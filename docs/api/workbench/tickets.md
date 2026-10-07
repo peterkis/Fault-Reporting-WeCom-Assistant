@@ -8,7 +8,7 @@
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,draft_recovery_enabled:boolean,logout_enabled:boolean`；新增宿主能力默认false，退出仅在实际员工Cookie认证已初始化且有当前CSRF时可用 |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,draft_recovery_enabled:boolean,logout_enabled:boolean`；新增宿主能力默认false，退出仅在实际员工Cookie认证已初始化且有当前CSRF时可用 |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
@@ -98,6 +98,24 @@ W `GET /api/tickets/{ticketId}/internal-notes/commands/{commandId}`：两个 UUI
 POST 前先将不可变原 UUID／版本／payload 成功持久化为密文；失败保留当前输入并阻止本次发送。24h或“丢弃草稿内容”清正文和 CryptoKey，保留最多20个独立 opaque 未核对操作标识；界面仍禁止新UUID，只能按原标识只读核对。COMMITTED／FAILED 才清匹配原标识，UNKNOWN继续保留；不提供普通“忘记”来绕过未知结果。核对旧操作不清后来输入的未提交内容，下一次发送仍须用户明确确认当前版本。已知 POST 成功而本地清理失败仍显示真实成功、禁止新提交并允许同UUID只读核对／重试清理；不降为 UNKNOWN。
 
 资源仍为单 App/API/SSE、复用 pool≤4／同机池预算≤8、SSE32、Worker／Gateway 单活及各 concurrency1；没有新增轮询。关闭方式为显式设 `workbenchInternalNotesEnabled=false` 后装配原宿主；源码回退采用单独 forward／revert，不删除事实。不涉及真实 Provider／OAuth／WeCom、部署、full／certify 或 Gate 推进。隔离 HTTP／生产 bundle 的新旧入口、失权、冲突和未知核对证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t02.md)。
+
+## 明确选择关联沟通的本人承接（WBINT-T05）
+
+W 宿主 `ticketConversationSelfHandlingEnabled:boolean=false` 独立于 T04，启用须已安装039首次责任轮次结构。关闭时新入口503且不新增关联/039读取；开启但缺039时503 `P2_016_SELF_HANDLING_UNAVAILABLE`。本票无数据库变更，复用单一 Ticket、039轮次、原 command ledger 和 Conversation Control。实际被测对象和关闭方式见 [T05执行记录](../../../plans/admin-workbench-integration/execution/t05.md)。
+
+`GET /api/tickets/{ticketId}/related-conversations?cursor=&limit=` 只列当前可读、非ENDED、源Intake或同一真实Journey/Channel Leg关联且身份匹配的服务会话。权限裁剪在LIMIT前，Session UUID keyset，每页默认/最多20；cursor绑定Ticket。返回 `{items:[{session_id,session_row_version:string,conversation_principal_id,conversation_principal_name,assignment_status,take_allowed}],next_cursor}`。没有一页结果不能证明不存在其他会话，不能从最后消息推断关联。读取BIGINT保留原十进制字符串；新写桥沿既有 `versionP2016` 和 [command Schema](../../../contracts/p2_016_conversation_self_handling_command.schema.json) 的1..2147483647。2147483647可实际写至2147483648，此后 `take_allowed=false`；更大的值也精确展示且不可写。既有Control的SafeInteger语义不改。
+
+`POST /api/tickets/{ticketId}/take-and-start-with-conversations` 与 `/accept-for-later-with-conversations` 的closed body：`client_command_id:UUID,expected_version:number,reason_code:大写code,resolver_team_id:当前组code,communication_choice:TAKE_SELECTED|RETAIN_CURRENT,sessions:[{session_id:UUID,expected_row_version:number}]`。TAKE_SELECTED须1..8个不同真实会话，逐一显式选择；RETAIN_CURRENT须空数组，明确保留原沟通人。不接受actor、target、force、自由备注或额外字段。版本范围同上；沿既有32KiB、Origin/CSRF、Idempotency-Key与Ticket If-Match，不改旧单会话复合命令。
+
+当前主体须活动且是活动当前组的真实成员；不得覆盖他人Ticket处理责任。NEW/QUEUED复用原queue/accept/start及首次责任依据，ACCEPTED本人已有真实basis仅允许开始。每个选中会话独立验证当前VIEW和TAKEOVER/TRANSFER、canonical主题与精确版本；给他人的沟通须现有TRANSFER授权且固定force=false，Ticket可读不能授予Conversation转交权。给本人是无事件的合法no-op。锁序为realtime发布锁→Ticket→按UUID排序的Session；既有standalone Control取相同发布锁后再锁Session。同事务包含Ticket Action、真实cycle、独立Conversation assignment/generation/control事件、既有投影及COMMITTED receipt，任一失败全部业务回滚，仅FAILED审计可留。无会话的Web事项须明确RETAIN_CURRENT，不造Session。
+
+成功沿原Ticket命令结果，`control_event_id:null,handling_cycle`，另有 `communication_choice,conversations:[{session_id,session_row_version:number,control_event_id:UUID|null,changed:boolean}]`；Schema见 [result](../../../contracts/p2_016_conversation_handling_result.schema.json) 与 [page](../../../contracts/p2_016_related_conversation_page.schema.json)。原UUID重放先重验当前主体、Ticket和选中会话可读，再读取原结果；payload变化409。浏览器只发一条POST，成功重读GET双责任事实，冲突保留原选择及旧版本，取消后才按当前版本重选。
+
+`ticket_conversation_draft_recovery_enabled = 本服务能力 && workbenchDraftRecoveryEnabled`，独立于Notes的 `draft_recovery_enabled`。正式表单复用T03加密store和T14授权生命周期，purpose=`ticket-conversation-handling`，账号/kind/Ticket/用途隔离，24h、20份、16KiB、500ms节流；恢复前重验bootstrap、Ticket和每个选择会话的实际读取及canonical关系，未通过不发布选择到UI。UNKNOWN冻结原UUID、动作、Ticket和各Session旧版本，未过期只显式重放原POST，不自动换身份或版本。敏感副本过期只留opaque原UUID。
+
+`GET /api/tickets/{ticketId}/conversation-handling-commands/{commandId}` 是该操作专用的只读核对，须能力和raw恢复选项都开启。closed无query/body，当前活动principal和Ticket读权、principal scope/Ticket/UUID/两种专用命令类型绑定原ledger。响应仅 `{state:'UNKNOWN'}`、`{state:'FAILED',error:{code:稳定P2_016码,retryable:false}}` 或 `{state:'COMMITTED',ticket_id,ticket_version,ticket_event_id}`，见 [Ack Schema](../../../contracts/p2_016_conversation_handling_ack.schema.json)。不返回会话引用/数量/版本、Control结果、payload/hash，也不授予Session读取或变更权。其他scope/type均UNKNOWN；当前Ticket失权拒绝。丢失Session读权的原操作可按当前Ticket读权读这份安全Ack，普通POST仍逐Session验权。
+
+选中最多8、页长最多20、单表单in-flight1；复用单App/Worker和原pool≤4、Gateway单活与SSE32预算，无新pool、常驻计时器或外部连接。本票不执行真实Provider/OAuth/WeCom/发送、部署、full/certify或Gate。关闭宿主选项退回旧入口并停止本用途恢复；已提交责任/事件/轮次不删除或倒写，代码回退采用独立forward/revert。
 
 ## 无会话本人承接与开始（WBINT-T04）
 

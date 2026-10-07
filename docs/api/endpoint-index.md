@@ -55,6 +55,10 @@
 | T25 | POST | `/api/tickets/{ticketId}/take-and-start` | W | 已实现、默认关闭：无真会话本人承接并开始，一个原子命令 | [工单](workbench/tickets.md#无会话本人承接与开始wbint-t04) |
 | T26 | POST | `/api/tickets/{ticketId}/accept-for-later` | W | 已实现、默认关闭：先接单，本轮首次责任依据 | [工单](workbench/tickets.md#无会话本人承接与开始wbint-t04) |
 | T27 | GET | `/api/tickets/{ticketId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：按当前授权和原UUID只读核对内部备注终态 | [草稿与核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
+| T28 | GET | `/api/tickets/{ticketId}/related-conversations` | W | 已实现、默认关闭：当前可读的真实关联会话，UUID keyset，每页最多20 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
+| T29 | POST | `/api/tickets/{ticketId}/take-and-start-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人承接并开始 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
+| T30 | POST | `/api/tickets/{ticketId}/accept-for-later-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人先接单 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
+| T31 | GET | `/api/tickets/{ticketId}/conversation-handling-commands/{commandId}` | W | 已实现、默认关闭：原UUID专用安全Ticket终态，无Session结果 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
 | R03 | POST | `/api/manual-reviews/{reviewId}/resolve` | W | 已实现：人工结论 | [复核](workbench/manual-reviews.md) |

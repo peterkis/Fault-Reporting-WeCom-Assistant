@@ -14,7 +14,7 @@ import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
 import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
 
-import {selfHandlingEligibility,selfHandlingResponsibilityEligibility} from './workbench-ticket-self-handling.mjs';
+import {selfHandlingEligibility,selfHandlingResponsibilityEligibility,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 
 export interface RelatedConversationRow {session_id:string;session_row_version:string;status:string;conversation_principal_id:string|null;conversation_principal_name:string|null;assignment_status:string|null}
 const relatedConversationSql=`(s.service_intake_id=$1::uuid OR EXISTS(SELECT 1 FROM intake.channel_leg own
@@ -183,6 +183,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     },
     async relatedConversations({cursor=null,limit,...input}:TicketQueryInput&{cursor?:unknown;limit?:unknown}){
       guardP2016(ticketConversationSelfHandlingEnabled);
+      if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const {ticket,principal:p}=await authorizedTicket(input),n=limitP2016(limit??20,20);
       const page=cursor?decodeCursorP2016(cursor,['v','ticket','id']):null;
       if(page&&(page.v!==1||page.ticket!==ticket.id))failP2016('CURSOR_INVALID');

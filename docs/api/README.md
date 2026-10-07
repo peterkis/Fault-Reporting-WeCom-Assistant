@@ -12,6 +12,7 @@
 | 确定宿主、认证、JSON、错误、时间、幂等、版本 | [公共约定与宿主](conventions.md) |
 | 会话列表、消息、接管、转派、内部备注、通信投递 | [会话工作台](workbench/conversations.md) |
 | 工单列表、详情、状态动作、双责任、通知投递 | [工单生命周期](workbench/tickets.md) |
+| 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |

@@ -1,6 +1,6 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
-import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
-export type {P2016InternalNoteCommand,P2016SelfHandlingCommand};
+import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
+export type {P2016InternalNoteCommand,P2016SelfHandlingCommand,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016RelatedConversationPage};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
@@ -47,14 +47,14 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)}};
 }
-export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
-function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled};}
+export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
+function decodePrincipal(value:unknown):Principal {const v=object(value);if(['source_group_directory_enabled','internal_notes_enabled','ticket_self_handling_enabled','ticket_conversation_self_handling_enabled','ticket_conversation_draft_recovery_enabled','draft_recovery_enabled','logout_enabled'].some(key=>typeof v[key]!=='boolean'))throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled as boolean,internal_notes_enabled:v.internal_notes_enabled as boolean,ticket_self_handling_enabled:v.ticket_self_handling_enabled as boolean,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled as boolean,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled as boolean,draft_recovery_enabled:v.draft_recovery_enabled as boolean,logout_enabled:v.logout_enabled as boolean};}
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext {
   const v=object(value),actions=strings(v.allowed_actions),ticket=id(v.id);
   if(ticket!==ticketId||actions.length>32||new Set(actions).size!==actions.length||actions.some(action=>! /^[a-z][a-z-]{0,63}$/u.test(action)))throw new ApiError(502,'INVALID_RESPONSE');
   const team=text(v.resolver_team_id);if(!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))throw new ApiError(502,'INVALID_RESPONSE');
-  if(actions.some(action=>['take-and-start','accept-for-later'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
+  if(actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
   return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{})};
 }
 async function rejectAuthorization(response:Response):Promise<never>{
@@ -74,7 +74,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
 }
 function decodeCycle(value:unknown):P2016HandlingCycle {const v=object(value);return {id:id(v.id),cycle_no:version(v.cycle_no),first_responsibility_event_id:v.first_responsibility_event_id===null?null:id(v.first_responsibility_event_id)};}
 function decodeTicketReceipt(v:Record<string,unknown>,ticketId:string):P2016InternalNoteResult {return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed as boolean};}
-async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016ConversationHandlingCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
@@ -95,6 +95,32 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
 
 }
 export const api={
+  relatedConversations:(ticketId:string,cursor:string|null,signal:AbortSignal):Promise<P2016RelatedConversationPage>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/related-conversations?'+new URLSearchParams({limit:'20',...(cursor?{cursor}:{})}),signal,value=>{
+    const v=object(value);if(Object.keys(v).length!==2||!Array.isArray(v.items)||v.items.length>20)throw new ApiError(502,'INVALID_RESPONSE');
+    const items=v.items.map((value):P2016RelatedConversationPage['items'][number]=>{const row=object(value),raw=text(row.session_row_version),status=row.assignment_status;
+      if(Object.keys(row).length!==6||!/^[1-9][0-9]{0,18}$/u.test(raw)||BigInt(raw)>9223372036854775807n||typeof row.take_allowed!=='boolean'||(status!==null&&status!=='ASSIGNED'&&status!=='UNASSIGNED')||(row.take_allowed&&BigInt(raw)>2147483647n))throw new ApiError(502,'INVALID_RESPONSE');
+      return {session_id:id(row.session_id),session_row_version:raw,conversation_principal_id:row.conversation_principal_id===null?null:id(row.conversation_principal_id),conversation_principal_name:nullable(row.conversation_principal_name),assignment_status:status,take_allowed:row.take_allowed};
+    });
+    if(new Set(items.map(row=>row.session_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
+    return {items,next_cursor:nullable(v.next_cursor)};
+  }),
+  readConversation:(sessionId:string,signal:AbortSignal):Promise<void>=>get('/api/conversations/'+encodeURIComponent(sessionId),signal,value=>{if(id(object(object(value).session).session_id)!==sessionId)throw new ApiError(502,'INVALID_RESPONSE');}),
+  handleConversations:(ticketId:string,action:P2016ConversationHandlingAction,command:P2016ConversationHandlingCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016ConversationHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
+    if(v.communication_choice!==command.communication_choice||!Array.isArray(v.conversations)||v.conversations.length!==command.sessions.length)throw new UnknownCommandOutcome();
+    const conversations=v.conversations.map(value=>{const row=object(value),session=id(row.session_id),original=command.sessions.find(item=>item.session_id===session),raw=row.session_row_version;
+      if(Object.keys(row).length!==4||!original||typeof row.changed!=='boolean'||typeof raw!=='number'||!Number.isSafeInteger(raw)||raw!==original.expected_row_version+(row.changed?1:0)||(row.changed?(typeof row.control_event_id!=='string'):row.control_event_id!==null))throw new UnknownCommandOutcome();
+      return {session_id:session,session_row_version:raw,control_event_id:row.control_event_id===null?null:id(row.control_event_id),changed:row.changed};
+    });
+    if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();
+    const cycle=decodeCycle(v.handling_cycle);if(cycle.first_responsibility_event_id===null)throw new UnknownCommandOutcome();
+    return {...decodeTicketReceipt(v,ticketId),handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id},communication_choice:command.communication_choice,conversations};
+  }),
+  conversationHandlingAcknowledgement:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016ConversationHandlingAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/conversation-handling-commands/'+encodeURIComponent(commandId),signal,value=>{
+    const v=object(value);if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
+    if(v.state==='FAILED'&&Object.keys(v).length===2){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||!/^P2_016_[A-Z0-9_]{1,64}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {state:'FAILED',error:{code,retryable:false}};}
+    if(v.state==='COMMITTED'&&Object.keys(v).length===4&&id(v.ticket_id)===ticketId)return {state:'COMMITTED',ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id)};
+    throw new ApiError(502,'INVALID_RESPONSE');
+  }),
   async logout(csrfToken:string|null){
     if(!csrfToken)throw new ApiError(403,'CSRF_UNAVAILABLE');
     const response=await fetch('/workbench/logout',{method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','x-csrf-token':csrfToken}});

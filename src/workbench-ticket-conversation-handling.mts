@@ -24,7 +24,13 @@ export function normalizeConversationHandlingCommand(input:unknown):Conversation
 }
 export function createTicketConversationHandlingService({pool,query,controlService,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService:Pick<ReturnType<typeof createConversationControlService>,'takeResponsibilityInTransaction'>;enabled?:boolean}&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
-  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
+  return Object.freeze({
+    async acknowledgement({authContext,ticketId,commandId}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
+      guardP2016(enabled);const id=uuidP2016(ticketId),command=uuidP2016(commandId);
+      if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      return ledger.conversationHandlingAcknowledgement({ticketId:id,commandId:command,authorize:transaction=>query.authorizedTicket({authContext,ticketId:id,transaction})});
+    },
+    async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeConversationHandlingCommand(input);
     if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
     return ledger.execute({command,authorize:async transaction=>{

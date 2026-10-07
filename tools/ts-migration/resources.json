@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_conversation_self_handling_command.schema.json",
+    "contracts/p2_016_related_conversation_page.schema.json",
+    "contracts/p2_016_conversation_handling_result.schema.json",
+    "contracts/p2_016_conversation_handling_ack.schema.json",
     "database/migrations/039_ticket_self_handling_cycles.sql",
     "contracts/p2_016_self_handling_command.schema.json",
     "contracts/workbench_attachment_contracts.d.ts",

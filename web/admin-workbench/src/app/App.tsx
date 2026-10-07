@@ -14,6 +14,7 @@ import {TicketNotes} from '../features/ticket-notes/TicketNotes';
 import {clearSessionAuthorization,clearSessionView,clearItemView} from './authorization';
 import {subscribeDrafts} from '../features/drafts/encrypted-drafts';
 import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
+import {TicketConversationHandling} from '../features/ticket-handling/TicketConversationHandling';
 import {AttachmentSection} from '../features/attachments/AttachmentSection';
 import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
 import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
@@ -107,13 +108,13 @@ function Shell({principal,children,navigationBlocked=false}:{principal:Principal
     onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出，当前浏览器的恢复副本已清理。'),
     onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看当前工单事实。')});
   useEffect(()=>{
-    if(!principal.draft_recovery_enabled&&!principal.logout_enabled)return;
+    if(!principal.draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.logout_enabled)return;
     try{return subscribeDrafts(value=>{
       if(value.principal!==principal.principal_id)return;
       if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
       else if(value.reason==='revoked'){if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
     });}catch{return;}
-  },[client,principal.principal_id,principal.draft_recovery_enabled,principal.logout_enabled]);
+  },[client,principal.principal_id,principal.draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.logout_enabled]);
   const settings=useLocation().pathname.startsWith('/settings/'),canNameGroups=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
   const [online,setOnline]=useState(navigator.onLine);
   const guardNavigation=(event:MouseEvent<HTMLAnchorElement>)=>{if(navigationBlocked)event.preventDefault();};
@@ -162,7 +163,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
         <dt>实际完结</dt><dd>{detail.item.completed_at??'尚无完结事件'}</dd>
       </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
-      {detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
       <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
       <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>

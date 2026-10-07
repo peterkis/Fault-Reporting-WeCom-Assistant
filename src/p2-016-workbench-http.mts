@@ -23,12 +23,15 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const conversationAck=/^\/api\/tickets\/([0-9a-f-]{36})\/conversation-handling-commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(conversationAck){if(!conversationHandling)failP2016('DISABLED',503);guardP2016(workbenchDraftRecoveryEnabled);queryKeys(url,[]);
+        json(response,200,await conversationHandling.acknowledgement({authContext,ticketId:conversationAck[1],commandId:conversationAck[2]}));return true;}
       const noteReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/internal-notes\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(noteReceipt){guardP2016(workbenchInternalNotesEnabled&&workbenchDraftRecoveryEnabled);queryKeys(url,[]);
         json(response,200,await tickets.internalNoteReceipt({authContext,ticketId:noteReceipt[1],commandId:noteReceipt[2]}));return true;}
       if(url.pathname==='/api/lifecycle/bootstrap'){queryKeys(url,[]);const principal=await query.principal(authContext);
         json(response,200,{principal_id:principal.principal_id,display_name:principal.display_name,csrf_token:authContext.auth_method==='COOKIE'?authContext.csrf_token:null,
-          internal_beta:true,ai_enabled:false,roles:principal.roles,polling_interval_ms:5000,source_group_directory_enabled:sourceGroupDirectoryEnabled,internal_notes_enabled:workbenchInternalNotesEnabled,ticket_self_handling_enabled:selfHandling!==null,ticket_conversation_self_handling_enabled:conversationHandling!==null,draft_recovery_enabled:workbenchInternalNotesEnabled&&workbenchDraftRecoveryEnabled,logout_enabled:logoutReady()&&authContext.auth_method==='COOKIE'&&typeof authContext.csrf_token==='string'&&authContext.csrf_token.length>0});return true;}
+          internal_beta:true,ai_enabled:false,roles:principal.roles,polling_interval_ms:5000,source_group_directory_enabled:sourceGroupDirectoryEnabled,internal_notes_enabled:workbenchInternalNotesEnabled,ticket_self_handling_enabled:selfHandling!==null,ticket_conversation_self_handling_enabled:conversationHandling!==null,ticket_conversation_draft_recovery_enabled:conversationHandling!==null&&workbenchDraftRecoveryEnabled,draft_recovery_enabled:workbenchInternalNotesEnabled&&workbenchDraftRecoveryEnabled,logout_enabled:logoutReady()&&authContext.auth_method==='COOKIE'&&typeof authContext.csrf_token==='string'&&authContext.csrf_token.length>0});return true;}
       const related=/^\/api\/tickets\/([0-9a-f-]{36})\/related-conversations$/iu.exec(url.pathname);
       if(related){if(!conversationHandling)failP2016('DISABLED',503);queryKeys(url,['cursor','limit']);json(response,200,await query.relatedConversations({authContext,ticketId:related[1],cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
       if(url.pathname==='/api/tickets'){queryKeys(url,['state','cursor','limit']);json(response,200,await query.list({authContext,state:url.searchParams.get('state')??'queued',cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
