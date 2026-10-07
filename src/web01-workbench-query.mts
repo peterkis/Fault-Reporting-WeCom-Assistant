@@ -99,6 +99,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
     const selected=card(row);return sourceGroups?(await sourceGroups.decorate([selected]))[0]??selected:selected;
   }
   return Object.freeze({
+    authorizedItem:item,
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';

@@ -12,6 +12,7 @@ import type {BoardColumn,CompletionRange,WorkbenchCard,Principal} from '../api/c
 import {useUiStore} from './ui-store';
 import {TicketNotes} from '../features/ticket-notes/TicketNotes';
 import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
+import {AttachmentSection} from '../features/attachments/AttachmentSection';
 import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
 import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
 
@@ -149,6 +150,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
+      <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
       <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
         <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>

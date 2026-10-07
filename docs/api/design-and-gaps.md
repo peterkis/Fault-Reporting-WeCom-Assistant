@@ -44,7 +44,7 @@
 
 ## 占位、模拟和未开放能力
 
-`GET /api/attachments/*` 当前显式404不可用。Ticket auto-close和candidate expire只有内部SYSTEM/维护动作，未公开HTTP；没有公开test-auth登录或 `/auth/bootstrap`。当前业务src没有Jev/DeepSeek/其他模型client；research文件和网络阻止probe不构成业务接口。
+基础会话宿主的 `GET /api/attachments/*` 仍显式404不可用。后继 [WBINT-T16](workbench/attachments.md) 在P2016宿主增加精确事项元信息和PNG/JPEG下载，默认关闭；只读取显式受信已保存的加密资产，生产登记／扫描／key装配仍需独立提供。Ticket auto-close和candidate expire只有内部SYSTEM/维护动作，未公开HTTP；没有公开test-auth登录或 `/auth/bootstrap`。当前业务src没有Jev/DeepSeek/其他模型client；research文件和网络阻止probe不构成业务接口。
 
 [WEB01合成原型](../../web/admin-workbench-prototype/README.md) 使用纯synthetic数据、无业务API。synthetic preview可能复用既有HTTP宿主，但模拟认证/SSE/数据只证明原型行为，不能升级为生产可用。正式React客户端通过真实bootstrap/board/items读取Ticket；后继默认关闭的[来源群名称维护](workbench/source-groups-design.md)仅允许ADMIN修改显示资料。
 
