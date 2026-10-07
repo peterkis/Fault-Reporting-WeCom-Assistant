@@ -77,7 +77,7 @@ flowchart LR
 
 待复核有真实 Ticket 关联时仅以 Ticket 为主卡，附该身份可见的复核提示；只有未建单项才使用独立 Review/Intake 标识。复核数据本身按既有权限读取，不借 Ticket 卡扩大 Manual Review 权限。普通 RECEIVED/WAITING_DESCRIPTION/WAITING_TRIAGE/FAILED 受理可能尚无 Ticket 或 Review，使用 kind=intake，并沿既有未建单队列的 ADMIN/DISPATCHER 范围读取；不推定 HANDLER 获权。没有优先级事实时返回 null，FAILED 保留失败含义。
 
-三列是展示归组，保留原状态。NEW/QUEUED/ACCEPTED/REOPENED 属待受理；IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR 属处理中；CLOSED 进入已关闭。RESOLVED 如放在第三列，必须标“已解决待确认”，且不能因两日关闭窗口隐藏仍未完结事项。CANCELLED 等终态需保留原状态文字，不能伪称 CLOSED；最终映射在直接测试中列明。
+三列是展示归组，保留原状态。NEW/QUEUED/ACCEPTED/REOPENED 属待受理；IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR 属处理中；CLOSED 进入已关闭。RESOLVED 如放在第三列，必须标“已解决待确认”，且不能因两日关闭窗口隐藏仍未完结事项。CANCELLED 默认从主看板移出，以 range=cancelled 专项筛选查看，保留原状态文字。关闭列按真实完结事件倒序；无完结时间的项排在有时间的项之后，不用 updated_at 冒充完结时间。
 
 已关闭默认以 Asia/Shanghai 自然日今天、昨天过滤真实关闭事件时间；没有 closing event 的记录不得拿 updated_at 冒充关闭时间。业务 LocalDateTime 是 `YYYY-MM-DD HH:mm:ss` 字符串，物理 epoch DTO 保留十进制字符串；不能依赖浏览器本地时区解析无 offset 字符串。时间范围由服务端给出，客户端只呈现。
 

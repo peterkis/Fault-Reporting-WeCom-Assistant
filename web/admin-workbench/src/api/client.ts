@@ -16,7 +16,7 @@ function decodeCard(value:unknown):WorkbenchCard {
 }
 function decodePage(value:unknown):BoardPage {
   const v=object(value),r=object(v.range);
-  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
+  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all','cancelled'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
   const column=v.column as BoardColumn,items=v.items.map(decodeCard);if(items.some(item=>item.column!==column))throw new ApiError(502,'INVALID_RESPONSE');
   return {items,column,next_cursor:nullable(v.next_cursor),range:{mode:r.mode as CompletionRange,from:datetime(r.from),until:datetime(r.until),timezone:'Asia/Shanghai'}};
 }

@@ -5,10 +5,13 @@ import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016, uuidP2016, localP2016, limitP2016, cursorP2016, decodeCursorP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
+const STATUS_COLUMNS = {
+  pending: ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'],
+  active: ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'],
+  closed: ['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'],
+} as const;
 export function boardColumn(status: string): BoardColumn {
-  if (['NEW', 'QUEUED', 'ACCEPTED', 'REOPENED', 'PENDING', 'RECEIVED', 'WAITING_DESCRIPTION', 'WAITING_TRIAGE', 'FAILED'].includes(status)) return 'pending';
-  if (['IN_PROGRESS', 'WAITING_REQUESTER', 'WAITING_VENDOR'].includes(status)) return 'active';
-  if (['RESOLVED', 'CLOSED', 'CANCELLED', 'DUPLICATE_LINKED'].includes(status)) return 'closed';
+  for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
   failP2016();
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'> { sort_at: string }
@@ -36,14 +39,14 @@ const CARD_SQL = `WITH cards AS (
    ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) ended ON TRUE
  LEFT JOIN LATERAL (SELECT r.review_reason_code FROM intake.manual_review_item r
    JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket jt ON jt.id=j.linked_ticket_id
-   WHERE r.status='PENDING' AND (r.linked_ticket_id=t.id OR r.service_intake_id=t.source_intake_id)
+   WHERE r.status='PENDING' AND (r.linked_ticket_id=t.id OR r.service_intake_id=t.source_intake_id OR j.linked_ticket_id=t.id)
      AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
      AND ($1::boolean OR jt.assignee_id=$2::uuid OR jt.resolver_team_id=ANY($3::text[]))
    ORDER BY r.created_at,r.id LIMIT 1) review ON TRUE
  WHERE ($1::boolean OR t.assignee_id=$2::uuid OR t.resolver_team_id=ANY($3::text[]))
  UNION ALL
  SELECT 'review',r.id::text,r.service_intake_id::text,i.intake_no,
-   COALESCE(NULLIF(i.summary,''),'未提供报修描述'),'PENDING',r.priority,NULL,NULL,i.source_channel,
+   COALESCE(NULLIF(i.summary,''),'未提供报修描述'),'PENDING',r.priority,i.reported_location_text,CASE WHEN j.profile_resolution_status='RESOLVED' THEN j.profile_snapshot->'contact'->>'name' END,i.source_channel,
    NULL,r.review_reason_code,to_char(r.created_at,'YYYY-MM-DD HH24:MI:SS'),
    to_char(r.updated_at,'YYYY-MM-DD HH24:MI:SS'),NULL,to_char(r.updated_at,'YYYY-MM-DD HH24:MI:SS')
  FROM intake.manual_review_item r JOIN intake.service_intake i ON i.id=r.service_intake_id
@@ -95,25 +98,28 @@ export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransacti
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';
-      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all'].includes(mode))failP2016();
+      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','cancelled'].includes(mode))failP2016();
       const selectedColumn=column as BoardColumn,selectedRange=mode as CompletionRange;
       const window=await range(selectedRange),limit=limitP2016(input.limit??'50');
-      const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from','at','kind','id']):null;
+      const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from','at','kind','id','order_group']):null;
       // Bind cursors to both filters and the current authorized scope, including a changed team/role.
       const scopeKey=JSON.stringify(authorized.values);
       if(page&&(page.v!==1||page.principal!==authorized.values[1]||page.scope!==scopeKey||page.column!==column||page.range!==mode||page.from!==window.from))failP2016('CURSOR_INVALID');
       const at=page?localP2016(page.at):null,id=page?uuidP2016(page.id):null;
       if(page&&(typeof page.kind!=='string'||!['ticket','review','intake'].includes(page.kind)))failP2016('CURSOR_INVALID');
-      const states=selectedColumn==='pending'?['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED']:
-        selectedColumn==='active'?['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR']:['CLOSED','RESOLVED','CANCELLED','DUPLICATE_LINKED'];
-      const r=await pool.query<CardRow>(CARD_SQL+` SELECT * FROM cards WHERE status=ANY($4::text[])
+      if(page&&page.order_group!==0&&page.order_group!==1)failP2016('CURSOR_INVALID');
+      const states=STATUS_COLUMNS[selectedColumn].filter(state=>selectedColumn!=='closed'||(selectedRange==='cancelled'?state==='CANCELLED':state!=='CANCELLED'));
+      const r=await pool.query<CardRow & {order_at:string;order_group:number}>(CARD_SQL+`, ordered AS (SELECT *,
+        CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN 1 ELSE 0 END AS order_group,
+        CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN completed_at ELSE sort_at END AS order_at FROM cards)
+        SELECT * FROM ordered WHERE status=ANY($4::text[])
         AND ($5::boolean OR status='RESOLVED' OR completed_at::timestamp>=$6::timestamp AND completed_at::timestamp<$7::timestamp)
-        AND ($8::text IS NULL OR (sort_at,kind,id)<($8::text,$9::text,$10::text))
-        ORDER BY sort_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
-          selectedColumn!=='closed'||selectedRange==='all',window.from,window.until,at,page?.kind??null,id,limit+1]);
-      const items=r.rows.slice(0,limit).map(card),last=items.at(-1);
+        AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
+        ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
+          selectedColumn!=='closed'||selectedRange!=='recent',window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
+      const rows=r.rows.slice(0,limit),items=rows.map(card),last=rows.at(-1);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:1,
-        principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.updated_at,kind:last.kind,id:last.id}):null});
+        principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },
     async detail({authContext,kind,id,cursor,limit}: {authContext:unknown;kind:string;id:unknown;cursor:unknown;limit:unknown}): Promise<WorkbenchDetail> {
       const selected=await item(authContext,kind,id),n=limitP2016(limit??'50');
@@ -133,13 +139,18 @@ export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransacti
         JOIN intake.web_request_binding b ON b.intake_id=s.intake_id
         WHERE s.intake_id=$1::uuid AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
           AND s.retention_until>platform.local_now()` : '';
-      const records=await pool.query<WorkbenchRecord>(`WITH records AS (
+      const records=await pool.query<WorkbenchRecord>(`WITH readable_intakes AS (
+        SELECT id FROM intake.service_intake WHERE id=$1::uuid AND retention_until>platform.local_now()
+        UNION SELECT i.id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
+        JOIN intake.service_intake i ON i.id=l.source_intake_id WHERE $2='ticket' AND j.linked_ticket_id=$3::uuid
+          AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND i.retention_until>platform.local_now()
+      ), records AS (
         SELECT 'message:'||m.id::text AS id,to_char(rel.linked_at,'YYYY-MM-DD HH24:MI:SS') AS at,
-          CASE WHEN rel.relation_type='PRIMARY' THEN '报修原文' ELSE '报修补充' END AS type,
+          CASE WHEN rel.intake_id=$1::uuid AND rel.relation_type='PRIMARY' THEN '报修原文' ELSE '报修补充' END AS type,
           m.clean_text AS text,'REPORT'::text AS audience,NULL::text AS actor,NULL::text AS old_status,NULL::text AS new_status
         FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id
         JOIN intake.service_intake i ON i.id=rel.intake_id
-        WHERE rel.intake_id=$1::uuid AND i.retention_until>platform.local_now() AND m.retention_until>platform.local_now()
+        WHERE rel.intake_id IN (SELECT id FROM readable_intakes) AND i.retention_until>platform.local_now() AND m.retention_until>platform.local_now()
         UNION ALL
         SELECT 'event:'||e.event_id::text,to_char(e.created_at,'YYYY-MM-DD HH24:MI:SS'),e.event_type,
           e.internal_note,'INTERNAL',COALESCE(p.display_name,e.operator_type),e.old_status,e.new_status

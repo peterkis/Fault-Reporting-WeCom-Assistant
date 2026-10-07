@@ -10,6 +10,8 @@ export function build(root: string): BuildManifest {
   // Invalidate first: a failed configuration, resource or compile must not leave a usable old artifact.
   for (const name of ['artifact-proof.json', 'runtime', 'emit'] as const) cleanGenerated(root, name);
   const before = identity(root);
+  // Preserve source collisions and resource guards before compiling or invoking Vite.
+  mappings(root);
   const compiler = program(root, 'tsconfig.migration.json');
   const emitted = compiler.emit();
   if (emitted.emitSkipped || emitted.diagnostics.length) throw new Error('MIGRATION_EMIT_FAILED');

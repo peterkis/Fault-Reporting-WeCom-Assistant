@@ -7,6 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {createHash} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,pool,principals})=>{
     const directory=resolve(process.env.WEB01_SCREENSHOT_DIR??join(tmpdir(),'web01-ui-'+randomUUID()));await mkdir(directory,{recursive:true});
@@ -64,6 +65,24 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
       assert.equal(await browser.evaluate("document.querySelector('.board').getBoundingClientRect().width<=innerWidth"),true);
       await capture('new-board-900.png');
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("!document.querySelector('dialog')");
+      const access=createPilotAccessService({pool});
+      await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
+      // Count real requests, without changing their HTTP result or adding retries.
+      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__web01DenialReads=0;globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/api/workbench/items/ticket/${id}'))globalThis.__web01DenialReads++;return original(...args);};return true})()`);
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&document.querySelectorAll('.ticket-card').length===2");
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
+      assert.ok(await browser.evaluate('globalThis.__web01DenialReads<=2'),'a denied active query must not recreate and request in a loop');
+      assert.equal(await browser.evaluate("document.querySelector('dialog').innerText.includes('仅供内部的合成处理记录')"),false);
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("!document.querySelector('dialog')");
+      await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
       await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
       await browser.waitFor("document.body.innerText.includes('会话已失效')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);

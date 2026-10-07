@@ -1,5 +1,5 @@
 export type BoardColumn = 'pending' | 'active' | 'closed';
-export type CompletionRange = 'recent' | 'all';
+export type CompletionRange = 'recent' | 'all' | 'cancelled';
 export type WorkbenchKind = 'ticket' | 'review' | 'intake';
 export interface WorkbenchCard {
   kind: WorkbenchKind; id: string; intake_id: string; number: string; title: string;

@@ -74,30 +74,31 @@ function Detail({principal}:{principal:Principal}){
 }
 function Workbench({principal}:{principal:Principal}){
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams();
-  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='all'?'all':'recent';
+  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':'recent';
   const pending=useColumn(principal.principal_id,'pending',range),active=useColumn(principal.principal_id,'active',range),closed=useColumn(principal.principal_id,'closed',range);
   const queries=[pending,active,closed],items=queries.flatMap(q=>q.isError?[]:q.data?.pages.flatMap(p=>p.items)??[]);
   const unique=[...new Map(items.map(i=>[i.kind+':'+i.id,i])).values()];
   const update=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
   const refresh=()=>{void pending.refetch();void active.refetch();void closed.refetch();};
   const window=closed.data?.pages[0]?.range;
+  const label=(column:BoardColumn)=>column==='closed'&&range==='cancelled'?'已取消':names[column];
   return <Shell principal={principal}><div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={28}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">只读工作台</span></div>
     <div className="toolbar"><div className="scope-tabs"><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未接入">与我有关<small>后续</small></button></div><div className="view-tabs"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={14}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={14}/>列表</button></div>
-      <div className="tools"><MorphIcon icon={view==='board'?PanelsTopLeft:Rows3} reducedMotion="user" size={17}/><span>授权范围 · 最近活动排序</span><Button variant="tertiary" onPress={refresh}><RefreshCw size={14}/>刷新</Button></div></div>
-    <div className="range-bar"><span>未完成事项保留全部时间范围</span><label>已关闭范围 <select value={range} onChange={e=>update('range',e.target.value)}><option value="recent">今天和昨天</option><option value="all">全部</option></select></label>{window?<small>北京时间 {window.from.slice(0,10)} 至 {window.until.slice(0,10)} 前 · 已解决待确认不限日期</small>:null}</div>
-    {view==='board'?<div className="board">{columns.map((column,index)=>{const q=queries[index];if(!q)return null;const loaded=q.data?.pages.flatMap(p=>p.items)??[];return <section className={'board-column '+column} key={column} aria-label={names[column]}><div className="column-heading"><h2><span className={'stage-dot '+column}/>{names[column]}</h2><span>{q.isError?'—':loaded.length} 已加载</span></div>
+      <div className="tools"><MorphIcon icon={view==='board'?PanelsTopLeft:Rows3} reducedMotion="user" size={17}/><span>授权范围 · 按列排序</span><Button variant="tertiary" onPress={refresh}><RefreshCw size={14}/>刷新</Button></div></div>
+    <div className="range-bar"><span>未完成事项保留全部时间范围</span><label>已关闭范围 <select value={range} onChange={e=>update('range',e.target.value)}><option value="recent">今天和昨天</option><option value="all">全部完结记录</option><option value="cancelled">已取消（全部时间）</option></select></label>{window&&range==='recent'?<small>北京时间 {window.from.slice(0,10)} 至 {window.until.slice(0,10)} 前 · 已解决待确认不限日期</small>:window?<small>{range==='cancelled'?'第三列仅查看已取消事项':'完结记录不限日期；取消事项另行查看'}</small>:null}</div>
+    {view==='board'?<div className="board">{columns.map((column,index)=>{const q=queries[index];if(!q)return null;const loaded=q.data?.pages.flatMap(p=>p.items)??[];return <section className={'board-column '+column} key={column} aria-label={label(column)}><div className="column-heading"><h2><span className={'stage-dot '+column}/>{label(column)}</h2><span>{q.isError?'—':loaded.length} 已加载</span></div>
       {q.isPending?<Message text="正在读取…"/>:q.isError?<Message text={errorMessage(q.error)} retry={()=>{void q.refetch();}}/>:<div className="column-cards">{loaded.map(item=><Card key={item.kind+item.id} item={item} search={location.search}/>)}{!loaded.length?<p className="empty">当前授权范围内暂无事项</p>:null}</div>}
       {!q.isError&&!q.isPending?(q.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={q.isFetchingNextPage} onPress={()=>{void q.fetchNextPage();}}>加载下一页</Button>:<p className="column-end">当前范围已加载完毕</p>):null}</section>;})}</div>:<>
-      {queries.map((q,index)=>q.isError?<Message key={index} text={names[columns[index]??'pending']+'：'+errorMessage(q.error)} retry={()=>{void q.refetch();}}/>:null)}
+      {queries.map((q,index)=>q.isError?<Message key={index} text={label(columns[index]??'pending')+'：'+errorMessage(q.error)} retry={()=>{void q.refetch();}}/>:null)}
       {queries.some(q=>q.isPending)?<Message text="正在读取列表…"/>:unique.length?<WorkList items={unique} search={location.search}/>:queries.some(q=>q.isError)?null:<p className="empty">当前授权范围内暂无事项</p>}
-      <div className="list-pagination">{queries.map((q,index)=><div key={index}><span>{names[columns[index]??'pending']} · {q.isError?'读取失败':(q.data?.pages.flatMap(p=>p.items).length??0)+' 条已加载'}</span>{q.hasNextPage&&!q.isError?<Button variant="secondary" onPress={()=>{void q.fetchNextPage();}} isDisabled={q.isFetchingNextPage}>加载下一页</Button>:null}</div>)}</div></>}
+      <div className="list-pagination">{queries.map((q,index)=><div key={index}><span>{label(columns[index]??'pending')} · {q.isError?'读取失败':(q.data?.pages.flatMap(p=>p.items).length??0)+' 条已加载'}</span>{q.hasNextPage&&!q.isError?<Button variant="secondary" onPress={()=>{void q.fetchNextPage();}} isDisabled={q.isFetchingNextPage}>加载下一页</Button>:null}</div>)}</div></>}
     <p className="workspace-footnote">仅展示当前身份获权的服务记录；不会因打开事项而接管或关闭。</p></div>
     {selected.id?<Detail principal={principal} key={selected.kind+':'+selected.id}/>:null}
   </Shell>;
 }
-function Session(){const expired=useUiStore(s=>s.sessionExpired),reset=useUiStore(s=>s.reset);
-  const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:!expired});
-  if(expired)return <div className="entry-state"><h1>医小修工作台</h1><Message text="会话已失效，请重新进入已授权工作台。" retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
+function Session(){const failure=useUiStore(s=>s.sessionError),reset=useUiStore(s=>s.reset);
+  const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null});
+  if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?"会话已失效，请重新进入已授权工作台。":"当前身份没有查看权限。"} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(bootstrap.isPending)return <div className="entry-state"><Message text="正在核验内部会话…"/></div>;
   if(bootstrap.isError)return <div className="entry-state"><h1>医小修工作台</h1><Message text={errorMessage(bootstrap.error)} retry={()=>{void bootstrap.refetch();}}/><a href="/workbench">返回现有工作台入口</a></div>;
   return <Workbench principal={bootstrap.data}/>;

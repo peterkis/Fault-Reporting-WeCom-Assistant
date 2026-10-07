@@ -18,7 +18,7 @@
 | 事件、责任链 | `/api/tickets/{id}/events` 当前只有事件元数据和 note存在标记；`/responsibility` 分别返回工单/沟通责任 | 复用对象授权；必要时补有界安全事件/记录投影，保留受众及分页，不把当前 owner 当完整历史 |
 | 个人资料/通知结果 | `/reporter-contact` 受合法关联/保留期约束；`/deliveries` 是独立真实投递事实 | 只显示本轮确有必要且获权的字段；不为卡片批量调用联系/通知接口，不伪造头像/送达 |
 | 搜索、跟进、未读、presence、SLA | 原型内存筛选/标记；当前没有完整后端能力 | 暂不开放全局搜索及这些虚假值；后续按各自持久/临时语义实现 |
-| 卡片打开、关闭、返回、刷新 | 原型没有标准路由；切卡请求身份需重建 | URL 表示对象/视图/过滤，取消过期请求，键盘/Escape/焦点返回与窄窗真实验证 |
+| 卡片打开、关闭、返回、刷新 | 原型没有标准路由；切卡请求身份需重建 | URL 表示对象/视图/过滤，取消过期请求，拒绝对象后清理相关缓存并重新读取看板范围，键盘/Escape/焦点返回与窄窗真实验证 |
 | 我来处理、接管、完工、重开、代录、拖动、声音 | 原型 mutate；旧 command API不等于 ADR-0024 原子主动作 | WEB01 只读。WEB02原子命令、WEB03代录/本人反馈、WEB04真实协作/提醒按后续授权实现 |
 | 正式入口、资源 | 原 `/workbench`、`/workbench/lifecycle` 与成员端有既有 HTTP/static/auth 路径 | 新 `/workbench/app/` 接同一受控链，hash bundle/manifest纳入原制品；UI fallback不吞API；旧关键路由直接回归 |
 | types/build/CI | 前端原型独立 TS7；根 TS5.9 的检查/制品目前不覆盖新 TSX 或 bundle | 当前 `v3-p09` 保持有效；根 npm ci 纳入前端依赖，新增实际前端 type/build 与 direct tests，改动工具须跑直接 tooling/hosts 回归 |

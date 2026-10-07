@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
   await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals})=>{
@@ -23,14 +24,30 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal((await get('/api/workbench/board?column=active&cursor='+first.next_cursor)).status,400);
     assert.equal((await get('/api/workbench/board?column=pending&limit=101')).status,400);
     const closed=await read('/api/workbench/board?column=closed');assert.equal(closed.items.length,4);
+    await pool.query('UPDATE pilot_ticket.ticket SET updated_at=platform.local_now() WHERE id=$1::uuid',[tickets[11].ticket.id]);
+    const closingFirst=await read('/api/workbench/board?column=closed&limit=1');
+    assert.equal(closingFirst.items[0].id,tickets[9].ticket.id);
+    const closingNext=await read('/api/workbench/board?column=closed&limit=1&cursor='+closingFirst.next_cursor);
+    assert.equal(closingNext.items[0].id,tickets[10].ticket.id);
     const resolved=closed.items.find(i=>i.status==='RESOLVED');assert.ok(resolved);assert.equal(resolved.completed_at,null);
     await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=date_trunc('day',platform.local_now())-interval '2 days' WHERE ticket_id=$1::uuid AND event_type='ticket.closed'",[tickets[9].ticket.id]);
     assert.equal((await read('/api/workbench/board?column=closed')).items.length,3);
     assert.equal((await read('/api/workbench/board?column=closed&range=all')).items.length,4);
+    const commandId=randomUUID();
+    const cancelled=await fetch(origin+'/api/tickets/'+tickets[0].ticket.id+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'WEB01_SYNTHETIC_CANCEL'})});
+    assert.equal(cancelled.status,200,await cancelled.clone().text());
+    assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.every(i=>i.status!=='CANCELLED'));
+    const cancellationView=await read('/api/workbench/board?column=closed&range=cancelled');
+    assert.equal(cancellationView.items.length,1);assert.equal(cancellationView.items[0].status,'CANCELLED');
+    const separateReview=pending.items.find(i=>i.kind==='review');
+    await pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$1::uuid WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$2::uuid)',[tickets[5].ticket.id,separateReview.id]);
+    assert.ok((await read('/api/workbench/board?column=active')).items.find(i=>i.id===tickets[5].ticket.id).review_reason);
+    assert.ok((await read('/api/workbench/board?column=pending')).items.every(i=>i.id!==separateReview.id));
     const outsider=await get('/api/workbench/board?column=pending',1);assert.equal(outsider.status,200);assert.equal((await outsider.json()).items.length,0);
     const path='/api/workbench/items/ticket/'+tickets[5].ticket.id;
     assert.equal((await get(path,1)).status,404);
     const detail=await read(path);assert.ok(detail.records.some(r=>r.text==='仅供内部的合成处理记录'&&r.audience==='INTERNAL'));assert.ok(detail.records.some(r=>r.audience==='REPORT'));assert.equal(detail.item.title,'住院部西区无线网络频繁断开');
+    assert.ok(detail.records.some(r=>r.audience==='REPORT'&&r.text?.includes('尚待判断的合成材料')));
     const shell=await get('/workbench/app/items/ticket/'+tickets[5].ticket.id);assert.equal(shell.status,200);assert.match(shell.headers.get('content-security-policy'),/script-src 'self'; style-src 'self'/u);
     assert.equal((await get('/workbench/app?view=list')).status,200);
     assert.equal((await fetch(origin+'/workbench/app?view=list')).status,401);

@@ -7,8 +7,13 @@ import {useUiStore} from './app/ui-store';
 import {App} from './app/App';
 import './style.css';
 let client:QueryClient;
-client=new QueryClient({queryCache:new QueryCache({onError(error){
-  if(error instanceof ApiError&&error.status===401){useUiStore.getState().expireSession();void client.cancelQueries();client.clear();}
+client=new QueryClient({queryCache:new QueryCache({onError(error,query){
+  if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);void client.cancelQueries();client.clear();}
+  else if(error instanceof ApiError&&error.status===403&&['session','board'].includes(String(query.queryKey[0]))){useUiStore.getState().failSession(403);void client.cancelQueries();client.clear();}
+  else if(error instanceof ApiError&&[403,404].includes(error.status)){
+    void client.cancelQueries({queryKey:query.queryKey,exact:true});query.setState({data:undefined,dataUpdatedAt:0});
+    if(query.queryKey[0]==='detail')void client.invalidateQueries({queryKey:['board',query.queryKey[1]],refetchType:'active'});
+  }
 }}),defaultOptions:{queries:{networkMode:'always',retry:false,staleTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false},mutations:{retry:false}}});
 const root=document.getElementById('root');if(!root)throw new Error('WORKBENCH_ROOT_MISSING');
 createRoot(root).render(<StrictMode><QueryClientProvider client={client}><BrowserRouter basename="/workbench/app"><App/></BrowserRouter></QueryClientProvider></StrictMode>);
