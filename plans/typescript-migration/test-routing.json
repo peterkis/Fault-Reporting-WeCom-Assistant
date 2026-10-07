@@ -320,6 +320,7 @@
     ],
     "v3-p09": [
       "tests/web01-workbench.test.mts", "tests/web01-workbench.integration.test.mjs", "tests/web01-workbench.browser.test.mjs",
+      "tests/p2-016-ticket-lifecycle.integration.test.mjs",
       "tests/p2-016-workbench-http.integration.test.mjs", "tests/p2-016-workbench-auth.integration.test.mjs", "tests/p2-016-workbench-wecom-auth.test.mjs",
       "tests/yxx-ss-008-assembly.integration.test.mjs",
       "tests/yxx-ss-006-supplements-review.integration.test.mjs",

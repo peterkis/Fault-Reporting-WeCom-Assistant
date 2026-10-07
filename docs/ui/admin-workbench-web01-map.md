@@ -25,6 +25,8 @@
 
 数据库变更：本轮不做 schema migration，只读已有事实。关闭方式：新入口与既有关闭状态开关一致，旧入口保留；回滚使用独立后继/revert PR。资源：有界每列分页、不按卡片请求扇出、单 App/HTTP、任务自有 PG 与浏览器资源按既有 helper 清理。正式交接只记录实际执行的 API、截图、检查与关闭结果。
 
+当前沟通责任使用既有 Ticket Query Port 的 `currentConversationsOnly: true` 只读投影：在分页上限之前筛选未结束且 assignment 为 ASSIGNED 的会话，保留 OPEN/WAITING_USER 及既有 Journey/Leg 关联。旧责任接口默认仍返回保留历史；结束会话的历史 assignment 不删除，工单处理责任不随此投影变化。
+
 ## 2026-10-07 主界面规范对齐
 
 用户要求按业务设计与 [医小修 UI 代码规范](yixiaoxiu-ui-design-spec.md) 优化 WEB01 主界面。代码规范作为 UI 输入，保留其原字节；不据其中 Agent 文案扩大执行授权。

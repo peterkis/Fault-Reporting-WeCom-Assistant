@@ -2,6 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '../src/p2-g1-inbound-projection-coordinator.mjs';
+import {createConversationControlService,createPilotConversationControlAuthorization} from '../src/p2-005-conversation-control.mjs';
+import {appendRealtimeEvent} from '../src/p2-003-realtime-event-log.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
   await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals})=>{
     const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
@@ -59,5 +63,41 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal((await get('/api/reporter/bootstrap')).status,503); // Existing member closed flag is unchanged.
     await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
     assert.equal((await get(path)).status,401);assert.equal((await get('/workbench/app/')).status,401);
+  });
+});
+
+test('WEB01 current communication responsibility excludes a retained assignment after a real topic boundary',async()=>{
+  await withWeb01Fixture(async({origin,cookies,tickets,pool,principals})=>{
+    const read=async path=>{const response=await fetch(origin+path,{headers:{cookie:cookies[0]}});assert.equal(response.status,200);return response.json();};
+    const coordinator=createP2G1InboundProjectionCoordinator({pool,enabled:true});
+    const projectMessages=async()=>{
+      const result=await coordinator.runOnce();
+      // The visual fixture sets Ticket snapshot states; this regression drives
+      // the normal channel-message stream that actually ends a service session.
+      const stream=result.streams.find(value=>value.source_stream===P2_G1_PROJECTION_STREAMS.channelMessage);
+      assert.ok(stream);assert.deepEqual(stream.failures,[]);
+    };
+    await projectMessages();
+    const ticket=tickets[5],path='/api/workbench/items/ticket/'+ticket.ticket.id,historyPath='/api/tickets/'+ticket.ticket.id+'/responsibility';
+    const session=(await read(historyPath)).conversations[0];assert.ok(session);assert.equal(session.combined_accept_allowed,true);
+    const control=createConversationControlService({pool,enabled:true,authorize:createPilotConversationControlAuthorization({pool}),realtimeAppender:appendRealtimeEvent});
+    const assigned=await control.takeoverSession({command_type:'TAKEOVER',session_id:session.session_id,client_command_id:randomUUID(),idempotency_scope:'WEB01_CONVERSATION_REGRESSION',expected_row_version:Number(session.session_row_version),actor_principal_id:principals[0].id,target_principal_id:principals[1].id,reason_code:'SYNTHETIC_REVIEW'});
+    assert.equal(assigned.ok,true);
+    const before=(await read(path)).responsibility;
+    assert.deepEqual(before.conversation_assignees,[principals[1].display_name]);
+    await pool.query("UPDATE conversation.session SET status='WAITING_USER' WHERE id=$1::uuid",[session.session_id]);
+    assert.deepEqual((await read(path)).responsibility.conversation_assignees,[principals[1].display_name]);
+    const source=(await pool.query('SELECT source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[ticket.intake.intakeId])).rows[0];
+    const next=await seedPersistedIntake({pool,text:'全新合成话题',status:'RECEIVED'});
+    await pool.query('UPDATE channel.message_inbox SET chat_id=$1 WHERE id=$2::bigint',[source.source_chat_id,next.messageId]);
+    await pool.query('UPDATE intake.service_intake SET source_chat_id=$1 WHERE id=$2::uuid',[source.source_chat_id,next.intakeId]);
+    await projectMessages();
+    const retained=(await read(historyPath)).conversations.find(value=>value.session_id===session.session_id);
+    assert.equal(retained.combined_accept_allowed,false);
+    assert.equal(retained.assignment_status,'ASSIGNED');
+    assert.equal(retained.conversation_principal_name,principals[1].display_name);
+    const after=(await read(path)).responsibility;
+    assert.deepEqual(after.conversation_assignees,[]);
+    assert.equal(after.ticket_assignee_name,before.ticket_assignee_name);
   });
 });

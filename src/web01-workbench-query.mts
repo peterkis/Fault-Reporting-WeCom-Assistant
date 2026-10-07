@@ -169,7 +169,9 @@ export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransacti
       ) SELECT * FROM records WHERE ($4::text IS NULL OR (at,id)<($4::text,$5::text))
         ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,kind,selected.id,at,recordId,n+1]);
       const items=records.rows.slice(0,n),last=items.at(-1);
-      const responsibility=kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id}):null;
+      // The legacy responsibility view retains history. Filter current ownership
+      // before its bounded result, without changing historical assignment facts.
+      const responsibility=kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id,currentConversationsOnly:true}):null;
       const names: string[]=[];
       if(responsibility&&Array.isArray(responsibility.conversations))for(const conversation of responsibility.conversations){
         if(typeof conversation.conversation_principal_name==='string')names.push(conversation.conversation_principal_name);

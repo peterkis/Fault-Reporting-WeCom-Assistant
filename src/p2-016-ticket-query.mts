@@ -130,17 +130,19 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_ordinal>$2 ORDER BY event_ordinal LIMIT $3`,[ticket.id,page?.ordinal??0,n+1]);
       return publicP2016({items:q.rows.slice(0,n),next_cursor:q.rows.length>n?cursorP2016({ticket:ticket.id,ordinal:(q.rows[n-1] as (typeof q.rows)[number]).event_ordinal}):null});
     },
-    async responsibility(input: TicketQueryInput) {
+    async responsibility(input: TicketQueryInput & { currentConversationsOnly?: boolean }) {
+      if(input.currentConversationsOnly!==undefined&&typeof input.currentConversationsOnly!=='boolean')failP2016();
       const {ticket}=await authorizedTicket(input);
       const q=await pool.query(`SELECT s.id::text AS session_id,s.row_version::text AS session_row_version,
         COALESCE(s.service_intake_id=$1::uuid AND s.status<>'ENDED',false) AS combined_accept_allowed,
         a.assigned_principal_id::text AS conversation_principal_id,p.display_name AS conversation_principal_name,a.assignment_status,a.assignment_version::text
         FROM conversation.session s LEFT JOIN conversation.assignment a ON a.session_id=s.id
         LEFT JOIN pilot_ticket.pilot_principal p ON p.id=a.assigned_principal_id
-        WHERE s.service_intake_id=$1::uuid OR s.id IN (
+        WHERE (s.service_intake_id=$1::uuid OR s.id IN (
           SELECT related.conversation_session_id FROM intake.channel_leg own
-          JOIN intake.channel_leg related ON related.journey_id=own.journey_id WHERE own.source_intake_id=$1::uuid)
-        ORDER BY s.created_at,s.id LIMIT 100`,[ticket.intake_id]);
+          JOIN intake.channel_leg related ON related.journey_id=own.journey_id WHERE own.source_intake_id=$1::uuid))
+        AND (NOT $2::boolean OR (s.status<>'ENDED' AND a.assignment_status='ASSIGNED'))
+        ORDER BY s.created_at,s.id LIMIT 100`,[ticket.intake_id,input.currentConversationsOnly===true]);
       const owner=await pool.query('SELECT p.display_name,rt.display_name AS team_name FROM pilot_ticket.resolver_team rt LEFT JOIN pilot_ticket.pilot_principal p ON p.id=$1::uuid WHERE rt.team_id=$2',[ticket.assignee_id,ticket.resolver_team_id]);
       return publicP2016({ticket_id:ticket.id,ticket_assignee_id:ticket.assignee_id,ticket_assignee_name:owner.rows[0]?.display_name??null,
         resolver_team_id:ticket.resolver_team_id,resolver_team_name:owner.rows[0]?.team_name??null,conversations:q.rows});
