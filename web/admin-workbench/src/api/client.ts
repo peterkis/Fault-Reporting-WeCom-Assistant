@@ -1,4 +1,4 @@
-import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
+import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
@@ -18,6 +18,11 @@ function decodeGroup(value:unknown):SourceGroupDisplay {
     ||!['ADMIN_CONFIRMED','UNREGISTERED'].includes(text(v.name_source))
     ||(v.name_source==='UNREGISTERED'?(name!==null||version!=='0'):(name===null||version==='0')))throw new ApiError(502,'INVALID_RESPONSE');
   return {ref,display_name:name,row_version:version,name_source:v.name_source as SourceGroupDisplay['name_source']};
+}
+function decodeGroupPage(value:unknown):SourceGroupPage {
+  const v=object(value);if(!Array.isArray(v.items)||v.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
+  const items=v.items.map(decodeGroup);if(new Set(items.map(group=>group.ref)).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
+  return {items,next_cursor:nullable(v.next_cursor)};
 }
 function decodeCard(value:unknown):WorkbenchCard {
   const v=object(value);if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
@@ -90,6 +95,7 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
 
 }
 export const api={
+  sourceGroups:(q:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/source-groups?'+new URLSearchParams({limit:'50',q,...(cursor?{cursor}:{})}),signal,decodeGroupPage),
   bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
   ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
   addInternalNote:(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'internal-notes',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
@@ -101,15 +107,20 @@ export const api={
   detail:(kind:string,id:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/items/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{
     const detail=decodeDetail(value);if(detail.item.kind!==kind||detail.item.id!==id)throw new ApiError(502,'INVALID_RESPONSE');return detail;
   }),
-  async saveGroupName(ref:string,command:SourceGroupNameCommand,csrfToken:string|null):Promise<SourceGroupNameResult> {
-    const response=await fetch('/api/workbench/source-groups/'+encodeURIComponent(ref)+'/name',{
-      method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
-      headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
-    if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
-    const v=object(await response.json());if(!response.ok)throw new ApiError(response.status,text(object(v.error).code));
-    if(v.ok!==true||typeof v.replayed!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
-    const group=decodeGroup(v.group);if(group.ref!==ref)throw new ApiError(502,'INVALID_RESPONSE');
-    return {ok:true,group,replayed:v.replayed};
+  async saveGroupName(ref:string,command:SourceGroupNameCommand,csrfToken:string|null,signal:AbortSignal):Promise<SourceGroupNameResult> {
+    try{
+      const response=await fetch('/api/workbench/source-groups/'+encodeURIComponent(ref)+'/name',{
+        method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+      const v=object(await response.json());
+      if(!response.ok){const code=text(object(v.error).code);if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();if(response.status<500||code==='P2_016_DISABLED')throw new ApiError(response.status,code);throw new UnknownCommandOutcome();}
+      if(v.ok!==true||typeof v.replayed!=='boolean')throw new UnknownCommandOutcome();
+      const group=decodeGroup(v.group);
+      if(group.ref!==ref||group.row_version!==String(BigInt(command.expected_row_version)+1n)||group.display_name!==command.display_name.trim()||group.name_source!=='ADMIN_CONFIRMED')throw new UnknownCommandOutcome();
+      return {ok:true,group,replayed:v.replayed};
+    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
   },
 };
 export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',CLOSED:'已关闭',CANCELLED:'已取消',DUPLICATE_LINKED:'已关联重复单'};
