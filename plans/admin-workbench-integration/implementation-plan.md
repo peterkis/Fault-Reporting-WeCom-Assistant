@@ -18,7 +18,7 @@ execution_status: IN_PROGRESS
 | --- | --- | --- | --- | --- |
 | WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | T01文档与[T23来源群目录LOCAL_VERIFIED](execution/t23.md)已本地集成、关票；各详细合同继续由所属票冻结 | A00 |
 | WBINT-01 | 命令上下文、错误与草稿基础 | 00 | IN_PROGRESS：[T02可靠备注LOCAL_VERIFIED](execution/t02.md)；T03持久恢复实现／验证中 | A01 |
-| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)；T04候选验证中，T05–T10未开始 | A02 |
+| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)与[T04无会话本人承接LOCAL_VERIFIED](execution/t04.md)已本地集成；T05–T10未完成，A02整组尚未验收 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | NOT_STARTED | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)已本地集成；T14／T15未完成，A04整组尚未验收 | A04 |
 | WBINT-05 | 工作人员代录、成员候选 | 02、04 | NOT_STARTED | A05 |

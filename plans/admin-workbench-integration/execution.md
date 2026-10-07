@@ -13,6 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
+## 当前执行状态导航（2026-10-08，T04 收口与T05领取）
+
+父任务已核对并关闭5／43票：T01／#56、T02／#57、T04／#59、T16／#71、T23／#78。下方日期导航保留为各自历史快照，详细证据保留实际测试对象。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T04 / #59 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59#issuecomment-6045052140)及[七项验收与原报告](execution/t04.md)可追溯 |
+| T04 本地集成与被测对象 | `49e7887d0870e17d188dfb05f71f5e159862748c`已安全快进合入；实际被测干净祖先`67f156259954e0c87ea0cd25ba37a7254f2e7f30`的strict／artifact、业务84／84、hosts18／18、retired1／1通过。194候选及Tool54独立保留，不相加称全量 |
+| T04 资源与归档 | 自有PG／HTTP／browser清理通过，父任务逐段残留0／0；978输出加manifest共979原文件已逐字节／SHA-256外部归档，managed worktree归档。899完整编译inputs与文档后继相同，不重绑 |
+| T05 / #60 | 父任务实时读取完整Issue／空评论／无原assignee，原生blocker #59已CLOSED，领取给peterkis；正在创建基于当前integration的独立worktree，准备一键交接Ticket与明确关联Conversation责任 |
+| T03 / #58 | 仍IMPLEMENTING；现有刷新／过期／退出／失权／存储／隔离边界片段已完成，最终整合候选待核验，不标整票PASS，其其他下游未领取 |
+| WBINT-02 / A02 | 仅T04无会话承接部分LOCAL_VERIFIED；会话、跨团队、派工／退回等后续票未完成，A02整组不记PASS |
+
+本地关票与领取不推进发布、部署、真实外部服务／发送、full／certify或业务Gate；新增能力继续默认false。父任务继续按原生DAG执行剩余票，原历史Evidence不改。
+
 ## 当前执行状态导航（2026-10-08，T16 收口后）
 
 父任务已核对并关闭4／43票：T01／#56、T02／#57、T16／#71、T23／#78；正式清单的勾选同步本次GitHub实读结果。下方各次导航保留为历史快照。
