@@ -30,6 +30,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
         await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
       };
       const expandAll=async()=>{
+        await browser.waitFor("document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelectorAll('[data-action=expand-column]').length===3");
         await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column][aria-expanded=false]')].forEach(button=>button.click())");
       };
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
