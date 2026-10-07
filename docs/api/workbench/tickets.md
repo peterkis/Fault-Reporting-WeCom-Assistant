@@ -8,7 +8,7 @@
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean`（两个宿主能力默认false） |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean`（三个宿主能力默认false） |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
@@ -81,6 +81,22 @@ W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade�
 
 资源仍为单 App/API/SSE、复用 pool≤4／同机池预算≤8、SSE32、Worker／Gateway 单活及各 concurrency1；没有新增轮询。关闭方式为显式设 `workbenchInternalNotesEnabled=false` 后装配原宿主；源码回退采用单独 forward／revert，不删除事实。不涉及真实 Provider／OAuth／WeCom、部署、full／certify 或 Gate 推进。隔离 HTTP／生产 bundle 的新旧入口、失权、冲突和未知核对证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t02.md)。
 
+## 无会话本人承接与开始（WBINT-T04）
+
+W 的 `POST /api/tickets/{ticketId}/take-and-start` 和 `POST /api/tickets/{ticketId}/accept-for-later` 使用独立宿主选项 `ticketSelfHandlingEnabled=false`。同源认证、Origin/CSRF、Idempotency-Key 与 If-Match 沿既有规则；closed body 必须为 `client_command_id:UUID,expected_version:number(1..2147483647),reason_code:大写code,resolver_team_id:当前组code`。客户端不能指定 actor、target、session 或自由备注。详细 [Schema](../../../contracts/p2_016_self_handling_command.schema.json) 与 [types](../../../contracts/p2_016_contracts.d.ts) 随本票实现；最终证据见 [T04](../../../plans/admin-workbench-integration/execution/t04.md)。
+
+服务器重新核对活动主体、当前处理角色、活动当前组及真实成员，且目标固定本人。已有他人预分派或承接不可覆盖，ADMIN 也不例外；不同处理组拒绝。Ticket 源 Intake 或 canonical Journey/Leg 上任何非 ENDED 真会话（含未分配）都拒绝 Ticket-only，转由 T05 的真实会话用例处理；不构造 Session。
+
+NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先接单止于 ACCEPTED。首次 accept 建立第1处理轮次，记录真实 accepted event、操作者、当前组、源 Intake 和命令依据；本人 ACCEPTED 已有轮次时 take-and-start 只 start，复用轮次。旧 ACCEPTED 无轮次、REOPENED、进行中、等待及终态拒绝本入口；不回填旧事件或在每次 start 增轮。
+
+成功结果沿既有 receipt 增加 `handling_cycle:{id,cycle_no,first_responsibility_event_id}`，control_event_id 为 null；启用时 GET TicketDetail 增加可空 handling_cycle 与真实 `take-and-start/accept-for-later` actions。客户端一条 POST，可信成功后重读 GET 的 owner/status/version/cycle；未知只核对原 UUID/version/payload。039 显式迁移保存原 Ticket 当前轮次引用和追加轮次/事件关联；cycle_start_event_id 是轮次起始依据，首次责任三字段允许未来显式重开后暂未派工的合法空态，T04 成功时 first_responsibility_event_id 必非空真实 accepted 事件，不创建另一套 owner 或 Ticket，固定历史迁移清单不变。Action/轮次/事件/既有投影和 COMMITTED receipt 同事务；失败业务 savepoint 整体回滚，FAILED receipt 可留审计。原始来源不改写，未来通知能由首次责任事件与源依据恢复，本票不真实发送。
+
+关闭选项返回503并隐藏按钮，旧 profiles 不访问039/new fields，旧 accept/start 保持；已提交责任/轮次/事件保留。启用缺039时 readiness 与新命令 fail closed。body32KiB、单表单in-flight1、无自动重试/新增轮询/常驻进程，复用原池预算、单App/Worker/Gateway与SSE32。
+
+正式 [TicketSelfHandling](../../../web/admin-workbench/src/features/ticket-handling/TicketSelfHandling.tsx) 仅在 bootstrap 能力开启后读取真实 Ticket command-context，按服务端新 actions 呈现两种按钮。处理组固定为服务端当前组，不从卡片、角色或沟通责任推断。共享 T02 的 unknown 响应核验；原动作与闭合 payload 在组件内存冻结，未知仅显式核对同一 POST，不使用新 UUID/版本/组。成功失效 context/detail/board，GET 未返回前不接受新的提交；不会按动画或 version+N 移卡。可信失权取消/清同对象缓存，组件卸载 abort 自有 POST；abort 不证明未提交。提交中与未知限制详情关闭/切换并提醒页面离开；跨刷新持久恢复仍由 T03 的独立合同维护，不在本票扩展。
+
+错误：输入/额外字段400，Header/版本或责任/状态/真会话冲突409，当前角色/组/成员拒绝403，对象失权404，活动身份失效401/403，关闭或未安装039为503。稳定拒绝含 `P2_016_SELF_HANDLING_OWNER_CONFLICT/CONVERSATION_REQUIRED/STATE_CONFLICT/UNAVAILABLE`；前缀后三个分别为完整 `P2_016_SELF_HANDLING_*` code。事务失败的 FAILED receipt 以既有 `P2_016_ACTION_FAILED` 返回503且不重试业务。
+
 ## 原子接管并接单
 
 `POST /api/conversations/{sessionId}/takeover-and-accept-ticket`：必需 `client_command_id,ticket_id,expected_ticket_version:number,expected_session_row_version:number,reason_code`；Header If-Match 对**会话版本**。Session 和 Ticket 来源必须匹配、combined_accept_allowed 且当前权限成立。两种责任在同一事务内全部成功或回滚，结果同 Ticket 命令并含 control_event_id。
@@ -98,4 +114,4 @@ W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade�
 
 常见码：`P2_016_FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED/TARGET_INVALID/CONTROL_CONFLICT/DELIVERY_STATE_CONFLICT`，以及主宿主 WORKBENCH 错误。详情刷新不能等于命令成功。
 
-核对测试：[HTTP integration](../../../tests/p2-016-workbench-http.integration.test.mjs)、[auth integration](../../../tests/p2-016-workbench-auth.integration.test.mjs)。背景：[生命周期与双责任](../../59_p2_016_ticket_lifecycle_and_responsibility.md)。无新增数据库或生产权限。
+核对测试：[HTTP integration](../../../tests/p2-016-workbench-http.integration.test.mjs)、[auth integration](../../../tests/p2-016-workbench-auth.integration.test.mjs)、[T04](../../../tests/t04-self-handling.integration.test.mjs)。背景：[生命周期与双责任](../../59_p2_016_ticket_lifecycle_and_responsibility.md)。本票仅显式增加039轮次结构；生产权限未改变。

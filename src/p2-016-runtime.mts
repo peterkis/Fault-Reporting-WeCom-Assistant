@@ -11,7 +11,8 @@ import { createWeb01WorkbenchQuery } from './web01-workbench-query.mjs';
 import { createWeb01WorkbenchHttp } from './web01-workbench-http.mjs';
 import { createWeb01WorkbenchStatic } from './web01-workbench-static.mjs';
 import {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
-interface P2016RuntimeOptionsInput { sourceGroupDirectoryEnabled?:boolean; workbenchInternalNotesEnabled?:boolean }
+import {createTicketSelfHandlingService,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
+interface P2016RuntimeOptionsInput { ticketSelfHandlingEnabled?:boolean; sourceGroupDirectoryEnabled?:boolean; workbenchInternalNotesEnabled?:boolean }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -67,7 +68,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,ticketSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  if(typeof ticketSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchInternalNotesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const featureFlags=flagsP2016(flags) as Record<'TICKET_LIFECYCLE_WORKBENCH_ENABLED' | 'REPORTER_TIMELINE_ENABLED' | 'WECOM_TEMPLATE_CARD_ENABLED', boolean>,enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
@@ -84,7 +86,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const webOAuth: WebOAuthPort=(createWeComWebOAuth as typeof createWeComWebOAuth)({...wecomWebOAuth,publicOrigin:reporterOrigin});
   const oauthHttp: ReporterHttpHandler=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents});
-  const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope});
+  const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
   const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
@@ -111,7 +113,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       reviews=createP2016ManualReviewFacade({pool,enabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
+      const selfHandling=ticketSelfHandlingEnabled?createTicketSelfHandlingService({pool,query,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const web01Http=createWeb01WorkbenchHttp(createWeb01WorkbenchQuery({pool,query,sourceGroups}),sourceGroups);
@@ -142,9 +145,10 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           const directorySchema=!directoryStore||await staffDirectorySchemaReady(pool);
           let sourceGroupSchema=true;
           if(sourceGroupDirectoryEnabled){try{sourceGroupSchema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='037_workbench_source_group_names'")).rowCount===1;}catch{sourceGroupSchema=false;}}
-          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
+          const selfHandlingReady=!ticketSelfHandlingEnabled||await selfHandlingSchemaReady(pool);
+          const ready=selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))

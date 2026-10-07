@@ -10,6 +10,7 @@
 .note-controls {display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
 .ticket-notes button {border:1px solid #d9d9d6;border-radius:5px;padding:5px 10px;background:#fff;}
 .ticket-notes button:disabled {opacity:.5;cursor:default;}
+.ticket-self-handling .take-and-start {background:#242321;color:#fff;border-color:#242321;}
 .note-controls span {margin-left:auto;color:#787774;}
 .ticket-note-state {margin-top:10px;}
 

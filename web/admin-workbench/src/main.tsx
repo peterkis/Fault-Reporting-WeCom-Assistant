@@ -22,7 +22,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   }
 }}),mutationCache:new MutationCache({onError(error,_variables,_context,mutation){
   if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);void client.cancelQueries();client.clear();}
-  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='ticket-internal-note')return clearTicketAuthorization(mutation.options.mutationKey[1],mutation.options.mutationKey[2],error);
+  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling'].includes(String(mutation.options.mutationKey[0])))return clearTicketAuthorization(mutation.options.mutationKey[1],mutation.options.mutationKey[2],error);
 }}),defaultOptions:{queries:{networkMode:'always',retry:false,staleTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false},mutations:{networkMode:'always',retry:false}}});
 const root=document.getElementById('root');if(!root)throw new Error('WORKBENCH_ROOT_MISSING');
 createRoot(root).render(<StrictMode><QueryClientProvider client={client}><BrowserRouter basename="/workbench/app"><App/></BrowserRouter></QueryClientProvider></StrictMode>);

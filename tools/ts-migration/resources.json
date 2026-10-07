@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/039_ticket_self_handling_cycles.sql",
+    "contracts/p2_016_self_handling_command.schema.json",
     "contracts/p2_016_internal_note_command.schema.json",
     "database/migrations/037_workbench_source_group_names.sql",
     "contracts/workbench_source_group_name_command.schema.json",
