@@ -197,3 +197,12 @@
 | GET | `/metrics` | 早期设计示例，未挂载 | [当前health/metrics](platform/auth-health.md) |
 
 后端外部Provider的完整URL见 [外部服务索引](integrations/external-services.md)，群内 @Bot 的 `aibot_msg_callback`、chatid及群名称实测见 [WebSocket消息回调](integrations/wecom-message-callback.md)，无REST的Port/事件见 [内部接口索引](integrations/internal-ports.md)。模拟预览和设计不计为当前业务接口。
+
+## 工作人员完工（WBINT-T11，默认关闭）
+
+| 方法 | 完整路径 | 宿主与用途 | 契约文档 |
+| --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/complete` | W，当前实际处理人的独立过程/已确认摘要，一次原子完工 | [完工](workbench/tickets.md#工作人员完工wbint-t11) |
+| GET | `/api/tickets/{ticketId}/completion/commands/{commandId}` | W，当前读权限下按原主体/用途/UUID只读核对安全终态；另需raw recovery | [完工核对](workbench/tickets.md#工作人员完工wbint-t11) |
+
+内部持久承诺reader不属于REST；默认false的旧Pilot不能执行或广告complete，旧resolve/confirm语义保留。

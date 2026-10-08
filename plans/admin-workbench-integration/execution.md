@@ -23,7 +23,8 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 | T03本地集成与被测对象 | `09c6ca4e8fb25d3a68202b641c23527d18314a39`已安全快进合入；实际被测干净祖先`0ca2fd3219dac6efbc7e5dfdae4aa5b1dfddf234`的strict／artifact、同制品业务92／92和工具32／32通过，29张真实PNG。文档后继仅3个Markdown，910项完整inputs不变；不重绑旧制品身份 |
 | T03资源与归档 | 自有PG／HTTP／browser／工具清理通过，父任务逐段残留0／0；原runtime987文件逐字节／SHA-256归档，managed worktree已归档，原FAIL保留 |
 | T05 / #60 | IMPLEMENTING；真实HTTP已证明本人承接与已分配沟通的最小原子链，其他风险及最终整合仍待完成，不标整票PASS |
-| T11／#66、T14／#69、T22／#77、T27／#82 | 父任务实时读取全文／空评论／无原assignee及原生blockers，#58与所需#59均CLOSED；四票已领取给peterkis，准备从当前integration创建独立worktree，分别负责工作人员完工、人工复核、会话工作区与公共故障候选 |
+| T11／#66、T14／#69、T22／#77、T27／#82 | 父任务实时核对全文／评论／assignee及原生blockers后领取；四票在独立worktree实施工作人员完工、人工复核、会话工作区与公共故障候选。已通过的验证片段不代表整票验收 |
+| T38 / #93 | 原生blocker #58已CLOSED；实时核对全文、空评论、ready标签和无原assignee后领取给peterkis。独立managed worktree以`2676763d63eddcd8763ae83f5fbd795bc8b50edd`为干净基线，仅实施授权SSE失效／重读与断线恢复；仍IMPLEMENTING，T39／T40未启动 |
 | 来源工作包 | 仅核实上述已完成票；各后续表单和工作包验收仍按实际证据，最终由T43汇总，不以6票关闭推导完整工作台就绪 |
 
 本轮继续单一集成分支与串行PG／HTTP／browser验证；新开关默认false。未push、部署、真实外部服务／发送、full／certify或Gate推进。
