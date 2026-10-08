@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/workbench_review_material_basis.schema.json",
+  "title": "workbench_review_material_basis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "original_revision",
+    "current_revision",
+    "original_hash",
+    "current_hash",
+    "stale",
+    "reason"
+  ],
+  "properties": {
+    "source_kind": {
+      "enum": [
+        "BOT",
+        "WEB"
+      ]
+    },
+    "original_revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "current_revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "original_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "current_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "stale": {
+      "type": "boolean"
+    },
+    "reason": {
+      "enum": [
+        "CURRENT",
+        "SOURCE_CHANGED",
+        "NEW_CHANNEL_LEG"
+      ]
+    }
+  }
+}

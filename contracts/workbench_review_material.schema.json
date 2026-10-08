@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/workbench_review_material.schema.json",
+  "title": "workbench_review_material",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_ref",
+    "revision",
+    "text",
+    "in_original_basis"
+  ],
+  "properties": {
+    "source_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "text": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 20000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "in_original_basis": {
+      "type": "boolean"
+    }
+  }
+}
