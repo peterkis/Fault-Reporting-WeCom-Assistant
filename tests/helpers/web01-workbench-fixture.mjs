@@ -8,6 +8,7 @@ import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.
 import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from '../../src/p1-006-ticket-state-actions.mjs';
 import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
 import {createRuleFirstOrchestrator} from '../../src/p2-015-rule-first-orchestrator.mjs';
 import {createSafeActionExecutor,createExistingTicketCommandPort} from '../../src/p2-015-safe-action-executor.mjs';
 import {createManualReviewStore} from '../../src/p2-015-manual-review.mjs';
@@ -47,7 +48,8 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{chronologicalTicketEvents=false,ticketConversationSelfHandlingEnabled=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{manualProjection=false,chronologicalTicketEvents=false,ticketConversationSelfHandlingEnabled=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+  assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
     if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
@@ -101,7 +103,11 @@ export async function withWeb01Fixture(run,{chronologicalTicketEvents=false,tick
     }
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
     const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
-    const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
+    try{
+    // Manual finite batches own projection in this explicit profile; ordinary UI fixtures still start the scheduled worker.
+    if(manualProjection){assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);}
+    const started=manualProjection?{address:await listenConversationWorkbenchServer(runtime.server,{port:listenPort}),cookies:runtime.authenticate.browserCookies?.()}:await runtime.start();
+    assert.ok(Array.isArray(started.cookies)&&started.cookies.length===3);const cookies=started.cookies.map(c=>c.name+'='+c.value);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;
     let malformedNoteSuccess=malformedInternalNoteSuccess;
@@ -123,7 +129,11 @@ export async function withWeb01Fixture(run,{chronologicalTicketEvents=false,tick
       const end=response.end.bind(response);
       response.end=(...args)=>{if(response.statusCode===200&&dropHandlingResponses){request.socket.destroy();return response;}if(response.statusCode===200&&malformedHandlingSuccess)return end('{"ok":true}');if([401,403,404].includes(response.statusCode)&&malformedSelfHandlingDenial)return end('{');return end(...args);};
     });
-    try{return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses});}
-    finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');}
+    return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses});}
+    finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');if(manualProjection){
+      const connections=await new Promise((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),metrics=await runtime.observability.metrics();
+      assert.equal(connections,0);assert.equal(metrics.sse_clients,0);
+      console.log('WEB01_MANUAL_PROJECTION_CLEANUP '+JSON.stringify({http_listening:runtime.server.listening,http_connections:connections,sse_clients:metrics.sse_clients}));
+    }}
   }});
 }

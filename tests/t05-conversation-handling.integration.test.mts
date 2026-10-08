@@ -154,6 +154,7 @@ test('an enabled related query fails closed when the required first responsibili
 
 const options={ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true};
 const completeProjectionOptions={...options,chronologicalTicketEvents:true};
+const manualProjectionOptions={...completeProjectionOptions,manualProjection:true};
 const body=(sessions:{session_id:string;expected_row_version:number}[]=[],choice='TAKE_SELECTED')=>({client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:'PILOT_IT',communication_choice:choice,sessions});
 test('real Journey legs list several identities and only the explicit subset changes while retain leaves the prior communicator',async()=>{
   await withWeb01Fixture(async(context:Fixture)=>{
@@ -167,7 +168,7 @@ test('real Journey legs list several identities and only the explicit subset cha
     const before=rows((await a.get('/api/tickets/'+other.ticket.id+'/related-conversations')).value.items);
     const retain=await a.post('/api/tickets/'+other.ticket.id+'/take-and-start-with-conversations',body([],'RETAIN_CURRENT'));assert.equal(retain.status,200,JSON.stringify(retain.value));assert.deepEqual(retain.value.conversations,[]);
     assert.deepEqual(rows((await a.get('/api/tickets/'+other.ticket.id+'/related-conversations')).value.items),before);assert.equal(before[0]?.conversation_principal_id,communicator.id);
-  },completeProjectionOptions);
+  },manualProjectionOptions);
 });
 
 test('same communicator is a lawful no-op and exact BIGINT values remain non-operable above the write bridge',async()=>{
@@ -218,7 +219,7 @@ test('a failure after Ticket or the first selected Session or COMMITTED receipt 
       const audit=(await context.pool.query<{state:string;result_ticket_event_id:string|null;result_control_event_id:string|null}>('SELECT state,result_ticket_event_id::text,result_control_event_id::text FROM pilot_ticket.ticket_command_receipt WHERE client_command_id=$1::uuid',[command.client_command_id])).rows[0];assert.deepEqual(audit,{state:'FAILED',result_ticket_event_id:null,result_control_event_id:null});
     }
     assert.equal((await a.post('/api/tickets/'+id+'/take-and-start-with-conversations',body(selected))).status,200);
-  },completeProjectionOptions);
+  },manualProjectionOptions);
 });
 
 test('parallel same UUID commits once while other intents conflict and a safe Ack cannot disclose other scopes or command types',async()=>{
@@ -245,7 +246,7 @@ test('keyset pages cover more than the legacy hundred without guessing absence a
     const first=await a.get('/api/tickets/'+ticket.ticket.id+'/related-conversations?limit=20');assert.equal(rows(first.value.items).length,20);assert.equal(typeof first.value.next_cursor,'string');assert.equal((await a.get('/api/tickets/'+other.ticket.id+'/related-conversations?cursor='+first.value.next_cursor)).status,400);
     do{const response=await a.get('/api/tickets/'+ticket.ticket.id+'/related-conversations?limit=20'+(cursor?'&cursor='+cursor:''));assert.equal(response.status,200);const page=rows(response.value.items);assert.ok(page.length<=20);for(const row of page){assert.ok(!seen.has(string(row.session_id)));seen.add(string(row.session_id));}cursor=response.value.next_cursor===null?null:string(response.value.next_cursor);}while(cursor);
     assert.equal(seen.size,102);assert.ok(extra.every(row=>seen.has(row.session_id)));assert.equal((await a.get('/api/tickets/'+ticket.ticket.id+'/related-conversations?limit=21')).status,400);
-  },completeProjectionOptions);
+  },manualProjectionOptions);
 });
 
 test('default false avoids new schema queries and the original legacy accept route still works without039',async()=>{
@@ -279,7 +280,7 @@ test('a true Journey leg cannot borrow Ticket readability or a mismatched report
     assert.equal(rows((await a.get('/api/tickets/'+id+'/related-conversations')).value.items).length,1);
     assert.equal((await a.post('/api/tickets/'+id+'/take-and-start-with-conversations',body([extra]))).status,404);
     assert.equal((await a.get('/api/tickets/'+id)).value.version,2);assert.equal((await context.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket_handling_cycle')).rows[0]?.n,0);
-  },completeProjectionOptions);
+  },manualProjectionOptions);
 });
 
 test('fresh membership team role and principal govern composite writes while a safe Ticket Ack gives no lost Session read permission',async()=>{
@@ -303,4 +304,29 @@ test('fresh membership team role and principal govern composite writes while a s
     assert.deepEqual((await a.get('/api/tickets/'+id+'/conversation-handling-commands/'+command.client_command_id)).value,{state:'COMMITTED',ticket_id:id,ticket_version:committed.value.ticket_version,ticket_event_id:committed.value.ticket_event_id});
     assert.deepEqual((await context.pool.query('SELECT count(*)::int AS n FROM conversation.control_event')).rows,before);
   },{...options,workbenchDraftRecoveryEnabled:true});
+});
+
+test('an Admin losing assigned-other transfer authority while the public command waits on its Ticket lock cannot keep the old privilege',async()=>{
+  await withWeb01Fixture(async(context:Fixture)=>{
+    await context.runtime.coordinator.runOnce();const ticket=context.tickets[0],actor=context.principals[0];assert.ok(ticket&&actor);const a=await http(context),b=await http(context,2),id=ticket.ticket.id;
+    const source=rows((await a.get('/api/tickets/'+id+'/related-conversations')).value.items)[0];assert.ok(source);
+    const take={client_command_id:randomUUID(),expected_row_version:Number(source.session_row_version),reason_code:'T05_OTHER_COMMUNICATOR'};assert.equal((await b.post('/api/conversations/'+source.session_id+'/takeover',take,take.expected_row_version)).status,200);
+    const assigned=rows((await a.get('/api/tickets/'+id+'/related-conversations')).value.items)[0];assert.ok(assigned);assert.equal(assigned.take_allowed,true);
+    const command=body([{session_id:string(assigned.session_id),expected_row_version:Number(assigned.session_row_version)}]),gate=await context.pool.connect();let pending:ReturnType<typeof a.post>|null=null;
+    const snapshot=async()=>{const {allowed_actions,...ticketFacts}=(await a.get('/api/tickets/'+id)).value;assert.ok(Array.isArray(allowed_actions));return {ticket:ticketFacts,events:(await a.get('/api/tickets/'+id+'/events')).value,responsibility:(await a.get('/api/tickets/'+id+'/responsibility')).value};};
+    const before=await snapshot();
+    try{
+      await gate.query('BEGIN');const gatePid=(await gate.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(gatePid);
+      await gate.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR NO KEY UPDATE',[id]);pending=a.post('/api/tickets/'+id+'/take-and-start-with-conversations',command);
+      let waitingPid:number|null=null;const until=Date.now()+5000;
+      while(Date.now()<until){const observed=await context.pool.query<{pid:number;wait_event:string;query:string;blocking_pids:number[]}>("SELECT pid,wait_event,query,pg_blocking_pids(pid) AS blocking_pids FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND query LIKE '%FOR UPDATE OF t%'");if(observed.rows.length===1){const trace=observed.rows[0];assert.ok(trace);waitingPid=trace.pid;assert.ok(trace.blocking_pids.includes(gatePid));console.log('T05_AUTHORITY_TICKET_LOCK_TRACE '+JSON.stringify({gate_pid:gatePid,...trace}));break;}await new Promise(resolve=>setTimeout(resolve,20));}
+      assert.ok(waitingPid!==null,'the public composite must actually wait at the Ticket row lock');
+      const role=await context.pool.connect();try{await role.query('BEGIN');await role.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[actor.id]);await role.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[actor.id]);await role.query('COMMIT');}finally{await role.query('ROLLBACK');role.release();}
+      assert.equal((await a.get('/api/tickets/'+id)).status,200);const current=rows((await a.get('/api/tickets/'+id+'/related-conversations')).value.items)[0];assert.ok(current);assert.equal(current.take_allowed,false);
+      await gate.query('COMMIT');const denied=await pending;
+      console.log('T05_AUTHORITY_RACE_DIAGNOSTIC '+JSON.stringify({blocked_http_pid:waitingPid,current_ticket_readable:true,current_transfer_allowed:current.take_allowed,status:denied.status,result:denied.value}));
+      assert.equal(denied.status,403);assert.equal(object(denied.value.error).code,'P2_016_FORBIDDEN');
+      assert.deepEqual(await snapshot(),before);
+    }finally{await gate.query('ROLLBACK');gate.release();if(pending)await pending;}
+  },completeProjectionOptions);
 });

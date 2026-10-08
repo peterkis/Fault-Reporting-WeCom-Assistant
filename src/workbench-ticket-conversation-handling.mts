@@ -47,9 +47,9 @@ export function createTicketConversationHandlingService({pool,query,controlServi
       if(!eligibility.actions.includes(action))failP2016(eligibility.rejection??'SELF_HANDLING_STATE_CONFLICT',eligibility.rejection==='FORBIDDEN'?403:409);
       const selectedSessions=[...command.sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id));
       for(const selected of selectedSessions){
-        const {session}=await query.authorizedRelatedConversation({authContext,ticketId:ticket.id,sessionId:selected.session_id,transaction,lock:true});
+        const {session,principal:currentPrincipal}=await query.authorizedRelatedConversation({authContext,ticketId:ticket.id,sessionId:selected.session_id,transaction,lock:true});
         if(session.session_row_version!==String(selected.expected_row_version))failP2016('VERSION_CONFLICT',409);
-        if(!await query.conversationTakeAllowed({principal,session,transaction}))failP2016('FORBIDDEN',403);
+        if(!await query.conversationTakeAllowed({principal:currentPrincipal,session,transaction}))failP2016('FORBIDDEN',403);
       }
       const ticketResult=await performFirstTicketResponsibilityInTransaction({transaction,ticket,principal,command:{...command,action},initialCycle:eligibility.cycle,tracePrefix:'t05:',...hooks});
       const conversations:{session_id:string;session_row_version:number;control_event_id:string|null;changed:boolean}[]=[];
