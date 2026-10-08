@@ -33,3 +33,9 @@
 | Integration | [integration_event](../../../contracts/integration_event.schema.json) | P3长期设计，不能据此视为已启动真实Connector |
 
 payload不含秘密/未脱敏患者文本，内部备注保持内部。资源遵循单App/API/SSE、单Worker、单活Gateway与现有有界batch；不能把内部Port索引当批准新的进程、队列系统或生产接口。测试及HTTP验证从各模块文档进入，原证据保持不变。
+
+## 工作人员完工持久消费边界（WBINT-T11）
+
+[completion service](../../../src/workbench-ticket-completion.mts) 的perform使用同一Unified Ticket Core/command ledger，HTTP见[完工](../workbench/tickets.md#工作人员完工wbint-t11)。进程内 `readCommittedStaffCompletions({afterCycleId:null或UUID,limit:默认20/最大100})` 从040的只含引用承诺读取同cycle/end event/原source与权威event安全摘要，返回items及next_cursor。items为cycle_id/cycle_no/node:STAFF_COMPLETED/ticket_id/ticket_event_id/source_intake_id/external_summary/业务occurred_at。新的pool/service实例可重发现相同稳定依据，无内存注册、重复正文、另一套状态/owner/receipt或Delivery。
+
+cursor用于全扫描分页，不能作为永久增量水位：较早UUID的cycle可能稍后才结束。未来消费者完整重扫并按cycle/node/event幂等；T24持有路由、模板、Outbox生成/Delivery与发送范围。此reader默认关闭、无独立HTTP或浏览器调用，不将可恢复承诺称为通知已经投递。

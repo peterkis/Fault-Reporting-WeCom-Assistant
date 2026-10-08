@@ -40,7 +40,10 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       const n=limitP2016(limit,100);
       const c=cursor?decodeCursorP2016(cursor,['ref','at','ordinal']):null;
       if(c&&(c.ref!==publicRef||!Number.isInteger(c.ordinal)||(c.ordinal as number)<1))failP2016('CURSOR_INVALID');
-      const q=await tx.query<{ event_id: string; event_type: keyof typeof MILESTONES; event_ordinal: number; created_at: string }>(`SELECT event_id::text,event_type,event_ordinal,created_at FROM pilot_ticket.ticket_event
+      const q=await tx.query<{ event_id: string; event_type: keyof typeof MILESTONES; event_ordinal: number; created_at: string;staff_summary:string|null }>(`SELECT event_id::text,event_type,event_ordinal,created_at,
+        CASE WHEN event_type='ticket.closed' AND old_status='IN_PROGRESS' AND new_status='CLOSED'
+          AND reason_code='STAFF_COMPLETED' AND operator_type='PILOT_USER' AND internal_note IS NOT NULL
+          AND char_length(btrim(external_note)) BETWEEN 1 AND 500 THEN external_note ELSE NULL END AS staff_summary FROM pilot_ticket.ticket_event
         WHERE ticket_id=$1::uuid AND event_type=ANY($2::text[]) AND ($3::timestamp without time zone IS NULL
           OR (created_at,event_ordinal)>($3::timestamp without time zone,$4::integer))
         ORDER BY created_at,event_ordinal,event_id LIMIT $5`,[s.ticket_id,Object.keys(MILESTONES),c?localP2016(c.at):null,c?.ordinal??0,n+1]);
@@ -50,7 +53,7 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       if(s.session_id!==null)await tx.query(`WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch)
         UPDATE pilot_ticket.reporter_access_session SET last_seen_epoch_ms=stamp.epoch,
         last_seen_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE session_id=$1::uuid`,[s.session_id]);
-      return publicP2016({items:rows.map(r=>({ref:textHashP2016(r.event_id).slice(0,32),text:MILESTONES[r.event_type],
+      return publicP2016({items:rows.map(r=>({ref:textHashP2016(r.event_id).slice(0,32),text:typeof r.staff_summary==='string'&&r.staff_summary.length<=500&&r.staff_summary.trim()?'工作人员已完成本轮处理：'+r.staff_summary:MILESTONES[r.event_type],
         occurred_at:localP2016(r.created_at),source_rank:0,source_ordinal:r.event_ordinal})),
         next_cursor:q.rows.length>n?cursorP2016({ref:publicRef,at:(last as NonNullable<typeof last>).created_at,ordinal:(last as NonNullable<typeof last>).event_ordinal}):null});
       });

@@ -23,7 +23,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   }
 }}),mutationCache:new MutationCache({onError(error,_variables,_context,mutation){
   if(error instanceof ApiError&&error.status===401)return clearSessionAuthorization(client,sessionPrincipal(),401,'revoked');
-  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling'].includes(String(mutation.options.mutationKey[0])))return clearItemAuthorization(client,mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
+  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling','ticket-completion'].includes(String(mutation.options.mutationKey[0])))return clearItemAuthorization(client,mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='manual-review-command'){
     const key=mutation.options.mutationKey;if(typeof key[1]==='string'&&typeof key[3]==='string'&&typeof key[4]==='string'&&(key[2]==='ticket'||key[2]==='review'||key[2]==='intake'))return clearReviewAuthorization(client,key[1],key[4],{kind:key[2],id:key[3]},error);
   }

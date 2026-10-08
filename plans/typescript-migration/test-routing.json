@@ -8,6 +8,9 @@
     {"path":"tests/wbint-t14-review.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/wbint-t14-review-boundaries.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/wbint-t14-review.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t11-completion.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t11-completion.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t11-completion.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-draft-contract.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-draft-isolation.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-draft-boundaries.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -359,7 +362,10 @@
       "tests/p2-g2-send-guard.integration.test.mjs",
       "tests/yxx-ss-010-contract.test.mjs",
       "tests/yxx-ss-010-runtime.integration.test.mjs",
-      "tests/yxx-ss-010-browser.integration.test.mjs"
+      "tests/yxx-ss-010-browser.integration.test.mjs",
+      "tests/t11-completion.test.mts",
+      "tests/t11-completion.integration.test.mts",
+      "tests/t11-completion.browser.test.mts"
     ],
     "v3-p08": ["tests/p2-g2-send-budget.test.mjs", "tests/p2-g2-send-guard.integration.test.mjs", "tests/p2-g2-candidate-scope.integration.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/yxx-ss-010-contract.test.mjs", "tests/yxx-ss-010-runtime.integration.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/yxx-current-readiness-cli.test.mts", "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs", "tests/p2-g2-yixiaoxiu-readiness.test.mjs"],
     "v3-p07": ["tests/p2-g2-wecom-web-oauth.test.mjs", "tests/p2-g2-yixiaoxiu-delegated-identity.test.mjs", "tests/yxx-ss-004-orchestration.integration.test.mjs", "tests/yxx-ss-005-member-queries.integration.test.mjs", "tests/yxx-ss-006-supplements-review.integration.test.mjs", "tests/yxx-ss-007-native-http-errors.test.mjs", "tests/yxx-ss-008-assembly.integration.test.mjs", "tests/p2-g2-yixiaoxiu-oauth.test.mjs"],
