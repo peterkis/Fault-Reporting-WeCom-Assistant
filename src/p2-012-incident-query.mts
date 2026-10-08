@@ -13,7 +13,7 @@ export type CandidateDetail = CandidateQueryRow & { source_decision: { id: strin
 export type P2012IncidentQuery = ReturnType<typeof createP2012IncidentQuery>;
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
-import { guard,uuid,limit,cursor,decodeCursor,frozen,fail,assertLocalDateTime,version,CANDIDATE_STATES,INCIDENT_STATES,allowedIncidentScopes,ERROR_CODES } from './p2-012-domain-contracts.mjs';
+import { guard,uuid,limit,cursor,decodeCursor,frozen,fail,assertLocalDateTime,version,CANDIDATE_STATES,INCIDENT_STATES,allowedIncidentScopes,ERROR_CODES,safeCandidateSourceRefs } from './p2-012-domain-contracts.mjs';
 import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 import type {CandidateMaterial} from './p2-012-candidate-material.mjs';
 export interface CandidateOwner {id:string;display_name:string;teams:{team_id:string;display_name:string}[];teams_truncated:boolean}
@@ -93,8 +93,8 @@ export function createP2012IncidentQuery({pool,enabled=false,allowDispatcherCamp
         LEFT JOIN pilot_ticket.ticket t ON t.id=d.linked_ticket_id WHERE d.id=ANY($1::uuid[]) AND ${sourceAccess.sql}`,[refs,...sourceAccess.values]);
       const visibleCount=population.rows[0]?.count??0;
       const manual=(row as CandidateReview).source_manual_review_id?(await pool.query('SELECT id,status,priority,review_reason_code,row_version,resolution_code,created_at,resolved_at FROM intake.manual_review_item WHERE id=$1::uuid',[(row as CandidateReview).source_manual_review_id])).rows[0]??null:null;
-      const safeRefs=(Array.isArray((d.safe_result as { source_refs?: unknown } | null)?.source_refs)?(d.safe_result as { source_refs: unknown[] }).source_refs:[]).filter((x): x is string=>typeof x==='string'&&/^(?:channel:[1-9][0-9]{0,18}|intake:[a-f0-9-]{36})$/iu.test(x)).slice(0,100);
-      const decision={id:d.id,result_code:d.result_code,reason_code:d.reason_code,catalog_version:d.catalog_version,rule_set_version:d.rule_set_version,engine_version:d.engine_version,decision_policy_version:d.decision_policy_version,input_hash:d.input_hash,result_hash:d.result_hash,source_refs:safeRefs};
+      const suppliedRefs=Array.isArray((d.safe_result as { source_refs?: unknown } | null)?.source_refs)?(d.safe_result as { source_refs: unknown[] }).source_refs:[];
+      let safeRefs=suppliedRefs.filter((x): x is string=>typeof x==='string'&&/^(?:channel:[1-9][0-9]{0,18}|intake:[a-f0-9-]{36})$/iu.test(x)).slice(0,100);
       const ownerRows=broad(p)?(await pool.query<{id:string;display_name:string}>("SELECT p.id::text,p.display_name FROM pilot_ticket.pilot_principal p WHERE p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')) ORDER BY p.id LIMIT 101")).rows:[];
       const owners:CandidateOwner[]=[];
       for(const owner of ownerRows.slice(0,100)){
@@ -103,6 +103,28 @@ export function createP2012IncidentQuery({pool,enabled=false,allowDispatcherCamp
         owners.push({...owner,teams:teams.slice(0,20),teams_truncated:teams.length>20});
       }
       const material=await readCandidateMaterial(pool,[...new Set([...(broad(p)?refs:sources.map(s=>s.source_decision_id)),(row as CandidateReview).source_decision_id])]);
+      const rootMaterial=material.items.find(item=>item.source_decision_id===d.id);
+      const suppliedWebRefs=rootMaterial?.source_kind==='WEB'&&rootMaterial.status!=='EXPIRED'?safeCandidateSourceRefs(suppliedRefs).filter(ref=>/^web:/iu.test(ref)):[];
+      if(suppliedWebRefs.length){
+        // A Web hint names a persisted submission in the root's original capture,
+        // never a guessed Intake, request token or Reporter identifier.
+        const webAccess=ticketPredicateP2016(p,3);
+        const retained=await pool.query<{id:string}>(`SELECT s.id::text FROM intake.deterministic_decision d
+          JOIN intake.service_intake i ON i.id=d.service_intake_id
+          JOIN intake.contact_journey j ON j.id=d.journey_id AND j.origin_intake_id=i.id
+          JOIN intake.web_request_binding b ON b.intake_id=i.id
+            AND b.source_app_scope=j.source_app_scope AND b.canonical_reporter_binding=j.reporter_identity_hash
+          JOIN intake.web_submission s ON s.intake_id=i.id
+          LEFT JOIN pilot_ticket.ticket t ON t.id=d.linked_ticket_id
+          WHERE d.id=$1::uuid AND d.source_kind='WEB' AND s.id=ANY($2::uuid[]) AND ${webAccess.sql}
+            AND s.input_revision BETWEEN d.source_window_start_sequence AND d.source_window_end_sequence
+            AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND s.retention_until>platform.local_now()
+            AND i.retention_until_epoch_ms>platform.physical_epoch_ms() AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+          ORDER BY s.input_revision LIMIT 100`,[d.id,suppliedWebRefs.map(ref=>uuid(ref.slice(4))),...webAccess.values]);
+        const supplied=new Set(suppliedWebRefs),available=new Set(retained.rows.map(item=>item.id));
+        safeRefs=suppliedRefs.filter((ref):ref is string=>typeof ref==='string'&&(/^(?:channel:[1-9][0-9]{0,18}|intake:[a-f0-9-]{36})$/iu.test(ref)||(supplied.has(ref)&&available.has(ref.slice(4).toLowerCase())))).slice(0,100);
+      }
+      const decision={id:d.id,result_code:d.result_code,reason_code:d.reason_code,catalog_version:d.catalog_version,rule_set_version:d.rule_set_version,engine_version:d.engine_version,decision_policy_version:d.decision_policy_version,input_hash:d.input_hash,result_hash:d.result_hash,source_refs:safeRefs};
       const expired=(await pool.query<{expired:boolean}>('SELECT $1::bigint<=platform.physical_epoch_ms() AS expired',[(row as CandidateReview).expires_epoch_ms])).rows[0]?.expired!==false;
       const actions:CandidateAction[]=[];
       if(broad(p)){

@@ -29,6 +29,8 @@ Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candid
 
 `materials` 最多101项（独立根 Decision 加最多100个 Report 引用），不扩大报修选择或来源选项上限。它保留原 Decision 的 revision/hash，并比较同 Intake 的实际 BOT 消息窗口或 WEB revision/保留 submissions；不使用整个 Journey 的无关 revision。材料变化或过期禁止确认，原 Decision/hash 保持不可变。WEB 当前 hash 仅在原 <=50 窗口及材料仍保留时提供；旧032 BOT profile 不访问033 Web表。当前 extent 沿既有权限：ADMIN全部，DISPATCHER默认LOCAL/BUILDING，只有独立显式政策才允许CAMPUS；不增加角色。
 
+Web 安全来源引用为真实生产者供应的 `web:<web_submission UUID>`，不是 request_ref、Intake 或 Reporter 标识。Query 只在原根为 WEB 且材料仍保留时，按当前根读取权限、同 Intake/binding/Journey、原捕获窗口和实际 submission 保留期限核对原供应引用；不会猜测或补造来源。原 decimal channel/intake 投影、Decision/hash/material basis 保持，BOT/032 profile 不执行这项 Web SQL。
+
 只读回执的当前候选读取及 ADMIN/DISPATCHER 决定用途权限先于 ledger 查询。查询限定 `P2_012:<current principal>`、actor、候选 ID 和开始/拒绝/确认三种动作；无记录或未终态返回 `UNKNOWN`，稳定失败返回 `FAILED` 及白名单 `error:{code,retryable:false}`，已提交返回 `COMMITTED` 及六字段 `result`（`replayed:true`）。共同字段为 `candidate_review_id,client_command_id,state`，各状态均封闭，见 [receipt schema](../../../contracts/p2_012_candidate_command_receipt.schema.json)。已提交 Incident 再独立核对当前 resource 读取权限，不返回命令正文、hash、身份材料或由表单推测的 owner。候选/草稿过期不证明原操作失败；获权的原 UUID 可继续只读核对，不能据此自动创建新意图。回执关闭不改变已有事实或旧 Incident API。
 
 子查询主要字段：
