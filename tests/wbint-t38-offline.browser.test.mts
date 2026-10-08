@@ -71,7 +71,7 @@ test('the integrated conversation handling new operation waits for the same fres
     const directory=await mkdtemp(join(tmpdir(),'web01-ui-'));let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
-      await browser.waitFor('document.querySelector("[data-action=retain-current-communicator]")?.disabled===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await browser.waitFor('document.querySelector("[data-action=retain-current-communicator]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]").click()');
       await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
       const priorReads=reads;unreadable=true;
