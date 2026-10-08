@@ -266,4 +266,16 @@ strong { font-weight: var(--fw-medium); }
 .source-group-selected { margin-top:var(--s-10); padding:var(--s-8); border:1px solid var(--line-hair); border-radius:var(--r-md); }
 .source-group-selected h2 { font-size:var(--fs-card); }
 .compact-settings { display:none; }
+.manual-review { margin:var(--s-10) 0;padding:var(--s-8);border:1px solid var(--line-hair);border-radius:var(--r-md);font-size:var(--fs-sm);overflow-wrap:anywhere; }
+.manual-review h3,.manual-review h4 { margin:var(--s-4) 0;font-size:var(--fs-card); }
+.manual-review p,.manual-review li { line-height:1.65;white-space:pre-wrap; }
+.manual-review label { display:grid;gap:var(--s-3);margin:var(--s-5) 0; }
+.manual-review select { width:100%;min-width:0;min-height:var(--target);padding:var(--s-4);border:1px solid var(--ring-1);border-radius:var(--r-md);background:var(--bg); }
+.manual-review dl>div { display:grid;grid-template-columns:90px minmax(0,1fr);gap:var(--s-4); }
+.manual-review dd { margin:0; }
+.manual-review ol,.manual-review ul { padding-left:var(--s-10); }
+.manual-review details { margin:var(--s-5) 0; }
+.manual-review small { color:var(--text-2); }
+.review-controls { display:flex;flex-wrap:wrap;gap:var(--s-4); }
+.review-controls button,.manual-review button { min-height:var(--target);padding:var(--s-3) var(--s-5);border-radius:var(--r-md);background:var(--bg-hover); }
 @media(max-width:900px) { .compact-settings { display:block; } .source-group-directory .page-title { align-items:start; } }

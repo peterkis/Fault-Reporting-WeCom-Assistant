@@ -29,4 +29,6 @@ export interface WorkbenchDetail {
   item: WorkbenchCard; description: string | null;
   records: WorkbenchRecord[]; next_cursor: string | null;
   responsibility: { ticket_assignee_name: string | null; conversation_assignees: string[] };
+  review_refs?:import('./workbench_review_contracts.js').ReviewReference[];
+  requested_item?:import('./workbench_review_contracts.js').CanonicalItem;
 }

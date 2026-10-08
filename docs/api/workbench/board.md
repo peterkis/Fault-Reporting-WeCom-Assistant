@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 W；正式页面 `/workbench/app/`。Ticket业务为真实API只读视图，与 `web/admin-workbench-prototype` 的合成原型区分。前端：[client](../../../web/admin-workbench/src/api/client.ts)；后端：[HTTP](../../../src/web01-workbench-http.mts)、[query](../../../src/web01-workbench-query.mts)。沿用内部身份、工单/复核范围、生命周期启用条件；后继增量提供默认关闭的管理员[来源群名称维护](source-groups-design.md)。
+宿主 W；正式页面 `/workbench/app/`。业务使用真实API，新增处理能力按默认关闭的独立开关启用，与 `web/admin-workbench-prototype` 的合成原型区分。前端：[client](../../../web/admin-workbench/src/api/client.ts)；后端：[HTTP](../../../src/web01-workbench-http.mts)、[query](../../../src/web01-workbench-query.mts)。沿用内部身份、工单/复核范围、生命周期启用条件；默认关闭的管理员[来源群名称维护](source-groups-design.md)独立授权。
 
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |
@@ -38,6 +38,8 @@ Accept: application/json
 
 前端同源Cookie、no-store、redirect:error，使用Query提供的AbortSignal取消请求（此client没有独立timeout）；必须校验JSON Content-Type和运行时DTO。HTTP成功但DTO不合法时client报 `INVALID_RESPONSE`（本地客户端错误，502）。服务端错误沿用WORKBENCH/P2_016；401/403不应被模拟卡片替代。
 
-正式前端仅上述三个 GET，没有自己的 SSE/WebSocket/命令 URL。开发代理 `/api` 的 loopback 目标仅用于本地，见 [Vite config](../../../web/admin-workbench/vite.config.ts)；它不是部署 Base URL。[ADR-0029](../../../adr/0029_admin_workbench_frontend_boundaries.md) 约束数据和前端边界。
+正式前端按已启用能力复用既有业务命令；本票默认关闭的[同事项复核](manual-reviews.md#同事项复核与恢复wbint-t14)使用原resolve与专用只读receipt，不自行建立业务事实。开发代理 `/api` 的 loopback 目标仅用于本地，见 [Vite config](../../../web/admin-workbench/vite.config.ts)；它不是部署 Base URL。[ADR-0029](../../../adr/0029_admin_workbench_frontend_boundaries.md) 约束数据和前端边界。
 
-核对：[unit](../../../tests/web01-workbench.test.mts)、[integration](../../../tests/web01-workbench.integration.test.mjs)、[browser](../../../tests/web01-workbench.browser.test.mjs)。本轮无运行时变更或新 Feature Flag。
+基础接口核对：[unit](../../../tests/web01-workbench.test.mts)、[integration](../../../tests/web01-workbench.integration.test.mjs)、[browser](../../../tests/web01-workbench.browser.test.mjs)。本票增量如下。
+
+WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:string}]`，每项独立Journey/保留期授权。Review发生合法canonical转换时响应可增加 `requested_item:{kind:'review',id}`，实际item和活动来自当前有权Ticket/Review/Intake，cursor仍绑定请求；客户端只接受准确原请求的Review alias。相同关联Ticket不重复计卡片；多个材料版本明确选择，刷新不静默改选或丢失输入。正式600px详情/全页展示原原因、缺失与冲突、安全材料和当前支持/不支持结论；React按文本呈现。默认关闭、无DB变更及实际证据见[本票记录](../../../plans/admin-workbench-integration/execution/t14.md)。

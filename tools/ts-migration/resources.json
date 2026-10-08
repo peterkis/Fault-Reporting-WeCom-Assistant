@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_review_contracts.d.ts",
+    "contracts/workbench_review_material_basis.schema.json",
+    "contracts/workbench_review_receipt.schema.json",
+    "contracts/workbench_review_material.schema.json",
+    "contracts/workbench_canonical_item.schema.json",
     "database/migrations/039_ticket_self_handling_cycles.sql",
     "contracts/p2_016_self_handling_command.schema.json",
     "contracts/workbench_attachment_contracts.d.ts",
