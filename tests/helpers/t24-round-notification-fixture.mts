@@ -6,10 +6,11 @@ import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
+import {migrateTicketRoundNotifications} from '../../scripts/ticket-round-notifications-migrate.mjs';
 
 export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>){
   await withWeb01Fixture(async(f:T11Fixture)=>{
-    await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});
+    await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
     const intake=await seedPersistedIntake({pool:f.pool,text:'合成Bot单聊报修',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t24-fixture'});
     assert.ok(created.ticket);

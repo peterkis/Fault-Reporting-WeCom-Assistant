@@ -3,29 +3,38 @@ import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { CommunicationSuccess, CommunicationJson } from './p2-004-communication-core.mjs';
 import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 interface NotificationEvent { event_id: string; event_type: string; new_status: TicketStatus; created_at: string; aggregate_version: number; ticket_id?: string; ticket_no?: string; intake_id?: string }
-interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string }
+interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string;trace_id:string;reason_code:string|null }
 type AppendObservation = (CommunicationSuccess & { error?: never }) | { error: { code: string }; message_id?: never; outbox_id?: never; delivery_ids?: never };
-interface NotificationOptions { enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
+interface NotificationOptions { roundNotificationBotId?:string|null;enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
 
 import { randomUUID } from 'node:crypto';
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import { ticketNotificationP2016 } from './p2-016-ticket-notification-policy.mjs';
 import { failP2016,guardP2016,textHashP2016,stampP2016 } from './p2-016-domain-contracts.mjs';
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
+import {readOriginalSingleBotSource} from './workbench-ticket-round-notifications.mjs';
 
 export function createP2016TicketNotificationProjector({enabled=false,cardEnabled=false,reporterAccess,explicitReferenceEnabled=false,
-  personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication}: NotificationOptions) {
+  personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication,roundNotificationBotId=null}: NotificationOptions) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('INPUT_INVALID');
   ticketNotificationP2016({event_type:'ticket.accepted',new_status:'ACCEPTED'},{additionalEventTypes});
   const configuredEvents=Object.freeze([...additionalEventTypes]);
   return Object.freeze({
     async project({transaction:tx,ticket,event}: { transaction: PostgresTransaction; ticket: { id: string; ticket_no?: string; intake_id?: string }; event: NotificationEvent | Pick<NotificationEvent, 'event_id'> }) {
       guardP2016(enabled);
-      const fact=await tx.query<NotificationFact>(`SELECT e.event_id::text,e.ticket_id::text,e.event_type,e.new_status,e.created_at,e.aggregate_version,
+      const fact=await tx.query<NotificationFact>(`SELECT e.event_id::text,e.ticket_id::text,e.event_type,e.new_status,e.created_at,e.aggregate_version,e.trace_id,e.reason_code,
         t.ticket_no,t.source_intake_id::text AS intake_id FROM pilot_ticket.ticket_event e
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
+      if(roundNotificationBotId!==null&&(event.event_type==='ticket.accepted'||event.event_type==='ticket.closed')
+        &&await readOriginalSingleBotSource(tx,ticket.intake_id as string,roundNotificationBotId)){
+        const round=(event as NotificationFact).trace_id.startsWith('t04:')||(await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
+          JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
+          WHERE t.id=$1::uuid AND c.first_responsibility_event_id IS NOT NULL`,[ticket.id])).rowCount===1;
+        if(event.event_type==='ticket.accepted'&&round||event.event_type==='ticket.closed'&&(event as NotificationFact).reason_code==='STAFF_COMPLETED')
+          return {created:false,reason:'ROUND_NOTIFICATION_OWNS_NODE'};
+      }
       const sourceFact=await tx.query(`SELECT source_channel,source_provider FROM intake.service_intake WHERE id=$1::uuid`,[ticket.intake_id]);
       if(sourceFact.rowCount!==1)failP2016('NOTIFICATION_BINDING_INVALID');
       if((sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_channel==='PORTAL'&&(sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_provider==='YIXIAOXIU_WEB')

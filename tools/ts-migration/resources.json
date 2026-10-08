@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/040_ticket_staff_completion.sql",
     "contracts/p2_016_completion_command.schema.json",
     "contracts/p2_016_completion_receipt.schema.json",

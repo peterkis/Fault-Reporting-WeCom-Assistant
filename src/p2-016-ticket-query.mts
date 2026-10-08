@@ -4,7 +4,7 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean }
+interface QueryOptions { ticketRoundNotificationsEnabled?:boolean;pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
@@ -66,7 +66,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketRoundNotificationsEnabled=false}: QueryOptions) {
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
     if(!p)failP2016('FORBIDDEN',403);return p;
@@ -166,9 +166,9 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     },
     async deliveries(input: TicketQueryInput) {
       const {ticket}=await authorizedTicket(input);
-      const q=await pool.query(`SELECT b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
+      const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
         d.side_effect_state,d.attempt_count,d.sent_at,b.created_at FROM communication.ticket_notification_binding b
-        JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1::uuid
+        JOIN communication.delivery d ON d.id=b.delivery_id ${ticketRoundNotificationsEnabled?'LEFT JOIN communication.ticket_round_notification_binding r ON r.notification_binding_id=b.id LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.cycle_id AND c.ticket_id=r.ticket_id':''} WHERE b.ticket_id=$1::uuid
         ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows});
     },
   });
