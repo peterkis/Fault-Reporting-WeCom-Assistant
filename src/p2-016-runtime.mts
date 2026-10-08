@@ -86,6 +86,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   if(memberConfig.enabled&&policy!=='MEMBER_REQUIRED')failYxx('CONFIG_INVALID');
   if(yxxSelfService!==null&&policy!=='MEMBER_REQUIRED')failYxx('CONFIG_INVALID');
   if(ticketRoundNotificationsEnabled&&(!ticketSelfHandlingEnabled||!ticketStaffCompletionEnabled||!featureFlags.WECOM_TEMPLATE_CARD_ENABLED||!featureFlags.REPORTER_TIMELINE_ENABLED||policy!=='MEMBER_REQUIRED'))failP2016('ROUND_NOTIFICATIONS_CONFIG_INVALID',503);
+  const roundBotId=ticketRoundNotificationsEnabled?memberConfig.botId:'ROUND_DISABLED';
+  if(typeof roundBotId!=='string'||!roundBotId||roundBotId.length>128)failP2016('ROUND_NOTIFICATIONS_CONFIG_INVALID',503);
   if(!enabled)return Object.freeze({disabled:true as const,start:async()=>({disabled:true}),stop:async()=>({stopped:true,disabled:true})});
   if((gatewayEnabled||senderEnabled)&&!(liveApproval?.live===true&&liveApproval?.scope===true&&liveApproval?.send===true))failP2016('LIVE_APPROVAL_REQUIRED',403);
   const scope=gatewayEnabled?createP2016InboundScope(inboundScope):null;
@@ -94,8 +96,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const access=createP2016ReporterAccess({pool,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,hmacSecret:reporterHmacSecret as string});
   const webOAuth: WebOAuthPort=(createWeComWebOAuth as typeof createWeComWebOAuth)({...wecomWebOAuth,publicOrigin:reporterOrigin});
   const oauthHttp: ReporterHttpHandler=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
-  const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,roundNotificationBotId:ticketRoundNotificationsEnabled?memberConfig.botId:null});
-  const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:memberConfig.botId??'ROUND_DISABLED',reporterAccess:access,personDestinationAuthorizer,communicationAppend});
+  const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,roundNotificationBotId:ticketRoundNotificationsEnabled?roundBotId:null});
+  const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend});
   const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled,ticketStaffCompletionEnabled,ticketRoundNotificationsEnabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
   const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});

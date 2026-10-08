@@ -26,13 +26,14 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         t.ticket_no,t.source_intake_id::text AS intake_id FROM pilot_ticket.ticket_event e
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
+      const nodeEvent=fact.rows[0];if(!nodeEvent)failP2016('NOTIFICATION_EVENT_INVALID');
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
-      if(roundNotificationBotId!==null&&(event.event_type==='ticket.accepted'||event.event_type==='ticket.closed')
+      if(roundNotificationBotId!==null&&(nodeEvent.event_type==='ticket.accepted'||nodeEvent.event_type==='ticket.closed')
         &&await readOriginalSingleBotSource(tx,ticket.intake_id as string,roundNotificationBotId)){
-        const round=(event as NotificationFact).trace_id.startsWith('t04:')||(await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
+        const round=nodeEvent.trace_id.startsWith('t04:')||(await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
           JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
           WHERE t.id=$1::uuid AND c.first_responsibility_event_id IS NOT NULL`,[ticket.id])).rowCount===1;
-        if(event.event_type==='ticket.accepted'&&round||event.event_type==='ticket.closed'&&(event as NotificationFact).reason_code==='STAFF_COMPLETED')
+        if(nodeEvent.event_type==='ticket.accepted'&&round||nodeEvent.event_type==='ticket.closed'&&nodeEvent.reason_code==='STAFF_COMPLETED')
           return {created:false,reason:'ROUND_NOTIFICATION_OWNS_NODE'};
       }
       const sourceFact=await tx.query(`SELECT source_channel,source_provider FROM intake.service_intake WHERE id=$1::uuid`,[ticket.intake_id]);
