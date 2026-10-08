@@ -48,6 +48,7 @@ test('T14 current identity and retained source scope are rechecked before histor
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const {get,read,post}=http(fixture),ticket=fixture.tickets[0],principal=fixture.principals[0];assert.ok(ticket);assert.ok(principal);
     const item=await read('/api/workbench/items/ticket/'+ticket.ticket.id),review=(item.review_refs as {id:string}[])[0];assert.ok(review);
+    await fixture.pool.query("UPDATE intake.contact_journey SET reported_at=LEAST(reported_at,platform.local_now()-interval '1 day') WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1::uuid)",[review.id]);
     const original=await read('/api/manual-reviews/'+review.id),bootstrap=await read('/api/lifecycle/bootstrap');
     const command={client_command_id:randomUUID(),expected_row_version:original.row_version,expected_material_basis:(original.material_basis as {current_hash:string}).current_hash,resolution_code:'CLASSIFY_BUSINESS_CONSULTATION',resolution_reason_code:'EXPLICIT_HUMAN_CHOICE'};
     assert.equal((await post(review.id,command,bootstrap.csrf_token)).status,200);
