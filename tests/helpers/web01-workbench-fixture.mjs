@@ -52,7 +52,7 @@ export async function withWeb01Fixture(run,{manualProjection=false,chronological
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
-    if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
+    if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
@@ -60,7 +60,7 @@ export async function withWeb01Fixture(run,{manualProjection=false,chronological
     const core=createPilotTicketCore({pool}),tickets=[];
     for(const [index,[title,location,status]] of scenarios.entries()){
       const text=title+'。全新合成开发材料，请协助排查。';
-      const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
+      const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;
       const row=(await pool.query(`UPDATE pilot_ticket.ticket SET title=$2,status=$3,reported_location_text=$4,version=2,
         assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval
@@ -74,7 +74,7 @@ export async function withWeb01Fixture(run,{manualProjection=false,chronological
       safeActionExecutor:createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),ticketCommandPort:createExistingTicketCommandPort({ticketCore:core}),manualReviewStore:createManualReviewStore(),decisionStore:createDecisionStore()}),
       ruleEngine:{catalog_version:'WEB01_FIXTURE',rule_set_version:'WEB01_FIXTURE',evaluate(){throw new Error('fixture creates persisted pending review');}}});
     const standalone=await seedPersistedIntake({pool,text:'尚待判断的合成材料，请协助确认。'});
-    for(const intakeId of [standalone.intakeId,...((ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled)&&ticketSelfHandlingWebSource?[]:[tickets[0].intake.intakeId])])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
+    for(const intakeId of [standalone.intakeId,...((ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled)&&ticketSelfHandlingWebSource?[]:[tickets[0].intake.intakeId])])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
     // Explicit real relation: the pending review and Ticket are the same intake, not two cards.
     await pool.query(`UPDATE intake.manual_review_item SET linked_ticket_id=$2::uuid WHERE service_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
     await pool.query(`UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid WHERE origin_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);

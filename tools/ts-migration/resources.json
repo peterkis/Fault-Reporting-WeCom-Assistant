@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_assignment_command.schema.json",
+    "contracts/p2_016_assignment_result.schema.json",
     "contracts/p2_016_conversation_self_handling_command.schema.json",
     "contracts/p2_016_related_conversation_page.schema.json",
     "contracts/p2_016_conversation_handling_result.schema.json",

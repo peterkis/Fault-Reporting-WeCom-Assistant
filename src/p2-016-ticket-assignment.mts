@@ -7,11 +7,11 @@ import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import { ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016 } from './p2-016-domain-contracts.mjs';
 
-export async function transferTicketAssignmentP2016({transaction,principal,ticket,command}: { transaction: PostgresTransaction; principal: WorkbenchPrincipal; ticket: P2016TicketRow; command: Extract<TicketCommand, { action: 'transfer-assignment' }> }) {
-  if(!ticketActionAllowedP2016(principal,ticket,'transfer-assignment'))failP2016('FORBIDDEN',403);
+export async function transferTicketAssignmentP2016({transaction,principal,ticket,command,workbenchBusinessAssignment=false}: { transaction: PostgresTransaction; principal: WorkbenchPrincipal; ticket: P2016TicketRow; command: Extract<TicketCommand, { action: 'transfer-assignment' }>;workbenchBusinessAssignment?:boolean }) {
+  if(workbenchBusinessAssignment===true?(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))):!ticketActionAllowedP2016(principal,ticket,'transfer-assignment'))failP2016('FORBIDDEN',403);
   if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
   const team=command.resolver_team_id??ticket.resolver_team_id;
-  if(!principal.roles.some(r=>['ADMIN','DISPATCHER'].includes(r))&&team!==ticket.resolver_team_id)failP2016('FORBIDDEN',403);
+  if(workbenchBusinessAssignment!==true&&!principal.roles.some(r=>['ADMIN','DISPATCHER'].includes(r))&&team!==ticket.resolver_team_id)failP2016('FORBIDDEN',403);
   const target=await transaction.query(`SELECT p.id FROM pilot_ticket.pilot_principal p
     JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
     JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id

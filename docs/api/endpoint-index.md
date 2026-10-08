@@ -59,6 +59,7 @@
 | T29 | POST | `/api/tickets/{ticketId}/take-and-start-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人承接并开始 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | T30 | POST | `/api/tickets/{ticketId}/accept-for-later-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人先接单 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | T31 | GET | `/api/tickets/{ticketId}/conversation-handling-commands/{commandId}` | W | 已实现、默认关闭：原UUID专用安全Ticket终态，无Session结果 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
+| WB-T06-A1 | POST | `/api/tickets/{ticketId}/assign` | W | 已挂载、默认关闭，验证进行中：明确内部处理人/组，不接单或开始 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
 | R03 | POST | `/api/manual-reviews/{reviewId}/resolve` | W | 已实现：人工结论 | [复核](workbench/manual-reviews.md) |

@@ -180,3 +180,16 @@ bootstrap的 `staff_completion_draft_recovery_enabled` 为实际完工能力AND 
 040的append-only通知承诺仅引用同Ticket/同cycle/真实结束event/原source，没有正文、owner、第二状态或Delivery。进程内 `readCommittedStaffCompletions({afterCycleId?:UUID|null,limit?:1..100})` 默认20，返回 `{items:[{cycle_id,cycle_no,node:'STAFF_COMPLETED',ticket_id,ticket_event_id,source_intake_id,external_summary,occurred_at}],next_cursor}`；安全摘要读取权威event。UUID cursor仅一次完整扫描的分页，不是永久增量checkpoint：旧cycle可能后来完工，恢复消费须重扫并以稳定cycle/node/event幂等。T24负责路由、模板、去重及Outbox/Delivery生成，此Port没有HTTP/发送入口。Reporter/H5本人安全投影只展示此明确完工事件的external_note，普通内部备注/处理过程不外发。
 
 表单in-flight1，复用原事务、pool≤4、总池建议≤8，App/API/SSE1、Worker1、Gateway单活、SSE32，无新轮询/常驻进程。关闭能力拒绝新命令并保留已提交事实；独立forward/revert不删除receipt、cycle/end/event或承诺。真实外部依赖、发送、部署、full/certify与Gate仍须独立授权。
+
+
+## 明确派单（WBINT-T06，进行中）
+
+本票当前新增 W 的 `POST /api/tickets/{ticketId}/assign`，宿主 `ticketAssignmentEnabled:boolean=false`。实现后的实际验证仍进行中，整票未完成；转派、选择沟通、目标选择器、专用安全核对与生产表单由本票后续公共 RED→GREEN 补齐，没有把未挂载路径加入索引。[冻结合同与实际分段](../../../plans/admin-workbench-integration/execution/t06.md)、[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../src/workbench-ticket-assignment.mts)。
+
+沿W认证/当前Ticket可见范围、Origin/CSRF、Idempotency-Key=client_command_id、If-Match=expected_version和32KiB上限。闭合body的七字段为UUID client_command_id、数字整数expected_version（1..2147483647）、CODE reason_code、UUID target_principal_id、CODE resolver_team_id、communication_choice、sessions。当前首片段只执行显式RETAIN_CURRENT与空sessions；TRANSFER_SELECTED是已冻结的后续合同，当前返回CONTROL_UNAVAILABLE而不伪称已交接。拒绝actor/来源/通知目的地/force/任意额外字段。
+
+合法派单仅无当前处理人的NEW/QUEUED；NEW使用原Core queue进入QUEUED，绝不执行accept/start。操作者须保持原Ticket读权及活动内部业务角色；目标须是选定活动组中的真实活动内部ADMIN/DISPATCHER/HANDLER。组成员指目标承接者，不要求操作者同时加入目标组，不授予新的Ticket读取或系统管理权限。外部厂商不成为候选内部Principal。
+
+仅原Ticket保存owner/team；原ticket.assignment_transferred追加前后人/组和实际操作者，039保存该真实首次派单事件的轮次/首次责任依据及同轮event引用，原来源不改。责任、事件、轮次、既有安全实时投影与原principal-scoped ledger的WORKBENCH_TICKET_ASSIGNMENT receipt同事务。依赖显式039、无新数据库变更；关闭后新路径503、不读039，保留旧profiles及真实历史。缺039为ASSIGNMENT_UNAVAILABLE/503且不插receipt；非法前态或责任为ASSIGNMENT_STATE_CONFLICT/409，其余现有INPUT_INVALID/TARGET_INVALID/FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED维持W状态合同。结果仅Ticket/event/version、可空handling_cycle、沟通选择与安全会话结果；不返回报修正文、外部身份或登录资料。
+
+复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。

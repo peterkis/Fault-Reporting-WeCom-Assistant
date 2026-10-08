@@ -339,6 +339,7 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/t06-assignment.integration.test.mts",
       "tests/web01-draft-contract.test.mjs",
       "tests/web01-draft-isolation.browser.test.mjs",
       "tests/web01-draft-boundaries.browser.test.mjs",
