@@ -1,4 +1,5 @@
 {
+  "$id": "https://hospital.local/contracts/p2_016_self_handling_command.schema.json",
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "title":"Ticket-only self handling command",
   "type":"object","additionalProperties":false,

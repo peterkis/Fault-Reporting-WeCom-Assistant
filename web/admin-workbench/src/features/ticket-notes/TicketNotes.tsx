@@ -4,7 +4,7 @@ import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/cl
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
 import {useNoteDraft} from '../drafts/use-note-draft';
 
-const actionNames:Record<string,string>={queue:'入队',accept:'接单',start:'开始处理','request-information':'请求补充','wait-vendor':'等待厂商',resume:'恢复处理',resolve:'登记解决',confirm:'确认恢复',reopen:'重开',cancel:'取消','add-note':'内部备注','transfer-assignment':'转派','take-and-start':'我来处理','accept-for-later':'先接单，稍后处理'};
+const actionNames:Record<string,string>={queue:'入队',accept:'接单',start:'开始处理','request-information':'请求补充','wait-vendor':'等待厂商',resume:'恢复处理',resolve:'登记解决',complete:'工作人员完工',confirm:'确认恢复',reopen:'重开',cancel:'取消','add-note':'内部备注','transfer-assignment':'转派','take-and-start':'我来处理','accept-for-later':'先接单，稍后处理'};
 type NoteState='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketNotes({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);

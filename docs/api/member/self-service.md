@@ -87,3 +87,6 @@ Web请求display_status=`RECEIVED_PROCESSING|WAITING_FOR_DETAILS|UNDER_REVIEW|TI
 完整契约：[OpenAPI](../../../contracts/yxx_self_service.openapi.yaml)、[types](../../../contracts/yxx_self_service_contracts.d.ts)、[request](../../../contracts/yxx_self_service_request.schema.json)、[supplement](../../../contracts/yxx_self_service_supplement.schema.json)、[receipt](../../../contracts/yxx_self_service_receipt.schema.json)、[detail](../../../contracts/yxx_self_service_request_detail.schema.json)、[list](../../../contracts/yxx_self_service_report_page.schema.json)、[timeline](../../../contracts/yxx_self_service_timeline.schema.json)、[bootstrap](../../../contracts/yxx_self_service_bootstrap.schema.json)、[catalog](../../../contracts/yxx_self_service_service_catalog.schema.json)。[契约冻结说明](../../runbooks/yixiaoxiu-self-service-contract-freeze.md)。
 
 核对：[native错误](../../../tests/yxx-ss-007-native-http-errors.test.mjs)、[HTTP恢复](../../../tests/yxx-ss-009-http-recovery.integration.test.mjs)、[目录](../../../tests/yxx-ss-009-catalog.integration.test.mjs)、[runtime](../../../tests/yxx-ss-010-runtime.integration.test.mjs)。成员轮询为有界5秒节奏，无SSE；数据库/外发/现场批准另查原运行契约。本轮未启动这些操作。
+
+
+WBINT-T11完工后，实际获权的本人Web/Bot安全时间线只读取STAFF_COMPLETED明确关闭事件的已确认外部摘要（≤500字）；内部处理过程与普通备注不进入H5投影。它依赖原Intake/Journey本人授权，不因工作人员BROAD权限变成任意成员可见，不增加客户端完工动作。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。

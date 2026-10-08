@@ -10,11 +10,12 @@ export type TicketCommand = CommandBase & (
   | { action: 'takeover-and-accept-ticket'; session_id: string; expected_session_row_version: number; target_principal_id?: never; resolver_team_id?: never });
 export interface TicketProjectionInput { transaction: PostgresTransaction; ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent; command?: TicketCommand | null }
 export type TicketRealtimeProjector = ((input: TicketProjectionInput) => Promise<unknown>) & { lock?: (transaction: PostgresTransaction) => Promise<unknown> };
-interface FacadeOptions { pool: PostgresPool; enabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
+interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
 
 import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
+import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
 
@@ -37,8 +38,9 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   // The existing exact-key, action-specific and scalar guards above establish this union.
   return result as TicketCommand;
 }
-export function createP2016TicketCommandFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),controlService,
+export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,query=createP2016TicketQuery({pool,enabled}),controlService,
   notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions) {
+  if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
     async internalNoteReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
@@ -50,7 +52,12 @@ export function createP2016TicketCommandFacade({pool,enabled=false,query=createP
       if(internalNote&&command.action!=='add-note')failP2016();
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
         authorize:async transaction=>{
-          const context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+          let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+          if(ticketStaffCompletionEnabled){
+            // Completion and existing commands must take the same stream mutex before receipt FK locks.
+            if(realtimeProjector?.lock)await realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
+            context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+          }
           if(command.session_id){
             const q=await transaction.query('SELECT service_intake_id::text FROM conversation.session WHERE id=$1::uuid',[command.session_id]);
             if(q.rowCount!==1||(q.rows[0] as (typeof q.rows)[number]).service_intake_id!==context.ticket.intake_id)failP2016('NOT_FOUND',404);

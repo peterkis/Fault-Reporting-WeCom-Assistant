@@ -25,6 +25,7 @@ export type TicketAction =
   | 'resume'
   | 'wait-vendor'
   | 'resolve'
+  | 'complete'
   | 'confirm'
   | 'reopen'
   | 'cancel'
@@ -85,6 +86,7 @@ const ACTIONS: Readonly<Record<TicketAction, TicketTransition>> = Object.freeze(
   },
   'wait-vendor': { from: ['IN_PROGRESS'], to: 'WAITING_VENDOR', eventType: 'ticket.waiting_vendor' },
   resolve: { from: ['IN_PROGRESS'], to: 'RESOLVED', eventType: 'ticket.resolved' },
+  complete: { from: ['IN_PROGRESS'], to: 'CLOSED', eventType: 'ticket.closed' },
   confirm: { from: ['RESOLVED'], to: 'CLOSED', eventType: 'ticket.closed' },
   reopen: {
     from: ['RESOLVED', 'CLOSED'],
@@ -134,6 +136,9 @@ export interface TicketActionInput {
   reasonCode?: string | null;
   attachmentIds?: unknown[];
   traceId: string;
+  internalProcess?: string;
+  externalSummary?: string;
+  externalSummaryConfirmed?: true;
 }
 
 export interface TicketEventRow {
@@ -206,6 +211,7 @@ export interface TicketActionService {
 }
 
 export interface TicketActionServiceOptions {
+  staffCompletionEnabled?: boolean;
   pool?: PostgresPool;
   authorize?: TicketActionAuthorizer | null;
   afterAction?: TicketActionAfterHook | null;
@@ -228,6 +234,8 @@ interface NormalizedTicketActionInput {
   reasonCode: string | null;
   attachmentIds: unknown[];
   traceId: string;
+  internalProcess: string | null;
+  externalSummary: string | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -275,6 +283,18 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
   if (actionValue === 'auto-close' && input.actor.type !== 'SYSTEM') {
     throw new TicketActionError('FORBIDDEN');
   }
+  let internalProcess: string | null = null, externalSummary: string | null = null;
+  if (actionValue === 'complete') {
+    if (input.actor.type !== 'PILOT_USER') throw new TicketActionError('FORBIDDEN');
+    internalProcess = nonEmpty(input.internalProcess, 'VALIDATION_FAILED', 2000).trim();
+    externalSummary = nonEmpty(input.externalSummary, 'VALIDATION_FAILED', 500).trim();
+    if (!internalProcess || !externalSummary || input.externalSummaryConfirmed !== true
+      || input.reasonCode !== 'STAFF_COMPLETED' || input.note !== undefined || input.externalVisible !== undefined) {
+      throw new TicketActionError('VALIDATION_FAILED');
+    }
+  } else if (input.internalProcess !== undefined || input.externalSummary !== undefined || input.externalSummaryConfirmed !== undefined) {
+    throw new TicketActionError('VALIDATION_FAILED');
+  }
   const operatorId = input.actor.id === null || input.actor.id === undefined
     ? null
     : nonEmpty(String(input.actor.id), 'VALIDATION_FAILED', 128);
@@ -303,6 +323,8 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
     reasonCode: nullableText(input.reasonCode, 'VALIDATION_FAILED', 128),
     attachmentIds,
     traceId,
+    internalProcess,
+    externalSummary,
   };
 }
 
@@ -488,7 +510,8 @@ export async function appendTicketEvent({
   return publicTicketEvent(row);
 }
 
-export function createTicketActionService({ pool, authorize = null, afterAction = null }: TicketActionServiceOptions = {}): TicketActionService {
+export function createTicketActionService({ pool, authorize = null, afterAction = null, staffCompletionEnabled = false }: TicketActionServiceOptions = {}): TicketActionService {
+  if (typeof staffCompletionEnabled !== 'boolean') throw new TypeError('staffCompletionEnabled must be boolean.');
   if (authorize !== null && typeof authorize !== 'function') {
     throw new TypeError('authorize must be a function when supplied.');
   }
@@ -498,6 +521,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
 
   async function performInTransaction(input: unknown, transaction: PostgresTransaction): Promise<TicketActionSuccess> {
     const request = validateActionInput(input);
+    if (request.action === 'complete' && !staffCompletionEnabled) throw new TicketActionError('FORBIDDEN');
     if (!transaction || typeof transaction.query !== 'function') {
       throw new TicketActionError('VALIDATION_FAILED');
     }
@@ -534,9 +558,10 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
       }
     }
     const nextStatus = transition.toCurrentStatus === true ? current.status : transition.to;
-    const externalNote = request.externalVisible ? request.note : null;
-    const internalNote = request.externalVisible ? null : request.note;
-    const closureReason = request.action === 'confirm'
+    if (request.action === 'complete' && current.assignee_id !== request.actor.id) throw new TicketActionError('FORBIDDEN');
+    const externalNote = request.action === 'complete' ? request.externalSummary : request.externalVisible ? request.note : null;
+    const internalNote = request.action === 'complete' ? request.internalProcess : request.externalVisible ? null : request.note;
+    const closureReason = request.action === 'complete' ? 'STAFF_COMPLETED' : request.action === 'confirm'
       ? request.reasonCode ?? 'REQUESTER_CONFIRMED'
       : request.action === 'auto-close'
         ? 'AUTO_TIMEOUT'
@@ -546,7 +571,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
             ? null
             : current.closure_reason;
     const assigneeId = request.action === 'accept' ? request.actor.id : current.assignee_id;
-    const externalResult = request.action === 'resolve' && externalNote !== null
+    const externalResult = ['resolve','complete'].includes(request.action) && externalNote !== null
       ? externalNote
       : current.external_result;
     const updated = await transaction.query<PilotTicketRow>(
@@ -617,8 +642,9 @@ export function externalTicketStatus(status: unknown): string | null {
   return isTicketStatus(status) ? EXTERNAL_TICKET_STATUS[status] ?? null : null;
 }
 
-export function getTicketActionTransitions(): readonly TicketActionTransition[] {
-  return Object.freeze((Object.entries(ACTIONS) as [TicketAction, TicketTransition][]).map(([action, transition]) => Object.freeze({
+export function getTicketActionTransitions({staffCompletionEnabled=false}: {staffCompletionEnabled?:boolean} = {}): readonly TicketActionTransition[] {
+  if (typeof staffCompletionEnabled !== 'boolean') throw new TypeError('staffCompletionEnabled must be boolean.');
+  return Object.freeze((Object.entries(ACTIONS) as [TicketAction, TicketTransition][]).filter(([action])=>action!=='complete'||staffCompletionEnabled).map(([action, transition]) => Object.freeze({
     action,
     from: Object.freeze([...transition.from]),
     to: 'to' in transition ? transition.to : null,
