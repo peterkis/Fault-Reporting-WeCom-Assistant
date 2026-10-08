@@ -1,5 +1,11 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
+import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
+let authorizationEpoch=0,transportWritable=true;
+export function setWorkbenchTransportWritable(value:boolean){transportWritable=value;}
+export function workbenchTransportWritable(){return transportWritable;}
+export function advanceWorkbenchAuthorizationEpoch(){authorizationEpoch++;}
+function requireCurrentRead(epoch:number,signal:AbortSignal){signal.throwIfAborted();if(epoch!==authorizationEpoch)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');}
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
@@ -47,8 +53,16 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)}};
 }
-export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
-function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled};}
+export interface Principal extends WorkbenchRealtimeCapability {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
+function decodePrincipal(value:unknown):Principal {
+  const v=object(value),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision);
+  if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean'
+    ||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
+    ||!/^(0|[1-9][0-9]{0,18})$/u.test(expires)||BigInt(expires)>9223372036854775807n||v.sse_endpoint!==(v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null)
+    ||(v.realtime_sse_enabled?(revision===null||!/^[a-f0-9]{64}$/u.test(revision)):(revision!==null||v.realtime_sse_available)))throw new ApiError(502,'INVALID_RESPONSE');
+  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled,
+    realtime_sse_enabled:v.realtime_sse_enabled,realtime_sse_available:v.realtime_sse_available,sse_endpoint:v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null,polling_interval_ms:interval,expires_epoch_ms:expires,authorization_revision:revision};
+}
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext {
   const v=object(value),actions=strings(v.allowed_actions),ticket=id(v.id);
@@ -64,13 +78,18 @@ async function rejectAuthorization(response:Response):Promise<never>{
   throw new ApiError(response.status,code);
 }
 async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):Promise<T> {
+  const epoch=authorizationEpoch;
+  try{
   const response=await fetch(path,{signal,credentials:'same-origin',redirect:'error',headers:{accept:'application/json'},cache:'no-store'});
+  requireCurrentRead(epoch,signal);
   // A credible HTTP authorization rejection fences cached authority even if its error body cannot be decoded.
   if([401,403,404].includes(response.status))return rejectAuthorization(response);
   if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
   const value:unknown=await response.json();
+  requireCurrentRead(epoch,signal);
   if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}
   return decode(value);
+  }catch(error){requireCurrentRead(epoch,signal);throw error;}
 }
 function decodeCycle(value:unknown):P2016HandlingCycle {const v=object(value);return {id:id(v.id),cycle_no:version(v.cycle_no),first_responsibility_event_id:v.first_responsibility_event_id===null?null:id(v.first_responsibility_event_id)};}
 function decodeTicketReceipt(v:Record<string,unknown>,ticketId:string):P2016InternalNoteResult {return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed as boolean};}

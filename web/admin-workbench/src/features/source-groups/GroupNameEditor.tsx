@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {SourceGroupDisplay,SourceGroupNameCommand} from '../../../../../contracts/web01_workbench_contracts';
 import {clearSourceGroupAuthorization} from './authority';
@@ -27,6 +27,7 @@ export function GroupNameEditor({group,principal,onSaved,onDenied,onBlockedChang
   useEffect(()=>()=>{request.current?.abort();},[]);
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
   const send=(command:SourceGroupNameCommand,checking:boolean)=>{
+    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，新名称尚未发送；输入和版本已保留，请重新读取。');return;}
     if(request.current)return;const controller=new AbortController();request.current=controller;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在保存群名称…');mutation.mutate({command,signal:controller.signal});
   };
   const adopt=async()=>{

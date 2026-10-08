@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
 import {useNoteDraft} from '../drafts/use-note-draft';
 
@@ -35,6 +35,7 @@ export function TicketNotes({ticketId,principal,onBlockedChange}:{ticketId:strin
     },onSettled:()=>{request.current=null;},
   });
   const send=async(command:P2016InternalNoteCommand,checking:boolean)=>{
+    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，新操作尚未准备或发送；输入已保留，请重新读取。');return;}
     if(request.current)return;
     const controller=new AbortController();request.current=controller;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在保存内部备注…');
     try{await draft.prepare(command);}catch{request.current=null;if(checking){setPending(command);setState('unknown');setMessage('原操作仍未知；恢复存储不可用，已保留原命令，尚未再次发送。');}else{setPending(null);setState('denied');setMessage('恢复副本未保存，原操作尚未发送。请保留输入并恢复浏览器存储后再试。');}return;}
@@ -46,9 +47,11 @@ export function TicketNotes({ticketId,principal,onBlockedChange}:{ticketId:strin
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const checkReceipt=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({commandId:draft.operationId,signal:controller.signal});};
   if(context.isPending)return <p role="status">正在读取工单动作与版本…</p>;
-  if(context.isError)return <section className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><button type="button" onClick={()=>{void context.refetch();}}>重新读取工单动作</button></section>;
+  if(context.isError&&!context.data)return <section className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><button type="button" onClick={()=>{void context.refetch();}}>重新读取工单动作</button></section>;
+  if(!context.data)return <p role="status">正在重新核验工单动作…</p>;
   const allowed=context.data.allowed_actions.includes('add-note');
   return <section className="ticket-notes" aria-label="工单操作">
+    {context.isError?<p role="status">动作读取失败；最近确认资料和输入已保留，请重新读取后提交新的操作。</p>:null}
     <p className="ticket-command-version">工单版本 {context.data.version}</p>
     <p className="ticket-allowed-actions">当前获权动作：{context.data.allowed_actions.map(action=>actionNames[action]??action).join('、')||'无'}</p>
     {allowed||pending||draft.operationId?<form onSubmit={event=>{event.preventDefault();if(!allowed||blocked||!draft.canSubmit||!note.trim()||note.length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:note.trim(),external_visible:false}),false);}}>
