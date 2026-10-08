@@ -14,6 +14,9 @@ import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030,assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
+import {createChannelMessageInbox} from '../src/p1-003-channel-message-inbox.mjs';
+import {createServiceIntakeProcessor} from '../src/p1-004-service-intake.mjs';
+import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 test('P2-016 review resolution and Safe Action commit or roll back together',async()=>{
   assert.ok(databaseUrl,'database required');
@@ -62,4 +65,35 @@ test('P2-016 review resolution and Safe Action commit or roll back together',asy
     assert.equal((await pool.query('SELECT result_code FROM intake.deterministic_decision WHERE id=$1::uuid',[cancelled.resolution_decision_id])).rows[0].result_code,'MANUAL_REVIEW_REQUIRED');
   }});
   await assertNoP2016Residual({databaseUrl});
+});
+
+test('T14 genuine Bot supplement invalidates the original Review without changing its row version',async()=>{
+  await withP2016IsolatedDatabase({databaseUrl,purpose:'t14basis',run:async context=>{
+    const {pool}=context;await applyThrough030(context);await migrateP2016({databaseUrl:context.databaseUrl});
+    const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'t14-synthetic-reviewer',displayName:'复核员',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+    const authContext={principal_id:principal.id},store=createManualReviewStore(),decisions=createDecisionStore();
+    const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey:'t14-only-synthetic-identity-key',decisionStore:decisions,
+      safeActionExecutor:createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,
+        ticketCommandPort:createExistingTicketCommandPort({ticketCore:createPilotTicketCore({pool})})}),
+      ruleEngine:{catalog_version:'TEST',rule_set_version:'TEST',evaluate(){throw new Error('synthetic');}}});
+    const input=await seedPersistedIntake({pool,text:'原始不确定材料'});
+    await orchestrator.processPersistedIntake({service_intake_id:input.intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
+    const facade=createP2016ManualReviewFacade({pool,enabled:true}),review=(await facade.listManualReviews({authContext})).items[0];
+    const original=await facade.getManualReviewDetail({authContext,reviewId:review.id});
+    const source=(await pool.query('SELECT source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[input.intakeId])).rows[0];
+    const epoch=(await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch,msgId='t14-'+randomUUID();
+    const message={schema_version:1,provider:'WECOM_AIBOT',idempotency_key:'WECOM_AIBOT:'+msgId,msg_id:msgId,req_id:msgId,bot_id:'bot-test',chat_type:'group',chat_id:source.source_chat_id,
+      sender_user_id:'user-test',msg_type:'text',provider_create_epoch_ms:null,create_time:null,received_epoch_ms:epoch,received_at:formatEpochMsToShanghaiLocal(epoch),
+      content:[{kind:'text',text:{raw:'补充：实际是咨询，不是故障',clean:'补充：实际是咨询，不是故障'}}],quote:null};
+    const appended=await createChannelMessageInbox({pool}).accept({message,traceId:'t14-synthetic',privacyClass:'INTERNAL',retentionUntil:input.retentionUntil},createServiceIntakeProcessor());
+    assert.equal(appended.ok,true);assert.equal(appended.result.intake.id,input.intakeId);assert.equal(appended.result.message.sequence_no,2);
+    const current=await facade.getManualReviewDetail({authContext,reviewId:review.id});assert.equal(current.row_version,original.row_version);assert.deepEqual(current.safe_result,original.safe_result);
+    const outcome=await facade.resolveManualReview({authContext,reviewId:review.id,body:{client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'HUMAN_CONFIRMED'}});
+    assert.equal(outcome.ok,false);assert.equal(outcome.error.code,'P2_016_VERSION_CONFLICT');
+    assert.equal((await facade.getManualReviewDetail({authContext,reviewId:review.id})).status,'PENDING');
+    const facts=(await pool.query(`SELECT (SELECT count(*)::integer FROM pilot_ticket.ticket) AS tickets,
+      (SELECT count(*)::integer FROM intake.deterministic_decision WHERE status='HUMAN_OVERRIDDEN') AS decisions,
+      (SELECT count(*)::integer FROM communication.outbox) AS outbox`)).rows[0];
+    assert.deepEqual(facts,{tickets:0,decisions:0,outbox:0});
+  }});await assertNoP2016Residual({databaseUrl});
 });
