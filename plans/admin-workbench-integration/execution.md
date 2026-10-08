@@ -13,7 +13,22 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-08，T03收口与新frontier领取）
+## 当前执行状态导航（2026-10-08，T11整票集成与收口）
+
+父任务已核对并关闭7／43票：T01／T02／T03／T04／T11／T16／T23。以下记录实际交付及被测对象，不表示整包验收或发布；此前日期导航保留为历史快照。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T11 / #66 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66#issuecomment-6051952458)及[七项验收、合同与原报告](execution/t11.md)已核对，来源WBINT-03／A03仅工作人员完工部分完成 |
+| T11本地集成与被测对象 | `cf1e4ecf4b77f93650a09798ac27ed1f1917130b`安全快进合入；真实干净被测祖先`a23877dca871a7cf86722b6482c055c2086ed6e4`的strict／一次build／artifact、NoPG44、真实HTTP8、正式production三入口13、适用hosts18和retired1均通过；各组独立记录，不称全量回归 |
+| T11证据与资源 | 后继仅本票Markdown，完整923编译inputs相等，原SHA／manifest不重绑；1058原文件逐字节／SHA-256外部归档并由父独立全量核对，managed worktree已归档。HTTP／browser／池／随机库均清理，父逐段PG残留0／0；原RED、仪器失败与中断报告保留 |
+| T05／T14／T22／T27／T38 | 继续独立实施；按实际新root交叠合并，PG／HTTP／browser验证串行。片段PASS不标整票完成 |
+| T24 / #79 | 原生blocker #66已CLOSED；父实读完整正文、空评论、ready标签与原无assignee后领取给peterkis，准备独立worktree，仅实施Bot单聊来源每轮节点可靠通知。T25／T26未开始，通知承诺不表示已外发 |
+| 来源工作包与后续票 | WBINT-03仍IN_PROGRESS，T12／T13及A03整组未验收；WBINT-08仅T24进入实施准备，T20未领取，全部后续票按GitHub当前原生依赖启动 |
+
+新增能力默认false；未push、部署、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。根目录用户未提交AGENTS／UI文档及四附件字节、status／index、HTTPS和分支均保留。
+
+## 历史执行状态导航（2026-10-08，T03收口与新frontier领取）
 
 父任务已核对并关闭6／43票：T01／#56、T02／#57、T03／#58、T04／#59、T16／#71、T23／#78。下方导航保留历史快照，不改写实际被测对象。
 
@@ -23,7 +38,8 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 | T03本地集成与被测对象 | `09c6ca4e8fb25d3a68202b641c23527d18314a39`已安全快进合入；实际被测干净祖先`0ca2fd3219dac6efbc7e5dfdae4aa5b1dfddf234`的strict／artifact、同制品业务92／92和工具32／32通过，29张真实PNG。文档后继仅3个Markdown，910项完整inputs不变；不重绑旧制品身份 |
 | T03资源与归档 | 自有PG／HTTP／browser／工具清理通过，父任务逐段残留0／0；原runtime987文件逐字节／SHA-256归档，managed worktree已归档，原FAIL保留 |
 | T05 / #60 | IMPLEMENTING；真实HTTP已证明本人承接与已分配沟通的最小原子链，其他风险及最终整合仍待完成，不标整票PASS |
-| T11／#66、T14／#69、T22／#77、T27／#82 | 父任务实时读取全文／空评论／无原assignee及原生blockers，#58与所需#59均CLOSED；四票已领取给peterkis，准备从当前integration创建独立worktree，分别负责工作人员完工、人工复核、会话工作区与公共故障候选 |
+| T11／#66、T14／#69、T22／#77、T27／#82 | 父任务实时核对全文／评论／assignee及原生blockers后领取；四票在独立worktree实施工作人员完工、人工复核、会话工作区与公共故障候选。已通过的验证片段不代表整票验收 |
+| T38 / #93 | 原生blocker #58已CLOSED；实时核对全文、空评论、ready标签和无原assignee后领取给peterkis。独立managed worktree以`2676763d63eddcd8763ae83f5fbd795bc8b50edd`为干净基线，仅实施授权SSE失效／重读与断线恢复；仍IMPLEMENTING，T39／T40未启动 |
 | 来源工作包 | 仅核实上述已完成票；各后续表单和工作包验收仍按实际证据，最终由T43汇总，不以6票关闭推导完整工作台就绪 |
 
 本轮继续单一集成分支与串行PG／HTTP／browser验证；新开关默认false。未push、部署、真实外部服务／发送、full／certify或Gate推进。

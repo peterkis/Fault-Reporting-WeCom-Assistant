@@ -13,7 +13,7 @@ native_blocking_edges: 76
 
 43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`；发布时快照全部开放且未领取，业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文保留发布快照；执行前重新读取正文、评论、领取人和依赖。
 
-2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。首次T01核查时43票均OPEN、76边与发布记录一致；该发布快照保留在机器可读记录中。2026-10-08父任务实时核对后，T01／T02／T03／T04／T16／T23已集成并在GitHub关闭，共6／43票。以下勾选仅表示已核实的Issue关闭状态，不表示发布、部署或整个工作包验收；其他票仍以执行前的GitHub状态为准。
+2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。首次T01核查时43票均OPEN、76边与发布记录一致；该发布快照保留在机器可读记录中。2026-10-08父任务实时核对后，T01／T02／T03／T04／T11／T16／T23已集成并在GitHub关闭，共7／43票。以下勾选仅表示已核实的Issue关闭状态，不表示发布、部署或整个工作包验收；其他票仍以执行前的GitHub状态为准。
 
 发布时frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。其实际完成和GitHub收口核验后，再从当前无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
 
@@ -72,9 +72,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **来源：** WBINT-02 / A02
 
-- [ ] **T11** — [#66 工作人员记录内外结果并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
+- [x] **T11** — [#66 工作人员记录内外结果并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **来源：** WBINT-03 / A03
+  - **本地执行：** [LOCAL_VERIFIED：七项验收、独立摘要、原子关闭与恢复承诺](execution/t11.md)已整票集成并[关票](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66#issuecomment-6051952458)，未发布／启用；T12／T13及A03整组另行验收。
 
 - [ ] **T12** — [#67 同事接管并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67)
   - **Blocked by:** [#62](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)、[#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
@@ -129,6 +130,7 @@ native_blocking_edges: 76
 - [ ] **T24** — [#79 按Bot来源可靠通知原报修人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-08 / A08
+  - **本地执行：** 父已实读GitHub当前正文／评论／依赖，#66已CLOSED，领取给peterkis；独立实施准备中，未验收／启用。
 
 - [ ] **T25** — [#80 通知H5与已核实代录报修人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80)
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)、[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)
