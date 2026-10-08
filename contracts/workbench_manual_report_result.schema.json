@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"workbench_manual_report_result.schema.json",
+  "type":"object","additionalProperties":false,
+  "required":["ok","client_command_id","intake_id","intake_no","source","reporter_verification","manual_contact_required","external_notification","result_code","ticket","review","replayed"],
+  "properties":{
+    "ok":{"const":true},"client_command_id":{"type":"string","format":"uuid"},"intake_id":{"type":"string","format":"uuid"},"intake_no":{"type":"string","pattern":"^INT-[0-9]{8}-[0-9]{4,}$"},
+    "source":{"enum":["PHONE","ON_SITE"]},"reporter_verification":{"const":"UNVERIFIED"},"manual_contact_required":{"const":true},"external_notification":{"const":false},"replayed":{"type":"boolean"},
+    "result_code":{"enum":["TICKET_ELIGIBLE","NEEDS_DESCRIPTION","MANUAL_REVIEW_REQUIRED","RELATED_FOLLOW_UP","STATUS_QUERY","SERVICE_REQUEST","BUSINESS_CONSULTATION","ACKNOWLEDGEMENT","OUT_OF_SCOPE","INCIDENT_REVIEW_CANDIDATE"]},
+    "ticket":{"anyOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["id","number","status"],"properties":{"id":{"type":"string","format":"uuid"},"number":{"type":"string","pattern":"^IT-[0-9]{8}-[0-9]{4,}$"},"status":{"enum":["NEW","QUEUED","ACCEPTED","IN_PROGRESS","WAITING_REQUESTER","WAITING_VENDOR","RESOLVED","CLOSED","REOPENED","CANCELLED","DUPLICATE_LINKED"]}}}]},
+    "review":{"anyOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["id","status"],"properties":{"id":{"type":"string","format":"uuid"},"status":{"const":"PENDING"}}}]}
+  }
+}

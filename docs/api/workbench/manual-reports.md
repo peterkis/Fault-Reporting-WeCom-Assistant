@@ -1,6 +1,6 @@
 # 电话／现场代录合同（WBINT-T17）
 
-返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入，当前实施准备中；下述路径在 handler 挂载前不称为已有接口。
+返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入。POST已在工作人员宿主挂载、默认关闭，尚待原HTTP GREEN；capabilities与只读receipt仍在本票后续实现中，不能称已有接口。
 
 宿主 W，内部工作人员会话。`workbenchManualReportsEnabled=false` 默认关闭；关闭时拒绝该用途并不访问042存储。启用后缺033/042 readiness 返回503。AI、外部目录、OAuth/Provider、Sender不参与受理。只有当前active ADMIN／DISPATCHER，或实际属于至少一个active处理组的HANDLER可以新代录；重复与回执每次重新核验同一当前权限。浏览器不能提供actor、WeCom identity、person binding、状态或处理人。成功受理不扩大该工作人员对新Ticket／Journey的既有读取范围。
 

@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_manual_report_contracts.d.ts",
+    "contracts/workbench_manual_report_command.schema.json",
+    "contracts/workbench_manual_report_result.schema.json",
+    "database/migrations/042_workbench_manual_reports.sql",
     "contracts/workbench_review_contracts.d.ts",
     "contracts/workbench_review_material_basis.schema.json",
     "contracts/workbench_review_receipt.schema.json",

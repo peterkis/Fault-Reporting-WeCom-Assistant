@@ -1,0 +1,6 @@
+import type {P2015ResultCode} from './p2_015_contracts.js';
+import type {TicketStatus} from '../src/p1-005-pilot-ticket-core.mjs';
+export interface ManualReporterSnapshot {readonly verification:'UNVERIFIED';readonly name:string;readonly contact:string;readonly department:string|null}
+export interface ManualReportCommand {readonly schema_version:1;readonly client_command_id:string;readonly source:'PHONE'|'ON_SITE';readonly description:string;readonly location:{readonly text:string|null;readonly unknown:boolean};readonly reporter:ManualReporterSnapshot}
+export interface ManualReportResult {readonly ok:true;readonly client_command_id:string;readonly intake_id:string;readonly intake_no:string;readonly source:ManualReportCommand['source'];readonly reporter_verification:'UNVERIFIED';readonly manual_contact_required:true;readonly external_notification:false;readonly result_code:P2015ResultCode;readonly ticket:{readonly id:string;readonly number:string;readonly status:TicketStatus}|null;readonly review:{readonly id:string;readonly status:'PENDING'}|null;readonly replayed:boolean}
+export type ManualReportReceipt={readonly client_command_id:string}&({readonly state:'UNKNOWN'}|{readonly state:'FAILED';readonly error:{readonly code:string;readonly retryable:false}}|{readonly state:'COMMITTED';readonly result:ManualReportResult&{readonly replayed:true}});
