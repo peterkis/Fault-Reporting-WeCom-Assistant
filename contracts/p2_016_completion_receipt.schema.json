@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "p2_016_completion_receipt.schema.json",
+  "$id": "https://hospital.local/contracts/p2_016_completion_receipt.schema.json",
   "title": "P2-016 authorized staff completion receipt lookup",
   "type": "object",
   "additionalProperties": false,

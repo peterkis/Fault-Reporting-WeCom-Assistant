@@ -1,4 +1,5 @@
 {
+  "$id": "https://hospital.local/contracts/p2_016_completion_command.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Current handler staff completion command",
   "type": "object",

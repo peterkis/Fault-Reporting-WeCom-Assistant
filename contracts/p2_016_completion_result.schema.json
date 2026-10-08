@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "p2_016_completion_result.schema.json",
+  "$id": "https://hospital.local/contracts/p2_016_completion_result.schema.json",
   "title": "P2-016 safe staff completion command result",
   "type": "object",
   "additionalProperties": false,
