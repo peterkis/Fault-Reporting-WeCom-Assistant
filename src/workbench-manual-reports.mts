@@ -78,7 +78,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,realtimeP
       VALUES($1::uuid,1,'MANUAL_REPORT',$2::uuid,$3,$4,$5,'OPEN',$6::timestamp without time zone) RETURNING id::text`,[journey.id,intake.id,safeHash({source:'STAFF_MANUAL_REPORT'}),safeHash({source:command.source,intake_id:intake.id}),contactScope,stamp.local])).rows[0];if(!leg)failP2016('ACTION_FAILED',503);
     const context={service_intake_id:intake.id,journey_ref:journey.id,safe_normalized_text:command.description,input_hash:safeHash(snapshot),source_refs:[trace],message_sequence_window:{start:1,end:1,count:1},delivery_mode:'APP_ONLY'};
     let route:SafeRoute;
-    try{route=routeP2007Decision(createRuleEngine().evaluate({text:command.description,source_ref:trace,source_kind:'USER_TEXT',observed_at:stamp.local,occurrence_location:command.location.text}),context);}catch{route=routeRuleFailure(context);}
+    try{route=routeP2007Decision({rule_output:createRuleEngine().evaluate({text:command.description,source_ref:trace,source_kind:'USER_TEXT',observed_at:stamp.local,occurrence_location:command.location.text}),context});}catch{route=routeRuleFailure(context);}
     const decision=await decisions.record({transaction:tx,input:{...route,journey_id:journey.id,channel_leg_id:leg.id,service_intake_id:intake.id,source_kind:'MANUAL',
       source_window_start_sequence:1,source_window_end_sequence:1,source_message_count:1,source_hash:safeHash(snapshot),safe_result:route,requires_manual_review:route.manual_review_required,
       ticket_creation_recommended:route.ticket_creation_recommended,incident_review_candidate:route.incident_review_candidate,observed_at:stamp.local as LocalDateTime}});
