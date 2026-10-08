@@ -92,7 +92,9 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
     catch(error){if((error as {code?:unknown}).code==='P2_015_AUTHORIZATION_DENIED')failP2016('NOT_FOUND',404);throw error;}
   }
   async function canonicalItem(input:DetailInput):Promise<CanonicalItem>{
-    const transaction=input.transaction??pool,{review,principal}=await detail(input),predicate=ticketPredicateP2016(principal,2);
+    const transaction=input.transaction??pool,context=await detail(input);
+    await materialFor(context,transaction);
+    const {review,principal}=context,predicate=ticketPredicateP2016(principal,2);
     const ticket=await transaction.query<{id:string}>(`SELECT t.id::text FROM pilot_ticket.ticket t
       JOIN intake.manual_review_item r ON r.id=$1::uuid JOIN intake.contact_journey j ON j.id=r.journey_id
       WHERE (t.source_intake_id=r.service_intake_id OR t.id=r.linked_ticket_id OR t.id=j.linked_ticket_id)
