@@ -151,3 +151,32 @@ NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先�
 常见码：`P2_016_FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED/TARGET_INVALID/CONTROL_CONFLICT/DELIVERY_STATE_CONFLICT`，以及主宿主 WORKBENCH 错误。详情刷新不能等于命令成功。
 
 核对测试：[HTTP integration](../../../tests/p2-016-workbench-http.integration.test.mjs)、[auth integration](../../../tests/p2-016-workbench-auth.integration.test.mjs)、[T04](../../../tests/t04-self-handling.integration.test.mjs)。背景：[生命周期与双责任](../../59_p2_016_ticket_lifecycle_and_responsibility.md)。本票仅显式增加039轮次结构；生产权限未改变。
+
+## 工作人员完工（WBINT-T11）
+
+W 的 `POST /api/tickets/{ticketId}/complete` 使用宿主 `ticketStaffCompletionEnabled:boolean=false`。启用前显式安装039与前向040；关闭时隐藏并拒绝新完工入口，不读取040的新字段或承诺表，旧 resolve/confirm 和旧 Pilot profile 保留。缺少任一迁移时 readiness 与新命令返回503，不插入命令receipt。[输入 Schema](../../../contracts/p2_016_completion_command.schema.json)、[安全结果 Schema](../../../contracts/p2_016_completion_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[本票执行](../../../plans/admin-workbench-integration/execution/t11.md)。
+
+沿 W 同源认证、Origin/CSRF、Idempotency-Key=client_command_id、If-Match=数字版本与32KiB上限。闭合body仅含以下七字段；拒绝 actor、target、action、ticket_id、来源、接收人、legacy note 或任何额外字段。
+
+| 字段 | 约束 |
+| --- | --- |
+| client_command_id、handling_cycle_id | UUID，分别为本次原命令与当前处理轮次 |
+| expected_version | 数字整数1..2147483647，不能传十进制字符串 |
+| reason_code | 固定 STAFF_COMPLETED |
+| internal_process | 独立必填字符串，trim非空，原长度≤2000，工作人员内部可见 |
+| external_summary | 另行填写的可公开字符串，trim非空，原长度≤500；不会从内部过程复制 |
+| external_summary_confirmed | 必须显式 true；编辑外部摘要后重新确认 |
+
+服务器在行锁后重新核对活动主体、ADMIN/DISPATCHER/HANDLER、活动当前组与实际成员，且固定为当前 assignee；ADMIN/BROAD可见性不能绕过责任。body轮次须为Ticket真实当前轮次，具有首次责任event且未结束。IN_PROGRESS通过明确 Core complete Action关闭；WAITING_REQUESTER/VENDOR在同事务合法resume→complete并保留两事件。ACCEPTED、REOPENED、无轮次历史状态、legacy RESOLVED及所有终态拒绝。另一个同事需使用独立T12，不提供隐式接管。
+
+同一 command ledger 事务追加实际 PILOT_USER、业务时间与 STAFF_COMPLETED 的ticket.closed，分别保存internal_note/external_note，关联同Ticket/同cycle事件、唯一工作人员结束event、引用原source的持久通知承诺、安全实时投影与COMMITTEDreceipt。六处写入任一失败回滚全部业务事实与等待态resume，仅保留FAILED审计；同UUID/原hash重放不重新执行，改正文/版本/轮次拒绝。完工启用profile的既有Facade与新service均在receipt外键锁之前取得同一实时流mutex，再获权；旧false profile保持原顺序。
+
+200结果仅 `ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,replayed:boolean,completion:{cycle_id,cycle_no,event_id,basis:'STAFF_COMPLETED'}`，无处理正文、目标或身份。401/403/404清可信授权范围；409保持独立输入，GET读当前事实后由用户明确新操作；网络、畸形响应或未核定终态保持UNKNOWN，不创建新UUID、不自动重发。
+
+`GET /api/tickets/{ticketId}/completion/commands/{commandId}` 是只读核对；依赖实际完工能力及raw `workbenchDraftRecoveryEnabled=true`，并验证当前读权限、原principal/Ticket/UUID和服务器设置的WORKBENCH_STAFF_COMPLETION用途。空query才合法。闭合 [receipt Schema](../../../contracts/p2_016_completion_receipt.schema.json) 为UNKNOWN、COMMITTED+以上安全replayed:true结果，或FAILED+code/retryable:false。未知、他人的命令、错误Ticket、其它用途均不泄漏原receipt；UNKNOWN不证明未提交。失去complete写权限但保留读权限时，只能查原标识。
+
+bootstrap的 `staff_completion_draft_recovery_enabled` 为实际完工能力AND raw recovery，独立于Notes限定的旧 `draft_recovery_enabled`；Notes关闭仍可恢复完工。purpose=staff-completion，敏感 `{value:{process,summary,confirmed},pending:原七字段命令或null}` 复用T03的非导出AES-GCM、固定24h、scope/AAD、上限与generation fence；不另建存储协议。刷新先核实当前主体、能力和准确Ticket写资格，普通恢复摘要要求再次确认。丢弃/过期/写资格丧失清敏感副本并保留未知原opaque标识；核定COMMITTED/FAILED才清匹配标识。可信失权清scope及跨tab缓存，但不伪判旧命令FAILED。raw recovery关闭不访问恢复存储或receipt，只在本页保留不可变UNKNOWN命令供显式原POST核对。
+
+040的append-only通知承诺仅引用同Ticket/同cycle/真实结束event/原source，没有正文、owner、第二状态或Delivery。进程内 `readCommittedStaffCompletions({afterCycleId?:UUID|null,limit?:1..100})` 默认20，返回 `{items:[{cycle_id,cycle_no,node:'STAFF_COMPLETED',ticket_id,ticket_event_id,source_intake_id,external_summary,occurred_at}],next_cursor}`；安全摘要读取权威event。UUID cursor仅一次完整扫描的分页，不是永久增量checkpoint：旧cycle可能后来完工，恢复消费须重扫并以稳定cycle/node/event幂等。T24负责路由、模板、去重及Outbox/Delivery生成，此Port没有HTTP/发送入口。Reporter/H5本人安全投影只展示此明确完工事件的external_note，普通内部备注/处理过程不外发。
+
+表单in-flight1，复用原事务、pool≤4、总池建议≤8，App/API/SSE1、Worker1、Gateway单活、SSE32，无新轮询/常驻进程。关闭能力拒绝新命令并保留已提交事实；独立forward/revert不删除receipt、cycle/end/event或承诺。真实外部依赖、发送、部署、full/certify与Gate仍须独立授权。

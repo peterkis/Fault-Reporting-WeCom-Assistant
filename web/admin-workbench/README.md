@@ -57,3 +57,9 @@ UNKNOWN持久化不可变原UUID／版本／正文后，刷新／误关可恢复
 `npm --prefix web/admin-workbench run dev` 仅绑定 loopback 5194，代理 `/api` 至 loopback 5195；开发者须单独启动已有、获授权的开发 HTTP 服务。生产截图和接入验证不使用 Vite dev/preview。
 
 正式入口沿现有 Workbench 功能开关与认证链启用；默认开关保持关闭。撤销会话/停用内部 principal 后页面和 API 均拒绝读取。回滚以独立 revert/后继 PR 撤销 WEB01 接入；本轮没有数据库迁移或待回滚的新事实表。不得恢复现场档案作为演示数据。
+
+## 后继工作人员完工（WBINT-T11，默认关闭）
+
+正式600px Ticket详情通过宿主 `ticketStaffCompletionEnabled=false` 装配独立表单；启用须039/040。当前实际处理人填写内部过程和另行确认的安全摘要，编辑摘要重新确认，一条complete POST后GET读取当前版本/状态/轮次。ADMIN/BROAD可见性不能越过当前责任，无Reporter确认、接管、browser命令链或直接发送。
+
+purpose=staff-completion复用T03公共加密store和共享useAuthorizedDraft，独立adapter冻结七字段原命令。bootstrap `staff_completion_draft_recovery_enabled=实际completion能力&&rawRecovery`，Notes限定旧field保持原AND，Notes关闭也可独立恢复本表单；Shell跨tab清理监听任一实际purpose recovery或logout。普通恢复需重新确认摘要；UNKNOWN保持原UUID/body/version/cycle不自动POST；fresh CLOSED无写资格时清敏感内容，保留opaque原标识仅只读receipt。可信失权与晚结果generation fence清缓存/copy，不判旧命令失败。raw recovery关闭无IDB/receipt访问，内存UNKNOWN仍只显式原POST核对。[API/关闭与资源](../../docs/api/workbench/tickets.md#工作人员完工wbint-t11)／[本票实际证据](../../plans/admin-workbench-integration/execution/t11.md)。

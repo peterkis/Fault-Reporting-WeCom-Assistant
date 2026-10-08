@@ -121,7 +121,8 @@
           "take-and-start",
           "accept-for-later",
           "take-and-start-with-conversations",
-          "accept-for-later-with-conversations"
+          "accept-for-later-with-conversations",
+          "complete"
         ]
       }
     },
@@ -154,6 +155,19 @@
               "maximum": 2147483647
             },
             "first_responsibility_event_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 36,
+                  "maxLength": 36,
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "staff_completion_event_id": {
               "anyOf": [
                 {
                   "type": "string",

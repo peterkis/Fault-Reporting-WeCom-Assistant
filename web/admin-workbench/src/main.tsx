@@ -22,7 +22,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   }
 }}),mutationCache:new MutationCache({onError(error,_variables,_context,mutation){
   if(error instanceof ApiError&&error.status===401)return clearSessionAuthorization(client,sessionPrincipal(),401,'revoked');
-  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling'].includes(String(mutation.options.mutationKey[0])))return clearItemAuthorization(client,mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
+  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling','ticket-completion'].includes(String(mutation.options.mutationKey[0])))return clearItemAuthorization(client,mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
   else if(attachmentParentDenied(error)&&mutation.options.mutationKey?.[0]==='attachment-download')return clearItemAuthorization(client,mutation.options.mutationKey[1],mutation.options.mutationKey[2],mutation.options.mutationKey[3],error);
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='source-group-name')return clearSourceGroupAuthorization(client,mutation.options.mutationKey[1],error);
 }}),defaultOptions:{queries:{networkMode:'always',retry:false,staleTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false},mutations:{networkMode:'always',retry:false}}});

@@ -4,7 +4,7 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean }
+interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
@@ -14,6 +14,7 @@ import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
 import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
 
+import {staffCompletionEligibility} from './workbench-ticket-completion.mjs';
 import {selfHandlingEligibility,selfHandlingResponsibilityEligibility,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 
 export interface RelatedConversationRow {session_id:string;session_row_version:string;status:string;conversation_principal_id:string|null;conversation_principal_name:string|null;assignment_status:string|null}
@@ -39,7 +40,7 @@ export function ticketPredicateP2016(principal: WorkbenchPrincipal,start=1) {
 }
 export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null },action: string) {
   if(!principal?.is_active)return false;
-  if(action==='auto-close')return false;
+  if(action==='auto-close'||action==='complete')return false;
   if(BROAD(principal))return true;
   if(!principal.roles.includes('HANDLER')||!principal.team_ids.includes(ticket.resolver_team_id))return false;
   if(action==='accept')return true;
@@ -74,7 +75,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false}: QueryOptions) {
   const conversationAuthorization=createPilotWorkbenchAuthorizationAdapter({pool});
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
@@ -106,10 +107,14 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     async detail(input: TicketQueryInput) {
       const {ticket,principal:p}=await authorizedTicket(input),report=await webReportForTicket(pool,ticket);
       const view=ticketViewP2016(ticket,p,report?{web_report:report}:{});
-      if(!ticketSelfHandlingEnabled&&!ticketConversationSelfHandlingEnabled)return view;
-      const eligibility=await (ticketSelfHandlingEnabled?selfHandlingEligibility:selfHandlingResponsibilityEligibility)(pool,p,ticket);
-      const combined=ticketConversationSelfHandlingEnabled?await selfHandlingResponsibilityEligibility(pool,p,ticket):null;
-      return publicP2016({...view,handling_cycle:eligibility.cycle,allowed_actions:[...view.allowed_actions,...(ticketSelfHandlingEnabled?eligibility.actions:[]),...(combined?.actions.map(a=>a+'-with-conversations')??[])]});
+      let result=view;
+      if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled){
+        const eligibility=await (ticketSelfHandlingEnabled?selfHandlingEligibility:selfHandlingResponsibilityEligibility)(pool,p,ticket);
+        const combined=ticketConversationSelfHandlingEnabled?await selfHandlingResponsibilityEligibility(pool,p,ticket):null;
+        result=publicP2016({...result,handling_cycle:eligibility.cycle,allowed_actions:[...result.allowed_actions,...(ticketSelfHandlingEnabled?eligibility.actions:[]),...(combined?.actions.map(a=>a+'-with-conversations')??[])]});
+      }
+      if(ticketStaffCompletionEnabled){const eligibility=await staffCompletionEligibility(pool,p,ticket),cycle=eligibility.cycle;result=publicP2016({...result,handling_cycle:cycle?{id:cycle.id,cycle_no:cycle.cycle_no,first_responsibility_event_id:cycle.first_responsibility_event_id,staff_completion_event_id:cycle.staff_completion_event_id}:null,allowed_actions:[...result.allowed_actions,...(eligibility.allowed?['complete']:[])]});}
+      return result;
     },
     async reporterContact(input: TicketQueryInput) {
       const {ticket}=await authorizedTicket(input);

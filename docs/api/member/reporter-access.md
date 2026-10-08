@@ -43,3 +43,6 @@ ETag 命中304无正文；不能当空Ticket重置页面。权限、绑定、有
 完整定义：[member types](../../../contracts/yixiaoxiu_contracts.d.ts)、[prepare schema](../../../contracts/yixiaoxiu_legacy_prepare.schema.json)、[prepared schema](../../../contracts/yixiaoxiu_legacy_prepared.schema.json)、[reporter view](../../../contracts/p2_016_reporter_ticket_view.schema.json)、[timeline](../../../contracts/p2_016_reporter_timeline.schema.json)。Grant/session schema是内部持久化信息，不是公开响应。
 
 核对：[成员profile](../../../tests/p2-g2-yixiaoxiu-profile.integration.test.mjs)、[OAuth归属](../../../tests/p2-g2-yixiaoxiu-oauth.test.mjs)、[旧surface](../../../tests/p2-016-reporter-surface.integration.test.mjs)、[Incident reporter](../../../tests/p2-012-reporter-http.integration.test.mjs)。成员Reporter无SSE，既有客户端5秒只读轮询。本轮未启用任何访问策略或现场外发。
+
+
+WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF_COMPLETED的ticket.closed追加事件为依据。本人/绑定授权timeline仅展示其已单独确认且≤500字的external_note；internal_note处理过程和普通内部备注仍不可见。不会伪造REPORTER或REQUESTER_CONFIRMED，不生成旧Reporter确认task；legacy RESOLVED-confirm保持原语义。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
