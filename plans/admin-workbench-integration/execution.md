@@ -24,6 +24,7 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 | T14工具与对象差异 | 真祖先`d66720e52de6081701fc4c146a51d94565f552ce`一次build／strict／artifact、hosts18、retired1及9项声明／资源映射通过；原947输入仅hosts源码一变，946原字节不变、1028运行输出全部映射／SHA相同；最终两Markdown后继完整947输入相等，原业务与工具身份分别保留 |
 | T14证据与资源 | 两对象ignored制品各1579文件均逐length／SHA-256外部归档并由父独立核对；原RED／FAIL／NOT_REACHED／afterartifact NOT_RUN保留。自有PG／HTTP／browser／池归零，用户资料与独立PG保持；managed工作树清理按实际归档状态记录 |
 | T17 / #72 | 实读完整正文、空评论、ready标签及无原assignee；原生blocker #69已CLOSED，领取给peterkis，基于当前integration实施电话／现场代录。实际报修人与操作主体分开，未核实身份不猜消息收件人；T18／T19未开始 |
+| T10 / #65 | 实读完整正文、空评论、ready标签及无原assignee；原生blockers #58／#59已CLOSED，领取给peterkis，基于当前integration独立准备等待、恢复和合法取消。当前仅合同与公开测试准备，尚未验收 |
 | T06／T22／T24／T27／T38 | 继续独立实施与按实际依赖集成；build及PG／HTTP／browser使用串行窗口，原分段结果保持真实对象，片段通过不标整票完成 |
 
 能力默认关闭；未push、部署、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。用户两份dirty文档、四附件、index、HTTPS和分支保持。
