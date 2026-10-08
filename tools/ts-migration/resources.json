@@ -2,6 +2,10 @@
   "schema_version": 1,
   "files": [
     "contracts/workbench_realtime_contracts.d.ts",
+    "contracts/p2_016_conversation_self_handling_command.schema.json",
+    "contracts/p2_016_related_conversation_page.schema.json",
+    "contracts/p2_016_conversation_handling_result.schema.json",
+    "contracts/p2_016_conversation_handling_ack.schema.json",
     "database/migrations/040_ticket_staff_completion.sql",
     "contracts/p2_016_completion_command.schema.json",
     "contracts/p2_016_completion_receipt.schema.json",

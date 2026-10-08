@@ -32,7 +32,7 @@ type AuthorizationName = 'authorizeRequestHandoff' | 'authorizeTakeover' | 'auth
 export type ControlAuthorization = Partial<Record<AuthorizationName, (context: ControlAuthorizationContext) => boolean | Promise<boolean>>> & { resolveTimelineAudience?: (context: ControlAuthorizationContext) => 'WORKBENCH' | 'RESTRICTED_ADMIN' | Promise<'WORKBENCH' | 'RESTRICTED_ADMIN'> };
 type RealtimeCommand = ReturnType<typeof mapControlRealtime>;
 export type ControlRealtimeAppender = (input: { transaction: PostgresTransaction; command: RealtimeCommand }) => unknown | Promise<unknown>;
-interface ControlOptions { pool?: PostgresPool; enabled?: boolean; authorize?: ControlAuthorization; realtimeAppender?: ControlRealtimeAppender; now?: () => Date; onInternalError?: ((error: unknown) => void) | null }
+interface ControlOptions { pool?: PostgresPool; enabled?: boolean; authorize?: ControlAuthorization; realtimeAppender?: ControlRealtimeAppender; now?: () => Date; onInternalError?: ((error: unknown) => void) | null;transactionStartHook?:((input:{transaction:PostgresTransaction})=>unknown|Promise<unknown>)|null }
 type ErrorObservation = { message?: unknown } | null | undefined;
 interface PilotPrincipalRow { id: string; is_active: boolean; roles: string[]; teams: string[] }
 interface PilotContext { actor: PilotPrincipalRow | null; target: PilotPrincipalRow | null; team: string | null }
@@ -206,7 +206,8 @@ export function createDenyAllConversationControlAuthorization(): ControlAuthoriz
   return Object.freeze({ authorizeRequestHandoff:deny,authorizeTakeover:deny,authorizeTransfer:deny,authorizeRelease:deny,authorizeCancel:deny,authorizeReadCursor:deny,authorizeGenerationInvalidation:deny,authorizeCommunication:deny });
 }
 
-export function createConversationControlService({ pool, enabled = false, authorize = createDenyAllConversationControlAuthorization(), realtimeAppender, now = () => new Date(), onInternalError = null }: ControlOptions = {}) {
+export function createConversationControlService({ pool, enabled = false, authorize = createDenyAllConversationControlAuthorization(), realtimeAppender, now = () => new Date(), onInternalError = null,transactionStartHook=null }: ControlOptions = {}) {
+  if(transactionStartHook!==null&&typeof transactionStartHook!=='function')throw new TypeError('Conversation transaction start hook is invalid.');
   if (!pool || typeof pool.connect !== 'function' || typeof enabled !== 'boolean' || typeof realtimeAppender !== 'function' || typeof now !== 'function' || (onInternalError !== null && typeof onInternalError !== 'function')) throw new TypeError('Conversation control service configuration is invalid.');
   const guarded: <T>(operation: () => Promise<T>) => Promise<T | ControlFailure> = async (operation) => { if (!enabled) return publicError(CONVERSATION_CONTROL_ERROR_CODES.disabled); try { return await operation(); } catch (error) { if (onInternalError) onInternalError(error); const codeValue = error instanceof ConversationControlError ? error.code : (error as ErrorObservation)?.message === CONVERSATION_CONTROL_ERROR_CODES.schemaDrift ? (error as { message: ControlErrorCode }).message : CONVERSATION_CONTROL_ERROR_CODES.storageFailed; return publicError(codeValue, codeValue === CONVERSATION_CONTROL_ERROR_CODES.storageFailed); } };
   const stamp = () => clockStamp(now);
@@ -214,6 +215,7 @@ export function createConversationControlService({ pool, enabled = false, author
     const run = async () => {
       const command = normalizeConversationControlCommand(input); const hash = computeConversationControlCommandHash(command);
       const inTransaction = async (tx: PostgresTransaction) => {
+        if(transactionStartHook!==null)await transactionStartHook({transaction:tx});
         const session = await lockSession(tx, command.session_id);
         const replay = await eventReplay(tx, command, hash); if (replay) return replay;
         if (command.command_type !== 'ADVANCE_READ_CURSOR') assertVersion(session, command.expected_row_version);
@@ -238,8 +240,9 @@ export function createConversationControlService({ pool, enabled = false, author
     return result({event,session:next,assignment:await currentAssignment(tx,command.session_id),handoff:(inserted.rows[0] as HandoffRow)});
   }); }
 
-  async function takeoverSession(input: ControlCommandFor<'TAKEOVER'>, transaction: PostgresTransaction | null = null) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
+  async function takeoverSession(input: ControlCommandFor<'TAKEOVER'>, transaction: PostgresTransaction | null = null, acceptAssigned=false) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
     const assignment = await currentAssignment(tx,command.session_id,true); if (assignment?.assignment_status==='ASSIGNED' && assignment.assigned_principal_id===command.target_principal_id) return result({session,assignment,handoff:await activeHandoff(tx,command.session_id,true),replayed:true,noOp:true});
+    if(acceptAssigned&&assignment?.assignment_status==='ASSIGNED')return transferCurrentAssignment({tx,command,hash,session,occurredAt},assignment);
     await authorizeCall(authorize,'authorizeTakeover',{transaction:tx,command,session,assignment}); if (assignment?.assignment_status==='ASSIGNED') fail(CONVERSATION_CONTROL_ERROR_CODES.alreadyAssigned);
     const handoff = await activeHandoff(tx,command.session_id,true); if (command.handoff_id && handoff?.id!==command.handoff_id) fail(CONVERSATION_CONTROL_ERROR_CODES.handoffNotFound);
     const nextAssignment = await tx.query<AssignmentViewRow>(`INSERT INTO conversation.assignment (session_id,assignment_status,assigned_principal_id,assigned_by_principal_id,assignment_version,assigned_at,released_at,updated_at) VALUES ($1::uuid,'ASSIGNED',$2::uuid,$3::uuid,1,$4::timestamp without time zone,NULL,$4::timestamp without time zone) ON CONFLICT (session_id) DO UPDATE SET assignment_status='ASSIGNED',assigned_principal_id=EXCLUDED.assigned_principal_id,assigned_by_principal_id=EXCLUDED.assigned_by_principal_id,assignment_version=conversation.assignment.assignment_version+1,assigned_at=EXCLUDED.assigned_at,released_at=NULL,updated_at=EXCLUDED.updated_at RETURNING assignment_status,assigned_principal_id::text,assignment_version::text,assigned_at,released_at`,[command.session_id,command.target_principal_id,command.actor_principal_id,occurredAt]);
@@ -251,12 +254,17 @@ export function createConversationControlService({ pool, enabled = false, author
     await appendRealtime(tx,events); return result({event,session:next,assignment:(nextAssignment.rows[0] as AssignmentViewRow),handoff:nextHandoff});
   }, transaction); }
 
-  async function transferAssignment(input: ControlCommandFor<'TRANSFER'>) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
-    const assignment=await currentAssignment(tx,command.session_id,true); if(!assignment||assignment.assignment_status!=='ASSIGNED') fail(CONVERSATION_CONTROL_ERROR_CODES.assignmentConflict); if(assignment.assigned_principal_id===command.target_principal_id) fail(CONVERSATION_CONTROL_ERROR_CODES.targetInvalid);
+  async function transferCurrentAssignment({tx,command,hash,session,occurredAt}:ExecutionContext,assignment:AssignmentRow){
     await authorizeCall(authorize,'authorizeTransfer',{transaction:tx,command,session,assignment});
     const updated=await tx.query<AssignmentViewRow>(`UPDATE conversation.assignment SET assigned_principal_id=$2::uuid,assigned_by_principal_id=$3::uuid,assignment_version=assignment_version+1,assigned_at=$4::timestamp without time zone,released_at=NULL,updated_at=$4::timestamp without time zone WHERE session_id=$1::uuid RETURNING assignment_status,assigned_principal_id::text,assignment_version::text,assigned_at,released_at`,[command.session_id,command.target_principal_id,command.actor_principal_id,occurredAt]);
     const next=await advanceSession(tx,command,occurredAt,{mode:'HUMAN'}); const event=await appendControlEvent(tx,command,hash,{event_type:'ASSIGNMENT_TRANSFERRED',old_assignment_status:'ASSIGNED',new_assignment_status:'ASSIGNED',old_control_mode:session.control_mode,new_control_mode:'HUMAN',generation_version_after:next.generation_version,session_row_version_after:next.row_version,occurred_at:occurredAt});
     await appendRealtime(tx,[mapControlRealtime('conversation.assigned','HANDOFF_EVENT',event.id,'ASSIGNMENT_TRANSFERRED','CONVERSATION_SESSION',command.session_id,next,{assignment_status:'ASSIGNED',assignment_version:Number((updated.rows[0] as AssignmentViewRow).assignment_version)},occurredAt)]); return result({event,session:next,assignment:(updated.rows[0] as AssignmentViewRow),handoff:await activeHandoff(tx,command.session_id)});
+  }
+  async function transferAssignment(input: ControlCommandFor<'TRANSFER'>) { return execute(input, async context => {
+    const assignment=await currentAssignment(context.tx,context.command.session_id,true);
+    if(!assignment||assignment.assignment_status!=='ASSIGNED')fail(CONVERSATION_CONTROL_ERROR_CODES.assignmentConflict);
+    if(assignment.assigned_principal_id===context.command.target_principal_id)fail(CONVERSATION_CONTROL_ERROR_CODES.targetInvalid);
+    return transferCurrentAssignment(context,assignment);
   }); }
 
   async function releaseAssignment(input: ControlCommandFor<'RELEASE'>) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
@@ -297,7 +305,13 @@ export function createConversationControlService({ pool, enabled = false, author
       || normalizeConversationControlCommand(command).command_type !== 'TAKEOVER') fail();
     return takeoverSession(command, transaction);
   }
-  return Object.freeze({requestHandoff,takeoverSession,takeoverSessionInTransaction,transferAssignment,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
+  async function takeResponsibilityInTransaction({transaction,command}:{transaction:PostgresTransaction;command:ControlCommandFor<'TAKEOVER'>}){
+    const normalized=normalizeConversationControlCommand(command);
+    if(!transaction||typeof transaction.query!=='function'||normalized.command_type!=='TAKEOVER'
+      ||normalized.actor_principal_id===null||normalized.actor_principal_id!==normalized.target_principal_id||normalized.force)fail();
+    return takeoverSession(command,transaction,true);
+  }
+  return Object.freeze({requestHandoff,takeoverSession,takeoverSessionInTransaction,takeResponsibilityInTransaction,transferAssignment,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
 }
 
 function mapControlRealtime(eventType: string,sourceType: string,sourceId: string,variant: string,aggregateType: string,aggregateId: string,session: SessionState,payload: Record<string, unknown>,occurredAt: string) {

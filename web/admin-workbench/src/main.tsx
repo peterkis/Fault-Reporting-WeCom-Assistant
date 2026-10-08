@@ -17,7 +17,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   else if(error instanceof ApiError&&error.status===403&&['session','board'].includes(String(query.queryKey[0])))void clearSessionAuthorization(client,sessionPrincipal(),403,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status)){
     if(query.queryKey[0]==='source-groups')void clearSourceGroupAuthorization(client,query.queryKey[1],error);
-    else if(query.queryKey[0]==='ticket-command-context')void clearItemAuthorization(client,query.queryKey[1],'ticket',query.queryKey[2],error);
+    else if(['ticket-command-context','ticket-related-conversations'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'ticket',query.queryKey[2],error);
     else if(query.queryKey[0]==='detail'||(query.queryKey[0]==='attachments'&&attachmentParentDenied(error)))void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else {void client.cancelQueries({queryKey:query.queryKey,exact:true});query.setState({data:undefined,dataUpdatedAt:0});if(query.queryKey[0]==='detail')void client.invalidateQueries({queryKey:['board',query.queryKey[1]],refetchType:'active'});}
   }

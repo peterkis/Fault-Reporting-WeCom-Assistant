@@ -4,7 +4,7 @@ import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 
 export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
-  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&key[0]==='ticket-command-context'&&key[2]===id));
+  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-command-context','ticket-related-conversations'].includes(String(key[0]))&&key[2]===id));
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{

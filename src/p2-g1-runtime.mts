@@ -102,6 +102,7 @@ export function createP2G1Runtime({
     enabled: true,
     authorize: controlAuthorization,
     realtimeAppender,
+    transactionStartHook:projectionTransactionStart,
   });
   const communicationService = createCommunicationService({
     pool,
