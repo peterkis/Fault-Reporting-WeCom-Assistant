@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016ConversationHandlingCommand,P2016ConversationHandlingAction} from '../../api/client';
 import {useConversationHandlingDraft} from './use-conversation-handling-draft';
 import type {ConversationHandlingIntent} from './use-conversation-handling-draft';
@@ -28,7 +28,9 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange}:
     onError:async(error,variables)=>{if(error instanceof ApiError){setPending(null);await draft.knownFailure(variables.intent.command.client_command_id).catch(()=>{});setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：原会话选择保留，请重新读取并确认版本。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}else{setPending(variables.intent);setState('unknown');setMessage('结果未知：请核对原操作；原动作、工单版本、会话选择及版本保持不变。');}},
     onSettled:()=>{request.current=null;},
   });
-  const send=async(intent:ConversationHandlingIntent,checking:boolean)=>{if(request.current)return;const controller=new AbortController();request.current=controller;setPending(intent);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在提交处理操作…');try{await draft.prepare(intent);}catch{request.current=null;if(checking){setState('unknown');setMessage('原操作仍未知，恢复存储不可用，尚未再次发送。');}else{setPending(null);setState('denied');setMessage('恢复副本尚未保存，操作尚未发送。');}return;}if(!controller.signal.aborted)mutation.mutate({intent,signal:controller.signal});};
+  const send=async(intent:ConversationHandlingIntent,checking:boolean)=>{
+    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，新操作尚未准备或发送；选择已保留，请重新读取。');return;}
+    if(request.current)return;const controller=new AbortController();request.current=controller;setPending(intent);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在提交处理操作…');try{await draft.prepare(intent);}catch{request.current=null;if(checking){setState('unknown');setMessage('原操作仍未知，恢复存储不可用，尚未再次发送。');}else{setPending(null);setState('denied');setMessage('恢复副本尚未保存，操作尚未发送。');}return;}if(!controller.signal.aborted)mutation.mutate({intent,signal:controller.signal});};
   const acknowledgement=useMutation({mutationKey:['ticket-self-handling',principal.principal_id,ticketId],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>api.conversationHandlingAcknowledgement(ticketId,commandId,signal),
     onSuccess:async(result,variables)=>{if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知，未找到终态不代表未提交；请继续只读核对。');refresh();return;}const cleaned=await draft.settle(variables.commandId);setPending(null);setSelected([]);setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage((result.state==='COMMITTED'?'已核对原操作结果：已提交。':'已核对原操作失败，请读取当前事实后明确新的操作。')+(cleaned?'':' 本地副本清理尚未确认，禁止新操作。'));refresh();},onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const checkAcknowledgement=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');acknowledgement.mutate({commandId:draft.operationId,signal:controller.signal});};
