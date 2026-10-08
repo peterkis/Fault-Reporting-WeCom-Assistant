@@ -54,7 +54,7 @@ resolution_code：`CONFIRM_TICKET_ELIGIBLE|CLASSIFY_SERVICE_REQUEST|REQUEST_DESC
 
 Bot原分类依据仍是生产者按 sequence ASC 取得的最多51条前缀、原 message count/window/hash；材料围栏另核对持久全量 count/max sequence 及原 Decision 之后真实新增的同 Journey Leg。人工阅读窗口独立取最新保留文本，最多50条/20k字符，按时间顺序显示；它不替换原分类 hash 或原判断窗口。`original_hash` 是原 Decision source hash，`current_hash` 是当前来源修订与后来 Leg 标识的捕获摘要，两者用途不同。Web继续核对原 binding/input_revision。
 
-这些来源范围在生产者一致的事务锁下核对，材料或版本变化拒绝旧结论；陈旧项仅支持明确取消，终态不支持新结论。咨询、澄清、确认回应、范围外等沿原分类Port及安全动作处理，不强制建故障；固定建议只作证据，不执行脚本、SQL或任意外发。相同UUID/原意图重放复用既有ledger，改意图拒绝；相同Ticket关联继续一张卡片。多个 Pending 版本的canonical沿现有Board实际Ticket/最早Pending规则，选择的Review命令目标仍保持独立；已知结果后重新读取有权canonical事实，旧Review入口按实际关联转换。
+这些来源范围在生产者一致的事务锁下核对，材料或版本变化拒绝旧结论；陈旧项仅支持明确取消，终态不支持新结论。咨询、澄清、确认回应、范围外等沿原分类Port及安全动作处理，不强制建故障；固定建议只作证据，不执行脚本、SQL或任意外发。相同UUID/原意图重放复用既有ledger，改意图拒绝；相同Ticket关联继续一张卡片。多个 Pending 版本的canonical沿现有Board实际Ticket/最早Pending规则，选择的Review命令目标仍保持独立；已知结果后重新读取有权canonical事实，旧Review入口按实际关联转换。转换前仍核对原Review自身当前权限及来源保留期；来源过期时旧Review入口返回404，即使关联Ticket仍可独立读取。
 
 恢复能力为 `manual_review_draft_recovery_enabled = workbenchManualReviewEnabled && workbenchDraftRecoveryEnabled`；原Notes `draft_recovery_enabled`语义不变。本票复用T03当前浏览器AES-GCM/不可导出密钥、固定首次保存后24h的草稿，scope为principal+review+ReviewId+manual-review。密文保存明确选择、原因、捕获字符串版本/材料摘要/canonical与原UNKNOWN完整命令，不自动替换选择、版本或UUID，也不自动POST。
 
