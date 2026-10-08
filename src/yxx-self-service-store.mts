@@ -76,7 +76,9 @@ function timelineItem(row:Pick<TimelineRow,'event_type'|'payload'|'occurred_at'|
   if(row.event_source==='TICKET'){
     const eventType=row.event_type==='ticket.created'?'TICKET_CREATED':'TICKET_UPDATED';
     const ticket=row.ticket_no?{ticket_no:row.ticket_no,status:row.ticket_status,updated_at:String(row.ticket_updated_at)}:null;
-    return {event_type:eventType,occurred_at:String(row.occurred_at),occurred_epoch_ms:localEpoch(row.occurred_at),summary:eventType==='TICKET_CREATED'?'工单已创建':'工单状态已更新',ticket};
+    const completion=row.payload?.staff_completion_summary;
+    const summary=typeof completion==='string'&&completion.trim()&&completion.length<=500?'工作人员已完成本轮处理：'+completion:eventType==='TICKET_CREATED'?'工单已创建':'工单状态已更新';
+    return {event_type:eventType,occurred_at:String(row.occurred_at),occurred_epoch_ms:localEpoch(row.occurred_at),summary,ticket};
   }
   const terminalStatus=row.payload?.new_status;
   const eventType=terminalStatus==='IGNORED'?'NOT_SERVICE':terminalStatus==='COMPLETED'?'NOT_SERVICE'
@@ -208,7 +210,10 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
             FROM intake.service_intake_event e LEFT JOIN pilot_ticket.ticket t ON t.source_intake_id=e.intake_id
            WHERE e.intake_id=$1::uuid AND (e.event_type<>'intake.ticket_created' OR NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket_event te WHERE te.ticket_id=t.id AND te.event_type='ticket.created'))
           UNION ALL
-           SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status),te.created_at::timestamp without time zone,te.event_ordinal::integer,te.event_id::text,
+           SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
+             CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
+               AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
+               AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END),te.created_at::timestamp without time zone,te.event_ordinal::integer,te.event_id::text,
                   t.ticket_no,te.new_status,to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS'),1::integer
             FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id
            WHERE t.source_intake_id=$1::uuid AND te.event_type=ANY($3::text[])

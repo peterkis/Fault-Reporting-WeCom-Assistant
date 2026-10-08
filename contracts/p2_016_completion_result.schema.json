@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_016_completion_result.schema.json",
+  "title": "P2-016 safe staff completion command result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "ticket_id",
+    "ticket_version",
+    "ticket_event_id",
+    "control_event_id",
+    "replayed",
+    "completion"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "ticket_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "ticket_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "ticket_event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "control_event_id": {
+      "type": "null"
+    },
+    "replayed": {
+      "type": "boolean"
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cycle_id",
+        "cycle_no",
+        "event_id",
+        "basis"
+      ],
+      "properties": {
+        "cycle_id": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "cycle_no": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "event_id": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "basis": {
+          "const": "STAFF_COMPLETED"
+        }
+      }
+    }
+  }
+}
