@@ -11,6 +11,6 @@ test('authorized staff admits a telephone fault with unknown location and an unv
     const response=await fetch(origin+'/api/workbench/reports',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':bootstrap.csrf_token},body:JSON.stringify(command)});
     assert.equal(response.status,202);const result=await response.json();
     assert.equal(result.manual_contact_required,true);assert.equal(result.external_notification,false);
-    assert.equal(result.reporter_verification,'UNVERIFIED');assert.equal(result.source,'PHONE');assert.equal(result.ticket.status,'NEW');
+    assert.equal(result.reporter_verification,'UNVERIFIED');assert.equal(result.source,'PHONE');assert.equal(result.ticket.status,'QUEUED');
   },{workbenchManualReportsEnabled:true});
 });
