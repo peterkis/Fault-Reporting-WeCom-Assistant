@@ -40,13 +40,13 @@ ALTER TABLE intake.service_intake ADD CONSTRAINT service_intake_manual_source_ch
     AND jsonb_typeof(manual_report_snapshot->'description') = 'string'
     AND jsonb_typeof(manual_report_snapshot->'location') = 'object'
     AND manual_report_snapshot->'location' ?& ARRAY['text','unknown']::text[]
-    AND manual_report_snapshot->'location' - ARRAY['text','unknown']::text[] = '{}'::jsonb
+    AND (manual_report_snapshot->'location') - ARRAY['text','unknown']::text[] = '{}'::jsonb
     AND ((manual_report_snapshot->'location'->'unknown' = 'true'::jsonb AND manual_report_snapshot->'location'->'text' = 'null'::jsonb)
       OR (manual_report_snapshot->'location'->'unknown' = 'false'::jsonb AND jsonb_typeof(manual_report_snapshot->'location'->'text') = 'string'
         AND char_length(manual_report_snapshot->'location'->>'text') BETWEEN 1 AND 200))
     AND jsonb_typeof(manual_report_snapshot->'reporter') = 'object'
     AND manual_report_snapshot->'reporter' ?& ARRAY['verification','name','contact','department']::text[]
-    AND manual_report_snapshot->'reporter' - ARRAY['verification','name','contact','department']::text[] = '{}'::jsonb
+    AND (manual_report_snapshot->'reporter') - ARRAY['verification','name','contact','department']::text[] = '{}'::jsonb
     AND manual_report_snapshot->'reporter'->>'verification' = 'UNVERIFIED'
     AND jsonb_typeof(manual_report_snapshot->'reporter'->'name') = 'string'
     AND jsonb_typeof(manual_report_snapshot->'reporter'->'contact') = 'string'
