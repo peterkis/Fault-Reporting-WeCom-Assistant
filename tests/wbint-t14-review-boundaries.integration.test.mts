@@ -58,13 +58,14 @@ test('T14 current identity and retained source scope are rechecked before histor
     await fixture.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principal.id]);
     await fixture.pool.query("WITH expiry AS (SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE intake.contact_journey SET retention_until_epoch_ms=expiry.epoch,retention_until=platform.local_from_epoch_ms(expiry.epoch) FROM expiry WHERE id=$1::uuid",[original.journey_id]);
     assert.equal((await get('/api/workbench/items/ticket/'+ticket.ticket.id)).status,200,'the existing Ticket remains independently readable');
-    for(const response of [await get('/api/manual-reviews/'+review.id),await get(receipt),await post(review.id,command,bootstrap.csrf_token),await get('/api/workbench/items/review/'+review.id)])assert.equal(response.status,404,'expired Review scope cannot resolve to a readable Ticket or historical result');
+    for(const response of [await get('/api/manual-reviews/'+review.id),await get(receipt),await post(review.id,command,bootstrap.csrf_token),await get('/api/workbench/items/review/'+review.id)])assert.equal(response.status,404,'expired Review scope cannot resolve to a readable Ticket or historical result: '+response.url);
     assert.deepEqual(await facts(fixture.pool),after);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
 
 test('T14 default-disabled workspace retains the original native profile and independently disabled recovery',async()=>{
-  for(const options of [{},{workbenchManualReviewEnabled:true}])await withWeb01Fixture(async(fixture:Fixture)=>{
+  const profiles:{workbenchManualReviewEnabled?:boolean}[]=[{},{workbenchManualReviewEnabled:true}];
+  for(const options of profiles)await withWeb01Fixture(async(fixture:Fixture)=>{
     const {get,read}=http(fixture),ticket=fixture.tickets[0];assert.ok(ticket);const bootstrap=await read('/api/lifecycle/bootstrap'),item=await read('/api/workbench/items/ticket/'+ticket.ticket.id);
     const review=(await fixture.pool.query<{id:string}>('SELECT id::text FROM intake.manual_review_item WHERE linked_ticket_id=$1::uuid',[ticket.ticket.id])).rows[0];assert.ok(review);
     const detail=await read('/api/manual-reviews/'+review.id),enabled=options.workbenchManualReviewEnabled===true;

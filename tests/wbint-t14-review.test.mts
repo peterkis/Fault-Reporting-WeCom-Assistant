@@ -5,6 +5,7 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createP2016ManualReviewFacade} from '../src/p2-016-manual-review-facade.mjs';
+import type {ManualReviewFacadeOptions} from '../src/p2-016-manual-review-facade.mjs';
 
 test('T14 receipt and captured Review intent schemas reject unrelated facts and unsafe versions',async()=>{
   const base={review_id:randomUUID(),client_command_id:randomUUID()},unknown={...base,state:'UNKNOWN'};
@@ -36,8 +37,9 @@ test('T14 disabled workspace and recovery guards acquire no storage capability',
     const disabled=createP2016ManualReviewFacade({pool});
     await assert.rejects(disabled.getManualReviewDetail(input),{code:'P2_016_DISABLED'});
     await assert.rejects(disabled.manualReviewReceipt(input),{code:'P2_016_DISABLED'});
-    for(const options of [{enabled:true},{enabled:true,workspaceEnabled:true},{enabled:true,draftRecoveryEnabled:true}])
-      await assert.rejects(createP2016ManualReviewFacade({pool,...options}).manualReviewReceipt(input),{code:'P2_016_DISABLED'});
+    const profiles:ManualReviewFacadeOptions[]=[{pool,enabled:true},{pool,enabled:true,workspaceEnabled:true},{pool,enabled:true,draftRecoveryEnabled:true}];
+    for(const profile of profiles)
+      await assert.rejects(createP2016ManualReviewFacade(profile).manualReviewReceipt(input),{code:'P2_016_DISABLED'});
     await assert.rejects(createP2016ManualReviewFacade({pool,enabled:true}).resolveManualReview({...input,body:{client_command_id:input.commandId,
       expected_row_version:'1',resolution_code:'CANCEL_REVIEW',resolution_reason_code:'EXPLICIT_CANCEL',expected_material_basis:'a'.repeat(64)}}),{code:'P2_016_DISABLED'});
     assert.equal(calls,0);assert.equal(pool.totalCount,0);assert.equal(pool.idleCount,0);assert.equal(pool.waitingCount,0);
