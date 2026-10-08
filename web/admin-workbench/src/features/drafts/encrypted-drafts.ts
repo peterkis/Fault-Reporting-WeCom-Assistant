@@ -113,6 +113,32 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   if('error' in committed)throw new DraftError(committed.error);
   handle.record=record;handle.operation=committed.operation;return record;
 }
+// The caller must freshly authorize its own scope. This only refreshes a still-existing
+// unchanged row's in-memory fence; cleared/expired rows and newer tab writes stay fenced.
+export async function rebaseDraft(handle:DraftHandle):Promise<void>{
+  const key=draftScopeKey(handle.scope),record=handle.record,operation=handle.operation;
+  if(!record||record.scope!==key||record.expiresAt<=Date.now())throw new DraftError('DRAFT_CHANGED');
+  const epoch=await state(value=>{
+    const current=value.drafts.find(row=>row.scope===key),pending=value.operations.find(row=>row.scope===key)??null;
+    if(!current||current.scope!==record.scope||current.revision!==record.revision||current.firstSavedAt!==record.firstSavedAt||current.expiresAt!==record.expiresAt||current.expiresAt<=Date.now()
+      ||(operation===null?pending!==null:!pending||pending.scope!==operation.scope||pending.commandId!==operation.commandId||pending.createdAt!==operation.createdAt))throw new DraftError('DRAFT_CHANGED');
+    return value.epoch;
+  });
+  if(handle.record!==record||handle.operation!==operation)throw new DraftError('DRAFT_CHANGED');
+  handle.epoch=epoch;
+}
+// Only a caller that observed a blank form before an unrelated settlement and
+// freshly authorized that scope may use this. No private copy is recreated here.
+export async function refreshEmptyDraft(handle:DraftHandle):Promise<void>{
+  const key=draftScopeKey(handle.scope),previousEpoch=handle.epoch;
+  if(handle.record!==null||handle.operation!==null)throw new DraftError('DRAFT_CHANGED');
+  const epoch=await state(value=>{
+    if(value.drafts.some(row=>row.scope===key)||value.operations.some(row=>row.scope===key))throw new DraftError('DRAFT_CHANGED');
+    return value.epoch;
+  });
+  if(handle.record!==null||handle.operation!==null||handle.epoch!==previousEpoch)throw new DraftError('DRAFT_CHANGED');
+  handle.epoch=epoch;
+}
 export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired'):Promise<void>{
   const key=draftScopeKey(handle.scope),revision=handle.record?.revision;
   const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
