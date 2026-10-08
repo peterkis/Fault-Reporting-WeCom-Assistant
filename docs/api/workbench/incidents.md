@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | `GET /api/incident-candidates` | state?、cursor?、limit 默认30/最大100 | `{items:[CandidateReview],next_cursor}`，范围授权 |
 | `GET /api/incident-candidates/{candidateId}` | 无必需 query | CandidateDetail；ETag=`"<row_version>"` |
+| `GET /api/incident-candidates/{candidateId}/commands/{commandId}` | 不接受 query | 当前 principal/candidate 的只读安全回执；额外要求宿主 `incidentCandidateWorkspaceEnabled=true`，默认关闭 |
 | `GET /api/incidents` | state?、cursor?、limit 默认30/最大100 | `{items:[IncidentPublicView],next_cursor}` |
 | `GET /api/incidents/{incidentId}` | 无必需 query | IncidentDetail；ETag；按角色裁剪 |
 | `GET /api/incidents/{incidentId}/events` | cursor?、limit 默认30/最大200 | `{items,next_cursor}`；窄权限仅公开事件类型 |
@@ -23,6 +24,12 @@
 state 候选：`CANDIDATE|UNDER_REVIEW|CONFIRMED|REJECTED|EXPIRED`；Incident：`CONFIRMED_LOCAL|CONFIRMED_BUILDING|CONFIRMED_CAMPUS|CONFIRMED_HOSPITAL_WIDE|INVESTIGATING|RESOLVED|CLOSED`；Incident 聚合过滤 `ACTIVE|FINISHED`。游标绑定 kind/state 或 incident/part。ETag 是版本提示，这些内部 detail 不支持 If-None-Match/304。
 
 Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candidate_review.schema.json)；Detail 增加 `source_decision,manual_review,report_sources[],eligible_owners[],roles[]`。source_decision 是 code/版本/hash/安全 refs，非原始消息。IncidentPublicView 为 `id,incident_no,status,confirmed_scope,service_family,symptom_family,severity,safe_title,row_version,confirmed_at,investigating_at,resolved_at,closed_at,created_at,updated_at`。Detail 对广域角色再含 `owner_principal_id,owner_team_id,primary_ticket_id,owner_display_name,primary_ticket_no`，所有角色含 roles。
+
+候选详情还返回当前 `allowed_actions,allowed_scopes,material_basis,materials[]`，以及 `visible_report_source_count,report_sources_truncated,eligible_owners_truncated`。Report 选项最多100、owner最多100、各 owner 有效组最多20并分别标记裁剪；获权来源总数由完整冻结 refs 的范围查询计数，不以返回页面长度代替。owner 和组取当前有效内部事实，确认事务再次锁定并校验。HANDLER 无决定动作/范围/owner，材料依据为 null，全局来源人数/科室/位置、窗口、内部事实 refs 与确认结果 ID 按权限裁剪。来源观察与确认后关联数量有不同语义。
+
+`materials` 最多101项（独立根 Decision 加最多100个 Report 引用），不扩大报修选择或来源选项上限。它保留原 Decision 的 revision/hash，并比较同 Intake 的实际 BOT 消息窗口或 WEB revision/保留 submissions；不使用整个 Journey 的无关 revision。材料变化或过期禁止确认，原 Decision/hash 保持不可变。WEB 当前 hash 仅在原 <=50 窗口及材料仍保留时提供；旧032 BOT profile 不访问033 Web表。当前 extent 沿既有权限：ADMIN全部，DISPATCHER默认LOCAL/BUILDING，只有独立显式政策才允许CAMPUS；不增加角色。
+
+只读回执的当前候选读取及 ADMIN/DISPATCHER 决定用途权限先于 ledger 查询。查询限定 `P2_012:<current principal>`、actor、候选 ID 和开始/拒绝/确认三种动作；无记录或未终态返回 `UNKNOWN`，稳定失败返回 `FAILED` 及白名单 `error:{code,retryable:false}`，已提交返回 `COMMITTED` 及六字段 `result`（`replayed:true`）。共同字段为 `candidate_review_id,client_command_id,state`，各状态均封闭，见 [receipt schema](../../../contracts/p2_012_candidate_command_receipt.schema.json)。已提交 Incident 再独立核对当前 resource 读取权限，不返回命令正文、hash、身份材料或由表单推测的 owner。候选/草稿过期不证明原操作失败；获权的原 UUID 可继续只读核对，不能据此自动创建新意图。回执关闭不改变已有事实或旧 Incident API。
 
 子查询主要字段：
 
@@ -43,7 +50,7 @@ Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candid
 | --- | --- |
 | `POST /api/incident-candidates/{candidateId}/start-review` | 无 |
 | `POST /api/incident-candidates/{candidateId}/reject` | 无 |
-| `POST /api/incident-candidates/{candidateId}/confirm` | expected_candidate_version、confirmed_scope、owner_principal_id、selected_report_refs[]；owner_team_id?、primary_ticket_id? |
+| `POST /api/incident-candidates/{candidateId}/confirm` | expected_candidate_version、confirmed_scope、owner_principal_id、selected_report_refs[]；expected_material_basis?、owner_team_id?、primary_ticket_id? |
 | `POST /api/incidents/{incidentId}/start-investigating` | 无 |
 | `POST /api/incidents/{incidentId}/correct-scope` | confirmed_scope |
 | `POST /api/incidents/{incidentId}/primary-ticket` | primary_ticket_id:UUID或null |
@@ -56,6 +63,8 @@ Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candid
 | `POST /api/incidents/{incidentId}/close` | 无 |
 
 ID 从路径注入命令，不允许 body 覆盖 `action,incident_id,candidate_review_id,incident_report_id,subscription_id`。`EXPIRE_CANDIDATE` 是服务内部动作，没有 HTTP `/expire`；不存在自由 publish-update 路由。
+
+`expected_material_basis` 如提供必须为64位小写 SHA-256，并在既有确认事务中与当前完整材料依据核对；合法但不匹配返回409 `P2_012_SOURCE_CONFLICT`。省略字段的旧 body/hash/行为保持。父版本始终是精确十进制 string（含超过2^53的版本），If-Match必须原样双引号包围；不得转为 Number、weak tag 或 bare value。当前权威确认只创建独立 Incident 和明确选择的 Reports，不合并/关闭个人 Ticket，也不代表通知已发送。
 
 confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN 权限控制。reason_code=`OPERATOR_REVIEWED|CONFIRMED_SHARED_FAULT|INCORRECT_ASSOCIATION|RECOVERY_CONFIRMED|SUBSCRIPTION_REQUEST|SCOPE_CORRECTION|MAINTENANCE_EXPIRED|WORKBENCH_CONFIRMED`。
 

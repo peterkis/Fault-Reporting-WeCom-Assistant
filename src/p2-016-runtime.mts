@@ -23,7 +23,7 @@ type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
 type TicketFacade = ReturnType<typeof createP2016TicketCommandFacade>;
 type ReviewFacade = ReturnType<typeof createP2016ManualReviewFacade>;
 type IncidentReporterAdapter = NonNullable<Parameters<typeof createP2016ReporterTimeline>[0]>['incidentAdapter'];
-export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter }
+export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter;candidateWorkspaceEnabled?:boolean }
 export interface P2016HttpExtension { handler: ReporterHttpHandler; close(): unknown | Promise<unknown> }
 type WebOAuthPort = import('./p2-g2-wecom-web-oauth.mjs').WeComOAuth;
 export interface P2016ClosurePort extends Pick<ReturnType<typeof createTicketClosureService>, 'runAutoClose' | 'runAutoCloseReminders'> { afterTicketAction: TicketActionAfterHook }
@@ -125,7 +125,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const selfHandling=ticketSelfHandlingEnabled?createTicketSelfHandlingService({pool,query,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const conversationHandling=ticketConversationSelfHandlingEnabled?createTicketConversationHandlingService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const staffCompletion=ticketStaffCompletionEnabled?createTicketStaffCompletionService({pool,query,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,staffCompletion,workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,staffCompletion,workbenchDraftRecoveryEnabled,incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups});

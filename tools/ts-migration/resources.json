@@ -98,6 +98,7 @@
     "contracts/p2_007_reporter_timeline_action.schema.json",
     "contracts/p2_007_ticket_card_view_model.schema.json",
     "contracts/p2_012_candidate_review.schema.json",
+    "contracts/p2_012_candidate_command_receipt.schema.json",
     "contracts/p2_012_contracts.d.ts",
     "contracts/p2_012_incident.schema.json",
     "contracts/p2_012_incident_command.schema.json",

@@ -70,6 +70,7 @@
 | I03 | POST | `/api/incident-candidates/{candidateId}/start-review` | W | 已实现：开始复核 | [公共故障](workbench/incidents.md) |
 | I04 | POST | `/api/incident-candidates/{candidateId}/reject` | W | 已实现：拒绝候选 | [公共故障](workbench/incidents.md) |
 | I05 | POST | `/api/incident-candidates/{candidateId}/confirm` | W | 已实现：人工确认 | [公共故障](workbench/incidents.md) |
+| I25 | GET | `/api/incident-candidates/{candidateId}/commands/{commandId}` | W | 已实现、默认关闭：当前 actor/exact Candidate 的原 UUID 安全回执核对 | [公共故障](workbench/incidents.md) |
 | I06 | GET | `/api/incidents` | W | 已实现：聚合列表 | [公共故障](workbench/incidents.md) |
 | I07 | GET | `/api/incidents/{incidentId}` | W | 已实现：聚合详情 | [公共故障](workbench/incidents.md) |
 | I08 | GET | `/api/incidents/{incidentId}/events` | W | 已实现：事件 | [公共故障](workbench/incidents.md) |
