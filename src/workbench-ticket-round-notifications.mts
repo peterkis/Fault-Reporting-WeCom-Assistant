@@ -47,11 +47,14 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
           JOIN pilot_ticket.ticket t ON t.id=c.ticket_id AND t.source_intake_id=c.source_intake_id
           JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.ticket_id=c.ticket_id AND ce.cycle_id=c.id AND ce.ticket_event_id=c.first_responsibility_event_id
           JOIN pilot_ticket.ticket_event e ON e.ticket_id=c.ticket_id AND e.event_id=c.first_responsibility_event_id
+            AND e.event_type='ticket.accepted' AND e.new_status='ACCEPTED' AND e.operator_type='PILOT_USER'
           WHERE ($1::uuid IS NULL OR c.id>$1::uuid) AND NOT EXISTS(SELECT 1 FROM communication.ticket_round_notification_binding b
             WHERE b.cycle_id=c.id AND b.node='FIRST_RESPONSIBILITY' AND b.destination_type='PERSON') ORDER BY c.id LIMIT 20`,[afterCycleId]);
         let created=0;
         for(const candidate of candidates.rows){
           const changed=await transactionP2016(pool,async tx=>{
+            // Follow command lock order: Ticket before cycle. The later public-ref FK must not invert it.
+            await tx.query('SELECT 1 FROM pilot_ticket.ticket WHERE id=$1::uuid FOR KEY SHARE',[candidate.ticket_id]);
             const locked=await tx.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE id=$1::uuid AND ticket_id=$2::uuid AND first_responsibility_event_id=$3::uuid FOR UPDATE',[candidate.cycle_id,candidate.ticket_id,candidate.event_id]);
             if(locked.rowCount!==1)return false;
             if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node='FIRST_RESPONSIBILITY' AND destination_type='PERSON'",[candidate.cycle_id])).rowCount)return false;
