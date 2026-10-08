@@ -279,3 +279,8 @@ strong { font-weight: var(--fw-medium); }
 .review-controls { display:flex;flex-wrap:wrap;gap:var(--s-4); }
 .review-controls button,.manual-review button { min-height:var(--target);padding:var(--s-3) var(--s-5);border-radius:var(--r-md);background:var(--bg-hover); }
 @media(max-width:900px) { .compact-settings { display:block; } .source-group-directory .page-title { align-items:start; } }
+.ticket-conversation-handling fieldset{border:0;padding:0;margin:12px 0;display:grid;gap:8px}
+.ticket-conversation-handling label{display:flex;align-items:flex-start;gap:8px}
+.ticket-conversation-handling input{flex:0 0 auto;margin-top:3px}
+.conversation-choices{list-style:none;padding:0;display:grid;gap:10px}
+.conversation-choices small{display:block;overflow-wrap:anywhere;color:var(--muted);font-size:12px}

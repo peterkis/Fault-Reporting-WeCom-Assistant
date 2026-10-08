@@ -8,6 +8,7 @@ import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.
 import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from '../../src/p1-006-ticket-state-actions.mjs';
 import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
 import {createRuleFirstOrchestrator} from '../../src/p2-015-rule-first-orchestrator.mjs';
 import {createSafeActionExecutor,createExistingTicketCommandPort} from '../../src/p2-015-safe-action-executor.mjs';
 import {createManualReviewStore} from '../../src/p2-015-manual-review.mjs';
@@ -47,10 +48,11 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{manualProjection=false,chronologicalTicketEvents=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+  assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
-    if(ticketSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
+    if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
@@ -58,14 +60,14 @@ export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,m
     const core=createPilotTicketCore({pool}),tickets=[];
     for(const [index,[title,location,status]] of scenarios.entries()){
       const text=title+'。全新合成开发材料，请协助排查。';
-      const intake=ticketSelfHandlingEnabled&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
+      const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;
       const row=(await pool.query(`UPDATE pilot_ticket.ticket SET title=$2,status=$3,reported_location_text=$4,version=2,
         assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval
         WHERE id=$1::uuid RETURNING *`,[ticket.id,title,status,location,['NEW','QUEUED'].includes(status)?null:principals[index%4].id,index])).rows[0];
       ticket={...ticket,...row};
       const event=await appendTicketEvent({transaction:pool,ticket,eventType:eventTypes[status],actor:{type:'PILOT_USER',id:principals[index%4].id},oldStatus:'NEW',internalNote:'仅供内部的合成处理记录',externalNote:status==='CLOSED'?'本次处置已完成。':null,traceId:'web01-synthetic'});
-      await pool.query(`UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' hours')::interval WHERE event_id=$1::uuid`,[event.event_id,status==='RESOLVED'?240:index>=9?(index-9)*4:0]);
+      if(!chronologicalTicketEvents)await pool.query(`UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' hours')::interval WHERE event_id=$1::uuid`,[event.event_id,status==='RESOLVED'?240:index>=9?(index-9)*4:0]);
       tickets.push({ticket,intake,event});
     }
     const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey:'web01-only-synthetic-identity-key',decisionStore:createDecisionStore(),
@@ -73,7 +75,7 @@ export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,m
       ruleEngine:{catalog_version:'WEB01_FIXTURE',rule_set_version:'WEB01_FIXTURE',evaluate(){throw new Error('fixture creates persisted pending review');}}});
     const standalone=await seedPersistedIntake({pool,text:'尚待判断的合成材料，请协助确认。'});
     const processReviewIntake=intakeId=>orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
-    for(const intakeId of [standalone.intakeId,...(ticketSelfHandlingEnabled&&ticketSelfHandlingWebSource?[]:[tickets[0].intake.intakeId])])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
+    for(const intakeId of [standalone.intakeId,...((ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled)&&ticketSelfHandlingWebSource?[]:[tickets[0].intake.intakeId])])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
     // Explicit real relation: the pending review and Ticket are the same intake, not two cards.
     await pool.query(`UPDATE intake.manual_review_item SET linked_ticket_id=$2::uuid WHERE service_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
     await pool.query(`UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid WHERE origin_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
@@ -90,7 +92,7 @@ export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,m
             const users=JSON.parse(init.body).userid_list;assert.equal(users.length,5);
             return new Response(JSON.stringify({errcode:0,open_userid_list:users.map(userid=>({userid,open_userid:openId(userid)}))}),{headers:{'content-type':'application/json'}});
           }});
-          runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,externalSendEnabled:false,workbenchManualReviewEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});return runtime.server;
+          runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,externalSendEnabled:false,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});return runtime.server;
         },startApp:async app=>{assert.equal(app,runtime.server);await auth.initialize();const started=await runtime.start();return 'http://127.0.0.1:'+started.address.port;},stopApp:async()=>{await runtime?.stop();}});
         const sessionToken=randomBytes(32).toString('base64url'),csrfToken=randomBytes(32).toString('base64url'),issued=Date.now(),expires=issued+8*3600000;
         const hash=value=>createHash('sha256').update(value).digest('hex'),identityHash=createHmac('sha256',identityHashKey).update(JSON.stringify(['workbench-identity-v1',corpId,agentId,openId('web01-synthetic-0')])).digest('hex');
@@ -101,8 +103,12 @@ export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,m
       }finally{await closeBrowserTestResources([async()=>{await tls?.close();if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await runtime?.stop();await auth?.close();if(runtime)assert.equal(runtime.server.listening,false);}]);}
     }
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
-    const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
+    try{
+    // Manual finite batches own projection in this explicit profile; ordinary UI fixtures still start the scheduled worker.
+    if(manualProjection){assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);}
+    const started=manualProjection?{address:await listenConversationWorkbenchServer(runtime.server,{port:listenPort}),cookies:runtime.authenticate.browserCookies?.()}:await runtime.start();
+    assert.ok(Array.isArray(started.cookies)&&started.cookies.length===3);const cookies=started.cookies.map(c=>c.name+'='+c.value);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;
     let malformedNoteSuccess=malformedInternalNoteSuccess;
@@ -132,7 +138,11 @@ export async function withWeb01Fixture(run,{workbenchManualReviewEnabled=false,m
       response.end=(...args)=>response.statusCode===200&&malformedReviewResponse&&request.url?.endsWith('/resolve')?end('{"ok":true}'):
         malformedReviewDenial&&[401,403,404].includes(response.statusCode)?end('{'):end(...args);
     });
-    try{return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
-    finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');}
+    return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
+    finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');if(manualProjection){
+      const connections=await new Promise((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),metrics=await runtime.observability.metrics();
+      assert.equal(connections,0);assert.equal(metrics.sse_clients,0);
+      console.log('WEB01_MANUAL_PROJECTION_CLEANUP '+JSON.stringify({http_listening:runtime.server.listening,http_connections:connections,sse_clients:metrics.sse_clients}));
+    }}
   }});
 }
