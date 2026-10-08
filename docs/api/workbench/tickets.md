@@ -8,7 +8,7 @@
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,draft_recovery_enabled:boolean,logout_enabled:boolean`；新增宿主能力默认false，退出仅在实际员工Cookie认证已初始化且有当前CSRF时可用 |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
