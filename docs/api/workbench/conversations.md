@@ -77,3 +77,39 @@ Origin: <workbench-origin>
 基础会话宿主的 `GET /api/attachments/*` 明确返回 404 `WORKBENCH_ATTACHMENT_NOT_AVAILABLE`。P2016宿主后继默认关闭的[事项附件扩展](attachments.md)有独立的精确下载合同，不从会话引用自动授予读取权。会话 detail 中 Incident/attachments 的 available:false 是这一参考视图的状态，不代表独立 Incident API 未实现。
 
 核对测试：[unit](../../../tests/p2-006-workbench.test.mjs)、[integration](../../../tests/p2-006-workbench.integration.test.mjs)。更详细背景：[P2-006](../../42_p2_006_realtime_web_workbench.md)。这些是验证入口，不声明本轮重跑了业务验收。
+## 集中服务会话工作区（WBINT-T22，默认关闭）
+
+W 的 `workbenchConversationsEnabled=false` 控制正式 React `/workbench/app/conversations` 和 `/workbench/app/conversations/{sessionId}`，以及下列新增别名。关闭时新接口返回503、页面不挂载；既有 `/api/conversations` profile 保留。新入口复用现有 Session/Control/Communication/Delivery 权威事实，无新表、迁移或长期 owner。纯 Web 事项没有 Session 时返回空关联，不创建聊天。
+
+所有读取先核对当前活动主体与对象权限。participant/topic 只显示当前保留资料与获权 canonical Item，缺资料明确显示未知；不输出外部用户、群、Bot、Thread 或目标标识。内部浏览器用 Session UUID 作路由，不把 UUID 当显示姓名或授权。当前服务主题按 persisted sequence 读取，时间较早的新材料不丢失；超期材料不返回。
+
+| 方法与完整路径 | 输入与成功响应 |
+| --- | --- |
+| `GET /api/workbench/conversations` | `state`：open/mine/unassigned/waiting_human/waiting_user/failed_delivery/ended；`cursor?` opaque；`limit?` 默认30/最大100。`{items,next_cursor}`；每项为安全 Session、participant_label/topic/channel_label、assignment、handoff、capabilities、逐对象获权 canonical_item 或 null |
+| `GET /api/workbench/conversations/{sessionId}` | 无query；workspace entry，ETag 为 Session row_version |
+| `GET /api/workbench/conversations/{sessionId}/items` | `before_sequence?` 或 `after_sequence?` 十进制 string；`limit?` 默认50/最大200。item_id/sequence_no/item_type/sender_kind/visibility/text/occurred_at 与两端边界/has_more |
+| `GET /api/workbench/conversations/{sessionId}/eligible-principals` | 当前合法转派候选 `{principal_id,display_name}`；不是任意人员目录 |
+| `GET /api/workbench/conversations/{sessionId}/deliveries` | 最大100个实际 Communication Delivery；安全message_id/delivery_id与purpose/status/side_effect_state/channel/attempt_count/last_error_code/sent_at/created_at；按精确 Message 关联 |
+| `GET /api/workbench/items/{ticket\|review\|intake}/{itemId}/conversations` | 先授权事项、再授权各真实 Session；`{items}` 最大100，含真实结束主题；无关联为空数组 |
+| `POST /api/workbench/conversations/{sessionId}/takeover` | 共同 UUID/expected_row_version；可选reason_code/handoff_id；200，当前合法接管 |
+| `POST /api/workbench/conversations/{sessionId}/transfer` | 共同字段+target_principal_id必需，force/reason_code可选；强制需当前角色/原因，200 |
+| `POST /api/workbench/conversations/{sessionId}/release` | 共同字段+reason_code可选；200 |
+| `POST /api/workbench/conversations/{sessionId}/handoff/request` | 共同字段+reason_code可选；200 |
+| `POST /api/workbench/conversations/{sessionId}/handoff/cancel` | 共同字段+reason_code/handoff_id可选；200 |
+| `POST /api/workbench/conversations/{sessionId}/messages` | 闭合 `{client_command_id,expected_row_version,text}`；text1..20480，UI最大2000；202仅受理 Message/Outbox/Delivery，不是已发送 |
+| `POST /api/workbench/conversations/{sessionId}/internal-notes` | 同一闭合文本形状；201，仅内部 Message，无Outbox/Delivery |
+| `GET /api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | 专用只读回复核对；无query/body |
+| `GET /api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | 专用只读内部备注核对；无query/body |
+
+POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie另需当前 CSRF/Origin；后端重查当前动作与转派目标。沟通 Assignment 不改变 Ticket 处理责任/状态。不提供 personal read writes、Delivery retry/reconcile、AI模式或通知写入口。workspace 不接受 quote/外部 target 字段。启用策略下 Bot 群来源人工回复从保留的 Session/Intake/Thread 一致绑定导出原 Reporter PERSON 私聊；浏览器不能选择外发对象。
+
+文本成功为 `{message_id,outbox_id,delivery_ids,command_status,replayed,created_at}`，内部备注 outbox_id=null、delivery_ids=[]。专用 receipt 只返回 `{session_id,client_command_id,state:"UNKNOWN"}`，或 state:"COMMITTED" 加上述安全result；匹配当前可读 Session、原sender主体、固定purpose和AGENT scope。其他主体/用途/不存在统一UNKNOWN，不返回正文、目标或hash。UNKNOWN不表示未提交。同一原UUID/body/version可在新材料推进Session版本后核对已提交结果；fresh UUID仍要求当前版本。
+
+`conversation_workspace_enabled` 是实际workspace能力；`conversation_draft_recovery_enabled` 还要求 raw `workbenchDraftRecoveryEnabled`。旧 Notes 的 `draft_recovery_enabled` 保持仅Notes含义。恢复scope为 principal+conversation+Session+conversation-reply/conversation-note，复用同一浏览器 AES-GCM 非导出密钥、24h/16KiB/20份限制。恢复前fresh bootstrap和当前Session READ/action，当前失权/跨tab清理/abort优先。原UNKNOWN命令正文/版本/UUID不被新材料替换；24h后敏感正文/密钥清理，原opaque UUID只读GET核对，无自动POST。
+
+正式UI列表最多200项、当前主题材料100条×4页最多400、Delivery100，selected查询备用轮询5秒；启用实时全局刷新时使用单一全局周期。新材料不抢焦点或覆盖输入。共享draft对另一用途settlement导致的epoch变化，仅在fresh own authority且同一未过期row/operationbasis时允许内存rebase；此前真正blank的handle仅从sameprincipal完整scoped unrelatedsettled通知进行fresh检查后metadata刷新。普通save fence、logout/revoke/discard/expiry和新标签row优先，不重新创建被清正文。
+
+闭合 Schema：[文本命令](../../../contracts/workbench_conversation_text_command.schema.json)、[安全收据](../../../contracts/workbench_conversation_command_receipt.schema.json)、[工作区详情](../../../contracts/workbench_conversation_workspace.schema.json)、[工作区分页](../../../contracts/workbench_conversation_workspace_page.schema.json)、[材料分页](../../../contracts/workbench_conversation_item_page.schema.json)、[精确投递分页](../../../contracts/workbench_conversation_delivery_page.schema.json)。材料的 RESTRICTED visibility 沿既有 ADMIN audience；Schema 取值不授予额外读取权。
+
+关闭新workspace选项可回退，保留已提交的Control/Communication/Delivery事实与旧获权profile。源码：[workspace](../../../src/workbench-conversations.mts)、[production UI](../../../web/admin-workbench/src/features/conversations/Conversations.tsx)、[types](../../../contracts/workbench_conversation_workspace_contracts.d.ts)。当前实际测试与精确候选/资源证据见 [T22执行记录](../../../plans/admin-workbench-integration/execution/t22.md)；不代表真实服务发送、部署或Gate批准。
+

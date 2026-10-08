@@ -1,0 +1,52 @@
+import {randomUUID} from 'node:crypto';
+import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../src/p2-001-conversation-contracts.mjs';
+import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
+import {createP2G1TestAuthentication} from '../../src/p2-g1-test-authentication.mjs';
+import type {G1AuthenticationPort} from '../../src/p2-g1-runtime.mjs';
+import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+interface Base {databaseUrl:string;pool:PostgresPool;tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string}
+export interface T22Session {id:string;intakeId:string;ticketId:string;reporter:string;rowVersion:number}
+export interface T22Fixture extends Base {sessions:T22Session[];cookie:string;outsiderCookie:string;handlerCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};restoreResponses:()=>void;bootstrapAuthenticationBoundary?:{armNext:(callback:()=>Promise<void>)=>void;readonly calls:number;readonly authenticatedPrincipalId:string|null}}
+export async function appendT22Item(pool:PostgresPool,sessionId:string,sequence:number,text:string,daysAgo=0){
+  const result=await pool.query<{id:string}>(`INSERT INTO conversation.item(session_id,sequence_no,item_type,sender_kind,visibility,text,safe_content,source_type,source_id,projection_variant,canonical_order_key,content_hash,privacy_class,retention_until,occurred_at)
+    VALUES($1::uuid,$2,'USER_MESSAGE','USER','EXTERNAL',$3,'{}','CHANNEL_MESSAGE',$4,'T22_FIXTURE',$4,$5,'INTERNAL',platform.local_now()+interval '30 days',platform.local_now()-($6::text||' days')::interval) RETURNING id::text`,[sessionId,sequence,text,randomUUID(),'c'.repeat(64),daysAgo]);
+  return result.rows[0]?.id??'';
+}
+export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,recovery=true,dropResponses=false,bootstrapRoleRace=false}:{enabled?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
+  await withWeb01Fixture(async(f:Base)=>{
+    await f.runtime.stop();const sessions:T22Session[]=[];
+    const identity=buildConversationThreadIdentity({provider:'WECOM_AIBOT',botId:'t22-synthetic-bot',chatType:'group',chatId:'t22-private-group-id',senderUserId:'t22-reporter-a'});
+    const thread=(await f.pool.query<{id:string}>(`INSERT INTO conversation.thread(provider,channel_account_id,chat_type,external_thread_key,thread_key,last_activity_at)
+      VALUES($1,$2,$3,$4,$5,platform.local_now()) RETURNING id::text`,[identity.provider,identity.channel_account_id,identity.chat_type,identity.external_thread_key,identity.thread_key])).rows[0];if(!thread)throw Error('T22_THREAD_REQUIRED');
+    for(let index=0;index<3;index++){
+      const ticket=f.tickets[index],reporter=index===1?'t22-reporter-b':'t22-reporter-a';if(!ticket)throw Error('T22_TICKET_REQUIRED');
+      await f.pool.query(`UPDATE intake.service_intake SET source_provider='WECOM_AIBOT',source_bot_id=$2,source_chat_type='group',source_chat_id=$3,reporter_wecom_userid=$4 WHERE id=$1::uuid`,[ticket.intake.intakeId,identity.channel_account_id,identity.external_thread_key,reporter]);
+      const scope=buildConversationSessionScope({threadKey:identity.thread_key,participantKey:reporter,serviceIntakeId:ticket.intake.intakeId,creationIdempotencyKey:'T22:'+randomUUID()});
+      const row=(await f.pool.query<{id:string;row_version:number}>(`INSERT INTO conversation.session(thread_id,participant_key,service_intake_id,session_scope_key,creation_idempotency_key,status,control_mode,last_activity_at,ended_at,close_reason)
+        VALUES($1::uuid,$2,$3::uuid,$4,$5,$6,'HUMAN',platform.local_now(),CASE WHEN $6='ENDED' THEN platform.local_now() END,CASE WHEN $6='ENDED' THEN 'SYNTHETIC_ENDED' END) RETURNING id::text,row_version::integer`,[thread.id,scope.participant_key,ticket.intake.intakeId,scope.session_scope_key,scope.creation_idempotency_key,index===2?'ENDED':'OPEN'])).rows[0];if(!row)throw Error('T22_SESSION_REQUIRED');
+      sessions.push({id:row.id,intakeId:ticket.intake.intakeId,ticketId:ticket.ticket.id,reporter,rowVersion:row.row_version});
+      await appendT22Item(f.pool,row.id,1,['参与者甲的打印机主题','参与者乙的护理主题','参与者甲的读卡主题'][index]??'合成主题');
+    }
+    const principalIds=[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''];
+    // Test-only role mutation between two genuine authority reads; both return their real result.
+    const originalAuthentication=bootstrapRoleRace?createP2G1TestAuthentication({pool:f.pool,principalIds,publicOrigin:f.origin}):null;
+    let nextBootstrapCallback:(()=>Promise<void>)|null=null,bootstrapCallbackArmed=false,bootstrapCallbackCalls=0,authenticatedPrincipalId:string|null=null;
+    const bootstrapAuthenticationBoundary=originalAuthentication?{armNext:(callback:()=>Promise<void>)=>{if(bootstrapCallbackArmed)throw Error('T22_BOOTSTRAP_CALLBACK_ALREADY_ARMED');bootstrapCallbackArmed=true;nextBootstrapCallback=callback;},get calls(){return bootstrapCallbackCalls;},get authenticatedPrincipalId(){return authenticatedPrincipalId;}}:undefined;
+    const workbenchAuthentication:G1AuthenticationPort|null=originalAuthentication?{browserCookies:originalAuthentication.browserCookies,authenticate:async request=>{
+      const originalContext=await originalAuthentication.authenticate(request);
+      if(originalContext&&request.method==='GET'&&request.url==='/api/lifecycle/bootstrap'&&nextBootstrapCallback){
+        const callback=nextBootstrapCallback;nextBootstrapCallback=null;authenticatedPrincipalId=originalContext.principal_id;bootstrapCallbackCalls++;await callback();
+      }
+      return originalContext;
+    }}:null;
+    const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds,workbenchAuthentication,externalSendEnabled:false,...{workbenchConversationsEnabled:enabled},workbenchDraftRecoveryEnabled:recovery});
+    let dropping=dropResponses;
+    if(dropResponses)runtime.server.on('request',(request,response)=>{if(!/\/messages$/u.test(request.url??''))return;const end=response.end.bind(response);response.end=((...args:Parameters<typeof response.end>)=>{if(response.statusCode===202&&dropping){request.socket.destroy();return response;}return end(...args);}) as typeof response.end;});
+    try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');
+      await run({...f,runtime,sessions,cookie:first.name+'='+first.value,outsiderCookie:other.name+'='+other.value,handlerCookie:handler.name+'='+handler.value,browserCookie:first,restoreResponses:()=>{dropping=false;},...(bootstrapAuthenticationBoundary?{bootstrapAuthenticationBoundary}:{})});
+    }finally{nextBootstrapCallback=null;await runtime.stop();if(runtime.server.listening)throw Error('T22_SERVER_NOT_CLOSED');}
+  });
+}
+

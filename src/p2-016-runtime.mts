@@ -16,7 +16,8 @@ import {createTicketConversationHandlingService} from './workbench-ticket-conver
 import {createTicketStaffCompletionService,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
 import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
-interface P2016RuntimeOptionsInput { ticketStaffCompletionEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
+import {createWorkbenchConversations} from './workbench-conversations.mjs';
+interface P2016RuntimeOptionsInput { ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -72,9 +73,10 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,ticketStaffCompletionEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,ticketStaffCompletionEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
   if(typeof ticketConversationSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof workbenchConversationsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchAttachmentsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -104,14 +106,14 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
   const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
-    authentication:workbenchAuthentication,externalSendEnabled,
+    authentication:workbenchAuthentication,externalSendEnabled,reporterPrivateReplies:workbenchConversationsEnabled,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
     realtimeAppender:appendP2016Realtime,
     projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
     realtimeScopeLimit:256,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
-    extensionFactory:({controlService,realtime})=>{
+    extensionFactory:({controlService,realtime,queryService,commandFacade})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
       if(yxxSelfService===null&&!orchestrationWorker&&(directorySyncJob||ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled))
         orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey:identityHmacKey as string,directoryPort,directorySource,directorySyncJob,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
@@ -125,13 +127,14 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const selfHandling=ticketSelfHandlingEnabled?createTicketSelfHandlingService({pool,query,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const conversationHandling=ticketConversationSelfHandlingEnabled?createTicketConversationHandlingService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const staffCompletion=ticketStaffCompletionEnabled?createTicketStaffCompletionService({pool,query,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,staffCompletion,workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups});
+      const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled});
       attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups);
-      const web01Static=createWeb01WorkbenchStatic({enabled});
+      const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
       if(yxxSelfService!==null)selfService=(createYxxSelfServiceExtension as typeof createYxxSelfServiceExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
@@ -164,7 +167,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
             checks:{...base.checks,p2_016_schema:schema,...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
-        authenticatedHandler:async context=>(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
+        authenticatedHandler:async context=>(await conversations.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))
           ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
           ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),

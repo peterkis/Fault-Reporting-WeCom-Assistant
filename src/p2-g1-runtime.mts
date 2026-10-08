@@ -23,7 +23,7 @@ interface G1RuntimeOptionsInput {
   gatewayStatusProvider?: G1GatewayStatusPort | null; communicationStatusProvider?: { isReady(): boolean } | null;
   requireGateway?: boolean; testAuthTtlMs?: number; authentication?: G1AuthenticationPort | null;
   externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
-  projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
+  reporterPrivateReplies?:boolean;projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
 }
 export type G1RuntimeOptions = { [K in keyof G1RuntimeOptionsInput]: G1RuntimeOptionsInput[K] | undefined };
 import { createCommunicationService } from './p2-004-communication-core.mjs';
@@ -68,6 +68,7 @@ export function createP2G1Runtime({
   testAuthTtlMs = 15 * 60_000,
   authentication = null,
   externalSendEnabled = true,
+  reporterPrivateReplies=false,
   clientFactory,
   projectionIntervalMs = 250,
   communicationIntervalMs = 250,
@@ -89,7 +90,7 @@ export function createP2G1Runtime({
     || typeof requireGateway !== 'boolean'
     || !Number.isInteger(testAuthTtlMs) || testAuthTtlMs < 10_000 || testAuthTtlMs > P2_G1_TEST_AUTH_MAX_TTL_MS
     || (authentication !== null && typeof authentication?.authenticate !== 'function')
-    || typeof externalSendEnabled !== 'boolean') {
+    || typeof reporterPrivateReplies!=='boolean'||typeof externalSendEnabled !== 'boolean') {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
   const authPort: G1AuthenticationPort = authentication ?? createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
@@ -105,6 +106,7 @@ export function createP2G1Runtime({
   const communicationService = createCommunicationService({
     pool,
     enabled: true,
+    reporterPrivateReplies,
     authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }),
   });
   const deliveryControl = createWorkbenchDeliveryControl({
@@ -147,6 +149,7 @@ export function createP2G1Runtime({
     pool,
     enabled: true,
     authorize: authorization,
+    safeTimeline:reporterPrivateReplies,
     featureStatus: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false },
   });
   const commandFacade = createConversationWorkbenchCommandFacade({
