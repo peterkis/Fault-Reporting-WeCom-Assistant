@@ -22,7 +22,7 @@ verified_on: 2026-10-07
 | 当前浏览器内部备注草稿 | `LOCAL_INCREMENT`：T03原生IDB/AES-GCM，固定24h、账号／事项／用途隔离、真实恢复验权；必要专用receipt GET见[合同](../../docs/api/workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) | 默认false，首消费者内部备注；无跨设备／服务端草稿，UNKNOWN过期只清正文并按原UUID只读核对，[记录](execution/t03.md)。01/A01 |
 | 三列看板／列表／详情 | React 已调用 `GET /api/workbench/board`、`GET /api/workbench/items/{kind}/{id}`；每列分页、只读详情，见[看板](../../docs/api/workbench/board.md) | 完整与我有关、搜索、提醒、动作、拖动未接；同一 Ticket 的复核不重复计卡片。01/12–15 |
 | 人工复核 | `GET /api/manual-reviews`、`GET /api/manual-reviews/{reviewId}`、Journey／legs／decisions 查询、`POST .../resolve`，见[复核接口](../../docs/api/workbench/manual-reviews.md) | React 未接；普通 resolve 不是“确认报修并开始处理”。补复合用例并保持材料修订 fence；不必为了统一 UI 新建第二份受理。04 |
-| 一步处理／双责任 | 旧 `POST /api/tickets/{ticketId}/accept`、`/start` 和 `/api/conversations/{sessionId}/takeover-and-accept-ticket`；T04 `LOCAL_INCREMENT` 的 `/take-and-start`、`/accept-for-later` 仅无真实会话、当前有效组本人承接 | T04 独立默认 false、039 显式迁移、一次事务与轮次；T05 真会话、完整同事接管／接管关闭仍是缺口。02；[T04 合同/证据](execution/t04.md) |
+| 一步处理／双责任 | 旧 `/accept`、`/start` 和单会话复合命令；T04无会话本人承接；T05 `LOCAL_INCREMENT` 的 `/take-and-start-with-conversations`、`/accept-for-later-with-conversations` 明确真会话或保留沟通 | T04/T05 独立默认false、复用039和原ledger；T05逐会话权限/版本同事务、专用安全Ack；完整同事Ticket接管／接管关闭仍是缺口。02；[T04](execution/t04.md)、[T05合同/证据](execution/t05.md) |
 | 派单／转派／跨团队接管 | `GET .../eligible-principals`、`GET .../responsibility`、`POST .../transfer` | 当前 transfer 不等于全部 AssignTicket／TakeOver，终态及目标团队约束需修订；补本人／有效组原子交接及限定可见范围。02 |
 | 撤派／停止退回 | 无 Ticket unassign／return HTTP；Conversation `/release` 只释放沟通责任 | 两类显式命令、合法状态、未完工作和交接；默认保留沟通责任。02 |
 | 等待／恢复／取消／内部记录 | 现有 `/request-information`、`/wait-vendor`、`/resume`、`/cancel`、`/notes` | React 未接；显示真实 allowed actions，不用取消模拟撤派；内部记录不默认外发或清待跟进。02/03/12 |
@@ -50,6 +50,7 @@ verified_on: 2026-10-07
 | --- | --- | --- | --- |
 | PROPOSED_PATH | `GET /api/workbench/items/{kind}/{id}/command-context` | W／01 | 已授权主体、真实可执行动作、Ticket／Review／实际会话各自版本、有效目标引用、材料修订；独立于展示 DTO |
 | LOCAL_INCREMENT | `POST /api/tickets/{ticketId}/take-and-start`、`/accept-for-later` | W／T04（02） | 仅无非 ENDED 真会话；当前有效组本人原子承接/开始、首次责任与轮次，默认关闭；[实际合同](../../docs/api/workbench/tickets.md)。T05 会话用例另行冻结 |
+| LOCAL_INCREMENT | `GET /api/tickets/{ticketId}/related-conversations`、两个 `*-with-conversations` POST及 `/conversation-handling-commands/{commandId}` GET | W／T05（02） | 真canonical会话分页/最多8明确选择或保留沟通；独立权限/版本原子承接，无DB变更；24h本用途恢复与Ticket安全Ack，默认关闭；[实际合同](../../docs/api/workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05)，[当前执行状态](execution/t05.md) |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/assign`、`/takeover` | W／02 | 目标人／组、原责任版本、操作者权限；接管跨团队后目标组有效 |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/unassign`、`/return-to-dispatch` | W／02 | 未开始／已开始区分，原因、未完成说明、明确沟通交接；不增轮次 |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/complete`、`/takeover-and-complete` | W／03 | 内部过程、对外摘要、工作人员关闭依据、目标轮次；后一命令包括责任交接 |

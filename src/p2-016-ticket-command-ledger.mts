@@ -11,10 +11,25 @@ interface ReceiptRow { id: string; command_hash: string; state: string; result_s
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';
 import type {P2016InternalNoteReceipt} from '../contracts/p2_016_contracts.js';
+import type {P2016ConversationHandlingAcknowledgement} from '../contracts/p2_016_contracts.js';
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
 
 export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'connect'> }) {
   return Object.freeze({
+    async conversationHandlingAcknowledgement({ticketId,commandId,authorize}:{ticketId:string;commandId:string;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<P2016ConversationHandlingAcknowledgement>{
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');
+        const {principal}=await authorize(transaction);
+        const selected=await transaction.query<{state:unknown;version:unknown;event:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable
+          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid
+          AND command_type IN ('take-and-start-with-conversations','accept-for-later-with-conversations') LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId]);
+        const row=selected.rows[0];
+        if(!row||row.state==='STARTED')return publicP2016({state:'UNKNOWN' as const});
+        if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({state:'FAILED' as const,error:{code:row.error,retryable:false as const}});
+        if(row.state==='COMMITTED')return publicP2016({state:'COMMITTED' as const,ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)});
+        failP2016('ACTION_FAILED',503);
+      });
+    },
     async internalNoteReceipt({ticketId,commandId,authorize}:{ticketId:string;commandId:string;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<P2016InternalNoteReceipt>{
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');
