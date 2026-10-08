@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Explicit selected or retained communication self-handling command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_version",
+    "reason_code",
+    "resolver_team_id",
+    "communication_choice",
+    "sessions"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "expected_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "resolver_team_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "communication_choice": {
+      "enum": [
+        "TAKE_SELECTED",
+        "RETAIN_CURRENT"
+      ]
+    },
+    "sessions": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "expected_row_version"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "x-unique-canonical-session-id": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "communication_choice": {
+            "const": "TAKE_SELECTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sessions": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "sessions": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}
