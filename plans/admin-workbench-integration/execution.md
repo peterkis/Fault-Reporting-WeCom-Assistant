@@ -13,7 +13,22 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-08，T11整票集成与收口）
+## 当前执行状态导航（2026-10-08，T05整票集成与收口）
+
+父任务已核对并关闭8／43票：T01／T02／T03／T04／T05／T11／T16／T23。中断后的原工作树和报告保留，恢复原代理继续按依赖实施；关闭票不表示整包验收或发布。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T05 / #60 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60#issuecomment-6053031084)及[七项验收、合同与原报告](execution/t05.md)已核对，WBINT-02／A02仅T04与T05部分完成 |
+| T05实际集成及验证 | `f82e485f903264a699d5fa36cc6bceddb3b6027a`安全快进；真实合并后被测祖先`b4396f70ccbec223a17b1da2b58a6dd3d977a736`的strict／一次build／artifact、共享backend20、production三入口16、适用hosts18分别通过。原FAA对象Unit4／HTTP16／UI8保持独立身份，未称全量回归 |
+| T05证据与资源 | 后继仅四份计划Markdown，完整934编译inputs相等；1013原输出逐文件SHA-256外部归档并由父独立核对，原manifest不重绑。自有PG／HTTP／browser／池归零；原RED／FAIL和被拒绝删除的已核实空目录保留 |
+| T06 / #61 | 实读完整正文、空评论、ready标签及原无assignee；原生blocker #60已CLOSED，领取给peterkis，准备基于当前integration的独立工作树，实施有效处理人／组派单与显式转派 |
+| T14／T22／T27／T38／T24 | 继续各自独立实施并保留中断前证据；按实际root交叠合并。build及PG／HTTP／browser使用父授予的串行窗口，片段通过不标整票完成 |
+| 来源工作包与后续票 | WBINT-02仍IN_PROGRESS，T06–T10及A02整组未验收；WBINT-03、WBINT-08及后续票仍按当前原生依赖，不因前置关闭推进Gate |
+
+默认关闭，未push、部署、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进；用户两份dirty文档、四附件、index、HTTPS和分支保持。
+
+## 历史执行状态导航（2026-10-08，T11整票集成与收口）
 
 父任务已核对并关闭7／43票：T01／T02／T03／T04／T11／T16／T23。以下记录实际交付及被测对象，不表示整包验收或发布；此前日期导航保留为历史快照。
 
