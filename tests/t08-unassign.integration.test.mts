@@ -28,7 +28,8 @@ async function unusedPort():Promise<number>{
 test('an authorized dispatcher withdraws one unstarted Ticket assignment while retaining its group, round, communication and existing deliveries',async()=>{
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t08',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
-    await applyThrough030(context);await migrateP2016({databaseUrl:context.databaseUrl});
+    const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};
+    await applyThrough030(context);await migrateP2016(migrationOptions);
     await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t08-dispatcher-'+randomUUID(),displayName:'T08 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
