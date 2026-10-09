@@ -34,7 +34,7 @@ test('workspace default-off and closed command input reject before any new fact 
 
 test('purpose-specific recovery capability is independent of old Notes and requires raw recovery plus actual workspace capability',async()=>{
  const f=fixture(),principal={principal_id:randomUUID(),display_name:'synthetic',is_active:true,roles:['ADMIN'],team_ids:[]};const query=createP2016TicketQuery({pool:f.pool,enabled:true,authorization:{...f.authorize,resolvePrincipal:async()=>principal}});
- const ports={query,tickets:{perform:unexpected,internalNoteReceipt:unexpected},reviews:{listManualReviews:unexpected,getManualReviewDetail:unexpected,journey:unexpected,resolveManualReview:unexpected},deliveryControl:{perform:unexpected},enabled:true};
+ const ports={query,tickets:{perform:unexpected,internalNoteReceipt:unexpected},reviews:{manualReviewReceipt:unexpected,listManualReviews:unexpected,getManualReviewDetail:unexpected,journey:unexpected,resolveManualReview:unexpected},deliveryControl:{perform:unexpected},enabled:true};
  for(const [workspace,recovery,expected]of [[false,false,false],[false,true,false],[true,false,false],[true,true,true]] as const){const c=context('/api/lifecycle/bootstrap');try{await createP2016WorkbenchHttp({...ports,workbenchConversationsEnabled:workspace,workbenchDraftRecoveryEnabled:recovery})(c.value);const body=c.output();assert.ok(body&&typeof body==='object'&&'conversation_draft_recovery_enabled' in body&&'draft_recovery_enabled' in body&&'conversation_workspace_enabled' in body);assert.equal(body.conversation_workspace_enabled,workspace);assert.equal(body.conversation_draft_recovery_enabled,expected);assert.equal(body.draft_recovery_enabled,false);}finally{c.close();}}
  assert.equal(f.calls(),0);
 });
