@@ -1,4 +1,4 @@
-import type {ManualReportCommand,ManualReportResult,ManualReportCapabilities,ManualReportReceipt} from '../contracts/workbench_manual_report_contracts.js';
+import type {ManualReportCommand,ManualReportResult,ManualReportCapabilities,ManualReportReceipt,ManualReportProjection} from '../contracts/workbench_manual_report_contracts.js';
 export class ManualReportContractError extends Error{}
 export const MANUAL_REPORT_DRAFT_ID='00000000-0000-4000-8000-000000000072';
 export interface ManualReportInput {source:'PHONE'|'ON_SITE';name:string;contact:string;department:string;description:string;location:string;unknown:boolean}
@@ -26,6 +26,13 @@ export function decodeManualReportCommand(value:unknown):ManualReportCommand{
 export function manualReportCommandFromInput(input:ManualReportInput,id:string):ManualReportCommand{
   return decodeManualReportCommand({schema_version:1,client_command_id:id,source:input.source,description:input.description.trim(),location:{text:input.unknown?null:input.location.trim(),unknown:input.unknown},
     reporter:{verification:'UNVERIFIED',name:input.name.trim(),contact:input.contact.trim(),department:input.department.trim()||null}});
+}
+export function decodeManualReportProjection(value:unknown):ManualReportProjection{
+  const v=exact(value,['source_kind','source','description','location','reporter','identity_source','actor_principal_id','manual_contact_required','external_notification']),r=exact(v.reporter,['verification','name','contact','department']),l=exact(v.location,['text','unknown']);
+  if(v.source_kind!=='MANUAL_REPORT'||v.identity_source!=='HAND_ENTERED'||v.manual_contact_required!==true||v.external_notification!==false||r.verification!=='UNVERIFIED'||typeof l.unknown!=='boolean'||l.unknown&&l.text!==null)bad();
+  const description=text(v.description,4000,1,true),name=text(r.name,100,1),contact=text(r.contact,100,1),department=r.department===null?null:text(r.department,100,1),location=l.unknown?null:text(l.text,200,1);
+  if(description!==description.trim()||name!==name.trim()||contact!==contact.trim()||department!==null&&department!==department.trim()||location!==null&&location!==location.trim())bad();
+  return {source_kind:'MANUAL_REPORT',source:source(v.source),description,location:{text:location,unknown:l.unknown},reporter:{verification:'UNVERIFIED',name,contact,department},identity_source:'HAND_ENTERED',actor_principal_id:uuid(v.actor_principal_id),manual_contact_required:true,external_notification:false};
 }
 const resultCodes=['TICKET_ELIGIBLE','NEEDS_DESCRIPTION','MANUAL_REVIEW_REQUIRED','RELATED_FOLLOW_UP','STATUS_QUERY','SERVICE_REQUEST','BUSINESS_CONSULTATION','ACKNOWLEDGEMENT','OUT_OF_SCOPE','INCIDENT_REVIEW_CANDIDATE'] as const;
 const statuses=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','CLOSED','REOPENED','CANCELLED','DUPLICATE_LINKED'] as const;
