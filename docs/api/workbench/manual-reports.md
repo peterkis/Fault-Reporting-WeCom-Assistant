@@ -1,6 +1,6 @@
 # 电话／现场代录合同（WBINT-T17）
 
-返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入。POST已在工作人员宿主挂载、默认关闭；`1628d328`原HTTP1首次完整GREEN，受理202及Core原生QUEUED已到达，policy3亦通过。977d原capabilities HTTP已真实404 RED；当前最小capabilities及同账本只读receipt已挂载，GREEN尚未运行。
+返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入。POST已在工作人员宿主挂载、默认关闭；`1628d328`原HTTP1首次完整GREEN，受理202及Core原生QUEUED已到达，policy3亦通过。977d原capabilities HTTP已真实404 RED；1b318原receipt HTTP1及真实WEB关联3、581合并相关10均通过。正式form原production RED为真实工作台缺少“新报修”入口；当前UI最小实现尚待GREEN。
 
 宿主 W，内部工作人员会话。`workbenchManualReportsEnabled=false` 默认关闭；关闭时拒绝该用途并不访问042存储。启用后缺033/042 readiness 返回503。AI、外部目录、OAuth/Provider、Sender不参与受理。只有当前active ADMIN／DISPATCHER，或实际属于至少一个active处理组的HANDLER可以新代录；重复与回执每次重新核验同一当前权限。浏览器不能提供actor、WeCom identity、person binding、状态或处理人。成功受理不扩大该工作人员对新Ticket／Journey的既有读取范围。
 
@@ -22,7 +22,9 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 
 042仅增加Intake原人工描述／来源／实际Reporter未核实快照和authenticated actor；Journey/Leg/Decision引用同一Intake，不新建Ticket/Owner/receipt表。旧SQL、历史证据、181迁移分母保持。停止本票option即可停止新代录/读取用途；已保存事实与原命令账本保留，结构修复用后续迁移。
 
-正式新报修表单复用T03当前浏览器AES-GCM、不可导出key、20份/16KiB、首次保存后固定24h、principal+intake+固定新报修scope+manual-report用途。固定scope id=`00000000-0000-4000-8000-000000000072`只是浏览器草稿槽位，不代表Service Intake、人员身份或服务器资源；受理后真实Intake UUID只由服务器返回。恢复前重新GET capabilities并核验当前account；只保存业务密文与原UNKNOWN UUID/body，不保存凭据。提交、恢复均不自动POST；成功、丢弃、退出、失权、过期沿T03清理。UNKNOWN正文/UUID不可更改，只能显式GET核对；敏感过期后仅保留opaque操作标识。正式路由`/workbench/app/reports/new`及当前工作台“新报修”入口下一public production RED已准备，产品UI尚未实现。
+正式新报修表单复用T03当前浏览器AES-GCM、不可导出key、20份/16KiB、首次保存后固定24h、principal+intake+固定新报修scope+manual-report用途。固定scope id=`00000000-0000-4000-8000-000000000072`只是浏览器草稿槽位，不代表Service Intake、人员身份或服务器资源；受理后真实Intake UUID只由服务器返回。恢复前重新GET capabilities并核验当前account；只保存业务密文与原UNKNOWN UUID/body，不保存凭据。pending只保存一次原命令，不重复复制大段描述。提交、恢复均不自动POST；成功、丢弃、退出、失权、过期沿T03清理。UNKNOWN正文/UUID不可更改，只能显式GET核对；敏感过期后仅保留opaque操作标识。正式路由`/workbench/app/reports/new`及当前工作台“新报修”入口已接入；原production RED保留，GREEN尚未运行。bootstrap新增可选兼容的`manual_reports_enabled`和`manual_report_draft_recovery_enabled`，旧回复缺字段视为false，组合非法拒绝；实际创建许可仍来自当前capabilities和服务器每次验权。沿T38既有authorization epoch/transport fence，只对新建操作检查当前连接事实，只读UNKNOWN核对不发送新命令。
+
+当前授权看板／列表／事项卡片在本票开关启用时，从本次保留期内真实MANUAL快照展示“电话代录／现场代录”和姓名附“身份未核实”。默认关闭不读取042字段，已有BOT/WEB及群名称字段保持；不把未核实姓名提升为人员目录、WeCom收件人或已解析profile。该显示仍由既有Core/Review/Intake读取权限决定，回执不赋予额外工单可见权。
 
 资源沿既有单App/Worker、Gateway单活、SSE32、共享pool max4／总预算8；本票无新后台worker、timer或目录网络。公共验证seam为真实已编译HTTP＋隔离PG及正式production bundle，七项追溯见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。T18目录核实、T19一步接单均不在本票。
 
