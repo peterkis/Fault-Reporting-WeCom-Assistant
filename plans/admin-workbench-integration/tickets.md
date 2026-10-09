@@ -189,11 +189,13 @@ native_blocking_edges: 76
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)、[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-12 / A12
 
-- [ ] **T38** — [#93 通过SSE更新真实工作台事实](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
+- [x] **T38** — [#93 通过SSE更新真实工作台事实](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
+  - **执行：** 2026-10-09 CLOSED；七项证据、真实被测祖先与分层结果见[实施记录](execution/t38.md)及[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93#issuecomment-6073463450)。本地集成，尚未发布。
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-13 / A13
 
 - [ ] **T39** — [#94 提示当前查看与编辑活动](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签及原生blocker #93 CLOSED，领取给peterkis；准备基于当前integration的独立实施，尚未验证。
   - **Blocked by:** [#93](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
   - **来源：** WBINT-13 / A13
 

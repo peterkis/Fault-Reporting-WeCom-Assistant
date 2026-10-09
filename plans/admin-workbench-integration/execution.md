@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-09，恢复与依赖领取）
+## 当前执行状态导航（2026-10-09，T38收口与T39领取）
+
+父任务已核对并关闭10／43票：T01／T02／T03／T04／T05／T11／T14／T16／T23／T38。以下关闭与领取已从GitHub读回；后续票继续按原生依赖，不以片段PASS代替整票。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T38 / #93 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93#issuecomment-6073463450)及[七项验收记录](execution/t38.md)可追溯。WBINT-13／A13仅T38子项完成 |
+| T38实际集成与被测对象 | `1d6f3b2fea0b36c1c57b218d841d24fe98ef27fa`已安全快进，尚未push；真实被测祖先`224c06d2fe4716687fdc01d573ec704b26b3a9c1`的一次build／strict／artifact和当前WEB01 9＋启用真实流1共10项通过。后继仅四份计划Markdown，完整958输入与1047输出／库存逐SHA相等，原manifest不重绑 |
+| T38分层证据与资源 | 原`0e1a328b`的专属19、兼容27、工具18＋1与9主映射行保持原对象；原FAIL／NOT_RUN保留，不宣称当前制品重跑过旧层。1678个原物及16张实际PNG外部归档逐length／SHA核对一致；自有资源归零，D盘managed工作树已实际归档 |
+| T39 / #94 | 完整正文／空评论／ready标签及原无assignee已实读，唯一原生blocker #93 CLOSED，领取给peterkis；准备获权短暂查看／编辑活动。它不领取、锁单、推进已读或替代责任，尚未验证 |
+| T24／T10与其他在途票 | T24同轮投递稳定身份单例实际1PASS，旧2PASS保持独立对象；T10原等待单例实际FAIL，200响应缺真实处理轮次，后层未达。两窗口均已终端释放并独立核实PG0／0；继续原票剩余范围与串行验证 |
+
+默认关闭，未push、部署、真实Provider／OAuth／WeCom／外发、full／certify或Gate推进；用户两份dirty文档、四附件、index及HTTPS保持。T40和整组A13未验收。
+
+## 历史执行状态导航（2026-10-09，恢复与依赖领取）
 
 父任务已核对并关闭9／43票：T01／T02／T03／T04／T05／T11／T14／T16／T23。以下区分实际被测对象与文档后继，关闭票不表示整包验收或发布。
 
