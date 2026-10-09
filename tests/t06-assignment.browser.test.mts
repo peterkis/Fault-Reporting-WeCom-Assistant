@@ -17,6 +17,7 @@ type RequestFact={order:number;method:string;path:string;status:number|null;body
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 function string(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
+function failureDetails(value:unknown):Record<string,unknown>{return value instanceof AggregateError?{name:value.name,message:value.message,errors:Array.from(value.errors,(nested:unknown)=>failureDetails(nested))}:value instanceof Error?{name:value.name,message:value.message,stack:value.stack}:{value:String(value)};}
 function selectExpression(label:string){return `Array.from(document.querySelectorAll('.detail-dialog select')).find(input=>Array.from(input.labels??[]).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;}
 async function choose(browser:Browser,label:string,text:string){
   const select=selectExpression(label);
@@ -54,7 +55,8 @@ test('production staff explicitly transfer an assigned queued Ticket with real g
       const url=new URL(request.url??'/',context.origin);if(!url.pathname.startsWith('/api/'))return;
       const fact:RequestFact={order:requests.length,method:request.method??'',path:url.pathname,status:null,body:null,idempotency_key:request.headers['idempotency-key'],if_match:request.headers['if-match'],csrf_present:typeof request.headers['x-csrf-token']==='string'&&request.headers['x-csrf-token'].length>0,origin_same:request.headers.origin===context.origin};requests.push(fact);
       response.once('finish',()=>{fact.status=response.statusCode;});
-      if(fact.method==='POST'){const chunks:Buffer[]=[];request.on('data',(chunk:unknown)=>{if(Buffer.isBuffer(chunk))chunks.push(chunk);else if(typeof chunk==='string')chunks.push(Buffer.from(chunk));});request.once('end',()=>{try{fact.body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fact.body=null;}});}
+      // Keep the server's delayed async iterator as the reader; a flowing observer would drain the body before authentication finishes.
+      if(fact.method==='POST'){request.pause();const chunks:Buffer[]=[];request.on('data',(chunk:unknown)=>{if(Buffer.isBuffer(chunk))chunks.push(chunk);else if(typeof chunk==='string')chunks.push(Buffer.from(chunk));});request.once('end',()=>{try{fact.body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fact.body=null;}});}
     };
     context.runtime.server.on('request',observe);
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
@@ -89,11 +91,12 @@ test('production staff explicitly transfer an assigned queued Ticket with real g
       assert.deepEqual((await context.pool.query('SELECT cycle_id::text FROM pilot_ticket.ticket_handling_cycle_event WHERE ticket_event_id=$1::uuid',[string(last.event_id)])).rows,[{cycle_id:cycle.id}]);
       assert.deepEqual(rows((await get(path+'/responsibility')).value.conversations),[]);await capture('new-detail-page-1280.png');
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',assignment_transfer:true,production_staff_role:'HANDLER',communication_choice:'RETAIN_CURRENT',one_command:true,persisted_person_and_team:true,same_cycle:true,current_scope_read_404:true,requests,screenshots}));
-    }catch(failure){error=failure;}
-    await closeBrowserTestResources([
-      async()=>{if(error&&browser){await writeFile(join(directory,'failure.png'),Buffer.from(string(await browser.screenshot()),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify({page:await browser.evaluate('({text:document.body.innerText,url:location.pathname})'),requests}));}},
-      async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
-      async()=>{context.runtime.server.removeListener('request',observe);assert.equal((await context.runtime.observability.metrics()).sse_clients,0);},
-    ],error);
+    }catch(failure){error=failure;console.error('T06_BROWSER_PRIMARY '+JSON.stringify(failureDetails(failure)));}
+    const cleanup=async(name:string,close:()=>Promise<unknown>)=>{try{await close();console.error('T06_BROWSER_CLEANUP '+JSON.stringify({name,status:'PASS'}));}catch(failure){console.error('T06_BROWSER_CLEANUP '+JSON.stringify({name,status:'FAIL',error:failureDetails(failure)}));throw failure;}};
+    try{await closeBrowserTestResources([
+      ()=>cleanup('failure-capture',async()=>{if(error&&browser){await writeFile(join(directory,'failure.png'),Buffer.from(string(await browser.screenshot()),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify({primary:failureDetails(error),page:await browser.evaluate('({text:document.body.innerText,url:location.pathname})'),requests}));}}),
+      ()=>cleanup('owned-browser',async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}),
+      ()=>cleanup('observer-and-sse',async()=>{context.runtime.server.removeListener('request',observe);assert.equal((await context.runtime.observability.metrics()).sse_clients,0);}),
+    ],error);}catch(failure){console.error('T06_BROWSER_TERMINAL '+JSON.stringify(failureDetails(failure)));throw failure;}
   },{ticketSelfHandlingEnabled:true,...{ticketAssignmentEnabled:true},workbenchRealtimeEnabled:true});
 });
