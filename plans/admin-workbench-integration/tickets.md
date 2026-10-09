@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-08
+snapshot_on: 2026-10-09
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -16,6 +16,8 @@ native_blocking_edges: 76
 2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。首次T01核查时43票均OPEN、76边与发布记录一致；该发布快照保留在机器可读记录中。2026-10-08父任务实时核对后，T01／T02／T03／T04／T05／T11／T14／T16／T23已集成并在GitHub关闭，共9／43票。以下勾选仅表示已核实的Issue关闭状态，不表示发布、部署或整个工作包验收；其他票仍以执行前的GitHub状态为准。
 
 发布时frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。其实际完成和GitHub收口核验后，再从当前无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
+
+2026-10-09当前已核实关闭12／43票：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T38。T06派单与显式转派已验收、集成并[GitHub收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61#issuecomment-6083677579)；历史零字节浏览器profile保留为清理例外，详情见[七项证据与关闭方式](execution/t06.md)。
 
 ## 导航与配置
 
@@ -52,10 +54,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **来源：** WBINT-02 / A02
 
-- [ ] **T06** — [#61 将工单派给同事或显式转派](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
+- [x] **T06** — [#61 将工单派给同事或显式转派](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)
   - **来源：** WBINT-02 / A02
-  - **本地执行：** blocker已关闭后实时核对并领取给peterkis；独立实施准备，尚未验收。
+  - **本地执行：** [LOCAL_VERIFIED：派单／转派、明确沟通原子交接、轮次、草稿与七项证据](execution/t06.md)已集成、关票。历史零字节profile清理受自动审批拒绝，已保全并如实记录。
 
 - [ ] **T07** — [#62 接管获权可见的跨团队工单](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
