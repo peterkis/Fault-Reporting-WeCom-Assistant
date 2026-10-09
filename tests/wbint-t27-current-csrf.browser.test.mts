@@ -61,6 +61,7 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
       const oldCsrf=stringField(originalBootstrap,'csrf_token');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/incidents/candidates/'+candidateId});
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('[data-action=refresh-candidate]'))`);
+      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]'))`);
       await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');
       const captured=await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]').textContent`);
       assert.equal(typeof captured,'string');assert.match(String(captured),/已捕获候选版本 1；当前候选版本 1/u);
