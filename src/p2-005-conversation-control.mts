@@ -260,12 +260,12 @@ export function createConversationControlService({ pool, enabled = false, author
     const next=await advanceSession(tx,command,occurredAt,{mode:'HUMAN'}); const event=await appendControlEvent(tx,command,hash,{event_type:'ASSIGNMENT_TRANSFERRED',old_assignment_status:'ASSIGNED',new_assignment_status:'ASSIGNED',old_control_mode:session.control_mode,new_control_mode:'HUMAN',generation_version_after:next.generation_version,session_row_version_after:next.row_version,occurred_at:occurredAt});
     await appendRealtime(tx,[mapControlRealtime('conversation.assigned','HANDOFF_EVENT',event.id,'ASSIGNMENT_TRANSFERRED','CONVERSATION_SESSION',command.session_id,next,{assignment_status:'ASSIGNED',assignment_version:Number((updated.rows[0] as AssignmentViewRow).assignment_version)},occurredAt)]); return result({event,session:next,assignment:(updated.rows[0] as AssignmentViewRow),handoff:await activeHandoff(tx,command.session_id)});
   }
-  async function transferAssignment(input: ControlCommandFor<'TRANSFER'>) { return execute(input, async context => {
+  async function transferAssignment(input: ControlCommandFor<'TRANSFER'>,transaction:PostgresTransaction|null=null) { return execute(input, async context => {
     const assignment=await currentAssignment(context.tx,context.command.session_id,true);
     if(!assignment||assignment.assignment_status!=='ASSIGNED')fail(CONVERSATION_CONTROL_ERROR_CODES.assignmentConflict);
     if(assignment.assigned_principal_id===context.command.target_principal_id)fail(CONVERSATION_CONTROL_ERROR_CODES.targetInvalid);
     return transferCurrentAssignment(context,assignment);
-  }); }
+  },transaction); }
 
   async function releaseAssignment(input: ControlCommandFor<'RELEASE'>) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
     const assignment=await currentAssignment(tx,command.session_id,true); if(!assignment||assignment.assignment_status!=='ASSIGNED') fail(CONVERSATION_CONTROL_ERROR_CODES.assignmentConflict); await authorizeCall(authorize,'authorizeRelease',{transaction:tx,command,session,assignment});
@@ -311,7 +311,12 @@ export function createConversationControlService({ pool, enabled = false, author
       ||normalized.actor_principal_id===null||normalized.actor_principal_id!==normalized.target_principal_id||normalized.force)fail();
     return takeoverSession(command,transaction,true);
   }
-  return Object.freeze({requestHandoff,takeoverSession,takeoverSessionInTransaction,takeResponsibilityInTransaction,transferAssignment,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
+  async function transferAssignmentInTransaction({transaction,command}:{transaction:PostgresTransaction;command:ControlCommandFor<'TRANSFER'>}){
+    const normalized=normalizeConversationControlCommand(command);
+    if(!transaction||typeof transaction.query!=='function'||normalized.command_type!=='TRANSFER'||normalized.actor_principal_id===null||normalized.force)fail();
+    return transferAssignment(command,transaction);
+  }
+  return Object.freeze({requestHandoff,takeoverSession,takeoverSessionInTransaction,takeResponsibilityInTransaction,transferAssignment,transferAssignmentInTransaction,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
 }
 
 function mapControlRealtime(eventType: string,sourceType: string,sourceId: string,variant: string,aggregateType: string,aggregateId: string,session: SessionState,payload: Record<string, unknown>,occurredAt: string) {
