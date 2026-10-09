@@ -588,6 +588,22 @@
     },
     "web_report": {
       "$ref": "p2_016_web_report.schema.json"
+    },
+    "material_basis": {
+      "$ref": "workbench_review_material_basis.schema.json"
+    },
+    "materials": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "workbench_review_material.schema.json"
+      }
+    },
+    "materials_truncated": {
+      "type": "boolean"
+    },
+    "canonical_item": {
+      "$ref": "workbench_canonical_item.schema.json"
     }
   },
   "x-business-timezone": "Asia/Shanghai",

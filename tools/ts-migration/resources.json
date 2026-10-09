@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_review_contracts.d.ts",
+    "contracts/workbench_review_material_basis.schema.json",
+    "contracts/workbench_review_receipt.schema.json",
+    "contracts/workbench_review_material.schema.json",
+    "contracts/workbench_canonical_item.schema.json",
     "contracts/p2_016_conversation_self_handling_command.schema.json",
     "contracts/p2_016_related_conversation_page.schema.json",
     "contracts/p2_016_conversation_handling_result.schema.json",

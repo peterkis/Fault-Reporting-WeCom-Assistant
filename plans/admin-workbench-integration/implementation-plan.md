@@ -18,10 +18,10 @@ execution_status: IN_PROGRESS
 | --- | --- | --- | --- | --- |
 | WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | T01文档与[T23来源群目录LOCAL_VERIFIED](execution/t23.md)已本地集成、关票；各详细合同继续由所属票冻结 | A00 |
 | WBINT-01 | 命令上下文、错误与草稿基础 | 00 | [T02可靠备注LOCAL_VERIFIED](execution/t02.md)与[T03持久恢复LOCAL_VERIFIED](execution/t03.md)均已集成、关票；后续表单分别验证其消费合同，整体证据由T43汇总 | A01 |
-| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)、[T04无会话本人承接LOCAL_VERIFIED](execution/t04.md)及[T05明确关联沟通原子承接LOCAL_VERIFIED](execution/t05.md)已本地集成并关票；T06已领取，T06–T10未完成，A02整组尚未验收 | A02 |
+| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)、[T04无会话本人承接LOCAL_VERIFIED](execution/t04.md)及[T05明确关联沟通原子承接LOCAL_VERIFIED](execution/t05.md)已本地集成并关票；T06／T10已按原生依赖领取，T06–T10未完成，A02整组尚未验收 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | IN_PROGRESS：[T11工作人员完工LOCAL_VERIFIED](execution/t11.md)已本地集成，内部过程／独立安全摘要／工作人员关闭与持久通知承诺同事务；T12／T13未开始，A03整组尚未验收 | A03 |
-| WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)已本地集成；T14已领取，T15未开始，A04整组尚未验收 | A04 |
-| WBINT-05 | 工作人员代录、成员候选 | 02、04 | NOT_STARTED | A05 |
+| WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T14同事项人工复核LOCAL_VERIFIED](execution/t14.md)与[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)均已本地集成并关票；T15未开始，A04整组尚未验收 | A04 |
+| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：T17已按原生依赖领取，实施未核实身份的电话／现场代录；T18／T19未开始，A05整组尚未验收 | A05 |
 | WBINT-06 | 原 Reporter 反馈与重开 | 03 | NOT_STARTED | A06 |
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | IN_PROGRESS：T22已按原生依赖领取 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：T24单聊Bot来源通知已按原生依赖领取，独立实施准备中；T25／T26未开始，A08整组尚未验收 | A08 |

@@ -1,0 +1,47 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_review_receipt.schema.json",
+  "title":"Authorized read-only MANUAL_REVIEW command receipt",
+  "anyOf":[
+    {
+      "type":"object","additionalProperties":false,
+      "required":["client_command_id","review_id","state"],
+      "properties":{
+        "client_command_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "review_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "state":{"const":"UNKNOWN"}
+      }
+    },
+    {
+      "type":"object","additionalProperties":false,
+      "required":["client_command_id","review_id","state","error"],
+      "properties":{
+        "client_command_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "review_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "state":{"const":"FAILED"},
+        "error":{"type":"object","additionalProperties":false,"required":["code","retryable"],"properties":{
+          "code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"retryable":{"const":false}
+        }}
+      }
+    },
+    {
+      "type":"object","additionalProperties":false,
+      "required":["client_command_id","review_id","state","result"],
+      "properties":{
+        "client_command_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "review_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "state":{"const":"COMMITTED"},
+        "result":{"type":"object","additionalProperties":false,
+          "required":["ok","review_id","status","resolution_decision_id","action_count","replayed"],
+          "properties":{
+            "ok":{"const":true},
+            "review_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+            "status":{"enum":["RESOLVED","CANCELLED"]},
+            "resolution_decision_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+            "action_count":{"type":"integer","minimum":0,"maximum":20},"replayed":{"const":true}
+          }
+        }
+      }
+    }
+  ]
+}
