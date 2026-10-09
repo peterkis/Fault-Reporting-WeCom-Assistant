@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
 import {createServer} from 'node:net';
+import type {Server} from 'node:http';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -15,7 +16,7 @@ export function record(value:unknown):Record<string,unknown>{assert.ok(value&&ty
 export function text(value:unknown):string{assert.equal(typeof value,'string');if(typeof value!=='string')throw Error('T27_STRING_REQUIRED');return value;}
 type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
 export interface Setup {pool:PostgresPool;f:Fixture;candidateId:string}
-export interface Context extends Setup {browser:Browser;root:string;origin:string;started:Record<string,unknown>;choose:(label:string,value:string)=>Promise<void>;capture:()=>Promise<void>}
+export interface Context extends Setup {browser:Browser;root:string;origin:string;server:Server;started:Record<string,unknown>;choose:(label:string,value:string)=>Promise<void>;capture:()=>Promise<void>}
 export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:options.purpose,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     const migrationInput={databaseUrl,mode:'apply'};await applyThrough031({pool,databaseUrl});await migrateP2012(migrationInput);
@@ -38,7 +39,7 @@ export async function candidateBrowser(options:{purpose:string;recovery?:boolean
       await browser.waitFor(options.workspace===false?'document.body.innerText.includes("候选工作区尚未启用")':`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]'))`);
       await browser.waitFor('Array.isArray(globalThis.__t27DomainReads)&&Array.isArray(globalThis.__t27Posts)');
       const activeBrowser=browser,choose=async(label:string,value:string)=>{await activeBrowser.evaluate(`(()=>{const select=document.querySelector(${JSON.stringify(root)}).querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!select)throw Error('MISSING_SELECT');select.value=${JSON.stringify(value)};select.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
-      await run({pool,f,candidateId,browser,root,origin,started,choose,capture});assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);await capture();console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',purpose:options.purpose,screenshots}));
+      await run({pool,f,candidateId,browser,root,origin,server:runtime.server,started,choose,capture});assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);await capture();console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',purpose:options.purpose,screenshots}));
     }catch(failure){error=failure;if(browser)try{await capture();await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));console.log('T27_FAILURE_DIRECTORY '+directory);}catch(evidenceFailure){error=new AggregateError([failure,evidenceFailure],'T27_EVIDENCE_FAILURE');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
   }});await assertNoP2012Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
