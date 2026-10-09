@@ -117,7 +117,7 @@ export interface ServiceIntakeRow {
   id: string;
   intake_no: string;
   source_channel: IntakeSourceChannel;
-  reporter_wecom_userid: string;
+  reporter_wecom_userid: string | null;
   request_type: TicketRequestType;
   reported_campus_id: string | null;
   reported_department_id: string | null;
@@ -180,7 +180,7 @@ export interface PublicIntake {
   id: string;
   intake_no: string;
   source_channel: IntakeSourceChannel;
-  reporter_wecom_userid: string;
+  reporter_wecom_userid: string | null;
   reporter_person_id: null;
   request_type: TicketRequestType;
   summary: null;

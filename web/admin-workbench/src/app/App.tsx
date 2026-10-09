@@ -20,6 +20,8 @@ import {AttachmentSection} from '../features/attachments/AttachmentSection';
 import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
 import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
 import {ReviewWorkspace} from '../features/manual-review/ReviewWorkspace';
+import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
+import {useManualReportAuthority} from '../features/manual-report/use-manual-report-draft';
 import {useWorkbenchRealtime,realtimeLabels} from '../realtime/useRealtime';
 import type {RealtimeView} from '../realtime/useRealtime';
 
@@ -112,13 +114,13 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
     onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出，当前浏览器的恢复副本已清理。'),
     onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看当前工单事实。')});
   useEffect(()=>{
-    if(!principal.draft_recovery_enabled&&!principal.manual_review_draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.staff_completion_draft_recovery_enabled&&!principal.logout_enabled)return;
+    if(!principal.draft_recovery_enabled&&!principal.manual_review_draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.staff_completion_draft_recovery_enabled&&!principal.manual_report_draft_recovery_enabled&&!principal.logout_enabled)return;
     try{return subscribeDrafts(value=>{
       if(value.principal!==principal.principal_id||value.principal!==client.getQueryData<Principal>(['session'])?.principal_id)return;
       if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
       else if(value.reason==='revoked'){if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
     });}catch{return;}
-  },[client,principal.principal_id,principal.draft_recovery_enabled,principal.manual_review_draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.staff_completion_draft_recovery_enabled,principal.logout_enabled]);
+  },[client,principal.principal_id,principal.draft_recovery_enabled,principal.manual_review_draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.staff_completion_draft_recovery_enabled,principal.manual_report_draft_recovery_enabled,principal.logout_enabled]);
   const settings=useLocation().pathname.startsWith('/settings/'),canNameGroups=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
   const [online,setOnline]=useState(navigator.onLine);
   const guardNavigation=(event:MouseEvent<HTMLAnchorElement>)=>{if(navigationBlocked)event.preventDefault();};
@@ -216,7 +218,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const label=(column:BoardColumn)=>column==='closed'&&range==='cancelled'?'已取消':names[column];
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}>{!fullPage?<div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={30} strokeWidth={1.6}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">{principal.internal_notes_enabled||principal.ticket_self_handling_enabled||principal.manual_review_enabled||principal.ticket_staff_completion_enabled?'人工协作':'只读'}</span></div>
     <div className="toolbar"><div className="scope-tabs"><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未开放">与我有关<small>后续</small></button></div>
-      <div className="tools"><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
+      <div className="tools"><ManualReportEntry principal={principal} blocked={navigationBlocked}/><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">全部完结记录</option><option value="cancelled">已取消（全部时间）</option></select></label>
       {completionWindow?<span className="range-caption">{range==='recent'?'已关闭：'+completionWindow.from.slice(5,10)+' – '+until+'（北京时间） · 已解决待确认保留':range==='cancelled'?'第三列仅查看已取消事项':'完结记录不限日期；取消事项另行查看'}</span>:null}</div>
     {view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range} query={query} loaded={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
@@ -229,10 +231,12 @@ function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useU
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null&&closedNotice===null});
   const realtime=useWorkbenchRealtime(failure===null&&closedNotice===null?bootstrap.data:undefined);
+  useManualReportAuthority(failure===null&&closedNotice===null?bootstrap.data:undefined);
   if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(bootstrap.isPending)return <div className="entry-state"><Message text="正在核验内部会话…"/></div>;
   if(bootstrap.isError&&!bootstrap.data)return <div className="entry-state"><h1>医小修工作台</h1><Message text={errorMessage(bootstrap.error)} retry={()=>{void bootstrap.refetch();}}/><a href="/workbench">返回现有工作台入口</a></div>;
+  if(/^\/reports\/new\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><ManualReportForm key={bootstrap.data.principal_id+':'+bootstrap.data.authorization_revision} principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>;
   return /^\/settings\/source-groups\/?$/iu.test(location.pathname)?<Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><SourceGroupDirectory key={bootstrap.data.principal_id} principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>:<Workbench key={bootstrap.data.principal_id} principal={bootstrap.data} realtime={realtime}/>;
 }
-export function App(){return <Routes><Route path="/" element={<Session/>}/><Route path="items/:kind/:id" element={<Session/>}/><Route path="settings/source-groups" element={<Session/>}/><Route path="*" element={<div className="entry-state"><Message text="页面不存在。"/><Link to="/">返回工作台</Link></div>}/></Routes>;}
+export function App(){return <Routes><Route path="/" element={<Session/>}/><Route path="items/:kind/:id" element={<Session/>}/><Route path="settings/source-groups" element={<Session/>}/><Route path="reports/new" element={<Session/>}/><Route path="*" element={<div className="entry-state"><Message text="页面不存在。"/><Link to="/">返回工作台</Link></div>}/></Routes>;}

@@ -22,6 +22,7 @@ import {
   safeHash,
   snapshotP2015Json,
 } from './p2-015-domain-contracts.mjs';
+import {readManualReportSource} from './workbench-manual-report-source.mjs';
 
 const RESOLUTIONS = new Set(['CONFIRM_TICKET_ELIGIBLE','REQUEST_DESCRIPTION','CLASSIFY_SERVICE_REQUEST',
   'CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE','LINK_EXISTING_JOURNEY',
@@ -34,8 +35,9 @@ const RESULT_BY_RESOLUTION: Readonly<Record<ReviewResolutionCode, P2015ResultCod
   CANCEL_REVIEW: 'MANUAL_REVIEW_REQUIRED',
 });
 
-export function createManualReviewStore({ authorizer = null, webSource = null }: { authorizer?: ReviewAuthorizer | null; webSource?: boolean | null } = {}) {
+export function createManualReviewStore({ authorizer = null, webSource = null,manualSource=false }: { authorizer?: ReviewAuthorizer | null; webSource?: boolean | null;manualSource?:boolean } = {}) {
   if (![true, false, null].includes(webSource)) failP2015(P2_015_ERROR_CODES.inputInvalid);
+  if(typeof manualSource!=='boolean')failP2015(P2_015_ERROR_CODES.inputInvalid);
   async function supportsWebSource(transaction: PostgresTransaction) {
     if (webSource !== null) return webSource;
     const result = await transaction.query<{ count: number }>(`SELECT count(*)::integer AS count
@@ -61,8 +63,14 @@ export function createManualReviewStore({ authorizer = null, webSource = null }:
           AND j.retention_until_epoch_ms>platform.physical_epoch_ms()`,[review_id,ids]);
     const row=selected.rows[0];if(!row)failP2015(P2_015_ERROR_CODES.authorizationDenied);
     const materials:ReviewMaterial[]=[];let currentRevision:string,currentSourceHash:string,changed:boolean,truncated=false;
-    const sourceKind=row.source_kind==='WEB'?'WEB':'BOT';
-    if(sourceKind==='WEB'){
+    const sourceKind=row.source_kind==='MANUAL'?'MANUAL':row.source_kind==='WEB'?'WEB':'BOT';
+    if(sourceKind==='MANUAL'){
+      if(!manualSource)failP2015(P2_015_ERROR_CODES.authorizationDenied);
+      const input=await readManualReportSource(transaction,row.service_intake_id);if(!input)failP2015(P2_015_ERROR_CODES.authorizationDenied);
+      currentRevision='1';currentSourceHash=input.source_hash;
+      changed=row.source_window_start_sequence!==1||row.source_window_end_sequence!==1||row.source_message_count!==1||row.source_hash!==currentSourceHash;
+      materials.push({source_ref:'manual:'+row.service_intake_id,revision:'1',text:input.report.description,in_original_basis:!changed});
+    }else if(sourceKind==='WEB'){
       const binding=await transaction.query<{input_revision:string}>(`SELECT input_revision::text FROM intake.web_request_binding
         WHERE intake_id=$1::uuid AND revoked_at IS NULL AND retention_until>platform.local_now()`,[row.service_intake_id]);
       const current=binding.rows[0];if(!current)failP2015(P2_015_ERROR_CODES.authorizationDenied);
@@ -96,7 +104,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null }:
     const originalRevision=String(sourceKind==='WEB'?row.basis_input_revision:row.source_window_end_sequence);
     // A Decision is bound to its own Leg. Later Legs add evidence that it did not judge.
     // Older independent Legs and unrelated Journey/Ticket revisions do not replace this basis.
-    const later=sourceKind==='BOT'?await transaction.query<{id:string;intake_id:string}>(`SELECT l.id::text,l.source_intake_id::text AS intake_id
+    const later=sourceKind!=='WEB'?await transaction.query<{id:string;intake_id:string}>(`SELECT l.id::text,l.source_intake_id::text AS intake_id
       FROM intake.channel_leg l JOIN intake.channel_leg basis ON basis.id=$2::uuid
       WHERE l.journey_id=$1::uuid AND l.leg_ordinal>basis.leg_ordinal ORDER BY l.leg_ordinal LIMIT 101`,[row.journey_id,row.channel_leg_id]):{rows:[]};
     if(later.rows.length>100)failP2015(P2_015_ERROR_CODES.inputInvalid);
