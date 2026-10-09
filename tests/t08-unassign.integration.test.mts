@@ -37,6 +37,9 @@ test('an authorized dispatcher withdraws one unstarted Ticket assignment while r
     const intake=object(await seedPersistedIntake({pool:context.pool,text:'T08 全新合成报修，打印服务不可用。',requestType:'INCIDENT',status:'RECEIVED'}));
     const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:string(intake.intakeId),occurredAt:assertLocalDateTime(intake.receivedAt),traceId:'t08-public-fixture'});
     assert.ok(created.ticket);const ticketId=created.ticket.id,path='/api/tickets/'+ticketId;
+    // Synthetic NEW precondition only in this freshly-created random fixture database.
+    // The public Core creates QUEUED; responsibility changes and all assertions remain real HTTP.
+    await context.pool.query("UPDATE pilot_ticket.ticket SET status='NEW' WHERE id=$1::uuid AND status='QUEUED' AND version=1 AND assignee_id IS NULL",[ticketId]);
     const port=await unusedPort(),origin='http://127.0.0.1:'+port;
     const runtimeOptions={pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:port,principalIds:[dispatcher.id,handler.id],externalSendEnabled:false,ticketAssignmentEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketUnassignEnabled:true};
     const runtime=createP2016Runtime(runtimeOptions);assert.ok('server' in runtime);
