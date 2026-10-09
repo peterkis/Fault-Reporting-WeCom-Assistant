@@ -533,6 +533,14 @@
           "maxLength": 64,
           "pattern": "^[a-f0-9]{64}$"
         },
+        "classification_source": {
+          "$ref": "workbench_manual_classification_source.schema.json"
+        },
+        "privacy_flags": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"type": "string", "maxLength": 128}
+        },
         "human_override": {
           "type": "object",
           "additionalProperties": false,
@@ -588,6 +596,9 @@
     },
     "web_report": {
       "$ref": "p2_016_web_report.schema.json"
+    },
+    "manual_report": {
+      "$ref": "workbench_manual_report_projection.schema.json"
     },
     "material_basis": {
       "$ref": "workbench_review_material_basis.schema.json"

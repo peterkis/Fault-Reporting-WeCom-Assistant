@@ -14,9 +14,16 @@ const reasons={HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'�
 const fields:Record<string,string>={selected_service_code:'服务',symptom_codes:'现象',domain_intent:'诉求',transaction_stage:'阶段',scope:'影响范围'};
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'conflict'|'denied';
 const sameItem=(a:CanonicalItem,b:CanonicalItem)=>a.kind===b.kind&&a.id===b.id;
-function Evidence({view}:{view:ReviewView}){
+function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
   const e=view.evidence;
   return <>
+    {view.manual_report?<section data-review-manual-report aria-label="本次代录事实"><h4>{view.manual_report.source==='PHONE'?'电话代录':'现场代录'}</h4>
+      <p>报修人身份未核实，需人工联系；本次不会自动通知。</p>
+      <dl><div><dt>报修人</dt><dd>{view.manual_report.reporter.name}</dd></div><div><dt>联系方式</dt><dd>{view.manual_report.reporter.contact}</dd></div>
+        <div><dt>报修人科室</dt><dd>{view.manual_report.reporter.department??'未填写'}</dd></div><div><dt>位置</dt><dd>{view.manual_report.location.unknown?'位置暂不清楚':view.manual_report.location.text}</dd></div></dl>
+      <p>代录人：{view.manual_report.actor_principal_id===principal.principal_id?principal.display_name:'工作人员身份已记录'}</p>
+      <details><summary>代录主体记录</summary><p>{view.manual_report.actor_principal_id}</p><p>报修人资料来自本次手工填报，尚未核实身份。</p></details>
+    </section>:null}
     <section data-review-original aria-label="原判断"><h4>原判断</h4><p>{e.result} · {e.reason}</p><p>安全提示：{e.risk}</p>
       <dl>{e.known.map(item=><div key={item.field}><dt>{fields[item.field]??item.field}</dt><dd>{item.value}</dd></div>)}</dl>{!e.known.length?<p>暂无结构化已知字段，请核对来源材料。</p>:null}
       <p>缺失字段：{e.missing.join('、')||'未列出'}</p><p>冲突：{e.conflicts.map(item=>item.code+' '+item.sources.join('、')).join('；')||'未列出'}</p>
@@ -105,7 +112,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Princip
   const view=context.data,capture=value.capture,changed=Boolean(capture&&(capture.row_version!==view.row_version||capture.material_basis!==view.material_basis.current_hash||!sameItem(capture.canonical_item,view.canonical_item)));
   const allowed=view.status==='PENDING'&&Boolean(value.choice)&&view.allowed_resolutions.includes(value.choice as keyof typeof resolutions)&&(!view.material_basis.stale||value.choice==='CANCEL_REVIEW');
   const canSubmit=allowed&&!changed&&!busy&&!unresolved&&state!=='succeeded'&&draft.canSubmit&&Boolean(value.reason)&&Boolean(capture)&&sameItem(item,view.canonical_item);
-  return <div data-review-id={reviewId}><p>待复核原因：{view.review_reason}；复核版本 {view.row_version} · {view.status}</p><Evidence view={view}/>
+  return <div data-review-id={reviewId}><p>待复核原因：{view.review_reason}；复核版本 {view.row_version} · {view.status}</p><Evidence view={view} principal={principal}/>
     <p>当前支持的结论：{view.allowed_resolutions.map(code=>resolutions[code]).join('、')||'此复核没有新的可执行结论'}。</p>
     <p>当前不支持：关联其他 Journey。</p>
     <form onSubmit={event=>{event.preventDefault();if(!canSubmit||!capture||!value.choice)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:capture.row_version,
