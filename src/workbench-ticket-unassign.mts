@@ -67,14 +67,14 @@ export function createTicketUnassignService({pool,query,enabled=false,...hooks}:
       if(!await unassignEligible(transaction,principal,ticket))failP2016('UNASSIGN_STATE_CONFLICT',409);
       if(command.communication_choice!=='RETAIN_CURRENT')failP2016('CONTROL_UNAVAILABLE',503);
       const cycle=await assignmentCycle(transaction,ticket.id);
-      if(!cycle?.first_responsibility_event_id)failP2016('UNASSIGN_STATE_CONFLICT',409);
+      if(cycle?.first_responsibility_event_id===null||!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('UNASSIGN_STATE_CONFLICT',409);
       const updated=await transaction.query<Pick<P2016TicketRow,'id'|'status'|'version'>>(`UPDATE pilot_ticket.ticket SET assignee_id=NULL,status='QUEUED',version=version+1,
         updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND version=$2 RETURNING id::text,status,version`,[ticket.id,command.expected_version]);
       const changed=updated.rows[0];if(!changed)failP2016('VERSION_CONFLICT',409);
       const result={ticket:{...ticket,...changed,assignee_id:null},event:await appendTicketEvent({transaction,ticket:changed,eventType:'ticket.unassigned',oldStatus:ticket.status,
         actor:{type:'PILOT_USER',id:principal.principal_id},reasonCode:command.reason_code,internalNote:command.reason,traceId:'t08:'+command.client_command_id,
         assignmentMetadata:{old_assignee_id:ticket.assignee_id,new_assignee_id:null,old_team_id:ticket.resolver_team_id,new_team_id:ticket.resolver_team_id}})};
-      await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
+      if(cycle)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
       await hooks.realtimeProjector?.({transaction,...result,command});
       return {ok:true as const,ticket_id:ticket.id,ticket_version:changed.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};
     }});
