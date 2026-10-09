@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t24-round-notifications.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t24-round-notification-identity.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t24-round-notifications.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t05-conversation-handling.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -342,6 +343,7 @@
     "v3-p09": [
       "tests/t24-round-notifications.integration.test.mts",
       "tests/t24-round-notification-identity.integration.test.mts",
+      "tests/t24-round-notifications.browser.test.mts",
       "tests/web01-draft-contract.test.mjs",
       "tests/web01-draft-isolation.browser.test.mjs",
       "tests/web01-draft-boundaries.browser.test.mjs",
