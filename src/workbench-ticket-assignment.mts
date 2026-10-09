@@ -10,19 +10,21 @@ import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
 export interface TicketAssignmentCommand {
-  action:'assign';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
+  action:'assign'|'transfer-assignment';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
   target_principal_id:string;resolver_team_id:string;communication_choice:'RETAIN_CURRENT'|'TRANSFER_SELECTED';
   sessions:{session_id:string;expected_row_version:number}[];
 }
 export function normalizeTicketAssignmentCommand(input:unknown):TicketAssignmentCommand{
   const v=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','target_principal_id','resolver_team_id','communication_choice','sessions']);
-  if(v.action!=='assign'||v.communication_choice!=='RETAIN_CURRENT'&&v.communication_choice!=='TRANSFER_SELECTED'||!Array.isArray(v.sessions)||v.sessions.length>8)failP2016();
+  if(v.action!=='assign'&&v.action!=='transfer-assignment'||v.communication_choice!=='RETAIN_CURRENT'&&v.communication_choice!=='TRANSFER_SELECTED'||!Array.isArray(v.sessions)||v.sessions.length>8)failP2016();
   const sessions=v.sessions.map(value=>{const row=exactP2016(value,['session_id','expected_row_version']);return {session_id:uuidP2016(row.session_id),expected_row_version:versionP2016(row.expected_row_version)};});
   if(new Set(sessions.map(row=>row.session_id)).size!==sessions.length||(v.communication_choice==='RETAIN_CURRENT'?sessions.length!==0:sessions.length===0))failP2016();
   return publicP2016({action:v.action,ticket_id:uuidP2016(v.ticket_id),client_command_id:uuidP2016(v.client_command_id),expected_version:versionP2016(v.expected_version),reason_code:codeP2016(v.reason_code),target_principal_id:uuidP2016(v.target_principal_id),resolver_team_id:codeP2016(v.resolver_team_id),communication_choice:v.communication_choice,sessions});
 }
-export function assignmentActions(principal:WorkbenchPrincipal,ticket:P2016TicketRow):'assign'[]{
-  return principal.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))&&ticket.assignee_id===null&&['NEW','QUEUED'].includes(ticket.status)?['assign']:[];
+export function assignmentActions(principal:WorkbenchPrincipal,ticket:P2016TicketRow):TicketAssignmentCommand['action'][]{
+  if(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))return [];
+  if(ticket.assignee_id===null&&['NEW','QUEUED'].includes(ticket.status))return ['assign'];
+  return ticket.assignee_id!==null&&['QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'].includes(ticket.status)?['transfer-assignment']:[];
 }
 export async function assignmentCycle(transaction:PostgresTransaction,ticketId:string):Promise<HandlingCycle|null>{
   const result=await transaction.query<HandlingCycle>(`SELECT c.id::text,c.cycle_no,c.first_responsibility_event_id::text
@@ -44,6 +46,7 @@ export function createTicketAssignmentService({pool,query,enabled=false,...hooks
       const {principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
       if(!assignmentActions(principal,ticket).includes(command.action))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+      if(command.action==='transfer-assignment'&&ticket.assignee_id===command.target_principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       if(command.communication_choice!=='RETAIN_CURRENT')failP2016('CONTROL_UNAVAILABLE',503);
       let current=ticket,queuedEvent:string|null=null,cycle=await assignmentCycle(transaction,ticket.id);
       if(!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
@@ -54,18 +57,18 @@ export function createTicketAssignmentService({pool,query,enabled=false,...hooks
         await hooks.realtimeProjector?.({transaction,...queued,command});
       }
       const result=await transferTicketAssignmentP2016({transaction,principal,ticket:current,command:{...command,action:'transfer-assignment',expected_version:current.version},workbenchBusinessAssignment:true});
-      if(!cycle){
+      if(!cycle&&command.action==='assign'){
         const inserted=await transaction.query<HandlingCycle>(`INSERT INTO pilot_ticket.ticket_handling_cycle(ticket_id,cycle_no,source_intake_id,cycle_start_event_id,first_responsibility_event_id,first_responsibility_principal_id,first_responsibility_team_id,client_command_id)
           VALUES($1::uuid,1,$2::uuid,$3::uuid,$3::uuid,$4::uuid,$5,$6::uuid) RETURNING id::text,cycle_no,first_responsibility_event_id::text`,[ticket.id,ticket.intake_id,result.event.event_id,command.target_principal_id,command.resolver_team_id,command.client_command_id]);
         cycle=inserted.rows[0]??null;if(!cycle)failP2016('ACTION_FAILED',503);
         await transaction.query('UPDATE pilot_ticket.ticket SET current_handling_cycle_id=$2::uuid WHERE id=$1::uuid',[ticket.id,cycle.id]);
-      }else if(cycle.first_responsibility_event_id===null){
+      }else if(cycle&&cycle.first_responsibility_event_id===null&&command.action==='assign'){
         const updated=await transaction.query<HandlingCycle>(`UPDATE pilot_ticket.ticket_handling_cycle SET first_responsibility_event_id=$2::uuid,first_responsibility_principal_id=$3::uuid,first_responsibility_team_id=$4
           WHERE id=$1::uuid AND ticket_id=$5::uuid AND first_responsibility_event_id IS NULL RETURNING id::text,cycle_no,first_responsibility_event_id::text`,[cycle.id,result.event.event_id,command.target_principal_id,command.resolver_team_id,ticket.id]);
         cycle=updated.rows[0]??null;
       }
-      if(!cycle?.first_responsibility_event_id)failP2016('ACTION_FAILED',503);
-      for(const eventId of [queuedEvent,result.event.event_id])if(eventId)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,eventId]);
+      if(command.action==='assign'&&!cycle?.first_responsibility_event_id)failP2016('ACTION_FAILED',503);
+      if(cycle)for(const eventId of [queuedEvent,result.event.event_id])if(eventId)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,eventId]);
       await hooks.notificationProjector?.project({transaction,...result});
       await hooks.realtimeProjector?.({transaction,...result,command});
       return {ok:true as const,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};

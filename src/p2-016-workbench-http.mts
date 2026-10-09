@@ -55,8 +55,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
     if(request.method==='POST'){
       queryKeys(url,[]);
       const body=await readJson(request);validateWriteRequest(request,authContext,body,{sessionMutation:false});
-      const assign=/^\/api\/tickets\/([0-9a-f-]{36})\/assign$/iu.exec(url.pathname);
-      if(assign){if(!assignment)failP2016('DISABLED',503);checkVersion(request,body.expected_version);exactP2016(body,['client_command_id','expected_version','reason_code','target_principal_id','resolver_team_id','communication_choice','sessions']);const result=await assignment.perform({authContext,command:{...body,action:'assign',ticket_id:assign[1]}});json(response,status(result),result);return true;}
+      const assignmentRoute=/^\/api\/tickets\/([0-9a-f-]{36})\/(assign|transfer-assignment)$/iu.exec(url.pathname);
+      if(assignmentRoute){if(!assignment)failP2016('DISABLED',503);checkVersion(request,body.expected_version);exactP2016(body,['client_command_id','expected_version','reason_code','target_principal_id','resolver_team_id','communication_choice','sessions']);const result=await assignment.perform({authContext,command:{...body,action:assignmentRoute[2],ticket_id:assignmentRoute[1]}});json(response,status(result),result);return true;}
       const conversationHandlingRoute=/^\/api\/tickets\/([0-9a-f-]{36})\/(take-and-start-with-conversations|accept-for-later-with-conversations)$/iu.exec(url.pathname);
       if(conversationHandlingRoute){
         if(!conversationHandling)failP2016('DISABLED',503);checkVersion(request,body.expected_version);

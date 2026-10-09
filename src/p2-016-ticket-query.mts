@@ -114,7 +114,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         const combined=ticketConversationSelfHandlingEnabled?await selfHandlingResponsibilityEligibility(pool,p,ticket):null;
         result=publicP2016({...result,handling_cycle:eligibility.cycle,allowed_actions:[...result.allowed_actions,...(ticketSelfHandlingEnabled?eligibility.actions:[]),...(combined?.actions.map(a=>a+'-with-conversations')??[])]});
       }
-      if(ticketAssignmentEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...result.allowed_actions,...assignmentActions(p,ticket)]});}
+      if(ticketAssignmentEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...new Set([...result.allowed_actions,...assignmentActions(p,ticket)])]});}
       if(ticketStaffCompletionEnabled){const eligibility=await staffCompletionEligibility(pool,p,ticket),cycle=eligibility.cycle;result=publicP2016({...result,handling_cycle:cycle?{id:cycle.id,cycle_no:cycle.cycle_no,first_responsibility_event_id:cycle.first_responsibility_event_id,staff_completion_event_id:cycle.staff_completion_event_id}:null,allowed_actions:[...result.allowed_actions,...(eligibility.allowed?['complete']:[])]});}
       return result;
     },
