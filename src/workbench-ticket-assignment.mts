@@ -54,7 +54,11 @@ export function createTicketAssignmentService({pool,query,controlService=null,en
       await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       // Follow the integrated stream mutex order before receipt foreign-key locks.
       await lockP2016Realtime(transaction);
-      return query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+      const current=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+      // A committed reply still contains selected Session references. Reauthorize READ before every receipt lookup;
+      // replay does not reacquire the TRANSFER write authority that the original command handed off.
+      for(const selected of [...command.sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id)))await query.authorizedRelatedConversation({authContext,ticketId:command.ticket_id,sessionId:selected.session_id,transaction});
+      return current;
     },run:async transaction=>{
       const {ticket,principal:visiblePrincipal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
       // These are authority rows, not a second ownership fact. Hold the current operator's role and scope until commit.
