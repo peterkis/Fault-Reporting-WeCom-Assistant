@@ -17,10 +17,10 @@ export function text(value:unknown):string{assert.equal(typeof value,'string');i
 type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
 export interface Setup {pool:PostgresPool;f:Fixture;candidateId:string}
 export interface Context extends Setup {browser:Browser;root:string;origin:string;server:Server;started:Record<string,unknown>;choose:(label:string,value:string)=>Promise<void>;capture:()=>Promise<void>}
-export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
+export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;reporters?:number;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:options.purpose,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     const migrationInput={databaseUrl,mode:'apply'};await applyThrough031({pool,databaseUrl});await migrateP2012(migrationInput);
-    const f=await fixtureP2012(pool,{reporters:3}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
+    const reporters=options.reporters??3;assert.ok(Number.isInteger(reporters)&&reporters>=3&&reporters<=100);const f=await fixtureP2012(pool,{reporters}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;
     await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
     const origin='http://127.0.0.1:'+port,runtime=createP2012Runtime({pool,principalIds:[text(record(f.admin).id),text(record(f.handler).id)],publicOrigin:origin,listenPort:port,
