@@ -39,8 +39,9 @@ export function ticketPredicateP2016(principal: WorkbenchPrincipal,start=1) {
   return {sql:`($${start}::boolean OR t.assignee_id=$${start+1}::uuid OR t.resolver_team_id=ANY($${start+2}::text[]))`,
     values:[BROAD(principal),principal.principal_id,principal.roles.includes('HANDLER')?principal.team_ids:[]]};
 }
-export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null },action: string) {
+export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null;status?:string },action: string) {
   if(!principal?.is_active)return false;
+  if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(ticket.status??''))return false;
   if(action==='auto-close'||action==='complete')return false;
   if(BROAD(principal))return true;
   if(!principal.roles.includes('HANDLER')||!principal.team_ids.includes(ticket.resolver_team_id))return false;

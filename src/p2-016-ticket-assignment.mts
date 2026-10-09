@@ -8,6 +8,7 @@ import { ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016 } from './p2-016-domain-contracts.mjs';
 
 export async function transferTicketAssignmentP2016({transaction,principal,ticket,command,workbenchBusinessAssignment=false}: { transaction: PostgresTransaction; principal: WorkbenchPrincipal; ticket: P2016TicketRow; command: Extract<TicketCommand, { action: 'transfer-assignment' }>;workbenchBusinessAssignment?:boolean }) {
+  if(['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(ticket.status))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
   if(workbenchBusinessAssignment===true?(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))):!ticketActionAllowedP2016(principal,ticket,'transfer-assignment'))failP2016('FORBIDDEN',403);
   if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
   const team=command.resolver_team_id??ticket.resolver_team_id;

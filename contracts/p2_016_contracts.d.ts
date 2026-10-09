@@ -65,6 +65,8 @@ export type P2016CompletionResult = P2016InternalNoteResult & Readonly<{completi
 export type P2016CompletionReceipt = Readonly<{client_command_id:string;ticket_id:string}> & (Readonly<{state:'UNKNOWN'}>|Readonly<{state:'COMMITTED';result:P2016CompletionResult}>|Readonly<{state:'FAILED';error:Readonly<{code:string;retryable:false}>}>);
 
 export type P2016AssignmentAction='assign'|'transfer-assignment';
+/** Receipt acknowledges only the current authorized Ticket; no selected Session identity is returned. */
+export type P2016AssignmentAcknowledgement=P2016ConversationHandlingAcknowledgement;
 export type P2016AssignmentCommand=Readonly<{client_command_id:string;expected_version:number;reason_code:string;target_principal_id:string;resolver_team_id:string;communication_choice:'TRANSFER_SELECTED'|'RETAIN_CURRENT';sessions:ReadonlyArray<{readonly session_id:string;readonly expected_row_version:number}>}>;
 export type P2016AssignmentResult=P2016InternalNoteResult&Readonly<{handling_cycle:P2016HandlingCycle|null;communication_choice:'TRANSFER_SELECTED'|'RETAIN_CURRENT';conversations:ReadonlyArray<{readonly session_id:string;readonly session_row_version:number;readonly control_event_id:string|null;readonly changed:boolean}>}>;
 export type P2016AssignmentTargets=Readonly<{resolver_teams:ReadonlyArray<{readonly team_id:string;readonly display_name:string}>;resolver_team_id:string|null;items:ReadonlyArray<{readonly principal_id:string;readonly display_name:string}>}>;

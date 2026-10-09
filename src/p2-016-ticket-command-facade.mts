@@ -66,6 +66,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
         run:async(transaction,{principal,ticket:authorizedTicket})=>{
           await realtimeProjector?.lock?.(transaction);
           const action=command.action==='takeover-and-accept-ticket'?'accept':command.action;
+          if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(authorizedTicket.status))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
           if(!ticketActionAllowedP2016(principal,authorizedTicket,action))failP2016('FORBIDDEN',403);
           let control: ControlResult | null=null;
           if(command.action==='takeover-and-accept-ticket'){

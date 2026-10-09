@@ -8,6 +8,7 @@ import type {createTicketSelfHandlingService} from './workbench-ticket-self-hand
 import type {createTicketStaffCompletionService} from './workbench-ticket-completion.mjs';
 import type {createTicketConversationHandlingService} from './workbench-ticket-conversation-handling.mjs';
 import type {createTicketAssignmentService} from './workbench-ticket-assignment.mjs';
+import {normalizeTicketAssignmentCommand} from './workbench-ticket-assignment.mjs';
 import {createHash} from 'node:crypto';
 import {RealtimeScopeUnavailable} from './p2-006-workbench-authorization.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
@@ -21,13 +22,15 @@ function checkVersion(request: IncomingMessage,value: unknown) {
   if(!/^[1-9][0-9]{0,18}$/u.test(text)||text!==String(value))failP2016('VERSION_CONFLICT',409);
 }
 function queryKeys(url: URL,allowed: readonly string[]) {if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))failP2016();}
-function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?/FORBIDDEN|PERMITTED/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
+function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?/FORBIDDEN|PERMITTED|TARGET_INVALID/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
 export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false,workbenchManualReviewEnabled=false,workbenchManualReportsEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,selfHandling=null,conversationHandling=null,assignment=null,staffCompletion=null,workbenchDraftRecoveryEnabled=false,workbenchRealtimeEnabled=false,realtimeAuthorization,logoutReady=()=>false}: HttpOptions) {
   return async({request,response,url,authContext,readJson,validateWriteRequest,json}: HttpContext)=>{
     const matched=/^\/api\/(tickets(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$)/u.test(url.pathname)
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const assignmentReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/assignment\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(assignmentReceipt){if(!assignment)failP2016('DISABLED',503);guardP2016(workbenchDraftRecoveryEnabled);queryKeys(url,[]);json(response,200,await assignment.acknowledgement({authContext,ticketId:assignmentReceipt[1],commandId:assignmentReceipt[2]}));return true;}
       const reviewReceipt=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(reviewReceipt){guardP2016(workbenchManualReviewEnabled&&workbenchDraftRecoveryEnabled);queryKeys(url,[]);
         json(response,200,await reviews.manualReviewReceipt({authContext,reviewId:reviewReceipt[1],commandId:reviewReceipt[2]}));return true;}
@@ -45,7 +48,7 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
         json(response,200,{principal_id:principal.principal_id,display_name:principal.display_name,csrf_token:authContext.auth_method==='COOKIE'?authContext.csrf_token:null,
           realtime_sse_enabled:realtimeEnabled,realtime_sse_available:realtimeAvailable,sse_endpoint:realtimeEnabled?'/api/realtime/events?scope=workbench':null,expires_epoch_ms:authContext.expires_epoch_ms,
           authorization_revision:realtimeEnabled?createHash('sha256').update(JSON.stringify([principal.principal_id,principal.roles,principal.team_ids])).digest('hex'):null,
-          internal_beta:true,ai_enabled:false,manual_reports_enabled:workbenchManualReportsEnabled,manual_report_draft_recovery_enabled:workbenchManualReportsEnabled&&workbenchDraftRecoveryEnabled,manual_review_enabled:workbenchManualReviewEnabled,manual_review_draft_recovery_enabled:workbenchManualReviewEnabled&&workbenchDraftRecoveryEnabled,roles:principal.roles,polling_interval_ms:5000,source_group_directory_enabled:sourceGroupDirectoryEnabled,internal_notes_enabled:workbenchInternalNotesEnabled,ticket_assignment_enabled:assignment!==null,ticket_assignment_draft_recovery_enabled:false,ticket_self_handling_enabled:selfHandling!==null,ticket_staff_completion_enabled:staffCompletion!==null,ticket_conversation_self_handling_enabled:conversationHandling!==null,ticket_conversation_draft_recovery_enabled:conversationHandling!==null&&workbenchDraftRecoveryEnabled,draft_recovery_enabled:workbenchInternalNotesEnabled&&workbenchDraftRecoveryEnabled,staff_completion_draft_recovery_enabled:staffCompletion!==null&&workbenchDraftRecoveryEnabled,logout_enabled:logoutReady()&&authContext.auth_method==='COOKIE'&&typeof authContext.csrf_token==='string'&&authContext.csrf_token.length>0});return true;}
+          internal_beta:true,ai_enabled:false,manual_reports_enabled:workbenchManualReportsEnabled,manual_report_draft_recovery_enabled:workbenchManualReportsEnabled&&workbenchDraftRecoveryEnabled,manual_review_enabled:workbenchManualReviewEnabled,manual_review_draft_recovery_enabled:workbenchManualReviewEnabled&&workbenchDraftRecoveryEnabled,roles:principal.roles,polling_interval_ms:5000,source_group_directory_enabled:sourceGroupDirectoryEnabled,internal_notes_enabled:workbenchInternalNotesEnabled,ticket_assignment_enabled:assignment!==null,ticket_assignment_draft_recovery_enabled:assignment!==null&&workbenchDraftRecoveryEnabled,ticket_self_handling_enabled:selfHandling!==null,ticket_staff_completion_enabled:staffCompletion!==null,ticket_conversation_self_handling_enabled:conversationHandling!==null,ticket_conversation_draft_recovery_enabled:conversationHandling!==null&&workbenchDraftRecoveryEnabled,draft_recovery_enabled:workbenchInternalNotesEnabled&&workbenchDraftRecoveryEnabled,staff_completion_draft_recovery_enabled:staffCompletion!==null&&workbenchDraftRecoveryEnabled,logout_enabled:logoutReady()&&authContext.auth_method==='COOKIE'&&typeof authContext.csrf_token==='string'&&authContext.csrf_token.length>0});return true;}
       const related=/^\/api\/tickets\/([0-9a-f-]{36})\/related-conversations$/iu.exec(url.pathname);
       const assignmentTargets=/^\/api\/tickets\/([0-9a-f-]{36})\/assignment-targets$/iu.exec(url.pathname);
       if(assignmentTargets){if(!assignment)failP2016('DISABLED',503);queryKeys(url,['resolver_team_id']);json(response,200,await query.assignmentTargets({authContext,ticketId:assignmentTargets[1],resolverTeamId:url.searchParams.get('resolver_team_id')}));return true;}
@@ -68,7 +71,7 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       queryKeys(url,[]);
       const body=await readJson(request);validateWriteRequest(request,authContext,body,{sessionMutation:false});
       const assignmentRoute=/^\/api\/tickets\/([0-9a-f-]{36})\/(assign|transfer-assignment)$/iu.exec(url.pathname);
-      if(assignmentRoute){if(!assignment)failP2016('DISABLED',503);checkVersion(request,body.expected_version);exactP2016(body,['client_command_id','expected_version','reason_code','target_principal_id','resolver_team_id','communication_choice','sessions']);const result=await assignment.perform({authContext,command:{...body,action:assignmentRoute[2],ticket_id:assignmentRoute[1]}});json(response,status(result),result);return true;}
+      if(assignmentRoute){if(!assignment)failP2016('DISABLED',503);exactP2016(body,['client_command_id','expected_version','reason_code','target_principal_id','resolver_team_id','communication_choice','sessions']);const command=normalizeTicketAssignmentCommand({...body,action:assignmentRoute[2],ticket_id:assignmentRoute[1]});checkVersion(request,command.expected_version);const result=await assignment.perform({authContext,command});json(response,status(result),result);return true;}
       const conversationHandlingRoute=/^\/api\/tickets\/([0-9a-f-]{36})\/(take-and-start-with-conversations|accept-for-later-with-conversations)$/iu.exec(url.pathname);
       if(conversationHandlingRoute){
         if(!conversationHandling)failP2016('DISABLED',503);checkVersion(request,body.expected_version);
