@@ -33,3 +33,29 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 回执在READ ONLY事务中核验当前创建权限，再读取原principal＋`WORKBENCH_MANUAL_REPORT`用途账本；UNKNOWN不写原账本或其它事实，同UUID其它principal或其它用途返回UNKNOWN。成功结果仅返回原受理结果，不含原描述或Reporter姓名／联系方式，闭合快照守卫失败返回503；重复提交只返回原结果，变更原意图409，失去当前创建权限后读取、重放均403。恢复开关默认false，关闭时只读receipt拒绝且不查询账本；capabilities恢复位诚实取当前配置。
 
 MANUAL复核的显式`CONFIRM_TICKET_ELIGIBLE`及`CLASSIFY_SERVICE_REQUEST`分别设置原Intake request_type为`INCIDENT`／`SERVICE_REQUEST`，沿既有执行器创建原生Core `QUEUED`、未分配工单；其余六种合法结论不建单。所有结论均保留原来源快照和Decision，不自动接单或发送通知。代录入口产生Core标题与Intake摘要时，沿原200／500 UTF16单位上限取完整Unicode字符前缀，完整原描述快照及其hash不改变。
+
+## T18 经核实成员选择（冻结合同，尚未挂载／NOT_RUN）
+
+2026-10-09 SOURCE准备，仅冻结[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)的公共输入输出及首个GET tracer。下面是计划合同，不能据此调用现有服务或宣称验证通过；本票[执行记录](../../../plans/admin-workbench-integration/execution/t18.md)区分后续实际运行。上文T17已交付合同、HAND_ENTERED／UNVERIFIED快照及原证据不改写。
+
+| 方法与路径（W，计划） | 输入／输出 |
+| --- | --- |
+| `GET /api/workbench/reporter-candidates?q={query}&limit={limit}&cursor={opaque}` | 当前工作人员认证及代录创建权＋配置应用与候选对象授权；闭合[候选页Schema](../../../contracts/workbench_reporter_candidates.schema.json)，不返回原始外部ID、手机号、工号或完整目录 |
+| `POST /api/workbench/reports` 的独立选择分支 | [选择命令Schema](../../../contracts/workbench_verified_manual_report_command.schema.json)；相同source／description／location／UUID规则，reporter只接受`verification:VERIFIED_SELECTION,candidate_ref,candidate_version`；由服务器重核，禁止浏览器提供姓名／部门／WeCom ID／proof／actor |
+| 同原`GET /api/workbench/reports/commands/{commandId}`的已提交选择结果 | 同principal＋MANUAL_REPORT原ledger与恢复配置；计划闭合[核实结果Schema](../../../contracts/workbench_verified_manual_report_result.schema.json)，不会从当前目录重新生成旧回执 |
+
+候选查询仅接受`q,limit,cursor`，参数不得重复；q去首尾空白后2–100字符，单行且拒绝控制字符；limit默认10、最大20；cursor为最多512字符的opaque引用，绑定当前principal、配置corp／app／目录scope、query、limit和资料版本，最长5分钟。不存在、过期或不匹配cursor返回400。候选页最多20项、16KiB，每人最多20个部门名称、名称1–100字符，不包含联系方式或头像；名称与部门仅用于展示，不能证明身份对应。候选引用最多256字符，版本为64位小写SHA256形式，二者均不是授权凭据。
+
+应用范围来自宿主受控配置，不接受浏览器指定corp／app／source scope。沿T17当前active ADMIN／DISPATCHER或属于active处理组的HANDLER创建许可，查询完成后再次检查当前认证／许可。窄`ManualReporterDirectoryPort.searchAuthorizedCandidates`在分页前裁剪该principal可枚举的对象范围；`verifyAuthorizedCandidate`在提交时独立重核同一应用与对象、资料版本、账户有效性、现有明确绑定及消息可达性。公共Port合同见[类型定义](../../../contracts/workbench_reporter_candidates_contracts.d.ts)。首次只验证GET正向切片；伪造引用、跨principal／应用、撤权、分页及离线均待各自真实RED。
+
+身份对应复用既有`YxxIdentityMapping`的`VERIFIED_DELEGATED_MAPPING`／configHash和`YxxMemberScope`的corp／app／canonical hash／proofRef；当前资料复用既有Directory Provider／Store及显式ProviderUidResolver。第三方`user_id`、`wecom_id`、官方`open_userid`、Bot UID、姓名与手机号没有自动等价关系。现有directory.identity_binding只证明特定目录scope中的解析，不能单独证明目标应用账户或可达性。配置映射不匹配、目录绑定STALE／CONFLICT、账户停用或重核失败拒绝该选择，不偷偷降级或改绑；用户可显式切换既有手填分支并形成新意图UUID。UNKNOWN原UUID／body仍不可更改。
+
+`binding_verified:true`只表示候选已具备明确绑定；`message_reachability:REACHABLE|UNREACHABLE|UNKNOWN`独立来自目标应用可达性证明，不由ACTIVE、能登录或目录存在推定。提交重核绑定成功且本次可达才记录`notification_eligibility:ELIGIBLE,manual_contact_required:false`；已核实绑定但不可达／未知仍可受理，记录`NOT_REACHABLE,manual_contact_required:true`。回执`reporter_verification:VERIFIED`仅指本次独立选择证明，不改变T17的UNVERIFIED含义。所有本票回执仍`external_notification:false`，不表示已发送；后续应用通知由T26及原独立外发开关／Outbox／Delivery合同承接，T18不直接调用Sender。
+
+预计使用父任务专属预留045的最小forward扩展：同一Service Intake保存独立的报修时姓名／部门、目录来源／版本、核验时刻、实际代录Principal、既有映射configHash及scope／proof引用、分别观察的可达性与通知资格。原T17列和历史快照不更新，不把旧UNVERIFIED记录提升为身份绑定；新选择分支与原手填分支互斥。这里只保存该次验证的观察与既有权威引用，不建立第二套Person／目录绑定／Ticket／owner／receipt事实源。选择证据与受理／Decision／Core或Review沿原账本同事务提交，失败全回滚；目录后续变化不回写已保存快照。045尚未写入或应用，具体最小结构必须由后续选择提交的真实RED驱动。
+
+计划配置`workbenchReporterCandidatesEnabled=false`，同时要求原代录开关；关闭该选择入口无需目录或新结构，既有手填仍可受理。配置端口缺失、目录离线／超时／结果超限用503稳定P2_016错误包并保留输入及手填入口；无结果返回200空页，不伪装离线。输入／cursor400、认证401、权限403、选择版本／绑定变更409、变意图UUID409。重放先验当前创建权与选择对象权，随后只读原结果，不以新资料重写历史。
+
+目录整次请求含解析最多2000ms、并发1、每principal每60秒最多10次、速率状态最多128个主体且惰性清理；无无限队列／后台全量同步／新timer。读既有本地当前目录优先，外部适配只在已批准独立运行边界内装配，本轮以Stub替代外部目录、映射及可达性。单App／Worker、Gateway单活、SSE32及共享pool max4／总预算8保持。关闭选择配置停止查询和新选择命令；已提交原账本及快照保留，结构修复用后续迁移。生产bundle选择、手填回退、恢复与失权清理均尚未实现／NOT_RUN。
+
+正式前端计划消费bootstrap可选兼容字段`reporter_candidates_enabled:boolean`；缺字段取false，仅在原代录用途与本票option同时启用时为true。它只控制入口展示，当前创建许可仍取原capabilities，并由每次GET／POST重新验权。浏览器不把候选页缓存当绑定证明；刷新／恢复后重新读取候选，UNKNOWN只保留原选择ref／version及UUID／body并显式GET核对，不能自动以新资料替换原提交。来源资料展示追加独立“本次已核实选择”与实际proof来源；既有T17未核实Reporter展示继续诚实保留。

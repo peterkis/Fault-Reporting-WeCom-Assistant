@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_reporter_candidates_contracts.d.ts",
+    "contracts/workbench_reporter_candidates.schema.json",
+    "contracts/workbench_verified_manual_report_command.schema.json",
+    "contracts/workbench_verified_manual_report_result.schema.json",
     "contracts/workbench_manual_report_capabilities.schema.json",
     "contracts/workbench_manual_report_receipt.schema.json",
     "contracts/workbench_manual_report_projection.schema.json",
