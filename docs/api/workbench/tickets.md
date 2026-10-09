@@ -217,19 +217,21 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 
 两个POST共享闭合[command Schema](../../../contracts/p2_016_takeover_command.schema.json)，仅六字段：`client_command_id:UUID`、`expected_version:integer`、`reason_code:CODE`、`resolver_team_id:CODE`、`communication_choice`、`sessions`。path决定动作和Ticket，服务端当前认证主体即新处理人；拒绝`target_principal_id`、`actor_principal_id`、角色、force、状态或任意额外字段。沿用W的Origin/CSRF、32KiB、Idempotency-Key等于body原UUID、If-Match等于Ticket版本。UUID规范化后拒绝重复Session；`TAKE_SELECTED`须明确选择1–8个规范关联Session及各原`expected_row_version:integer`，`RETAIN_CURRENT`须`sessions=[]`且不写任何Conversation。不得根据换组后的新可见性倒推原沟通交接权限。
 
-| 前态（须已有当前处理人及有效本轮首次责任依据） | `takeover` | `takeover-and-start` |
+| 前态（须已有当前处理人） | `takeover` | `takeover-and-start` |
 | --- | --- | --- |
-| QUEUED | 人和组交接，仍QUEUED | 交接后由原Core合法accept→start，仍同一事务/轮次 |
-| ACCEPTED | 人和组交接，仍ACCEPTED | 交接后由原Core合法start→IN_PROGRESS |
+| QUEUED | 人和组交接，仍QUEUED，保留原可空轮次/依据 | 须有效current cycle及已有非空first basis；交接后原Core合法accept→start，同一事务/轮次 |
+| ACCEPTED | 人和组交接，仍ACCEPTED，保留原可空轮次/依据 | 须有效current cycle及已有非空first basis；交接后原Core合法start→IN_PROGRESS |
 | IN_PROGRESS | 人和组交接，仍IN_PROGRESS | 409，不重复started |
 | WAITING_REQUESTER / WAITING_VENDOR | 人和组交接，保留等待 | 409，不把resume混为start |
-| NEW / REOPENED / RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED，或无当前处理人/有效轮次 | 409 | 409 |
+| NEW / REOPENED / RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED，或无当前处理人 | 409 | 409 |
+
+仅接管沿已集成T06合法transfer的当前状态/责任事实；`current_handling_cycle_id=null`且不存在已有cycle时允许交接并返回`handling_cycle:null`，不为旧活跃事实虚构轮次或历史首次责任。原有效cycle及其可空first basis保持原值；有cycle才追加该真实责任事件的cycle link。损坏current pointer、指向他Ticket的cycle，或current为空但存在孤立cycle均fail-closed/409，不以null掩盖损坏。一步开始独立要求有效current cycle及已有非空first basis；缺此依据409，不自动历史回填、创轮次或补首次通知。
 
 同本人同组且无责任变化返回409；相同原UUID合法重放按原结果核对。仅拥有读取权限仍须具备活动ADMIN/DISPATCHER/HANDLER业务角色；普通HANDLER不须为旧owner，但必须在原Ticket本人/实际所属旧组读取范围内。新组必须活动、实际包含本人且本次可用；不能复用T06“任意内部目标人”的候选列表作为本人接管授权。活动主体/角色、原可见组及目标本人/成员/组在事务内重新取得并持锁到commit，Ticket版本、Session原版本和逐对象Control动作同时核验。Ticket接管不授予他人沟通TRANSFER权限、全院读取、管理或通知核对权限。
 
 [targets Schema](../../../contracts/p2_016_takeover_targets.schema.json)闭合为`{resolver_teams:[{team_id,display_name}],resolver_team_id:CODE|null,allowed_actions:[...]}`。查询只接受可选`resolver_team_id`；组按CODE排序、最多100展示项，不返回人员目录/联系方式/外部身份。显式所选组独立验证有效本人membership后纳入最多100项响应，列表缺席不等同撤权；查询不构成稍后提交的授权租约。既有`related-conversations`规范关系、20项keyset及逐对象当前Session读取继续复用，T07独立开启后的门控装配仍待实现，不因本合同启动T05独立写能力。
 
-[result Schema](../../../contracts/p2_016_takeover_result.schema.json)与[独立类型](../../../contracts/p2_016_takeover_contracts.d.ts)仅返回Ticket/version/最后Ticket event、`control_event_id:null`、原非空handling_cycle、沟通选择及安全Session结果。仅接管追加唯一`ticket.assignment_transferred`，保留原/新人及组/实际操作者metadata；一步开始另追加合法accept/start。使用039原current cycle/first responsibility basis和同轮event links，不回填任意历史accept，不创建新轮次，不重复已有首次责任通知，不改原Intake/来源。既有公开events仅含状态/版本等安全字段；本SOURCE tracer不宣称已验证私有metadata或cycle-event持久关联，后续isolatedPG/PublicPort窗口须另证。
+[result Schema](../../../contracts/p2_016_takeover_result.schema.json)与[独立类型](../../../contracts/p2_016_takeover_contracts.d.ts)仅返回Ticket/version/最后Ticket event、`control_event_id:null`、原可空handling_cycle（已有cycle的first basis也可空）、沟通选择及安全Session结果。一步开始使用同Schema的`#/$defs/started_result`及`P2016TakeoverAndStartResult`非空轮次/依据约束。仅接管追加唯一`ticket.assignment_transferred`，保留原/新人及组/实际操作者metadata；一步开始另追加合法accept/start。存在有效039 current cycle时保留原first responsibility basis并追加同轮event links；无cycle仅交接当前责任，不回填任意历史accept、不创建新轮次、不重复或新造首次责任通知、不改原Intake/来源。既有公开events仅含状态/版本等安全字段；本SOURCE tracer不宣称已验证私有metadata或cycle-event持久关联，后续isolatedPG/PublicPort窗口须另证。
 
 所有责任、合法状态动作、Control/generation、轮次链接、通知/实时投影及原ledger回执同事务提交。复用T06 stream mutex→receipt→Ticket→UUID排序Session及authority锁约束，选定沟通在Ticket换组前按原scope验证，并使用既有`takeResponsibilityInTransaction`本人caller-Tx seam；第二对象失败全部回滚。复用原`ticket_command_receipt`，计划专用用途`WORKBENCH_TICKET_TAKEOVER`；同UUID异payload409，重放前重验当前Ticket与所选Session READ scope，失去原写权不等同失去核对读权。[receipt Schema](../../../contracts/p2_016_takeover_receipt.schema.json)只返回UNKNOWN、COMMITTED最小四字段或FAILED稳定code/retryable:false，不返回组/Session/完整snapshot；UNKNOWN不表示未提交。
 

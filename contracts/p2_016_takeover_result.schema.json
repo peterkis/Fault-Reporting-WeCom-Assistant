@@ -12,13 +12,17 @@
     "ticket_event_id": {"$ref": "#/$defs/uuid"},
     "control_event_id": {"type": "null"},
     "handling_cycle": {
-      "type": "object", "additionalProperties": false,
-      "required": ["id", "cycle_no", "first_responsibility_event_id"],
-      "properties": {
-        "id": {"$ref": "#/$defs/uuid"},
-        "cycle_no": {"type": "integer", "minimum": 1, "maximum": 2147483647},
-        "first_responsibility_event_id": {"$ref": "#/$defs/uuid"}
-      }
+      "anyOf": [
+        {"type": "object", "additionalProperties": false,
+          "required": ["id", "cycle_no", "first_responsibility_event_id"],
+          "properties": {
+            "id": {"$ref": "#/$defs/uuid"},
+            "cycle_no": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+            "first_responsibility_event_id": {"anyOf": [{"$ref": "#/$defs/uuid"}, {"type": "null"}]}
+          }
+        },
+        {"type": "null"}
+      ]
     },
     "communication_choice": {"enum": ["TAKE_SELECTED", "RETAIN_CURRENT"]},
     "conversations": {
@@ -41,6 +45,15 @@
     "then": {"properties": {"conversations": {"maxItems": 0}}},
     "else": {"properties": {"conversations": {"minItems": 1}}}
   }],
-  "$defs": {"uuid": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},
-  "description": "PLANNED only. The original current cycle and non-null first responsibility basis are retained. ticket_event_id is the last Ticket event of this command; takeover alone has exactly one assignment_transferred event. Current Ticket and selected Session read scope must be checked before returning any replay."
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "started_result": {
+      "allOf": [
+        {"$ref": "#"},
+        {"properties": {"handling_cycle": {"type": "object", "properties": {"first_responsibility_event_id": {"$ref": "#/$defs/uuid"}}}}}
+      ],
+      "description": "PLANNED takeover-and-start result: a valid current cycle and its non-null first responsibility basis are independently required before the atomic start."
+    }
+  },
+  "description": "PLANNED only. Takeover alone preserves the original nullable current cycle and nullable first responsibility basis exactly as the existing legal transfer does; absent history is not invented. A corrupt current pointer or orphaned existing cycle fails closed. ticket_event_id is the last Ticket event of this command; takeover alone has exactly one assignment_transferred event. Current Ticket and selected Session read scope must be checked before returning any replay."
 }

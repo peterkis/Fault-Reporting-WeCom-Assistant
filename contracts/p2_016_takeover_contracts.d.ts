@@ -7,12 +7,17 @@ export type P2016TakeoverCommand = Readonly<{
   Readonly<{communication_choice:'RETAIN_CURRENT';sessions:readonly []}> |
   Readonly<{communication_choice:'TAKE_SELECTED';sessions:readonly [P2016TakeoverSession,...P2016TakeoverSession[]]}>
 );
+export type P2016TakeoverHandlingCycle = Readonly<{id:string;cycle_no:number;first_responsibility_event_id:string|null}>;
 export type P2016TakeoverResult = Readonly<{
   ok:true;ticket_id:string;ticket_version:number;ticket_event_id:string;control_event_id:null;
-  handling_cycle:Readonly<{id:string;cycle_no:number;first_responsibility_event_id:string}>;
+  handling_cycle:P2016TakeoverHandlingCycle|null;
   communication_choice:'TAKE_SELECTED'|'RETAIN_CURRENT';
   conversations:ReadonlyArray<Readonly<{session_id:string;session_row_version:number;control_event_id:string|null;changed:boolean}>>;
   replayed:boolean;
+}>;
+/** Atomic start independently requires a valid current cycle and its existing first basis. */
+export type P2016TakeoverAndStartResult = Omit<P2016TakeoverResult,'handling_cycle'> & Readonly<{
+  handling_cycle:Readonly<{id:string;cycle_no:number;first_responsibility_event_id:string}>;
 }>;
 export type P2016TakeoverTargets = Readonly<{
   resolver_teams:ReadonlyArray<Readonly<{team_id:string;display_name:string}>>;
