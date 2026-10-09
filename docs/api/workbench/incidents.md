@@ -48,6 +48,8 @@ Web 安全来源引用为真实生产者供应的 `web:<web_submission UUID>`，
 
 共同 body：`client_command_id:UUID,reason_code,expected_row_version:string`。确认候选改用 `expected_candidate_version:string`。Header 幂等、CSRF/Origin，If-Match **精确**为 `"<expected_candidate_version ?? expected_row_version>"`，此模块不接受 W/ 前缀或裸版本。
 
+Cookie 会话续期后，命令须使用同一 principal 当前授权核对返回的 CSRF；授权更新不改变原用户意图的 UUID、正文或捕获版本。服务端继续按实际 Cookie 验证 CSRF。正式候选表单的续期行为新增单例 `wbint-t27-current-csrf.browser.test.mts`，当前仅源码登记，尚未运行；不据此声明该表单已通过。
+
 | METHOD + PATH | 额外必需字段 / 可选字段 |
 | --- | --- |
 | `POST /api/incident-candidates/{candidateId}/start-review` | 无 |
