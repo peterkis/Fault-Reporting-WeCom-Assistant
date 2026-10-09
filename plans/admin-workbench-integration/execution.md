@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-09，T17收口与T18／T19领取）
+## 当前执行状态导航（2026-10-09，T06收口与下一验证窗口）
+
+当前已核实关闭12／43票：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T38。T06原七项、受控集成与GitHub关闭已读回；后续仍按实时原生阻塞关系实施。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T06 / #61 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61#issuecomment-6083677579)与[七项验收、清理例外](execution/t06.md)已核对；派单／显式转派不冒接单或开工，明确沟通选择与责任变更原子提交，目标人和有效组共同交接，轮次／原始来源及追加记录保留 |
+| T06实际集成与被测对象 | 受控快进至`2b07e9922cc3810fdabc1c88d99145426b8bf47e`；真实被测`07287db34c2801a4dc7b99c4966f6cf3adf61dbe`的原生分组与适用`247e37f`4项保持各自身份。后继仅两份文档，manifest未重绑 |
+| T06验收证据 | 本票19文件36PASS、直接相关17文件125PASS、工具2文件54PASS；当前strict／一次build／artifact0。1131输出与1441完整库存逐SHA核对，18张本票PNG保留；原RED／FAIL及未到达层保持原记录，无full／certify |
+| T06活动资源与历史例外 | 当前HTTP／App／Node／browser／timer／SSE／pool／随机DB均关闭，独立PG额外库／客户端0／0；旧4fa失败留下一个profile，仅含0字节journal。自动审批两次在CreateProcess前拒绝清理，已保全原FAIL和拒绝证据；不标总清理为零 |
+| 后续实施 | T27／#82为下一验证窗口，先合入实际已完成集成；T07／T08的#61已关闭，开始前重新读取全文与原生依赖并领取。其余已准备源码票按串行窗口验证，片段PASS不标整票完成 |
+
+WBINT-02／A02继续IN_PROGRESS。新增能力默认关闭；用户两份dirty文档、四附件、空index及HTTPS保持。未push／PR、真实外部依赖或发送、用户库迁移、部署、full／certify或Gate推进。
+
+## 历史执行状态导航（2026-10-09，T17收口与T18／T19领取）
 
 父任务已核对并关闭11／43票：T01／T02／T03／T04／T05／T11／T14／T16／T17／T23／T38。以下关闭与领取已从GitHub读回；后续票继续按原生依赖，不以片段PASS代替整票。
 

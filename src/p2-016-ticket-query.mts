@@ -4,7 +4,7 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean }
+interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketAssignmentEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
@@ -12,9 +12,10 @@ export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
-import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
+import { failP2016,guardP2016,uuidP2016,codeP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
 
 import {staffCompletionEligibility} from './workbench-ticket-completion.mjs';
+import {assignmentActions,assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {selfHandlingEligibility,selfHandlingResponsibilityEligibility,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 
 export interface RelatedConversationRow {session_id:string;session_row_version:string;status:string;conversation_principal_id:string|null;conversation_principal_name:string|null;assignment_status:string|null}
@@ -38,8 +39,9 @@ export function ticketPredicateP2016(principal: WorkbenchPrincipal,start=1) {
   return {sql:`($${start}::boolean OR t.assignee_id=$${start+1}::uuid OR t.resolver_team_id=ANY($${start+2}::text[]))`,
     values:[BROAD(principal),principal.principal_id,principal.roles.includes('HANDLER')?principal.team_ids:[]]};
 }
-export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null },action: string) {
+export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null;status?:string },action: string) {
   if(!principal?.is_active)return false;
+  if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(ticket.status??''))return false;
   if(action==='auto-close'||action==='complete')return false;
   if(BROAD(principal))return true;
   if(!principal.roles.includes('HANDLER')||!principal.team_ids.includes(ticket.resolver_team_id))return false;
@@ -75,7 +77,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false}: QueryOptions) {
   const conversationAuthorization=createPilotWorkbenchAuthorizationAdapter({pool});
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
@@ -88,6 +90,29 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
   }
   return Object.freeze({
     principal,authorizedTicket,
+    async assignmentTargets({authContext,ticketId,resolverTeamId=null,targetPrincipalId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown;targetPrincipalId?:unknown}) {
+      guardP2016(ticketAssignmentEnabled);
+      const {ticket,principal:p}=await authorizedTicket({authContext,ticketId});
+      if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
+      if(assignmentActions(p,ticket).length===0)failP2016('FORBIDDEN',403);
+      const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
+      const selectedPerson=targetPrincipalId===null?null:uuidP2016(targetPrincipalId);if(selectedPerson&&selected===null)failP2016();
+      const effectiveGroupsSql=`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
+        WHERE rt.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.pilot_principal p ON p.id=m.principal_id
+          WHERE m.team_id=rt.team_id AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')))`;
+      const selectedGroup=selected===null?null:(await pool.query<{team_id:string;display_name:string}>(effectiveGroupsSql+' AND rt.team_id=$1',[selected])).rows[0]??failP2016('FORBIDDEN',403);
+      const groups=await pool.query<{team_id:string;display_name:string}>(effectiveGroupsSql+' ORDER BY rt.team_id LIMIT 100');
+      const resolverTeams=selectedGroup&&!groups.rows.some(group=>group.team_id===selectedGroup.team_id)
+        ?[...groups.rows.slice(0,99),selectedGroup].sort((a,b)=>a.team_id<b.team_id?-1:a.team_id===b.team_id?0:1):groups.rows;
+      const candidatesSql=`SELECT p.id::text AS principal_id,p.display_name
+        FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
+        WHERE m.team_id=$1 AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))`;
+      if(selectedPerson&&!(await pool.query(candidatesSql+' AND p.id=$2::uuid',[selected,selectedPerson])).rows[0])failP2016('FORBIDDEN',403);
+      const candidates=selected===null?[]:(await pool.query<{principal_id:string;display_name:string}>(selectedPerson
+        ?'SELECT principal_id,display_name FROM ('+candidatesSql+' ORDER BY (p.id=$2::uuid) DESC,p.display_name,p.id LIMIT 100) bounded ORDER BY display_name,principal_id'
+        :candidatesSql+' ORDER BY p.display_name,p.id LIMIT 100',selectedPerson?[selected,selectedPerson]:[selected])).rows;
+      return publicP2016({resolver_teams:resolverTeams,resolver_team_id:selected,items:candidates});
+    },
     async list({authContext,state='queued',cursor=null,limit}: { authContext: unknown; state?: string; cursor?: unknown; limit?: unknown }) {
       const p=await principal(authContext),n=limitP2016(limit),predicate=ticketPredicateP2016(p);
       const aliases: Record<string, TicketStatus>={queued:'QUEUED',accepted:'ACCEPTED',in_progress:'IN_PROGRESS',waiting_requester:'WAITING_REQUESTER',waiting_vendor:'WAITING_VENDOR',resolved:'RESOLVED',closed:'CLOSED',reopened:'REOPENED',cancelled:'CANCELLED'};
@@ -113,6 +138,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         const combined=ticketConversationSelfHandlingEnabled?await selfHandlingResponsibilityEligibility(pool,p,ticket):null;
         result=publicP2016({...result,handling_cycle:eligibility.cycle,allowed_actions:[...result.allowed_actions,...(ticketSelfHandlingEnabled?eligibility.actions:[]),...(combined?.actions.map(a=>a+'-with-conversations')??[])]});
       }
+      if(ticketAssignmentEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...new Set([...result.allowed_actions,...assignmentActions(p,ticket)])]});}
       if(ticketStaffCompletionEnabled){const eligibility=await staffCompletionEligibility(pool,p,ticket),cycle=eligibility.cycle;result=publicP2016({...result,handling_cycle:cycle?{id:cycle.id,cycle_no:cycle.cycle_no,first_responsibility_event_id:cycle.first_responsibility_event_id,staff_completion_event_id:cycle.staff_completion_event_id}:null,allowed_actions:[...result.allowed_actions,...(eligibility.allowed?['complete']:[])]});}
       return result;
     },
@@ -172,7 +198,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         resolver_team_id:ticket.resolver_team_id,resolver_team_name:owner.rows[0]?.team_name??null,conversations:q.rows});
     },
     async authorizedRelatedConversation({authContext,ticketId,sessionId,transaction=pool,lock=false}:TicketQueryInput&{sessionId:string}){
-      guardP2016(ticketConversationSelfHandlingEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled);
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId,transaction});
       const q=await transaction.query<RelatedConversationRow>(`SELECT ${relatedFields} FROM conversation.session s
         LEFT JOIN conversation.assignment a ON a.session_id=s.id LEFT JOIN pilot_ticket.pilot_principal p ON p.id=a.assigned_principal_id
@@ -187,7 +213,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         action:session.assignment_status==='ASSIGNED'&&session.conversation_principal_id!==p.principal_id?'TRANSFER':'TAKEOVER'});
     },
     async relatedConversations({cursor=null,limit,...input}:TicketQueryInput&{cursor?:unknown;limit?:unknown}){
-      guardP2016(ticketConversationSelfHandlingEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled);
       if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const {ticket,principal:p}=await authorizedTicket(input),n=limitP2016(limit??20,20);
       const page=cursor?decodeCursorP2016(cursor,['v','ticket','id']):null;
