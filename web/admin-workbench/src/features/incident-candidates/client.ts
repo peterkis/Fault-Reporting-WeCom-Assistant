@@ -1,4 +1,4 @@
-import {ApiError,UnknownCommandOutcome} from '../../api/client';
+import {ApiError,UnknownCommandOutcome,captureWorkbenchRead} from '../../api/client';
 
 export const candidateStates=['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED'] as const;
 export type CandidateState=typeof candidateStates[number];
@@ -95,11 +95,14 @@ function decodeDetail(value:unknown,candidateId:string):CandidateDetail {
     allowed_actions:unique(list(row.allowed_actions,3,value=>member(value,candidateActions)),value=>value),allowed_scopes:unique(list(row.allowed_scopes,4,value=>member(value,incidentScopes)),value=>value),roles:unique(list(row.roles,3,value=>member(value,['ADMIN','DISPATCHER','HANDLER'] as const)),value=>value)};
 }
 async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):Promise<T>{
+  const requireCurrent=captureWorkbenchRead(signal);try{
   const response=await fetch(path,{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});
+  requireCurrent();
   if([401,403,404].includes(response.status))throw new ApiError(response.status,'AUTHORIZATION_REJECTED');
   if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
-  const value:unknown=await response.json();if(!response.ok){const error=object(object(value).error),code=text(error.code,100);if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new ApiError(response.status,'INVALID_RESPONSE');throw new ApiError(response.status,code);}
+  const value:unknown=await response.json();requireCurrent();if(!response.ok){const error=object(object(value).error),code=text(error.code,100);if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new ApiError(response.status,'INVALID_RESPONSE');throw new ApiError(response.status,code);}
   return decode(value);
+  }catch(error){requireCurrent();throw error;}
 }
 export const candidateApi={
   list:(state:CandidateState,cursor:string|null,signal:AbortSignal):Promise<CandidatePage>=>get('/api/incident-candidates?'+new URLSearchParams({state,limit:'30',...(cursor?{cursor}:{})}),signal,decodePage),

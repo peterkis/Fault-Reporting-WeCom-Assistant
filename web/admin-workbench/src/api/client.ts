@@ -11,6 +11,7 @@ export function setWorkbenchTransportWritable(value:boolean){transportWritable=v
 export function workbenchTransportWritable(){return transportWritable;}
 export function advanceWorkbenchAuthorizationEpoch(){authorizationEpoch++;}
 function requireCurrentRead(epoch:number,signal:AbortSignal){signal.throwIfAborted();if(epoch!==authorizationEpoch)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');}
+export function captureWorkbenchRead(signal:AbortSignal):()=>void {const epoch=authorizationEpoch;return()=>requireCurrentRead(epoch,signal);}
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand,P2016CompletionCommand,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016RelatedConversationPage};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}

@@ -53,10 +53,11 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       else{setPending(variables.operation);setState('unknown');setMessage('结果未知：原 UUID、版本、材料依据和正文保持不变，请先只读核对。');}
     },onSettled:()=>{request.current=null;}});
   const receipt=useMutation({mutationKey:['incident-candidate-receipt',principal.principal_id,detail.id],mutationFn:({operation,signal}:{operation:CandidateOperation;signal:AbortSignal})=>candidateApi.receipt(detail.id,operation.body.client_command_id,signal),
-    onSuccess:result=>{
+    onSuccess:async(result,variables)=>{
       if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
+      const cleaned=result.state==='COMMITTED'?await draft.success(variables.operation.body.client_command_id,true):true;
       setPending(null);setReviewRequired(true);refresh();
-      if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage('原操作已确认提交；当前输入保留，请核对当前事实。');}
+      if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'原操作已确认提交；恢复副本清理失败，禁止新提交，请继续只读核对。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。');}
     },onError:()=>{setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='__NO_TEAM__'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));

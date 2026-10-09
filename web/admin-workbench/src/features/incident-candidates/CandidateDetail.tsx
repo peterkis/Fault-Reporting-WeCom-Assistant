@@ -1,8 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
-import {useQuery} from '@tanstack/react-query';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {Link,useParams} from 'react-router';
 import type {Principal} from '../../api/client';
-import {errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,advanceWorkbenchAuthorizationEpoch} from '../../api/client';
+import {clearSessionAuthorization} from '../../app/authorization';
 import {candidateApi} from './client';
 import {CandidateDecisionForm} from './CandidateDecisionForm';
 
@@ -16,12 +17,15 @@ export function CandidateDetailPage({principal,onBlockedChange}:{principal:Princ
   return <CandidateDetail key={principal.principal_id+':'+id} principal={principal} candidateId={id} onBlockedChange={onBlockedChange}/>;
 }
 export function CandidateDetail({principal,candidateId,onBlockedChange}:{principal:Principal;candidateId:string;onBlockedChange:(blocked:boolean)=>void}){
-  const heading=useRef<HTMLHeadingElement|null>(null),query=useQuery({queryKey:['incident-candidate-detail',principal.principal_id,candidateId],queryFn:({signal})=>candidateApi.detail(candidateId,signal)}),detail=query.data;
+  const client=useQueryClient(),heading=useRef<HTMLHeadingElement|null>(null),query=useQuery({queryKey:['incident-candidate-detail',principal.principal_id,candidateId],queryFn:({signal})=>candidateApi.detail(candidateId,signal)}),detail=query.data;
+  const [refreshError,setRefreshError]=useState('');
+  const refresh=async()=>{try{setRefreshError('');const fresh=await client.fetchQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),staleTime:0});const identity=(actor:Principal)=>JSON.stringify([actor.principal_id,actor.csrf_token,actor.authorization_revision,[...actor.roles].sort(),actor.incident_candidate_workspace_enabled,actor.incident_candidate_draft_recovery_enabled]);if(identity(fresh)!==identity(principal))advanceWorkbenchAuthorizationEpoch();await query.refetch();}catch(error){setRefreshError(errorMessage(error));if(error instanceof ApiError&&(error.status===401||error.status===403))await clearSessionAuthorization(client,principal.principal_id,error.status,'revoked');}};
   const [blocked,setBlocked]=useState(false);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{if(detail)heading.current?.focus();},[Boolean(detail)]);
   return <article className="detail-page" data-candidate-id={candidateId} aria-labelledby={'candidate-heading-'+candidateId}>
-    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><button type="button" data-action="refresh-candidate" onClick={()=>{void query.refetch();}}>刷新当前事实</button></div>
+    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><button type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}}>刷新当前事实</button></div>
+    {refreshError?<p role="alert">{refreshError}</p>:null}
     {query.isPending?<p role="status">正在读取获权候选…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:detail?<div className="detail-body">
       <header className="detail-heading"><p className="context-line">人工公共故障候选 · {candidateLabels[detail.status]}</p><h1 id={'candidate-heading-'+candidateId} ref={heading} tabIndex={-1}>{detail.service_family} · {detail.symptom_family}</h1><p>候选依据版本 {detail.row_version}；候选并非已确认公共故障。</p></header>
       <section className="properties" aria-label="候选来源与数量"><dl><dt>来源观察人数</dt><dd>{detail.distinct_reporters??unavailable}</dd><dt>来源观察科室</dt><dd>{detail.distinct_departments??unavailable}</dd><dt>来源观察位置</dt><dd>{detail.distinct_locations??unavailable}</dd><dt>原观察窗口</dt><dd>{detail.correlation_window_ms===null?unavailable:detail.correlation_window_ms+' 毫秒'}</dd><dt>来源建议范围</dt><dd>{scopeLabels[detail.scope_candidate]??detail.scope_candidate}（尚未确认）</dd><dt>原观察时间</dt><dd>{detail.first_seen_at??unavailable} 至 {detail.last_seen_at??unavailable}</dd><dt>候选到期</dt><dd>{detail.expires_at}（北京时间）</dd></dl>
@@ -34,7 +38,7 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
         <ul>{detail.materials.map((material,index)=><li key={material.source_decision_id}>{index+1}. {material.source_kind==='WEB'?'医小修材料':'Bot 材料'} · {material.status==='CURRENT'?'与原依据一致':material.status==='CHANGED'?'已有新材料':'材料已过期或不可用'} · 原版本 {material.original_revision} / 当前版本 {material.current_revision??'不可用'}<p>原材料依据：{material.original_source_hash}</p>{material.status!=='EXPIRED'&&material.current_source_hash?<p>当前材料依据：{material.current_source_hash}</p>:null}</li>)}</ul>
         <h3>当前获权动作</h3><p>{detail.allowed_actions.map(action=>actionLabels[action]).join('、')||'当前没有可执行动作。'}</p><p>所有决定由工作人员明确作出；确认只产生独立 Incident，不合并或关闭个人工单。</p>
       </section>
-      <CandidateDecisionForm key={principal.principal_id+':'+candidateId} principal={principal} detail={detail} onBlockedChange={setBlocked} onRefresh={()=>{void query.refetch();}}/>
+      <CandidateDecisionForm key={principal.principal_id+':'+candidateId} principal={principal} detail={detail} onBlockedChange={setBlocked} onRefresh={()=>{void refresh();}}/>
     </div>:null}
   </article>;
 }
