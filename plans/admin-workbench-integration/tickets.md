@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-09
+snapshot_on: 2026-10-10
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -18,6 +18,8 @@ native_blocking_edges: 76
 发布时frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。其实际完成和GitHub收口核验后，再从当前无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
 
 2026-10-09当前已核实关闭12／43票：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T38。T06派单与显式转派已验收、集成并[GitHub收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61#issuecomment-6083677579)；历史零字节浏览器profile保留为清理例外，详情见[七项证据与关闭方式](execution/t06.md)。
+
+2026-10-10恢复核查：GitHub已关闭13／43票，剩余30票OPEN；在上述12票之外，T27公共故障候选已按原七项验收、合入本地集成分支并[收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82#issuecomment-6088472390)，见[原对象与分组证据](execution/t27.md)。T28的原生blocker #82已CLOSED；下一串行验证窗口为T22。A09整组仍未完成。
 
 ## 导航与配置
 
@@ -150,9 +152,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#79](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **来源：** WBINT-08 / A08
 
-- [ ] **T27** — [#82 人工复核并确认公共故障候选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
+- [x] **T27** — [#82 人工复核并确认公共故障候选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-09 / A09
+  - **本地执行：** [LOCAL_VERIFIED：原七项、独立Incident、材料与命令恢复、分组证据及清理](execution/t27.md)已核对；交付aac2d438已安全快进，GitHub CLOSED已读回。真实被测源6607ace4及早先分组各保留原身份，未发布／启用；T28及A09整组未完成。
 
 - [ ] **T28** — [#83 跟进公共故障及关联个人报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **Blocked by:** [#82](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)

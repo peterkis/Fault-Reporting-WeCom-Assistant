@@ -20,11 +20,21 @@ import { WorkbenchError } from './p2-006-workbench-query.mjs';
 import { assertLocalDateTime,assertEpochMsString } from './platform/time-contract.mjs';
 
 export const SCOPES=Object.freeze(['LOCAL','BUILDING','CAMPUS','HOSPITAL_WIDE']);
+export function allowedIncidentScopes(roles:readonly string[],allowDispatcherCampus=false):Incident['confirmed_scope'][] {
+  if(roles.includes('ADMIN'))return ['LOCAL','BUILDING','CAMPUS','HOSPITAL_WIDE'];
+  if(roles.includes('DISPATCHER'))return allowDispatcherCampus?['LOCAL','BUILDING','CAMPUS']:['LOCAL','BUILDING'];
+  return [];
+}
 export const INCIDENT_STATES=Object.freeze([...SCOPES.map(s=>'CONFIRMED_'+s),'INVESTIGATING','RESOLVED','CLOSED']);
 export const CANDIDATE_STATES=Object.freeze(['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED']);
 export const REASONS=Object.freeze(['OPERATOR_REVIEWED','CONFIRMED_SHARED_FAULT','INCORRECT_ASSOCIATION','RECOVERY_CONFIRMED','SUBSCRIPTION_REQUEST','SCOPE_CORRECTION','MAINTENANCE_EXPIRED','WORKBENCH_CONFIRMED']);
 export const ACTIONS=Object.freeze(['START_REVIEW','REJECT_CANDIDATE','EXPIRE_CANDIDATE','CONFIRM_INCIDENT','START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT']);
 export const LIMITS=Object.freeze({pool:4,list:30,maximumList:100,events:200,sse:32});
+// Preserve supplied safe hints only; never reconstruct references from source content.
+export function safeCandidateSourceRefs(value:unknown):string[] {
+  if(!Array.isArray(value))return [];
+  return [...new Set(value.slice(0,100).filter((ref):ref is string=>typeof ref==='string'&&/^(?:channel:[1-9][0-9]{0,18}|(?:web|intake):[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/iu.test(ref)))];
+}
 export const ERROR_CODES=Object.freeze(["P2_012_COMMAND_CONFLICT","P2_012_COMMAND_FAILED","P2_012_CURSOR_INVALID","P2_012_DIRECT_DESTINATION_REQUIRED","P2_012_DISABLED","P2_012_EXPIRY_CONFLICT","P2_012_FLAG_INVALID","P2_012_FORBIDDEN","P2_012_INPUT_INVALID","P2_012_LIMIT_INVALID","P2_012_LIVE_APPROVAL_REQUIRED","P2_012_NOTIFICATION_EVENT_INVALID","P2_012_NOTIFICATION_FAILED","P2_012_NOT_FOUND","P2_012_OWNER_INVALID","P2_012_PRIMARY_NOT_LINKED","P2_012_PRIMARY_STILL_LINKED","P2_012_REPORT_ALREADY_LINKED","P2_012_SOURCE_CONFLICT","P2_012_SOURCE_EVIDENCE_INCOMPLETE","P2_012_SOURCE_NOT_FOUND","P2_012_STATE_CONFLICT","P2_012_TICKET_ALREADY_LINKED","P2_012_VERSION_CONFLICT"]);
 export function fail(code: string='INPUT_INVALID',status=400): never{const value='P2_012_'+code;throw new WorkbenchError(ERROR_CODES.includes(value)?value:'P2_012_INPUT_INVALID',status);}
 const HTTP_ERROR_STATUS=Object.freeze(Object.fromEntries(Object.entries({
@@ -70,8 +80,8 @@ export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   const v=snapshot(input) as JsonObservation;if(!ACTIONS.includes(v?.action as string))fail();
   const candidate=['START_REVIEW','REJECT_CANDIDATE','EXPIRE_CANDIDATE','CONFIRM_INCIDENT'].includes(v.action as string);
   const identity=candidate?'candidate_review_id':'incident_id',versionKey=v.action==='CONFIRM_INCIDENT'?'expected_candidate_version':'expected_row_version';
-  const extras=({CONFIRM_INCIDENT:['confirmed_scope','owner_principal_id','owner_team_id','primary_ticket_id','selected_report_refs'],CORRECT_SCOPE:['confirmed_scope'],SET_PRIMARY_TICKET:['primary_ticket_id'],LINK_REPORT:['source_decision_id'],UNLINK_REPORT:['incident_report_id','expected_report_version'],MARK_REPORTER_RECOVERED:['incident_report_id','expected_report_version'],PAUSE_SUBSCRIPTION:['subscription_id','expected_subscription_version'],RESUME_SUBSCRIPTION:['subscription_id','expected_subscription_version','direct_channel_leg_id']} as Record<string, string[]>)[v.action as string]??[];
-  const required=extras.filter(k=>!['owner_team_id','primary_ticket_id','direct_channel_leg_id'].includes(k));
+  const extras=({CONFIRM_INCIDENT:['confirmed_scope','owner_principal_id','owner_team_id','primary_ticket_id','selected_report_refs','expected_material_basis'],CORRECT_SCOPE:['confirmed_scope'],SET_PRIMARY_TICKET:['primary_ticket_id'],LINK_REPORT:['source_decision_id'],UNLINK_REPORT:['incident_report_id','expected_report_version'],MARK_REPORTER_RECOVERED:['incident_report_id','expected_report_version'],PAUSE_SUBSCRIPTION:['subscription_id','expected_subscription_version'],RESUME_SUBSCRIPTION:['subscription_id','expected_subscription_version','direct_channel_leg_id']} as Record<string, string[]>)[v.action as string]??[];
+  const required=extras.filter(k=>!['owner_team_id','primary_ticket_id','direct_channel_leg_id','expected_material_basis'].includes(k));
   exact(v,[...base,identity,versionKey,...extras],[...base,identity,versionKey,...required]);
   if(!REASONS.includes(v.reason_code as string))fail();
   const out: JsonObservation={...v,client_command_id:uuid(v.client_command_id),[identity]:uuid(v[identity]),expected_row_version:version(v[versionKey])};
@@ -79,6 +89,7 @@ export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   for(const k of ['expected_report_version','expected_subscription_version'])if(v[k]!==undefined)out[k]=version(v[k]);
   if(v.confirmed_scope!==undefined&&!SCOPES.includes(v.confirmed_scope as string))fail();
   if(v.owner_team_id!=null)out.owner_team_id=code(v.owner_team_id);
+  if(Object.hasOwn(v,'expected_material_basis')&&(typeof v.expected_material_basis!=='string'||!/^[a-f0-9]{64}$/u.test(v.expected_material_basis)))fail();
   if(v.action==='SET_PRIMARY_TICKET'&&!Object.hasOwn(v,'primary_ticket_id'))fail();
   if(v.selected_report_refs!==undefined){if(!Array.isArray(v.selected_report_refs)||!v.selected_report_refs.length||v.selected_report_refs.length>100)fail();out.selected_report_refs=v.selected_report_refs.map(uuid).sort();if(new Set(out.selected_report_refs as string[]).size!==(out.selected_report_refs as string[]).length)fail();}
   return frozen(out) as NormalizedIncidentCommand;
