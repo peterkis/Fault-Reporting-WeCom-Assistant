@@ -1,9 +1,12 @@
 import {ApiError,UnknownCommandOutcome} from '../../api/client';
 import type {CanonicalItem,ReviewCommand,ReviewCommandResult,ReviewMaterialProjection,ReviewReceipt} from '../../../../../contracts/workbench_review_contracts';
+import {decodeManualReportProjection} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {ManualReportProjection} from '../../../../../contracts/workbench_manual_report_contracts';
 export type {ReviewCommand,ReviewReceipt};
 export const resolutions={CONFIRM_TICKET_ELIGIBLE:'确认为故障，受理工单',CLASSIFY_SERVICE_REQUEST:'确认为服务请求',REQUEST_DESCRIPTION:'请求补充描述',CLASSIFY_BUSINESS_CONSULTATION:'记录业务咨询',ACKNOWLEDGE:'记录确认回应',MARK_OUT_OF_SCOPE:'记录范围外诉求',KEEP_INCIDENT_REVIEW_CANDIDATE:'保留公共故障审核候选',CANCEL_REVIEW:'取消此复核'} as const;
 export type Resolution=keyof typeof resolutions;
 export interface ReviewView extends ReviewMaterialProjection {
+  manual_report?:ManualReportProjection;
   id:string;decision_id:string;service_intake_id:string;review_reason:string;row_version:string;status:'PENDING'|'RESOLVED'|'CANCELLED';canonical_item:CanonicalItem;
   evidence:{result:string;reason:string;known:{field:string;value:string}[];missing:string[];conflicts:{code:string;sources:string[]}[];
     sources:string[];versions:string[];risk:string;provenance:{field:string;value:string;source:string;confidence:string}[];suggestions:{type:string;policy:string}[]};
@@ -36,20 +39,23 @@ function shown(value:unknown):string{const v=Array.isArray(value)?list(value,100
 function decodeReview(value:unknown,target:string):ReviewView{
   const v=object(value),s=object(v.safe_result),basis=exact(v.material_basis,['source_kind','original_revision','current_revision','original_hash','current_hash','stale','reason']);
   if(uuid(v.id).toLowerCase()!==target.toLowerCase()||(v.status!=='PENDING'&&v.status!=='RESOLVED'&&v.status!=='CANCELLED')
-    ||(basis.source_kind!=='BOT'&&basis.source_kind!=='WEB')||!['CURRENT','SOURCE_CHANGED','NEW_CHANNEL_LEG'].includes(text(basis.reason,32)))invalid();
+    ||(basis.source_kind!=='BOT'&&basis.source_kind!=='WEB'&&basis.source_kind!=='MANUAL')||!['CURRENT','SOURCE_CHANGED','NEW_CHANNEL_LEG'].includes(text(basis.reason,32)))invalid();
+  let manual:ManualReportProjection|undefined;
+  if(basis.source_kind==='MANUAL'){try{manual=decodeManualReportProjection(v.manual_report);}catch{invalid();}}
+  else if(Object.hasOwn(v,'manual_report'))invalid();
   const stale=flag(basis.stale),reason=basis.reason as ReviewView['material_basis']['reason'];if(stale===(reason==='CURRENT'))invalid();
   const allowed=list(v.allowed_resolutions,8,resolution);if(new Set(allowed).size!==allowed.length||(v.status!=='PENDING'&&allowed.length)||(stale&&allowed.some(item=>item!=='CANCEL_REVIEW')))invalid();
   const unsupported=list(v.unsupported_resolutions,1,item=>{if(item!=='LINK_EXISTING_JOURNEY')invalid();return 'LINK_EXISTING_JOURNEY' as const;});if(new Set(unsupported).size!==unsupported.length)invalid();
   const fields=exact(s.known_fields,['selected_service_code','symptom_codes','domain_intent','transaction_stage','scope'],[]);
   const known=Object.entries(fields).map(([field,value])=>({field,value:field==='symptom_codes'?JSON.stringify(list(value,100,item=>text(item,128))):value===null?'未提供':text(value,128)}));
   const materials=list(v.materials,50,item=>{const m=exact(item,['source_ref','revision','text','in_original_basis']),ref=text(m.source_ref,160);
-    if(!/^channel:[1-9][0-9]*$/u.test(ref)&&!/^web:[0-9a-f-]{36}$/iu.test(ref))invalid();
+    if(!/^channel:[1-9][0-9]*$/u.test(ref)&&!/^web:[0-9a-f-]{36}$/iu.test(ref)&&!(basis.source_kind==='MANUAL'&&ref==='manual:'+uuid(v.service_intake_id)))invalid();
     return {source_ref:ref,revision:reviewVersion(m.revision,true),text:m.text===null?null:text(m.text),in_original_basis:flag(m.in_original_basis)};});
   if(materials.reduce((sum,item)=>sum+(item.text?.length??0),0)>20000)invalid();
   const projection:ReviewMaterialProjection={material_basis:{source_kind:basis.source_kind,original_revision:reviewVersion(basis.original_revision,true),current_revision:reviewVersion(basis.current_revision,true),
     original_hash:hash(basis.original_hash),current_hash:hash(basis.current_hash),stale,reason},materials,materials_truncated:flag(v.materials_truncated)};
   hash(s.input_hash);hash(s.result_hash);flag(s.manual_review_required);flag(s.ticket_creation_recommended);flag(s.incident_review_candidate);
-  return {...projection,id:uuid(v.id),decision_id:uuid(v.decision_id),service_intake_id:uuid(v.service_intake_id),review_reason:code(v.review_reason_code),row_version:reviewVersion(v.row_version),status:v.status,
+  return {...projection,...(manual?{manual_report:manual}:{}),id:uuid(v.id),decision_id:uuid(v.decision_id),service_intake_id:uuid(v.service_intake_id),review_reason:code(v.review_reason_code),row_version:reviewVersion(v.row_version),status:v.status,
     canonical_item:canonicalItem(v.canonical_item),allowed_resolutions:allowed,unsupported_resolutions:unsupported,
     evidence:{result:code(s.result_code),reason:code(s.reason_code),known,missing:list(s.unknown_fields,100,item=>text(item,128)),
       conflicts:list(s.conflicts,100,item=>{const c=object(item);return {code:code(c.code),sources:c.source_refs===undefined?[]:list(c.source_refs,100,item=>text(item,160))};}),
