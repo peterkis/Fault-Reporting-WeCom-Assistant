@@ -22,7 +22,7 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 
 042仅增加Intake原人工描述／来源／实际Reporter未核实快照和authenticated actor；Journey/Leg/Decision引用同一Intake，不新建Ticket/Owner/receipt表。旧SQL、历史证据、181迁移分母保持。停止本票option即可停止新代录/读取用途；已保存事实与原命令账本保留，结构修复用后续迁移。
 
-正式新报修表单复用T03当前浏览器AES-GCM、不可导出key、20份/16KiB、首次保存后固定24h、principal+intake+固定新报修scope+manual-report用途。恢复前重新GET capabilities并核验当前account；只保存业务密文与原UNKNOWN UUID/body，不保存凭据。提交、恢复均不自动POST；成功、丢弃、退出、失权、过期沿T03清理。UNKNOWN正文/UUID不可更改，只能显式GET核对；敏感过期后仅保留opaque操作标识。
+正式新报修表单复用T03当前浏览器AES-GCM、不可导出key、20份/16KiB、首次保存后固定24h、principal+intake+固定新报修scope+manual-report用途。固定scope id=`00000000-0000-4000-8000-000000000072`只是浏览器草稿槽位，不代表Service Intake、人员身份或服务器资源；受理后真实Intake UUID只由服务器返回。恢复前重新GET capabilities并核验当前account；只保存业务密文与原UNKNOWN UUID/body，不保存凭据。提交、恢复均不自动POST；成功、丢弃、退出、失权、过期沿T03清理。UNKNOWN正文/UUID不可更改，只能显式GET核对；敏感过期后仅保留opaque操作标识。正式路由`/workbench/app/reports/new`及当前工作台“新报修”入口下一public production RED已准备，产品UI尚未实现。
 
 资源沿既有单App/Worker、Gateway单活、SSE32、共享pool max4／总预算8；本票无新后台worker、timer或目录网络。公共验证seam为真实已编译HTTP＋隔离PG及正式production bundle，七项追溯见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。T18目录核实、T19一步接单均不在本票。
 
