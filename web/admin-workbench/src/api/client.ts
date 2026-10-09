@@ -142,8 +142,12 @@ export const api={
     return {resolver_teams,resolver_team_id:team,items};
   }),
   assignTicket:(ticketId:string,action:P2016AssignmentAction,command:P2016AssignmentCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016AssignmentResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
-    if(Object.keys(v).length!==9||v.communication_choice!==command.communication_choice||!Array.isArray(v.conversations)||v.conversations.length!==0)throw new UnknownCommandOutcome();
-    return {...decodeTicketReceipt(v,ticketId),handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle),communication_choice:command.communication_choice,conversations:[]};
+    if(Object.keys(v).length!==9||v.communication_choice!==command.communication_choice||!Array.isArray(v.conversations)||v.conversations.length!==command.sessions.length)throw new UnknownCommandOutcome();
+    const conversations=v.conversations.map(value=>{const row=object(value),session=id(row.session_id),original=command.sessions.find(item=>item.session_id===session),raw=row.session_row_version;
+      if(Object.keys(row).length!==4||!original||typeof row.changed!=='boolean'||typeof raw!=='number'||!Number.isSafeInteger(raw)||raw!==original.expected_row_version+(row.changed?1:0)||(row.changed?(typeof row.control_event_id!=='string'):row.control_event_id!==null))throw new UnknownCommandOutcome();
+      return {session_id:session,session_row_version:raw,control_event_id:row.control_event_id===null?null:id(row.control_event_id),changed:row.changed};});
+    if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();
+    return {...decodeTicketReceipt(v,ticketId),handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle),communication_choice:command.communication_choice,conversations};
   }),
   manualReportCapabilities:(signal:AbortSignal):Promise<ManualReportCapabilities>=>get('/api/workbench/reports/capabilities',signal,value=>{try{return decodeManualReportCapabilities(value);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   manualReportReceipt:(commandId:string,signal:AbortSignal):Promise<ManualReportReceipt>=>get('/api/workbench/reports/commands/'+encodeURIComponent(commandId),signal,value=>{try{return decodeManualReportReceipt(value,commandId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
