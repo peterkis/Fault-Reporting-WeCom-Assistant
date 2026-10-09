@@ -95,6 +95,7 @@ native_blocking_edges: 76
 - [ ] **T15** — [#70 确认明确故障并立即开始处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)、[#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **来源：** WBINT-04 / A04
+  - **本地执行：** 2026-10-09 实读完整正文／评论／标签及原生依赖，两项 blocker 已 CLOSED；领取给 peterkis，独立分支准备明确故障的原子确认并开始。当前未验证、未集成，A04 整组未完成。
 
 - [x] **T16** — [#71 安全查看已有报修附件](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71)
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
@@ -115,6 +116,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-05 / A05
 
 - [ ] **T20** — [#75 Web原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #66 CLOSED，领取给peterkis；独立准备原Web报修人反馈与同轮重开合同，尚未验证。
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-06 / A06
 
@@ -173,6 +175,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-11 / A11
 
 - [ ] **T34** — [#89 明确关注并查看与我有关](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #60 CLOSED，领取给peterkis；独立准备明确关注与获权责任并集合同，尚未验证。
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)
   - **来源：** WBINT-12 / A12
 
@@ -188,11 +191,13 @@ native_blocking_edges: 76
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)、[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-12 / A12
 
-- [ ] **T38** — [#93 通过SSE更新真实工作台事实](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
+- [x] **T38** — [#93 通过SSE更新真实工作台事实](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
+  - **执行：** 2026-10-09 CLOSED；七项证据、真实被测祖先与分层结果见[实施记录](execution/t38.md)及[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93#issuecomment-6073463450)。本地集成，尚未发布。
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-13 / A13
 
 - [ ] **T39** — [#94 提示当前查看与编辑活动](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签及原生blocker #93 CLOSED，领取给peterkis；准备基于当前integration的独立实施，尚未验证。
   - **Blocked by:** [#93](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
   - **来源：** WBINT-13 / A13
 

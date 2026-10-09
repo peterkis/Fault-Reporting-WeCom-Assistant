@@ -12,6 +12,7 @@ import './style.css';
 let client:QueryClient;
 const sessionPrincipal=()=>client.getQueryData<Principal>(['session'])?.principal_id;
 client=new QueryClient({queryCache:new QueryCache({onError(error,query){
+  if(query.queryKey[0]!=='session'&&typeof query.queryKey[1]==='string'&&query.queryKey[1]!==sessionPrincipal())return;
   if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,sessionPrincipal(),401,'revoked');
   else if(error instanceof ApiError&&error.status===403&&['session','board','conversations'].includes(String(query.queryKey[0])))void clearSessionAuthorization(client,sessionPrincipal(),403,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status)){
@@ -24,6 +25,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
     else {void client.cancelQueries({queryKey:query.queryKey,exact:true});query.setState({data:undefined,dataUpdatedAt:0});if(query.queryKey[0]==='detail')void client.invalidateQueries({queryKey:['board',query.queryKey[1]],refetchType:'active'});}
   }
 }}),mutationCache:new MutationCache({onError(error,_variables,_context,mutation){
+  const principal=mutation.options.mutationKey?.[1];if(typeof principal==='string'&&principal!==sessionPrincipal())return;
   if(error instanceof ApiError&&error.status===401)return clearSessionAuthorization(client,sessionPrincipal(),401,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey&&['ticket-internal-note','ticket-self-handling','ticket-completion'].includes(String(mutation.options.mutationKey[0])))return clearItemAuthorization(client,mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='manual-review-command'){

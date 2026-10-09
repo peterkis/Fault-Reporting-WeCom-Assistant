@@ -24,7 +24,7 @@
 | 成员新报修、补充、我的报修、命令恢复、服务目录 | [医小修成员自助](member/self-service.md) |
 | 机器人卡片工单详情、旧 Grant 与成员读取 | [Reporter 访问](member/reporter-access.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
-| SSE 重放与轮询降级 | [实时事件](platform/realtime.md) |
+| SSE 重放、正式管理端授权重读与轮询降级 | [实时事件](platform/realtime.md) |
 | 后端调用的企业微信、人员目录和通道 SDK | [外部服务](integrations/external-services.md) |
 | 群内 @Bot 回调的群ID/群名称、来源识别与本次现场验证 | [企业微信消息回调](integrations/wecom-message-callback.md) |
 | 没有 REST 入口的进程内 Port、事件、Worker | [内部接口](integrations/internal-ports.md) |
