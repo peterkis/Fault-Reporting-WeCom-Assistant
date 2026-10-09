@@ -40,7 +40,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
     setValue(current=>JSON.stringify(current)===snapshot?emptyCandidateDecision:current);setReviewRequired(JSON.stringify(latest.current)!==snapshot);refresh();
   };
   const mutation=useMutation({mutationKey:['incident-candidate-command',principal.principal_id,detail.id],
-    mutationFn:({operation,signal}:{operation:CandidateOperation;snapshot:string;signal:AbortSignal})=>candidateApi.perform(operation,principal.csrf_token,signal),
+    mutationFn:({operation,signal,csrfToken}:{operation:CandidateOperation;snapshot:string;signal:AbortSignal;csrfToken:string|null})=>candidateApi.perform(operation,csrfToken,signal),
     onSuccess:(result,variables)=>applyCommit(result,variables.snapshot),
     onError:(error,variables)=>{
       if(error instanceof CandidateCommandRefusal){setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error));refresh();}
@@ -69,7 +69,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       if(!current.allowed_actions.includes(operation.action))throw new ApiError(409,operation.action==='CONFIRM_INCIDENT'&&current.materials.some(material=>material.status!=='CURRENT')?'P2_012_SOURCE_CONFLICT':'P2_012_STATE_CONFLICT');
       // Fresh authorization never replaces the captured body or version.
       if(controller.signal.aborted)return;
-      mutation.mutate({operation,snapshot,signal:controller.signal});
+      mutation.mutate({operation,snapshot,signal:controller.signal,csrfToken:fresh.csrf_token});
     }catch(error){request.current=null;setPending(null);setState('denied');setReviewRequired(true);setMessage('尚未发送：'+(error instanceof ApiError?refusalMessage(error):errorMessage(error)));refresh();}
   };
   const submit=()=>{
