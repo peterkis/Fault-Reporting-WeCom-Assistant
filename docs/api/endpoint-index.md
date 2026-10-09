@@ -217,3 +217,12 @@
 | GET | `/api/tickets/{ticketId}/completion/commands/{commandId}` | W，当前读权限下按原主体/用途/UUID只读核对安全终态；另需raw recovery | [完工核对](workbench/tickets.md#工作人员完工wbint-t11) |
 
 内部持久承诺reader不属于REST；默认false的旧Pilot不能执行或广告complete，旧resolve/confirm语义保留。
+
+## WBINT-T08计划合同（PLANNED/NOT_RUN，未挂载）
+
+| 方法 | 完整路径 | 状态/用途 | 合同 |
+| --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/unassign` | PLANNED：ADMIN/DISPATCHER撤销当前尚未开始派工，一个原子命令；默认false | [T08计划合同](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run) |
+| GET | `/api/tickets/{ticketId}/unassign/commands/{commandId}` | PLANNED：原principal/用途/UUID的安全Ticket终态核对；另需raw recovery | [T08计划合同](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run) |
+
+本节不属于当前已实现接口，SOURCE准备不能证明mounted REST或运行RED/PASS；T08全部运行NOT_RUN，具体剩余见[执行记录](../../plans/admin-workbench-integration/execution/t08.md)。

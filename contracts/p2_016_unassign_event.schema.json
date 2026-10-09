@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_unassign_event.schema.json",
+  "title": "PLANNED WBINT-T08 private Ticket event fact; not a public HTTP DTO",
+  "type": "object", "additionalProperties": false,
+  "required": ["event_id", "ticket_id", "event_type", "old_status", "new_status", "aggregate_version", "event_ordinal", "operator_type", "operator_id", "internal_note", "external_note", "reason_code", "assignment_metadata", "trace_id", "created_at"],
+  "properties": {
+    "event_id": {"$ref": "#/$defs/uuid"}, "ticket_id": {"$ref": "#/$defs/uuid"}, "event_type": {"const": "ticket.unassigned"},
+    "old_status": {"enum": ["QUEUED", "ACCEPTED"]}, "new_status": {"const": "QUEUED"},
+    "aggregate_version": {"$ref": "#/$defs/version"}, "event_ordinal": {"$ref": "#/$defs/version"},
+    "operator_type": {"const": "PILOT_USER"}, "operator_id": {"$ref": "#/$defs/uuid"},
+    "internal_note": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S"}, "external_note": {"type": "null"},
+    "reason_code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "assignment_metadata": {
+      "type": "object", "additionalProperties": false,
+      "required": ["old_assignee_id", "new_assignee_id", "old_team_id", "new_team_id"],
+      "properties": {"old_assignee_id": {"$ref": "#/$defs/uuid"}, "new_assignee_id": {"type": "null"}, "old_team_id": {"$ref": "#/$defs/team"}, "new_team_id": {"$ref": "#/$defs/team"}},
+      "x-runtime-invariant": "old_team_id equals new_team_id; old_assignee_id equals the locked Ticket owner."
+    },
+    "trace_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "created_at": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai"}
+  },
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "team": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}
+  },
+  "x-audience": "Private Ticket persistence fact. Internal reason and operator identity are excluded from Reporter, member, notification and SSE DTOs.",
+  "x-status": "PLANNED", "x-runtime-validation": "NOT_RUN"
+}

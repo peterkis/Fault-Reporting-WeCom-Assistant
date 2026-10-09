@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_unassign_result.schema.json",
+  "title": "PLANNED WBINT-T08 safe unassign result; runtime NOT_RUN",
+  "type": "object", "additionalProperties": false,
+  "required": ["ok", "ticket_id", "ticket_version", "ticket_event_id", "control_event_id", "handling_cycle", "communication_choice", "conversations", "replayed"],
+  "properties": {
+    "ok": {"const": true},
+    "ticket_id": {"$ref": "#/$defs/uuid"},
+    "ticket_version": {"$ref": "#/$defs/version"},
+    "ticket_event_id": {"$ref": "#/$defs/uuid"},
+    "control_event_id": {"type": "null"},
+    "handling_cycle": {"anyOf": [{
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cycle_no", "first_responsibility_event_id"],
+      "properties": {"id": {"$ref": "#/$defs/uuid"}, "cycle_no": {"$ref": "#/$defs/version"}, "first_responsibility_event_id": {"$ref": "#/$defs/uuid"}}
+    }, {"type": "null"}]},
+    "communication_choice": {"enum": ["RETAIN_CURRENT", "TRANSFER_SELECTED"]},
+    "conversations": {"type": "array", "maxItems": 8, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session_id", "session_row_version", "control_event_id", "changed"],
+      "properties": {
+        "session_id": {"$ref": "#/$defs/uuid"}, "session_row_version": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "control_event_id": {"anyOf": [{"$ref": "#/$defs/uuid"}, {"type": "null"}]}, "changed": {"type": "boolean"}
+      }
+    }},
+    "replayed": {"type": "boolean"}
+  },
+  "allOf": [{"if": {"properties": {"communication_choice": {"const": "RETAIN_CURRENT"}}}, "then": {"properties": {"conversations": {"maxItems": 0}}}, "else": {"properties": {"conversations": {"minItems": 1}}}}],
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+  },
+  "x-status": "PLANNED", "x-runtime-validation": "NOT_RUN"
+}

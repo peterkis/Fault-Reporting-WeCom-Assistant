@@ -53,3 +53,7 @@
 `contracts/yxx_self_service.openapi.yaml` 是成员业务的较完整闭合合同；`conversation_center.openapi.yaml` 混合领域与工作台API，须核对真实handler。部分内部查询（事件、联系资料、Incident子查询）返回专门SQL投影，并不直接返回同名持久化Schema的完整row。模块文档列出实际返回字段，链接Schema/类型用于进一步核对，不能把内部数据库字段全量序列化给前端。
 
 后续若确认真实契约缺陷，应先按已有ADR/任务授权修正对应合同和实现、添加针对风险的验证，再同步本目录。本轮没有为这些差异新建候选、改Gate或运行full/certify。
+
+## WBINT-T08 SOURCE合同增量（2026-10-09）
+
+[撤销当前未开始派工](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run)已冻结独立闭合Schema，`POST /api/tickets/{id}/unassign`及专用只读ACK仍PLANNED/未挂载，所有运行NOT_RUN。当前T06 assignment事件、039及Control caller-Tx只提供复用接缝，不能替代release状态/角色/fence/历史、same-round再承接与正式bundle验收。未知legacy责任边界失败关闭，不将本轮过去曾started永久绑定新承接；当前进行中和两waiting须独立T09，T09仍blocked。本阶段无SQL/产品实现，未来最小前向release event/null metadata CHECK编号由父另行分配，不占046。[原七项执行](../../plans/admin-workbench-integration/execution/t08.md)仍IN_PROGRESS。
