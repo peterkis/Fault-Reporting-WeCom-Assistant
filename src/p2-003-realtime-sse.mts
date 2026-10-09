@@ -46,6 +46,7 @@ export interface RealtimeSseHandler {
 import { types as utilTypes } from 'node:util';
 
 import * as realtimeEventLog from './p2-003-realtime-event-log.mjs';
+import {RealtimeScopeUnavailable} from './p2-006-workbench-authorization.mjs';
 
 const MAX_POSTGRES_BIGINT = '9223372036854775807';
 const REALTIME_PATH = '/api/realtime/events';
@@ -1190,12 +1191,16 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
         request,
         scope: REALTIME_SCOPE,
       }));
-    } catch {
+    } catch (error) {
       if (authorizationConnectionClosed()) {
         stopEarlyDisconnectWatch();
         return;
       }
       stopEarlyDisconnectWatch();
+      if(error instanceof RealtimeScopeUnavailable){
+        writeFallbackResponse(response,{status:503,code:REALTIME_SSE_ERROR_CODES.storageFailed,reason:'TEMPORARY_UNAVAILABLE',strategy:'POLL_UNTIL_SSE_AVAILABLE',pollAfterMs:Math.max(1000,configuration.recoveryPollMs)});
+        return;
+      }
       writeErrorResponse(response, 403, REALTIME_SSE_ERROR_CODES.forbidden);
       return;
     }
