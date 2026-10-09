@@ -6,12 +6,12 @@ import type {ManualReportCommand,ManualReportResult} from '../contracts/workbenc
 import {createPilotTicketCore} from './p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
-import {createRuleEngine} from './p2-007-rule-engine.mjs';
+import {createManualReportRulePolicy} from './workbench-manual-report-policy.mjs';
 import {createDecisionStore} from './p2-015-decision-store.mjs';
 import {createManualReviewStore} from './p2-015-manual-review.mjs';
 import {createServiceIntakeDecisionPort} from './p2-015-service-intake-decision-port.mjs';
 import {createSafeActionExecutor} from './p2-015-safe-action-executor.mjs';
-import {routeP2007Decision,routeRuleFailure} from './p2-015-decision-router.mjs';
+import {routeRuleFailure} from './p2-015-decision-router.mjs';
 import type {SafeRoute} from './p2-015-decision-router.mjs';
 import {safeHash} from './p2-015-domain-contracts.mjs';
 import {failP2016,guardP2016,exactP2016,uuidP2016,publicP2016,stampP2016} from './p2-016-domain-contracts.mjs';
@@ -78,7 +78,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,realtimeP
       VALUES($1::uuid,1,'MANUAL_REPORT',$2::uuid,$3,$4,$5,'OPEN',$6::timestamp without time zone) RETURNING id::text`,[journey.id,intake.id,safeHash({source:'STAFF_MANUAL_REPORT'}),safeHash({source:command.source,intake_id:intake.id}),contactScope,stamp.local])).rows[0];if(!leg)failP2016('ACTION_FAILED',503);
     const context={service_intake_id:intake.id,journey_ref:journey.id,safe_normalized_text:command.description,input_hash:safeHash(snapshot),source_refs:[trace],message_sequence_window:{start:1,end:1,count:1},delivery_mode:'APP_ONLY'};
     let route:SafeRoute;
-    try{route=routeP2007Decision({rule_output:createRuleEngine().evaluate({text:command.description,source_ref:trace,source_kind:'USER_TEXT',observed_at:stamp.local,occurrence_location:command.location.text}),context});}catch{route=routeRuleFailure(context);}
+    try{route=createManualReportRulePolicy().route({text:command.description,source_ref:trace,source_kind:'USER_TEXT',observed_at:stamp.local,occurrence_location:command.location.text},context);}catch{route=routeRuleFailure(context);}
     const decision=await decisions.record({transaction:tx,input:{...route,journey_id:journey.id,channel_leg_id:leg.id,service_intake_id:intake.id,source_kind:'MANUAL',
       source_window_start_sequence:1,source_window_end_sequence:1,source_message_count:1,source_hash:safeHash(snapshot),safe_result:route,requires_manual_review:route.manual_review_required,
       ticket_creation_recommended:route.ticket_creation_recommended,incident_review_candidate:route.incident_review_candidate,observed_at:stamp.local as LocalDateTime}});
