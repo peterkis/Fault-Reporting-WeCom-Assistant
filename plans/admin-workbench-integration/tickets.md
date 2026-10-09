@@ -72,6 +72,7 @@ native_blocking_edges: 76
 - [ ] **T10** — [#65 执行等待、恢复和合法取消](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **来源：** WBINT-02 / A02
+  - **本地执行：** 实时核对正文、评论和原生依赖，#58／#59已CLOSED；领取给peterkis，独立工作树准备等待、恢复和合法取消，尚未验收。
 
 - [x] **T11** — [#66 工作人员记录内外结果并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
@@ -94,6 +95,7 @@ native_blocking_edges: 76
 - [ ] **T15** — [#70 确认明确故障并立即开始处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)、[#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **来源：** WBINT-04 / A04
+  - **本地执行：** 2026-10-09 实读完整正文／评论／标签及原生依赖，两项 blocker 已 CLOSED；领取给 peterkis，独立分支准备明确故障的原子确认并开始。当前未验证、未集成，A04 整组未完成。
 
 - [x] **T16** — [#71 安全查看已有报修附件](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71)
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
