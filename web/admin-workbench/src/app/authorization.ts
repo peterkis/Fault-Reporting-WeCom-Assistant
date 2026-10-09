@@ -1,5 +1,5 @@
 import type {QueryClient} from '@tanstack/react-query';
-import {ApiError} from '../api/client';
+import {ApiError,advanceWorkbenchAuthorizationEpoch} from '../api/client';
 import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 
@@ -28,6 +28,7 @@ export async function clearReviewAuthorization(client:QueryClient,principal:stri
 }
 export function clearTicketAuthorization(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemAuthorization(client,principal,'ticket',ticketId,error);}
 export function clearSessionView(client:QueryClient,status:401|403|undefined,notice?:string){
+  advanceWorkbenchAuthorizationEpoch();
   if(status)useUiStore.getState().failSession(status);else useUiStore.getState().closeSession(notice??'会话已关闭，请重新核验。');
   void client.cancelQueries();client.clear();
 }

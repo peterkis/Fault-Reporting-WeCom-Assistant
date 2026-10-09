@@ -3,6 +3,7 @@
   "files": [
     "contracts/workbench_review_start_contracts.d.ts",
     "contracts/workbench_review_resolve_and_start_command.schema.json",
+    "contracts/workbench_realtime_contracts.d.ts",
     "contracts/workbench_review_contracts.d.ts",
     "contracts/workbench_review_material_basis.schema.json",
     "contracts/workbench_review_receipt.schema.json",

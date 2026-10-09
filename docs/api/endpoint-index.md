@@ -28,7 +28,7 @@
 | C14 | POST | `/api/conversations/{sessionId}/internal-notes` | W | 已实现：内部备注/201 | [会话](workbench/conversations.md) |
 | C15 | POST | `/api/deliveries/{deliveryId}/retry` | W | 已实现：通信重试 | [会话](workbench/conversations.md) |
 | C16 | POST | `/api/deliveries/{deliveryId}/reconcile` | W | 已实现：通信人工核对 | [会话](workbench/conversations.md) |
-| T01 | GET | `/api/lifecycle/bootstrap` | W | 已实现：生命周期身份；WEB01复用 | [工单](workbench/tickets.md) |
+| T01 | GET | `/api/lifecycle/bootstrap` | W | 已实现：生命周期身份/能力；WEB01复用及默认关闭的授权实时能力 | [工单](workbench/tickets.md) |
 | T02 | GET | `/api/tickets` | W | 已实现：工单队列 | [工单](workbench/tickets.md) |
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
 | T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
