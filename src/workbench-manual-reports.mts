@@ -7,6 +7,7 @@ import {createPilotTicketCore} from './p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {createManualReportRulePolicy} from './workbench-manual-report-policy.mjs';
+import {manualReportFields} from './workbench-manual-report-source.mjs';
 import {createDecisionStore} from './p2-015-decision-store.mjs';
 import {createManualReviewStore} from './p2-015-manual-review.mjs';
 import {createServiceIntakeDecisionPort} from './p2-015-service-intake-decision-port.mjs';
@@ -22,18 +23,10 @@ import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
 interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtimeProjector?:Realtime|null}
-function text(value:unknown,max:number,multiline=false):string{
-  if(typeof value!=='string'||(multiline?/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u:/[\u0000-\u001f\u007f]/u).test(value))failP2016();
-  const result=value.trim();if(!result||[...result].length>max)failP2016();return result;
-}
 export function manualReportCommand(input:unknown):ManualReportCommand{
   const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter']);
-  if(v.schema_version!==1||(v.source!=='PHONE'&&v.source!=='ON_SITE'))failP2016();
-  const location=exactP2016(v.location,['text','unknown']),reporter=exactP2016(v.reporter,['verification','name','contact','department']);
-  if(typeof location.unknown!=='boolean'||location.unknown&&location.text!==null||reporter.verification!=='UNVERIFIED')failP2016();
-  return publicP2016({schema_version:1,client_command_id:uuidP2016(v.client_command_id),source:v.source,description:text(v.description,4000,true),
-    location:{unknown:location.unknown,text:location.unknown?null:text(location.text,200)},
-    reporter:{verification:'UNVERIFIED',name:text(reporter.name,100),contact:text(reporter.contact,100),department:reporter.department===null?null:text(reporter.department,100)}});
+  if(v.schema_version!==1)failP2016();
+  return publicP2016({schema_version:1,client_command_id:uuidP2016(v.client_command_id),...manualReportFields({source:v.source,description:v.description,location:v.location,reporter:v.reporter})});
 }
 export async function manualReportsSchemaReady(pool:PostgresTransaction){
   try{return (await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('033_yxx_self_service_intake','042_workbench_manual_reports')")).rowCount===2;}catch{return false;}

@@ -122,7 +122,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
         const n=await notifications.project(input);await (realtimeProjector as RealtimeProjector).ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
       }}});
       tickets=createP2016TicketCommandFacade({pool,enabled,ticketStaffCompletionEnabled,query,controlService,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket});
-      reviews=createP2016ManualReviewFacade({pool,enabled,workspaceEnabled:workbenchManualReviewEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
+      reviews=createP2016ManualReviewFacade({pool,enabled,workspaceEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
       const selfHandling=ticketSelfHandlingEnabled?createTicketSelfHandlingService({pool,query,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
