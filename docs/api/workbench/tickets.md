@@ -194,3 +194,26 @@ bootstrap的 `staff_completion_draft_recovery_enabled` 为实际完工能力AND 
 040的append-only通知承诺仅引用同Ticket/同cycle/真实结束event/原source，没有正文、owner、第二状态或Delivery。进程内 `readCommittedStaffCompletions({afterCycleId?:UUID|null,limit?:1..100})` 默认20，返回 `{items:[{cycle_id,cycle_no,node:'STAFF_COMPLETED',ticket_id,ticket_event_id,source_intake_id,external_summary,occurred_at}],next_cursor}`；安全摘要读取权威event。UUID cursor仅一次完整扫描的分页，不是永久增量checkpoint：旧cycle可能后来完工，恢复消费须重扫并以稳定cycle/node/event幂等。T24负责路由、模板、去重及Outbox/Delivery生成，此Port没有HTTP/发送入口。Reporter/H5本人安全投影只展示此明确完工事件的external_note，普通内部备注/处理过程不外发。
 
 表单in-flight1，复用原事务、pool≤4、总池建议≤8，App/API/SSE1、Worker1、Gateway单活、SSE32，无新轮询/常驻进程。关闭能力拒绝新命令并保留已提交事实；独立forward/revert不删除receipt、cycle/end/event或承诺。真实外部依赖、发送、部署、full/certify与Gate仍须独立授权。
+
+
+## 明确派单与转派（WBINT-T06）
+
+W 的 `POST /api/tickets/{ticketId}/assign` 与 `/transfer-assignment` 使用宿主 `ticketAssignmentEnabled:boolean=false`。有效人/组、明确沟通原子交接、候选查询、正式表单、终态、回执、同轮通知、事务权限锁及专用恢复均已完成隔离公开验证；固定被测身份、七项映射与相关回归见[本票执行记录](../../../plans/admin-workbench-integration/execution/t06.md)。[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../src/workbench-ticket-assignment.mts)。
+
+沿W认证/当前Ticket可见范围、Origin/CSRF、Idempotency-Key=client_command_id、If-Match=expected_version和32KiB上限。闭合body的七字段为UUID client_command_id、数字整数expected_version（1..2147483647）、CODE reason_code、UUID target_principal_id、CODE resolver_team_id、communication_choice、sessions。RETAIN_CURRENT必须空sessions；TRANSFER_SELECTED必须1..8个唯一、真实关联且当前分别获权的 `{session_id:UUID,expected_row_version:number}`。调用者必须独立具有Conversation Control权限；Ticket读取不授予Session权限。Session按UUID排序锁定，在原Ticket组范围内先执行Control caller事务，再执行人/组责任写；任何业务写失败全部回滚，保留FAILED审计。拒绝actor/来源/通知目的地/force/任意额外字段。
+
+合法派单仅无当前处理人的NEW/QUEUED；NEW使用原Core queue进入QUEUED，绝不执行accept/start。操作者须保持原Ticket读权及活动内部业务角色；目标须是选定活动组中的真实活动内部ADMIN/DISPATCHER/HANDLER。组成员指目标承接者，不要求操作者同时加入目标组，不授予新的Ticket读取或系统管理权限。外部厂商不成为候选内部Principal。
+
+显式转派仅有当前处理人的QUEUED/ACCEPTED/IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR；当前合法可读的活动内部业务同事可操作，不要求自己是原处理人。原目标人和组完全不变时拒绝。复用同一责任写/event/ledger事务，仅人和实际有效目标组改变，状态、来源和已有轮次/first-responsibility依据保留，事件加入原轮次；legacy本无轮次时不补造历史轮次。新路径不调用accept/start；旧`/transfer`保留输入及角色合同，同样阻断终态绕过。目标活动人、真实成员、活动组、业务角色和操作者当前业务角色/可见成员在事务内验权并持共享锁至提交，不把候选查询或旧缓存当权限租约。外部协助的WAITING_VENDOR仍由内部同事负责。
+
+只读候选查询为 `GET /api/tickets/{ticketId}/assignment-targets?resolver_team_id=CODE`，闭合输出为 `{resolver_teams:[{team_id,display_name}],resolver_team_id:CODE|null,items:[{principal_id,display_name}]}`，见[targets Schema](../../../contracts/p2_016_assignment_targets.schema.json)。只在当前Ticket原读权、活动内部业务角色及当前可派单/转派动作内，返回有有效内部业务承接者的活动组；100只是展示上限，显式合法所选组按独立活动组/成员事实核验并仍纳入最多100项的有界响应，不把排序第101项误作403或业务权限上限。组按CODE排序，成员按display_name/id排序且最多100，只返回活动真实内部业务成员。不要求操作者属于目标组；未选组返回null/空items，多个组必须明确选择。查询闭合为可选resolver_team_id:CODE及target_principal_id:UUID；提供所选人必须同时明确组。所选目标按该活动组真实活动成员/内部业务角色独立核验，合法目标即使普通100人展示页缺席也纳入最多100项有界响应，原display_name/id排序与安全两字段保持；真实失效目标或不允许组403、缺明确组/非法query400、Ticket不可见404、关闭/缺039为503。列表缺席本身不作为草稿撤权依据。读取不写Ticket/Event/cycle/receipt，不返回登录身份、联系方式、外部身份或整份成员图；提交仍按实际活动组、成员、角色及当前权限独立核验，查询不提供权限凭据。
+
+`GET /api/tickets/{id}/related-conversations?limit=20&cursor=...`在T06单独启用时可沿既有当前Session scope/Control授权发现安全规范会话；仍只返回原最小六字段与20项keyset分页，不启动独立T05写能力。正式表单无默认组、人或沟通选择；TRANSFER_SELECTED仅交接人工勾选的真实会话及原版本，选择本身不POST。提交一个闭合命令，成功后真正GET当前事实；失去Ticket原范围则清除私有事项，不能为展示新责任授予额外读权。409保留选择，读取当前版本后由用户再次明确确认。
+
+`GET /api/tickets/{id}/assignment/commands/{uuid}`依赖实际assignment能力和raw `workbenchDraftRecoveryEnabled=true`，只在当前原Principal/Ticket/WORKBENCH_TICKET_ASSIGNMENT用途内READ ONLY核对。闭合[receipt Schema](../../../contracts/p2_016_assignment_receipt.schema.json)为UNKNOWN单字段、COMMITTED仅state/Ticket/version/event，或FAILED仅state/code/retryable:false；不返回目标、Session身份、正文或完整result_snapshot。其他主体/事项/用途不泄漏receipt，UNKNOWN不表示未提交；失去写动作但保留当前读权时可只读核对原标识。
+
+bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND raw恢复开关，缺字段按false。purpose `ticket-assignment`复用T03唯一AES-GCM、非导出钥、24h固定TTL、主体/事项/用途AAD、generation fence和跨tab清理；不延长TTL。冻结原UUID、动作、Ticket版本、目标人/组、明确沟通选择与Session原版本；恢复前核对当前主体、能力、Ticket、目标和每个Session独立读权/真实关联。UNKNOWN不自动创建新UUID或发送；开启恢复时仅用户明确GET原安全ACK，raw=false不打开IndexedDB，内存核对只复用原意图幂等命令。仅明确失权或关联撤销清理敏感内容；临时503／网络失败保留原密文与不透明操作，未核验选择不显示且禁止新提交，服务恢复后刷新重新授权再恢复。过期清理敏感内容，保留原opaque命令供当前合法读权核对；成功后清理副本并GET事实。
+
+仅原Ticket保存owner/team；原ticket.assignment_transferred追加前后人/组和实际操作者，039保存该真实首次派单事件的轮次/首次责任依据及同轮event引用，原来源不改。责任、事件、轮次、既有安全实时投影与原principal-scoped ledger的WORKBENCH_TICKET_ASSIGNMENT receipt同事务。每次原命令重放在查账本之前也重新验证当前Ticket与所选规范Session的READ权限；不得返回已失权Session元数据，也不要求已经交出的TRANSFER写权。专用安全ACK仍只核对当前Ticket读权并返回最小四字段，无Session引用。依赖显式039、无新数据库变更；关闭后新路径503、不读039，保留旧profiles及真实历史。缺039为ASSIGNMENT_UNAVAILABLE/503且不插receipt；非法前态或责任为ASSIGNMENT_STATE_CONFLICT/409，其余现有INPUT_INVALID/TARGET_INVALID/FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED维持W状态合同。结果仅Ticket/event/version、可空handling_cycle、沟通选择与安全会话结果；不返回报修正文、外部身份或登录资料。
+
+复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。
