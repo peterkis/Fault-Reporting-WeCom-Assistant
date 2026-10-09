@@ -9,6 +9,7 @@ import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgr
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../scripts/p2-016-migrate.mjs';
 import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketUnassign} from '../scripts/ticket-unassign-migrate.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
 import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
@@ -31,6 +32,7 @@ test('an authorized dispatcher withdraws one unstarted Ticket assignment while r
     const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};
     await applyThrough030(context);await migrateP2016(migrationOptions);
     await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
+    await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t08-dispatcher-'+randomUUID(),displayName:'T08 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
     const handler=await access.upsertPrincipal({wecomUserId:'t08-handler-'+randomUUID(),displayName:'T08 合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
