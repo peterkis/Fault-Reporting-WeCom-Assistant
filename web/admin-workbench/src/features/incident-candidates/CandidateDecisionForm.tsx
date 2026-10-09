@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQueryClient} from '@tanstack/react-query';
-import {Link} from 'react-router';
+import {Link,useLocation,useNavigate} from 'react-router';
 import {api,ApiError,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {candidateApi,CandidateCommandRefusal} from './client';
@@ -19,7 +19,7 @@ type State='idle'|'submitting'|'checking'|'unknown'|'failed'|'denied'|'committed
 function refusalMessage(error:ApiError){if(error.code==='P2_012_SOURCE_CONFLICT')return '原材料依据已变化或过期；输入已保留，请核对当前事实。';if(error.code==='P2_012_OWNER_INVALID')return '负责人或责任组已失效；输入已保留，请重新核对。';return errorMessage(error);}
 
 export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefresh}:{principal:Principal;detail:CandidateDetail;onBlockedChange:(blocked:boolean)=>void;onRefresh:()=>void}){
-  const client=useQueryClient(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
+  const client=useQueryClient(),navigate=useNavigate(),route=useLocation(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null),[checkedUnknown,setCheckedUnknown]=useState(false);
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('原操作仍未知；请先只读核对原 UUID。');}},
@@ -33,11 +33,10 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   useEffect(()=>{
     if(!navigationBlocked)return;
     const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();};
-    const location=window.location.href,historyState:unknown=window.history.state;
-    const back=(event:PopStateEvent)=>{event.stopImmediatePropagation();window.history.pushState(historyState,'',location);};
+    const back=(event:PopStateEvent)=>{event.stopImmediatePropagation();void navigate({pathname:route.pathname,search:route.search,hash:route.hash},{replace:true,state:route.state});};
     window.addEventListener('beforeunload',warn);window.addEventListener('popstate',back,{capture:true});
     return()=>{window.removeEventListener('beforeunload',warn);window.removeEventListener('popstate',back,{capture:true});};
-  },[navigationBlocked]);
+  },[navigationBlocked,navigate,route.pathname,route.search,route.hash,route.state]);
   const refresh=()=>{onRefresh();void client.invalidateQueries({queryKey:['incident-candidates',principal.principal_id]});};
   const update=(change:Partial<CandidateDecisionValue>|((current:CandidateDecisionValue)=>Partial<CandidateDecisionValue>))=>setValue(current=>({...current,...(typeof change==='function'?change(current):change),capture:current.capture??{version:detail.row_version,basis:detail.material_basis}}));
   const applyCommit=(result:CandidateCommandResult,snapshot:string)=>{
