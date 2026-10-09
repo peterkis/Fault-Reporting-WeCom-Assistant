@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_activity_contracts.d.ts",
+    "contracts/workbench_activity_command.schema.json",
+    "contracts/workbench_activity_view.schema.json",
     "contracts/workbench_realtime_contracts.d.ts",
     "contracts/workbench_review_contracts.d.ts",
     "contracts/workbench_review_material_basis.schema.json",
