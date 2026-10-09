@@ -13,6 +13,7 @@
 | 会话列表、消息、接管、转派、内部备注、通信投递 | [会话工作台](workbench/conversations.md) |
 | 工单列表、详情、状态动作、双责任、通知投递 | [工单生命周期](workbench/tickets.md) |
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
+| 获权跨团队本人接管、人和实际有效组一起交接 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source)：PLANNED／NOT_RUN，尚未挂载 |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
 | 工作人员电话／现场未核实身份代录（默认关闭） | [代录报修](workbench/manual-reports.md)；T17首HTTP GREEN待验，目录核实／一步处理属后票 |
