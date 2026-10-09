@@ -6,7 +6,7 @@
 
 | 方法与路径 | 合同 |
 | --- | --- |
-| `GET /api/workbench/reports/capabilities` | `{can_create:true,manual_contact_required:true,external_notification:false}`；当前权限及readiness重新核验 |
+| `GET /api/workbench/reports/capabilities` | `{can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:boolean}`；当前权限及readiness重新核验；恢复位取本票用途与原通用恢复开关同时启用 |
 | `POST /api/workbench/reports` | JSON、同源Origin/CSRF、Idempotency-Key与body UUID相等；首次202、相同原意图重放200 |
 | `GET /api/workbench/reports/commands/{commandId}` | 默认恢复能力同时启用；READ ONLY原principal＋MANUAL_REPORT用途账本，闭合UNKNOWN/FAILED/COMMITTED，不写receipt，不按状态猜结果 |
 
@@ -26,4 +26,6 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 
 资源沿既有单App/Worker、Gateway单活、SSE32、共享pool max4／总预算8；本票无新后台worker、timer或目录网络。公共验证seam为真实已编译HTTP＋隔离PG及正式production bundle，七项追溯见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。T18目录核实、T19一步接单均不在本票。
 
-Review切片已由39d真实HTTP RED定位并加入最小源码，GREEN待验证：原`GET /api/manual-reviews/{reviewId}`在当前Review／Journey权限与保留期内返回`material_basis.source_kind:MANUAL`、固定来源revision 1及原描述材料`manual:{intakeId}`，不按Bot消息窗口生成或替换原Decision依据。附加闭合`manual_report:{source_kind:MANUAL_REPORT,source:PHONE|ON_SITE,description,location,reporter,identity_source:HAND_ENTERED,actor_principal_id,manual_contact_required:true,external_notification:false}`，内容取本次持久快照及真实authenticated actor；姓名／联系方式仍UNVERIFIED，不赋予任何Person／WeCom身份。原合法`ACKNOWLEDGE`等人工结论同原账本与事务处理，只走人工来源适用的数据库动作，零Communication／Outbox／Delivery；不将未知现象强制建工单。原safe_result／provenance保持，材料围栏沿当前capture hash；已有BOT／WEB的权限、材料与通知语义保留。MANUAL分支沿`workbenchManualReportsEnabled=false`默认关闭，材料工作区还沿原T14开关；旧BOT/WEB不会读取042新增字段。
+Review切片由39d真实HTTP RED定位，344原Review1已真实GREEN：原`GET /api/manual-reviews/{reviewId}`在当前Review／Journey权限与保留期内返回`material_basis.source_kind:MANUAL`、固定来源revision 1及原描述材料`manual:{intakeId}`，不按Bot消息窗口生成或替换原Decision依据。附加闭合`manual_report:{source_kind:MANUAL_REPORT,source:PHONE|ON_SITE,description,location,reporter,identity_source:HAND_ENTERED,actor_principal_id,manual_contact_required:true,external_notification:false}`，内容取本次持久快照及真实authenticated actor；姓名／联系方式仍UNVERIFIED，不赋予任何Person／WeCom身份。原合法`ACKNOWLEDGE`已证明同原账本与事务只走人工来源适用的数据库动作，零Communication／Outbox／Delivery、不强制建工单；其它合法结论仍待本票验证。原safe_result／provenance保持，材料围栏沿当前capture hash；已有BOT／WEB的权限、材料与通知语义保留。MANUAL分支沿`workbenchManualReportsEnabled=false`默认关闭，材料工作区还沿原T14开关；旧BOT/WEB不会读取042新增字段。
+
+下一公开切片只准备capabilities／只读receipt HTTP RED，生产入口尚未实现；UNKNOWN不得写原账本或其它事实。回执只在当前允许创建代录的principal及`WORKBENCH_MANUAL_REPORT`用途内查询，同UUID其它principal或其它用途返回UNKNOWN。成功结果仅返回原受理结果，不含原描述或Reporter姓名／联系方式；重复提交只返回原结果，变更原意图409，失去当前创建权限后读取、重放均403。本切片的首次运行及后续闭合Schema验收仍NOT_RUN。
