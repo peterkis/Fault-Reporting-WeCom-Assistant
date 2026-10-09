@@ -17,7 +17,7 @@ interface SourceRow { source_provider: string; source_bot_id: string; reporter_w
 interface WebReportRow { source_provider: string; initial_content: unknown; supplement_items: unknown }
 export interface ManualReviewCurrentResult { ok: true; review_id: unknown; status: Exclude<ReviewStatus, 'PENDING'>; resolution_decision_id: string; action_count: number }
 export type ManualReviewLedgerResult = LedgerResult<ManualReviewCurrentResult>;
-export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; workspaceEnabled?:boolean; draftRecoveryEnabled?:boolean; query?: P2016TicketQuery; notificationProjector?: OrchestrationWorkerOptions['notifications'] | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication | undefined; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
+export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; workspaceEnabled?:boolean; manualSourceEnabled?:boolean; draftRecoveryEnabled?:boolean; query?: P2016TicketQuery; notificationProjector?: OrchestrationWorkerOptions['notifications'] | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication | undefined; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
 type CommunicationObservation = NonNullable<CommunicationResult> & { error?: { code: string } };
 import { createManualReviewStore } from './p2-015-manual-review.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
@@ -28,6 +28,7 @@ import { p2016TicketSourceIntake } from './p2-016-guided-journey.mjs';
 import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import { safeHash } from './p2-015-domain-contracts.mjs';
+import {readManualReportSource} from './workbench-manual-report-source.mjs';
 import { projectContactJourney,projectDecision } from './p2-015-projections.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { createP2016TicketQuery,ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
@@ -69,13 +70,14 @@ async function webReportForIntake(queryable: PostgresTransaction,intakeId: strin
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String((item as Record<string, unknown>).input_revision),text:typeof (item as Record<string, unknown>).text==='string'?(item as Record<string, unknown>).text:null}))};
 }
-export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabled=false,draftRecoveryEnabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
+export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabled=false,manualSourceEnabled=false,draftRecoveryEnabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
   communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}: ManualReviewFacadeOptions) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
+  if(typeof manualSourceEnabled!=='boolean')failP2016();
   const ledger=createP2016CommandLedger({pool}),decisions=createDecisionStore(),core=createPilotTicketCore({pool});
   function storeFor(principal: WorkbenchPrincipal,transaction: PostgresTransaction=pool) {
     const predicate=ticketPredicateP2016(principal);
-    return createManualReviewStore({authorizer:{authorizedJourneyIds:async()=>{
+    return createManualReviewStore({manualSource:manualSourceEnabled,authorizer:{authorizedJourneyIds:async()=>{
       const q=await transaction.query<{ id: string }>(`SELECT j.id::text FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
         WHERE ${predicate.sql} ORDER BY j.id LIMIT 10001`,predicate.values);
       if(q.rows.length>10000)failP2016('REVIEW_SCOPE_TOO_LARGE',503);
@@ -158,8 +160,9 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       const report=await webReportForIntake(transaction,review.service_intake_id);
       if(!workspaceEnabled)return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
       const material=await materialFor({review,principal,store},transaction);
+      const manual=manualSourceEnabled&&material.material_basis.source_kind==='MANUAL'?await readManualReportSource(transaction,review.service_intake_id):null;
       const allowed=review.status!=='PENDING'?[]:material.material_basis.stale?['CANCEL_REVIEW']:Object.keys(ACTIONS);
-      return publicP2016({...review,...(report?{web_report:report}:{}),...material,canonical_item:await canonicalItem(input),allowed_resolutions:allowed,unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
+      return publicP2016({...review,...(report?{web_report:report}:{}),...(manual?{manual_report:manual.report}:{}),...material,canonical_item:await canonicalItem(input),allowed_resolutions:allowed,unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
     },
     async journey({authContext,journeyId,part=null}: { authContext: unknown; journeyId: unknown; part?: string | null }) {
       const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
@@ -197,14 +200,15 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
           FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
           WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0] as SourceRow;
         const webSource=source?.source_provider==='YIXIAOXIU_WEB';
-        const actionTypes=workspaceEnabled&&!webSource&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE'].includes(v.resolution_code)
-          ? ['APPLY_INTAKE_CLASSIFICATION',...ACTIONS[v.resolution_code]] as SafeActionType[] : (webSource?WEB_ACTIONS:ACTIONS)[v.resolution_code];
+        const appOnly=webSource||manualSourceEnabled&&source?.source_provider==='STAFF_MANUAL_REPORT';
+        const actionTypes=workspaceEnabled&&!appOnly&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE'].includes(v.resolution_code)
+          ? ['APPLY_INTAKE_CLASSIFICATION',...ACTIONS[v.resolution_code]] as SafeActionType[] : (appOnly?WEB_ACTIONS:ACTIONS)[v.resolution_code];
         const suggestions: SafeActionSuggestion[]=actionTypes.map((type,index)=>{
           const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
           return {action_type:type,action_ordinal:index+1,execution_policy:'HUMAN_CONFIRM_REQUIRED',safe_payload:payload,payload_hash:safeHash(payload)};
         });
         const decision=await decisions.ensureHumanActions({transaction,decisionId:(resolution as { resolution_decision_id: string }).resolution_decision_id,suggestions});
-        const fixed=webSource?null:createP2004FixedCommunicationPort({append:async input=>{
+        const fixed=appOnly?null:createP2004FixedCommunicationPort({append:async input=>{
           const group=source.source_chat_type==='group';
           const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
           const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
@@ -224,23 +228,23 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
             const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary)});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
-              if(!webSource&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
+              if(!appOnly&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
               if(realtimeProjector)await realtimeProjector.ticket({transaction:tx,ticket:result.ticket,event});}
             return result;
           }}});
         const actionContext: SafeActionContext={trace_id:'p2-016:'+command.client_command_id,session_id:source.session_id??null,
-          privacy_class:webSource?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
+          privacy_class:appOnly?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
           retention_until_epoch_ms:source.retention_until_epoch_ms,
-          ...(!webSource?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
+          ...(!appOnly?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
             target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
-        const actions=await executor.execute({transaction,decision:webSource?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
+        const actions=await executor.execute({transaction,decision:appOnly?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
         if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
-        if(webSource&&v.resolution_code==='REQUEST_DESCRIPTION') {
+        if(appOnly&&v.resolution_code==='REQUEST_DESCRIPTION') {
           const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
             SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
             WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
-        } else if(webSource&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
+        } else if(appOnly&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
           const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
             SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
                 updated_at=GREATEST(created_at,$2::timestamp without time zone)

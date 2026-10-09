@@ -4,6 +4,8 @@
 
 状态：SOURCE_READY／NOT_RUN，基线 `326b7ea455b5cfc7de6e3e980401921fc9cac524`。下列是本票冻结的目标合同，当前生产 handler 尚未挂载，不是可用接口。第一条 HTTP RED 的源码已登记，build、strict、数据库、HTTP和正式制品浏览器均 NOT_RUN；后续须在父任务授予的串行窗口执行原 RED，再逐片最小实现。
 
+SOURCE恢复已合入真实integration `4ffd8c6585eab0e96b202b44b80462b2617aa33f`，保留已完成T17／T38／T14／T05／T11。原public tracer不变，044仍仅预留；下文原ledger合同已按真实042专用人工代录分支明确并集，不沿用旧031资源CHECK覆盖当前实现。此同步不包含任何新的运行结果。
+
 ## 主体、事项与责任
 
 内部 W 身份从现有认证取得，再从数据库核对当前活动 Principal、角色、组及对象可见性。客户端不提供 principal、角色、责任人或授权范围。事项为 `{kind:'ticket'|'review'|'intake',id:UUID}`；现有 Ticket、Review、Journey 和源 Intake 事实决定规范事项，同 Ticket 的 Review 不形成第二张卡。Ticket Assignment 和当前非 ENDED Conversation Assignment 继续分别是处理和沟通责任的唯一事实源。
@@ -34,7 +36,7 @@ POST 精确字段：`client_command_id:UUID`、`canonical_item:{kind,id}`、`exp
 
 `follow_version` 是关注自身的 opaque CAS token，按固定规范JSON对 `[schema=1,principal_id,canonical_item,sorted(anchor,following,row_version)]` 求SHA-256；无行也产生确定token。包含规范映射，避免多个Review收敛后仅取max版本造成旧取消覆盖新关注；它不是Ticket版本、材料revision或SSE位置。BIGINT保持十进制string，不转number。单事项最多100个当前源锚点，超过时关注读／写失败关闭，不截断后冒充完整取消；相关SQL用有界验证与EXISTS，不拉全院卡片回浏览器过滤。
 
-复用 `pilot_ticket.ticket_command_receipt` 和现有 `P2_016:<principal>` scope、UUID、hash、SAVEPOINT、COMMITTED／FAILED终态。本票唯一新purpose为服务端指定 `WORKBENCH_ITEM_FOLLOW`。现031 ledger资源 CHECK只接受Ticket或Review；为完整支持Intake规范事项，前向迁移拟增加 `source_intake_id UUID REFERENCES intake.service_intake(id) ON DELETE RESTRICT`，仅把现资源 CHECK扩大为至少Ticket／Review／sourceIntake之一。旧receipt与旧动作语义不变，不建立第二ledger、泛用命令HTTP或Ticket事件流。
+复用 `pilot_ticket.ticket_command_receipt` 和现有 `P2_016:<principal>` scope、UUID、hash、SAVEPOINT、COMMITTED／FAILED终态。本票唯一新purpose为服务端指定 `WORKBENCH_ITEM_FOLLOW`。现042资源 CHECK保留Ticket／Review非空的旧分支，并仅允许 `WORKBENCH_MANUAL_REPORT` 在Ticket／Review／Session均null时记录真实工作人员受理。044必须保留这一完整专用分支及原目的／授权／回执语义。为完整支持Intake规范事项，拟增加 `source_intake_id UUID REFERENCES intake.service_intake(id) ON DELETE RESTRICT`，仅新增 `command_type='WORKBENCH_ITEM_FOLLOW' AND source_intake_id IS NOT NULL AND conversation_session_id IS NULL` 的资源分支；新列另约束为null或该follow用途，不把裸sourceIntake非空作为所有命令的资源豁免。旧receipt与旧动作语义不变，不建立第二ledger、泛用命令HTTP或Ticket事件流。
 
 当前规范映射只接受现有源Intake、Review／Journey linked_ticket_id及真实Channel Leg关系；沿当前WEB01／Review retained material的可见性／保留期验证，每个requested alias与最终canonical对象分别授权。只因关注行有某个Intake UUID，不能新增可读alias。纯网页来源没有Session，不为并集造沟通事实。
 
