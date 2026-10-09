@@ -22,7 +22,7 @@ function checkVersion(request: IncomingMessage,value: unknown) {
   if(!/^[1-9][0-9]{0,18}$/u.test(text)||text!==String(value))failP2016('VERSION_CONFLICT',409);
 }
 function queryKeys(url: URL,allowed: readonly string[]) {if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))failP2016();}
-function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?/FORBIDDEN|PERMITTED|TARGET_INVALID/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
+function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?result.error.code==='P2_016_NOT_FOUND'?404:/FORBIDDEN|PERMITTED|TARGET_INVALID/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
 export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false,workbenchManualReviewEnabled=false,workbenchManualReportsEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,selfHandling=null,conversationHandling=null,assignment=null,staffCompletion=null,workbenchDraftRecoveryEnabled=false,workbenchRealtimeEnabled=false,realtimeAuthorization,logoutReady=()=>false}: HttpOptions) {
   return async({request,response,url,authContext,readJson,validateWriteRequest,json}: HttpContext)=>{
     const matched=/^\/api\/(tickets(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$)/u.test(url.pathname)
