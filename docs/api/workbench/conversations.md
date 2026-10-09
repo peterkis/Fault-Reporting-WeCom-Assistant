@@ -111,6 +111,8 @@ POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie
 
 与已集成T38共用Session中的单一realtime controller；`conversations`、`conversation-view`（包含当前材料/精确Delivery）、`conversation-eligible`、`item-conversations`四个当前主体活动GET family参与同一失效重读。启用realtime时停用selected备用轮询；关闭时保留既有5秒selected回退，不创建新增EventSource。会话读取复用同一授权epoch/AbortSignal栅栏，迟到读取不得恢复已清授权事实。对象403/404只清目标会话草稿/资料，先取消再清含该主体会话关系的聚合查询并仅重读活动family；主体401/bootstrap403继续清全部当前主体。完整fresh周期失败时新的回复/备注/控制不prepare或POST，输入与选择保留；原UNKNOWN的显式同UUID核对及专用只读receipt保持原合同。这里记录源码接入合同；合入新根后的HTTP/生产bundle验证仍按T22当次候选单独记录。
 
+真实Delivery状态生成时间线投影时，在同一现有投影事务内保留`conversation.item.created`并追加`communication.delivery.changed`有界失效提示。提示以该持久Item作来源及Session授权范围，使用独立event variant，不携带外部目标或Provider回执；客户端仍重读获权Delivery GET，不能把事件payload当作投递成功事实。
+
 闭合 Schema：[文本命令](../../../contracts/workbench_conversation_text_command.schema.json)、[安全收据](../../../contracts/workbench_conversation_command_receipt.schema.json)、[工作区详情](../../../contracts/workbench_conversation_workspace.schema.json)、[工作区分页](../../../contracts/workbench_conversation_workspace_page.schema.json)、[材料分页](../../../contracts/workbench_conversation_item_page.schema.json)、[精确投递分页](../../../contracts/workbench_conversation_delivery_page.schema.json)。材料的 RESTRICTED visibility 沿既有 ADMIN audience；Schema 取值不授予额外读取权。
 
 关闭新workspace选项可回退，保留已提交的Control/Communication/Delivery事实与旧获权profile。源码：[workspace](../../../src/workbench-conversations.mts)、[production UI](../../../web/admin-workbench/src/features/conversations/Conversations.tsx)、[types](../../../contracts/workbench_conversation_workspace_contracts.d.ts)。当前实际测试与精确候选/资源证据见 [T22执行记录](../../../plans/admin-workbench-integration/execution/t22.md)；不代表真实服务发送、部署或Gate批准。
