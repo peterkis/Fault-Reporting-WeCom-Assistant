@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID,createHash} from 'node:crypto';
-import {withT22Fixture,appendT22Item} from './helpers/wbint-t22-fixture.mjs';
+import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('the production workspace reads real scoped topics, keeps input and selection during new material, and labels 202 as pending delivery',async()=>{
@@ -26,7 +26,7 @@ test('the production workspace reads real scoped topics, keeps input and selecti
       assert.equal(await browser.evaluate("document.querySelector('[data-conversation-timeline]').textContent.includes('参与者乙的护理主题')"),false);
       await browser.evaluate("(()=>{const input=document.querySelector('textarea[data-purpose=messages]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T22 browser preserved reply');input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.setSelectionRange(4,11);})()");
       await browser.waitFor("document.querySelector('[data-conversation-draft=messages]').textContent.includes('已保存恢复副本')");
-      await appendT22Item(pool,session.id,2,'T22 arrived while writing',10);await pool.query('UPDATE conversation.session SET row_version=row_version+1,generation_version=generation_version+1 WHERE id=$1::uuid',[session.id]);
+      await appendT22LiveItem(pool,session.id,'T22 arrived while writing',10);await pool.query('UPDATE conversation.session SET row_version=row_version+1,generation_version=generation_version+1 WHERE id=$1::uuid',[session.id]);
       await browser.waitFor("document.querySelector('[data-conversation-timeline]').textContent.includes('T22 arrived while writing')");
       assert.deepEqual(await browser.evaluate("(()=>{const input=document.querySelector('textarea[data-purpose=messages]');return {value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input};})()"),{value:'T22 browser preserved reply',start:4,end:11,focused:true});
       await browser.evaluate("document.querySelector('[data-action=send-conversation-reply]').click()");
