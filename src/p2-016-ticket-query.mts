@@ -208,7 +208,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         action:session.assignment_status==='ASSIGNED'&&session.conversation_principal_id!==p.principal_id?'TRANSFER':'TAKEOVER'});
     },
     async relatedConversations({cursor=null,limit,...input}:TicketQueryInput&{cursor?:unknown;limit?:unknown}){
-      guardP2016(ticketConversationSelfHandlingEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled);
       if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const {ticket,principal:p}=await authorizedTicket(input),n=limitP2016(limit??20,20);
       const page=cursor?decodeCursorP2016(cursor,['v','ticket','id']):null;
