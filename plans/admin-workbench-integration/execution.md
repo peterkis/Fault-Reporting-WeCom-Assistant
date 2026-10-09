@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-10，中断恢复与T27收口）
+## 当前执行状态导航（2026-10-10，中断恢复与T22收口）
+
+GitHub实际读回已关闭14／43票，剩余29票OPEN：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T22／T23／T27／T38。旧子代理均已完成并停止；依据保留工作树及当前原生依赖恢复后续任务，已完成验证不重复执行。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T22 / #77 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)及[原七项验收记录](execution/t22.md)已核对。集中会话、获权沟通控制、回复／内部备注、确切Delivery展示和24小时恢复均为真实服务接入 |
+| T22实际集成与被测对象 | 受控快进至`882e384c1088df93fa24b7268f47a079459767d2`，真实被测祖先`06f3c880c6d759497eb68f44a8865a3c45d1fff3`。文档后继只改API和本票执行Markdown，原生MIGRATION_INPUT_DRIFT保留；不重绑manifest或冒称新被测对象 |
+| T22验收证据 | 固定源build／strict／artifact原生0；原22、有限兼容46及工具外层原生27／18／1通过。父独立核对1072输入、1216输出和5006个去重原归档文件；源码／API辅助核对未发现明确业务缺口。原FAIL、工具内层故意FAIL及NOT_REACHED保留 |
+| T22活动资源 | worker已实际RELEASE；父独立核实自有PG额外库／客户端0／0、probe pool0。App／HTTP／SSE／browser及匹配测试进程均关闭，保留合成PG供下一任务 |
+| 下一实施 | 保留的T08工作树合入实际最新集成后，按原七项先运行原公开HTTP tracer，再最小前向实现与整票串行验证。T35的#69／#77均已CLOSED，可独立准备源码；准备状态不计验收 |
+
+WBINT-07／A07本地完成，全部43票仍IN_PROGRESS。新增开关默认false；用户两份dirty文档、四附件与空index保持。未push／PR、真实外部服务或发送、用户库迁移、部署、full／certify或Gate推进。
+
+## 历史执行状态导航（2026-10-10，中断恢复与T27收口）
 
 GitHub实时核对已关闭13／43票，剩余30票OPEN：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T27／T38。中断恢复时没有运行中的子代理；已完成票不重复执行，准备源码不计验收。
 
