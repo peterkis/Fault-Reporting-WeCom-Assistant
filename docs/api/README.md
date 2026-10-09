@@ -2,7 +2,7 @@
 
 本目录是前端、后端和 Agent 查找交互接口的统一入口。先从 [完整 HTTP 索引](endpoint-index.md) 找到 `METHOD + PATH`，再阅读对应模块的请求、响应、权限和失败处理。路径必须连同宿主、装配模式一起使用。
 
-核对日期：2026-10-07（Asia/Shanghai）。源码基点：`3cf707945afac7392806f7d8dca3dfb6be94caad`。这是仓库实现清单；现场部署、开关、批准范围须另查当前运行配置和授权记录。接口已实现不表示已启用或允许真实发送。
+初始清单核对日期：2026-10-07（Asia/Shanghai），源码基点：`3cf707945afac7392806f7d8dca3dfb6be94caad`。后续接口接入与验收见各模块文档及[逐票实施记录](../../plans/admin-workbench-integration/execution.md)。现场部署、开关、批准范围须另查当前运行配置和授权记录；接口已实现不表示已启用或允许真实发送。
 
 ## 按业务查找
 
@@ -16,7 +16,7 @@
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
-| 工作人员电话／现场未核实身份代录（默认关闭） | [代录报修](workbench/manual-reports.md)；T17首HTTP GREEN待验，目录核实／一步处理属后票 |
+| 工作人员电话／现场未核实身份代录（默认关闭） | [代录报修](workbench/manual-reports.md)；[T17本地隔离验收与集成证据](../../plans/admin-workbench-integration/execution/t17.md)已核对，目录核实／一步处理由T18／T19继续实施 |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
