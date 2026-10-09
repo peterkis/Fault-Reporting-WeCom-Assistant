@@ -2,8 +2,8 @@ import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mj
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
-import type {ManualReportCommand,ManualReportResult} from '../contracts/workbench_manual_report_contracts.js';
-import {createPilotTicketCore} from './p1-005-pilot-ticket-core.mjs';
+import type {ManualReportCommand,ManualReportResult,ManualReportReceipt,ManualReportCapabilities} from '../contracts/workbench_manual_report_contracts.js';
+import {createPilotTicketCore,isTicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {createManualReportRulePolicy} from './workbench-manual-report-policy.mjs';
@@ -14,15 +14,15 @@ import {createServiceIntakeDecisionPort} from './p2-015-service-intake-decision-
 import {createSafeActionExecutor} from './p2-015-safe-action-executor.mjs';
 import {routeRuleFailure} from './p2-015-decision-router.mjs';
 import type {SafeRoute} from './p2-015-decision-router.mjs';
-import {safeHash} from './p2-015-domain-contracts.mjs';
-import {failP2016,guardP2016,exactP2016,uuidP2016,publicP2016,stampP2016} from './p2-016-domain-contracts.mjs';
+import {safeHash,P2_015_RESULT_CODES} from './p2-015-domain-contracts.mjs';
+import {failP2016,guardP2016,exactP2016,uuidP2016,publicP2016,stampP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
 import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {LocalDateTime} from '../contracts/time_contracts.js';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
-interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtimeProjector?:Realtime|null}
+interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;realtimeProjector?:Realtime|null}
 export function manualReportCommand(input:unknown):ManualReportCommand{
   const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter']);
   if(v.schema_version!==1)failP2016();
@@ -31,7 +31,23 @@ export function manualReportCommand(input:unknown):ManualReportCommand{
 export async function manualReportsSchemaReady(pool:PostgresTransaction){
   try{return (await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('033_yxx_self_service_intake','042_workbench_manual_reports')")).rowCount===2;}catch{return false;}
 }
-export function createWorkbenchManualReports({pool,query,enabled=false,realtimeProjector=null}:Options){
+function storedResult(input:unknown,commandId:string):ManualReportResult&{replayed:true}{
+  try{
+    const v=exactP2016(input,['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','external_notification','result_code','ticket','review']);
+    const resultCode=P2_015_RESULT_CODES.find(code=>code===v.result_code);
+    if(v.ok!==true||uuidP2016(v.client_command_id)!==commandId||typeof v.intake_no!=='string'||!/^INT-[0-9]{8}-[0-9]{4,}$/u.test(v.intake_no)
+      ||(v.source!=='PHONE'&&v.source!=='ON_SITE')||v.reporter_verification!=='UNVERIFIED'||v.manual_contact_required!==true||v.external_notification!==false||!resultCode)failP2016();
+    const ticket=v.ticket===null?null:exactP2016(v.ticket,['id','number','status']);
+    if(ticket&&(typeof ticket.number!=='string'||!/^IT-[0-9]{8}-[0-9]{4,}$/u.test(ticket.number)||!isTicketStatus(ticket.status)))failP2016();
+    const review=v.review===null?null:exactP2016(v.review,['id','status']);if(review&&review.status!=='PENDING')failP2016();
+    return publicP2016({ok:true,client_command_id:commandId,intake_id:uuidP2016(v.intake_id),intake_no:v.intake_no,source:v.source,
+      reporter_verification:'UNVERIFIED',manual_contact_required:true,external_notification:false,result_code:resultCode,
+      ticket:ticket?{id:uuidP2016(ticket.id),number:ticket.number as string,status:ticket.status as TicketStatus}:null,
+      review:review?{id:uuidP2016(review.id),status:'PENDING'}:null,replayed:true});
+  }catch{failP2016('ACTION_FAILED',503);}
+}
+export function createWorkbenchManualReports({pool,query,enabled=false,draftRecoveryEnabled=false,realtimeProjector=null}:Options){
+  if(typeof enabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool}),core=createPilotTicketCore({pool});
   const decisions=createDecisionStore({webSource:true,manualSource:true}),reviews=createManualReviewStore({webSource:true}),intakes=createServiceIntakeDecisionPort();
   async function authorize(authContext:unknown,transaction:PostgresTransaction){
@@ -44,6 +60,24 @@ export function createWorkbenchManualReports({pool,query,enabled=false,realtimeP
       if(!membership.rowCount)failP2016('FORBIDDEN',403);
     }
     return {principal};
+  }
+  async function capabilities(authContext:unknown):Promise<ManualReportCapabilities>{
+    return transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorize(authContext,tx);
+      return publicP2016({can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});});
+  }
+  async function receipt(authContext:unknown,commandId:string):Promise<ManualReportReceipt>{
+    guardP2016(draftRecoveryEnabled);
+    return transactionP2016(pool,async tx=>{
+      await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
+      const row=(await tx.query<{state:unknown;result:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS result,error_code AS error,retryable
+        FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type='WORKBENCH_MANUAL_REPORT' LIMIT 1`,
+      ['P2_016:'+principal.principal_id,commandId])).rows[0];
+      const base={client_command_id:commandId};
+      if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
+      if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({...base,state:'FAILED',error:{code:row.error,retryable:false}});
+      if(row.state==='COMMITTED')return publicP2016({...base,state:'COMMITTED',result:storedResult(row.result,commandId)});
+      failP2016('ACTION_FAILED',503);
+    });
   }
   async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:ManualReportCommand):Promise<Omit<ManualReportResult,'replayed'>>{
     await realtimeProjector?.lock(tx);
@@ -88,7 +122,11 @@ export function createWorkbenchManualReports({pool,query,enabled=false,realtimeP
   }
   return Object.freeze({
     async handler({request,response,url,authContext,readJson,validateWriteRequest,json}:HttpContext){
-      if(url.pathname!=='/api/workbench/reports')return false;guardP2016(enabled);if(request.method!=='POST')failP2016('NOT_FOUND',404);if(url.searchParams.size)failP2016();
+      const capabilityPath=url.pathname==='/api/workbench/reports/capabilities',receiptPath=/^\/api\/workbench\/reports\/commands\/([^/]+)$/u.exec(url.pathname);
+      if(url.pathname!=='/api/workbench/reports'&&!capabilityPath&&!receiptPath)return false;guardP2016(enabled);if(url.searchParams.size)failP2016();
+      if(request.method==='GET'&&capabilityPath){json(response,200,await capabilities(authContext));return true;}
+      if(request.method==='GET'&&receiptPath){json(response,200,await receipt(authContext,uuidP2016(receiptPath[1])));return true;}
+      if(request.method!=='POST'||capabilityPath||receiptPath)failP2016('NOT_FOUND',404);
       const body=await readJson(request);if(Buffer.byteLength(JSON.stringify(body),'utf8')>16*1024)failP2016('BODY_TOO_LARGE',413);validateWriteRequest(request,authContext,body,{sessionMutation:false});
       const command=manualReportCommand(body),result=await ledger.execute({command:{...command,action:'manual-report'},receiptType:'WORKBENCH_MANUAL_REPORT',authorize:tx=>authorize(authContext,tx),run:(tx,{principal})=>admit(tx,principal,command)});
       json(response,result.ok===false?503:result.replayed?200:202,result);return true;

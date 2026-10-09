@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_manual_report_capabilities.schema.json",
+    "contracts/workbench_manual_report_receipt.schema.json",
     "contracts/workbench_manual_report_projection.schema.json",
     "contracts/workbench_manual_classification_source.schema.json",
     "contracts/workbench_manual_report_contracts.d.ts",
