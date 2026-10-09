@@ -14,12 +14,12 @@ export interface UnassignCommand {action:'unassign';ticket_id:string;client_comm
 export function normalizeTicketUnassignCommand(input:unknown):UnassignCommand{
   const value=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','reason','communication_choice','communication_target_principal_id','sessions']);
   if(value.action!=='unassign'||typeof value.reason!=='string'||value.reason.length>2000||!value.reason.trim()
-    ||!['RETAIN_CURRENT','TRANSFER_SELECTED'].includes(String(value.communication_choice))||!Array.isArray(value.sessions)||value.sessions.length>8)failP2016();
+    ||(value.communication_choice!=='RETAIN_CURRENT'&&value.communication_choice!=='TRANSFER_SELECTED')||!Array.isArray(value.sessions)||value.sessions.length>8)failP2016();
   const sessions=value.sessions.map(item=>{const row=exactP2016(item,['session_id','expected_row_version']);return {session_id:uuidP2016(row.session_id),expected_row_version:versionP2016(row.expected_row_version)};});
   if(new Set(sessions.map(row=>row.session_id)).size!==sessions.length)failP2016();
   const target=value.communication_target_principal_id===null?null:uuidP2016(value.communication_target_principal_id);
   if(value.communication_choice==='RETAIN_CURRENT'?(target!==null||sessions.length!==0):(target===null||sessions.length===0))failP2016();
-  return publicP2016({action:'unassign' as const,ticket_id:uuidP2016(value.ticket_id),client_command_id:uuidP2016(value.client_command_id),expected_version:versionP2016(value.expected_version),reason_code:codeP2016(value.reason_code),reason:value.reason.trim(),communication_choice:value.communication_choice as UnassignCommand['communication_choice'],communication_target_principal_id:target,sessions});
+  return publicP2016({action:'unassign' as const,ticket_id:uuidP2016(value.ticket_id),client_command_id:uuidP2016(value.client_command_id),expected_version:versionP2016(value.expected_version),reason_code:codeP2016(value.reason_code),reason:value.reason.trim(),communication_choice:value.communication_choice,communication_target_principal_id:target,sessions});
 }
 export async function unassignSchemaReady(tx:PostgresTransaction){
   try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('039_ticket_self_handling_cycles','046_ticket_unassign')")).rowCount===2;}catch{return false;}
