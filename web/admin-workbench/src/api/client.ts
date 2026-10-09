@@ -102,6 +102,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
   return decode(value);
   }catch(error){requireCurrentRead(epoch,signal);throw error;}
 }
+export {get as readWorkbench};
 function decodeCycle(value:unknown):P2016HandlingCycle {const v=object(value);return {id:id(v.id),cycle_no:version(v.cycle_no),first_responsibility_event_id:v.first_responsibility_event_id===null?null:id(v.first_responsibility_event_id),...(Object.hasOwn(v,'staff_completion_event_id')?{staff_completion_event_id:v.staff_completion_event_id===null?null:id(v.staff_completion_event_id)}:{})};}
 function decodeTicketReceipt(v:Record<string,unknown>,ticketId:string):P2016InternalNoteResult {return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed as boolean};}
 function decodeCompletion(value:unknown,ticketId:string):P2016CompletionResult {

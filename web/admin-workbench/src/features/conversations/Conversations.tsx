@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Link,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
-import {ApiError,errorMessage} from '../../api/client';
+import {ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization} from '../../app/authorization';
 import {ConversationComposer} from './ConversationComposer';
@@ -22,6 +22,7 @@ function Control({entry,principal,onBlockedChange}:{entry:ConversationWorkspaceE
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
   useEffect(()=>{if(!busy&&!pending)return;const warn=(e:BeforeUnloadEvent)=>e.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[busy,pending]);
   async function act(action:string,force=false,saved?:{action:string;command:ConversationControlCommand}){
+    if(!saved&&!workbenchTransportWritable()){setNotice('连接尚未完成事实核验，新沟通操作尚未准备或发送；选择已保留，请重新读取。');return;}
     if(request.current)return;const controller=new AbortController(),token=generation.current;request.current=controller;setBusy(true);
     const attempt=saved??{action,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:entry.session.row_version,...(action==='transfer'?{target_principal_id:target,force}:{}),...(force?{reason_code:reason}:{}),...(entry.handoff&&['takeover','handoff/cancel'].includes(action)?{handoff_id:entry.handoff.handoff_id}:{})})};
     try{await conversations.control(id,attempt.action,attempt.command,principal.csrf_token,controller.signal);if(generation.current!==token||controller.signal.aborted)return;setPending(null);setNotice('沟通操作已确认；处理责任与工单状态另行管理。');}
@@ -47,7 +48,7 @@ function SelectedConversation({principal,id,onBlockedChange}:{principal:Principa
     const [entry,first,delivery]=await Promise.all([conversations.detail(id,signal),conversations.items(id,signal),conversations.deliveries(id,signal)]);const items:ConversationWorkspaceItem[]=[...first.items];let cursor=first.before_sequence,hasMore=first.has_more;
     for(let page=1;page<pages&&hasMore&&cursor;page++){const older=await conversations.items(id,signal,{before_sequence:cursor});items.push(...older.items);cursor=older.before_sequence;hasMore=older.has_more;}
     return {entry,items:[...new Map(items.map(v=>[v.item_id,v])).values()].sort((a,b)=>BigInt(a.sequence_no)<BigInt(b.sequence_no)?-1:1).slice(-400),delivery,hasMore};
-  },refetchInterval:'realtime_sse_enabled' in principal&&principal.realtime_sse_enabled===true?false:5000,placeholderData:previous=>previous});
+  },refetchInterval:principal.realtime_sse_enabled?false:5000,placeholderData:previous=>previous});
   const blocked=replyBlocked||noteBlocked||controlBlocked;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   if(!result.data)return <section className="conversation-content"><p role={result.isError?'alert':'status'}>{result.isError?errorMessage(result.error):'正在核验服务会话…'}</p><button onClick={()=>void result.refetch()}>重新读取</button></section>;

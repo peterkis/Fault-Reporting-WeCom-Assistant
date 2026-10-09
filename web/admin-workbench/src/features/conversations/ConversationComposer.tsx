@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
@@ -56,6 +56,7 @@ export function ConversationComposer({entry,principal,purpose,onBlockedChange,on
     setOutcome((purpose==='messages'?'已受理发送；请查看本条回复的投递状态。':'已保存内部备注，仅供获权工作人员查看。')+(preserve?' 较新的输入已保留。':'')+(cleaned?'':' 恢复副本清理尚未确认，请只读核对。'));
   }
   async function send(saved?:SavedCommand){
+    if(!saved&&!workbenchTransportWritable()){setOutcome('连接尚未完成事实核验，新回复或备注尚未准备或发送；输入已保留，请重新读取。');return;}
     if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token};
     let command=saved;

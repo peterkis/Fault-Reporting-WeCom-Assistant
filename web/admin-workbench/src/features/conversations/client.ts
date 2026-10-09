@@ -1,4 +1,4 @@
-import {ApiError,UnknownCommandOutcome} from '../../api/client';
+import {ApiError,UnknownCommandOutcome,readWorkbench} from '../../api/client';
 import type {ConversationWorkspaceEntry,ConversationWorkspacePage,ConversationItemPage,ConversationWorkspaceItem,ConversationWorkspaceDelivery,ConversationMessageResult,ConversationTextCommand,ConversationCommandReceipt,ConversationPurpose} from '../../../../../contracts/workbench_conversation_workspace_contracts';
 export type {ConversationWorkspaceEntry,ConversationWorkspaceItem,ConversationPurpose,ConversationTextCommand,ConversationMessageResult};
 export const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -20,11 +20,7 @@ export function decodeConversation(v:unknown):ConversationWorkspaceEntry{
     canonical_item:i?{kind:i.kind as 'ticket'|'review'|'intake',id:uuid(i.id),number:text(i.number),title:text(i.title)}:null};
 }
 function message(v:unknown):ConversationMessageResult{const o=object(v);if(!['COMMITTED','REPLAYED'].includes(text(o.command_status)))bad();return {message_id:uuid(o.message_id),outbox_id:o.outbox_id===null?null:uuid(o.outbox_id),delivery_ids:array(o.delivery_ids,uuid),command_status:o.command_status as ConversationMessageResult['command_status'],replayed:bool(o.replayed),created_at:time(o.created_at)};}
-async function read<T>(path:string,signal:AbortSignal,decode:(v:unknown)=>T):Promise<T>{
-  const r=await fetch(path,{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});
-  if([401,403,404].includes(r.status))throw new ApiError(r.status,'AUTHORIZATION_REJECTED');
-  if(!r.headers.get('content-type')?.startsWith('application/json'))bad();const v:unknown=await r.json();if(!r.ok)throw new ApiError(r.status,text(object(object(v).error).code));return decode(v);
-}
+const read=readWorkbench;
 const base=(id:string)=>'/api/workbench/conversations/'+encodeURIComponent(id);
 export interface ConversationControlCommand {client_command_id:string;expected_row_version:number;target_principal_id?:string;force?:boolean;reason_code?:string;handoff_id?:string}
 async function write<T>(id:string,action:string,command:ConversationTextCommand|ConversationControlCommand,csrf:string|null,signal:AbortSignal,decode:(v:unknown)=>T):Promise<T>{

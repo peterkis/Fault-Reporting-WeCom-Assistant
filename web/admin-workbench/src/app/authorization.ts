@@ -13,7 +13,12 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
     return key[1]===principal&&((kind==='ticket'&&key[2]===id&&['ticket-internal-note','ticket-self-handling','ticket-completion'].includes(String(key[0])))||(key[0]==='attachment-download'&&key[2]===kind&&key[3]===id)||(key[0]==='manual-review-command'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id)));
   }}))client.getMutationCache().remove(mutation);
   void client.invalidateQueries({queryKey:['board',principal],refetchType:'active'});
-  if(kind==='conversation'){for(const query of client.getQueryCache().findAll({predicate:q=>q.queryKey[1]===principal&&['conversations','item-conversations'].includes(String(q.queryKey[0]))}))query.setState({data:undefined,dataUpdatedAt:0});void client.invalidateQueries({queryKey:['conversations',principal],refetchType:'active'});}
+  if(kind==='conversation'){
+    const aggregate=(key:readonly unknown[])=>key[1]===principal&&['conversations','item-conversations'].includes(String(key[0]));
+    await client.cancelQueries({predicate:q=>aggregate(q.queryKey)},{revert:false});
+    for(const query of client.getQueryCache().findAll({predicate:q=>aggregate(q.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error:null,status:'pending',fetchStatus:'idle'});
+    void client.invalidateQueries({predicate:q=>aggregate(q.queryKey)&&q.isActive(),refetchType:'active'});
+  }
 }
 export function clearTicketView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemView(client,principal,'ticket',ticketId,error);}
 export async function clearItemAuthorization(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
