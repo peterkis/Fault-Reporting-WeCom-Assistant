@@ -95,6 +95,7 @@ native_blocking_edges: 76
 - [ ] **T15** — [#70 确认明确故障并立即开始处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)、[#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **来源：** WBINT-04 / A04
+  - **本地执行：** 2026-10-09 实读完整正文／评论／标签及原生依赖，两项 blocker 已 CLOSED；领取给 peterkis，独立分支准备明确故障的原子确认并开始。当前未验证、未集成，A04 整组未完成。
 
 - [x] **T16** — [#71 安全查看已有报修附件](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71)
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
