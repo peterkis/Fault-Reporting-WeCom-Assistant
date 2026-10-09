@@ -56,7 +56,14 @@ export function createTicketAssignmentService({pool,query,controlService=null,en
       await lockP2016Realtime(transaction);
       return query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
     },run:async transaction=>{
-      const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
+      const {ticket,principal:visiblePrincipal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
+      // These are authority rows, not a second ownership fact. Hold the current operator's role and scope until commit.
+      const worker=await transaction.query<{role:string}>(`SELECT r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
+        WHERE p.id=$1::uuid AND p.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER') ORDER BY r.role FOR SHARE OF p,r`,[visiblePrincipal.principal_id]);
+      if(!worker.rowCount)failP2016('FORBIDDEN',403);
+      const membership=await transaction.query(`SELECT m.principal_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+        WHERE m.principal_id=$1::uuid AND m.team_id=$2 FOR SHARE OF m,rt`,[visiblePrincipal.principal_id,ticket.resolver_team_id]);
+      if(!worker.rows.some(row=>['ADMIN','DISPATCHER'].includes(row.role))&&ticket.assignee_id!==visiblePrincipal.principal_id&&!membership.rowCount)failP2016('FORBIDDEN',403);
       const {principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
       if(!assignmentActions(principal,ticket).includes(command.action))failP2016('ASSIGNMENT_STATE_CONFLICT',409);

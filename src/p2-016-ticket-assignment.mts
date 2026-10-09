@@ -16,10 +16,11 @@ export async function transferTicketAssignmentP2016({transaction,principal,ticke
   const target=await transaction.query(`SELECT p.id FROM pilot_ticket.pilot_principal p
     JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
     JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+    JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
     WHERE p.id=$1::uuid AND p.is_active AND m.team_id=$2 AND rt.is_active
-      AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))
-    FOR SHARE OF p,rt`,[command.target_principal_id,team]);
-  if(target.rowCount!==1)failP2016('TARGET_INVALID',403);
+      AND r.role IN ('ADMIN','DISPATCHER','HANDLER') ORDER BY r.role
+    FOR SHARE OF p,m,rt,r`,[command.target_principal_id,team]);
+  if(!target.rowCount)failP2016('TARGET_INVALID',403);
   const updated=await transaction.query<Pick<P2016TicketRow, 'id' | 'status' | 'version'>>(`UPDATE pilot_ticket.ticket SET assignee_id=$2::uuid,resolver_team_id=$3,
     version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND version=$4
     RETURNING id::text,status,version`,[ticket.id,command.target_principal_id,team,command.expected_version]);
