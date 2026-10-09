@@ -20,12 +20,12 @@ function refusalMessage(error:ApiError){if(error.code==='P2_012_SOURCE_CONFLICT'
 
 export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefresh}:{principal:Principal;detail:CandidateDetail;onBlockedChange:(blocked:boolean)=>void;onRefresh:()=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
-  const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null);
+  const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null),[checkedUnknown,setCheckedUnknown]=useState(false);
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('原操作仍未知；请先只读核对原 UUID。');}},
     onOperation:id=>{setPending(null);setState('unknown');setMessage('原操作 '+id+' 仍未知，敏感恢复内容不可用；不能提交新操作。');},
     onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');}});
-  const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0;
+  const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0,originalId=pending?.body.client_command_id??draft.operationId;
   const navigationBlocked=active||unknown||candidateHasInput(value);
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);
@@ -52,10 +52,10 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       else if(error instanceof ApiError&&[401,403,404].includes(error.status)){setState('denied');setMessage('当前操作权限已变化，请重新核对。');refresh();}
       else{setPending(variables.operation);setState('unknown');setMessage('结果未知：原 UUID、版本、材料依据和正文保持不变，请先只读核对。');}
     },onSettled:()=>{request.current=null;}});
-  const receipt=useMutation({mutationKey:['incident-candidate-receipt',principal.principal_id,detail.id],mutationFn:({operation,signal}:{operation:CandidateOperation;signal:AbortSignal})=>candidateApi.receipt(detail.id,operation.body.client_command_id,signal),
+  const receipt=useMutation({mutationKey:['incident-candidate-receipt',principal.principal_id,detail.id],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>candidateApi.receipt(detail.id,commandId,signal),
     onSuccess:async(result,variables)=>{
-      if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
-      const cleaned=result.state==='COMMITTED'?await draft.success(variables.operation.body.client_command_id,true):true;
+      if(result.state==='UNKNOWN'){setCheckedUnknown(true);setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
+      setCheckedUnknown(false);const cleaned=result.state==='COMMITTED'?await draft.success(variables.commandId,true):true;
       setPending(null);setReviewRequired(true);refresh();
       if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'原操作已确认提交；恢复副本清理失败，禁止新提交，请继续只读核对。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。');}
@@ -67,7 +67,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   const canSubmit=Boolean(draft.canSubmit&&value.action&&value.reason&&detail.allowed_actions.includes(value.action)&&currentCapture&&!reviewRequired&&!active&&!pending&&(!confirm||canConfirm));
   const send=async(operation:CandidateOperation,snapshot:string)=>{
     if(request.current)return;
-    const controller=new AbortController();request.current=controller;setPending(operation);setState('submitting');setMessage('正在核对当前权限并提交明确决定…');
+    const controller=new AbortController();request.current=controller;setCheckedUnknown(false);setPending(operation);setState('submitting');setMessage('正在核对当前权限并提交明确决定…');
     try{
       const fresh=await api.bootstrap(controller.signal);if(fresh.principal_id!==principal.principal_id||!fresh.incident_candidate_workspace_enabled)throw new ApiError(403,'AUTHORIZATION_REJECTED');
       const current=await candidateApi.detail(detail.id,controller.signal);
@@ -88,7 +88,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
     }else operation=Object.freeze({candidateId:detail.id,action:value.action,body:Object.freeze({...common,expected_row_version:value.capture.version})});
     void send(operation,JSON.stringify(value));
   };
-  const check=()=>{if(!pending||request.current)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({operation:pending,signal:controller.signal});};
+  const check=()=>{if(!originalId||request.current)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({commandId:originalId,signal:controller.signal});};
   return <section className="candidate-decision" aria-label="人工候选决定">
     {principal.incident_candidate_draft_recovery_enabled?<p data-candidate-draft>{draft.message}</p>:null}
     {purposeAllowed?<form onSubmit={event=>{event.preventDefault();submit();}}><h2>人工决定</h2><p>各项由工作人员明确选择；刷新只更新当前事实，已捕获的决定依据保持不变。</p>
@@ -106,7 +106,8 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       <div className="note-controls"><button type="submit" data-action="submit-candidate" disabled={!canSubmit}>{active?'正在核对…':'提交明确决定'}</button>
         {!pending&&candidateHasInput(value)?<button type="button" data-action="adopt-candidate-basis" disabled={active} onClick={()=>{setValue(current=>({...current,capture:{version:detail.row_version,basis:detail.material_basis}}));setReviewRequired(false);}}>明确采用当前依据</button>:null}
         {!pending&&candidateHasInput(value)?<button type="button" data-action="clear-candidate-input" disabled={active} onClick={()=>{setValue(emptyCandidateDecision);setReviewRequired(false);}}>清除当前输入</button>:null}
-        {pending?<button type="button" data-action="check-candidate-operation" disabled={active} onClick={check}>只读核对原操作</button>:null}
+        {originalId?<button type="button" data-action="check-candidate-operation" disabled={active} onClick={check}>只读核对原操作</button>:null}
+        {pending&&checkedUnknown&&unknown?<button type="button" data-action="replay-candidate-operation" disabled={active} onClick={()=>{void send(pending,JSON.stringify(value));}}>明确重放原操作（保留原 UUID 和正文）</button>:null}
       </div>
     </form>:<p>当前可读取候选，没有人工决定权限。</p>}
     {message?<p role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'} data-candidate-outcome>{message}</p>:null}

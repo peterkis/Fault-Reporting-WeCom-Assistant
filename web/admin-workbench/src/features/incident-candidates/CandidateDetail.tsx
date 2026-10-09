@@ -4,6 +4,7 @@ import {Link,useParams} from 'react-router';
 import type {Principal} from '../../api/client';
 import {api,ApiError,errorMessage,advanceWorkbenchAuthorizationEpoch} from '../../api/client';
 import {clearSessionAuthorization} from '../../app/authorization';
+import {purgeDrafts} from '../drafts/encrypted-drafts';
 import {candidateApi} from './client';
 import {CandidateDecisionForm} from './CandidateDecisionForm';
 
@@ -19,13 +20,16 @@ export function CandidateDetailPage({principal,onBlockedChange}:{principal:Princ
 export function CandidateDetail({principal,candidateId,onBlockedChange}:{principal:Principal;candidateId:string;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),heading=useRef<HTMLHeadingElement|null>(null),query=useQuery({queryKey:['incident-candidate-detail',principal.principal_id,candidateId],queryFn:({signal})=>candidateApi.detail(candidateId,signal)}),detail=query.data;
   const [refreshError,setRefreshError]=useState('');
+  const [cleanupError,setCleanupError]=useState('');
   const refresh=async()=>{try{setRefreshError('');const fresh=await client.fetchQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),staleTime:0});const identity=(actor:Principal)=>JSON.stringify([actor.principal_id,actor.csrf_token,actor.authorization_revision,[...actor.roles].sort(),actor.incident_candidate_workspace_enabled,actor.incident_candidate_draft_recovery_enabled]);if(identity(fresh)!==identity(principal))advanceWorkbenchAuthorizationEpoch();await query.refetch();}catch(error){setRefreshError(errorMessage(error));if(error instanceof ApiError&&(error.status===401||error.status===403))await clearSessionAuthorization(client,principal.principal_id,error.status,'revoked');}};
   const [blocked,setBlocked]=useState(false);
+  useEffect(()=>{const error=query.error;if(!(error instanceof ApiError)||![401,403,404].includes(error.status))return;let mounted=true;advanceWorkbenchAuthorizationEpoch();const key=['incident-candidate-detail',principal.principal_id,candidateId];client.getQueryCache().find({queryKey:key,exact:true})?.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});for(const mutation of client.getMutationCache().findAll({predicate:entry=>entry.options.mutationKey?.[1]===principal.principal_id&&entry.options.mutationKey[2]===candidateId&&['incident-candidate-command','incident-candidate-receipt'].includes(String(entry.options.mutationKey[0]))}))client.getMutationCache().remove(mutation);if(principal.incident_candidate_draft_recovery_enabled)void purgeDrafts({principal:principal.principal_id,kind:'incident-candidate',id:candidateId,purpose:'incident-review',reason:'revoked'}).catch(()=>{if(mounted)setCleanupError('当前权限已拒绝读取；恢复副本清理尚未确认，请保持页面关闭。');});return()=>{mounted=false;};},[client,principal.principal_id,principal.incident_candidate_draft_recovery_enabled,candidateId,query.error]);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{if(detail)heading.current?.focus();},[Boolean(detail)]);
   return <article className="detail-page" data-candidate-id={candidateId} aria-labelledby={'candidate-heading-'+candidateId}>
     <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><button type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}}>刷新当前事实</button></div>
     {refreshError?<p role="alert">{refreshError}</p>:null}
+    {cleanupError?<p role="alert">{cleanupError}</p>:null}
     {query.isPending?<p role="status">正在读取获权候选…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:detail?<div className="detail-body">
       <header className="detail-heading"><p className="context-line">人工公共故障候选 · {candidateLabels[detail.status]}</p><h1 id={'candidate-heading-'+candidateId} ref={heading} tabIndex={-1}>{detail.service_family} · {detail.symptom_family}</h1><p>候选依据版本 {detail.row_version}；候选并非已确认公共故障。</p></header>
       <section className="properties" aria-label="候选来源与数量"><dl><dt>来源观察人数</dt><dd>{detail.distinct_reporters??unavailable}</dd><dt>来源观察科室</dt><dd>{detail.distinct_departments??unavailable}</dd><dt>来源观察位置</dt><dd>{detail.distinct_locations??unavailable}</dd><dt>原观察窗口</dt><dd>{detail.correlation_window_ms===null?unavailable:detail.correlation_window_ms+' 毫秒'}</dd><dt>来源建议范围</dt><dd>{scopeLabels[detail.scope_candidate]??detail.scope_candidate}（尚未确认）</dd><dt>原观察时间</dt><dd>{detail.first_seen_at??unavailable} 至 {detail.last_seen_at??unavailable}</dd><dt>候选到期</dt><dd>{detail.expires_at}（北京时间）</dd></dl>
