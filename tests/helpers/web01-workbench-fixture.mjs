@@ -42,6 +42,13 @@ const scenarios=[
 ];
 const eventTypes={NEW:'ticket.created',QUEUED:'ticket.queued',REOPENED:'ticket.reopened',ACCEPTED:'ticket.accepted',IN_PROGRESS:'ticket.started',WAITING_VENDOR:'ticket.waiting_vendor',WAITING_REQUESTER:'ticket.waiting_requester',CLOSED:'ticket.closed',RESOLVED:'ticket.resolved'};
 async function unusedPort(){const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const port=s.address().port;await new Promise(r=>s.close(r));return port;}
+async function settleManualFixtureProjection(runtime){
+  const result=await runtime.coordinator.runOnce();
+  const channel=result.streams.find(stream=>stream.source_stream==='CHANNEL_MESSAGE_INBOX');
+  assert.ok(channel);assert.equal(channel.failures.length,0);
+  assert.equal((await runtime.coordinator.backlog()).channel_messages,0);
+  console.log('WBINT_T17_FIXTURE_BASELINE '+JSON.stringify({source_stream:channel.source_stream,scanned:channel.scanned,inserted:channel.inserted,replayed:channel.replayed,channel_failures:channel.failures.length,other_stream_failures:result.failures-channel.failures.length}));
+}
 // Actual Web source through the existing Store Port: there is no Bot inbox/thread to project into a Session.
 export async function seedWeb01NoConversationIntake({pool,text,location='合成位置'}){
   const scope={scopeHash:createHash('sha256').update('web01-only-'+randomUUID()).digest('hex'),sourceCorpScope:'web01-synthetic-corp',sourceAppScope:'web01-synthetic-app',proofRef:'web01-synthetic-proof'};
@@ -101,6 +108,7 @@ export async function withWeb01Fixture(run,{workbenchRealtimeEnabled=false,workb
         const sessionId=(await pool.query(`INSERT INTO pilot_ticket.workbench_auth_session(session_token_hash,csrf_token_hash,principal_id,identity_hash,created_at,created_epoch_ms,last_seen_at,last_seen_epoch_ms,expires_epoch_ms,expires_at)
           VALUES($1,$2,$3::uuid,$4,platform.local_from_epoch_ms($5),$5,platform.local_from_epoch_ms($5),$5,$6,platform.local_from_epoch_ms($6)) RETURNING session_id::text`,[hash(sessionToken),hash(csrfToken),principals[0].id,identityHash,issued,expires])).rows[0].session_id;
         const browserCookies=[{name:'__Host-wecom_workbench_session',value:sessionToken,url:tls.origin+'/',path:'/',secure:true,httpOnly:true,sameSite:'Lax'},{name:'__Host-wecom_workbench_csrf',value:csrfToken,url:tls.origin+'/',path:'/',secure:true,httpOnly:false,sameSite:'Lax'}];
+        if(workbenchManualReportsEnabled)await settleManualFixtureProjection(runtime);
         return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin:tls.origin,certificateSpki:tls.certificateSpki,browserCookies,cookies:[browserCookies.map(c=>c.name+'='+c.value).join('; ')],sessionId,backendOrigin:'http://127.0.0.1:'+runtime.server.address().port});
       }finally{await closeBrowserTestResources([async()=>{await tls?.close();if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await runtime?.stop();await auth?.close();if(runtime)assert.equal(runtime.server.listening,false);}]);}
     }
@@ -111,6 +119,7 @@ export async function withWeb01Fixture(run,{workbenchRealtimeEnabled=false,workb
     if(manualProjection){assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);}
     const started=manualProjection?{address:await listenConversationWorkbenchServer(runtime.server,{port:listenPort}),cookies:runtime.authenticate.browserCookies?.()}:await runtime.start();
     assert.ok(Array.isArray(started.cookies)&&started.cookies.length===3);const cookies=started.cookies.map(c=>c.name+'='+c.value);
+    if(workbenchManualReportsEnabled&&!manualProjection)await settleManualFixtureProjection(runtime);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;
     let malformedNoteSuccess=malformedInternalNoteSuccess;
