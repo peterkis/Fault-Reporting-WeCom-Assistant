@@ -1,5 +1,5 @@
-import {useRef} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useEffect,useRef} from 'react';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {ManualReportCommand} from '../../../../../contracts/workbench_manual_report_contracts';
@@ -15,6 +15,14 @@ export async function clearManualReportAuthority(client:QueryClient,principal:st
   for(const query of client.getQueryCache().findAll({queryKey:key}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>mutation.options.mutationKey?.[0]==='manual-report-command'&&mutation.options.mutationKey?.[1]===principal}))client.getMutationCache().remove(mutation);
   await purgeDrafts({principal,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report',reason:'revoked'}).catch(()=>{});
+}
+export function useManualReportAuthority(principal:Principal|undefined){
+  const client=useQueryClient(),context=useQuery({queryKey:manualReportCapabilitiesKey(principal?.principal_id??''),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal?.manual_reports_enabled??false});
+  useEffect(()=>{
+    if(!principal||!(context.error instanceof ApiError))return;
+    if(context.error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');
+    else if([403,404].includes(context.error.status))void clearManualReportAuthority(client,principal.principal_id,context.error);
+  },[client,principal?.principal_id,context.error]);
 }
 export function useManualReportDraft({principal,value,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;pending:ManualReportCommand|null;onRestore:(restored:{value:ManualReportInput;pending:ManualReportCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),stage=useRef<'session'|'create'>('session');

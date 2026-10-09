@@ -21,6 +21,7 @@ import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
 import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
 import {ReviewWorkspace} from '../features/manual-review/ReviewWorkspace';
 import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
+import {useManualReportAuthority} from '../features/manual-report/use-manual-report-draft';
 import {useWorkbenchRealtime,realtimeLabels} from '../realtime/useRealtime';
 import type {RealtimeView} from '../realtime/useRealtime';
 
@@ -230,6 +231,7 @@ function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useU
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null&&closedNotice===null});
   const realtime=useWorkbenchRealtime(failure===null&&closedNotice===null?bootstrap.data:undefined);
+  useManualReportAuthority(failure===null&&closedNotice===null?bootstrap.data:undefined);
   if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(bootstrap.isPending)return <div className="entry-state"><Message text="正在核验内部会话…"/></div>;
