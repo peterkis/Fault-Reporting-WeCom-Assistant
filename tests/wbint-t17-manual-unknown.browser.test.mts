@@ -41,7 +41,7 @@ test('a truly committed manual report with an unreadable HTTP acknowledgement re
         WHERE r.command_scope=$1 AND r.client_command_id=$2::uuid AND r.command_type='WORKBENCH_MANUAL_REPORT'`,['P2_016:'+principal.id,id])).rows[0];assert.ok(row);return row;};
       assert.deepEqual(await facts(),{intakes:1,tickets:1,receipts:1,state:'COMMITTED',actor:principal.id});
       await reload(browser);await browser.waitFor("document.querySelector('[aria-label=\"故障描述\"]')?.value==='T17 UNKNOWN actual intent：打印机无法打印'&&Boolean(document.querySelector('[data-action=check-manual-report-receipt]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]').disabled"),true);assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').disabled"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]').matches(':disabled')"),true);assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').disabled"),true);
       assert.deepEqual(await browser.evaluate(pending),{schema:1,pending:command});assert.equal(posts,1);assert.deepEqual(receipts,[]);assert.equal(await browser.evaluate("globalThis.__t17Requests.filter(row=>row.method==='POST').length"),0);
       const restored=object(await browser.evaluate(copies));assert.deepEqual(restored.drafts,saved.drafts);assert.deepEqual(restored.operations,[{commandId:id,purpose:'manual-report'}]);
       const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const image=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-900.png');await writeFile(file,image);
