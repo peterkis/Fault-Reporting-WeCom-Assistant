@@ -1,6 +1,6 @@
 # 电话／现场代录合同（WBINT-T17）
 
-返回[导航](../README.md) · [索引](../endpoint-index.md)。电话／现场代录、当前创建权限、同用途回执及正式新报修／MANUAL复核页面均已挂载，默认关闭。持久受理、规则结果、草稿恢复／UNKNOWN只读核对和生产制品浏览器行为已有本地隔离证据；完整七项交付及剩余风险验证状态见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。历史RED、修补过程及实际被测对象保留在执行记录和其原始证据中，不代表生产启用或Gate批准。
+返回[导航](../README.md) · [索引](../endpoint-index.md)。电话／现场代录、当前创建权限、同用途回执及正式新报修／MANUAL复核页面均已挂载，默认关闭。本票七项已有本地隔离证据，覆盖持久受理、人工复核、草稿恢复／UNKNOWN只读核对、并发／事务回滚及生产制品浏览器行为；实际被测祖先、当前差异和限制见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。历史RED与修补过程保留在执行记录和原始证据中，不代表生产启用或Gate批准。
 
 宿主 W，内部工作人员会话。`workbenchManualReportsEnabled=false` 默认关闭；关闭时拒绝该用途并不访问042存储。启用后缺033/042 readiness 返回503。AI、外部目录、OAuth/Provider、Sender不参与受理。只有当前active ADMIN／DISPATCHER，或实际属于至少一个active处理组的HANDLER可以新代录；重复与回执每次重新核验同一当前权限。浏览器不能提供actor、WeCom identity、person binding、状态或处理人。成功受理不扩大该工作人员对新Ticket／Journey的既有读取范围。
 
@@ -31,3 +31,5 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 `GET /api/manual-reviews/{reviewId}`在当前Review／Journey权限与保留期内返回`material_basis.source_kind:MANUAL`、固定来源revision 1及原描述材料`manual:{intakeId}`，不按Bot消息窗口生成或替换原Decision依据。附加闭合`manual_report:{source_kind:MANUAL_REPORT,source:PHONE|ON_SITE,description,location,reporter,identity_source:HAND_ENTERED,actor_principal_id,manual_contact_required:true,external_notification:false}`，内容取本次持久快照及真实authenticated actor；姓名／联系方式仍UNVERIFIED，不赋予任何Person／WeCom身份。人工结论沿同原账本与事务，仅走人工来源适用的APP_ONLY数据库动作；确认回应、咨询等不强制建工单，所有结论均无自动Communication／Outbox／Delivery。各结论隔离验证状态见执行记录。正式复核页面展示本次手填Reporter、未核实身份与人工联系提示，并单独展示实际代录主体；仅真实actor UUID等于当前principal时取当前工作人员名称，其它主体记录诚实保留，不根据姓名／联系方式推断身份。原safe_result／provenance保持，材料围栏沿当前capture hash；已有BOT／WEB的权限、材料与通知语义保留。MANUAL分支沿`workbenchManualReportsEnabled=false`默认关闭，材料工作区还沿原T14开关；旧BOT/WEB不会读取042新增字段。
 
 回执在READ ONLY事务中核验当前创建权限，再读取原principal＋`WORKBENCH_MANUAL_REPORT`用途账本；UNKNOWN不写原账本或其它事实，同UUID其它principal或其它用途返回UNKNOWN。成功结果仅返回原受理结果，不含原描述或Reporter姓名／联系方式，闭合快照守卫失败返回503；重复提交只返回原结果，变更原意图409，失去当前创建权限后读取、重放均403。恢复开关默认false，关闭时只读receipt拒绝且不查询账本；capabilities恢复位诚实取当前配置。
+
+MANUAL复核的显式`CONFIRM_TICKET_ELIGIBLE`及`CLASSIFY_SERVICE_REQUEST`分别设置原Intake request_type为`INCIDENT`／`SERVICE_REQUEST`，沿既有执行器创建原生Core `QUEUED`、未分配工单；其余六种合法结论不建单。所有结论均保留原来源快照和Decision，不自动接单或发送通知。代录入口产生Core标题与Intake摘要时，沿原200／500 UTF16单位上限取完整Unicode字符前缀，完整原描述快照及其hash不改变。
