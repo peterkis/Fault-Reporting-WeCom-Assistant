@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-09
+snapshot_on: 2026-10-10
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,35 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-09，T06收口与下一验证窗口）
+## 当前执行状态导航（2026-10-10，中断恢复与T22收口）
+
+GitHub实际读回已关闭14／43票，剩余29票OPEN：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T22／T23／T27／T38。旧子代理均已完成并停止；依据保留工作树及当前原生依赖恢复后续任务，已完成验证不重复执行。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T22 / #77 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)及[原七项验收记录](execution/t22.md)已核对。集中会话、获权沟通控制、回复／内部备注、确切Delivery展示和24小时恢复均为真实服务接入 |
+| T22实际集成与被测对象 | 受控快进至`882e384c1088df93fa24b7268f47a079459767d2`，真实被测祖先`06f3c880c6d759497eb68f44a8865a3c45d1fff3`。文档后继只改API和本票执行Markdown，原生MIGRATION_INPUT_DRIFT保留；不重绑manifest或冒称新被测对象 |
+| T22验收证据 | 固定源build／strict／artifact原生0；原22、有限兼容46及工具外层原生27／18／1通过。父独立核对1072输入、1216输出和5006个去重原归档文件；源码／API辅助核对未发现明确业务缺口。原FAIL、工具内层故意FAIL及NOT_REACHED保留 |
+| T22活动资源 | worker已实际RELEASE；父独立核实自有PG额外库／客户端0／0、probe pool0。App／HTTP／SSE／browser及匹配测试进程均关闭，保留合成PG供下一任务 |
+| 下一实施 | 保留的T08工作树合入实际最新集成后，按原七项先运行原公开HTTP tracer，再最小前向实现与整票串行验证。T35的#69／#77均已CLOSED，可独立准备源码；准备状态不计验收 |
+
+WBINT-07／A07本地完成，全部43票仍IN_PROGRESS。新增开关默认false；用户两份dirty文档、四附件与空index保持。未push／PR、真实外部服务或发送、用户库迁移、部署、full／certify或Gate推进。
+
+## 历史执行状态导航（2026-10-10，中断恢复与T27收口）
+
+GitHub实时核对已关闭13／43票，剩余30票OPEN：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T27／T38。中断恢复时没有运行中的子代理；已完成票不重复执行，准备源码不计验收。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T27 / #82 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82#issuecomment-6088472390)与[原七项验收记录](execution/t27.md)已核对；人工候选确认产生独立Incident，个人Ticket不合并、不隐式关闭 |
+| T27实际集成与被测对象 | 受控快进至`aac2d438927db1d447cb0f7f957f3a24c3226807`；真实被测源`6607ace4a07915a7feb39143ed7543bf86c80d4c`的一次build／strict／artifact通过。交付后继仅接口与本票执行Markdown；原HEAD绑定验证器返回MIGRATION_INPUT_DRIFT，原输出保留，未改绑旧manifest或冒称后继artifact PASS |
+| T27分组证据 | 当前production浏览器14、领域／合同／隔离PG／HTTP15、迟到回执1、工具外层18通过；ee4／ea8／4a与sourceRefs Port保持各自原证明，不称在6607全量重跑。11119个原归档文件、1051输入、1187输出由父逐字节／SHA核对 |
+| T27活动资源 | worker已终端RELEASE；App／browser／process／pool与随机DB关闭，父独立核实自有PG额外库／客户端0／0。历史失败、执行器超时和故意失败内层样本原样保留 |
+| 下一实施 | 恢复保留的T22工作树，先合入实际最新集成，再执行原七项与原22 cases及适用兼容验证；重型验证串行。T28的#82已CLOSED，可重新读取完整正文／原生依赖后独立准备源码 |
+
+WBINT-09／A09继续IN_PROGRESS。新增能力默认关闭；用户两份dirty文档、四附件与空index保持。未push／PR、真实外部服务或发送、用户库迁移、部署、full／certify或Gate推进。
+
+## 历史执行状态导航（2026-10-09，T06收口与下一验证窗口）
 
 当前已核实关闭12／43票：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T23／T38。T06原七项、受控集成与GitHub关闭已读回；后续仍按实时原生阻塞关系实施。
 
