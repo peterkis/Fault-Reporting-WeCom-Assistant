@@ -182,9 +182,9 @@ bootstrap的 `staff_completion_draft_recovery_enabled` 为实际完工能力AND 
 表单in-flight1，复用原事务、pool≤4、总池建议≤8，App/API/SSE1、Worker1、Gateway单活、SSE32，无新轮询/常驻进程。关闭能力拒绝新命令并保留已提交事实；独立forward/revert不删除receipt、cycle/end/event或承诺。真实外部依赖、发送、部署、full/certify与Gate仍须独立授权。
 
 
-## 明确派单（WBINT-T06，进行中）
+## 明确派单与转派（WBINT-T06）
 
-W 的 `POST /api/tickets/{ticketId}/assign` 与 `/transfer-assignment` 使用宿主 `ticketAssignmentEnabled:boolean=false`。有效人/组、明确沟通原子交接、候选查询、正式表单、终态、回执及同轮通知已分段执行实际公开验证；当前权限锁与专用恢复仍在整票验证中，完成状态和固定被测身份见[本票实际分段](../../../plans/admin-workbench-integration/execution/t06.md)。[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../src/workbench-ticket-assignment.mts)。
+W 的 `POST /api/tickets/{ticketId}/assign` 与 `/transfer-assignment` 使用宿主 `ticketAssignmentEnabled:boolean=false`。有效人/组、明确沟通原子交接、候选查询、正式表单、终态、回执、同轮通知、事务权限锁及专用恢复均已完成隔离公开验证；固定被测身份、七项映射与相关回归见[本票执行记录](../../../plans/admin-workbench-integration/execution/t06.md)。[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../src/workbench-ticket-assignment.mts)。
 
 沿W认证/当前Ticket可见范围、Origin/CSRF、Idempotency-Key=client_command_id、If-Match=expected_version和32KiB上限。闭合body的七字段为UUID client_command_id、数字整数expected_version（1..2147483647）、CODE reason_code、UUID target_principal_id、CODE resolver_team_id、communication_choice、sessions。RETAIN_CURRENT必须空sessions；TRANSFER_SELECTED必须1..8个唯一、真实关联且当前分别获权的 `{session_id:UUID,expected_row_version:number}`。调用者必须独立具有Conversation Control权限；Ticket读取不授予Session权限。Session按UUID排序锁定，在原Ticket组范围内先执行Control caller事务，再执行人/组责任写；任何业务写失败全部回滚，保留FAILED审计。拒绝actor/来源/通知目的地/force/任意额外字段。
 
