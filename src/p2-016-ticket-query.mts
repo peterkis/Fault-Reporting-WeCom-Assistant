@@ -12,7 +12,7 @@ export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
-import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
+import { failP2016,guardP2016,uuidP2016,codeP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
 
 import {staffCompletionEligibility} from './workbench-ticket-completion.mjs';
 import {assignmentActions,assignmentCycle} from './workbench-ticket-assignment.mjs';
@@ -89,6 +89,23 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
   }
   return Object.freeze({
     principal,authorizedTicket,
+    async assignmentTargets({authContext,ticketId,resolverTeamId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}) {
+      guardP2016(ticketAssignmentEnabled);
+      const {ticket,principal:p}=await authorizedTicket({authContext,ticketId});
+      if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
+      if(assignmentActions(p,ticket).length===0)failP2016('FORBIDDEN',403);
+      const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
+      const groups=await pool.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
+        WHERE rt.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.pilot_principal p ON p.id=m.principal_id
+          WHERE m.team_id=rt.team_id AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')))
+        ORDER BY rt.team_id LIMIT 100`);
+      if(selected!==null&&!groups.rows.some(group=>group.team_id===selected))failP2016('FORBIDDEN',403);
+      const candidates=selected===null?[]:(await pool.query<{principal_id:string;display_name:string}>(`SELECT p.id::text AS principal_id,p.display_name
+        FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
+        WHERE m.team_id=$1 AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))
+        ORDER BY p.display_name,p.id LIMIT 100`,[selected])).rows;
+      return publicP2016({resolver_teams:groups.rows,resolver_team_id:selected,items:candidates});
+    },
     async list({authContext,state='queued',cursor=null,limit}: { authContext: unknown; state?: string; cursor?: unknown; limit?: unknown }) {
       const p=await principal(authContext),n=limitP2016(limit),predicate=ticketPredicateP2016(p);
       const aliases: Record<string, TicketStatus>={queued:'QUEUED',accepted:'ACCEPTED',in_progress:'IN_PROGRESS',waiting_requester:'WAITING_REQUESTER',waiting_vendor:'WAITING_VENDOR',resolved:'RESOLVED',closed:'CLOSED',reopened:'REOPENED',cancelled:'CANCELLED'};
