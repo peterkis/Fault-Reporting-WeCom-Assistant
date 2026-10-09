@@ -23,9 +23,9 @@ execution_status: IN_PROGRESS
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T14同事项人工复核LOCAL_VERIFIED](execution/t14.md)与[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)均已本地集成并关票；T15已按原生依赖领取并独立准备，A04整组尚未验收 | A04 |
 | WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：T17七项已核对、集成并关票；T18／T19原生依赖关闭后已领取，准备核实成员与同事务开始合同；A05整组尚未验收 | A05 |
 | WBINT-06 | 原 Reporter 反馈与重开 | 03 | IN_PROGRESS；T20已领取，T21未启动 | A06 |
-| WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | IN_PROGRESS：T22已按原生依赖领取 | A07 |
+| WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | IN_PROGRESS：T22已领取，保留源码与原证据；恢复后先合入实际最新集成再完成整票串行验证，准备状态不计验收 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：T24单聊Bot来源通知已按原生依赖领取，独立实施准备中；T25／T26未开始，A08整组尚未验收 | A08 |
-| WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：T27已按原生依赖领取；T28未开始 | A09 |
+| WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：[T27公共故障候选LOCAL_VERIFIED](execution/t27.md)原七项已核对、集成并关票；T28的原生blocker已关闭，仍待独立实施，A09整组尚未验收 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | NOT_STARTED | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；T34已领取，T35–T37未启动 | A12 |
