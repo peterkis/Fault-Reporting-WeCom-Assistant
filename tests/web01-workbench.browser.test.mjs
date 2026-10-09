@@ -430,6 +430,7 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       const literal='<img src=x onerror=alert(1)>合成群';await change(literal);
       assert.equal(await browser.evaluate("document.querySelectorAll('dialog .properties img').length"),0);
       assert.equal((await pool.query('SELECT display_name FROM workbench.source_group_name')).rows[0].display_name,literal);
+      await browser.waitFor("(()=>{const button=document.querySelector('[aria-label=\"关闭详情\"]');return button instanceof HTMLButtonElement&&!button.disabled&&!button.matches(':disabled');})()");
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
       await browser.waitFor("!document.querySelector('dialog')");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");

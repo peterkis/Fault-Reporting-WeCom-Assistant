@@ -19,7 +19,7 @@ interface G1RuntimeOptionsInput {
   senderAdapter?: G1SenderPort | null;
   senderFactory?: ((input: { gateway: ReturnType<typeof createP2G1WeComGateway> }) => G1SenderPort) | null;
   extensionFactory?: ((input: { controlService: ReturnType<typeof createConversationControlService>; authorization: ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>; realtime: ReturnType<typeof createRealtimeSseHandler>; coordinator: ReturnType<typeof createP2G1InboundProjectionCoordinator>; queryService: ReturnType<typeof createConversationWorkbenchQueryService>; commandFacade: ReturnType<typeof createConversationWorkbenchCommandFacade> }) => G1RuntimeExtension) | null;
-  realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;
+  realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;realtimeAvailabilityFallback?:boolean;
   gatewayStatusProvider?: G1GatewayStatusPort | null; communicationStatusProvider?: { isReady(): boolean } | null;
   requireGateway?: boolean; testAuthTtlMs?: number; authentication?: G1AuthenticationPort | null;
   externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
@@ -62,6 +62,7 @@ export function createP2G1Runtime({
   realtimeAppender = appendRealtimeEvent,
   projectionTransactionStart = null,
   realtimeScopeLimit = 5000,
+  realtimeAvailabilityFallback=false,
   gatewayStatusProvider = null,
   communicationStatusProvider = null,
   requireGateway = gatewayEnabled,
@@ -84,6 +85,7 @@ export function createP2G1Runtime({
     || typeof realtimeAppender !== 'function'
     || (projectionTransactionStart !== null && typeof projectionTransactionStart !== 'function')
     || !Number.isInteger(realtimeScopeLimit) || realtimeScopeLimit<1 || realtimeScopeLimit>5000
+    ||typeof realtimeAvailabilityFallback!=='boolean'
     || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
     || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
     || typeof requireGateway !== 'boolean'
@@ -123,7 +125,7 @@ export function createP2G1Runtime({
     authenticate: authPort.authenticate,
     authorize: async (authContext) => {
       const principal = await authorization.resolvePrincipal(authContext);
-      return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit});
+      return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit,availabilityFallback:realtimeAvailabilityFallback});
     },
   });
   let assembly: ReturnType<typeof createP2G1HumanOnlyAssembly>;
