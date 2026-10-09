@@ -45,7 +45,7 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
     const capture=async()=>{
       assert.ok(browser);const shot=await browser.screenshot();assert.equal(typeof shot,'string');
       if(typeof shot!=='string')throw Error('T27_SCREENSHOT_REQUIRED');
-      const bytes=Buffer.from(shot,'base64'),file=join(directory,'csrf-current-'+bytes.readUInt32BE(16)+'.png');
+      const bytes=Buffer.from(shot,'base64'),file=join(directory,'new-detail-'+bytes.readUInt32BE(16)+'.png');
       await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
     };
     const root=`article[data-candidate-id="${candidateId}"]`;
