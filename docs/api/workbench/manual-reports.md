@@ -1,6 +1,6 @@
 # 电话／现场代录合同（WBINT-T17）
 
-返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入。POST已在工作人员宿主挂载、默认关闭；原HTTP首次受理202已到达，但最小Ticket断言失败，当前尚未GREEN。capabilities与只读receipt仍在本票后续实现中，不能称已有接口。
+返回[导航](../README.md) · [索引](../endpoint-index.md)。本合同冻结 T17 输入。POST已在工作人员宿主挂载、默认关闭；`1628d328`原HTTP1首次完整GREEN，受理202及Core原生QUEUED已到达，policy3亦通过。capabilities与只读receipt仍在本票后续实现中，不能称已有接口。
 
 宿主 W，内部工作人员会话。`workbenchManualReportsEnabled=false` 默认关闭；关闭时拒绝该用途并不访问042存储。启用后缺033/042 readiness 返回503。AI、外部目录、OAuth/Provider、Sender不参与受理。只有当前active ADMIN／DISPATCHER，或实际属于至少一个active处理组的HANDLER可以新代录；重复与回执每次重新核验同一当前权限。浏览器不能提供actor、WeCom identity、person binding、状态或处理人。成功受理不扩大该工作人员对新Ticket／Journey的既有读取范围。
 
@@ -25,3 +25,5 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 正式新报修表单复用T03当前浏览器AES-GCM、不可导出key、20份/16KiB、首次保存后固定24h、principal+intake+固定新报修scope+manual-report用途。恢复前重新GET capabilities并核验当前account；只保存业务密文与原UNKNOWN UUID/body，不保存凭据。提交、恢复均不自动POST；成功、丢弃、退出、失权、过期沿T03清理。UNKNOWN正文/UUID不可更改，只能显式GET核对；敏感过期后仅保留opaque操作标识。
 
 资源沿既有单App/Worker、Gateway单活、SSE32、共享pool max4／总预算8；本票无新后台worker、timer或目录网络。公共验证seam为真实已编译HTTP＋隔离PG及正式production bundle，七项追溯见[执行记录](../../../plans/admin-workbench-integration/execution/t17.md)。T18目录核实、T19一步接单均不在本票。
+
+下一Review切片已冻结、尚未实现：原`GET /api/manual-reviews/{reviewId}`在当前Review／Journey权限与保留期内返回`material_basis.source_kind:MANUAL`、固定来源revision 1及原描述材料`manual:{intakeId}`，不按Bot消息窗口生成或替换原Decision依据。附加闭合`manual_report:{source_kind:MANUAL_REPORT,source:PHONE|ON_SITE,description,location,reporter,identity_source:HAND_ENTERED,actor_principal_id,manual_contact_required:true,external_notification:false}`，内容取本次持久快照及真实authenticated actor；姓名／联系方式仍UNVERIFIED，不赋予任何Person／WeCom身份。原合法`ACKNOWLEDGE`等人工结论同原账本与事务处理，只走人工来源适用的数据库动作，零Communication／Outbox／Delivery；不将未知现象强制建工单。原safe_result／provenance保持，材料围栏沿当前capture hash；已有BOT／WEB的权限、材料与通知语义保留。此合同准备的真实HTTP RED尚NOT_RUN，不能称这些增量已挂载。
