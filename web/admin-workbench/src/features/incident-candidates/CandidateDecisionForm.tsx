@@ -62,7 +62,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       setPending(null);setReviewRequired(true);refresh();
       if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'原操作已确认提交；恢复副本清理失败，禁止新提交，请继续只读核对。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。'+(cleaned?'':' 恢复副本清理失败，原 UUID 已保留，禁止新提交，请继续只读核对。'));}
-    },onError:()=>{setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
+    },onError:(_error,variables)=>{if(variables.signal.aborted)return;setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='__NO_TEAM__'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));
   const primaryOptions=[...new Map(value.refs.flatMap(ref=>{const source=sources.get(ref);return source?.ticket_id?[[source.ticket_id,{id:source.ticket_id,label:source.ticket_no??'当前编号不可用'}] as const]:[];})).values()];
   const currentCapture=Boolean(value.capture&&value.capture.version===detail.row_version),confirm=value.action==='CONFIRM_INCIDENT';
