@@ -24,6 +24,7 @@ GitHub实际读回已关闭14／43票，剩余29票OPEN：T01／T02／T03／T04�
 | T22验收证据 | 固定源build／strict／artifact原生0；原22、有限兼容46及工具外层原生27／18／1通过。父独立核对1072输入、1216输出和5006个去重原归档文件；源码／API辅助核对未发现明确业务缺口。原FAIL、工具内层故意FAIL及NOT_REACHED保留 |
 | T22活动资源与归档 | worker已实际RELEASE；父独立核实自有PG额外库／客户端0／0、probe pool0。App／HTTP／SSE／browser及匹配测试进程均关闭；1925个必要ignored文件逐路径／长度／SHA匹配保全，D盘本次managed工作树已归档并读回、实际目录已移除。保留合成PG供下一任务；旧C盘附件不在本次清理范围 |
 | 当前实施 | T08已恢复为唯一重型验证owner，保留工作树合入最新完成集成，按原七项先运行原公开HTTP tracer再最小前向实现。T35的#69／#77均CLOSED，实读全文／评论／标签后已领取给peterkis；独立工作树仅准备合同与原tracer，尚未构建或运行。T20只读整票预检并行，不触共享验证资源；准备状态不计验收 |
+| T35源码准备 | 干净私有交付`ab748f7b867eb8650d2fc97f6f484d01761ae94b`已合入实际root `60e33f4`；8个自有源／原副本、12个保护文件、四份闭合Schema及原routing并集由父静态核对。原唯一HTTP／production浏览器tracer保持240秒；047仅预留，生产源码／SQL无变更，全部运行NOT_BUILT_NOT_RUN。未合入root或关闭#90 |
 
 WBINT-07／A07本地完成，全部43票仍IN_PROGRESS。新增开关默认false；用户两份dirty文档、四附件与空index保持。未push／PR、真实外部服务或发送、用户库迁移、部署、full／certify或Gate推进。
 
