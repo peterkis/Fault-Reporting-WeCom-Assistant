@@ -13,7 +13,7 @@ async function facts(context:Fixture,id:string){return {
  ticket:(await context.pool.query('SELECT assignee_id::text,resolver_team_id,status,version,current_handling_cycle_id::text,source_intake_id::text FROM pilot_ticket.ticket WHERE id=$1::uuid',[id])).rows,
  events:(await context.pool.query('SELECT event_id::text,event_type FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid ORDER BY event_id',[id])).rows,
  cycles:(await context.pool.query('SELECT id::text,cycle_no,first_responsibility_event_id::text FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid ORDER BY id',[id])).rows,
- communication:(await context.pool.query('SELECT s.id::text,s.row_version::text,a.assigned_principal_id::text,a.row_version::text AS assignment_version FROM conversation.session s LEFT JOIN conversation.assignment a ON a.session_id=s.id WHERE s.service_intake_id=(SELECT source_intake_id FROM pilot_ticket.ticket WHERE id=$1::uuid) ORDER BY s.id',[id])).rows,
+ communication:(await context.pool.query('SELECT s.id::text,s.row_version::text,a.assigned_principal_id::text,a.assignment_version::text FROM conversation.session s LEFT JOIN conversation.assignment a ON a.session_id=s.id WHERE s.service_intake_id=(SELECT source_intake_id FROM pilot_ticket.ticket WHERE id=$1::uuid) ORDER BY s.id',[id])).rows,
  controlEvents:(await context.pool.query('SELECT e.id::text FROM conversation.control_event e JOIN conversation.session s ON s.id=e.session_id WHERE s.service_intake_id=(SELECT source_intake_id FROM pilot_ticket.ticket WHERE id=$1::uuid) ORDER BY e.id',[id])).rows,
  bindings:(await context.pool.query('SELECT id::text FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid ORDER BY id',[id])).rows,
 };}
