@@ -2,7 +2,7 @@ import type {P2016ManualReviewDetail,P2016ManualReviewResolution} from './p2_016
 export interface CanonicalItem {kind:'ticket'|'review'|'intake';id:string}
 export interface ReviewReference {id:string;status:'PENDING'|'RESOLVED'|'CANCELLED';row_version:string}
 export interface ReviewMaterialBasis {
-  source_kind:'BOT'|'WEB';original_revision:string;current_revision:string;
+  source_kind:'BOT'|'WEB'|'MANUAL';original_revision:string;current_revision:string;
   original_hash:string;current_hash:string;stale:boolean;reason:'CURRENT'|'SOURCE_CHANGED'|'NEW_CHANNEL_LEG';
 }
 export interface ReviewMaterial {source_ref:string;revision:string;text:string|null;in_original_basis:boolean}

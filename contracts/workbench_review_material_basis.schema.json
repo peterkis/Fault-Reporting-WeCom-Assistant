@@ -17,7 +17,8 @@
     "source_kind": {
       "enum": [
         "BOT",
-        "WEB"
+        "WEB",
+        "MANUAL"
       ]
     },
     "original_revision": {

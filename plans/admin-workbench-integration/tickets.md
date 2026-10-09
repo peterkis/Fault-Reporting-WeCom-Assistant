@@ -102,18 +102,20 @@ native_blocking_edges: 76
   - **来源：** WBINT-04 / A04
   - **本地执行：** [LOCAL_VERIFIED：真实附件、逐项验收及资源清理](execution/t16.md)；已集成、关票，未发布／启用；A04整组仍未完成。
 
-- [ ] **T17** — [#72 手工代录电话或现场报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72)
+- [x] **T17** — [#72 手工代录电话或现场报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72)
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **来源：** WBINT-05 / A05
-  - **本地执行：** 原生blocker已关闭后实时核对并领取给peterkis；基于当前integration独立实施，尚未验收。
+  - **本地执行：** [七项验收、当前合同与分阶段证据](execution/t17.md)已核对；交付1828b60安全快进，[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72#issuecomment-6077295469)及CLOSED已读回。默认关闭、未发布／启用；T18／T19及A05整组未完成。
 
 - [ ] **T18** — [#73 选择经核实成员并代录](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)
   - **Blocked by:** [#72](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72)
   - **来源：** WBINT-05 / A05
+  - **执行：** 2026-10-09已实读完整正文／空评论／ready标签及原生blocker #72 CLOSED，领取给peterkis；独立准备核实成员候选合同，运行与整票验收尚未完成。
 
 - [ ] **T19** — [#74 代录后由本人立即处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74)
   - **Blocked by:** [#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)、[#72](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72)
   - **来源：** WBINT-05 / A05
+  - **执行：** 2026-10-09已实读完整正文／空评论／ready标签及原生blockers #59／#72 CLOSED，领取给peterkis；独立准备同事务受理与本人开始合同，运行与整票验收尚未完成。
 
 - [ ] **T20** — [#75 Web原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #66 CLOSED，领取给peterkis；独立准备原Web报修人反馈与同轮重开合同，尚未验证。
