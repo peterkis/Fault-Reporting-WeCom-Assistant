@@ -31,7 +31,7 @@ function stringField(value:unknown,key:string):string {
 
 test('T27 native START uses renewed same-principal Cookie CSRF and preserves the captured command',async()=>{
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t27csrf',run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
-    await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
+    const migrationInput={databaseUrl,mode:'apply'};await applyThrough031({pool,databaseUrl});await migrateP2012(migrationInput);
     const f=await fixtureP2012(pool,{reporters:3}),candidateId=stringField(await f.newCandidate(),'id'),principalId=stringField(f.admin,'id');
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));
     const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;
