@@ -4,6 +4,7 @@
     "contracts/p2_016_waiting_action_command.schema.json",
     "contracts/p2_016_waiting_action_result.schema.json",
     "contracts/p2_016_waiting_event_page.schema.json",
+    "contracts/workbench_realtime_contracts.d.ts",
     "contracts/workbench_review_contracts.d.ts",
     "contracts/workbench_review_material_basis.schema.json",
     "contracts/workbench_review_receipt.schema.json",

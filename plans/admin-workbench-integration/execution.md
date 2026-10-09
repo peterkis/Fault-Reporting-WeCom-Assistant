@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-08
+snapshot_on: 2026-10-09
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,17 +13,35 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-08，T14整票集成与收口）
+## 当前执行状态导航（2026-10-09，T38收口与T39领取）
+
+父任务已核对并关闭10／43票：T01／T02／T03／T04／T05／T11／T14／T16／T23／T38。以下关闭与领取已从GitHub读回；后续票继续按原生依赖，不以片段PASS代替整票。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T38 / #93 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93#issuecomment-6073463450)及[七项验收记录](execution/t38.md)可追溯。WBINT-13／A13仅T38子项完成 |
+| T38实际集成与被测对象 | `1d6f3b2fea0b36c1c57b218d841d24fe98ef27fa`已安全快进，尚未push；真实被测祖先`224c06d2fe4716687fdc01d573ec704b26b3a9c1`的一次build／strict／artifact和当前WEB01 9＋启用真实流1共10项通过。后继仅四份计划Markdown，完整958输入与1047输出／库存逐SHA相等，原manifest不重绑 |
+| T38分层证据与资源 | 原`0e1a328b`的专属19、兼容27、工具18＋1与9主映射行保持原对象；原FAIL／NOT_RUN保留，不宣称当前制品重跑过旧层。1678个原物及16张实际PNG外部归档逐length／SHA核对一致；自有资源归零，D盘managed工作树已实际归档 |
+| T39 / #94 | 完整正文／空评论／ready标签及原无assignee已实读，唯一原生blocker #93 CLOSED，领取给peterkis；准备获权短暂查看／编辑活动。它不领取、锁单、推进已读或替代责任，尚未验证 |
+| T20 / #75 | 完整正文／空评论／ready标签及原无assignee已实读，唯一原生blocker #66 CLOSED，领取给peterkis；独立准备原Web报修人对合法完工轮次的明确未解决反馈，不提前T21或真实成员写启用 |
+| T34 / #89 | 完整正文／空评论／ready标签及原无assignee已实读，唯一原生blocker #60 CLOSED，领取给peterkis；独立准备明确关注与获权责任并集，查看不自动关注，不提前T35–T37 |
+| T24／T10与其他在途票 | T24同轮投递稳定身份单例实际1PASS，旧2PASS保持独立对象；T10原等待单例实际FAIL，200响应缺真实处理轮次，后层未达。两窗口均已终端释放并独立核实PG0／0；继续原票剩余范围与串行验证 |
+
+默认关闭，未push、部署、真实Provider／OAuth／WeCom／外发、full／certify或Gate推进；用户两份dirty文档、四附件、index及HTTPS保持。T40和整组A13未验收。
+
+## 历史执行状态导航（2026-10-09，恢复与依赖领取）
 
 父任务已核对并关闭9／43票：T01／T02／T03／T04／T05／T11／T14／T16／T23。以下区分实际被测对象与文档后继，关闭票不表示整包验收或发布。
 
 | 任务／对象 | 当前状态与证据 |
 | --- | --- |
-| T14 / #69 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69#issuecomment-6056575947)及[七项验收、合同与原报告](execution/t14.md)已核对；来源WBINT-04／A04仅T14与T16子项完成，T15未开始 |
+| T14 / #69 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69#issuecomment-6056575947)及[七项验收、合同与原报告](execution/t14.md)已核对；来源WBINT-04／A04仅T14与T16子项完成，T15已领取但未完成 |
 | T14集成与业务证据 | `3f3df0819b5b4bcdd616dfc75f3472afa697e1be`安全快进；真实干净被测祖先`103290505b047d39808ea1ca538439d0dd1fde95`的NoPG3、边界HTTP3、自有HTTP8、原生相关12、正式production8共34项通过；原层全部到达，当前production报告没有新PNG |
 | T14工具与对象差异 | 真祖先`d66720e52de6081701fc4c146a51d94565f552ce`一次build／strict／artifact、hosts18、retired1及9项声明／资源映射通过；原947输入仅hosts源码一变，946原字节不变、1028运行输出全部映射／SHA相同；最终两Markdown后继完整947输入相等，原业务与工具身份分别保留 |
 | T14证据与资源 | 两对象ignored制品各1579文件均逐length／SHA-256外部归档并由父独立核对；原RED／FAIL／NOT_REACHED／afterartifact NOT_RUN保留。自有PG／HTTP／browser／池归零，用户资料与独立PG保持；managed工作树清理按实际归档状态记录 |
 | T17 / #72 | 实读完整正文、空评论、ready标签及无原assignee；原生blocker #69已CLOSED，领取给peterkis，基于当前integration实施电话／现场代录。实际报修人与操作主体分开，未核实身份不猜消息收件人；T18／T19未开始 |
+| T10 / #65 | 实读完整正文、空评论、ready标签及无原assignee；原生blockers #58／#59已CLOSED，领取给peterkis，基于当前integration独立准备等待、恢复和合法取消。当前仅合同与公开测试准备，尚未验收 |
+| T15 / #70 | 2026-10-09 实读完整正文、空评论、ready标签及原无assignee；原生blockers #60／#69已CLOSED，领取给peterkis，从真实integration `7253910` 建立独立工作树准备原子确认并开始。当前未验证、未集成，不推进A04整组验收 |
 | T06／T22／T24／T27／T38 | 继续独立实施与按实际依赖集成；build及PG／HTTP／browser使用串行窗口，原分段结果保持真实对象，片段通过不标整票完成 |
 
 能力默认关闭；未push、部署、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。用户两份dirty文档、四附件、index、HTTPS和分支保持。
