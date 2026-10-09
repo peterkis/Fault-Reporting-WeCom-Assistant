@@ -6,6 +6,7 @@ import type {P2016RuntimeOptions,P2016EnabledRuntime} from '../../src/p2-016-run
 import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
 import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
+import type {PilotRole} from '../../src/p1-009-pilot-access-workbench.mjs';
 import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {assertLocalDateTime} from '../../src/platform/time-contract.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harness.mjs';
@@ -25,7 +26,8 @@ export async function withT08Fixture(run:(fixture:T08Fixture)=>Promise<void>,opt
   await applyThrough030(context);const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
   await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});if(options.migration!==false)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool:context.pool});
-  const members=await Promise.all([['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']].map((roles,index)=>access.upsertPrincipal({wecomUserId:'t08-slice-'+index+'-'+randomUUID(),displayName:'T08 合成内部人员 '+index,roles,resolverTeamIds:['PILOT_IT']})));
+  const roleSets:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
+  const members=await Promise.all(roleSets.map((roles,index)=>access.upsertPrincipal({wecomUserId:'t08-slice-'+index+'-'+randomUUID(),displayName:'T08 合成内部人员 '+index,roles,resolverTeamIds:['PILOT_IT']})));
   const admin=members[0],dispatcher=members[1],handler=members[2],otherHandler=members[3];assert.ok(admin&&dispatcher&&handler&&otherHandler);
   const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address!=='string');await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
   const port=address.port,origin='http://127.0.0.1:'+port;
