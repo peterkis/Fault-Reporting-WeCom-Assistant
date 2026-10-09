@@ -11,7 +11,7 @@ test('the real enabled public Ticket detail remains covered by the closed publis
 });
 test('closed assignment normalization preserves explicit intent and enforces exact versions and bounded unique selections',()=>{
  const input={action:'assign',ticket_id:randomUUID(),client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_ASSIGN',target_principal_id:randomUUID(),resolver_team_id:'PILOT_IT',communication_choice:'TRANSFER_SELECTED',sessions:[{session_id:randomUUID(),expected_row_version:1}]};
- const normalized=normalizeTicketAssignmentCommand(input);assert.deepEqual(normalized,input);input.sessions[0]!.expected_row_version=9;assert.equal(normalized.sessions[0]?.expected_row_version,1);assert.equal(Object.isFrozen(normalized.sessions[0]),true);
+ const normalized=normalizeTicketAssignmentCommand(input);assert.deepEqual(normalized,input);const original=input.sessions[0];assert.ok(original);original.expected_row_version=9;assert.equal(normalized.sessions[0]?.expected_row_version,1);assert.equal(Object.isFrozen(normalized.sessions[0]),true);
  for(const invalid of [{...input,external_visible:true},{...input,expected_version:'2'},{...input,expected_version:0},{...input,communication_choice:'RETAIN_CURRENT'},{...input,sessions:[]},{...input,sessions:[normalized.sessions[0],normalized.sessions[0]]},{...input,sessions:Array.from({length:9},()=>({session_id:randomUUID(),expected_row_version:1}))}])assert.throws(()=>normalizeTicketAssignmentCommand(invalid),{code:'P2_016_INPUT_INVALID'});
 });
 test('assignment policy advertises lawful ownership actions without implying acceptance or granting nonworker roles',()=>{
