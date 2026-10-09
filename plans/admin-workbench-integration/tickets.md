@@ -116,6 +116,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-05 / A05
 
 - [ ] **T20** — [#75 Web原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #66 CLOSED，领取给peterkis；独立准备原Web报修人反馈与同轮重开合同，尚未验证。
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-06 / A06
 
@@ -174,6 +175,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-11 / A11
 
 - [ ] **T34** — [#89 明确关注并查看与我有关](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)
+  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #60 CLOSED，领取给peterkis；独立准备明确关注与获权责任并集合同，尚未验证。
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)
   - **来源：** WBINT-12 / A12
 
