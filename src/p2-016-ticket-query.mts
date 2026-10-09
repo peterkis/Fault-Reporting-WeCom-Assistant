@@ -193,7 +193,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         resolver_team_id:ticket.resolver_team_id,resolver_team_name:owner.rows[0]?.team_name??null,conversations:q.rows});
     },
     async authorizedRelatedConversation({authContext,ticketId,sessionId,transaction=pool,lock=false}:TicketQueryInput&{sessionId:string}){
-      guardP2016(ticketConversationSelfHandlingEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled);
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId,transaction});
       const q=await transaction.query<RelatedConversationRow>(`SELECT ${relatedFields} FROM conversation.session s
         LEFT JOIN conversation.assignment a ON a.session_id=s.id LEFT JOIN pilot_ticket.pilot_principal p ON p.id=a.assigned_principal_id
