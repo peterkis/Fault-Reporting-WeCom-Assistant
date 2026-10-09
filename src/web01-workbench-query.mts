@@ -5,12 +5,14 @@ import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016, uuidP2016, localP2016, limitP2016, cursorP2016, decodeCursorP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
 import {sourceLabel} from './workbench-source-groups.mjs';
 import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
+import type {ReviewReference} from '../contracts/workbench_review_contracts.js';
+import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
 const STATUS_COLUMNS = {
   pending: ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'],
   active: ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'],
-  closed: ['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'],
+  closed: ['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED'],
 } as const;
 export function boardColumn(status: string): BoardColumn {
   for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
@@ -83,7 +85,7 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualReviewEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;manualReviewEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
   async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }
   async function range(mode: CompletionRange): Promise<BoardPage['range']> {
     const r=await pool.query<{from:string;until:string}>(`SELECT
@@ -95,7 +97,25 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
     if(!['ticket','review','intake'].includes(kind))failP2016('NOT_FOUND',404);
     const authorized=await scope(authContext);
     const r=await pool.query<CardRow>(CARD_SQL+' SELECT * FROM cards WHERE kind=$4 AND id=$5', [...authorized.values,kind,uuidP2016(id)]);
-    const row=r.rows[0];if(!row)failP2016('NOT_FOUND',404);
+    let row=r.rows[0];
+    if(!row&&manualReviewEnabled&&reviews&&kind==='review'){
+      const canonical=await reviews.canonicalItem({authContext,reviewId:uuidP2016(id)});
+      if(canonical.kind!==kind||canonical.id!==id)return item(authContext,canonical.kind,canonical.id);
+    }
+    if(!row&&manualReviewEnabled&&kind==='intake'&&authorized.values[0]===true){
+      const retained=await pool.query<CardRow>(`SELECT 'intake'::text AS kind,i.id::text,i.id::text AS intake_id,i.intake_no AS number,
+        COALESCE(NULLIF(i.summary,''),'未提供报修描述') AS title,i.status,NULL::text AS priority,i.reported_location_text AS location,
+        NULL::text AS reporter_name,i.source_channel AS source,NULL::text AS assignee_name,NULL::text AS review_reason,
+        to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+        NULL::text AS completed_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at
+        FROM intake.service_intake i WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
+          AND i.status IN ('COMPLETED','IGNORED')
+          AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id OR t.id=i.pilot_ticket_id)
+          AND NOT EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
+            JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)`,[uuidP2016(id)]);
+      row=retained.rows[0];
+    }
+    if(!row)failP2016('NOT_FOUND',404);
     const selected=card(row);return sourceGroups?(await sourceGroups.decorate([selected]))[0]??selected:selected;
   }
   return Object.freeze({
@@ -129,7 +149,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
     async detail({authContext,kind,id,cursor,limit}: {authContext:unknown;kind:string;id:unknown;cursor:unknown;limit:unknown}): Promise<WorkbenchDetail> {
       const selected=await item(authContext,kind,id),n=limitP2016(limit??'50');
       const page=cursor?decodeCursorP2016(cursor,['kind','id','at','record_id']):null;
-      if(page&&(page.kind!==kind||page.id!==selected.id))failP2016('CURSOR_INVALID');
+      if(page&&(page.kind!==kind||page.id!==uuidP2016(id)))failP2016('CURSOR_INVALID');
       const at=page?localP2016(page.at):null,recordId=page?.record_id??null;
       if(page&&(typeof recordId!=='string'||recordId.length>100))failP2016('CURSOR_INVALID');
       // Known safe report text, not raw frames, identity tokens, arbitrary payloads or delivery metadata.
@@ -172,18 +192,33 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
         WHERE $2='intake' AND e.intake_id=$1::uuid
         ${webRecords}
       ) SELECT * FROM records WHERE ($4::text IS NULL OR (at,id)<($4::text,$5::text))
-        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,kind,selected.id,at,recordId,n+1]);
+        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1]);
       const items=records.rows.slice(0,n),last=items.at(-1);
       // The legacy responsibility view retains history. Filter current ownership
       // before its bounded result, without changing historical assignment facts.
-      const responsibility=kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id,currentConversationsOnly:true}):null;
+      const responsibility=selected.kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id,currentConversationsOnly:true}):null;
       const names: string[]=[];
       if(responsibility&&Array.isArray(responsibility.conversations))for(const conversation of responsibility.conversations){
         if(typeof conversation.conversation_principal_name==='string')names.push(conversation.conversation_principal_name);
       }
+      let reviewRefs:ReviewReference[]|undefined;
+      if(manualReviewEnabled){
+        const authorized=await scope(authContext);
+        const refs=await pool.query<ReviewReference>(`SELECT r.id::text,r.status,r.row_version::text FROM intake.manual_review_item r
+          JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
+          JOIN intake.service_intake i ON i.id=r.service_intake_id
+          WHERE ($4='ticket' AND (r.service_intake_id=$5::uuid OR r.linked_ticket_id=$6::uuid OR j.linked_ticket_id=$6::uuid)
+            OR $4<>'ticket' AND r.service_intake_id=$5::uuid)
+            AND ${authorized.sql} AND i.retention_until>platform.local_now()
+            AND j.retention_until_epoch_ms>platform.physical_epoch_ms() ORDER BY r.created_at,r.id LIMIT 101`,
+        [...authorized.values,selected.kind,selected.intake_id,selected.id]);
+        if(refs.rows.length>100)failP2016('REVIEW_SCOPE_TOO_LARGE',503);
+        reviewRefs=refs.rows;
+      }
       return publicP2016({item:selected,description:report.rows[0]?.summary??null,records:items,
-        next_cursor:records.rows.length>n&&last?cursorP2016({kind,id:selected.id,at:last.at,record_id:last.id}):null,
-        responsibility:{ticket_assignee_name:selected.assignee_name,conversation_assignees:[...new Set(names)]}});
+        next_cursor:records.rows.length>n&&last?cursorP2016({kind,id:uuidP2016(id),at:last.at,record_id:last.id}):null,
+        responsibility:{ticket_assignee_name:selected.assignee_name,conversation_assignees:[...new Set(names)]},...(reviewRefs?{review_refs:reviewRefs}:{}),
+        ...(selected.kind!==kind||selected.id!==id?{requested_item:{kind:kind as WorkbenchCard['kind'],id:uuidP2016(id)}}:{})});
     },
   });
 }

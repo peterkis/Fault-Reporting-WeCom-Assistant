@@ -34,6 +34,12 @@ export async function createYxxBrowserFixture({pool,createApp=null,startApp=list
       }
       if(failTimeline&&url.pathname.endsWith('/timeline')){failTimeline=false;response.writeHead(503,{'content-type':'application/json'});response.end('{"error":{"code":"YXX_ENTRY_UNAVAILABLE"}}');return;}
       const outgoing=httpRequest(base+request.url,{method:request.method,headers:{...request.headers,host:new URL(origin).host}},incoming=>{
+        if(incoming.headers['content-type']?.split(';',1)[0]==='text/event-stream'){
+          response.once('close',()=>{incoming.destroy();outgoing.destroy();});
+          incoming.once('error',()=>response.destroy());incoming.once('aborted',()=>response.destroy());
+          if(response.destroyed){incoming.destroy();outgoing.destroy();return;}
+          response.writeHead(incoming.statusCode,incoming.headers);response.flushHeaders();incoming.pipe(response);return;
+        }
         const chunks=[];incoming.on('data',chunk=>chunks.push(chunk));incoming.on('end',()=>{
           const send=()=>{const headers={...incoming.headers};
             if(headers.location?.startsWith('https://open.weixin.qq.com/')){

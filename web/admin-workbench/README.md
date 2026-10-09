@@ -54,6 +54,8 @@ UNKNOWN持久化不可变原UUID／版本／正文后，刷新／误关可恢复
 
 ## 开发与关闭
 
+WBINT-T38通过 `workbenchRealtimeEnabled=false` 默认关闭的单适配器消费真实授权SSE提示，只使当前主体已挂载活动Query重读。原生Last-Event-ID、gap/容量回退和5秒非重叠周期沿 [实时合同](../../docs/api/platform/realtime.md#正式管理端接入wbint-t38)。输入、焦点、滚动与当前操作对象保持，可信失权优先清除显示与本地scope；暂时REST错误保留最后确认数据并阻止新prepare，原UNKNOWN只由用户核对。SSE单独失败且REST健康仍允许人工写，事件不自动POST或覆盖状态。关闭不创建新的流/轮询；无数据库迁移、新进程/池、presence或音效。实际源/制品、真实流与清理结果见 [本票执行](../../plans/admin-workbench-integration/execution/t38.md)。
+
 `npm --prefix web/admin-workbench run dev` 仅绑定 loopback 5194，代理 `/api` 至 loopback 5195；开发者须单独启动已有、获授权的开发 HTTP 服务。生产截图和接入验证不使用 Vite dev/preview。
 
 正式入口沿现有 Workbench 功能开关与认证链启用；默认开关保持关闭。撤销会话/停用内部 principal 后页面和 API 均拒绝读取。回滚以独立 revert/后继 PR 撤销 WEB01 接入；本轮没有数据库迁移或待回滚的新事实表。不得恢复现场档案作为演示数据。
