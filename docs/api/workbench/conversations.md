@@ -117,3 +117,5 @@ POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie
 
 关闭新workspace选项可回退，保留已提交的Control/Communication/Delivery事实与旧获权profile。源码：[workspace](../../../src/workbench-conversations.mts)、[production UI](../../../web/admin-workbench/src/features/conversations/Conversations.tsx)、[types](../../../contracts/workbench_conversation_workspace_contracts.d.ts)。当前实际测试与精确候选/资源证据见 [T22执行记录](../../../plans/admin-workbench-integration/execution/t22.md)；不代表真实服务发送、部署或Gate批准。
 
+2026-10-10 本地整票验证的实际源码为 `06f3c880c6d759497eb68f44a8865a3c45d1fff3`，制品 manifest `7f7766c7eb05f675d7cd88028e18169034886de3bc013b17214e34a1fa7f5277`。原九文件22项、相关既有14文件46项和有限工具保护原生27/18/1项均通过；回复终态使用隔离PG与明确的合成Sender Port，实际SSE及当前授权GET来自生产bundle/真实loopback HTTP。默认关闭、单一事实源及停止线保持。此文档后继只记录原结果，不重建或重绑被测源码；完整原报告、失败与资源清理指针见执行记录。
+
