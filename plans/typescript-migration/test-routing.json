@@ -5,6 +5,7 @@
   "legacy_entry_count": 207,
   "entries": [
     {"path":"tests/t06-assignment-targets.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t06-assignment.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t06-transfer.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t06-assignment.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/wbint-t38-gap.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -354,6 +355,7 @@
     ],
     "v3-p09": [
       "tests/t06-assignment-targets.integration.test.mts",
+      "tests/t06-assignment.browser.test.mts",
       "tests/t06-transfer.integration.test.mts",
       "tests/t06-assignment.integration.test.mts",
         "tests/wbint-t14-review.test.mts",
