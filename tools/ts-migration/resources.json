@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/yxx_self_service_feedback_contracts.d.ts",
+    "contracts/yxx_self_service_feedback_command.schema.json",
+    "contracts/yxx_self_service_feedback_context.schema.json",
+    "contracts/yxx_self_service_feedback_result.schema.json",
+    "contracts/yxx_self_service_feedback_receipt.schema.json",
     "contracts/workbench_realtime_contracts.d.ts",
     "contracts/workbench_review_contracts.d.ts",
     "contracts/workbench_review_material_basis.schema.json",

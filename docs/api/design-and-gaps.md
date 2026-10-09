@@ -53,3 +53,5 @@
 `contracts/yxx_self_service.openapi.yaml` 是成员业务的较完整闭合合同；`conversation_center.openapi.yaml` 混合领域与工作台API，须核对真实handler。部分内部查询（事件、联系资料、Incident子查询）返回专门SQL投影，并不直接返回同名持久化Schema的完整row。模块文档列出实际返回字段，链接Schema/类型用于进一步核对，不能把内部数据库字段全量序列化给前端。
 
 后续若确认真实契约缺陷，应先按已有ADR/任务授权修正对应合同和实现、添加针对风险的验证，再同步本目录。本轮没有为这些差异新建候选、改Gate或运行full/certify。
+
+2026-10-09 WBINT-T20已准备[Web明确未解决反馈候选](member/web-feedback-design.md)：精确Web来源、原本人绑定、当前写profile、合法完工cycle、Ticket版本、同轮防重和只读原命令恢复。状态SOURCE_READY，043仅预留、当前未挂载，原公开RED源码仅登记且NOT_RUN；不是成员反馈已实现，也不变更只读/OAuth-only/SS011边界。

@@ -86,6 +86,8 @@ Web请求display_status=`RECEIVED_PROCESSING|WAITING_FOR_DETAILS|UNDER_REVIEW|TI
 
 完整契约：[OpenAPI](../../../contracts/yxx_self_service.openapi.yaml)、[types](../../../contracts/yxx_self_service_contracts.d.ts)、[request](../../../contracts/yxx_self_service_request.schema.json)、[supplement](../../../contracts/yxx_self_service_supplement.schema.json)、[receipt](../../../contracts/yxx_self_service_receipt.schema.json)、[detail](../../../contracts/yxx_self_service_request_detail.schema.json)、[list](../../../contracts/yxx_self_service_report_page.schema.json)、[timeline](../../../contracts/yxx_self_service_timeline.schema.json)、[bootstrap](../../../contracts/yxx_self_service_bootstrap.schema.json)、[catalog](../../../contracts/yxx_self_service_service_catalog.schema.json)。[契约冻结说明](../../runbooks/yixiaoxiu-self-service-contract-freeze.md)。
 
+WBINT-T20 的[Web明确未解决反馈合同](web-feedback-design.md)已准备SOURCE候选，包含原来源/当前profile/合法完工轮次/Ticket版本、同轮语义防重、原命令只读恢复和043前向迁移提案；**反馈handler、上下文与UI尚未实现，全部验证NOT_RUN**。它不进入本页现有REST清单，不改变原supplement或readonly/OAuth-only/SS011边界。
+
 核对：[native错误](../../../tests/yxx-ss-007-native-http-errors.test.mjs)、[HTTP恢复](../../../tests/yxx-ss-009-http-recovery.integration.test.mjs)、[目录](../../../tests/yxx-ss-009-catalog.integration.test.mjs)、[runtime](../../../tests/yxx-ss-010-runtime.integration.test.mjs)。成员轮询为有界5秒节奏，无SSE；数据库/外发/现场批准另查原运行契约。本轮未启动这些操作。
 
 

@@ -193,6 +193,8 @@
 | POST | `/internal/v1/messages/{messageId}/media` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
 | POST | `/internal/v1/ai/triage` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
 | POST | `/internal/v1/wecom/card-actions` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
+| POST | `/api/yixiaoxiu/requests/{requestRef}/feedback` | WBINT-T20候选合同SOURCE_READY，未挂载／未验证 | [Web反馈候选](member/web-feedback-design.md) |
+| GET | `/api/yixiaoxiu/requests/{requestRef}/feedback/commands/{clientCommandId}` | WBINT-T20原命令只读恢复候选，未挂载／未验证 | [Web反馈候选](member/web-feedback-design.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/accept` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/start` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/request-information` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
