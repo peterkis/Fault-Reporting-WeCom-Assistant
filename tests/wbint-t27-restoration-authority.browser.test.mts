@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {randomUUID} from 'node:crypto';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
 
 test('T27 a delayed independent restoration authorization cannot replace a newer same-principal public authority or restore its old privileged input',async()=>{
- await candidateBrowser({purpose:'t27restoreauth',recovery:true},async({pool,f,candidateId,browser,root,server,choose})=>{
+ await candidateBrowser({purpose:'t27restauth',recovery:true,setup:async({pool,f,candidateId})=>{assert.equal((await createP2012IncidentCommandService({pool,enabled:true}).perform({authContext:{principal_id:text(record(f.admin).id)},command:{action:'START_REVIEW',candidate_review_id:candidateId,expected_row_version:'1',client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED'}})).ok,true);}},async({pool,f,candidateId,browser,root,server,choose})=>{
   await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.innerText.includes('最长24小时')`);await choose('人工决定','CONFIRM_INCIDENT');await choose('决定原因','CONFIRMED_SHARED_FAULT');await choose('确认范围','HOSPITAL_WIDE');await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.innerText.includes('已保存恢复副本')`);const before=record(await browser.evaluate(candidateCopies));assert.ok(Array.isArray(before.drafts)&&before.drafts.length===1);
   let reads=0,held:Record<string,unknown>|undefined,current:Record<string,unknown>|undefined,release:(()=>void)|undefined;
   const observe=(request:IncomingMessage,response:ServerResponse)=>{if(request.method!=='GET'||request.url!=='/api/incident-candidates/'+candidateId)return;const index=++reads,end=response.end;response.end=(...args:unknown[])=>{if(response.statusCode===200){const raw=args[0];assert.ok(typeof raw==='string'||Buffer.isBuffer(raw));const body=record(JSON.parse(typeof raw==='string'?raw:raw.toString()));if(index===2){held=body;release=()=>{Reflect.apply(end,response,args);};return response;}if(index>2)current=body;}Reflect.apply(end,response,args);return response;};};
