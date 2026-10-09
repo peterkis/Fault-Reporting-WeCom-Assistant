@@ -100,3 +100,9 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 直接成功 ACK、明确稳定 FAILED，以及 COMMITTED/FAILED 回执均结算恢复记录。浏览器清理失败不能把已知结果变成 UNKNOWN；保留已知结果与原 UUID，禁止新提交，只能只读核对及重试清理。当前授权 epoch 和原请求撤销状态共同阻止迟到读取、恢复授权及错误回调恢复已清理的缓存、输入或 UNKNOWN。权限变化后仍需当前 bootstrap 和当前资源读取，旧 ADMIN 响应不能复活受保护投影。
 
 资源复用原 App/Worker/Gateway和单条 SSE（默认32客户端），应用池预算不超过8；确认 body沿原32KiB、Report100/owner100/各组20及材料101上限。关闭新宿主能力停止入口、恢复与专用回执，已提交事实及旧 API 保留；外发开关与独立现场授权保持原边界。当前隔离 PostgreSQL、真实 loopback HTTP、production bundle 与清理证据见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)，不等同于真实外部服务、发送、部署、full/certify或Gate批准。
+
+## 公共故障跟进接入准备（WBINT-T28）
+
+[T28合同和原七项验证计划](../../../plans/admin-workbench-integration/execution/t28.md)已按实际十个POST冻结。当前React详情仍为T27只读结果；跟进UI和本票业务验证尚未完成。首个[生产bundle调查tracer](../../../tests/wbint-t28-investigating.browser.test.mts)通过真实候选HTTP确认独立Incident，再验证显式开始调查、精确父版本及个人Ticket／责任／事件不变，当前为NOT_RUN。此准备不改变上表现有接口、032数据库、默认关闭或已有证据。
+
+T28所需拟议 `GET /api/incidents/{incidentId}/commands/{commandId}` 是 **PROPOSED_PATH／NOT_IMPLEMENTED**；当前候选专用回执不能核对Incident命令。必要恢复入口须在真实RED后沿原ledger及当前Incident读取权限实现／验证，再同步路径索引。Report／Subscription／events／通知读取沿当前安全投影和独立cursor，页数不能冒充关联总数；Incident owner不产生新的管理权，公共恢复／关闭不关闭个人Ticket。
