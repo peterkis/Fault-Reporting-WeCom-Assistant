@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_manual_report_command.schema.json",
+  "title":"Authenticated staff unverified telephone or on-site report",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","client_command_id","source","description","location","reporter"],
+  "properties":{
+    "schema_version":{"const":1},"client_command_id":{"type":"string","format":"uuid"},
+    "source":{"enum":["PHONE","ON_SITE"]},"description":{"type":"string","minLength":1,"maxLength":4000},
+    "location":{"anyOf":[
+      {"type":"object","additionalProperties":false,"required":["text","unknown"],"properties":{"unknown":{"const":true},"text":{"type":"null"}}},
+      {"type":"object","additionalProperties":false,"required":["text","unknown"],"properties":{"unknown":{"const":false},"text":{"type":"string","minLength":1,"maxLength":200}}}
+    ]},
+    "reporter":{"type":"object","additionalProperties":false,"required":["verification","name","contact","department"],"properties":{
+      "verification":{"const":"UNVERIFIED"},"name":{"type":"string","minLength":1,"maxLength":100},"contact":{"type":"string","minLength":1,"maxLength":100},
+      "department":{"anyOf":[{"type":"null"},{"type":"string","minLength":1,"maxLength":100}]}
+    }}
+  }
+}

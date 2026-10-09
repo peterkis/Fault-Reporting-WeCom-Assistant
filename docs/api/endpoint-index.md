@@ -27,6 +27,9 @@
 | CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| MR01 | POST | `/api/workbench/reports` | W | T17已挂载、默认关闭；电话／现场未核实Reporter代录，原HTTP1 GREEN；T18／T19未实现 | [代录报修](workbench/manual-reports.md) |
+| MR02 | GET | `/api/workbench/reports/capabilities` | W | T17当前创建权限及恢复配置；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
+| MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | T17原主体／用途同账本只读UNKNOWN/FAILED/COMMITTED，另需恢复开关；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |
