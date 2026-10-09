@@ -42,4 +42,6 @@ Accept: application/json
 
 基础接口核对：[unit](../../../tests/web01-workbench.test.mts)、[integration](../../../tests/web01-workbench.integration.test.mjs)、[browser](../../../tests/web01-workbench.browser.test.mjs)。本票增量如下。
 
+WBINT-T34 的[关注／与我有关合同](follow-design.md)目前为 SOURCE_READY／NOT_RUN；`scope=related`及显式follow写命令尚未挂载。现接口仍只接受上述原query，不能把该合同当作生产能力或提前实现个人已读／团队跟进。
+
 WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:string}]`，每项独立Journey/保留期授权。Review发生合法canonical转换时响应可增加 `requested_item:{kind:'review',id}`，实际item和活动来自当前有权Ticket/Review/Intake，cursor仍绑定请求；客户端只接受准确原请求的Review alias。相同关联Ticket不重复计卡片；多个材料版本明确选择，刷新不静默改选或丢失输入。正式600px详情/全页展示原原因、缺失与冲突、安全材料和当前支持/不支持结论；React按文本呈现。默认关闭、无DB变更及实际证据见[本票记录](../../../plans/admin-workbench-integration/execution/t14.md)。

@@ -200,6 +200,8 @@
 | POST | `/api/v1/tickets/{ticketId}/actions/confirm` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/reopen` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | GET | `/metrics` | 早期设计示例，未挂载 | [当前health/metrics](platform/auth-health.md) |
+| GET | `/api/workbench/board?scope=related` | T34实施前query合同，尚未挂载；现board原query不变 | [关注设计](workbench/follow-design.md) |
+| POST | `/api/workbench/items/{kind}/{id}/follow` | T34实施前合同，尚未挂载；044仅预留，默认关闭目标 | [关注设计](workbench/follow-design.md) |
 
 后端外部Provider的完整URL见 [外部服务索引](integrations/external-services.md)，群内 @Bot 的 `aibot_msg_callback`、chatid及群名称实测见 [WebSocket消息回调](integrations/wecom-message-callback.md)，无REST的Port/事件见 [内部接口索引](integrations/internal-ports.md)。模拟预览和设计不计为当前业务接口。
 

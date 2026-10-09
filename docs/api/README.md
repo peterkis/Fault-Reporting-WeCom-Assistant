@@ -17,6 +17,7 @@
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
+| 明确关注及“与我有关”的实施前合同（尚未挂载） | [T34 关注设计](workbench/follow-design.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
 | 完整人工工作台怎样分批接入、有哪些后端缺口 | [实施计划](../../plans/admin-workbench-integration/README.md)／[能力映射](../../plans/admin-workbench-integration/capability-map.md)；其中候选路径尚未挂载 |
 | 管理员检索／分页维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
