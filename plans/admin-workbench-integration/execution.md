@@ -13,9 +13,9 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-09，T38收口与T39领取）
+## 当前执行状态导航（2026-10-09，T17收口与T18／T19领取）
 
-父任务已核对并关闭10／43票：T01／T02／T03／T04／T05／T11／T14／T16／T23／T38。以下关闭与领取已从GitHub读回；后续票继续按原生依赖，不以片段PASS代替整票。
+父任务已核对并关闭11／43票：T01／T02／T03／T04／T05／T11／T14／T16／T17／T23／T38。以下关闭与领取已从GitHub读回；后续票继续按原生依赖，不以片段PASS代替整票。
 
 | 任务／对象 | 当前状态与证据 |
 | --- | --- |
@@ -39,7 +39,10 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 | T14集成与业务证据 | `3f3df0819b5b4bcdd616dfc75f3472afa697e1be`安全快进；真实干净被测祖先`103290505b047d39808ea1ca538439d0dd1fde95`的NoPG3、边界HTTP3、自有HTTP8、原生相关12、正式production8共34项通过；原层全部到达，当前production报告没有新PNG |
 | T14工具与对象差异 | 真祖先`d66720e52de6081701fc4c146a51d94565f552ce`一次build／strict／artifact、hosts18、retired1及9项声明／资源映射通过；原947输入仅hosts源码一变，946原字节不变、1028运行输出全部映射／SHA相同；最终两Markdown后继完整947输入相等，原业务与工具身份分别保留 |
 | T14证据与资源 | 两对象ignored制品各1579文件均逐length／SHA-256外部归档并由父独立核对；原RED／FAIL／NOT_REACHED／afterartifact NOT_RUN保留。自有PG／HTTP／browser／池归零，用户资料与独立PG保持；managed工作树清理按实际归档状态记录 |
-| T17 / #72 | 实读完整正文、空评论、ready标签及无原assignee；原生blocker #69已CLOSED，领取给peterkis，基于当前integration实施电话／现场代录。实际报修人与操作主体分开，未核实身份不猜消息收件人；T18／T19未开始 |
+| T17 / #72 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72#issuecomment-6077295469)及[七项验收](execution/t17.md)已核对。电话／现场实际Reporter与代录主体分别保存；正式表单、未核实提示和MANUAL复核已接入，默认关闭 |
+| T17集成与证据 | `1828b60eb6b286dba06c08e7535810cdfdb1aa17`已受控快进，真实被测祖先`9e18a003a387e062a214e85490204e4f7043ebf4`的风险7、必要工具18＋retired1通过。生产表单、撤权、COMMIT后不可读响应／刷新／24h／GET-only及复核兼容均按原祖先保留；985输入、1087输出与1688完整制品逐SHA核对，无重绑或泛称一次全量回归 |
+| T17资源与边界 | 自有PG／后端／池／浏览器归零，完整制品、原source ZIP和失败报告已外部归档；内层预期失败与外包装误读仍保留。历史SQL未改，仅042新增。两份用户dirty文档、四附件与空index合入前后相等；未push、部署、真实外部发送、full／certify或Gate推进 |
+| T18 / #73；T19 / #74 | 实读完整正文／评论／标签及原生依赖，所需#72／#59均CLOSED后领取给peterkis；分别准备核实成员与同事务代录开始合同，当前无运行验收；A05整组仍IN_PROGRESS |
 | T10 / #65 | 实读完整正文、空评论、ready标签及无原assignee；原生blockers #58／#59已CLOSED，领取给peterkis，基于当前integration独立准备等待、恢复和合法取消。当前仅合同与公开测试准备，尚未验收 |
 | T15 / #70 | 2026-10-09 实读完整正文、空评论、ready标签及原无assignee；原生blockers #60／#69已CLOSED，领取给peterkis，从真实integration `7253910` 建立独立工作树准备原子确认并开始。当前未验证、未集成，不推进A04整组验收 |
 | T06／T22／T24／T27／T38 | 继续独立实施与按实际依赖集成；build及PG／HTTP／browser使用串行窗口，原分段结果保持真实对象，片段通过不标整票完成 |
