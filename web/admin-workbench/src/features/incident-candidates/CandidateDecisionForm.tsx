@@ -46,9 +46,9 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   };
   const mutation=useMutation({mutationKey:['incident-candidate-command',principal.principal_id,detail.id],
     mutationFn:({operation,signal,csrfToken}:{operation:CandidateOperation;snapshot:string;signal:AbortSignal;csrfToken:string|null})=>candidateApi.perform(operation,csrfToken,signal),
-    onSuccess:(result,variables)=>applyCommit(result,variables.snapshot),
-    onError:(error,variables)=>{
-      if(error instanceof CandidateCommandRefusal){setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error));refresh();}
+    onSuccess:async(result,variables)=>{const cleaned=await draft.success(variables.operation.body.client_command_id,JSON.stringify(latest.current)!==variables.snapshot);applyCommit(result,variables.snapshot);if(!cleaned)setMessage((result.result_ref_type==='INCIDENT'?'公共故障已确认':'候选决定已提交')+'；恢复副本清理失败，原 UUID 已保留，禁止新提交，请只读核对。');},
+    onError:async(error,variables)=>{
+      if(error instanceof CandidateCommandRefusal){let cleaned=true;try{await draft.knownFailure(variables.operation.body.client_command_id);}catch{cleaned=false;}setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error)+(cleaned?'':' 恢复副本清理失败，原 UUID 已保留，禁止新提交，请只读核对。'));refresh();}
       else if(error instanceof ApiError&&[401,403,404].includes(error.status)){setState('denied');setMessage('当前操作权限已变化，请重新核对。');refresh();}
       else{setPending(variables.operation);setState('unknown');setMessage('结果未知：原 UUID、版本、材料依据和正文保持不变，请先只读核对。');}
     },onSettled:()=>{request.current=null;}});
