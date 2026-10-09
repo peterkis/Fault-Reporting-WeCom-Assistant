@@ -27,7 +27,7 @@ test('one real stream refreshes conversation families and exact Delivery while p
   const requests:{path:string;method:string;browser:boolean}[]=[],events:string[]=[];
   runtime.server.on('request',(request,response)=>{
    const path=new URL(request.url??'/',f.origin).pathname;requests.push({path,method:request.method??'',browser:typeof request.headers['sec-fetch-site']==='string'});
-   if(path==='/api/realtime/events'){const write=response.write;response.write=(...args:Parameters<typeof response.write>)=>{const text=String(args[0]);for(const name of ['conversation.assigned','conversation.item.created','communication.delivery.changed'])if(text.includes('event: '+name))events.push(name);return Reflect.apply(write,response,args);};}
+   if(path==='/api/realtime/events'){const write=response.write;response.write=(chunk:unknown,...args:unknown[]):boolean=>{const text=String(chunk);for(const name of ['conversation.assigned','conversation.item.created','communication.delivery.changed'])if(text.includes('event: '+name))events.push(name);return Reflect.apply(write,response,[chunk,...args]);};}
    if(request.method==='GET'&&path.startsWith('/api/workbench/conversations')){const end=response.end;response.end=(...args:unknown[])=>{Reflect.apply(end,response,unreadable?['{']:args);return response;};}
    if(request.method==='POST'&&path.endsWith('/messages')){const end=response.end;response.end=(...args:unknown[])=>{if(loseReply&&response.statusCode===202){loseReply=false;request.socket.destroy();return response;}Reflect.apply(end,response,args);return response;};}
   });
