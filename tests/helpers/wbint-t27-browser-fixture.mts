@@ -17,7 +17,7 @@ export function text(value:unknown):string{assert.equal(typeof value,'string');i
 type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
 export interface Setup {pool:PostgresPool;f:Fixture;candidateId:string}
 export interface Context extends Setup {browser:Browser;root:string;origin:string;server:Server;started:Record<string,unknown>;choose:(label:string,value:string)=>Promise<void>;capture:()=>Promise<void>}
-export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;reporters?:number;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
+export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;reporters?:number;observeHistory?:boolean;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:options.purpose,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     const migrationInput={databaseUrl,mode:'apply'};await applyThrough031({pool,databaseUrl});await migrateP2012(migrationInput);
     const reporters=options.reporters??3;assert.ok(Number.isInteger(reporters)&&reporters>=3&&reporters<=100);const f=await fixtureP2012(pool,{reporters}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
@@ -34,6 +34,7 @@ export async function candidateBrowser(options:{purpose:string;recovery?:boolean
       await browser.waitFor('document.querySelector(".page-title h1")?.textContent==="团队工作台"');
       const bootstrap=record(await browser.evaluate('fetch("/api/lifecycle/bootstrap").then(r=>r.json())'));assert.equal(bootstrap.internal_notes_enabled,false);assert.equal(bootstrap.draft_recovery_enabled,false);assert.equal(bootstrap.logout_enabled,false);assert.equal(bootstrap.incident_candidate_draft_recovery_enabled,(options.workspace??true)&&(options.recovery??false));
       await browser.command('Page.enable');
+      if(options.observeHistory)await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'globalThis.__t27PagePopStates=0;globalThis.__t27HistoryEvents=[];addEventListener("popstate",()=>{globalThis.__t27PagePopStates++;globalThis.__t27HistoryEvents.push({path:location.pathname,idx:history.state?.idx});},{capture:true});'});
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{const send=globalThis.fetch;globalThis.__t27DomainReads=[];globalThis.__t27Posts=[];globalThis.fetch=async(path,options)=>{if(/^\\/api\\/(incident-candidates|incidents)(?:[/?]|$)/.test(String(path)))globalThis.__t27DomainReads.push(String(path));if(options?.method==='POST')globalThis.__t27Posts.push({path:String(path),body:options.body});return send(path,options);};})()"});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/incidents/candidates/'+candidateId});
       await browser.waitFor(options.workspace===false?'document.body.innerText.includes("候选工作区尚未启用")':`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]'))`);

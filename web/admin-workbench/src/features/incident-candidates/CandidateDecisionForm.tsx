@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQueryClient} from '@tanstack/react-query';
-import {Link,useLocation,useNavigate} from 'react-router';
+import {Link} from 'react-router';
 import {api,ApiError,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {candidateApi,CandidateCommandRefusal} from './client';
@@ -17,9 +17,12 @@ const reasonNames={OPERATOR_REVIEWED:'已由工作人员核对',INCORRECT_ASSOCI
 const scopeNames={LOCAL:'局部',BUILDING:'楼宇',CAMPUS:'院区',HOSPITAL_WIDE:'全院'};
 type State='idle'|'submitting'|'checking'|'unknown'|'failed'|'denied'|'committed';
 function refusalMessage(error:ApiError){if(error.code==='P2_012_SOURCE_CONFLICT')return '原材料依据已变化或过期；输入已保留，请核对当前事实。';if(error.code==='P2_012_OWNER_INVALID')return '负责人或责任组已失效；输入已保留，请重新核对。';return errorMessage(error);}
+// Install before BrowserRouter subscribes: its POP must not unmount unsaved input.
+let retainedNavigation:{location:string;state:unknown}|null=null;
+window.addEventListener('popstate',event=>{const retained=retainedNavigation;if(!retained)return;event.stopImmediatePropagation();window.history.pushState(retained.state,'',retained.location);},{capture:true});
 
 export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefresh}:{principal:Principal;detail:CandidateDetail;onBlockedChange:(blocked:boolean)=>void;onRefresh:()=>void}){
-  const client=useQueryClient(),navigate=useNavigate(),route=useLocation(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
+  const client=useQueryClient(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null),[checkedUnknown,setCheckedUnknown]=useState(false);
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('原操作仍未知；请先只读核对原 UUID。');}},
@@ -33,10 +36,10 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   useEffect(()=>{
     if(!navigationBlocked)return;
     const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();};
-    const back=(event:PopStateEvent)=>{event.stopImmediatePropagation();void navigate({pathname:route.pathname,search:route.search,hash:route.hash},{replace:true,state:route.state});};
-    window.addEventListener('beforeunload',warn);window.addEventListener('popstate',back,{capture:true});
-    return()=>{window.removeEventListener('beforeunload',warn);window.removeEventListener('popstate',back,{capture:true});};
-  },[navigationBlocked,navigate,route.pathname,route.search,route.hash,route.state]);
+    const retained={location:window.location.href,state:window.history.state as unknown};retainedNavigation=retained;
+    window.addEventListener('beforeunload',warn);
+    return()=>{window.removeEventListener('beforeunload',warn);if(retainedNavigation===retained)retainedNavigation=null;};
+  },[navigationBlocked]);
   const refresh=()=>{onRefresh();void client.invalidateQueries({queryKey:['incident-candidates',principal.principal_id]});};
   const update=(change:Partial<CandidateDecisionValue>|((current:CandidateDecisionValue)=>Partial<CandidateDecisionValue>))=>setValue(current=>({...current,...(typeof change==='function'?change(current):change),capture:current.capture??{version:detail.row_version,basis:detail.material_basis}}));
   const applyCommit=(result:CandidateCommandResult,snapshot:string)=>{
@@ -47,6 +50,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
     mutationFn:({operation,signal,csrfToken}:{operation:CandidateOperation;snapshot:string;signal:AbortSignal;csrfToken:string|null})=>candidateApi.perform(operation,csrfToken,signal),
     onSuccess:async(result,variables)=>{const cleaned=await draft.success(variables.operation.body.client_command_id,JSON.stringify(latest.current)!==variables.snapshot);applyCommit(result,variables.snapshot);if(!cleaned)setMessage((result.result_ref_type==='INCIDENT'?'公共故障已确认':'候选决定已提交')+'；恢复副本清理失败，原 UUID 已保留，禁止新提交，请只读核对。');},
     onError:async(error,variables)=>{
+      if(variables.signal.aborted)return;
       if(error instanceof CandidateCommandRefusal){let cleaned=true;try{await draft.knownFailure(variables.operation.body.client_command_id);}catch{cleaned=false;}setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error)+(cleaned?'':' 恢复副本清理失败，原 UUID 已保留，禁止新提交，请只读核对。'));refresh();}
       else if(error instanceof ApiError&&[401,403,404].includes(error.status)){setState('denied');setMessage('当前操作权限已变化，请重新核对。');refresh();}
       else{setPending(variables.operation);setState('unknown');setMessage('结果未知：原 UUID、版本、材料依据和正文保持不变，请先只读核对。');}
