@@ -6,6 +6,7 @@ import type {Principal} from '../../api/client';
 import {candidateApi,CandidateCommandRefusal} from './client';
 import type {CandidateAction,CandidateDetail,CandidateOperation,CandidateReason,CandidateCommandResult,IncidentScope} from './client';
 import {IncidentResultView} from './IncidentResult';
+import {useCandidateDraft} from './use-candidate-draft';
 import './candidate.css';
 
 export interface CandidateDecisionValue {action:CandidateAction|'';reason:CandidateReason|'';scope:IncidentScope|'';owner:string;team:string;refs:string[];primary:string;capture:{version:string;basis:string|null}|null}
@@ -20,6 +21,10 @@ function refusalMessage(error:ApiError){if(error.code==='P2_012_SOURCE_CONFLICT'
 export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefresh}:{principal:Principal;detail:CandidateDetail;onBlockedChange:(blocked:boolean)=>void;onRefresh:()=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null);
+  const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
+    onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('原操作仍未知；请先只读核对原 UUID。');}},
+    onOperation:id=>{setPending(null);setState('unknown');setMessage('原操作 '+id+' 仍未知，敏感恢复内容不可用；不能提交新操作。');},
+    onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');}});
   const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0;
   const navigationBlocked=active||unknown||candidateHasInput(value);
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
@@ -54,11 +59,11 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage('原操作已确认提交；当前输入保留，请核对当前事实。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。');}
     },onError:()=>{setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
-  const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='NONE'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));
+  const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='__NO_TEAM__'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));
   const primaryOptions=[...new Map(value.refs.flatMap(ref=>{const source=sources.get(ref);return source?.ticket_id?[[source.ticket_id,{id:source.ticket_id,label:source.ticket_no??'当前编号不可用'}] as const]:[];})).values()];
   const currentCapture=Boolean(value.capture&&value.capture.version===detail.row_version),confirm=value.action==='CONFIRM_INCIDENT';
   const canConfirm=Boolean(detail.material_basis&&value.capture?.basis===detail.material_basis&&detail.materials.every(material=>material.status==='CURRENT')&&value.scope&&detail.allowed_scopes.includes(value.scope)&&owner&&value.team&&teamValid&&value.refs.length&&value.refs.every(ref=>sources.has(ref))&&value.primary&&(value.primary==='NONE'||primaryOptions.some(ticket=>ticket.id===value.primary)));
-  const canSubmit=Boolean(value.action&&value.reason&&detail.allowed_actions.includes(value.action)&&currentCapture&&!reviewRequired&&!active&&!pending&&(!confirm||canConfirm));
+  const canSubmit=Boolean(draft.canSubmit&&value.action&&value.reason&&detail.allowed_actions.includes(value.action)&&currentCapture&&!reviewRequired&&!active&&!pending&&(!confirm||canConfirm));
   const send=async(operation:CandidateOperation,snapshot:string)=>{
     if(request.current)return;
     const controller=new AbortController();request.current=controller;setPending(operation);setState('submitting');setMessage('正在核对当前权限并提交明确决定…');
@@ -77,19 +82,20 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
     const common={client_command_id:crypto.randomUUID(),reason_code:value.reason};let operation:CandidateOperation;
     if(value.action==='CONFIRM_INCIDENT'){
       if(!value.scope||!value.capture.basis)return;
-      operation=Object.freeze({candidateId:detail.id,action:value.action,body:Object.freeze({...common,expected_candidate_version:value.capture.version,expected_material_basis:value.capture.basis,confirmed_scope:value.scope,owner_principal_id:value.owner,owner_team_id:value.team==='NONE'?null:value.team,selected_report_refs:Object.freeze([...value.refs]),primary_ticket_id:value.primary==='NONE'?null:value.primary})});
+      operation=Object.freeze({candidateId:detail.id,action:value.action,body:Object.freeze({...common,expected_candidate_version:value.capture.version,expected_material_basis:value.capture.basis,confirmed_scope:value.scope,owner_principal_id:value.owner,owner_team_id:value.team==='__NO_TEAM__'?null:value.team,selected_report_refs:Object.freeze([...value.refs]),primary_ticket_id:value.primary==='NONE'?null:value.primary})});
     }else operation=Object.freeze({candidateId:detail.id,action:value.action,body:Object.freeze({...common,expected_row_version:value.capture.version})});
     void send(operation,JSON.stringify(value));
   };
   const check=()=>{if(!pending||request.current)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({operation:pending,signal:controller.signal});};
   return <section className="candidate-decision" aria-label="人工候选决定">
+    {principal.incident_candidate_draft_recovery_enabled?<p data-candidate-draft>{draft.message}</p>:null}
     {purposeAllowed?<form onSubmit={event=>{event.preventDefault();submit();}}><h2>人工决定</h2><p>各项由工作人员明确选择；刷新只更新当前事实，已捕获的决定依据保持不变。</p>
       <div className="candidate-form-grid"><label>人工决定<select aria-label="人工决定" value={value.action} onChange={event=>update({action:event.target.value as CandidateAction|''})}><option value="">请选择决定</option>{Object.entries(actionNames).map(([action,label])=><option key={action} value={action} disabled={!detail.allowed_actions.includes(action as CandidateAction)}>{label}{detail.allowed_actions.includes(action as CandidateAction)?'':'（当前不可用）'}</option>)}</select></label>
       <label>决定原因<select aria-label="决定原因" value={value.reason} onChange={event=>update({reason:event.target.value as CandidateReason|''})}><option value="">请选择原因</option>{Object.entries(reasonNames).map(([reason,label])=><option key={reason} value={reason}>{label}</option>)}</select></label></div>
       {value.capture?<p data-captured-basis>已捕获候选版本 {value.capture.version}；当前候选版本 {detail.row_version}。{confirm?'已捕获材料依据：'+(value.capture.basis??'不可用'):''}</p>:null}
       {confirm?<><div className="candidate-form-grid"><label>确认范围<select aria-label="确认范围" value={value.scope} onChange={event=>update({scope:event.target.value as IncidentScope|''})}><option value="">请选择范围</option>{value.scope&&!detail.allowed_scopes.includes(value.scope)?<option value={value.scope}>原选择当前不可用</option>:null}{detail.allowed_scopes.map(scope=><option key={scope} value={scope}>{scopeNames[scope]}</option>)}</select></label>
         <label>故障负责人<select aria-label="故障负责人" value={value.owner} onChange={event=>update({owner:event.target.value})}><option value="">请选择负责人</option>{value.owner&&!owner?<option value={value.owner}>原负责人当前不可用</option>:null}{detail.eligible_owners.map(owner=><option key={owner.id} value={owner.id}>{owner.display_name}</option>)}</select></label>
-        <label>责任组<select aria-label="责任组" value={value.team} onChange={event=>update({team:event.target.value})}><option value="">请选择责任组或无责任组</option><option value="NONE">无责任组</option>{value.team&&!teamValid?<option value={value.team}>原责任组当前不可用</option>:null}{owner?.teams.map(team=><option key={team.team_id} value={team.team_id}>{team.display_name}</option>)}</select></label>
+        <label>责任组<select aria-label="责任组" value={value.team} onChange={event=>update({team:event.target.value})}><option value="">请选择责任组或无责任组</option><option value="__NO_TEAM__">无责任组</option>{value.team&&!teamValid?<option value={value.team}>原责任组当前不可用</option>:null}{owner?.teams.map(team=><option key={team.team_id} value={team.team_id}>{team.display_name}</option>)}</select></label>
         <label>主工单<select aria-label="主工单" value={value.primary} onChange={event=>update({primary:event.target.value})}><option value="">请选择主工单或无主工单</option><option value="NONE">无主工单</option>{value.primary&&value.primary!=='NONE'&&!primaryOptions.some(ticket=>ticket.id===value.primary)?<option value={value.primary}>原主工单不在当前有效选择中</option>:null}{primaryOptions.map(ticket=><option key={ticket.id} value={ticket.id}>{ticket.label}</option>)}</select></label></div>
         <fieldset><legend>逐项选择关联报修来源</legend><p>获权来源总数：{detail.visible_report_source_count}；已提供选项：{detail.report_sources.length}；当前选择 {value.refs.length} 项 Report，涉及 {primaryOptions.length} 个个人工单。</p>{detail.report_sources.map((source,index)=><label className="candidate-report-choice" key={source.source_decision_id}><input type="checkbox" data-report-ref={source.source_decision_id} checked={value.refs.includes(source.source_decision_id)} onChange={event=>{const checked=event.target.checked;update(current=>({refs:checked?current.refs.includes(source.source_decision_id)?current.refs:[...current.refs,source.source_decision_id]:current.refs.filter(ref=>ref!==source.source_decision_id)}));}}/><span>{index+1}. {source.ticket_no??'未建单来源'} · 独立报修引用</span></label>)}{value.refs.some(ref=>!sources.has(ref))?<p role="alert">已有选择当前不可读取或未提供；没有自动替换或删除原选择，请重新核对。</p>:null}</fieldset>
         {detail.report_sources_truncated||detail.eligible_owners_truncated||owner?.teams_truncated?<p>部分选项已裁剪，仅能选择当前已提供的获权对象。</p>:null}
