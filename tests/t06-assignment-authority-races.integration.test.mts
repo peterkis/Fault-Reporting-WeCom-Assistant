@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool,PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
 type Fixture={pool:PostgresPool;origin:string;cookies:string[];tickets:{ticket:{id:string}}[];principals:{id:string}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 const cases=['target-membership','target-role','operator-role','operator-visible-membership'] as const;
@@ -12,7 +12,7 @@ for(const kind of cases)test('real public assignment linearizes '+kind+' revocat
   const get=async(url:string)=>{const response=await fetch(context.origin+url,{headers:{cookie}});return {status:response.status,value:object(await response.json())};};const bootstrap=(await get('/api/lifecycle/bootstrap')).value;assert.equal((await get(path)).status,200);assert.equal((await get(path+'/assignment-targets?resolver_team_id=PILOT_IT')).status,200);
   const body={client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target.id,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]};
   const snapshot=async()=>({ticket:(await context.pool.query('SELECT version,assignee_id::text,resolver_team_id,status,current_handling_cycle_id::text,source_intake_id::text FROM pilot_ticket.ticket WHERE id=$1::uuid',[first.ticket.id])).rows,events:(await context.pool.query('SELECT event_id::text FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid ORDER BY event_id',[first.ticket.id])).rows,cycles:(await context.pool.query('SELECT id::text FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid',[first.ticket.id])).rows});const before=await snapshot();
-  const gate=await context.pool.connect();let revoker:Awaited<ReturnType<PostgresPool['connect']>>|null=null,pending:Promise<{status:number;value:Record<string,unknown>}>|null=null,revoke:Promise<void>|null=null,revoked=false,installed=false;
+  const gate=await context.pool.connect();let revoker:PostgresPoolClient|null=null,pending:Promise<{status:number;value:Record<string,unknown>}>|null=null,revoke:Promise<void>|null=null,revoked=false,installed=false;
   try{
    const gatePid=(await gate.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(gatePid);await gate.query('SELECT pg_advisory_lock(9050661)');
    await context.pool.query("CREATE FUNCTION platform.t06_authority_barrier() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(9050661); RETURN NEW; END $$");await context.pool.query(`CREATE TRIGGER t06_authority_barrier BEFORE UPDATE ON pilot_ticket.ticket FOR EACH ROW WHEN (NEW.id='${first.ticket.id}'::uuid AND NEW.assignee_id='${target.id}'::uuid) EXECUTE FUNCTION platform.t06_authority_barrier()`);installed=true;
