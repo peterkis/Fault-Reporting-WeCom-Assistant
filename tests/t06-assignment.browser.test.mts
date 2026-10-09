@@ -90,7 +90,10 @@ test('production staff explicitly transfer an assigned queued Ticket with real g
       const event=(await context.pool.query('SELECT assignment_metadata,operator_type,operator_id FROM pilot_ticket.ticket_event WHERE event_id=$1::uuid',[string(last.event_id)])).rows[0];assert.deepEqual(event,{assignment_metadata:{old_assignee_id:originalOwner.id,new_assignee_id:target.id,old_team_id:'PILOT_IT',new_team_id:team},operator_type:'PILOT_USER',operator_id:actor.id});
       assert.deepEqual((await context.pool.query('SELECT cycle_id::text FROM pilot_ticket.ticket_handling_cycle_event WHERE ticket_event_id=$1::uuid',[string(last.event_id)])).rows,[{cycle_id:cycle.id}]);
       assert.deepEqual(rows((await get(path+'/responsibility')).value.conversations),[]);await capture('new-detail-page-1280.png');
-      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',assignment_transfer:true,production_staff_role:'HANDLER',communication_choice:'RETAIN_CURRENT',one_command:true,persisted_person_and_team:true,same_cycle:true,current_scope_read_404:true,requests,screenshots}));
+      const diagnostic=join(tmpdir(),'t06-browser-diagnostic-'+randomUUID()+'.json');
+      await writeFile(diagnostic,JSON.stringify({production_staff_role:'HANDLER',communication_choice:'RETAIN_CURRENT',requests,screenshots},null,2));
+      console.log('T06_BROWSER_DIAGNOSTIC '+JSON.stringify({file:diagnostic.replaceAll('\\','/')}));
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',assignment_transfer:true,staff_handler:true,communication_retained:true,one_command:true,persisted_person_and_team:true,same_cycle:true,current_scope_read_404:true,screenshots:screenshots.map(shot=>({...shot,file:shot.file.replaceAll('\\','/')}))}));
     }catch(failure){error=failure;console.error('T06_BROWSER_PRIMARY '+JSON.stringify(failureDetails(failure)));}
     const cleanup=async(name:string,close:()=>Promise<unknown>)=>{try{await close();console.error('T06_BROWSER_CLEANUP '+JSON.stringify({name,status:'PASS'}));}catch(failure){console.error('T06_BROWSER_CLEANUP '+JSON.stringify({name,status:'FAIL',error:failureDetails(failure)}));throw failure;}};
     try{await closeBrowserTestResources([
