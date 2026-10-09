@@ -24,7 +24,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('原操作仍未知；请先只读核对原 UUID。');}},
     onOperation:id=>{setPending(null);setState('unknown');setMessage('原操作 '+id+' 仍未知，敏感恢复内容不可用；不能提交新操作。');},
-    onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');}});
+    onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');setReviewRequired(false);setCheckedUnknown(false);}});
   const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0,originalId=pending?.body.client_command_id??draft.operationId;
   const navigationBlocked=active||unknown||candidateHasInput(value);
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
@@ -105,7 +105,8 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       </>:null}
       <div className="note-controls"><button type="submit" data-action="submit-candidate" disabled={!canSubmit}>{active?'正在核对…':'提交明确决定'}</button>
         {!pending&&candidateHasInput(value)?<button type="button" data-action="adopt-candidate-basis" disabled={active} onClick={()=>{setValue(current=>({...current,capture:{version:detail.row_version,basis:detail.material_basis}}));setReviewRequired(false);}}>明确采用当前依据</button>:null}
-        {!pending&&candidateHasInput(value)?<button type="button" data-action="clear-candidate-input" disabled={active} onClick={()=>{setValue(emptyCandidateDecision);setReviewRequired(false);}}>清除当前输入</button>:null}
+        {!pending&&candidateHasInput(value)?<button type="button" data-action="clear-candidate-input" disabled={active} onClick={()=>{if(draft.enabled)void draft.discard();else{setValue(emptyCandidateDecision);setReviewRequired(false);}}}>清除当前输入</button>:null}
+        {pending&&unknown&&draft.enabled?<button type="button" data-action="discard-candidate-recovery" disabled={active} onClick={()=>{void draft.discard();}}>清除敏感恢复内容（保留原操作核对）</button>:null}
         {originalId?<button type="button" data-action="check-candidate-operation" disabled={active} onClick={check}>只读核对原操作</button>:null}
         {pending&&checkedUnknown&&unknown?<button type="button" data-action="replay-candidate-operation" disabled={active} onClick={()=>{void send(pending,JSON.stringify(value));}}>明确重放原操作（保留原 UUID 和正文）</button>:null}
       </div>
