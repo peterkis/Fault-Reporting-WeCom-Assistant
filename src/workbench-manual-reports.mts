@@ -31,6 +31,9 @@ export function manualReportCommand(input:unknown):ManualReportCommand{
 export async function manualReportsSchemaReady(pool:PostgresTransaction){
   try{return (await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('033_yxx_self_service_intake','042_workbench_manual_reports')")).rowCount===2;}catch{return false;}
 }
+function manualExcerpt(value:string,maximum:number){
+  let result='';for(const character of value){if(result.length+character.length>maximum)break;result+=character;}return result;
+}
 function storedResult(input:unknown,commandId:string):ManualReportResult&{replayed:true}{
   try{
     const v=exactP2016(input,['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','external_notification','result_code','ticket','review']);
@@ -90,7 +93,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
         manual_report_snapshot,manual_actor_principal_id,manual_command_receipt_id)
       SELECT 'INT-'||to_char($1::timestamp without time zone,'YYYYMMDD')||'-'||lpad(n,GREATEST(4,char_length(n)),'0'),
         'MANUAL','STAFF_MANUAL_REPORT',NULL,NULL,NULL,NULL,true,'PERSONAL',$2::timestamp without time zone,$3::bigint,'UNKNOWN',$4,$5,'RECEIVED',$1::timestamp without time zone,$6::jsonb,$7::uuid,$8::uuid
-      FROM number RETURNING id::text,intake_no`,[stamp.local,retention,retentionEpoch,command.description.slice(0,500),command.location.text,JSON.stringify(snapshot),principal.principal_id,receipt.id])).rows[0];if(!intake)failP2016('ACTION_FAILED',503);
+      FROM number RETURNING id::text,intake_no`,[stamp.local,retention,retentionEpoch,manualExcerpt(command.description,500),command.location.text,JSON.stringify(snapshot),principal.principal_id,receipt.id])).rows[0];if(!intake)failP2016('ACTION_FAILED',503);
     const trace='manual:'+intake.id;
     await tx.query(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
       VALUES('intake.received','intake',$1::uuid,1,1,$2::timestamp without time zone,$3,$4::jsonb)`,[intake.id,stamp.local,trace,JSON.stringify({intake_id:intake.id,source_channel:'MANUAL',source:command.source,actor_principal_id:principal.principal_id,reporter_verification:'UNVERIFIED',manual_contact_required:true})]);
@@ -110,7 +113,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
       source_window_start_sequence:1,source_window_end_sequence:1,source_message_count:1,source_hash:safeHash(snapshot),safe_result:route,requires_manual_review:route.manual_review_required,
       ticket_creation_recommended:route.ticket_creation_recommended,incident_review_candidate:route.incident_review_candidate,observed_at:stamp.local as LocalDateTime}});
     const executor=createSafeActionExecutor({decisionStore:decisions,manualReviewStore:reviews,intakeDecisionPort:intakes,ticketCommandPort:{async createMinimalTicket({transaction,intake_id,occurred_at,trace_id}){
-      const created=await core.createForIntakeInTransaction({transaction,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id,title:command.description.slice(0,200)});
+      const created=await core.createForIntakeInTransaction({transaction,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id,title:manualExcerpt(command.description,200)});
       if(created.created){const event=await appendTicketEvent({transaction,ticket:created.ticket,eventType:'ticket.created',actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});await realtimeProjector?.ticket({transaction,ticket:created.ticket,event});}return created;
     }}});
     await executor.execute({transaction:tx,decision,context:{trace_id:trace,privacy_class:'PERSONAL',retention_until:retention,retention_until_epoch_ms:retentionEpoch}});
