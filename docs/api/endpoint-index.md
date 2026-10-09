@@ -28,7 +28,7 @@
 | C14 | POST | `/api/conversations/{sessionId}/internal-notes` | W | 已实现：内部备注/201 | [会话](workbench/conversations.md) |
 | C15 | POST | `/api/deliveries/{deliveryId}/retry` | W | 已实现：通信重试 | [会话](workbench/conversations.md) |
 | C16 | POST | `/api/deliveries/{deliveryId}/reconcile` | W | 已实现：通信人工核对 | [会话](workbench/conversations.md) |
-| T01 | GET | `/api/lifecycle/bootstrap` | W | 已实现：生命周期身份；WEB01复用 | [工单](workbench/tickets.md) |
+| T01 | GET | `/api/lifecycle/bootstrap` | W | 已实现：生命周期身份/能力；WEB01复用及默认关闭的授权实时能力 | [工单](workbench/tickets.md) |
 | T02 | GET | `/api/tickets` | W | 已实现：工单队列 | [工单](workbench/tickets.md) |
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
 | T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
@@ -65,6 +65,7 @@
 | R04 | GET | `/api/contact-journeys/{journeyId}` | W | 已实现：Journey | [复核](workbench/manual-reviews.md) |
 | R05 | GET | `/api/contact-journeys/{journeyId}/legs` | W | 已实现：渠道链 | [复核](workbench/manual-reviews.md) |
 | R06 | GET | `/api/contact-journeys/{journeyId}/decisions` | W | 已实现：确定性判定 | [复核](workbench/manual-reviews.md) |
+| R07 | GET | `/api/manual-reviews/{reviewId}/commands/{commandId}` | W | 已实现、默认关闭：当前Review授权/原UUID只读核对 | [同事项复核](workbench/manual-reviews.md#同事项复核与恢复wbint-t14) |
 | I01 | GET | `/api/incident-candidates` | W | 已实现：候选列表 | [公共故障](workbench/incidents.md) |
 | I02 | GET | `/api/incident-candidates/{candidateId}` | W | 已实现：候选详情 | [公共故障](workbench/incidents.md) |
 | I03 | POST | `/api/incident-candidates/{candidateId}/start-review` | W | 已实现：开始复核 | [公共故障](workbench/incidents.md) |

@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction} from '../../api/client';
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
@@ -27,6 +27,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange}:{ticketI
     },onSettled:()=>{request.current=null;},
   });
   const send=(intent:Pending,checking:boolean)=>{
+    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，新处理操作尚未发送；请重新读取。');return;}
     if(request.current)return;const controller=new AbortController();request.current=controller;setPending(intent);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在提交处理操作…');mutation.mutate({intent,signal:controller.signal});
   };
   const submit=(action:SelfHandlingAction)=>{
