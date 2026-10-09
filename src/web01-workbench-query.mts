@@ -7,6 +7,7 @@ import {sourceLabel} from './workbench-source-groups.mjs';
 import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import type {ReviewReference} from '../contracts/workbench_review_contracts.js';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
+import {readManualReportSource} from './workbench-manual-report-source.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
 const STATUS_COLUMNS = {
@@ -85,7 +86,14 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualReviewEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;manualReviewEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+  async function decorate(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
+    const sourced=sourceGroups?await sourceGroups.decorate(items):items;if(!manualReportsEnabled)return sourced;
+    const result:WorkbenchCard[]=[];
+    for(const item of sourced){const manual=item.source==='MANUAL'?await readManualReportSource(pool,item.intake_id):null;
+      result.push(manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+'（身份未核实）'}:item);}
+    return result;
+  }
   async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }
   async function range(mode: CompletionRange): Promise<BoardPage['range']> {
     const r=await pool.query<{from:string;until:string}>(`SELECT
@@ -116,7 +124,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualRe
       row=retained.rows[0];
     }
     if(!row)failP2016('NOT_FOUND',404);
-    const selected=card(row);return sourceGroups?(await sourceGroups.decorate([selected]))[0]??selected:selected;
+    const selected=card(row);return (await decorate([selected]))[0]??selected;
   }
   return Object.freeze({
     authorizedItem:item,
@@ -142,7 +150,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualRe
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
           selectedColumn!=='closed'||selectedRange!=='recent',window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
-      const rows=r.rows.slice(0,limit),items=sourceGroups?await sourceGroups.decorate(rows.map(card)):rows.map(card),last=rows.at(-1);
+      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card)),last=rows.at(-1);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },
