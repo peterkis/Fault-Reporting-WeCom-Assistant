@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_manual_report_self_handling_contracts.d.ts",
+    "contracts/workbench_manual_report_self_handling_command.schema.json",
+    "contracts/workbench_manual_report_self_handling_context.schema.json",
+    "contracts/workbench_manual_report_self_handling_result.schema.json",
     "contracts/workbench_manual_report_capabilities.schema.json",
     "contracts/workbench_manual_report_receipt.schema.json",
     "contracts/workbench_manual_report_projection.schema.json",

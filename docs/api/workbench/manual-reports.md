@@ -33,3 +33,29 @@ MANUAL入口使用`WBINT_T17_MANUAL_SYMPTOMS/1.0.0`别名overlay，只把实际�
 回执在READ ONLY事务中核验当前创建权限，再读取原principal＋`WORKBENCH_MANUAL_REPORT`用途账本；UNKNOWN不写原账本或其它事实，同UUID其它principal或其它用途返回UNKNOWN。成功结果仅返回原受理结果，不含原描述或Reporter姓名／联系方式，闭合快照守卫失败返回503；重复提交只返回原结果，变更原意图409，失去当前创建权限后读取、重放均403。恢复开关默认false，关闭时只读receipt拒绝且不查询账本；capabilities恢复位诚实取当前配置。
 
 MANUAL复核的显式`CONFIRM_TICKET_ELIGIBLE`及`CLASSIFY_SERVICE_REQUEST`分别设置原Intake request_type为`INCIDENT`／`SERVICE_REQUEST`，沿既有执行器创建原生Core `QUEUED`、未分配工单；其余六种合法结论不建单。所有结论均保留原来源快照和Decision，不自动接单或发送通知。代录入口产生Core标题与Intake摘要时，沿原200／500 UTF16单位上限取完整Unicode字符前缀，完整原描述快照及其hash不改变。
+
+## 代录后由本人立即处理（WBINT-T19，SOURCE合同，尚未挂载）
+
+本节是#74的冻结输入／输出与首个HTTP tracer准备，不是已经提供的接口。当前生产源码未改，build、strict、tracer、PG、browser均`NOT_RUN`；[本票记录](../../../plans/admin-workbench-integration/execution/t19.md)列出全部七项remaining。T17普通受理的字段、canonical payload/hash、既有命令结果及恢复语义保持原合同。T18核实成员未纳入本片。
+
+| 候选方法与路径 | 冻结合同 |
+| --- | --- |
+| `GET /api/workbench/reports/self-handling-context` | W／READ ONLY；当前创建权限及真实活动组成员资格；闭合`{can_take_and_start,resolver_teams:[{id,name}],manual_contact_required:true,external_notification:false,draft_recovery_enabled}`。仅返回当前操作者合法活动组，稳定按id排序，最多100；超限明确503，不截断成完整候选。无合法组时false＋空数组，不授予新的读取权限 |
+| `POST /api/workbench/reports/take-and-start` | W／同源Origin／CSRF／16KiB／UUID Idempotency-Key与body一致；T17原闭合body只增加必填`resolver_team_id`；首次完成202、相同原意图重放200。姓名、联系方式仍UNVERIFIED；目标处理人固定当前authenticated principal |
+| `GET /api/workbench/reports/commands/{commandId}` | 复用原MANUAL_REPORT用途READ ONLY核对；UNKNOWN／FAILED／COMMITTED语义不变；原principal＋当前创建权限及原恢复开关重新核验，不写账本，不发送新命令 |
+
+输入[Schema](../../../contracts/workbench_manual_report_self_handling_command.schema.json)、[当前组上下文](../../../contracts/workbench_manual_report_self_handling_context.schema.json)、[成功结果](../../../contracts/workbench_manual_report_self_handling_result.schema.json)及[类型](../../../contracts/workbench_manual_report_self_handling_contracts.d.ts)为候选合同。结果沿原闭合`ManualReportResult`，成功必须`ticket.status=IN_PROGRESS`、`review=null`、`result_code=TICKET_ELIGIBLE|SERVICE_REQUEST`，无额外联系方式、actor声明或未知字段。受理后当前版本、责任与轮次由原获权Ticket查询读取。
+
+新报修尚无Ticket／Review／Intake对象版本，body使用`schema_version:1`，不接收虚构`expected_version`或If-Match。服务器在唯一新Core上以真实版本执行accept→start，成功首轮cycle1有真实accepted事件、操作者、选定活动组及原命令依据。新入口同时要求既有`workbenchManualReportsEnabled=false`与`ticketSelfHandlingEnabled=false`的显式启用以及033／039／042 readiness；一个开关关闭即拒绝新操作。恢复还要求原`workbenchDraftRecoveryEnabled=false`，既有普通受理及已存恢复不因此改变。
+
+原当前角色与创建权限仍必需；ADMIN／DISPATCHER也必须实际属于所选活动处理组。新组不要求等于Core默认组，而是该次建单时传入合法选定组；多组明确选择，不默认挑首个。锁后重新核验实际principal／角色／成员／组有效性，重放前也执行当前授权。浏览器不得声明actor、处理人、Person／WeCom身份、Conversation或业务状态。实际Reporter由T17原快照保存，Recorder为服务器认证主体，Handler为本次实际承接者；Recorder与Handler本次可同人，仍是两项独立事实。
+
+一次原MANUAL_REPORT账本事务包含T17原持久Intake／来源快照／Journey／MANUAL Leg／Decision／规则动作、唯一Core Ticket、原显式accept／start及039轮次／事件关联。新action `manual-report-take-and-start`只用于新分支原command hash，原普通`manual-report`canonical对象及hash完全不变；同UUID跨action或改组／描述返回409，不建第二单。复用原purpose和receipt，不新建owner、receipt、Ticket表或Conversation；当前计划无新增SQL，若后续真实RED证明结构不足，先向父任务申请编号。历史001–042与旧Evidence不改。
+
+原规则要求Review、没有合法最小Ticket或不能承接时，复合操作明确失败，业务事实全部回滚；不能成功返回仅Review或声称部分受理／责任已成功。既有`POST /api/manual-reviews/{reviewId}/resolve`的显式`CONFIRM_TICKET_ELIGIBLE`／`CLASSIFY_SERVICE_REQUEST`只适用于已持久Review、当前授权和原版本，可产生QUEUED／未分配Core。新表单没有可直接代用的已有Review对象，也不把“由我处理”当作该人工确认；复核到处理沿所属T15合同。工作人员可明确选择普通T17受理，按规则持久Review；前端不得失败后自动补普通POST或串行调用旧接单／开始伪装原子成功。
+
+FAILED保留原失败账本，业务savepoint全部回滚；同UUID失败重放不重新执行。事务失败HTTP503沿原稳定错误；认证401、权限403、闭合输入400、变意图409、关闭／缺readiness503。UNKNOWN保留原UUID及完整body，显式GET核对；找不到终态不等于未提交。不自动换UUID、改group／版本、降为普通受理或重复POST。已提交结果只取原回执，不从Core当前状态猜旧命令结果。
+
+正式T17新表单将保留“提交报修”，在当前context获准时增加“由我处理”与明确组选择。新action草稿使用T03同一当前浏览器AES-GCM／不可导出key／首次保存固定24h，独立`manual-report-self-handling`用途与T17固定槽位，保存原body、mode和UNKNOWN UUID，不改普通`manual-report`草稿。恢复前重新验当前principal、创建权与所选真实组；成功／丢弃／退出／失权／过期沿原清理，UNKNOWN只留规定opaque核对元数据。连接与epoch围栏复用T38，不从动画或点击推导提交成功。此段前端尚未实现或验证。
+
+本票无目录网络依赖，现有UNVERIFIED电话／现场路径在目录不可用时可使用；保留人工联系提示，零新增Message／Communication／Outbox／Delivery／Reporter Grant或外发。资源沿单App／Worker、Gateway单活、SSE32、共享pool4／总预算8，单表单in-flight1，无新worker／timer。关闭任一新入口依赖隐藏按钮、拒绝新复合命令；已提交受理、责任、轮次、事件及原回执保留。尚未运行的验证覆盖授权／合法组、默认关闭／缺readiness、规则Review拒绝、完整回滚、并发／原UUID冲突、原T17恢复兼容、UNKNOWN、撤权、固定24h和真实production bundle；不能据本合同推导已验收。
