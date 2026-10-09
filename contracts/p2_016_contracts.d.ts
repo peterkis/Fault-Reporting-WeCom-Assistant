@@ -15,6 +15,13 @@ export type P2016InternalNoteResult = { readonly ok: true; readonly ticket_id: s
 export type P2016InternalNoteReceipt = Readonly<{client_command_id:string;ticket_id:string}> & (
   Readonly<{state:'UNKNOWN'}> | Readonly<{state:'COMMITTED';result:P2016InternalNoteResult}> | Readonly<{state:'FAILED';error:Readonly<{code:string;retryable:false}>}>);
 
+/** T10's closed human-action payload. The first source slice enables request-information only. */
+export type P2016WaitingActionCommand = { readonly client_command_id:string; readonly expected_version:number; readonly reason_code:string; readonly note:string; readonly external_visible:false; };
+/** The reference is the actual persisted current cycle, or null for a lawful legacy Ticket without one. */
+export type P2016RequestInformationResult = P2016InternalNoteResult & { readonly handling_cycle_id:string|null; };
+export type P2016TicketEventProjection = { readonly event_id:string; readonly event_type:string; readonly old_status:P2016TicketDetail['status']|null; readonly new_status:P2016TicketDetail['status']|null; readonly aggregate_version:number; readonly event_ordinal:number; readonly created_at:string; readonly has_internal_note:boolean; readonly has_external_note:boolean; readonly handling_cycle_id?:string|null; };
+export type P2016TicketEventPage = { readonly items:ReadonlyArray<P2016TicketEventProjection>; readonly next_cursor:string|null; };
+
 export type P2016TicketTransferCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly target_principal_id: string; readonly resolver_team_id?: string; };
 
 export type P2016CombinedTakeoverAccept = { readonly client_command_id: string; readonly ticket_id: string; readonly expected_ticket_version: number; readonly expected_session_row_version: number; readonly reason_code: string; };

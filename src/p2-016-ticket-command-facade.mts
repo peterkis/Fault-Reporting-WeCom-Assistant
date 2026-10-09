@@ -10,13 +10,14 @@ export type TicketCommand = CommandBase & (
   | { action: 'takeover-and-accept-ticket'; session_id: string; expected_session_row_version: number; target_principal_id?: never; resolver_team_id?: never });
 export interface TicketProjectionInput { transaction: PostgresTransaction; ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent; command?: TicketCommand | null }
 export type TicketRealtimeProjector = ((input: TicketProjectionInput) => Promise<unknown>) & { lock?: (transaction: PostgresTransaction) => Promise<unknown> };
-interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
+interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; ticketWaitingActionsEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
 
 import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
+import { selfHandlingSchemaReady } from './workbench-ticket-self-handling.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
 
 const ACTIONS=['queue','accept','start','request-information','wait-vendor','resume','resolve','confirm','reopen','cancel','add-note','transfer-assignment','takeover-and-accept-ticket'];
@@ -38,9 +39,10 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   // The existing exact-key, action-specific and scalar guards above establish this union.
   return result as TicketCommand;
 }
-export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,query=createP2016TicketQuery({pool,enabled}),controlService,
+export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketWaitingActionsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
   notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions) {
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
     async internalNoteReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
@@ -50,6 +52,11 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
     async perform({authContext,command:input,internalNote=false}: { authContext: unknown; command: unknown;internalNote?:boolean }) {
       guardP2016(enabled);const command=normalizeP2016TicketCommand(input);
       if(internalNote&&command.action!=='add-note')failP2016();
+      const cycleAware=ticketWaitingActionsEnabled&&command.action==='request-information';
+      if(cycleAware){
+        if(typeof command.note!=='string'||!command.note.trim()||command.external_visible!==false)failP2016();
+        if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      }
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
@@ -88,9 +95,18 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
               note:command.note??null,externalVisible:command.external_visible??false,reasonCode:command.reason_code,
               traceId:'p2-016:'+command.client_command_id},transaction);
           }
+          let handlingCycleId:string|null=null;
+          if(cycleAware){
+            // The Core Action still holds the Ticket lock. Read its authoritative current cycle;
+            // the existing same-Ticket foreign keys bind this real event without creating a round.
+            const selected=await transaction.query<{cycle_id:string|null}>('SELECT current_handling_cycle_id::text AS cycle_id FROM pilot_ticket.ticket WHERE id=$1::uuid',[ticket.id]);
+            const current=selected.rows[0];if(!current)failP2016('ACTION_FAILED',503);
+            handlingCycleId=current.cycle_id===null?null:uuidP2016(current.cycle_id);
+            if(handlingCycleId!==null)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,handlingCycleId,result.event.event_id]);
+          }
           if(notificationProjector&&!closure)await notificationProjector.project({transaction,ticket:result.ticket,event:result.event});
           if(realtimeProjector)await realtimeProjector({transaction,ticket:result.ticket,event:result.event,command});
-          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null};
+          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null,...(cycleAware?{handling_cycle_id:handlingCycleId}:{})};
         },
       });
     },

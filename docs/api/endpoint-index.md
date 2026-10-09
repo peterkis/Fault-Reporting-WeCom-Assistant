@@ -31,7 +31,7 @@
 | T01 | GET | `/api/lifecycle/bootstrap` | W | 已实现：生命周期身份；WEB01复用 | [工单](workbench/tickets.md) |
 | T02 | GET | `/api/tickets` | W | 已实现：工单队列 | [工单](workbench/tickets.md) |
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
-| T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
+| T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页；T10默认false轮次引用增量源码待验证 | [工单](workbench/tickets.md#等待报修人的同轮次关联wbint-t10首片段) |
 | T05 | GET | `/api/tickets/{ticketId}/responsibility` | W | 已实现：双责任 | [工单](workbench/tickets.md) |
 | T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知 | [工单](workbench/tickets.md) |
 | T07 | GET | `/api/tickets/{ticketId}/eligible-principals` | W | 已实现：处理人候选 | [工单](workbench/tickets.md) |
@@ -39,7 +39,7 @@
 | T09 | POST | `/api/tickets/{ticketId}/queue` | W | 已实现：入队 | [工单](workbench/tickets.md) |
 | T10 | POST | `/api/tickets/{ticketId}/accept` | W | 已实现：接单 | [工单](workbench/tickets.md) |
 | T11 | POST | `/api/tickets/{ticketId}/start` | W | 已实现：开始处理 | [工单](workbench/tickets.md) |
-| T12 | POST | `/api/tickets/{ticketId}/request-information` | W | 已实现：请求补充 | [工单](workbench/tickets.md) |
+| T12 | POST | `/api/tickets/{ticketId}/request-information` | W | 已实现：请求补充；T10默认false同轮次增量源码待验证 | [工单](workbench/tickets.md#等待报修人的同轮次关联wbint-t10首片段) |
 | T13 | POST | `/api/tickets/{ticketId}/wait-vendor` | W | 已实现：等待供应商 | [工单](workbench/tickets.md) |
 | T14 | POST | `/api/tickets/{ticketId}/resume` | W | 已实现：恢复处理 | [工单](workbench/tickets.md) |
 | T15 | POST | `/api/tickets/{ticketId}/resolve` | W | 已实现：解决 | [工单](workbench/tickets.md) |
