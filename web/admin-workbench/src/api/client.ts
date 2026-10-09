@@ -140,7 +140,7 @@ export const api={
     if(v.state==='COMMITTED'&&Object.keys(v).length===4&&id(v.ticket_id)===ticketId)return {state:'COMMITTED',ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id)};
     throw new ApiError(502,'INVALID_RESPONSE');
   }),
-  assignmentTargets:(ticketId:string,team:string|null,signal:AbortSignal):Promise<P2016AssignmentTargets>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/assignment-targets'+(team?'?'+new URLSearchParams({resolver_team_id:team}):''),signal,value=>{
+  assignmentTargets:(ticketId:string,team:string|null,signal:AbortSignal,target:string|null=null):Promise<P2016AssignmentTargets>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/assignment-targets'+(team?'?'+new URLSearchParams({resolver_team_id:team,...(target?{target_principal_id:target}:{})}):''),signal,value=>{
     const v=object(value);if(Object.keys(v).length!==3||!Array.isArray(v.resolver_teams)||v.resolver_teams.length>100||!Array.isArray(v.items)||v.items.length>100||v.resolver_team_id!==team)throw new ApiError(502,'INVALID_RESPONSE');
     const resolver_teams=v.resolver_teams.map(value=>{const row=object(value),team_id=text(row.team_id),display_name=text(row.display_name);if(Object.keys(row).length!==2||!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team_id)||!display_name||display_name.length>128)throw new ApiError(502,'INVALID_RESPONSE');return {team_id,display_name};});
     const items=v.items.map(value=>{const row=object(value),principal_id=id(row.principal_id),display_name=text(row.display_name);if(Object.keys(row).length!==2||!display_name||display_name.length>128)throw new ApiError(502,'INVALID_RESPONSE');return {principal_id,display_name};});

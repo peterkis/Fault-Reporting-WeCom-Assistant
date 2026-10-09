@@ -90,12 +90,13 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
   }
   return Object.freeze({
     principal,authorizedTicket,
-    async assignmentTargets({authContext,ticketId,resolverTeamId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}) {
+    async assignmentTargets({authContext,ticketId,resolverTeamId=null,targetPrincipalId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown;targetPrincipalId?:unknown}) {
       guardP2016(ticketAssignmentEnabled);
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId});
       if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
       if(assignmentActions(p,ticket).length===0)failP2016('FORBIDDEN',403);
       const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
+      const selectedPerson=targetPrincipalId===null?null:uuidP2016(targetPrincipalId);if(selectedPerson&&selected===null)failP2016();
       const effectiveGroupsSql=`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
         WHERE rt.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.pilot_principal p ON p.id=m.principal_id
           WHERE m.team_id=rt.team_id AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')))`;
@@ -103,10 +104,13 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       const groups=await pool.query<{team_id:string;display_name:string}>(effectiveGroupsSql+' ORDER BY rt.team_id LIMIT 100');
       const resolverTeams=selectedGroup&&!groups.rows.some(group=>group.team_id===selectedGroup.team_id)
         ?[...groups.rows.slice(0,99),selectedGroup].sort((a,b)=>a.team_id<b.team_id?-1:a.team_id===b.team_id?0:1):groups.rows;
-      const candidates=selected===null?[]:(await pool.query<{principal_id:string;display_name:string}>(`SELECT p.id::text AS principal_id,p.display_name
+      const candidatesSql=`SELECT p.id::text AS principal_id,p.display_name
         FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
-        WHERE m.team_id=$1 AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))
-        ORDER BY p.display_name,p.id LIMIT 100`,[selected])).rows;
+        WHERE m.team_id=$1 AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))`;
+      if(selectedPerson&&!(await pool.query(candidatesSql+' AND p.id=$2::uuid',[selected,selectedPerson])).rows[0])failP2016('FORBIDDEN',403);
+      const candidates=selected===null?[]:(await pool.query<{principal_id:string;display_name:string}>(selectedPerson
+        ?'SELECT principal_id,display_name FROM ('+candidatesSql+' ORDER BY (p.id=$2::uuid) DESC,p.display_name,p.id LIMIT 100) bounded ORDER BY display_name,principal_id'
+        :candidatesSql+' ORDER BY p.display_name,p.id LIMIT 100',selectedPerson?[selected,selectedPerson]:[selected])).rows;
       return publicP2016({resolver_teams:resolverTeams,resolver_team_id:selected,items:candidates});
     },
     async list({authContext,state='queued',cursor=null,limit}: { authContext: unknown; state?: string; cursor?: unknown; limit?: unknown }) {
