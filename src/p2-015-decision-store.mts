@@ -2,11 +2,11 @@ import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool
 import type { LocalDateTime } from '../contracts/time_contracts.js';
 import type { P2015ResultCode } from '../contracts/p2_015_contracts.js';
 import type { SafeActionSuggestion, SafeActionType, BoundarySafeRoute } from './p2-015-decision-router.mjs';
-export interface DecisionRow<S = BoundarySafeRoute> { id: string; journey_id: string; channel_leg_id: string; service_intake_id: string; conversation_session_id: string | null; linked_ticket_id: string | null; decision_ordinal: number; decision_key: string; source_window_start_sequence: number; source_window_end_sequence: number; source_message_count: number; source_hash: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; result_code: P2015ResultCode; reason_code: string; input_hash: string; result_hash: string; safe_result: S; requires_manual_review: boolean; ticket_creation_recommended: boolean; incident_review_candidate: boolean; status: 'RECORDED' | 'HUMAN_OVERRIDDEN'; observed_at: LocalDateTime; source_kind?: 'BOT' | 'WEB'; primary_web_submission_id?: string | null; basis_input_revision?: string | number | null }
+export interface DecisionRow<S = BoundarySafeRoute> { id: string; journey_id: string; channel_leg_id: string; service_intake_id: string; conversation_session_id: string | null; linked_ticket_id: string | null; decision_ordinal: number; decision_key: string; source_window_start_sequence: number; source_window_end_sequence: number; source_message_count: number; source_hash: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; result_code: P2015ResultCode; reason_code: string; input_hash: string; result_hash: string; safe_result: S; requires_manual_review: boolean; ticket_creation_recommended: boolean; incident_review_candidate: boolean; status: 'RECORDED' | 'HUMAN_OVERRIDDEN'; observed_at: LocalDateTime; source_kind?: 'BOT' | 'WEB' | 'MANUAL'; primary_web_submission_id?: string | null; basis_input_revision?: string | number | null }
 export interface ActionRow extends SafeActionSuggestion { id: string; decision_id: string; action_key: string; state: 'PROPOSED' | 'EXECUTED' | 'REPLAYED' | 'FAILED' | 'CANCELLED'; row_version: string; execution_command_id?: string | null; execution_command_hash?: string | null; result_ref_type?: string | null; result_ref_id?: string | null; error_code?: string | null; retryable?: boolean | null; executed_at?: string | null }
 export type DecisionRecord = ReturnType<typeof publicDecision<BoundarySafeRoute>>;
 type DecisionInputBase<S> = Omit<DecisionRow<S>, 'id' | 'decision_ordinal' | 'decision_key' | 'status' | 'source_kind' | 'primary_web_submission_id' | 'basis_input_revision' | 'conversation_session_id' | 'linked_ticket_id'> & { conversation_session_id?: string | null; linked_ticket_id?: string | null; safe_action_suggestions?: SafeActionSuggestion[] };
-export type DecisionInput<S = BoundarySafeRoute> = DecisionInputBase<S> & ({ source_kind?: 'BOT'; primary_web_submission_id?: null; basis_input_revision?: null } | { source_kind: 'WEB'; primary_web_submission_id: string; basis_input_revision: number });
+export type DecisionInput<S = BoundarySafeRoute> = DecisionInputBase<S> & ({ source_kind?: 'BOT'; primary_web_submission_id?: null; basis_input_revision?: null } | { source_kind: 'WEB'; primary_web_submission_id: string; basis_input_revision: number } | {source_kind:'MANUAL';primary_web_submission_id?:null;basis_input_revision?:null});
 export type MarkActionRow = Pick<ActionRow, 'id' | 'state' | 'row_version'> & { result_ref_type: string | null; result_ref_id: string | null; error_code: string | null; retryable: boolean | null };
 export interface MarkActionInput { transaction: PostgresTransaction; action_id: string; state: ActionRow['state']; command_id: string; command_hash: string; result_ref_type?: string | null; result_ref_id?: string | null; error_code?: string | null; retryable?: boolean | null; executed_at: string }
 export type DecisionStore = ReturnType<typeof createDecisionStore>;
@@ -66,9 +66,10 @@ async function insertActions(transaction: PostgresTransaction, row: Pick<Decisio
   return actions;
 }
 
-export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false}: { sourceWindowScope?: 'JOURNEY' | 'CHANNEL_LEG'; webSource?: boolean }={}) {
+export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false,manualSource=false}: { sourceWindowScope?: 'JOURNEY' | 'CHANNEL_LEG'; webSource?: boolean;manualSource?:boolean }={}) {
   if(!['JOURNEY','CHANNEL_LEG'].includes(sourceWindowScope))failP2015(P2_015_ERROR_CODES.inputInvalid);
   if(typeof webSource!=='boolean')failP2015(P2_015_ERROR_CODES.inputInvalid);
+  if(typeof manualSource!=='boolean'||manualSource&&!webSource)failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
     async ensureHumanActions({ transaction, decisionId, suggestions }: { transaction: PostgresTransaction; decisionId: string; suggestions: SafeActionSuggestion[] }) {
       const value = snapshotP2015Json(suggestions);
@@ -91,14 +92,15 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
       const value = snapshotP2015Json(input);
       const sourceKind = value.source_kind ?? 'BOT';
       if (!webSource && sourceKind !== 'BOT') failP2015(P2_015_ERROR_CODES.inputInvalid);
-      if (!['BOT', 'WEB'].includes(sourceKind)
+      if (!['BOT', 'WEB', 'MANUAL'].includes(sourceKind)
         || (sourceKind === 'WEB' && (typeof value.primary_web_submission_id !== 'string'
           || !Number.isInteger(value.basis_input_revision) || value.basis_input_revision < 1))
-        || (sourceKind === 'BOT' && ((value.primary_web_submission_id !== undefined && value.primary_web_submission_id !== null)
+        || (sourceKind === 'MANUAL' && !manualSource)
+        || (sourceKind !== 'WEB' && ((value.primary_web_submission_id !== undefined && value.primary_web_submission_id !== null)
           || (value.basis_input_revision !== undefined && value.basis_input_revision !== null)))) {
         failP2015(P2_015_ERROR_CODES.inputInvalid);
       }
-      const identity: { journey_id: string; source_window_start_sequence: number; source_window_end_sequence: number; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; source_kind?: 'WEB'; primary_web_submission_id?: string; basis_input_revision?: number; channel_leg_id?: string } = {
+      const identity: { journey_id: string; source_window_start_sequence: number; source_window_end_sequence: number; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; source_kind?: 'WEB'|'MANUAL';service_intake_id?:string; primary_web_submission_id?: string; basis_input_revision?: number; channel_leg_id?: string } = {
         journey_id: value.journey_id,
         source_window_start_sequence: value.source_window_start_sequence,
         source_window_end_sequence: value.source_window_end_sequence,
@@ -112,6 +114,7 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
         identity.primary_web_submission_id = (value.primary_web_submission_id as string);
         identity.basis_input_revision = (value.basis_input_revision as number);
       }
+      if(sourceKind==='MANUAL'){identity.source_kind='MANUAL';identity.service_intake_id=value.service_intake_id;}
       let keyVersion='v1';
       if(sourceWindowScope==='CHANNEL_LEG'){
         const leg=await transaction.query<{ leg_ordinal: number }>('SELECT leg_ordinal FROM intake.channel_leg WHERE id=$1::uuid AND journey_id=$2::uuid',[value.channel_leg_id,value.journey_id]);

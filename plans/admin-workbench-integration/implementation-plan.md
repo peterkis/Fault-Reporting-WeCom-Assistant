@@ -21,14 +21,14 @@ execution_status: IN_PROGRESS
 | WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)、[T04无会话本人承接LOCAL_VERIFIED](execution/t04.md)及[T05明确关联沟通原子承接LOCAL_VERIFIED](execution/t05.md)已本地集成并关票；T06／T10已按原生依赖领取，T06–T10未完成，A02整组尚未验收 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | IN_PROGRESS：[T11工作人员完工LOCAL_VERIFIED](execution/t11.md)已本地集成，内部过程／独立安全摘要／工作人员关闭与持久通知承诺同事务；T12／T13未开始，A03整组尚未验收 | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T14同事项人工复核LOCAL_VERIFIED](execution/t14.md)与[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)均已本地集成并关票；T15已按原生依赖领取并独立准备，A04整组尚未验收 | A04 |
-| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：T17已按原生依赖领取，实施未核实身份的电话／现场代录；T18／T19未开始，A05整组尚未验收 | A05 |
-| WBINT-06 | 原 Reporter 反馈与重开 | 03 | NOT_STARTED | A06 |
+| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：T17七项已核对、集成并关票；T18／T19原生依赖关闭后已领取，准备核实成员与同事务开始合同；A05整组尚未验收 | A05 |
+| WBINT-06 | 原 Reporter 反馈与重开 | 03 | IN_PROGRESS；T20已领取，T21未启动 | A06 |
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | IN_PROGRESS：T22已按原生依赖领取 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：T24单聊Bot来源通知已按原生依赖领取，独立实施准备中；T25／T26未开始，A08整组尚未验收 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：T27已按原生依赖领取；T28未开始 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | NOT_STARTED | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
-| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | NOT_STARTED | A12 |
+| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；T34已领取，T35–T37未启动 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
