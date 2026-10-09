@@ -48,7 +48,7 @@ Web 安全来源引用为真实生产者供应的 `web:<web_submission UUID>`，
 
 共同 body：`client_command_id:UUID,reason_code,expected_row_version:string`。确认候选改用 `expected_candidate_version:string`。Header 幂等、CSRF/Origin，If-Match **精确**为 `"<expected_candidate_version ?? expected_row_version>"`，此模块不接受 W/ 前缀或裸版本。
 
-Cookie 会话续期后，命令须使用同一 principal 当前授权核对返回的 CSRF；授权更新不改变原用户意图的 UUID、正文或捕获版本。服务端继续按实际 Cookie 验证 CSRF。正式候选表单的续期行为新增单例 `wbint-t27-current-csrf.browser.test.mts`，当前仅源码登记，尚未运行；不据此声明该表单已通过。
+Cookie 会话续期后，命令须使用同一 principal 当前授权核对返回的 CSRF；授权更新不改变原用户意图的 UUID、正文或捕获版本。服务端继续按实际 Cookie 验证 CSRF。正式候选表单复用同一主体当前 bootstrap 的 CSRF；原 captured UUID、正文及版本不变。对应真实续期 HTTP/production bundle 单例与当前隔离验证见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)。
 
 | METHOD + PATH | 额外必需字段 / 可选字段 |
 | --- | --- |
@@ -85,3 +85,18 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 ```
 
 核对测试：[workbench integration](../../../tests/p2-012-workbench.integration.test.mjs)、[process assembly](../../../tests/p2-012-process-assembly.integration.test.mjs)、[subscription HTTP/browser](../../../tests/p2-g2-subscription-http-browser.integration.test.mjs)。[长期背景](../../62_p2_012_human_confirmed_incident_lifecycle.md)。本轮未启用 Incident 或外发。
+
+
+## 正式候选工作区与恢复（WBINT-T27）
+
+正式页面为 `/workbench/app/incidents/candidates`、`/workbench/app/incidents/candidates/{UUID}` 和 `/workbench/app/incidents/{UUID}`。新页面只接受规范 UUID；旧管理端与既有 Incident API 保留原 profile。宿主 `incidentCandidateWorkspaceEnabled` 默认 false，并依赖既有 Incident 扩展；关闭时不发候选领域读取或创建恢复库。恢复还须独立 `workbenchDraftRecoveryEnabled`，bootstrap 的 `incident_candidate_draft_recovery_enabled` 为两项能力的交集，内部备注或退出功能不是其前提。无数据库迁移或第二套 Ticket 事实源。
+
+列表每页30、最多保留最近三页，显示的是当前加载数量。来源观察、当前获权 Report 总数、已提供选项、人工选择的 Report 数及涉及的独立个人 Ticket 数分别表达；不能把页面长度作为全量关联或影响人数。确认须明确选择当前合法范围、有效负责人及有效组或无组、逐项 Report 引用和主工单或无主工单。`owner_team_id:null` 表示无组，合法真实组编码 `NONE` 仍是字符串；非空主 Ticket 必须来自明确选择的来源。确认只创建独立 Incident/关联 Report，不合并或关闭个人 Ticket，不表示通知已发送。结果再通过当前获权 Incident GET 阅读，不能从保存的表单推测负责人或内部投影。
+
+刷新及既有单条 SSE 的 `incident_candidate.created`、`incident_candidate.updated`、`incident.updated` 更新当前事实，不改捕获版本、材料依据、UUID、正文或已有选择。材料变化/过期、父版本失配、当前范围或 owner/team 失效必须重新核对；采用当前依据需要工作人员明确操作。未提交输入或 UNKNOWN 会阻止意外离开；明确清除消费既有跨标签页失效，不能清理失败却声称输入已清除。
+
+恢复 scope 是当前 principal / `incident-candidate` / 候选 UUID / `incident-review`。复用既有 AES-GCM 非导出密钥、首次保存固定24小时、UTF-8 16KiB和各最多20份草稿与20个未结操作标记上限。原操作意图在 POST 前持久化。传输不确定保持 UNKNOWN；重载不自动发送或生成新 UUID，先只读核对原回执。只有仍有完整未过期正文、且只读核对仍 UNKNOWN 时，才能明确重放原 UUID、原版本与原正文。过期或显式丢弃只清除敏感正文，保留 opaque 原 UUID用于只读核对；不据此创建新意图。当前用途/对象/会话失权按既有 revoked 规则清除本地副本与操作标记；原服务端回执事实不变且读取继续按当前权限检查。
+
+直接成功 ACK、明确稳定 FAILED，以及 COMMITTED/FAILED 回执均结算恢复记录。浏览器清理失败不能把已知结果变成 UNKNOWN；保留已知结果与原 UUID，禁止新提交，只能只读核对及重试清理。当前授权 epoch 和原请求撤销状态共同阻止迟到读取、恢复授权及错误回调恢复已清理的缓存、输入或 UNKNOWN。权限变化后仍需当前 bootstrap 和当前资源读取，旧 ADMIN 响应不能复活受保护投影。
+
+资源复用原 App/Worker/Gateway和单条 SSE（默认32客户端），应用池预算不超过8；确认 body沿原32KiB、Report100/owner100/各组20及材料101上限。关闭新宿主能力停止入口、恢复与专用回执，已提交事实及旧 API 保留；外发开关与独立现场授权保持原边界。当前隔离 PostgreSQL、真实 loopback HTTP、production bundle 与清理证据见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)，不等同于真实外部服务、发送、部署、full/certify或Gate批准。
