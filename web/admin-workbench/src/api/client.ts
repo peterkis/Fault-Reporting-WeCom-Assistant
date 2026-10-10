@@ -1,6 +1,7 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
+import type {P2016ReopenResult,P2016ReopenReceipt} from '../../../../contracts/p2_016_contracts';
 import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets,P2016AssignmentResult,P2016AssignmentAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets} from '../../../../contracts/workbench_unassign_contracts';
 export type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets};
@@ -118,6 +119,12 @@ function decodeCompletion(value:unknown,ticketId:string):P2016CompletionResult {
   if(Object.keys(v).length!==7||v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null||Object.keys(c).length!==4||id(c.event_id)!==event||c.basis!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');
   return {...decodeTicketReceipt(v,ticketId),completion:{cycle_id:id(c.cycle_id),cycle_no:version(c.cycle_no),event_id:event,basis:'STAFF_COMPLETED'}};
 }
+function decodeReopen(value:unknown,ticketId:string):P2016ReopenResult {
+  const v=object(value),c=object(v.handling_cycle);
+  if(Object.keys(v).length!==7||v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null
+    ||Object.keys(c).length!==4||version(c.cycle_no)<2||c.first_responsibility_event_id!==null||c.staff_completion_event_id!==null)throw new ApiError(502,'INVALID_RESPONSE');
+  return {...decodeTicketReceipt(v,ticketId),handling_cycle:{id:id(c.id),cycle_no:version(c.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}};
+}
 async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016UnassignCommand|P2016ReopenCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
@@ -227,9 +234,14 @@ export const api={
     throw new ApiError(502,'INVALID_RESPONSE');
   }),
   reopenTicket:(ticketId:string,command:P2016ReopenCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'reopen',command,csrfToken,signal,v=>{
-    const cycle=decodeCycle(v.handling_cycle),result=decodeTicketReceipt(v,ticketId);
-    if(cycle.first_responsibility_event_id!==null||cycle.staff_completion_event_id!==null||result.ticket_version!==command.expected_version+1)throw new UnknownCommandOutcome();
-    return {...result,handling_cycle:cycle};
+    const result=decodeReopen(v,ticketId);if(result.ticket_version!==command.expected_version+1)throw new UnknownCommandOutcome();return result;
+  }),
+  reopenReceipt:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016ReopenReceipt>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/reopen/commands/'+encodeURIComponent(commandId),signal,value=>{
+    const v=object(value);if(id(v.ticket_id)!==ticketId||id(v.client_command_id)!==commandId)throw new ApiError(502,'INVALID_RESPONSE');const base={ticket_id:ticketId,client_command_id:commandId};
+    if(v.state==='UNKNOWN'&&Object.keys(v).length===3)return {...base,state:'UNKNOWN'};
+    if(v.state==='FAILED'&&Object.keys(v).length===4){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||! /^[A-Z][A-Z0-9_]{0,63}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'FAILED',error:{code,retryable:false}};}
+    if(v.state==='COMMITTED'&&Object.keys(v).length===4){const result=decodeReopen(v.result,ticketId);if(result.replayed!==true)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'COMMITTED',result};}
+    throw new ApiError(502,'INVALID_RESPONSE');
   }),
   completeTicket:(ticketId:string,command:P2016CompletionCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'complete',command,csrfToken,signal,v=>{
     const result=decodeCompletion(v,ticketId);if(result.completion.cycle_id!==command.handling_cycle_id||result.ticket_version<command.expected_version+1||result.ticket_version>command.expected_version+2)throw new UnknownCommandOutcome();return result;

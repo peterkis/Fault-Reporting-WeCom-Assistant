@@ -23,6 +23,7 @@ function renderFeedback(){
  $('feedback-panel').hidden=!visible;clear($('feedback-controls'));$('feedback-state').textContent=visible?feedbackState.message:'';$('feedback-state').className=feedbackState.kind;
  if(!visible||!allowed&&!pending)return;
  const button=node('button','仍未解决，重开此工单');button.type='button';button.dataset.action='submit-feedback';button.disabled=state.busy||Boolean(pending)||state.pendingCommandId!==null||state.storageBlocked||!allowed;button.addEventListener('click',()=>void submitFeedback());$('feedback-controls').append(button);
+ if(pending){const check=node('button','只读核对原反馈操作');check.type='button';check.dataset.action='check-feedback-command';check.disabled=state.busy||state.stopped||state.hidden;check.addEventListener('click',()=>void checkFeedback());$('feedback-controls').append(check);}
 }
 function clearFeedback(){feedbackState.pending=null;feedbackState.message='';feedbackState.kind='';$('feedback-panel').hidden=true;clear($('feedback-controls'));$('feedback-state').textContent='';}
 function committedFeedback(value,pending){
@@ -46,6 +47,22 @@ async function submitFeedback(){
   if(error.status&&error.status<500){feedbackState.pending=null;feedbackState.message=messageFor(error.status);feedbackState.kind='error';if(error.status===404)clearDetailState();state.detailEtag=null;}
   else{feedbackState.message='结果未知：保留原操作与版本，不会再次发送。请继续核对原结果。';feedbackState.kind='error';}
  }finally{if(finishOperation(operation)){renderFeedback();syncPendingButtons();schedule();}}
+}
+async function checkFeedback(){
+ const pending=feedbackState.pending;if(!pending||state.busy||state.stopped||state.hidden||state.detail?.request_ref!==pending.requestRef)return;
+ const operation=beginOperation({busy:true});feedbackState.message='正在只读核对原反馈操作…';feedbackState.kind='';renderFeedback();
+ try{
+  const response=await fetchJson(`/api/yixiaoxiu/requests/${pending.requestRef}/feedback/commands/${pending.input.client_command_id}`,{},operation.signal);if(!ownsOperation(operation))return;
+  const receipt=response.body,keys=receipt&&typeof receipt==='object'&&!Array.isArray(receipt)?Object.keys(receipt).sort().join(','):'';
+  if(receipt?.client_command_id!==pending.input.client_command_id||receipt.request_ref!==pending.requestRef)throw ambiguousResult();
+  if(receipt.state==='UNKNOWN'&&keys==='client_command_id,request_ref,state'){feedbackState.message='结果未知：尚无可确认的终态，保留原操作，不会再次发送。';feedbackState.kind='error';return;}
+  if(receipt.state!=='COMMITTED'||keys!=='client_command_id,request_ref,result,state'||receipt.result?.replayed!==true)throw ambiguousResult();committedFeedback(receipt.result,pending);
+  const fresh=await fetchJson(`/api/yixiaoxiu/requests/${pending.requestRef}`,{},operation.signal);if(!ownsOperation(operation))return;
+  if(fresh.body?.request_ref!==pending.requestRef||fresh.body.ticket?.ticket_no!==pending.ticketNo||!Object.hasOwn(ticketStatuses,fresh.body.ticket?.status??''))throw ambiguousResult();
+  const timeline=await loadTimeline(pending.requestRef,operation);if(!timeline||!ownsOperation(operation))return;
+  feedbackState.pending=null;feedbackState.message='已核对：原反馈已重开同一工单，请按当前进展继续查看。';feedbackState.kind='success';state.detailEtag=fresh.etag;renderDetail(fresh.body,timeline);
+ }catch(error){if(!ownsOperation(operation))return;if(error.status===404){clearDetailState();return;}feedbackState.message='结果未知：只读核对尚未完成，保留原操作，不会再次发送。';feedbackState.kind='error';}
+ finally{if(finishOperation(operation)){renderFeedback();syncPendingButtons();schedule();}}
 }
 const sessionRevalidationMs=5000;
 const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});

@@ -26,11 +26,12 @@ test('production H5 retains its original unknown feedback and checks its FEEDBAC
    await tab.evaluate('location.assign('+JSON.stringify('/wecom/yixiaoxiu/reports/'+f.requestRef)+')',{awaitPromise:false});
    await tab.waitFor("document.querySelector('#detail-view')?.hidden===false&&document.querySelector('#detail-status')?.textContent.includes('关闭')");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-action=submit-feedback]'))"),true,'production original-Reporter detail must expose its lawful explicit feedback control');
-   await tab.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST'){globalThis.__t20Posts.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);await response.clone().text();if(String(path).endsWith('/feedback'))throw new TypeError('SIMULATED_COMMITTED_RESPONSE_LOSS');return response;}globalThis.__t20Reads.push(String(path));return original(path,options);};})()");
+   await tab.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.__t20Statuses=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST'){globalThis.__t20Posts.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);await response.clone().text();globalThis.__t20Statuses.push({path:String(path),status:response.status});if(String(path).endsWith('/feedback'))throw new TypeError('SIMULATED_COMMITTED_RESPONSE_LOSS');return response;}globalThis.__t20Reads.push(String(path));return original(path,options);};})()");
    const before=Buffer.from(await tab.screenshot(),'base64');await writeFile(join(directory,'lawful-feedback-390.png'),before);
    await tab.evaluate("document.querySelector('[data-action=submit-feedback]').click()");
    await tab.waitFor("document.querySelector('[data-feedback-state]')?.textContent.includes('结果未知')");
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),1);
+   assert.deepEqual(await tab.evaluate('globalThis.__t20Statuses'),[{path:f.path+'/feedback',status:200}],'the public original POST must complete before its response is deliberately lost');
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-action=check-feedback-command]'))"),true,'unknown feedback requires original-purpose GET-only result checking');
    await tab.evaluate("document.querySelector('[data-action=check-feedback-command]').click()");
    await tab.waitFor("document.querySelector('[data-feedback-state]')?.textContent.includes('已核对')&&document.querySelector('#detail-status')?.textContent.includes('重新')");

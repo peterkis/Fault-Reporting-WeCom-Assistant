@@ -30,6 +30,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const reopenReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/reopen\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(reopenReceipt){queryKeys(url,[]);json(response,200,await tickets.reopenReceipt({authContext,ticketId:reopenReceipt[1],commandId:reopenReceipt[2]}));return true;}
       const unassignTargets=/^\/api\/tickets\/([0-9a-f-]{36})\/unassign\/communication-targets$/iu.exec(url.pathname);
       if(unassignTargets){if(!unassign)failP2016('DISABLED',503);queryKeys(url,['target_principal_id']);json(response,200,await unassign.communicationTargets({authContext,ticketId:unassignTargets[1],targetPrincipalId:url.searchParams.get('target_principal_id')}));return true;}
       const unassignReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/unassign\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);

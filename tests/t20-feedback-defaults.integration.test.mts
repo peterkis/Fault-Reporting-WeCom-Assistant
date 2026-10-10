@@ -23,7 +23,7 @@ test('readonly and OAuth-only profiles retain no feedback route; zero-write memb
   for(const profile of ['MEMBER_TICKET_READONLY','OAUTH_ONLY'] as const){
    const options={...f.options,identityMapping:await mapping(),oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:f.options.featureFlags,reporterFeedbackEnabled:true}};
    const app=profile==='MEMBER_TICKET_READONLY'?createYxxProfile({...options,profile:'MEMBER_TICKET_READONLY'}):createYxxProfile({...options,profile:'OAUTH_ONLY'});
-   try{await app.start();const member=browser(app.server);await login(member);assert.equal((await member.request(f.path+'/feedback',post(f.command,'not-a-write-grant'))).status,404);}
+   try{await app.start();const member=browser(app.server);await login(member);const denied=await member.request(f.path+'/feedback',post(f.command,'not-a-write-grant'));assert.equal(denied.status,403);assert.equal(t20Object(t20Object(denied.json()).error).code,'YXX_MEMBER_WRITE_DISABLED');}
    finally{await app.stop();assert.equal(app.server.listening,false);}
   }
   const app=createYxxProfile({...f.options,profile:'MEMBER_SELF_SERVICE',identityMapping:await mapping(),oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true}});
@@ -42,7 +42,7 @@ test('043 readiness is conditional on enabled W rounds while original W defaults
    for(const enabled of [false,true]){
     const runtime=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.context.origin,principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,...(enabled?{ticketReopenRoundsEnabled:true}:{})});
     if('disabled' in runtime)throw Error('T20_DEFAULT_READY_DISABLED');
-    try{await runtime.start();const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);}
+    try{await runtime.start();const projected=await runtime.coordinator.runOnce();assert.equal(projected.failures,0,JSON.stringify(projected));const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);}
     finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
    }
   }finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_ticket_reopen_rounds' WHERE migration_id='043_t20_missing'");}

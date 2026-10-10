@@ -11,11 +11,38 @@ interface ReceiptRow { id: string; command_hash: string; state: string; result_s
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';
 import type {P2016InternalNoteReceipt} from '../contracts/p2_016_contracts.js';
+import type {P2016ReopenReceipt} from '../contracts/p2_016_contracts.js';
+import {reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 import type {P2016ConversationHandlingAcknowledgement} from '../contracts/p2_016_contracts.js';
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
 
 export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'connect'> }) {
   return Object.freeze({
+    async reopenReceipt({ticketId,commandId,authorize}:{ticketId:string;commandId:string;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<P2016ReopenReceipt>{
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(transaction);
+        const base={client_command_id:commandId,ticket_id:ticketId};
+        // Original actor + Ticket + dedicated action. Never read the command hash,
+        // reason, raw body or private result snapshot, and never require write/raw flags.
+        const selected=await transaction.query<{state:string;version:number|null;event:string|null;error:string|null;retryable:boolean|null}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable
+          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid
+          AND actor_principal_id=$4::uuid AND command_type='reopen' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId,principal.principal_id]);
+        const row=selected.rows[0];if(!row||row.state==='STARTED')return {...base,state:'UNKNOWN'};
+        if(row.state==='FAILED'&&row.retryable===false&&row.error&&P2016_ERROR_CODES.includes(row.error))return {...base,state:'FAILED',error:{code:row.error,retryable:false}};
+        if(row.state==='COMMITTED'&&await reopenRoundsSchemaReady(transaction)){
+          const basis=await transaction.query<{id:string;cycle_no:number}>(`SELECT c.id::text,c.cycle_no FROM pilot_ticket.ticket_cycle_reopen r
+            JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.new_cycle_id AND c.ticket_id=r.ticket_id AND c.source_intake_id=r.source_intake_id
+            JOIN pilot_ticket.ticket_event e ON e.event_id=r.reopen_event_id AND e.ticket_id=r.ticket_id
+            WHERE r.ticket_id=$1::uuid AND r.client_command_id=$2::uuid AND r.origin='STAFF' AND r.reopen_event_id=$3::uuid
+             AND c.cycle_start_event_id=e.event_id AND e.event_type='ticket.reopened' AND e.operator_type='PILOT_USER'
+             AND e.operator_id=$4 AND e.aggregate_version=$5 AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId,commandId,row.event,principal.principal_id,row.version]);
+          const cycle=basis.rows[0];if(cycle)return {...base,state:'COMMITTED',result:{ok:true,ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event),control_event_id:null,replayed:true,
+            handling_cycle:{id:uuidP2016(cycle.id),cycle_no:versionP2016(cycle.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}}};
+        }
+        // A historical legacy reopen without the shared basis is not a T20 result.
+        return {...base,state:'UNKNOWN'};
+      });
+    },
     async conversationHandlingAcknowledgement({ticketId,commandId,authorize}:{ticketId:string;commandId:string;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<P2016ConversationHandlingAcknowledgement>{
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');

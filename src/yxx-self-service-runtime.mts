@@ -8,7 +8,7 @@ import type {YxxMemberFlags} from './yxx-self-service-authorization.mjs';
 import type {YxxQuota} from './yxx-self-service-command.mjs';
 import type {YxxOrchestratorOptions} from './yxx-self-service-orchestrator.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
-export interface YxxSelfServiceExtensionOptions {reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
+export interface YxxSelfServiceExtensionOptions {reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
 import { createHmac } from 'node:crypto';
 import {createYxxSelfServiceFeedback} from './yxx-self-service-feedback.mjs';
 import { createYxxMemberAuthorizer } from './p2-g2-yixiaoxiu-authorizer.mjs';
@@ -36,8 +36,8 @@ export function resolveYxxServiceCatalog(selected:ServiceCatalog|null|undefined,
 
 export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, reporterMemberEntry,
   identityMapping, reporterHmacSecret, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
-  ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true as const}), serviceCatalog, reporterFeedbackEnabled=false }:YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled?:boolean}={} as YxxSelfServiceExtensionOptions) {
-  if(typeof reporterFeedbackEnabled!=='boolean')failYxx('CONFIG_INVALID');
+  ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true as const}), serviceCatalog, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false }:YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled?:boolean}={} as YxxSelfServiceExtensionOptions) {
+  if(typeof reporterFeedbackEnabled!=='boolean'||typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled)failYxx('CONFIG_INVALID');
   const config = validateYxxEntryConfig(reporterMemberEntry);
   if (!['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(profile)
     || config.identityMode !== 'VERIFIED_DELEGATED_MAPPING'
@@ -68,7 +68,7 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const catalog=resolveYxxServiceCatalog(serviceCatalog,ruleEngine);
   const native = createYxxSelfServiceNativeHttp({ publicOrigin, oauth:oauth as EnabledWeComOAuth,
     oauthHttp: createWeComOAuthHttp({ oauth, publicOrigin }), profile, featureFlags,
-    command, reporterFeedbackEnabled, supplement: createYxxSelfServiceSupplement({ command }), query,
+    command, reporterFeedbackEnabled,reporterFeedbackDraftRecoveryEnabled, supplement: createYxxSelfServiceSupplement({ command }), query,
     authenticateMember: ({ request }:{request:IncomingMessage}) => authenticate(request), recoveryBindingSecret: reporterHmacSecret, serviceCatalog:catalog });
   // FULL is processed by the original Worker. Its App never constructs a Web pump.
   const orchestrator = profile === 'MEMBER_SELF_SERVICE'

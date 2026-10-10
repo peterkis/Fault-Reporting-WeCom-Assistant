@@ -5,12 +5,12 @@ import type {Principal,P2016ReopenCommand} from '../../api/client';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 import {subscribeDrafts} from '../drafts/encrypted-drafts';
 
-type State='idle'|'submitting'|'succeeded'|'denied'|'conflict'|'unknown';
+type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0);
  const [reason,setReason]=useState(''),[pending,setPending]=useState<P2016ReopenCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
  const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
- const blocked=state==='submitting'||state==='unknown',navigationBlocked=blocked||Boolean(reason);
+ const blocked=state==='submitting'||state==='checking'||state==='unknown',navigationBlocked=blocked||Boolean(reason);
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;setReason('');setPending(null);setState('idle');setMessage('');};
  useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
@@ -24,11 +24,29 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
    const result=await api.reopenTicket(ticketId,command,principal.csrf_token,controller.signal);if(!current())return;
    const fresh=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;
    if(fresh.version<result.ticket_version||fresh.handling_cycle?.id!==result.handling_cycle.id)throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
+   client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
    setReason('');setPending(null);setState('succeeded');setMessage(fresh.handling_cycle.first_responsibility_event_id===null?'已重开，本轮等待重新承接。':'已重开，当前新轮次已有后续处理。');refresh();
   }catch(error){
    if(!current())return;
    if(error instanceof ApiError){setPending(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if([403,404].includes(error.status))await clearTicketAuthorization(client,principal.principal_id,ticketId,error);else if(error.status===409)refresh();}
    else{setState('unknown');setMessage('结果未知：原重开操作、版本和原因保持不变，当前不会再次发送。');}
+  }finally{if(generation.current===token)request.current=null;}
+ }
+ async function checkOriginal(){
+  if(request.current||!pending)return;const command=pending,controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setState('checking');setMessage('正在只读核对原重开操作…');
+  const current=()=>{if(generation.current!==token||controller.signal.aborted)return false;try{currentRead();return true;}catch{return false;}};
+  try{
+   const receipt=await api.reopenReceipt(ticketId,command.client_command_id,controller.signal);if(!current())return;
+   if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果未知：保留原操作，尚无可确认的终态，不会再次发送。');return;}
+   const fresh=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;
+   client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
+   if(receipt.state==='FAILED'){setPending(null);setState('denied');setMessage('已核对原操作被拒绝；已重新读取当前权限与版本，请确认后明确发起新操作。');refresh();return;}
+   if(receipt.result.ticket_version!==command.expected_version+1||fresh.version<receipt.result.ticket_version||fresh.handling_cycle?.id!==receipt.result.handling_cycle.id)throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
+   setReason('');setPending(null);setState('succeeded');setMessage(fresh.handling_cycle.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新承接。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
+  }catch(error){
+   if(!current())return;
+   if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearTicketAuthorization(client,principal.principal_id,ticketId,error);}
+   else{setState('unknown');setMessage('结果未知：只读核对尚未完成，保留原操作，不会再次发送。');}
   }finally{if(generation.current===token)request.current=null;}
  }
  const allowed=principal.ticket_reopen_rounds_enabled&&context.data?.allowed_actions.includes('reopen')===true;
@@ -41,6 +59,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
    <p>重开后保留原处理组，清除当前处理人，等待重新承接。</p>
    <button type="submit" data-action="reopen-ticket" disabled={blocked||context.isFetching||!allowed||!reason.trim()}>重开此工单</button>
   </form>:<p>当前没有重开此工单的权限。</p>}
+  {pending&&['unknown','checking'].includes(state)?<button type="button" data-action="check-reopen-command" disabled={state==='checking'} onClick={()=>void checkOriginal()}>只读核对原重开操作</button>:null}
   {!blocked?<button type="button" onClick={()=>{void context.refetch();}}>重新读取重开权限</button>:null}
   {state!=='idle'?<p data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
  </section>;

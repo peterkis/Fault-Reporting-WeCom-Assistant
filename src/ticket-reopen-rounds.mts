@@ -22,6 +22,20 @@ export async function unassignedReopenedRound(tx:PostgresTransaction,ticketId:st
    AND e.event_type='ticket.reopened' AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId]);
  return selected.rowCount===1;
 }
+export async function reopenedRoundFollowUp(tx:PostgresTransaction,ticketId:string,principalId:string):Promise<{origin:'WEB_REPORTER'|'STAFF';is_previous_handler:boolean;awaiting_acceptance:true}|null>{
+ if(!await unassignedReopenedRound(tx,ticketId))return null;
+ const selected=await tx.query<{origin:'WEB_REPORTER'|'STAFF';completed_by:string}>(`SELECT r.origin,e.operator_id AS completed_by
+  FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
+  JOIN pilot_ticket.ticket_cycle_reopen r ON r.new_cycle_id=c.id AND r.ticket_id=t.id
+  JOIN pilot_ticket.ticket_event e ON e.event_id=r.completion_event_id AND e.ticket_id=t.id
+  WHERE t.id=$1::uuid AND t.status='REOPENED' AND t.assignee_id IS NULL AND c.first_responsibility_event_id IS NULL
+   AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$2::uuid AND p.is_active
+    AND (EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role pr WHERE pr.principal_id=p.id AND pr.role IN ('ADMIN','DISPATCHER'))
+     OR EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role pr JOIN pilot_ticket.pilot_team_member tm ON tm.principal_id=pr.principal_id
+      JOIN pilot_ticket.resolver_team rt ON rt.team_id=tm.team_id AND rt.is_active
+      WHERE pr.principal_id=p.id AND pr.role='HANDLER' AND tm.team_id=t.resolver_team_id)))`,[ticketId,principalId]);
+ const row=selected.rows[0];return row?{origin:row.origin,is_previous_handler:row.completed_by===principalId,awaiting_acceptance:true}:null;
+}
 export async function completedTicketRound(tx:PostgresTransaction,ticketId:string):Promise<CompletedTicketRound|null>{
  const selected=await tx.query<CompletedTicketRound>(`SELECT c.id::text,c.ticket_id::text,c.source_intake_id::text,c.cycle_no,
    c.staff_completion_event_id::text,e.operator_id AS completed_by,t.resolver_team_id,t.ticket_no,t.version,t.status

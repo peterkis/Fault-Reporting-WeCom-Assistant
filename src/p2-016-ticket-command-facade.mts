@@ -16,7 +16,7 @@ import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
-import {completedTicketRound,reopenCompletedRound,reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
+import {completedTicketRound,reopenCompletedRound,reopenRoundsSchemaReady,unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
 
@@ -45,6 +45,10 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
+    async reopenReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
+      guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+      return ledger.reopenReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
+    },
     async internalNoteReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
       guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
       return ledger.internalNoteReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
@@ -82,6 +86,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             if(!control?.ok||control.no_op)failP2016('CONTROL_CONFLICT',409);
           }
           const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
+          if(command.action==='start'&&ticket.status==='REOPENED'&&ticket.assignee_id===null&&await unassignedReopenedRound(transaction,ticket.id))failP2016('SELF_HANDLING_STATE_CONFLICT',409);
           let result: { ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent };
           let newCycle:{id:string;cycle_no:number;first_responsibility_event_id:null;staff_completion_event_id:null}|null=null;
           const completed=command.action==='reopen'&&ticketReopenRoundsEnabled?await completedTicketRound(transaction,ticket.id):null;

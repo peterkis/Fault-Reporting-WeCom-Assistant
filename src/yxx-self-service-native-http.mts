@@ -10,7 +10,7 @@ import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 type MemberServiceCatalog=Pick<ServiceCatalog,'catalog_version'|'listServices'>;
 type RawAuth=Record<string,unknown>;
 type ErrorFields={code?:string;status?:number};
-export interface YxxNativeHttpOptions {publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
+export interface YxxNativeHttpOptions {reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
@@ -199,9 +199,9 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 
 export function createYxxSelfServiceNativeHttp({
   publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,
 }:Omit<YxxNativeHttpOptions,'command'|'query'> & {reporterFeedbackEnabled?:boolean;command:YxxNativeHttpOptions['command'] & Partial<Pick<YxxSelfServiceCommand,'feedback'>>;query:YxxNativeHttpOptions['query'] & Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'feedbackReceipt'>>}={} as YxxNativeHttpOptions) {
-  if(typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
+  if(typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled||typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
     || !query?.list || !query?.detailWithEtag || !query?.timeline || !query?.commandStatus
@@ -303,7 +303,7 @@ export function createYxxSelfServiceNativeHttp({
         const context = await currentMember(request, { requireWrite: serviceEnabled });
         json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: !serviceEnabled,
           can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: (context as {csrf_token:string}).csrf_token,
-          recovery_scope: context.recovery_scope }); return true;
+          recovery_scope: context.recovery_scope,...(reporterFeedbackEnabled?{feedback_draft_recovery_enabled:reporterFeedbackDraftRecoveryEnabled}:{}) }); return true;
       }
       if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
         if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');

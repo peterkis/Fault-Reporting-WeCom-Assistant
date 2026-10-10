@@ -63,3 +63,7 @@ M拟新增独立严格boolean配置 `reporterFeedbackDraftRecoveryEnabled=false`
 恢复每次先核当前READ、当前原scope/应用/来源和独立用途，再恢复敏感内容；新提交另核当前WRITE/CSRF/round/version。退出、失权、来源失效或scope代次不匹配清页面敏感内容；过期/损坏记录不能给新操作授权。UNKNOWN即使raw不可恢复仍只能查原UUID，没有终态不得重交；COMMITTED只在闭合原结果与fresh事实均核实后说明已核对，FAILED也须fresh读取后由用户明确发起新意图。这是待公开RED/最小实现/正式浏览器验证的合同，不是cf53已通过的恢复证明。
 
 工作人员详情拟追加闭合可选`reopen_follow_up:{origin:'WEB_REPORTER'|'STAFF',is_previous_handler:boolean,awaiting_acceptance:true}`，仅真实043 current shared basis/未承接轮次、当前获权W读者可见。`is_previous_handler`根据040真实完成操作人及当前身份/对象读权派生；不保存新跟进或owner，不自动派回。前人失权仍拒读，其余获权团队保持未指派事项和普通待承接提示。M DTO没有该字段，不泄露工作人员身份或内部处理内容。本后继有两来源公开首断言，运行仍NOT_RUN。
+
+## b41 原11实际差额后的最小前向（SOURCE / NOT_RUN）
+
+b41 原六文件2PASS/9FAIL和NOT_REACHED完整保全，见本票执行记录。已观察的专用W ACK/两端UNKNOWN控件/M raw false声明/未承接START/两来源提示差额现在沿上文合同实现源码；H5现有FEEDBACK GET消费和W独立GET安全回执都不自动重POST。M当前详情本就只含安全Ticket编号/状态，不假造内部cycle/version供浏览器核对；闭合原FEEDBACK receipt确认原结果，再读当前本人同Ticket安全事实和timeline。PC按闭合原回执与当前同轮事实核对，两端暂仍本页内存，不实现未经first观察的raw存储。readonly/OAuth-only的403是原namespace拒绝，保留原FAIL后仅更正合法安排；W readiness先执行既有public coordinator前置，不修改Schema门禁。新候选须实际build/types/artifact和原11验证，默认关闭、当前READ边界、独立STAFF、原七remaining保持。

@@ -233,4 +233,8 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 `ticket_reopen_rounds_enabled` 是 W 宿主 `ticketReopenRoundsEnabled` 的独立能力投影，默认 false；显式启用须先具备 043 schema 与当前 W 权限。正式 PC 仅在该能力和当前 command context 同时允许 `reopen` 时显示原因表单，使用原 W `POST /api/tickets/{ticketId}/reopen`、当前 CSRF、原 UUID 和 `expected_version`；这不授予 Reporter 自助写权。新 shared round 清当前处理人、保处理组，之后必须显式重新承接；Conversation 责任独立。
 
-关闭该选项隐藏新 PC 消费并停用新 shared-round 服务路径，保留既有 legacy 生命周期行为和追加历史，不回改 043 或旧 SQL。当前 UNKNOWN 只保留本页原操作且不自动重发；原目的 GET 核对和保护恢复仍待后续公开实证，不能由首组 GREEN 推定完整恢复已交付。本人 Web 反馈有独立 M 默认关闭能力，见[反馈合同](../member/web-feedback-design.md)。
+关闭该选项隐藏新 PC 写消费并停用新 shared-round 服务路径，保留既有 legacy 生命周期行为和追加历史，不回改 043 或旧 SQL。`GET /api/tickets/{ticketId}/reopen/commands/{commandId}` 是原 STAFF_REOPEN 用途的只读核对：整 W 读入口仍启用且当前 principal 具有 Ticket READ 即可，独立于新写能力和 raw 恢复选项。它绑定原 actor/principal scope、Ticket、UUID 和 `reopen`，仅查 ledger 安全标量与不可变 shared-round basis，不读取原因、hash 或私有结果快照；其他 actor/用途或未取得终态返回 UNKNOWN，当前对象失权仍拒绝。闭合 [结果](../../../contracts/p2_016_reopen_result.schema.json) 和 [回执](../../../contracts/p2_016_reopen_receipt.schema.json) 不授予新操作权限。
+
+PC UNKNOWN 保留当前页原 UUID/版本/原因，显式只 GET 该回执及当前获权 Ticket，不自动 POST 或换 ID；COMMITTED 的原闭合结果与当前同轮事实核实后才显示已核对，FAILED 也先重读当前事实，UNKNOWN 保留原意图。raw 关闭不新建持久恢复记录。M 同样只 GET 原 FEEDBACK 用途与当前本人详情，保持原 READ/profile 规则；独立 M `reporterFeedbackDraftRecoveryEnabled=false` 仅声明启用反馈 bootstrap 的 `feedback_draft_recovery_enabled`，尚未实现 raw 存储。两端保护恢复的实际 save/reload/24h/失权仍待后续公开 first，不由现有首组 GREEN 推定交付。本人 Web 反馈的独立默认关闭能力见[反馈合同](../member/web-feedback-design.md)。
+
+真正 043 新轮次未承接前，legacy `start` 拒绝绕过首次责任依据；T04 的显式承接路径保持。当前获权 W TicketDetail 可追加闭合 `reopen_follow_up:{origin,is_previous_handler,awaiting_acceptance:true}`，只由当前未承接 shared basis 和 040 上轮完工人派生；获权团队看到普通待承接事实，旧处理人失权仍拒绝，M 不包含此字段。该字段不派工、不存新跟进或 owner。以上 b41 实际差额的前向源码待新固定候选验证，整票仍 IN_PROGRESS。
