@@ -2,6 +2,7 @@ import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchD
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
 import type {P2016ReopenResult,P2016ReopenReceipt} from '../../../../contracts/p2_016_contracts';
+import type {P2016TicketDetail} from '../../../../contracts/p2_016_contracts';
 import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets,P2016AssignmentResult,P2016AssignmentAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets} from '../../../../contracts/workbench_unassign_contracts';
 export type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets};
@@ -18,7 +19,7 @@ export function captureWorkbenchRead(signal:AbortSignal):()=>void {const epoch=a
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand,P2016CompletionCommand,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016RelatedConversationPage};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface P2016ReopenCommand {client_command_id:string;expected_version:number;reason_code:'STAFF_REOPEN';note:string}
-export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
+export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null;reopen_follow_up?:NonNullable<P2016TicketDetail['reopen_follow_up']>}
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
@@ -89,7 +90,9 @@ function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext
   if(ticket!==ticketId||actions.length>32||new Set(actions).size!==actions.length||actions.some(action=>! /^[a-z][a-z-]{0,63}$/u.test(action)))throw new ApiError(502,'INVALID_RESPONSE');
   const team=text(v.resolver_team_id);if(!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))throw new ApiError(502,'INVALID_RESPONSE');
   if(actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations','complete'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
-  return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{})};
+  let followUp:NonNullable<P2016TicketDetail['reopen_follow_up']>|undefined;
+  if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
+  return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
 }
 async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';

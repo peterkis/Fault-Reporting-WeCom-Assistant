@@ -242,3 +242,7 @@ M 的独立 `reporterFeedbackDraftRecoveryEnabled=false` 投影 `feedback_draft_
 真正 043 新轮次未承接前，legacy `start` 拒绝绕过首次责任依据；T04 的显式承接路径保持。当前获权 W TicketDetail 可追加闭合 `reopen_follow_up:{origin,is_previous_handler,awaiting_acceptance:true}`，只由当前未承接 shared basis 和 040 上轮完工人派生；获权团队看到普通待承接事实，旧处理人失权仍拒绝，M 不包含此字段。该字段不派工、不存新跟进或 owner。以上 b41 实际差额的前向源码待新固定候选验证，整票仍 IN_PROGRESS。
 
 b176原11实际9PASS/2FAIL保留原运行身份。专用ACK/两端UNKNOWN原GET核对、newround START阻断及两来源安全字段已到达；两FAIL在停用账号现行401与原403预期的差异，不能调整产品授权边界。后继来源校准精确401/闭合无正文认证拒绝，并准备关闭新write/raw仍当前READ的ACK、同浏览器raw reload和正式上轮HANDLER提示首组，全部NOT_RUN。保护恢复需独立原scope/Ticket/purpose、当前READ、首次保存24h不续期及有界非导出AES-GCM；raw过期或敏感内容不能恢复不等于原命令未提交，原opaque UUID只供安全GET核对。PC提示的实际消费和完整raw/currentauth尚未由现有9PASS证明，默认关闭和整票IN_PROGRESS保持。
+
+15306原四实际2PASS/2FAIL保留原身份：两端生产页面同浏览器reload后恢复原opaque UUID并由用户GET核对已通过；WRITE/raw关闭时当前READ专用ACK已到达，后续START广告不一致与fresh REOPENED后的literal PC提示缺失是实际RED。前向源码对真实043未指派未承接轮次独立于新write选项过滤start，保持无043 basis legacy；PC仅消费当前获权GET的闭合reopen_follow_up，在正在读取或错误时隐藏提示。提示不授予重开/承接权限、不通知外部、不重新分派。该后继尚NOT_RUN，当前原七仍IN_PROGRESS。
+
+raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允许该旧操作已被终态核对清理后为新输入创建敏感恢复副本；业务写权限与是否保存恢复副本独立。原POST已得到200而随后context GET暂时失败，也不得将已提交命令显示为已知拒绝或丢弃唯一UUID；保留UNKNOWN只读核对与新命令栅栏，待原receipt/当前事实和必要清理确认。两项生命周期边界已登记真实公开首测、尚NOT_RUN，不能把未运行源码审查当完成证据。

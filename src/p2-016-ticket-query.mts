@@ -17,7 +17,7 @@ import { failP2016,guardP2016,uuidP2016,codeP2016,limitP2016,localP2016,cursorP2
 import {staffCompletionEligibility} from './workbench-ticket-completion.mjs';
 import {assignmentActions,assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {unassignEligible,unassignSchemaReady} from './workbench-ticket-unassign.mjs';
-import {reopenedRoundFollowUp} from './ticket-reopen-rounds.mjs';
+import {reopenedRoundFollowUp,unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import {selfHandlingEligibility,selfHandlingResponsibilityEligibility,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 
 export interface RelatedConversationRow {session_id:string;session_row_version:string;status:string;conversation_principal_id:string|null;conversation_principal_name:string|null;assignment_status:string|null}
@@ -143,7 +143,10 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       if(ticketAssignmentEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...new Set([...result.allowed_actions,...assignmentActions(p,ticket)])]});}
       if(ticketUnassignEnabled){if(!await unassignSchemaReady(pool))failP2016('UNASSIGN_UNAVAILABLE',503);if(await unassignEligible(pool,p,ticket))result=publicP2016({...result,allowed_actions:[...result.allowed_actions,'unassign']});}
       if(ticketStaffCompletionEnabled){const eligibility=await staffCompletionEligibility(pool,p,ticket),cycle=eligibility.cycle;result=publicP2016({...result,handling_cycle:cycle?{id:cycle.id,cycle_no:cycle.cycle_no,first_responsibility_event_id:cycle.first_responsibility_event_id,staff_completion_event_id:cycle.staff_completion_event_id}:null,allowed_actions:[...result.allowed_actions,...(eligibility.allowed?['complete']:[])]});}
-      if(ticketReopenRoundsEnabled){const followUp=await reopenedRoundFollowUp(pool,ticket.id,p.principal_id);if(followUp)result=publicP2016({...result,reopen_follow_up:followUp,allowed_actions:result.allowed_actions.filter(action=>action!=='start')});}
+      if(ticket.status==='REOPENED'&&ticket.assignee_id===null&&await unassignedReopenedRound(pool,ticket.id)){
+        result=publicP2016({...result,allowed_actions:result.allowed_actions.filter(action=>action!=='start')});
+        if(ticketReopenRoundsEnabled){const followUp=await reopenedRoundFollowUp(pool,ticket.id,p.principal_id);if(followUp)result=publicP2016({...result,reopen_follow_up:followUp});}
+      }
       return result;
     },
     async reporterContact(input: TicketQueryInput) {
