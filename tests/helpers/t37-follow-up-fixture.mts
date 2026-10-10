@@ -14,6 +14,10 @@ import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
 import {migrateWorkbenchFollowUpSchedules} from '../../scripts/workbench-follow-up-schedules-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
+import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../../scripts/yxx-self-service-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{
   assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;
@@ -30,13 +34,15 @@ export type T37Fixture = Readonly<{
   http(index:number):Promise<T37Http>;createTicket():Promise<string>;setHandlerTeams(teams:readonly string[]):Promise<void>;
 }>;
 /** Omitted option is the actual default-off composition; no fixture manufactures an HTTP success. */
-export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean}>={}){
+export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;lifecycleEnabled?:boolean}>={}){
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t37',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough030(context);
     const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
-    if(options.ticketAssignmentEnabled===true||options.ticketUnassignEnabled===true)await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
+    if(options.lifecycleEnabled===true){await migrateP2012(legacyOptions);await migrateYxxSelfService(legacyOptions);}
+    if(options.ticketAssignmentEnabled===true||options.ticketUnassignEnabled===true||options.lifecycleEnabled===true)await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.ticketUnassignEnabled===true)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
+    if(options.lifecycleEnabled===true){await migrateTicketStaffCompletion({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl:context.databaseUrl,mode:'apply'});}
     if(options.workbenchFollowUpSchedulesEnabled===true)await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
@@ -51,7 +57,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     const followUpOption=options.workbenchFollowUpSchedulesEnabled===undefined?{}:{workbenchFollowUpSchedulesEnabled:options.workbenchFollowUpSchedulesEnabled};
     const assignmentOption=options.ticketAssignmentEnabled===undefined?{}:{ticketAssignmentEnabled:options.ticketAssignmentEnabled};
     const runtimeOptions={pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:origin,listenPort:port,
-      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...followUpOption,...assignmentOption,...(options.ticketUnassignEnabled===undefined?{}:{ticketUnassignEnabled:options.ticketUnassignEnabled})};
+      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...(options.lifecycleEnabled===true?{ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true}:{}),...followUpOption,...assignmentOption,...(options.ticketUnassignEnabled===undefined?{}:{ticketUnassignEnabled:options.ticketUnassignEnabled})};
     const runtime=createP2016Runtime(runtimeOptions);
     try{
       assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);assert.equal(runtime.selfService,null);
