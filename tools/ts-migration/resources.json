@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/045_workbench_verified_manual_reports.sql",
     "contracts/workbench_reporter_verification.schema.json",
     "contracts/workbench_verified_manual_report_projection.schema.json",
