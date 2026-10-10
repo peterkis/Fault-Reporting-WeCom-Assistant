@@ -128,8 +128,8 @@ test('T35 actual foreground material advances only its own source and reader, ne
       const orchestrator=createYxxSelfServiceOrchestrator({pool:f.pool,profile:'MEMBER_SELF_SERVICE',featureFlags:flags,
         ruleEngine:{catalog_version:'T35_SYNTHETIC_RULE_FAILURE',rule_set_version:'T35_SYNTHETIC_RULE_FAILURE',evaluate(){throw Error('T35_SYNTHETIC_UNCERTAIN_REVIEW');}}});
       await orchestrator.processOne({requestRef});
-      const text='T35最新网页补充：请核对合成工作站的打印设置。';
-      const supplemented=await memberPost('/api/yixiaoxiu/requests/'+requestRef+'/supplements',{schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text});
+      const supplementText='T35最新网页补充：请核对合成工作站的打印设置。';
+      const supplemented=await memberPost('/api/yixiaoxiu/requests/'+requestRef+'/supplements',{schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:supplementText});
       assert.equal(supplemented.status,202,await supplemented.clone().text());assert.equal(object(object(await supplemented.json()).receipt).accepted_revision,'2');
       await orchestrator.processOne({requestRef});
       const root=(await f.pool.query<{intake_id:string}>('SELECT intake_id::text FROM intake.web_request_binding WHERE request_ref=$1',[requestRef])).rows[0];assert.ok(root);
@@ -138,7 +138,7 @@ test('T35 actual foreground material advances only its own source and reader, ne
       assert.ok(Array.isArray(page.items));const selected=page.items.map(object).find(item=>item.service_intake_id===root.intake_id);assert.ok(selected);
       const reviewId=text(selected.id),review=reviewView(await json(await get('/api/manual-reviews/'+reviewId)));
       // Avoid force-fitting a Session/Ticket version into the genuine Web revision.
-      const latest=review.materials.find(item=>item.revision==='2'&&item.text===text),original=review.materials.find(item=>item.revision==='1');assert.ok(latest);assert.ok(original);
+      const latest=review.materials.find(item=>item.revision==='2'&&item.text===supplementText),original=review.materials.find(item=>item.revision==='1');assert.ok(latest);assert.ok(original);
       const readPath='/api/workbench/items/review/'+reviewId+'/read-position';
       const itemPath='/api/workbench/items/review/'+reviewId;
       const beforeItem=await json(await get(itemPath)),beforeSession=await json(await get('/api/conversations/'+session.id));
@@ -149,19 +149,19 @@ test('T35 actual foreground material advances only its own source and reader, ne
       await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:visibilityAndTrace});
       await browser.evaluate(visibilityAndTrace);
-      assert.equal(await browser.evaluate(`fetch('/api/manual-reviews/${reviewId}').then(r=>r.json()).then(v=>v.materials.some(m=>m.revision==='2'&&m.text===${JSON.stringify(text)}))`),true);
+      assert.equal(await browser.evaluate(`fetch('/api/manual-reviews/${reviewId}').then(r=>r.json()).then(v=>v.materials.some(m=>m.revision==='2'&&m.text===${JSON.stringify(supplementText)}))`),true);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-materials]'))"),false,'a genuine prefetch has not rendered source material');
       assert.deepEqual(await browser.evaluate('globalThis.__t35ReadPosts'),[],'GET/prefetch must never write a personal position');
       // The first expected product RED is this actual mounted HTTP contract, not a fake method or static scan.
       const a0=webPosition(positionPage(await json(await get(readPath)))),b0=webPosition(positionPage(await json(await get(readPath,1))));
       assert.equal(a0.last_read_position,'0');assert.equal(b0.last_read_position,'0');assert.equal(a0.latest_position,'2');assert.equal(a0.has_unread_material,true);
       await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/review/'+reviewId+'?detail=page'});
-      await browser.waitFor(`document.querySelector('[data-review-materials]')?.textContent.includes(${JSON.stringify(text)})`);
+      await browser.waitFor(`document.querySelector('[data-review-materials]')?.textContent.includes(${JSON.stringify(supplementText)})`);
       assert.equal(await browser.evaluate('document.visibilityState'),'hidden');
       assert.deepEqual(await browser.evaluate('globalThis.__t35ReadPosts'),[],'even opened and loaded material in a background document is unread');
       assert.equal(webPosition(positionPage(await json(await get(readPath)))).last_read_position,'0');
       // Visibility/focus are simulated only at the browser platform boundary; rendering, fetch and response remain actual.
-      await browser.evaluate(`(()=>{const paragraphs=[...document.querySelectorAll('[data-review-materials] li p')],target=paragraphs.find(p=>p.textContent===${JSON.stringify(text)});if(!target)throw Error('T35_ACTUAL_BODY_REQUIRED');target.scrollIntoView({block:'center'});globalThis.__t35Visibility='visible';document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
+      await browser.evaluate(`(()=>{const paragraphs=[...document.querySelectorAll('[data-review-materials] li p')],target=paragraphs.find(p=>p.textContent===${JSON.stringify(supplementText)});if(!target)throw Error('T35_ACTUAL_BODY_REQUIRED');target.scrollIntoView({block:'center'});globalThis.__t35Visibility='visible';document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
       await browser.waitFor(`globalThis.__t35ReadPosts.some(row=>row.path.endsWith('/read-position')&&row.body.source_ref===${JSON.stringify(latest.source_ref)}&&row.body.revision==='2')`);
       const posts=await browser.evaluate('globalThis.__t35ReadPosts') as ReadTrace[];
       assert.equal(posts.filter(row=>row.body.source_ref===latest.source_ref&&row.body.revision==='2').length,1);
