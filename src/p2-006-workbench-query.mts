@@ -15,7 +15,7 @@ export interface WorkbenchListInput extends AuthInput { state?: WorkbenchListSta
 export interface WorkbenchDetailInput { authContext: WorkbenchAuthContext; sessionId: string }
 export interface WorkbenchItemsInput extends AuthInput { sessionId?: string; before_sequence?: string | number | bigint; after_sequence?: string | number | bigint; limit?: string | number | null }
 type QueryAuthorizer = Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal' | 'safePrincipal' | 'actionsFor' | 'sessionAccessPredicate' | 'authorizeSession' | 'isAdmin' | 'listEligiblePrincipals'>;
-export interface WorkbenchQueryOptions { pool?: PostgresTransaction; enabled?: boolean; authorize?: QueryAuthorizer; nowEpochMs?: (() => unknown) | null; now?: () => Date; featureStatus?: Readonly<Record<string, boolean>> | null }
+export interface WorkbenchQueryOptions { pool?: PostgresTransaction; enabled?: boolean; authorize?: QueryAuthorizer; safeTimeline?:boolean;nowEpochMs?: (() => unknown) | null; now?: () => Date; featureStatus?: Readonly<Record<string, boolean>> | null }
 interface ItemRow { id: string; sequence_no: string | number; item_type: string; sender_kind: string; visibility: string; text: string | null; safe_content: unknown; occurred_at: unknown }
 interface WorkbenchBaseRow {
   session_id: string; thread_id: string; status: string; control_mode: string; generation_version: string; row_version: string;
@@ -238,8 +238,9 @@ export function createConversationWorkbenchQueryService({
   nowEpochMs = null,
   now = () => new Date(),
   featureStatus = null,
+  safeTimeline=false,
 }: WorkbenchQueryOptions = {}) {
-  if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || !authorize
+  if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || typeof safeTimeline!=='boolean'||!authorize
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') {
     throw new TypeError('Workbench query service configuration is invalid.');
   }
@@ -361,8 +362,8 @@ export function createConversationWorkbenchQueryService({
     const result = await (pool as PostgresTransaction).query<ItemRow>(
       `SELECT id::text, sequence_no::text, item_type, sender_kind, visibility, text, safe_content, occurred_at
          FROM conversation.item
-        WHERE session_id=$1::uuid AND visibility=ANY($2::text[]) ${boundary}
-        ORDER BY occurred_at ${direction}, sequence_no ${direction} LIMIT $${values.length}`,
+        WHERE session_id=$1::uuid AND visibility=ANY($2::text[]) ${boundary} ${safeTimeline?'AND retention_until>platform.local_now()':''}
+        ORDER BY ${safeTimeline?`sequence_no ${direction}`:`occurred_at ${direction}, sequence_no ${direction}`} LIMIT $${values.length}`,
       values,
     );
     const hasMore = result.rows.length > pageSize;

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_conversation_delivery_page.schema.json",
+  "title": "workbench_conversation_delivery_page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "delivery_id",
+          "purpose",
+          "status",
+          "side_effect_state",
+          "channel",
+          "attempt_count",
+          "last_error_code",
+          "sent_at",
+          "created_at"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "delivery_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "LEASED",
+              "SENDING",
+              "SENT",
+              "RECONCILIATION_REQUIRED",
+              "DEAD_LETTER",
+              "CANCELLED"
+            ]
+          },
+          "side_effect_state": {
+            "enum": [
+              "NOT_ATTEMPTED",
+              "ACKNOWLEDGED",
+              "UNKNOWN"
+            ]
+          },
+          "channel": {
+            "type": "string"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "$ref": "local_datetime.schema.json"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "$ref": "local_datetime.schema.json"
+          }
+        }
+      }
+    }
+  }
+}

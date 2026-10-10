@@ -1,0 +1,11 @@
+.candidate-decision {margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:8px;}
+.candidate-form-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0;}
+.candidate-form-grid label {display:grid;gap:8px;min-width:0;}
+.candidate-form-grid select {width:100%;min-width:0;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text-1);}
+.candidate-decision fieldset {min-width:0;border:1px solid var(--line);border-radius:6px;padding:12px;}
+.candidate-report-choice {display:flex;gap:8px;align-items:flex-start;margin:10px 0;}
+.candidate-report-choice span,.candidate-evidence dd,.candidate-decision p {overflow-wrap:anywhere;}
+.candidate-evidence {margin:12px 0;}
+.candidate-evidence dt {color:var(--text-2);margin-top:12px;}
+.candidate-evidence dd {margin:4px 0;}
+@media(max-width:900px){.candidate-form-grid {grid-template-columns:minmax(0,1fr);}.candidate-decision {padding:12px;}}
