@@ -22,8 +22,11 @@ GitHub实际读回已关闭14／43票，剩余29票OPEN：T01／T02／T03／T04�
 | T22 / #77 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)及[原七项验收记录](execution/t22.md)已核对。集中会话、获权沟通控制、回复／内部备注、确切Delivery展示和24小时恢复均为真实服务接入 |
 | T22实际集成与被测对象 | 受控快进至`882e384c1088df93fa24b7268f47a079459767d2`，真实被测祖先`06f3c880c6d759497eb68f44a8865a3c45d1fff3`。文档后继只改API和本票执行Markdown，原生MIGRATION_INPUT_DRIFT保留；不重绑manifest或冒称新被测对象 |
 | T22验收证据 | 固定源build／strict／artifact原生0；原22、有限兼容46及工具外层原生27／18／1通过。父独立核对1072输入、1216输出和5006个去重原归档文件；源码／API辅助核对未发现明确业务缺口。原FAIL、工具内层故意FAIL及NOT_REACHED保留 |
-| T22活动资源 | worker已实际RELEASE；父独立核实自有PG额外库／客户端0／0、probe pool0。App／HTTP／SSE／browser及匹配测试进程均关闭，保留合成PG供下一任务 |
-| 下一实施 | 保留的T08工作树合入实际最新集成后，按原七项先运行原公开HTTP tracer，再最小前向实现与整票串行验证。T35的#69／#77均已CLOSED，可独立准备源码；准备状态不计验收 |
+| T22活动资源与归档 | worker已实际RELEASE；父独立核实自有PG额外库／客户端0／0、probe pool0。App／HTTP／SSE／browser及匹配测试进程均关闭；1925个必要ignored文件逐路径／长度／SHA匹配保全，D盘本次managed工作树已归档并读回、实际目录已移除。保留合成PG供下一任务；旧C盘附件不在本次清理范围 |
+| 当前实施 | T08已恢复为唯一重型验证owner，保留工作树合入最新完成集成，按原七项先运行原公开HTTP tracer再最小前向实现。T35的#69／#77均CLOSED，实读全文／评论／标签后已领取给peterkis；独立工作树仅准备合同与原tracer，尚未构建或运行。T20只读整票预检并行，不触共享验证资源；准备状态不计验收 |
+| T35源码准备 | 干净私有交付`ab748f7b867eb8650d2fc97f6f484d01761ae94b`已合入实际root `60e33f4`；8个自有源／原副本、12个保护文件、四份闭合Schema及原routing并集由父静态核对。原唯一HTTP／production浏览器tracer保持240秒；047仅预留，生产源码／SQL无变更，全部运行NOT_BUILT_NOT_RUN。未合入root或关闭#90 |
+| T08进度与资源迁移 | 私有固定源`f158c6ba1498eb1e377cc0b86f196145b24cb551`的非法数组零写入、显式沟通交接、独立能力／legacy及原撤派共4项真实PASS；原七项仍IN_PROGRESS。C盘实际空间为0后归档失败，原失败／不完整目录保留；1983文件已转存D盘外部证据。worker明确释放后，父将唯一自有合成PG正常停止、1322文件逐SHA复制到D盘，保留C原目录；新实例端口／配置／身份及额外库／客户端0／0核实，执行notes和子进程临时路径转D后重新授T08串行窗口。历史PASS不重绑或重跑；用户数据库／服务未动 |
+| 全部历史临时资料迁D | 用户追加要求后，worker再次释放窗口；563个本任务历史目录、434104文件共9183074554字节（8.552GiB）已逐根pre/post SHA核对后移动到`D:/wecom-workbench-evidence/prior-c-temp`，C盘源目录全部消失，本任务前缀残留0。原FAIL／NOT_RUN／不完整归档及manifest不改，新旧位置通过`D:/wecom-workbench-evidence/c-to-d-move/location-map.json`检索；最终证明见同目录`parent-final-proof.json`。C盘实读可用8.832GiB。后续TEMP／TMP、npm缓存、截图、报告、测试PG均固定D盘，当前notes入口`D:/wecom-workbench-evidence/notes`；C盘已安装工具／skills仅只读使用 |
 
 WBINT-07／A07本地完成，全部43票仍IN_PROGRESS。新增开关默认false；用户两份dirty文档、四附件与空index保持。未push／PR、真实外部服务或发送、用户库迁移、部署、full／certify或Gate推进。
 
