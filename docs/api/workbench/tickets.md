@@ -229,20 +229,15 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
 
 
-## Bot 原报修人轮次通知读取（WBINT-T24，UI源码后继 NOT_BUILT_NOT_RUN）
+## Bot 原报修人轮次通知读取（WBINT-T24）
 
-现有获权 GET /api/tickets/{ticketId}/deliveries 和041真实节点绑定保持。ticketRoundNotificationsEnabled=false继续默认关闭；已认证 /api/lifecycle/bootstrap 新布尔 ticket_round_notifications_enabled 仅反映该宿主能力，客户端缺字段按false。正式Ticket详情仅能力开启时挂载“报修人通知送达”只读区域，读取现有安全DTO，显示首次责任／工作人员完工、轮次、PERSON路由、实际Delivery状态／尝试次数／side_effect_state／sent_at。原通知Schema仍闭合，轮次两字段成对可空；客户端拒绝未知字段、重复Delivery身份、不合法枚举或版本／时间，不收取raw目标、Bot／Reporter、binding或内部内容。
+本票已完成本地隔离验收；能力默认关闭，未部署或现场外发。沿用获权 `GET /api/tickets/{ticketId}/deliveries`，宿主 W、当前 Ticket READ、原认证与失败规则不变，没有新增通知读取路径。最多100条，不作为全历史分页。新节点通知沿原 Bot 单聊报修人绑定生成，041 只增加轮次／节点与既有通知的绑定，不建立第二套 Ticket 或 Delivery。
 
-组件沿共享当前授权epoch的同源无缓存GET，挂载读取一次，只提供“重新读取通知”的显式GET；卸载／切换取消自身读取，generation屏蔽晚结果，可信失权清当前Ticket／Session视图。没有通知POST、retry／reconcile／SDK调用、轮询、发送或通知消费者变更。
+`ticketRoundNotificationsEnabled=false` 继续默认关闭；已认证 `/api/lifecycle/bootstrap` 的 `ticket_round_notifications_enabled` 反映宿主能力，客户端缺字段按 false。启用时沿既有安全 DTO 显示首次责任／工作人员完工、轮次、PERSON 路由、实际 Delivery 状态、尝试次数、`side_effect_state` 和 `sent_at`。轮次两字段成对可空；客户端拒绝未知字段、重复 Delivery 身份、不合法枚举、版本或时间，不读取原始目标、Bot／Reporter、binding 或内部内容。
 
-原干净9ac9b280候选一次build／strict／artifact原生0／0／0，原browser首0PASS／1FAIL/native1：真实Cookie accept/start/complete、CLOSED和FIRST／STAFF cycle1 PERSON/PENDING两条API前置到达，正式页面缺区域为真实UI RED（原source45／compiled51）。原TAP、1920×1080失败PNG、完整1110inputs／1281outputs及sourceZIP冻结在D外部归档，手动重读／UI隐私／末尾物理counts均NOT_REACHED，不用源码补丁升级其结论。当前后继尚未build／运行，原首7836字节、SHA db547b5e777b064aca0d5c3092274c43e5981c918ea7c56f89dcb4e07599984d、240秒与角色／flags／routing不变。完整七项、T06 assignment/QUEUED首通知与真正T08／T09范围继续remaining；运行窗口已TEMP_RELEASE返T20。
+正式 Ticket 详情的“报修人通知送达”区域挂载时读取一次，提供“重新读取通知”的显式 GET。切换／卸载取消本次读取，generation 与当前授权 epoch 屏蔽迟到结果；可信失权清理视图。此区域不提交通知、重试或人工核对命令；既有 retry／reconcile HTTP 权限及独立外发开关保持。关闭能力停止新节点扫描与该区域展示，既有 Ticket／Outbox／Delivery／审计保留。
 
-
-### 原 UI GREEN 准备构建失败与 typed 时间后继（SOURCE／NOT_RUN）
-
-717d683d候选唯一构建在web严格类型前置原生exit1：Notification解码器原字符串时间返回值不满足LocalDateTime品牌，TS2322位于client.ts117。strict／artifact／SQL／PG fixture／HTTP／browser都NOT_RUN，无新UI业务结果或失败PNG；原9ac区域缺失RED及全部NOT_REACHED层保持原身份。该失败已完整D保全1872档（当前source raw1111／partial.build759／原日志2）及源ZIP，窗口明确TEMP_RELEASE返T20。
-
-仅源码修补Notification时间边界：保留现有primitive string与秒精度格式校验，进一步验证合法公历日期、闰年和时分秒范围，验证后返回LocalDateTime品牌。旧通用datetime和DTO品牌类型不放宽，未引入浏览器不可用的node:util依赖、新模块、any或双重断言。仅通知sent_at（允许null）与created_at走新typed parser；节点读取／UI和消费者等其它行为不变。原首／三测试／041／角色／flags／240秒保持，当前后继build／strict／artifact／browser全部NOT_RUN，只在新grant下验证原browser首。
+验证分属真实对象：824f 正式 production bundle 浏览器验证 PENDING、SENT、DEAD_LETTER、RECONCILIATION_REQUIRED 与读取／隐私边界；发送结果来自隔离合成 Sender，不代表现场送达。18d 一次 build／strict／artifact 为 0/0/0，原 Schema／Contract／资源检查各 1 PASS。早期缺区域 UI RED、严格类型失败、两次 Schema 失败与工具超时均保留在[逐项执行记录](../../../plans/admin-workbench-integration/execution/t24.md)，不改写为通过，不把较早制品重绑至文档后继。
 
 ## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
 
