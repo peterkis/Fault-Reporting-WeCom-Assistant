@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import type {IncomingMessage} from 'node:http';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+import {candidateBrowser,record} from './helpers/wbint-t27-browser-fixture.mjs';
+import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
+test('T27 an explicit public clear in a second owned same-profile tab clears both canonical recovery consumers without replaying any command',async()=>{
+ await candidateBrowser({purpose:'t27tabs',recovery:true},async({candidateId,browser,root,origin,server,choose})=>{
+  await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.innerText.includes('最长24小时')`);await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.innerText.includes('已保存恢复副本')`);let posts=0;const observe=(request:IncomingMessage)=>{if(request.method==='POST')posts++;};server.on('request',observe);let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+  try{tab=await yxxTab(browser,origin+'/workbench/app/incidents/candidates/'+candidateId);await tab.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]')?.value==='START_REVIEW'`);await tab.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=clear-candidate-input]').click()`);await tab.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]')?.value===''`);await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]')?.value===''`);assert.deepEqual(record(await browser.evaluate(candidateCopies)).drafts,[]);assert.deepEqual(record(await tab.evaluate(candidateCopies)).drafts,[]);assert.equal(posts,0);const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.innerText.includes('最长24小时')`);assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('select[aria-label="人工决定"]').value`),'');assert.equal(posts,0);}finally{await tab?.close();server.off('request',observe);}
+ });
+});

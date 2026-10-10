@@ -17,6 +17,8 @@ W 原生宿主的处理顺序是：未认证扩展 → 可用的 health provider
 
 Base URL 从宿主配置取得，浏览器使用同源相对路径。内部 W 的监听 helper 限定 loopback；Reporter/成员公开 origin 必须遵循各自配置及 HTTPS 规则。不得把测试随机端口、当前云域名或 P1 origin 写成所有 API 的固定地址。
 
+P2-016 的集中会话扩展复用 W，`workbenchConversationsEnabled=false` 控制 `/api/workbench/conversations` 及正式 conversation 页面。它沿同一认证和当前对象授权，复用 Control/Communication/Delivery，不创建另一个 HTTP 服务或 Ticket 事实源；[模块合同](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭)包含专用只读收据与旧 profile 的保留方式。
+
 ## 认证与权限
 
 | 调用域 | 身份 | 写入约束 |
