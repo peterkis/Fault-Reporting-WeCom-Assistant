@@ -9,20 +9,23 @@ import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {migrateTicketRoundNotifications} from '../../scripts/ticket-round-notifications-migrate.mjs';
 import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
 
-export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,manualRoundConsumption=false}:{ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;manualRoundConsumption?:boolean}={}){
+export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,manualRoundConsumption=false,roundNotificationsOff=false}:{ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;manualRoundConsumption?:boolean;roundNotificationsOff?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
     if(ticketUnassignEnabled)await migrateTicketUnassign({databaseUrl:f.databaseUrl,mode:'apply'});
+    // Base withWeb01Fixture(ticketSelfHandlingEnabled:true) formally installs033/039; above installs040. Never fake schema ledger or cycles.
+    if(ticketReopenRoundsEnabled)await migrateTicketReopenRounds({databaseUrl:f.databaseUrl,mode:'apply'});
     const intake=await seedPersistedIntake({pool:f.pool,text:'合成Bot单聊报修',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t24-fixture'});
     assert.ok(created.ticket);
     const options={pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
-      externalSendEnabled:false,ticketAssignmentEnabled,ticketUnassignEnabled,ticketConversationSelfHandlingEnabled,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,
+      externalSendEnabled:false,ticketAssignmentEnabled,ticketUnassignEnabled,ticketConversationSelfHandlingEnabled,ticketReopenRoundsEnabled,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,
       reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED' as const,reporterMemberEntry:entryConfig,
       wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}},
-      ticketRoundNotificationsEnabled:true};
+      ticketRoundNotificationsEnabled:!roundNotificationsOff};
     const runtime=createP2016Runtime(options);
     try{
       // Existing T08 host pattern: real HTTP, with automatic worker scheduling omitted only in explicit-consumption tests.
