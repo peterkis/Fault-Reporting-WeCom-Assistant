@@ -3,7 +3,7 @@ import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { CommunicationSuccess, CommunicationJson } from './p2-004-communication-core.mjs';
 import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 interface NotificationEvent { event_id: string; event_type: string; new_status: TicketStatus; created_at: string; aggregate_version: number; ticket_id?: string; ticket_no?: string; intake_id?: string }
-interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string }
+interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string; handling_cycle_id:string|null }
 type AppendObservation = (CommunicationSuccess & { error?: never }) | { error: { code: string }; message_id?: never; outbox_id?: never; delivery_ids?: never };
 interface NotificationOptions { enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
 
@@ -22,7 +22,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
     async project({transaction:tx,ticket,event}: { transaction: PostgresTransaction; ticket: { id: string; ticket_no?: string; intake_id?: string }; event: NotificationEvent | Pick<NotificationEvent, 'event_id'> }) {
       guardP2016(enabled);
       const fact=await tx.query<NotificationFact>(`SELECT e.event_id::text,e.ticket_id::text,e.event_type,e.new_status,e.created_at,e.aggregate_version,
-        t.ticket_no,t.source_intake_id::text AS intake_id FROM pilot_ticket.ticket_event e
+        t.ticket_no,t.source_intake_id::text AS intake_id,to_jsonb(t)->>'current_handling_cycle_id' AS handling_cycle_id FROM pilot_ticket.ticket_event e
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
@@ -32,6 +32,14 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         return {created:false,reason:'WEB_APP_ONLY'};
       const policy=ticketNotificationP2016({event_type:(event as NotificationFact).event_type,new_status:(event as NotificationFact).new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
       if(!policy)return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
+      // A later acceptance keeps the current round's physical promise, including a pending or failed Delivery.
+      // The JSON field lookup above remains compatible with the baseline that has no handling-cycle column.
+      const cycle=(event as NotificationFact).handling_cycle_id;
+      if(policy.notification_type==='TICKET_ACCEPTED'&&cycle&&(await tx.query(`SELECT 1 FROM pilot_ticket.ticket_handling_cycle c
+        JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.cycle_id=c.id AND ce.ticket_id=c.ticket_id
+        JOIN communication.ticket_notification_binding b ON b.ticket_event_id=ce.ticket_event_id AND b.ticket_id=c.ticket_id
+        WHERE c.id=$1::uuid AND c.ticket_id=$2::uuid AND b.notification_type='TICKET_ACCEPTED' LIMIT 1`,[cycle,ticket.id])).rowCount)
+        return {created:false,reason:'HANDLING_ROUND_ALREADY_NOTIFIED'};
       const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[(event as NotificationFact).event_id]);
       if(legacy.rowCount)return {created:false,reason:'P1_NOTIFICATION_OWNS_EVENT'};
       const origin=await tx.query<{ source_bot_id: string; reporter_wecom_userid: string; source_chat_type: string; source_chat_id: string }>(`SELECT i.source_bot_id,i.reporter_wecom_userid,
