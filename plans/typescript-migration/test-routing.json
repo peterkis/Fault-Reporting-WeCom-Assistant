@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t09-selected-ui-boundaries.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t09-safe-ack-boundaries.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t09-fields-and-authority.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t09-race-replay-reaccept.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -451,6 +452,9 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "t09-selected-ui": [
+      "tests/t09-selected-ui-boundaries.browser.test.mts"
+    ],
     "t09-boundaries": [
       "tests/t09-safe-ack-boundaries.integration.test.mts",
       "tests/t09-fields-and-authority.integration.test.mts",
@@ -474,6 +478,7 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/t09-selected-ui-boundaries.browser.test.mts",
       "tests/t09-safe-ack-boundaries.integration.test.mts",
       "tests/t09-fields-and-authority.integration.test.mts",
       "tests/t09-race-replay-reaccept.integration.test.mts",
