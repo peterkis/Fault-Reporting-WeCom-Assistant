@@ -16,7 +16,7 @@ export type P2016ReturnToDispatchResult=Readonly<{
   conversations:ReadonlyArray<Readonly<{session_id:string;session_row_version:number;control_event_id:string|null;changed:boolean}>>;
   replayed:boolean;
 }>;
-/** Current Ticket READ + original actor/resource/purpose; excludes selected Sessions and internal text. */
+/** W read enabled + current Ticket READ + original actor/resource/purpose. Independent of T09 write/draft flags, excludes selected Sessions/internal text. */
 export type P2016ReturnToDispatchAcknowledgement=P2016AssignmentAcknowledgement;
 export type P2016ReturnToDispatchTargets=Readonly<{items:ReadonlyArray<Readonly<{principal_id:string;display_name:string}>>}>;
 /** Append-only private fact; no new owner or round authority. */

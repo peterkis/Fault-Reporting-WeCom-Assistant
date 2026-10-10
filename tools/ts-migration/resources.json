@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_return_to_dispatch_receipt.schema.json",
     "database/migrations/048_ticket_return_to_dispatch.sql",
     "contracts/workbench_return_to_dispatch_contracts.d.ts",
     "contracts/p2_016_return_to_dispatch_command.schema.json",

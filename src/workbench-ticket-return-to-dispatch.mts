@@ -1,5 +1,6 @@
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery,P2016TicketRow} from './p2-016-ticket-query.mjs';
+import type {P2016ReturnToDispatchAcknowledgement} from '../contracts/workbench_return_to_dispatch_contracts.js';
 import {ticketActionAllowedP2016} from './p2-016-ticket-query.mjs';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
@@ -8,7 +9,7 @@ import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
 
 const startedStates=['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'];
 export interface ReturnToDispatchCommand {
@@ -70,7 +71,21 @@ async function currentSegmentStarted(tx:PostgresTransaction,ticket:P2016TicketRo
 }
 export function createTicketReturnToDispatchService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
  const ledger=createP2016CommandLedger({pool});
- return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}) {
+ return Object.freeze({async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016ReturnToDispatchAcknowledgement> {
+  const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+  // Safe READ survives the write/draft flags; the existing query still requires enabled W and current Ticket READ.
+  return transactionP2016(pool,async transaction=>{
+   await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+   const selected=await transaction.query<{state:unknown;version:unknown;event:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable
+     FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid
+     AND actor_principal_id=$4::uuid AND command_type='WORKBENCH_TICKET_RETURN_TO_DISPATCH' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId,principal.principal_id]);
+   const row=selected.rows[0];
+   if(!row||row.state==='STARTED')return publicP2016({state:'UNKNOWN' as const});
+   if(row.state==='COMMITTED')return publicP2016({state:'COMMITTED' as const,ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)});
+   if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({state:'FAILED' as const,error:{code:row.error,retryable:false as const}});
+   failP2016('ACTION_FAILED',503);
+  });
+ },async perform({authContext,command:input}:{authContext:unknown;command:unknown}) {
   guardP2016(enabled);const command=normalizeReturnToDispatchCommand(input);
   if(!await returnToDispatchSchemaReady(pool))failP2016('RETURN_TO_DISPATCH_UNAVAILABLE',503);
   return ledger.execute({command,receiptType:'WORKBENCH_TICKET_RETURN_TO_DISPATCH',authorize:async transaction=>{
