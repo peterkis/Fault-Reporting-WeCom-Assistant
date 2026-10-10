@@ -26,7 +26,7 @@ export interface T09Fixture {pool:PostgresPool;origin:string;runtime:P2016Enable
 export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ticketReturnToDispatchEnabled=false}:{ticketReturnToDispatchEnabled?:boolean}={}){
  const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t09',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
-  await applyThrough030(context);await migrateP2016({databaseUrl:context.databaseUrl,mode:'apply'});
+  await applyThrough030(context);const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(migrationOptions);
   await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool:context.pool}),roles:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
   const members=await Promise.all(roles.map((role,index)=>access.upsertPrincipal({wecomUserId:'t09-synthetic-'+index+'-'+randomUUID(),displayName:'T09 合成内部人员 '+index,roles:role,resolverTeamIds:['PILOT_IT']})));
