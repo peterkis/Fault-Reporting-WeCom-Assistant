@@ -101,3 +101,17 @@ READ_COMMITTED仅返回同原selection、当前actor／application／scope授权
 公开[VERIFIED保留投影](../../../contracts/workbench_verified_manual_report_projection.schema.json)闭合为`source_kind:MANUAL_REPORT,source,description,location,reporter:{verification:VERIFIED,name,departments},identity_source:VERIFIED_DIRECTORY_SELECTION,actor_principal_id,manual_contact_required,external_notification:false,notification_eligibility`。姓名／部门取本次原proof snapshot；ELIGIBLE严格对应manual_contact_required=false，其余true。它不含联系方式、raw成员ID、candidate ref、scope/hash、配置或private proof。既有投影Schema增加该独立分支，原HAND_ENTERED分支字段与含义保持。当前生产仍只写／读T17分支，此处schema冻结不是VERIFIED写入实现。
 
 成功／COMMITTED公开字段沿原13字段[已核实结果](../../../contracts/workbench_verified_manual_report_result.schema.json)，只增加已冻结VERIFIED与独立eligibility，不公开人员资料或proof；共享receipt Schema允许这个独立结果分支，UNKNOWN／FAILED与原T17结果不变。新`VerifiedManualReportProjection/Receipt`类型单独声明，未把当前T17生产返回类型偷偷改成已实现union。045仅预留，实际同一Intake private观察／Public projection／Core或Review／ledger的同Tx扩展等待真实POST RED；不新建第二套目录、Person、Ticket或receipt事实源。
+
+### 2026-10-10 原POST真实RED后的最小SOURCE实现（未构建／未运行）
+
+固定83c339的原8294／bc749首片已真实执行：build／strict／artifact全部native0，合法bootstrap及候选GET到达后，POST实际400而预期202；后续verify／VERIFIED／Core／ACK断言NOT_REACHED。原TAP没有读取error body，不能把静态UNVERIFIED-only normalizer原因说成实际response日志。完整原档及释放证据见本票执行记录，均保持原绑定。
+
+本分支后继SOURCE新增`workbench-reporter-verification.mts`消费已冻结closed envelope。待验行为：POST只接受三字段selection，显式候选开关和配置authority有效后，当前创建验权及原账本／用途／hash／原目标读取在READ ONLY事务内完成；Directory ADMISSION或READ_COMMITTED等待在事务外，与GET共用原2000ms／单在途／速率／16KiB约束。返回后再次验当前人员；事务内进入受理及commit前重验人员、scope／ACTIVE+VERIFIED证明与精确版本／时效。错actor／app／目标／pin／形状／时钟503，目录版本或绑定状态变更409，当前失权403；不退回手填或猜绑定。
+
+合法新受理复用原MANUAL账本savepoint、Intake、Journey／Leg、Decision、Core或Review，并在同事务保留原public snapshot及完整private ADMISSION观察；公开结果仍13字段且external_notification=false。资格只表示本次独立可达性观察，不代表Delivery创建或送达。没有调用SDK／sender，没有新增Outbox事实源。手填路径不读045或新增列，仍UNVERIFIED／人工联系。
+
+已提交POST先读取原actor＋用途＋UUID／body hash及Intake保存目标，只作当前对象READ；当前目录资料／可达性变更不重建旧snapshot。并发原命令获胜时，事务后补原对象READ及回复前人员／目标fence；同UUID异body409，不能把原proof改绑另一事项。最小GET ACK仍当前工作人员权限＋原UUID／用途，不请求Directory，返回前重验当前人员，不含原对象profile或private proof。两种回复均闭合解析原保存结果。
+
+042实际约束只允许HAND_ENTERED／UNVERIFIED，故新[045](../../../database/migrations/045_workbench_verified_manual_reports.sql)只扩现有Intake：增加nullable `manual_reporter_verification`及closed VERIFIED快照／private envelope一致性约束；旧27SQL、043与046不改，不回填、不新建Person／Ticket／所有权／receipt表。独立migrator默认check，apply依赖042、校验checksum并关闭max1 pool；当前未运行／未应用。隔离fixture仅在原显式`manualReports=true && reporterCandidates=true`装配它，原账户／角色／业务种子／两首字节／默认false不改。
+
+此SOURCE只准备首受理与最小回执；现有MANUAL公开资料reader／正式选择UI仍为UNVERIFIED-only，VERIFIED详细资料读取、不可变资料公开证明、公共HTTP负权与回滚、物理Delivery守恒、通知接缝及生产制品UI均待后继真实切片。关闭候选开关停止新核实选择，旧T17及最小账本ACK保留；不drop迁移或重写旧观察。全部新运行NOT_RUN，七项不关闭。

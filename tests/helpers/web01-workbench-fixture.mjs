@@ -19,6 +19,7 @@ import {migrateYxxSelfService} from '../../scripts/yxx-self-service-migrate.mjs'
 import {createYxxSelfServiceStore} from '../../src/yxx-self-service-store.mjs';
 import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 import {migrateWorkbenchManualReports} from '../../scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchVerifiedManualReports} from '../../scripts/workbench-verified-manual-reports-migrate.mjs';
 import {createServiceIntakeDecisionPort} from '../../src/p2-015-service-intake-decision-port.mjs';
 import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
 import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
@@ -62,6 +63,7 @@ export async function withWeb01Fixture(run,{workbenchRealtimeEnabled=false,workb
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
     if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
     if(workbenchManualReportsEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});}
+    if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));

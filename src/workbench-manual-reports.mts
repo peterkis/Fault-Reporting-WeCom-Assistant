@@ -15,16 +15,21 @@ import {createSafeActionExecutor} from './p2-015-safe-action-executor.mjs';
 import {routeRuleFailure} from './p2-015-decision-router.mjs';
 import type {SafeRoute} from './p2-015-decision-router.mjs';
 import {safeHash,P2_015_RESULT_CODES} from './p2-015-domain-contracts.mjs';
-import {failP2016,guardP2016,exactP2016,uuidP2016,publicP2016,stampP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
+import {failP2016,guardP2016,exactP2016,uuidP2016,publicP2016,stampP2016,transactionP2016,P2016_ERROR_CODES,hashP2016} from './p2-016-domain-contracts.mjs';
 import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {LocalDateTime} from '../contracts/time_contracts.js';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
-import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,VerifiedManualReportResult,ManualReporterAdmissionEnvelope} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
 import {createWorkbenchReporterCandidates} from './workbench-reporter-candidates.mjs';
+import {verifiedManualReportCommand,retainedReporterTarget} from './workbench-reporter-verification.mjs';
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
 interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;reporterCandidatesEnabled?:boolean;reporterDirectory?:ManualReporterDirectoryOptions|null;realtimeProjector?:Realtime|null}
+type AdmissionCommand=ManualReportCommand|VerifiedManualReportCommand;
+type AdmissionResult=ManualReportResult|VerifiedManualReportResult;
+type AdmissionReceipt=Exclude<ManualReportReceipt,{state:'COMMITTED'}>|{client_command_id:string;state:'COMMITTED';result:AdmissionResult&{replayed:true}};
 export function manualReportCommand(input:unknown):ManualReportCommand{
   const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter']);
   if(v.schema_version!==1)failP2016();
@@ -36,19 +41,26 @@ export async function manualReportsSchemaReady(pool:PostgresTransaction){
 function manualExcerpt(value:string,maximum:number){
   let result='';for(const character of value){if(result.length+character.length>maximum)break;result+=character;}return result;
 }
-function storedResult(input:unknown,commandId:string):ManualReportResult&{replayed:true}{
+function storedResult(input:unknown,commandId:string):AdmissionResult&{replayed:true}{
   try{
-    const v=exactP2016(input,['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','external_notification','result_code','ticket','review']);
+    const keys=['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','external_notification','result_code','ticket','review'];
+    const candidate=exactP2016(input,[...keys,'notification_eligibility'],keys),verified=candidate.reporter_verification==='VERIFIED';
+    const v=exactP2016(candidate,verified?[...keys,'notification_eligibility']:keys);
     const resultCode=P2_015_RESULT_CODES.find(code=>code===v.result_code);
     if(v.ok!==true||uuidP2016(v.client_command_id)!==commandId||typeof v.intake_no!=='string'||!/^INT-[0-9]{8}-[0-9]{4,}$/u.test(v.intake_no)
-      ||(v.source!=='PHONE'&&v.source!=='ON_SITE')||v.reporter_verification!=='UNVERIFIED'||v.manual_contact_required!==true||v.external_notification!==false||!resultCode)failP2016();
+      ||(v.source!=='PHONE'&&v.source!=='ON_SITE')||(!verified&&(v.reporter_verification!=='UNVERIFIED'||v.manual_contact_required!==true))
+      ||verified&&((v.notification_eligibility!=='ELIGIBLE'&&v.notification_eligibility!=='NOT_REACHABLE')||v.manual_contact_required!==(v.notification_eligibility!=='ELIGIBLE'))
+      ||v.external_notification!==false||!resultCode)failP2016();
     const ticket=v.ticket===null?null:exactP2016(v.ticket,['id','number','status']);
     if(ticket&&(typeof ticket.number!=='string'||!/^IT-[0-9]{8}-[0-9]{4,}$/u.test(ticket.number)||!isTicketStatus(ticket.status)))failP2016();
     const review=v.review===null?null:exactP2016(v.review,['id','status']);if(review&&review.status!=='PENDING')failP2016();
-    return publicP2016({ok:true,client_command_id:commandId,intake_id:uuidP2016(v.intake_id),intake_no:v.intake_no,source:v.source,
-      reporter_verification:'UNVERIFIED',manual_contact_required:true,external_notification:false,result_code:resultCode,
+    const base:Omit<ManualReportResult,'reporter_verification'|'manual_contact_required'|'replayed'>&{replayed:true}={ok:true,client_command_id:commandId,intake_id:uuidP2016(v.intake_id),intake_no:v.intake_no,source:v.source,
+      external_notification:false as const,result_code:resultCode,
       ticket:ticket?{id:uuidP2016(ticket.id),number:ticket.number as string,status:ticket.status as TicketStatus}:null,
-      review:review?{id:uuidP2016(review.id),status:'PENDING'}:null,replayed:true});
+      review:review?{id:uuidP2016(review.id),status:'PENDING' as const}:null,replayed:true as const};
+    if(verified){if(v.notification_eligibility!=='ELIGIBLE'&&v.notification_eligibility!=='NOT_REACHABLE')failP2016();
+      return publicP2016({...base,reporter_verification:'VERIFIED',manual_contact_required:v.notification_eligibility!=='ELIGIBLE',notification_eligibility:v.notification_eligibility});}
+    return publicP2016({...base,reporter_verification:'UNVERIFIED',manual_contact_required:true});
   }catch{failP2016('ACTION_FAILED',503);}
 }
 export function createWorkbenchManualReports({pool,query,enabled=false,draftRecoveryEnabled=false,reporterCandidatesEnabled=false,reporterDirectory=null,realtimeProjector=null}:Options){
@@ -71,7 +83,28 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
     return transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorize(authContext,tx);
       return publicP2016({can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});});
   }
-  async function receipt(authContext:unknown,commandId:string):Promise<ManualReportReceipt>{
+  const currentPrincipal=(authContext:unknown)=>transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');return (await authorize(authContext,tx)).principal;});
+  async function committedTarget(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:VerifiedManualReportCommand):Promise<YxxMemberScope|null>{
+    const row=(await tx.query<{state:string;hash:string;purpose:string;proof:unknown}>(`SELECT r.state,r.command_type AS purpose,r.command_hash AS hash,i.manual_reporter_verification AS proof
+      FROM pilot_ticket.ticket_command_receipt r LEFT JOIN intake.service_intake i ON i.manual_command_receipt_id=r.id
+      AND i.source_channel='MANUAL' AND i.source_provider='STAFF_MANUAL_REPORT' AND i.manual_actor_principal_id=r.actor_principal_id
+      AND i.retention_until>platform.local_now() AND r.command_type='WORKBENCH_MANUAL_REPORT'
+      WHERE r.command_scope=$1 AND r.client_command_id=$2::uuid AND r.actor_principal_id=$3::uuid LIMIT 1`,
+    ['P2_016:'+principal.principal_id,command.client_command_id,principal.principal_id])).rows[0];
+    if(row&&(row.purpose!=='WORKBENCH_MANUAL_REPORT'||row.hash!==hashP2016({...command,action:'manual-report'})))failP2016('COMMAND_CONFLICT',409);
+    return row?.state==='COMMITTED'?retainedReporterTarget(row.proof,principal.principal_id,command.reporter):null;
+  }
+  async function verifyForCommand(authContext:unknown,command:VerifiedManualReportCommand){
+    guardP2016(reporterCandidatesEnabled);
+    const before=await transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
+      if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='045_workbench_verified_manual_reports'")).rowCount!==1)failP2016('ACTION_FAILED',503);
+      return {principal,target:await committedTarget(tx,principal,command)};});
+    const outcome=await reporterCandidates.verify(before.principal.principal_id,command.reporter,before.target).then(value=>({ok:true as const,value}),(error:unknown)=>({ok:false as const,error}));
+    const after=await currentPrincipal(authContext);if(after.principal_id!==before.principal.principal_id)failP2016('FORBIDDEN',403);
+    if(!outcome.ok)throw outcome.error;reporterCandidates.fence(after.principal_id,command.reporter,outcome.value,before.target);
+    return {principalId:after.principal_id,target:before.target,verification:outcome.value};
+  }
+  async function receipt(authContext:unknown,commandId:string):Promise<AdmissionReceipt>{
     guardP2016(draftRecoveryEnabled);
     return transactionP2016(pool,async tx=>{
       await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
@@ -79,30 +112,40 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
         FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type='WORKBENCH_MANUAL_REPORT' LIMIT 1`,
       ['P2_016:'+principal.principal_id,commandId])).rows[0];
       const base={client_command_id:commandId};
+      const current=await authorize(authContext,tx);if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
       if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
       if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({...base,state:'FAILED',error:{code:row.error,retryable:false}});
       if(row.state==='COMMITTED')return publicP2016({...base,state:'COMMITTED',result:storedResult(row.result,commandId)});
       failP2016('ACTION_FAILED',503);
     });
   }
-  async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:ManualReportCommand):Promise<Omit<ManualReportResult,'replayed'>>{
+  async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:AdmissionCommand,verification:ManualReporterAdmissionEnvelope|null=null):Promise<Omit<ManualReportResult,'replayed'>|Omit<VerifiedManualReportResult,'replayed'>>{
+    if((command.reporter.verification==='VERIFIED_SELECTION')!==(verification!==null))failP2016('ACTION_FAILED',503);
+    if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(principal.principal_id,command.reporter,verification,null);
     await realtimeProjector?.lock(tx);
     const stamp=stampP2016(),retentionEpoch=String(BigInt(stamp.epoch)+30n*86400000n),retention=formatEpochMsToShanghaiLocal(retentionEpoch);
-    const snapshot={source:command.source,description:command.description,location:command.location,reporter:command.reporter,identity_source:'HAND_ENTERED',manual_contact_required:true,external_notification:false};
+    const eligibility=verification?.proof.reachability.status==='REACHABLE'?'ELIGIBLE' as const:'NOT_REACHABLE' as const;
+    const snapshot=verification?{source:command.source,description:command.description,location:command.location,
+      reporter:{verification:'VERIFIED',name:verification.proof.profile_at_report.display_name,departments:verification.proof.profile_at_report.departments},
+      identity_source:'VERIFIED_DIRECTORY_SELECTION',manual_contact_required:eligibility!=='ELIGIBLE',notification_eligibility:eligibility,external_notification:false}
+      :{source:command.source,description:command.description,location:command.location,reporter:command.reporter,identity_source:'HAND_ENTERED',manual_contact_required:true,external_notification:false};
     const receipt=(await tx.query<{id:string}>("SELECT id::text FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type='WORKBENCH_MANUAL_REPORT'",['P2_016:'+principal.principal_id,command.client_command_id])).rows[0];if(!receipt)failP2016('ACTION_FAILED',503);
     const intake=(await tx.query<{id:string;intake_no:string}>(`WITH number AS (SELECT nextval('intake.service_intake_number_seq')::text AS n)
       INSERT INTO intake.service_intake(intake_no,source_channel,source_provider,source_bot_id,source_chat_type,reporter_wecom_userid,primary_message_id,
         explicit_aggregation_boundary,privacy_class,retention_until,retention_until_epoch_ms,request_type,summary,reported_location_text,status,last_message_at,
-        manual_report_snapshot,manual_actor_principal_id,manual_command_receipt_id)
+        manual_report_snapshot,manual_actor_principal_id,manual_command_receipt_id${verification?',manual_reporter_verification':''})
       SELECT 'INT-'||to_char($1::timestamp without time zone,'YYYYMMDD')||'-'||lpad(n,GREATEST(4,char_length(n)),'0'),
-        'MANUAL','STAFF_MANUAL_REPORT',NULL,NULL,NULL,NULL,true,'PERSONAL',$2::timestamp without time zone,$3::bigint,'UNKNOWN',$4,$5,'RECEIVED',$1::timestamp without time zone,$6::jsonb,$7::uuid,$8::uuid
-      FROM number RETURNING id::text,intake_no`,[stamp.local,retention,retentionEpoch,manualExcerpt(command.description,500),command.location.text,JSON.stringify(snapshot),principal.principal_id,receipt.id])).rows[0];if(!intake)failP2016('ACTION_FAILED',503);
+        'MANUAL','STAFF_MANUAL_REPORT',NULL,NULL,NULL,NULL,true,'PERSONAL',$2::timestamp without time zone,$3::bigint,'UNKNOWN',$4,$5,'RECEIVED',$1::timestamp without time zone,$6::jsonb,$7::uuid,$8::uuid${verification?',$9::jsonb':''}
+      FROM number RETURNING id::text,intake_no`,[stamp.local,retention,retentionEpoch,manualExcerpt(command.description,500),command.location.text,JSON.stringify(snapshot),principal.principal_id,receipt.id,...(verification?[JSON.stringify(verification)]:[])])).rows[0];if(!intake)failP2016('ACTION_FAILED',503);
     const trace='manual:'+intake.id;
     await tx.query(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
-      VALUES('intake.received','intake',$1::uuid,1,1,$2::timestamp without time zone,$3,$4::jsonb)`,[intake.id,stamp.local,trace,JSON.stringify({intake_id:intake.id,source_channel:'MANUAL',source:command.source,actor_principal_id:principal.principal_id,reporter_verification:'UNVERIFIED',manual_contact_required:true})]);
-    // This hash identifies this independent contact/source scope only. It is
-    // never a verified Person, member binding or matching key for name/phone.
-    const contactScope=safeHash({source:'STAFF_MANUAL_REPORT',intake_id:intake.id}),profile={source:'HAND_ENTERED',version:'1',verification:'UNVERIFIED',manual_contact_required:true};
+      VALUES('intake.received','intake',$1::uuid,1,1,$2::timestamp without time zone,$3,$4::jsonb)`,[intake.id,stamp.local,trace,JSON.stringify({intake_id:intake.id,source_channel:'MANUAL',source:command.source,actor_principal_id:principal.principal_id,
+        reporter_verification:verification?'VERIFIED':'UNVERIFIED',manual_contact_required:verification?eligibility!=='ELIGIBLE':true})]);
+    // Hand-entry identifies only this independent source. Verified selection
+    // retains the explicitly mapped canonical target, never a name/phone match.
+    const contactScope=verification?verification.proof.scope.scopeHash:safeHash({source:'STAFF_MANUAL_REPORT',intake_id:intake.id}),
+      profile=verification?{source:'VERIFIED_DIRECTORY_SELECTION',version:verification.selection.candidate_version,verification:'VERIFIED',profile_at_report:verification.proof.profile_at_report,manual_contact_required:eligibility!=='ELIGIBLE'}
+        :{source:'HAND_ENTERED',version:'1',verification:'UNVERIFIED',manual_contact_required:true};
     const journey=(await tx.query<{id:string}>(`INSERT INTO intake.contact_journey(creation_key,origin_intake_id,entry_mode,origin_channel,current_channel,reporter_identity_hash,
       profile_resolution_status,profile_snapshot,profile_snapshot_hash,status,evaluation_due_at,evaluation_due_epoch_ms,reported_at,last_activity_at,privacy_class,retention_until,retention_until_epoch_ms)
       VALUES($1,$2::uuid,'STAFF_MANUAL_REPORT','MANUAL','MANUAL',$3,'NOT_REQUIRED',$4::jsonb,$5,'OPEN',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone,$6::timestamp without time zone,'PERSONAL',$8::timestamp without time zone,$9::bigint) RETURNING id::text`,
@@ -123,20 +166,22 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
     const ticket=(await tx.query<{id:string;number:string;status:TicketStatus}>(`SELECT id::text,ticket_no AS number,status FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid`,[intake.id])).rows[0]??null;
     const review=(await tx.query<{id:string;status:'PENDING'}>(`SELECT id::text,status FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING' ORDER BY created_at,id LIMIT 1`,[intake.id])).rows[0]??null;
     if(review)await realtimeProjector?.review({transaction:tx,reviewId:review.id});
-    await authorize({principal_id:principal.principal_id},tx);
-    return publicP2016({ok:true,client_command_id:command.client_command_id,intake_id:intake.id,intake_no:intake.intake_no,source:command.source,reporter_verification:'UNVERIFIED',manual_contact_required:true,external_notification:false,result_code:route.result_code,ticket,review});
+    const current=await authorize({principal_id:principal.principal_id},tx);
+    if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(current.principal.principal_id,command.reporter,verification,null);
+    const base={ok:true as const,client_command_id:command.client_command_id,intake_id:intake.id,intake_no:intake.intake_no,source:command.source,external_notification:false as const,result_code:route.result_code,ticket,review};
+    return verification?publicP2016({...base,reporter_verification:'VERIFIED',manual_contact_required:eligibility!=='ELIGIBLE',notification_eligibility:eligibility})
+      :publicP2016({...base,reporter_verification:'UNVERIFIED',manual_contact_required:true});
   }
   return Object.freeze({
     async handler({request,response,url,authContext,readJson,validateWriteRequest,json}:HttpContext){
       if(url.pathname==='/api/workbench/reporter-candidates'){
         guardP2016(enabled&&reporterCandidatesEnabled);if(request.method!=='GET')failP2016('NOT_FOUND',404);
-        const currentPrincipal=()=>transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');return (await authorize(authContext,tx)).principal;});
-        const principal=await currentPrincipal();
+        const principal=await currentPrincipal(authContext);
         // Network/adapter wait is outside the database transaction. Current
         // creation authority is checked again before any page or error returns.
         const outcome=await reporterCandidates.search(principal.principal_id,url.searchParams).then(
           page=>({ok:true as const,page}),(error:unknown)=>({ok:false as const,error}));
-        const current=await currentPrincipal();if(current.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+        const current=await currentPrincipal(authContext);if(current.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
         if(!outcome.ok)throw outcome.error;json(response,200,outcome.page);return true;
       }
       const capabilityPath=url.pathname==='/api/workbench/reports/capabilities',receiptPath=/^\/api\/workbench\/reports\/commands\/([^/]+)$/u.exec(url.pathname);
@@ -145,8 +190,37 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
       if(request.method==='GET'&&receiptPath){json(response,200,await receipt(authContext,uuidP2016(receiptPath[1])));return true;}
       if(request.method!=='POST'||capabilityPath||receiptPath)failP2016('NOT_FOUND',404);
       const body=await readJson(request);if(Buffer.byteLength(JSON.stringify(body),'utf8')>16*1024)failP2016('BODY_TOO_LARGE',413);validateWriteRequest(request,authContext,body,{sessionMutation:false});
-      const command=manualReportCommand(body),result=await ledger.execute({command:{...command,action:'manual-report'},receiptType:'WORKBENCH_MANUAL_REPORT',authorize:tx=>authorize(authContext,tx),run:(tx,{principal})=>admit(tx,principal,command)});
-      json(response,result.ok===false?503:result.replayed?200:202,result);return true;
+      const candidate=exactP2016(body,['schema_version','client_command_id','source','description','location','reporter']);
+      const rawReporter=exactP2016(candidate.reporter,['verification','candidate_ref','candidate_version','name','contact','department'],['verification']);
+      const command=rawReporter.verification==='VERIFIED_SELECTION'?verifiedManualReportCommand(body):manualReportCommand(body);
+      const verifiedCommand=command.reporter.verification==='VERIFIED_SELECTION'?verifiedManualReportCommand(body):null;
+      const checked=verifiedCommand?await verifyForCommand(authContext,verifiedCommand):null;
+      const result=await ledger.execute({command:{...command,action:'manual-report'},receiptType:'WORKBENCH_MANUAL_REPORT',authorize:async tx=>{
+        const context=await authorize(authContext,tx);
+        if(checked&&verifiedCommand){if(context.principal.principal_id!==checked.principalId)failP2016('FORBIDDEN',403);
+          const target=await committedTarget(tx,context.principal,verifiedCommand);
+          if(checked.target&&(!target||hashP2016(target)!==hashP2016(checked.target)))failP2016('ACTION_FAILED',503);
+          reporterCandidates.fence(context.principal.principal_id,verifiedCommand.reporter,checked.verification,checked.target);}
+        return context;
+      },run:(tx,{principal})=>{
+        if(checked&&checked.verification.purpose!=='ADMISSION')failP2016('ACTION_FAILED',503);
+        return admit(tx,principal,command,checked?.verification??null);
+      }});
+      if(verifiedCommand&&result.ok===true&&result.replayed){
+        // A concurrent original commit can win after preflight. Recheck current
+        // READ against its retained original target outside the ledger transaction.
+        const read=checked?.verification.purpose==='READ_COMMITTED'?checked:await verifyForCommand(authContext,verifiedCommand);if(read.verification.purpose!=='READ_COMMITTED')failP2016('ACTION_FAILED',503);
+        const current=await transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');const context=await authorize(authContext,tx);
+          const target=await committedTarget(tx,context.principal,verifiedCommand);if(!target||!read.target||hashP2016(target)!==hashP2016(read.target))failP2016('ACTION_FAILED',503);
+          reporterCandidates.fence(context.principal.principal_id,verifiedCommand.reporter,read.verification,target);return context.principal;});
+        if(current.principal_id!==read.principalId)failP2016('FORBIDDEN',403);
+      }
+      if(verifiedCommand&&checked&&result.ok===true&&!result.replayed){
+        const current=await currentPrincipal(authContext);if(current.principal_id!==checked.principalId)failP2016('FORBIDDEN',403);
+        reporterCandidates.fence(current.principal_id,verifiedCommand.reporter,checked.verification,null);
+      }
+      const reply=result.ok===true&&result.replayed?storedResult(Object.fromEntries(Object.entries(result).filter(([key])=>key!=='replayed')),command.client_command_id):result;
+      json(response,reply.ok===false?503:reply.replayed?200:202,reply);return true;
     },
   });
 }

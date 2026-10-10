@@ -1,6 +1,8 @@
-import type {ManualReporterDirectoryOptions,WorkbenchReporterCandidate,WorkbenchReporterCandidates} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {ManualReporterDirectoryOptions,WorkbenchReporterCandidate,WorkbenchReporterCandidates,ManualReporterSelection,ManualReporterVerificationEnvelope} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
 import {exactP2016,failP2016,guardP2016,publicP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
+import {parseReporterVerification,reporterVerificationAuthority} from './workbench-reporter-verification.mjs';
 
 const MAX_PAGE_BYTES=16*1024,DEADLINE_MS=2000,WINDOW_MS=60_000;
 function label(value:unknown,maximum=100):string{
@@ -43,21 +45,18 @@ export function createWorkbenchReporterCandidates({enabled=false,directory=null}
   const application=configured?.application?Object.freeze({sourceCorpScope:configured.application.sourceCorpScope,sourceAppScope:configured.application.sourceAppScope}):null;
   const sourceScope=configured?.directorySourceScope;
   const search=configured?.port&&typeof configured.port.searchAuthorizedCandidates==='function'?configured.port.searchAuthorizedCandidates.bind(configured.port):null;
+  const verify=configured?.port&&typeof configured.port.verifyAuthorizedCandidate==='function'?configured.port.verifyAuthorizedCandidate.bind(configured.port):null;
+  const verificationAuthority=configured?.verificationAuthority?Object.freeze({...configured.verificationAuthority}):null;
   const rates=new Map<string,{started:number;count:number}>();
   let inFlight:Promise<unknown>|null=null;
-  return Object.freeze({
-    async search(principalId:string,params:URLSearchParams):Promise<WorkbenchReporterCandidates>{
-      guardP2016(enabled);
-      const fields=query(params);
-      if(!application||typeof search!=='function'||typeof sourceScope!=='string')failP2016('ACTION_FAILED',503);
-      try{label(application.sourceCorpScope,128);label(application.sourceAppScope,128);label(sourceScope,128);}catch{failP2016('ACTION_FAILED',503);}
+  async function bounded<Input,T>(principalId:string,start:(signal:AbortSignal)=>Promise<Input>,decode:(input:Input)=>T):Promise<T>{
       const started=Date.now();
       for(const [key,value] of rates)if(started-value.started>=WINDOW_MS)rates.delete(key);
       const rate=rates.get(principalId);
       if(inFlight||(rate&&rate.count>=10)||(!rate&&rates.size>=128))failP2016('ACTION_FAILED',503);
       rates.set(principalId,rate?{...rate,count:rate.count+1}:{started,count:1});
       const controller=new AbortController();
-      const task=Promise.resolve().then(()=>search({principal_id:principalId,application,directory_source_scope:sourceScope,...fields,signal:controller.signal}));
+      const task=Promise.resolve().then(()=>start(controller.signal));
       inFlight=task;
       // A timed-out adapter that ignores abort cannot open a second request. Its
       // one outstanding operation stays fenced until it actually settles.
@@ -65,15 +64,42 @@ export function createWorkbenchReporterCandidates({enabled=false,directory=null}
       let timer:ReturnType<typeof setTimeout>|undefined;
       const deadline=new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>{const error=new WorkbenchError('P2_016_ACTION_FAILED',503);controller.abort(error);reject(error);},DEADLINE_MS);});
       try{
-        let raw:unknown;
+        let raw:Input;
         try{raw=await Promise.race([settled,deadline]);}
         catch(error){
           if(error instanceof WorkbenchError&&P2016_ERROR_CODES.includes(error.code)&&[400,403,409,503].includes(error.status))throw error;
           failP2016('ACTION_FAILED',503);
         }
-        try{const result=page(raw,fields.limit);if(Date.now()-started>=DEADLINE_MS)failP2016();return result;}
-        catch{failP2016('ACTION_FAILED',503);}
+        try{const result=decode(raw);if(Date.now()-started>=DEADLINE_MS)failP2016();return result;}
+        catch(error){if(error instanceof WorkbenchError&&[403,409,503].includes(error.status))throw error;failP2016('ACTION_FAILED',503);}
       }finally{if(timer!==undefined)clearTimeout(timer);}
+  }
+  function configuration(){
+    if(!application||typeof sourceScope!=='string')failP2016('ACTION_FAILED',503);
+    try{label(application.sourceCorpScope,128);label(application.sourceAppScope,128);label(sourceScope,128);}catch{failP2016('ACTION_FAILED',503);}
+    return {application,directory_source_scope:sourceScope};
+  }
+  return Object.freeze({
+    fence(principalId:string,selection:ManualReporterSelection,envelope:ManualReporterVerificationEnvelope,target:YxxMemberScope|null){
+      guardP2016(enabled);const scope=configuration(),authority=reporterVerificationAuthority(verificationAuthority),signal=new AbortController().signal;
+      const request=target===null?{principal_id:principalId,...scope,selection,signal,purpose:'ADMISSION' as const,committed_target_scope:null}
+        :{principal_id:principalId,...scope,selection,signal,purpose:'READ_COMMITTED' as const,committed_target_scope:target};
+      return parseReporterVerification(envelope,request,authority);
+    },
+    async search(principalId:string,params:URLSearchParams):Promise<WorkbenchReporterCandidates>{
+      guardP2016(enabled);const fields=query(params),scope=configuration();if(!search)failP2016('ACTION_FAILED',503);
+      return bounded(principalId,signal=>search({principal_id:principalId,...scope,...fields,signal}),raw=>page(raw,fields.limit));
+    },
+    async verify(principalId:string,selection:ManualReporterSelection,committedTarget:YxxMemberScope|null):Promise<ManualReporterVerificationEnvelope>{
+      guardP2016(enabled);const scope=configuration(),authority=reporterVerificationAuthority(verificationAuthority);if(!verify)failP2016('ACTION_FAILED',503);
+      return bounded(principalId,async signal=>{
+        const request=committedTarget===null?{principal_id:principalId,...scope,selection,signal,purpose:'ADMISSION' as const,committed_target_scope:null}
+          :{principal_id:principalId,...scope,selection,signal,purpose:'READ_COMMITTED' as const,committed_target_scope:publicP2016(committedTarget)};
+        return {request,raw:await verify(request)};
+      },value=>{
+        // The request was produced locally; the untrusted payload is only its raw member.
+        return parseReporterVerification(value.raw,value.request,authority);
+      });
     },
   });
 }
