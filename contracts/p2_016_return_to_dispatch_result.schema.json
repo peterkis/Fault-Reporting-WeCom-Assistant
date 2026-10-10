@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_return_to_dispatch_result.schema.json",
+  "title":"Planned WBINT-T09 safe return result, never internal unfinished work",
+  "type":"object","additionalProperties":false,
+  "required":["ok","ticket_id","ticket_version","ticket_event_id","control_event_id","handling_cycle","communication_choice","conversations","replayed"],
+  "properties":{
+    "ok":{"const":true},
+    "ticket_id":{"$ref":"p2_016_unassign_result.schema.json#/$defs/uuid"},
+    "ticket_version":{"$ref":"p2_016_unassign_result.schema.json#/$defs/version"},
+    "ticket_event_id":{"$ref":"p2_016_unassign_result.schema.json#/$defs/uuid"},
+    "control_event_id":{"type":"null"},
+    "handling_cycle":{"$ref":"p2_016_unassign_result.schema.json#/properties/handling_cycle"},
+    "communication_choice":{"enum":["RETAIN_CURRENT","TRANSFER_SELECTED"]},
+    "conversations":{"$ref":"p2_016_unassign_result.schema.json#/properties/conversations"},
+    "replayed":{"type":"boolean"}
+  },
+  "allOf":[{"if":{"properties":{"communication_choice":{"const":"RETAIN_CURRENT"}}},"then":{"properties":{"conversations":{"maxItems":0}}},"else":{"properties":{"conversations":{"minItems":1}}}}],
+  "x-status":"PLANNED_NOT_IMPLEMENTED_NOT_RUN"
+}

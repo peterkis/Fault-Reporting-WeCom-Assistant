@@ -227,3 +227,27 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 安全200为`ok,ticket_id,ticket_version,ticket_event_id,control_event_id:null,handling_cycle,communication_choice,conversations,replayed`，无原因/Reporter/正文；默认retain返回空conversations，GET重读实际责任。ACK复用[安全assignment receipt形状](../../../contracts/p2_016_assignment_receipt.schema.json)，只给最小Ticket终态，无Session/原因。UNKNOWN不等于未提交；409保留输入并明确新操作，401/403/404清可信授权敏感副本，临时503/网络保留未核验输入且不自动POST；当前浏览器按账号、Ticket 和 purpose 加密恢复，最长 24h；原 UUID 在 UNKNOWN 后只 GET 安全 ACK，不自动重放 POST。raw 关闭仍可内存核对。已知 COMMITTED 后清理失败仍保持已提交并阻止新命令，重试核对后完成清理；恢复须当前授权和目标/所选 Session 版本核验。临时网络故障保留密文并隐藏未核验选择；真实失权仅清本用途敏感副本，其他用途保留。
 
 输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
+
+## 停止处理并退回（WBINT-T09，冻结计划／NOT_RUN）
+
+以下是[#64](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)的SOURCE合同，**尚无生产handler／能力／UI**。独立动作覆盖`IN_PROGRESS|WAITING_REQUESTER|WAITING_VENDOR → QUEUED`，不使用T08未开始撤派、transfer、cancel或close代替。当前处理人或获权ADMIN／DISPATCHER记录原因及未完成工作后清处理人，保留有效处理组、本轮与来源历史；默认保留独立沟通责任。实际实现和七项验收状态见[T09执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
+
+| METHOD + PATH（W，计划） | 合同 |
+| --- | --- |
+| `POST /api/tickets/{ticketId}/return-to-dispatch` | 单个原子停止退回命令；[闭合八字段Schema](../../../contracts/p2_016_return_to_dispatch_command.schema.json)，[安全结果Schema](../../../contracts/p2_016_return_to_dispatch_result.schema.json) |
+| `GET /api/tickets/{ticketId}/return-to-dispatch/commands/{commandId}` | 当前Ticket READ、原principal／Ticket／专用用途及UUID；沿[最小ACK形状](../../../contracts/p2_016_assignment_receipt.schema.json)，不返回原因、未完成工作或所选Session；T09启用即可，raw敏感恢复可关闭 |
+| `GET /api/tickets/{ticketId}/return-to-dispatch/communication-targets[?target_principal_id=UUID]` | 当前合法停止退回权限和Ticket读权；[独立沟通target页](../../../contracts/p2_016_return_to_dispatch_targets.schema.json)，最多100个活动内部对象，显式合法保存target在界内pin；读取不授予Control写权 |
+
+命令恰为`client_command_id:UUID,expected_version:number(1..2147483647),reason_code:CODE(1..64),reason:string,unfinished_work:string,communication_choice:RETAIN_CURRENT|TRANSFER_SELECTED,communication_target_principal_id:UUID|null,sessions:[{session_id:UUID,expected_row_version:number}]`。reason原UTF16长度≤500、unfinished_work≤1400，分别trim后必填；服务器加固定“停止原因／未完成工作”标题保存在既有internal_note，整体≤2000，原ledger命令还保留两个独立字段。内部记录不作为状态解析输入，不提供external_visible、外部摘要或接收人。RETAIN_CURRENT要求null target和空sessions；TRANSFER_SELECTED要求明确活动内部target及1..8个规范唯一真实关联Session，逐Session版本为1..2147483647。[类型和私有事件提案](../../../contracts/workbench_return_to_dispatch_contracts.d.ts)区分HTTP与内部事实。
+
+沿W Cookie、Origin／CSRF、JSON／32KiB，`Idempotency-Key`精确匹配UUID，`If-Match`精确匹配捕获Ticket版本；query及额外body字段拒绝。状态必须属于上述三类且当前owner非空。当前handler还须具备现有活动人员／角色／组的业务操作许可；只可见的同事没有此写权，调度／管理员同样不能在未开始或终态使用本动作。继承T08的顺序责任段围栏，用当前canonical event_ordinal、真实开始／等待／恢复或进行中交接事实证明当前段已开始；过去已结束段的开始不冒充当前段，未知／截断未得到合法依据时fail-closed。同人调整不伪造新段。当前责任、权限、对象关系在行锁后再次核验；不能用当前status、时间或投影独自替代完整业务围栏。
+
+复用原ledger和caller-Tx Core／Control，保持receipt→shared realtime fence→Ticket→UUID排序Session锁序和锁后权限。清owner、保组、保current cycle及first basis，version+1，追加独立`ticket.returned_to_dispatch`和同轮event link；其[私有事实Schema](../../../contracts/p2_016_return_to_dispatch_event.schema.json)记录真实old owner→JSON null／同组／操作者／两块内部内容。默认retain不调用沟通release；显式选取独立校验当前Session READ、同源／主题、Control TRANSFER与target，不借Ticket调度权扩充沟通权限。不猜最新会话、不造Session、不写第二套owner。Ticket、选定Session／Control／generation、event／cycle link／安全实时投影与COMMITTED全部同事务，失败只留原FAILED审计。
+
+048只作最小forward提案：既有046目前只允许未开始`ticket.unassigned`释放，后续真实RED若需要才扩充事件词汇和严格同组旧owner→null、三类old状态→QUEUED及内部两段约束，不新表／owner／started列。还需把真实returned释放加入共享当前责任段边界，使同轮再次承接后的新未开始段可证明；不覆盖T08原未开始规则或既有迁移。当前没有048文件或迁移执行。Core仍是唯一工单／状态／责任／事件事实源。
+
+同UUID原hash终态只一次；重放先重查当前Ticket及原所选Session读权，改payload409。ACK仅当前Ticket READ和原actor／resource／专用purpose的最小UNKNOWN／FAILED／COMMITTED；UNKNOWN不能推断未提交，不返回原命令或内部材料。稳定错误拟沿P2_016输入400、身份401、动作／Control／target403、不可见／错误关联404、版本／状态／hash／段围栏409、关闭／Schema不齐／事务失败503；实际guard与业务码由真实RED驱动实现。
+
+草稿计划purpose=`ticket-return-to-dispatch`，沿T03同账号／Ticket／当前浏览器AES-GCM、24h／20份／16KiB与T38 epoch、abort、generation及storage CAS。完整原UUID／版本／八字段body在UNKNOWN后冻结，只显式GET安全ACK；不自动换UUID／版本或POST。成功／丢弃／退出／可信失权清本用途，临时失败保留未核验密文，敏感到期只留opaque标识；迟到结果不得改新输入。需当前权限及选定对象重新验权后恢复，关raw恢复仍可内存核对。
+
+`ticketReturnToDispatchEnabled=false`为独立计划开关，不偷开T05／T06／T08；当前runtime尚未消费。关闭停止本票动作／能力／target／ACK／UI，不查048或改变已提交事实，旧入口保持。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续真实accept不重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target页≤100、单表单in-flight1保持，无新SSE／轮询／worker。首tracer使用真实HANDLER、原assign／accept／start／wait-vendor和公开GET，在原已有承诺后只提交一次return，240s；当前全部NOT_RUN，后续须原HTTP真实RED后才写生产与048，再逐片完整七项及production bundle。
