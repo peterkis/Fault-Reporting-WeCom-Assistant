@@ -31,9 +31,8 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
     FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type IN (
       'ticket.assignment_transferred','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed',
       'ticket.unassigned','ticket.reopened','ticket.closed','ticket.cancelled') ORDER BY event_ordinal DESC LIMIT 201`,[ticket.id]);
-  if(events.rows.length>200)return false;
   let owner=ticket.assignee_id,team=ticket.resolver_team_id;
-  for(const event of events.rows){
+  for(const event of events.rows.slice(0,200)){
     if(!Number.isSafeInteger(event.event_ordinal)||event.event_ordinal<1||!Number.isInteger(event.aggregate_version)||event.aggregate_version>ticket.version)return false;
     if(['ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.unassigned','ticket.reopened','ticket.closed','ticket.cancelled'].includes(event.event_type))return false;
     if(event.event_type==='ticket.accepted'){
@@ -46,6 +45,8 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
     if(metadata.old_assignee_id===null||metadata.old_assignee_id!==owner)return true;
     owner=metadata.old_assignee_id;team=metadata.old_team_id;
   }
+  // The extra row only proves truncation if the bounded current segment has not already supplied a valid basis.
+  if(events.rows.length>200)return false;
   // Legacy accept alone is only a basis when there is no earlier contradictory responsibility fact.
   return events.rows.some(event=>event.event_type==='ticket.accepted'&&event.operator_id===owner);
 }
