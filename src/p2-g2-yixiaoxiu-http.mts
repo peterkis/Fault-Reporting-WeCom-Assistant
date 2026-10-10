@@ -4,13 +4,18 @@ import type {OAuthHttpHandler} from './p2-g2-wecom-oauth-http.mjs';
 import type {ReporterAccess} from './p2-016-reporter-access.mjs';
 import type {ReporterTimeline} from './p2-016-reporter-timeline.mjs';
 import type {createYxxMemberAuthorizer} from './p2-g2-yixiaoxiu-authorizer.mjs';
-export interface YxxMemberHttpOptions {oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler;access:ReporterAccess;timeline:ReporterTimeline;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;publicOrigin:string;now?:()=>number}
+import type {createBotReporterFeedback} from './bot-reporter-feedback.mjs';
+import type {BotReporterFeedbackInput} from '../contracts/bot_reporter_feedback_contracts.js';
+export interface YxxMemberHttpOptions {oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler;access:ReporterAccess;timeline:ReporterTimeline;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;publicOrigin:string;now?:()=>number;feedback?:ReturnType<typeof createBotReporterFeedback>|null}
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {textHashP2016} from './p2-016-domain-contracts.mjs';
 import {beginWeComOAuth,readWeComCookie,browserName,sessionName,logoutWeComBrowser,joinWeComBrowserBindings} from './p2-g2-wecom-oauth-http.mjs';
 import {WeComOAuthError} from './p2-g2-wecom-web-oauth.mjs';
 import {YxxEntryError,failYxx,exactYxx} from './p2-g2-yixiaoxiu-contract.mjs';
+import {BotReporterFeedbackError} from './bot-reporter-feedback.mjs';
+import {parseYxxFeedbackInput} from './yxx-self-service-feedback.mjs';
+import {readYxxJsonBody} from './yxx-self-service-native-http.mjs';
 
 const root='/wecom/yixiaoxiu/';
 const assets:Readonly<Record<string,readonly [string,string]>>=Object.freeze({'/reporter/':['index.html','text/html'],'/reporter/open':['index.html','text/html'],
@@ -28,7 +33,7 @@ async function asset(response:ServerResponse,item:readonly [string,string]){
   if(item[0]==='index.html')content=content.replace('<html lang="zh-CN">','<html lang="zh-CN" data-identity-mode="MEMBER_REQUIRED">');
   response.writeHead(200,{'content-type':item[1]+'; charset=utf-8'});response.end(content);
 }
-export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,publicOrigin,now=Date.now}:YxxMemberHttpOptions){
+export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,publicOrigin,now=Date.now,feedback=null}:YxxMemberHttpOptions){
   const origin=new URL(publicOrigin);
   if(origin.protocol!=='https:'||origin.origin!==publicOrigin)failYxx('CONFIG_INVALID');
   const entries=new Map<string,{locator:ReturnType<ReporterAccess['legacyLocator']>;browser:BrowserToken;expires:number}>();let closed=false;
@@ -46,6 +51,24 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       const api=path.startsWith('/api/reporter');
       if((request.method==='POST'||api)&&(request.headers.origin&&request.headers.origin!==publicOrigin||request.headers['sec-fetch-site']==='cross-site'))failYxx('ORIGIN_INVALID');
       if(request.method==='POST'&&request.headers.origin!==publicOrigin)failYxx('ORIGIN_INVALID');
+      const feedbackRoute=/^\/api\/reporter\/tickets\/([A-Za-z0-9_-]{32})\/feedback(?:\/commands\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}))?$/iu.exec(path);
+      if(path==='/api/reporter/feedback/bootstrap'||feedbackRoute){
+        if(!feedback)throw new BotReporterFeedbackError('BOT_FEEDBACK_FORBIDDEN',403);
+        if(url.search)failYxx('INPUT_INVALID');
+        const token=readWeComCookie(request,sessionName);
+        if(request.method==='GET'){
+          if(request.headers['transfer-encoding']!==undefined||request.headers['content-length']!==undefined&&request.headers['content-length']!=='0')failYxx('INPUT_INVALID');
+          const result=path==='/api/reporter/feedback/bootstrap'?feedback.bootstrap(token):feedbackRoute?.[2]
+            ?await feedback.receipt({sessionToken:token,publicRef:feedbackRoute[1],commandId:feedbackRoute[2]}):null;
+          if(!result)failYxx('INPUT_INVALID');authorizer.authenticate(token);json(response,200,result);return true;
+        }
+        if(request.method!=='POST'||!feedbackRoute||feedbackRoute[2])failYxx('INPUT_INVALID');
+        feedback.assertCsrf(token,request.headers['x-csrf-token']);
+        let value:BotReporterFeedbackInput;try{value=parseYxxFeedbackInput(await readYxxJsonBody(request,2048));}catch{failYxx('INPUT_INVALID');}
+        if(request.headers['idempotency-key']!==value.client_command_id||request.headers['if-match']!=='"'+value.expected_ticket_version+'"')failYxx('INPUT_INVALID');
+        const result=await feedback.accept({sessionToken:token,publicRef:feedbackRoute[1],input:value});
+        authorizer.authenticate(token);json(response,200,result);return true;
+      }
       if(request.method==='POST'&&(path==='/api/reporter/logout'||path===root+'logout')){
         if(url.search)failYxx('INPUT_INVALID');exactYxx(await body(request),[]);
         const clear=logoutWeComBrowser({request,oauth});sweep();json(response,200,{logged_out:true},{'set-cookie':clear});return true;
@@ -99,10 +122,11 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       if(path.startsWith(root))return oauthHttp({request,response,url});
       failYxx('NOT_FOUND');
     }catch(error){
+      if(error instanceof BotReporterFeedbackError){json(response,error.status,{error:{code:error.code,retryable:error.status>=500}});return true;}
       let selected=error as YxxEntryError;
       if(!(error instanceof YxxEntryError))selected=new YxxEntryError(/^P2_016_(CURSOR|LIMIT|INPUT)_INVALID$/u.test((error as {code?:string}|null)?.code??'')?'INPUT_INVALID':'UNAVAILABLE');
       json(response,selected.status,{error:{code:selected.code,retryable:selected.status>=500}});return true;
     }
   };
-  return Object.freeze({handler,close(){closed=true;entries.clear();authorizer.close();}});
+  return Object.freeze({handler,close(){closed=true;entries.clear();feedback?.close();authorizer.close();}});
 }

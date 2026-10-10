@@ -1,4 +1,4 @@
-/** WBINT-T21 SOURCE contract; production routes await the original public RED. */
+/** WBINT-T21 SOURCE contract; candidate routes await post-RED runtime validation. */
 import type {YxxFeedbackInput,YxxFeedbackContext} from './yxx_self_service_feedback_contracts.js';
 export type BotReporterFeedbackInput = YxxFeedbackInput;
 export type BotReporterFeedbackContext = YxxFeedbackContext;

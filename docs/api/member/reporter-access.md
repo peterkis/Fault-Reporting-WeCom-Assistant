@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-2026-10-10 WBINT-T21的[Bot本人反馈合同](bot-feedback-design.md)已冻结为SOURCE候选；新增feedback上下文/Bootstrap/POST/专用GET尚未实现、未运行，不改变本页既有只读入口。Web反馈的已实现接口不能替代Bot publicRef路径。
+2026-10-11 WBINT-T21的[Bot本人反馈合同](bot-feedback-design.md)已有最小SOURCE候选：显式Bot能力在成员写profile增加同事务feedback_context、独立Bootstrap/POST/用途Receipt。原1e01公开HTTP只到“缺context”真实RED；本后继尚未构建或运行，未集成、未完成原七项。默认false及只读profile保持本页原详情，Web requestRef不能替代Bot publicRef。
 
 调用方：[reporter.js](../../../web/p2-reporter/reporter.js)。有两种互斥访问策略：`MEMBER_REQUIRED`（M/O/W按装配挂载）与显式 `LEGACY_BOUND_GRANT`（W）。W装配还依赖默认false的 `REPORTER_TIMELINE_ENABLED`；独立只读profile通过配置/显式装配启用handler，不直接消费此持久Flag，成员入口/OAuth条件仍适用。实现：[成员handler](../../../src/p2-g2-yixiaoxiu-http.mts)、[旧handler](../../../src/p2-016-reporter-http.mts)、[timeline](../../../src/p2-016-reporter-timeline.mts)、[访问服务](../../../src/p2-016-reporter-access.mts)。
 

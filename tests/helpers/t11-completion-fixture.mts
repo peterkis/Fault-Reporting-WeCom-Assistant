@@ -5,6 +5,7 @@ import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {randomUUID} from 'node:crypto';
 import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
 import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../../scripts/bot-reporter-feedback-migrate.mjs';
 import type {P2016TicketDetail} from '../../contracts/p2_016_contracts.js';
 import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {assertLocalDateTime} from '../../src/platform/time-contract.mjs';
@@ -23,6 +24,7 @@ export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{co
     await f.runtime.stop();
     if(completionEnabled&&installCompletionSchema)await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});
     if(completionEnabled&&installCompletionSchema)await migrateTicketReopenRounds({databaseUrl:f.databaseUrl,mode:'apply'});
+    if(completionEnabled&&installCompletionSchema)await migrateBotReporterFeedback({databaseUrl:f.databaseUrl,mode:'apply'});
     const options={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:completionEnabled,workbenchInternalNotesEnabled:notesEnabled,workbenchDraftRecoveryEnabled:recoveryEnabled};
     const runtime=createP2016Runtime(options);
     try{const started=await runtime.start();if(!started.cookies)throw Error('T11_AUTH_REQUIRED');await run({...f,runtime,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});}

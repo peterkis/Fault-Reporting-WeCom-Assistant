@@ -16,6 +16,9 @@
     "guidance"
   ],
   "properties": {
+    "feedback_context": {
+      "$ref": "yxx_self_service_feedback_context.schema.json"
+    },
     "public_ref": {
       "type": "string",
       "minLength": 32,

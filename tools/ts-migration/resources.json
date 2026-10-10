@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/050_bot_reporter_feedback.sql",
     "contracts/bot_reporter_feedback_contracts.d.ts",
     "contracts/bot_reporter_feedback_bootstrap.schema.json",
     "contracts/bot_reporter_feedback_result.schema.json",

@@ -91,7 +91,7 @@ function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext
   const team=text(v.resolver_team_id);if(!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))throw new ApiError(502,'INVALID_RESPONSE');
   if(actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations','complete'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
   let followUp:NonNullable<P2016TicketDetail['reopen_follow_up']>|undefined;
-  if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
+  if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='BOT_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
   return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
 }
 async function rejectAuthorization(response:Response):Promise<never>{

@@ -2,7 +2,7 @@
 
 返回[Reporter接口](reporter-access.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t21.md) · [共享轮次](web-feedback-design.md)。
 
-2026-10-10：**SOURCE_CONTRACT_FROZEN / NOT_IMPLEMENTED / NOT_RUN**。以下是[#76](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)冻结候选；新增字段/入口尚未挂载，不能当现有REST调用。当前Bot详情和旧Grant规则仍见Reporter接口。
+2026-10-11：**MINIMAL_SOURCE_AFTER_REAL_HTTP_RED / NOT_RUNTIME_VERIFIED / NOT_INTEGRATED**。[#76](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)原1e01 tracer在真实本人GET200缺feedback_context处RED；父核证并RELEASE后授权以下最小SOURCE。候选handler已接线，但本后继build/types/artifact/PG/HTTP/browser全部NOT_RUN，不宣称可运行或整票完成。默认关闭的Bot详情及旧Grant规则仍见Reporter接口。
 
 ## 身份、来源与HTTP
 
@@ -23,7 +23,7 @@
 
 输入直接复用[YxxFeedbackInput](../../../contracts/yxx_self_service_feedback_contracts.d.ts)/[command Schema](../../../contracts/yxx_self_service_feedback_command.schema.json)：schema_version:1、UUID client_command_id、feedback:'STILL_UNRESOLVED'、32字符completed_round_ref、安全整数expected_ticket_version（1..2147483647）。additionalProperties:false；重复JSON键/过深JSON沿当前严格守卫拒绝。Idempotency-Key精确UUID，If-Match为同版本带双引号十进制。无任意反馈文本、内部过程或客户端身份字段。
 
-context复用[Schema](../../../contracts/yxx_self_service_feedback_context.schema.json)：允许时schema_version:1/can_feedback:true/completed_round_ref/completed_round_no/ticket_version/rejection:null；不允许时后三个业务标量null，rejection为WRITE_DISABLED/TICKET_NOT_CREATED/ROUND_NOT_COMPLETED/ROUND_ALREADY_REOPENED。错误binding直接404。Bot roundRef由server secret对BOT_FEEDBACK用途、当前corp/app/Bot/原本人scope、publicRef及真实完工cycle/staff_completion_event做HMAC截24字节base64url，与Web用途/ref隔离；不是Bearer授权，锁后从完成依据重算。
+context复用[Schema](../../../contracts/yxx_self_service_feedback_context.schema.json)：允许时schema_version:1/can_feedback:true/completed_round_ref/completed_round_no/ticket_version/rejection:null；不允许时后三个业务标量null，rejection为WRITE_DISABLED/TICKET_NOT_CREATED/ROUND_NOT_COMPLETED/ROUND_ALREADY_REOPENED。错误binding直接404。Bot roundRef维持32字符opaque闭合字段：8字节服务端物理签发时间（分钟桶）+16字节HMAC，绑定BOT_FEEDBACK_ROUND用途、当前corp/App/Bot/本人scope、publicRef、真实source/cycle/staff_completion_event；5分钟有效、拒绝未来时间，锁后从当前完成依据核验。它与Web用途/ref隔离，不是Bearer权限，也不保存原消息历史App。
 
 [Bootstrap](../../../contracts/bot_reporter_feedback_bootstrap.schema.json)、[BotResult](../../../contracts/bot_reporter_feedback_result.schema.json)、[BotReceipt](../../../contracts/bot_reporter_feedback_receipt.schema.json)均闭合。[类型](../../../contracts/bot_reporter_feedback_contracts.d.ts)保留独立public_ref。Result仅ok/replayed/public_ref/completed_round_ref/reopened_round_no及ticket{ticket_no,status:'REOPENED',version}；Receipt仅原UUID/public_ref/state UNKNOWN或COMMITTED+Result(replayed:true)。不含Web request_ref、内部Ticket/Intake/cycle/event UUID、前人、原身份、command hash/private snapshot/Grant。缺原用途回执是UNKNOWN，不能推出无迟到提交；确定输入/权限/轮次/版本失败在原POST返回。
 
@@ -41,11 +41,15 @@ context复用[Schema](../../../contracts/yxx_self_service_feedback_context.schem
 
 ## 数据库提案、资源与关闭
 
-父为T21独占预留050，**RESERVED_NOT_APPLIED**；本SOURCE无SQL/迁移器/writer。拟前向扩**已有** `pilot_ticket.ticket_command_receipt`：command_type BOT_REPORTER_FEEDBACK、服务端用途+corp/app/Bot/member hash的command_scope、真实Ticket/publicRef和原安全result_snapshot。Reporter不创建或借内部principal；actor_principal_id可空例外须闭合CHECK限制到Reporter用途，既有工作人员命令仍必须有合法principal。scope+UUID唯一/资源/终态约束不放宽，STAFF actor/scope/用途查询不读取Reporter记录。
+父为T21独占预留的[050](../../../database/migrations/050_bot_reporter_feedback.sql)及[迁移器](../../../scripts/bot-reporter-feedback-migrate.mts)现为**SOURCE_ONLY / NOT_APPLIED**。050前向扩**已有** `pilot_ticket.ticket_command_receipt`：command_type BOT_REPORTER_FEEDBACK、服务端用途+corp/App/Bot/member HMAC的command_scope、真实Ticket/publicRef和闭合安全result_snapshot。Reporter不创建或借内部principal；NULL actor严格限定Bot用途/scope、真实Ticket、无review/session/control及COMMITTED追加结果，既有工作人员命令仍必须有合法principal。scope+UUID唯一/资源/终态约束不放宽，STAFF用途不读取Reporter记录。
 
 以上App scope记录命令创建时受信认证范围；不因旧publicRef没有App列而追加历史pin、回填原Bot Intake或拒绝所有旧ref新反馈。新的合法feedback仍逐次满足本票成员写授权、原Bot所有权、真实完工轮次和并发规则。
 
-050仅向043共享origin枚举添加BOT_REPORTER，不改031/033/039/040/043历史字节或回填。共享cycle仍唯一、Ticket/事件/轮次/已有ledger权威不变，无第二Ticket/ledger/owner。启用新写需迁移就绪；关闭不扩旧详情context/读新gated字段，当前READ下已提交安全原UUID恢复沿现有ledger列；缺必要schema明确不可用。具体SQL以首真实RED后最小实现冻结。
+050另向043共享origin枚举添加BOT_REPORTER，不改031/033/039/040/043历史字节或回填。共享cycle仍唯一、Ticket/事件/轮次/已有ledger权威不变，无第二Ticket/ledger/owner。启用新写需050就绪；关闭Bot能力不扩旧详情context，但成员写profile继续挂载当前READ下安全原UUID恢复；缺必要schema明确503。新POST的确定失败回滚全部事实，不留下假COMMITTED；无本用途原结果是UNKNOWN，不推导未提交。
+
+最小生产Port为[Bot service](../../../src/bot-reporter-feedback.mts)、[现有authorizer的currentScope/authorizeInTransaction](../../../src/p2-g2-yixiaoxiu-authorizer.mts)、[现有Ticket ledger的caller-Tx方法](../../../src/p2-016-ticket-command-ledger.mts)和[共享round用例](../../../src/ticket-reopen-rounds.mts)。同一个authorized detail事务生成context/ETag，写事务保持stream→scope+UUID→source/Ticket→ledger顺序，提交前再核物理保留期与当前local-only成员；Receipt核当前READ及真实BOT_REPORTER basis。HTTP复用[现有严格JSON守卫](../../../src/yxx-self-service-native-http.mts)拒绝重复键/过深/非JSON/超2KiB输入。
+
+同制品工作人员详情的闭合origin Schema/types/client decoder/既有follow-up提示接纳BOT_REPORTER；不新建前人责任或派工。隔离T11 fixture在原040/043之后安装050，以保留原e971首body/断言/演员/预算；没有伪造完工/Delivery。正式Bot页显式提交与草稿/多标签恢复仍待后续逐片，未由本SOURCE冒充完成。
 
 资源沿单App/API、单Worker、Gateway单活、SSE32、业务pool≤4/总池建议≤8；路径in-flight≤32、JSON2KiB、普通测试每文件240s/stock concurrency1。没有新常驻进程/每Ticket timer。关闭保既有Bot只读及已提交事实；UNKNOWN只GET原UUID，不重发/换ID/换版本。
 
@@ -53,4 +57,4 @@ context复用[Schema](../../../contracts/yxx_self_service_feedback_context.schem
 
 ## 当前证据边界
 
-首[HTTP tracer](../../../tests/wbint-t21-bot-feedback.integration.test.mts)仅一case。现有owned PG normalized Bot Inbox/Intake合成fixture→真实Core建单→真实工作人员T04/T11 HTTP完工→原受信source-bound publicRef Port→合成官方身份映射Stub/成员native HTTP context/CSRF/feedback/ACK→独立staff HTTP新cycle核对。它不是现场回调、SDK或已送达卡片验证；MEMBER_REQUIRED不需要Grant或伪造Delivery。build/types/artifact/PG/HTTP/browser全部NOT_RUN。权限负向、并发/回滚/补充、重新认证/多标签/UNKNOWN及正式生产成员制品浏览器仍是原七项未完成范围。
+首[HTTP tracer](../../../tests/wbint-t21-bot-feedback.integration.test.mts)保持e971原字节，活动STAGED_RUNTIME/database:true/browser:false/node_flags:[]、一case/240s/stock concurrency1。原1e01完成build/types/artifact native0/0/0；实际首native1、0pass/1fail在本人detail缺context处RED，bootstrap/POST/ACK/新staff核对NOT_REACHED，全部原source/compiled/TAP/trace/archive保留。这不是现场回调、SDK或已送达卡片验证；本最小SOURCE后继所有runtime均NOT_RUN。权限负向、并发/回滚/补充、重新认证/多标签/UNKNOWN及正式生产成员制品浏览器仍是原七项未完成范围。

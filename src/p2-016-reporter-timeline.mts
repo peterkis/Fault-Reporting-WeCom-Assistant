@@ -1,10 +1,11 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
+import type {BotReporterFeedbackContext} from '../contracts/bot_reporter_feedback_contracts.js';
 type ReadScope = Pick<ReporterScope, 'ticket_id' | 'session_id' | 'public_ref'>;
 interface ReadInput { sessionToken: unknown; publicRef?: unknown }
 type Reader<T> = (transaction: PostgresTransaction, scope: ReadScope) => Promise<T>;
-interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null }
+interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null; feedbackContext?:((transaction:PostgresTransaction,input:ReadInput)=>Promise<BotReporterFeedbackContext>)|null }
 export type ReporterTimeline = ReturnType<typeof createP2016ReporterTimeline>;
 
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
@@ -13,7 +14,7 @@ const MILESTONES=Object.freeze({'ticket.created':'工单已受理','ticket.queue
   'ticket.started':'正在处理','ticket.resumed':'已恢复处理','ticket.waiting_requester':'等待您补充信息',
   'ticket.waiting_vendor':'已联系厂商协助','ticket.resolved':'已处理，等待确认','ticket.closed':'工单已关闭',
   'ticket.reopened':'已重新受理','ticket.cancelled':'工单已撤销'});
-export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null,authorizeRead=null}: TimelineOptions) {
+export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null,authorizeRead=null,feedbackContext=null}: TimelineOptions) {
   async function scope(sessionToken: unknown,publicRef: unknown) {guardP2016(enabled);return (access as NonNullable<typeof access>).authenticate(sessionToken,{publicRef});}
   // Both facades execute this one safe projection. authorizeRead is an internal composition port,
   // never an HTTP scope payload; member mode supplies its transaction after ownership validation.
@@ -32,6 +33,7 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
         title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:EXTERNAL_TICKET_STATUS[t.status],
         created_at:localP2016(t.created_at),updated_at:localP2016(t.updated_at),version:t.version,
         guidance:'如未解决，请在企业微信机器人单聊中回复。',
+        ...(feedbackContext?{feedback_context:await feedbackContext(tx,{sessionToken,publicRef})}:{}),
         ...(incidentAdapter?{incident_milestones:await incidentAdapter.milestones({ticketId:s.ticket_id,transaction:tx,memberRead:s.session_id===null})}:{})});
       });
     },

@@ -15,6 +15,42 @@ import type {P2016ReopenReceipt} from '../contracts/p2_016_contracts.js';
 import {reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 import type {P2016ConversationHandlingAcknowledgement} from '../contracts/p2_016_contracts.js';
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
+import type {BotReporterFeedbackResult} from '../contracts/bot_reporter_feedback_contracts.js';
+import {exactP2016} from './p2-016-domain-contracts.mjs';
+
+const BOT_FEEDBACK_TYPE='BOT_REPORTER_FEEDBACK';
+function botFeedbackScope(value:string){if(!/^BOT_REPORTER_FEEDBACK:[a-f0-9]{64}$/u.test(value))failP2016();return value;}
+function botFeedbackResult(input:unknown):BotReporterFeedbackResult{
+  const value=exactP2016(input,['ok','replayed','public_ref','completed_round_ref','reopened_round_no','ticket']);
+  const ticket=exactP2016(value.ticket,['ticket_no','status','version']);
+  if(value.ok!==true||typeof value.replayed!=='boolean'||typeof value.public_ref!=='string'||!/^[A-Za-z0-9_-]{32}$/u.test(value.public_ref)
+    ||typeof value.completed_round_ref!=='string'||!/^[A-Za-z0-9_-]{32}$/u.test(value.completed_round_ref)
+    ||versionP2016(value.reopened_round_no)<2||typeof ticket.ticket_no!=='string'||ticket.ticket_no.length<1||ticket.ticket_no.length>64||ticket.status!=='REOPENED')failP2016();
+  return {ok:true,replayed:value.replayed,public_ref:value.public_ref,completed_round_ref:value.completed_round_ref,reopened_round_no:versionP2016(value.reopened_round_no),
+    ticket:{ticket_no:ticket.ticket_no,status:'REOPENED',version:versionP2016(ticket.version)}};
+}
+// Dedicated Reporter purpose uses the existing ledger, without inventing a staff
+// principal. Caller authorizes current Bot READ and owns its transaction/locks.
+export async function readBotFeedbackCommandInTransaction({transaction:tx,commandScope,commandId}:{transaction:PostgresTransaction;commandScope:string;commandId:string}){
+  const selected=await tx.query<{command_hash:string;ticket_id:string;result_snapshot:unknown;ticket_no:string;cycle_no:number;version:number}>(`SELECT l.command_hash,l.ticket_id::text,l.result_snapshot,t.ticket_no,c.cycle_no,e.aggregate_version AS version
+    FROM pilot_ticket.ticket_command_receipt l JOIN pilot_ticket.ticket t ON t.id=l.ticket_id
+    JOIN pilot_ticket.ticket_cycle_reopen r ON r.ticket_id=l.ticket_id AND r.client_command_id=l.client_command_id AND r.reopen_event_id=l.result_ticket_event_id AND r.origin='BOT_REPORTER'
+    JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.new_cycle_id AND c.ticket_id=r.ticket_id AND c.source_intake_id=r.source_intake_id
+    JOIN pilot_ticket.ticket_event e ON e.event_id=r.reopen_event_id AND e.ticket_id=r.ticket_id
+    WHERE l.command_scope=$1 AND l.client_command_id=$2::uuid AND l.command_type='BOT_REPORTER_FEEDBACK' AND l.actor_principal_id IS NULL AND l.state='COMMITTED'
+      AND c.cycle_start_event_id=e.event_id AND e.event_type='ticket.reopened' AND e.operator_type='REPORTER' AND e.operator_id=$3
+      AND e.old_status='CLOSED' AND e.new_status='REOPENED' AND e.aggregate_version=l.result_ticket_version`,[botFeedbackScope(commandScope),uuidP2016(commandId),commandScope.slice(BOT_FEEDBACK_TYPE.length+1)]);
+  const row=selected.rows[0];if(!row)return null;
+  const result=botFeedbackResult(row.result_snapshot);
+  if(result.ticket.ticket_no!==row.ticket_no||result.ticket.version!==row.version||result.reopened_round_no!==row.cycle_no)failP2016('ACTION_FAILED',503);
+  return {command_hash:row.command_hash,ticket_id:row.ticket_id,result};
+}
+export async function commitBotFeedbackCommandInTransaction({transaction:tx,commandScope,commandId,commandHash,ticketId,expectedVersion,eventId,result}:{transaction:PostgresTransaction;commandScope:string;commandId:string;commandHash:string;ticketId:string;expectedVersion:number;eventId:string;result:BotReporterFeedbackResult}){
+  const safe=botFeedbackResult(result);if(!/^[a-f0-9]{64}$/u.test(commandHash)||safe.replayed||safe.ticket.version!==expectedVersion+1)failP2016();
+  await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,command_type,ticket_id,actor_principal_id,expected_ticket_version,state,result_ticket_version,result_ticket_event_id,result_snapshot,completed_at)
+    VALUES($1,$2::uuid,$3,'BOT_REPORTER_FEEDBACK',$4::uuid,NULL,$5,'COMMITTED',$6,$7::uuid,$8::jsonb,platform.local_now())`,
+  [botFeedbackScope(commandScope),uuidP2016(commandId),commandHash,uuidP2016(ticketId),versionP2016(expectedVersion),safe.ticket.version,uuidP2016(eventId),JSON.stringify(safe)]);
+}
 
 export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'connect'> }) {
   return Object.freeze({

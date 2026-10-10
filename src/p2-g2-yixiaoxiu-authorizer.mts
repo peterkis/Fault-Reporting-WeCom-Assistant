@@ -3,9 +3,11 @@ import type { WeComOAuth, EnabledWeComOAuth, OAuthMember, OAuthMemberId, Interna
 import type { YxxIdentityMapping } from './p2-g2-yixiaoxiu-delegated-identity.mjs';
 import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
 export interface VerifiedYxxMember {corpId:string;userid:InternalMemberId}
+export interface YxxBotReadScope extends Pick<ReporterScope,'ticket_id'|'public_ref'|'session_id'> {source_intake_id:string}
+export interface YxxBotMemberScope extends VerifiedYxxMember {agentId:string;botId:string}
 export interface YxxAuthorizerOptions {pool: PostgresPool; oauth: WeComOAuth; config: unknown; identityMapping?: YxxIdentityMapping | null | undefined}
 export interface YxxAuthorizerInput {sessionToken?: unknown; publicRef?: unknown; locator?: Parameters<ReporterAccess['locateLegacyInTransaction']>[0]['locator'] | null; access?: Pick<ReporterAccess, 'locateLegacyInTransaction'> | null}
-interface OwnershipRow extends Record<string, unknown> { ticket_id: string; public_ref: string; reporter_binding_hash: string; source_provider: string; source_bot_id: string; reporter_wecom_userid: string }
+interface OwnershipRow extends Record<string, unknown> { ticket_id: string; source_intake_id:string; public_ref: string; reporter_binding_hash: string; source_provider: string; source_bot_id: string; reporter_wecom_userid: string }
 import {textHashP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 import {failYxx,publicRefYxx,validateYxxEntryConfig} from './p2-g2-yixiaoxiu-contract.mjs';
 import {yxxIdentityConfigHash} from './p2-g2-yixiaoxiu-delegated-identity.mjs';
@@ -16,6 +18,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
     ||(oauth as EnabledWeComOAuth).scope?.corpId!==c.corpId||(oauth as EnabledWeComOAuth).scope?.agentId!==c.agentId)failYxx('CONFIG_INVALID');
   if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'
     &&(typeof identityMapping?.resolve!=='function'||identityMapping.configHash!==yxxIdentityConfigHash(c)))failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
+  const configuredScope=Object.freeze({corpId:c.corpId,agentId:c.agentId,botId:c.botId});
   let inFlight=0,closed=false;
   function authenticate(sessionToken: SessionToken | null | undefined): VerifiedYxxMember{
     if(closed)failYxx('UNAVAILABLE');
@@ -31,7 +34,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
   }
   async function authorize(tx: PostgresTransaction,member: VerifiedYxxMember,publicRef: unknown){
     publicRefYxx(publicRef);
-    const q=await tx.query<OwnershipRow>(`SELECT r.ticket_id::text,r.public_ref,r.reporter_binding_hash,
+    const q=await tx.query<OwnershipRow>(`SELECT r.ticket_id::text,i.id::text AS source_intake_id,r.public_ref,r.reporter_binding_hash,
       i.source_provider,i.source_bot_id,i.reporter_wecom_userid
       FROM pilot_ticket.reporter_public_ref r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
       JOIN intake.service_intake i ON i.id=t.source_intake_id
@@ -42,7 +45,14 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
     const row=(q.rows[0] as OwnershipRow);
     if(!row||row.source_provider!=='WECOM_AIBOT'||row.source_bot_id!==c.botId||row.reporter_wecom_userid!==member.userid
       ||row.reporter_binding_hash!==textHashP2016(JSON.stringify(['WECOM_AIBOT',c.botId,member.userid])))return null;
-    return Object.freeze({ticket_id:row.ticket_id,public_ref:row.public_ref,session_id:null});
+    return Object.freeze({ticket_id:row.ticket_id,source_intake_id:row.source_intake_id,public_ref:row.public_ref,session_id:null});
+  }
+  function currentScope(sessionToken:unknown):Readonly<YxxBotMemberScope>{return Object.freeze({...configuredScope,...authenticate(sessionToken as SessionToken|null)});}
+  // Caller owns transaction and stream-before-source lock ordering. Authentication
+  // remains local-only; the browser never supplies a scope or source identity.
+  async function authorizeInTransaction({transaction,sessionToken,publicRef}:{transaction:PostgresTransaction;sessionToken:unknown;publicRef:unknown}):Promise<YxxBotReadScope>{
+    const member=authenticate(sessionToken as SessionToken|null),scope=await authorize(transaction,member,publicRef);
+    if(!scope)failYxx('NOT_FOUND');authenticate(sessionToken as SessionToken|null);return scope;
   }
   async function run<T>({sessionToken,publicRef=null,locator=null,access=null}: YxxAuthorizerInput,reader: (tx: PostgresTransaction, scope: Pick<ReporterScope, 'ticket_id' | 'public_ref' | 'session_id'>) => Promise<T>): Promise<T>{
     const member=authenticate(sessionToken as SessionToken | null);
@@ -59,7 +69,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
         }}
         const scope=await authorize(tx,member,ref);
         if(!scope){await tx.query("INSERT INTO pilot_ticket.reporter_access_event(event_type,reason_code) VALUES('ACCESS_DENIED','MEMBER_ENTRY_DENIED')");return null;}
-        const value=await reader(tx,scope);
+        const value=await reader(tx,{ticket_id:scope.ticket_id,public_ref:scope.public_ref,session_id:scope.session_id});
         authenticate(sessionToken as SessionToken | null); // Reject an identity revoked while the transaction awaited I/O.
         return {value};
       });
@@ -67,6 +77,6 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
       if(!result)failYxx('NOT_FOUND');return result.value;
     }finally{inFlight--;}
   }
-  return Object.freeze({authenticate,read:<T,>(input: YxxAuthorizerInput,reader: (tx: PostgresTransaction,scope: Pick<ReporterScope, 'ticket_id' | 'public_ref' | 'session_id'>)=>Promise<T>)=>run(input,reader),
+  return Object.freeze({authenticate,currentScope,authorizeInTransaction,read:<T,>(input: YxxAuthorizerInput,reader: (tx: PostgresTransaction,scope: Pick<ReporterScope, 'ticket_id' | 'public_ref' | 'session_id'>)=>Promise<T>)=>run(input,reader),
     locate:(input: YxxAuthorizerInput)=>run(input,async(_tx,scope)=>scope.public_ref),close(){closed=true;}});
 }
