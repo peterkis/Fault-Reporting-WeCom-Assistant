@@ -32,14 +32,6 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         return {created:false,reason:'WEB_APP_ONLY'};
       const policy=ticketNotificationP2016({event_type:(event as NotificationFact).event_type,new_status:(event as NotificationFact).new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
       if(!policy)return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
-      // A later acceptance keeps the current round's physical promise, including a pending or failed Delivery.
-      // The JSON field lookup above remains compatible with the baseline that has no handling-cycle column.
-      const cycle=(event as NotificationFact).handling_cycle_id;
-      if(policy.notification_type==='TICKET_ACCEPTED'&&cycle&&(await tx.query(`SELECT 1 FROM pilot_ticket.ticket_handling_cycle c
-        JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.cycle_id=c.id AND ce.ticket_id=c.ticket_id
-        JOIN communication.ticket_notification_binding b ON b.ticket_event_id=ce.ticket_event_id AND b.ticket_id=c.ticket_id
-        WHERE c.id=$1::uuid AND c.ticket_id=$2::uuid AND b.notification_type='TICKET_ACCEPTED' LIMIT 1`,[cycle,ticket.id])).rowCount)
-        return {created:false,reason:'HANDLING_ROUND_ALREADY_NOTIFIED'};
       const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[(event as NotificationFact).event_id]);
       if(legacy.rowCount)return {created:false,reason:'P1_NOTIFICATION_OWNS_EVENT'};
       const origin=await tx.query<{ source_bot_id: string; reporter_wecom_userid: string; source_chat_type: string; source_chat_id: string }>(`SELECT i.source_bot_id,i.reporter_wecom_userid,
@@ -58,6 +50,14 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         WHERE ticket_event_id=$1::uuid AND notification_type=$2 AND recipient_binding_hash=$3 AND destination_type='PERSON' AND template_version=$4`,
       [(event as NotificationFact).event_id,(policy as NonNullable<typeof policy>).notification_type,binding,(policy as NonNullable<typeof policy>).template_version]);
       if(existing.rowCount)return {created:false,replayed:true,...existing.rows[0]};
+      // A later event keeps the current round's physical promise; an exact-event replay above retains its acknowledgement.
+      // The JSON field lookup remains compatible with the baseline that has no handling-cycle column.
+      const cycle=(event as NotificationFact).handling_cycle_id;
+      if(policy.notification_type==='TICKET_ACCEPTED'&&cycle&&(await tx.query(`SELECT 1 FROM pilot_ticket.ticket_handling_cycle c
+        JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.cycle_id=c.id AND ce.ticket_id=c.ticket_id
+        JOIN communication.ticket_notification_binding b ON b.ticket_event_id=ce.ticket_event_id AND b.ticket_id=c.ticket_id
+        WHERE c.id=$1::uuid AND c.ticket_id=$2::uuid AND b.notification_type='TICKET_ACCEPTED' LIMIT 1`,[cycle,ticket.id])).rowCount)
+        return {created:false,reason:'HANDLING_ROUND_ALREADY_NOTIFIED'};
       const suffix=(ticket.ticket_no as string).slice(-4),stamp=stampP2016(now),expiry=String(BigInt(stamp.epoch)+2592000000n);
       const groupReceipt=(policy as NonNullable<typeof policy>).notification_type==='TICKET_CREATED'&&source.source_chat_type==='group';
       const groupClosure=(policy as NonNullable<typeof policy>).notification_type==='TICKET_CLOSED'&&source.source_chat_type==='group';
