@@ -29,7 +29,7 @@ for(const mode of ['logout','write-off','revocation'] as const){
    try{
     await lock.query('BEGIN');await lock.query('SELECT i.id FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE b.request_ref=$1 FOR UPDATE OF b,i',[f.requestRef]);pending=f.send();
     await waitUntil(async()=>Boolean((await f.context.pool.query("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock'")).rowCount));
-    if(mode==='logout')assert.equal((await f.member.request('/wecom/yixiaoxiu/logout',{method:'POST',body:{},headers:{origin,'content-type':'application/json'}})).status,200);
+    if(mode==='logout'){const logout={method:'POST',body:{},headers:{origin,'content-type':'application/json'}};assert.equal((await f.member.request('/wecom/yixiaoxiu/logout',logout)).status,200);}
     else if(mode==='write-off')f.options.featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED=false;
     else await lock.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1',[f.requestRef]);
     await lock.query('COMMIT');const result=await pending;assert.equal(result.status,{logout:503,'write-off':403,revocation:404}[mode],result.text);

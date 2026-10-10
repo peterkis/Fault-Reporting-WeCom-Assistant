@@ -20,7 +20,7 @@ test('production H5 offers its lawful original Reporter an explicit same-Ticket 
    fixture=await createYxxBrowserFixture({pool:f.context.pool,createApp:({oauth,origin:publicOrigin}:{oauth:WeComOAuth;origin:string})=>{
     const runtime=createYxxProfile({...f.options,identityMapping,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,yxxSelfService:{featureFlags:f.options.featureFlags,pollMilliseconds:100,reporterFeedbackEnabled:true}});app=runtime;return runtime.server;
    }});
-   fixture.setMember('open-a');tab=await fixture.launch({path:'/wecom/yixiaoxiu/reports/'+f.requestRef,width:390,height:844});assert.ok(tab);
+   assert.ok(fixture);fixture.setMember('open-a');tab=await fixture.launch({path:'/wecom/yixiaoxiu/reports/'+f.requestRef,width:390,height:844});assert.ok(tab);
    await tab.waitFor("document.querySelector('#detail-view')?.hidden===false&&document.querySelector('#detail-status')?.textContent.includes('关闭')");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-action=submit-feedback]'))"),true,'production original-Reporter detail must expose its lawful explicit feedback control');
    await tab.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t20Posts.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t20Reads.push(String(path));return original(path,options);};})()");

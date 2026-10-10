@@ -31,11 +31,11 @@ test('independent staff W reopen and own-member feedback compete on one App and 
   await f.app.stop();const full=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,
    principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true,
    wecomWebOAuth:oauthOptions,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret,
-   yxxSelfService:{profile:'FULL_SERVICE_LOOP',featureFlags:f.options.featureFlags,reporterFeedbackEnabled:true}});
+   yxxSelfService:{featureFlags:f.options.featureFlags,reporterFeedbackEnabled:true}});
   if('disabled' in full)throw Error('T20_RACE_FULL_DISABLED');
   try{
    const started=await full.start();assert.ok(started.cookies);const cookie=started.cookies[0];assert.ok(cookie);
-   const staff=browser(full.server,cookie),member=browser(full.server);await login(member);
+   const staff=browser(full.server),member=browser(full.server);staff.cookies.set(cookie.name,cookie.value);await login(member);
    const staffBootstrap=t20Object((await staff.request('/api/lifecycle/bootstrap')).json()),memberBootstrap=t20Object((await member.request('/api/yixiaoxiu/bootstrap')).json());
    const staffBody={client_command_id:randomUUID(),expected_version:f.completed.version,reason_code:'STAFF_REOPEN',note:'独立工作人员与本人反馈竞争'};
    const responses=await Promise.all([staff.request('/api/tickets/'+f.ticketId+'/reopen',post(staffBody,staffBootstrap.csrf_token)),member.request(f.path+'/feedback',{...post(f.command,memberBootstrap.csrf_token),headers:{...post(f.command,memberBootstrap.csrf_token).headers,'if-match':'"'+f.completed.version+'"'}})]);
