@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_feedback_command.schema.json",
+  "title": "WBINT-T20 frozen Web feedback candidate input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "client_command_id", "feedback", "completed_round_ref", "expected_ticket_version"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "feedback": {"const": "STILL_UNRESOLVED"},
+    "completed_round_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "expected_ticket_version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+  }
+}

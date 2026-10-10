@@ -13,6 +13,7 @@ import {createYxxReadonlyServer} from '../../src/p2-g2-yixiaoxiu-server.mjs';
 import {entryConfig,entryKey,listenYxx,stopYxx} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 
+/** @param {{pool: import('../../src/platform/postgres-pool.mjs').PostgresPool, createApp?: ((input: {oauth: ReturnType<typeof createWeComWebOAuth>, origin: string}) => import('node:http').Server) | null, startApp?: typeof listenYxx, stopApp?: typeof stopYxx}} options */
 export async function createYxxBrowserFixture({pool,createApp=null,startApp=listenYxx,stopApp=stopYxx}){
   const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe','/usr/bin/openssl','/bin/openssl','/usr/local/bin/openssl'].find(existsSync);
   if(!openssl)throw new Error('YXX_TEST_OPENSSL_REQUIRED');

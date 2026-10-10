@@ -23,6 +23,10 @@ native_blocking_edges: 76
 
 2026-10-10最新恢复核查：GitHub已关闭14／43票，剩余29票OPEN；T22集中会话原七项已完成父独立核对、合入本地集成并[收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)，见[实际对象、原报告与关闭方式](execution/t22.md)。WBINT-07／A07本地完成；T35的原生blockers #69／#77均已关闭。下一串行验证窗口为T08；其它已准备源码不计验收。
 
+2026-10-10 T08收口后实际快照：已关闭15／43票，剩余28票OPEN。T08撤销未开始派工的原七项经父独立核对，交付`697bfd6f014fc174eecd951c484eff98babbaa90`已安全快进到本地集成分支，[#63完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63#issuecomment-6093445782)，见[合同、原被测对象与分组证据](execution/t08.md)。T09的#58／#63已关闭；下一串行验证为T20。T15／T18／T19／T20／T28／T34／T35以及T10／T39源码已准备，尚未验收；WBINT-02／A02整组仍待T07／T09／T10。
+
+2026-10-10 T20收口后实际快照：已关闭16／43票，剩余27票OPEN。T20完整原七项与原始分组证据经父独立核对，交付`722f1d0a5b82d0455fc9cf2939bc8e70207e97ad`已安全快进；[#75完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)，见[合同、被测祖先与关闭方式](execution/t20.md)。原被测`0f9af956…`保持原制品，文档后继guard1如实记录，1142输入／1332原输出字节核对相同。T21／T37依赖现已满足，须先核对领取；T09合入最新源码准备，T24／T18下一原首验证仍未完成，WBINT-06／A06仍待T21。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -67,9 +71,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
   - **来源：** WBINT-02 / A02
 
-- [ ] **T08** — [#63 撤销尚未开始的派工](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)
+- [x] **T08** — [#63 撤销尚未开始的派工](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
   - **来源：** WBINT-02 / A02
+  - **本地执行：** [LOCAL_VERIFIED：默认保留沟通、显式原子交接、有界当前责任段、原UUID核对与七项证据](execution/t08.md)已集成、关票；本票32、直接兼容106和原工具27通过，原失败与采集更正保留。默认关闭、未发布／启用；A02仍未完成。
 
 - [ ] **T09** — [#64 停止处理并退回待安排](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#63](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)
@@ -123,8 +128,8 @@ native_blocking_edges: 76
   - **来源：** WBINT-05 / A05
   - **执行：** 2026-10-09已实读完整正文／空评论／ready标签及原生blockers #59／#72 CLOSED，领取给peterkis；独立准备同事务受理与本人开始合同，运行与整票验收尚未完成。
 
-- [ ] **T20** — [#75 Web原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
-  - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #66 CLOSED，领取给peterkis；独立准备原Web报修人反馈与同轮重开合同，尚未验证。
+- [x] **T20** — [#75 Web原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
+  - **执行：** [原七项、当前REST与分组证据](execution/t20.md)已由父核对；交付722f1d0a安全快进，[完成评论与CLOSED](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)已读回。原被测0f9及全部FAIL／NOT_REACHED保留，默认关闭、未发布／启用；T21与A06整组未完成。
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-06 / A06
 

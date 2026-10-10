@@ -14,6 +14,7 @@
     "supplements": {"type": "array", "maxItems": 50, "items": {"type": "object", "additionalProperties": false, "required": ["input_revision", "text"], "properties": {"input_revision": {"type": "string", "pattern": "^[1-9][0-9]*$"}, "text": {"type": ["string", "null"]}}}},
     "safe_location": {"type": ["string", "null"]},
     "created_at": {"$ref": "./local_datetime.schema.json"}, "created_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "updated_at": {"$ref": "./local_datetime.schema.json"}, "updated_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"},
-    "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}, "safe_clarification": {"type": ["string", "null"]}, "can_supplement": {"type": "boolean"}
+    "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}, "safe_clarification": {"type": ["string", "null"]}, "can_supplement": {"type": "boolean"},
+    "feedback_context": {"$ref": "./yxx_self_service_feedback_context.schema.json"}
   }
 }
