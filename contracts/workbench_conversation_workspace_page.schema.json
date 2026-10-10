@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_conversation_workspace_page.schema.json",
+  "title": "workbench_conversation_workspace_page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "next_cursor"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session",
+          "participant_label",
+          "topic",
+          "channel_label",
+          "canonical_item",
+          "assignment",
+          "handoff",
+          "capabilities"
+        ],
+        "properties": {
+          "session": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "session_id",
+              "status",
+              "control_mode",
+              "generation_version",
+              "row_version",
+              "last_activity_at"
+            ],
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+              },
+              "status": {
+                "enum": [
+                  "OPEN",
+                  "WAITING_USER",
+                  "ENDED"
+                ]
+              },
+              "control_mode": {
+                "enum": [
+                  "HUMAN",
+                  "COPILOT",
+                  "AUTO"
+                ]
+              },
+              "generation_version": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "row_version": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "last_activity_at": {
+                "$ref": "local_datetime.schema.json"
+              }
+            }
+          },
+          "participant_label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "channel_label": {
+            "enum": [
+              "群来源 · 回复通过私聊",
+              "Bot 私聊"
+            ]
+          },
+          "canonical_item": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "id",
+                  "number",
+                  "title"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "ticket",
+                      "review",
+                      "intake"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                  },
+                  "number": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "assigned_to_me",
+              "assigned_display_name"
+            ],
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "assigned_to_me": {
+                "type": "boolean"
+              },
+              "assigned_display_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "handoff_id",
+                  "status",
+                  "row_version"
+                ],
+                "properties": {
+                  "handoff_id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "row_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capabilities": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 2048
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

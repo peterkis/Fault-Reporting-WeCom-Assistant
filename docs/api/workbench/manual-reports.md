@@ -40,7 +40,7 @@ MANUAL复核的显式`CONFIRM_TICKET_ELIGIBLE`及`CLASSIFY_SERVICE_REQUEST`分�
 
 | 候选方法与路径 | 冻结合同 |
 | --- | --- |
-| `GET /api/workbench/reports/self-handling-context` | W／READ ONLY；当前创建权限及真实活动组成员资格；闭合`{can_take_and_start,resolver_teams:[{id,name}],manual_contact_required:true,external_notification:false,draft_recovery_enabled}`。仅返回当前操作者合法活动组，稳定按id排序，最多100；超限明确503，不截断成完整候选。无合法组时false＋空数组，不授予新的读取权限 |
+| `GET /api/workbench/reports/self-handling-context` | W／READ ONLY；当前创建权限及真实活动组成员资格；闭合`{can_take_and_start,resolver_teams:[{id,name}],manual_contact_required:true,external_notification:false,draft_recovery_enabled}`。仅返回当前操作者合法活动组，稳定按id排序，最多100；超限明确503，不截断成完整候选。仍有普通代录创建权但无合法处理组时false＋空数组；已失去当前创建权继续403，不授予新的读取权限 |
 | `POST /api/workbench/reports/take-and-start` | W／同源Origin／CSRF／16KiB／UUID Idempotency-Key与body一致；T17原闭合body只增加必填`resolver_team_id`；首次完成202、相同原意图重放200。姓名、联系方式仍UNVERIFIED；目标处理人固定当前authenticated principal |
 | `GET /api/workbench/reports/commands/{commandId}` | 复用原MANUAL_REPORT用途READ ONLY核对；UNKNOWN／FAILED／COMMITTED语义不变；原principal＋当前创建权限及原恢复开关重新核验，不写账本，不发送新命令 |
 
