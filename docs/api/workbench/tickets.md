@@ -236,3 +236,10 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 组件沿共享当前授权epoch的同源无缓存GET，挂载读取一次，只提供“重新读取通知”的显式GET；卸载／切换取消自身读取，generation屏蔽晚结果，可信失权清当前Ticket／Session视图。没有通知POST、retry／reconcile／SDK调用、轮询、发送或通知消费者变更。
 
 原干净9ac9b280候选一次build／strict／artifact原生0／0／0，原browser首0PASS／1FAIL/native1：真实Cookie accept/start/complete、CLOSED和FIRST／STAFF cycle1 PERSON/PENDING两条API前置到达，正式页面缺区域为真实UI RED（原source45／compiled51）。原TAP、1920×1080失败PNG、完整1110inputs／1281outputs及sourceZIP冻结在D外部归档，手动重读／UI隐私／末尾物理counts均NOT_REACHED，不用源码补丁升级其结论。当前后继尚未build／运行，原首7836字节、SHA db547b5e777b064aca0d5c3092274c43e5981c918ea7c56f89dcb4e07599984d、240秒与角色／flags／routing不变。完整七项、T06 assignment/QUEUED首通知与真正T08／T09范围继续remaining；运行窗口已TEMP_RELEASE返T20。
+
+
+### 原 UI GREEN 准备构建失败与 typed 时间后继（SOURCE／NOT_RUN）
+
+717d683d候选唯一构建在web严格类型前置原生exit1：Notification解码器原字符串时间返回值不满足LocalDateTime品牌，TS2322位于client.ts117。strict／artifact／SQL／PG fixture／HTTP／browser都NOT_RUN，无新UI业务结果或失败PNG；原9ac区域缺失RED及全部NOT_REACHED层保持原身份。该失败已完整D保全1872档（当前source raw1111／partial.build759／原日志2）及源ZIP，窗口明确TEMP_RELEASE返T20。
+
+仅源码修补Notification时间边界：保留现有primitive string与秒精度格式校验，进一步验证合法公历日期、闰年和时分秒范围，验证后返回LocalDateTime品牌。旧通用datetime和DTO品牌类型不放宽，未引入浏览器不可用的node:util依赖、新模块、any或双重断言。仅通知sent_at（允许null）与created_at走新typed parser；节点读取／UI和消费者等其它行为不变。原首／三测试／041／角色／flags／240秒保持，当前后继build／strict／artifact／browser全部NOT_RUN，只在新grant下验证原browser首。

@@ -2,6 +2,7 @@ import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchD
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
 import type {P2016TicketNotification} from '../../../../contracts/p2_016_contracts';
+import type {LocalDateTime} from '../../../../contracts/time_contracts';
 export type {P2016TicketNotification};
 import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets,P2016AssignmentResult,P2016AssignmentAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets} from '../../../../contracts/workbench_unassign_contracts';
@@ -27,6 +28,15 @@ function text(value:unknown): string {if(typeof value!=='string')throw new ApiEr
 function nullable(value:unknown): string|null {return value===null?null:text(value);}
 function strings(value:unknown):string[] {if(!Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value.map(text);}
 function datetime(value:unknown):string {const v=text(value);if(!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u.test(v))throw new ApiError(502,'INVALID_RESPONSE');return v;}
+function notificationDatetime(value:unknown):LocalDateTime {
+  const v=datetime(value),year=Number(v.slice(0,4)),month=Number(v.slice(5,7)),day=Number(v.slice(8,10));
+  const hour=Number(v.slice(11,13)),minute=Number(v.slice(14,16)),second=Number(v.slice(17,19));
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const maximum=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+  if(year<1||month<1||month>12||day<1||maximum===undefined||day>maximum||hour>23||minute>59||second>59)throw new ApiError(502,'INVALID_RESPONSE');
+  // The original second-precision format and Gregorian calendar/clock checks establish the opaque business-time brand.
+  return v as LocalDateTime;
+}
 function id(value:unknown):string {const v=text(value);if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(v))throw new ApiError(502,'INVALID_RESPONSE');return v;}
 function decodeGroup(value:unknown):SourceGroupDisplay {
   const v=object(value),ref=text(v.ref),version=text(v.row_version),name=nullable(v.display_name);
@@ -111,7 +121,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
     return {...round,notification_type:row.notification_type as P2016TicketNotification['notification_type'],
       destination_type:row.destination_type as P2016TicketNotification['destination_type'],delivery_id:id(row.delivery_id),
       status:row.status as P2016TicketNotification['status'],side_effect_state:row.side_effect_state as P2016TicketNotification['side_effect_state'],
-      attempt_count:row.attempt_count,sent_at:row.sent_at===null?null:datetime(row.sent_at),created_at:datetime(row.created_at)};
+      attempt_count:row.attempt_count,sent_at:row.sent_at===null?null:notificationDatetime(row.sent_at),created_at:notificationDatetime(row.created_at)};
   });
   if(new Set(items.map(item=>item.delivery_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {items};
