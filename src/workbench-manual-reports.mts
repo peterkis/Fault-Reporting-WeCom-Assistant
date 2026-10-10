@@ -20,9 +20,11 @@ import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {LocalDateTime} from '../contracts/time_contracts.js';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
+import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
+import {createWorkbenchReporterCandidates} from './workbench-reporter-candidates.mjs';
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
-interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;realtimeProjector?:Realtime|null}
+interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;reporterCandidatesEnabled?:boolean;reporterDirectory?:ManualReporterDirectoryOptions|null;realtimeProjector?:Realtime|null}
 export function manualReportCommand(input:unknown):ManualReportCommand{
   const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter']);
   if(v.schema_version!==1)failP2016();
@@ -49,8 +51,9 @@ function storedResult(input:unknown,commandId:string):ManualReportResult&{replay
       review:review?{id:uuidP2016(review.id),status:'PENDING'}:null,replayed:true});
   }catch{failP2016('ACTION_FAILED',503);}
 }
-export function createWorkbenchManualReports({pool,query,enabled=false,draftRecoveryEnabled=false,realtimeProjector=null}:Options){
-  if(typeof enabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+export function createWorkbenchManualReports({pool,query,enabled=false,draftRecoveryEnabled=false,reporterCandidatesEnabled=false,reporterDirectory=null,realtimeProjector=null}:Options){
+  if(typeof enabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean'||typeof reporterCandidatesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  const reporterCandidates=createWorkbenchReporterCandidates({enabled:enabled&&reporterCandidatesEnabled,directory:reporterDirectory});
   const ledger=createP2016CommandLedger({pool}),core=createPilotTicketCore({pool});
   const decisions=createDecisionStore({webSource:true,manualSource:true}),reviews=createManualReviewStore({webSource:true}),intakes=createServiceIntakeDecisionPort();
   async function authorize(authContext:unknown,transaction:PostgresTransaction){
@@ -125,6 +128,17 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
   }
   return Object.freeze({
     async handler({request,response,url,authContext,readJson,validateWriteRequest,json}:HttpContext){
+      if(url.pathname==='/api/workbench/reporter-candidates'){
+        guardP2016(enabled&&reporterCandidatesEnabled);if(request.method!=='GET')failP2016('NOT_FOUND',404);
+        const currentPrincipal=()=>transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');return (await authorize(authContext,tx)).principal;});
+        const principal=await currentPrincipal();
+        // Network/adapter wait is outside the database transaction. Current
+        // creation authority is checked again before any page or error returns.
+        const outcome=await reporterCandidates.search(principal.principal_id,url.searchParams).then(
+          page=>({ok:true as const,page}),(error:unknown)=>({ok:false as const,error}));
+        const current=await currentPrincipal();if(current.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+        if(!outcome.ok)throw outcome.error;json(response,200,outcome.page);return true;
+      }
       const capabilityPath=url.pathname==='/api/workbench/reports/capabilities',receiptPath=/^\/api\/workbench\/reports\/commands\/([^/]+)$/u.exec(url.pathname);
       if(url.pathname!=='/api/workbench/reports'&&!capabilityPath&&!receiptPath)return false;guardP2016(enabled);if(url.searchParams.size)failP2016();
       if(request.method==='GET'&&capabilityPath){json(response,200,await capabilities(authContext));return true;}

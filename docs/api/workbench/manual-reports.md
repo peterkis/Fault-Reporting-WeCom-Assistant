@@ -67,3 +67,15 @@ T18 专树已正常合入指定集成根`4fececa695f8adea54ce599baa6b5f8cf50665d
 后续最小GET切片须复用T17的当前代录创建权与现有authenticatedHandler，再装配受控应用／目录scope及窄候选Port；在实际HTTP首RED前不预写生产handler。前端继续沿T17当前capabilities、T38 authorization epoch、abort／组件generation及同账号草稿用途隔离。迟到目录页不得覆盖新查询、撤权后内容或UNKNOWN原命令；候选资料只能展示，提交仍须服务器重核。明确手填回退形成新的意图UUID，原UNKNOWN必须先只读核对，不能由新选择或当前目录悄然替换。
 
 本票选择只完成代录受理，不自动派工、接单或创建沟通责任；后续一步处理属T19。首GET、选择提交、快照／回执、离线与失权、正式bundle选择表单依次取得各自真实RED后实施。045仍只预留最小同Intake快照提案，无SQL文件、无迁移执行；本次源码同步与合同核对没有任何运行PASS。
+
+### 2026-10-10 原 GET 真实 RED 后的源码准备
+
+原首测试在固定`cc06a6a37bdd100e4bb3e4ab5a54ce8ed60cff20`经一次build／strict／artifact均native 0后实际调用候选GET，得到404≠200；原候选JSON及Directory响应断言未到达。该原失败与完整制品已保全，本段后继源码尚未重新build、types或运行，**不能宣称GET已验证可用或整票完成**。原执行证据和源码后继身份见[本票执行记录](../../../plans/admin-workbench-integration/execution/t18.md)。
+
+本次源码只准备`GET /api/workbench/reporter-candidates`。生产runtime开始消费`workbenchReporterCandidatesEnabled=false`、`manualReporterDirectory=null`，仅在原代录option与候选option同时启用时处理该用途；关闭时不读取目录或033／042存储。开启后继续核验原T17当前创建许可及033／042 readiness，并把authenticated principal、宿主冻结的corp／app／directory scope和规范化q／limit／cursor传给既有窄`searchAuthorizedCandidates`。目录等待在数据库事务外，返回成功页或错误前再次验当前创建权。配置缺失／无效或目录结果无效用503；POST候选路径不挂载。
+
+GET输入只接受单份q／limit／cursor：q去首尾空白后2–100字符，原值拒绝控制字符；limit默认10、最大20；cursor为1–512字符base64url opaque引用。Directory Port必须在分页前执行对象过滤，并负责cursor的principal／应用／目录／query／limit／资料版本关联及五分钟有效期，向宿主用稳定400拒绝失配或过期；宿主不会把opaque引用当授权凭据或复制第二套目录事实。返回只接受原闭合四字段页与七字段候选，候选数不超过请求limit／20、各名称最多100字符、部门最多20且唯一、ref32–256、版本64位小写SHA256、cursor最多512；额外字段与16KiB超限返回503，合法空页仍200。
+
+源码准备的目录等待加解析deadline为2000ms、全局在途1／无队列、每principal每60秒最多10次、惰性清理rate状态最多128。超时会abort并503；若adapter忽略abort，其单一未结束操作继续占并发围栏，直到实际settle，不能用“已超时”开启第二请求。无常驻worker／全量同步／后台timer；单次deadline timer在请求finally清理。关闭本票候选option停止新查询，T17手填及既有事实保留。
+
+候选GET不执行`verifyAuthorizedCandidate`，不写Intake／Ticket／profile／proof／receipt，不产生外发。选择POST、VERIFIED公开投影／回执、首次proof版本与目标绑定、终态当前对象READ语义、045及正式UI均仍独立前置；本次不预实现它们。bootstrap的`reporter_candidates_enabled`与前端消费也留待其实际UI切片。本票全部七项仍REMAINING，源码后继等待下一唯一运行窗口的原GET GREEN与必要负片。

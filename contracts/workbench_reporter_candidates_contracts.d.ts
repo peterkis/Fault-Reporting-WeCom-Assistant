@@ -32,7 +32,14 @@ export interface ManualReporterSelection {
   readonly candidate_ref:string;
   readonly candidate_version:string;
 }
-/** External/current-directory authority only; neither method accepts browser identity fields. */
+/** External/current-directory authority only; neither method accepts browser identity fields.
+ * GET search must filter the principal's configured application/object scope before paging.
+ * The Port owns opaque cursor principal/application/directory/query/limit/version binding,
+ * rejects mismatched/expired cursors (maximum 5min), and honors the supplied abort signal.
+ * The host validates the closed 16KiB page, bounded labels/references, 2s deadline and
+ * concurrency/rate limits; it never derives identity equivalence from returned labels.
+ * Selection verification/proof-return/replay semantics remain a later explicit contract.
+ */
 export interface ManualReporterDirectoryPort {
   searchAuthorizedCandidates(input:ManualReporterSearch):Promise<unknown>;
   verifyAuthorizedCandidate(input:Omit<ManualReporterSearch,'query'|'limit'|'cursor'>&{
