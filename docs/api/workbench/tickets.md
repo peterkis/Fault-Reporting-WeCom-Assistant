@@ -206,16 +206,16 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 
 复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。
 
-## 撤销未开始派工（WBINT-T08，PLANNED/NOT_RUN）
+## 撤销未开始派工（WBINT-T08，实施中）
 
-本节只冻结SOURCE合同，两条路径均未挂载，运行NOT_RUN。[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)；不得将这里的路径/码/开关加入当前已实现能力判断。
+本节为当前冻结合同及本票实现进度。POST已在自有隔离PG/真实HTTP验证；安全GET ACK当前源码已挂载，本候选运行仍待验证，生产UI及原七项整票验收尚未完成。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
 
-| METHOD + PATH | PLANNED合同 |
+| METHOD + PATH | 当前合同 |
 | --- | --- |
 | POST `/api/tickets/{ticketId}/unassign` | 一个闭合原子撤派命令，当前未开始责任由获权ADMIN/DISPATCHER撤回 |
-| GET `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前Ticket读权、原principal/专用用途/原UUID的安全UNKNOWN/FAILED/COMMITTED；另需raw recovery |
+| GET `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前Ticket读权、原principal/专用用途/原UUID的最小UNKNOWN/FAILED/COMMITTED；独立T08启用即可，raw草稿恢复可关闭 |
 
-拟宿主`ticketUnassignEnabled:boolean=false`，独立于T05/T06；关闭不广告/不读新迁移，旧profile保留。启用须039及未来已分配前向release迁移；目前038–045预约、046未分配，本阶段无SQL。现031不允许unassigned event，现Core metadata guard不接受new_assignee=null，未来只扩充既有event/check，不增owner/started字段或第二套Ticket/receipt。
+宿主`ticketUnassignEnabled:boolean=false`，独立于T05/T06；关闭不广告/不读新迁移，旧profile保留。启用须039及前向046_ticket_unassign。046只扩充既有event/check，允许严格的同组旧owner→JSON null释放metadata，不增owner/started字段、表或第二套Ticket/receipt；既有031/039迁移字节保留。
 
 body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483647),reason_code:CODE(1..64),reason:string(原长≤2000、trim非空),communication_choice:RETAIN_CURRENT|TRANSFER_SELECTED,communication_target_principal_id:UUID|null,sessions:[{session_id:UUID,expected_row_version:number(1..2147483647)}]`。RETAIN_CURRENT必须null target/空sessions；显式TRANSFER_SELECTED必须活动内部target、1..8个唯一规范Session。原因只存internal_note，没有external_visible/外部摘要/接收人；额外键拒绝。沿W Origin/CSRF/JSON/32KiB/Idempotency-Key与If-Match一致。
 

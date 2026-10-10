@@ -1,6 +1,7 @@
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery,P2016TicketRow} from './p2-016-ticket-query.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
+import type {P2016UnassignAcknowledgement} from '../contracts/workbench_unassign_contracts.js';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
@@ -8,7 +9,7 @@ import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
 
 export interface UnassignCommand {action:'unassign';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;reason:string;communication_choice:'RETAIN_CURRENT'|'TRANSFER_SELECTED';communication_target_principal_id:string|null;sessions:{session_id:string;expected_row_version:number}[]}
 export function normalizeTicketUnassignCommand(input:unknown):UnassignCommand{
@@ -60,7 +61,21 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
 }
 export function createTicketUnassignService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean}&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
-  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
+  return Object.freeze({
+  async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016UnassignAcknowledgement>{
+    guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+    if(!await unassignSchemaReady(pool))failP2016('UNASSIGN_UNAVAILABLE',503);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+      const selected=await transaction.query<{state:unknown;version:unknown;event:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable
+        FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid
+        AND command_type='WORKBENCH_TICKET_UNASSIGN' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId]);
+      const row=selected.rows[0];if(!row||row.state==='STARTED')return {state:'UNKNOWN'};
+      if(row.state==='COMMITTED')return {state:'COMMITTED',ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)};
+      if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return {state:'FAILED',error:{code:row.error,retryable:false}};
+      failP2016('ACTION_FAILED',503);
+    });
+  },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeTicketUnassignCommand(input);
     if(!await unassignSchemaReady(pool))failP2016('UNASSIGN_UNAVAILABLE',503);
     return ledger.execute({command,receiptType:'WORKBENCH_TICKET_UNASSIGN',authorize:async transaction=>{

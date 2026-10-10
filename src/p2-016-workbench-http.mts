@@ -30,6 +30,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const unassignReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/unassign\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(unassignReceipt){if(!unassign)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await unassign.acknowledgement({authContext,ticketId:unassignReceipt[1],commandId:unassignReceipt[2]}));return true;}
       const assignmentReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/assignment\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(assignmentReceipt){if(!assignment)failP2016('DISABLED',503);guardP2016(workbenchDraftRecoveryEnabled);queryKeys(url,[]);json(response,200,await assignment.acknowledgement({authContext,ticketId:assignmentReceipt[1],commandId:assignmentReceipt[2]}));return true;}
       const reviewReceipt=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
