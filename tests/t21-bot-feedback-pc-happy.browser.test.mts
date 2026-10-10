@@ -56,11 +56,12 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
     const source=await seedPersistedIntake({pool:context.pool,text:'合成门诊打印机无法打印处方。',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:source.intakeId,occurredAt:source.receivedAt,traceId:'t21-pc-bot-source'});
     assert.ok(created.ticket);
+    const ticket=created.ticket;
     const access=createP2016ReporterAccess({pool:context.pool,enabled:true,hmacSecret:secret});
-    const original=await transactionP2016(context.pool,transaction=>access.ensurePublicRefInTransaction({transaction,ticketId:created.ticket.id,reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test']))}));
-    const staff=await t11Http(context),active=await staff.start(created.ticket.id),completion=await staff.post(created.ticket.id,'complete',staff.command(active));
+    const original=await transactionP2016(context.pool,transaction=>access.ensurePublicRefInTransaction({transaction,ticketId:ticket.id,reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test']))}));
+    const staff=await t11Http(context),active=await staff.start(ticket.id),completion=await staff.post(ticket.id,'complete',staff.command(active));
     assert.equal(completion.status,200,await completion.text());
-    const completed=await staff.detail(created.ticket.id);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+    const completed=await staff.detail(ticket.id);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
     const completedCycle=completed.handling_cycle;assert.ok(completedCycle);
     await context.runtime.stop();assert.equal(context.runtime.server.listening,false);
     const botConfig={...config,reporterUserIds:['user-test','other-user-test']};
@@ -76,6 +77,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
         const runtime=memberApp(oauth,publicOrigin);
         app=runtime;return runtime.server;
       }});
+      assert.ok(fixture);
       fixture.setMember('open-a');tab=await fixture.launch({path:'/synthetic-start',width:1440,height:900});assert.ok(tab);
       await tab.command('Page.enable');await tab.command('Page.addScriptToEvaluateOnNewDocument',{source:observe});
       // Real OAuth/state/Cookie middleware and official mapping Stub; no Cookie
