@@ -54,3 +54,22 @@ ACK 的闭合 [schema](../../../contracts/workbench_personal_read_acknowledgemen
 目标新 option `workbenchPersonalReadEnabled=false`；bootstrap字段 `personal_read_enabled=false`。关闭时新入口503且在本票查询/写库前返回，停止观察/UI提示；原会话Control和受理链路继续可用，已提交位置/receipt保留。默认仍一App/API/SSE、一Worker、Gateway单活、SSE32、应用池总量建议≤8；本票无新worker。当前页面最多100来源、原材料50/20k或现有400会话Item上限；观察只服务当前获权有界DOM并及时disconnect。
 
 计划错误边界：400闭合字段/UUID/ref/revision/重复query；401主体认证；403Origin/CSRF/角色；404当前来源/留存/错误关联；409同UUID改意图；413正文过大；503关闭/不可用。错误不输出SQL、数据库URL、原始Provider内容或外部身份。测试只合成PG、同源HTTP、正式bundle、系统浏览器及受控平台可见性，不调用真实OAuth/WeCom/目录/模型，不外发/部署/full/certify/Gate推进。
+
+## root 4fe 同步：已实现接缝与尚未运行的个人位置
+
+2026-10-10 的SOURCE快照已在T35自身分支正常合入 `4fececa695f8adea54ce599baa6b5f8cf50665d2`。相对前次已合root `60e33f4d60317f42c7ed1d82cfec7bc56f594b8a`，只有父执行/票号导航变化；当前T14/T22/T38生产接缝未变化。本节只核齐合同与后续运行边界，个人位置仍PLANNED，所有本票runtime仍NOT_RUN。
+
+| 当前已实现接缝 | T35应消费的确切事实 | 禁止用作已看到的信号 |
+| --- | --- | --- |
+| T14 `GET /api/manual-reviews/{reviewId}` 及获权事项详情 | 安全材料 `source_ref/revision/text`、真实canonical映射；当前来源/Review/Journey读权和保留期 | `material_basis`、Decision hash、Review行版本、GET成功或打开详情 |
+| T22 `GET /api/workbench/conversations/{sessionId}/items` | 当前Session的确切安全Item与 `sequence_no`；before/after分页只改变加载窗口 | 列表last_item、已加载页边界、全量metadata最大值或另一个Session的序列 |
+| 既有 `POST /api/conversations/{sessionId}/read-cursor` | 原Control本人cursor及捕获的cursor行版本；仅实际可见Item序列 | Ticket版本、WEB revision、SSE event_id、row/generation版本或其他坐席cursor |
+| T38 bootstrap及单一 `/api/realtime/events?scope=workbench` | 当前主体/范围/授权epoch、隐藏页停读及恢复时完整fresh；REST失效重读信号 | 收到事件、重连、最近成功读取时间、presence、失效后预加载 |
+
+T22材料分页默认50/最大200，当前UI累计上限400；T14材料最多50/20k字符，权限/保留过滤先于LIMIT。这些上限不允许把未加载的材料隐式置已读。分页GET、预加载和隐藏页渲染本身全部零推进；恢复到前台并重新验权后，只把当时确切在视口、具有正文的材料作为目标。较旧实际看见位置可以提交，但单调最大值不回退，仍较新的未见材料继续未读。Session写入口沿既有安全整数边界，不能把BIGINT string不安全转number或与WEB位置相互赋值。
+
+同一页面若同时展示WEB材料与Session投影，分别使用自己的当前读取坐标，不由其中一次读取代写另一轴；同账号其他标签也不能凭缓存猜测该标签已见内容。不同主体永远独立，从当前认证派生本人，不提供“代某人已读”输入。Review→Ticket只变导航alias，不重复复制来源位置或增加两卡未读；旧Review权限/保留期失败仍404，不能借Ticket读权复活。
+
+实施后个人read查询应加入T38已有当前主体/当前对象活动family和清理机制，沿同一epoch/AbortSignal/组件观察代际；关闭/隐藏/离开对象及时disconnect。SSE或任何GET成功不会调用read POST，后台inactive对象不新增轮询。先确认个人提交成功再显示推进；UNKNOWN只按原UUID和当前来源权限核对安全收据，不自动重放正文或代写同事位置。
+
+本次未新增Schema、测试片、observer、HTTP handler或SQL；原四个闭合Schema和唯一公开首tracer字节保持。原首tracer的受控可见性只模拟系统浏览器平台边界，不伪造服务成功；真正build/类型/前置或浏览器层未到时必须保持NOT_REACHED而非称产品RED。与T36的组合验收须等待其真实集成合同；当前只确认个人阅读无处置写入，不能宣称不存在的团队接口已验证。
