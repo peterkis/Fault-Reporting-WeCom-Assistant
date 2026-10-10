@@ -54,6 +54,7 @@
 
 后续若确认真实契约缺陷，应先按已有ADR/任务授权修正对应合同和实现、添加针对风险的验证，再同步本目录。本轮没有为这些差异新建候选、改Gate或运行full/certify。
 
+2026-10-10 WBINT-T20 [Web明确未解决反馈](member/web-feedback-design.md)已完成[原七项本地整票验证](../../plans/admin-workbench-integration/execution/t20.md)，待父独立审查/集成：当前M详情feedback_context、feedback POST及原FEEDBACK GET、043同Ticket新轮/清owner/保组历史、独立HANDLER W服务与正式H5/PC、两来源获权前人提示、UNKNOWN GET-only及独立raw恢复均已实现。最终0f9af956 build/strict/artifact原生0、直接消费者10PASS、原hosts外层27PASS；其它真实HTTP/合同/并发/隐私和原FAIL/setup/NOT_REACHED各保原源/制品/原档，不重绑PASS。新增能力默认false，cold rawOFF只保挂载页内原UUID，不承诺刷新24h；readonly/OAuth-only/SS011、单Core/独立Conversation责任及真实外部/send/userDB/deploy/full/certify/Gate停止线保持。早期SOURCE/局部slice描述仅在本票逐候选历史保留。
 ## WBINT-T08 本地整票实现（2026-10-10）
 
 [撤销当前未开始派工](workbench/tickets.md#wbint-t08-撤销未开始派工)的闭合 POST、安全原 UUID GET ACK、有界沟通目标 GET 及正式前端消费现已实现，独立 consumer 默认 false。ACK 不要求 raw recovery；敏感恢复另以当前账号/Ticket/purpose 加密保留最长 24h，UNKNOWN 只 GET 原终态、不自动重发。实际数据库变更仅前向 `046_ticket_unassign.sql`，扩既有事件和严格 null 释放 CHECK，不新增表或第二事实源；历史 SQL 保持。原 20 本票文件 32PASS、15 相关文件 106PASS、既有 hosts 原生 27PASS；准确固定制品、原始失败与工具采集分类更正分别记录，不将内部故障注入 TAP 当主运行失败。

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_feedback_result.schema.json",
+  "title": "WBINT-T20 frozen safe committed feedback candidate",
+  "type": "object", "additionalProperties": false,
+  "required": ["ok", "replayed", "request_ref", "completed_round_ref", "reopened_round_no", "ticket"],
+  "properties": {
+    "ok": {"const": true}, "replayed": {"type": "boolean"},
+    "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "completed_round_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "reopened_round_no": {"type": "integer", "minimum": 2, "maximum": 2147483647},
+    "ticket": {
+      "type": "object", "additionalProperties": false, "required": ["ticket_no", "status", "version"],
+      "properties": {
+        "ticket_no": {"type": "string", "minLength": 1, "maxLength": 64},
+        "status": {"const": "REOPENED"},
+        "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+      }
+    }
+  }
+}

@@ -34,14 +34,14 @@ function failureMessage(error:unknown):string{
 }
 export interface AuthorizedDraftValue<T,C> {value:T;pending:C|null}
 export interface AuthorizedDraftOptions<T,C> {
-  scope:DraftScope;enabled:boolean;value:T;pending:C|null;emptyValue:T;
+  scope:DraftScope;enabled:boolean;writeEnabled?:boolean;value:T;pending:C|null;emptyValue:T;
   hasInput:(value:T)=>boolean;serialise:(value:AuthorizedDraftValue<T,C>)=>string;
   decode:(text:string)=>AuthorizedDraftValue<T,C>;commandId:(command:C)=>string;
   authorize:(signal:AbortSignal)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
   onRestore:(value:AuthorizedDraftValue<T,C>)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
 }
 export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
-  const {scope,enabled,value,pending,emptyValue}=options,scopeKey=draftScopeKey(scope);
+  const {scope,enabled,value,pending,emptyValue}=options,scopeKey=draftScopeKey(scope),writeEnabled=options.writeEnabled??enabled;
   const protocol=useRef(options);protocol.current=options;
   const encode=(value:AuthorizedDraftValue<T,C>)=>protocol.current.serialise(value);
   const hasInput=(value:T)=>protocol.current.hasInput(value);
@@ -57,10 +57,12 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   const cancelTimer=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
   const cancelAuthority=()=>{authorityRequest.current?.abort();authorityRequest.current=null;};
   async function write(value:AuthorizedDraftValue<T,C>){
+    if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
     const token=generation.current,text=encode(value);
     setStatus('saving');setMessage('正在保存恢复副本…');
     const task=queue.current.catch(()=>{}).then(async()=>{
       if(generation.current!==token||!handle.current)throw new DraftError('DRAFT_CHANGED');
+      if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
       const target=handle.current,saveOptions=value.pending?{commandId:protocol.current.commandId(value.pending)}:{};
       let record;
       try{record=await saveDraft(target,text,saveOptions);}
@@ -147,11 +149,12 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error));return;}
   },[enabled,scopeKey]);
   useEffect(()=>{
+    if(!writeEnabled){cancelTimer();return;}
     if(!enabled||!initialized||!handle.current||pending||!hasInput(value)||encode(latest.current)===lastSaved.current)return;
     setStatus('saving');setMessage('正在保存恢复副本…');
     // Keep the first timer: continuous typing starts one bounded save every 500 ms.
     if(timer.current===null)timer.current=setTimeout(()=>{timer.current=null;void write({...latest.current}).catch(()=>{});},500);
-  },[enabled,value,pending,initialized,refreshIndex]);
+  },[enabled,writeEnabled,value,pending,initialized,refreshIndex]);
   useEffect(()=>{
     const target=handle.current;if(!enabled||!target?.record)return;
     const token=generation.current;
@@ -171,7 +174,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       catch{setStatus('failed');setMessage('恢复副本清理失败；请保留当前输入。');}
     },
     async prepare(command:C){
-      if(!enabled)return;
+      if(!enabled||!writeEnabled)return;
       if(!initialized||!handle.current)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
       cancelTimer();latest.current={value:latest.current.value,pending:command};
       if(encode(latest.current)!==lastSaved.current)await write({...latest.current});
@@ -185,7 +188,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage('已提交；恢复副本已清理。');
       return handle.current?.operation===null;
     },
-    async knownFailure(commandId:string){if(enabled&&handle.current){latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');}},
+    async knownFailure(commandId:string){if(enabled&&writeEnabled&&handle.current){latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');}},
   };
 }
 

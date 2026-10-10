@@ -5,7 +5,7 @@ import type {WeComOAuth} from './p2-g2-wecom-web-oauth.mjs';
 import type {YxxMemberExtensionOptions} from './p2-g2-yixiaoxiu-server.mjs';
 import type {YxxSelfServiceExtensionOptions} from './yxx-self-service-runtime.mjs';
 import type {P2012RuntimeOptions} from './p2-012-workbench-assembly.mjs';
-type MemberProfileOptions = YxxMemberExtensionOptions & {listenPort?:number;yxxSelfService?:{featureFlags?:YxxSelfServiceExtensionOptions['featureFlags'];pollMilliseconds?:number|undefined}};
+type MemberProfileOptions = YxxMemberExtensionOptions & {listenPort?:number;yxxSelfService?:{reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;featureFlags?:YxxSelfServiceExtensionOptions['featureFlags'];pollMilliseconds?:number|undefined}};
 export type OAuthOnlyProfileOptions = {profile?:'OAUTH_ONLY';listenPort?:number;oauth:WeComOAuth;publicOrigin:string|undefined;pool?:MemberProfileOptions['pool']|undefined;reporterMemberEntry?:unknown;identityMapping?:MemberProfileOptions['identityMapping'];reporterHmacSecret?:string|undefined;yxxSelfService?:MemberProfileOptions['yxxSelfService']};
 export type ReadonlyProfileOptions = MemberProfileOptions & {profile:'MEMBER_TICKET_READONLY'};
 export type SelfServiceProfileOptions = MemberProfileOptions & Pick<YxxSelfServiceExtensionOptions,'ruleEngine'|'serviceCatalog'> & {profile:'MEMBER_SELF_SERVICE'};
@@ -36,7 +36,7 @@ export function createYxxProfile({profile='OAUTH_ONLY',listenPort=0,...options}:
   }
   let selfService:ReturnType<typeof createYxxSelfServiceExtension>|null=null,member:ReturnType<typeof createYxxMemberExtension>|null=null;
   if(profile==='MEMBER_SELF_SERVICE'){
-    selfService=createYxxSelfServiceExtension({...options,profile,featureFlags:(options as MemberProfileOptions).yxxSelfService?.featureFlags??{},pollMilliseconds:(options as MemberProfileOptions).yxxSelfService?.pollMilliseconds} as YxxSelfServiceExtensionOptions);
+    selfService=createYxxSelfServiceExtension({...options,profile,reporterFeedbackEnabled:(options as MemberProfileOptions).yxxSelfService?.reporterFeedbackEnabled??false,reporterFeedbackDraftRecoveryEnabled:(options as MemberProfileOptions).yxxSelfService?.reporterFeedbackDraftRecoveryEnabled??false,featureFlags:(options as MemberProfileOptions).yxxSelfService?.featureFlags??{},pollMilliseconds:(options as MemberProfileOptions).yxxSelfService?.pollMilliseconds} as YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled:boolean});
     member=createYxxMemberExtension(options as YxxMemberExtensionOptions);
   }
   const server=selfService?createWeComOAuthServer({oauth:(options as MemberProfileOptions).oauth,publicOrigin:(options as MemberProfileOptions).publicOrigin,profile,

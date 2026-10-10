@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {P2016ReturnToDispatchCommand,P2016ReturnSession} from '../../../../../contracts/workbench_return_to_dispatch_contracts';
-import {DraftError,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
+import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -101,7 +101,7 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
   const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;setRestoring(false);setUnavailable(false);onSensitiveClear();};
   const current=(controller:AbortController,token:number,read:()=>void)=>{controller.signal.throwIfAborted();read();if(generation.current!==token||request.current!==controller)throw new DOMException('RETURN_RESTORE_CHANGED','AbortError');};
   const draft=useAuthorizedDraft<ReturnInput,P2016ReturnToDispatchCommand>({
-    scope,enabled,value,pending,emptyValue:EMPTY_RETURN,
+    scope,enabled,writeEnabled:enabled&&principal.ticket_return_to_dispatch_enabled,value,pending,emptyValue:EMPTY_RETURN,
     // A newly typed live value can remain visible when a committed state disables this action; it is not silently saved under lost write authority.
     hasInput:input=>hasReturnInput(input)&&actionAllowed,serialise:serialiseReturn,decode,commandId:command=>command.client_command_id,
     authorize:async signal=>{
@@ -155,7 +155,7 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   const checkOpaque=async(fence:ReturnFence,purge=false)=>{
-    fence.requireCurrent();if(!(await indexedDB.databases()).some(row=>row.name==='wecom-workbench-drafts-v1')){fence.requireCurrent();return null;}
+    fence.requireCurrent();if(!await hasExistingDraft(scope)){fence.requireCurrent();return null;}
     fence.requireCurrent();const fresh=await api.bootstrap(fence.signal);fence.requireCurrent();if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');
     client.setQueryData(['session'],fresh);if(fresh.ticket_return_to_dispatch_draft_recovery_enabled)throw new DraftError('DRAFT_RECHECK_ENABLED');
     await api.ticketCommandContext(ticketId,fence.signal);fence.requireCurrent();const saved=await openDraft(scope,{restore:false});fence.requireCurrent();

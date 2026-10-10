@@ -110,6 +110,8 @@ execution_status: IN_PROGRESS
 
 ## WBINT-06：本人未解决反馈和原工单重开
 
+2026-10-10子项状态：T20／[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)已按原七项本地验证、集成并收口，见[实际被测对象与原档](execution/t20.md)。Web本人反馈与工作人员重开已实现；[成员REST入口](../../docs/api/member/self-service.md)和[工作台入口](../../docs/api/workbench/tickets.md)可检索。Bot反馈T21尚未完成，WBINT-06／A06整组继续IN_PROGRESS；默认关闭，未发布或启用。
+
 - **负责范围**：M 的 Web／Bot 本人 HTTP、共同反馈／重开应用用例、Member详情 UI、Ticket 新轮次及内部提醒投影。
 - **输入**：03 完工轮次／安全结果，02 新轮次再次派工。Web requestRef 与 Bot publicRef 分路定位，共用服务端用例，不以 Ticket UUID／entryRef作为本人授权。
 - **输出／HTTP**：两条候选 feedback 路径及对应安全上下文 DTO（见[映射](capability-map.md)）；只对原 Reporter、原应用／Bot绑定、可反馈完工轮次允许 STILL_UNRESOLVED。零写／readonly／OAuth-only profile 保持拒绝，不能绕过开关或用旧 Grant回退。

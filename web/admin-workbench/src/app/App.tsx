@@ -16,6 +16,7 @@ import {subscribeDrafts} from '../features/drafts/encrypted-drafts';
 import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
 import {TicketConversationHandling} from '../features/ticket-handling/TicketConversationHandling';
 import {TicketCompletion} from '../features/ticket-completion/TicketCompletion';
+import {TicketReopen} from '../features/ticket-reopen/TicketReopen';
 import {TicketAssignment} from '../features/ticket-assignment/TicketAssignment';
 import {TicketUnassign} from '../features/ticket-unassign/TicketUnassign';
 import {TicketReturnToDispatch} from '../features/ticket-return-to-dispatch/TicketReturnToDispatch';
@@ -142,7 +143,8 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
 }
 function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false);
-  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||unassignBlocked||returnBlocked;
+  const [reopenBlocked,setReopenBlocked]=useState(false);
+  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||unassignBlocked||returnBlocked||reopenBlocked;
   useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),dialog=useRef<HTMLDialogElement>(null),previousFocus=useRef<HTMLElement|null>(null),pageHeading=useRef<HTMLHeadingElement>(null);
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
@@ -182,6 +184,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled?<TicketCompletion key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
+      {detail.item.kind==='ticket'?<TicketReopen key={principal.principal_id+':reopen:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReopenBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setAssignmentBlocked}/>:null}
       {detail.item.kind==='ticket'?<TicketReturnToDispatch key={principal.principal_id+':return-to-dispatch:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReturnBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_unassign_enabled?<TicketUnassign key={principal.principal_id+':unassign:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setUnassignBlocked}/>:null}

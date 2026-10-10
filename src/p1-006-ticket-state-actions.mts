@@ -213,6 +213,8 @@ export interface TicketActionService {
 }
 
 export interface TicketActionServiceOptions {
+  acceptReopenedRound?: boolean;
+  reopenClearAssignee?: boolean;
   staffCompletionEnabled?: boolean;
   pool?: PostgresPool;
   authorize?: TicketActionAuthorizer | null;
@@ -520,7 +522,9 @@ export async function appendTicketEvent({
   return publicTicketEvent(row);
 }
 
-export function createTicketActionService({ pool, authorize = null, afterAction = null, staffCompletionEnabled = false }: TicketActionServiceOptions = {}): TicketActionService {
+export function createTicketActionService({ pool, authorize = null, afterAction = null, staffCompletionEnabled = false, reopenClearAssignee = false, acceptReopenedRound = false }: TicketActionServiceOptions = {}): TicketActionService {
+  if(typeof acceptReopenedRound!=='boolean')throw new TypeError('acceptReopenedRound must be boolean.');
+  if(typeof reopenClearAssignee!=='boolean')throw new TypeError('reopenClearAssignee must be boolean.');
   if (typeof staffCompletionEnabled !== 'boolean') throw new TypeError('staffCompletionEnabled must be boolean.');
   if (authorize !== null && typeof authorize !== 'function') {
     throw new TypeError('authorize must be a function when supplied.');
@@ -553,7 +557,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
       throw new TicketActionError('TICKET_VERSION_CONFLICT');
     }
     const transition = ACTIONS[request.action];
-    if (!transition.from.includes(current.status)) {
+    if (!transition.from.includes(current.status)&&!(acceptReopenedRound&&request.action==='accept'&&current.status==='REOPENED'&&current.assignee_id===null)) {
       throw new TicketActionError('INVALID_STATE_TRANSITION');
     }
     if (authorize) {
@@ -580,7 +584,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
           : request.action === 'reopen'
             ? null
             : current.closure_reason;
-    const assigneeId = request.action === 'accept' ? request.actor.id : current.assignee_id;
+    const assigneeId = request.action === 'accept' ? request.actor.id : request.action==='reopen'&&reopenClearAssignee?null:current.assignee_id;
     const externalResult = ['resolve','complete'].includes(request.action) && externalNote !== null
       ? externalNote
       : current.external_result;
