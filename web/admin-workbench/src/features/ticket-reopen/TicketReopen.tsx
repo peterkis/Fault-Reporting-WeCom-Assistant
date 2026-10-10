@@ -3,7 +3,7 @@ import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,captureWorkbenchRead,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016ReopenCommand} from '../../api/client';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
-import {subscribeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,subscribeDrafts} from '../drafts/encrypted-drafts';
 import {useReopenDraft} from './use-reopen-draft';
 
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
@@ -21,7 +21,12 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
  const blocked=state==='submitting'||state==='checking'||state==='unknown'||Boolean(commandId),navigationBlocked=blocked||Boolean(reason)&&!draft.safeToLeave;
  useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- useEffect(()=>subscribeDrafts(event=>{if(event.principal===principal.principal_id&&['logout','logout-unknown','revoked'].includes(event.reason)&&(event.kind===undefined||event.kind==='ticket'&&(event.id===undefined||event.id===ticketId))&&(event.purpose===undefined||event.purpose==='staff-reopen'))clear();}),[principal.principal_id,ticketId]);
+ useEffect(()=>{
+  if(!draft.enabled)return;
+  try{return subscribeDrafts(event=>{if(event.principal===principal.principal_id&&['logout','logout-unknown','revoked'].includes(event.reason)&&(event.kind===undefined||event.kind==='ticket'&&(event.id===undefined||event.id===ticketId))&&(event.purpose===undefined||event.purpose==='staff-reopen'))clear();});}
+  // The shared hook owns the visible storage failure and its new-submit fence.
+  catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_STORAGE_UNAVAILABLE'))throw error;}
+ },[draft.enabled,principal.principal_id,ticketId]);
  useEffect(()=>{if(!navigationBlocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocked]);
  const refresh=()=>{void client.invalidateQueries({queryKey:['ticket-command-context',principal.principal_id,ticketId]});void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
  const deny=async(error:ApiError)=>{if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearTicketAuthorization(client,principal.principal_id,ticketId,error);};
