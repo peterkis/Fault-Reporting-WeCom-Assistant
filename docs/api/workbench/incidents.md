@@ -103,9 +103,11 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 
 ## 公共故障跟进接入准备（WBINT-T28）
 
-[T28合同和原七项验证计划](../../../plans/admin-workbench-integration/execution/t28.md)已按实际十个POST冻结。当前React详情仍为T27只读结果；跟进UI和本票业务验证尚未完成。首个[生产bundle调查tracer](../../../tests/wbint-t28-investigating.browser.test.mts)通过真实候选HTTP确认独立Incident，再验证显式开始调查、精确父版本及个人Ticket／责任／事件不变，当前为NOT_RUN。此准备不改变上表现有接口、032数据库、默认关闭或已有证据。
+[T28合同和原七项验证计划](../../../plans/admin-workbench-integration/execution/t28.md)已按实际十个POST冻结。原固定源bb337246cb0054a8f5445b72b296eddb1cdbba25的[生产bundle调查tracer](../../../tests/wbint-t28-investigating.browser.test.mts)实际1 FAIL：正式详情缺少公共故障操作选择；其后POST、版本、事件、个人Ticket／责任及刷新断言均NOT_REACHED。当前后继仅准备该真实RED对应的最小调查接入：独立详情由当前ADMIN／DISPATCHER明确选择开始调查和原因，按原UUID、字符串版本及精确If-Match调用现有POST，收到封闭成功ACK后重新GET当前详情。候选确认页嵌入结果仍为只读。新源码build／types／artifact／browser均NOT_RUN，不称调查或整票已通过；032数据库、后端既有动作、默认关闭和原FAIL证据保持。
 
 T28所需拟议 `GET /api/incidents/{incidentId}/commands/{commandId}` 是 **PROPOSED_PATH／NOT_IMPLEMENTED**；当前候选专用回执不能核对Incident命令。必要恢复入口须在真实RED后沿原ledger及当前Incident读取权限实现／验证，再同步路径索引。Report／Subscription／events／通知读取沿当前安全投影和独立cursor，页数不能冒充关联总数；Incident owner不产生新的管理权，公共恢复／关闭不关闭个人Ticket。
 
 
 当前 root4fe 的 Incident detail 仅包含安全字段与 roles；Incident 没有 allowed_actions／allowed_scopes，这两项当前仅属于 Candidate。T28 操作提示依据当前 roles／status，提交仍由既有事务核验实际权限、父子版本与归属。拟议 Incident receipt 继续 PROPOSED_PATH／NOT_IMPLEMENTED，其用途权限须包含原动作及子目标的当前权限；父 Incident 的读取权不能替代 ADMIN 专用动作或 HANDLER 当前本人 assignee 权限。Incident owner 字段不增加操作授权。新增负责人转交、内部处置和显式发布属于 WBINT-10／T29–T31。
+
+首调查SOURCE阶段的传输UNKNOWN仅在当前页面保留原UUID／父版本／正文，阻止新提交与意外导航；当前事实GET不结算原意图，也不自动重放。跨刷新加密恢复及Incident原操作回执仍待对应实际RED切片，本段不宣称它们可用。

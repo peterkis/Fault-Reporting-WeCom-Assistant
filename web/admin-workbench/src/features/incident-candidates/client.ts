@@ -128,3 +128,29 @@ export const candidateApi={
     }catch(error){if(error instanceof CandidateCommandRefusal||(error instanceof ApiError&&[401,403,404].includes(error.status)))throw error;throw new UnknownCommandOutcome();}
   },
 };
+
+export type IncidentInvestigationCommand=Readonly<{client_command_id:string;expected_row_version:string;reason_code:'OPERATOR_REVIEWED'}>;
+export interface IncidentCommandResult extends Omit<CandidateCommandResult,'result_ref_type'>{result_ref_type:'INCIDENT'}
+export class IncidentCommandRefusal extends ApiError {}
+export const incidentApi={
+  async startInvestigation(incidentId:string,command:IncidentInvestigationCommand,csrfToken:string|null,signal:AbortSignal):Promise<IncidentCommandResult>{
+    const target=id(incidentId),body=object(command);exact(body,['client_command_id','expected_row_version','reason_code']);
+    const original={client_command_id:id(body.client_command_id),expected_row_version:version(body.expected_row_version),reason_code:member(body.reason_code,['OPERATOR_REVIEWED'] as const)};
+    const requireCurrent=captureWorkbenchRead(signal);requireCurrent();
+    try{
+      const response=await fetch('/api/incidents/'+target+'/start-investigating',{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':original.client_command_id,'if-match':'"'+original.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(original)});
+      requireCurrent();
+      if([401,403,404].includes(response.status))throw new ApiError(response.status,'AUTHORIZATION_REJECTED');
+      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+      const value:unknown=await response.json();requireCurrent();const r=object(value);
+      if(!response.ok){
+        const error=object(r.error),code=errorCode(error.code);
+        if(r.ok===false&&typeof r.replayed==='boolean'&&error.retryable===false){exact(r,['ok','error','replayed']);exact(error,['code','retryable']);throw new IncidentCommandRefusal(response.status,code);}
+        throw new UnknownCommandOutcome();
+      }
+      const result=decodeResult(r,target);
+      if(response.status!==200||result.result_ref_type!=='INCIDENT'||result.result_ref_id!==target||result.result_row_version!==(BigInt(original.expected_row_version)+1n).toString())throw new UnknownCommandOutcome();
+      return {...result,result_ref_type:'INCIDENT'};
+    }catch(error){if(error instanceof IncidentCommandRefusal||(error instanceof ApiError&&[401,403,404].includes(error.status)))throw error;throw new UnknownCommandOutcome();}
+  },
+};
