@@ -12,6 +12,7 @@ import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harne
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
 import {migrateWorkbenchFollowUpSchedules} from '../../scripts/workbench-follow-up-schedules-migrate.mjs';
+import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{
   assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;
@@ -25,18 +26,20 @@ export type T37Http = Readonly<{
 export type T37Fixture = Readonly<{
   pool:PostgresPool;origin:string;runtime:P2016EnabledRuntime;
   dispatcher:string;handler:string;otherHandler:string;
-  http(index:number):Promise<T37Http>;createTicket():Promise<string>;
+  http(index:number):Promise<T37Http>;createTicket():Promise<string>;setHandlerTeams(teams:readonly string[]):Promise<void>;
 }>;
 /** Omitted option is the actual default-off composition; no fixture manufactures an HTTP success. */
-export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean}>={}){
+export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean;ticketAssignmentEnabled?:boolean}>={}){
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t37',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough030(context);
     const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
+    if(options.ticketAssignmentEnabled===true)await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.workbenchFollowUpSchedulesEnabled===true)await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
-    const handler=await access.upsertPrincipal({wecomUserId:'t37-handler-'+randomUUID(),displayName:'T37 合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+    const handlerUserId='t37-handler-'+randomUUID();
+    const handler=await access.upsertPrincipal({wecomUserId:handlerUserId,displayName:'T37 合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
     const otherHandler=await access.upsertPrincipal({wecomUserId:'t37-other-'+randomUUID(),displayName:'T37 合成同事',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));
     const address=probe.address();assert.ok(address&&typeof address!=='string');
@@ -44,8 +47,9 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     const port=address.port,origin='http://127.0.0.1:'+port;
     // Only explicit opt-in installs049. The original source/body exercises the actual native router.
     const followUpOption=options.workbenchFollowUpSchedulesEnabled===undefined?{}:{workbenchFollowUpSchedulesEnabled:options.workbenchFollowUpSchedulesEnabled};
+    const assignmentOption=options.ticketAssignmentEnabled===undefined?{}:{ticketAssignmentEnabled:options.ticketAssignmentEnabled};
     const runtimeOptions={pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:origin,listenPort:port,
-      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...followUpOption};
+      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...followUpOption,...assignmentOption};
     const runtime=createP2016Runtime(runtimeOptions);
     try{
       assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);assert.equal(runtime.selfService,null);
@@ -56,8 +60,9 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
         const get=async(path:string)=>{const response=await fetch(origin+path,{headers:{cookie}});return {status:response.status,value:object(await response.json())};};
         const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);const csrf=text(bootstrap.value.csrf_token);
         const post=async(path:string,body:Readonly<Record<string,unknown>>)=>{
+          const expected=body.expected_row_version??body.expected_version;
           const response=await fetch(origin+path,{method:'POST',headers:{cookie,origin,'content-type':'application/json','x-csrf-token':csrf,
-            'idempotency-key':text(body.client_command_id),'if-match':'"'+String(body.expected_version)+'"'},body:JSON.stringify(body)});
+            'idempotency-key':text(body.client_command_id),'if-match':'"'+String(expected)+'"'},body:JSON.stringify(body)});
           return {status:response.status,value:object(await response.json())};
         };
         return {get,post};
@@ -67,7 +72,11 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
         const result=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:text(intake.intakeId),occurredAt:assertLocalDateTime(intake.receivedAt),traceId:'t37-public-core-fixture'});
         assert.ok(result.ticket);return result.ticket.id;
       };
-      await run({pool:context.pool,origin,runtime,dispatcher:dispatcher.id,handler:handler.id,otherHandler:otherHandler.id,http,createTicket});
+      const setHandlerTeams=async(teams:readonly string[])=>{
+        const configured=await access.upsertPrincipal({wecomUserId:handlerUserId,displayName:'T37 合成处理人',roles:['HANDLER'],resolverTeamIds:[...teams]});
+        assert.equal(configured.id,handler.id);
+      };
+      await run({pool:context.pool,origin,runtime,dispatcher:dispatcher.id,handler:handler.id,otherHandler:otherHandler.id,http,createTicket,setHandlerTeams});
     }finally{
       await runtime.stop();assert.equal(runtime.server.listening,false);
       assert.equal(await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),0);
