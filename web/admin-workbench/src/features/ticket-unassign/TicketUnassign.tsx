@@ -1,5 +1,5 @@
 // T08 consumer installed after the original real production-bundle RED.
-// Install only after the first frozen production-bundle tracer has actually reached its own RED.
+// Local production-bundle validation does not enable the default-off feature or authorize deployment.
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';

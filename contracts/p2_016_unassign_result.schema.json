@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hospital.local/contracts/p2_016_unassign_result.schema.json",
-  "title": "PLANNED WBINT-T08 safe unassign result; runtime NOT_RUN",
+  "title": "WBINT-T08 safe unassign result",
   "type": "object", "additionalProperties": false,
   "required": ["ok", "ticket_id", "ticket_version", "ticket_event_id", "control_event_id", "handling_cycle", "communication_choice", "conversations", "replayed"],
   "properties": {
@@ -31,5 +31,5 @@
     "uuid": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
     "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
   },
-  "x-status": "PLANNED", "x-runtime-validation": "NOT_RUN"
+  "x-status": "IMPLEMENTED_DEFAULT_OFF", "x-runtime-validation": "Exact local validation evidence is recorded in plans/admin-workbench-integration/execution/t08.md; no production or Gate approval."
 }

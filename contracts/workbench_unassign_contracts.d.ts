@@ -1,7 +1,7 @@
 import type {LocalDateTime} from './time_contracts.js';
 import type {P2016AssignmentAcknowledgement,P2016HandlingCycle} from './p2_016_contracts.js';
 
-/** PLANNED WBINT-T08 contract. No mounted unassign HTTP or validated runtime is claimed. */
+/** WBINT-T08 default-off HTTP contract. Exact local evidence and deployment boundaries: execution/t08.md. */
 export type P2016UnassignSession = Readonly<{session_id:string;expected_row_version:number}>;
 export type P2016UnassignCommand = Readonly<{client_command_id:string;expected_version:number;reason_code:string;reason:string}> & (
   Readonly<{communication_choice:'RETAIN_CURRENT';communication_target_principal_id:null;sessions:readonly []}> |

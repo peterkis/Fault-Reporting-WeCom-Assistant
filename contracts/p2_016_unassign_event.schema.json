@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hospital.local/contracts/p2_016_unassign_event.schema.json",
-  "title": "PLANNED WBINT-T08 private Ticket event fact; not a public HTTP DTO",
+  "title": "WBINT-T08 private Ticket event fact; not a public HTTP DTO",
   "type": "object", "additionalProperties": false,
   "required": ["event_id", "ticket_id", "event_type", "old_status", "new_status", "aggregate_version", "event_ordinal", "operator_type", "operator_id", "internal_note", "external_note", "reason_code", "assignment_metadata", "trace_id", "created_at"],
   "properties": {
@@ -26,5 +26,5 @@
     "team": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}
   },
   "x-audience": "Private Ticket persistence fact. Internal reason and operator identity are excluded from Reporter, member, notification and SSE DTOs.",
-  "x-status": "PLANNED", "x-runtime-validation": "NOT_RUN"
+  "x-status": "IMPLEMENTED_DEFAULT_OFF", "x-runtime-validation": "Exact local validation evidence is recorded in plans/admin-workbench-integration/execution/t08.md; no production or Gate approval."
 }

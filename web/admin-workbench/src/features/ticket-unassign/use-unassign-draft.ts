@@ -1,5 +1,5 @@
 // T08 consumer installed after the original real production-bundle RED.
-// Depends on the exact future client additions described in shared-seams.md; not installed in production.
+// Uses the shared guarded client and purpose-specific encrypted-draft contract.
 import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';

@@ -208,13 +208,13 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 
 ## 撤销未开始派工（WBINT-T08，实施中）
 
-本节为当前冻结合同及本票实现进度。POST已在自有隔离PG/真实HTTP验证；安全GET ACK当前源码已挂载，本候选运行仍待验证，生产UI及原七项整票验收尚未完成。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
+本节为当前冻结合同及本票实现进度。POST、安全 GET ACK、沟通目标 GET 及正式管理端 UI 已在自有隔离 PG、真实 HTTP 和生产 bundle 浏览器局部验证。原七项整票最后固定候选的完整并集及相关工具验证尚待结束。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
 
 | METHOD + PATH | 当前合同 |
 | --- | --- |
 | POST `/api/tickets/{ticketId}/unassign` | 一个闭合原子撤派命令，当前未开始责任由获权ADMIN/DISPATCHER撤回 |
 | GET `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前Ticket读权、原principal/专用用途/原UUID的最小UNKNOWN/FAILED/COMMITTED；独立T08启用即可，raw草稿恢复可关闭 |
-| GET `/api/tickets/{ticketId}/unassign/communication-targets[?target_principal_id=UUID]` | 当前合法撤派动作及Ticket读权；活动内部沟通target，safe `items:[{principal_id,display_name}]` ≤100，显式有效保存target在界内pin；不要求处理组成员、不授予Control写权。当前源码挂载，运行待本候选验证 |
+| GET `/api/tickets/{ticketId}/unassign/communication-targets[?target_principal_id=UUID]` | 当前合法撤派动作及Ticket读权；活动内部沟通target，safe `items:[{principal_id,display_name}]` ≤100，显式有效保存target在界内pin；不要求处理组成员、不授予Control写权。源码已挂载，隔离真实 HTTP 已验证 |
 
 宿主`ticketUnassignEnabled:boolean=false`，独立于T05/T06；关闭不广告/不读新迁移，旧profile保留。启用须039及前向046_ticket_unassign。046只扩充既有event/check，允许严格的同组旧owner→JSON null释放metadata，不增owner/started字段、表或第二套Ticket/receipt；既有031/039迁移字节保留。
 
@@ -224,6 +224,6 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 清个人owner、留组/报修/source/当前cycle/first basis，回QUEUED、version+1，仅追加ticket.unassigned（原owner→null、同组、操作者、内部原因）。默认不触Conversation；显式选择在Ticket行锁和UUID排序Session锁后独立核验关联/VIEW/Control权限/版本/target，通过现已集成caller-Tx transfer/takeover原子提交。Ticket、选定Control、event/cycle link/安全实时投影/COMMITTED receipt全成功或全失败；失败只留FAILED审计。原UUID/hash重放一次终态，改payload409，重放仍当前授权原所选Session READ，不泄漏失权DTO。
 
-安全200为`ok,ticket_id,ticket_version,ticket_event_id,control_event_id:null,handling_cycle,communication_choice,conversations,replayed`，无原因/Reporter/正文；默认retain返回空conversations，GET重读实际责任。ACK复用[安全assignment receipt形状](../../../contracts/p2_016_assignment_receipt.schema.json)，只给最小Ticket终态，无Session/原因。UNKNOWN不等于未提交；409保留输入并明确新操作，401/403/404清可信授权敏感副本，临时503/网络保留未核验输入且不自动POST；实际T03/生产bundle消费未实现/NOT_RUN。
+安全200为`ok,ticket_id,ticket_version,ticket_event_id,control_event_id:null,handling_cycle,communication_choice,conversations,replayed`，无原因/Reporter/正文；默认retain返回空conversations，GET重读实际责任。ACK复用[安全assignment receipt形状](../../../contracts/p2_016_assignment_receipt.schema.json)，只给最小Ticket终态，无Session/原因。UNKNOWN不等于未提交；409保留输入并明确新操作，401/403/404清可信授权敏感副本，临时503/网络保留未核验输入且不自动POST；当前浏览器按账号、Ticket 和 purpose 加密恢复，最长 24h；原 UUID 在 UNKNOWN 后只 GET 安全 ACK，不自动重放 POST。raw 关闭仍可内存核对。已知 COMMITTED 后清理失败仍保持已提交并阻止新命令，重试核对后完成清理；恢复须当前授权和目标/所选 Session 版本核验。临时网络故障保留密文并隐藏未核验选择；真实失权仅清本用途敏感副本，其他用途保留。
 
-输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。新拟码P2_016_UNASSIGN_UNAVAILABLE/UNASSIGN_STATE_CONFLICT未加入当前runtime枚举。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。唯一public tracer SOURCE已准备，strict/build/artifact/Unit/Contract/PG/HTTP/browser/清理均NOT_RUN，整票IN_PROGRESS。
+输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组尚待验证，整票 IN_PROGRESS。
