@@ -229,7 +229,9 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
 
 
-## 同一工单新轮次重开（WBINT-T20，IN_PROGRESS）
+## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
+
+当前M/H5与独立W/PC服务、043 shared-round、当前获权提示、安全原UUID GET和独立raw恢复已完成原七项本地隔离验证；最终0f9af956一套build/strict/artifact原生0、直接消费者10PASS、原hosts外层27PASS。原HTTP/合同/并发/两端真实bundle证据各保tested源，不重绑更早PASS；全部原FAIL/setup/observer/NOT_REACHED与当前原始索引见[逐票执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。待父独立验收/集成；下面带b41/b176/15306/9395身份的NOT_RUN和remaining保留其历史阶段，当前行为以上文与本节合同为准。默认关闭/不外发/不部署/不推进Gate保持。
 
 `ticket_reopen_rounds_enabled` 是 W 宿主 `ticketReopenRoundsEnabled` 的独立能力投影，默认 false；显式启用须先具备 043 schema 与当前 W 权限。正式 PC 仅在该能力和当前 command context 同时允许 `reopen` 时显示原因表单，使用原 W `POST /api/tickets/{ticketId}/reopen`、当前 CSRF、原 UUID 和 `expected_version`；这不授予 Reporter 自助写权。新 shared round 清当前处理人、保处理组，之后必须显式重新承接；Conversation 责任独立。
 

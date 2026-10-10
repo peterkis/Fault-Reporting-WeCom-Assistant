@@ -1,14 +1,14 @@
-# Web 原报修人仍未解决反馈（WBINT-T20 候选合同）
+# Web 原报修人仍未解决反馈（WBINT-T20）
 
 返回[成员自助](self-service.md) · [T20执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。来源为 WBINT-06/A06、[Issue #75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)、Accepted [ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)。
 
-2026-10-10 当前为 **IN_PROGRESS**：M真实反馈/安全原UUID首、独立HANDLER W重开首与两种下一显式承接已有各自固定源本地GREEN；f21固定源15项合同/权限/并发/锁等待风险实际GREEN。原公开RED、mixed FAIL与未到达部分保留D原件，不复用旧GREEN到新源。生产H5已实际到达本人详情并证明缺反馈按钮；PC异步context原观察FAIL与独立H5双close清理错误分别保留。当前H5按钮/原闭合结果+fresh GET及最小测试安排后继是NOT_RUN；完整恢复/提醒/浏览器/兼容和原七收口未完成。2026-10-09的SOURCE_READY/NOT_IMPLEMENTED/NOT_RUN是保留的原准备状态。Bot feedback属于T21；既有Web补充与只读/OAuth-only/SS011边界保持。
+2026-10-10 当前为 **LOCAL_VERIFIED_WHOLE / AWAITING_PARENT_ACCEPTANCE**：M详情context、真实feedback POST/专用GET、043同Ticket共享新轮、独立HANDLER W服务与正式H5/PC消费、获权两来源前人提示及受保护恢复已实现并完成[原七项本地验证](../../../plans/admin-workbench-integration/execution/t20.md)。最终0f9af956一套build/strict/artifact原生0，直接消费者10PASS、原hosts外层27PASS/native0；每个更早HTTP/合同/并发/隐私结果保留原HEAD/制品/日志，不重绑或伪称同候选全量。原RED、mixed FAIL、observer/setup错误和NOT_REACHED均保全，以下带日期的后继段落保留其原历史阶段。待父独立审查/集成/GitHub收口；真实外部、现场、部署/full/certify/Gate未运行。Bot feedback属于T21；补充与readonly/OAuth-only/SS011边界保持。
 
 ## HTTP、输入和输出
 
 宿主 M，既有 MEMBER_SELF_SERVICE 或 FULL_SERVICE_LOOP 成员扩展。Web `requestRef` 为原 `intake.web_request_binding.request_ref` 的32字符不透明引用；不能传内部 Ticket/Intake UUID、Bot publicRef、entryRef或旧Grant。它只定位来源，不授予权利。
 
-| METHOD + PATH | 候选合同 |
+| METHOD + PATH | 当前合同 |
 | --- | --- |
 | `GET /api/yixiaoxiu/requests/{requestRef}` | 复用当前详情；仅显式启用反馈能力时追加闭合 `feedback_context`。当前成员绑定读权、应用范围和保留期仍由既有授权核对，ETag含上下文的真变化 |
 | `POST /api/yixiaoxiu/requests/{requestRef}/feedback` | JSON≤2KiB、无query、精确Origin/非cross-site、当前Cookie+CSRF；200为同事务已提交的 FeedbackResult，原UUID重放亦200且replayed:true，不以202表示重开 |
@@ -28,15 +28,15 @@ completed_round_ref由现有受信服务端secret对用途、原成员/企业/�
 
 已CLOSED/CANCELLED详情can_supplement=false，普通补充继续拒绝；普通谢谢/材料在原允许补充的合法阶段被接收，也不直接重开。反馈最后提交前在同事务重新核对原source与物理epoch保留期，不能沿用Ticket锁等待前的存活判断；真实过期回滚整个新轮次及receipt。
 
-独立W `ticketReopenRoundsEnabled=false`沿自身PILOT_USER/角色/对象/版本权限复用同一043合法完工basis，原W ledger记录reopen，不伪Reporter FEEDBACK。条件readiness043和bootstrap ticket_reopen_rounds_enabled由同一能力决定；没有完工basis或能力关闭保持原W动作合同。生产PC首来源只增加显式原因/原UUID/原版本的同单重开表单，成功响应后要求当前授权GET的新cycle事实再展示；其UNKNOWN仅保留原操作，不自动POST/换UUID。独立只读核对与受保护恢复/24h、仍获权旧处理人提示仍是本票remaining，当前SOURCE不是完整PC交付；M和W都不改变Conversation责任或建立第二Core。
+独立W `ticketReopenRoundsEnabled=false`沿自身PILOT_USER/角色/对象/版本权限复用同一043合法完工basis，原W ledger记录reopen，不伪Reporter FEEDBACK。条件readiness043和bootstrap ticket_reopen_rounds_enabled由同一能力决定；没有完工basis或能力关闭保持原W动作合同。正式PC显式原因/原UUID/原版本表单在成功响应后读取当前获权新cycle事实；UNKNOWN不自动POST/换UUID，专用安全GET只按当前W READ/原actor/Ticket/reopen用途查安全标量与basis，不读取原原因或私有payload。关闭新write/raw仍可在当前READ下核对已有原UUID，失权拒绝。当前闭合reopen_follow_up消费已证明STAFF和WEB_REPORTER两来源、仍获权前人/团队待承接及失效认证清理；不重新派工、外发或建立第二事实。M和W不改变Conversation责任。
 
 核验是四道独立门禁：原Web绑定及source corp/app/proof、当前服务端写profile/flags/identity-generation、合法当前完工轮次、当前Ticket版本。完工轮次必须为039当前cycle、source_intake_id等于原Intake、040的不可变STAFF_COMPLETED结束事件/承诺成立、Ticket为CLOSED。未建单Intake、历史seed CLOSED或旧RESOLVED不能冒充T11完工轮次。共享恢复GET只要求当前M读权和原绑定；当前write_flag关闭或本轮已重开不能阻止已提交原命令核对，也不使新写入合法。O只读替代宿主原限制不因此扩展。
 
 新反馈复用成员command adapter的本地quota（kind FEEDBACK）、CSRF/UUID、command advisory锁、localOnly身份复核及既有pool/caller transaction。禁止OAuth/Provider网络进入DB事务，重放也先重新验原绑定、保留期、当前profile/scope和身份。使用既有stream mutex于Ticket外键/业务行锁前，避免T11已有双UUID锁顺序风险；锁后再查绑定、Ticket、当前cycle/完工事件/版本。caller-TX入口不自行COMMIT/ROLLBACK，全部事实和最后身份复核在调用者同一事务内。
 
-043仅作为前向提案独占预留，**未编写/应用**；033/039/040原字节保留。计划扩展现有 `intake.web_command_receipt` 的FEEDBACK kind及安全原结果引用/快照，不另建收据账本；其scope+UUID唯一约束继续共享SUBMIT/SUPPLEMENT/FEEDBACK，跨用途或改payload同UUID409。反馈不追加Web材料revision、不成为orchestrator补充输入。
+043前向迁移已实现并仅在隔离owned测试库实际应用；033/039/040及旧SQL原字节保留。它扩展现有 `intake.web_command_receipt` 的FEEDBACK kind及安全原结果引用/快照，不另建收据账本；scope+UUID唯一约束继续共享SUBMIT/SUPPLEMENT/FEEDBACK，跨用途或改payload同UUID409。反馈不追加Web材料revision、不成为orchestrator补充输入；未对用户数据库执行迁移。
 
-计划在现有Ticket核心内增加不可变、事件关联的cycle-reopen依据（不是第二套Ticket或owner）：唯一completed_cycle_id、原source Intake、reopen event、新cycle、原command receipt及明确Reporter反馈依据。相同完工轮次被不同UUID或工作人员命令竞争时只能产生一个重开事件/新cycle；后到新UUID409，原已提交UUID返回原安全结果。失败于反馈、Core事件、cycle、owner清理或最后身份复核的任何一步，全事务回滚，不留下部分重开/收据。
+现有Ticket核心内已增加不可变、事件关联的cycle-reopen依据：唯一completed_cycle_id、原source Intake、reopen event、新cycle、原command receipt及明确Reporter或STAFF来源依据，不是第二套Ticket或owner。真实不同UUID/两来源竞争只产生一个重开事件/新cycle；后到新UUID409，原UUID合法重放返回原安全结果。反馈、Core事件、cycle、owner清理或最后身份/物理retention复核任一步失败，全事务回滚；Caller-TX和锁等待风险已按原固定源验证。
 
 唯一Ticket通过显式Core reopen从CLOSED到REOPENED，版本+1；保留原resolver_team/source/history，清assignee，追加一次ticket.reopened事件及新cycle（cycle_no+1、cycle_start_event为该事件，首次责任三字段全null、staff_completion_event_id:null）。原040完工与承诺不改。下一轮需显式承接；round能力下T04/T05对合法未承接REOPENED开放受控accept→start/accept-for-later，同一轮首次责任仅填一次，旧默认关闭矩阵保留。不能仅start、自动派回前人或制造FIRST_RESPONSIBILITY通知。
 
@@ -44,7 +44,9 @@ W既有reopen仍沿自身current principal/对象/action权限和W receipt执行
 
 ## UI、内部提醒、隐私和关闭
 
-既有生产 `web/p2-reporter/self-service.js` 后续由本票接入：只在获准原详情展示“同一故障仍未解决”；普通补充/谢谢沿原supplement语义，关闭补充保持当前拒绝。新故障另报。成功后fresh GET显示同单待重新承接。409保留原意图并fresh GET，用户明确发起新意图才换UUID；未知结果保留原UUID/body/round/version，不自动POST或换ID。重新认证后只读核对原命令；可信scope改变清受保护内容且不认领他人命令。
+既有生产 `web/p2-reporter/self-service.js` 已接入正式H5：只在获准原详情展示“同一故障仍未解决”；普通补充/谢谢沿原supplement语义，关闭补充保持当前拒绝。新故障另报。成功后闭合原结果与fresh GET显示同单待重新承接。409保留原意图并fresh GET，用户明确发起新意图才换UUID；UNKNOWN保留原UUID/body/round/version，只由用户GET原FEEDBACK回执和当前本人事实，不自动POST/换ID。当前授权scope改变或失权清受保护内容，不认领他人命令。
+
+M独立 `reporterFeedbackDraftRecoveryEnabled=false`、W raw投影 `ticket_reopen_draft_recovery_enabled`均默认关闭。启用时两端复用T03唯一AES-GCM/non-extractable key、first-save24h不续期、scope/purpose AAD、CAS和20份/16KiB限制；M使用principal64摘要/request_ref32/reporter-feedback，W为当前principal/Ticket/staff-reopen，不保存Cookie/CSRF。expiry/corrupt清敏感副本并保原opaque，恢复先当前READ，失去新写或动作不显示原原因。oldopaque在raw关闭后仍可用户GET；终态清理后不能为新输入新建敏感副本。真实POST200之后读取暂时503不变成已知失败，不丢唯一UUID；cleanup未确认保原栅栏。cold rawOFF/no oldrow不读写IDB，不承诺刷新24h，仅挂载页内核对。退出/current授权拒绝清页面与范围内容；原同scope取消回调在rawOFF仍保留，迟到回执不能重新显示旧内容。Member新scope和两端真实consumer/nativeCDP/IDB/privacy/logout/原T03兼容均保各原制品证据，不把decoy store scope称业务授权。
 
 回执/原命令恢复不包含输入原文。现有recovery_scope下仅保存有界用途、Web ref、UUID、round ref、Ticket版本；不存Cookie/CSRF/原始成员标识。每次新动作单in-flight1，UNKNOWN禁止新反馈。返回来源与原scope改变、401/403/404时清可信页面/cache；404核对来源失效不能伪判先前事务未提交。
 
@@ -52,7 +54,7 @@ W既有reopen仍沿自身current principal/对象/action权限和W receipt执行
 
 复用既有pool（fixture业务池≤4、admin1；应用总池≤8）、一个App/Worker/Gateway、SSE32和concurrency1；POST2KiB、详情/收据单对象、原quota与32请求in-flight上限保留，无新进程/扫描平台。退回方式为关闭成员write_flag或SELF_SERVICE，保留MY_REPORTS下原读取/已启用feedback recovery；全面关闭新能力不读043，保留已提交Ticket/事件/round/receipt，禁止删除事实或回写旧SQL。真实发送、Provider/OAuth、用户DB、部署、full/certify和Gate另行授权。
 
-原公开RED源：[wbint-t20-feedback.integration.test.mts](../../../tests/wbint-t20-feedback.integration.test.mts)，STAGED_RUNTIME/v3-p09、PG required、browser:false、原runner每文件240s。它经真实Web源受理/原orchestrator建单和T04/T11公共工作人员HTTP完工，再走真实member GET/POST。当前仅已准备，所有运行证据NOT_RUN。后续逐片补成员/绑定/profile负向、不同UUID/陈旧轮次、Caller-TX回滚、工作人员共享round/获权提醒、普通材料、响应丢失恢复及正式H5制品浏览器；首片不等于七项验收完成。
+原公开RED源：[wbint-t20-feedback.integration.test.mts](../../../tests/wbint-t20-feedback.integration.test.mts)，STAGED_RUNTIME/v3-p09、PG required、browser:false、原runner每文件240s。它经真实Web源受理/原orchestrator建单和T04/T11公共工作人员HTTP完工，再走member GET/POST；原7a607…字节、9c150实际RED和31e3实际GREEN1均保留。独立STAFF原c630…和next accept原b393…分别保角色/原断言/240s；原首不是整票替代，完整七项/后续实际失败与当前证据见执行记录。以下是各原固定候选的历史，不是当前未实现清单。
 
 ## 2026-10-10 原目的核对与保护恢复后继合同（PLANNED / NOT_RUN）
 
