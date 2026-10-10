@@ -13,7 +13,7 @@ import {readBotFeedbackCommandInTransaction,commitBotFeedbackCommandInTransactio
 export class BotReporterFeedbackError extends Error{
   constructor(public readonly code:string,public readonly status:number){super(code);}
 }
-const fail=(code:string,status=409):never=>{throw new BotReporterFeedbackError('BOT_FEEDBACK_'+code,status);};
+function fail(code:string,status=409):never{throw new BotReporterFeedbackError('BOT_FEEDBACK_'+code,status);}
 interface BotFeedbackReadInput{sessionToken:unknown;publicRef:unknown}
 interface BotFeedbackOptions{pool:PostgresPool;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;scopeSecret:string;enabled?:boolean;featureFlags?:Partial<YxxMemberFlags>}
 export async function botFeedbackSchemaReady(tx:PostgresTransaction){
