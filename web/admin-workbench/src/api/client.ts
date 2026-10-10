@@ -154,17 +154,20 @@ export const api={
   // Existing canonical Session READ endpoints only; an absent member in a truncated list is not revocation evidence.
   returnCommunicationTargets:async(ticketId:string,_target:string|null,sessions:readonly P2016ReturnSession[],signal:AbortSignal):Promise<P2016ReturnToDispatchTargets>=>{
     id(ticketId);if(sessions.length>8||new Set(sessions.map(row=>id(row.session_id).toLowerCase())).size!==sessions.length)throw new ApiError(400,'INVALID_INPUT');
-    if(!sessions.length)return {items:[]};let intersection:Map<string,{principal_id:string;display_name:string}>|null=null;
+    if(!sessions.length)return {items:[]};
+    type EligibleTarget=P2016ReturnToDispatchTargets['items'][number];
+    let intersection=new Map<string,EligibleTarget>(),firstPage=true;
     for(const selected of [...sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id))){
       const page=await get('/api/conversations/'+encodeURIComponent(id(selected.session_id))+'/eligible-principals',signal,value=>{
         const v=object(value);if(Object.keys(v).length!==1||!Array.isArray(v.items)||v.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
         const items=v.items.map(value=>{const row=object(value),principal_id=id(row.principal_id),display_name=text(row.display_name),actions=strings(row.actions);if(Object.keys(row).length!==3||!display_name||actions.some(action=>!['TRANSFER_TARGET','FORCE_TRANSFER_TARGET'].includes(action)))throw new ApiError(502,'INVALID_RESPONSE');return {principal_id,display_name,actions};});
         if(new Set(items.map(row=>row.principal_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');return items;
       });
-      const allowed=new Map(page.filter(row=>row.actions.includes('TRANSFER_TARGET')).map(row=>[row.principal_id.toLowerCase(),{principal_id:row.principal_id,display_name:row.display_name}]));
-      intersection=intersection===null?allowed:new Map([...intersection].filter(([principal])=>allowed.has(principal)));
+      const allowed=new Map<string,EligibleTarget>(page.filter(row=>row.actions.includes('TRANSFER_TARGET')).map(row=>[row.principal_id.toLowerCase(),{principal_id:row.principal_id,display_name:row.display_name}]));
+      if(firstPage){intersection=allowed;firstPage=false;}
+      else for(const principal of intersection.keys())if(!allowed.has(principal))intersection.delete(principal);
     }
-    return {items:[...(intersection?.values()??[])].sort((a,b)=>a.display_name.localeCompare(b.display_name)||a.principal_id.localeCompare(b.principal_id))};
+    return {items:[...intersection.values()].sort((a,b)=>a.display_name.localeCompare(b.display_name)||a.principal_id.localeCompare(b.principal_id))};
   },
   returnAcknowledgement:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016ReturnToDispatchAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/return-to-dispatch/commands/'+encodeURIComponent(commandId),signal,value=>{
     const v=object(value);if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
