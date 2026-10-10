@@ -3,6 +3,7 @@
   "files": [
     "database/migrations/046_ticket_unassign.sql",
     "contracts/p2_016_unassign_command.schema.json",
+    "contracts/p2_016_unassign_targets.schema.json",
     "contracts/p2_016_unassign_result.schema.json",
     "contracts/p2_016_unassign_event.schema.json",
     "contracts/workbench_unassign_contracts.d.ts",
