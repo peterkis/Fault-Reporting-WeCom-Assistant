@@ -117,6 +117,7 @@
           "reopen",
           "cancel",
           "add-note",
+          "unassign",
           "assign",
           "transfer-assignment",
           "take-and-start",

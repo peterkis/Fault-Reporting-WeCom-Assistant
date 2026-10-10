@@ -23,6 +23,8 @@ native_blocking_edges: 76
 
 2026-10-10最新恢复核查：GitHub已关闭14／43票，剩余29票OPEN；T22集中会话原七项已完成父独立核对、合入本地集成并[收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)，见[实际对象、原报告与关闭方式](execution/t22.md)。WBINT-07／A07本地完成；T35的原生blockers #69／#77均已关闭。下一串行验证窗口为T08；其它已准备源码不计验收。
 
+2026-10-10 T08收口后实际快照：已关闭15／43票，剩余28票OPEN。T08撤销未开始派工的原七项经父独立核对，交付`697bfd6f014fc174eecd951c484eff98babbaa90`已安全快进到本地集成分支，[#63完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63#issuecomment-6093445782)，见[合同、原被测对象与分组证据](execution/t08.md)。T09的#58／#63已关闭；下一串行验证为T20。T15／T18／T19／T20／T28／T34／T35以及T10／T39源码已准备，尚未验收；WBINT-02／A02整组仍待T07／T09／T10。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -67,9 +69,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
   - **来源：** WBINT-02 / A02
 
-- [ ] **T08** — [#63 撤销尚未开始的派工](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)
+- [x] **T08** — [#63 撤销尚未开始的派工](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)
   - **来源：** WBINT-02 / A02
+  - **本地执行：** [LOCAL_VERIFIED：默认保留沟通、显式原子交接、有界当前责任段、原UUID核对与七项证据](execution/t08.md)已集成、关票；本票32、直接兼容106和原工具27通过，原失败与采集更正保留。默认关闭、未发布／启用；A02仍未完成。
 
 - [ ] **T09** — [#64 停止处理并退回待安排](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#63](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63)

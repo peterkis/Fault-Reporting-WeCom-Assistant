@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_unassign_command.schema.json",
+  "title": "WBINT-T08 unassign command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client_command_id", "expected_version", "reason_code", "reason", "communication_choice", "communication_target_principal_id", "sessions"],
+  "properties": {
+    "client_command_id": {"$ref": "#/$defs/uuid"},
+    "expected_version": {"$ref": "#/$defs/version"},
+    "reason_code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "reason": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S", "x-runtime-normalization": "Check original length, then trim; store only as internal_note."},
+    "communication_choice": {"enum": ["RETAIN_CURRENT", "TRANSFER_SELECTED"]},
+    "communication_target_principal_id": {"anyOf": [{"$ref": "#/$defs/uuid"}, {"type": "null"}]},
+    "sessions": {
+      "type": "array", "maxItems": 8, "x-unique-canonical-session-id": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "expected_row_version"],
+        "properties": {"session_id": {"$ref": "#/$defs/uuid"}, "expected_row_version": {"$ref": "#/$defs/version"}}
+      }
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"communication_choice": {"const": "TRANSFER_SELECTED"}}},
+    "then": {"properties": {"communication_target_principal_id": {"$ref": "#/$defs/uuid"}, "sessions": {"minItems": 1}}},
+    "else": {"properties": {"communication_target_principal_id": {"type": "null"}, "sessions": {"maxItems": 0}}}
+  }],
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+  },
+  "x-status": "IMPLEMENTED_DEFAULT_OFF",
+  "x-runtime-validation": "Exact local validation evidence is recorded in plans/admin-workbench-integration/execution/t08.md; no production or Gate approval."
+}
