@@ -115,3 +115,9 @@ READ_COMMITTED仅返回同原selection、当前actor／application／scope授权
 042实际约束只允许HAND_ENTERED／UNVERIFIED，故新[045](../../../database/migrations/045_workbench_verified_manual_reports.sql)只扩现有Intake：增加nullable `manual_reporter_verification`及closed VERIFIED快照／private envelope一致性约束；旧27SQL、043与046不改，不回填、不新建Person／Ticket／所有权／receipt表。独立migrator默认check，apply依赖042、校验checksum并关闭max1 pool；当前未运行／未应用。隔离fixture仅在原显式`manualReports=true && reporterCandidates=true`装配它，原账户／角色／业务种子／两首字节／默认false不改。
 
 此SOURCE只准备首受理与最小回执；现有MANUAL公开资料reader／正式选择UI仍为UNVERIFIED-only，VERIFIED详细资料读取、不可变资料公开证明、公共HTTP负权与回滚、物理Delivery守恒、通知接缝及生产制品UI均待后继真实切片。关闭候选开关停止新核实选择，旧T17及最小账本ACK保留；不drop迁移或重写旧观察。全部新运行NOT_RUN，七项不关闭。
+
+### 2026-10-11 051前向数据库修补（SOURCE_ONLY／NOT_RUN）
+
+原03a8公开POST仍503，命令READ为FAILED；query窗口观察到SQLSTATE2201B，尚未定位具体SQL或首cause。045中candidate_ref固定模式的量词上界256存在明确静态SQL语法风险，JS解析与纯copy检查通过不能替代数据库CHECK。旧045与所有历史迁移保持；新增[051](../../../database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql)只前向替换 `service_intake_manual_verification_check` 的该子句为独立长度32–256及同ASCII字符集判断。其余CHECK／IS TRUE／null与UNVERIFIED／actor与proof规则不变，HTTP／JS／Schema的32–256合同不缩为255，不删除约束。
+
+核实选择路径需要在原045之后应用051。本次原隔离测试caller只准备从STAGED资源读取051并在同迁移事务记录checksum与时间，资源清单仅登记这个具体SQL；既有045 migrator、业务代码、默认false和API无变更，没有生产迁移或部署。DDL、构建及原POST后继仍NOT_RUN，是否解决该事务失败需下一次原公开用例证据。关闭候选开关停止新核实选择，保留旧资料及前向约束；不得以删除CHECK／修改历史045或重写旧观察回退。

@@ -270,6 +270,7 @@
     "web/p2-workbench/time-display.mjs",
     "web/p2-workbench/workbench-state.mjs",
     "web/p2-workbench/workbench.css",
-    "web/p2-workbench/workbench.js"
+    "web/p2-workbench/workbench.js",
+    "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql"
   ]
 }

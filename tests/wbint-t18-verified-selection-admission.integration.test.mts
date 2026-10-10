@@ -3,9 +3,10 @@
 // public202/minimal13field/CoreQUEUED/originalUUID READ ACK assertions remain.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHmac,randomUUID} from 'node:crypto';
+import {createHash,createHmac,randomUUID} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {hashP2016,P2016_ERROR_CODES} from '../src/p2-016-domain-contracts.mjs';
+import {hashP2016,P2016_ERROR_CODES,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
 import {WORKBENCH_ERROR_CODES,WorkbenchError} from '../src/p2-006-workbench-query.mjs';
 import {reporterVerificationAuthority,parseReporterVerification} from '../src/workbench-reporter-verification.mjs';
 import {createWorkbenchReporterCandidates} from '../src/workbench-reporter-candidates.mjs';
@@ -104,6 +105,21 @@ test('a real verified selection is rechecked by server authority and produces on
     },
   };
   await withWeb01Fixture(async({origin,cookies,principals,pool}:Fixture)=>{
+    // Fixture-only forward migration after the shared fixture's original 045.
+    // Read the compiled resource and retain existing migration ledger conventions.
+    const migrationId='051_workbench_verified_manual_report_candidate_ref_check';
+    const migrationSql=await readFile(new URL('../database/migrations/'+migrationId+'.sql',import.meta.url),'utf8');
+    const migrationBody=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(migrationSql)?.[1];
+    if(!migrationBody)throw new Error('T18_051_MIGRATION_BODY_INVALID');
+    const checksum=createHash('sha256').update(migrationSql).digest('hex');
+    await transactionP2016(pool,async tx=>{
+      await tx.query("SELECT pg_advisory_xact_lock(hashtext('VERIFIED_MANUAL_REPORTS_MIGRATION'))");
+      if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='045_workbench_verified_manual_reports'")).rowCount!==1)throw new Error('T18_051_PREREQUISITE_MISSING');
+      const old=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[migrationId])).rows[0];
+      if(old){if(old.checksum_sha256!==checksum)throw new Error('T18_051_CHECKSUM_CONFLICT');return;}
+      await tx.query(migrationBody);
+      await tx.query(`WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch) INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms) SELECT $1,$2,platform.local_from_epoch_ms(epoch),epoch FROM stamp`,[migrationId,checksum]);
+    });
     assert.ok(principals[0]);authorizedPrincipalId=principals[0].id;
     assert.ok(cookies[0]);const cookie=cookies[0];
     const get=(path:string)=>fetch(origin+path,{headers:{cookie}});
