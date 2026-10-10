@@ -25,7 +25,7 @@ TicketDetail：`id,ticket_no,request_type,status,priority,resolver_team_id,assig
 
 事件投影：`event_id,event_type,old_status,new_status,aggregate_version,event_ordinal,created_at,has_internal_note,has_external_note`。责任投影：`ticket_id,ticket_assignee_id,ticket_assignee_name,resolver_team_id,resolver_team_name,conversations[]`；每条 conversation 含 `session_id,session_row_version:string,combined_accept_allowed,conversation_principal_id,conversation_principal_name,assignment_status,assignment_version`。复合命令使用前须按命令要求将可验证的会话版本转成安全整数。
 
-Notification：`notification_type,destination_type,delivery_id,status,side_effect_state,attempt_count,sent_at,created_at`；SENT/ACKNOWLEDGED 的技术含义不替代现场客户端观察。
+Notification：`notification_type,destination_type,delivery_id,status,side_effect_state,attempt_count,sent_at,created_at`；T24开启时另含成对的node:FIRST_RESPONSIBILITY|STAFF_COMPLETED|null与cycle_no:positive integer|null，未绑定轮次的既有通知两值均null；SENT/ACKNOWLEDGED 的技术含义不替代现场客户端观察。
 
 `reporter-contact` 顶层：`status,contact,departments[],fetched_at`。历史 contact 可含 `name,userid,mobile,telephone`，department 含 `name,department_ref,role`。第三方来源可增加 `sex,current_profile`；current_profile 含 `status,contact:{name,mobile},sex,avatar_url,departments,fetched_at`。缺资料为 DEFERRED/STALE 与 null，不伪造联系方式。这是内部授权接口，不提供给 Reporter/成员 UI。
 
@@ -228,6 +228,21 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
 
+
+## Bot 原报修人轮次通知读取（WBINT-T24，UI源码后继 NOT_BUILT_NOT_RUN）
+
+现有获权 GET /api/tickets/{ticketId}/deliveries 和041真实节点绑定保持。ticketRoundNotificationsEnabled=false继续默认关闭；已认证 /api/lifecycle/bootstrap 新布尔 ticket_round_notifications_enabled 仅反映该宿主能力，客户端缺字段按false。正式Ticket详情仅能力开启时挂载“报修人通知送达”只读区域，读取现有安全DTO，显示首次责任／工作人员完工、轮次、PERSON路由、实际Delivery状态／尝试次数／side_effect_state／sent_at。原通知Schema仍闭合，轮次两字段成对可空；客户端拒绝未知字段、重复Delivery身份、不合法枚举或版本／时间，不收取raw目标、Bot／Reporter、binding或内部内容。
+
+组件沿共享当前授权epoch的同源无缓存GET，挂载读取一次，只提供“重新读取通知”的显式GET；卸载／切换取消自身读取，generation屏蔽晚结果，可信失权清当前Ticket／Session视图。没有通知POST、retry／reconcile／SDK调用、轮询、发送或通知消费者变更。
+
+原干净9ac9b280候选一次build／strict／artifact原生0／0／0，原browser首0PASS／1FAIL/native1：真实Cookie accept/start/complete、CLOSED和FIRST／STAFF cycle1 PERSON/PENDING两条API前置到达，正式页面缺区域为真实UI RED（原source45／compiled51）。原TAP、1920×1080失败PNG、完整1110inputs／1281outputs及sourceZIP冻结在D外部归档，手动重读／UI隐私／末尾物理counts均NOT_REACHED，不用源码补丁升级其结论。当前后继尚未build／运行，原首7836字节、SHA db547b5e777b064aca0d5c3092274c43e5981c918ea7c56f89dcb4e07599984d、240秒与角色／flags／routing不变。完整七项、T06 assignment/QUEUED首通知与真正T08／T09范围继续remaining；运行窗口已TEMP_RELEASE返T20。
+
+
+### 原 UI GREEN 准备构建失败与 typed 时间后继（SOURCE／NOT_RUN）
+
+717d683d候选唯一构建在web严格类型前置原生exit1：Notification解码器原字符串时间返回值不满足LocalDateTime品牌，TS2322位于client.ts117。strict／artifact／SQL／PG fixture／HTTP／browser都NOT_RUN，无新UI业务结果或失败PNG；原9ac区域缺失RED及全部NOT_REACHED层保持原身份。该失败已完整D保全1872档（当前source raw1111／partial.build759／原日志2）及源ZIP，窗口明确TEMP_RELEASE返T20。
+
+仅源码修补Notification时间边界：保留现有primitive string与秒精度格式校验，进一步验证合法公历日期、闰年和时分秒范围，验证后返回LocalDateTime品牌。旧通用datetime和DTO品牌类型不放宽，未引入浏览器不可用的node:util依赖、新模块、any或双重断言。仅通知sent_at（允许null）与created_at走新typed parser；节点读取／UI和消费者等其它行为不变。原首／三测试／041／角色／flags／240秒保持，当前后继build／strict／artifact／browser全部NOT_RUN，只在新grant下验证原browser首。
 
 ## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
 
