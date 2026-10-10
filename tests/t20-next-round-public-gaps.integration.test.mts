@@ -25,8 +25,8 @@ for(const feature of ['explicit-first-accept','previous-handler-hint'] as const)
     }else{
      const response=await handler.get('/api/tickets/'+ticketId);assert.equal(response.status,200);
      assert.deepEqual(t20Object(await response.json()).reopen_follow_up,{origin:'STAFF',is_previous_handler:true,awaiting_acceptance:true},'only the still-authorized prior handler receives its internal follow-up fact');
-     await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[1]?.id]);assert.equal((await handler.get('/api/tickets/'+ticketId)).status,403);
-     const team=t20Object(await (await administrator.get('/api/tickets/'+ticketId)).json());assert.deepEqual(team.reopen_follow_up,{origin:'STAFF',is_previous_handler:false,awaiting_acceptance:true});assert.equal(team.assignee_id,null);assert.equal(team.resolver_team_id,completed.resolver_team_id);
+     await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[1]?.id]);const inactive=await handler.get('/api/tickets/'+ticketId);assert.equal(inactive.status,401);assert.deepEqual(await inactive.json(),{error:{code:'WORKBENCH_UNAUTHENTICATED',retryable:false}});
+     const team=t20Object(await (await administrator.get('/api/tickets/'+ticketId)).json());assert.deepEqual(team.reopen_follow_up,{origin:'STAFF',is_previous_handler:false,awaiting_acceptance:true});assert.equal(team.assignee_id,null);assert.equal(team.resolver_team_id,completed.resolver_team_id);assert.equal(team.version,before.version);
     }
    }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   });

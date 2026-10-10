@@ -27,7 +27,8 @@ test('independent HANDLER reads its original STAFF_REOPEN purpose without a rese
    assert.equal((await handler.get(path+'?purpose=add-note')).status,400);
    const fresh=await handler.detail(ticketId);assert.equal(fresh.version,completed.version+1);assert.equal(fresh.assignee_id,null);assert.equal(fresh.handling_cycle?.cycle_no,(completed.handling_cycle?.cycle_no??0)+1);
    const basis=await context.pool.query<{n:number}>("SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid",[ticketId]);assert.equal(basis.rows[0]?.n,1);
-   await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[1]?.id]);assert.equal((await handler.get(path)).status,403,'receipt still requires current read authority');
+   await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[1]?.id]);const inactive=await handler.get(path);assert.equal(inactive.status,401,'inactive identity is rejected before the receipt reader');assert.deepEqual(await inactive.json(),{error:{code:'WORKBENCH_UNAUTHENTICATED',retryable:false}});
+   const unchanged=await administrator.detail(ticketId);assert.equal(unchanged.version,fresh.version);assert.equal(unchanged.assignee_id,null);assert.equal(unchanged.handling_cycle?.id,fresh.handling_cycle?.id);
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
  });
 });

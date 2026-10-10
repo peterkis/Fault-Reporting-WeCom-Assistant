@@ -67,3 +67,5 @@ M拟新增独立严格boolean配置 `reporterFeedbackDraftRecoveryEnabled=false`
 ## b41 原11实际差额后的最小前向（SOURCE / NOT_RUN）
 
 b41 原六文件2PASS/9FAIL和NOT_REACHED完整保全，见本票执行记录。已观察的专用W ACK/两端UNKNOWN控件/M raw false声明/未承接START/两来源提示差额现在沿上文合同实现源码；H5现有FEEDBACK GET消费和W独立GET安全回执都不自动重POST。M当前详情本就只含安全Ticket编号/状态，不假造内部cycle/version供浏览器核对；闭合原FEEDBACK receipt确认原结果，再读当前本人同Ticket安全事实和timeline。PC按闭合原回执与当前同轮事实核对，两端暂仍本页内存，不实现未经first观察的raw存储。readonly/OAuth-only的403是原namespace拒绝，保留原FAIL后仅更正合法安排；W readiness先执行既有public coordinator前置，不修改Schema门禁。新候选须实际build/types/artifact和原11验证，默认关闭、当前READ边界、独立STAFF、原七remaining保持。
+
+b176 两生产UNKNOWN browser现已各原生1PASS，真实POST status200/原purpose GET/fresh同Ticket事实、无第二POST/rawOFF均到达；原POST body未独立persist，不回填历史。下一同浏览器raw首仅在独立raw选项显式true下由真实页面提交丢响应、reload后保原UUID或核实原终态、只GET原用途和当前事实，不用私有seed/新UUID/假成功。它尚未运行，也不代表加密、首次保存24h、损坏/到期/当前READ/source scope清理已完成；这些仍需后续实际slice。当前全局READ关闭、readonly/OAuth-only、原配置代次及来源绑定/保留期规则保持，不能用W权限绕M边界。

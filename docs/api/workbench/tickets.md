@@ -238,3 +238,5 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 PC UNKNOWN 保留当前页原 UUID/版本/原因，显式只 GET 该回执及当前获权 Ticket，不自动 POST 或换 ID；COMMITTED 的原闭合结果与当前同轮事实核实后才显示已核对，FAILED 也先重读当前事实，UNKNOWN 保留原意图。raw 关闭不新建持久恢复记录。M 同样只 GET 原 FEEDBACK 用途与当前本人详情，保持原 READ/profile 规则；独立 M `reporterFeedbackDraftRecoveryEnabled=false` 仅声明启用反馈 bootstrap 的 `feedback_draft_recovery_enabled`，尚未实现 raw 存储。两端保护恢复的实际 save/reload/24h/失权仍待后续公开 first，不由现有首组 GREEN 推定交付。本人 Web 反馈的独立默认关闭能力见[反馈合同](../member/web-feedback-design.md)。
 
 真正 043 新轮次未承接前，legacy `start` 拒绝绕过首次责任依据；T04 的显式承接路径保持。当前获权 W TicketDetail 可追加闭合 `reopen_follow_up:{origin,is_previous_handler,awaiting_acceptance:true}`，只由当前未承接 shared basis 和 040 上轮完工人派生；获权团队看到普通待承接事实，旧处理人失权仍拒绝，M 不包含此字段。该字段不派工、不存新跟进或 owner。以上 b41 实际差额的前向源码待新固定候选验证，整票仍 IN_PROGRESS。
+
+b176原11实际9PASS/2FAIL保留原运行身份。专用ACK/两端UNKNOWN原GET核对、newround START阻断及两来源安全字段已到达；两FAIL在停用账号现行401与原403预期的差异，不能调整产品授权边界。后继来源校准精确401/闭合无正文认证拒绝，并准备关闭新write/raw仍当前READ的ACK、同浏览器raw reload和正式上轮HANDLER提示首组，全部NOT_RUN。保护恢复需独立原scope/Ticket/purpose、当前READ、首次保存24h不续期及有界非导出AES-GCM；raw过期或敏感内容不能恢复不等于原命令未提交，原opaque UUID只供安全GET核对。PC提示的实际消费和完整raw/currentauth尚未由现有9PASS证明，默认关闭和整票IN_PROGRESS保持。
