@@ -8,7 +8,8 @@ interface CandidateObservation { incident_candidate?: unknown; incident_review_c
 export interface CandidateSourceDecision extends Omit<DecisionRow, 'safe_result'> { safe_result: unknown; manual_review_id?: string | null }
 export type CandidateImportResult = { id: string; status: 'CANDIDATE' | 'UNDER_REVIEW' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED'; row_version: string; created: boolean };
 import { createDecisionStore } from './p2-015-decision-store.mjs';
-import { guard,uuid,hash,validateCandidate,frozen,fail,transaction } from './p2-012-domain-contracts.mjs';
+import {YXX_WEB_LIMITS} from './yxx-self-service-store.mjs';
+import { guard,uuid,hash,validateCandidate,frozen,fail,transaction,safeCandidateSourceRefs } from './p2-012-domain-contracts.mjs';
 
 // Trusted application seam for an already-computed frozen P2-007 result. No clustering,
 // threshold selection, raw-message reading or existing Decision mutation happens here.
@@ -24,11 +25,23 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}: Options)
       await tx.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[source.journey_id]);
       const refs=await tx.query('SELECT id::text FROM intake.deterministic_decision WHERE id=ANY($1::uuid[])',[ids]);
       if(refs.rowCount!==ids.length)fail('SOURCE_NOT_FOUND',404);
+      const observation=source.safe_result;
+      const suppliedRefs=observation!==null&&typeof observation==='object'&&!Array.isArray(observation)&&Object.hasOwn(observation,'source_refs')
+        ?{source_refs:safeCandidateSourceRefs((observation as Record<string,unknown>).source_refs)}:{};
       const payload={incident_candidate:{...safe,is_candidate:true,creates_incident:false,human_confirmation_required:true},
         incident_report_decision_ids:ids,source_decision_id:sourceDecisionId,source_result_hash:source.result_hash,
-        p2_007_candidate_hash:hash(candidate),catalog_version:source.catalog_version,rule_set_version:source.rule_set_version};
+        p2_007_candidate_hash:hash(candidate),catalog_version:source.catalog_version,rule_set_version:source.rule_set_version,...suppliedRefs};
       const identity=hash(payload);
-      return store.record({transaction:tx,input:{...source,engine_version:'p2-012-candidate-source/1',
+      let webBasis:{basis_input_revision:number}|undefined;
+      if(source.source_kind==='WEB'){
+        // The existing Web producer bounds revisions to 50. Validate its persisted
+        // decimal capture before adapting to DecisionStore's numeric input contract.
+        const revision=String(source.basis_input_revision);
+        if(!/^[1-9][0-9]{0,1}$/u.test(revision)||BigInt(revision)>BigInt(YXX_WEB_LIMITS.window))fail('SOURCE_CONFLICT',409);
+        webBasis={basis_input_revision:Number(revision)};
+      }
+      const selectedStore=webBasis?createDecisionStore({webSource:true}):store;
+      return selectedStore.record({transaction:tx,input:{...source,...webBasis,engine_version:'p2-012-candidate-source/1',
         decision_policy_version:'candidate/1/'+identity.slice(0,40),result_code:'INCIDENT_REVIEW_CANDIDATE',
         reason_code:'INCIDENT_CANDIDATE_HUMAN_CONFIRMATION',input_hash:identity,result_hash:hash(payload),safe_result:payload,
         requires_manual_review:true,ticket_creation_recommended:false,incident_review_candidate:true,safe_action_suggestions:[]} as DecisionInput<typeof payload>});
