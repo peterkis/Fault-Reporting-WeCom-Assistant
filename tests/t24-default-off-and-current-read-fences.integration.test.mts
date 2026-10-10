@@ -52,7 +52,7 @@ test('default-off public Worker preserves a committed FIRST until explicit enabl
    const allowed=await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:[role],resolverTeamIds:role==='HANDLER'?['PILOT_IT']:[]});assert.equal(allowed.id,readerId);
    assert.deepEqual(await read(),actual);
    const restricted=await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['HANDLER'],resolverTeamIds:[]});assert.equal(restricted.id,readerId);
-   const denied=await reader.get(path);assert.equal(denied.status,404);const error=await denied.json();assert.equal(Object.hasOwn(error,'items'),false);
+   const denied=await reader.get(path);assert.equal(denied.status,404);const error=await denied.json();assert.ok(error!==null&&typeof error==='object'&&!Array.isArray(error));assert.equal(Object.hasOwn(error,'items'),false);
    for(const marker of [canary,'user-test','bot-test'])assert.equal(JSON.stringify(error).includes(marker),false);
    assert.deepEqual(await physical(context.pool),baseline);assert.deepEqual(await producer.detail(id),completed);
   }
