@@ -4,6 +4,12 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t20-staff-reopen-ack.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t20-feedback-unknown.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t20-staff-unknown.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t20-feedback-entry-boundaries.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t20-feedback-defaults.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t20-next-round-public-gaps.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-staff-first.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-feedback-first.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-feedback-locks.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -516,7 +522,13 @@
       "tests/t20-feedback-locks.integration.test.mts",
       "tests/t20-feedback-first.browser.test.mts",
       "tests/t20-staff-first.browser.test.mts",
-      "tests/t20-next-accept.integration.test.mts"
+      "tests/t20-next-accept.integration.test.mts",
+      "tests/t20-staff-reopen-ack.integration.test.mts",
+      "tests/t20-feedback-unknown.browser.test.mts",
+      "tests/t20-staff-unknown.browser.test.mts",
+      "tests/t20-feedback-entry-boundaries.integration.test.mts",
+      "tests/t20-feedback-defaults.integration.test.mts",
+      "tests/t20-next-round-public-gaps.integration.test.mts"
     ],
     "v3-p08": ["tests/p2-g2-send-budget.test.mjs", "tests/p2-g2-send-guard.integration.test.mjs", "tests/p2-g2-candidate-scope.integration.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/yxx-ss-010-contract.test.mjs", "tests/yxx-ss-010-runtime.integration.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/yxx-current-readiness-cli.test.mts", "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs", "tests/p2-g2-yixiaoxiu-readiness.test.mjs"],
     "v3-p07": ["tests/p2-g2-wecom-web-oauth.test.mjs", "tests/p2-g2-yixiaoxiu-delegated-identity.test.mjs", "tests/yxx-ss-004-orchestration.integration.test.mjs", "tests/yxx-ss-005-member-queries.integration.test.mjs", "tests/yxx-ss-006-supplements-review.integration.test.mjs", "tests/yxx-ss-007-native-http-errors.test.mjs", "tests/yxx-ss-008-assembly.integration.test.mjs", "tests/p2-g2-yixiaoxiu-oauth.test.mjs"],

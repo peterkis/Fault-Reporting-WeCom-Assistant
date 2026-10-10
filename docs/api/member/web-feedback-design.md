@@ -53,3 +53,13 @@ W既有reopen仍沿自身current principal/对象/action权限和W receipt执行
 复用既有pool（fixture业务池≤4、admin1；应用总池≤8）、一个App/Worker/Gateway、SSE32和concurrency1；POST2KiB、详情/收据单对象、原quota与32请求in-flight上限保留，无新进程/扫描平台。退回方式为关闭成员write_flag或SELF_SERVICE，保留MY_REPORTS下原读取/已启用feedback recovery；全面关闭新能力不读043，保留已提交Ticket/事件/round/receipt，禁止删除事实或回写旧SQL。真实发送、Provider/OAuth、用户DB、部署、full/certify和Gate另行授权。
 
 原公开RED源：[wbint-t20-feedback.integration.test.mts](../../../tests/wbint-t20-feedback.integration.test.mts)，STAGED_RUNTIME/v3-p09、PG required、browser:false、原runner每文件240s。它经真实Web源受理/原orchestrator建单和T04/T11公共工作人员HTTP完工，再走真实member GET/POST。当前仅已准备，所有运行证据NOT_RUN。后续逐片补成员/绑定/profile负向、不同UUID/陈旧轮次、Caller-TX回滚、工作人员共享round/获权提醒、普通材料、响应丢失恢复及正式H5制品浏览器；首片不等于七项验收完成。
+
+## 2026-10-10 原目的核对与保护恢复后继合同（PLANNED / NOT_RUN）
+
+cf53真实H5和独立HANDLER PC各1PASS仅证明明确提交首行为。下一公开slice保留模拟已提交响应丢失：真实POST已提交后只丢其浏览器响应，页面保持原UUID/body/round/version；“只读核对原操作”只能GET原FEEDBACK或STAFF_REOPEN用途回执，再GET当前获权事实，禁止换ID、自动POST、把UNKNOWN当未提交或伪造成功。M现有FEEDBACK receipt已实现，H5该消费尚未实现；W拟加 `/api/tickets/{ticketId}/reopen/commands/{clientCommandId}`，仅当前W读取授权、原principal receipt scope、原Ticket和`reopen`目的。安全回执只包含原command/Ticket标识、UNKNOWN或FAILED或COMMITTED的原安全结果，不含原因、内部过程、Cookie/CSRF或第二套owner。非该principal/目的没有可冒领结果；原对象失权仍拒绝读取。raw关闭不是GET核对的前置阻断。
+
+M拟新增独立严格boolean配置 `reporterFeedbackDraftRecoveryEnabled=false`，只在显式启用feedback的bootstrap中声明闭合 `feedback_draft_recovery_enabled:boolean`，旧未启用feedback的bootstrap形状保持。W沿T03已有独立默认关闭raw选项，使用独立`staff-reopen`用途；M使用`web-feedback`用途和当前受信`recovery_scope`、原Web ref。raw关闭时本票原操作仅留当前页内存，不把FEEDBACK塞入旧SUBMIT/SUPPLEMENT journal，不新存原UUID或原文。raw打开才允许有界受保护内容：同浏览器AES-GCM/不可导出key、首次保存起24小时不续期、单操作in-flight、最多20项，元数据不含Cookie/CSRF/真实成员身份或原因原文。
+
+恢复每次先核当前READ、当前原scope/应用/来源和独立用途，再恢复敏感内容；新提交另核当前WRITE/CSRF/round/version。退出、失权、来源失效或scope代次不匹配清页面敏感内容；过期/损坏记录不能给新操作授权。UNKNOWN即使raw不可恢复仍只能查原UUID，没有终态不得重交；COMMITTED只在闭合原结果与fresh事实均核实后说明已核对，FAILED也须fresh读取后由用户明确发起新意图。这是待公开RED/最小实现/正式浏览器验证的合同，不是cf53已通过的恢复证明。
+
+工作人员详情拟追加闭合可选`reopen_follow_up:{origin:'WEB_REPORTER'|'STAFF',is_previous_handler:boolean,awaiting_acceptance:true}`，仅真实043 current shared basis/未承接轮次、当前获权W读者可见。`is_previous_handler`根据040真实完成操作人及当前身份/对象读权派生；不保存新跟进或owner，不自动派回。前人失权仍拒读，其余获权团队保持未指派事项和普通待承接提示。M DTO没有该字段，不泄露工作人员身份或内部处理内容。本后继有两来源公开首断言，运行仍NOT_RUN。
