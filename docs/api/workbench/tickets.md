@@ -214,6 +214,7 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 | --- | --- |
 | POST `/api/tickets/{ticketId}/unassign` | 一个闭合原子撤派命令，当前未开始责任由获权ADMIN/DISPATCHER撤回 |
 | GET `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前Ticket读权、原principal/专用用途/原UUID的最小UNKNOWN/FAILED/COMMITTED；独立T08启用即可，raw草稿恢复可关闭 |
+| GET `/api/tickets/{ticketId}/unassign/communication-targets[?target_principal_id=UUID]` | 当前合法撤派动作及Ticket读权；活动内部沟通target，safe `items:[{principal_id,display_name}]` ≤100，显式有效保存target在界内pin；不要求处理组成员、不授予Control写权。当前源码挂载，运行待本候选验证 |
 
 宿主`ticketUnassignEnabled:boolean=false`，独立于T05/T06；关闭不广告/不读新迁移，旧profile保留。启用须039及前向046_ticket_unassign。046只扩充既有event/check，允许严格的同组旧owner→JSON null释放metadata，不增owner/started字段、表或第二套Ticket/receipt；既有031/039迁移字节保留。
 

@@ -1,7 +1,7 @@
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery,P2016TicketRow} from './p2-016-ticket-query.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
-import type {P2016UnassignAcknowledgement} from '../contracts/workbench_unassign_contracts.js';
+import type {P2016UnassignAcknowledgement,P2016UnassignTargets} from '../contracts/workbench_unassign_contracts.js';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
@@ -74,6 +74,20 @@ export function createTicketUnassignService({pool,query,controlService=null,enab
       if(row.state==='COMMITTED')return {state:'COMMITTED',ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)};
       if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return {state:'FAILED',error:{code:row.error,retryable:false}};
       failP2016('ACTION_FAILED',503);
+    });
+  },async communicationTargets({authContext,ticketId:inputTicket,targetPrincipalId=null}:{authContext:unknown;ticketId:unknown;targetPrincipalId?:unknown}):Promise<P2016UnassignTargets>{
+    guardP2016(enabled);const ticketId=uuidP2016(inputTicket),target=targetPrincipalId===null?null:uuidP2016(targetPrincipalId);
+    if(!await unassignSchemaReady(pool))failP2016('UNASSIGN_UNAVAILABLE',503);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');const {principal,ticket}=await query.authorizedTicket({authContext,ticketId,transaction});
+      if(!await unassignEligible(transaction,principal,ticket))failP2016('FORBIDDEN',403);
+      const candidates=`SELECT p.id::text AS principal_id,p.display_name FROM pilot_ticket.pilot_principal p WHERE p.is_active
+        AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))`;
+      if(target&&!(await transaction.query(candidates+' AND p.id=$1::uuid',[target])).rowCount)failP2016('FORBIDDEN',403);
+      const listed=await transaction.query<{principal_id:string;display_name:string}>(target
+        ?'SELECT principal_id,display_name FROM ('+candidates+' ORDER BY (p.id=$1::uuid) DESC,p.display_name,p.id LIMIT 100) bounded ORDER BY display_name,principal_id'
+        :candidates+' ORDER BY p.display_name,p.id LIMIT 100',target?[target]:[]);
+      return publicP2016({items:listed.rows});
     });
   },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeTicketUnassignCommand(input);
