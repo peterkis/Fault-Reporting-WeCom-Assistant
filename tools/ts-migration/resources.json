@@ -7,6 +7,7 @@
     "contracts/workbench_follow_up_schedule_receipt.schema.json",
     "contracts/workbench_follow_up_schedule_result.schema.json",
     "contracts/workbench_follow_up_schedule_view.schema.json",
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",

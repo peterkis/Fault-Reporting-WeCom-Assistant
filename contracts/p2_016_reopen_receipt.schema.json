@@ -2,6 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hospital.local/contracts/p2_016_reopen_receipt.schema.json",
   "title": "T20 current-authorized original STAFF_REOPEN purpose receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "client_command_id": {},
+    "ticket_id": {},
+    "state": {},
+    "result": {},
+    "error": {}
+  },
   "oneOf": [
     {
       "type": "object", "additionalProperties": false,

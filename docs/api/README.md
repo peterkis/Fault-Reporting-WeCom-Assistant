@@ -14,6 +14,7 @@
 | 集中获权服务主题、独立沟通责任、当前浏览器回复恢复与专用安全收据 | [集中会话（T22，默认关闭）](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | 工单列表、详情、状态动作、双责任、通知投递 | [工单生命周期](workbench/tickets.md) |
 | 工单共享下次行动（T37，首片段源码挂载待验证，完整业务进行中） | [共享跟进时间](workbench/follow-up-schedules.md) |
+| Bot单聊每轮首次责任／完工通知与真实隔离送达状态（默认关闭） | [轮次节点通知](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)／[T24本地七项证据](../../plans/admin-workbench-integration/execution/t24.md) |
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
