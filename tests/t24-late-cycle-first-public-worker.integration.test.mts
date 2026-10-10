@@ -22,11 +22,19 @@ async function physical(pool:PostgresPool):Promise<Ids>{const row=(await pool.qu
  ARRAY(SELECT id::text FROM communication.delivery_attempt ORDER BY id::text) AS attempts,
  ARRAY(SELECT id::text FROM pilot_ticket.reporter_public_ref ORDER BY id::text) AS refs,
  ARRAY(SELECT grant_id::text FROM pilot_ticket.reporter_access_grant ORDER BY grant_id::text) AS grants`)).rows[0];assert.ok(row);return row;}
-function delta(before:Ids,after:Ids,count:number,roundCount=count){
+function delta(before:Ids,after:Ids,count:number,roundCount=count,grantBaseline=before.grants){
  for(const key of ['messages','outboxes','deliveries','bindings'] as const){assert.equal(after[key].length,before[key].length+count,key+' physical delta');assert.ok(before[key].every(id=>after[key].includes(id)),key+' preserves every old/unbound identity');}
  assert.equal(after.rounds.length,before.rounds.length+roundCount);assert.ok(before.rounds.every(id=>after.rounds.includes(id)));
- assert.deepEqual(after.attempts,before.attempts);assert.deepEqual(after.grants,before.grants);
+ assert.deepEqual(after.attempts,before.attempts);assert.deepEqual(after.grants,grantBaseline);
 }
+type GrantFact={grant_id:string;ticket_event_id:string;notification_type:string;reporter_binding_hash:string;purpose:string;state:string;binding_matches:boolean;row_digest:string};
+async function grantFacts(pool:PostgresPool,id:string){return (await pool.query<GrantFact>(`SELECT g.grant_id::text,b.ticket_event_id::text,b.notification_type,g.reporter_binding_hash,g.purpose,g.state,
+ (g.ticket_id=b.ticket_id AND g.message_id=b.message_id AND g.delivery_id=b.delivery_id AND g.reporter_binding_hash=b.recipient_binding_hash
+  AND r.ticket_id=g.ticket_id AND r.reporter_binding_hash=g.reporter_binding_hash AND b.destination_type='PERSON') AS binding_matches,
+ md5(to_jsonb(g)::text) AS row_digest FROM pilot_ticket.reporter_access_grant g
+ JOIN pilot_ticket.reporter_public_ref r ON r.id=g.public_ref_id JOIN communication.ticket_notification_binding b ON b.delivery_id=g.delivery_id
+ WHERE g.ticket_id=$1::uuid ORDER BY g.grant_id`,[id])).rows;}
+// row_digest freezes every persisted Grant field without exposing nonce/token bytes; it is a consistency snapshot, not authorization.
 async function nodeFacts(pool:PostgresPool,id:string){return (await pool.query(`SELECT r.cycle_id::text,c.cycle_no,r.node,b.id::text AS binding_id,
  b.ticket_event_id::text,m.id::text AS message_id,o.id::text AS outbox_id,d.id::text AS delivery_id,b.notification_type,
  (b.ticket_event_id=CASE WHEN r.node='FIRST_RESPONSIBILITY' THEN c.first_responsibility_event_id ELSE c.staff_completion_event_id END) AS original_basis,
@@ -71,7 +79,7 @@ test('a real staff reopen and same-C2 T05 acceptance gain one source-bound FIRST
   await context.runtime.coordinator.runOnce();
   const related=rows((await get(path+'/responsibility',handlerCookie)).conversations);assert.equal(related.length,1,'actual original Bot Session remains present');
   const queued=await get(path,handlerCookie);assert.equal(queued.status,'QUEUED');assert.equal(queued.assignee_id,null);assert.ok(Array.isArray(queued.allowed_actions)&&queued.allowed_actions.includes('take-and-start-with-conversations'));
-  const beforeC1=await physical(context.pool);
+  const beforeC1=await physical(context.pool);assert.deepEqual(beforeC1.grants,[]);
   await post(path+'/take-and-start-with-conversations',{client_command_id:randomUUID(),expected_version:queued.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:queued.resolver_team_id,communication_choice:'RETAIN_CURRENT',sessions:[]},handlerCookie,handlerBootstrap.csrf_token);
   const active=await get(path,handlerCookie),c1=cycle(active.handling_cycle);assert.equal(active.status,'IN_PROGRESS');assert.equal(active.assignee_id,handler.id);assert.equal(c1.cycle_no,1);assert.equal(typeof c1.first_responsibility_event_id,'string');
   const completion=await post(path+'/complete',{client_command_id:randomUUID(),expected_version:active.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:c1.id,
@@ -84,7 +92,10 @@ test('a real staff reopen and same-C2 T05 acceptance gain one source-bound FIRST
    FROM communication.ticket_notification_binding b JOIN communication.message m ON m.id=b.message_id
    JOIN communication.outbox o ON o.id=b.outbox_id JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1::uuid ORDER BY b.id`,[id])).rows;
   const frozenC1=(await context.pool.query('SELECT to_jsonb(c) AS fact FROM pilot_ticket.ticket_handling_cycle c WHERE id=$1::uuid',[c1.id])).rows;
-  console.log('T24_LC1_STAGE '+JSON.stringify({stage:'C1_REAL_COMPLETION_COMMITTED_ROUND_WORKER_NOT_YET_RUN',physical_ids:await physical(context.pool)}));
+  // T05 accept invokes the existing Card projector before first-cycle metadata is attached; its committed legacy031 notice owns this Grant.
+  const c1Physical=await physical(context.pool),c1Grants=await grantFacts(context.pool,id);assert.equal(c1Grants.length,1);
+  assert.deepEqual(c1Physical.grants,c1Grants.map(grant=>grant.grant_id));assert.equal(c1Grants[0]?.ticket_event_id,c1.first_responsibility_event_id);
+  console.log('T24_LC1_STAGE '+JSON.stringify({stage:'C1_REAL_COMPLETION_COMMITTED_ROUND_WORKER_NOT_YET_RUN',physical_ids:c1Physical}));
 
   // Independent STAFF uses its own ADMIN permission. It does not acquire member feedback scope or fabricate a new source.
   const beforeReopen=await physical(context.pool);
@@ -115,10 +126,17 @@ test('a real staff reopen and same-C2 T05 acceptance gain one source-bound FIRST
    (ce.cycle_id=c.id AND ce.ticket_id=c.ticket_id) AS cycle_event_matches FROM pilot_ticket.ticket_handling_cycle c
    JOIN pilot_ticket.ticket_event e ON e.ticket_id=c.ticket_id AND e.event_id=c.first_responsibility_event_id JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.ticket_event_id=e.event_id WHERE c.id=$1::uuid`,[c2.id])).rows;
   assert.deepEqual(basis,[{first_responsibility_event_id:accepted.ticket_event_id,first_responsibility_principal_id:handler.id,first_responsibility_team_id:ready.resolver_team_id,source_intake_id:source.source_intake_id,event_type:'ticket.accepted',new_status:'ACCEPTED',cycle_event_matches:true}]);
-  console.log('T24_LC1_STAGE '+JSON.stringify({stage:'C2_REAL_T05_FIRST_COMMITTED_BEFORE_LATE_WORKER',physical_ids:await physical(context.pool)}));
+  const beforeLateWorker=await physical(context.pool),committedGrants=await grantFacts(context.pool,id);assert.equal(committedGrants.length,2);
+  assert.deepEqual(beforeLateWorker.grants,committedGrants.map(grant=>grant.grant_id));
+  for(const prior of c1Grants)assert.deepEqual(committedGrants.find(grant=>grant.grant_id===prior.grant_id),prior,'C2 accept preserves the exact committed C1 Grant');
+  assert.equal(committedGrants.filter(grant=>grant.ticket_event_id===accepted.ticket_event_id).length,1);
+  for(const grant of committedGrants){assert.equal(grant.notification_type,'TICKET_ACCEPTED');assert.equal(grant.reporter_binding_hash,recipientHash);assert.equal(grant.binding_matches,true);assert.equal(grant.purpose,'REPORTER_TIMELINE');assert.equal(grant.state,'ISSUED');}
+  console.log('T24_LC1_STAGE '+JSON.stringify({stage:'C2_REAL_T05_FIRST_COMMITTED_BEFORE_LATE_WORKER',physical_ids:beforeLateWorker}));
   // Exact-basis 031 adoption is legitimate. Measure producer plus Worker as one interval; do not require a second physical append if the producer already committed the same notice.
   await productionWorker.runOnce();
-  const afterC2=await physical(context.pool);delta(beforeC1,afterC2,3+reopenNotices.length,3);
+  // Producer+Worker still has the original complete physical node delta; only the Grant baseline is frozen after both genuine T05 producers.
+  const afterC2=await physical(context.pool);delta(beforeC1,afterC2,3+reopenNotices.length,3,beforeLateWorker.grants);
+  assert.deepEqual(await grantFacts(context.pool,id),committedGrants,'late Worker cannot add, replace or mutate either producer Grant');
   const allFacts=await nodeFacts(context.pool,id),newFacts=allFacts.filter(fact=>fact.cycle_id===c2.id),c1Facts=allFacts.filter(fact=>fact.cycle_id===c1.id);
   assert.equal(allFacts.length,3);assert.equal(c1Facts.length,2);assert.equal(newFacts.length,1,'late Worker must bind the actual C2 FIRST exactly once');
   for(const fact of allFacts){
@@ -141,7 +159,7 @@ test('a real staff reopen and same-C2 T05 acceptance gain one source-bound FIRST
   for(const old of c1Deliveries){const current=delivered.find(row=>row.delivery_id===old.delivery_id);assert.ok(current);for(const key of ['delivery_id','notification_type','destination_type','status','attempt_count','side_effect_state','sent_at','created_at'] as const)assert.equal(current[key],old[key]);}
   for(const privateValue of [text(source.source_bot_id),text(source.reporter_wecom_userid),'INTERNAL_T24_LC1'])assert.equal(JSON.stringify(delivered).includes(privateValue),false);
   await productionWorker.runOnce();const replay=await post(path+'/accept-for-later-with-conversations',acceptCommand,handlerCookie,handlerBootstrap.csrf_token);assert.equal(replay.replayed,true);await productionWorker.runOnce();
-  assert.deepEqual(await physical(context.pool),afterC2);assert.deepEqual(await nodeFacts(context.pool,id),allFacts);assert.deepEqual(rows((await get(path+'/deliveries')).items),delivered);
+  assert.deepEqual(await physical(context.pool),afterC2);assert.deepEqual(await grantFacts(context.pool,id),committedGrants);assert.deepEqual(await nodeFacts(context.pool,id),allFacts);assert.deepEqual(rows((await get(path+'/deliveries')).items),delivered);
   assert.deepEqual(await get(path),ready);assert.deepEqual(await readSource(),source);assert.deepEqual((await context.pool.query('SELECT to_jsonb(c) AS fact FROM pilot_ticket.ticket_handling_cycle c WHERE id=$1::uuid',[c1.id])).rows,frozenC1);
   console.log('T24_LC1_STAGE '+JSON.stringify({stage:'LATE_WORKER_AND_REPLAY_PHYSICAL_IDENTITIES_STABLE',physical_ids:afterC2,production_worker_port:'runtime.roundNotifications.runOnce',process_restart:false,real_sender:false}));
  },{ticketConversationSelfHandlingEnabled:true,ticketReopenRoundsEnabled:true,manualRoundConsumption:true});
