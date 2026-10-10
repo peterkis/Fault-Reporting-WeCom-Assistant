@@ -207,13 +207,13 @@
 
 ## 明确拒绝与设计路径
 
-WBINT-T37目标合同仅SOURCE准备，以下三条均**尚未挂载／NOT_RUN**，详见[共享跟进时间](workbench/follow-up-schedules.md)。
+WBINT-T37以下三条在真实原POST404后仅**SOURCE挂载／后继NOT_RUN**，原七项仍进行中；详见[共享跟进时间](workbench/follow-up-schedules.md)。
 
 | METHOD | PATH | 状态 | 合同 |
 | --- | --- | --- | --- |
-| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，待实现：当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
-| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，待实现：显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
-| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，待实现：当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出与恢复) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，SOURCE挂载待验证：当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
+| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，SOURCE挂载待验证：显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，SOURCE挂载待验证：当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出与恢复) |
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |

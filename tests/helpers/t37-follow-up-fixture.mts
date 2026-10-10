@@ -11,6 +11,7 @@ import {assertLocalDateTime} from '../../src/platform/time-contract.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harness.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
+import {migrateWorkbenchFollowUpSchedules} from '../../scripts/workbench-follow-up-schedules-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{
   assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;
@@ -32,6 +33,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t37',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough030(context);
     const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
+    if(options.workbenchFollowUpSchedulesEnabled===true)await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
     const handler=await access.upsertPrincipal({wecomUserId:'t37-handler-'+randomUUID(),displayName:'T37 合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
@@ -40,8 +42,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     const address=probe.address();assert.ok(address&&typeof address!=='string');
     await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
     const port=address.port,origin='http://127.0.0.1:'+port;
-    // Supply the frozen target option as a variable: current production runtime does not yet consume it.
-    // The first RED must reach the real mounted router, never a test-provided success handler.
+    // Only explicit opt-in installs049. The original source/body exercises the actual native router.
     const followUpOption=options.workbenchFollowUpSchedulesEnabled===undefined?{}:{workbenchFollowUpSchedulesEnabled:options.workbenchFollowUpSchedulesEnabled};
     const runtimeOptions={pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:origin,listenPort:port,
       principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...followUpOption};

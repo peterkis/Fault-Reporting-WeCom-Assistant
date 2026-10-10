@@ -1,7 +1,7 @@
 ---
 task_id: WBINT-T37
 issue: 92
-status: PLANNED_SOURCE_READY
+status: FIRST_SLICE_SOURCE_IMPLEMENTED_NOT_RUN
 runtime_status: NOT_RUN
 source_base: 406599744d5676a840c90cb497ff033b4c375aea
 timezone: Asia/Shanghai
@@ -11,7 +11,7 @@ timezone: Asia/Shanghai
 
 返回 [API 导航](../README.md) · [HTTP 索引](../endpoint-index.md) · [工单](tickets.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t37.md)
 
-本页冻结 #92 的目标合同。当前只有合同与首条真实 HTTP 用例源码，以下路径尚未挂载；build、类型、数据库、HTTP、Worker、浏览器均 `NOT_RUN`。领域依据为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 第4项及 [WBINT-12/A12](../../../plans/admin-workbench-integration/implementation-plan.md#wbint-12个人已读关注团队待跟进与共享预约)。首次实际 RED 后逐切片实现。
+本页冻结 #92 的目标合同。原始f9d候选build/types/artifact原生0，首条真实调度员POST返回404形成实际RED，原档独立保留。其后仅SOURCE补齐049、原Ledger事务及三条W路由，**该源码后继尚未build／类型／迁移／HTTP验证**。当前源码资格只覆盖获权调度／ADMIN和当前处理人；实际canonical沟通人维护、Worker、正式PC等尚待后续切片，不把下文完整目标合同称为整票已实现。领域依据为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 第4项及 [WBINT-12/A12](../../../plans/admin-workbench-integration/implementation-plan.md#wbint-12个人已读关注团队待跟进与共享预约)。
 
 ## 宿主和入口
 
@@ -19,9 +19,9 @@ W 同源工作人员宿主，沿用当前活动内部 Principal 认证、Cookie 
 
 | METHOD + PATH | 目标行为 | 开关 |
 | --- | --- | --- |
-| `GET /api/tickets/{ticketId}/follow-up-schedule` | 当前获权安排、维护动作与最近20条修订历史 | `workbenchFollowUpSchedulesEnabled=false` 默认关闭 |
-| `POST /api/tickets/{ticketId}/follow-up-schedule` | 显式 `SET` 或 `CANCEL` | 同上；还需当前维护权限 |
-| `GET /api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | 原主体／用途／UUID 的最小安全命令终态 | 只依赖原生命周期与当前 Ticket READ；独立于新写开关和 raw draft recovery |
+| `GET /api/tickets/{ticketId}/follow-up-schedule` | SOURCE挂载／NOT_RUN：当前获权安排、维护动作与最近20条修订历史 | `workbenchFollowUpSchedulesEnabled=false` 默认关闭 |
+| `POST /api/tickets/{ticketId}/follow-up-schedule` | SOURCE挂载／NOT_RUN：显式 `SET` 或 `CANCEL` | 同上；还需当前维护权限 |
+| `GET /api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | SOURCE挂载／NOT_RUN：原主体／用途／UUID 的最小安全命令终态 | 只依赖原生命周期与当前 Ticket READ；独立于新写开关和 raw draft recovery |
 
 路径 UUID；无 query。POST JSON ≤32 KiB，拒绝未知字段；必须 `Idempotency-Key` 等于 body UUID、`If-Match: "<expected_version>"` 等于 body Ticket 数字版本。GET ACK 不需 CSRF/Origin、If-Match 或 Idempotency-Key，不返回原时间、payload/hash、人员、责任或私有资料。关闭新 write/view 入口不阻断原主体的已提交结果核对。
 
@@ -68,7 +68,7 @@ ACK [Schema](../../../contracts/workbench_follow_up_schedule_receipt.schema.json
 
 ## 事实、生命周期与到期 Worker
 
-049 仅保留给本票的前向迁移，当前无 SQL 文件／执行。计划在唯一 Ticket Core 下保存从属的当前安排与修订历史，关联原 Ticket／Event；不复制 status、assignee、resolver team 或 communication owner。SET/CANCEL 的安排、Ticket version+1、追加 `ticket.follow_up_scheduled`／`ticket.follow_up_cancelled`、ledger终态及必要安全实时失效在同一事务；失败全部回滚。它们不改变 Ticket 状态、责任、Intake、轮次或外部 Outbox/Delivery，不写自由正文。
+真实RED后新增 [049前向SQL](../../../database/migrations/049_workbench_follow_up_schedules.sql) 与[显式迁移器](../../../scripts/workbench-follow-up-schedules-migrate.mts)，当前尚未执行。源码在唯一 Ticket Core 下保存从属的当前安排与追加SET/CANCEL修订，关联原 Ticket／Event；不复制 status、assignee、resolver team 或 communication owner。PK/FK绑定原Ticket、同Ticket Event和当前修订，时间／epoch精确秒配对，稳定due索引；原事件CHECK按原目录表达式扩展保留既有词汇。迁移只接受apply/check、pool1和原031前置；固定基线及所有旧SQL不变。SET/CANCEL 的安排、Ticket version+1、追加 `ticket.follow_up_scheduled`／`ticket.follow_up_cancelled`、ledger终态及必要安全实时失效在同一事务；失败全部回滚。它们不改变 Ticket 状态、责任、Intake、轮次或外部 Outbox/Delivery，不写自由正文。初版readiness只核049checksum和两关系存在；catalog完整漂移、并发、回滚、默认off旧profile和终态fence仍需后继真实验证。
 
 处理／沟通转派、撤派和停止退回保留时间及安排修订；新责任由现有事实读取。实际 CLOSED/CANCELLED 的原 Ticket Action／工作人员完工事务产生权威终态 Event，使该活动安排同时结束；安排历史以该真实 Event 留下 ENDED 依据，不创建额外轮次或独立状态机。安排是否仍活动必须同时满足原 SET Event ordinal 之后没有真实关闭／取消／重开终结 fence，并核对当前 Ticket 状态／轮次；不能只读新增表中的旧时间或一个 enabled 位。无论切换开关，读取与 Worker 都不得复活该旧时间；关闭新入口期间的真实关闭或取消仍以原 Ticket Event 为终结事实。重开原 Ticket 后没有活动安排，须新的明确 SET。后续必须运行 disable→close/cancel→reenable、真实重开与新 SET 的验证，当前未实现；不为此增加常驻 hook／新配置所有权。关闭后旧 due 扫描不得产生有效新活动提示；关闭／改期与扫描竞争须在原 Ticket／安排锁和版本中收敛。
 
