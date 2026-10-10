@@ -6,9 +6,11 @@ import assert from 'node:assert/strict';
 import {createHmac,randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {hashP2016,P2016_ERROR_CODES} from '../src/p2-016-domain-contracts.mjs';
-import {WORKBENCH_ERROR_CODES} from '../src/p2-006-workbench-query.mjs';
+import {WORKBENCH_ERROR_CODES,WorkbenchError} from '../src/p2-006-workbench-query.mjs';
+import {reporterVerificationAuthority,parseReporterVerification} from '../src/workbench-reporter-verification.mjs';
+import {createWorkbenchReporterCandidates} from '../src/workbench-reporter-candidates.mjs';
 import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
-import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {ManualReporterDirectoryOptions,ManualReporterVerificationInput,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
 interface Fixture {origin:string;cookies:string[];principals:{id:string}[]}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');if(typeof value!=='string')throw Error('EXPECTED_STRING');return value;}
@@ -20,6 +22,12 @@ function safePublicError(input:unknown):{error_code:string;retryable:boolean|nul
   if(error===null||typeof error!=='object'||Array.isArray(error)||!('code'in error)
     ||typeof error.code!=='string'||!diagnosticErrorCodes.includes(error.code))return {error_code:'UNKNOWN',retryable:null};
   return {error_code:error.code,retryable:'retryable'in error&&typeof error.retryable==='boolean'?error.retryable:null};
+}
+type VerifierStage='CAPTURE'|'AUTHORITY_NORMALIZE'|'PARSE'|'FENCE';
+type VerifierDiagnostic={stage:VerifierStage;status:'PASS'}|{stage:VerifierStage;status:'FAIL';error_code:string;error_name:'WorkbenchError'|'TypeError'|'Error'|'UNKNOWN'};
+function safeVerifierFailure(error:unknown):{error_code:string;error_name:'WorkbenchError'|'TypeError'|'Error'|'UNKNOWN'}{
+  const code=error!==null&&typeof error==='object'&&'code'in error&&typeof error.code==='string'&&diagnosticErrorCodes.includes(error.code)?error.code:'UNKNOWN';
+  return {error_code:code,error_name:error instanceof WorkbenchError?'WorkbenchError':error instanceof TypeError?'TypeError':error instanceof Error?'Error':'UNKNOWN'};
 }
 const application={sourceCorpScope:'wbint-t18-synthetic-corp',sourceAppScope:'wbint-t18-synthetic-app'};
 const directoryScope='WBINT_T18_SYNTHETIC_DIRECTORY',mappingHash='c'.repeat(64),mappingProof='T18_SYNTHETIC_MAPPING_PROOF';
@@ -36,6 +44,7 @@ const candidate={candidate_ref:'t18_synthetic_allowed_candidate_01',candidate_ve
 test('a real verified selection is rechecked by server authority and produces one durable manual admission with a stored minimal acknowledgement',async()=>{
   let authorizedPrincipalId:string|null=null,verifyCalls=0;
   const verificationStages:string[]=[];
+  const captured:{input:ManualReporterVerificationInput|null;envelope:unknown}={input:null,envelope:null};
   let profile={display_name:'合成成员甲',departments:['合成门诊']};
   const directory:ManualReporterDirectoryOptions={
     application,
@@ -52,6 +61,7 @@ test('a real verified selection is rechecked by server authority and produces on
       async verifyAuthorizedCandidate(input){
         verifyCalls++;
         verificationStages.push('VERIFY_ENTERED');
+        captured.input=input;
         assert.ok(authorizedPrincipalId);assert.equal(input.principal_id,authorizedPrincipalId);
         assert.deepEqual(input.application,directory.application);
         assert.equal(input.directory_source_scope,directory.directorySourceScope);
@@ -63,12 +73,13 @@ test('a real verified selection is rechecked by server authority and produces on
         // phone, directory ID or raw WeCom ID is used to manufacture a binding.
         const epoch=String(Date.now()),local=formatEpochMsToShanghaiLocal(epoch),until=String(BigInt(epoch)+300_000n);
         verificationStages.push('VERIFY_ENVELOPE_RETURNING');
-        return {schema_version:1,purpose:'ADMISSION',selection:input.selection,application:directory.application,directory_source_scope:directory.directorySourceScope,
+        const envelope={schema_version:1,purpose:'ADMISSION',selection:input.selection,application:directory.application,directory_source_scope:directory.directorySourceScope,
           actor_principal_id:authorizedPrincipalId,object_access:'ALLOWED',authorized_at:local,authorized_at_epoch_ms:epoch,
           valid_until:formatEpochMsToShanghaiLocal(until),valid_until_epoch_ms:until,
           proof:{source:'VERIFIED_DIRECTORY_SELECTION',...stableObservation,profile_at_report:profile,
             reachability:{...stableObservation.reachability,checked_at:local,checked_at_epoch_ms:epoch,proof_ref:'T18_SYNTHETIC_REACHABILITY_PROOF'},
             verified_at:local,verified_at_epoch_ms:epoch,actor_principal_id:authorizedPrincipalId}};
+        captured.envelope=envelope;return envelope;
       },
     },
   };
@@ -87,6 +98,28 @@ test('a real verified selection is rechecked by server authority and produces on
     let diagnosticPayload:unknown=null;try{diagnosticPayload=await admitted.clone().json();}catch{/* UNKNOWN, never print raw text */}
     console.log('T18_POST_DIAGNOSTIC '+JSON.stringify({http_phase:'POST_RETURNED',status:admitted.status,
       ...safePublicError(diagnosticPayload),verify_stages:[...verificationStages]}));
+    // Pure public verifier observation uses only this POST's actual producer objects.
+    // Clone data after producer completion, retaining its exact AbortSignal reference.
+    // Do not call Directory.verify, change clocks or probe any old archived object.
+    const verifierDiagnostics:VerifierDiagnostic[]=[];
+    if(captured.input===null||captured.envelope===null){
+      verifierDiagnostics.push({stage:'CAPTURE',status:'FAIL',error_code:'UNKNOWN',error_name:'UNKNOWN'});
+    }else{
+      let stage:VerifierStage='CAPTURE';
+      try{
+        const {signal,...data}=captured.input;
+        const inputCopy:ManualReporterVerificationInput={...structuredClone(data),signal};
+        const envelopeCopy:unknown=structuredClone(captured.envelope);
+        verifierDiagnostics.push({stage,status:'PASS'});
+        stage='AUTHORITY_NORMALIZE';const authority=reporterVerificationAuthority(directory.verificationAuthority);
+        verifierDiagnostics.push({stage,status:'PASS'});
+        stage='PARSE';const parsed=parseReporterVerification(envelopeCopy,inputCopy,authority);
+        verifierDiagnostics.push({stage,status:'PASS'});
+        stage='FENCE';createWorkbenchReporterCandidates({enabled:true,directory}).fence(inputCopy.principal_id,inputCopy.selection,parsed,inputCopy.committed_target_scope);
+        verifierDiagnostics.push({stage,status:'PASS'});
+      }catch(error){verifierDiagnostics.push({stage,status:'FAIL',...safeVerifierFailure(error)});}
+    }
+    console.log('T18_PUBLIC_VERIFIER_DIAGNOSTIC '+JSON.stringify(verifierDiagnostics));
     assert.equal(admitted.status,202);const result=object(await admitted.json());
     assert.equal(verifyCalls,1);assert.equal(result.ok,true);assert.equal(result.client_command_id,command.client_command_id);
     assert.equal(result.reporter_verification,'VERIFIED');assert.equal(result.notification_eligibility,'ELIGIBLE');
