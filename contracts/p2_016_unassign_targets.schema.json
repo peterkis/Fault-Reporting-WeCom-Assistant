@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_unassign_targets.schema.json",
+  "title":"WBINT-T08 bounded independent communication targets",
+  "type":"object","additionalProperties":false,"required":["items"],
+  "properties":{"items":{"type":"array","maxItems":100,"items":{
+    "type":"object","additionalProperties":false,"required":["principal_id","display_name"],
+    "properties":{"principal_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"display_name":{"type":"string","minLength":1}}
+  }}},
+  "x-selected-target":"An explicitly saved currently valid target is pinned inside the same bounded hundred; display absence is not revocation.",
+  "x-status": "IMPLEMENTED_DEFAULT_OFF","x-runtime-validation": "Exact local validation evidence is recorded in plans/admin-workbench-integration/execution/t08.md; no production or Gate approval."
+}

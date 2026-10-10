@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_feedback_receipt.schema.json",
+  "title": "WBINT-T20 frozen original feedback command recovery candidate",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false, "required": ["client_command_id", "request_ref", "state"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+        "state": {"const": "UNKNOWN"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false, "required": ["client_command_id", "request_ref", "state", "result"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+        "state": {"const": "COMMITTED"},
+        "result": {"allOf": [{"$ref": "./yxx_self_service_feedback_result.schema.json"}, {"properties": {"replayed": {"const": true}}}]}
+      }
+    }
+  ]
+}
