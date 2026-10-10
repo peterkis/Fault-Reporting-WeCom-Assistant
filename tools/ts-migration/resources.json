@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/bot_reporter_feedback_contracts.d.ts",
+    "contracts/bot_reporter_feedback_bootstrap.schema.json",
+    "contracts/bot_reporter_feedback_result.schema.json",
+    "contracts/bot_reporter_feedback_receipt.schema.json",
     "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",

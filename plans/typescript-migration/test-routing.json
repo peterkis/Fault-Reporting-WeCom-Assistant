@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/wbint-t21-bot-feedback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-member-privacy-store.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-staff-recovery-boundaries.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-member-origin-hint.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -461,7 +462,7 @@
       "tests/yxx-ss-010-contract.test.mjs",
       "tests/p2-g2-current-evidence.test.mjs"
     ],
-    "v3-p09": ["tests/t20-member-privacy-store.browser.test.mts","tests/t20-staff-recovery-boundaries.browser.test.mts","tests/t20-member-origin-hint.browser.test.mts","tests/t20-staff-raw-off-after-opaque-failed.browser.test.mts","tests/t20-staff-post200-context503.browser.test.mts",
+    "v3-p09": ["tests/wbint-t21-bot-feedback.integration.test.mts","tests/t20-member-privacy-store.browser.test.mts","tests/t20-staff-recovery-boundaries.browser.test.mts","tests/t20-member-origin-hint.browser.test.mts","tests/t20-staff-raw-off-after-opaque-failed.browser.test.mts","tests/t20-staff-post200-context503.browser.test.mts",
       "tests/wbint-t20-feedback.integration.test.mts",
       "tests/t06-assignment-communication-boundaries.integration.test.mts",
       "tests/t06-assignment-restoration-boundaries.browser.test.mts",
