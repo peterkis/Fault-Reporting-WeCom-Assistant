@@ -42,7 +42,7 @@ test('043 readiness is conditional on enabled W rounds while original W defaults
    for(const enabled of [false,true]){
     const runtime=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.context.origin,principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,...(enabled?{ticketReopenRoundsEnabled:true}:{})});
     if('disabled' in runtime)throw Error('T20_DEFAULT_READY_DISABLED');
-    try{await runtime.start();const projected=await runtime.coordinator.runOnce();assert.equal(projected.failures,0,JSON.stringify(projected));const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);}
+    try{await runtime.start();const projected=await runtime.coordinator.runOnce();if(projected.disabled)throw Error('T20_PROJECTION_DISABLED');assert.equal(projected.failures,0,JSON.stringify(projected));const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);}
     finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
    }
   }finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_ticket_reopen_rounds' WHERE migration_id='043_t20_missing'");}
