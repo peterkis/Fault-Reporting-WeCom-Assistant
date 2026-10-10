@@ -4,6 +4,8 @@
 
 WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#撤销未开始派工wbint-t08plannednot_run)。计划路径不表示已挂载。
 
+WBINT-T37 的[共享跟进安排合同](follow-up-schedules.md)为 `PLANNED_SOURCE_READY / NOT_RUN`：当前处理／沟通人与获权调度维护、转派保留、关闭／取消清活动留历史、重开重新安排；三条目标路径尚未挂载，不能作为现有服务调用。
+
 宿主：W，P2-016 扩展。调用方：[lifecycle UI](../../../web/p2-workbench/lifecycle.js)。默认关闭：`TICKET_LIFECYCLE_WORKBENCH_ENABLED`。实现：[HTTP](../../../src/p2-016-workbench-http.mts)、[query](../../../src/p2-016-ticket-query.mts)、[command facade](../../../src/p2-016-ticket-command-facade.mts)、[command ledger](../../../src/p2-016-ticket-command-ledger.mts)。Ticket 是唯一编号/状态/处理责任事实源，Conversation Assignment 单独管理沟通责任。
 
 ## 查询

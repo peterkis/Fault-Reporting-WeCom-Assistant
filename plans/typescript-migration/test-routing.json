@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t37-follow-up-schedule.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-member-privacy-store.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-staff-recovery-boundaries.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t20-member-origin-hint.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -444,6 +445,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "wbint-t37-first": ["tests/t37-follow-up-schedule.integration.test.mts"],
     "v3-d01": [
       "tests/yxx-current-readiness.test.mts",
       "tests/yxx-current-evidence.test.mts",
@@ -461,7 +463,7 @@
       "tests/yxx-ss-010-contract.test.mjs",
       "tests/p2-g2-current-evidence.test.mjs"
     ],
-    "v3-p09": ["tests/t20-member-privacy-store.browser.test.mts","tests/t20-staff-recovery-boundaries.browser.test.mts","tests/t20-member-origin-hint.browser.test.mts","tests/t20-staff-raw-off-after-opaque-failed.browser.test.mts","tests/t20-staff-post200-context503.browser.test.mts",
+    "v3-p09": ["tests/t37-follow-up-schedule.integration.test.mts","tests/t20-member-privacy-store.browser.test.mts","tests/t20-staff-recovery-boundaries.browser.test.mts","tests/t20-member-origin-hint.browser.test.mts","tests/t20-staff-raw-off-after-opaque-failed.browser.test.mts","tests/t20-staff-post200-context503.browser.test.mts",
       "tests/wbint-t20-feedback.integration.test.mts",
       "tests/t06-assignment-communication-boundaries.integration.test.mts",
       "tests/t06-assignment-restoration-boundaries.browser.test.mts",
