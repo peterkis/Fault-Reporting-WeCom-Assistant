@@ -26,5 +26,5 @@
     }}},
     "history_has_more":{"type":"boolean"}
   },
-  "x-runtime-validation":["All schedule versions <= PostgreSQL BIGINT maximum","active schedule_version equals top-level schedule_version","due_epoch_ms exactly matches Asia/Shanghai due_at","history newest revision first","SET/CANCEL end_reason null; ENDED names actual terminal state"]
+  "x-runtime-validation":["All schedule versions <= PostgreSQL BIGINT maximum","active schedule_version equals top-level schedule_version","due_epoch_ms exactly matches Asia/Shanghai due_at","history newest revision first; same revision uses real Ticket Event ordinal descending","SET/CANCEL end_reason null; ENDED references the actual terminal Event for that revision","active schedule is fenced by current Ticket state/cycle and authoritative terminal/reopen Event order, regardless of prior feature toggle"]
 }

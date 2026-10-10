@@ -56,7 +56,7 @@ W 同源工作人员宿主，沿用当前活动内部 Principal 认证、Cookie 
 
 ## 输出与恢复
 
-[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json) 闭合输出：`ticket_id,ticket_version,schedule_version,active,allowed_actions,history,history_has_more`。active 为 null 或 `{schedule_version,due_at,due_epoch_ms,is_due}`，其中修订等于顶层、时间和 epoch 精确配对；is_due 按当前权威时间派生，只有活动安排可到期。无安排初始版本为 `"0"`，取消／结束后修订不回零。history 返回最新修订在前、最多20条；`history_has_more` 明示还有持久历史，不能把尾部窗口当全量。每条含 `schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED`；CANCEL/ENDED 保留刚结束的时间，SET/CANCEL 的 end_reason 为 null。
+[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json) 闭合输出：`ticket_id,ticket_version,schedule_version,active,allowed_actions,history,history_has_more`。active 为 null 或 `{schedule_version,due_at,due_epoch_ms,is_due}`，其中修订等于顶层、时间和 epoch 精确配对；is_due 按当前权威时间派生，只有活动安排可到期。无安排初始版本为 `"0"`，取消／结束后修订不回零；终态只结束该安排，不凭开关制造新的用户安排修订。history 返回最新修订在前、同修订按真实 Ticket Event ordinal 降序、最多20条；`history_has_more` 明示还有持久历史，不能把尾部窗口当全量。每条含 `schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED`；CANCEL/ENDED 保留刚结束的时间，SET/CANCEL 的 end_reason 为 null。ENDED 引用实际关闭／取消 Event，是该修订的终结证据，不是虚构用户 CANCEL。
 
 POST [安全结果 Schema](../../../contracts/workbench_follow_up_schedule_result.schema.json)：`{ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,schedule_version,replayed}`。不返回责任、时间、正文或凭据；成功后重读实际查询，重读临时失败不推翻原成功。
 
@@ -70,7 +70,7 @@ ACK [Schema](../../../contracts/workbench_follow_up_schedule_receipt.schema.json
 
 049 仅保留给本票的前向迁移，当前无 SQL 文件／执行。计划在唯一 Ticket Core 下保存从属的当前安排与修订历史，关联原 Ticket／Event；不复制 status、assignee、resolver team 或 communication owner。SET/CANCEL 的安排、Ticket version+1、追加 `ticket.follow_up_scheduled`／`ticket.follow_up_cancelled`、ledger终态及必要安全实时失效在同一事务；失败全部回滚。它们不改变 Ticket 状态、责任、Intake、轮次或外部 Outbox/Delivery，不写自由正文。
 
-处理／沟通转派、撤派和停止退回保留时间及安排修订；新责任由现有事实读取。实际 CLOSED/CANCELLED 的原 Ticket Action／工作人员完工事务同时清活动并追加 ENDED 修订历史，引用该终态 Ticket Event；不创建额外轮次或独立状态机。重开原 Ticket 后没有活动安排，须新的明确 SET。关闭后旧 due 扫描不得产生有效新活动提示；关闭／改期与扫描竞争须在原 Ticket／安排锁和版本中收敛。
+处理／沟通转派、撤派和停止退回保留时间及安排修订；新责任由现有事实读取。实际 CLOSED/CANCELLED 的原 Ticket Action／工作人员完工事务产生权威终态 Event，使该活动安排同时结束；安排历史以该真实 Event 留下 ENDED 依据，不创建额外轮次或独立状态机。安排是否仍活动必须同时满足原 SET Event ordinal 之后没有真实关闭／取消／重开终结 fence，并核对当前 Ticket 状态／轮次；不能只读新增表中的旧时间或一个 enabled 位。无论切换开关，读取与 Worker 都不得复活该旧时间；关闭新入口期间的真实关闭或取消仍以原 Ticket Event 为终结事实。重开原 Ticket 后没有活动安排，须新的明确 SET。后续必须运行 disable→close/cancel→reenable、真实重开与新 SET 的验证，当前未实现；不为此增加常驻 hook／新配置所有权。关闭后旧 due 扫描不得产生有效新活动提示；关闭／改期与扫描竞争须在原 Ticket／安排锁和版本中收敛。
 
 复用单一 Worker extension 的批处理 seam；每次最多20个、串行、稳定 `(due_epoch_ms,ticket_id)` 顺序及索引，不建 per-Ticket timer。到期信号以 `(ticket_id,schedule_version)` 唯一持久防重，与 signal marker 和内部 realtime 同事务；失败可恢复，重复批次／重启不重复发布该修订。信号只触发当前获权查询失效，不包含内部人物或时间正文，不创建外部通知；一次信号不清 is_due，未明确取消／改期前持续待办。默认关闭不扫描新增安排存储、不开新进程／连接池，既有投影和发送行为保持。
 
