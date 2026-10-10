@@ -1,0 +1,87 @@
+// NEXT_FIRST_NOT_RUN. Original external e3a05f9 source is separately preserved.
+// Only the legal configured authority envelope/version/time were aligned; original
+// public202/minimal13field/CoreQUEUED/originalUUID READ ACK assertions remain.
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createHmac,randomUUID} from 'node:crypto';
+import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {hashP2016} from '../src/p2-016-domain-contracts.mjs';
+import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
+interface Fixture {origin:string;cookies:string[];principals:{id:string}[]}
+function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
+function string(value:unknown):string{assert.equal(typeof value,'string');if(typeof value!=='string')throw Error('EXPECTED_STRING');return value;}
+const application={sourceCorpScope:'wbint-t18-synthetic-corp',sourceAppScope:'wbint-t18-synthetic-app'};
+const directoryScope='WBINT_T18_SYNTHETIC_DIRECTORY',mappingHash='c'.repeat(64),mappingProof='T18_SYNTHETIC_MAPPING_PROOF';
+// Controlled isolated authority represents an explicit mapped canonical member;
+// this HMAC follows the existing member-purpose convention and is not live proof.
+const targetScope={scopeHash:createHmac('sha256','T18_ISOLATED_SCOPE_SECRET_NOT_A_LIVE_CREDENTIAL').update(JSON.stringify(['member',application.sourceCorpScope,application.sourceAppScope,'T18_SYNTHETIC_CANONICAL_MEMBER_A'])).digest('hex'),
+  ...application,proofRef:mappingProof};
+const stableObservation={scope:targetScope,mapping_config_hash:mappingHash,verification_method:'VERIFIED_DELEGATED_MAPPING',profile_source:'THIRD_PARTY_STAFF_DIRECTORY',
+  directory_source_scope:directoryScope,directory_snapshot_version:'T18_SYNTHETIC_DIRECTORY_V1',profile_at_report:{display_name:'合成成员甲',departments:['合成门诊']},
+  binding_proof_ref:'T18_SYNTHETIC_BINDING_PROOF',account_status:'ACTIVE',binding_state:'VERIFIED',proof_kind:'SYNTHETIC',
+  reachability:{status:'REACHABLE',target_scope_hash:targetScope.scopeHash}};
+const candidate={candidate_ref:'t18_synthetic_allowed_candidate_01',candidate_version:hashP2016({candidate_ref:'t18_synthetic_allowed_candidate_01',...stableObservation}),
+  display_name:'合成成员甲',departments:['合成门诊'],profile_source:'THIRD_PARTY_STAFF_DIRECTORY',binding_verified:true,message_reachability:'REACHABLE'};
+test('a real verified selection is rechecked by server authority and produces one durable manual admission with a stored minimal acknowledgement',async()=>{
+  let authorizedPrincipalId:string|null=null,verifyCalls=0;
+  let profile={display_name:'合成成员甲',departments:['合成门诊']};
+  const directory:ManualReporterDirectoryOptions={
+    application,
+    directorySourceScope:directoryScope,
+    verificationAuthority:{mappingConfigHash:mappingHash,mappingProofRef:mappingProof,proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'},
+    port:{
+      async searchAuthorizedCandidates(input){
+        assert.equal(input.principal_id,authorizedPrincipalId);
+        assert.deepEqual(input.application,directory.application);
+        assert.equal(input.directory_source_scope,directory.directorySourceScope);
+        input.signal.throwIfAborted();
+        return {schema_version:1,candidates:[candidate],next_cursor:null,manual_fallback_available:true};
+      },
+      async verifyAuthorizedCandidate(input){
+        verifyCalls++;
+        assert.ok(authorizedPrincipalId);assert.equal(input.principal_id,authorizedPrincipalId);
+        assert.deepEqual(input.application,directory.application);
+        assert.equal(input.directory_source_scope,directory.directorySourceScope);
+        assert.deepEqual(input.selection,{verification:'VERIFIED_SELECTION',candidate_ref:candidate.candidate_ref,candidate_version:candidate.candidate_version});
+        assert.equal(input.purpose,'ADMISSION');assert.equal(input.committed_target_scope,null);
+        input.signal.throwIfAborted();
+        // Only a controlled synthetic authority supplies the identity/proof. No browser name,
+        // phone, directory ID or raw WeCom ID is used to manufacture a binding.
+        const epoch=String(Date.now()),local=formatEpochMsToShanghaiLocal(epoch),until=String(BigInt(epoch)+300_000n);
+        return {schema_version:1,purpose:'ADMISSION',selection:input.selection,application:directory.application,directory_source_scope:directory.directorySourceScope,
+          actor_principal_id:authorizedPrincipalId,object_access:'ALLOWED',authorized_at:local,authorized_at_epoch_ms:epoch,
+          valid_until:formatEpochMsToShanghaiLocal(until),valid_until_epoch_ms:until,
+          proof:{source:'VERIFIED_DIRECTORY_SELECTION',...stableObservation,profile_at_report:profile,
+            reachability:{...stableObservation.reachability,checked_at:local,checked_at_epoch_ms:epoch,proof_ref:'T18_SYNTHETIC_REACHABILITY_PROOF'},
+            verified_at:local,verified_at_epoch_ms:epoch,actor_principal_id:authorizedPrincipalId}};
+      },
+    },
+  };
+  await withWeb01Fixture(async({origin,cookies,principals}:Fixture)=>{
+    assert.ok(principals[0]);authorizedPrincipalId=principals[0].id;
+    assert.ok(cookies[0]);const cookie=cookies[0];
+    const get=(path:string)=>fetch(origin+path,{headers:{cookie}});
+    const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);
+    const csrf=string(object(await bootstrap.json()).csrf_token);
+    const page=await get('/api/workbench/reporter-candidates?q='+encodeURIComponent('合成')+'&limit=2');
+    assert.equal(page.status,200);assert.deepEqual(await page.json(),{schema_version:1,candidates:[candidate],next_cursor:null,manual_fallback_available:true});
+    const command:VerifiedManualReportCommand={schema_version:1,client_command_id:randomUUID(),source:'PHONE',description:'合成经核实代录：打印机无法打印',location:{text:null,unknown:true},reporter:{verification:'VERIFIED_SELECTION',candidate_ref:candidate.candidate_ref,candidate_version:candidate.candidate_version}};
+    const admitted=await fetch(origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
+    assert.equal(admitted.status,202);const result=object(await admitted.json());
+    assert.equal(verifyCalls,1);assert.equal(result.ok,true);assert.equal(result.client_command_id,command.client_command_id);
+    assert.equal(result.reporter_verification,'VERIFIED');assert.equal(result.notification_eligibility,'ELIGIBLE');
+    assert.equal(result.manual_contact_required,false);assert.equal(result.external_notification,false);assert.equal(result.replayed,false);
+    assert.equal(object(result.ticket).status,'QUEUED');assert.equal(result.review,null);
+    assert.deepEqual(Object.keys(result).sort(),['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','notification_eligibility','external_notification','result_code','ticket','review','replayed'].sort());
+    // The minimal ACK is stored admission, not a re-read of current directory data.
+    profile={display_name:'目录后来更名',departments:['目录后来调岗']};
+    const acknowledgement=await get('/api/workbench/reports/commands/'+command.client_command_id);
+    assert.equal(acknowledgement.status,200);
+    assert.deepEqual(await acknowledgement.json(),{client_command_id:command.client_command_id,state:'COMMITTED',result:{...result,replayed:true}});
+    assert.equal(verifyCalls,1);
+    // This slice proves public admission and stable minimal receipt only. Criterion 3's
+    // actual immutable name/departments/proof projection, negative binding/authorization,
+    // physical Outbox/Delivery conservation and rollback are later explicit slices.
+  },{workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,workbenchDraftRecoveryEnabled:true});
+});

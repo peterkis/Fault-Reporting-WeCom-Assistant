@@ -79,3 +79,25 @@ GET输入只接受单份q／limit／cursor：q去首尾空白后2–100字符，
 源码准备的目录等待加解析deadline为2000ms、全局在途1／无队列、每principal每60秒最多10次、惰性清理rate状态最多128。超时会abort并503；若adapter忽略abort，其单一未结束操作继续占并发围栏，直到实际settle，不能用“已超时”开启第二请求。无常驻worker／全量同步／后台timer；单次deadline timer在请求finally清理。关闭本票候选option停止新查询，T17手填及既有事实保留。
 
 候选GET不执行`verifyAuthorizedCandidate`，不写Intake／Ticket／profile／proof／receipt，不产生外发。选择POST、VERIFIED公开投影／回执、首次proof版本与目标绑定、终态当前对象READ语义、045及正式UI均仍独立前置；本次不预实现它们。bootstrap的`reporter_candidates_enabled`与前端消费也留待其实际UI切片。本票全部七项仍REMAINING，源码后继等待下一唯一运行窗口的原GET GREEN与必要负片。
+
+### 2026-10-10 GET GREEN 后冻结的选择验证／保留合同（POST NEXT_FIRST_NOT_RUN）
+
+固定6493的原GET1已实际PASS，原404RED保持。本段只冻结内部验证IO、公开保留形状和独立POST first，**尚未实现或验证核实选择POST**。内部[proof envelope Schema](../../../contracts/workbench_reporter_verification.schema.json)不是浏览器请求或公开API回复；staff JSON仍仅提交原UUID／来源／描述／位置及`VERIFIED_SELECTION, candidate_ref, candidate_version`，拒绝actor、app、scope、profile、proof和收件人ID。原同名T17手填继续HAND_ENTERED／UNVERIFIED、人工联系、零自动外发，不自动匹配目录。
+
+受控`ManualReporterDirectoryOptions.verificationAuthority`为选择分支单独钉住已有映射authority的`mappingConfigHash,mappingProofRef,proofKind,validationProfile`；GET仍可不配置它。映射digest来自既有`YxxIdentityMapping.configHash`，proofRef来自已核实配置，不能采信请求或目录页提供的任意hash。`SYNTHETIC`只允许`ISOLATED_TEST`，`LIVE`标记也不构成现场／外发授权。该Port必须先用既有显式namespace resolver／verified delegated mapping解析目标，再在当前应用、目录及principal对象范围内核验current Directory记录；姓名／手机号／同格式的ID、候选`binding_verified:true`、schema通过都不是身份事实证明。
+
+`verifyAuthorizedCandidate`的输入为当前principal、受控application／directory scope、原selection与AbortSignal，加闭合用途：首次`purpose:ADMISSION,committed_target_scope:null`；终态POST重放`purpose:READ_COMMITTED,committed_target_scope:<原保存YxxMemberScope>`，后者由服务器按同principal＋MANUAL_REPORT账本及关联Intake取出，浏览器不能指定。它们不能互换。共享2000ms含解析／在途1／有界rate约束仍适用；不在持有数据库事务时等待外部目录。
+
+两种成功返回均闭合`schema_version:1,purpose,selection,application,directory_source_scope,actor_principal_id,object_access:ALLOWED,authorized_at,authorized_at_epoch_ms,valid_until,valid_until_epoch_ms`，再分别只允许`proof`或`target_scope`。ADMISSION proof沿原字段增加`account_status:ACTIVE,binding_state:VERIFIED,proof_kind`及时间epoch；`reachability`独立含`status,target_scope_hash,checked_at,checked_at_epoch_ms,proof_ref`。scope沿既有YxxMemberScope四字段；资料只含目录来源／版本、本次姓名与部门，private binding／mapping references不是Person／Ticket的新权威表。
+
+后续消费者必须同时检查：返回用途与请求相同；selection.ref/version与原提交精确相等；envelope／proof actor等于authenticated principal；两层corp/app、目录scope与宿主配置相等；映射hash／scope.proofRef／proofKind与宿主pin相等；account为ACTIVE且binding为VERIFIED；reachability.target_scope_hash等于proof.scope.scopeHash且同目标应用。Producer必须从既有当前授权、显式映射及binding资料形成这些观察，STALE／CONFLICT／停用／跨对象或应用拒绝；不把任意canonical hash本身当proof。REACHABLE需该实际目标应用的独立非空可达性proof；ACTIVE／目录存在／可登录不能替代它。UNREACHABLE／UNKNOWN在明确绑定有效时仍可受理，资格NOT_REACHABLE与人工联系true，不默默降级为手填。
+
+选择版本约定为现有`hashP2016`的稳定canonical JSON hash，输入精确为`{candidate_ref,scope,mapping_config_hash,verification_method,profile_source,directory_source_scope,directory_snapshot_version,profile_at_report,binding_proof_ref,account_status,binding_state,proof_kind,reachability:{status,target_scope_hash}}`；scope是既有canonical mapped target，不能由姓名／手机号生成。GET producer基于同一当前观察生成版本，ADMISSION producer重查并重算，宿主也重算与原version比较；不能只echo浏览器版本。actor已由opaque ref及envelope授权绑定。授权时刻／expiry／reachability检查时刻及其短期proof reference不参与资料版本，避免每次重核因时钟推进必然冲突；稳定binding／资料／可达性观察变更仍使新提交409。
+
+所有内部绝对时刻采用Asia/Shanghai无时区后缀秒精度与对应epoch毫秒字符串双值，须通过既有time contract验证并相互一致；不得Date.parse猜时区。授权／验证／可达性观察不能在未来，返回时至多5分钟，`0 < valid_until_epoch_ms-authorized_at_epoch_ms <= 300000`且当前时刻小于expiry；proof.verified_at与envelope.authorized_at一致，reachability.checked_at不晚于该时刻且至多5分钟。16KiB与闭合形状也须执行；畸形／错pin／时间不自洽503，当前无权403、当前版本／binding变化409，不能降级或制造成功。
+
+READ_COMMITTED仅返回同原selection、当前actor／application／scope授权和`target_scope`。它必须等于原保存目标，证明当前可读该对象；不要求原candidate_version等于最新目录资料版本，不重建profile／reachability或改写原受理结果。POST仍先验当前创建许可＋对象READ；GET最小ACK继续现有原principal／用途／当前工作人员许可的READ ONLY，不依赖在线Directory、新创建proof或新资料。目录离线不能暗中放行新的选择POST，也不能让他人读取原UUID。
+
+公开[VERIFIED保留投影](../../../contracts/workbench_verified_manual_report_projection.schema.json)闭合为`source_kind:MANUAL_REPORT,source,description,location,reporter:{verification:VERIFIED,name,departments},identity_source:VERIFIED_DIRECTORY_SELECTION,actor_principal_id,manual_contact_required,external_notification:false,notification_eligibility`。姓名／部门取本次原proof snapshot；ELIGIBLE严格对应manual_contact_required=false，其余true。它不含联系方式、raw成员ID、candidate ref、scope/hash、配置或private proof。既有投影Schema增加该独立分支，原HAND_ENTERED分支字段与含义保持。当前生产仍只写／读T17分支，此处schema冻结不是VERIFIED写入实现。
+
+成功／COMMITTED公开字段沿原13字段[已核实结果](../../../contracts/workbench_verified_manual_report_result.schema.json)，只增加已冻结VERIFIED与独立eligibility，不公开人员资料或proof；共享receipt Schema允许这个独立结果分支，UNKNOWN／FAILED与原T17结果不变。新`VerifiedManualReportProjection/Receipt`类型单独声明，未把当前T17生产返回类型偷偷改成已实现union。045仅预留，实际同一Intake private观察／Public projection／Core或Review／ledger的同Tx扩展等待真实POST RED；不新建第二套目录、Person、Ticket或receipt事实源。
