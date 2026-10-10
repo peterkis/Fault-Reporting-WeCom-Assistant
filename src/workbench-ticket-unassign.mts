@@ -31,13 +31,21 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
     FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type IN (
       'ticket.assignment_transferred','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed',
       'ticket.unassigned','ticket.reopened','ticket.closed','ticket.cancelled') ORDER BY event_ordinal DESC LIMIT 201`,[ticket.id]);
-  let owner=ticket.assignee_id,team=ticket.resolver_team_id;
+  let owner=ticket.assignee_id,team=ticket.resolver_team_id,freshAcceptance=false;
   for(const event of events.rows.slice(0,200)){
     if(!Number.isSafeInteger(event.event_ordinal)||event.event_ordinal<1||!Number.isInteger(event.aggregate_version)||event.aggregate_version>ticket.version)return false;
-    if(['ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.unassigned','ticket.reopened','ticket.closed','ticket.cancelled'].includes(event.event_type))return false;
+    if(event.event_type==='ticket.unassigned'){
+      const metadata=event.assignment_metadata;
+      // A genuine later accept starts a new unstarted segment inside the same handling round.
+      // The old segment must end with the existing exact owner-release fact, not just any status change.
+      return freshAcceptance&&event.operator_id!==null&&['QUEUED','ACCEPTED'].includes(event.old_status??'')&&event.new_status==='QUEUED'
+        &&metadata!==null&&metadata.old_assignee_id!==null&&metadata.new_assignee_id===null&&metadata.old_team_id===team&&metadata.new_team_id===team;
+    }
+    if(['ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.reopened','ticket.closed','ticket.cancelled'].includes(event.event_type))return false;
     if(event.event_type==='ticket.accepted'){
       if(event.operator_id!==owner||event.old_status!=='QUEUED'||event.new_status!=='ACCEPTED')return false;
       // An explicit accept after assignment does not erase an earlier started segment.
+      freshAcceptance=true;
       continue;
     }
     const metadata=event.assignment_metadata;
