@@ -10,7 +10,7 @@ import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 type MemberServiceCatalog=Pick<ServiceCatalog,'catalog_version'|'listServices'>;
 type RawAuth=Record<string,unknown>;
 type ErrorFields={code?:string;status?:number};
-export interface YxxNativeHttpOptions {publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
+export interface YxxNativeHttpOptions {reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
@@ -199,8 +199,9 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 
 export function createYxxSelfServiceNativeHttp({
   publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null,
-}:YxxNativeHttpOptions={} as YxxNativeHttpOptions) {
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,
+}:Omit<YxxNativeHttpOptions,'command'|'query'> & {reporterFeedbackEnabled?:boolean;command:YxxNativeHttpOptions['command'] & Partial<Pick<YxxSelfServiceCommand,'feedback'>>;query:YxxNativeHttpOptions['query'] & Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'feedbackReceipt'>>}={} as YxxNativeHttpOptions) {
+  if(typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled||typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
     || !query?.list || !query?.detailWithEtag || !query?.timeline || !query?.commandStatus
@@ -234,6 +235,26 @@ export function createYxxSelfServiceNativeHttp({
   async function asset(response:ServerResponse,item:readonly [string,string]) {
     const content = await readFile(new URL(`../web/p2-reporter/${item[0]}`, import.meta.url), 'utf8');
     response.writeHead(200, { ...HEADERS, 'content-type': `${item[1]}; charset=utf-8` }); response.end(content);
+  }
+
+  // Serve only the compiled T03 journal entry and its manifest-declared JS
+  // imports. This is static code; member authority remains in the own-detail API.
+  async function recoveryAsset(url:URL,response:ServerResponse) {
+    const root=new URL('../web/admin-workbench/',import.meta.url);
+    const value:unknown=JSON.parse(await readFile(new URL('.vite/manifest.json',root),'utf8'));
+    if(!value||typeof value!=='object'||Array.isArray(value))throw error('YXX_UNAVAILABLE',503);
+    const manifest=value as Record<string,unknown>,files=new Set<string>(),visited=new Set<string>();
+    function entry(name:string):string{
+      const raw=manifest[name];if(!raw||typeof raw!=='object'||Array.isArray(raw))throw error('YXX_UNAVAILABLE',503);
+      const item=raw as Record<string,unknown>;if(typeof item.file!=='string'||!/^assets\/[A-Za-z0-9_-]+\.js$/u.test(item.file))throw error('YXX_UNAVAILABLE',503);
+      files.add(item.file);if(visited.has(name))return item.file;visited.add(name);if(visited.size>32)throw error('YXX_UNAVAILABLE',503);
+      if(item.imports!==undefined){if(!Array.isArray(item.imports)||item.imports.length>32)throw error('YXX_UNAVAILABLE',503);for(const child of item.imports){if(typeof child!=='string')throw error('YXX_UNAVAILABLE',503);entry(child);}}
+      return item.file;
+    }
+    const main=entry('src/feedback-recovery.ts');
+    if(url.pathname===ROOT+'feedback-recovery.js'){response.writeHead(302,{...HEADERS,location:ROOT+'recovery/'+main});response.end();return;}
+    const file=url.pathname.slice((ROOT+'recovery/').length);if(!files.has(file))throw error('YXX_NOT_FOUND',404);
+    const content=await readFile(new URL(file,root));response.writeHead(200,{...HEADERS,'content-type':'text/javascript; charset=utf-8'});response.end(content);
   }
 
   async function nativePage({ request, response, requestRef }:{request:IncomingMessage;response:ServerResponse;requestRef:string|null}) {
@@ -275,6 +296,10 @@ export function createYxxSelfServiceNativeHttp({
         if (request.method !== 'GET' || url.search) throw error('YXX_NOT_FOUND', 404);
         await asset(response, ASSETS[url.pathname] as readonly [string,string]); return true;
       }
+      if(url.pathname===ROOT+'feedback-recovery.js'||url.pathname.startsWith(ROOT+'recovery/')){
+        if(request.method!=='GET'||url.search)throw error('YXX_NOT_FOUND',404);
+        await recoveryAsset(url,response);return true;
+      }
       if (request.method === 'GET' && url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });
         if (!readEnabled) return oauthHttp({ request, response, url });
@@ -302,7 +327,7 @@ export function createYxxSelfServiceNativeHttp({
         const context = await currentMember(request, { requireWrite: serviceEnabled });
         json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: !serviceEnabled,
           can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: (context as {csrf_token:string}).csrf_token,
-          recovery_scope: context.recovery_scope }); return true;
+          recovery_scope: context.recovery_scope,...(reporterFeedbackEnabled?{feedback_draft_recovery_enabled:reporterFeedbackDraftRecoveryEnabled}:{}) }); return true;
       }
       if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
         if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');
@@ -333,6 +358,26 @@ export function createYxxSelfServiceNativeHttp({
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         json(response, 200, await query.list({ request, source: url.searchParams.get('source') as YxxMemberSource|null, cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') })); return true;
+      }
+      const feedbackRoute=/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})\/feedback(?:\/commands\/([0-9a-f-]{36}))?$/iu.exec(url.pathname);
+      if(feedbackRoute){
+        if(!reporterFeedbackEnabled)throw error('YXX_UNAVAILABLE',503);
+        if(url.search)throw error('YXX_INPUT_INVALID');
+        const requestRef=feedbackRoute[1] as string;
+        if(request.method==='GET'&&feedbackRoute[2]){
+          if(!COMMAND_ID.test(feedbackRoute[2])||header(request,'transfer-encoding')||Number(header(request,'content-length')??0)>0)throw error('YXX_INPUT_INVALID');
+          if(header(request,'sec-fetch-site')==='cross-site'||header(request,'origin')&&header(request,'origin')!==origin.origin)throw error('YXX_FORBIDDEN',403);
+          await currentMember(request);
+          json(response,200,await query.feedbackReceipt?.({request,requestRef,clientCommandId:feedbackRoute[2]}));return true;
+        }
+        if(request.method!=='POST'||feedbackRoute[2])throw error('YXX_NOT_FOUND',404);
+        assertOrigin(request,origin.origin);const input=await body(request,2048),context=await currentMember(request,{requireWrite:true});
+        if(header(request,'if-match')!=='"'+String(input.expected_ticket_version)+'"')throw error('YXX_CONFLICT',409);
+        if(header(request,'x-csrf-token')!==context.csrf_token)throw error('YXX_FORBIDDEN',403);
+        const result=await command.feedback?.({request,input,requestRef});
+        const latest=await currentMember(request,{requireWrite:true});
+        if(latest.recovery_scope!==context.recovery_scope||latest.csrf_token!==context.csrf_token)throw error('YXX_AUTH_RECHECK_FAILED',503);
+        json(response,200,result);return true;
       }
       if (url.pathname.startsWith('/api/yixiaoxiu/requests/') && ['GET', 'POST'].includes(request.method as string)) {
         const route = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([^/]*)(?:\/(timeline|supplements))?$/u);
