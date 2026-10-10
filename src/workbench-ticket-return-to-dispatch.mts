@@ -5,6 +5,8 @@ import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
+import {ConversationControlError} from './p2-005-conversation-control.mjs';
+import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
@@ -66,16 +68,16 @@ async function currentSegmentStarted(tx:PostgresTransaction,ticket:P2016TicketRo
  }
  return false;
 }
-export function createTicketReturnToDispatchService({pool,query,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
+export function createTicketReturnToDispatchService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
  const ledger=createP2016CommandLedger({pool});
  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}) {
   guardP2016(enabled);const command=normalizeReturnToDispatchCommand(input);
   if(!await returnToDispatchSchemaReady(pool))failP2016('RETURN_TO_DISPATCH_UNAVAILABLE',503);
-  // Only the original retain slice has reached a real public RED; selected transfer is still unavailable.
-  if(command.communication_choice!=='RETAIN_CURRENT')failP2016('CONTROL_UNAVAILABLE',503);
   return ledger.execute({command,receiptType:'WORKBENCH_TICKET_RETURN_TO_DISPATCH',authorize:async transaction=>{
    await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});await lockP2016Realtime(transaction);
-   return query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+   const current=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+   for(const selected of [...command.sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id)))await query.authorizedRelatedConversation({authContext,ticketId:command.ticket_id,sessionId:selected.session_id,transaction});
+   return current;
   },run:async transaction=>{
    const {ticket,principal:visible}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
    const roles=await transaction.query(`SELECT r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
@@ -88,8 +90,38 @@ export function createTicketReturnToDispatchService({pool,query,enabled=false,..
    if(!principal.roles.some(role=>['ADMIN','DISPATCHER'].includes(role))&&!membership.rowCount)failP2016('FORBIDDEN',403);
    if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
    if(!await currentSegmentStarted(transaction,ticket))failP2016('RETURN_TO_DISPATCH_STATE_CONFLICT',409);
+   if(command.communication_choice==='TRANSFER_SELECTED'&&!controlService)failP2016('CONTROL_UNAVAILABLE',503);
    const cycle=await assignmentCycle(transaction,ticket.id);
    if(cycle?.first_responsibility_event_id===null||!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('RETURN_TO_DISPATCH_STATE_CONFLICT',409);
+   const selectedSessions=[...command.sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id));
+   for(const selected of selectedSessions) {
+    const {session,principal:current}=await query.authorizedRelatedConversation({authContext,ticketId:ticket.id,sessionId:selected.session_id,transaction,lock:true});
+    if(session.session_row_version!==String(selected.expected_row_version))failP2016('VERSION_CONFLICT',409);
+    if(!await query.conversationTakeAllowed({principal:current,session,transaction}))failP2016('FORBIDDEN',403);
+   }
+   const conversations:{session_id:string;session_row_version:number;control_event_id:string|null;changed:boolean}[]=[];
+   // Existing Control sees the original Ticket facts and shares the outer ledger business savepoint.
+   for(const selected of selectedSessions) {
+    const {session}=await query.authorizedRelatedConversation({authContext,ticketId:ticket.id,sessionId:selected.session_id,transaction});
+    try {
+     if(!controlService||!command.communication_target_principal_id)failP2016('CONTROL_UNAVAILABLE',503);
+     const controlCommand={session_id:selected.session_id,client_command_id:command.client_command_id,idempotency_scope:'T09_RETURN_TO_DISPATCH:'+selected.session_id.toUpperCase(),expected_row_version:selected.expected_row_version,
+       actor_principal_id:principal.principal_id,target_principal_id:command.communication_target_principal_id,reason_code:command.reason_code};
+     const controlled=session.assignment_status==='ASSIGNED'
+       ?await controlService.transferAssignmentInTransaction({transaction,command:{...controlCommand,command_type:'TRANSFER'}})
+       :await controlService.takeoverSessionInTransaction({transaction,command:{...controlCommand,command_type:'TAKEOVER'}});
+     if(!controlled.ok||!controlled.session)failP2016('CONTROL_CONFLICT',409);
+     conversations.push({session_id:selected.session_id,session_row_version:controlled.session.row_version,control_event_id:controlled.event?.id??null,changed:!controlled.no_op});
+    }catch(error) {
+     if(error instanceof ConversationControlError) {
+      if(error.code==='CONVERSATION_CONTROL_SESSION_VERSION_CONFLICT')failP2016('VERSION_CONFLICT',409);
+      if(error.code==='CONVERSATION_CONTROL_UNAUTHORIZED'||error.code==='CONVERSATION_CONTROL_FORCE_TRANSFER_FORBIDDEN')failP2016('FORBIDDEN',403);
+      if(error.code==='CONVERSATION_CONTROL_STORAGE_FAILED')throw error;
+      failP2016('CONTROL_CONFLICT',409);
+     }
+     throw error;
+    }
+   }
    const updated=await transaction.query<Pick<P2016TicketRow,'id'|'status'|'version'>>(`UPDATE pilot_ticket.ticket SET assignee_id=NULL,status='QUEUED',version=version+1,
      updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND version=$2 RETURNING id::text,status,version`,[ticket.id,command.expected_version]);
    const changed=updated.rows[0];if(!changed)failP2016('VERSION_CONFLICT',409);
@@ -98,7 +130,7 @@ export function createTicketReturnToDispatchService({pool,query,enabled=false,..
      assignmentMetadata:{old_assignee_id:ticket.assignee_id,new_assignee_id:null,old_team_id:ticket.resolver_team_id,new_team_id:ticket.resolver_team_id}})};
    if(cycle)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
    await hooks.realtimeProjector?.({transaction,...result,command});
-   return {ok:true as const,ticket_id:ticket.id,ticket_version:changed.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};
+   return {ok:true as const,ticket_id:ticket.id,ticket_version:changed.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations};
   }});
  }});
 }
