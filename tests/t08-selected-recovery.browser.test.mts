@@ -112,7 +112,8 @@ for(const temporary of [false,true])test(temporary
     assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice]:checked').length"),0);
     // A fresh document after the authorized scoped cleanup uses the new storage epoch; no second business action.
     await reload(browser);await browser.waitFor(`document.querySelector('#internal-note')?.value===${JSON.stringify(otherNote)}&&Boolean(${reasonInput})&&(${reasonInput}).value===''&&(${reasonInput}).disabled===false`);
-    assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy);assert.equal(await browser.evaluate(property('处理责任')),text(beforeResponsibility.ticket_assignee_name));
+    assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy);
+    assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()==='处理责任')?.nextElementSibling?.querySelector('.owner-name')?.textContent?.trim()"),text(beforeResponsibility.ticket_assignee_name));
     assert.deepEqual((await admin.get(path)).value,before);assert.deepEqual((await admin.get(path+'/responsibility')).value,beforeResponsibility);
     assert.deepEqual((await admin.get(path+'/events?limit=200')).value.items,history);assert.deepEqual((await admin.get(path+'/deliveries')).value,delivery);
     assert.equal(requests.filter(row=>row.method==='POST').length,0);
