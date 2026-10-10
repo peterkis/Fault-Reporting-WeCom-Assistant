@@ -136,7 +136,7 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
           fence.requireCurrent();
           if(isUnassignChoiceRevocation(error)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
             // Only the originally observed revision is removed; a newer tab's value is never guessed or deleted.
-            fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked');fence.requireCurrent();
+            fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();
           }
           throw error;
         }
@@ -171,7 +171,7 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
       const copy=await openDraft(scope);fence.requireCurrent();
       if(copy.text===null&&copy.handle.record===null)return true;
       if(copy.text!==serialiseUnassign(expected))return false;
-      fence.requireCurrent();await removeSensitiveDraft(copy.handle,'revoked');fence.requireCurrent();return true;
+      fence.requireCurrent();await removeSensitiveDraft(copy.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();return true;
     },
   };
 }

@@ -6,6 +6,12 @@ import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 import type {T08Fixture} from './helpers/t08-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
+import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
+import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
+import {createSafeActionExecutor,createExistingTicketCommandPort} from '../src/p2-015-safe-action-executor.mjs';
+import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
+import {createDecisionStore} from '../src/p2-015-decision-store.mjs';
+import {createServiceIntakeDecisionPort} from '../src/p2-015-service-intake-decision-port.mjs';
 
 const command=(target:string,sessions:{session_id:string;expected_row_version:number}[])=>({client_command_id:randomUUID(),expected_version:2,
  reason_code:'WORKBENCH_UNASSIGN',reason:'原处理未开始，明确原子交接所选沟通。',communication_choice:'TRANSFER_SELECTED',communication_target_principal_id:target,sessions});
@@ -39,6 +45,15 @@ test('unassign Ticket READ does not substitute for exact canonical Session membe
 test('failure on the second explicitly selected real Journey Session rolls back the first Control write and all Ticket facts',async()=>{
  await withT08Fixture(async fixture=>{
   const admin=await fixture.http(0),ticket=await fixture.createTicket(),path='/api/tickets/'+ticket;await accept(fixture,ticket);await drain(fixture);
+  const original=(await admin.get(path)).value,core=createPilotTicketCore({pool:fixture.pool});
+  // This minimal fixture deliberately has no background Orchestration worker. Establish the origin
+  // through its existing real Port, exactly as the production source flow does; no SQL relation writes.
+  const orchestrator=createRuleFirstOrchestrator({pool:fixture.pool,identityHmacKey:'t08-only-synthetic-origin-key',decisionStore:createDecisionStore(),
+   safeActionExecutor:createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),ticketCommandPort:createExistingTicketCommandPort({ticketCore:core}),manualReviewStore:createManualReviewStore(),decisionStore:createDecisionStore()}),
+   ruleEngine:{catalog_version:'T08_FIXTURE',rule_set_version:'T08_FIXTURE',evaluate(){throw Error('synthetic origin requests human review');}}});
+  const prepared=object(await orchestrator.processPersistedIntake({service_intake_id:text(original.intake_id),feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}}));
+  assert.equal(prepared.ok,true);assert.equal(prepared.model_provider_calls,0);assert.equal(prepared.sender_calls,0);await drain(fixture);
+  assert.equal((await admin.get(path)).value.version,2);assert.equal((await admin.get(path)).value.assignee_id,fixture.handler);
   const leg=(await fixture.pool.query<{journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}>(`SELECT l.journey_id::text,l.reporter_identity_hash,l.provider_context_hash,l.channel_identity_hash
    FROM intake.channel_leg l JOIN pilot_ticket.ticket t ON t.source_intake_id=l.source_intake_id WHERE t.id=$1::uuid`,[ticket])).rows[0];assert.ok(leg);
   const continuations=[];for(let n=0;n<2;n++)continuations.push(object(await seedPersistedIntake({pool:fixture.pool,text:'T08 real rollback continuation '+n,requestType:'INCIDENT',status:'RECEIVED'})));await drain(fixture);

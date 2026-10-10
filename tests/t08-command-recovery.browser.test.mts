@@ -63,7 +63,7 @@ for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery
     // Existing original IDB seam: a real cleanup failure cannot relabel a read COMMITTED receipt as UNKNOWN.
     await browser.evaluate("(()=>{globalThis.__t08Delete=IDBObjectStore.prototype.delete;IDBObjectStore.prototype.delete=function(...args){if(this.name==='operations')throw new DOMException('T08_SETTLEMENT_FAILURE','UnknownError');return globalThis.__t08Delete.apply(this,args);};})()");
     await browser.evaluate("document.querySelector('[data-action=check-unassign-command]').click()");
-    await browser.waitFor(`(${root})?.innerText.includes('终态已读到')&&(${root})?.innerText.includes('清理尚未确认')`);
+    await browser.waitFor(`(${root})?.innerText.includes('原操作已核对为提交')&&(${root})?.innerText.includes('清理尚未确认')`);
     assert.equal(await browser.evaluate(`(${root})?.innerText.includes('结果未知')`),false);assert.deepEqual(object(await browser.evaluate(copies)).operations,[operation]);
     assert.equal(requests.filter(row=>row.method==='POST').length,1);await browser.evaluate('IDBObjectStore.prototype.delete=globalThis.__t08Delete');
    }

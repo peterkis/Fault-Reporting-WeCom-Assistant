@@ -139,9 +139,13 @@ export async function refreshEmptyDraft(handle:DraftHandle):Promise<void>{
   if(handle.record!==null||handle.operation!==null||handle.epoch!==previousEpoch)throw new DraftError('DRAFT_CHANGED');
   handle.epoch=epoch;
 }
-export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired'):Promise<void>{
+export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired',options:{requireMatchingRevision?:boolean}={}):Promise<void>{
   const key=draftScopeKey(handle.scope),revision=handle.record?.revision;
-  const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
+  const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);
+    // A revision-scoped caller must not broadcast old authority loss over a newer tab's row.
+    // Existing expiry/discard callers retain their original default policy.
+    if(options.requireMatchingRevision&&(!current||current.revision!==revision))throw new DraftError('DRAFT_CHANGED');
+    if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
   handle.record=null;handle.epoch=next.epoch;handle.operation=next.operation;
   publish({...handle.scope,reason});
 }
