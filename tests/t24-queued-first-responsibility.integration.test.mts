@@ -23,7 +23,7 @@ test('a real T06 queued assignment creates exactly one durable FIRST intent for 
     assert.equal(handler.principal_id,target.id);assert.ok(Array.isArray(handler.roles)&&handler.roles.includes('HANDLER'));
     assert.equal(bootstrap.ticket_assignment_enabled,true);assert.equal(bootstrap.ticket_round_notifications_enabled,true);
     assert.equal(typeof bootstrap.csrf_token,'string');assert.equal(typeof bootstrap.csrf_token==='string'&&bootstrap.csrf_token.length>=16,true);
-    const before=await get(path);assert.equal(before.status,'NEW');assert.equal(before.assignee_id,null);
+    const before=await get(path);assert.equal(before.status,'QUEUED');assert.equal(before.assignee_id,null);
     assert.ok(Array.isArray(before.allowed_actions)&&before.allowed_actions.includes('assign'));
     assert.equal(typeof before.version,'number');assert.ok(typeof before.version==='number'&&Number.isInteger(before.version)&&before.version>=1);
     assert.ok(before.handling_cycle===null||before.handling_cycle===undefined||object(before.handling_cycle).first_responsibility_event_id===null);
