@@ -40,7 +40,7 @@ test('failure on the second explicitly selected real Journey Session rolls back 
  await withT08Fixture(async fixture=>{
   const admin=await fixture.http(0),ticket=await fixture.createTicket(),path='/api/tickets/'+ticket;await accept(fixture,ticket);await drain(fixture);
   const leg=(await fixture.pool.query<{journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}>(`SELECT l.journey_id::text,l.reporter_identity_hash,l.provider_context_hash,l.channel_identity_hash
-   FROM intake.channel_leg l JOIN pilot_ticket.ticket t ON t.intake_id=l.source_intake_id WHERE t.id=$1::uuid`,[ticket])).rows[0];assert.ok(leg);
+   FROM intake.channel_leg l JOIN pilot_ticket.ticket t ON t.source_intake_id=l.source_intake_id WHERE t.id=$1::uuid`,[ticket])).rows[0];assert.ok(leg);
   const continuations=[];for(let n=0;n<2;n++)continuations.push(object(await seedPersistedIntake({pool:fixture.pool,text:'T08 real rollback continuation '+n,requestType:'INCIDENT',status:'RECEIVED'})));await drain(fixture);
   const selected:{session_id:string;expected_row_version:number}[]=[];
   for(const intake of continuations){const session=(await fixture.pool.query<{id:string;thread_id:string;row_version:string}>('SELECT id::text,thread_id::text,row_version::text FROM conversation.session WHERE service_intake_id=$1::uuid',[intake.intakeId])).rows[0];assert.ok(session);

@@ -24,7 +24,7 @@ ALTER TABLE pilot_ticket.ticket_event ADD CONSTRAINT p2016_assignment_metadata_c
         AND jsonb_typeof(assignment_metadata->'old_team_id')='string'
         AND assignment_metadata->>'old_team_id' ~ '^[A-Z][A-Z0-9_]{0,63}$'
         AND assignment_metadata->'old_team_id'=assignment_metadata->'new_team_id'
-        AND old_status IN ('QUEUED','ACCEPTED') AND new_status='QUEUED'
+        AND old_status IS NOT NULL AND old_status IN ('QUEUED','ACCEPTED') AND new_status='QUEUED'
         AND operator_type='PILOT_USER' AND operator_id IS NOT NULL
         AND internal_note IS NOT NULL AND char_length(internal_note) BETWEEN 1 AND 2000 AND btrim(internal_note)<>''
         AND external_note IS NULL AND reason_code IS NOT NULL
