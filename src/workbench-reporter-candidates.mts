@@ -68,10 +68,10 @@ export function createWorkbenchReporterCandidates({enabled=false,directory=null}
         try{raw=await Promise.race([settled,deadline]);}
         catch(error){
           if(error instanceof WorkbenchError&&P2016_ERROR_CODES.includes(error.code)&&[400,403,409,503].includes(error.status))throw error;
-          failP2016('ACTION_FAILED',503);
+          throw failP2016('ACTION_FAILED',503);
         }
         try{const result=decode(raw);if(Date.now()-started>=DEADLINE_MS)failP2016();return result;}
-        catch(error){if(error instanceof WorkbenchError&&[403,409,503].includes(error.status))throw error;failP2016('ACTION_FAILED',503);}
+        catch(error){if(error instanceof WorkbenchError&&[403,409,503].includes(error.status))throw error;throw failP2016('ACTION_FAILED',503);}
       }finally{if(timer!==undefined)clearTimeout(timer);}
   }
   function configuration(){

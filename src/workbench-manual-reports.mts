@@ -203,7 +203,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
           reporterCandidates.fence(context.principal.principal_id,verifiedCommand.reporter,checked.verification,checked.target);}
         return context;
       },run:(tx,{principal})=>{
-        if(checked&&checked.verification.purpose!=='ADMISSION')failP2016('ACTION_FAILED',503);
+        if(checked&&checked.verification.purpose!=='ADMISSION')throw failP2016('ACTION_FAILED',503);
         return admit(tx,principal,command,checked?.verification??null);
       }});
       if(verifiedCommand&&result.ok===true&&result.replayed){
