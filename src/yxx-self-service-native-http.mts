@@ -237,6 +237,26 @@ export function createYxxSelfServiceNativeHttp({
     response.writeHead(200, { ...HEADERS, 'content-type': `${item[1]}; charset=utf-8` }); response.end(content);
   }
 
+  // Serve only the compiled T03 journal entry and its manifest-declared JS
+  // imports. This is static code; member authority remains in the own-detail API.
+  async function recoveryAsset(url:URL,response:ServerResponse) {
+    const root=new URL('../web/admin-workbench/',import.meta.url);
+    const value:unknown=JSON.parse(await readFile(new URL('.vite/manifest.json',root),'utf8'));
+    if(!value||typeof value!=='object'||Array.isArray(value))throw error('YXX_UNAVAILABLE',503);
+    const manifest=value as Record<string,unknown>,files=new Set<string>(),visited=new Set<string>();
+    function entry(name:string):string{
+      const raw=manifest[name];if(!raw||typeof raw!=='object'||Array.isArray(raw))throw error('YXX_UNAVAILABLE',503);
+      const item=raw as Record<string,unknown>;if(typeof item.file!=='string'||!/^assets\/[A-Za-z0-9_-]+\.js$/u.test(item.file))throw error('YXX_UNAVAILABLE',503);
+      files.add(item.file);if(visited.has(name))return item.file;visited.add(name);if(visited.size>32)throw error('YXX_UNAVAILABLE',503);
+      if(item.imports!==undefined){if(!Array.isArray(item.imports)||item.imports.length>32)throw error('YXX_UNAVAILABLE',503);for(const child of item.imports){if(typeof child!=='string')throw error('YXX_UNAVAILABLE',503);entry(child);}}
+      return item.file;
+    }
+    const main=entry('src/feedback-recovery.ts');
+    if(url.pathname===ROOT+'feedback-recovery.js'){response.writeHead(302,{...HEADERS,location:ROOT+'recovery/'+main});response.end();return;}
+    const file=url.pathname.slice((ROOT+'recovery/').length);if(!files.has(file))throw error('YXX_NOT_FOUND',404);
+    const content=await readFile(new URL(file,root));response.writeHead(200,{...HEADERS,'content-type':'text/javascript; charset=utf-8'});response.end(content);
+  }
+
   async function nativePage({ request, response, requestRef }:{request:IncomingMessage;response:ServerResponse;requestRef:string|null}) {
     if (!readEnabled) { page(response, 503, '医小修服务未启用', '当前仅保留原有认证提示。'); return true; }
     try {
@@ -275,6 +295,10 @@ export function createYxxSelfServiceNativeHttp({
       if (ASSETS[url.pathname]) {
         if (request.method !== 'GET' || url.search) throw error('YXX_NOT_FOUND', 404);
         await asset(response, ASSETS[url.pathname] as readonly [string,string]); return true;
+      }
+      if(url.pathname===ROOT+'feedback-recovery.js'||url.pathname.startsWith(ROOT+'recovery/')){
+        if(request.method!=='GET'||url.search)throw error('YXX_NOT_FOUND',404);
+        await recoveryAsset(url,response);return true;
       }
       if (request.method === 'GET' && url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });

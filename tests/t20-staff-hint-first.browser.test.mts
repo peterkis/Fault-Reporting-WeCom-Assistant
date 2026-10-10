@@ -23,7 +23,9 @@ test('production PC reminds its currently authorized previous HANDLER after a ge
    await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已关闭')");
    const posted=await http.post(ticketId,'reopen',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'STAFF_REOPEN',note:'上轮人员核实仍需重新承接'});assert.equal(posted.status,200);
    const fresh=t20Object(await (await http.get('/api/tickets/'+ticketId)).json());assert.deepEqual(fresh.reopen_follow_up,{origin:'STAFF',is_previous_handler:true,awaiting_acceptance:true});assert.equal(fresh.assignee_id,null);assert.equal(fresh.resolver_team_id,closed.resolver_team_id);
-   await tab.waitFor("document.querySelector('.properties')?.textContent.includes('重新')");
+   // Realtime is intentionally off: a public reload rereads current detail rather than waiting for an unsolicited refresh.
+   const previous=await tab.evaluate('performance.timeOrigin');await tab.command('Page.enable');await tab.command('Page.reload');await tab.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
+   await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('重新')");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-reopen-follow-up]'))"),true,'current authorized previous-handler fact must be consumed by the production PC');
    assert.equal(await tab.evaluate("document.querySelector('[data-reopen-follow-up]')?.textContent.includes('上轮由您处理')&&document.querySelector('[data-reopen-follow-up]')?.textContent.includes('等待重新承接')"),true);
    const after=await http.detail(ticketId);assert.equal(after.version,closed.version+1);assert.equal(after.assignee_id,null);assert.equal(after.resolver_team_id,closed.resolver_team_id);
