@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | `GET /api/incident-candidates` | state?、cursor?、limit 默认30/最大100 | `{items:[CandidateReview],next_cursor}`，范围授权 |
 | `GET /api/incident-candidates/{candidateId}` | 无必需 query | CandidateDetail；ETag=`"<row_version>"` |
+| `GET /api/incident-candidates/{candidateId}/commands/{commandId}` | 不接受 query | 当前 principal/candidate 的只读安全回执；额外要求宿主 `incidentCandidateWorkspaceEnabled=true`，默认关闭 |
 | `GET /api/incidents` | state?、cursor?、limit 默认30/最大100 | `{items:[IncidentPublicView],next_cursor}` |
 | `GET /api/incidents/{incidentId}` | 无必需 query | IncidentDetail；ETag；按角色裁剪 |
 | `GET /api/incidents/{incidentId}/events` | cursor?、limit 默认30/最大200 | `{items,next_cursor}`；窄权限仅公开事件类型 |
@@ -23,6 +24,14 @@
 state 候选：`CANDIDATE|UNDER_REVIEW|CONFIRMED|REJECTED|EXPIRED`；Incident：`CONFIRMED_LOCAL|CONFIRMED_BUILDING|CONFIRMED_CAMPUS|CONFIRMED_HOSPITAL_WIDE|INVESTIGATING|RESOLVED|CLOSED`；Incident 聚合过滤 `ACTIVE|FINISHED`。游标绑定 kind/state 或 incident/part。ETag 是版本提示，这些内部 detail 不支持 If-None-Match/304。
 
 Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candidate_review.schema.json)；Detail 增加 `source_decision,manual_review,report_sources[],eligible_owners[],roles[]`。source_decision 是 code/版本/hash/安全 refs，非原始消息。IncidentPublicView 为 `id,incident_no,status,confirmed_scope,service_family,symptom_family,severity,safe_title,row_version,confirmed_at,investigating_at,resolved_at,closed_at,created_at,updated_at`。Detail 对广域角色再含 `owner_principal_id,owner_team_id,primary_ticket_id,owner_display_name,primary_ticket_no`，所有角色含 roles。
+
+候选详情还返回当前 `allowed_actions,allowed_scopes,material_basis,materials[]`，以及 `visible_report_source_count,report_sources_truncated,eligible_owners_truncated`。Report 选项最多100、owner最多100、各 owner 有效组最多20并分别标记裁剪；获权来源总数由完整冻结 refs 的范围查询计数，不以返回页面长度代替。owner 和组取当前有效内部事实，确认事务再次锁定并校验。HANDLER 无决定动作/范围/owner，材料依据为 null，全局来源人数/科室/位置、窗口、内部事实 refs 与确认结果 ID 按权限裁剪。来源观察与确认后关联数量有不同语义。
+
+`materials` 最多101项（独立根 Decision 加最多100个 Report 引用），不扩大报修选择或来源选项上限。它保留原 Decision 的 revision/hash，并比较同 Intake 的实际 BOT 消息窗口或 WEB revision/保留 submissions；不使用整个 Journey 的无关 revision。材料变化或过期禁止确认，原 Decision/hash 保持不可变。WEB 当前 hash 仅在原 <=50 窗口及材料仍保留时提供；旧032 BOT profile 不访问033 Web表。当前 extent 沿既有权限：ADMIN全部，DISPATCHER默认LOCAL/BUILDING，只有独立显式政策才允许CAMPUS；不增加角色。
+
+Web 安全来源引用为真实生产者供应的 `web:<web_submission UUID>`，不是 request_ref、Intake 或 Reporter 标识。Query 只在原根为 WEB 且材料仍保留时，按当前根读取权限、同 Intake/binding/Journey、原捕获窗口和实际 submission 保留期限核对原供应引用；不会猜测或补造来源。原 decimal channel/intake 投影、Decision/hash/material basis 保持，BOT/032 profile 不执行这项 Web SQL。
+
+只读回执的当前候选读取及 ADMIN/DISPATCHER 决定用途权限先于 ledger 查询。查询限定 `P2_012:<current principal>`、actor、候选 ID 和开始/拒绝/确认三种动作；无记录或未终态返回 `UNKNOWN`，稳定失败返回 `FAILED` 及白名单 `error:{code,retryable:false}`，已提交返回 `COMMITTED` 及六字段 `result`（`replayed:true`）。共同字段为 `candidate_review_id,client_command_id,state`，各状态均封闭，见 [receipt schema](../../../contracts/p2_012_candidate_command_receipt.schema.json)。已提交 Incident 再独立核对当前 resource 读取权限，不返回命令正文、hash、身份材料或由表单推测的 owner。候选/草稿过期不证明原操作失败；获权的原 UUID 可继续只读核对，不能据此自动创建新意图。回执关闭不改变已有事实或旧 Incident API。
 
 子查询主要字段：
 
@@ -39,11 +48,13 @@ Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candid
 
 共同 body：`client_command_id:UUID,reason_code,expected_row_version:string`。确认候选改用 `expected_candidate_version:string`。Header 幂等、CSRF/Origin，If-Match **精确**为 `"<expected_candidate_version ?? expected_row_version>"`，此模块不接受 W/ 前缀或裸版本。
 
+Cookie 会话续期后，命令须使用同一 principal 当前授权核对返回的 CSRF；授权更新不改变原用户意图的 UUID、正文或捕获版本。服务端继续按实际 Cookie 验证 CSRF。正式候选表单复用同一主体当前 bootstrap 的 CSRF；原 captured UUID、正文及版本不变。对应真实续期 HTTP/production bundle 单例与当前隔离验证见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)。
+
 | METHOD + PATH | 额外必需字段 / 可选字段 |
 | --- | --- |
 | `POST /api/incident-candidates/{candidateId}/start-review` | 无 |
 | `POST /api/incident-candidates/{candidateId}/reject` | 无 |
-| `POST /api/incident-candidates/{candidateId}/confirm` | expected_candidate_version、confirmed_scope、owner_principal_id、selected_report_refs[]；owner_team_id?、primary_ticket_id? |
+| `POST /api/incident-candidates/{candidateId}/confirm` | expected_candidate_version、confirmed_scope、owner_principal_id、selected_report_refs[]；expected_material_basis?、owner_team_id?、primary_ticket_id? |
 | `POST /api/incidents/{incidentId}/start-investigating` | 无 |
 | `POST /api/incidents/{incidentId}/correct-scope` | confirmed_scope |
 | `POST /api/incidents/{incidentId}/primary-ticket` | primary_ticket_id:UUID或null |
@@ -56,6 +67,8 @@ Candidate 基础字段详见 [candidate schema](../../../contracts/p2_012_candid
 | `POST /api/incidents/{incidentId}/close` | 无 |
 
 ID 从路径注入命令，不允许 body 覆盖 `action,incident_id,candidate_review_id,incident_report_id,subscription_id`。`EXPIRE_CANDIDATE` 是服务内部动作，没有 HTTP `/expire`；不存在自由 publish-update 路由。
+
+`expected_material_basis` 如提供必须为64位小写 SHA-256，并在既有确认事务中与当前完整材料依据核对；合法但不匹配返回409 `P2_012_SOURCE_CONFLICT`。省略字段的旧 body/hash/行为保持。父版本始终是精确十进制 string（含超过2^53的版本），If-Match必须原样双引号包围；不得转为 Number、weak tag 或 bare value。当前权威确认只创建独立 Incident 和明确选择的 Reports，不合并/关闭个人 Ticket，也不代表通知已发送。
 
 confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN 权限控制。reason_code=`OPERATOR_REVIEWED|CONFIRMED_SHARED_FAULT|INCORRECT_ASSOCIATION|RECOVERY_CONFIRMED|SUBSCRIPTION_REQUEST|SCOPE_CORRECTION|MAINTENANCE_EXPIRED|WORKBENCH_CONFIRMED`。
 
@@ -72,3 +85,18 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 ```
 
 核对测试：[workbench integration](../../../tests/p2-012-workbench.integration.test.mjs)、[process assembly](../../../tests/p2-012-process-assembly.integration.test.mjs)、[subscription HTTP/browser](../../../tests/p2-g2-subscription-http-browser.integration.test.mjs)。[长期背景](../../62_p2_012_human_confirmed_incident_lifecycle.md)。本轮未启用 Incident 或外发。
+
+
+## 正式候选工作区与恢复（WBINT-T27）
+
+正式页面为 `/workbench/app/incidents/candidates`、`/workbench/app/incidents/candidates/{UUID}` 和 `/workbench/app/incidents/{UUID}`。新页面只接受规范 UUID；旧管理端与既有 Incident API 保留原 profile。宿主 `incidentCandidateWorkspaceEnabled` 默认 false，并依赖既有 Incident 扩展；关闭时不发候选领域读取或创建恢复库。恢复还须独立 `workbenchDraftRecoveryEnabled`，bootstrap 的 `incident_candidate_draft_recovery_enabled` 为两项能力的交集，内部备注或退出功能不是其前提。无数据库迁移或第二套 Ticket 事实源。
+
+列表每页30、最多保留最近三页，显示的是当前加载数量。来源观察、当前获权 Report 总数、已提供选项、人工选择的 Report 数及涉及的独立个人 Ticket 数分别表达；不能把页面长度作为全量关联或影响人数。确认须明确选择当前合法范围、有效负责人及有效组或无组、逐项 Report 引用和主工单或无主工单。`owner_team_id:null` 表示无组，合法真实组编码 `NONE` 仍是字符串；非空主 Ticket 必须来自明确选择的来源。确认只创建独立 Incident/关联 Report，不合并或关闭个人 Ticket，不表示通知已发送。结果再通过当前获权 Incident GET 阅读，不能从保存的表单推测负责人或内部投影。
+
+刷新及既有单条 SSE 的 `incident_candidate.created`、`incident_candidate.updated`、`incident.updated` 更新当前事实，不改捕获版本、材料依据、UUID、正文或已有选择。材料变化/过期、父版本失配、当前范围或 owner/team 失效必须重新核对；采用当前依据需要工作人员明确操作。未提交输入或 UNKNOWN 会阻止意外离开；明确清除消费既有跨标签页失效，不能清理失败却声称输入已清除。
+
+恢复 scope 是当前 principal / `incident-candidate` / 候选 UUID / `incident-review`。复用既有 AES-GCM 非导出密钥、首次保存固定24小时、UTF-8 16KiB和各最多20份草稿与20个未结操作标记上限。原操作意图在 POST 前持久化。传输不确定保持 UNKNOWN；重载不自动发送或生成新 UUID，先只读核对原回执。只有仍有完整未过期正文、且只读核对仍 UNKNOWN 时，才能明确重放原 UUID、原版本与原正文。过期或显式丢弃只清除敏感正文，保留 opaque 原 UUID用于只读核对；不据此创建新意图。当前用途/对象/会话失权按既有 revoked 规则清除本地副本与操作标记；原服务端回执事实不变且读取继续按当前权限检查。
+
+直接成功 ACK、明确稳定 FAILED，以及 COMMITTED/FAILED 回执均结算恢复记录。浏览器清理失败不能把已知结果变成 UNKNOWN；保留已知结果与原 UUID，禁止新提交，只能只读核对及重试清理。当前授权 epoch 和原请求撤销状态共同阻止迟到读取、恢复授权及错误回调恢复已清理的缓存、输入或 UNKNOWN。权限变化后仍需当前 bootstrap 和当前资源读取，旧 ADMIN 响应不能复活受保护投影。
+
+资源复用原 App/Worker/Gateway和单条 SSE（默认32客户端），应用池预算不超过8；确认 body沿原32KiB、Report100/owner100/各组20及材料101上限。关闭新宿主能力停止入口、恢复与专用回执，已提交事实及旧 API 保留；外发开关与独立现场授权保持原边界。当前隔离 PostgreSQL、真实 loopback HTTP、production bundle 与清理证据见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)，不等同于真实外部服务、发送、部署、full/certify或Gate批准。
