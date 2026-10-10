@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_candidate_command_receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_review_id": {"type": "string", "format": "uuid"},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "state": {"enum": ["UNKNOWN", "FAILED", "COMMITTED"]},
+    "error": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "code": {"type": "string", "enum": ["P2_012_COMMAND_CONFLICT", "P2_012_COMMAND_FAILED", "P2_012_CURSOR_INVALID", "P2_012_DIRECT_DESTINATION_REQUIRED", "P2_012_DISABLED", "P2_012_EXPIRY_CONFLICT", "P2_012_FLAG_INVALID", "P2_012_FORBIDDEN", "P2_012_INPUT_INVALID", "P2_012_LIMIT_INVALID", "P2_012_LIVE_APPROVAL_REQUIRED", "P2_012_NOTIFICATION_EVENT_INVALID", "P2_012_NOTIFICATION_FAILED", "P2_012_NOT_FOUND", "P2_012_OWNER_INVALID", "P2_012_PRIMARY_NOT_LINKED", "P2_012_PRIMARY_STILL_LINKED", "P2_012_REPORT_ALREADY_LINKED", "P2_012_SOURCE_CONFLICT", "P2_012_SOURCE_EVIDENCE_INCOMPLETE", "P2_012_SOURCE_NOT_FOUND", "P2_012_STATE_CONFLICT", "P2_012_TICKET_ALREADY_LINKED", "P2_012_VERSION_CONFLICT"]},
+        "retryable": {"const": false}
+      }, "required": ["code", "retryable"]
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "ok": {"const": true},
+        "result_ref_type": {"enum": ["CANDIDATE", "INCIDENT"]},
+        "result_ref_id": {"type": "string", "format": "uuid"},
+        "result_row_version": {"type": "string", "pattern": "^[1-9][0-9]{0,18}$"},
+        "result_event_id": {"type": "string", "format": "uuid"},
+        "replayed": {"const": true}
+      }, "required": ["ok", "result_ref_type", "result_ref_id", "result_row_version", "result_event_id", "replayed"]
+    }
+  },
+  "required": ["candidate_review_id", "client_command_id", "state"],
+  "oneOf": [
+    {"properties": {"state": {"const": "UNKNOWN"}}, "not": {"anyOf": [{"required": ["error"]}, {"required": ["result"]}]}},
+    {"properties": {"state": {"const": "FAILED"}}, "required": ["error"], "not": {"required": ["result"]}},
+    {"properties": {"state": {"const": "COMMITTED"}}, "required": ["result"], "not": {"required": ["error"]}}
+  ]
+}
