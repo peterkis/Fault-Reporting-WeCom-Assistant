@@ -212,6 +212,7 @@ export interface TicketActionService {
 }
 
 export interface TicketActionServiceOptions {
+  acceptReopenedRound?: boolean;
   reopenClearAssignee?: boolean;
   staffCompletionEnabled?: boolean;
   pool?: PostgresPool;
@@ -516,7 +517,8 @@ export async function appendTicketEvent({
   return publicTicketEvent(row);
 }
 
-export function createTicketActionService({ pool, authorize = null, afterAction = null, staffCompletionEnabled = false, reopenClearAssignee = false }: TicketActionServiceOptions = {}): TicketActionService {
+export function createTicketActionService({ pool, authorize = null, afterAction = null, staffCompletionEnabled = false, reopenClearAssignee = false, acceptReopenedRound = false }: TicketActionServiceOptions = {}): TicketActionService {
+  if(typeof acceptReopenedRound!=='boolean')throw new TypeError('acceptReopenedRound must be boolean.');
   if(typeof reopenClearAssignee!=='boolean')throw new TypeError('reopenClearAssignee must be boolean.');
   if (typeof staffCompletionEnabled !== 'boolean') throw new TypeError('staffCompletionEnabled must be boolean.');
   if (authorize !== null && typeof authorize !== 'function') {
@@ -550,7 +552,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
       throw new TicketActionError('TICKET_VERSION_CONFLICT');
     }
     const transition = ACTIONS[request.action];
-    if (!transition.from.includes(current.status)) {
+    if (!transition.from.includes(current.status)&&!(acceptReopenedRound&&request.action==='accept'&&current.status==='REOPENED'&&current.assignee_id===null)) {
       throw new TicketActionError('INVALID_STATE_TRANSITION');
     }
     if (authorize) {

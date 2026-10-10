@@ -6,6 +6,22 @@ export interface CompletedTicketRound {id:string;ticket_id:string;source_intake_
 export async function reopenRoundsSchemaReady(tx:PostgresTransaction){
  try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='043_ticket_reopen_rounds'")).rowCount===1;}catch{return false;}
 }
+// Only an actual shared reopen basis permits a new round's first explicit acceptance.
+// Legacy REOPENED rows and merely seeded incomplete cycles retain their previous contract.
+export async function unassignedReopenedRound(tx:PostgresTransaction,ticketId:string){
+ if(!await reopenRoundsSchemaReady(tx))return false;
+ const selected=await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
+  JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
+  JOIN pilot_ticket.ticket_cycle_reopen r ON r.new_cycle_id=c.id AND r.ticket_id=t.id AND r.source_intake_id=t.source_intake_id
+  JOIN pilot_ticket.ticket_handling_cycle prior ON prior.id=r.completed_cycle_id AND prior.ticket_id=t.id AND prior.staff_completion_event_id=r.completion_event_id
+  JOIN pilot_ticket.ticket_event e ON e.event_id=r.reopen_event_id AND e.ticket_id=t.id
+  JOIN pilot_ticket.staff_completion_notification_commitment n ON n.cycle_id=prior.id AND n.ticket_id=t.id AND n.ticket_event_id=r.completion_event_id AND n.source_intake_id=t.source_intake_id
+  WHERE t.id=$1::uuid AND t.status='REOPENED' AND t.assignee_id IS NULL
+   AND c.first_responsibility_event_id IS NULL AND c.staff_completion_event_id IS NULL
+   AND c.cycle_no=prior.cycle_no+1 AND c.source_intake_id=t.source_intake_id AND c.cycle_start_event_id=r.reopen_event_id
+   AND e.event_type='ticket.reopened' AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId]);
+ return selected.rowCount===1;
+}
 export async function completedTicketRound(tx:PostgresTransaction,ticketId:string):Promise<CompletedTicketRound|null>{
  const selected=await tx.query<CompletedTicketRound>(`SELECT c.id::text,c.ticket_id::text,c.source_intake_id::text,c.cycle_no,
    c.staff_completion_event_id::text,e.operator_id AS completed_by,t.resolver_team_id,t.ticket_no,t.version,t.status
