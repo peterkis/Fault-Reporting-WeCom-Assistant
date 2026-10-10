@@ -323,11 +323,38 @@
           "display_name": {
             "type": "string",
             "maxLength": 256
+          },
+          "teams": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "team_id": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+                },
+                "display_name": {
+                  "type": "string",
+                  "maxLength": 128
+                }
+              },
+              "required": [
+                "team_id",
+                "display_name"
+              ]
+            }
+          },
+          "teams_truncated": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
-          "display_name"
+          "display_name",
+          "teams",
+          "teams_truncated"
         ]
       }
     },
@@ -476,6 +503,120 @@
           "type": "null"
         }
       ]
+    },
+    "visible_report_source_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "report_sources_truncated": {
+      "type": "boolean"
+    },
+    "allowed_actions": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "START_REVIEW",
+          "REJECT_CANDIDATE",
+          "CONFIRM_INCIDENT"
+        ]
+      }
+    },
+    "allowed_scopes": {
+      "type": "array",
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "LOCAL",
+          "BUILDING",
+          "CAMPUS",
+          "HOSPITAL_WIDE"
+        ]
+      }
+    },
+    "material_basis": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "materials": {
+      "type": "array",
+      "maxItems": 101,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_decision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_kind": {
+            "enum": [
+              "BOT",
+              "WEB"
+            ]
+          },
+          "original_revision": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19
+          },
+          "current_revision": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,18}$",
+                "maxLength": 19
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "original_source_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "current_source_hash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "CURRENT",
+              "CHANGED",
+              "EXPIRED"
+            ]
+          }
+        },
+        "required": [
+          "source_decision_id",
+          "source_kind",
+          "original_revision",
+          "current_revision",
+          "original_source_hash",
+          "current_source_hash",
+          "status"
+        ]
+      }
+    },
+    "eligible_owners_truncated": {
+      "type": "boolean"
     }
   },
   "required": [

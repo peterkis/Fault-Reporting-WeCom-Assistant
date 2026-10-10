@@ -18,7 +18,7 @@ export interface CommunicationDestination { provider: string; channel_account_id
 export type CommunicationSuccess = Readonly<Omit<CommandResult, 'delivery_ids'> & { delivery_ids: readonly string[] }>;
 type PublicFailure = ReturnType<typeof publicError>;
 export type CommunicationResult = CommunicationSuccess | PublicFailure | null;
-interface MessageRow { id: string; created_at: unknown; command_hash?: string }
+interface MessageRow { id: string; created_at: unknown; command_hash?: string; sender_principal_id?:string|null }
 interface IdRow { id: string }
 interface SessionThreadRow { session_id: string; session_status: ConversationSessionStatus; row_version: string | number; thread_id: string; provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; thread_status: string }
 interface SessionContext { ok?: never; session: { id: string; status: ConversationSessionStatus; row_version: number; thread_id: string; control_mode?: ConversationControlMode }; thread: { provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; status: string } }
@@ -26,7 +26,7 @@ export interface CommunicationAuthorizationContext extends SessionContext { tran
 export interface CommunicationServiceOptions {
   pool?: PostgresPool; enabled?: boolean; authorizeCommand?: (context: CommunicationAuthorizationContext) => boolean | Promise<boolean>;
   destinationResolver?: (context: SessionContext & { command: NormalizedCommunicationCommand }) => readonly CommunicationDestination[] | Promise<readonly CommunicationDestination[]>;
-  nowEpochMs?: (() => unknown) | null; now?: () => Date;
+  reporterPrivateReplies?:boolean;nowEpochMs?: (() => unknown) | null; now?: () => Date;
 }
 type StorageError = { code?: unknown; message?: unknown; constraint?: unknown } | null | undefined;
 type LegacyRow = { id: string; outbox_id: string; status: string; channel: string; attempt_count: string | number; last_error_code: string | null; sent_at: unknown };
@@ -368,15 +368,16 @@ function commandResultFromRows(message: MessageRow, outbox: IdRow | null, delive
   });
 }
 
-async function readExistingCommand(transaction: PostgresTransaction, command: NormalizedCommunicationCommand): Promise<CommunicationResult> {
+async function readExistingCommand(transaction: PostgresTransaction, command: NormalizedCommunicationCommand,principalId?:string): Promise<CommunicationResult> {
   const messageResult = await transaction.query<MessageRow>(
-    `SELECT id::text, command_hash, created_at
+    `SELECT id::text, command_hash, created_at,sender_principal_id::text
        FROM communication.message
       WHERE idempotency_scope = $1 AND client_command_id = $2::uuid`,
     [command.idempotency_scope, command.client_command_id],
   );
   if (messageResult.rowCount === 0) return null;
   if (messageResult.rowCount !== 1) fail(COMMUNICATION_ERROR_CODES.storageFailed);
+  if(principalId!==undefined&&messageResult.rows[0]?.sender_principal_id!==principalId)return publicError(COMMUNICATION_ERROR_CODES.commandConflict);
   if ((messageResult.rows[0] as MessageRow).command_hash !== computeCommunicationCommandHash(command)) {
     return publicError(COMMUNICATION_ERROR_CODES.commandConflict);
   }
@@ -459,7 +460,7 @@ async function withTransaction<T>(pool: PostgresPool | undefined, operation: (tr
   }
 }
 
-async function loadSessionAndThread(transaction: PostgresTransaction, command: NormalizedCommunicationCommand): Promise<SessionContext | PublicFailure> {
+async function loadSessionAndThread(transaction: PostgresTransaction, command: NormalizedCommunicationCommand,{checkVersion=true}={}): Promise<SessionContext | PublicFailure> {
   const result = await transaction.query<SessionThreadRow>(
     `SELECT session.id::text AS session_id, session.status AS session_status,
             session.row_version, session.thread_id::text,
@@ -474,11 +475,24 @@ async function loadSessionAndThread(transaction: PostgresTransaction, command: N
   if (result.rowCount !== 1) return publicError(COMMUNICATION_ERROR_CODES.sessionNotFound);
   const row = result.rows[0] as SessionThreadRow;
   if (row.session_status === 'ENDED') return publicError(COMMUNICATION_ERROR_CODES.sessionEnded);
-  if (Number(row.row_version) !== command.expected_row_version) return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
+  if (checkVersion&&Number(row.row_version) !== command.expected_row_version) return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
   return Object.freeze({
     session: Object.freeze({ id: row.session_id, status: row.session_status, row_version: Number(row.row_version), thread_id: row.thread_id }),
     thread: Object.freeze({ provider: row.provider, channel_account_id: row.channel_account_id, chat_type: row.chat_type, external_thread_key: row.external_thread_key, status: row.thread_status }),
   });
+}
+
+async function persistedReporterDestination(transaction:PostgresTransaction,context:SessionContext,command:NormalizedCommunicationCommand):Promise<readonly CommunicationDestination[]>{
+  const found=await transaction.query<{reporter:string}>(`SELECT i.reporter_wecom_userid AS reporter
+    FROM conversation.session s JOIN conversation.thread t ON t.id=s.thread_id
+    JOIN intake.service_intake i ON i.id=s.service_intake_id
+    WHERE s.id=$1::uuid AND i.source_provider='WECOM_AIBOT' AND t.provider=i.source_provider
+      AND t.channel_account_id=i.source_bot_id AND t.chat_type=i.source_chat_type
+      AND s.participant_key=i.reporter_wecom_userid
+      AND t.external_thread_key=CASE WHEN i.source_chat_type='single' THEN i.reporter_wecom_userid ELSE i.source_chat_id END
+      AND i.retention_until>platform.local_now() FOR SHARE OF i`,[command.session_id]);
+  if(found.rowCount!==1)fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
+  return [Object.freeze({provider:context.thread.provider,channel_account_id:context.thread.channel_account_id,target_type:'PERSON',target_id:requiredString(found.rows[0]?.reporter,256)})];
 }
 
 function mapStorageError(error: unknown) {
@@ -493,10 +507,11 @@ export function createCommunicationService({
   enabled = false,
   authorizeCommand = async () => false,
   destinationResolver = resolveCommunicationDestination,
+  reporterPrivateReplies=false,
   nowEpochMs = null,
   now = () => new Date(),
 }: CommunicationServiceOptions = {}) {
-  if (typeof enabled !== 'boolean' || typeof authorizeCommand !== 'function' || typeof destinationResolver !== 'function'
+  if (typeof enabled !== 'boolean' || typeof reporterPrivateReplies!=='boolean'||typeof authorizeCommand !== 'function' || typeof destinationResolver !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') throw new TypeError('Communication service configuration is invalid.');
 
   async function guarded<T>(operation: () => Promise<T>): Promise<T | PublicFailure> {
@@ -530,10 +545,19 @@ export function createCommunicationService({
       if (!['HUMAN_REPLY', 'AI_REPLY'].includes(normalized.purpose) || normalized.visibility !== 'EXTERNAL') fail();
       if (MEDIA_TYPES.has(normalized.message_type) || normalized.attachment_ids.length > 0) return publicError(COMMUNICATION_ERROR_CODES.mediaNotAuthorized);
       return withTransaction(pool, async (transaction) => {
-        const context = await loadSessionAndThread(transaction, normalized);
+        const context = await loadSessionAndThread(transaction, normalized,{checkVersion:!reporterPrivateReplies});
         if (context.ok === false) return context;
         if (await authorizeCommand({ transaction, command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
-        const resolved = await destinationResolver({ command: normalized, ...context });
+        if(reporterPrivateReplies){
+          const existing=await readExistingCommand(transaction,normalized,requiredUuid(actor.principal_id));if(existing!==null)return existing;
+          if(context.session.row_version!==normalized.expected_row_version)return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
+          if(normalized.reply_to_item_id!==null){
+            const quote=await transaction.query(`SELECT id FROM conversation.item WHERE id=$1::uuid AND session_id=$2::uuid
+              AND visibility='EXTERNAL' AND retention_until>platform.local_now()`,[normalized.reply_to_item_id,normalized.session_id]);
+            if(quote.rowCount!==1)fail();
+          }
+        }
+        const resolved = reporterPrivateReplies&&normalized.purpose==='HUMAN_REPLY'?await persistedReporterDestination(transaction,context,normalized):await destinationResolver({ command: normalized, ...context });
         return appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: resolved });
       });
     });
@@ -546,9 +570,13 @@ export function createCommunicationService({
       const normalized = normalizeCommunicationCommand(withOverrides(command, { sender_kind: senderKind, purpose: 'INTERNAL_NOTE', message_type: 'text', visibility: 'INTERNAL' }));
       validateRetentionBoundary(normalized);
       return withTransaction(pool, async (transaction) => {
-        const context = await loadSessionAndThread(transaction, normalized);
+        const context = await loadSessionAndThread(transaction, normalized,{checkVersion:!reporterPrivateReplies});
         if (context.ok === false) return context;
         if (await authorizeCommand({ transaction, command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+        if(reporterPrivateReplies){
+          const existing=await readExistingCommand(transaction,normalized,requiredUuid(actor.principal_id));if(existing!==null)return existing;
+          if(context.session.row_version!==normalized.expected_row_version)return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
+        }
         return appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: [] });
       });
     });

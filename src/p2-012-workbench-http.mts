@@ -7,12 +7,18 @@ import { guard,fail,p2012HttpStatusForCommandResult } from './p2-012-domain-cont
 const ROUTES=Object.freeze({'start-review':'START_REVIEW',reject:'REJECT_CANDIDATE',confirm:'CONFIRM_INCIDENT',
   'start-investigating':'START_INVESTIGATING','correct-scope':'CORRECT_SCOPE','primary-ticket':'SET_PRIMARY_TICKET',
   'reports/link':'LINK_REPORT',resolve:'RESOLVE_INCIDENT',close:'CLOSE_INCIDENT'});
-export function createP2012WorkbenchHttp({query,commands,enabled=false}: { query: P2012IncidentQuery; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean }){
+export function createP2012WorkbenchHttp({query,commands,enabled=false,candidateWorkspaceEnabled=false}: { query: P2012IncidentQuery; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean;candidateWorkspaceEnabled?:boolean }){
   return (async({request,response,url,authContext,readJson,validateWriteRequest,json}: Parameters<G1AuthenticatedExtension>[0])=>{
     if(!/^\/api\/(incident-candidates|incidents)(?:\/|$)/u.test(url.pathname))return false;guard(enabled);
     const candidate=url.pathname.startsWith('/api/incident-candidates'),root=candidate?'/api/incident-candidates':'/api/incidents',kind=candidate?'candidate':'incident';
     const suffix=url.pathname.slice(root.length),match=/^\/([a-f0-9-]{36})(?:\/(.*))?$/iu.exec(suffix);
     if(request.method==='GET'){
+      const receipt=candidate&&match?/^commands\/([a-f0-9-]{36})$/iu.exec(match[2]??''):null;
+      if(receipt&&match){
+        if(!candidateWorkspaceEnabled)fail('NOT_FOUND',404);
+        if(url.search)fail();
+        json(response,200,await query.candidateCommandReceipt({authContext,id:match[1] as string,commandId:receipt[1] as string}));return true;
+      }
       if([...url.searchParams.keys()].some(k=>!['state','cursor','limit'].includes(k)))fail();
       let result: { row_version?: unknown } & Record<string, unknown>;
       if(!suffix)result=await query.list({authContext,kind,state:url.searchParams.get('state'),after:url.searchParams.get('cursor'),pageLimit:url.searchParams.get('limit')});

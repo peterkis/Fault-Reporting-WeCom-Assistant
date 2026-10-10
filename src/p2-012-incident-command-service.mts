@@ -21,10 +21,11 @@ type Options = { pool: PostgresPool; enabled?: boolean; query?: P2012IncidentQue
 export type P2012IncidentCommandService = ReturnType<typeof createP2012IncidentCommandService>;
 import { randomUUID } from 'node:crypto';
 import { createP2012IncidentQuery,broad } from './p2-012-incident-query.mjs';
-import { normalizeCommand,guard,hash,frozen,fail,transaction,ERROR_CODES } from './p2-012-domain-contracts.mjs';
+import { normalizeCommand,guard,hash,frozen,fail,transaction,ERROR_CODES,allowedIncidentScopes } from './p2-012-domain-contracts.mjs';
+import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 
-export function createP2012IncidentCommandService({pool,enabled=false,query=createP2012IncidentQuery({pool,enabled}),
-  notifications=null,realtime=null,allowDispatcherCampus=false,maintenanceEnabled=false}: Options){
+export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus}),
+  notifications=null,realtime=null,maintenanceEnabled=false}: Options){
   async function authorize(tx: PostgresTransaction,authContext: unknown,c: NormalizedIncidentCommand,system: boolean): Promise<Authority>{
     const kind=c.candidate_review_id?'candidate':'incident';
     if(system){if(c.action!=='EXPIRE_CANDIDATE'||!maintenanceEnabled)fail('FORBIDDEN',403);
@@ -34,8 +35,7 @@ export function createP2012IncidentCommandService({pool,enabled=false,query=crea
     const ctx=await query.resource({authContext,id:((c.candidate_review_id??c.incident_id) as string),kind,tx});const p=ctx.principal;
     if(!broad(p)&&c.action!=='MARK_REPORTER_RECOVERED')fail('FORBIDDEN',403);
     if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(c.action)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
-    if(c.confirmed_scope==='HOSPITAL_WIDE'&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
-    if(c.confirmed_scope==='CAMPUS'&&!p.roles.includes('ADMIN')&&!allowDispatcherCampus)fail('FORBIDDEN',403);
+    if(c.confirmed_scope!==undefined&&!allowedIncidentScopes(p.roles,allowDispatcherCampus).includes(c.confirmed_scope))fail('FORBIDDEN',403);
     if(c.incident_report_id){
       const r=await tx.query(`SELECT r.ticket_id,t.assignee_id FROM incident.incident_report r LEFT JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
         WHERE r.id=$1::uuid AND r.incident_id=$2::uuid`,[c.incident_report_id,c.incident_id]);
@@ -113,10 +113,18 @@ export function createP2012IncidentCommandService({pool,enabled=false,query=crea
         if(d.result_hash!==row.source_result_hash)fail('SOURCE_CONFLICT',409);
         const allowedRefs=d.safe_result.incident_report_decision_ids??[(row.source_decision_id as string)];
         if(c.selected_report_refs.some(id=>!allowedRefs.includes(id)))fail('SOURCE_CONFLICT',409);
-        const owner=await tx.query(`SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$1::uuid AND p.is_active
+        const material=await readCandidateMaterial(tx,[...new Set([...allowedRefs,row.source_decision_id as string])],{lock:true});
+        if(material.items.some(item=>item.status!=='CURRENT')||(c.expected_material_basis!==undefined&&c.expected_material_basis!==material.basis))fail('SOURCE_CONFLICT',409);
+        const owner=await tx.query(`SELECT p.id FROM pilot_ticket.pilot_principal p WHERE p.id=$1::uuid AND p.is_active
           AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('HANDLER','DISPATCHER','ADMIN'))
-          AND ($2::text IS NULL OR EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m WHERE m.principal_id=p.id AND m.team_id=$2))`,[c.owner_principal_id,c.owner_team_id??null]);
-        if(owner.rowCount!==1)fail('OWNER_INVALID');
+          AND ($2::text IS NULL OR EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team team ON team.team_id=m.team_id AND team.is_active WHERE m.principal_id=p.id AND m.team_id=$2))
+          FOR SHARE OF p`,[c.owner_principal_id,c.owner_team_id??null]);
+        if(owner.rowCount!==1)fail('OWNER_INVALID',409);
+        if(c.owner_team_id){
+          const membership=await tx.query(`SELECT m.principal_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team team ON team.team_id=m.team_id
+            WHERE m.principal_id=$1::uuid AND m.team_id=$2 AND team.is_active FOR SHARE OF m,team`,[c.owner_principal_id,c.owner_team_id]);
+          if(membership.rowCount!==1)fail('OWNER_INVALID',409);
+        }
         const id=randomUUID();ctx.incident=((await tx.query<Incident>(`WITH clock AS (SELECT platform.physical_epoch_ms()+2592000000 AS expiry)
           INSERT INTO incident.incident(id,incident_no,status,confirmed_scope,service_family,symptom_family,severity,safe_title,safe_public_summary_code,
             owner_principal_id,owner_team_id,retention_until,retention_until_epoch_ms)

@@ -51,3 +51,11 @@ POST 精确字段：`client_command_id:UUID`、`canonical_item:{kind,id}`、`exp
 不新增依赖、进程、Worker、Gateway、timer、SSE或数据库pool；复用现单App、单Worker与现池，建议总池≤8，原SSE32不变。板页默认50／最大100，原详情材料上限不变；源锚点上限100，事务和fixture串行。关闭方式为follow选项false并隐藏新操作／scope，保留关注和receipt事实，不改变旧mine、责任、Ticket及原开关；结构修复只用新迁移，不重写历史SQL或证据。
 
 第一条[真实HTTP RED源码](../../../tests/wbint-t34-follow.integration.test.mts)只覆盖实际沟通人的获权并集与已有Review规范去重，尚未运行。后续逐片覆盖显式关注／取消／原命令重放；真实处理、沟通转出与显式关注保留；GET／编辑无写；Review转换／双锚点取消；失权／角色变化、锁等待后重新验权、stale与并发；默认false无新表访问、缺迁移失败关闭；正式生产制品按钮／scope／列表／看板／详情及缓存清理。每片先保留原RED，再最小GREEN；适用unit／contract、隔离PG／HTTP、正式制品浏览器、strict、单build／artifact及工具proof均须实际记录。
+
+## 2026-10-10 当前根接口的 SOURCE 接缝核对
+
+本次只将 integration `4fececa695f8adea54ce599baa6b5f8cf50665d2` 同步到原 T34 源码，不宣称上述目标 HTTP 已挂载。当前 Ticket 查询的 `mine` 仍只代表处理责任；`column=pending` 是现有看板状态桶，不是团队补充待跟进事实，`attention.following` 也不是个人已读。T34 只实现显式关注与获权责任并集，读位置、团队补充处置及共享安排仍由原相邻票承担。
+
+当前沟通并集应沿权威 Session 的 `ASSIGNED` 且非 `ENDED` 当前责任查询，不能从历史责任结果、T22 会话列表的显示姓名或团队可见性推得。T17 的 MANUAL 材料继续沿真实来源、当前能力、保留期与对象授权；手填身份不创建 Session 或沟通关系。原首片继续用既有 related-conversations／takeover 公共 HTTP 建立真实沟通事实，T22 默认关闭的集中会话入口不替代它；原首片 MANUAL 默认 false。当前 board 的闭合 query 守卫尚不接受 `scope=related`，这里只记录待验证的公开缺口，未实际运行，不能记为 RED 或 PASS。
+
+044 继续只是 SOURCE_CONTRACT_ONLY／NOT_APPLIED 提案，无 SQL 文件或执行；042 的 MANUAL 专用 receipt 分支和历史 SQL 保持原字节。原 tracer、角色、fixture flags、STAGED_RUNTIME、数据库／浏览器标记、node_flags=[]、串行与 240 秒预算均不改。
