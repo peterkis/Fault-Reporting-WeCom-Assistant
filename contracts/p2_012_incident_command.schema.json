@@ -124,6 +124,11 @@
           "type": "null"
         }
       ]
+    },
+    "expected_material_basis": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "maxLength": 64
     }
   },
   "required": [
@@ -417,6 +422,11 @@
                 "type": "null"
               }
             ]
+          },
+          "expected_material_basis": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "maxLength": 64
           }
         },
         "required": [

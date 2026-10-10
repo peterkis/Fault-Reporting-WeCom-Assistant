@@ -14,19 +14,21 @@ import {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import {createTicketSelfHandlingService,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 import {createTicketConversationHandlingService} from './workbench-ticket-conversation-handling.mjs';
 import {createTicketAssignmentService} from './workbench-ticket-assignment.mjs';
+import {createTicketUnassignService,unassignSchemaReady} from './workbench-ticket-unassign.mjs';
 import {createTicketStaffCompletionService,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
 import {createTicketRoundNotifications,roundNotificationSchemaReady} from './workbench-ticket-round-notifications.mjs';
 import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
+import {createWorkbenchConversations} from './workbench-conversations.mjs';
 import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench-manual-reports.mjs';
-interface P2016RuntimeOptionsInput { ticketRoundNotificationsEnabled?:boolean; ticketAssignmentEnabled?:boolean;workbenchRealtimeEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
+interface P2016RuntimeOptionsInput { ticketRoundNotificationsEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
 type TicketFacade = ReturnType<typeof createP2016TicketCommandFacade>;
 type ReviewFacade = ReturnType<typeof createP2016ManualReviewFacade>;
 type IncidentReporterAdapter = NonNullable<Parameters<typeof createP2016ReporterTimeline>[0]>['incidentAdapter'];
-export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter }
+export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter;candidateWorkspaceEnabled?:boolean }
 export interface P2016HttpExtension { handler: ReporterHttpHandler; close(): unknown | Promise<unknown> }
 type WebOAuthPort = import('./p2-g2-wecom-web-oauth.mjs').WeComOAuth;
 export interface P2016ClosurePort extends Pick<ReturnType<typeof createTicketClosureService>, 'runAutoClose' | 'runAutoCloseReminders'> { afterTicketAction: TicketActionAfterHook }
@@ -75,13 +77,15 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,ticketRoundNotificationsEnabled=false,ticketAssignmentEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchManualReviewEnabled=false,ticketStaffCompletionEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,ticketRoundNotificationsEnabled=false,ticketUnassignEnabled=false,ticketAssignmentEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,ticketStaffCompletionEnabled=false,workbenchManualReviewEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
   if(typeof ticketAssignmentEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketRoundNotificationsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchManualReportsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchRealtimeEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketConversationSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof ticketUnassignEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof workbenchConversationsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchAttachmentsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -106,7 +110,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const oauthHttp: ReporterHttpHandler=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,roundNotificationBotId:ticketRoundNotificationsEnabled?roundBotId:null});
   const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend});
-  const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,ticketStaffCompletionEnabled,ticketAssignmentEnabled,ticketRoundNotificationsEnabled});
+  const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,ticketStaffCompletionEnabled,ticketAssignmentEnabled,ticketUnassignEnabled,ticketRoundNotificationsEnabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
   const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
@@ -116,7 +120,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
   const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
-    authentication:workbenchAuthentication,externalSendEnabled,
+    authentication:workbenchAuthentication,externalSendEnabled,reporterPrivateReplies:workbenchConversationsEnabled,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
     realtimeAppender:appendP2016Realtime,
     projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
@@ -124,7 +128,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
     realtimeAvailabilityFallback:workbenchRealtimeEnabled,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
-    extensionFactory:({controlService,realtime,authorization})=>{
+    extensionFactory:({controlService,realtime,queryService,commandFacade,authorization})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
       if(yxxSelfService===null&&!orchestrationWorker&&(directorySyncJob||ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled))
         orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey:identityHmacKey as string,directoryPort,directorySource,directorySyncJob,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
@@ -140,13 +144,15 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const staffCompletion=ticketStaffCompletionEnabled?createTicketStaffCompletionService({pool,query,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
       const manualReports=createWorkbenchManualReports({pool,query,enabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,realtimeProjector});
       const assignment=ticketAssignmentEnabled?createTicketAssignmentService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,assignment,staffCompletion,workbenchDraftRecoveryEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true}),logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
+      const unassign=ticketUnassignEnabled?createTicketUnassignService({pool,query,controlService,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,assignment,unassign,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true}),incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled,reviews:workbenchManualReviewEnabled?reviews:null});
+      const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled});
       attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups);
-      const web01Static=createWeb01WorkbenchStatic({enabled});
+      const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
       if(yxxSelfService!==null)selfService=(createYxxSelfServiceExtension as typeof createYxxSelfServiceExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
@@ -174,14 +180,15 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           let sourceGroupSchema=true;
           if(sourceGroupDirectoryEnabled){try{sourceGroupSchema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='037_workbench_source_group_names'")).rowCount===1;}catch{sourceGroupSchema=false;}}
           const selfHandlingReady=!(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled)||await selfHandlingSchemaReady(pool);
+          const unassignReady=!ticketUnassignEnabled||await unassignSchemaReady(pool);
           const staffCompletionReady=!ticketStaffCompletionEnabled||await staffCompletionSchemaReady(pool);
           const roundNotificationsReady=!ticketRoundNotificationsEnabled||await roundNotificationSchemaReady(pool);
           const manualReportsReady=!workbenchManualReportsEnabled||await manualReportsSchemaReady(pool);
-          const ready=roundNotificationsReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
+          const ready=roundNotificationsReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
             checks:{...base.checks,p2_016_schema:schema,...(ticketRoundNotificationsEnabled?{ticket_round_notification_schema:roundNotificationsReady}:{}),...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
-        authenticatedHandler:async context=>(await manualReports.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
+        authenticatedHandler:async context=>(await conversations.handler(context))||(await manualReports.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))
           ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
           ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),

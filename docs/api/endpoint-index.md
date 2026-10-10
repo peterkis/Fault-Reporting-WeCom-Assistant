@@ -12,6 +12,21 @@
 | --- | --- | --- | --- | --- | --- |
 | G01 | GET | `/api/workbench/source-groups` | W | 本地实现：ADMIN观察群目录、q检索、绑定搜索的分页；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | G02 | POST | `/api/workbench/source-groups/{groupRef}/name` | W | 已实现：ADMIN登记/改名；默认关闭 | [来源群](workbench/source-groups-design.md) |
+| CW01 | GET | `/api/workbench/conversations` | W | 已实现、默认关闭：获权参与者/服务主题分页 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW02 | GET | `/api/workbench/conversations/{sessionId}` | W | 已实现、默认关闭：集中详情/ETag | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW03 | GET | `/api/workbench/conversations/{sessionId}/items` | W | 已实现、默认关闭：按sequence保留材料 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW04 | GET | `/api/workbench/conversations/{sessionId}/eligible-principals` | W | 已实现、默认关闭：当前合法沟通转派候选 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW05 | GET | `/api/workbench/conversations/{sessionId}/deliveries` | W | 已实现、默认关闭：精确Message/Delivery状态 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW06 | GET | `/api/workbench/items/{kind}/{itemId}/conversations` | W | 已实现、默认关闭：真实canonical事项关联，kind=ticket/review/intake | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW07 | POST | `/api/workbench/conversations/{sessionId}/takeover` | W | 已实现、默认关闭：人工接管 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW08 | POST | `/api/workbench/conversations/{sessionId}/transfer` | W | 已实现、默认关闭：合法沟通转派 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW09 | POST | `/api/workbench/conversations/{sessionId}/release` | W | 已实现、默认关闭：释放沟通责任 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW10 | POST | `/api/workbench/conversations/{sessionId}/handoff/request` | W | 已实现、默认关闭：请求人工接管 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW11 | POST | `/api/workbench/conversations/{sessionId}/handoff/cancel` | W | 已实现、默认关闭：取消人工接管请求 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW12 | POST | `/api/workbench/conversations/{sessionId}/messages` | W | 已实现、默认关闭：人工回复202仅受理 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | MR01 | POST | `/api/workbench/reports` | W | T17已挂载、默认关闭；电话／现场未核实Reporter代录，原HTTP1 GREEN；T18／T19未实现 | [代录报修](workbench/manual-reports.md) |
 | MR02 | GET | `/api/workbench/reports/capabilities` | W | T17当前创建权限及恢复配置；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
 | MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | T17原主体／用途同账本只读UNKNOWN/FAILED/COMMITTED，另需恢复开关；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
@@ -77,6 +92,7 @@
 | I03 | POST | `/api/incident-candidates/{candidateId}/start-review` | W | 已实现：开始复核 | [公共故障](workbench/incidents.md) |
 | I04 | POST | `/api/incident-candidates/{candidateId}/reject` | W | 已实现：拒绝候选 | [公共故障](workbench/incidents.md) |
 | I05 | POST | `/api/incident-candidates/{candidateId}/confirm` | W | 已实现：人工确认 | [公共故障](workbench/incidents.md) |
+| I25 | GET | `/api/incident-candidates/{candidateId}/commands/{commandId}` | W | 已实现、默认关闭：当前 actor/exact Candidate 的原 UUID 安全回执核对 | [公共故障](workbench/incidents.md) |
 | I06 | GET | `/api/incidents` | W | 已实现：聚合列表 | [公共故障](workbench/incidents.md) |
 | I07 | GET | `/api/incidents/{incidentId}` | W | 已实现：聚合详情 | [公共故障](workbench/incidents.md) |
 | I08 | GET | `/api/incidents/{incidentId}/events` | W | 已实现：事件 | [公共故障](workbench/incidents.md) |
@@ -164,6 +180,8 @@
 | U03 | GET | `/workbench/incidents` | W | 页面：公共故障 | [平台](platform/auth-health.md) |
 | U04 | GET | `/workbench/app`、`/workbench/app/` | W | 页面：React内部认证 | [看板](workbench/board.md) |
 | U05 | GET | `/workbench/app/items/{kind}/{id}` | W | 页面：React详情deep link | [平台](platform/auth-health.md) |
+| UC01 | GET | `/workbench/app/conversations` | W | 正式集中会话页，默认关闭、先验身份 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| UC02 | GET | `/workbench/app/conversations/{sessionId}` | W | 正式主题deep link，默认关闭、先验身份 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | U06 | GET | `/workbench/app/assets/{buildAsset}.js`、`/workbench/app/assets/{buildAsset}.css` | W | 静态：inventory成员 | [平台](platform/auth-health.md) |
 | U07 | GET | `/static/workbench/workbench.js`、`/static/workbench/workbench.css`、`/static/workbench/workbench-state.mjs`、`/static/workbench/time-display.mjs` | W | 静态：会话 | [平台](platform/auth-health.md) |
 | U08 | GET | `/static/workbench/lifecycle.js`、`/static/workbench/lifecycle.css`、`/static/workbench/incidents.js` | W | 静态：生命周期/公共故障 | [平台](platform/auth-health.md) |
@@ -217,3 +235,13 @@
 | GET | `/api/tickets/{ticketId}/completion/commands/{commandId}` | W，当前读权限下按原主体/用途/UUID只读核对安全终态；另需raw recovery | [完工核对](workbench/tickets.md#工作人员完工wbint-t11) |
 
 内部持久承诺reader不属于REST；默认false的旧Pilot不能执行或广告complete，旧resolve/confirm语义保留。
+
+## WBINT-T08 撤销未开始派工（已实现，默认关闭）
+
+| 方法 | 完整路径 | 当前用途 | 合同 |
+| --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/unassign` | 获权 ADMIN/DISPATCHER 撤销当前未开始派工；明确内部原因；默认保留沟通，显式所选交接同事务 | [撤派合同](workbench/tickets.md#wbint-t08-撤销未开始派工) |
+| GET | `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前 Ticket 读权和原 principal/用途/UUID 的最小终态核对；独立 T08 consumer 启用即可，raw recovery 可关闭 | [安全核对](workbench/tickets.md#wbint-t08-撤销未开始派工) |
+| GET | `/api/tickets/{ticketId}/unassign/communication-targets` | 当前合法动作的活动内部沟通目标；可用 `target_principal_id=UUID` 验证保存的目标；结果至多 100，不授予 Control 写权 | [目标读取](workbench/tickets.md#wbint-t08-撤销未开始派工) |
+
+三入口和正式管理端消费已完成本机合成隔离 PG、真实 loopback HTTP、生产 bundle 浏览器及相关兼容验证。独立 `ticketUnassignEnabled` 默认 false；准确被测源码、原七项、原始 FAIL/PASS、制品与资源证据见[本票执行](../../plans/admin-workbench-integration/execution/t08.md)。本地验证不构成真实外发、部署或 Gate 授权。

@@ -4,7 +4,7 @@ import {BrowserRouter} from 'react-router';
 import {MutationCache,QueryCache,QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {ApiError} from './api/client';
 import type {Principal} from './api/client';
-import {clearSessionAuthorization,clearItemAuthorization,clearReviewAuthorization} from './app/authorization';
+import {clearSessionAuthorization,clearItemAuthorization,clearReviewAuthorization,clearTicketUnassignView} from './app/authorization';
 import {attachmentParentDenied} from './features/attachments/client';
 import {clearSourceGroupAuthorization} from './features/source-groups/authority';
 import {App} from './app/App';
@@ -14,9 +14,12 @@ const sessionPrincipal=()=>client.getQueryData<Principal>(['session'])?.principa
 client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   if(query.queryKey[0]!=='session'&&typeof query.queryKey[1]==='string'&&query.queryKey[1]!==sessionPrincipal())return;
   if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,sessionPrincipal(),401,'revoked');
-  else if(error instanceof ApiError&&error.status===403&&['session','board'].includes(String(query.queryKey[0])))void clearSessionAuthorization(client,sessionPrincipal(),403,'revoked');
+  else if(error instanceof ApiError&&error.status===403&&['session','board','conversations'].includes(String(query.queryKey[0])))void clearSessionAuthorization(client,sessionPrincipal(),403,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status)){
     if(query.queryKey[0]==='source-groups')void clearSourceGroupAuthorization(client,query.queryKey[1],error);
+    else if(query.queryKey[0]==='ticket-unassign-targets')void clearTicketUnassignView(client,query.queryKey[1],query.queryKey[2],error);
+    else if(['conversation-view','conversation-eligible'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'conversation',query.queryKey[2],error);
+    else if(query.queryKey[0]==='item-conversations')void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else if(['ticket-command-context','ticket-related-conversations'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'ticket',query.queryKey[2],error);
     else if(query.queryKey[0]==='manual-review'&&typeof query.queryKey[1]==='string'&&typeof query.queryKey[3]==='string'&&typeof query.queryKey[4]==='string'&&(query.queryKey[2]==='ticket'||query.queryKey[2]==='review'||query.queryKey[2]==='intake'))void clearReviewAuthorization(client,query.queryKey[1],query.queryKey[4],{kind:query.queryKey[2],id:query.queryKey[3]},error);
     else if(query.queryKey[0]==='detail'||(query.queryKey[0]==='attachments'&&attachmentParentDenied(error)))void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);

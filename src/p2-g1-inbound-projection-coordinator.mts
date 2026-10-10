@@ -170,10 +170,11 @@ export function createP2G1TimelineProjector({
           [(session.rows[0] as RawRecord).thread_id, sourceRecord.occurred_at],
         );
       }
-      await realtimeAppender({
-        transaction,
-        command: mapConversationItemCreatedEvent(item),
-      });
+      const itemEvent=mapConversationItemCreatedEvent(item);
+      await realtimeAppender({transaction,command:itemEvent});
+      if(sourceRecord.source_type==='DELIVERY'){
+        await realtimeAppender({transaction,command:{...itemEvent,event_type:'communication.delivery.changed',event_variant:'COMMUNICATION_DELIVERY_PROJECTED_V1'}});
+      }
     },
     faultInjection: wakeup === null ? null : {
       afterCommit: async () => {

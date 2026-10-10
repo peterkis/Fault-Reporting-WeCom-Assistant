@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {randomUUID} from 'node:crypto';
+import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
+import {createChannelMessageInbox} from '../src/p1-003-channel-message-inbox.mjs';
+import {createServiceIntakeProcessor} from '../src/p1-004-service-intake.mjs';
+import {adaptWeComSdkFrame} from '../src/p1-002-wecom-sdk-adapter.mjs';
+import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
+import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
+import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
+import {createP2012CandidateSourceAdapter,createP2012CandidateReviewStore} from '../src/p2-012-candidate-source-adapter.mjs';
+import {withP2012Database,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
+
+test('T27 trusted candidate preserves supplied real decimal Bot and UUID Web producer source references',async()=>{
+  const databaseUrl=process.env.PILOT_DATABASE_URL;
+  await withP2012Database({databaseUrl,purpose:'t27refs',run:async({pool,databaseUrl})=>{
+    await migrateCurrentBaselineWithYxx({databaseUrl});
+    const f=await fixtureP2012(pool,{reporters:3}),query=createP2012IncidentQuery({pool,enabled:true}),authContext={principal_id:f.admin.id};
+    const adapter=createP2012CandidateSourceAdapter({pool,enabled:true}),store=createP2012CandidateReviewStore({pool,enabled:true});
+    const target=(await pool.query('SELECT source_bot_id,source_chat_id,reporter_wecom_userid,retention_until,last_message_at FROM intake.service_intake WHERE id=$1::uuid',[f.reports[0].intakeId])).rows[0];
+    const frame=adaptWeComSdkFrame({cmd:'aibot_msg_callback',headers:{req_id:'t27-'+randomUUID()},body:{msgid:'t27-'+randomUUID(),aibotid:target.source_bot_id,chattype:'group',chatid:target.source_chat_id,from:{userid:target.reporter_wecom_userid},msgtype:'text',text:{content:'补充：HIS系统无法登录'}}},{receivedAt:target.last_message_at});assert.equal(frame.ok,true);
+    const accepted=await createChannelMessageInbox({pool}).accept({message:frame.message,traceId:'t27-synthetic-source-refs',privacyClass:'INTERNAL',retentionUntil:target.retention_until},createServiceIntakeProcessor({existingIntakeSelector:()=>({id:f.reports[0].intakeId})}));assert.equal(accepted.ok,true);
+    const bot=await createRuleFirstOrchestrator({pool,identityHmacKey:'synthetic-incident-identity-hmac-key',safeActionExecutor:{execute:async()=>[]}}).processPersistedIntake({service_intake_id:f.reports[0].intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
+    assert.ok(bot.decision.safe_result.source_refs.includes('channel:'+accepted.result.message.channel_message_id));
+    const captured=await adapter.record({sourceDecisionId:bot.decision.id,candidate:f.candidate,reportDecisionIds:[bot.decision.id]});
+    assert.deepEqual(captured.safe_result.source_refs,bot.decision.safe_result.source_refs,'the trusted adapter must preserve the producer-supplied references without replacing original evidence');
+    const candidate=await store.importDecision({decisionId:captured.id});
+    assert.deepEqual((await query.detail({authContext,id:candidate.id,kind:'candidate'})).source_decision.source_refs,bot.decision.safe_result.source_refs,'decimal channel references must remain safely available to an authorized candidate reader');
+    const scope={scopeHash:'a'.repeat(64),sourceCorpScope:'synthetic-t27-corp',sourceAppScope:'synthetic-t27-app',proofRef:'tests/t27-source-refs'};
+    const web=await createYxxSelfServiceStore({pool,scopeSecret:'synthetic-t27-source-refs-secret'}).accept({scope,kind:'SUBMIT',input:{schema_version:1,client_command_id:randomUUID(),description:'HIS系统无法登录',location:{unknown:true,text:null},service_code:'HIS',impact_scope:'MULTIPLE_USERS',reported_department_text:null,extension:null}});
+    const processed=await createYxxSelfServiceOrchestrator({pool,profile:'MEMBER_SELF_SERVICE',featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}).processOne({requestRef:web.receipt.request_ref});assert.equal(processed.processed,true);
+    const original=(await pool.query('SELECT safe_result,result_hash FROM intake.deterministic_decision WHERE id=$1::uuid',[processed.decision_id])).rows[0];assert.ok(original.safe_result.source_refs.length>0);assert.ok(original.safe_result.source_refs.every(ref=>/^web:[a-f0-9-]{36}$/u.test(ref)));
+    const webCapture=await adapter.record({sourceDecisionId:processed.decision_id,candidate:f.candidate,reportDecisionIds:[processed.decision_id]});
+    assert.deepEqual(webCapture.safe_result.source_refs,original.safe_result.source_refs);
+    const webCandidate=await store.importDecision({decisionId:webCapture.id});assert.deepEqual((await query.detail({authContext,id:webCandidate.id,kind:'candidate'})).source_decision.source_refs,original.safe_result.source_refs);
+    assert.equal((await pool.query('SELECT result_hash FROM intake.deterministic_decision WHERE id=$1::uuid',[processed.decision_id])).rows[0].result_hash,original.result_hash);
+    assert.equal((await pool.query('SELECT count(*)::integer AS count FROM incident.incident')).rows[0].count,0);
+  }});await assertNoP2012Residual({databaseUrl});
+});

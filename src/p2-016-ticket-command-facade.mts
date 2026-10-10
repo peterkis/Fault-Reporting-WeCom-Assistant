@@ -89,6 +89,14 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
               note:command.note??null,externalVisible:command.external_visible??false,reasonCode:command.reason_code,
               traceId:'p2-016:'+command.client_command_id},transaction);
           }
+          if(action==='accept'){
+            // The legacy HTTP command shares an already established round; it never creates one.
+            // Read through JSON so the baseline without the cycle migration stays compatible.
+            const current=await transaction.query<{cycle_id:string|null}>(`SELECT to_jsonb(t)->>'current_handling_cycle_id' AS cycle_id
+              FROM pilot_ticket.ticket t WHERE t.id=$1::uuid`,[ticket.id]);
+            const cycleId=current.rows[0]?.cycle_id;
+            if(cycleId)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycleId,result.event.event_id]);
+          }
           if(notificationProjector&&!closure)await notificationProjector.project({transaction,ticket:result.ticket,event:result.event});
           if(realtimeProjector)await realtimeProjector({transaction,ticket:result.ticket,event:result.event,command});
           return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null};

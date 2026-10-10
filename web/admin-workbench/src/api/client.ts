@@ -2,6 +2,8 @@ import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchD
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
 import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets,P2016AssignmentResult,P2016AssignmentAcknowledgement} from '../../../../contracts/p2_016_contracts';
+import type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets} from '../../../../contracts/workbench_unassign_contracts';
+export type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets};
 export type {P2016AssignmentAction,P2016AssignmentCommand};
 import type {ManualReportCommand,ManualReportCapabilities,ManualReportReceipt,ManualReportResult} from '../../../../contracts/workbench_manual_report_contracts';
 import {decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
@@ -11,6 +13,7 @@ export function setWorkbenchTransportWritable(value:boolean){transportWritable=v
 export function workbenchTransportWritable(){return transportWritable;}
 export function advanceWorkbenchAuthorizationEpoch(){authorizationEpoch++;}
 function requireCurrentRead(epoch:number,signal:AbortSignal){signal.throwIfAborted();if(epoch!==authorizationEpoch)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');}
+export function captureWorkbenchRead(signal:AbortSignal):()=>void {const epoch=authorizationEpoch;return()=>requireCurrentRead(epoch,signal);}
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand,P2016CompletionCommand,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016RelatedConversationPage};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
@@ -68,14 +71,14 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)},...(refs?{review_refs:refs}:{}),...(requested?{requested_item:requested}:{})};
 }
-export interface Principal extends WorkbenchRealtimeCapability {ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;logout_enabled:boolean}
+export interface Principal extends WorkbenchRealtimeCapability {ticket_unassign_enabled:boolean;ticket_unassign_draft_recovery_enabled:boolean;ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;conversation_workspace_enabled:boolean;conversation_draft_recovery_enabled:boolean;incident_candidate_workspace_enabled:boolean;incident_candidate_draft_recovery_enabled:boolean;logout_enabled:boolean}
 function optionalFlag(value:unknown):boolean{if(value===undefined)return false;if(typeof value!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return value;} function decodePrincipal(value:unknown):Principal {
-  const v=object(value),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision),manual=optionalFlag(v.manual_review_enabled),recovery=optionalFlag(v.manual_review_draft_recovery_enabled),manualReports=optionalFlag(v.manual_reports_enabled),manualReportRecovery=optionalFlag(v.manual_report_draft_recovery_enabled);
-  if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_draft_recovery_enabled!=='boolean'||typeof v.ticket_staff_completion_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.staff_completion_draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean'
-    ||(recovery&&!manual)||(manualReportRecovery&&!manualReports)||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
+  const v=object(value),unassign=optionalFlag(v.ticket_unassign_enabled),unassignRecovery=optionalFlag(v.ticket_unassign_draft_recovery_enabled),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision),manual=optionalFlag(v.manual_review_enabled),recovery=optionalFlag(v.manual_review_draft_recovery_enabled),manualReports=optionalFlag(v.manual_reports_enabled),manualReportRecovery=optionalFlag(v.manual_report_draft_recovery_enabled);
+  if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_draft_recovery_enabled!=='boolean'||typeof v.ticket_staff_completion_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.staff_completion_draft_recovery_enabled!=='boolean'||typeof v.conversation_workspace_enabled!=='boolean'||typeof v.conversation_draft_recovery_enabled!=='boolean'||typeof v.incident_candidate_workspace_enabled!=='boolean'||typeof v.incident_candidate_draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean'
+    ||(unassignRecovery&&!unassign)||(recovery&&!manual)||(manualReportRecovery&&!manualReports)||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
     ||!/^(0|[1-9][0-9]{0,18})$/u.test(expires)||BigInt(expires)>9223372036854775807n||v.sse_endpoint!==(v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null)
     ||(v.realtime_sse_enabled?(revision===null||!/^[a-f0-9]{64}$/u.test(revision)):(revision!==null||v.realtime_sse_available)))throw new ApiError(502,'INVALID_RESPONSE');
-  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,manual_report_draft_recovery_enabled:manualReportRecovery,logout_enabled:v.logout_enabled,
+  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_unassign_enabled:unassign,ticket_unassign_draft_recovery_enabled:unassignRecovery,ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,manual_report_draft_recovery_enabled:manualReportRecovery,conversation_workspace_enabled:v.conversation_workspace_enabled,conversation_draft_recovery_enabled:v.conversation_draft_recovery_enabled,incident_candidate_workspace_enabled:v.incident_candidate_workspace_enabled,incident_candidate_draft_recovery_enabled:v.incident_candidate_draft_recovery_enabled,logout_enabled:v.logout_enabled,
     realtime_sse_enabled:v.realtime_sse_enabled,realtime_sse_available:v.realtime_sse_available,sse_endpoint:v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null,polling_interval_ms:interval,expires_epoch_ms:expires,authorization_revision:revision};
 }
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
@@ -106,6 +109,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
   return decode(value);
   }catch(error){requireCurrentRead(epoch,signal);throw error;}
 }
+export {get as readWorkbench};
 function decodeCycle(value:unknown):P2016HandlingCycle {const v=object(value);return {id:id(v.id),cycle_no:version(v.cycle_no),first_responsibility_event_id:v.first_responsibility_event_id===null?null:id(v.first_responsibility_event_id),...(Object.hasOwn(v,'staff_completion_event_id')?{staff_completion_event_id:v.staff_completion_event_id===null?null:id(v.staff_completion_event_id)}:{})};}
 function decodeTicketReceipt(v:Record<string,unknown>,ticketId:string):P2016InternalNoteResult {return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed as boolean};}
 function decodeCompletion(value:unknown,ticketId:string):P2016CompletionResult {
@@ -113,7 +117,7 @@ function decodeCompletion(value:unknown,ticketId:string):P2016CompletionResult {
   if(Object.keys(v).length!==7||v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null||Object.keys(c).length!==4||id(c.event_id)!==event||c.basis!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');
   return {...decodeTicketReceipt(v,ticketId),completion:{cycle_id:id(c.cycle_id),cycle_no:version(c.cycle_no),event_id:event,basis:'STAFF_COMPLETED'}};
 }
-async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016UnassignCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
@@ -125,7 +129,7 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
         const code=text(object(v.error).code);
         if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
         // A durable FAILED receipt is a known refusal. An unstructured server failure may follow a commit.
-        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||['P2_016_DISABLED','P2_016_SELF_HANDLING_UNAVAILABLE','P2_016_STAFF_COMPLETION_UNAVAILABLE'].includes(code))throw new ApiError(response.status,code);
+        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||['P2_016_DISABLED','P2_016_SELF_HANDLING_UNAVAILABLE','P2_016_STAFF_COMPLETION_UNAVAILABLE'].includes(code)||(action==='unassign'&&code==='P2_016_UNASSIGN_UNAVAILABLE'))throw new ApiError(response.status,code);
         throw new UnknownCommandOutcome();
       }
       if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
@@ -134,6 +138,33 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
 
 }
 export const api={
+  unassignAcknowledgement:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016UnassignAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/unassign/commands/'+encodeURIComponent(commandId),signal,value=>{
+    const v=object(value);if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
+    if(v.state==='FAILED'&&Object.keys(v).length===2){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {state:'FAILED',error:{code,retryable:false}};}
+    if(v.state==='COMMITTED'&&Object.keys(v).length===4&&id(v.ticket_id).toLowerCase()===ticketId.toLowerCase())return {state:'COMMITTED',ticket_id:id(v.ticket_id),ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id)};
+    throw new ApiError(502,'INVALID_RESPONSE');
+  }),
+  unassignCommunicationTargets:(ticketId:string,target:string|null,signal:AbortSignal):Promise<P2016UnassignTargets>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/unassign/communication-targets'+(target===null?'':'?'+new URLSearchParams({target_principal_id:id(target)})),signal,value=>{
+    const v=object(value);if(Object.keys(v).length!==1||!Array.isArray(v.items)||v.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
+    const items=v.items.map(value=>{const row=object(value),principal_id=id(row.principal_id),display_name=text(row.display_name);if(Object.keys(row).length!==2||!display_name)throw new ApiError(502,'INVALID_RESPONSE');return {principal_id,display_name};});
+    if(new Set(items.map(row=>row.principal_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');return {items};
+  }),
+  unassignTicket:async(ticketId:string,command:P2016UnassignCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016UnassignResult>=>{
+    const requireCurrent=captureWorkbenchRead(signal);requireCurrent();
+    try{
+      const result=await postTicketCommand(ticketId,'unassign',command,csrfToken,signal,v=>{
+        if(Object.keys(v).length!==9||version(v.ticket_version)!==command.expected_version+1||v.communication_choice!==command.communication_choice||!Array.isArray(v.conversations)||v.conversations.length!==command.sessions.length)throw new UnknownCommandOutcome();
+        const originals=new Map(command.sessions.map(row=>[row.session_id.toLowerCase(),row]));
+        const conversations=v.conversations.map(value=>{const row=object(value),session=id(row.session_id),original=originals.get(session.toLowerCase());
+          if(Object.keys(row).length!==4||!original||typeof row.changed!=='boolean'||version(row.session_row_version)!==original.expected_row_version+(row.changed?1:0)||(row.changed?typeof row.control_event_id!=='string':row.control_event_id!==null))throw new UnknownCommandOutcome();
+          return {session_id:session,session_row_version:version(row.session_row_version),control_event_id:row.control_event_id===null?null:id(row.control_event_id),changed:row.changed};});
+        if(new Set(conversations.map(row=>row.session_id.toLowerCase())).size!==conversations.length)throw new UnknownCommandOutcome();
+        let handling_cycle:P2016UnassignResult['handling_cycle']=null;
+        if(v.handling_cycle!==null){const cycle=object(v.handling_cycle);if(Object.keys(cycle).length!==3)throw new UnknownCommandOutcome();handling_cycle={id:id(cycle.id),cycle_no:version(cycle.cycle_no),first_responsibility_event_id:id(cycle.first_responsibility_event_id)};}
+        return {...decodeTicketReceipt(v,ticketId),handling_cycle,communication_choice:command.communication_choice,conversations};
+      });requireCurrent();return result;
+    }catch(error){requireCurrent();throw error;}
+  },
   assignmentAcknowledgement:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016AssignmentAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/assignment/commands/'+encodeURIComponent(commandId),signal,value=>{
     const v=object(value);if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
     if(v.state==='FAILED'&&Object.keys(v).length===2){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {state:'FAILED',error:{code,retryable:false}};}

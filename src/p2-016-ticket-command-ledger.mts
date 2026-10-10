@@ -6,7 +6,7 @@ export interface LedgerFailure { ok: false; error: { code: string; retryable: bo
 // A committed DB snapshot follows the ledger write contract, but its consumer-specific payload is unknown.
 export type StoredLedgerSuccess = LedgerSuccess & Record<string, unknown>;
 export type LedgerResult<R extends LedgerSuccess> = (R & { replayed: false }) | (StoredLedgerSuccess & { replayed: true }) | LedgerFailure;
-export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
+export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
 interface ReceiptRow { id: string; command_hash: string; state: string; result_snapshot: StoredLedgerSuccess; error_code: string; retryable: boolean }
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';

@@ -1,5 +1,5 @@
 // These bounded browser-local recovery copies never own Ticket facts or authority.
-export interface DraftScope {principal:string;kind:'ticket'|'review'|'intake';id:string;purpose:string}
+export interface DraftScope {principal:string;kind:'ticket'|'review'|'intake'|'conversation'|'incident-candidate';id:string;purpose:string}
 export interface DraftRecord {schema:1;scope:string;principal:string;kind:DraftScope['kind'];id:string;purpose:string;firstSavedAt:number;expiresAt:number;revision:string;iv:Uint8Array<ArrayBuffer>;ciphertext:ArrayBuffer;key:CryptoKey}
 export interface OperationRecord extends DraftScope {scope:string;commandId:string;createdAt:number}
 export interface DraftHandle {scope:DraftScope;record:DraftRecord|null;operation:OperationRecord|null;epoch:string}
@@ -10,7 +10,7 @@ function invalidation(value:unknown):DraftInvalidation|null{
   if(!value||typeof value!=='object'||Array.isArray(value))return null;const v=value as Record<string,unknown>;
   const reason=v.reason,kind=v.kind;
   if(typeof v.principal!=='string'||!UUID.test(v.principal)||(reason!=='discard'&&reason!=='expired'&&reason!=='settled'&&reason!=='revoked'&&reason!=='logout'&&reason!=='logout-unknown')||Object.keys(v).some(key=>!['principal','kind','id','purpose','reason'].includes(key)))return null;
-  if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'||v.id!==undefined&&(typeof v.id!=='string'||!UUID.test(v.id))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose)))return null;
+  if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'&&kind!=='conversation'&&kind!=='incident-candidate'||v.id!==undefined&&(typeof v.id!=='string'||!UUID.test(v.id))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose)))return null;
   return {principal:v.principal,reason,...(kind!==undefined?{kind}:{}),...(typeof v.id==='string'?{id:v.id}:{}),...(typeof v.purpose==='string'?{purpose:v.purpose}:{})};
 }
 function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
@@ -23,12 +23,12 @@ export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>vo
 export const DRAFT_TTL_MS=86_400_000,DRAFT_MAX_BYTES=16_384,DRAFT_MAX_COUNT=20;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu,encoder=new TextEncoder();
 export function draftScopeKey(scope:DraftScope):string {
-  if(!UUID.test(scope.principal)||!UUID.test(scope.id)||!['ticket','review','intake'].includes(scope.kind)||! /^[a-z][a-z-]{0,63}$/u.test(scope.purpose))throw new DraftError('DRAFT_SCOPE_INVALID');
+  if(!UUID.test(scope.principal)||!UUID.test(scope.id)||!['ticket','review','intake','conversation','incident-candidate'].includes(scope.kind)||! /^[a-z][a-z-]{0,63}$/u.test(scope.purpose))throw new DraftError('DRAFT_SCOPE_INVALID');
   return JSON.stringify([scope.principal,scope.kind,scope.id,scope.purpose]);
 }
 function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new DraftError('DRAFT_CORRUPT');return value as Record<string,unknown>;}
 function scopeOf(v:Record<string,unknown>):DraftScope{
-  if(typeof v.principal!=='string'||typeof v.id!=='string'||typeof v.purpose!=='string'||(v.kind!=='ticket'&&v.kind!=='review'&&v.kind!=='intake'))throw new DraftError('DRAFT_CORRUPT');
+  if(typeof v.principal!=='string'||typeof v.id!=='string'||typeof v.purpose!=='string'||(v.kind!=='ticket'&&v.kind!=='review'&&v.kind!=='intake'&&v.kind!=='conversation'&&v.kind!=='incident-candidate'))throw new DraftError('DRAFT_CORRUPT');
   const scope:DraftScope={principal:v.principal,kind:v.kind,id:v.id,purpose:v.purpose};if(v.scope!==draftScopeKey(scope))throw new DraftError('DRAFT_CORRUPT');return scope;
 }
 function decode(value:unknown):DraftRecord {
@@ -139,9 +139,13 @@ export async function refreshEmptyDraft(handle:DraftHandle):Promise<void>{
   if(handle.record!==null||handle.operation!==null||handle.epoch!==previousEpoch)throw new DraftError('DRAFT_CHANGED');
   handle.epoch=epoch;
 }
-export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired'):Promise<void>{
+export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired',options:{requireMatchingRevision?:boolean}={}):Promise<void>{
   const key=draftScopeKey(handle.scope),revision=handle.record?.revision;
-  const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
+  const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);
+    // A revision-scoped caller must not broadcast old authority loss over a newer tab's row.
+    // Existing expiry/discard callers retain their original default policy.
+    if(options.requireMatchingRevision&&(!current||current.revision!==revision))throw new DraftError('DRAFT_CHANGED');
+    if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
   handle.record=null;handle.epoch=next.epoch;handle.operation=next.operation;
   publish({...handle.scope,reason});
 }
@@ -170,7 +174,7 @@ export async function purgeDrafts(filter:DraftInvalidation):Promise<void>{
       const loaded=()=>{if(--remaining)return;try{if(rows.result.length>20)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');for(const [index,row] of (rows.result as unknown[]).entries()){
         // Explicit authorized purge can clear malformed metadata without treating it as a failed command.
         const key=keys.result[index];if(key===undefined)continue;let scope:DraftScope|null=null;
-        try{scope=scopeOf(object(row));}catch{if(typeof key==='string'){try{const fields:unknown=JSON.parse(key);if(Array.isArray(fields)&&fields.length===4&&typeof fields[0]==='string'&&(fields[1]==='ticket'||fields[1]==='review'||fields[1]==='intake')&&typeof fields[2]==='string'&&typeof fields[3]==='string'){const candidate:DraftScope={principal:fields[0],kind:fields[1],id:fields[2],purpose:fields[3]};if(draftScopeKey(candidate)===key)scope=candidate;}}catch{/* unknown owner is not guessed */}}}
+        try{scope=scopeOf(object(row));}catch{if(typeof key==='string'){try{const fields:unknown=JSON.parse(key);if(Array.isArray(fields)&&fields.length===4&&typeof fields[0]==='string'&&(fields[1]==='ticket'||fields[1]==='review'||fields[1]==='intake'||fields[1]==='conversation')&&typeof fields[2]==='string'&&typeof fields[3]==='string'){const candidate:DraftScope={principal:fields[0],kind:fields[1],id:fields[2],purpose:fields[3]};if(draftScopeKey(candidate)===key)scope=candidate;}}catch{/* unknown owner is not guessed */}}}
         if(scope&&matchesDraft(filter,scope))store.delete(key);
       }}catch(error){failure=error;tx.abort();}};rows.onsuccess=loaded;keys.onsuccess=loaded;
     }
