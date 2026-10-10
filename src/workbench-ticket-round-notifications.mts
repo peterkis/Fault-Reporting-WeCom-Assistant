@@ -8,7 +8,7 @@ import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';
 interface OriginalSingleBotSource {bot_id:string;reporter_user_id:string;retention_epoch:string;journey_id:string|null}
-interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;created_at:string;aggregate_version:number}
+interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'CLOSED';created_at:string;aggregate_version:number}
 interface RoundOptions {pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined}
 
 export async function roundNotificationSchemaReady(tx:PostgresTransaction){
@@ -42,8 +42,9 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
       try{
         if(!await roundNotificationSchemaReady(pool))failP2016('ROUND_NOTIFICATIONS_UNAVAILABLE',503);
         // The cursor covers one bounded sweep only. Reset it at the end and on restart; it is never a checkpoint.
+        // Use the immutable first-event status; an assigned QUEUED Ticket has not been accepted.
         const candidates=await pool.query<Candidate>(`SELECT c.id::text AS cycle_id,c.ticket_id::text,c.source_intake_id::text,c.cycle_no,t.ticket_no,
-          e.event_id::text,n.node,e.created_at,e.aggregate_version FROM pilot_ticket.ticket_handling_cycle c
+          e.event_id::text,n.node,e.new_status AS event_status,e.created_at,e.aggregate_version FROM pilot_ticket.ticket_handling_cycle c
           JOIN pilot_ticket.ticket t ON t.id=c.ticket_id AND t.source_intake_id=c.source_intake_id
           JOIN LATERAL (
             SELECT c.first_responsibility_event_id AS event_id,'FIRST_RESPONSIBILITY' AS node
@@ -53,7 +54,12 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
           ) n ON true
           JOIN pilot_ticket.ticket_handling_cycle_event ce ON ce.ticket_id=c.ticket_id AND ce.cycle_id=c.id AND ce.ticket_event_id=n.event_id
           JOIN pilot_ticket.ticket_event e ON e.ticket_id=c.ticket_id AND e.event_id=n.event_id AND e.operator_type='PILOT_USER'
-            AND ((n.node='FIRST_RESPONSIBILITY' AND e.event_type='ticket.accepted' AND e.new_status='ACCEPTED')
+            AND ((n.node='FIRST_RESPONSIBILITY' AND (
+                (e.event_type='ticket.accepted' AND e.new_status='ACCEPTED')
+                OR (e.event_type='ticket.assignment_transferred' AND e.old_status='QUEUED' AND e.new_status='QUEUED' AND e.operator_id IS NOT NULL
+                  AND e.assignment_metadata->>'old_assignee_id' IS NULL
+                  AND lower(e.assignment_metadata->>'new_assignee_id')=c.first_responsibility_principal_id::text
+                  AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
               OR (n.node='STAFF_COMPLETED' AND e.event_type='ticket.closed' AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
                 AND e.reason_code='STAFF_COMPLETED' AND e.operator_id IS NOT NULL AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500))
           WHERE ($1::uuid IS NULL OR c.id>$1::uuid) AND NOT EXISTS(SELECT 1 FROM communication.ticket_round_notification_binding b
@@ -82,7 +88,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
               const ref=await reporterAccess.ensurePublicRefInTransaction({transaction:tx,ticketId:candidate.ticket_id,reporterBindingHash:binding,...(source.journey_id?{journeyId:source.journey_id}:{})});
               const message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',
                 client_command_id:randomUUID(),message_type:'template_card',visibility:'EXTERNAL',destination_policy:'P2_016_REPORTER',privacy_class:'INTERNAL',
-                content:{public_ref:ref.public_ref,suffix:candidate.ticket_no.slice(-4),status:candidate.node==='FIRST_RESPONSIBILITY'?'ACCEPTED':'CLOSED',occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType,source:'DIRECT'},
+                content:{public_ref:ref.public_ref,suffix:candidate.ticket_no.slice(-4),status:candidate.event_status,occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType,source:'DIRECT'},
                 retention_until:formatEpochMsToShanghaiLocal(source.retention_epoch),retention_until_epoch_ms:source.retention_epoch},
                 resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.bot_id,target_type:'PERSON',target_id:source.reporter_user_id}]});
               if(!message||!('message_id' in message)||!message.outbox_id||message.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
