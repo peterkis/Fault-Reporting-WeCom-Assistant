@@ -190,7 +190,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-12 / A12
 
 - [ ] **T35** — [#90 实际阅读后推进个人已读](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
-  - **执行：** 2026-10-10 实读完整正文／空评论／ready标签及原无assignee，原生blockers #69／#77均CLOSED后领取给peterkis；独立工作树准备跨来源个人位置合同与原真实HTTP／production浏览器tracer。尚未构建或运行，不计A12验收。
+  - **执行：** 2026-10-10 实读完整正文／空评论／ready标签及原无assignee，原生blockers #69／#77均CLOSED后领取给peterkis；独立工作树已冻结跨来源个人位置合同与原真实HTTP／production浏览器tracer，8个自有文件及原副本逐SHA核对。SOURCE_READY／NOT_BUILT_NOT_RUN；等待串行窗口，不计A12验收。
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)、[#77](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **来源：** WBINT-12 / A12
 
