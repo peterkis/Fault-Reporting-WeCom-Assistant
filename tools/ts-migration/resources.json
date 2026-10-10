@@ -9,6 +9,7 @@
     "contracts/p2_016_return_to_dispatch_result.schema.json",
     "contracts/p2_016_return_to_dispatch_event.schema.json",
     "contracts/p2_016_return_to_dispatch_targets.schema.json",
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",

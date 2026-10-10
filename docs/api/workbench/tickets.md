@@ -25,7 +25,7 @@ TicketDetail：`id,ticket_no,request_type,status,priority,resolver_team_id,assig
 
 事件投影：`event_id,event_type,old_status,new_status,aggregate_version,event_ordinal,created_at,has_internal_note,has_external_note`。责任投影：`ticket_id,ticket_assignee_id,ticket_assignee_name,resolver_team_id,resolver_team_name,conversations[]`；每条 conversation 含 `session_id,session_row_version:string,combined_accept_allowed,conversation_principal_id,conversation_principal_name,assignment_status,assignment_version`。复合命令使用前须按命令要求将可验证的会话版本转成安全整数。
 
-Notification：`notification_type,destination_type,delivery_id,status,side_effect_state,attempt_count,sent_at,created_at`；SENT/ACKNOWLEDGED 的技术含义不替代现场客户端观察。
+Notification：`notification_type,destination_type,delivery_id,status,side_effect_state,attempt_count,sent_at,created_at`；T24开启时另含成对的node:FIRST_RESPONSIBILITY|STAFF_COMPLETED|null与cycle_no:positive integer|null，未绑定轮次的既有通知两值均null；SENT/ACKNOWLEDGED 的技术含义不替代现场客户端观察。
 
 `reporter-contact` 顶层：`status,contact,departments[],fetched_at`。历史 contact 可含 `name,userid,mobile,telephone`，department 含 `name,department_ref,role`。第三方来源可增加 `sex,current_profile`；current_profile 含 `status,contact:{name,mobile},sex,avatar_url,departments,fetched_at`。缺资料为 DEFERRED/STALE 与 null，不伪造联系方式。这是内部授权接口，不提供给 Reporter/成员 UI。
 
@@ -254,6 +254,16 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 当前PC草稿SOURCE使用purpose=`ticket-return-to-dispatch`，沿T03同账号／Ticket／当前浏览器AES-GCM、24h／20份／16KiB与T38 epoch、abort、generation及storage CAS。双必填独立字段、Ticket版本和明确沟通选择共同保存；原UUID／版本／八字段body在UNKNOWN后冻结，只显式GET安全ACK，不自动换UUID／版本或POST。成功／丢弃／退出／可信失权清本用途，临时失败保留未核验密文，敏感到期只留opaque标识；迟到结果不得改新输入。恢复前重验Ticket与明确Session授权，最多10页关联查询；超过界限或目标列表未能证明旧选择时保留密文并阻止恢复／新提交。关raw后不解密或新建空恢复库；已有原操作必须只读核对，不能以新的UUID提交。实际POST成功先记COMMITTED，后续GET或本地清理暂时失败不改成终态拒绝。以上均待原PC首及必要边界实测。
 
 `ticketReturnToDispatchEnabled=false`仍为独立默认关闭源码option，不偷开T05／T06／T08。关闭T09停止POST及动作能力，安全ACK仍以整个W读启用、当前认证／TicketREAD及原actor／Ticket／专用purpose／UUID读取原031 ledger；不查048、不检查当前写状态／版本／target。PC保持安全ACK消费者可挂载，关闭写能力或raw恢复不允许创建新操作；整个W关闭／身份失效／失权仍拒绝。literal T09=false边界须独立实测。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续承接不应重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target每页≤100、关联恢复≤10页、单表单in-flight1保持，无新SSE／轮询／worker。原bd412编译FAIL、aab2／b618／0a0ffcb真实HTTP RED、9eab／cca730／1528各原首GREEN及55c PC FORM_PRESENT RED独立保全；当前源码的build／strict／artifact／SQL／HTTP／browser均NOT_RUN，整七项仍IN_PROGRESS。
+
+## Bot 原报修人轮次通知读取（WBINT-T24）
+
+本票已完成本地隔离验收；能力默认关闭，未部署或现场外发。沿用获权 `GET /api/tickets/{ticketId}/deliveries`，宿主 W、当前 Ticket READ、原认证与失败规则不变，没有新增通知读取路径。最多100条，不作为全历史分页。新节点通知沿原 Bot 单聊报修人绑定生成，041 只增加轮次／节点与既有通知的绑定，不建立第二套 Ticket 或 Delivery。
+
+`ticketRoundNotificationsEnabled=false` 继续默认关闭；已认证 `/api/lifecycle/bootstrap` 的 `ticket_round_notifications_enabled` 反映宿主能力，客户端缺字段按 false。启用时沿既有安全 DTO 显示首次责任／工作人员完工、轮次、PERSON 路由、实际 Delivery 状态、尝试次数、`side_effect_state` 和 `sent_at`。轮次两字段成对可空；客户端拒绝未知字段、重复 Delivery 身份、不合法枚举、版本或时间，不读取原始目标、Bot／Reporter、binding 或内部内容。
+
+正式 Ticket 详情的“报修人通知送达”区域挂载时读取一次，提供“重新读取通知”的显式 GET。切换／卸载取消本次读取，generation 与当前授权 epoch 屏蔽迟到结果；可信失权清理视图。此区域不提交通知、重试或人工核对命令；既有 retry／reconcile HTTP 权限及独立外发开关保持。关闭能力停止新节点扫描与该区域展示，既有 Ticket／Outbox／Delivery／审计保留。
+
+验证分属真实对象：824f 正式 production bundle 浏览器验证 PENDING、SENT、DEAD_LETTER、RECONCILIATION_REQUIRED 与读取／隐私边界；发送结果来自隔离合成 Sender，不代表现场送达。18d 一次 build／strict／artifact 为 0/0/0，原 Schema／Contract／资源检查各 1 PASS。早期缺区域 UI RED、严格类型失败、两次 Schema 失败与工具超时均保留在[逐项执行记录](../../../plans/admin-workbench-integration/execution/t24.md)，不改写为通过，不把较早制品重绑至文档后继。
 
 ## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
 
