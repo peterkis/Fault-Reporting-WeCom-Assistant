@@ -14,6 +14,7 @@ import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
+import {migrateTicketReturnToDispatch} from '../../scripts/ticket-return-to-dispatch-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
@@ -28,6 +29,7 @@ export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ti
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t09',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
   await applyThrough030(context);const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(migrationOptions);
   await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
+  if(ticketReturnToDispatchEnabled)await migrateTicketReturnToDispatch({databaseUrl:context.databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool:context.pool}),roles:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
   const members=await Promise.all(roles.map((role,index)=>access.upsertPrincipal({wecomUserId:'t09-synthetic-'+index+'-'+randomUUID(),displayName:'T09 合成内部人员 '+index,roles:role,resolverTeamIds:['PILOT_IT']})));
   const [admin,dispatcher,handler,otherHandler]=members;assert.ok(admin&&dispatcher&&handler&&otherHandler);

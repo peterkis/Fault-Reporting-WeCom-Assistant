@@ -230,11 +230,11 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 ## 停止处理并退回（WBINT-T09，冻结计划／NOT_RUN）
 
-以下是[#64](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)的SOURCE合同，**尚无生产handler／能力／UI**。独立动作覆盖`IN_PROGRESS|WAITING_REQUESTER|WAITING_VENDOR → QUEUED`，不使用T08未开始撤派、transfer、cancel或close代替。当前处理人或获权ADMIN／DISPATCHER记录原因及未完成工作后清处理人，保留有效处理组、本轮与来源历史；默认保留独立沟通责任。实际实现和七项验收状态见[T09执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
+以下是[#64](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)的冻结合同。原首已在aab2固定制品取得真实HTTP 404 RED，之后仅补RETAIN_CURRENT POST源码；新候选仍**NOT_BUILT_NOT_RUN**，没有GREEN、能力广告或UI。TRANSFER_SELECTED、target GET、safe ACK与恢复继续计划状态。独立动作覆盖`IN_PROGRESS|WAITING_REQUESTER|WAITING_VENDOR → QUEUED`，不使用T08未开始撤派、transfer、cancel或close代替。当前处理人或获权ADMIN／DISPATCHER记录原因及未完成工作后清处理人，保留有效处理组、本轮与来源历史；默认保留独立沟通责任。实际实现和七项验收状态见[T09执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
 
-| METHOD + PATH（W，计划） | 合同 |
+| METHOD + PATH（W，部分SOURCE／其余计划） | 合同 |
 | --- | --- |
-| `POST /api/tickets/{ticketId}/return-to-dispatch` | 单个原子停止退回命令；[闭合八字段Schema](../../../contracts/p2_016_return_to_dispatch_command.schema.json)，[安全结果Schema](../../../contracts/p2_016_return_to_dispatch_result.schema.json) |
+| `POST /api/tickets/{ticketId}/return-to-dispatch` | RETAIN_CURRENT最小源码已挂载，NOT_BUILT_NOT_RUN；TRANSFER_SELECTED当前503 CONTROL_UNAVAILABLE，尚未实现。单个原子停止退回命令；[闭合八字段Schema](../../../contracts/p2_016_return_to_dispatch_command.schema.json)，[安全结果Schema](../../../contracts/p2_016_return_to_dispatch_result.schema.json) |
 | `GET /api/tickets/{ticketId}/return-to-dispatch/commands/{commandId}` | 当前Ticket READ、原principal／Ticket／专用用途及UUID；沿[最小ACK形状](../../../contracts/p2_016_assignment_receipt.schema.json)，不返回原因、未完成工作或所选Session；T09启用即可，raw敏感恢复可关闭 |
 | `GET /api/tickets/{ticketId}/return-to-dispatch/communication-targets[?target_principal_id=UUID]` | 当前合法停止退回权限和Ticket读权；[独立沟通target页](../../../contracts/p2_016_return_to_dispatch_targets.schema.json)，最多100个活动内部对象，显式合法保存target在界内pin；读取不授予Control写权 |
 
@@ -244,10 +244,10 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 复用原ledger和caller-Tx Core／Control，保持receipt→shared realtime fence→Ticket→UUID排序Session锁序和锁后权限。清owner、保组、保current cycle及first basis，version+1，追加独立`ticket.returned_to_dispatch`和同轮event link；其[私有事实Schema](../../../contracts/p2_016_return_to_dispatch_event.schema.json)记录真实old owner→JSON null／同组／操作者／两块内部内容。默认retain不调用沟通release；显式选取独立校验当前Session READ、同源／主题、Control TRANSFER与target，不借Ticket调度权扩充沟通权限。不猜最新会话、不造Session、不写第二套owner。Ticket、选定Session／Control／generation、event／cycle link／安全实时投影与COMMITTED全部同事务，失败只留原FAILED审计。
 
-048只作最小forward提案：既有046目前只允许未开始`ticket.unassigned`释放，后续真实RED若需要才扩充事件词汇和严格同组旧owner→null、三类old状态→QUEUED及内部两段约束，不新表／owner／started列。还需把真实returned释放加入共享当前责任段边界，使同轮再次承接后的新未开始段可证明；不覆盖T08原未开始规则或既有迁移。当前没有048文件或迁移执行。Core仍是唯一工单／状态／责任／事件事实源。
+原首真实RED后新增最小forward 048源码及独立迁移器，NOT_RUN／NOT_APPLIED：既有046只允许未开始`ticket.unassigned`释放，048扩充独立returned词汇和严格同组旧owner→null、三类old状态→QUEUED及内部记录约束，无新表／owner／started列，依赖031／039／046。旧迁移字节保留。后续同轮再承接仍须真实RED验证共享责任段的returned释放边界，不预修相邻T08规则。Core仍是唯一工单／状态／责任／事件事实源。
 
 同UUID原hash终态只一次；重放先重查当前Ticket及原所选Session读权，改payload409。ACK仅当前Ticket READ和原actor／resource／专用purpose的最小UNKNOWN／FAILED／COMMITTED；UNKNOWN不能推断未提交，不返回原命令或内部材料。稳定错误拟沿P2_016输入400、身份401、动作／Control／target403、不可见／错误关联404、版本／状态／hash／段围栏409、关闭／Schema不齐／事务失败503；实际guard与业务码由真实RED驱动实现。
 
 草稿计划purpose=`ticket-return-to-dispatch`，沿T03同账号／Ticket／当前浏览器AES-GCM、24h／20份／16KiB与T38 epoch、abort、generation及storage CAS。完整原UUID／版本／八字段body在UNKNOWN后冻结，只显式GET安全ACK；不自动换UUID／版本或POST。成功／丢弃／退出／可信失权清本用途，临时失败保留未核验密文，敏感到期只留opaque标识；迟到结果不得改新输入。需当前权限及选定对象重新验权后恢复，关raw恢复仍可内存核对。
 
-`ticketReturnToDispatchEnabled=false`为独立计划开关，不偷开T05／T06／T08；当前runtime尚未消费。关闭停止本票动作／能力／target／ACK／UI，不查048或改变已提交事实，旧入口保持。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续真实accept不重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target页≤100、单表单in-flight1保持，无新SSE／轮询／worker。首tracer使用真实HANDLER、原assign／accept／start／wait-vendor和公开GET，在原已有承诺后只提交一次return，240s；当前全部NOT_RUN，后续须原HTTP真实RED后才写生产与048，再逐片完整七项及production bundle。
+`ticketReturnToDispatchEnabled=false`已作为独立boolean源码option装配，关闭不查048；启用的Schema/readiness及详情cycle仍待当前候选实跑，不偷开T05／T06／T08。当前只挂载retain POST，target／ACK／UI和动作能力尚无实现，旧入口保持。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续真实accept不重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target页≤100、单表单in-flight1保持，无新SSE／轮询／worker。首tracer使用真实HANDLER、原assign／accept／start／wait-vendor和公开GET，在原已有承诺后只提交一次return，240s；原首aab2已有真实404 RED（0PASS／1FAIL），其旧build／strict／artifact原生0／0／0与原bd412 TS2353分开保全；新retain源码候选的build／strict／artifact／SQL／HTTP／GREEN仍NOT_RUN。之后须新窗口验证原首GREEN，再逐片完整七项及production bundle。
