@@ -66,7 +66,12 @@ test('a real T06 queued assignment creates exactly one durable FIRST intent for 
     assert.equal(assigned.communication_choice,'RETAIN_CURRENT');assert.deepEqual(assigned.conversations,[]);assert.equal(assigned.control_event_id,null);
     const queued=await get(path);assert.equal(queued.status,'QUEUED');assert.equal(queued.assignee_id,target.id);assert.equal(queued.resolver_team_id,'PILOT_IT');
     assert.equal(queued.version,assigned.ticket_version);assert.equal(queued.intake_id,source.source_intake_id);
-    const cycle=object(queued.handling_cycle);assert.equal(cycle.cycle_no,1);assert.deepEqual(assigned.handling_cycle,cycle);
+    const cycle=object(queued.handling_cycle),ackCycle=object(assigned.handling_cycle);
+    assert.deepEqual(Object.keys(ackCycle).sort(),['cycle_no','first_responsibility_event_id','id']);
+    assert.deepEqual(Object.keys(cycle).sort(),['cycle_no','first_responsibility_event_id','id','staff_completion_event_id']);
+    assert.equal(cycle.cycle_no,1);
+    for(const field of ['id','cycle_no','first_responsibility_event_id'] as const)assert.equal(ackCycle[field],cycle[field]);
+    assert.equal(cycle.staff_completion_event_id,null);
     assert.equal(cycle.first_responsibility_event_id,assigned.ticket_event_id);
     const events=rows((await get(path+'/events')).items),firstEvent=events.find(event=>event.event_id===assigned.ticket_event_id);assert.ok(firstEvent);
     assert.equal(firstEvent.event_type,'ticket.assignment_transferred');
