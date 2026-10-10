@@ -42,8 +42,8 @@ Accept: application/json
 
 基础接口核对：[unit](../../../tests/web01-workbench.test.mts)、[integration](../../../tests/web01-workbench.integration.test.mjs)、[browser](../../../tests/web01-workbench.browser.test.mjs)。本票增量如下。
 
-WBINT-T34 原被测提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 的首条真实HTTP已取得 `scope=related` 返回400的RED，原件与清理见[本票记录](../../../plans/admin-workbench-integration/execution/t34.md)。当前后继仅完成责任查询源码，状态 **NOT_BUILT_NOT_RUN**：related在原获权、规范去重的卡片上取本人当前处理责任或ASSIGNED且非ENDED的真实沟通关系，再排序、分页；沟通材料须仍在保留期，历史责任、团队可见性、最新消息都不产生该关系。它不修改任何责任或事项，不返回Session引用或其他人的关系。
+WBINT-T34 原被测提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 的首条真实HTTP已取得 `scope=related` 返回400的RED，原件与清理见[本票记录](../../../plans/admin-workbench-integration/execution/t34.md)。后继 d89547f4 已通过一次 build／strict／artifact 及原首真实HTTP 1/1（仅责任查询片）：related在原获权、规范去重的卡片上取本人当前处理责任或ASSIGNED且非ENDED的真实沟通关系，再排序、分页；沟通材料须仍在保留期，历史责任、团队可见性、最新消息都不产生该关系。它不修改任何责任或事项，不返回Session引用或其他人的关系。
 
-本片默认 `workbenchFollowEnabled=false`，无数据库变更、不读取044；尚无本片GREEN。完整[关注／与我有关合同](follow-design.md)中的FOLLOW写入、attention、follow_version、完整迁移readiness与正式UI仍为后续目标，不能将本片称为完整关注服务，也不改变个人已读或团队待跟进。
+本片默认 `workbenchFollowEnabled=false`，无数据库变更、不读取044；GREEN只覆盖上述原首查询测试。完整[关注／与我有关合同](follow-design.md)中的FOLLOW写入、attention、follow_version、完整迁移readiness与正式UI仍为后续目标，不能将本片称为完整关注服务，也不改变个人已读或团队待跟进。
 
 WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:string}]`，每项独立Journey/保留期授权。Review发生合法canonical转换时响应可增加 `requested_item:{kind:'review',id}`，实际item和活动来自当前有权Ticket/Review/Intake，cursor仍绑定请求；客户端只接受准确原请求的Review alias。相同关联Ticket不重复计卡片；多个材料版本明确选择，刷新不静默改选或丢失输入。正式600px详情/全页展示原原因、缺失与冲突、安全材料和当前支持/不支持结论；React按文本呈现。默认关闭、无DB变更及实际证据见[本票记录](../../../plans/admin-workbench-integration/execution/t14.md)。

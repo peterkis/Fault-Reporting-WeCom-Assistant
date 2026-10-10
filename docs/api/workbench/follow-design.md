@@ -1,6 +1,6 @@
 # 明确关注与我有关（WBINT-T34，实施前合同）
 
-当前责任查询片：原提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 已真实运行原首条HTTP并取得400 RED；源码后继只补默认关闭的team/related查询、当前本人处理／沟通交集及cursor范围隔离，**NOT_BUILT_NOT_RUN**，无044变更。该片不实现FOLLOW、attention、follow_version或正式UI；全票七项仍未完成。具体当前请求与关闭规则见[看板](board.md)，原证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t34.md)。下文保留最初冻结阶段和完整目标合同；其中完整关注的迁移readiness要求不由当前只读片替代。
+当前责任查询片：原提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 已真实运行原首条HTTP并取得400 RED；源码后继只补默认关闭的team/related查询、当前本人处理／沟通交集及cursor范围隔离，后继 d89547f4 的原首真实HTTP 1/1通过（仅责任查询片），无044变更。该片不实现FOLLOW、attention、follow_version或正式UI；全票七项仍未完成。具体当前请求与关闭规则见[看板](board.md)，原证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t34.md)。下文保留最初冻结阶段和完整目标合同；其中完整关注的迁移readiness要求不由当前只读片替代。
 
 返回 [接口导航](../README.md) · [当前看板](board.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t34.md)
 
@@ -52,7 +52,7 @@ POST 精确字段：`client_command_id:UUID`、`canonical_item:{kind,id}`、`exp
 
 不新增依赖、进程、Worker、Gateway、timer、SSE或数据库pool；复用现单App、单Worker与现池，建议总池≤8，原SSE32不变。板页默认50／最大100，原详情材料上限不变；源锚点上限100，事务和fixture串行。关闭方式为follow选项false并隐藏新操作／scope，保留关注和receipt事实，不改变旧mine、责任、Ticket及原开关；结构修复只用新迁移，不重写历史SQL或证据。
 
-第一条[真实HTTP RED源码](../../../tests/wbint-t34-follow.integration.test.mts)只覆盖实际沟通人的获权并集与已有Review规范去重，尚未运行。后续逐片覆盖显式关注／取消／原命令重放；真实处理、沟通转出与显式关注保留；GET／编辑无写；Review转换／双锚点取消；失权／角色变化、锁等待后重新验权、stale与并发；默认false无新表访问、缺迁移失败关闭；正式生产制品按钮／scope／列表／看板／详情及缓存清理。每片先保留原RED，再最小GREEN；适用unit／contract、隔离PG／HTTP、正式制品浏览器、strict、单build／artifact及工具proof均须实际记录。
+第一条[真实HTTP RED源码](../../../tests/wbint-t34-follow.integration.test.mts)只覆盖实际沟通人的获权并集与已有Review规范去重，现已在 d89547f4 的原首真实HTTP 1/1通过；这是单片证据。后续逐片覆盖显式关注／取消／原命令重放；真实处理、沟通转出与显式关注保留；GET／编辑无写；Review转换／双锚点取消；失权／角色变化、锁等待后重新验权、stale与并发；默认false无新表访问、缺迁移失败关闭；正式生产制品按钮／scope／列表／看板／详情及缓存清理。每片先保留原RED，再最小GREEN；适用unit／contract、隔离PG／HTTP、正式制品浏览器、strict、单build／artifact及工具proof均须实际记录。
 
 ## 2026-10-10 当前根接口的 SOURCE 接缝核对
 
