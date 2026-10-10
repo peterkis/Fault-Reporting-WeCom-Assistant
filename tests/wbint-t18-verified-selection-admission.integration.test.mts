@@ -5,12 +5,22 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac,randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {hashP2016} from '../src/p2-016-domain-contracts.mjs';
+import {hashP2016,P2016_ERROR_CODES} from '../src/p2-016-domain-contracts.mjs';
+import {WORKBENCH_ERROR_CODES} from '../src/p2-006-workbench-query.mjs';
 import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
 import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
 interface Fixture {origin:string;cookies:string[];principals:{id:string}[]}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');if(typeof value!=='string')throw Error('EXPECTED_STRING');return value;}
+const diagnosticErrorCodes:readonly string[]=Object.freeze([...P2016_ERROR_CODES,...Object.values(WORKBENCH_ERROR_CODES)]);
+// Retain only finite public error codes and a boolean. Body, message, labels, proof,
+// headers and credentials are never diagnostic output. This is not a server-cause observer.
+function safePublicError(input:unknown):{error_code:string;retryable:boolean|null}{
+  const error=input!==null&&typeof input==='object'&&!Array.isArray(input)&&'error'in input?input.error:null;
+  if(error===null||typeof error!=='object'||Array.isArray(error)||!('code'in error)
+    ||typeof error.code!=='string'||!diagnosticErrorCodes.includes(error.code))return {error_code:'UNKNOWN',retryable:null};
+  return {error_code:error.code,retryable:'retryable'in error&&typeof error.retryable==='boolean'?error.retryable:null};
+}
 const application={sourceCorpScope:'wbint-t18-synthetic-corp',sourceAppScope:'wbint-t18-synthetic-app'};
 const directoryScope='WBINT_T18_SYNTHETIC_DIRECTORY',mappingHash='c'.repeat(64),mappingProof='T18_SYNTHETIC_MAPPING_PROOF';
 // Controlled isolated authority represents an explicit mapped canonical member;
@@ -25,6 +35,7 @@ const candidate={candidate_ref:'t18_synthetic_allowed_candidate_01',candidate_ve
   display_name:'合成成员甲',departments:['合成门诊'],profile_source:'THIRD_PARTY_STAFF_DIRECTORY',binding_verified:true,message_reachability:'REACHABLE'};
 test('a real verified selection is rechecked by server authority and produces one durable manual admission with a stored minimal acknowledgement',async()=>{
   let authorizedPrincipalId:string|null=null,verifyCalls=0;
+  const verificationStages:string[]=[];
   let profile={display_name:'合成成员甲',departments:['合成门诊']};
   const directory:ManualReporterDirectoryOptions={
     application,
@@ -40,15 +51,18 @@ test('a real verified selection is rechecked by server authority and produces on
       },
       async verifyAuthorizedCandidate(input){
         verifyCalls++;
+        verificationStages.push('VERIFY_ENTERED');
         assert.ok(authorizedPrincipalId);assert.equal(input.principal_id,authorizedPrincipalId);
         assert.deepEqual(input.application,directory.application);
         assert.equal(input.directory_source_scope,directory.directorySourceScope);
         assert.deepEqual(input.selection,{verification:'VERIFIED_SELECTION',candidate_ref:candidate.candidate_ref,candidate_version:candidate.candidate_version});
         assert.equal(input.purpose,'ADMISSION');assert.equal(input.committed_target_scope,null);
+        verificationStages.push('VERIFY_ASSERTIONS_PASSED');
         input.signal.throwIfAborted();
         // Only a controlled synthetic authority supplies the identity/proof. No browser name,
         // phone, directory ID or raw WeCom ID is used to manufacture a binding.
         const epoch=String(Date.now()),local=formatEpochMsToShanghaiLocal(epoch),until=String(BigInt(epoch)+300_000n);
+        verificationStages.push('VERIFY_ENVELOPE_RETURNING');
         return {schema_version:1,purpose:'ADMISSION',selection:input.selection,application:directory.application,directory_source_scope:directory.directorySourceScope,
           actor_principal_id:authorizedPrincipalId,object_access:'ALLOWED',authorized_at:local,authorized_at_epoch_ms:epoch,
           valid_until:formatEpochMsToShanghaiLocal(until),valid_until_epoch_ms:until,
@@ -68,6 +82,11 @@ test('a real verified selection is rechecked by server authority and produces on
     assert.equal(page.status,200);assert.deepEqual(await page.json(),{schema_version:1,candidates:[candidate],next_cursor:null,manual_fallback_available:true});
     const command:VerifiedManualReportCommand={schema_version:1,client_command_id:randomUUID(),source:'PHONE',description:'合成经核实代录：打印机无法打印',location:{text:null,unknown:true},reporter:{verification:'VERIFIED_SELECTION',candidate_ref:candidate.candidate_ref,candidate_version:candidate.candidate_version}};
     const admitted=await fetch(origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
+    // Observe the same real response without consuming it or adding another request.
+    // The prior d980 body remains NOT_CAPTURED; this successor retains safe fields only.
+    let diagnosticPayload:unknown=null;try{diagnosticPayload=await admitted.clone().json();}catch{/* UNKNOWN, never print raw text */}
+    console.log('T18_POST_DIAGNOSTIC '+JSON.stringify({http_phase:'POST_RETURNED',status:admitted.status,
+      ...safePublicError(diagnosticPayload),verify_stages:[...verificationStages]}));
     assert.equal(admitted.status,202);const result=object(await admitted.json());
     assert.equal(verifyCalls,1);assert.equal(result.ok,true);assert.equal(result.client_command_id,command.client_command_id);
     assert.equal(result.reporter_verification,'VERIFIED');assert.equal(result.notification_eligibility,'ELIGIBLE');
