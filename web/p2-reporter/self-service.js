@@ -13,6 +13,40 @@ const durableLimit=20;
 const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
 const requestDeadlineMs=15000;
+// The independent feedback command stays in this page's memory. It never enters
+// the generic SUBMIT/SUPPLEMENT recovery journal or stores its raw operation.
+const feedbackState={pending:null,message:'',kind:''};
+function feedbackEligible(detail){const value=detail?.feedback_context;return value?.schema_version===1&&value.can_feedback===true&&value.rejection===null&&REQUEST_REF.test(value.completed_round_ref??'')&&Number.isInteger(value.completed_round_no)&&value.completed_round_no>=1&&value.completed_round_no<2147483647&&Number.isInteger(value.ticket_version)&&value.ticket_version>=1&&value.ticket_version<2147483647&&detail.ticket?.status==='CLOSED';}
+function renderFeedback(){
+ const detail=state.detail,allowed=feedbackEligible(detail)&&!state.readOnly&&!state.stopped;
+ const pending=feedbackState.pending,visible=Boolean(detail&&(allowed||pending?.requestRef===detail.request_ref||feedbackState.message));
+ $('feedback-panel').hidden=!visible;clear($('feedback-controls'));$('feedback-state').textContent=visible?feedbackState.message:'';$('feedback-state').className=feedbackState.kind;
+ if(!visible||!allowed&&!pending)return;
+ const button=node('button','仍未解决，重开此工单');button.type='button';button.dataset.action='submit-feedback';button.disabled=state.busy||Boolean(pending)||state.pendingCommandId!==null||state.storageBlocked||!allowed;button.addEventListener('click',()=>void submitFeedback());$('feedback-controls').append(button);
+}
+function clearFeedback(){feedbackState.pending=null;feedbackState.message='';feedbackState.kind='';$('feedback-panel').hidden=true;clear($('feedback-controls'));$('feedback-state').textContent='';}
+function committedFeedback(value,pending){
+ const exact=(object,keys)=>object&&typeof object==='object'&&!Array.isArray(object)&&Object.keys(object).sort().join(',')===keys.slice().sort().join(',');
+ if(!exact(value,['ok','replayed','request_ref','completed_round_ref','reopened_round_no','ticket'])||value.ok!==true||typeof value.replayed!=='boolean'||value.request_ref!==pending.requestRef||value.completed_round_ref!==pending.input.completed_round_ref||value.reopened_round_no!==pending.completedRoundNo+1||!exact(value.ticket,['ticket_no','status','version'])||value.ticket.ticket_no!==pending.ticketNo||value.ticket.status!=='REOPENED'||value.ticket.version!==pending.input.expected_ticket_version+1)throw ambiguousResult();return value;
+}
+async function submitFeedback(){
+ if(state.busy||state.stopped||state.hidden||state.pendingCommandId||feedbackState.pending||!feedbackEligible(state.detail)||state.readOnly)return;
+ const detail=state.detail,context=detail.feedback_context,id=crypto.randomUUID();
+ const pending=Object.freeze({requestRef:detail.request_ref,ticketNo:detail.ticket.ticket_no,completedRoundNo:context.completed_round_no,input:Object.freeze({schema_version:1,client_command_id:id,feedback:'STILL_UNRESOLVED',completed_round_ref:context.completed_round_ref,expected_ticket_version:context.ticket_version})});
+ feedbackState.pending=pending;feedbackState.message='正在提交本轮未解决反馈…';feedbackState.kind='';const operation=beginOperation({busy:true});renderFeedback();
+ try{
+  const result=await fetchJson(`/api/yixiaoxiu/requests/${pending.requestRef}/feedback`,{method:'POST',headers:{...jsonHeaders(id,window.__yxx_csrf),'if-match':'"'+pending.input.expected_ticket_version+'"'},body:JSON.stringify(pending.input)},operation.signal);
+  if(!ownsOperation(operation))return;committedFeedback(result.body,pending);
+  const fresh=await fetchJson(`/api/yixiaoxiu/requests/${pending.requestRef}`,{},operation.signal);if(!ownsOperation(operation))return;
+  if(fresh.body?.request_ref!==pending.requestRef||fresh.body.ticket?.ticket_no!==pending.ticketNo||fresh.body.ticket?.status!=='REOPENED')throw ambiguousResult();
+  const timeline=await loadTimeline(pending.requestRef,operation);if(!timeline||!ownsOperation(operation))return;
+  feedbackState.pending=null;feedbackState.message='已重开原工单，本轮等待工作人员重新承接。';feedbackState.kind='success';state.detailEtag=fresh.etag;renderDetail(fresh.body,timeline);
+ }catch(error){
+  if(!ownsOperation(operation))return;
+  if(error.status&&error.status<500){feedbackState.pending=null;feedbackState.message=messageFor(error.status);feedbackState.kind='error';if(error.status===404)clearDetailState();state.detailEtag=null;}
+  else{feedbackState.message='结果未知：保留原操作与版本，不会再次发送。请继续核对原结果。';feedbackState.kind='error';}
+ }finally{if(finishOperation(operation)){renderFeedback();syncPendingButtons();schedule();}}
+}
 const sessionRevalidationMs=5000;
 const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});
 const logoutStorageKey='yxx.self_service.logout_signal';
@@ -27,7 +61,7 @@ function setStatus(textValue,kind=''){const value=$('app-status');value.textCont
 function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
 function resetReportSource(){state.reportSource='';state.listLoading=false;$('report-source').value='';$('load-more-reports').hidden=true;$('load-more-reports').disabled=false;}
 function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
-function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked||state.readOnly===true;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
+function syncPendingButtons(){const blocked=state.pendingCommandId!==null||feedbackState.pending!==null||state.storageBlocked||state.readOnly===true;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
 function durableRecords(){const records=[];for(const key of durableKeys()){let value;try{value=JSON.parse(localStorage.getItem(key)??'null');}catch{continue;}if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id))continue;records.push({key,value});}return records;}
@@ -61,6 +95,7 @@ function remember(id){
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
+ if(!preserveContext)clearFeedback();else{$('feedback-panel').hidden=true;clear($('feedback-controls'));$('feedback-state').textContent='';}
  resetReportSource();
  resetServiceCatalog('');
  $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;state.supplementFeedback=null;
@@ -143,7 +178,7 @@ async function fetchJson(path,options={},signal){
 }
 function beginOperation({busy=false}={}){state.controller?.abort();const controller=new AbortController();state.controller=controller;if(busy)state.busy=true;return {controller,signal:controller.signal,generation:state.generation};}
 function ownsOperation(operation){return state.controller===operation.controller&&state.generation===operation.generation&&!state.stopped;}
-function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;if(state.sessionCheckDue)scheduleSessionRevalidation();return true;}
+function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;renderFeedback();if(state.sessionCheckDue)scheduleSessionRevalidation();return true;}
 function scheduleSessionRevalidation(){
  if(state.hidden||state.loggedOut||state.stopped||!RECOVERY_SCOPE.test(state.recoveryScope??'')){clearTimeout(state.sessionTimer);state.sessionTimer=null;return;}
  if(state.sessionTimer!==null&&!state.sessionCheckDue)return;
@@ -265,8 +300,8 @@ function renderTimeline(timeline,{older=false}={}){
  $('load-older-timeline').hidden=!state.timelineCursor;$('load-older-timeline').disabled=false;
  $('timeline-window-note').textContent=state.timelineExpanded?'已加载较早记录；下次状态刷新会回到最近100条。':'显示最近100条处理记录；可按需加载更早记录。';
 }
-function renderDetail(detail,timeline){state.detail=detail;renderGuidance(detail);clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['位置',detail.safe_location||'未提供位置'],['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);$('detail-status').append(node('span',` · ${detail.ticket?.ticket_no?ticketSummary(detail.ticket):'尚未生成工单'}`));$('supplement-form').hidden=!detail.can_supplement;}
-function clearDetailState(){state.supplementFeedback=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
+function renderDetail(detail,timeline){state.detail=detail;renderGuidance(detail);clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['位置',detail.safe_location||'未提供位置'],['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);$('detail-status').append(node('span',` · ${detail.ticket?.ticket_no?ticketSummary(detail.ticket):'尚未生成工单'}`));$('supplement-form').hidden=!detail.can_supplement;renderFeedback();}
+function clearDetailState(){clearFeedback();state.supplementFeedback=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
 async function loadTimeline(ref,operation,{cursor=null}={}){const query=new URLSearchParams({limit:'100'});if(cursor)query.set('cursor',cursor);else query.set('before',latestTimelineBoundary);const result=await fetchJson(`/api/yixiaoxiu/requests/${ref}/timeline?${query}`,{},operation.signal);return ownsOperation(operation)?result.body:null;}
 async function loadDetail(){
  if(state.busy||!state.detail)return;
@@ -380,7 +415,7 @@ async function bootstrap(){
   const nextScope=result.body.recovery_scope;
   if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
   readPending();
-  if(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope)releaseTabPending();
+  if(previousScope&&previousScope!==nextScope){clearFeedback();}if(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope)releaseTabPending();
   state.recoveryScope=nextScope;window.__yxx_csrf=result.body.csrf_token;
   state.readOnly=result.body.read_only===true;
   for(const link of document.querySelectorAll('a[href="/wecom/yixiaoxiu/reports/new"]'))link.hidden=!result.body.can_submit;

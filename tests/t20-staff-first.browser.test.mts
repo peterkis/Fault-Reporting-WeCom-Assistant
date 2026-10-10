@@ -23,6 +23,7 @@ test('production PC HANDLER explicitly reopens a completed Ticket through its in
    const cookie=started.cookies[2];assert.ok(cookie);assert.equal(typeof cookie.url,'string');
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
    await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已关闭')");
+   await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&!document.querySelector('.ticket-reopen')?.textContent.includes('正在读取重开权限')");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-action=reopen-ticket]'))"),true,'production PC must expose independent authorized staff reopen');
    await tab.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t20Posts.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t20Reads.push(String(path));return original(path,options);};})()");
    await tab.evaluate("(()=>{const input=document.querySelector('#reopen-reason');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'工作人员核实同一故障仍需处置');input.dispatchEvent(new Event('input',{bubbles:true}));})()");

@@ -2,7 +2,7 @@
 
 返回[成员自助](self-service.md) · [T20执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。来源为 WBINT-06/A06、[Issue #75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)、Accepted [ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)。
 
-2026-10-10 当前为 **IN_PROGRESS**：M真实反馈/安全原UUID首、独立HANDLER W重开首与两种下一显式承接已有各自固定源本地GREEN。原公开RED、mixed FAIL与未到达部分保留D原件，不复用旧GREEN到新源；当前闭合详情Schema、锁等待后保留期复核与生产PC首消费最小前向仍待验证，H5首次尚未到按钮断言，完整权限/恢复/提醒/浏览器/兼容和原七收口未完成。2026-10-09的SOURCE_READY/NOT_IMPLEMENTED/NOT_RUN是保留的原准备状态。Bot feedback属于T21；既有Web补充与只读/OAuth-only/SS011边界保持。
+2026-10-10 当前为 **IN_PROGRESS**：M真实反馈/安全原UUID首、独立HANDLER W重开首与两种下一显式承接已有各自固定源本地GREEN；f21固定源15项合同/权限/并发/锁等待风险实际GREEN。原公开RED、mixed FAIL与未到达部分保留D原件，不复用旧GREEN到新源。生产H5已实际到达本人详情并证明缺反馈按钮；PC异步context原观察FAIL与独立H5双close清理错误分别保留。当前H5按钮/原闭合结果+fresh GET及最小测试安排后继是NOT_RUN；完整恢复/提醒/浏览器/兼容和原七收口未完成。2026-10-09的SOURCE_READY/NOT_IMPLEMENTED/NOT_RUN是保留的原准备状态。Bot feedback属于T21；既有Web补充与只读/OAuth-only/SS011边界保持。
 
 ## HTTP、输入和输出
 
