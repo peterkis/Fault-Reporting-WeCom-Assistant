@@ -16,6 +16,7 @@ import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
+import {completedTicketRound,reopenCompletedRound,reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
 
@@ -38,8 +39,9 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   // The existing exact-key, action-specific and scalar guards above establish this union.
   return result as TicketCommand;
 }
-export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,query=createP2016TicketQuery({pool,enabled}),controlService,
-  notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions) {
+export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketReopenRoundsEnabled=false,query=createP2016TicketQuery({pool,enabled}),controlService,
+  notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions & {ticketReopenRoundsEnabled?:boolean}) {
+  if(typeof ticketReopenRoundsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
@@ -53,7 +55,8 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
-          if(ticketStaffCompletionEnabled){
+          if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
+          if(ticketStaffCompletionEnabled||ticketReopenRoundsEnabled){
             // Completion and existing commands must take the same stream mutex before receipt FK locks.
             if(realtimeProjector?.lock)await realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
             context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
@@ -80,7 +83,15 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
           }
           const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
           let result: { ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent };
+          let newCycle:{id:string;cycle_no:number;first_responsibility_event_id:null;staff_completion_event_id:null}|null=null;
+          const completed=command.action==='reopen'&&ticketReopenRoundsEnabled?await completedTicketRound(transaction,ticket.id):null;
           if(command.action==='transfer-assignment')result=await transferTicketAssignmentP2016({transaction,principal,ticket,command});
+          else if(completed){
+            if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
+            const reopened=await reopenCompletedRound({transaction,round:completed,actor:{type:'PILOT_USER',id:principal.principal_id},commandId:command.client_command_id,
+              origin:'STAFF',reasonCode:command.reason_code,note:command.note??null,afterAction:closure?.afterTicketAction??null});
+            result=reopened;newCycle=reopened.handling_cycle;
+          }
           else {
             const actions=createTicketActionService({authorize:async({ticket:current,action})=>ticketActionAllowedP2016(principal,current,action),
               afterAction:closure?.afterTicketAction??null});
@@ -99,7 +110,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
           }
           if(notificationProjector&&!closure)await notificationProjector.project({transaction,ticket:result.ticket,event:result.event});
           if(realtimeProjector)await realtimeProjector({transaction,ticket:result.ticket,event:result.event,command});
-          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null};
+          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null,...(newCycle?{handling_cycle:newCycle}:{})};
         },
       });
     },

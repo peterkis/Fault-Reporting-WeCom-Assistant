@@ -16,11 +16,12 @@ import {createTicketConversationHandlingService} from './workbench-ticket-conver
 import {createTicketAssignmentService} from './workbench-ticket-assignment.mjs';
 import {createTicketUnassignService,unassignSchemaReady} from './workbench-ticket-unassign.mjs';
 import {createTicketStaffCompletionService,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
+import {reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
 import {createWorkbenchConversations} from './workbench-conversations.mjs';
 import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench-manual-reports.mjs';
-interface P2016RuntimeOptionsInput { ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
+interface P2016RuntimeOptionsInput { ticketReopenRoundsEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -76,13 +77,14 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,ticketUnassignEnabled=false,ticketAssignmentEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,ticketStaffCompletionEnabled=false,workbenchManualReviewEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,ticketReopenRoundsEnabled=false,ticketUnassignEnabled=false,ticketAssignmentEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,ticketStaffCompletionEnabled=false,workbenchManualReviewEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
   if(typeof ticketAssignmentEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchManualReportsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchRealtimeEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketConversationSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketUnassignEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof ticketReopenRoundsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchConversationsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -129,7 +131,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtimeProjector.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async (input: ClosureNotificationInput)=>{
         const n=await notifications.project(input);await (realtimeProjector as RealtimeProjector).ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
       }}});
-      tickets=createP2016TicketCommandFacade({pool,enabled,ticketStaffCompletionEnabled,query,controlService,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket});
+      tickets=createP2016TicketCommandFacade({pool,enabled,ticketStaffCompletionEnabled,ticketReopenRoundsEnabled,query,controlService,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket});
       reviews=createP2016ManualReviewFacade({pool,enabled,workspaceEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
@@ -177,9 +179,11 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           const unassignReady=!ticketUnassignEnabled||await unassignSchemaReady(pool);
           const staffCompletionReady=!ticketStaffCompletionEnabled||await staffCompletionSchemaReady(pool);
           const manualReportsReady=!workbenchManualReportsEnabled||await manualReportsSchemaReady(pool);
-          const ready=unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
+          const roundsRequested=ticketReopenRoundsEnabled||yxxSelfService?.reporterFeedbackEnabled===true;
+          const reopenReady=!roundsRequested||await reopenRoundsSchemaReady(pool);
+          const ready=reopenReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,...(roundsRequested?{ticket_reopen_rounds_schema:reopenReady}:{}),...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await conversations.handler(context))||(await manualReports.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))

@@ -1,5 +1,5 @@
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
-import type {TicketActor} from './p1-006-ticket-state-actions.mjs';
+import type {TicketActor,TicketActionAfterHook} from './p1-006-ticket-state-actions.mjs';
 import {createTicketActionService} from './p1-006-ticket-state-actions.mjs';
 import {failP2016} from './p2-016-domain-contracts.mjs';
 export interface CompletedTicketRound {id:string;ticket_id:string;source_intake_id:string;cycle_no:number;staff_completion_event_id:string;completed_by:string;resolver_team_id:string;ticket_no:string;version:number;status:string}
@@ -20,9 +20,9 @@ export async function completedTicketRound(tx:PostgresTransaction,ticketId:strin
  return selected.rows[0]??null;
 }
 // Caller owns transaction, authorization and stream-before-receipt lock. No network or transaction boundary here.
-export async function reopenCompletedRound({transaction:tx,round,actor,commandId,origin,reasonCode,note=null}:{transaction:PostgresTransaction;round:CompletedTicketRound;actor:TicketActor;commandId:string;origin:'WEB_REPORTER'|'STAFF';reasonCode:string;note?:string|null}){
+export async function reopenCompletedRound({transaction:tx,round,actor,commandId,origin,reasonCode,note=null,afterAction=null}:{transaction:PostgresTransaction;round:CompletedTicketRound;actor:TicketActor;commandId:string;origin:'WEB_REPORTER'|'STAFF';reasonCode:string;note?:string|null;afterAction?:TicketActionAfterHook|null}){
  const latest=await completedTicketRound(tx,round.ticket_id);if(!latest||latest.id!==round.id||latest.version!==round.version)failP2016('VERSION_CONFLICT',409);
- const result=await createTicketActionService({authorize:async()=>true,reopenClearAssignee:true}).performInTransaction({ticketId:round.ticket_id,action:'reopen',actor,expectedVersion:round.version,reasonCode,note,traceId:'t20:'+commandId},tx);
+ const result=await createTicketActionService({authorize:async()=>true,reopenClearAssignee:true,afterAction}).performInTransaction({ticketId:round.ticket_id,action:'reopen',actor,expectedVersion:round.version,reasonCode,note,traceId:'t20:'+commandId},tx);
  const inserted=await tx.query<{id:string;cycle_no:number}>(`INSERT INTO pilot_ticket.ticket_handling_cycle(ticket_id,cycle_no,source_intake_id,cycle_start_event_id,client_command_id)
    VALUES($1::uuid,$2,$3::uuid,$4::uuid,$5::uuid) RETURNING id::text,cycle_no`,[round.ticket_id,round.cycle_no+1,round.source_intake_id,result.event.event_id,commandId]);
  const next=inserted.rows[0];if(!next)failP2016('ACTION_FAILED',503);
