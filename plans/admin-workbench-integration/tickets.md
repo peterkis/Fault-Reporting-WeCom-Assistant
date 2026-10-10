@@ -21,6 +21,8 @@ native_blocking_edges: 76
 
 2026-10-10恢复核查：GitHub已关闭13／43票，剩余30票OPEN；在上述12票之外，T27公共故障候选已按原七项验收、合入本地集成分支并[收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82#issuecomment-6088472390)，见[原对象与分组证据](execution/t27.md)。T28的原生blocker #82已CLOSED；下一串行验证窗口为T22。A09整组仍未完成。
 
+2026-10-10最新恢复核查：GitHub已关闭14／43票，剩余29票OPEN；T22集中会话原七项已完成父独立核对、合入本地集成并[收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77#issuecomment-6089929089)，见[实际对象、原报告与关闭方式](execution/t22.md)。WBINT-07／A07本地完成；T35的原生blockers #69／#77均已关闭。下一串行验证窗口为T08；其它已准备源码不计验收。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -130,9 +132,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-06 / A06
 
-- [ ] **T22** — [#77 集中查看会话并人工回复](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
+- [x] **T22** — [#77 集中查看会话并人工回复](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-07 / A07
+  - **本地执行：** [原七项、本地隔离验证与资源释放](execution/t22.md)已由父核对；交付882e384c安全快进，GitHub CLOSED已读回。真实被测06f3c880保持原manifest和证据身份；默认关闭、未发布／启用。
 
 - [x] **T23** — [#78 检索并维护来源群显示名称](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/78)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
@@ -187,6 +190,7 @@ native_blocking_edges: 76
   - **来源：** WBINT-12 / A12
 
 - [ ] **T35** — [#90 实际阅读后推进个人已读](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
+  - **执行：** 2026-10-10 实读完整正文／空评论／ready标签及原无assignee，原生blockers #69／#77均CLOSED后领取给peterkis；独立工作树已冻结跨来源个人位置合同与原真实HTTP／production浏览器tracer，8个自有文件及原副本逐SHA核对。SOURCE_READY／NOT_BUILT_NOT_RUN；等待串行窗口，不计A12验收。
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)、[#77](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **来源：** WBINT-12 / A12
 
