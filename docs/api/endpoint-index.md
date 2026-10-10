@@ -236,11 +236,12 @@
 
 内部持久承诺reader不属于REST；默认false的旧Pilot不能执行或广告complete，旧resolve/confirm语义保留。
 
-## WBINT-T08计划合同（PLANNED/NOT_RUN，未挂载）
+## WBINT-T08 撤销未开始派工（已实现，默认关闭）
 
-| 方法 | 完整路径 | 状态/用途 | 合同 |
+| 方法 | 完整路径 | 当前用途 | 合同 |
 | --- | --- | --- | --- |
-| POST | `/api/tickets/{ticketId}/unassign` | PLANNED：ADMIN/DISPATCHER撤销当前尚未开始派工，一个原子命令；默认false | [T08计划合同](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run) |
-| GET | `/api/tickets/{ticketId}/unassign/commands/{commandId}` | PLANNED：原principal/用途/UUID的安全Ticket终态核对；另需raw recovery | [T08计划合同](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run) |
+| POST | `/api/tickets/{ticketId}/unassign` | 获权 ADMIN/DISPATCHER 撤销当前未开始派工；明确内部原因；默认保留沟通，显式所选交接同事务 | [撤派合同](workbench/tickets.md#wbint-t08-撤销未开始派工) |
+| GET | `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前 Ticket 读权和原 principal/用途/UUID 的最小终态核对；独立 T08 consumer 启用即可，raw recovery 可关闭 | [安全核对](workbench/tickets.md#wbint-t08-撤销未开始派工) |
+| GET | `/api/tickets/{ticketId}/unassign/communication-targets` | 当前合法动作的活动内部沟通目标；可用 `target_principal_id=UUID` 验证保存的目标；结果至多 100，不授予 Control 写权 | [目标读取](workbench/tickets.md#wbint-t08-撤销未开始派工) |
 
-本节不属于当前已实现接口，SOURCE准备不能证明mounted REST或运行RED/PASS；T08全部运行NOT_RUN，具体剩余见[执行记录](../../plans/admin-workbench-integration/execution/t08.md)。
+三入口和正式管理端消费已完成本机合成隔离 PG、真实 loopback HTTP、生产 bundle 浏览器及相关兼容验证。独立 `ticketUnassignEnabled` 默认 false；准确被测源码、原七项、原始 FAIL/PASS、制品与资源证据见[本票执行](../../plans/admin-workbench-integration/execution/t08.md)。本地验证不构成真实外发、部署或 Gate 授权。

@@ -54,6 +54,8 @@
 
 后续若确认真实契约缺陷，应先按已有ADR/任务授权修正对应合同和实现、添加针对风险的验证，再同步本目录。本轮没有为这些差异新建候选、改Gate或运行full/certify。
 
-## WBINT-T08 SOURCE合同增量（2026-10-09）
+## WBINT-T08 本地整票实现（2026-10-10）
 
-[撤销当前未开始派工](workbench/tickets.md#撤销未开始派工wbint-t08plannednot_run)已冻结独立闭合Schema，`POST /api/tickets/{id}/unassign`及专用只读ACK仍PLANNED/未挂载，所有运行NOT_RUN。当前T06 assignment事件、039及Control caller-Tx只提供复用接缝，不能替代release状态/角色/fence/历史、same-round再承接与正式bundle验收。未知legacy责任边界失败关闭，不将本轮过去曾started永久绑定新承接；当前进行中和两waiting须独立T09，T09仍blocked。本阶段无SQL/产品实现，未来最小前向release event/null metadata CHECK编号由父另行分配，不占046。[原七项执行](../../plans/admin-workbench-integration/execution/t08.md)仍IN_PROGRESS。
+[撤销当前未开始派工](workbench/tickets.md#wbint-t08-撤销未开始派工)的闭合 POST、安全原 UUID GET ACK、有界沟通目标 GET 及正式前端消费现已实现，独立 consumer 默认 false。ACK 不要求 raw recovery；敏感恢复另以当前账号/Ticket/purpose 加密保留最长 24h，UNKNOWN 只 GET 原终态、不自动重发。实际数据库变更仅前向 `046_ticket_unassign.sql`，扩既有事件和严格 null 释放 CHECK，不新增表或第二事实源；历史 SQL 保持。原 20 本票文件 32PASS、15 相关文件 106PASS、既有 hosts 原生 27PASS；准确固定制品、原始失败与工具采集分类更正分别记录，不将内部故障注入 TAP 当主运行失败。
+
+未知/被截断的同人责任链 fail-closed；已证明的当前不同个人未开始责任段不因较早 200 条历史被误拒绝。进行中和两 waiting 不能使用本入口，独立 T09 范围保持，T08 不提前实现停止退回。真实再承接及旧/新 accept 混用保留同轮原首次责任通知，各 Delivery 承诺独立；不外发撤派通知或新建轮次。[原七项执行](../../plans/admin-workbench-integration/execution/t08.md)为 LOCAL_VERIFIED_WHOLE，GitHub/工作包收口由父独立验收后更新；真实依赖、发送、部署、full/certify/Gate 未运行。

@@ -206,9 +206,9 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 
 复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。
 
-## 撤销未开始派工（WBINT-T08，实施中）
+## WBINT-T08 撤销未开始派工
 
-本节为当前冻结合同及本票实现进度。POST、安全 GET ACK、沟通目标 GET 及正式管理端 UI 已在自有隔离 PG、真实 HTTP 和生产 bundle 浏览器局部验证。原七项整票最后固定候选的完整并集及相关工具验证尚待结束。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
+本节为当前冻结合同及本票实现进度。POST、安全 GET ACK、沟通目标 GET 及正式管理端 UI 已在自有隔离 PG、真实 HTTP 和生产 bundle 浏览器局部验证。原七项已完成本地整票验证：固定 20 个本票文件 32PASS、15 个直接相关文件 106PASS、既有 hosts 原生 27PASS。原 source 与文档后继身份分开记录，GitHub/工作包收口由父独立验收。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
 
 | METHOD + PATH | 当前合同 |
 | --- | --- |
@@ -226,4 +226,4 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 安全200为`ok,ticket_id,ticket_version,ticket_event_id,control_event_id:null,handling_cycle,communication_choice,conversations,replayed`，无原因/Reporter/正文；默认retain返回空conversations，GET重读实际责任。ACK复用[安全assignment receipt形状](../../../contracts/p2_016_assignment_receipt.schema.json)，只给最小Ticket终态，无Session/原因。UNKNOWN不等于未提交；409保留输入并明确新操作，401/403/404清可信授权敏感副本，临时503/网络保留未核验输入且不自动POST；当前浏览器按账号、Ticket 和 purpose 加密恢复，最长 24h；原 UUID 在 UNKNOWN 后只 GET 安全 ACK，不自动重放 POST。raw 关闭仍可内存核对。已知 COMMITTED 后清理失败仍保持已提交并阻止新命令，重试核对后完成清理；恢复须当前授权和目标/所选 Session 版本核验。临时网络故障保留密文并隐藏未核验选择；真实失权仅清本用途敏感副本，其他用途保留。
 
-输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组尚待验证，整票 IN_PROGRESS。
+输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
