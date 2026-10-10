@@ -67,6 +67,7 @@ export function parseReporterVerification(input:unknown,request:ManualReporterVe
       ||p.directory_source_scope!==request.directory_source_scope||uuidP2016(p.actor_principal_id)!==request.principal_id
       ||!Array.isArray(profile.departments)||profile.departments.length>20||new Set(profile.departments).size!==profile.departments.length
       ||(reach.status!=='REACHABLE'&&reach.status!=='UNREACHABLE'&&reach.status!=='UNKNOWN')||reach.target_scope_hash!==target.scopeHash)unavailable();
+    if(typeof p.account_status!=='string'||typeof p.binding_state!=='string')unavailable();
     if(p.account_status!=='ACTIVE'||p.binding_state!=='VERIFIED')failP2016('VERSION_CONFLICT',409);
     const verified=clock(p.verified_at,p.verified_at_epoch_ms),checked=clock(reach.checked_at,reach.checked_at_epoch_ms);
     if(verified!==issued||BigInt(checked)>BigInt(verified)||BigInt(verified)-BigInt(checked)>300_000n)unavailable();
