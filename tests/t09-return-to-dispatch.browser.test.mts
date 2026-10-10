@@ -102,11 +102,17 @@ test('production PC current handler restores two required inputs and returns a r
       assert.equal(await browser.evaluate(`(${root})?.innerText.includes(${JSON.stringify(reason)})`),false);assert.equal(await browser.evaluate(`(${root})?.innerText.includes(${JSON.stringify(unfinished)})`),false);completed.push(activeStage);
       activeStage='EXPLICIT_SAFE_ACK';const ackPath=path+'/return-to-dispatch/commands/'+commandId;
       await browser.evaluate(`(()=>{const send=fetch;globalThis.fetch=async(url,options)=>{const response=await send(url,options);if((options?.method??'GET')==='GET'&&String(url)===${JSON.stringify(ackPath)})globalThis.__t09RealAck={status:response.status,body:await response.clone().json()};return response;};})()`);
-      await browser.evaluate(`(${check}).click()`);await browser.waitFor(`(${root})?.innerText.includes('原操作已核对为提交')&&(${queued})`);
+      await browser.evaluate(`(${check}).click()`);
+      const acknowledgementWaitDeadline=Date.now()+30000; // Existing browser wait default; completion shares that budget.
+      await browser.waitFor(`(${root})?.innerText.includes('原操作已核对为提交')&&(${queued})`);
       const acknowledgement=object(await browser.evaluate('globalThis.__t09RealAck'));assert.equal(acknowledgement.status,200);assert.deepEqual(acknowledgement.body,{state:'COMMITTED',ticket_id:ticketId,ticket_version:version(before.version)+1,ticket_event_id:text(result.ticket_event_id)});
       assert.equal(posts().length,1);assert.equal(acks().length,1);const ack=acks()[0];assert.ok(ack);assert.equal(ack.method,'GET');assert.equal(ack.path,ackPath);assert.equal(ack.status,200);completed.push(activeStage);
       activeStage='CURRENT_FACTS_AND_CLEANUP';
       // Observe actual consumer re-reads before independent ADMIN comparison, so test GETs cannot impersonate UI refresh.
+      // The message is rendered before asynchronous query invalidations finish; only real server response finishes satisfy this wait.
+      while(Date.now()<acknowledgementWaitDeadline&&!([path,webPath].every(resource=>requests.some(row=>row.method==='GET'&&row.order>ack.order&&row.path===resource&&row.status===200)))){
+        await new Promise<void>(resolveWait=>setTimeout(resolveWait,50));
+      }
       assert.ok(requests.some(row=>row.method==='GET'&&row.order>ack.order&&row.path===path&&row.status===200));assert.ok(requests.some(row=>row.method==='GET'&&row.order>ack.order&&row.path===webPath&&row.status===200));
       assert.deepEqual(await publicGet(admin,path),committed);assert.deepEqual(await publicGet(admin,path+'/responsibility'),committedResponsibility);assert.deepEqual(rows((await publicGet(admin,path+'/events?limit=200')).items),committedHistory);assert.deepEqual(await publicGet(admin,path+'/deliveries'),deliveries);
       const records=rows((await publicGet(admin,webPath+'?limit=100')).records);assert.deepEqual(records.filter(row=>row.audience==='EXTERNAL'),external);assert.ok(records.some(row=>row.id==='event:'+text(returned.event_id)&&row.audience==='INTERNAL'&&typeof row.text==='string'&&row.text.includes(reason)&&row.text.includes(unfinished)));
