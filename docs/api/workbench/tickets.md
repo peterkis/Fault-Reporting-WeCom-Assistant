@@ -228,14 +228,14 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
 
-## 停止处理并退回（WBINT-T09，HTTP原首已验证／PC源码待验证）
+## 停止处理并退回（WBINT-T09，部分隔离验证通过／当前组装待验证）
 
-以下是[#64](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64)的冻结合同与当前实现状态。RETAIN_CURRENT原首在9eab、TRANSFER_SELECTED原首在cca730、安全ACK原首在1528分别取得固定制品的真实HTTP1PASS；各自的原404／503 RED继续保留。55c原production PC首取得真实FORM_PRESENT超时RED，前置合法WAITING_VENDOR和PC详情通过；双必填、恢复、提交、UNKNOWN刷新、显式ACK及消费者重读均NOT_REACHED。随后补齐最小能力、客户端和PC消费者源码，当前后继为**SOURCE_READY_NOT_BUILT_NOT_RUN**，这些历史HTTP结果不重绑新候选，整票仍未验收。独立动作覆盖`IN_PROGRESS|WAITING_REQUESTER|WAITING_VENDOR → QUEUED`，当前处理人或获权ADMIN／DISPATCHER记录原因及未完成工作后清处理人，保留有效处理组、本轮与来源历史；默认保留独立沟通责任。具体对象和原七项剩余见[T09执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
+以下是 [#64](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64) 的冻结合同。历史 b0cd 对象的真实 PC 输入恢复／UNKNOWN／ACK 及三条 HTTP 原首共 4 PASS，69ae 对象的安全 ACK、字段权限及竞争重放再承接共 5 PASS；各自旧 FAIL 与原被测对象保留。当前已正常合入 T24/041，但新组装 tracer 和显式多会话 PC 两 case 尚未运行，状态 **SOURCE_READY_NOT_BUILT_NOT_RUN**，整票尚未验收。独立动作覆盖 `IN_PROGRESS|WAITING_REQUESTER|WAITING_VENDOR → QUEUED`，当前处理人或获权 ADMIN／DISPATCHER 记录原因及未完成工作后清处理人，保留处理组、本轮及来源历史，默认保留独立沟通责任。完整对象、版本和原七项余项见 [T09 执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
 
 | METHOD + PATH（W；验证对象见执行记录） | 合同与状态 |
 | --- | --- |
 | `POST /api/tickets/{ticketId}/return-to-dispatch` | 已实现；RETAIN_CURRENT在9eab、单Session TRANSFER_SELECTED在cca730原HTTP1PASS。单个原子停止退回命令；[闭合八字段Schema](../../../contracts/p2_016_return_to_dispatch_command.schema.json)，[安全结果Schema](../../../contracts/p2_016_return_to_dispatch_result.schema.json)。当前PC消费者尚未验证 |
-| `GET /api/tickets/{ticketId}/return-to-dispatch/commands/{commandId}` | 已实现；1528原HTTP1PASS。当前Ticket READ、原principal／Ticket／专用用途及UUID；[闭合安全ACK](../../../contracts/p2_016_return_to_dispatch_receipt.schema.json)不返回原因、未完成工作或所选Session。整个W读入口启用且当前TicketREAD有效，独立于T09写option与raw恢复；literal写false边界仍待实测 |
+| `GET /api/tickets/{ticketId}/return-to-dispatch/commands/{commandId}` | 已实现；1528原HTTP1PASS。当前Ticket READ、原principal／Ticket／专用用途及UUID；[闭合安全ACK](../../../contracts/p2_016_return_to_dispatch_receipt.schema.json)不返回原因、未完成工作或所选Session。整个W读入口启用且当前TicketREAD有效，独立于T09写option与raw恢复；literal 写 false 边界已在历史 69ae 对象验证；当前组装未重跑 |
 | `GET /api/lifecycle/bootstrap`、`GET /api/tickets/{ticketId}` | 当前SOURCE补充T09两项boolean能力及获权`allowed_actions: return-to-dispatch`；[闭合能力片段](../../../contracts/p2_016_return_to_dispatch_capability.schema.json)。缺省能力按false解码；广告不执行命令，仍由POST锁后再次验权 |
 | `GET /api/tickets/{ticketId}/related-conversations[?cursor=…]` | 复用已实现的canonical关联会话分页；每页≤20，真实row_version与take_allowed。当前SOURCE允许独立T09启用时读取；不根据最近消息猜测Session |
 | `GET /api/conversations/{sessionId}/eligible-principals` | 复用已实现的当前Session读权与活动内部资格列表，每页≤100；SOURCE消费者对最多8个明确Session串行读取TRANSFER_TARGET交集，再逐Session复核READ／Control／版本／关系。列表不授予写权；原target未在有界列表中出现只算未核验，不据此清除密文 |
@@ -253,7 +253,7 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 当前PC草稿SOURCE使用purpose=`ticket-return-to-dispatch`，沿T03同账号／Ticket／当前浏览器AES-GCM、24h／20份／16KiB与T38 epoch、abort、generation及storage CAS。双必填独立字段、Ticket版本和明确沟通选择共同保存；原UUID／版本／八字段body在UNKNOWN后冻结，只显式GET安全ACK，不自动换UUID／版本或POST。成功／丢弃／退出／可信失权清本用途，临时失败保留未核验密文，敏感到期只留opaque标识；迟到结果不得改新输入。恢复前重验Ticket与明确Session授权，最多10页关联查询；超过界限或目标列表未能证明旧选择时保留密文并阻止恢复／新提交。关raw后不解密或新建空恢复库；已有原操作必须只读核对，不能以新的UUID提交。实际POST成功先记COMMITTED，后续GET或本地清理暂时失败不改成终态拒绝。以上均待原PC首及必要边界实测。
 
-`ticketReturnToDispatchEnabled=false`仍为独立默认关闭源码option，不偷开T05／T06／T08。关闭T09停止POST及动作能力，安全ACK仍以整个W读启用、当前认证／TicketREAD及原actor／Ticket／专用purpose／UUID读取原031 ledger；不查048、不检查当前写状态／版本／target。PC保持安全ACK消费者可挂载，关闭写能力或raw恢复不允许创建新操作；整个W关闭／身份失效／失权仍拒绝。literal T09=false边界须独立实测。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续承接不应重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target每页≤100、关联恢复≤10页、单表单in-flight1保持，无新SSE／轮询／worker。原bd412编译FAIL、aab2／b618／0a0ffcb真实HTTP RED、9eab／cca730／1528各原首GREEN及55c PC FORM_PRESENT RED独立保全；当前源码的build／strict／artifact／SQL／HTTP／browser均NOT_RUN，整七项仍IN_PROGRESS。
+`ticketReturnToDispatchEnabled=false`仍为独立默认关闭源码option，不偷开T05／T06／T08。关闭T09停止POST及动作能力，安全ACK仍以整个W读启用、当前认证／TicketREAD及原actor／Ticket／专用purpose／UUID读取原031 ledger；不查048、不检查当前写状态／版本／target。PC保持安全ACK消费者可挂载，关闭写能力或raw恢复不允许创建新操作；整个W关闭／身份失效／失权仍拒绝。literal T09=false 边界已在历史 69ae 对象验证，当前组装对象尚未重跑。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续承接不应重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target每页≤100、关联恢复≤10页、单表单in-flight1保持，无新SSE／轮询／worker。原bd412编译FAIL、aab2／b618／0a0ffcb真实HTTP RED、9eab／cca730／1528各原首GREEN及55c PC FORM_PRESENT RED独立保全；当前源码的build／strict／artifact／SQL／HTTP／browser均NOT_RUN，整七项仍IN_PROGRESS。
 
 ## Bot 原报修人轮次通知读取（WBINT-T24）
 
