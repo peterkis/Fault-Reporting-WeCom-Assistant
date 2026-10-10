@@ -43,6 +43,11 @@ async function load(browser:Browser){
   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
   await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'&&Boolean(document.querySelector('#detail-title'))`);
 }
+async function receiptScreenshot(browser:Browser){
+  const imageDirectory=join(tmpdir(),'web01-ui-'+randomUUID());
+  await mkdir(imageDirectory);
+  return screenshot(browser,imageDirectory,'new-detail-1920');
+}
 async function screenshot(browser:Browser,directory:string,name:string){
   const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name+'.png');await writeFile(file,pixels);
   return {file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')};
@@ -126,7 +131,7 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
         assert.deepEqual(await browser.evaluate('globalThis.__t24PCWrites'),[]);
         assert.deepEqual(await physical(),baseline);assert.deepEqual(await producer.detail(id),completed);assert.equal(senderCalls,1);
         await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).scrollIntoView({block:'center'})`);
-        console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_NON_PENDING_STATES',delivery_status:scenario.status,side_effect_state:scenario.effect,sender:'SYNTHETIC_ONLY',screenshots:[await screenshot(browser,directory,'real-'+scenario.name+'-authorized-refresh')]}));
+        console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_NON_PENDING_STATES',delivery_status:scenario.status,side_effect_state:scenario.effect,sender:'SYNTHETIC_ONLY',screenshots:[await receiptScreenshot(browser)]}));
       }catch(failure){
         error=failure;
         try{if(browser){

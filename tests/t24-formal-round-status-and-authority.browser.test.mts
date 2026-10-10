@@ -30,6 +30,11 @@ async function load(browser:Browser){
   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
   await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'&&Boolean(document.querySelector('#detail-title'))`);
 }
+async function receiptScreenshot(browser:Browser){
+  const imageDirectory=join(tmpdir(),'web01-ui-'+randomUUID());
+  await mkdir(imageDirectory);
+  return screenshot(browser,imageDirectory,'new-detail-1920');
+}
 async function screenshot(browser:Browser,directory:string,name:string){
   const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name+'.png');await writeFile(file,pixels);
   return {file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')};
@@ -73,7 +78,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
       await browser.evaluate(click());await browser.waitFor(`globalThis.__t24PCReads.length>${reads.length}`);await browser.waitFor(render());
       const reread=await browser.evaluate('globalThis.__t24PCReads.at(-1)') as Read;assert.equal(reread.path,path);assert.equal(reread.status,200);assert.deepEqual(reread.body.items,actual.items);
       for(const marker of ['INTERNAL_T24_PC_CANARY','user-test','bot-test']){assert.equal(visible.includes(marker),false);assert.equal(JSON.stringify(reread.body).includes(marker),false);}
-      const positive=await screenshot(browser,directory,'real-pending-authorized');
+      const positive=await receiptScreenshot(browser);
       // Change only real synthetic access facts through the existing Port. No business SQL or browser identity override.
       const readerId=context.principals[1]?.id;assert.ok(readerId);
       const principal=(await context.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[readerId])).rows[0];assert.ok(principal);
@@ -82,7 +87,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
       await browser.waitFor(`globalThis.__t24PCReads.length>${count}&&[401,403,404].includes(globalThis.__t24PCReads.at(-1).status)`);
       await browser.waitFor(`!document.querySelector(${JSON.stringify(region)})?.querySelector('li')`);
       const rejected=await browser.evaluate('globalThis.__t24PCReads.at(-1)') as {path:string;status:number};assert.equal(rejected.path,path);assert.ok([401,403,404].includes(rejected.status));
-      const negative=await screenshot(browser,directory,'real-ticket-read-denied');
+      const negative=await receiptScreenshot(browser);
       assert.deepEqual(await browser.evaluate('globalThis.__t24PCWrites'),[]);assert.deepEqual(await physical(),baseline);
       const after=await producer.detail(id);assert.equal(after.status,'CLOSED');assert.equal(after.version,completed.version);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_LIST_REFRESH_AUTH',screenshots:[positive,negative]}));
@@ -105,7 +110,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
       assert.equal(await browser.evaluate('globalThis.__t24PCBootstrap.at(-1).body.ticket_round_notifications_enabled'),false);
       assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(region)}))`),false);
       assert.deepEqual(await browser.evaluate('globalThis.__t24PCReads'),[]);assert.deepEqual(await browser.evaluate('globalThis.__t24PCWrites'),[]);
-      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_CAPABILITY_OFF',screenshots:[await screenshot(browser,directory,'real-capability-off')]}));
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_CAPABILITY_OFF',screenshots:[await receiptScreenshot(browser)]}));
     }catch(failure){error=failure;try{if(browser)await screenshot(browser,directory,'disabled-failure');}catch(evidenceFailure){error=new AggregateError([failure,evidenceFailure],'T24_PC_DISABLED_FAILURE_EVIDENCE');}console.log('T24_BROWSER_FAILURE '+JSON.stringify({directory}));}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{manualRoundConsumption:true,roundNotificationsOff:true});
