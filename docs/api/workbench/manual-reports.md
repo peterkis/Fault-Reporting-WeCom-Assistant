@@ -59,3 +59,11 @@ MANUAL复核的显式`CONFIRM_TICKET_ELIGIBLE`及`CLASSIFY_SERVICE_REQUEST`分�
 目录整次请求含解析最多2000ms、并发1、每principal每60秒最多10次、速率状态最多128个主体且惰性清理；无无限队列／后台全量同步／新timer。读既有本地当前目录优先，外部适配只在已批准独立运行边界内装配，本轮以Stub替代外部目录、映射及可达性。单App／Worker、Gateway单活、SSE32及共享pool max4／总预算8保持。关闭选择配置停止查询和新选择命令；已提交原账本及快照保留，结构修复用后续迁移。生产bundle选择、手填回退、恢复与失权清理均尚未实现／NOT_RUN。
 
 正式前端计划消费bootstrap可选兼容字段`reporter_candidates_enabled:boolean`；缺字段取false，仅在原代录用途与本票option同时启用时为true。它只控制入口展示，当前创建许可仍取原capabilities，并由每次GET／POST重新验权。浏览器不把候选页缓存当绑定证明；刷新／恢复后重新读取候选，UNKNOWN只保留原选择ref／version及UUID／body并显式GET核对，不能自动以新资料替换原提交。来源资料展示追加独立“本次已核实选择”与实际proof来源；既有T17未核实Reporter展示继续诚实保留。
+
+### 2026-10-10 当前 T17 接缝核对（T18 仍为计划）
+
+T18 专树已正常合入指定集成根`4fececa695f8adea54ce599baa6b5f8cf50665d2`。当前生产`createWorkbenchManualReports`仍只接收T17的HAND_ENTERED／UNVERIFIED命令，runtime与bootstrap尚未消费`workbenchReporterCandidatesEnabled`、`manualReporterDirectory`或`reporter_candidates_enabled`；候选GET与核实选择POST仍未挂载。原fixture透传仅用于待运行首tracer，不代表宿主已有可用入口。
+
+后续最小GET切片须复用T17的当前代录创建权与现有authenticatedHandler，再装配受控应用／目录scope及窄候选Port；在实际HTTP首RED前不预写生产handler。前端继续沿T17当前capabilities、T38 authorization epoch、abort／组件generation及同账号草稿用途隔离。迟到目录页不得覆盖新查询、撤权后内容或UNKNOWN原命令；候选资料只能展示，提交仍须服务器重核。明确手填回退形成新的意图UUID，原UNKNOWN必须先只读核对，不能由新选择或当前目录悄然替换。
+
+本票选择只完成代录受理，不自动派工、接单或创建沟通责任；后续一步处理属T19。首GET、选择提交、快照／回执、离线与失权、正式bundle选择表单依次取得各自真实RED后实施。045仍只预留最小同Intake快照提案，无SQL文件、无迁移执行；本次源码同步与合同核对没有任何运行PASS。
