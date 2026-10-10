@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",
     "contracts/yxx_self_service_feedback_context.schema.json",

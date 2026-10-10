@@ -3,6 +3,7 @@ import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mj
 import type {YxxSelfServiceStore,YxxStoreRead} from './yxx-self-service-store.mjs';
 import type {YxxMemberContext,YxxMemberSource,YxxMemberScope,createYxxSelfServiceAuthorization} from './yxx-self-service-authorization.mjs';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
+import type {YxxFeedbackStore} from './yxx-self-service-feedback.mjs';
 type ActiveContext=YxxMemberContext & {scope:YxxMemberScope};
 export interface YxxQueryOptions {pool:PostgresPool;authorization:ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>;store?:Pick<YxxSelfServiceStore,'timeline'|'command'>|null;scopeSecret?:string;now?:()=>string}
 export interface YxxQueryInput {request:IncomingMessage;source?:YxxMemberSource|null;limit?:unknown;cursor?:string|null;requestRef?:string|undefined;publicRef?:string|undefined;ref?:string|undefined;kind?:'WEB_REQUEST'|'BOT_TICKET';ifNoneMatch?:string|null;after?:string|null;before?:string|null;clientCommandId?:unknown}
@@ -257,11 +258,12 @@ async function listRows(transaction:PostgresTransaction,context:ActiveContext,se
 
 export function createYxxSelfServiceQuery({
   pool,
+  feedbackStore = null,
   authorization,
   store = null,
   scopeSecret = 'yxx-self-service-query-secret-32-bytes',
   now = () => String(Date.now()),
-}:YxxQueryOptions={} as YxxQueryOptions) {
+}:YxxQueryOptions & {feedbackStore?:YxxFeedbackStore|null}={} as YxxQueryOptions) {
   if (!pool?.connect || !authorization?.read || typeof scopeSecret !== 'string' || Buffer.byteLength(scopeSecret) < 16) {
     fail('YXX_QUERY_CONFIG_INVALID', 503);
   }
@@ -330,7 +332,8 @@ export function createYxxSelfServiceQuery({
            AND i.source_provider='YIXIAOXIU_WEB'`, [ref, context.scope.scopeHash, context.scope.sourceCorpScope, context.scope.sourceAppScope]);
       if (q.rowCount !== 1) fail('YXX_NOT_FOUND', 404);
       const detail=safeWebDetail({ ...(q.rows[0] as WebDetailRow), safe_clarification: null });
-      return {...detail,can_supplement:detail.can_supplement&&context.write_flag===true&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED===true};
+      return {...detail,can_supplement:detail.can_supplement&&context.write_flag===true&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED===true,
+        ...(feedbackStore?{feedback_context:await feedbackStore.context(transaction,context,ref as string)}:{})};
     });
   }
 
@@ -409,6 +412,10 @@ export function createYxxSelfServiceQuery({
   }
 
   return Object.freeze({
+    async feedbackReceipt({request,requestRef:ref,clientCommandId}:YxxQueryInput){
+      if(!feedbackStore)fail('YXX_UNAVAILABLE',503);requestRef(ref);
+      return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.WEB_COMMAND,source:'WEB',run:context=>transactionP2016(pool,tx=>feedbackStore.receipt(tx,context.scope,ref as string,clientCommandId))});
+    },
     list,
     listMyReports: list,
     detail,

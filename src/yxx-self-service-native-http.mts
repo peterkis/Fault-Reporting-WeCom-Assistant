@@ -199,8 +199,9 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 
 export function createYxxSelfServiceNativeHttp({
   publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null,
-}:YxxNativeHttpOptions={} as YxxNativeHttpOptions) {
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,
+}:Omit<YxxNativeHttpOptions,'command'|'query'> & {reporterFeedbackEnabled?:boolean;command:YxxNativeHttpOptions['command'] & Partial<Pick<YxxSelfServiceCommand,'feedback'>>;query:YxxNativeHttpOptions['query'] & Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'feedbackReceipt'>>}={} as YxxNativeHttpOptions) {
+  if(typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
     || !query?.list || !query?.detailWithEtag || !query?.timeline || !query?.commandStatus
@@ -333,6 +334,26 @@ export function createYxxSelfServiceNativeHttp({
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         json(response, 200, await query.list({ request, source: url.searchParams.get('source') as YxxMemberSource|null, cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') })); return true;
+      }
+      const feedbackRoute=/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})\/feedback(?:\/commands\/([0-9a-f-]{36}))?$/iu.exec(url.pathname);
+      if(feedbackRoute){
+        if(!reporterFeedbackEnabled)throw error('YXX_UNAVAILABLE',503);
+        if(url.search)throw error('YXX_INPUT_INVALID');
+        const requestRef=feedbackRoute[1] as string;
+        if(request.method==='GET'&&feedbackRoute[2]){
+          if(!COMMAND_ID.test(feedbackRoute[2])||header(request,'transfer-encoding')||Number(header(request,'content-length')??0)>0)throw error('YXX_INPUT_INVALID');
+          if(header(request,'sec-fetch-site')==='cross-site'||header(request,'origin')&&header(request,'origin')!==origin.origin)throw error('YXX_FORBIDDEN',403);
+          await currentMember(request);
+          json(response,200,await query.feedbackReceipt?.({request,requestRef,clientCommandId:feedbackRoute[2]}));return true;
+        }
+        if(request.method!=='POST'||feedbackRoute[2])throw error('YXX_NOT_FOUND',404);
+        assertOrigin(request,origin.origin);const input=await body(request,2048),context=await currentMember(request,{requireWrite:true});
+        if(header(request,'if-match')!=='"'+String(input.expected_ticket_version)+'"')throw error('YXX_CONFLICT',409);
+        if(header(request,'x-csrf-token')!==context.csrf_token)throw error('YXX_FORBIDDEN',403);
+        const result=await command.feedback?.({request,input,requestRef});
+        const latest=await currentMember(request,{requireWrite:true});
+        if(latest.recovery_scope!==context.recovery_scope||latest.csrf_token!==context.csrf_token)throw error('YXX_AUTH_RECHECK_FAILED',503);
+        json(response,200,result);return true;
       }
       if (url.pathname.startsWith('/api/yixiaoxiu/requests/') && ['GET', 'POST'].includes(request.method as string)) {
         const route = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([^/]*)(?:\/(timeline|supplements))?$/u);
