@@ -117,6 +117,7 @@
           "reopen",
           "cancel",
           "add-note",
+          "unassign",
           "assign",
           "transfer-assignment",
           "take-and-start",
@@ -184,6 +185,29 @@
           }
         }
       ]
+    },
+    "reopen_follow_up": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "is_previous_handler",
+        "awaiting_acceptance"
+      ],
+      "properties": {
+        "origin": {
+          "enum": [
+            "WEB_REPORTER",
+            "STAFF"
+          ]
+        },
+        "is_previous_handler": {
+          "type": "boolean"
+        },
+        "awaiting_acceptance": {
+          "const": true
+        }
+      }
     }
   },
   "x-business-timezone": "Asia/Shanghai",

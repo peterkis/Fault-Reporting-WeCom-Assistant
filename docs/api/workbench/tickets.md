@@ -2,13 +2,15 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
+WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#撤销未开始派工wbint-t08plannednot_run)。计划路径不表示已挂载。
+
 宿主：W，P2-016 扩展。调用方：[lifecycle UI](../../../web/p2-workbench/lifecycle.js)。默认关闭：`TICKET_LIFECYCLE_WORKBENCH_ENABLED`。实现：[HTTP](../../../src/p2-016-workbench-http.mts)、[query](../../../src/p2-016-ticket-query.mts)、[command facade](../../../src/p2-016-ticket-command-facade.mts)、[command ledger](../../../src/p2-016-ticket-command-ledger.mts)。Ticket 是唯一编号/状态/处理责任事实源，Conversation Assignment 单独管理沟通责任。
 
 ## 查询
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,manual_review_enabled:boolean,manual_review_draft_recovery_enabled:boolean,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,manual_review_enabled:boolean,manual_review_draft_recovery_enabled:boolean,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_reopen_rounds_enabled:boolean,ticket_reopen_draft_recovery_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
@@ -217,3 +219,50 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 仅原Ticket保存owner/team；原ticket.assignment_transferred追加前后人/组和实际操作者，039保存该真实首次派单事件的轮次/首次责任依据及同轮event引用，原来源不改。责任、事件、轮次、既有安全实时投影与原principal-scoped ledger的WORKBENCH_TICKET_ASSIGNMENT receipt同事务。每次原命令重放在查账本之前也重新验证当前Ticket与所选规范Session的READ权限；不得返回已失权Session元数据，也不要求已经交出的TRANSFER写权。专用安全ACK仍只核对当前Ticket读权并返回最小四字段，无Session引用。依赖显式039、无新数据库变更；关闭后新路径503、不读039，保留旧profiles及真实历史。缺039为ASSIGNMENT_UNAVAILABLE/503且不插receipt；非法前态或责任为ASSIGNMENT_STATE_CONFLICT/409，其余现有INPUT_INVALID/TARGET_INVALID/FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED维持W状态合同。结果仅Ticket/event/version、可空handling_cycle、沟通选择与安全会话结果；不返回报修正文、外部身份或登录资料。
 
 复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。
+
+## WBINT-T08 撤销未开始派工
+
+本节为当前冻结合同及本票实现进度。POST、安全 GET ACK、沟通目标 GET 及正式管理端 UI 已在自有隔离 PG、真实 HTTP 和生产 bundle 浏览器局部验证。原七项已完成本地整票验证：固定 20 个本票文件 32PASS、15 个直接相关文件 106PASS、既有 hosts 原生 27PASS。原 source 与文档后继身份分开记录，GitHub/工作包收口由父独立验收。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。
+
+| METHOD + PATH | 当前合同 |
+| --- | --- |
+| POST `/api/tickets/{ticketId}/unassign` | 一个闭合原子撤派命令，当前未开始责任由获权ADMIN/DISPATCHER撤回 |
+| GET `/api/tickets/{ticketId}/unassign/commands/{commandId}` | 当前Ticket读权、原principal/专用用途/原UUID的最小UNKNOWN/FAILED/COMMITTED；独立T08启用即可，raw草稿恢复可关闭 |
+| GET `/api/tickets/{ticketId}/unassign/communication-targets[?target_principal_id=UUID]` | 当前合法撤派动作及Ticket读权；活动内部沟通target，safe `items:[{principal_id,display_name}]` ≤100，显式有效保存target在界内pin；不要求处理组成员、不授予Control写权。源码已挂载，隔离真实 HTTP 已验证 |
+
+宿主`ticketUnassignEnabled:boolean=false`，独立于T05/T06；关闭不广告/不读新迁移，旧profile保留。启用须039及前向046_ticket_unassign。046只扩充既有event/check，允许严格的同组旧owner→JSON null释放metadata，不增owner/started字段、表或第二套Ticket/receipt；既有031/039迁移字节保留。
+
+body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483647),reason_code:CODE(1..64),reason:string(原长≤2000、trim非空),communication_choice:RETAIN_CURRENT|TRANSFER_SELECTED,communication_target_principal_id:UUID|null,sessions:[{session_id:UUID,expected_row_version:number(1..2147483647)}]`。RETAIN_CURRENT必须null target/空sessions；显式TRANSFER_SELECTED必须活动内部target、1..8个唯一规范Session。原因只存internal_note，没有external_visible/外部摘要/接收人；额外键拒绝。沿W Origin/CSRF/JSON/32KiB/Idempotency-Key与If-Match一致。
+
+只允许QUEUED/ACCEPTED、nonnull当前owner、可证明当前个人责任段未开始；ADMIN/DISPATCHER也不能在IN_PROGRESS或两waiting使用此入口。NEW/REOPENED/无owner/终态拒绝，未知legacy边界fail-closed。权威按同Ticket event_ordinal与T06真实assignment metadata/accepted核验、必须吻合当前owner/组；同人换组或同人接单不重置started，来源transfer已处于进行中/waiting也继承开始。当前段之后started/waiting/resume拒绝，过去轮次/已结束旧段started不永久禁止未来合法新未开始承接；精确事件fence见本票执行，不加不存在的业务事实。
+
+清个人owner、留组/报修/source/当前cycle/first basis，回QUEUED、version+1，仅追加ticket.unassigned（原owner→null、同组、操作者、内部原因）。默认不触Conversation；显式选择在Ticket行锁和UUID排序Session锁后独立核验关联/VIEW/Control权限/版本/target，通过现已集成caller-Tx transfer/takeover原子提交。Ticket、选定Control、event/cycle link/安全实时投影/COMMITTED receipt全成功或全失败；失败只留FAILED审计。原UUID/hash重放一次终态，改payload409，重放仍当前授权原所选Session READ，不泄漏失权DTO。
+
+安全200为`ok,ticket_id,ticket_version,ticket_event_id,control_event_id:null,handling_cycle,communication_choice,conversations,replayed`，无原因/Reporter/正文；默认retain返回空conversations，GET重读实际责任。ACK复用[安全assignment receipt形状](../../../contracts/p2_016_assignment_receipt.schema.json)，只给最小Ticket终态，无Session/原因。UNKNOWN不等于未提交；409保留输入并明确新操作，401/403/404清可信授权敏感副本，临时503/网络保留未核验输入且不自动POST；当前浏览器按账号、Ticket 和 purpose 加密恢复，最长 24h；原 UUID 在 UNKNOWN 后只 GET 安全 ACK，不自动重放 POST。raw 关闭仍可内存核对。已知 COMMITTED 后清理失败仍保持已提交并阻止新命令，重试核对后完成清理；恢复须当前授权和目标/所选 Session 版本核验。临时网络故障保留密文并隐藏未核验选择；真实失权仅清本用途敏感副本，其他用途保留。
+
+输入400、身份401、角色/沟通/target403、不可见或非规范关联404、版本/hash/状态/fence409、关闭/缺Schema/事务失败503。稳定业务码 `P2_016_UNASSIGN_UNAVAILABLE`、`P2_016_UNASSIGN_STATE_CONFLICT` 已加入当前 runtime 枚举；另沿用 `P2_016_VERSION_CONFLICT`、`P2_016_COMMAND_CONFLICT`、`P2_016_FORBIDDEN`、`P2_016_NOT_FOUND`、`P2_016_TARGET_INVALID`、`P2_016_CONTROL_CONFLICT`、`P2_016_ACTION_FAILED`。unassigned不新增Message/Outbox/Delivery，不外发撤派；同轮再承接不重复已发生首次责任通知，不新增轮次。资源沿单App/Worker、Gateway单活、SSE32/pool≤4/总建议≤8/所选≤8；关闭新option保留已提交事实。原公开首 tracer、闭合合同、隔离 PG/HTTP、生产 UI、敏感草稿/UNKNOWN/并发恢复已有分阶段真实证据及清理；历史 FAIL/NOT_REACHED 原样保留。最终固定候选全部本票文件与有限相关组通过；既有工具主运行原生 27PASS，故障注入子 TAP 和采集器误读的更正分别保留。整票 LOCAL_VERIFIED_WHOLE，默认关闭和原生产授权边界不变。
+
+
+## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
+
+当前M/H5与独立W/PC服务、043 shared-round、当前获权提示、安全原UUID GET和独立raw恢复已完成原七项本地隔离验证；最终0f9af956一套build/strict/artifact原生0、直接消费者10PASS、原hosts外层27PASS。原HTTP/合同/并发/两端真实bundle证据各保tested源，不重绑更早PASS；全部原FAIL/setup/observer/NOT_REACHED与当前原始索引见[逐票执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。待父独立验收/集成；下面带b41/b176/15306/9395身份的NOT_RUN和remaining保留其历史阶段，当前行为以上文与本节合同为准。默认关闭/不外发/不部署/不推进Gate保持。
+
+`ticket_reopen_rounds_enabled` 是 W 宿主 `ticketReopenRoundsEnabled` 的独立能力投影，默认 false；显式启用须先具备 043 schema 与当前 W 权限。正式 PC 仅在该能力和当前 command context 同时允许 `reopen` 时显示原因表单，使用原 W `POST /api/tickets/{ticketId}/reopen`、当前 CSRF、原 UUID 和 `expected_version`；这不授予 Reporter 自助写权。新 shared round 清当前处理人、保处理组，之后必须显式重新承接；Conversation 责任独立。
+
+关闭该选项隐藏新 PC 写消费并停用新 shared-round 服务路径，保留既有 legacy 生命周期行为和追加历史，不回改 043 或旧 SQL。`GET /api/tickets/{ticketId}/reopen/commands/{commandId}` 是原 STAFF_REOPEN 用途的只读核对：整 W 读入口仍启用且当前 principal 具有 Ticket READ 即可，独立于新写能力和 raw 恢复选项。它绑定原 actor/principal scope、Ticket、UUID 和 `reopen`，仅查 ledger 安全标量与不可变 shared-round basis，不读取原因、hash 或私有结果快照；其他 actor/用途或未取得终态返回 UNKNOWN，当前对象失权仍拒绝。闭合 [结果](../../../contracts/p2_016_reopen_result.schema.json) 和 [回执](../../../contracts/p2_016_reopen_receipt.schema.json) 不授予新操作权限。
+
+PC UNKNOWN 保留原 UUID，显式只 GET 该回执及当前获权 Ticket，不自动 POST、ACK 或换 ID。新源码复用 T03 AES-GCM/non-extractable key、first-save 24h、CAS/20份/16KiB journal，purpose 为 `staff-reopen`；W bootstrap 的 `ticket_reopen_draft_recovery_enabled` 是原 raw 选项与新写能力同时启用的投影，不改变默认关闭。恢复先重新验证当前 READ；新写能力或原动作消失时清敏感原因/原写 payload，只恢复 opaque UUID 给用户点击 GET。raw 关闭不创建新数据库/恢复副本，已存在的原操作仍可在当前 READ 下只读核对。
+
+M 的独立 `reporterFeedbackDraftRecoveryEnabled=false` 投影 `feedback_draft_recovery_enabled`；新源码从本次编译 manifest 的受限 JS entry/import 图加载同一个 T03 store，Web scope 使用当前 `recovery_scope` 摘要、request ref 与 `reporter-feedback` purpose，不借 W principal/Ticket ID。原字段全部密文保存，Cookie/CSRF 不进入副本；24h 到期/丢弃或原写能力失效不把 UNKNOWN 改成失败，原 UUID 仍只能按 FEEDBACK purpose GET。COMMITTED 闭合结果与当前获权同 Ticket 事实核实、恢复清理确认后才显示已核对；cleanup 未确认阻止新反馈，退出独立清理本成员反馈范围。该源码后继尚 NOT_RUN，save/reload GREEN、实际 24h/current READ/损坏/跨标签/关闭边界与适用兼容仍需本票逐段实证，不由旧 GREEN 或 T03 原证明推定交付。本人 Web 反馈的独立默认关闭能力见[反馈合同](../member/web-feedback-design.md)。
+
+真正 043 新轮次未承接前，legacy `start` 拒绝绕过首次责任依据；T04 的显式承接路径保持。当前获权 W TicketDetail 可追加闭合 `reopen_follow_up:{origin,is_previous_handler,awaiting_acceptance:true}`，只由当前未承接 shared basis 和 040 上轮完工人派生；获权团队看到普通待承接事实，旧处理人失权仍拒绝，M 不包含此字段。该字段不派工、不存新跟进或 owner。以上 b41 实际差额的前向源码待新固定候选验证，整票仍 IN_PROGRESS。
+
+b176原11实际9PASS/2FAIL保留原运行身份。专用ACK/两端UNKNOWN原GET核对、newround START阻断及两来源安全字段已到达；两FAIL在停用账号现行401与原403预期的差异，不能调整产品授权边界。后继来源校准精确401/闭合无正文认证拒绝，并准备关闭新write/raw仍当前READ的ACK、同浏览器raw reload和正式上轮HANDLER提示首组，全部NOT_RUN。保护恢复需独立原scope/Ticket/purpose、当前READ、首次保存24h不续期及有界非导出AES-GCM；raw过期或敏感内容不能恢复不等于原命令未提交，原opaque UUID只供安全GET核对。PC提示的实际消费和完整raw/currentauth尚未由现有9PASS证明，默认关闭和整票IN_PROGRESS保持。
+
+15306原四实际2PASS/2FAIL保留原身份：两端生产页面同浏览器reload后恢复原opaque UUID并由用户GET核对已通过；WRITE/raw关闭时当前READ专用ACK已到达，后续START广告不一致与fresh REOPENED后的literal PC提示缺失是实际RED。前向源码对真实043未指派未承接轮次独立于新write选项过滤start，保持无043 basis legacy；PC仅消费当前获权GET的闭合reopen_follow_up，在正在读取或错误时隐藏提示。提示不授予重开/承接权限、不通知外部、不重新分派。该后继尚NOT_RUN，当前原七仍IN_PROGRESS。
+
+raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允许该旧操作已被终态核对清理后为新输入创建敏感恢复副本；业务写权限与是否保存恢复副本独立。原POST已得到200而随后context GET暂时失败，也不得将已提交命令显示为已知拒绝或丢弃唯一UUID；保留UNKNOWN只读核对与新命令栅栏，待原receipt/当前事实和必要清理确认。两项生命周期边界已登记真实公开首测、尚NOT_RUN，不能把未运行源码审查当完成证据。
+
+9395原四实际2PASS/2FAIL已保全：START关闭广告与获权STAFF正式提示PASS；两生命周期首测分别实际新敏感record1≠0，以及真实原POST200/服务器GET200受控client503却误报拒绝。最小后继给现有共享hook独立writeEnabled（缺省仍沿原enabled），W旧opaque读消费不启用新敏感保存；只有原POST未成功时才按其明确拒绝清理，POST200后的临时读取失败保原UUID UNKNOWN。该源码后继尚NOT_RUN，旧15306/9395结果保持各自被测身份。
+
+冷raw关闭且没有旧row时，不打开或写入IndexedDB，也不在local/sessionStorage持久化UUID；此时只保证挂载页面内原UUID的GET核对，不承诺刷新后24h恢复。刷新丢失内存标识不代表原命令失败，不能自动重发。raw启用的固定24h副本，以及既有opaque在关闭raw后的只读恢复，是两个独立路径；前者到期或丢弃只清敏感payload/key，不能把原未知操作变成失败或借此换UUID。

@@ -13,7 +13,32 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-10，中断恢复与T22收口）
+## 当前执行状态导航（2026-10-10，T20收口）
+
+GitHub已关闭16／43票，剩余27票OPEN。T20经原七项父核验、安全快进及[完成态读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)收口；本地交付为`722f1d0a5b82d0455fc9cf2939bc8e70207e97ad`，真实被测祖先为`0f9af956e72880fcafdd637972e4231dfea923ae`。详见[原七项、分组证据与关闭方式](execution/t20.md)。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T20 / #75 | CLOSED；原Web报修人明确未解决反馈、同单唯一新轮次、独立工作人员重开、当前获权前人提示及原UUID只读恢复已本地验证；默认关闭，WBINT-06／A06仍待T21 |
+| 验证身份与原档 | 被测Node24 build／strict／artifact原生0；最终直接消费者10PASS、原hosts外层27PASS/native0。适用旧分组沿各自真实源保留；当前文档后继guard native1／MIGRATION_INPUT_DRIFT与原日志保留，父逐项核1142输入、1332原输出字节相同，不改保护器、不重绑制品、不声称当前guard通过 |
+| 资源与用户资料 | 已明确WHOLE RELEASE，父新核D盘owned PG额外库／客户端0／0；自有探测池与相关执行资源0。最终52原件／2ZIP及58历史索引已核对，六份根用户原件、既有两处dirty与四附件、空index保持 |
+| 后续实施 | T09先在D盘合入最新集成源码并冻结兼容合同；T24首次责任通知原公开S1继续独立验证，T18已冻结身份证明合同与下一真实POST首测。T21／T37原生依赖现已满足，须执行前核对GitHub并领取；源码准备不计验收 |
+| 停止线 | 新源码／缓存／构建／测试／证据均在D盘；全部新增能力默认false，无真实外部／发送／用户库、push／PR／部署、full／certify或Gate推进 |
+
+## 恢复状态历史（2026-10-10，T08收口）
+
+GitHub实际快照已关闭15／43票，剩余28票OPEN；本次新增完成T08，其他已核实关闭状态保持。T09所需#58／#63已关闭。源码并行、运行验证串行，下一验证为T20；源码准备不计整票验收。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T08 / #63 | CLOSED；[完成评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63#issuecomment-6093445782)正文及完成态已读回，[原七项、接口与关闭方式](execution/t08.md)可追溯；默认保留沟通，明确选择时与撤派同事务，进行中拒绝，保留组／本轮历史且无额外撤派外发 |
+| 集成与实际被测对象 | `697bfd6f014fc174eecd951c484eff98babbaa90`安全快进；真实被测祖先`9d08366df087c4d59708d96d9002ee16197a6a39`。后继只改4份Markdown，1103构建输入及1268运行输出相同；原MIGRATION_INPUT_DRIFT与文档身份差异保留，不重绑制品 |
+| 验证与原档 | Node24 build／strict／artifact原生0；本票20文件32、直接相关15文件106、原工具27通过。工具采集误读故意失败的内层TAP，原wrapper1及错误摘要保留，独立原native0／最终SPEC27更正；2203文件原档、日志／trace／运行字节／6张本票PNG由父核对，所有历史FAIL／partial／NOT_REACHED保留 |
+| 资源与归档 | 已明确RELEASE，父实际核D盘隔离PG额外库／客户端0／0；自有App／HTTP／SSE／浏览器／池及原工具进程已关闭。2023个必要ignored文件／29,591,372 bytes逐路径、长度、SHA匹配既有D盘原档，39,977个可再生成依赖文件明确排除；本次D盘managed工作树已实际归档、附件类型及原目录／Git登记消失均已读回，六份根用户资料与空index保持 |
+| 并行准备 | T15／T18／T19／T20／T28／T34／T35和T10／T39已正常同步指定集成根，原合同／tracer／角色／240s／历史213登记保留。全部是SOURCE_READY／NOT_RUN，执行前合入最新已交付根；原生依赖、独立STAFF REOPEN和T24实际撤派／停止退回范围保持 |
+| 来源工作包与停止线 | WBINT-02／A02仅T08子项新增完成，T07／T09／T10未完成；全部新增开关默认false，D盘创建／测试，不连接真实OAuth／WeCom／Provider、不外发、不操作用户库、不push／部署／full／certify或推进Gate |
+
+## 恢复状态历史（2026-10-10，中断恢复与T22收口）
 
 GitHub实际读回已关闭14／43票，剩余29票OPEN：T01／T02／T03／T04／T05／T06／T11／T14／T16／T17／T22／T23／T27／T38。旧子代理均已完成并停止；依据保留工作树及当前原生依赖恢复后续任务，已完成验证不重复执行。
 

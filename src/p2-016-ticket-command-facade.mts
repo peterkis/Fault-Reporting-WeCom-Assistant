@@ -16,6 +16,7 @@ import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
+import {completedTicketRound,reopenCompletedRound,reopenRoundsSchemaReady,unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
 import { selfHandlingSchemaReady } from './workbench-ticket-self-handling.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
@@ -39,12 +40,17 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   // The existing exact-key, action-specific and scalar guards above establish this union.
   return result as TicketCommand;
 }
-export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketWaitingActionsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
-  notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions) {
+export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReopenRoundsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
+  notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions & {ticketReopenRoundsEnabled?:boolean}) {
+  if(typeof ticketReopenRoundsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
+    async reopenReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
+      guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+      return ledger.reopenReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
+    },
     async internalNoteReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
       guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
       return ledger.internalNoteReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
@@ -60,7 +66,8 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
-          if(ticketStaffCompletionEnabled){
+          if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
+          if(ticketStaffCompletionEnabled||ticketReopenRoundsEnabled){
             // Completion and existing commands must take the same stream mutex before receipt FK locks.
             if(realtimeProjector?.lock)await realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
             context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
@@ -86,8 +93,17 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             if(!control?.ok||control.no_op)failP2016('CONTROL_CONFLICT',409);
           }
           const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
+          if(command.action==='start'&&ticket.status==='REOPENED'&&ticket.assignee_id===null&&await unassignedReopenedRound(transaction,ticket.id))failP2016('SELF_HANDLING_STATE_CONFLICT',409);
           let result: { ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent };
+          let newCycle:{id:string;cycle_no:number;first_responsibility_event_id:null;staff_completion_event_id:null}|null=null;
+          const completed=command.action==='reopen'&&ticketReopenRoundsEnabled?await completedTicketRound(transaction,ticket.id):null;
           if(command.action==='transfer-assignment')result=await transferTicketAssignmentP2016({transaction,principal,ticket,command});
+          else if(completed){
+            if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
+            const reopened=await reopenCompletedRound({transaction,round:completed,actor:{type:'PILOT_USER',id:principal.principal_id},commandId:command.client_command_id,
+              origin:'STAFF',reasonCode:command.reason_code,note:command.note??null,afterAction:closure?.afterTicketAction??null});
+            result=reopened;newCycle=reopened.handling_cycle;
+          }
           else {
             const actions=createTicketActionService({authorize:async({ticket:current,action})=>ticketActionAllowedP2016(principal,current,action),
               afterAction:closure?.afterTicketAction??null});
@@ -105,9 +121,17 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             handlingCycleId=current.cycle_id===null?null:uuidP2016(current.cycle_id);
             if(handlingCycleId!==null)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,handlingCycleId,result.event.event_id]);
           }
+          if(action==='accept'){
+            // The legacy HTTP command shares an already established round; it never creates one.
+            // Read through JSON so the baseline without the cycle migration stays compatible.
+            const current=await transaction.query<{cycle_id:string|null}>(`SELECT to_jsonb(t)->>'current_handling_cycle_id' AS cycle_id
+              FROM pilot_ticket.ticket t WHERE t.id=$1::uuid`,[ticket.id]);
+            const cycleId=current.rows[0]?.cycle_id;
+            if(cycleId)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycleId,result.event.event_id]);
+          }
           if(notificationProjector&&!closure)await notificationProjector.project({transaction,ticket:result.ticket,event:result.event});
           if(realtimeProjector)await realtimeProjector({transaction,ticket:result.ticket,event:result.event,command});
-          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null,...(cycleAware?{handling_cycle_id:handlingCycleId}:{})};
+          return {ok:true,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:control?.event?.id??null,...(newCycle?{handling_cycle:newCycle}:{}),...(cycleAware?{handling_cycle_id:handlingCycleId}:{})};
         },
       });
     },

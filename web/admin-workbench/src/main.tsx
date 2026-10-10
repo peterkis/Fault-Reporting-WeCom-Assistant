@@ -4,7 +4,7 @@ import {BrowserRouter} from 'react-router';
 import {MutationCache,QueryCache,QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {ApiError} from './api/client';
 import type {Principal} from './api/client';
-import {clearSessionAuthorization,clearItemAuthorization,clearReviewAuthorization} from './app/authorization';
+import {clearSessionAuthorization,clearItemAuthorization,clearReviewAuthorization,clearTicketUnassignView} from './app/authorization';
 import {attachmentParentDenied} from './features/attachments/client';
 import {clearSourceGroupAuthorization} from './features/source-groups/authority';
 import {App} from './app/App';
@@ -17,6 +17,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   else if(error instanceof ApiError&&error.status===403&&['session','board','conversations'].includes(String(query.queryKey[0])))void clearSessionAuthorization(client,sessionPrincipal(),403,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status)){
     if(query.queryKey[0]==='source-groups')void clearSourceGroupAuthorization(client,query.queryKey[1],error);
+    else if(query.queryKey[0]==='ticket-unassign-targets')void clearTicketUnassignView(client,query.queryKey[1],query.queryKey[2],error);
     else if(['conversation-view','conversation-eligible'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'conversation',query.queryKey[2],error);
     else if(query.queryKey[0]==='item-conversations')void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else if(['ticket-command-context','ticket-related-conversations'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'ticket',query.queryKey[2],error);
