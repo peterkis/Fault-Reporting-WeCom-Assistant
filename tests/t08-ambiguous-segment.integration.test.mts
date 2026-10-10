@@ -28,6 +28,6 @@ test('a truncated same-person responsibility chain fails closed rather than trea
   const body={client_command_id:randomUUID(),expected_version:version,reason_code:'WORKBENCH_UNASSIGN',reason:'历史截断不能推测责任段未开始',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]};
   const rejected=await admin.post(path+'/unassign',body);assert.equal(rejected.status,409);assert.equal(object(rejected.value.error).code,'P2_016_UNASSIGN_STATE_CONFLICT');
   assert.deepEqual((await admin.get(path)).value,before);assert.deepEqual(await history(),events);assert.deepEqual((await admin.get(path+'/deliveries')).value,delivery);assert.deepEqual((await admin.get(path+'/responsibility')).value,responsibility);
-  const replay=await admin.post(path+'/unassign',body);assert.equal(replay.status,409);assert.deepEqual(replay.value,rejected.value);assert.deepEqual(await history(),events);
+  const replay=await admin.post(path+'/unassign',body);assert.equal(replay.status,409);assert.deepEqual(replay.value,{...rejected.value,replayed:true});assert.deepEqual(await history(),events);
  },{ticketAssignmentEnabled:true});
 });
