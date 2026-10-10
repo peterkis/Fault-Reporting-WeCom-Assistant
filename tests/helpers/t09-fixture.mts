@@ -24,7 +24,7 @@ export interface T09Http {get(path:string):Promise<{status:number;value:Record<s
 export interface T09Fixture {pool:PostgresPool;origin:string;runtime:P2016EnabledRuntime;admin:string;dispatcher:string;handler:string;otherHandler:string;http(index:number):Promise<T09Http>;createTicket():Promise<string>}
 
 /** Only a disabled planned option is added; no test-owned HTTP handler supplies success. */
-export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ticketReturnToDispatchEnabled=false}:{ticketReturnToDispatchEnabled?:boolean}={}){
+export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ticketReturnToDispatchEnabled=false,workbenchDraftRecoveryEnabled=false}:{ticketReturnToDispatchEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean}={}){
  const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t09',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
   await applyThrough030(context);const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(migrationOptions);
@@ -35,7 +35,7 @@ export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ti
   const [admin,dispatcher,handler,otherHandler]=members;assert.ok(admin&&dispatcher&&handler&&otherHandler);
   const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address!=='string');await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
   const port=address.port,origin='http://127.0.0.1:'+port;
-  const runtime=createP2016Runtime({pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:port,principalIds:members.map(member=>member.id),externalSendEnabled:false,ticketAssignmentEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketUnassignEnabled:true,...{ticketReturnToDispatchEnabled}});assert.ok('server' in runtime);
+  const runtime=createP2016Runtime({pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:port,principalIds:members.map(member=>member.id),externalSendEnabled:false,ticketAssignmentEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketUnassignEnabled:true,...{ticketReturnToDispatchEnabled,workbenchDraftRecoveryEnabled}});assert.ok('server' in runtime);
   try{
    assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);
    await listenConversationWorkbenchServer(runtime.server,{port});const cookies=runtime.authenticate.browserCookies?.();assert.equal(cookies?.length,4);assert.ok(cookies);
