@@ -27,7 +27,7 @@ native_blocking_edges: 76
 
 2026-10-10 T20收口后实际快照：已关闭16／43票，剩余27票OPEN。T20完整原七项与原始分组证据经父独立核对，交付`722f1d0a5b82d0455fc9cf2939bc8e70207e97ad`已安全快进；[#75完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)，见[合同、被测祖先与关闭方式](execution/t20.md)。原被测`0f9af956…`保持原制品，文档后继guard1如实记录，1142输入／1332原输出字节核对相同。T21／T37依赖现已满足，须先核对领取；T09合入最新源码准备，T24／T18下一原首验证仍未完成，WBINT-06／A06仍待T21。
 
-2026-10-11 T24 本地整票验收完成：原七项及真实被测祖先证据已核对，源码 `18d8aa71f91a156397348232b28c6a122fb8e464` 安全快进；见[轮次通知合同、原始证据与关闭方式](execution/t24.md)。GitHub 关票读回另记录于实施记录；本地交付不代表发布或真实外发。T25／T26 和 WBINT-08／A08 整组继续按原生依赖推进。上文快照保留各自历史日期。
+2026-10-11 T24 本地整票验收完成：原七项及真实被测祖先证据已核对，源码 `18d8aa71f91a156397348232b28c6a122fb8e464` 安全快进；见[轮次通知合同、原始证据与关闭方式](execution/t24.md)。[#79已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79#issuecomment-6102767418)，实际17／43 CLOSED、26 OPEN；本地交付不代表发布或真实外发。T25／T26 和 WBINT-08／A08 整组继续按原生依赖推进。上文快照保留各自历史日期。
 
 ## 导航与配置
 
