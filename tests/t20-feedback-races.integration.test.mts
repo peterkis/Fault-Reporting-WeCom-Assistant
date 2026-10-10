@@ -28,7 +28,7 @@ test('different UUID own-member HTTP commands for one completed round have exact
 
 test('independent staff W reopen and own-member feedback compete on one App and one completed-round basis',async()=>{
  await withT20FeedbackFixture(async f=>{
-  await f.app.stop();const full=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,
+  await f.app.stop();const full=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},publicOrigin:origin,
    principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true,
    wecomWebOAuth:oauthOptions,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret,
    yxxSelfService:{featureFlags:f.options.featureFlags,reporterFeedbackEnabled:true}});

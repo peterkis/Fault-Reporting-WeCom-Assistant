@@ -54,7 +54,7 @@
 
 后续若确认真实契约缺陷，应先按已有ADR/任务授权修正对应合同和实现、添加针对风险的验证，再同步本目录。本轮没有为这些差异新建候选、改Gate或运行full/certify。
 
-2026-10-09 WBINT-T20已准备[Web明确未解决反馈候选](member/web-feedback-design.md)：精确Web来源、原本人绑定、当前写profile、合法完工cycle、Ticket版本、同轮防重和只读原命令恢复。状态SOURCE_READY，043仅预留、当前未挂载，原公开RED源码仅登记且NOT_RUN；不是成员反馈已实现，也不变更只读/OAuth-only/SS011边界。
+2026-10-10 WBINT-T20 [Web明确未解决反馈](member/web-feedback-design.md)为IN_PROGRESS：原本人M入口、独立HANDLER W共享重开首与两种下一显式承接已取得各自固定源本地GREEN；043已为前向候选，能力分别默认false。原17首次mixed结果、真实closed schema/锁后retention/PC差额、安排与H5未到达均D保留；当前最小forward待验证，完整权限/提醒/UNKNOWN与raw恢复/正式H5和PC/兼容/原七收口仍未完成。不把局部GREEN称whole或改变readonly/OAuth-only/SS011边界。
 ## WBINT-T08 本地整票实现（2026-10-10）
 
 [撤销当前未开始派工](workbench/tickets.md#wbint-t08-撤销未开始派工)的闭合 POST、安全原 UUID GET ACK、有界沟通目标 GET 及正式前端消费现已实现，独立 consumer 默认 false。ACK 不要求 raw recovery；敏感恢复另以当前账号/Ticket/purpose 加密保留最长 24h，UNKNOWN 只 GET 原终态、不自动重发。实际数据库变更仅前向 `046_ticket_unassign.sql`，扩既有事件和严格 null 释放 CHECK，不新增表或第二事实源；历史 SQL 保持。原 20 本票文件 32PASS、15 相关文件 106PASS、既有 hosts 原生 27PASS；准确固定制品、原始失败与工具采集分类更正分别记录，不将内部故障注入 TAP 当主运行失败。

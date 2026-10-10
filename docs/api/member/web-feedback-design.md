@@ -2,7 +2,7 @@
 
 返回[成员自助](self-service.md) · [T20执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。来源为 WBINT-06/A06、[Issue #75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)、Accepted [ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)。
 
-2026-10-09 状态为 **SOURCE_READY / NOT_IMPLEMENTED / NOT_RUN**。本页冻结后续公开 RED 的目标，当前 handler 尚无反馈入口、反馈上下文或命令核对。不能把下表当成当前可调用 API。Bot feedback 属于 T21，不在本票挂载；既有 Web 补充与只读/OAuth-only/SS011 profile 保留。
+2026-10-10 当前为 **IN_PROGRESS**：M真实反馈/安全原UUID首、独立HANDLER W重开首与两种下一显式承接已有各自固定源本地GREEN。原公开RED、mixed FAIL与未到达部分保留D原件，不复用旧GREEN到新源；当前闭合详情Schema、锁等待后保留期复核与生产PC首消费最小前向仍待验证，H5首次尚未到按钮断言，完整权限/恢复/提醒/浏览器/兼容和原七收口未完成。2026-10-09的SOURCE_READY/NOT_IMPLEMENTED/NOT_RUN是保留的原准备状态。Bot feedback属于T21；既有Web补充与只读/OAuth-only/SS011边界保持。
 
 ## HTTP、输入和输出
 
@@ -24,7 +24,11 @@ completed_round_ref由现有受信服务端secret对用途、原成员/企业/�
 
 ## 权限、轮次与事务
 
-新的宿主能力 `reporterFeedbackEnabled=false` 默认关闭，不增加部署profile或隐式启用选项。关闭时不构建新反馈用例、不读取043新字段/表、不改旧详情Schema/补充/收据。启用时要求实际033/039/040及043迁移标记；缺失503且无写入。M profile仍须为 MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP，MY_REPORTS和SELF_SERVICE均true、服务端当前write_flag:true，既有SS011外层guard和当前成员认证继续执行。不能由查看详情、旧Grant或W principal推导M写权；OAUTH_ONLY、MEMBER_TICKET_READONLY和SS011零写仍拒绝。
+新的宿主能力 `reporterFeedbackEnabled=false` 默认关闭，不增加部署profile或隐式启用选项。关闭时不构建新反馈用例、不读取043新字段/表、不扩旧详情响应、不改补充/通用收据；既有闭合详情Schema仅增加条件可选的feedback_context引用，additionalProperties:false保持。启用时要求实际033/039/040及043迁移标记；缺失503且无写入。M POST仍须为MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP，MY_REPORTS和SELF_SERVICE均true、服务端当前write_flag:true，既有SS011外层guard和当前成员认证继续执行。不能由查看详情、旧Grant或W principal推导M写权；OAUTH_ONLY、MEMBER_TICKET_READONLY和SS011零写仍拒绝。原purpose GET单独要求当前READ；运行中配置代次/flag变化继续拒绝，不放宽既有FLAGS_CHANGED或global读禁用。合法WRITE关闭仍READ的恢复情境使用当前稳定profile与fresh认证，核对原scope/UUID；不会由旧cookie或M写权推导读权。
+
+已CLOSED/CANCELLED详情can_supplement=false，普通补充继续拒绝；普通谢谢/材料在原允许补充的合法阶段被接收，也不直接重开。反馈最后提交前在同事务重新核对原source与物理epoch保留期，不能沿用Ticket锁等待前的存活判断；真实过期回滚整个新轮次及receipt。
+
+独立W `ticketReopenRoundsEnabled=false`沿自身PILOT_USER/角色/对象/版本权限复用同一043合法完工basis，原W ledger记录reopen，不伪Reporter FEEDBACK。条件readiness043和bootstrap ticket_reopen_rounds_enabled由同一能力决定；没有完工basis或能力关闭保持原W动作合同。生产PC首来源只增加显式原因/原UUID/原版本的同单重开表单，成功响应后要求当前授权GET的新cycle事实再展示；其UNKNOWN仅保留原操作，不自动POST/换UUID。独立只读核对与受保护恢复/24h、仍获权旧处理人提示仍是本票remaining，当前SOURCE不是完整PC交付；M和W都不改变Conversation责任或建立第二Core。
 
 核验是四道独立门禁：原Web绑定及source corp/app/proof、当前服务端写profile/flags/identity-generation、合法当前完工轮次、当前Ticket版本。完工轮次必须为039当前cycle、source_intake_id等于原Intake、040的不可变STAFF_COMPLETED结束事件/承诺成立、Ticket为CLOSED。未建单Intake、历史seed CLOSED或旧RESOLVED不能冒充T11完工轮次。共享恢复GET只要求当前M读权和原绑定；当前write_flag关闭或本轮已重开不能阻止已提交原命令核对，也不使新写入合法。O只读替代宿主原限制不因此扩展。
 

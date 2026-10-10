@@ -3,16 +3,20 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
 import {browser,login,post,origin} from './helpers/yxx-ss-009-http-fixture.mjs';
+import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {mapping,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('ordinary thanks and supplementary material keep the completed Ticket and round closed',async()=>{
  await withT20FeedbackFixture(async f=>{
-  const before=t20Object((await f.member.request(f.path)).json());
-  const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:before.input_revision,text:'谢谢，补充故障发生时的界面说明'};
-  const result=await f.member.request(f.path+'/supplements',post(supplement,f.csrf));assert.equal(result.status,202,result.text);
   const facts=await f.context.pool.query<{status:string;version:number;cycle:string}>(`SELECT status,version,current_handling_cycle_id::text AS cycle FROM pilot_ticket.ticket WHERE id=$1::uuid`,[f.ticketId]);
   assert.deepEqual(facts.rows[0],{status:'CLOSED',version:f.completed.version,cycle:f.completed.handling_cycle?.id});
   assert.equal((await f.context.pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid',[f.ticketId])).rows[0]?.n,0);
- });
+ },{beforeCompletion:async({member,path,csrf})=>{
+  const before=t20Object((await member.request(path)).json());assert.equal(before.can_supplement,true);
+  const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:before.input_revision,text:'谢谢，补充故障发生时的界面说明'};
+  const result=await member.request(path+'/supplements',post(supplement,csrf));assert.equal(result.status,202,result.text);
+ }});
 });
 
 test('feedback HTTP input, Origin, CSRF, UUID, round and Ticket version fail independently without a new fact',async()=>{
@@ -40,11 +44,15 @@ test('another member cannot claim the request or feedback receipt; current read 
   const committed=await f.send();assert.equal(committed.status,200,committed.text);
   const receiptPath=f.path+'/feedback/commands/'+f.command.client_command_id;
   assert.equal((await other.request(receiptPath)).status,404);
-  f.options.featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED=false;
-  const receipt=await f.member.request(receiptPath);assert.equal(receipt.status,200,receipt.text);assert.equal(t20Object(receipt.json()).state,'COMMITTED');
-  assert.equal((await f.send()).status,403);
-  assert.equal((await f.member.request(receiptPath+'?purpose=SUBMIT')).status,400);
-  assert.equal((await f.member.request(receiptPath,{headers:{origin:'https://other.invalid'}})).status,403);
+  await f.app.stop();const current=createYxxProfile({...f.options,profile:'MEMBER_SELF_SERVICE',identityMapping:await mapping(),oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true}});
+  try{
+   await current.start();await current.selfService.pump?.stop();const reader=browser(current.server);await login(reader);
+   const currentBootstrap=t20Object((await reader.request('/api/yixiaoxiu/bootstrap')).json());assert.equal(currentBootstrap.can_submit,false);
+   const receipt=await reader.request(receiptPath);assert.equal(receipt.status,200,receipt.text);assert.equal(t20Object(receipt.json()).state,'COMMITTED');
+   assert.equal((await reader.request(f.path+'/feedback',{...post(f.command,currentBootstrap.csrf_token),headers:{...post(f.command,currentBootstrap.csrf_token).headers,'if-match':'"'+f.completed.version+'"'}})).status,403);
+   assert.equal((await reader.request(receiptPath+'?purpose=SUBMIT')).status,400);
+   assert.equal((await reader.request(receiptPath,{headers:{origin:'https://other.invalid'}})).status,403);
+  }finally{await current.stop();assert.equal(current.server.listening,false);}
  });
 });
 

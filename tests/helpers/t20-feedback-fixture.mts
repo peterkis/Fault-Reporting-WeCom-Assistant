@@ -18,7 +18,7 @@ export interface T20FeedbackFixture{
  send(body?:YxxFeedbackInput,headers?:Record<string,string>):ReturnType<ReturnType<typeof browser>['request']>;
 }
 // Single App at every stage; synthetic identity adapters, actual admission/Core/T04/T11 and native HTTP.
-export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>Promise<void>){
+export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>Promise<void>,{beforeCompletion}:{beforeCompletion?:(input:{member:ReturnType<typeof browser>;path:string;csrf:string})=>Promise<void>}={}){
  await withT11Fixture(async context=>{
   await context.runtime.stop();const options=await t20MemberOptions(context),admission=t20MemberApp(options);
   let requestRef:string,ticketId:string;
@@ -31,6 +31,7 @@ export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>P
    assert.equal((await member.request('/api/yixiaoxiu/requests/'+requestRef)).status,200);
    const located=await context.pool.query<{id:string}>('SELECT t.id::text FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE b.request_ref=$1',[requestRef]);
    assert.equal(located.rowCount,1);assert.ok(located.rows[0]);ticketId=located.rows[0].id;
+   if(beforeCompletion){await beforeCompletion({member,path:'/api/yixiaoxiu/requests/'+requestRef,csrf:String(bootstrap.csrf_token)});await admission.selfService.orchestrator.processPending({batchSize:20});}
   }finally{await admission.stop();assert.equal(admission.server.listening,false);}
   const staff=createP2016Runtime({pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:context.origin,
    listenPort:Number(new URL(context.origin).port),principalIds:[context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true});

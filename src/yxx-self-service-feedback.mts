@@ -56,7 +56,7 @@ export function createYxxSelfServiceFeedback({pool,scopeSecret}:{pool:PostgresPo
   const commandHash=hashP2016({kind:'FEEDBACK',request_ref:requestRef,...value});
   const receipt=await tx.query<{command_kind:string;command_hash:string;result_request_ref:string|null;feedback_result:YxxFeedbackResult|null}>(`SELECT command_kind,command_hash,result_request_ref,feedback_result FROM intake.web_command_receipt WHERE scope_hash=$1 AND client_command_id=$2::uuid`,[scope.scopeHash,value.client_command_id]);
   const previous=receipt.rows[0];
-  const beforeCommit=async()=>{if(onBeforeCommit&&await onBeforeCommit({transaction:tx})!==true)fail('YXX_AUTH_RECHECK_FAILED',403);};
+  const beforeCommit=async()=>{await source(tx,scope,requestRef);if(onBeforeCommit&&await onBeforeCommit({transaction:tx})!==true)fail('YXX_AUTH_RECHECK_FAILED',403);};
   if(previous){
    if(previous.command_kind!=='FEEDBACK'||previous.command_hash!==commandHash||previous.result_request_ref!==requestRef||!previous.feedback_result)fail('YXX_COMMAND_CONFLICT');
    await beforeCommit();return {...previous.feedback_result,replayed:true};
