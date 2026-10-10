@@ -33,6 +33,6 @@ export function useReopenDraft({ticketId,principal,reason,pending,onRestore,onOp
   void (async()=>{if(!await hasExistingDraft(scope)||controller.signal.aborted)return;await authorize(controller.signal);if(!controller.signal.aborted)setExisting(true);})().catch(error=>{if(!controller.signal.aborted)authorityFailure(error);}).finally(()=>{if(!controller.signal.aborted)setProbing(false);});
   return()=>controller.abort();
  },[principal.principal_id,principal.csrf_token,principal.ticket_reopen_draft_recovery_enabled,ticketId]);
- const draft=useAuthorizedDraft<string,P2016ReopenCommand>({scope,enabled:principal.ticket_reopen_draft_recovery_enabled===true||existing,value:reason,pending,emptyValue:'',hasInput:input=>Boolean(input),serialise:copy=>JSON.stringify({schema:1,...copy}),decode,commandId:command=>command.client_command_id,authorize,onAuthorityFailure:authorityFailure,onRestore,onOperation,onSensitiveClear});
+ const draft=useAuthorizedDraft<string,P2016ReopenCommand>({scope,enabled:principal.ticket_reopen_draft_recovery_enabled===true||existing,writeEnabled:principal.ticket_reopen_draft_recovery_enabled===true,value:reason,pending,emptyValue:'',hasInput:input=>Boolean(input),serialise:copy=>JSON.stringify({schema:1,...copy}),decode,commandId:command=>command.client_command_id,authorize,onAuthorityFailure:authorityFailure,onRestore,onOperation,onSensitiveClear});
  return {...draft,probing};
 }

@@ -27,11 +27,11 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
  const deny=async(error:ApiError)=>{if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearTicketAuthorization(client,principal.principal_id,ticketId,error);};
  async function settle(id:string){settling.current=true;try{return await draft.success(id);}finally{settling.current=false;}}
  async function send(command:P2016ReopenCommand){
-  if(request.current||!workbenchTransportWritable()||!draft.canSubmit)return;const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setPending(command);setState('submitting');setMessage('正在提交重开操作…');let dispatched=false;
+  if(request.current||!workbenchTransportWritable()||!draft.canSubmit)return;const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setPending(command);setState('submitting');setMessage('正在提交重开操作…');let dispatched=false,postAccepted=false;
   const current=()=>{if(generation.current!==token||controller.signal.aborted)return false;try{currentRead();return true;}catch{return false;}};
   try{
    await draft.prepare(command);if(!current())return;dispatched=true;
-   const result=await api.reopenTicket(ticketId,command,principal.csrf_token,controller.signal);if(!current())return;
+   const result=await api.reopenTicket(ticketId,command,principal.csrf_token,controller.signal);postAccepted=true;if(!current())return;
    const fresh=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;
    if(fresh.version<result.ticket_version||fresh.handling_cycle?.id!==result.handling_cycle.id)throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
    client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
@@ -39,7 +39,8 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
    setReason('');setPending(null);setOpaque(cleaned?null:command.client_command_id);setState(cleaned?'succeeded':'unknown');setMessage((fresh.handling_cycle.first_responsibility_event_id===null?'已重开，本轮等待重新承接。':'已重开，当前新轮次已有后续处理。')+(cleaned?'':' 恢复清理尚未确认，请只读核对原操作。'));refresh();
   }catch(error){
    if(!current())return;
-   if(dispatched&&error instanceof ApiError){if([401,403,404].includes(error.status))await deny(error);else{await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}}
+   if(dispatched&&error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);
+   else if(dispatched&&!postAccepted&&error instanceof ApiError){await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
    else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'尚未发送：恢复副本未确认，不能发起新操作，请保留原 UUID 只读核对。');}
   }finally{if(generation.current===token)request.current=null;}
  }
