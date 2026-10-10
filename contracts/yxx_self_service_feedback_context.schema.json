@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_feedback_context.schema.json",
+  "title": "WBINT-T20 frozen safe feedback eligibility candidate",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "can_feedback", "completed_round_ref", "completed_round_no", "ticket_version", "rejection"],
+      "properties": {
+        "schema_version": {"const": 1}, "can_feedback": {"const": true},
+        "completed_round_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+        "completed_round_no": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "ticket_version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "rejection": {"type": "null"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "can_feedback", "completed_round_ref", "completed_round_no", "ticket_version", "rejection"],
+      "properties": {
+        "schema_version": {"const": 1}, "can_feedback": {"const": false},
+        "completed_round_ref": {"type": "null"}, "completed_round_no": {"type": "null"}, "ticket_version": {"type": "null"},
+        "rejection": {"enum": ["WRITE_DISABLED", "TICKET_NOT_CREATED", "ROUND_NOT_COMPLETED", "ROUND_ALREADY_REOPENED"]}
+      }
+    }
+  ]
+}

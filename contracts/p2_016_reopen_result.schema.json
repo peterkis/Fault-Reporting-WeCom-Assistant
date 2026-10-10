@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_reopen_result.schema.json",
+  "title": "T20 safe shared-round staff reopen result",
+  "type": "object", "additionalProperties": false,
+  "required": ["ok", "ticket_id", "ticket_version", "ticket_event_id", "control_event_id", "replayed", "handling_cycle"],
+  "properties": {
+    "ok": {"const": true},
+    "ticket_id": {"type": "string", "format": "uuid"},
+    "ticket_version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "ticket_event_id": {"type": "string", "format": "uuid"},
+    "control_event_id": {"type": "null"},
+    "replayed": {"type": "boolean"},
+    "handling_cycle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cycle_no", "first_responsibility_event_id", "staff_completion_event_id"],
+      "properties": {
+        "id": {"type": "string", "format": "uuid"},
+        "cycle_no": {"type": "integer", "minimum": 2, "maximum": 2147483647},
+        "first_responsibility_event_id": {"type": "null"},
+        "staff_completion_event_id": {"type": "null"}
+      }
+    }
+  }
+}

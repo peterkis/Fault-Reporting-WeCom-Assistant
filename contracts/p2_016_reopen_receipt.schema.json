@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_reopen_receipt.schema.json",
+  "title": "T20 current-authorized original STAFF_REOPEN purpose receipt",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["client_command_id", "ticket_id", "state"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "ticket_id": {"type": "string", "format": "uuid"},
+        "state": {"const": "UNKNOWN"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["client_command_id", "ticket_id", "state", "result"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "ticket_id": {"type": "string", "format": "uuid"},
+        "state": {"const": "COMMITTED"},
+        "result": {"allOf": [{"$ref": "./p2_016_reopen_result.schema.json"}, {"properties": {"replayed": {"const": true}}}]}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["client_command_id", "ticket_id", "state", "error"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "ticket_id": {"type": "string", "format": "uuid"},
+        "state": {"const": "FAILED"},
+        "error": {
+          "type": "object", "additionalProperties": false, "required": ["code", "retryable"],
+          "properties": {"code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}, "retryable": {"const": false}}
+        }
+      }
+    }
+  ]
+}

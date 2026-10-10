@@ -93,7 +93,7 @@ export function select(routes: Routes, kind: 'alias' | 'selection', name: string
 }
 export function testEnvironment(root: string, entries: Entry[], input: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const result: NodeJS.ProcessEnv = {};
-  for (const name of ['PATH','Path','SystemRoot','SYSTEMROOT','WINDIR','COMSPEC','PATHEXT','HOME','USERPROFILE','TEMP','TMP','TMPDIR','LOCALAPPDATA','APPDATA','LANG','LC_ALL','TZ']) {
+  for (const name of ['PATH','Path','SystemRoot','SYSTEMROOT','WINDIR','COMSPEC','PATHEXT','HOME','USERPROFILE','TEMP','TMP','TMPDIR','LOCALAPPDATA','APPDATA','LANG','LC_ALL','TZ','npm_config_cache','PYTHONDONTWRITEBYTECODE']) {
     if (input[name] !== undefined) result[name] = input[name];
   }
   // No .env loading, NODE_OPTIONS, provider credentials or production flags.
