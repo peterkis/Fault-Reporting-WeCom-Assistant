@@ -121,3 +121,14 @@ READ_COMMITTED仅返回同原selection、当前actor／application／scope授权
 原03a8公开POST仍503，命令READ为FAILED；query窗口观察到SQLSTATE2201B，尚未定位具体SQL或首cause。045中candidate_ref固定模式的量词上界256存在明确静态SQL语法风险，JS解析与纯copy检查通过不能替代数据库CHECK。旧045与所有历史迁移保持；新增[051](../../../database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql)只前向替换 `service_intake_manual_verification_check` 的该子句为独立长度32–256及同ASCII字符集判断。其余CHECK／IS TRUE／null与UNVERIFIED／actor与proof规则不变，HTTP／JS／Schema的32–256合同不缩为255，不删除约束。
 
 核实选择路径需要在原045之后应用051。本次原隔离测试caller只准备从STAGED资源读取051并在同迁移事务记录checksum与时间，资源清单仅登记这个具体SQL；既有045 migrator、业务代码、默认false和API无变更，没有生产迁移或部署。DDL、构建及原POST后继仍NOT_RUN，是否解决该事务失败需下一次原公开用例证据。关闭候选开关停止新核实选择，保留旧资料及前向约束；不得以删除CHECK／修改历史045或重写旧观察回退。
+
+
+### T18 正式管理端接入首例状态（2026-10-11，SOURCE_ONLY）
+
+T18私有候选`f83fbec18eaab714fbc3ca37d0d9b50d640cbc70`上的原候选GET与核实选择POST已各1 PASS；POST实际202并存储原UUID的COMMITTED最小回执。该结果不等同正式管理端支持，也不改变默认关闭和真实外部依赖停止线。原失败候选的日志与收据保持其原状态。
+
+下一首例已注册为[正式PC浏览器单片](../../../tests/wbint-t18-normal-verified-form.browser.test.mts)，**NEXT_FIRST_NOT_BUILT_NOT_RUN**。预定界面合同在既有姓名输入上提供真实候选combobox、授权option和显式选择；提交只沿本文件已有`VERIFIED_SELECTION/ref/version`合同，不上传姓名/部门/proof/actor作为授权证据。当前正式表单仍是手填分支，此项须通过实际生产bundle browser RED→GREEN证明。
+
+报修时资料继续通过已有`GET /api/manual-reviews/{reviewId}`的`manual_report`读取：[闭合VERIFIED projection Schema](../../../contracts/workbench_verified_manual_report_projection.schema.json)已定义safe姓名与部门数组、来源、代录主体和资格；未包含联系方式、原始外部ID或private proof。**当前生产reader与前端decoder尚只支持HAND_ENTERED/UNVERIFIED，本轮没有补齐，因此此合同仍是接入后层NOT_RUN。**最小命令回执不增加人员快照字段；界面必须读取该次持久来源资料，不能把刷新后的Directory名称回写成旧单。
+
+本次只新增一个SOURCE测试及精确导航注册，复用既有HTTP路径、认证fixture和合成Directory Port，无新增REST入口、业务实现或SQL。051仅在新首例caller中复用原已通过迁移setup，不改历史045或共享helper；不以初始SQL伪造业务成功。当前全部新增运行检查NOT_RUN，完整状态见[本票执行记录](../../../plans/admin-workbench-integration/execution/t18.md)。
