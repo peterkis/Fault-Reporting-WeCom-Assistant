@@ -4,6 +4,7 @@ import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
 import type {TicketAction,TicketActionAfterHook,PublicTicketEvent} from './p1-006-ticket-state-actions.mjs';
 import type {PublicPilotTicket} from './p1-005-pilot-ticket-core.mjs';
 import {createTicketActionService} from './p1-006-ticket-state-actions.mjs';
+import {unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
@@ -36,7 +37,7 @@ export async function selfHandlingResponsibilityEligibility(tx:PostgresTransacti
   let rejection:string|null=null;
   if(!member.rowCount)rejection='FORBIDDEN';
   else if(ticket.assignee_id!==null&&ticket.assignee_id!==principal.principal_id)rejection='SELF_HANDLING_OWNER_CONFLICT';
-  const initial=['NEW','QUEUED'].includes(ticket.status);
+  const initial=['NEW','QUEUED'].includes(ticket.status)||(ticket.status==='REOPENED'&&await unassignedReopenedRound(tx,ticket.id));
   const accepted=ticket.status==='ACCEPTED'&&ticket.assignee_id===principal.principal_id&&cycle?.first_responsibility_event_id!=null;
   if(!rejection&&!initial&&!accepted)rejection='SELF_HANDLING_STATE_CONFLICT';
   const actions:SelfHandlingAction[]=rejection?[]:initial?['take-and-start','accept-for-later']:['take-and-start'];
@@ -44,8 +45,10 @@ export async function selfHandlingResponsibilityEligibility(tx:PostgresTransacti
 }
 export interface SelfHandlingHooks {realtimeProjector?:Projector|null;closure?:{afterTicketAction:TicketActionAfterHook}|null;notificationProjector?:{project:(input:ProjectInput)=>Promise<unknown>}|null}
 export async function performFirstTicketResponsibilityInTransaction({transaction:tx,ticket,principal,command,initialCycle,realtimeProjector=null,closure=null,notificationProjector=null,tracePrefix='t04:'}:{transaction:PostgresTransaction;ticket:P2016TicketRow;principal:WorkbenchPrincipal;command:SelfHandlingCommand;initialCycle:HandlingCycle|null;tracePrefix?:string}&SelfHandlingHooks){
-        const actions=createTicketActionService({authorize:async()=>true,afterAction:closure?.afterTicketAction??null});
-        const chain:TicketAction[]=ticket.status==='NEW'?['queue','accept']:ticket.status==='QUEUED'?['accept']:[];
+        const reopened=ticket.status==='REOPENED'&&await unassignedReopenedRound(tx,ticket.id);
+        if(ticket.status==='REOPENED'&&!reopened)failP2016('SELF_HANDLING_STATE_CONFLICT',409);
+        const actions=createTicketActionService({authorize:async()=>true,afterAction:closure?.afterTicketAction??null,acceptReopenedRound:reopened});
+        const chain:TicketAction[]=ticket.status==='NEW'?['queue','accept']:ticket.status==='QUEUED'||reopened?['accept']:[];
         if(command.action==='take-and-start')chain.push('start');
         let current:P2016TicketRow|PublicPilotTicket=ticket,cycle=initialCycle;
         const results:{ticket:PublicPilotTicket;event:PublicTicketEvent}[]=[];

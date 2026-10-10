@@ -10,7 +10,7 @@ WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#撤销未�
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,manual_review_enabled:boolean,manual_review_draft_recovery_enabled:boolean,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,manual_review_enabled:boolean,manual_review_draft_recovery_enabled:boolean,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_reopen_rounds_enabled:boolean,ticket_reopen_draft_recovery_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
@@ -243,3 +243,27 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 717d683d候选唯一构建在web严格类型前置原生exit1：Notification解码器原字符串时间返回值不满足LocalDateTime品牌，TS2322位于client.ts117。strict／artifact／SQL／PG fixture／HTTP／browser都NOT_RUN，无新UI业务结果或失败PNG；原9ac区域缺失RED及全部NOT_REACHED层保持原身份。该失败已完整D保全1872档（当前source raw1111／partial.build759／原日志2）及源ZIP，窗口明确TEMP_RELEASE返T20。
 
 仅源码修补Notification时间边界：保留现有primitive string与秒精度格式校验，进一步验证合法公历日期、闰年和时分秒范围，验证后返回LocalDateTime品牌。旧通用datetime和DTO品牌类型不放宽，未引入浏览器不可用的node:util依赖、新模块、any或双重断言。仅通知sent_at（允许null）与created_at走新typed parser；节点读取／UI和消费者等其它行为不变。原首／三测试／041／角色／flags／240秒保持，当前后继build／strict／artifact／browser全部NOT_RUN，只在新grant下验证原browser首。
+
+## 同一工单新轮次重开（WBINT-T20，本地整票验证完成，待父审查）
+
+当前M/H5与独立W/PC服务、043 shared-round、当前获权提示、安全原UUID GET和独立raw恢复已完成原七项本地隔离验证；最终0f9af956一套build/strict/artifact原生0、直接消费者10PASS、原hosts外层27PASS。原HTTP/合同/并发/两端真实bundle证据各保tested源，不重绑更早PASS；全部原FAIL/setup/observer/NOT_REACHED与当前原始索引见[逐票执行记录](../../../plans/admin-workbench-integration/execution/t20.md)。待父独立验收/集成；下面带b41/b176/15306/9395身份的NOT_RUN和remaining保留其历史阶段，当前行为以上文与本节合同为准。默认关闭/不外发/不部署/不推进Gate保持。
+
+`ticket_reopen_rounds_enabled` 是 W 宿主 `ticketReopenRoundsEnabled` 的独立能力投影，默认 false；显式启用须先具备 043 schema 与当前 W 权限。正式 PC 仅在该能力和当前 command context 同时允许 `reopen` 时显示原因表单，使用原 W `POST /api/tickets/{ticketId}/reopen`、当前 CSRF、原 UUID 和 `expected_version`；这不授予 Reporter 自助写权。新 shared round 清当前处理人、保处理组，之后必须显式重新承接；Conversation 责任独立。
+
+关闭该选项隐藏新 PC 写消费并停用新 shared-round 服务路径，保留既有 legacy 生命周期行为和追加历史，不回改 043 或旧 SQL。`GET /api/tickets/{ticketId}/reopen/commands/{commandId}` 是原 STAFF_REOPEN 用途的只读核对：整 W 读入口仍启用且当前 principal 具有 Ticket READ 即可，独立于新写能力和 raw 恢复选项。它绑定原 actor/principal scope、Ticket、UUID 和 `reopen`，仅查 ledger 安全标量与不可变 shared-round basis，不读取原因、hash 或私有结果快照；其他 actor/用途或未取得终态返回 UNKNOWN，当前对象失权仍拒绝。闭合 [结果](../../../contracts/p2_016_reopen_result.schema.json) 和 [回执](../../../contracts/p2_016_reopen_receipt.schema.json) 不授予新操作权限。
+
+PC UNKNOWN 保留原 UUID，显式只 GET 该回执及当前获权 Ticket，不自动 POST、ACK 或换 ID。新源码复用 T03 AES-GCM/non-extractable key、first-save 24h、CAS/20份/16KiB journal，purpose 为 `staff-reopen`；W bootstrap 的 `ticket_reopen_draft_recovery_enabled` 是原 raw 选项与新写能力同时启用的投影，不改变默认关闭。恢复先重新验证当前 READ；新写能力或原动作消失时清敏感原因/原写 payload，只恢复 opaque UUID 给用户点击 GET。raw 关闭不创建新数据库/恢复副本，已存在的原操作仍可在当前 READ 下只读核对。
+
+M 的独立 `reporterFeedbackDraftRecoveryEnabled=false` 投影 `feedback_draft_recovery_enabled`；新源码从本次编译 manifest 的受限 JS entry/import 图加载同一个 T03 store，Web scope 使用当前 `recovery_scope` 摘要、request ref 与 `reporter-feedback` purpose，不借 W principal/Ticket ID。原字段全部密文保存，Cookie/CSRF 不进入副本；24h 到期/丢弃或原写能力失效不把 UNKNOWN 改成失败，原 UUID 仍只能按 FEEDBACK purpose GET。COMMITTED 闭合结果与当前获权同 Ticket 事实核实、恢复清理确认后才显示已核对；cleanup 未确认阻止新反馈，退出独立清理本成员反馈范围。该源码后继尚 NOT_RUN，save/reload GREEN、实际 24h/current READ/损坏/跨标签/关闭边界与适用兼容仍需本票逐段实证，不由旧 GREEN 或 T03 原证明推定交付。本人 Web 反馈的独立默认关闭能力见[反馈合同](../member/web-feedback-design.md)。
+
+真正 043 新轮次未承接前，legacy `start` 拒绝绕过首次责任依据；T04 的显式承接路径保持。当前获权 W TicketDetail 可追加闭合 `reopen_follow_up:{origin,is_previous_handler,awaiting_acceptance:true}`，只由当前未承接 shared basis 和 040 上轮完工人派生；获权团队看到普通待承接事实，旧处理人失权仍拒绝，M 不包含此字段。该字段不派工、不存新跟进或 owner。以上 b41 实际差额的前向源码待新固定候选验证，整票仍 IN_PROGRESS。
+
+b176原11实际9PASS/2FAIL保留原运行身份。专用ACK/两端UNKNOWN原GET核对、newround START阻断及两来源安全字段已到达；两FAIL在停用账号现行401与原403预期的差异，不能调整产品授权边界。后继来源校准精确401/闭合无正文认证拒绝，并准备关闭新write/raw仍当前READ的ACK、同浏览器raw reload和正式上轮HANDLER提示首组，全部NOT_RUN。保护恢复需独立原scope/Ticket/purpose、当前READ、首次保存24h不续期及有界非导出AES-GCM；raw过期或敏感内容不能恢复不等于原命令未提交，原opaque UUID只供安全GET核对。PC提示的实际消费和完整raw/currentauth尚未由现有9PASS证明，默认关闭和整票IN_PROGRESS保持。
+
+15306原四实际2PASS/2FAIL保留原身份：两端生产页面同浏览器reload后恢复原opaque UUID并由用户GET核对已通过；WRITE/raw关闭时当前READ专用ACK已到达，后续START广告不一致与fresh REOPENED后的literal PC提示缺失是实际RED。前向源码对真实043未指派未承接轮次独立于新write选项过滤start，保持无043 basis legacy；PC仅消费当前获权GET的闭合reopen_follow_up，在正在读取或错误时隐藏提示。提示不授予重开/承接权限、不通知外部、不重新分派。该后继尚NOT_RUN，当前原七仍IN_PROGRESS。
+
+raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允许该旧操作已被终态核对清理后为新输入创建敏感恢复副本；业务写权限与是否保存恢复副本独立。原POST已得到200而随后context GET暂时失败，也不得将已提交命令显示为已知拒绝或丢弃唯一UUID；保留UNKNOWN只读核对与新命令栅栏，待原receipt/当前事实和必要清理确认。两项生命周期边界已登记真实公开首测、尚NOT_RUN，不能把未运行源码审查当完成证据。
+
+9395原四实际2PASS/2FAIL已保全：START关闭广告与获权STAFF正式提示PASS；两生命周期首测分别实际新敏感record1≠0，以及真实原POST200/服务器GET200受控client503却误报拒绝。最小后继给现有共享hook独立writeEnabled（缺省仍沿原enabled），W旧opaque读消费不启用新敏感保存；只有原POST未成功时才按其明确拒绝清理，POST200后的临时读取失败保原UUID UNKNOWN。该源码后继尚NOT_RUN，旧15306/9395结果保持各自被测身份。
+
+冷raw关闭且没有旧row时，不打开或写入IndexedDB，也不在local/sessionStorage持久化UUID；此时只保证挂载页面内原UUID的GET核对，不承诺刷新后24h恢复。刷新丢失内存标识不代表原命令失败，不能自动重发。raw启用的固定24h副本，以及既有opaque在关闭raw后的只读恢复，是两个独立路径；前者到期或丢弃只清敏感payload/key，不能把原未知操作变成失败或借此换UUID。
