@@ -20,7 +20,7 @@ export function boardColumn(status: string): BoardColumn {
   failP2016();
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'> { sort_at: string }
-interface Input { authContext: unknown; column: string | null; range: string | null; cursor: unknown; limit: unknown }
+interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; cursor: unknown; limit: unknown }
 const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
    t.title,t.status,t.priority,t.reported_location_text AS location,profile.name AS reporter_name,
@@ -77,6 +77,28 @@ const CARD_SQL = `WITH cards AS (
      JOIN pilot_ticket.ticket actual ON actual.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)
    AND NOT EXISTS (SELECT 1 FROM intake.manual_review_item r WHERE r.service_intake_id=i.id AND r.status='PENDING')
 )`;
+// Narrow the already authorized canonical card, without multiplying it by Sessions or Legs.
+const RELATED_CARD_SQL = `(kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket handling
+  WHERE handling.id=cards.id::uuid AND handling.assignee_id=$2::uuid)
+ OR EXISTS(SELECT 1 FROM conversation.session s JOIN conversation.assignment a ON a.session_id=s.id
+  JOIN intake.service_intake anchor ON anchor.id=cards.intake_id::uuid AND anchor.retention_until>platform.local_now()
+  JOIN intake.service_intake material ON material.id=s.service_intake_id AND material.retention_until>platform.local_now()
+  WHERE a.assignment_status='ASSIGNED' AND a.assigned_principal_id=$2::uuid AND s.status<>'ENDED'
+    AND (s.service_intake_id=anchor.id OR EXISTS(
+      SELECT 1 FROM intake.channel_leg own JOIN intake.contact_journey j ON j.id=own.journey_id
+      JOIN intake.channel_leg related ON related.journey_id=own.journey_id
+      WHERE own.source_intake_id=anchor.id AND related.conversation_session_id=s.id
+        AND related.source_intake_id=s.service_intake_id AND related.conversation_thread_id=s.thread_id
+        AND own.reporter_identity_hash=j.reporter_identity_hash AND related.reporter_identity_hash=own.reporter_identity_hash
+        AND j.retention_until_epoch_ms>platform.physical_epoch_ms())
+      OR (cards.kind='ticket' AND EXISTS(
+        SELECT 1 FROM intake.channel_leg linked JOIN intake.contact_journey j ON j.id=linked.journey_id
+        JOIN intake.service_intake linked_material ON linked_material.id=linked.source_intake_id
+        WHERE j.linked_ticket_id=cards.id::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+          AND linked_material.retention_until>platform.local_now() AND linked_material.reporter_wecom_userid=s.participant_key
+          AND linked.reporter_identity_hash=j.reporter_identity_hash
+          AND (linked.conversation_session_id=s.id OR linked.source_intake_id=s.service_intake_id)
+          AND (linked.conversation_thread_id=s.thread_id OR linked.conversation_thread_id IS NULL))))))`;
 function card(row: CardRow): WorkbenchCard {
   return { kind: row.kind, id: row.id, intake_id: row.intake_id, number: row.number, title: row.title,
     status: row.status, column: boardColumn(row.status), priority: row.priority, source: row.source,
@@ -86,7 +108,7 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
   async function decorate(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     const sourced=sourceGroups?await sourceGroups.decorate(items):items;if(!manualReportsEnabled)return sourced;
     const result:WorkbenchCard[]=[];
@@ -131,20 +153,23 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualRe
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';
+      const boardScope=input.scope??'team';
+      if((boardScope!=='team'&&boardScope!=='related')||(!workbenchFollowEnabled&&input.scope!=null))failP2016();
       if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','cancelled'].includes(mode))failP2016();
       const selectedColumn=column as BoardColumn,selectedRange=mode as CompletionRange;
       const window=await range(selectedRange),limit=limitP2016(input.limit??'50');
       const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from','at','kind','id','order_group']):null;
       // Bind cursors to both filters and the current authorized scope, including a changed team/role.
-      const scopeKey=JSON.stringify(authorized.values);
+      const scopeKey=JSON.stringify(workbenchFollowEnabled?[authorized.values,boardScope]:authorized.values);
       if(page&&(page.v!==1||page.principal!==authorized.values[1]||page.scope!==scopeKey||page.column!==column||page.range!==mode||page.from!==window.from))failP2016('CURSOR_INVALID');
       const at=page?localP2016(page.at):null,id=page?uuidP2016(page.id):null;
       if(page&&(typeof page.kind!=='string'||!['ticket','review','intake'].includes(page.kind)))failP2016('CURSOR_INVALID');
       if(page&&page.order_group!==0&&page.order_group!==1)failP2016('CURSOR_INVALID');
       const states=STATUS_COLUMNS[selectedColumn].filter(state=>selectedColumn!=='closed'||(selectedRange==='cancelled'?state==='CANCELLED':state!=='CANCELLED'));
+      const related=boardScope==='related'?` WHERE ${RELATED_CARD_SQL}`:'';
       const r=await pool.query<CardRow & {order_at:string;order_group:number}>(CARD_SQL+`, ordered AS (SELECT *,
         CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN 1 ELSE 0 END AS order_group,
-        CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN completed_at ELSE sort_at END AS order_at FROM cards)
+        CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN completed_at ELSE sort_at END AS order_at FROM cards${related})
         SELECT * FROM ordered WHERE status=ANY($4::text[])
         AND ($5::boolean OR status='RESOLVED' OR completed_at::timestamp>=$6::timestamp AND completed_at::timestamp<$7::timestamp)
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))

@@ -1,5 +1,7 @@
 # 明确关注与我有关（WBINT-T34，实施前合同）
 
+当前责任查询片：原提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 已真实运行原首条HTTP并取得400 RED；源码后继只补默认关闭的team/related查询、当前本人处理／沟通交集及cursor范围隔离，**NOT_BUILT_NOT_RUN**，无044变更。该片不实现FOLLOW、attention、follow_version或正式UI；全票七项仍未完成。具体当前请求与关闭规则见[看板](board.md)，原证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t34.md)。下文保留最初冻结阶段和完整目标合同；其中完整关注的迁移readiness要求不由当前只读片替代。
+
 返回 [接口导航](../README.md) · [当前看板](board.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t34.md)
 
 状态：SOURCE_READY／NOT_RUN，基线 `326b7ea455b5cfc7de6e3e980401921fc9cac524`。下列是本票冻结的目标合同，当前生产 handler 尚未挂载，不是可用接口。第一条 HTTP RED 的源码已登记，build、strict、数据库、HTTP和正式制品浏览器均 NOT_RUN；后续须在父任务授予的串行窗口执行原 RED，再逐片最小实现。

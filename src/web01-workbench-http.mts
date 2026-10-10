@@ -4,7 +4,7 @@ import { failP2016 } from './p2-016-domain-contracts.mjs';
 import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import {sourceGroupNameCommand} from './workbench-source-groups.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
-export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01WorkbenchQuery>,sourceGroups:ReturnType<typeof createWorkbenchSourceGroups>|null=null) {
+export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01WorkbenchQuery>,sourceGroups:ReturnType<typeof createWorkbenchSourceGroups>|null=null,workbenchFollowEnabled=false) {
   return async({request,response,url,authContext,json,readJson,validateWriteRequest}: Context)=>{
     if(url.pathname==='/api/workbench/source-groups'||url.pathname.startsWith('/api/workbench/source-groups/')){
       if(!sourceGroups)failP2016('DISABLED',503);
@@ -24,11 +24,13 @@ export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01Wor
     }
     if(!url.pathname.startsWith('/api/workbench/board')&&!url.pathname.startsWith('/api/workbench/items/'))return false;
     if(request.method!=='GET')failP2016('NOT_FOUND',404);
-    const allowed=url.pathname==='/api/workbench/board'?['column','range','cursor','limit']:['cursor','limit'];
+    const allowed=url.pathname==='/api/workbench/board'?['column','range','cursor','limit',...(workbenchFollowEnabled?['scope']:[])]:['cursor','limit'];
     if([...url.searchParams.keys()].some(k=>!allowed.includes(k))||allowed.some(k=>url.searchParams.getAll(k).length>1))failP2016();
     const cursor=url.searchParams.get('cursor'),limit=url.searchParams.get('limit');
     if(url.pathname==='/api/workbench/board'){
-      json(response,200,await query.list({authContext,column:url.searchParams.get('column'),range:url.searchParams.get('range'),cursor,limit}));return true;
+      const scope=url.searchParams.get('scope');
+      if(scope!==null&&scope!=='team'&&scope!=='related')failP2016();
+      json(response,200,await query.list({authContext,column:url.searchParams.get('column'),range:url.searchParams.get('range'),...(workbenchFollowEnabled?{scope}:{}),cursor,limit}));return true;
     }
     const match=/^\/api\/workbench\/items\/(ticket|review|intake)\/([0-9a-f-]{36})$/iu.exec(url.pathname);
     if(!match||!match[1])failP2016('NOT_FOUND',404);
