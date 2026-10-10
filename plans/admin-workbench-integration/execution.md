@@ -22,7 +22,7 @@ GitHub实际快照已关闭15／43票，剩余28票OPEN；本次新增完成T08�
 | T08 / #63 | CLOSED；[完成评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63#issuecomment-6093445782)正文及完成态已读回，[原七项、接口与关闭方式](execution/t08.md)可追溯；默认保留沟通，明确选择时与撤派同事务，进行中拒绝，保留组／本轮历史且无额外撤派外发 |
 | 集成与实际被测对象 | `697bfd6f014fc174eecd951c484eff98babbaa90`安全快进；真实被测祖先`9d08366df087c4d59708d96d9002ee16197a6a39`。后继只改4份Markdown，1103构建输入及1268运行输出相同；原MIGRATION_INPUT_DRIFT与文档身份差异保留，不重绑制品 |
 | 验证与原档 | Node24 build／strict／artifact原生0；本票20文件32、直接相关15文件106、原工具27通过。工具采集误读故意失败的内层TAP，原wrapper1及错误摘要保留，独立原native0／最终SPEC27更正；2203文件原档、日志／trace／运行字节／6张本票PNG由父核对，所有历史FAIL／partial／NOT_REACHED保留 |
-| 资源与归档 | 已明确RELEASE，父实际核D盘隔离PG额外库／客户端0／0；自有App／HTTP／SSE／浏览器／池及原工具进程已关闭。必要ignored制品已完整保全，managed工作树归档状态以实际工具读回为准 |
+| 资源与归档 | 已明确RELEASE，父实际核D盘隔离PG额外库／客户端0／0；自有App／HTTP／SSE／浏览器／池及原工具进程已关闭。2023个必要ignored文件／29,591,372 bytes逐路径、长度、SHA匹配既有D盘原档，39,977个可再生成依赖文件明确排除；本次D盘managed工作树已实际归档、附件类型及原目录／Git登记消失均已读回，六份根用户资料与空index保持 |
 | 并行准备 | T15／T18／T19／T20／T28／T34／T35和T10／T39已正常同步指定集成根，原合同／tracer／角色／240s／历史213登记保留。全部是SOURCE_READY／NOT_RUN，执行前合入最新已交付根；原生依赖、独立STAFF REOPEN和T24实际撤派／停止退回范围保持 |
 | 来源工作包与停止线 | WBINT-02／A02仅T08子项新增完成，T07／T09／T10未完成；全部新增开关默认false，D盘创建／测试，不连接真实OAuth／WeCom／Provider、不外发、不操作用户库、不push／部署／full／certify或推进Gate |
 
