@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_related_conversation_page.schema.json",
   "title": "Authorized canonical related conversation page with exact BIGINT versions",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,9 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
+import type {P2016TicketNotification} from '../../../../contracts/p2_016_contracts';
+import type {LocalDateTime} from '../../../../contracts/time_contracts';
+export type {P2016TicketNotification};
 import type {P2016ReopenResult,P2016ReopenReceipt} from '../../../../contracts/p2_016_contracts';
 import type {P2016TicketDetail} from '../../../../contracts/p2_016_contracts';
 import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets,P2016AssignmentResult,P2016AssignmentAcknowledgement} from '../../../../contracts/p2_016_contracts';
@@ -28,6 +31,15 @@ function text(value:unknown): string {if(typeof value!=='string')throw new ApiEr
 function nullable(value:unknown): string|null {return value===null?null:text(value);}
 function strings(value:unknown):string[] {if(!Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value.map(text);}
 function datetime(value:unknown):string {const v=text(value);if(!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u.test(v))throw new ApiError(502,'INVALID_RESPONSE');return v;}
+function notificationDatetime(value:unknown):LocalDateTime {
+  const v=datetime(value),year=Number(v.slice(0,4)),month=Number(v.slice(5,7)),day=Number(v.slice(8,10));
+  const hour=Number(v.slice(11,13)),minute=Number(v.slice(14,16)),second=Number(v.slice(17,19));
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const maximum=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+  if(year<1||month<1||month>12||day<1||maximum===undefined||day>maximum||hour>23||minute>59||second>59)throw new ApiError(502,'INVALID_RESPONSE');
+  // The original second-precision format and Gregorian calendar/clock checks establish the opaque business-time brand.
+  return v as LocalDateTime;
+}
 function id(value:unknown):string {const v=text(value);if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(v))throw new ApiError(502,'INVALID_RESPONSE');return v;}
 function decodeGroup(value:unknown):SourceGroupDisplay {
   const v=object(value),ref=text(v.ref),version=text(v.row_version),name=nullable(v.display_name);
@@ -74,14 +86,14 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)},...(refs?{review_refs:refs}:{}),...(requested?{requested_item:requested}:{})};
 }
-export interface Principal extends WorkbenchRealtimeCapability {ticket_reopen_draft_recovery_enabled?:boolean;ticket_reopen_rounds_enabled:boolean;ticket_unassign_enabled:boolean;ticket_unassign_draft_recovery_enabled:boolean;ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;conversation_workspace_enabled:boolean;conversation_draft_recovery_enabled:boolean;incident_candidate_workspace_enabled:boolean;incident_candidate_draft_recovery_enabled:boolean;logout_enabled:boolean}
+export interface Principal extends WorkbenchRealtimeCapability {ticket_round_notifications_enabled:boolean;ticket_reopen_draft_recovery_enabled?:boolean;ticket_reopen_rounds_enabled:boolean;ticket_unassign_enabled:boolean;ticket_unassign_draft_recovery_enabled:boolean;ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;conversation_workspace_enabled:boolean;conversation_draft_recovery_enabled:boolean;incident_candidate_workspace_enabled:boolean;incident_candidate_draft_recovery_enabled:boolean;logout_enabled:boolean}
 function optionalFlag(value:unknown):boolean{if(value===undefined)return false;if(typeof value!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return value;} function decodePrincipal(value:unknown):Principal {
   const v=object(value),unassign=optionalFlag(v.ticket_unassign_enabled),unassignRecovery=optionalFlag(v.ticket_unassign_draft_recovery_enabled),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision),manual=optionalFlag(v.manual_review_enabled),recovery=optionalFlag(v.manual_review_draft_recovery_enabled),manualReports=optionalFlag(v.manual_reports_enabled),manualReportRecovery=optionalFlag(v.manual_report_draft_recovery_enabled);
   if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_draft_recovery_enabled!=='boolean'||typeof v.ticket_staff_completion_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.staff_completion_draft_recovery_enabled!=='boolean'||typeof v.conversation_workspace_enabled!=='boolean'||typeof v.conversation_draft_recovery_enabled!=='boolean'||typeof v.incident_candidate_workspace_enabled!=='boolean'||typeof v.incident_candidate_draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean'
     ||(unassignRecovery&&!unassign)||(recovery&&!manual)||(manualReportRecovery&&!manualReports)||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
     ||!/^(0|[1-9][0-9]{0,18})$/u.test(expires)||BigInt(expires)>9223372036854775807n||v.sse_endpoint!==(v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null)
     ||(v.realtime_sse_enabled?(revision===null||!/^[a-f0-9]{64}$/u.test(revision)):(revision!==null||v.realtime_sse_available)))throw new ApiError(502,'INVALID_RESPONSE');
-  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_reopen_rounds_enabled:optionalFlag(v.ticket_reopen_rounds_enabled),ticket_reopen_draft_recovery_enabled:optionalFlag(v.ticket_reopen_draft_recovery_enabled),ticket_unassign_enabled:unassign,ticket_unassign_draft_recovery_enabled:unassignRecovery,ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,manual_report_draft_recovery_enabled:manualReportRecovery,conversation_workspace_enabled:v.conversation_workspace_enabled,conversation_draft_recovery_enabled:v.conversation_draft_recovery_enabled,incident_candidate_workspace_enabled:v.incident_candidate_workspace_enabled,incident_candidate_draft_recovery_enabled:v.incident_candidate_draft_recovery_enabled,logout_enabled:v.logout_enabled,
+  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_round_notifications_enabled:optionalFlag(v.ticket_round_notifications_enabled),ticket_reopen_rounds_enabled:optionalFlag(v.ticket_reopen_rounds_enabled),ticket_reopen_draft_recovery_enabled:optionalFlag(v.ticket_reopen_draft_recovery_enabled),ticket_unassign_enabled:unassign,ticket_unassign_draft_recovery_enabled:unassignRecovery,ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,manual_report_draft_recovery_enabled:manualReportRecovery,conversation_workspace_enabled:v.conversation_workspace_enabled,conversation_draft_recovery_enabled:v.conversation_draft_recovery_enabled,incident_candidate_workspace_enabled:v.incident_candidate_workspace_enabled,incident_candidate_draft_recovery_enabled:v.incident_candidate_draft_recovery_enabled,logout_enabled:v.logout_enabled,
     realtime_sse_enabled:v.realtime_sse_enabled,realtime_sse_available:v.realtime_sse_available,sse_endpoint:v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null,polling_interval_ms:interval,expires_epoch_ms:expires,authorization_revision:revision};
 }
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
@@ -93,6 +105,31 @@ function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext
   let followUp:NonNullable<P2016TicketDetail['reopen_follow_up']>|undefined;
   if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='BOT_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
   return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
+}
+function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification[]} {
+  const page=object(value);
+  if(Object.keys(page).length!==1||!Array.isArray(page.items)||page.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
+  const items=page.items.map(value=>{
+    const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no');
+    const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[])];
+    if(hasNode!==hasCycle||Object.keys(row).length!==keys.length||Object.keys(row).some(key=>!keys.includes(key))
+      ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
+      ||!['PERSON','GROUP'].includes(text(row.destination_type))||!['PENDING','LEASED','SENDING','SENT','DEAD_LETTER','RECONCILIATION_REQUIRED','CANCELLED'].includes(text(row.status))
+      ||!['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'].includes(text(row.side_effect_state))
+      ||typeof row.attempt_count!=='number'||!Number.isInteger(row.attempt_count)||row.attempt_count<0||row.attempt_count>2147483647)throw new ApiError(502,'INVALID_RESPONSE');
+    let round:Pick<P2016TicketNotification,'node'|'cycle_no'>={};
+    if(hasNode){
+      const node=row.node;
+      if(node===null){if(row.cycle_no!==null)throw new ApiError(502,'INVALID_RESPONSE');round={node:null,cycle_no:null};}
+      else {if(node!=='FIRST_RESPONSIBILITY'&&node!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');round={node,cycle_no:version(row.cycle_no)};}
+    }
+    return {...round,notification_type:row.notification_type as P2016TicketNotification['notification_type'],
+      destination_type:row.destination_type as P2016TicketNotification['destination_type'],delivery_id:id(row.delivery_id),
+      status:row.status as P2016TicketNotification['status'],side_effect_state:row.side_effect_state as P2016TicketNotification['side_effect_state'],
+      attempt_count:row.attempt_count,sent_at:row.sent_at===null?null:notificationDatetime(row.sent_at),created_at:notificationDatetime(row.created_at)};
+  });
+  if(new Set(items.map(item=>item.delivery_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
+  return {items};
 }
 async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';
@@ -274,6 +311,7 @@ export const api={
 
   sourceGroups:(q:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/source-groups?'+new URLSearchParams({limit:'50',q,...(cursor?{cursor}:{})}),signal,decodeGroupPage),
   bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
+  ticketNotifications:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/deliveries',signal,decodeTicketNotifications),
   ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
   addInternalNote:(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'internal-notes',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
   selfHandle:(ticketId:string,action:SelfHandlingAction,command:P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016SelfHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
