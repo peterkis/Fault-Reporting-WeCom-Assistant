@@ -113,8 +113,9 @@ test('a real verified selection is rechecked by server authority and produces on
     assert.equal(page.status,200);assert.deepEqual(await page.json(),{schema_version:1,candidates:[candidate],next_cursor:null,manual_fallback_available:true});
     const command:VerifiedManualReportCommand={schema_version:1,client_command_id:randomUUID(),source:'PHONE',description:'合成经核实代录：打印机无法打印',location:{text:null,unknown:true},reporter:{verification:'VERIFIED_SELECTION',candidate_ref:candidate.candidate_ref,candidate_version:candidate.candidate_version}};
     const queryRejections:{sequence:number;event:'REJECT'|'SYNC_THROW';sqlstate:string;error_class:'PostgresBoundaryError'|'TypeError'|'Error'|'UNKNOWN'}[]=[];
-    let querySequence=0;
+    let querySequence=0,observerActive=true;
     function recordQueryFailure(sequence:number,event:'REJECT'|'SYNC_THROW',error:unknown):void{
+      if(!observerActive)return;
       try{
         const code=error!==null&&typeof error==='object'&&'code'in error&&typeof error.code==='string'&&/^[A-Z0-9]{5}$/u.test(error.code)?error.code:'UNKNOWN';
         const error_class=error instanceof PostgresBoundaryError?'PostgresBoundaryError':error instanceof TypeError?'TypeError':error instanceof Error?'Error':'UNKNOWN';
@@ -129,6 +130,7 @@ test('a real verified selection is rechecked by server authority and produces on
       try{if(connected instanceof Promise){
         void connected.then((value:unknown)=>{
           try{
+            if(!observerActive)return;
             if(value===null||typeof value!=='object'||!('query'in value)||typeof value.query!=='function'||restoreQueries.has(value))return;
             const originalQuery=value.query,client=value;
             restoreQueries.set(client,()=>{client.query=originalQuery;});
@@ -150,6 +152,7 @@ test('a real verified selection is rechecked by server authority and produces on
     try{
       admitted=await fetch(origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
     }finally{
+      observerActive=false;
       pool.connect=originalConnect;for(const restore of restoreQueries.values())restore();
     }
     // This narrow window can include existing runtime queries; sequence is not causality.
