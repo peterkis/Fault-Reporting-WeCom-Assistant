@@ -4,6 +4,12 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t24-unassign-reaccept-first-identity.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t24-consumer-restart-public-port.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t24-partial-intent-recovery-public-port.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t24-synthetic-sender-success.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t24-synthetic-sender-fail.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t24-synthetic-sender-unknown.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t24-queued-first-responsibility.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t24-round-notifications.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t24-round-notification-identity.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -466,6 +472,12 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/t24-unassign-reaccept-first-identity.integration.test.mts",
+      "tests/t24-consumer-restart-public-port.integration.test.mts",
+      "tests/t24-partial-intent-recovery-public-port.integration.test.mts",
+      "tests/t24-synthetic-sender-success.integration.test.mts",
+      "tests/t24-synthetic-sender-fail.integration.test.mts",
+      "tests/t24-synthetic-sender-unknown.integration.test.mts",
       "tests/t24-queued-first-responsibility.integration.test.mts",
       "tests/t24-round-notifications.integration.test.mts",
       "tests/t24-round-notification-identity.integration.test.mts",
