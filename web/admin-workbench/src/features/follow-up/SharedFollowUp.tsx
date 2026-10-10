@@ -92,7 +92,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);else{setState('unknown');setMessage('只读核对尚未完成；原操作仍保留，不会再次发送。');}}
   finally{if(generation.current===token)request.current=null;}
  }
- if(!principal.follow_up_schedules_enabled&&!commandId&&state==='idle')return null;
+ if(!principal.follow_up_schedules_enabled&&!commandId&&!input&&state==='idle')return null;
  const canSet=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('SET')===true;
  const canCancel=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('CANCEL')===true;
  return <section role="region" aria-label="共享下次跟进时间" className="ticket-notes shared-follow-up">
