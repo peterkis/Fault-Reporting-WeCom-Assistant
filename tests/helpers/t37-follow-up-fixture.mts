@@ -30,7 +30,8 @@ export type T37Fixture = Readonly<{
 export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean}>={}){
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t37',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
-    await applyThrough030(context);await migrateP2016({databaseUrl:context.databaseUrl,mode:'apply'});
+    await applyThrough030(context);
+    const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
     const handler=await access.upsertPrincipal({wecomUserId:'t37-handler-'+randomUUID(),displayName:'T37 合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
