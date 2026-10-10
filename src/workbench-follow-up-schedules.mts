@@ -25,9 +25,10 @@ export function normalizeFollowUpCommand(ticketId:unknown,input:unknown):SharedF
   if(value.action==='CANCEL')return {...base,action:'CANCEL',due_at:null};
   try{const due=assertLocalDateTime(value.due_at);shanghaiLocalToEpochMs(due);return {...base,action:'SET',due_at:due};}catch{failP2016();}
 }
-function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow){
-  // Current communicator is a later independently tested slice; no group READ/CONTROL promotion.
-  return OPEN_STATES.includes(ticket.status)&&(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id);
+async function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow,currentCommunicator:()=>Promise<boolean>):Promise<boolean>{
+  if(!OPEN_STATES.includes(ticket.status))return false;
+  if(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id)return true;
+  return currentCommunicator();
 }
 async function readCurrent(transaction:PostgresTransaction,ticketId:string):Promise<CurrentRow|null>{
   const result=await transaction.query<CurrentRow>(`SELECT s.schedule_version::text,s.due_at,s.due_epoch_ms::text,s.scheduled_event_id::text,
@@ -64,7 +65,8 @@ export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realt
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
         const {principal,ticket}=await query.authorizedTicket({authContext,ticketId,transaction});await ready(transaction);
-        const current=await readCurrent(transaction,ticketId),history=await readHistory(transaction,ticketId),canMaintain=maintainable(principal,ticket);
+        const current=await readCurrent(transaction,ticketId),history=await readHistory(transaction,ticketId),canMaintain=await maintainable(principal,ticket,
+          ()=>query.isCurrentCommunicator({authContext,ticketId,transaction}));
         const active=current?.active&&current.due_at!==null&&current.due_epoch_ms!==null?{
           schedule_version:followUpRevision(current.schedule_version,false),due_at:assertLocalDateTime(current.due_at),due_epoch_ms:assertEpochMsString(current.due_epoch_ms),
           is_due:BigInt(current.due_epoch_ms)<=BigInt(assertEpochMsString(String(Date.now())))}:null;
@@ -102,7 +104,7 @@ export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realt
         await transaction.query(`SELECT m.principal_id,rt.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
           WHERE m.principal_id=$1::uuid ORDER BY m.team_id FOR SHARE OF m,rt`,[authority.principal.principal_id]);
         const {ticket,principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
-        if(!maintainable(principal,ticket))failP2016('FORBIDDEN',403);
+        if(!await maintainable(principal,ticket,()=>query.isCurrentCommunicator({authContext,ticketId:ticket.id,transaction,lock:true})))failP2016('FORBIDDEN',403);
         if(ticket.version!==command.expected_version||ticket.version===2147483647)failP2016('VERSION_CONFLICT',409);
         const current=await readCurrent(transaction,ticket.id),previous=current?followUpRevision(current.schedule_version,false):'0';
         if(previous!==command.expected_schedule_version||BigInt(previous)===9223372036854775807n)failP2016('VERSION_CONFLICT',409);
