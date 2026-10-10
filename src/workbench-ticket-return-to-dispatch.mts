@@ -69,6 +69,14 @@ async function currentSegmentStarted(tx:PostgresTransaction,ticket:P2016TicketRo
  }
  return false;
 }
+// READ advertisement shares the original started-segment and current operation authority; it never executes a command.
+export async function returnToDispatchEligible(tx:PostgresTransaction,principal:Parameters<typeof ticketActionAllowedP2016>[0],ticket:P2016TicketRow) {
+ if(!ticketActionAllowedP2016(principal,ticket,'wait-vendor')||!principal)return false;
+ if(!principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!(await tx.query('SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id WHERE m.principal_id=$1::uuid AND m.team_id=$2 AND rt.is_active',[principal.principal_id,ticket.resolver_team_id])).rowCount)return false;
+ if(!await currentSegmentStarted(tx,ticket))return false;
+ const cycle=await assignmentCycle(tx,ticket.id);
+ return !(cycle?.first_responsibility_event_id===null||!cycle&&(await tx.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount);
+}
 export function createTicketReturnToDispatchService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
  const ledger=createP2016CommandLedger({pool});
  return Object.freeze({async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016ReturnToDispatchAcknowledgement> {

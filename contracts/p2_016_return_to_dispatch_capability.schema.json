@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_return_to_dispatch_capability.schema.json",
+  "title": "Lifecycle bootstrap T09 capability fragment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket_return_to_dispatch_enabled",
+    "ticket_return_to_dispatch_draft_recovery_enabled"
+  ],
+  "properties": {
+    "ticket_return_to_dispatch_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "ticket_return_to_dispatch_draft_recovery_enabled": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ticket_return_to_dispatch_draft_recovery_enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ticket_return_to_dispatch_enabled": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "x-contract-scope": "This closed fragment is extracted from the existing /api/lifecycle/bootstrap DTO, not the separate generic /api/workbench/bootstrap. Missing optional capabilities decode false; ACK READ remains independent of these booleans.",
+  "x-status": "SOURCE_ONLY_NOT_BUILT_NOT_RUN"
+}

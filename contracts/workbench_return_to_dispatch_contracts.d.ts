@@ -1,7 +1,7 @@
 import type {LocalDateTime} from './time_contracts.js';
 import type {P2016AssignmentAcknowledgement,P2016HandlingCycle} from './p2_016_contracts.js';
 
-/** WBINT-T09 frozen planned contract; no production route before the original public RED. */
+/** WBINT-T09 frozen command; implemented public seams have separately pinned original RED/GREEN evidence. */
 export type P2016ReturnSession=Readonly<{session_id:string;expected_row_version:number}>;
 export type P2016ReturnToDispatchCommand=Readonly<{
   client_command_id:string;expected_version:number;reason_code:string;reason:string;unfinished_work:string;
@@ -27,3 +27,6 @@ export type P2016ReturnToDispatchEventFact=Readonly<{
   internal_note:string;external_note:null;reason_code:string;trace_id:string;created_at:LocalDateTime;
   assignment_metadata:Readonly<{old_assignee_id:string;new_assignee_id:null;old_team_id:string;new_team_id:string}>;
 }>;
+
+/** Optional lifecycle bootstrap capability fragment; raw storage never gates safe ACK READ. */
+export interface P2016ReturnToDispatchCapability {ticket_return_to_dispatch_enabled:boolean;ticket_return_to_dispatch_draft_recovery_enabled:boolean}
