@@ -15,6 +15,8 @@ export type P2016UnassignResult = Readonly<{
 }>;
 /** Current Ticket read authority and original principal/purpose only; no selected Session or reason. */
 export type P2016UnassignAcknowledgement = P2016AssignmentAcknowledgement;
+/** Independent bounded internal communication choices; the query grants no later Control write. */
+export type P2016UnassignTargets = Readonly<{items:ReadonlyArray<Readonly<{principal_id:string;display_name:string}>>}>;
 /** Private append-only fact; ordinary events HTTP retains its existing safe projection. */
 export type P2016UnassignEventFact = Readonly<{
   event_id:string;ticket_id:string;event_type:'ticket.unassigned';old_status:'QUEUED'|'ACCEPTED';new_status:'QUEUED';
