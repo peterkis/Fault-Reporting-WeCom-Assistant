@@ -137,3 +137,9 @@ T18私有候选`f83fbec18eaab714fbc3ca37d0d9b50d640cbc70`上的原候选GET与�
 
 本票需要 045 与其 051 前向修补共同生效。现有公开 `migrateWorkbenchVerifiedManualReports({databaseUrl, mode})` 将覆盖所需 045→051 链；`check` 保持只读，缺任一所需项返回 PENDING，完整一致返回 NOOP_ALREADY_APPLIED。`apply` 校验原 042 前置及两文件 checksum，在原迁移锁与单事务内依序应用缺项，完整存在时 NOOP；返回既有 root migration_id 形状兼容，status 表示整条本票所需链。两 SQL 原字节均不可修改。当前生产函数尚只处理 045，051 由测试 caller 显式应用；此处是补齐合同，尚不能视为入口已通过。
 未提交草稿中已明确选择成员时，只随既有加密副本保存选择意图，不恢复成员核验资格。刷新后要求重新选择成员或明确改为手填；候选开关关闭时保留输入并阻止静默提交为手填。已提交而结果未知的副本仍保存原命令和 UUID，只允许原 GET 核对。
+
+### 核实选择拒绝与未知结果合同
+
+单独 HTTP 403、404、409 或错误文字不能证明未受理。核实选择在 Directory 前置核验失败后，仅当当前创建权限仍有效，原命令账本在同 actor／body／UUID／purpose 锁下确定为 FAILED，才可返回闭合错误体 `{"error":{"code":"P2_016_FORBIDDEN","retryable":false},"receipt":{"client_command_id":"00000000-0000-4000-8000-000000000018","state":"FAILED","error":{"code":"P2_016_FORBIDDEN","retryable":false}}}`。两个 code 必须一致，只含原 UUID 与错误，不含资料或目标；原 COMMITTED 不得被失败覆盖，也不通过对象拒绝返回其正文。
+
+浏览器只有严格解析同 UUID 的这类 FAILED 回执，且当前创建能力仍获准时，才清原标识并允许明确手填；错 UUID、额外字段、矛盾 state／code 或一般拒绝均不能作为已失败。提交后权限复验拒绝或其它未知结果保留原操作，当前权限恢复也不新 POST；用户必须显式 GET 核对。真正创建失权继续按原用途清理敏感内容。

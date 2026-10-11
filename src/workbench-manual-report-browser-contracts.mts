@@ -1,5 +1,5 @@
 import type {ManualReportCommand,ManualReportResult,ManualReportCapabilities,ManualReportReceipt,ManualReportProjection} from '../contracts/workbench_manual_report_contracts.js';
-import type {VerifiedManualReportCommand,VerifiedManualReportResult,VerifiedManualReportReceipt,VerifiedManualReportProjection,ManualReporterSelection,WorkbenchReporterCandidates} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {VerifiedManualReportCommand,VerifiedManualReportResult,VerifiedManualReportReceipt,VerifiedManualReportProjection,ManualReporterSelection,WorkbenchReporterCandidates,VerifiedManualReportRejection} from '../contracts/workbench_reporter_candidates_contracts.js';
 export type ManualReportAdmissionCommand=ManualReportCommand|VerifiedManualReportCommand;
 export type ManualReportAdmissionResult=ManualReportResult|VerifiedManualReportResult;
 export type ManualReportAdmissionReceipt=ManualReportReceipt|VerifiedManualReportReceipt;
@@ -68,6 +68,12 @@ export function decodeManualReportReceipt(value:unknown,id:string):ManualReportA
   if(v.state==='UNKNOWN'){exact(v,['client_command_id','state']);return {...base,state:'UNKNOWN'};}
   if(v.state==='FAILED'){exact(v,['client_command_id','state','error']);const e=exact(v.error,['code','retryable']),code=text(e.code,64,1);if(e.retryable!==false||!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))bad();return {...base,state:'FAILED',error:{code,retryable:false}};}
   if(v.state==='COMMITTED'){exact(v,['client_command_id','state','result']);const result=decodeManualReportResult(v.result,id);if(result.replayed!==true)bad();if(result.reporter_verification==='VERIFIED')return {...base,state:'COMMITTED',result:{...result,replayed:true}};return {...base,state:'COMMITTED',result:{...result,replayed:true}};}bad();
+}
+export function decodeVerifiedManualReportRejection(value:unknown,id:string):VerifiedManualReportRejection{
+  const v=exact(value,['error','receipt']),e=exact(v.error,['code','retryable']);
+  const receipt=decodeManualReportReceipt(v.receipt,id);
+  if(receipt.state!=='FAILED'||e.retryable!==false||e.code!==receipt.error.code)bad();
+  return {error:{code:receipt.error.code,retryable:false},receipt};
 }
 export function encodeManualReportDraft(value:ManualReportInput,pending:ManualReportAdmissionCommand|null,selectionIntent=false):string{
   // Store a pending command only once, so bounded Unicode descriptions are not

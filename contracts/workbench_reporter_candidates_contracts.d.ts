@@ -122,3 +122,9 @@ export type VerifiedManualReportReceipt={readonly client_command_id:string}&(
   {readonly state:'UNKNOWN'}|{readonly state:'FAILED';readonly error:{readonly code:string;readonly retryable:false}}
   |{readonly state:'COMMITTED';readonly result:VerifiedManualReportResult&{readonly replayed:true}}
 );
+
+/** A failed preflight is terminal only after the existing command ledger confirms it. */
+export interface VerifiedManualReportRejection {
+  readonly error:{readonly code:string;readonly retryable:false};
+  readonly receipt:Extract<VerifiedManualReportReceipt,{readonly state:'FAILED'}>;
+}

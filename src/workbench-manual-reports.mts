@@ -20,10 +20,14 @@ import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {LocalDateTime} from '../contracts/time_contracts.js';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
-import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,VerifiedManualReportResult,ManualReporterAdmissionEnvelope} from '../contracts/workbench_reporter_candidates_contracts.js';
+import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,VerifiedManualReportResult,ManualReporterAdmissionEnvelope,VerifiedManualReportRejection} from '../contracts/workbench_reporter_candidates_contracts.js';
 import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
 import {createWorkbenchReporterCandidates} from './workbench-reporter-candidates.mjs';
+import {WorkbenchError} from './p2-006-workbench-query.mjs';
 import {verifiedManualReportCommand,retainedReporterTarget} from './workbench-reporter-verification.mjs';
+class ConfirmedReporterRejection extends WorkbenchError {
+  constructor(status:number,readonly rejection:VerifiedManualReportRejection){super(rejection.error.code,status);}
+}
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
 interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;reporterCandidatesEnabled?:boolean;reporterDirectory?:ManualReporterDirectoryOptions|null;realtimeProjector?:Realtime|null}
@@ -101,8 +105,23 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
       return {principal,target:await committedTarget(tx,principal,command)};});
     const outcome=await reporterCandidates.verify(before.principal.principal_id,command.reporter,before.target).then(value=>({ok:true as const,value}),(error:unknown)=>({ok:false as const,error}));
     const after=await currentPrincipal(authContext);if(after.principal_id!==before.principal.principal_id)failP2016('FORBIDDEN',403);
-    if(!outcome.ok)throw outcome.error;reporterCandidates.fence(after.principal_id,command.reporter,outcome.value,before.target);
-    return {principalId:after.principal_id,target:before.target,verification:outcome.value};
+    try{
+      if(!outcome.ok)throw outcome.error;
+      reporterCandidates.fence(after.principal_id,command.reporter,outcome.value,before.target);
+      return {principalId:after.principal_id,target:before.target,verification:outcome.value};
+    }catch(error){
+      // An object-read refusal must never reveal or replace an existing commit.
+      if(before.target!==null)throw error;
+      const failed=await ledger.execute({command:{...command,action:'manual-report'},receiptType:'WORKBENCH_MANUAL_REPORT',authorize:async tx=>{
+        const context=await authorize(authContext,tx);if(context.principal.principal_id!==after.principal_id)failP2016('FORBIDDEN',403);return context;
+      },run:async()=>{throw error;}});
+      // A concurrent original commit wins the same ledger lock. Its result is
+      // deliberately not returned through a rejected Directory selection.
+      if(failed.ok!==false||failed.error.retryable!==false||!P2016_ERROR_CODES.includes(failed.error.code))throw error;
+      const current=await currentPrincipal(authContext);if(current.principal_id!==after.principal_id)failP2016('FORBIDDEN',403);
+      const rejection:VerifiedManualReportRejection={error:{code:failed.error.code,retryable:false},receipt:{client_command_id:command.client_command_id,state:'FAILED',error:{code:failed.error.code,retryable:false}}};
+      throw new ConfirmedReporterRejection(error instanceof WorkbenchError?error.status:503,rejection);
+    }
   }
   async function receipt(authContext:unknown,commandId:string):Promise<AdmissionReceipt>{
     guardP2016(draftRecoveryEnabled);
@@ -194,7 +213,9 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
       const rawReporter=exactP2016(candidate.reporter,['verification','candidate_ref','candidate_version','name','contact','department'],['verification']);
       const command=rawReporter.verification==='VERIFIED_SELECTION'?verifiedManualReportCommand(body):manualReportCommand(body);
       const verifiedCommand=command.reporter.verification==='VERIFIED_SELECTION'?verifiedManualReportCommand(body):null;
-      const checked=verifiedCommand?await verifyForCommand(authContext,verifiedCommand):null;
+      let checked:Awaited<ReturnType<typeof verifyForCommand>>|null;
+      try{checked=verifiedCommand?await verifyForCommand(authContext,verifiedCommand):null;}
+      catch(error){if(error instanceof ConfirmedReporterRejection){json(response,error.status,error.rejection);return true;}throw error;}
       const result=await ledger.execute({command:{...command,action:'manual-report'},receiptType:'WORKBENCH_MANUAL_REPORT',authorize:async tx=>{
         const context=await authorize(authContext,tx);
         if(checked&&verifiedCommand){if(context.principal.principal_id!==checked.principalId)failP2016('FORBIDDEN',403);

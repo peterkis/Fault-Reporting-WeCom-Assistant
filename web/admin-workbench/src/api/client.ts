@@ -13,7 +13,7 @@ export type {P2016AssignmentAction,P2016AssignmentCommand};
 import type {ManualReportCapabilities} from '../../../../contracts/workbench_manual_report_contracts';
 import type {ManualReportAdmissionCommand,ManualReportAdmissionResult,ManualReportAdmissionReceipt} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {WorkbenchReporterCandidates} from '../../../../contracts/workbench_reporter_candidates_contracts';
-import {decodeReporterCandidates,decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
+import {decodeVerifiedManualReportRejection,decodeReporterCandidates,decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {SharedFollowUpCommand,SharedFollowUpActive} from '../../../../contracts/workbench_follow_up_schedule_contracts';
 import type {CanonicalItem,ReviewReference} from '../../../../contracts/workbench_review_contracts';
 let authorizationEpoch=0,transportWritable=true;
@@ -29,6 +29,7 @@ export interface TicketCommandContext {id:string;version:number;allowed_actions:
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
+export class ConfirmedManualReportRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}
 function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function text(value:unknown): string {if(typeof value!=='string')throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function nullable(value:unknown): string|null {return value===null?null:text(value);}
@@ -254,6 +255,10 @@ export const api={
   submitManualReport:async(command:ManualReportAdmissionCommand,csrfToken:string|null,signal:AbortSignal):Promise<ManualReportAdmissionResult>=>{
     try{
       const response=await fetch('/api/workbench/reports',{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if(!response.ok&&response.status!==401&&command.reporter.verification==='VERIFIED_SELECTION'&&response.headers.get('content-type')?.startsWith('application/json')){
+        try{const rejected=decodeVerifiedManualReportRejection(await response.clone().json(),command.client_command_id);throw new ConfirmedManualReportRejection(response.status,rejected.error.code,rejected.receipt.client_command_id);}
+        catch(error){if(error instanceof ConfirmedManualReportRejection)throw error;}
+      }
       if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const value:unknown=await response.json(),v=object(value);

@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Link} from 'react-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
+import {api,ApiError,ConfirmedManualReportRejection,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {ManualReportAdmissionCommand,ManualReportAdmissionResult} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {WorkbenchReporterCandidate,WorkbenchReporterCandidates} from '../../../../../contracts/workbench_reporter_candidates_contracts';
@@ -33,12 +33,15 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
   const deny=(error:ApiError)=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setSelected(null);setSelectionIntent(false);setPage(null);candidateRequest.current?.abort();setPending(null);setResult(null);setState('denied');setMessage('当前身份已没有代录权限，输入及恢复副本已清理。');
     if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearManualReportAuthority(client,principal.principal_id,error);};
-  async function retainCandidateRefusal(controller:AbortController,token:number,commandId?:string){
+  async function retainCandidateRefusal(controller:AbortController,token:number,commandId?:string,confirmedFailure=false){
     const acquired=request.current===null;if(acquired)request.current=controller;
     try{
       const fresh=await context.refetch();
       if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
       if(fresh.error instanceof ApiError&&[401,403,404].includes(fresh.error.status)){deny(fresh.error);return;}
+      if(commandId&&(!confirmedFailure||fresh.isError||!fresh.data?.can_create)){
+        setState('unknown');setMessage('结果未知：报修可能已受理。原操作标识保持不变，请显式只读核对。');return;
+      }
       if(commandId){
         try{await draft.knownFailure(commandId);}catch{if(mounted.current&&!controller.signal.aborted&&token===generation.current){setState('unknown');setMessage('成员选择已被拒绝，但恢复副本尚未核对，请先只读核对原操作。');}return;}
         if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
@@ -66,7 +69,10 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
       await accepted(command.client_command_id,admitted,admitted.replayed?'已受理：已核对原操作结果。':'已受理报修。');
     }catch(error){
       if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
-      if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(command.reporter.verification==='VERIFIED_SELECTION'&&error.status!==401)await retainCandidateRefusal(controller,token,command.client_command_id);else deny(error);return;}
+      if(error instanceof ApiError&&command.reporter.verification==='VERIFIED_SELECTION'){
+        if(error.status===401)deny(error);else await retainCandidateRefusal(controller,token,command.client_command_id,error instanceof ConfirmedManualReportRejection&&error.commandId===command.client_command_id);return;
+      }
+      if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}
       if(error instanceof ApiError){await draft.knownFailure(command.client_command_id).catch(()=>{});setPending(null);setState('denied');setMessage('受理被拒绝，输入已保留：'+errorMessage(error));}
       else if(!dispatched){setPending(null);setState('denied');setMessage('恢复副本未保存，本次尚未发送；请保留并检查当前输入。');}
       else{setState('unknown');setPending(command);setMessage('结果未知：报修可能已受理。原内容和操作标识保持不变，请只读核对。');}
