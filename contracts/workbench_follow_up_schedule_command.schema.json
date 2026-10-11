@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_follow_up_schedule_command.schema.json",
+  "title":"WBINT-T37 shared Ticket follow-up schedule command (planned)",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["client_command_id","expected_version","expected_schedule_version","reason_code","action","due_at"],
+  "properties":{
+    "client_command_id":{"type":"string","format":"uuid"},
+    "expected_version":{"type":"integer","minimum":1,"maximum":2147483647},
+    "expected_schedule_version":{"type":"string","pattern":"^(0|[1-9][0-9]{0,18})$","x-postgresql-bigint-maximum":"9223372036854775807"},
+    "reason_code":{"const":"WORKBENCH_FOLLOW_UP_SCHEDULE"},
+    "action":{"enum":["SET","CANCEL"]},
+    "due_at":{"oneOf":[{"$ref":"local_datetime.schema.json"},{"type":"null"}]}
+  },
+  "oneOf":[
+    {"properties":{"action":{"const":"SET"},"due_at":{"$ref":"local_datetime.schema.json"}}},
+    {"properties":{"action":{"const":"CANCEL"},"due_at":{"type":"null"}}}
+  ],
+  "x-runtime-validation":["Gregorian calendar","schedule version <= PostgreSQL BIGINT maximum","Cookie Origin/CSRF","Idempotency-Key equals client_command_id","If-Match equals expected_version"]
+}

@@ -5,6 +5,7 @@ import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016, uuidP2016, localP2016, limitP2016, cursorP2016, decodeCursorP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
 import {sourceLabel} from './workbench-source-groups.mjs';
 import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
+import type {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
 import type {ReviewReference} from '../contracts/workbench_review_contracts.js';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
 import {readManualReportSource} from './workbench-manual-report-source.mjs';
@@ -19,7 +20,7 @@ export function boardColumn(status: string): BoardColumn {
   for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
   failP2016();
 }
-interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'> { sort_at: string }
+interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'|'follow_up_schedule'> { sort_at: string }
 interface Input { authContext: unknown; column: string | null; range: string | null; cursor: unknown; limit: unknown }
 const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
@@ -86,9 +87,17 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
   async function decorate(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
-    const sourced=sourceGroups?await sourceGroups.decorate(items):items;if(!manualReportsEnabled)return sourced;
+    let sourced=sourceGroups?await sourceGroups.decorate(items):items;
+    if(followUpSchedules){
+      const ticketIds=[...new Set(sourced.filter(item=>item.kind==='ticket').map(item=>item.id))];
+      if(ticketIds.length){
+        const active=await followUpSchedules.activeForAuthorizedTickets(ticketIds);
+        sourced=sourced.map(item=>item.kind==='ticket'?{...item,follow_up_schedule:active.get(item.id)??null}:item);
+      }
+    }
+    if(!manualReportsEnabled)return sourced;
     const result:WorkbenchCard[]=[];
     for(const item of sourced){const manual=item.source==='MANUAL'?await readManualReportSource(pool,item.intake_id):null;
       result.push(manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+'（身份未核实）'}:item);}

@@ -28,7 +28,7 @@ execution_status: IN_PROGRESS
 | WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：[T27公共故障候选LOCAL_VERIFIED](execution/t27.md)原七项已核对、集成并关票；T28的原生blocker已关闭，仍待独立实施，A09整组尚未验收 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | NOT_STARTED | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
-| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；T34／T35已领取并准备源码合同，尚未运行验收；T36／T37未启动 | A12 |
+| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；T34／T35已领取并准备源码合同，尚未运行验收；T36未启动；T37本地实现及原七项定向验证完成，待父任务集成，默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
