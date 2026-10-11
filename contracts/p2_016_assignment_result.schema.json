@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_assignment_result.schema.json",
   "title": "Explicit Ticket assignment result",
   "type": "object",
   "additionalProperties": false,
