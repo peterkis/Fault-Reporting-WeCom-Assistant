@@ -10,10 +10,15 @@ export const FOLLOW_UP_MIGRATION_ID='049_workbench_follow_up_schedules';
 const file=new URL('../database/migrations/049_workbench_follow_up_schedules.sql',import.meta.url);
 export async function followUpSchemaReady(queryable:PostgresTransaction):Promise<boolean>{
   const checksum=createHash('sha256').update(await readFile(file,'utf8')).digest('hex');
-  const result=await queryable.query<{checksum_sha256:unknown;current_table:unknown;revision_table:unknown}>(`SELECT checksum_sha256,
-    to_regclass('pilot_ticket.follow_up_schedule')::text AS current_table,to_regclass('pilot_ticket.follow_up_schedule_revision')::text AS revision_table
+  const result=await queryable.query<{checksum_sha256:unknown;current_table:unknown;revision_table:unknown;current_time_pair:boolean;revision_time_pair:boolean}>(`SELECT checksum_sha256,
+    to_regclass('pilot_ticket.follow_up_schedule')::text AS current_table,to_regclass('pilot_ticket.follow_up_schedule_revision')::text AS revision_table,
+    EXISTS(SELECT 1 FROM pg_constraint c WHERE c.conrelid=to_regclass('pilot_ticket.follow_up_schedule')
+      AND c.conname='follow_up_current_time_pair' AND c.contype='c' AND c.convalidated AND c.conenforced AND NOT c.condeferrable) AS current_time_pair,
+    EXISTS(SELECT 1 FROM pg_constraint c WHERE c.conrelid=to_regclass('pilot_ticket.follow_up_schedule_revision')
+      AND c.conname='follow_up_revision_time_pair' AND c.contype='c' AND c.convalidated AND c.conenforced AND NOT c.condeferrable) AS revision_time_pair
     FROM platform.schema_migration WHERE migration_id=$1`,[FOLLOW_UP_MIGRATION_ID]);
-  const row=result.rows[0];return row?.checksum_sha256===checksum&&row.current_table==='pilot_ticket.follow_up_schedule'&&row.revision_table==='pilot_ticket.follow_up_schedule_revision';
+  const row=result.rows[0];return row?.checksum_sha256===checksum&&row.current_table==='pilot_ticket.follow_up_schedule'&&row.revision_table==='pilot_ticket.follow_up_schedule_revision'
+    &&row.current_time_pair===true&&row.revision_time_pair===true;
 }
 export async function migrateWorkbenchFollowUpSchedules({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}){
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
