@@ -9,18 +9,20 @@ import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {createP2016WeComSender} from '../../src/p2-016-wecom-sender.mjs';
+import {migrateWorkbenchSourceGroups} from '../../scripts/workbench-source-groups-migrate.mjs';
 export function t26Object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
-export async function withT26Fixture(run:(context:T11Fixture)=>Promise<void>){
+export async function withT26Fixture(run:(context:T11Fixture)=>Promise<void>,{roundLifecycle=false,sourceGroups=false}:{roundLifecycle?:boolean;sourceGroups?:boolean}={}){
  await withT24Fixture(async original=>{
   await original.runtime.stop();
+  if(sourceGroups)await migrateWorkbenchSourceGroups({databaseUrl:original.databaseUrl,mode:'apply'});
   const options={pool:original.pool,publicOrigin:original.origin,listenPort:Number(new URL(original.origin).port),principalIds:[original.principals[0]?.id??'',original.outsider.id,original.principals[1]?.id??''],
    flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:true,
-   ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,
+   ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,ticketAssignmentEnabled:roundLifecycle,ticketUnassignEnabled:roundLifecycle,ticketReopenRoundsEnabled:roundLifecycle,sourceGroupDirectoryEnabled:sourceGroups,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,
    reporterPolicy:'MEMBER_REQUIRED' as const,reporterMemberEntry:entryConfig,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}}};
   const runtime=createP2016Runtime(options);
   try{await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(original.origin).port)});const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);await run({...original,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});}
   finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{manualRoundConsumption:true});
+ },{manualRoundConsumption:true,ticketAssignmentEnabled:roundLifecycle,ticketUnassignEnabled:roundLifecycle,ticketReopenRoundsEnabled:roundLifecycle});
 }
 export async function t26Group(context:T11Fixture,tag:string){
  const intake=await seedPersistedIntake({pool:context.pool,text:'T26_PRIVATE_'+tag,chatType:'group',requestType:'INCIDENT',status:'RECEIVED',tag});
