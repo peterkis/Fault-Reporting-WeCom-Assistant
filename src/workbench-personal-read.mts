@@ -19,12 +19,13 @@ export function personalReadRevision(value:unknown,zero=false):string{
 }
 export function personalReadCommand(value:unknown):PersonalReadCommand{
   const v=exactP2016(value,['client_command_id','source_ref','revision']);
-  if(typeof v.source_ref!=='string'||!/^(?:web|manual):[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(v.source_ref))failP2016();
+  if(typeof v.source_ref!=='string'||!/^(?:channel:[1-9][0-9]{0,18}|(?:web|manual):[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u.test(v.source_ref))failP2016();
+  if(v.source_ref.startsWith('channel:'))personalReadRevision(v.source_ref.slice(8));
   return {client_command_id:uuidP2016(v.client_command_id),source_ref:v.source_ref,revision:personalReadRevision(v.revision)};
 }
 function acknowledgement(value:unknown):PersonalReadAcknowledgement{
   const v=exactP2016(value,['ok','client_command_id','source_key','source_kind','last_read_position','row_version','replayed']);
-  if(v.ok!==true||(v.source_kind!=='WEB'&&v.source_kind!=='MANUAL')||typeof v.source_key!=='string'||!/^[a-f0-9]{64}$/u.test(v.source_key)||typeof v.replayed!=='boolean')failP2016('ACTION_FAILED',503);
+  if(v.ok!==true||(v.source_kind!=='WEB'&&v.source_kind!=='MANUAL'&&v.source_kind!=='BOT')||typeof v.source_key!=='string'||!/^[a-f0-9]{64}$/u.test(v.source_key)||typeof v.replayed!=='boolean')failP2016('ACTION_FAILED',503);
   return {ok:true,client_command_id:uuidP2016(v.client_command_id),source_key:v.source_key,source_kind:v.source_kind,last_read_position:personalReadRevision(v.last_read_position),row_version:personalReadRevision(v.row_version),replayed:v.replayed};
 }
 const sourceKey=(kind:PersonalReadSourceKind,intakeId:string)=>hashP2016([PURPOSE,kind,intakeId]);
@@ -64,6 +65,9 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
       GROUP BY i.id
       UNION ALL SELECT i.id,'MANUAL',1::bigint FROM readable r JOIN intake.service_intake i ON i.id=r.id
         WHERE $7::boolean AND i.source_provider='STAFF_MANUAL_REPORT' AND i.manual_report_snapshot IS NOT NULL
+      UNION ALL SELECT i.id,'BOT',max(rel.sequence_no)::bigint FROM readable r JOIN intake.service_intake i ON i.id=r.id
+        JOIN intake.service_intake_message rel ON rel.intake_id=i.id JOIN channel.message_inbox m ON m.id=rel.channel_message_id
+        WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until>platform.local_now() GROUP BY i.id
     ) SELECT c.intake_id::text,c.source_kind,c.latest_position::text,
       COALESCE(p.last_read_position,0)::text AS last_read_position,COALESCE(p.row_version,0)::text AS row_version
       FROM coordinates c LEFT JOIN pilot_ticket.personal_material_read_position p ON p.principal_id=$5::uuid AND p.source_kind=c.source_kind AND p.source_intake_id=c.intake_id
@@ -73,6 +77,13 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
   }
   async function material(tx:PostgresTransaction,c:Authorized,command:PersonalReadCommand){
     const r=readable(c);
+    if(command.source_ref.startsWith('channel:')){
+      const row=(await tx.query<{intake_id:string}>(r.sql+`SELECT i.id::text AS intake_id FROM readable r JOIN intake.service_intake i ON i.id=r.id
+        JOIN intake.service_intake_message rel ON rel.intake_id=i.id JOIN channel.message_inbox m ON m.id=rel.channel_message_id
+        WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until>platform.local_now() AND m.id=$7::bigint AND rel.sequence_no=$8::bigint
+        FOR SHARE OF i,rel,m`,[...r.values,command.source_ref.slice(8),command.revision])).rows[0];
+      if(!row)failP2016('NOT_FOUND',404);return {intakeId:row.intake_id,kind:'BOT' as const};
+    }
     if(command.source_ref.startsWith('manual:')){
       if(!manualSourceEnabled||command.revision!=='1')failP2016('NOT_FOUND',404);
       const row=(await tx.query<{intake_id:string}>(r.sql+`SELECT i.id::text AS intake_id FROM readable r JOIN intake.service_intake i ON i.id=r.id
@@ -93,7 +104,7 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
         await tx.query('SET TRANSACTION READ ONLY');await ready(tx);const c=await authorize(tx,input),n=limitP2016(input.limit??'50');
         const cursor=input.cursor?decodeCursorP2016(input.cursor,['scope','after_kind','after_id']):null;
         if(cursor&&cursor.scope!==c.scope)failP2016('CURSOR_INVALID');
-        if(cursor&&cursor.after_kind!=='WEB'&&cursor.after_kind!=='MANUAL')failP2016('CURSOR_INVALID');
+        if(cursor&&cursor.after_kind!=='WEB'&&cursor.after_kind!=='MANUAL'&&cursor.after_kind!=='BOT')failP2016('CURSOR_INVALID');
         const rows=await sources(tx,c,cursor?{kind:cursor.after_kind as PersonalReadSourceKind,id:uuidP2016(cursor.after_id)}:null,n),visible=rows.slice(0,n),last=visible.at(-1);
         const positions:PersonalReadPosition[]=visible.map(row=>({source_key:sourceKey(row.source_kind,row.intake_id),source_kind:row.source_kind,last_read_position:personalReadRevision(row.last_read_position,true),latest_position:personalReadRevision(row.latest_position),row_version:personalReadRevision(row.row_version,true),has_unread_material:BigInt(row.latest_position)>BigInt(row.last_read_position)}));
         return {canonical_item:c.canonical,sources:positions,next_cursor:rows.length>n&&last?cursorP2016({scope:c.scope,after_kind:last.source_kind,after_id:last.intake_id}):null};
@@ -128,7 +139,8 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
           JOIN intake.service_intake i ON i.id=r.id LEFT JOIN intake.web_request_binding b ON b.intake_id=r.id
           WHERE l.command_scope=$7 AND l.client_command_id=$8::uuid AND l.actor_principal_id=$5::uuid AND l.command_type=$9 AND l.state='COMMITTED'
             AND ((i.source_provider='YIXIAOXIU_WEB' AND b.revoked_at IS NULL AND b.retention_until>platform.local_now())
-              OR ($10::boolean AND i.source_provider='STAFF_MANUAL_REPORT' AND i.manual_report_snapshot IS NOT NULL))`,[...r.values,PURPOSE+':'+c.principal.principal_id,commandId,PURPOSE,manualSourceEnabled])).rows[0];
+              OR ($10::boolean AND i.source_provider='STAFF_MANUAL_REPORT' AND i.manual_report_snapshot IS NOT NULL)
+              OR (i.source_provider='WECOM_AIBOT' AND EXISTS(SELECT 1 FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id WHERE rel.intake_id=i.id AND m.retention_until>platform.local_now())))`,[...r.values,PURPOSE+':'+c.principal.principal_id,commandId,PURPOSE,manualSourceEnabled])).rows[0];
         return receipt?{client_command_id:commandId,state:'COMMITTED',result:{...acknowledgement(receipt.result_snapshot),replayed:true}}:{client_command_id:commandId,state:'UNKNOWN'};
       });
     },
