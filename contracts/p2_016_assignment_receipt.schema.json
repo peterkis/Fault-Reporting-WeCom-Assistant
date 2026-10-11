@@ -2,6 +2,9 @@
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "$id":"https://hospital.local/contracts/p2_016_assignment_receipt.schema.json",
   "title":"Currently authorized principal Ticket assignment acknowledgement without communication identities",
+  "type":"object",
+  "additionalProperties":false,
+  "properties":{"state":{},"error":{},"ticket_id":{},"ticket_version":{},"ticket_event_id":{}},
   "anyOf":[
     {"type":"object","additionalProperties":false,"required":["state"],"properties":{"state":{"const":"UNKNOWN"}}},
     {"type":"object","additionalProperties":false,"required":["state","ticket_id","ticket_version","ticket_event_id"],"properties":{"state":{"const":"COMMITTED"},"ticket_id":{"type":"string","pattern":"^[0-9a-f-]{36}$"},"ticket_version":{"type":"integer","minimum":1,"maximum":2147483647},"ticket_event_id":{"type":"string","pattern":"^[0-9a-f-]{36}$"}}},

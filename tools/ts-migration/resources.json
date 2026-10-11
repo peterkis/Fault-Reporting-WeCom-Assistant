@@ -3,6 +3,7 @@
   "files": [
     "contracts/workbench_review_start_contracts.d.ts",
     "contracts/workbench_review_resolve_and_start_command.schema.json",
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",
