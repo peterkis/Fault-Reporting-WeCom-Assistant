@@ -6,7 +6,7 @@ import type {WorkbenchRealtimeStatus} from '../../../../contracts/workbench_real
 import {createWorkbenchRealtimeClient} from '../../../../src/workbench-realtime-client.mjs';
 import {clearSessionAuthorization} from '../app/authorization';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
-const families=new Set(['board','detail','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result']);
+const families=new Set(['board','detail','personal-read-position','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result']);
 export const isWorkbenchRealtimeQuery=(key:readonly unknown[],principal:string)=>key[1]===principal&&typeof key[0]==='string'&&families.has(key[0]);
 const identity=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 class IdentityChanged extends Error{}
@@ -35,7 +35,10 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
               else query.setState({data:undefined,dataUpdatedAt:0,error:null,status:'pending',fetchStatus:'idle'});
             }
             client.setQueryData(['session'],fresh);
-            if(fresh.principal_id!==principal.principal_id)await purgeDrafts({principal:principal.principal_id,reason:'revoked'});
+            if(fresh.principal_id!==principal.principal_id){
+              client.removeQueries({predicate:query=>query.queryKey[0]==='personal-read-command'&&query.queryKey[1]===principal.principal_id});
+              await purgeDrafts({principal:principal.principal_id,reason:'revoked'});
+            }
             signal.throwIfAborted();throw new IdentityChanged();
           }
           client.setQueryData(['session'],fresh);

@@ -68,7 +68,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
  return <section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
   <h3>重开同一工单</h3>
   {loading?<p role="status">正在读取重开权限与版本…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:context.data?<p>工单版本 {context.data.version}</p>:null}
-  {principal.ticket_reopen_rounds_enabled&&!context.isFetching&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='WEB_REPORTER'?'报修人反馈仍未解决；':'工作人员已重开同一工单；'}等待重新承接。</p>:null}
+  {principal.ticket_reopen_rounds_enabled&&!context.isFetching&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'工作人员已重开同一工单；':'报修人反馈仍未解决；'}等待重新承接。</p>:null}
   {allowed?<form onSubmit={event=>{event.preventDefault();if(blocked||loading||context.isFetching||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}>
    <label htmlFor="reopen-reason">重开原因</label><p>请核实同一故障仍需处理。原因仅供获权工作人员协作。</p>
    <textarea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/>

@@ -87,7 +87,7 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
   async function decorate(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     let sourced=sourceGroups?await sourceGroups.decorate(items):items;
     if(followUpSchedules){
@@ -173,15 +173,20 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUp
       const report=await pool.query<{summary:string|null;source_provider:string}>(`SELECT summary,source_provider FROM intake.service_intake
         WHERE id=$1::uuid AND retention_until>platform.local_now()`,[selected.intake_id]);
       const web=report.rows[0]?.source_provider==='YIXIAOXIU_WEB';
+      const manual=personalReadEnabled&&manualReportsEnabled&&report.rows[0]?.source_provider==='STAFF_MANUAL_REPORT'?await readManualReportSource(pool,selected.intake_id):null;
+      const manualRecords=manual?`UNION ALL
+        SELECT 'manual:'||i.id::text,to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS'),'报修原文',$7::text,
+          'REPORT',NULL,NULL,NULL,'manual:'||i.id::text,'1'::text FROM intake.service_intake i
+        WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()` : '';
       const webRecords=web?`UNION ALL
         SELECT 'web:'||s.id::text,to_char(s.received_at,'YYYY-MM-DD HH24:MI:SS'),
           CASE WHEN s.kind='SUBMIT' THEN '报修原文' ELSE '报修补充' END,
           CASE WHEN s.kind='SUBMIT' THEN s.safe_content->>'description' ELSE s.safe_content->>'text' END,
-          'REPORT',NULL,NULL,NULL FROM intake.web_submission s
+          'REPORT',NULL,NULL,NULL,${personalReadEnabled?"'web:'||s.id::text,s.input_revision::text":"NULL::text,NULL::text"} FROM intake.web_submission s
         JOIN intake.web_request_binding b ON b.intake_id=s.intake_id
         WHERE s.intake_id=$1::uuid AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
           AND s.retention_until>platform.local_now()` : '';
-      const records=await pool.query<WorkbenchRecord>(`WITH readable_intakes AS (
+      const records=await pool.query<WorkbenchRecord&{material_source_ref:string|null;material_revision:string|null}>(`WITH readable_intakes AS (
         SELECT id FROM intake.service_intake WHERE id=$1::uuid AND retention_until>platform.local_now()
         UNION SELECT i.id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
         JOIN intake.service_intake i ON i.id=l.source_intake_id WHERE $2='ticket' AND j.linked_ticket_id=$3::uuid
@@ -189,28 +194,31 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUp
       ), records AS (
         SELECT 'message:'||m.id::text AS id,to_char(rel.linked_at,'YYYY-MM-DD HH24:MI:SS') AS at,
           CASE WHEN rel.intake_id=$1::uuid AND rel.relation_type='PRIMARY' THEN '报修原文' ELSE '报修补充' END AS type,
-          m.clean_text AS text,'REPORT'::text AS audience,NULL::text AS actor,NULL::text AS old_status,NULL::text AS new_status
+          m.clean_text AS text,'REPORT'::text AS audience,NULL::text AS actor,NULL::text AS old_status,NULL::text AS new_status,
+          ${personalReadEnabled?"CASE WHEN i.source_provider='WECOM_AIBOT' THEN 'channel:'||m.id::text END":"NULL::text"} AS material_source_ref,
+          ${personalReadEnabled?"CASE WHEN i.source_provider='WECOM_AIBOT' THEN rel.sequence_no::text END":"NULL::text"} AS material_revision
         FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id
         JOIN intake.service_intake i ON i.id=rel.intake_id
         WHERE rel.intake_id IN (SELECT id FROM readable_intakes) AND i.retention_until>platform.local_now() AND m.retention_until>platform.local_now()
         UNION ALL
         SELECT 'event:'||e.event_id::text,to_char(e.created_at,'YYYY-MM-DD HH24:MI:SS'),e.event_type,
-          e.internal_note,'INTERNAL',COALESCE(p.display_name,e.operator_type),e.old_status,e.new_status
+          e.internal_note,'INTERNAL',COALESCE(p.display_name,e.operator_type),e.old_status,e.new_status,NULL,NULL
         FROM pilot_ticket.ticket_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id::text=e.operator_id
         WHERE $2='ticket' AND e.ticket_id=$3::uuid
         UNION ALL
         SELECT 'external:'||e.event_id::text,to_char(e.created_at,'YYYY-MM-DD HH24:MI:SS'),'对外摘要',
-          e.external_note,'EXTERNAL',COALESCE(p.display_name,e.operator_type),NULL,NULL
+          e.external_note,'EXTERNAL',COALESCE(p.display_name,e.operator_type),NULL,NULL,NULL,NULL
         FROM pilot_ticket.ticket_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id::text=e.operator_id
         WHERE $2='ticket' AND e.ticket_id=$3::uuid AND e.external_note IS NOT NULL
         UNION ALL
         SELECT 'intake-event:'||e.event_id::text,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS'),
-          e.event_type,NULL,'INTERNAL','SYSTEM',NULL,NULL FROM intake.service_intake_event e
+          e.event_type,NULL,'INTERNAL','SYSTEM',NULL,NULL,NULL,NULL FROM intake.service_intake_event e
         WHERE $2='intake' AND e.intake_id=$1::uuid
         ${webRecords}
+        ${manualRecords}
       ) SELECT * FROM records WHERE ($4::text IS NULL OR (at,id)<($4::text,$5::text))
-        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1]);
-      const items=records.rows.slice(0,n),last=items.at(-1);
+        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1,...(manual?[manual.report.description]:[])]);
+      const items=records.rows.slice(0,n).map(({material_source_ref,material_revision,...record})=>({...record,...(material_source_ref&&material_revision?{read_material:{source_ref:material_source_ref,revision:material_revision}}:{})})),last=items.at(-1);
       // The legacy responsibility view retains history. Filter current ownership
       // before its bounded result, without changing historical assignment facts.
       const responsibility=selected.kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id,currentConversationsOnly:true}):null;

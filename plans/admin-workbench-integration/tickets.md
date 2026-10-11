@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-10
+snapshot_on: 2026-10-11
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -30,6 +30,12 @@ native_blocking_edges: 76
 2026-10-11 T24 本地整票验收完成：原七项及真实被测祖先证据已核对，源码 `18d8aa71f91a156397348232b28c6a122fb8e464` 安全快进；见[轮次通知合同、原始证据与关闭方式](execution/t24.md)。[#79已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79#issuecomment-6102767418)，实际17／43 CLOSED、26 OPEN；本地交付不代表发布或真实外发。T25／T26 和 WBINT-08／A08 整组继续按原生依赖推进。上文快照保留各自历史日期。
 
 2026-10-11 T18 整票收口：七项本地验收、两轴增量审查和资源释放已核对，c6e2ba27 安全快进；[#73 已关闭并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73#issuecomment-6105209273)，实际 **19／43 CLOSED、24 OPEN**。见[当前 API、真实被测祖先与历史失败](execution/t18.md)。文档后继的严格制品身份拒绝原样保留，不将后继冒称已被测试。T25 依赖已满足，WBINT-05／A05 仍待 T19。
+
+2026-10-11 T21 整票收口：原七项与各真实被测对象已父核，ba55a23f安全快进；[#76完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，当前 **20／43 CLOSED、23 OPEN**，WBINT-06／A06本地完成。见[合同、原始失败与保全](execution/t21.md)。后续T35／T26／T25等继续按原生依赖和单一运行窗口推进；SOURCE_READY不计整票验收。
+
+2026-10-11 T35 整票收口：原七项、逐被测祖先结果、两轴修补及保全／清理后继已父核，e7ebc2e8安全快进；[#90完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90#issuecomment-6108623843)，当前 **21／43 CLOSED、22 OPEN**。见[当前合同、历史失败与真实记录](execution/t35.md)。T26接续整票，T36的原生#90已关闭；WBINT-12／A12仍待T34／T36，默认关闭与现场停止线保持。
+
+2026-10-11 T26 整票收口：原七项、8f7fb416同制品40／40、适用工具18／18、两轴修补、完整保全及人工tmp清空实际读回均父核，308b9a9d安全快进；[#81完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)，当前 **22／43 CLOSED、21 OPEN**。见[合同、原失败与真实被测祖先](execution/t26.md)。WBINT-08／A08仍待T25，其原生#66／#73已关闭；默认关闭，真实强@、客户端送达与现场授权保持独立。
 
 ## 导航与配置
 
@@ -138,9 +144,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-06 / A06
 
-- [ ] **T21** — [#76 Bot原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)
+- [x] **T21** — [#76 Bot原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)
   - **Blocked by:** [#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-06 / A06
+  - **本地执行：** [原七项、真实被测祖先与分组证据](execution/t21.md)已父核并安全快进ba55a23f，[GitHub收口已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，WBINT-06／A06本地完成；默认关闭、未发布／启用。
 
 - [x] **T22** — [#77 集中查看会话并人工回复](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
@@ -162,7 +169,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)、[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)
   - **来源：** WBINT-08 / A08
 
-- [ ] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
+- [x] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
   - **Blocked by:** [#79](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **来源：** WBINT-08 / A08
 
@@ -200,8 +207,9 @@ native_blocking_edges: 76
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)
   - **来源：** WBINT-12 / A12
 
-- [ ] **T35** — [#90 实际阅读后推进个人已读](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
-  - **执行：** 2026-10-10 实读完整正文／空评论／ready标签及原无assignee，原生blockers #69／#77均CLOSED后领取给peterkis；独立工作树已冻结跨来源个人位置合同与原真实HTTP／production浏览器tracer，8个自有文件及原副本逐SHA核对。SOURCE_READY／NOT_BUILT_NOT_RUN；等待串行窗口，不计A12验收。
+- [x] **T35** — [#90 实际阅读后推进个人已读](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
+  - **当前本地执行：** [原七项LOCAL_VERIFIED](execution/t35.md)已父核、e7ebc2e8安全快进并GitHub关闭；实际来源／会话、本人可见正文、单调位置、规范映射、授权与UNKNOWN恢复证据及原失败保留。保全工作字节和全部自有清理已核对；A12仍待T34／T36。
+  - **历史准备：** 2026-10-10 实读完整正文／空评论／ready标签及原无assignee，原生blockers #69／#77均CLOSED后领取给peterkis；独立工作树已冻结跨来源个人位置合同与原真实HTTP／production浏览器tracer，8个自有文件及原副本逐SHA核对。SOURCE_READY／NOT_BUILT_NOT_RUN；等待串行窗口，不计A12验收。
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)、[#77](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **来源：** WBINT-12 / A12
 

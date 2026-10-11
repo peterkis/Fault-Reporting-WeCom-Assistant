@@ -29,6 +29,7 @@ import {IncidentCandidates} from '../features/incident-candidates/IncidentCandid
 import {CandidateDetailPage} from '../features/incident-candidates/CandidateDetail';
 import {IncidentResultPage} from '../features/incident-candidates/IncidentResult';
 import {ReviewWorkspace} from '../features/manual-review/ReviewWorkspace';
+import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMaterial';
 import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
 import {useManualReportAuthority} from '../features/manual-report/use-manual-report-draft';
 import {useWorkbenchRealtime,realtimeLabels} from '../realtime/useRealtime';
@@ -204,7 +205,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
       <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
-        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
+        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header>{record.read_material?<PersonalReadMaterial principal={principal} item={{kind:detail.item.kind,id:detail.item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={record.text}/>:<p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p>}</div></li>)}</ol>
         {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button variant="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}</section>
     </div>:null}
   </>;

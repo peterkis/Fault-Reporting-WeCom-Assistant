@@ -1,0 +1,31 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
+import type {PersonalReadPage,PersonalReadAcknowledgement} from '../contracts/workbench_personal_read_contracts.js';
+
+test('T35 real Review resolution keeps one source anchor, one canonical card, and an independently unread second principal',()=>withT35Fixture(async f=>{
+  const admitted=await f.post('/api/workbench/reports',{schema_version:1,client_command_id:randomUUID(),source:'ON_SITE',description:'合成现场代录：打印机情况不明',location:{text:null,unknown:true},reporter:{verification:'UNVERIFIED',name:'合成报修人',contact:'现场人工联系',department:null}});
+  assert.equal(admitted.status,202);const receipt=await admitted.json() as {intake_id:string;review:{id:string}};
+  const reviewPath='/api/manual-reviews/'+receipt.review.id,alias='/api/workbench/items/review/'+receipt.review.id;
+  const command={client_command_id:randomUUID(),source_ref:'manual:'+receipt.intake_id,revision:'1'};
+  const readPage=async(path:string,reader:0|1=0):Promise<PersonalReadPage>=>{const r=await f.get(path+'/read-position',reader);assert.equal(r.status,200,await r.clone().text());return await r.json() as PersonalReadPage;};
+  const original=await readPage(alias),b0=await readPage(alias,1);
+  const read=await f.post(alias+'/read-position',command);assert.equal(read.status,200);const ack=await read.json() as PersonalReadAcknowledgement;
+  const detail=await (await f.get(reviewPath)).json() as {row_version:string;material_basis:{current_hash:string}};
+  const bootstrap=await (await f.get('/api/lifecycle/bootstrap')).json() as {csrf_token:string};
+  const resolved=await fetch(f.origin+reviewPath+'/resolve',{method:'POST',headers:{cookie:f.firstCookie,origin:f.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+detail.row_version+'"','x-csrf-token':bootstrap.csrf_token},body:JSON.stringify({client_command_id:command.client_command_id,expected_row_version:detail.row_version,expected_material_basis:detail.material_basis.current_hash,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'FAULT_CONFIRMED'})});
+  assert.equal(resolved.status,200,await resolved.clone().text());
+  const current=await (await f.get(reviewPath)).json() as {canonical_item:{kind:string;id:string};status:string};assert.equal(current.status,'RESOLVED');assert.equal(current.canonical_item.kind,'ticket');
+  const target='/api/workbench/items/ticket/'+current.canonical_item.id,after=await readPage(target);
+  assert.deepEqual(after.canonical_item,current.canonical_item);assert.equal(after.sources.length,1);assert.equal(after.sources[0]?.source_key,original.sources[0]?.source_key);assert.equal(after.sources[0]?.last_read_position,'1');
+  assert.deepEqual((await readPage(alias)).sources,after.sources,'canonical navigation never copies a source row');
+  assert.deepEqual((await readPage(target,1)).sources,b0.sources);
+  const replay=await f.post(target+'/read-position',command);assert.equal(replay.status,200);const replayed=await replay.json() as PersonalReadAcknowledgement;assert.equal(replayed.replayed,true);assert.equal(replayed.source_key,ack.source_key);assert.equal(replayed.row_version,ack.row_version);
+  const safeReceipt=await (await f.get(target+'/read-position/commands/'+command.client_command_id)).json() as {state:string;result:PersonalReadAcknowledgement};assert.equal(safeReceipt.state,'COMMITTED');assert.equal(safeReceipt.result.source_key,ack.source_key);
+  const board=await (await f.get('/api/workbench/board?column=pending')).json() as {items:{id:string;kind:string;intake_id:string}[]};
+  const cards=board.items.filter(card=>card.intake_id===receipt.intake_id);assert.deepEqual(cards.map(card=>({kind:card.kind,id:card.id})),[current.canonical_item]);
+  await f.pool.query("UPDATE intake.service_intake SET retention_until=platform.local_now()-interval '1 minute' WHERE id=$1::uuid",[receipt.intake_id]);
+  assert.equal((await f.get(alias+'/read-position')).status,404,'an expired original Review never borrows the Ticket authority');
+  assert.equal((await f.post(target+'/read-position',{...command,client_command_id:randomUUID()})).status,404);
+}));

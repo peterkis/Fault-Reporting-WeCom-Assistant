@@ -1,3 +1,4 @@
+import {PersonalReadMaterial} from '../personal-read/PersonalReadMaterial';
 import {useEffect,useRef,useState} from 'react';
 import {Link} from 'react-router';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -35,7 +36,7 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
     <section data-review-materials aria-label="当前来源材料"><h4>当前来源材料</h4><p>原材料修订 {view.material_basis.original_revision}；当前修订 {view.material_basis.current_revision}（{view.material_basis.source_kind}）。</p>
       {view.material_basis.stale?<p role="alert">来源材料已变化，旧判断只能明确取消。请选择仍待判断的新复核项。</p>:null}
       {view.materials_truncated?<p>当前只展示保留期内的有界材料，部分内容未展示。</p>:null}
-      <ol>{view.materials.map(item=><li key={item.source_ref}><small>{item.source_ref} · 修订 {item.revision} · {item.in_original_basis?'原判断范围':'后来补充'}</small><p>{item.text??'当前没有可展示的文本内容。'}</p></li>)}</ol>
+      <ol>{view.materials.map(item=><li key={item.source_ref}><small>{item.source_ref} · 修订 {item.revision} · {item.in_original_basis?'原判断范围':'后来补充'}</small><PersonalReadMaterial principal={principal} item={{kind:'review',id:view.id}} sourceRef={item.source_ref} revision={item.revision} text={item.text}/></li>)}</ol>
       {!view.materials.length?<p>暂无保留期内的可展示材料。</p>:null}
     </section>
   </>;

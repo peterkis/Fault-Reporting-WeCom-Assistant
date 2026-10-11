@@ -17,6 +17,7 @@
 | Bot单聊每轮首次责任／完工通知与真实隔离送达状态（默认关闭） | [轮次节点通知](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)／[T24本地七项证据](../../plans/admin-workbench-integration/execution/t24.md) |
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
+| 本人实际看到材料后的独立阅读位置、原UUID安全核对与原 Session cursor（默认关闭） | [个人阅读位置](workbench/personal-read.md)／[T35执行记录](../../plans/admin-workbench-integration/execution/t35.md) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
 | 工作人员电话／现场代录与经核实成员选择（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)；一步处理由 T19 继续实施 |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
@@ -26,6 +27,7 @@
 | 管理员检索／分页维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
 | 成员新报修、补充、我的报修、命令恢复、服务目录 | [医小修成员自助](member/self-service.md) |
 | 机器人卡片工单详情、旧 Grant 与成员读取 | [Reporter 访问](member/reporter-access.md) |
+| Bot原报修人明确仍未解决、同Ticket新轮待承接、原UUID恢复核对（默认关闭） | [Bot反馈与当前恢复合同](member/bot-feedback-design.md)／[T21本地七项证据](../../plans/admin-workbench-integration/execution/t21.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
 | SSE 重放、正式管理端授权重读与轮询降级 | [实时事件](platform/realtime.md) |
 | 后端调用的企业微信、人员目录和通道 SDK | [外部服务](integrations/external-services.md) |
