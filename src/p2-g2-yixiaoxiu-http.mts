@@ -16,6 +16,7 @@ import {YxxEntryError,failYxx,exactYxx} from './p2-g2-yixiaoxiu-contract.mjs';
 import {BotReporterFeedbackError} from './bot-reporter-feedback.mjs';
 import {parseYxxFeedbackInput} from './yxx-self-service-feedback.mjs';
 import {readYxxJsonBody} from './yxx-self-service-native-http.mjs';
+import {botReporterAsset} from './bot-reporter-static.mjs';
 
 const root='/wecom/yixiaoxiu/';
 const assets:Readonly<Record<string,readonly [string,string]>>=Object.freeze({'/reporter/':['index.html','text/html'],'/reporter/open':['index.html','text/html'],
@@ -28,9 +29,10 @@ async function body(request:IncomingMessage):Promise<unknown>{
   const chunks:Buffer[]=[];let size=0;for await(const chunk of request as AsyncIterable<Buffer>){size+=chunk.length;if(size>2048)failYxx('INPUT_INVALID');chunks.push(chunk);}
   try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{failYxx('INPUT_INVALID');}
 }
-async function asset(response:ServerResponse,item:readonly [string,string]){
+async function asset(response:ServerResponse,item:readonly [string,string],feedback=false){
   let content=await readFile(new URL('../web/p2-reporter/'+item[0],import.meta.url),'utf8');
   if(item[0]==='index.html')content=content.replace('<html lang="zh-CN">','<html lang="zh-CN" data-identity-mode="MEMBER_REQUIRED">');
+  if(item[0]==='index.html'&&feedback)content=content.replace('</body>','<script type="module" src="/reporter/bot-feedback.js"></script></body>');
   response.writeHead(200,{'content-type':item[1]+'; charset=utf-8'});response.end(content);
 }
 export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,publicOrigin,now=Date.now,feedback=null}:YxxMemberHttpOptions){
@@ -105,8 +107,9 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       if(request.method==='GET'&&page){
         if(url.search)failYxx('INPUT_INVALID');
         try{oauth.authenticate(readWeComCookie(request,sessionName));}catch(error){if(!(error instanceof WeComOAuthError))throw error;beginWeComOAuth({request,response,oauth,returnPath:path});return true;}
-        await asset(response,['index.html','text/html']);return true;
+        await asset(response,['index.html','text/html'],feedback!==null);return true;
       }
+      if(feedback&&(path==='/reporter/bot-feedback.js'||path.startsWith('/reporter/feedback-assets/'))){if(request.method!=='GET'||url.search)failYxx('INPUT_INVALID');await botReporterAsset(path,response);return true;}
       if(assets[path]){if(request.method!=='GET'||url.search)failYxx('INPUT_INVALID');await asset(response,assets[path]);return true;}
       const ticket=/^\/api\/reporter\/tickets\/([A-Za-z0-9_-]{32})(\/timeline)?$/u.exec(path);
       if(request.method==='GET'&&ticket){
