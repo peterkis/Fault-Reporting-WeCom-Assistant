@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/bot_reporter_feedback_receipt.schema.json",
+  "title": "Bot member feedback dedicated receipt (WBINT-T21 SOURCE contract)",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["client_command_id", "public_ref", "state"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "public_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+        "state": {"const": "UNKNOWN"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["client_command_id", "public_ref", "state", "result"],
+      "properties": {
+        "client_command_id": {"type": "string", "format": "uuid"},
+        "public_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+        "state": {"const": "COMMITTED"},
+        "result": {
+          "allOf": [
+            {"$ref": "bot_reporter_feedback_result.schema.json"},
+            {"type": "object", "properties": {"replayed": {"const": true}}}
+          ]
+        }
+      }
+    }
+  ]
+}

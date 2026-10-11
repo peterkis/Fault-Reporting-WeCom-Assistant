@@ -21,14 +21,14 @@ execution_status: IN_PROGRESS
 | WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)、[T04无会话本人承接LOCAL_VERIFIED](execution/t04.md)、[T05明确关联沟通原子承接LOCAL_VERIFIED](execution/t05.md)、[T06派单与显式转派LOCAL_VERIFIED](execution/t06.md)、[T08撤销未开始派工LOCAL_VERIFIED](execution/t08.md)已集成并关票；原失败／清理历史保留，T07／T09／T10未完成，A02整组尚未验收 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | IN_PROGRESS：[T11工作人员完工LOCAL_VERIFIED](execution/t11.md)已本地集成，内部过程／独立安全摘要／工作人员关闭与持久通知承诺同事务；T12／T13未开始，A03整组尚未验收 | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T14同事项人工复核LOCAL_VERIFIED](execution/t14.md)与[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)均已本地集成并关票；T15已按原生依赖领取并独立准备，A04整组尚未验收 | A04 |
-| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：T17七项已核对、集成并关票；T18／T19原生依赖关闭后已领取，准备核实成员与同事务开始合同；A05整组尚未验收 | A05 |
-| WBINT-06 | 原 Reporter 反馈与重开 | 03 | IN_PROGRESS；T20已领取，T21未启动 | A06 |
+| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：[T17代录](execution/t17.md)及[T18核实成员](execution/t18.md)原七项已核对、集成并关票；T19同事务本人开始尚未完成，A05整组尚未验收 | A05 |
+| WBINT-06 | 原 Reporter 反馈与重开 | 03 | LOCAL_VERIFIED：[T20 Web本人反馈](execution/t20.md)与[T21 Bot本人反馈](execution/t21.md)原七项均经父独立核对、集成并GitHub收口；A06本地完成，默认关闭、未发布／启用 | A06 |
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | LOCAL_VERIFIED：[T22原七项](execution/t22.md)经父独立核对、合入本地集成并GitHub收口；A07本地完成，默认关闭，未发布／启用 | A07 |
-| WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：[T24单聊Bot每轮节点通知LOCAL_VERIFIED](execution/t24.md)已安全快进，本地原七项与正式详情／失败恢复证据核对完成；T25／T26未完成，A08整组尚未验收 | A08 |
+| WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：[T24单聊Bot节点通知](execution/t24.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项已父核、合入本地集成并关票；两路记账／恢复和正式详情已有隔离证据，T25尚未完成，A08整组尚未验收；真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：[T27公共故障候选LOCAL_VERIFIED](execution/t27.md)原七项已核对、集成并关票；T28的原生blocker已关闭，仍待独立实施，A09整组尚未验收 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | NOT_STARTED | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
-| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；T34／T35已领取并准备源码合同，尚未运行验收；T36／T37未启动 | A12 |
+| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T35个人已读原七项](execution/t35.md)与[T37共享时间原七项](execution/t37.md)均已父核、集成并GitHub关闭；T34仍待整票验收，T36的原生#90已关闭但实施未完成，A12整组未完成；默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
@@ -110,7 +110,7 @@ execution_status: IN_PROGRESS
 
 ## WBINT-06：本人未解决反馈和原工单重开
 
-2026-10-10子项状态：T20／[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)已按原七项本地验证、集成并收口，见[实际被测对象与原档](execution/t20.md)。Web本人反馈与工作人员重开已实现；[成员REST入口](../../docs/api/member/self-service.md)和[工作台入口](../../docs/api/workbench/tickets.md)可检索。Bot反馈T21尚未完成，WBINT-06／A06整组继续IN_PROGRESS；默认关闭，未发布或启用。
+2026-10-11当前子项状态：T20／[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)已按原七项本地验证、集成并收口；[T21 Bot本人反馈](execution/t21.md)原七项完成父独立验收并安全快进ba55a23f，[#76已关闭读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)。WBINT-06／A06本地完成，各分组保留真实被测对象与原失败；[Web成员REST](../../docs/api/member/self-service.md)、[Bot反馈](../../docs/api/member/bot-feedback-design.md)和[工作人员重开](../../docs/api/workbench/tickets.md)可检索。默认关闭，未发布或启用。
 
 - **负责范围**：M 的 Web／Bot 本人 HTTP、共同反馈／重开应用用例、Member详情 UI、Ticket 新轮次及内部提醒投影。
 - **输入**：03 完工轮次／安全结果，02 新轮次再次派工。Web requestRef 与 Bot publicRef 分路定位，共用服务端用例，不以 Ticket UUID／entryRef作为本人授权。
