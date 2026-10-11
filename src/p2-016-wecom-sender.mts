@@ -30,7 +30,10 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
   const app=appRoundNotifications?createWorkbenchAppNotificationSender({...appRoundNotifications,enabled:enabled&&cardEnabled&&linkMode==='MEMBER_REQUIRED',origin,allowedHosts,allowLocalHttp}):null;
   return createCommunicationSenderPort(async request=>{
     if(!enabled)return rejected('P2_016_SENDER_DISABLED');
-    if(request.provider==='WECOM_APP')return app?app.send({...request,message:{message_type:request.message.message_type,content:request.message.content as Record<string,unknown>}}):rejected('APP_NOTIFICATION_ROUTE_MISSING');
+    if(request.provider==='WECOM_APP'){
+      if(request.message.message_type!=='template_card'||!groupContent(request.message.content))return rejected('APP_NOTIFICATION_BINDING_INVALID');
+      return app?app.send({...request,message:{message_type:'template_card',content:request.message.content}}):rejected('APP_NOTIFICATION_ROUTE_MISSING');
+    }
     if(groupContent(request.message.content)&&request.message.content.transport==='WECOM_MESSAGE_PUSH'){
       if(request.message.message_type!=='template_card')return rejected('GROUP_PUSH_BINDING_INVALID');
       return groups?groups.send({...request,message:{message_type:'template_card',content:request.message.content}}):rejected('GROUP_PUSH_ROUTE_MISSING');
