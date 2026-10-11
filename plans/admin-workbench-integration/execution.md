@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T35收口）
+## 当前执行状态导航（2026-10-11，T26收口）
+
+GitHub 实际快照为 **22／43 CLOSED、21 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t26-20261011-d.json)。[#81 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T26 / #81 | 原七项经父独立核对，308b9a9d 安全快进并 GitHub 收口；[当前合同与真实被测祖先](execution/t26.md)。原群和 Bot 私聊分别记账、恢复，WBINT-08／A08 整组仍待 T25。 |
+| 验证 | 8f7fb416 同一冻结对象 build／strict／artifact 原生0／0／0，26相关文件40／40及适用工具18／18 PASS；Standards／Spec 分别收口异步来源与分页 P1，均无新增 actionable。最后后继仅本票执行 Markdown，1293输入不变，原制品不重绑。 |
+| 保全与清理 | 3914保全文件、1293物理输入、134原build副本、137历史native和原失败PNG均父核；[完整交接](D:/wecom-workbench-evidence/t26/final/handoff.json)。三次自动清理拒绝保留，用户手动清空精确tmp后父／子实际读回；原活动资源0终态与无后续运行分别记录，共享keeper保留。 |
+| 后续 | 接续 T25 整票；其原生 #66／#73 已 CLOSED。其它 SOURCE_READY 按当前原生依赖和单一运行窗口推进，准备源码不计验收；T36 权限已按用户选择冻结于私树，尚未运行。 |
+| 边界 | 默认关闭，根六件用户文件保持原字节；未push、PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。真实强@、客户端送达与2C4G容量仍未验证。 |
+
+## 历史执行状态导航（2026-10-11，T35收口）
 
 GitHub 实际快照为 **21／43 CLOSED、22 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t35-20261011-d.json)。[#90 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90#issuecomment-6108623843)。
 

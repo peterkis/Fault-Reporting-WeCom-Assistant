@@ -35,6 +35,8 @@ native_blocking_edges: 76
 
 2026-10-11 T35 整票收口：原七项、逐被测祖先结果、两轴修补及保全／清理后继已父核，e7ebc2e8安全快进；[#90完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90#issuecomment-6108623843)，当前 **21／43 CLOSED、22 OPEN**。见[当前合同、历史失败与真实记录](execution/t35.md)。T26接续整票，T36的原生#90已关闭；WBINT-12／A12仍待T34／T36，默认关闭与现场停止线保持。
 
+2026-10-11 T26 整票收口：原七项、8f7fb416同制品40／40、适用工具18／18、两轴修补、完整保全及人工tmp清空实际读回均父核，308b9a9d安全快进；[#81完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)，当前 **22／43 CLOSED、21 OPEN**。见[合同、原失败与真实被测祖先](execution/t26.md)。WBINT-08／A08仍待T25，其原生#66／#73已关闭；默认关闭，真实强@、客户端送达与现场授权保持独立。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -167,7 +169,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)、[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)
   - **来源：** WBINT-08 / A08
 
-- [ ] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
+- [x] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
   - **Blocked by:** [#79](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **来源：** WBINT-08 / A08
 
