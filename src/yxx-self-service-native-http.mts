@@ -75,7 +75,7 @@ function cookieSeen(request:IncomingMessage,name:string) {
   return (request.headers.cookie ?? '').split(';').some((part) => part.trim().startsWith(`${name}=`));
 }
 
-async function body(request:IncomingMessage,maximum:number):Promise<Record<string,unknown>> {
+export async function readYxxJsonBody(request:IncomingMessage,maximum:number):Promise<Record<string,unknown>> {
   if (((header(request, 'content-type') ?? '').split(';', 1)[0] as string).trim().toLowerCase() !== 'application/json') {
     throw error('YXX_CONTENT_TYPE_INVALID', 415);
   }
@@ -108,6 +108,7 @@ async function body(request:IncomingMessage,maximum:number):Promise<Record<strin
     return value as Record<string,unknown>;
   } catch { throw error('YXX_INPUT_INVALID'); }
 }
+const body=readYxxJsonBody;
 
 function assertOrigin(request:IncomingMessage,publicOrigin:string) {
   if (header(request, 'origin') !== publicOrigin || header(request, 'sec-fetch-site') === 'cross-site') {

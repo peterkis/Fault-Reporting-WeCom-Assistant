@@ -179,7 +179,7 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
   handle.record=next.record;handle.operation=next.operation;handle.epoch=next.epoch;
   if(next.removed)publish({...handle.scope,reason:'settled'});
 }
-export async function purgeDrafts(filter:DraftInvalidation):Promise<void>{
+export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=false}:{preserveOperations?:boolean}={}):Promise<void>{
   if(!invalidation(filter))throw new DraftError('DRAFT_SCOPE_INVALID');
   // A disabled application must not create a draft database just to clear it.
   if(!globalThis.indexedDB?.databases)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -188,7 +188,7 @@ export async function purgeDrafts(filter:DraftInvalidation):Promise<void>{
   await new Promise<void>((resolve,reject)=>{
     let tx:IDBTransaction;try{tx=db.transaction(['drafts','operations','control'],'readwrite');}catch(error){db.close();reject(error);return;}
     let failure:unknown;tx.oncomplete=()=>{db.close();resolve();};tx.onabort=()=>{db.close();reject(failure??new DraftError('DRAFT_STORAGE_UNAVAILABLE'));};tx.onerror=()=>{};
-    for(const name of ['drafts','operations']){
+    for(const name of preserveOperations?['drafts']:['drafts','operations']){
       const store=tx.objectStore(name),rows=store.getAll(undefined,21),keys=store.getAllKeys(undefined,21);let remaining=2;
       const loaded=()=>{if(--remaining)return;try{if(rows.result.length>20)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');for(const [index,row] of (rows.result as unknown[]).entries()){
         // Explicit authorized purge can clear malformed metadata without treating it as a failed command.

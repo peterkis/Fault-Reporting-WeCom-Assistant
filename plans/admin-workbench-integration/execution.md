@@ -13,7 +13,43 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T24收口）
+## 当前执行状态导航（2026-10-11，T21收口）
+
+GitHub 实际快照为 **20／43 CLOSED、23 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t21-20261011-d.json)。[#76 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T21 / #76 | 原七项经父独立核对，ba55a23f 安全快进并GitHub收口；[当前合同与证据](execution/t21.md)，WBINT-06／A06 本地完成。 |
+| 验证 | 真实 5b913d7d 一次 build／strict／artifact 原生0；最终相关12／12、共享T03／T20 11／11、tooling／hosts 54／54及retired单例1／1通过，各组保留实际被测对象。两轴最终增量0新增问题。 |
+| 制品与原档 | 文档后继的严格 Artifact 实际 MIGRATION_INPUT_DRIFT／REJECTED 保留；原1245输入、1505输出、1827保全文件和31张截图已核对。Git ZIP与实际输入的换行差异用27份原字节补件覆盖，未重绑被测提交。 |
+| 后续 | 继续T35整票；T26／T25及其他SOURCE_READY按原生依赖与单一运行窗口推进，准备源码不计验收。WBINT-05／A05仍待T19，WBINT-12／A12仍待T34／T35／T36。 |
+| 资源与边界 | T21自有53个临时目录已清理，PG额外库／client／probe及相关进程／临时残留为0，共享keeper保留；根六件用户文件字节不变。默认关闭，未push、部署、真实外发、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-11，T18收口）
+
+GitHub 实际快照为 **19／43 CLOSED、24 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t18-20261011-d.json)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T18 / #73 | 原七项已完成，c6e2ba27 安全快进；[当前合同与证据](execution/t18.md)，[#73 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73#issuecomment-6105209273)。 |
+| 验证 | 真实 95a400ae 一次 build／strict／artifact 通过，相关 16 PASS、工具 27 PASS；13 文件／25 个不同 T18 用例保留各自被测祖先，不合称一次全量。两轴增量无剩余发现。 |
+| 制品与文档 | 后继仅四份 Markdown。c6 对 95a 制品的严格身份复验返回 MIGRATION_INPUT_DRIFT／REJECTED，原拒绝与原成功分别保留；1220 输入／1462 输出字节核对相同，未重绑证据。 |
+| 后续 | 接续 T21 整票窗口；T25 的 #66／#73 已关闭，可按当前 GitHub 依赖领取。T35 等既有 SOURCE_READY 不计验收，实际运行前一次合入最新基线。WBINT-05／A05 仍待 T19。 |
+| 路径与资源 | 全部新增工作在 D；T18 27 个临时目录已清理，自有 PG 额外库／client 0/0、相关活动进程 0，keeper 保留。根 6 个用户文件逐字节不变。默认关闭，未 push、部署、真实外发、full／certify 或 Gate 推进。 |
+
+## 历史执行状态导航（2026-10-11，T37收口）
+
+GitHub 实际快照为 **18／43 CLOSED、25 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t37-20261011-d.json)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T37 / #92 | 原七项本地完成，a2cfce93 安全快进；[合同与各被测对象](execution/t37.md)，[#92 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92#issuecomment-6104234195)。 |
+| 本轮验证 | 7ec7b3ec 一次 build／strict／artifact 通过，最终相关 23/23、8 张真实生产浏览器截图；恢复、权限、到期和命令回滚的早期组保留各自原结果。工具父项 16 PASS／2 FAIL 保留，环境修正后原 browser discovery 子项隔离复验退出 0，不声称原父项通过。 |
+| 交付边界 | 两轴无剩余问题；后继仅文档，不重绑制品。开关默认 false，未 push、部署、真实外发、full／certify 或 Gate 推进。T09 组合归 T43，完整搜索归 T41；WBINT-12／A12 整组仍待 T34／T35／T36。 |
+| 后续 | T18 原 POST／GET 已有各 1 PASS，生产 PC 首例仍 NOT_RUN；准备合入当前基线后接续连续验证。T15／T19／T10／T07／T39 已正常同步此前 5fdef 基线，仅 SOURCE_READY，后续仍须同步最新集成。 |
+| 路径与资源 | 新工作与运行输出均在 D；T37 最终自有 PG 额外库／client 0/0，相关进程与临时截图目录已清，keeper 保留。根 6 个用户文件逐字节不变。 |
+
+## 历史执行状态导航（2026-10-11，T24收口）
 
 GitHub实际快照为 **17／43 CLOSED、26 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t24-20261011-d.json)。
 

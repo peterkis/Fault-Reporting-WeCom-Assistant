@@ -3,6 +3,7 @@ import type {TicketActor,TicketActionAfterHook} from './p1-006-ticket-state-acti
 import {createTicketActionService} from './p1-006-ticket-state-actions.mjs';
 import {failP2016} from './p2-016-domain-contracts.mjs';
 export interface CompletedTicketRound {id:string;ticket_id:string;source_intake_id:string;cycle_no:number;staff_completion_event_id:string;completed_by:string;resolver_team_id:string;ticket_no:string;version:number;status:string}
+export type TicketReopenOrigin='WEB_REPORTER'|'BOT_REPORTER'|'STAFF';
 export async function reopenRoundsSchemaReady(tx:PostgresTransaction){
  try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='043_ticket_reopen_rounds'")).rowCount===1;}catch{return false;}
 }
@@ -22,9 +23,9 @@ export async function unassignedReopenedRound(tx:PostgresTransaction,ticketId:st
    AND e.event_type='ticket.reopened' AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId]);
  return selected.rowCount===1;
 }
-export async function reopenedRoundFollowUp(tx:PostgresTransaction,ticketId:string,principalId:string):Promise<{origin:'WEB_REPORTER'|'STAFF';is_previous_handler:boolean;awaiting_acceptance:true}|null>{
+export async function reopenedRoundFollowUp(tx:PostgresTransaction,ticketId:string,principalId:string):Promise<{origin:TicketReopenOrigin;is_previous_handler:boolean;awaiting_acceptance:true}|null>{
  if(!await unassignedReopenedRound(tx,ticketId))return null;
- const selected=await tx.query<{origin:'WEB_REPORTER'|'STAFF';completed_by:string}>(`SELECT r.origin,e.operator_id AS completed_by
+ const selected=await tx.query<{origin:TicketReopenOrigin;completed_by:string}>(`SELECT r.origin,e.operator_id AS completed_by
   FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
   JOIN pilot_ticket.ticket_cycle_reopen r ON r.new_cycle_id=c.id AND r.ticket_id=t.id
   JOIN pilot_ticket.ticket_event e ON e.event_id=r.completion_event_id AND e.ticket_id=t.id
@@ -50,7 +51,7 @@ export async function completedTicketRound(tx:PostgresTransaction,ticketId:strin
  return selected.rows[0]??null;
 }
 // Caller owns transaction, authorization and stream-before-receipt lock. No network or transaction boundary here.
-export async function reopenCompletedRound({transaction:tx,round,actor,commandId,origin,reasonCode,note=null,afterAction=null}:{transaction:PostgresTransaction;round:CompletedTicketRound;actor:TicketActor;commandId:string;origin:'WEB_REPORTER'|'STAFF';reasonCode:string;note?:string|null;afterAction?:TicketActionAfterHook|null}){
+export async function reopenCompletedRound({transaction:tx,round,actor,commandId,origin,reasonCode,note=null,afterAction=null}:{transaction:PostgresTransaction;round:CompletedTicketRound;actor:TicketActor;commandId:string;origin:TicketReopenOrigin;reasonCode:string;note?:string|null;afterAction?:TicketActionAfterHook|null}){
  const latest=await completedTicketRound(tx,round.ticket_id);if(!latest||latest.id!==round.id||latest.version!==round.version)failP2016('VERSION_CONFLICT',409);
  const result=await createTicketActionService({authorize:async()=>true,reopenClearAssignee:true,afterAction}).performInTransaction({ticketId:round.ticket_id,action:'reopen',actor,expectedVersion:round.version,reasonCode,note,traceId:'t20:'+commandId},tx);
  const inserted=await tx.query<{id:string;cycle_no:number}>(`INSERT INTO pilot_ticket.ticket_handling_cycle(ticket_id,cycle_no,source_intake_id,cycle_start_event_id,client_command_id)

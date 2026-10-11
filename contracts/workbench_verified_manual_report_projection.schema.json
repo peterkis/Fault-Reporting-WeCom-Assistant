@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"workbench_verified_manual_report_projection.schema.json",
+  "title":"Safe retained observation of verified manual reporter; private proof excluded",
+  "type":"object","additionalProperties":false,
+  "required":["source_kind","source","description","location","reporter","identity_source","actor_principal_id","manual_contact_required","external_notification","notification_eligibility"],
+  "properties":{
+    "source_kind":{"const":"MANUAL_REPORT"},"source":{"$ref":"workbench_manual_report_command.schema.json#/properties/source"},
+    "description":{"$ref":"workbench_manual_report_command.schema.json#/properties/description"},"location":{"$ref":"workbench_manual_report_command.schema.json#/properties/location"},
+    "reporter":{"type":"object","additionalProperties":false,"required":["verification","name","departments"],"properties":{
+      "verification":{"const":"VERIFIED"},"name":{"$ref":"workbench_reporter_candidates.schema.json#/properties/candidates/items/properties/display_name"},"departments":{"$ref":"workbench_reporter_candidates.schema.json#/properties/candidates/items/properties/departments"}
+    }},
+    "identity_source":{"const":"VERIFIED_DIRECTORY_SELECTION"},"actor_principal_id":{"type":"string","format":"uuid"},
+    "manual_contact_required":{"type":"boolean"},"external_notification":{"const":false},"notification_eligibility":{"enum":["ELIGIBLE","NOT_REACHABLE"]}
+  },
+  "allOf":[{"if":{"properties":{"notification_eligibility":{"const":"ELIGIBLE"}}},"then":{"properties":{"manual_contact_required":{"const":false}}},"else":{"properties":{"manual_contact_required":{"const":true}}}}]
+}

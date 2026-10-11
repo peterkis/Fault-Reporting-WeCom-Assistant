@@ -37,7 +37,7 @@ export function createYxxProfile({profile='OAUTH_ONLY',listenPort=0,...options}:
   let selfService:ReturnType<typeof createYxxSelfServiceExtension>|null=null,member:ReturnType<typeof createYxxMemberExtension>|null=null;
   if(profile==='MEMBER_SELF_SERVICE'){
     selfService=createYxxSelfServiceExtension({...options,profile,reporterFeedbackEnabled:(options as MemberProfileOptions).yxxSelfService?.reporterFeedbackEnabled??false,reporterFeedbackDraftRecoveryEnabled:(options as MemberProfileOptions).yxxSelfService?.reporterFeedbackDraftRecoveryEnabled??false,featureFlags:(options as MemberProfileOptions).yxxSelfService?.featureFlags??{},pollMilliseconds:(options as MemberProfileOptions).yxxSelfService?.pollMilliseconds} as YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled:boolean});
-    member=createYxxMemberExtension(options as YxxMemberExtensionOptions);
+    member=createYxxMemberExtension({...options,feedbackProfile:profile,feedbackFeatureFlags:(options as MemberProfileOptions).yxxSelfService?.featureFlags??{}} as YxxMemberExtensionOptions);
   }
   const server=selfService?createWeComOAuthServer({oauth:(options as MemberProfileOptions).oauth,publicOrigin:(options as MemberProfileOptions).publicOrigin,profile,
     memberHandler:async context=>(await selfService.handler(context))||(member as NonNullable<typeof member>).handler(context)} as WeComOAuthServerOptions):
