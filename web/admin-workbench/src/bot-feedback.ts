@@ -26,7 +26,7 @@ if(ref&&document.documentElement.dataset.identityMode==='MEMBER_REQUIRED'){
  function render(){
   section.hidden=stopped||!context&&!pending&&!message.textContent;controls.replaceChildren();
   if(context){const button=document.createElement('button');button.type='button';button.textContent='仍未解决，重开此工单';button.dataset.action='submit-bot-feedback';button.disabled=busy||Boolean(pending)||!csrf;button.onclick=()=>void submit();controls.append(button);}
-  if(pending){const check=document.createElement('button');check.type='button';check.textContent='只读核对原反馈操作';check.dataset.action='check-bot-feedback-command';check.disabled=busy;check.onclick=()=>void check();controls.append(check);}
+  if(pending){const checkButton=document.createElement('button');checkButton.type='button';checkButton.textContent='只读核对原反馈操作';checkButton.dataset.action='check-bot-feedback-command';checkButton.disabled=busy;checkButton.onclick=()=>void check();controls.append(checkButton);}
  }
  function committed(raw:unknown,p:Pending){
   const value=object(raw);exact(value,['ok','replayed','public_ref','completed_round_ref','reopened_round_no','ticket']);const ticket=object(value.ticket);exact(ticket,['ticket_no','status','version']);
