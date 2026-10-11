@@ -12,6 +12,7 @@ import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harne
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
 import {migrateWorkbenchFollowUpSchedules} from '../../scripts/workbench-follow-up-schedules-migrate.mjs';
+import {migrateWorkbenchFollowUpDueSignals} from '../../scripts/workbench-follow-up-due-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
 import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
@@ -43,7 +44,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     if(options.ticketAssignmentEnabled===true||options.ticketUnassignEnabled===true||options.lifecycleEnabled===true)await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.ticketUnassignEnabled===true)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.lifecycleEnabled===true){await migrateTicketStaffCompletion({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl:context.databaseUrl,mode:'apply'});}
-    if(options.workbenchFollowUpSchedulesEnabled===true)await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});
+    if(options.workbenchFollowUpSchedulesEnabled===true){await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpDueSignals({databaseUrl:context.databaseUrl,mode:'apply'});}
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
     const handlerUserId='t37-handler-'+randomUUID();

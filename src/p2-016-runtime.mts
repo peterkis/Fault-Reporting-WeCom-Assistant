@@ -23,7 +23,7 @@ import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.
 import {createWorkbenchConversations} from './workbench-conversations.mjs';
 import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench-manual-reports.mjs';
 import {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
-import {followUpSchemaReady} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
+import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
 interface P2016RuntimeOptionsInput {workbenchFollowUpSchedulesEnabled?:boolean}
 interface P2016RuntimeOptionsInput { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
@@ -41,7 +41,7 @@ export type P2016ClosureOptions = Omit<NonNullable<Parameters<typeof createTicke
 export type P2016ClosureFactory = (options: P2016ClosureOptions) => P2016ClosurePort;
 interface P2016RuntimeOptionsInput extends Omit<G1RuntimeOptions, 'pool' | 'publicOrigin' | 'allowedTargetHashes'> { pool: PostgresPool; publicOrigin: string; flags?: unknown; reporterHmacSecret?: string; reporterOrigin?: string; allowedHosts?: readonly string[]; allowedTargetHashes?: readonly string[]; allowLocalHttp?: boolean; liveApproval?: { live?: boolean; scope?: boolean; send?: boolean } | null; inboundScope?: unknown; orchestrationWorker?: Pick<P2015Worker, 'processDueBatch'> | null; identityHmacKey?: string; directoryPort?: OrchestrationWorkerOptions['directoryPort']; directorySource?: string; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; directorySyncJob?: OrchestrationWorkerOptions['directorySyncJob']; ruleEngine?: OrchestrationWorkerOptions['ruleEngine']; serviceCatalog?: ServiceCatalog|null; ruleFirstFlags?: unknown; ticketNotificationAdditionalEvents?: readonly string[]; incidentExtensionFactory?: ((input: { pool: PostgresPool; realtime: Parameters<NonNullable<G1RuntimeOptions['extensionFactory']>>[0]['realtime']; query: P2016TicketQuery }) => P2016IncidentExtension) | null; personDestinationAuthorizer?: OrchestrationWorkerOptions['personDestinationAuthorizer']; communicationAppend?: OrchestrationWorkerOptions['communicationAppend']; wecomWebOAuth?: import('./p2-g2-wecom-web-oauth.mjs').WeComOAuthOptions; reporterPolicy?: 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED'; reporterMemberEntry?: unknown; identityMapping?: import('./p2-g2-yixiaoxiu-delegated-identity.mjs').YxxIdentityMapping | null; yxxSelfService?: { reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean; featureFlags?: Partial<import('./yxx-self-service-authorization.mjs').YxxMemberFlags>; quota?: import('./yxx-self-service-command.mjs').YxxQuota } | null; limitedRequestGuard?: G1RuntimeExtension['unauthenticatedHandler'] | null; workbenchAuthentication?: (G1AuthenticationPort & { supportsLogout?:boolean; mappingDigest?: () => unknown; unauthenticatedHandler?: G1RuntimeExtension['unauthenticatedHandler'] }) | null }
 export type P2016RuntimeOptions = { [K in keyof P2016RuntimeOptionsInput]: {} extends Pick<P2016RuntimeOptionsInput, K> ? P2016RuntimeOptionsInput[K] | undefined : P2016RuntimeOptionsInput[K] };
-export type P2016EnabledRuntime = ReturnType<typeof createP2G1Runtime> & { roundNotifications:ReturnType<typeof createTicketRoundNotifications>;query: P2016TicketQuery; tickets: TicketFacade; reviews: ReviewFacade; reporterAccess: ReturnType<typeof createP2016ReporterAccess>; notifications: Notifications; realtimeProjector: RealtimeProjector; orchestrationWorker: Pick<P2015Worker, 'processDueBatch'> | null; incidentExtension: P2016IncidentExtension | null; selfService: P2016HttpExtension | null; runAutoClose: () => ReturnType<P2016ClosurePort['runAutoClose']>; runAutoCloseReminders: () => ReturnType<P2016ClosurePort['runAutoCloseReminders']> };
+export type P2016EnabledRuntime = ReturnType<typeof createP2G1Runtime> & { roundNotifications:ReturnType<typeof createTicketRoundNotifications>;runFollowUpDueBatch:ReturnType<typeof createWorkbenchFollowUpSchedules>['runDueBatch'];query: P2016TicketQuery; tickets: TicketFacade; reviews: ReviewFacade; reporterAccess: ReturnType<typeof createP2016ReporterAccess>; notifications: Notifications; realtimeProjector: RealtimeProjector; orchestrationWorker: Pick<P2015Worker, 'processDueBatch'> | null; incidentExtension: P2016IncidentExtension | null; selfService: P2016HttpExtension | null; runAutoClose: () => ReturnType<P2016ClosurePort['runAutoClose']>; runAutoCloseReminders: () => ReturnType<P2016ClosurePort['runAutoCloseReminders']> };
 export interface P2016DisabledRuntime { disabled: true; start(): Promise<{ disabled: boolean }>; stop(): Promise<{ stopped: boolean; disabled: boolean }> }
 import { createP2G1Runtime } from './p2-g1-runtime.mjs';
 import { createChannelMessageInbox } from './p1-003-channel-message-inbox.mjs';
@@ -123,6 +123,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const operationalIntake=Object.freeze({accept:(input: unknown)=>scope&&!scope.accepts((input as { message?: unknown } | null)?.message)
     ?Promise.resolve({ok:false as const,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false as const}}):inbox.accept(input,intakeProcessor)});
   let attachments:ReturnType<typeof createWorkbenchAttachments>|null=null;
+  let runFollowUpDueBatch:ReturnType<typeof createWorkbenchFollowUpSchedules>['runDueBatch']|undefined;
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
   const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
@@ -131,12 +132,13 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
     realtimeAppender:appendP2016Realtime,
     projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
     realtimeScopeLimit:256,
-    realtimeAvailabilityFallback:workbenchRealtimeEnabled,
+    realtimeAvailabilityFallback:workbenchRealtimeEnabled,realtimeFollowUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
     extensionFactory:({controlService,realtime,queryService,commandFacade,authorization})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
-      const followUpSchedules=createWorkbenchFollowUpSchedules({pool,query,enabled:workbenchFollowUpSchedulesEnabled,realtimeProjector:realtimeProjector.ticket});
+      const followUpSchedules=createWorkbenchFollowUpSchedules({pool,query,enabled:workbenchFollowUpSchedulesEnabled,realtimeProjector:realtimeProjector.ticket,wakeup:realtime.wakeup});
+      runFollowUpDueBatch=followUpSchedules.runDueBatch;
       if(yxxSelfService===null&&!orchestrationWorker&&(directorySyncJob||ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled))
         orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey:identityHmacKey as string,directoryPort,directorySource,directorySyncJob,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
       closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtimeProjector.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async (input: ClosureNotificationInput)=>{
@@ -152,7 +154,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const manualReports=createWorkbenchManualReports({pool,query,enabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,realtimeProjector});
       const assignment=ticketAssignmentEnabled?createTicketAssignmentService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const unassign=ticketUnassignEnabled?createTicketUnassignService({pool,query,controlService,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,workbenchFollowUpSchedulesEnabled,followUpSchedules,ticketRoundNotificationsEnabled,ticketReopenRoundsEnabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,assignment,unassign,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true}),incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,workbenchFollowUpSchedulesEnabled,followUpSchedules,ticketRoundNotificationsEnabled,ticketReopenRoundsEnabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,assignment,unassign,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true,followUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled}),incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled,reviews:workbenchManualReviewEnabled?reviews:null});
@@ -191,7 +193,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           const staffCompletionReady=!ticketStaffCompletionEnabled||await staffCompletionSchemaReady(pool);
           const roundNotificationsReady=!ticketRoundNotificationsEnabled||await roundNotificationSchemaReady(pool);
           const manualReportsReady=!workbenchManualReportsEnabled||await manualReportsSchemaReady(pool);
-          const followUpReady=!workbenchFollowUpSchedulesEnabled||await followUpSchemaReady(pool);
+          const followUpReady=!workbenchFollowUpSchedulesEnabled||await followUpDueSchemaReady(pool);
           const roundsRequested=ticketReopenRoundsEnabled||yxxSelfService?.reporterFeedbackEnabled===true;
           const reopenReady=!roundsRequested||await reopenRoundsSchemaReady(pool);
           const ready=followUpReady&&roundNotificationsReady&&reopenReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
@@ -203,13 +205,13 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
           ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
         staticHandler:async(pathname,response)=>(await web01Static(pathname,response))||(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
-        runOnce:async()=>{await roundNotifications.runOnce();if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await (realtimeProjector as RealtimeProjector).runOnce();await incidentExtension?.runOnce?.();},
+        runOnce:async()=>{await followUpSchedules.runDueBatch();await roundNotifications.runOnce();if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await (realtimeProjector as RealtimeProjector).runOnce();await incidentExtension?.runOnce?.();},
       };
     },
   });
   const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:(closure as P2016ClosurePort).afterTicketAction});
   return Object.freeze({...runtime,roundNotifications,query,tickets:tickets as TicketFacade,reviews:reviews as ReviewFacade,reporterAccess:access,notifications,realtimeProjector:realtimeProjector as RealtimeProjector,orchestrationWorker,incidentExtension,
-    selfService,
+    selfService,runFollowUpDueBatch:(input?:{limit?:unknown})=>{if(!runFollowUpDueBatch)failP2016('FOLLOW_UP_UNAVAILABLE',503);return runFollowUpDueBatch(input);},
     stop:async()=>{await attachments?.close();await selfService?.close();memberExtension?.close();(webOAuth as {close?:()=>void}).close?.();return runtime.stop();},
     // Explicit system job, never exposed as an HTTP/User/Reporter action. Scheduling belongs to the approved worker role.
     runAutoClose:async()=>(closure as P2016ClosurePort).runAutoClose({actionService:systemActions,limit:20}),

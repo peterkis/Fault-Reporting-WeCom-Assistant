@@ -77,8 +77,8 @@ ACK [Schema](../../../contracts/workbench_follow_up_schedule_receipt.schema.json
 资源仍单 App/API/SSE、单 Worker、Gateway 单活、SSE≤32、批次≤20、pool≤4／全机预算≤8及各concurrency1。关闭 write/view 和新增 due batch 保留所有事实历史及旧 ACK；源码采用前向修补／revert，不删除历史 SQL／事实。本地隔离验证不授权真实外部发送、OAuth／Provider、用户数据库、部署、full／certify 或 Gate。
 
 
-## 内部到期批处理调用合同（首 tracer 登记，尚未实现）
+## 内部到期批处理调用合同（053 SOURCE，待运行验证）
 
-P2016EnabledRuntime.runFollowUpDueBatch({limit}) 是本票后续真实系统 Port；limit 缺省20，其他值只接受1..20安全整数，闭合返回 {scanned,emitted,skipped}，逐项均为非负安全整数且不超过limit。由既有单Worker extension调用，不开放HTTP写动作。首次公开Port tracer先经真实Core/SET/GET建立已到期安排，再断言实际Port及授权持久replay；不存在实现时记录真实缺口，不以自建成功计数器替代。
+P2016EnabledRuntime.runFollowUpDueBatch({limit}) 是本票内部真实系统 Port；limit 缺省20，其他值只接受1..20安全整数，闭合返回 {scanned,emitted,skipped}，逐项均为非负安全整数且不超过limit。由既有单Worker extension调用，不开放HTTP写动作。首次公开Port tracer先经真实Core/SET/GET建立已到期安排，再断言实际Port及授权持久replay；不存在实现时记录真实缺口，不以自建成功计数器替代。
 
-稳定信号复用 ticket.updated / SYSTEM / TICKET，payload仅 {ticket_id,follow_up_schedule_version,reason:FOLLOW_UP_DUE}；其业务含义为获权查询失效和重读。发布不增加Ticket version/Event、不改变安排修订或责任、不创建Delivery。安排修订防重由本票获分配的053前向marker保持；旧049不改。当前只冻结合同和测试，053及Port实现尚未写入或执行。
+稳定信号复用 ticket.updated / SYSTEM / TICKET，payload仅 {ticket_id,follow_up_schedule_version,reason:FOLLOW_UP_DUE}；其业务含义为获权查询失效和重读。发布不增加Ticket version/Event、不改变安排修订或责任、不创建Delivery。安排修订防重由本票获分配的053前向marker保持；旧049不改。原777ca11e候选已在真实已到期安排之后取得缺失Port的原生RED；当前SOURCE新增053、真实有界批次和单Worker调用，尚待本源码候选验证。关闭时在任何049/053访问前返回；RESOLVED沿既有active规则保留。锁顺序为stream→Ticket→当前安排，同事务提交marker和replay事件；改期/关闭先提交时旧候选不发布，Worker先提交时保留一次历史提示，消费端必须重读当前事实。

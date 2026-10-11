@@ -180,9 +180,9 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     })));
   }
 
-  async function resolveRealtimeAuthorization(principal: WorkbenchPrincipal | null | undefined, { limit = 5000,availabilityFallback=false }: { limit?: number;availabilityFallback?:boolean } = {}) {
+  async function resolveRealtimeAuthorization(principal: WorkbenchPrincipal | null | undefined, { limit = 5000,availabilityFallback=false,followUpSchedulesEnabled=false }: { limit?: number;availabilityFallback?:boolean;followUpSchedulesEnabled?:boolean } = {}) {
     if (!isWorker(principal)) return null;
-    if(!Number.isInteger(limit)||limit<1||limit>5000)throw new TypeError('Invalid realtime scope limit.');
+    if(!Number.isInteger(limit)||limit<1||limit>5000||typeof followUpSchedulesEnabled!=='boolean')throw new TypeError('Invalid realtime scope limit.');
     const predicate = sessionAccessPredicate(principal, { start: 1 });
     const result = await (pool as PostgresTransaction).query<{ session_id: string; thread_id: string }>(
       `SELECT s.id::text AS session_id, s.thread_id::text
@@ -200,7 +200,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     const broad=hasRole(principal,'ADMIN')||hasRole(principal,'DISPATCHER');
     const tickets=!broad&&(remaining>0||availabilityFallback)?await (pool as PostgresTransaction).query<{ id: string }>(`SELECT t.id::text FROM pilot_ticket.ticket t
       JOIN intake.service_intake i ON i.id=t.source_intake_id
-      WHERE i.source_provider='YIXIAOXIU_WEB'
+      WHERE ${followUpSchedulesEnabled?"(i.source_provider='YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM pilot_ticket.follow_up_schedule fs WHERE fs.ticket_id=t.id))":"i.source_provider='YIXIAOXIU_WEB'"}
         AND (t.assignee_id=$1::uuid OR t.resolver_team_id=ANY($2::text[]))
       ORDER BY t.id LIMIT $3`,[principal.principal_id,hasRole(principal,'HANDLER')?principal.team_ids:[],remaining+(availabilityFallback?1:0)]):{rows:[]};
     if(availabilityFallback&&tickets.rows.length>remaining)throw new RealtimeScopeUnavailable();

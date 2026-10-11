@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/053_workbench_follow_up_due_signals.sql",
     "database/migrations/049_workbench_follow_up_schedules.sql",
     "contracts/workbench_follow_up_schedule_command.schema.json",
     "contracts/workbench_follow_up_schedule_contracts.d.ts",

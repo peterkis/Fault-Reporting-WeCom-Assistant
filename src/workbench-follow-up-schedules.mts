@@ -5,10 +5,12 @@ import type {SharedFollowUpCommand,SharedFollowUpView,SharedFollowUpHistoryEntry
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
-import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
+import {lockP2016Realtime,appendP2016Realtime} from './p2-016-realtime-appender.mjs';
+import {REALTIME_STREAM_NAME} from './p2-003-realtime-event-log.mjs';
 import {assertLocalDateTime,assertEpochMsString,shanghaiLocalToEpochMs} from './platform/time-contract.mjs';
 import {exactP2016,uuidP2016,versionP2016,failP2016,guardP2016,transactionP2016,publicP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
 import {followUpSchemaReady} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
+import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
 
 const OPEN_STATES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'];
 const purpose='WORKBENCH_FOLLOW_UP_SCHEDULE';
@@ -30,14 +32,14 @@ async function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow,c
   if(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id)return true;
   return currentCommunicator();
 }
-async function readCurrent(transaction:PostgresTransaction,ticketId:string):Promise<CurrentRow|null>{
+async function readCurrent(transaction:PostgresTransaction,ticketId:string,lock=false):Promise<CurrentRow|null>{
   const result=await transaction.query<CurrentRow>(`SELECT s.schedule_version::text,s.due_at,s.due_epoch_ms::text,s.scheduled_event_id::text,
     (s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') AND NOT EXISTS(
       SELECT 1 FROM pilot_ticket.ticket_event end_event WHERE end_event.ticket_id=t.id AND end_event.event_ordinal>start_event.event_ordinal
         AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))) AS active
     FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
     LEFT JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
-    WHERE s.ticket_id=$1::uuid`,[ticketId]);
+    WHERE s.ticket_id=$1::uuid${lock?' FOR UPDATE OF s':'}`,[ticketId]);
   return result.rows[0]??null;
 }
 async function readHistory(transaction:PostgresTransaction,ticketId:string):Promise<{items:SharedFollowUpHistoryEntry[];hasMore:boolean}>{
@@ -56,10 +58,51 @@ async function readHistory(transaction:PostgresTransaction,ticketId:string):Prom
   return {items:result.rows.slice(0,20).map(row=>({schedule_version:followUpRevision(row.schedule_version,false),action:row.action,due_at:assertLocalDateTime(row.due_at),
     occurred_at:assertLocalDateTime(row.occurred_at),ticket_event_id:uuidP2016(row.ticket_event_id),end_reason:row.end_reason})),hasMore:result.rows.length>20};
 }
-export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realtimeProjector}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>){
-  const ledger=createP2016CommandLedger({pool});
+export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realtimeProjector,wakeup}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;wakeup?:()=>unknown|Promise<unknown>}&Pick<SelfHandlingHooks,'realtimeProjector'>){
+  const ledger=createP2016CommandLedger({pool});let dueBusy=false;
   async function ready(transaction:PostgresTransaction){guardP2016(enabled);if(!await followUpSchemaReady(transaction))failP2016('FOLLOW_UP_UNAVAILABLE',503);}
   return Object.freeze({
+    async runDueBatch({limit=20}:{limit?:unknown}={}){
+      if(typeof limit!=='number'||!Number.isSafeInteger(limit)||limit<1||limit>20)failP2016();
+      if(!enabled||dueBusy)return {scanned:0,emitted:0,skipped:0};
+      dueBusy=true;
+      try{
+        if(!await followUpDueSchemaReady(pool))failP2016('FOLLOW_UP_UNAVAILABLE',503);
+        const candidates=await pool.query<{ticket_id:string;schedule_version:string}>(`SELECT s.ticket_id::text,s.schedule_version::text
+          FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
+          JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
+          WHERE s.due_epoch_ms<=platform.physical_epoch_ms() AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
+            AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_event ended WHERE ended.ticket_id=t.id AND ended.event_ordinal>start_event.event_ordinal
+              AND (ended.new_status IN ('CLOSED','CANCELLED') OR ended.event_type='ticket.reopened'))
+            AND NOT EXISTS(SELECT 1 FROM pilot_ticket.follow_up_due_signal signal WHERE signal.ticket_id=s.ticket_id AND signal.schedule_version=s.schedule_version)
+          ORDER BY s.due_epoch_ms,s.ticket_id LIMIT $1`,[limit]);
+        let emitted=0;
+        for(const candidate of candidates.rows){
+          const published=await transactionP2016(pool,async transaction=>{
+            // Same order as human commands: stream, Ticket, then its current arrangement.
+            await lockP2016Realtime(transaction);
+            const ticket=(await transaction.query<{id:string;version:number}>('SELECT id::text,version FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE',[candidate.ticket_id])).rows[0];if(!ticket)return false;
+            const current=await readCurrent(transaction,ticket.id,true);
+            if(!current?.active||current.schedule_version!==candidate.schedule_version||current.due_epoch_ms===null||current.scheduled_event_id===null)return false;
+            const now=(await transaction.query<{epoch:string}>('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0];if(!now||BigInt(current.due_epoch_ms)>BigInt(now.epoch))return false;
+            const stamp=(await transaction.query<{at:string;expires:string}>(`WITH clock AS (SELECT GREATEST(platform.local_now(),COALESCE(max(occurred_at),platform.local_now())) AS at
+              FROM conversation.realtime_event WHERE stream_name=$1) SELECT at,at+interval '7 days' AS expires FROM clock`,[REALTIME_STREAM_NAME])).rows[0];if(!stamp)failP2016('FOLLOW_UP_UNAVAILABLE',503);
+            const marker=await transaction.query(`INSERT INTO pilot_ticket.follow_up_due_signal(ticket_id,schedule_version,published_at)
+              VALUES($1::uuid,$2::bigint,$3::timestamp) ON CONFLICT(ticket_id,schedule_version) DO NOTHING RETURNING ticket_id`,[ticket.id,current.schedule_version,stamp.at]);
+            if(marker.rowCount!==1)return false;
+            const result=await appendP2016Realtime({transaction,command:{schema_version:1,publisher_name:'P2_016_FOLLOW_UP',publisher_version:'1',
+              source_type:'TICKET_EVENT',source_id:current.scheduled_event_id,event_variant:'FOLLOW_UP_DUE',event_type:'ticket.updated',aggregate_type:'TICKET',aggregate_id:ticket.id,aggregate_version:String(ticket.version),
+              authorization_scope_type:'SYSTEM',authorization_scope_id:null,visibility_scope:'WORKBENCH',
+              payload:{ticket_id:ticket.id,follow_up_schedule_version:current.schedule_version,reason:'FOLLOW_UP_DUE'},occurred_at:stamp.at,expires_at:stamp.expires}});
+            if(result.status==='EXPIRED_SOURCE')failP2016('FOLLOW_UP_UNAVAILABLE',503);
+            return true;
+          });
+          if(published)emitted++;
+        }
+        if(emitted>0){try{await wakeup?.();}catch{/* A wake hint cannot undo the committed marker and replay event. */}}
+        return {scanned:candidates.rows.length,emitted,skipped:candidates.rows.length-emitted};
+      }finally{dueBusy=false;}
+    },
     async view({authContext,ticketId:input}:{authContext:unknown;ticketId:unknown}):Promise<SharedFollowUpView>{
       guardP2016(enabled);const ticketId=uuidP2016(input);
       return transactionP2016(pool,async transaction=>{
