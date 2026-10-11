@@ -27,8 +27,8 @@ test('T35 real Bot group and direct Legs keep independent sequence anchors and c
   const authContext={principal_id:f.principals[0]?.id};
   const journey=await query.journey({authContext,journeyId:group.journey_id});
   const legs=await query.journey({authContext,journeyId:group.journey_id,part:'legs'});
-  assert.ok(Array.isArray(legs));assert.deepEqual(legs.map(leg=>leg.leg_type),['GROUP_ORIGIN','DIRECT_GUIDED']);
-  const ticketId=journey.linked_ticket_id;assert.ok(typeof ticketId==='string');
+  assert.ok(Array.isArray(legs));assert.deepEqual(legs.map(leg=>{assert.ok('leg_type' in leg);return leg.leg_type;}),['GROUP_ORIGIN','DIRECT_GUIDED']);
+  assert.ok(!Array.isArray(journey));const ticketId=journey.linked_ticket_id;assert.ok(typeof ticketId==='string');
   const path='/api/workbench/items/ticket/'+ticketId+'/read-position';
   const page=async(reader:0|1=0,query=''):Promise<PersonalReadPage>=>{const r=await f.get(path+query,reader);assert.equal(r.status,200,await r.clone().text());return await r.json() as PersonalReadPage;};
   const before=await page();assert.equal(before.sources.length,2,'two real Legs must produce two independent BOT anchors');
