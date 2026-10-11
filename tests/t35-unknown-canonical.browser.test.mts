@@ -36,6 +36,10 @@ test('T35 an unknown read survives real Review resolution and canonical Ticket n
     await browser.evaluate("(()=>{for(const button of document.querySelectorAll('.board-column.pending [data-action=\"expand-column\"]'))if(button.getAttribute('aria-expanded')==='false')button.click();})()");
     await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open'))`);await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open').click()`);
     await browser.waitFor(`Boolean(document.querySelector('.activity-list ${selector}'))`);
+    await browser.waitFor("Boolean(document.querySelector('[aria-label=\"选择复核项\"]'))");
+    // A real user can leave the Review selector empty and read only the Ticket's original record.
+    await browser.evaluate("(()=>{const select=document.querySelector('[aria-label=\"选择复核项\"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'');select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await browser.waitFor("!document.querySelector('[data-review-materials]')");
     await browser.evaluate(`(()=>{document.querySelector(${JSON.stringify('.activity-list '+selector)}).scrollIntoView({block:'center'});globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
     await browser.waitFor(`globalThis.__t35Receipts.some(response=>response.path.startsWith(${JSON.stringify(target+'/commands/')})&&response.status===200&&response.body.client_command_id===${JSON.stringify(original.client_command_id)}&&response.body.state==='COMMITTED')`);
     assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[original]);assert.equal(await position(0),'1');assert.equal(await position(1),'0');
