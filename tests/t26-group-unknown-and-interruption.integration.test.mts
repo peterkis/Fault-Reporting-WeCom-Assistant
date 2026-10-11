@@ -41,6 +41,6 @@ test('unknown group effects and an interrupted native Worker require explicit ad
    assert.equal((await admin(crash.id,String(crashGroup.delivery_id),'reconcile',confirmed)).status,200);assert.equal(t26Object(await (await admin(crash.id,String(crashGroup.delivery_id),'reconcile',confirmed)).json()).replayed,true);
    assert.equal(await survivor.deliver({deliveryId:String(crashGroup.delivery_id)}),null);assert.deepEqual((await t26Deliveries(crash.http,crash.id)).find(row=>row.delivery_id===crashPerson.delivery_id),stable);assert.equal(personCalls,2);assert.deepEqual(await crash.http.detail(crash.id),crash.started);
    console.log('T26_OWNED_WORKER_INTERRUPTION '+JSON.stringify({owned_pid:child.pid,actual_send_boundary:true,process_exit_observed:exited,default_lease_ms:30000,explicit_reconciliation:true,real_delivery_effect:'NOT_RUN'}));
-  }finally{if(!exited){child.kill();await exit;}child.disconnect?.();}
+  }finally{if(!exited){child.kill();await exit;}if(child.connected)child.disconnect();}
  });
 });
