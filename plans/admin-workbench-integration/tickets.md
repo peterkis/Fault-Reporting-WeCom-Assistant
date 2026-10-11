@@ -206,7 +206,8 @@ native_blocking_edges: 76
   - **Blocked by:** [#90](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
   - **来源：** WBINT-12 / A12
 
-- [ ] **T37** — [#92 维护工单共享跟进时间](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92)
+- [x] **T37** — [#92 维护工单共享跟进时间](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92)
+  - **本地执行：** 2026-10-11 原七项完成，a2cfce93 保留真实被测 7ec7b3ec 祖先并安全快进；最终相关 23/23、两轴无剩余问题，[证据与历史失败](execution/t37.md)、[关闭读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92#issuecomment-6104234195)。当前总计18／43 CLOSED、25 OPEN；默认关闭，WBINT-12／A12 仍待 T34／T35／T36。
   - **Blocked by:** [#61](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61)、[#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-12 / A12
 
