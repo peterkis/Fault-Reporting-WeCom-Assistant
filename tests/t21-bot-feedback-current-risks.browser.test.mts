@@ -9,7 +9,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
-import type {IncomingMessage,ServerResponse} from 'node:http';
+import type {IncomingMessage,ServerResponse,Server} from 'node:http';
 import {withT21DraftFixture,t21Config,t21Mapping} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {secret} from './helpers/yxx-ss-009-http-fixture.mjs';
@@ -64,13 +64,13 @@ const holdEncryption=`(()=>{const encrypt=crypto.subtle.encrypt.bind(crypto.subt
  crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__t21EncryptionHeld++;held.push(()=>encrypt(...args).then(resolve,reject));});
  globalThis.__t21ReleaseEncryption=()=>{crypto.subtle.encrypt=encrypt;for(const send of held.splice(0))send();};})()`;
 
-interface Run {f:T21DraftFixture;fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>;browser:Browser;peers:Peer[];serverWire:{method:string;path:string;status:number|null}[];directory:string;page:string}
+interface Run {f:T21DraftFixture;fixture:NonNullable<Awaited<ReturnType<typeof createYxxBrowserFixture>>>;browser:Browser;peers:Peer[];serverWire:{method:string;path:string;status:number|null}[];directory:string;page:string}
 async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:Run)=>Promise<void>){
  assert.match(fileURLToPath(import.meta.url).replaceAll('\\','/'),/\/\.build\/runtime\/tests\/t21-bot-feedback-current-risks\.browser\.test\.mjs$/u);
  assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
  await withT21DraftFixture(async f=>{
   const mapping=await t21Mapping(),directory=join(tmpdir(),'t21-browser-current-risks-'+randomUUID());await mkdir(directory);
-  let fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,browser:Browser|undefined,app:ReturnType<typeof createYxxProfile>|undefined,primary:unknown;
+  let fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,browser:Browser|undefined,app:{server:Server;stop():Promise<void>}|undefined,primary:unknown;
   const peers:Peer[]=[],serverWire:{method:string;path:string;status:number|null}[]=[];
   const observe=(request:IncomingMessage,response:ServerResponse)=>{const path=new URL(request.url??'/','http://127.0.0.1').pathname;if(path!==f.path+'/feedback'&&!path.startsWith(f.path+'/feedback/commands/'))return;const row={method:request.method??'',path,status:null as number|null};serverWire.push(row);response.once('finish',()=>{row.status=response.statusCode;});};
   try{
@@ -79,7 +79,7 @@ async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:R
      yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},pollMilliseconds:100,...(raw===undefined?{}:{reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:raw})}});
     app=runtime;runtime.server.on('request',observe);return runtime.server;
    }});
-   fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
+   assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    const page=fixture.origin+'/wecom/yixiaoxiu/tickets/'+f.publicRef;
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport(mode)});await browser.command('Page.navigate',{url:page});await browser.waitFor(enabled);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true,'execute the staged production Bot bundle');
