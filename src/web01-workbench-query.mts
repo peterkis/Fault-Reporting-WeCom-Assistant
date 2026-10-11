@@ -100,7 +100,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUp
     if(!manualReportsEnabled)return sourced;
     const result:WorkbenchCard[]=[];
     for(const item of sourced){const manual=item.source==='MANUAL'?await readManualReportSource(pool,item.intake_id):null;
-      result.push(manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+'（身份未核实）'}:item);}
+      result.push(manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+(manual.report.reporter.verification==='VERIFIED'?'（本次已核实）':'（身份未核实）')}:item);}
     return result;
   }
   async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }

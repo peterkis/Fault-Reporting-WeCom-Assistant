@@ -132,3 +132,7 @@ T18私有候选`f83fbec18eaab714fbc3ca37d0d9b50d640cbc70`上的原候选GET与�
 报修时资料继续通过已有`GET /api/manual-reviews/{reviewId}`的`manual_report`读取：[闭合VERIFIED projection Schema](../../../contracts/workbench_verified_manual_report_projection.schema.json)已定义safe姓名与部门数组、来源、代录主体和资格；未包含联系方式、原始外部ID或private proof。**当前生产reader与前端decoder尚只支持HAND_ENTERED/UNVERIFIED，本轮没有补齐，因此此合同仍是接入后层NOT_RUN。**最小命令回执不增加人员快照字段；界面必须读取该次持久来源资料，不能把刷新后的Directory名称回写成旧单。
 
 本次只新增一个SOURCE测试及精确导航注册，复用既有HTTP路径、认证fixture和合成Directory Port，无新增REST入口、业务实现或SQL。051仅在新首例caller中复用原已通过迁移setup，不改历史045或共享helper；不以初始SQL伪造业务成功。当前全部新增运行检查NOT_RUN，完整状态见[本票执行记录](../../../plans/admin-workbench-integration/execution/t18.md)。
+
+### T18 完整迁移入口补齐合同（待真实首例验证）
+
+本票需要 045 与其 051 前向修补共同生效。现有公开 `migrateWorkbenchVerifiedManualReports({databaseUrl, mode})` 将覆盖所需 045→051 链；`check` 保持只读，缺任一所需项返回 PENDING，完整一致返回 NOOP_ALREADY_APPLIED。`apply` 校验原 042 前置及两文件 checksum，在原迁移锁与单事务内依序应用缺项，完整存在时 NOOP；返回既有 root migration_id 形状兼容，status 表示整条本票所需链。两 SQL 原字节均不可修改。当前生产函数尚只处理 045，051 由测试 caller 显式应用；此处是补齐合同，尚不能视为入口已通过。
