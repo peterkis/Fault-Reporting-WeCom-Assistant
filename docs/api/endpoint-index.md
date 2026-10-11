@@ -10,6 +10,9 @@
 
 | ID | 方法 | 完整路径 | 宿主 | 状态 / 用途 | 契约文档 |
 | --- | --- | --- | --- | --- | --- |
+| PR01 | GET | `/api/workbench/items/{kind}/{id}/read-position` | W | 已挂载、默认关闭：当前获权来源的本人位置，kind=ticket/review/intake，有界分页 | [个人阅读位置](workbench/personal-read.md) |
+| PR02 | POST | `/api/workbench/items/{kind}/{id}/read-position` | W | 已挂载、默认关闭：确切 source_ref/revision 的本人单调推进，原 UUID | [个人阅读位置](workbench/personal-read.md) |
+| PR03 | GET | `/api/workbench/items/{kind}/{id}/read-position/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/来源下原用途 UUID 的安全 UNKNOWN/COMMITTED核对 | [个人阅读位置](workbench/personal-read.md) |
 | G01 | GET | `/api/workbench/source-groups` | W | 本地实现：ADMIN观察群目录、q检索、绑定搜索的分页；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | G02 | POST | `/api/workbench/source-groups/{groupRef}/name` | W | 已实现：ADMIN登记/改名；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | CW01 | GET | `/api/workbench/conversations` | W | 已实现、默认关闭：获权参与者/服务主题分页 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
