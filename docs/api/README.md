@@ -26,6 +26,7 @@
 | 管理员检索／分页维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
 | 成员新报修、补充、我的报修、命令恢复、服务目录 | [医小修成员自助](member/self-service.md) |
 | 机器人卡片工单详情、旧 Grant 与成员读取 | [Reporter 访问](member/reporter-access.md) |
+| Bot原报修人明确仍未解决、同Ticket新轮待承接、原UUID恢复核对（默认关闭） | [Bot反馈与当前恢复合同](member/bot-feedback-design.md)／[T21本地七项证据](../../plans/admin-workbench-integration/execution/t21.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
 | SSE 重放、正式管理端授权重读与轮询降级 | [实时事件](platform/realtime.md) |
 | 后端调用的企业微信、人员目录和通道 SDK | [外部服务](integrations/external-services.md) |

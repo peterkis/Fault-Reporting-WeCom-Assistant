@@ -2,59 +2,56 @@
 
 返回[Reporter接口](reporter-access.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t21.md) · [共享轮次](web-feedback-design.md)。
 
-2026-10-11：**MINIMAL_SOURCE_AFTER_REAL_HTTP_RED / NOT_RUNTIME_VERIFIED / NOT_INTEGRATED**。[#76](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)原1e01 tracer在真实本人GET200缺feedback_context处RED；父核证并RELEASE后授权以下最小SOURCE。候选handler已接线，但本后继build/types/artifact/PG/HTTP/browser全部NOT_RUN，不宣称可运行或整票完成。默认关闭的Bot详情及旧Grant规则仍见Reporter接口。
+2026-10-11：本地隔离业务与生产制品浏览器验证已完成，最终运行和边界见执行记录。本地结果尚待父汇合、Issue验收；没有发布、启用或现场授权。独立宿主选项 `botReporterFeedbackEnabled=false`、`botReporterFeedbackDraftRecoveryEnabled=false`，全部持久 Feature Flag 默认false。
 
 ## 身份、来源与HTTP
 
-宿主M的MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP、MEMBER_REQUIRED。原Bot详情沿独立 `/api/reporter/tickets/{publicRef}`；32字符publicRef只定位。当前企业/应用OAuth及已证明映射、配置Bot、原source WECOM_AIBOT、原Reporter userid、active publicRef/binding hash、Intake/关联Journey物理保留期共同验权。后续H5读取或转单聊不改变原Bot来源。Web requestRef、Ticket UUID/编号、64hex entryRef、继续令牌和Grant均不是feedback定位或授权。
+M的MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP、MEMBER_REQUIRED按当前独立获准corp/App/Bot配置、同App OAuth及configHash绑定的官方成员映射建立身份，再核原WECOM_AIBOT/Bot/Reporter、ACTIVE publicRef/binding hash及原Intake/关联Journey物理保留期。沿用ADR-0018/0019/0021；既有Bot Intake没有历史App pin，不回填或新增永久pin规则。命令创建时App和用途保持隔离，另一App的配置与映射仍须独立获准。
 
-2026-10-10前向范围澄清：沿用[ADR-0018](../../../adr/0018_yixiaoxiu_member_ticket_entry.md)、[ADR-0019](../../../adr/0019_yixiaoxiu_delegated_identity_mapping.md)及[ADR-0021的SS-008装配](../../../adr/0021_yixiaoxiu_self_service_contracts.md)。当前受控且获准的corp/App/Bot配置、同App OAuth和完整configHash绑定的官方映射建立当前成员身份，再与原Bot/User/publicRef/hash及物理保留期共同验权。另一配置不能复用旧mapping；另一合法App也须独立批准配置、成员和映射，不能按同名userid猜测对应。
+32字符publicRef只定位原Bot工单；旧Grant/entryRef/Bound Session、Web requestRef、内部UUID或浏览器自述来源不授写权。原Bot详情读取保持独立；原成员只读和OAuth-only职责见Reporter接口。
 
-原Bot来源事实只有原Bot/User绑定，既有Bot Intake的source_app_scope为NULL，publicRef没有创建时App字段。当前认证App、命令创建时App/用途scope、原消息来源是三种不同事实。T21 roundRef和ledger command_scope由受信服务端身份导出当前corp/App/Bot/本人及BOT_REPORTER_FEEDBACK用途；该命令提交时的范围可作为命令事实持久保存，不能称为原Bot消息历史App，也不对publicRef读取回填、旋转或覆盖原hash。原命令恢复/replay必须匹配当前获权身份及原命令App/用途/ref/UUID，其他范围不能读取或重放其结果。
-
-此前外置App-pin提案和依赖它的草稿按原字节保留，属于新增、未批准的策略解释，不作为本票历史App所有权的依据或正向fixture前置。Accepted规则未要求“ref创建时App终身pin”或“旧无pin ref只读”；缺该字段不使原source-bound首fixture失效。两个独立获准App对同一原Bot创建全新命令的历史排他规则未确定，本票不添加该断言或扩大App授权。若另行选择这种策略，须先明确批准并同步领域合同。
-
-| METHOD + PATH | 冻结候选合同 |
+| Method / path | 行为 |
 | --- | --- |
-| `GET /api/reporter/tickets/{publicRef}` | 原本人安全详情，仅显式Bot feedback能力增加T20闭合 `feedback_context`；先验权再ETag/304，ETag包含真实context变化 |
-| `GET /api/reporter/feedback/bootstrap` | 无query/body、当前成员、同源；闭合 `schema_version:1,write_enabled:boolean,csrf_token:string或null`。CSRF来自当前服务端会话；无写权为null，不改旧只读bootstrap |
-| `POST /api/reporter/tickets/{publicRef}/feedback` | JSON≤2KiB、无query，当前Cookie/精确Origin/非cross-site/CSRF、Idempotency-Key及quoted If-Match；200代表已提交，仅显式STILL_UNRESOLVED |
-| `GET /api/reporter/tickets/{publicRef}/feedback/commands/{clientCommandId}` | 无query/body，当前获准corp/App/Bot/Reporter的独立Bot READ及原publicRef/命令创建时App/用途/UUID；200为闭合UNKNOWN或COMMITTED回执；合法新写关闭仍可核对旧命令，只GET不自动POST |
+| `GET /api/reporter/tickets/{publicRef}` | 当前Bot本人READ；显式Bot能力启用时加闭合feedback_context，同事务生成context/ETag |
+| `GET /api/reporter/feedback/bootstrap` | 当前成员；闭合schema_version/write_enabled/csrf_token三字段，WRITE关闭时false/null |
+| `GET /api/reporter/feedback/recovery` | 当前受信成员独立Bot恢复scope；闭合schema_version/recovery_scope/raw_enabled，无query/body；不要求Web MY_REPORTS读取权限 |
+| `POST /api/reporter/tickets/{publicRef}/feedback` | 当前WRITE及原Bot本人来源；仅显式STILL_UNRESOLVED，成功200表示事务已提交 |
+| `GET /api/reporter/tickets/{publicRef}/feedback/commands/{clientCommandId}` | 当前独立Bot READ、原对象/App/用途/UUID；闭合UNKNOWN或COMMITTED，不受新WRITE关闭阻断 |
 
-输入直接复用[YxxFeedbackInput](../../../contracts/yxx_self_service_feedback_contracts.d.ts)/[command Schema](../../../contracts/yxx_self_service_feedback_command.schema.json)：schema_version:1、UUID client_command_id、feedback:'STILL_UNRESOLVED'、32字符completed_round_ref、安全整数expected_ticket_version（1..2147483647）。additionalProperties:false；重复JSON键/过深JSON沿当前严格守卫拒绝。Idempotency-Key精确UUID，If-Match为同版本带双引号十进制。无任意反馈文本、内部过程或客户端身份字段。
+POST JSON≤2KiB、无query；当前Cookie、精确Origin、非cross-site、CSRF、Idempotency-Key精确UUID、If-Match为同版本带双引号十进制。共享[输入Schema](../../../contracts/yxx_self_service_feedback_command.schema.json)只收schema_version:1、client_command_id、feedback:'STILL_UNRESOLVED'、completed_round_ref、expected_ticket_version（安全整数1..2147483647）；拒绝额外文本/身份字段、重复JSON键、过深或非JSON输入。
 
-context复用[Schema](../../../contracts/yxx_self_service_feedback_context.schema.json)：允许时schema_version:1/can_feedback:true/completed_round_ref/completed_round_no/ticket_version/rejection:null；不允许时后三个业务标量null，rejection为WRITE_DISABLED/TICKET_NOT_CREATED/ROUND_NOT_COMPLETED/ROUND_ALREADY_REOPENED。错误binding直接404。Bot roundRef维持32字符opaque闭合字段：8字节服务端物理签发时间（分钟桶）+16字节HMAC，绑定BOT_FEEDBACK_ROUND用途、当前corp/App/Bot/本人scope、publicRef、真实source/cycle/staff_completion_event；5分钟有效、拒绝未来时间，锁后从当前完成依据核验。它与Web用途/ref隔离，不是Bearer权限，也不保存原消息历史App。
+共享[context](../../../contracts/yxx_self_service_feedback_context.schema.json)允许时给原completed_round_no/ticket_version和32字符opaque凭据；拒绝时业务标量null。round凭据是服务端物理分钟桶+HMAC，绑定Bot用途、当前corp/App/Bot/本人、publicRef、真实source/cycle/staff_completion_event，5分钟有效。不同分钟的凭据可以不同，不能按两次GET字节相等判断同一轮。
 
-[Bootstrap](../../../contracts/bot_reporter_feedback_bootstrap.schema.json)、[BotResult](../../../contracts/bot_reporter_feedback_result.schema.json)、[BotReceipt](../../../contracts/bot_reporter_feedback_receipt.schema.json)均闭合。[类型](../../../contracts/bot_reporter_feedback_contracts.d.ts)保留独立public_ref。Result仅ok/replayed/public_ref/completed_round_ref/reopened_round_no及ticket{ticket_no,status:'REOPENED',version}；Receipt仅原UUID/public_ref/state UNKNOWN或COMMITTED+Result(replayed:true)。不含Web request_ref、内部Ticket/Intake/cycle/event UUID、前人、原身份、command hash/private snapshot/Grant。缺原用途回执是UNKNOWN，不能推出无迟到提交；确定输入/权限/轮次/版本失败在原POST返回。
+[Bootstrap](../../../contracts/bot_reporter_feedback_bootstrap.schema.json)、[Recovery](../../../contracts/bot_reporter_feedback_recovery.schema.json)、[Result](../../../contracts/bot_reporter_feedback_result.schema.json)、[Receipt](../../../contracts/bot_reporter_feedback_receipt.schema.json)及[类型](../../../contracts/bot_reporter_feedback_contracts.d.ts)均闭合。Result仅ok/replayed/public_ref/completed_round_ref/reopened_round_no和ticket{ticket_no,status:'REOPENED',version}；Receipt仅原UUID/public_ref/state及安全Result。没有内部Ticket/Intake/cycle/event UUID、身份、前人、内部过程、私有ledger或Grant。UNKNOWN不证明未提交。
 
-## 权限、共享用例与幂等
+## 当前权限与共享轮次
 
-候选独立宿主选项 `botReporterFeedbackEnabled=false`；Web reporterFeedbackEnabled、旧Reporter timeline或W权限不隐式开启它。只有成员写profile、MEMBER_REQUIRED、当前write_flag、SELF_SERVICE/MY_REPORTS均true及Bot能力true才允许新POST。OAUTH_ONLY、MEMBER_TICKET_READONLY、LEGACY_BOUND_GRANT、SS011零写保持拒绝。ADR-0018旧Grant仅在当前成员重新认证及本人核验后定位，Bound Session读权不成为成员写权。
+新POST要求当前Bot能力、当前SELF_SERVICE/MY_REPORTS及成员写profile。入口、锁后、最后授权DB await后和事务返回前核验当前WRITE、source/binding/物理retention/local-only成员；变化即拒绝并整事务回滚。事务内不连接OAuth/Provider。错误按当前认证401、对象拒绝404、禁止403、版本/轮次/幂等冲突409和不可用503区分；一般403或失权响应不证明原POST未提交。
 
-原UUID恢复独立核验当前Bot READ和原binding/retention/身份；“曾提交”或草稿不是READ。失权404、失认证401、profile/操作禁止403；合法WRITE关闭不阻止已有命令恢复，不创建新POST。原Bot读取不要求Web详情权限；服务端scope由受信认证产生，不按ref外形或浏览器宣称来源。
+只复用T20 completedTicketRound/reopenCompletedRound及同一TicketActionService。真正T11 STAFF_COMPLETED/040完成依据才可重开：同Ticket/version+1，新cycle、assignee清空，原组/source/history保留，首次责任与完工字段为空，等待工作人员显式重新承接；Conversation责任独立。普通补充和谢谢继续原Channel/Intake/Journey，不隐式重开。
 
-只有同一命令范围内的原UUID才能重放/核对原结果；另一已获准App上的同UUID若没有本App/BOT_REPORTER_FEEDBACK用途命令，返回闭合UNKNOWN，不能泄漏其他App/WEB/STAFF的已提交结果。这个命令隔离不宣称publicRef属于历史App，也不授予另一App新写权。现有member authorizer的read自行管理只读事务；未来writer需复用其原source/ref核验的caller-Tx接缝，不能用先读后写或嵌套read事务替代同事务验权。
+stream→App/用途/UUID→source/Ticket→原ledger的锁顺序；同completed cycle唯一basis使不同UUID及STAFF/Bot竞争只成功一次。原UUID/原payload重放原安全结果，改payload或后到的新命令409。其他App/Web/Staff用途没有本用途原结果时返回UNKNOWN，不泄漏其他命令。
 
-复用T20 `completedTicketRound` / `reopenCompletedRound` 与原TicketActionService，不复制第二重开逻辑。原source Intake须匹配current cycle，仅真实T11 IN_PROGRESS→CLOSED/STAFF_COMPLETED/PILOT_USER事件及040承诺允许；旧seed CLOSED/RESOLVED不冒充。本次反馈命令、ticket.reopened和新cycle同事务，version+1、清assignee、保原组/source/history；新cycle首次责任和完工字段空、待显式重新承接，Conversation责任不变，不产生首次责任通知。
+## 生产成员页面与恢复
 
-共享completed cycle唯一basis约束不同UUID及STAFF/Bot并发只成功一次；原UUID/原payload重放原结果，改payload或后到新UUID409。stream mutex在receipt FK/source/Ticket锁之前，scope+UUID advisory锁；锁后/提交前再验binding、物理retention和当前local-only身份，任一步失败全事务回滚。caller-owned事务不自行COMMIT/ROLLBACK，不让OAuth/Provider网络进入事务。普通补充/谢谢沿原Channel/Intake/Journey，不自动重开。
+既有Reporter进度页由独立typed Vite entry增加本人显式“仍未解决”及原操作只读核对控件。Node只发布当前编译manifest的闭合JS graph，不回退源码。实际可反馈时header说明“本人进度与明确反馈”；成功后fresh GET显示同单待承接。
 
-## 数据库提案、资源与关闭
+恢复先取得当前原Bot本人detail READ，再从独立Recovery接口取得稳定opaque actor分区；对象publicRef和purpose:'bot-reporter-feedback'分别隔离，scope不授Ticket或WRITE权限。Bot raw选项独立默认false，raw_enabled还受当前WRITE约束。默认关闭且没有旧操作时不创建IndexedDB。
 
-父为T21独占预留的[050](../../../database/migrations/050_bot_reporter_feedback.sql)及[迁移器](../../../scripts/bot-reporter-feedback-migrate.mts)现为**SOURCE_ONLY / NOT_APPLIED**。050前向扩**已有** `pilot_ticket.ticket_command_receipt`：command_type BOT_REPORTER_FEEDBACK、服务端用途+corp/App/Bot/member HMAC的command_scope、真实Ticket/publicRef和闭合安全result_snapshot。Reporter不创建或借内部principal；NULL actor严格限定Bot用途/scope、真实Ticket、无review/session/control及COMMITTED追加结果，既有工作人员命令仍必须有合法principal。scope+UUID唯一/资源/终态约束不放宽，STAFF用途不读取Reporter记录。
+复用现有T03有界journal：raw payload在发送前加密、原UUID保存；非导出AES-GCM key、16KiB/20条上限、从首次保存起24小时。恢复只取opaque UUID而不解密/重发旧payload；过期或WRITE/raw关闭清cipher/key，已有原UUID仍须当前READ下显式GET。POST结果不确定、一般403、刷新或重认证不换UUID/版本，不自动POST；只有验证本对象的真实COMMITTED终态才结算。
 
-以上App scope记录命令创建时受信认证范围；不因旧publicRef没有App列而追加历史pin、回填原Bot Intake或拒绝所有旧ref新反馈。新的合法feedback仍逐次满足本票成员写授权、原Bot所有权、真实完工轮次和并发规则。
+退出按本Actor/kind/Bot purpose清各工单敏感副本、更新持久epoch并保opaque操作，隐藏标签同步停止。首次Recovery尚未到达的退出发明确无身份logout广播，已知Actor peer不经可见性门禁清自己的scope，不猜未知sender身份；迟到旧响应受generation/abort隔离。不同Actor和Web用途保持隔离，多标签save CAS/epoch禁止迟到加密复活副本。
 
-050另向043共享origin枚举添加BOT_REPORTER，不改031/033/039/040/043历史字节或回填。共享cycle仍唯一、Ticket/事件/轮次/已有ledger权威不变，无第二Ticket/ledger/owner。启用新写需050就绪；关闭Bot能力不扩旧详情context，但成员写profile继续挂载当前READ下安全原UUID恢复；缺必要schema明确503。新POST的确定失败回滚全部事实，不留下假COMMITTED；无本用途原结果是UNKNOWN，不推导未提交。
+## 数据库、资源与关闭
 
-最小生产Port为[Bot service](../../../src/bot-reporter-feedback.mts)、[现有authorizer的currentScope/authorizeInTransaction](../../../src/p2-g2-yixiaoxiu-authorizer.mts)、[现有Ticket ledger的caller-Tx方法](../../../src/p2-016-ticket-command-ledger.mts)和[共享round用例](../../../src/ticket-reopen-rounds.mts)。同一个authorized detail事务生成context/ETag，写事务保持stream→scope+UUID→source/Ticket→ledger顺序，提交前再核物理保留期与当前local-only成员；Receipt核当前READ及真实BOT_REPORTER basis。HTTP复用[现有严格JSON守卫](../../../src/yxx-self-service-native-http.mts)拒绝重复键/过深/非JSON/超2KiB输入。
+[050迁移](../../../database/migrations/050_bot_reporter_feedback.sql)与[迁移器](../../../scripts/bot-reporter-feedback-migrate.mts)仅在本地owned隔离库应用验证。前向扩已有ticket_command_receipt的BOT_REPORTER_FEEDBACK用途/App scope、安全snapshot及严格NULL actor CHECK，并向043 origin加BOT_REPORTER；既有SQL原字节、Ticket/cycle/ledger权威保持。成员不创建或借内部principal；没有第二Ticket/owner/双写。启用需要050/043就绪，缺schema明确503；默认关闭的原readiness不要求050。
 
-同制品工作人员详情的闭合origin Schema/types/client decoder/既有follow-up提示接纳BOT_REPORTER；不新建前人责任或派工。隔离T11 fixture在原040/043之后安装050，以保留原e971首body/断言/演员/预算；没有伪造完工/Delivery。正式Bot页显式提交与草稿/多标签恢复仍待后续逐片，未由本SOURCE冒充完成。
+同App/API、单Worker/Gateway/PG边界保持；业务pool≤4、总池建议≤8、路径in-flight≤32、锁/语句2s、SSE默认32，浏览器单busy请求及5s进度轮询。证据是软件资源和隔离行为验证，不宣称2C4G负载容量。
 
-资源沿单App/API、单Worker、Gateway单活、SSE32、业务pool≤4/总池建议≤8；路径in-flight≤32、JSON2KiB、普通测试每文件240s/stock concurrency1。没有新常驻进程/每Ticket timer。关闭保既有Bot只读及已提交事实；UNKNOWN只GET原UUID，不重发/换ID/换版本。
+关闭两个Bot宿主选项并保全部持久Flag false，停止新写与新raw副本；成员写profile保当前READ下原UUID安全核对。保留已提交Ticket/event/cycle/ledger事实，不反向执行050或删除事实来回滚。readonly/OAuth-only/LEGACY_BOUND_GRANT不获得Bot写权。
 
-正式Reporter页后续明确“同一故障仍未解决”，成功结果后fresh GET显示同单待承接；普通谢谢和新故障区分。内部获权前人提示复用共享reopen依据，失权不泄漏。恢复最长24小时、原UUID/payload、退出/失权清理、多标签和raw/write OFF须逐片真实验证；恢复Bootstrap/存储合同在对应slice前补充，不将当前三个bootstrap字段冒称已提供草稿恢复。
+## 证据边界
 
-## 当前证据边界
+原七项、每组真实被测head/manifest、原RED/FAIL、两轴独立审查和资源释放见[执行记录](../../../plans/admin-workbench-integration/execution/t21.md)。原e971 HTTP和2f8a PC first body/roles/hash保留。新的physical Journey安排由现有Journey/ref Ports创建；SQL只注入锁/保留期/receipt或native clock包装等待故障，原clock OID/定义/comment恢复。
 
-首[HTTP tracer](../../../tests/wbint-t21-bot-feedback.integration.test.mts)保持e971原字节，活动STAGED_RUNTIME/database:true/browser:false/node_flags:[]、一case/240s/stock concurrency1。原1e01完成build/types/artifact native0/0/0；实际首native1、0pass/1fail在本人detail缺context处RED，bootstrap/POST/ACK/新staff核对NOT_REACHED，全部原source/compiled/TAP/trace/archive保留。这不是现场回调、SDK或已送达卡片验证；本最小SOURCE后继所有runtime均NOT_RUN。权限负向、并发/回滚/补充、重新认证/多标签/UNKNOWN及正式生产成员制品浏览器仍是原七项未完成范围。
+仅本地合成OAuth/mapping、隔离PG、真实HTTP和生产bundle浏览器。真实OAuth、WeCom/Provider、已送达卡片、强@或用户业务库、full/certify、部署、P2-G2-LIVE/P2-008及后续Gate未授权/未运行；不从本地PASS推导这些能力。

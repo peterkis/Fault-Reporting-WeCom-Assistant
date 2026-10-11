@@ -132,10 +132,14 @@
 | E01 | GET | `/api/reporter/member/session` | M/O/W成员扩展 | 已实现：成员认证状态 | [Reporter](member/reporter-access.md) |
 | E02 | GET | `/api/reporter/bootstrap` | 成员或W legacy | 已实现：依策略返回不同DTO | [Reporter](member/reporter-access.md) |
 | E03 | POST | `/api/reporter/member-entry/prepare` | 成员扩展 | 已实现：旧卡片浏览器继续入口 | [Reporter](member/reporter-access.md) |
-| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度 | [Reporter](member/reporter-access.md) |
+| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度；T21显式Bot能力可加同事务feedback_context | [Reporter](member/reporter-access.md)、[Bot反馈](member/bot-feedback-design.md) |
 | E05 | GET | `/api/reporter/tickets/{publicRef}/timeline` | 成员或W legacy | 已实现：公开时间线 | [Reporter](member/reporter-access.md) |
 | E06 | POST | `/api/reporter/logout` | 成员或W legacy | 已实现：清对应访问会话 | [Reporter](member/reporter-access.md) |
 | E07 | POST | `/api/reporter/access/exchange` | W legacy / 成员扩展 | 条件兼容：旧Grant；成员模式403 | [Reporter](member/reporter-access.md) |
+| E08 | GET | `/api/reporter/feedback/bootstrap` | M成员写扩展 | T21已实现，默认关闭：当前WRITE/CSRF | [Bot反馈](member/bot-feedback-design.md) |
+| E09 | GET | `/api/reporter/feedback/recovery` | M成员写扩展 | T21已实现：当前Bot独立恢复scope；raw默认关闭，不依赖Web MY_REPORTS | [Bot反馈](member/bot-feedback-design.md) |
+| E10 | POST | `/api/reporter/tickets/{publicRef}/feedback` | M成员写扩展 | T21已实现，默认关闭：原Bot本人明确仍未解决 | [Bot反馈](member/bot-feedback-design.md) |
+| E11 | GET | `/api/reporter/tickets/{publicRef}/feedback/commands/{clientCommandId}` | M成员写扩展 | T21已实现：当前Bot本人READ下原用途UUID安全核对，与新WRITE分开 | [Bot反馈](member/bot-feedback-design.md) |
 
 ## SSE、认证与健康
 
@@ -196,6 +200,8 @@
 | U16 | GET | `/reporter/`、`/reporter/open` | Reporter | 页面：只读进度 | [Reporter](member/reporter-access.md) |
 | U17 | GET | `/reporter/reporter.js`、`/reporter/reporter.css` | Reporter | 静态：Reporter | [平台](platform/auth-health.md) |
 | U18 | GET | `/`、`/static/pilot-workbench.js`、`/static/pilot-workbench.css` | P | 历史页面/资源 | [平台](platform/auth-health.md) |
+| U19 | GET | `/reporter/bot-feedback.js` | M成员写扩展 | T21默认关闭：302到当前Vite第三entry的编译资源 | [Bot反馈](member/bot-feedback-design.md) |
+| U20 | GET | `/reporter/feedback-assets/{buildAsset}.js` | M成员写扩展 | T21闭合manifest JS graph；未知404，无源码回退 | [Bot反馈](member/bot-feedback-design.md) |
 
 ## 已保存附件（WBINT-T16，默认关闭）
 
