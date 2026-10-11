@@ -2,7 +2,7 @@ import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchD
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
 import type {P2016TicketNotification} from '../../../../contracts/p2_016_contracts';
-import type {LocalDateTime} from '../../../../contracts/time_contracts';
+import type {LocalDateTime,PhysicalEpochMs} from '../../../../contracts/time_contracts';
 export type {P2016TicketNotification};
 import type {P2016ReopenResult,P2016ReopenReceipt} from '../../../../contracts/p2_016_contracts';
 import type {P2016TicketDetail} from '../../../../contracts/p2_016_contracts';
@@ -12,7 +12,7 @@ export type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgeme
 export type {P2016AssignmentAction,P2016AssignmentCommand};
 import type {ManualReportCommand,ManualReportCapabilities,ManualReportReceipt,ManualReportResult} from '../../../../contracts/workbench_manual_report_contracts';
 import {decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
-import type {SharedFollowUpCommand} from '../../../../contracts/workbench_follow_up_schedule_contracts';
+import type {SharedFollowUpCommand,SharedFollowUpActive} from '../../../../contracts/workbench_follow_up_schedule_contracts';
 import type {CanonicalItem,ReviewReference} from '../../../../contracts/workbench_review_contracts';
 let authorizationEpoch=0,transportWritable=true;
 export function setWorkbenchTransportWritable(value:boolean){transportWritable=value;}
@@ -54,11 +54,22 @@ function decodeGroupPage(value:unknown):SourceGroupPage {
   const items=v.items.map(decodeGroup);if(new Set(items.map(group=>group.ref)).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {items,next_cursor:nullable(v.next_cursor)};
 }
+/** The same closed active value is consumed by authorized cards and the detail view. */
+export function decodeSharedFollowUpActive(value:unknown):SharedFollowUpActive {
+  const v=object(value),keys=['schedule_version','due_at','due_epoch_ms','is_due'];
+  if(Object.keys(v).length!==keys.length||Object.keys(v).some(key=>!keys.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');
+  const revision=text(v.schedule_version),due=notificationDatetime(v.due_at),epoch=text(v.due_epoch_ms),expected=Date.parse(due.replace(' ','T')+'+08:00');
+  if(!/^[1-9][0-9]{0,18}$/u.test(revision)||BigInt(revision)>9223372036854775807n||typeof v.is_due!=='boolean'
+    ||!/^(0|[1-9][0-9]{0,18})$/u.test(epoch)||!Number.isSafeInteger(expected)||expected<0||BigInt(epoch)!==BigInt(expected)||BigInt(epoch)%1000n!==0n)throw new ApiError(502,'INVALID_RESPONSE');
+  // Explicit Shanghai parsing, nonnegative integer equality and second precision establish the epoch brand.
+  return {schedule_version:revision,due_at:due,due_epoch_ms:epoch as PhysicalEpochMs,is_due:v.is_due};
+}
 function decodeCard(value:unknown):WorkbenchCard {
-  const v=object(value);if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
+  const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
   return {kind:v.kind as WorkbenchCard['kind'],id:id(v.id),intake_id:id(v.intake_id),column:v.column as BoardColumn,
     number:text(v.number),title:text(v.title),status:text(v.status),priority:nullable(v.priority),source:text(v.source),
     source_label:text(v.source_label),source_group:v.source_group===null?null:decodeGroup(v.source_group),
+    ...(Object.hasOwn(v,'follow_up_schedule')?{follow_up_schedule:v.follow_up_schedule===null?null:decodeSharedFollowUpActive(v.follow_up_schedule)}:{}),
     location:nullable(v.location),reporter_name:nullable(v.reporter_name),assignee_name:nullable(v.assignee_name),review_reason:nullable(v.review_reason),
     created_at:datetime(v.created_at),updated_at:datetime(v.updated_at),completed_at:v.completed_at===null?null:datetime(v.completed_at)};
 }

@@ -1,6 +1,6 @@
 import type {LocalDateTime, PhysicalEpochMs} from './time_contracts.js';
 
-/** WBINT-T37 frozen target contract; SOURCE_READY does not imply a mounted HTTP route. */
+/** WBINT-T37 shared schedule contract; targeted runtime evidence is recorded in execution/t37.md. */
 export type SharedFollowUpCommand = Readonly<{
   client_command_id:string;
   expected_version:number;

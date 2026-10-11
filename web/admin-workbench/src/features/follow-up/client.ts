@@ -1,5 +1,5 @@
-import {ApiError,UnknownCommandOutcome,captureWorkbenchRead,postTicketCommand,readWorkbench} from '../../api/client';
-import type {LocalDateTime,PhysicalEpochMs} from '../../../../../contracts/time_contracts';
+import {ApiError,UnknownCommandOutcome,captureWorkbenchRead,postTicketCommand,readWorkbench,decodeSharedFollowUpActive} from '../../api/client';
+import type {LocalDateTime} from '../../../../../contracts/time_contracts';
 import type {SharedFollowUpCommand,SharedFollowUpHistoryEntry,SharedFollowUpReceipt,SharedFollowUpResult,SharedFollowUpView} from '../../../../../contracts/workbench_follow_up_schedule_contracts';
 export type {SharedFollowUpCommand,SharedFollowUpReceipt,SharedFollowUpResult,SharedFollowUpView};
 
@@ -19,10 +19,7 @@ function datetime(value:unknown):LocalDateTime{
 }
 /** The input is explicit Shanghai wall time; no browser-local timezone conversion. */
 export function followUpInput(value:string):LocalDateTime{const due=datetime(value.trim()),epoch=Date.parse(due.replace(' ','T')+'+08:00');if(!Number.isSafeInteger(epoch)||epoch<0)return invalid();return due;}
-function epoch(value:unknown,due:LocalDateTime):PhysicalEpochMs{
- const v=text(value),expected=Date.parse(due.replace(' ','T')+'+08:00');
- if(!/^(0|[1-9][0-9]{0,18})$/u.test(v)||!Number.isSafeInteger(expected)||expected<0||BigInt(v)!==BigInt(expected)||BigInt(v)%1000n!==0n)return invalid();return v as PhysicalEpochMs;
-}
+
 function history(value:unknown):SharedFollowUpHistoryEntry{
  const v=closed(value,['schedule_version','action','due_at','occurred_at','ticket_event_id','end_reason']);
  if(v.action!=='SET'&&v.action!=='CANCEL'&&v.action!=='ENDED')return invalid();
@@ -35,8 +32,8 @@ function view(value:unknown,ticketId:string):SharedFollowUpView{
  if(ticket!==ticketId||!Array.isArray(v.allowed_actions)||v.allowed_actions.length>2||!Array.isArray(v.history)||v.history.length>20)return invalid();
  const actions:('SET'|'CANCEL')[]=v.allowed_actions.map(value=>{if(value!=='SET'&&value!=='CANCEL')return invalid();return value;});
  if(new Set(actions).size!==actions.length)return invalid();
- let active:SharedFollowUpView['active']=null;
- if(v.active!==null){const a=closed(v.active,['schedule_version','due_at','due_epoch_ms','is_due']),due=datetime(a.due_at),current=revision(a.schedule_version,true);if(current!==schedule)return invalid();active={schedule_version:current,due_at:due,due_epoch_ms:epoch(a.due_epoch_ms,due),is_due:boolean(a.is_due)};}
+ const active=v.active===null?null:decodeSharedFollowUpActive(v.active);
+ if(active&&active.schedule_version!==schedule)return invalid();
  return {ticket_id:ticket,ticket_version:version(v.ticket_version),schedule_version:schedule,active,allowed_actions:actions,history:v.history.map(history),history_has_more:boolean(v.history_has_more)};
 }
 function result(value:unknown,ticketId:string):SharedFollowUpResult{

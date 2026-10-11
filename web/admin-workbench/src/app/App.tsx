@@ -79,6 +79,13 @@ function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
 }
+function SharedFollowUpSummary({value}:{value:WorkbenchCard['follow_up_schedule']}){
+  if(!value)return null;
+  return <p className={'shared-follow-up-summary'+(value.is_due?' is-due':'')}>
+    <strong>共享跟进 · {value.is_due?'已到期':'已安排'}</strong>
+    <time dateTime={value.due_at.replace(' ','T')+'+08:00'}>{value.due_at}（北京时间）</time>
+  </p>;
+}
 function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selected:boolean;now:number}){
   return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id}>
     <Link className="card-open" to={itemLink(item,search)} state={{fromBoard:true}}>
@@ -86,6 +93,7 @@ function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selec
       <h3>{item.title}</h3>
       <p className="card-meta" title={(item.location??'位置未提供')+' · '+(item.reporter_name??'报修人资料未提供')}>{item.location??'位置未提供'} · {item.reporter_name??'报修人资料未提供'}</p>
       <div className="card-tags"><Status item={item}/><span className="neutral-chip" title={item.source_label}>{item.source_label}</span></div>
+      <SharedFollowUpSummary value={item.follow_up_schedule}/>
       <footer className="card-footer"><Owner name={item.assignee_name}/><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>更新 {relativeTime(item.updated_at,now)}</time></footer>
       <span className="sr-only">查看详情</span>
     </Link>
@@ -100,7 +108,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
   const [expanded,setExpanded]=useState(false),visible=expanded?items:items.slice(0,3);
   const tableColumns=tableHelper.columns([
     tableHelper.accessor('number',{header:'编号'}),
-    tableHelper.accessor('title',{header:'问题',cell:({row})=><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link>}),
+    tableHelper.accessor('title',{header:'问题',cell:({row})=><><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link><SharedFollowUpSummary value={row.original.follow_up_schedule}/></>}),
     tableHelper.accessor('status',{header:'状态',cell:({row})=><Status item={row.original}/>}),
     tableHelper.accessor('source_label',{header:'来源',cell:({row})=><span className="neutral-chip">{row.original.source_label}</span>}),
     tableHelper.accessor('location',{header:'位置',cell:({getValue})=>getValue()??'未提供'}),

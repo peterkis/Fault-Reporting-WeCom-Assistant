@@ -1,7 +1,7 @@
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery,P2016TicketRow} from './p2-016-ticket-query.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
-import type {SharedFollowUpCommand,SharedFollowUpView,SharedFollowUpHistoryEntry,SharedFollowUpReceipt} from '../contracts/workbench_follow_up_schedule_contracts.js';
+import type {SharedFollowUpCommand,SharedFollowUpView,SharedFollowUpHistoryEntry,SharedFollowUpReceipt,SharedFollowUpActive} from '../contracts/workbench_follow_up_schedule_contracts.js';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {appendTicketEvent} from './p1-006-ticket-state-actions.mjs';
@@ -14,7 +14,7 @@ import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate
 
 const OPEN_STATES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'];
 const purpose='WORKBENCH_FOLLOW_UP_SCHEDULE';
-interface CurrentRow {schedule_version:string;due_at:string|null;due_epoch_ms:string|null;scheduled_event_id:string|null;active:boolean}
+interface CurrentRow {ticket_id:string;schedule_version:string;due_at:string|null;due_epoch_ms:string|null;scheduled_event_id:string|null;active:boolean}
 interface HistoryRow {schedule_version:string;action:'SET'|'CANCEL'|'ENDED';due_at:string;occurred_at:string;ticket_event_id:string;end_reason:'CLOSED'|'CANCELLED'|null}
 export function followUpRevision(value:unknown,allowZero=true):string{
   if(typeof value!=='string'||!/^(0|[1-9][0-9]{0,18})$/u.test(value)||BigInt(value)>9223372036854775807n||(!allowZero&&value==='0'))failP2016();return value;
@@ -32,15 +32,25 @@ async function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow,c
   if(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id)return true;
   return currentCommunicator();
 }
-async function readCurrent(transaction:PostgresTransaction,ticketId:string,lock=false):Promise<CurrentRow|null>{
-  const result=await transaction.query<CurrentRow>(`SELECT s.schedule_version::text,s.due_at,s.due_epoch_ms::text,s.scheduled_event_id::text,
+async function readCurrents(transaction:PostgresTransaction,ticketIds:readonly string[],lock=false):Promise<CurrentRow[]>{
+  if(ticketIds.length>100)failP2016();
+  if(!ticketIds.length)return [];
+  const result=await transaction.query<CurrentRow>(`SELECT s.ticket_id::text,s.schedule_version::text,s.due_at,s.due_epoch_ms::text,s.scheduled_event_id::text,
     (s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') AND NOT EXISTS(
       SELECT 1 FROM pilot_ticket.ticket_event end_event WHERE end_event.ticket_id=t.id AND end_event.event_ordinal>start_event.event_ordinal
         AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))) AS active
     FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
     LEFT JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
-    WHERE s.ticket_id=$1::uuid${lock?' FOR UPDATE OF s':''}`,[ticketId]);
-  return result.rows[0]??null;
+    WHERE s.ticket_id=ANY($1::uuid[])${lock?' FOR UPDATE OF s':''}`,[ticketIds]);
+  return result.rows;
+}
+async function readCurrent(transaction:PostgresTransaction,ticketId:string,lock=false):Promise<CurrentRow|null>{
+  return (await readCurrents(transaction,[ticketId],lock))[0]??null;
+}
+function activeFromCurrent(current:CurrentRow|null,now:bigint):SharedFollowUpActive|null{
+  if(!current?.active||current.due_at===null||current.due_epoch_ms===null)return null;
+  return {schedule_version:followUpRevision(current.schedule_version,false),due_at:assertLocalDateTime(current.due_at),due_epoch_ms:assertEpochMsString(current.due_epoch_ms),
+    is_due:BigInt(current.due_epoch_ms)<=now};
 }
 async function readHistory(transaction:PostgresTransaction,ticketId:string):Promise<{items:SharedFollowUpHistoryEntry[];hasMore:boolean}>{
   const result=await transaction.query<HistoryRow>(`SELECT schedule_version::text,action,due_at,occurred_at,ticket_event_id::text,end_reason FROM (
@@ -62,6 +72,17 @@ export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realt
   const ledger=createP2016CommandLedger({pool});let dueBusy=false;
   async function ready(transaction:PostgresTransaction){guardP2016(enabled);if(!await followUpSchemaReady(transaction))failP2016('FOLLOW_UP_UNAVAILABLE',503);}
   return Object.freeze({
+    // Internal projection port: callers supply only their already-authorized, paginated Ticket IDs.
+    async activeForAuthorizedTickets(ticketIds:readonly string[]):Promise<ReadonlyMap<string,SharedFollowUpActive|null>>{
+      if(ticketIds.length>100)failP2016();
+      if(!enabled||!ticketIds.length)return new Map<string,SharedFollowUpActive|null>();
+      const ids=[...new Set(ticketIds.map(uuidP2016))];
+      await ready(pool);
+      const currents=await readCurrents(pool,ids),now=BigInt(assertEpochMsString(String(Date.now())));
+      const active=new Map<string,SharedFollowUpActive|null>(ids.map(id=>[id,null]));
+      for(const current of currents)active.set(current.ticket_id,activeFromCurrent(current,now));
+      return active;
+    },
     async runDueBatch({limit=20}:{limit?:unknown}={}){
       if(typeof limit!=='number'||!Number.isSafeInteger(limit)||limit<1||limit>20)failP2016();
       if(!enabled||dueBusy)return {scanned:0,emitted:0,skipped:0};
@@ -110,9 +131,7 @@ export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realt
         const {principal,ticket}=await query.authorizedTicket({authContext,ticketId,transaction});await ready(transaction);
         const current=await readCurrent(transaction,ticketId),history=await readHistory(transaction,ticketId),canMaintain=await maintainable(principal,ticket,
           ()=>query.isCurrentCommunicator({authContext,ticketId,transaction}));
-        const active=current?.active&&current.due_at!==null&&current.due_epoch_ms!==null?{
-          schedule_version:followUpRevision(current.schedule_version,false),due_at:assertLocalDateTime(current.due_at),due_epoch_ms:assertEpochMsString(current.due_epoch_ms),
-          is_due:BigInt(current.due_epoch_ms)<=BigInt(assertEpochMsString(String(Date.now())))}:null;
+        const active=activeFromCurrent(current,BigInt(assertEpochMsString(String(Date.now()))));
         return publicP2016({ticket_id:ticketId,ticket_version:ticket.version,schedule_version:current?followUpRevision(current.schedule_version,false):'0',active,
           allowed_actions:canMaintain?(active?['SET','CANCEL'] as const:['SET'] as const):[],history:history.items,history_has_more:history.hasMore});
       });
