@@ -40,6 +40,8 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       if(sourceFact.rowCount!==1)failP2016('NOTIFICATION_BINDING_INVALID');
       if((sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_channel==='PORTAL'&&(sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_provider==='YIXIAOXIU_WEB')
         return {created:false,reason:'WEB_APP_ONLY'};
+      if((sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_channel==='MANUAL'&&(sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_provider==='STAFF_MANUAL_REPORT')
+        return {created:false,reason:'MANUAL_APP_ONLY'};
       const policy=ticketNotificationP2016({event_type:(event as NotificationFact).event_type,new_status:(event as NotificationFact).new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
       if(!policy)return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
       const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[(event as NotificationFact).event_id]);
