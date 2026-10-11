@@ -27,7 +27,7 @@ async function sdkReply(response:Response,signal:AbortSignal):Promise<unknown>{
 /** Existing App HTTP SDK leaf; no Bot SDK, browser call, credential persistence or second Outbox. */
 export function createWorkbenchAppNotificationSender({pool,notifications,agentId,accessTokenProvider,enabled=false,fetchImpl=fetch,origin,allowedHosts,allowLocalHttp=false}:WorkbenchAppNotificationSenderOptions){
  const app=normalizeAppNotificationOptions(notifications);
- if(typeof enabled!=='boolean'||!app||!Number.isSafeInteger(agentId)||agentId<1||typeof accessTokenProvider!=='function'||typeof fetchImpl!=='function')throw TypeError('APP_NOTIFICATION_CONFIGURATION_INVALID');
+ if(typeof enabled!=='boolean'||!app||!Number.isSafeInteger(agentId)||agentId<1||String(agentId)!==app.authority.sourceAppScope||typeof accessTokenProvider!=='function'||typeof fetchImpl!=='function')throw TypeError('APP_NOTIFICATION_CONFIGURATION_INVALID');
  return createCommunicationSenderPort(async request=>{
   if(!enabled||!app.enabled)return reject('APP_NOTIFICATION_DISABLED');
   if(request.provider!=='WECOM_APP'||request.channel_account_id!==app.authority.channelAccountId||request.target_type!=='PERSON'||!singleMember(request.target_id)||request.message.message_type!=='template_card')return reject('APP_NOTIFICATION_TARGET_INVALID');
