@@ -4,6 +4,7 @@
     "contracts/p2_016_waiting_action_command.schema.json",
     "contracts/p2_016_waiting_action_result.schema.json",
     "contracts/p2_016_waiting_event_page.schema.json",
+    "database/migrations/041_ticket_round_notifications.sql",
     "database/migrations/043_ticket_reopen_rounds.sql",
     "contracts/yxx_self_service_feedback_contracts.d.ts",
     "contracts/yxx_self_service_feedback_command.schema.json",
