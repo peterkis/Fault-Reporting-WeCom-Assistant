@@ -97,7 +97,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
   async function verifyForCommand(authContext:unknown,command:VerifiedManualReportCommand){
     guardP2016(reporterCandidatesEnabled);
     const before=await transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
-      if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='045_workbench_verified_manual_reports'")).rowCount!==1)failP2016('ACTION_FAILED',503);
+      if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('045_workbench_verified_manual_reports','051_workbench_verified_manual_report_candidate_ref_check')")).rowCount!==2)failP2016('ACTION_FAILED',503);
       return {principal,target:await committedTarget(tx,principal,command)};});
     const outcome=await reporterCandidates.verify(before.principal.principal_id,command.reporter,before.target).then(value=>({ok:true as const,value}),(error:unknown)=>({ok:false as const,error}));
     const after=await currentPrincipal(authContext);if(after.principal_id!==before.principal.principal_id)failP2016('FORBIDDEN',403);
