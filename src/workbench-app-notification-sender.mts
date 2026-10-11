@@ -17,6 +17,11 @@ const reject=(code:string):CommunicationSenderResult=>({outcome:'REJECTED_NOT_AP
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'APP_NOTIFICATION_RECONCILIATION_REQUIRED',retryable:false});
 // Neither the generic Sender Port nor a PERSON label rules out bulk syntax.
 function singleMember(value:unknown):value is string{return typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}$/u.test(value)&&value!=='@all';}
+async function sdkDeadline<T>(operation:Promise<T>,signal:AbortSignal):Promise<T>{
+ let abort:(()=>void)|undefined;
+ try{return await Promise.race([operation,new Promise<never>((_,reject)=>{abort=()=>reject(signal.reason);if(signal.aborted)abort();else signal.addEventListener('abort',abort,{once:true});})]);}
+ finally{if(abort)signal.removeEventListener('abort',abort);}
+}
 async function sdkReply(response:Response,signal:AbortSignal):Promise<unknown>{
  if(!response.ok||!response.body){await response.body?.cancel().catch(()=>{});throw Error('APP_SDK_RESPONSE_INVALID');}
  const reader=response.body.getReader(),chunks:Uint8Array[]=[];let bytes=0;
@@ -66,7 +71,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
   }catch{return reject('APP_NOTIFICATION_BINDING_UNAVAILABLE');}
   const signal=AbortSignal.any([request.signal,AbortSignal.timeout(5000)]);let token:string,recipient:string;
   try{
-   const credential=await accessTokenProvider({signal});signal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
+   const credential=await sdkDeadline(accessTokenProvider({signal}),signal);signal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');endpoint.searchParams.set('access_token',token);
    const converted=exactP2016(await sdkReply(await fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[request.target_id]})}),signal),['errcode','errmsg','open_userid_list','invalid_userid_list'],['errcode','open_userid_list']);
    if(converted.errcode!==0||!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');
