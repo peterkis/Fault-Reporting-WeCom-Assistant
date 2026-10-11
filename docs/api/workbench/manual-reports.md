@@ -136,3 +136,4 @@ T18私有候选`f83fbec18eaab714fbc3ca37d0d9b50d640cbc70`上的原候选GET与�
 ### T18 完整迁移入口补齐合同（待真实首例验证）
 
 本票需要 045 与其 051 前向修补共同生效。现有公开 `migrateWorkbenchVerifiedManualReports({databaseUrl, mode})` 将覆盖所需 045→051 链；`check` 保持只读，缺任一所需项返回 PENDING，完整一致返回 NOOP_ALREADY_APPLIED。`apply` 校验原 042 前置及两文件 checksum，在原迁移锁与单事务内依序应用缺项，完整存在时 NOOP；返回既有 root migration_id 形状兼容，status 表示整条本票所需链。两 SQL 原字节均不可修改。当前生产函数尚只处理 045，051 由测试 caller 显式应用；此处是补齐合同，尚不能视为入口已通过。
+未提交草稿中已明确选择成员时，只随既有加密副本保存选择意图，不恢复成员核验资格。刷新后要求重新选择成员或明确改为手填；候选开关关闭时保留输入并阻止静默提交为手填。已提交而结果未知的副本仍保存原命令和 UUID，只允许原 GET 核对。

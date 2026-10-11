@@ -24,10 +24,10 @@ export function useManualReportAuthority(principal:Principal|undefined){
     else if([403,404].includes(context.error.status))void clearManualReportAuthority(client,principal.principal_id,context.error);
   },[client,principal?.principal_id,context.error]);
 }
-export function useManualReportDraft({principal,value,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;pending:ManualReportAdmissionCommand|null;onRestore:(restored:{value:ManualReportInput;pending:ManualReportAdmissionCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useManualReportDraft({principal,value,pending,selectionIntent,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;pending:ManualReportAdmissionCommand|null;selectionIntent:boolean;onRestore:(restored:{value:ManualReportInput;pending:ManualReportAdmissionCommand|null;selectionIntent?:true})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),stage=useRef<'session'|'create'>('session');
-  return useAuthorizedDraft<ManualReportInput,ManualReportAdmissionCommand>({scope:{principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'},enabled:principal.manual_report_draft_recovery_enabled,
-    value,pending,emptyValue:emptyManualReportInput(),hasInput:hasManualReportInput,serialise:v=>encodeManualReportDraft(v.value,v.pending),decode:text=>{try{return decodeManualReportDraft(text);}catch{throw new DraftError('DRAFT_CORRUPT');}},commandId:command=>command.client_command_id,
+  return useAuthorizedDraft<{input:ManualReportInput;selectionIntent:boolean},ManualReportAdmissionCommand>({scope:{principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'},enabled:principal.manual_report_draft_recovery_enabled,
+    value:{input:value,selectionIntent},pending,emptyValue:{input:emptyManualReportInput(),selectionIntent:false},hasInput:v=>hasManualReportInput(v.input),serialise:v=>encodeManualReportDraft(v.value.input,v.pending,v.value.selectionIntent),decode:text=>{try{const restored=decodeManualReportDraft(text);return {value:{input:restored.value,selectionIntent:restored.selectionIntent===true},pending:restored.pending};}catch{throw new DraftError('DRAFT_CORRUPT');}},commandId:command=>command.client_command_id,
     authorize:async signal=>{
       stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);
       if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');
@@ -38,5 +38,5 @@ export function useManualReportDraft({principal,value,pending,onRestore,onOperat
       if(error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,principal.principal_id,error.status as 401|403,'revoked');
       else if(error instanceof ApiError&&[403,404].includes(error.status))void clearManualReportAuthority(client,principal.principal_id,error);
       else if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,principal.principal_id,undefined,'revoked','当前账号已变化，请重新读取授权；原输入已停止恢复。');
-    },onRestore,onOperation,onSensitiveClear});
+    },onRestore:restored=>onRestore({value:restored.value.input,pending:restored.pending,...(restored.value.selectionIntent?{selectionIntent:true as const}:{})}),onOperation,onSensitiveClear});
 }

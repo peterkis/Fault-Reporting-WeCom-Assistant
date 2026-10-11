@@ -69,14 +69,15 @@ export function decodeManualReportReceipt(value:unknown,id:string):ManualReportA
   if(v.state==='FAILED'){exact(v,['client_command_id','state','error']);const e=exact(v.error,['code','retryable']),code=text(e.code,64,1);if(e.retryable!==false||!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))bad();return {...base,state:'FAILED',error:{code,retryable:false}};}
   if(v.state==='COMMITTED'){exact(v,['client_command_id','state','result']);const result=decodeManualReportResult(v.result,id);if(result.replayed!==true)bad();if(result.reporter_verification==='VERIFIED')return {...base,state:'COMMITTED',result:{...result,replayed:true}};return {...base,state:'COMMITTED',result:{...result,replayed:true}};}bad();
 }
-export function encodeManualReportDraft(value:ManualReportInput,pending:ManualReportAdmissionCommand|null):string{
+export function encodeManualReportDraft(value:ManualReportInput,pending:ManualReportAdmissionCommand|null,selectionIntent=false):string{
   // Store a pending command only once, so bounded Unicode descriptions are not
   // duplicated in the existing 16 KiB recovery envelope.
-  return JSON.stringify(pending?{schema:1,pending}:{schema:1,value});
+  return JSON.stringify(pending?{schema:1,pending}:selectionIntent?{schema:1,value,selection_intent:true}:{schema:1,value});
 }
-export function decodeManualReportDraft(text:string):{value:ManualReportInput;pending:ManualReportAdmissionCommand|null}{
+export function decodeManualReportDraft(text:string):{value:ManualReportInput;pending:ManualReportAdmissionCommand|null;selectionIntent?:true}{
   const input:unknown=JSON.parse(text);if(!input||typeof input!=='object'||Array.isArray(input))bad();const root=input as Record<string,unknown>;if(root.schema!==1)bad();
   if(Object.hasOwn(root,'pending')){exact(root,['schema','pending']);const pending=decodeManualReportCommand(root.pending);return {pending,value:{source:pending.source,name:pending.reporter.verification==='UNVERIFIED'?pending.reporter.name:'',contact:pending.reporter.verification==='UNVERIFIED'?pending.reporter.contact:'',department:pending.reporter.verification==='UNVERIFIED'?pending.reporter.department??'':'',description:pending.description,location:pending.location.text??'',unknown:pending.location.unknown}};}
+  if(Object.hasOwn(root,'selection_intent')){exact(root,['schema','value','selection_intent']);if(root.selection_intent!==true)bad();return {value:decodeManualReportInput(root.value),pending:null,selectionIntent:true};}
   exact(root,['schema','value']);return {value:decodeManualReportInput(root.value),pending:null};
 }
 
