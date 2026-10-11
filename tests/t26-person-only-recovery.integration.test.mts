@@ -15,6 +15,8 @@ test('a successful group delivery survives a private-route failure and exact HTT
   const replay=await control(id,String(person.delivery_id),'retry',command);assert.equal(replay.status,200);assert.equal(t26Object(await replay.json()).replayed,true);
   const recovered=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:t26Sender(context,tag,{fetchImpl,onPerson})});
   assert.equal(await recovered.deliver({deliveryId:String(group.delivery_id)}),null);await recovered.deliver({deliveryId:String(person.delivery_id)});await context.runtime.roundNotifications.runOnce();
-  const after=await t26Deliveries(http,id);assert.deepEqual(after.find(row=>row.delivery_id===group.delivery_id),sentGroup);assert.equal(after.find(row=>row.delivery_id===person.delivery_id)?.status,'SENT');assert.equal(after.find(row=>row.delivery_id===person.delivery_id)?.attempt_count,2);assert.equal(groupCalls,1);assert.equal(personCalls,1);assert.deepEqual(await http.detail(id),started);
+  // One rejected send + the explicit retry audit + the acknowledged send are
+  // three Delivery Attempts; the UUID replay does not add a fourth Attempt.
+  const after=await t26Deliveries(http,id);assert.deepEqual(after.find(row=>row.delivery_id===group.delivery_id),sentGroup);assert.equal(after.find(row=>row.delivery_id===person.delivery_id)?.status,'SENT');assert.equal(after.find(row=>row.delivery_id===person.delivery_id)?.attempt_count,3);assert.equal(groupCalls,1);assert.equal(personCalls,1);assert.deepEqual(await http.detail(id),started);
  });
 });
