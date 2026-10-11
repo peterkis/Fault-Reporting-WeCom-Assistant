@@ -43,7 +43,7 @@ async function json(response:Response):Promise<Record<string,unknown>>{
 function text(value:unknown):string{assert.ok(typeof value==='string');return value;}
 function positionPage(value:Record<string,unknown>):PositionPage{
   assert.ok(Array.isArray(value.sources));const canonical=object(value.canonical_item);
-  const sources=value.sources.map(raw=>{const row=object(raw),kind=row.source_kind;
+  const sources=value.sources.map<SourcePosition>(raw=>{const row=object(raw),kind=row.source_kind;
     assert.ok(kind==='BOT'||kind==='WEB'||kind==='MANUAL');assert.ok(typeof row.has_unread_material==='boolean');
     return {source_key:text(row.source_key),source_kind:kind,last_read_position:text(row.last_read_position),latest_position:text(row.latest_position),
       row_version:text(row.row_version),has_unread_material:row.has_unread_material};
@@ -75,8 +75,9 @@ const visibilityAndTrace = `(()=>{
 test('T35 actual foreground material advances only its own source and reader, never hidden prefetch or another Session', {timeout:240_000}, async()=>{
   await withT22Fixture(async f=>{
     await f.runtime.stop(); // A single App owns this port, including the real member HTTP seam below.
-    await migrateP2012({databaseUrl:f.databaseUrl,mode:'apply'});
-    await migrateYxxSelfService({databaseUrl:f.databaseUrl,mode:'apply'});
+    const migrationInput={databaseUrl:f.databaseUrl,mode:'apply'};
+    await migrateP2012(migrationInput);
+    await migrateYxxSelfService(migrationInput);
     const second=f.principals[1],session=f.sessions[0];assert.ok(second);assert.ok(session);
     await createPilotAccessService({pool:f.pool}).upsertPrincipal({
       wecomUserId:'web01-synthetic-1',displayName:'T35第二合成阅读者',roles:['ADMIN'],resolverTeamIds:['PILOT_IT'],
