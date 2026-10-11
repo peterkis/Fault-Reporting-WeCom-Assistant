@@ -21,7 +21,7 @@ test('verified reachable MANUAL admission retains its origin and creates one app
   const candidate=rows(object(await candidateResponse.json()).candidates)[0];assert.ok(candidate);
   const command={schema_version:1,client_command_id:randomUUID(),source:'PHONE',description:'打印机无法打印处方，设备发生故障，请协助处理。',location:{text:'合成门诊',unknown:false},
    reporter:{verification:'VERIFIED_SELECTION',candidate_ref:text(candidate.candidate_ref),candidate_version:text(candidate.candidate_version)}};
-  const admitted=await fetch(context.origin+'/api/workbench/manual-reports',{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
+  const admitted=await fetch(context.origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
   assert.equal(admitted.status,202);const report=object(await admitted.json());
   assert.equal(report.source,'PHONE');assert.equal(report.reporter_verification,'VERIFIED');assert.equal(report.manual_contact_required,false);assert.equal(report.external_notification,false);
   const ticket=object(report.ticket),ticketId=text(ticket.id),started=await http.start(ticketId);
