@@ -51,4 +51,4 @@ T22获权精确Message列表可关联实际人工消息；本票不扩大会话�
 
 复用 `ticketRoundNotificationsEnabled=false` 的默认关闭能力；此合同不引入或开启新持久Flag。false不扫描/读取新增结构，保留既有profiles；未来新增适配配置也默认不可外发。group发送还受现有senderEnabled、externalSend、精确发送批准及范围校验约束；合成Sender显式隔离，不连接Provider/OAuth/WeCom。关闭通知能力停止生成新节点；关闭发送并停止现有Worker消费保留全部Ticket/Event/cycle/Outbox/Delivery/Attempt，不删成功、失败、UNKNOWN或历史证据。
 
-App/API/SSE1、Worker1、Gateway单活、Communication concurrency1、SSE32、复用原pool≤4/同机总量建议≤8；batch≤20，lease30s、Sender deadline5s、maxAttempts5、每目标60s窗口20。群配置≤32、响应体≤8192byte、生成群正文UTF-8≤2048byte，复用原数据库Attempt限流，不新建无界队列、计时器或连接池。当前仅静态合同；容量/清理实际结果仍NOT_RUN。
+App/API/SSE1、Worker1、Gateway单活、Communication concurrency1、SSE32、复用原pool≤4/同机总量建议≤8；batch≤20，lease30s、Sender deadline5s、maxAttempts5、每目标60s窗口20。群配置≤32、响应体≤8192byte、生成群正文UTF-8≤2048byte，复用原数据库Attempt限流，不新建无界队列、计时器或连接池。合成节点、原生中断、当前正式bundle及资源结果见执行页和final handoff；真实2C4G容量仍NOT_RUN。
