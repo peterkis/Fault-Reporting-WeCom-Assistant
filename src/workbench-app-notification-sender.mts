@@ -91,8 +91,8 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/message/send');endpoint.searchParams.set('access_token',token);
    const receipt=exactP2016(await sdkReply(await fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify(body)}),signal),['errcode','errmsg','msgid','invaliduser','invalidparty','invalidtag','unlicenseduser','response_code'],['errcode']);
    if(receipt.errcode!==0||['invaliduser','invalidparty','invalidtag','unlicenseduser'].some(key=>receipt[key]!==undefined&&receipt[key]!==''))return unknown();
-   if(receipt.msgid!==undefined&&(typeof receipt.msgid!=='string'||!receipt.msgid||receipt.msgid.length>512))return unknown();
-   return {outcome:'ACKNOWLEDGED',provider_message_id:typeof receipt.msgid==='string'?'app_ack_'+textHashP2016(receipt.msgid).slice(0,32):null,error_code:null,retryable:false};
+   if(typeof receipt.msgid!=='string'||!receipt.msgid.trim()||receipt.msgid.length>512||/[\u0000-\u001f\u007f]/u.test(receipt.msgid))return unknown();
+   return {outcome:'ACKNOWLEDGED',provider_message_id:'app_ack_'+textHashP2016(receipt.msgid).slice(0,32),error_code:null,retryable:false};
   }catch{return unknown();}
  });
 }
