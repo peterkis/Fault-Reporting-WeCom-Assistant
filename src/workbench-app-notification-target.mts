@@ -44,6 +44,9 @@ export async function readOriginalAppNotificationSource(tx:PostgresTransaction,i
  // A denied Web/Bot source is not a MANUAL source or a requirement to install its optional schema.
  const origin=await tx.query<{is_manual:boolean}>("SELECT source_channel='MANUAL' AND source_provider='STAFF_MANUAL_REPORT' AS is_manual FROM intake.service_intake WHERE id=$1::uuid",[intakeId]);
  if(origin.rowCount!==1||origin.rows[0]?.is_manual!==true)return null;
+ // T17 HAND_ENTERED facts stay manual-contact-only, including hosts without optional045.
+ const snapshot=await tx.query<{verified:boolean}>("SELECT manual_report_snapshot->>'identity_source'='VERIFIED_DIRECTORY_SELECTION' AS verified FROM intake.service_intake WHERE id=$1::uuid",[intakeId]);
+ if(snapshot.rowCount!==1||snapshot.rows[0]?.verified!==true)return null;
  const manual=await tx.query<ManualSourceRow>(`SELECT i.manual_reporter_verification AS proof,i.manual_actor_principal_id::text AS actor,
    j.reporter_identity_hash AS reporter_hash,j.id::text AS journey_id,LEAST(i.retention_until_epoch_ms,j.retention_until_epoch_ms)::text AS retention_epoch
    FROM intake.service_intake i JOIN intake.contact_journey j ON j.origin_intake_id=i.id AND j.entry_mode='STAFF_MANUAL_REPORT' AND j.origin_channel='MANUAL'
