@@ -1,84 +1,86 @@
 ---
 task_id: WBINT-T37
 issue: 92
-status: FIRST_SLICE_SOURCE_IMPLEMENTED_NOT_RUN
-runtime_status: NOT_RUN
+status: LOCAL_VERIFIED
+runtime_status: SELECTED_LOCAL_CHECKS_PASS
 source_base: 406599744d5676a840c90cb497ff033b4c375aea
+tested_head: 7ec7b3ec73cd2f1fc67f839582b4aad4bd34caa3
 timezone: Asia/Shanghai
 ---
 
-# 工单共享跟进时间（WBINT-T37，待实现）
+# 工单共享跟进时间（WBINT-T37）
 
 返回 [API 导航](../README.md) · [HTTP 索引](../endpoint-index.md) · [工单](tickets.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t37.md)
 
-本页冻结 #92 的目标合同。原始f9d候选build/types/artifact原生0，首条真实调度员POST返回404形成实际RED，原档独立保留。其后仅SOURCE补齐049、原Ledger事务及三条W路由，**该源码后继尚未build／类型／迁移／HTTP验证**。当前源码资格只覆盖获权调度／ADMIN和当前处理人；实际canonical沟通人维护、Worker、正式PC等尚待后续切片，不把下文完整目标合同称为整票已实现。领域依据为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 第4项及 [WBINT-12/A12](../../../plans/admin-workbench-integration/implementation-plan.md#wbint-12个人已读关注团队待跟进与共享预约)。
+本页描述当前实现。原七项的本地隔离验证、真实 loopback HTTP、生产前端制品浏览器结果及历史 RED 见执行记录；各结果保留自己的被测提交，不能拼成一次 full/certify。领域依据为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 第4项及 [WBINT-12/A12](../../../plans/admin-workbench-integration/implementation-plan.md#wbint-12个人已读关注团队待跟进与共享预约)。T09 停止退回与共享安排组合归 T43，完整搜索归 T41；本票不推进现场、生产或业务 Gate。
 
 ## 宿主和入口
 
-W 同源工作人员宿主，沿用当前活动内部 Principal 认证、Cookie Origin/CSRF 和 `no-store`。成员、Reporter、OAuth-only、公共 ref 和 Conversation 子路由没有本操作权限。
+W 同源工作人员宿主，沿用当前活动内部 Principal 认证、Cookie Origin/CSRF 和 no-store。成员、Reporter、OAuth-only、公共 ref 和 Conversation 子路由没有本操作权限。
 
-| METHOD + PATH | 目标行为 | 开关 |
+| METHOD + PATH | 行为 | 开关 |
 | --- | --- | --- |
-| `GET /api/tickets/{ticketId}/follow-up-schedule` | SOURCE挂载／NOT_RUN：当前获权安排、维护动作与最近20条修订历史 | `workbenchFollowUpSchedulesEnabled=false` 默认关闭 |
-| `POST /api/tickets/{ticketId}/follow-up-schedule` | SOURCE挂载／NOT_RUN：显式 `SET` 或 `CANCEL` | 同上；还需当前维护权限 |
-| `GET /api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | SOURCE挂载／NOT_RUN：原主体／用途／UUID 的最小安全命令终态 | 只依赖原生命周期与当前 Ticket READ；独立于新写开关和 raw draft recovery |
+| GET /api/tickets/{ticketId}/follow-up-schedule | 当前获权安排、维护动作与最近20条历史 | workbenchFollowUpSchedulesEnabled，默认false |
+| POST /api/tickets/{ticketId}/follow-up-schedule | 显式 SET 或 CANCEL | 同上，并核当前维护权限 |
+| GET /api/tickets/{ticketId}/follow-up-schedule/commands/{commandId} | 原主体／用途／UUID 的最小安全终态 | 只依赖原生命周期与当前 Ticket READ，独立于新入口和 raw recovery |
 
-路径 UUID；无 query。POST JSON ≤32 KiB，拒绝未知字段；必须 `Idempotency-Key` 等于 body UUID、`If-Match: "<expected_version>"` 等于 body Ticket 数字版本。GET ACK 不需 CSRF/Origin、If-Match 或 Idempotency-Key，不返回原时间、payload/hash、人员、责任或私有资料。关闭新 write/view 入口不阻断原主体的已提交结果核对。
+路径使用 UUID，无 query。POST JSON≤32 KiB，拒绝未知字段；Idempotency-Key 必须等于 body UUID，If-Match 的引号数字必须等于 body expected_version。ACK GET 不需 CSRF/Origin、If-Match 或 Idempotency-Key，不返回原时间、payload/hash、人员、责任或私有资料。
 
 ## 输入、并发与幂等
 
-[闭合 Schema](../../../contracts/workbench_follow_up_schedule_command.schema.json)／[类型](../../../contracts/workbench_follow_up_schedule_contracts.d.ts)：恰好六字段。
+[命令 Schema](../../../contracts/workbench_follow_up_schedule_command.schema.json)／[类型](../../../contracts/workbench_follow_up_schedule_contracts.d.ts)闭合为六字段：
 
 | 字段 | 约束 |
 | --- | --- |
-| `client_command_id` | 原 UUID；UNKNOWN 时保留，不生成新意图 |
-| `expected_version` | 当前 Ticket 安全整数 number，1..2147483647 |
-| `expected_schedule_version` | 当前安排修订的十进制 string，初始 `"0"`，最大 PostgreSQL BIGINT；不得 Number 强转 |
-| `reason_code` | 固定 `WORKBENCH_FOLLOW_UP_SCHEDULE` |
-| `action` | `SET` 或 `CANCEL` |
-| `due_at` | SET 必须有效 Gregorian `YYYY-MM-DD HH:mm:ss`；CANCEL 必须 null |
+| client_command_id | 原 UUID；UNKNOWN 保留，不生成新意图 |
+| expected_version | 当前 Ticket 安全整数 number，1..2147483647 |
+| expected_schedule_version | 当前安排修订的十进制 string，初始"0"，最大 PostgreSQL BIGINT；不得 Number 强转 |
+| reason_code | 固定 WORKBENCH_FOLLOW_UP_SCHEDULE |
+| action | SET 或 CANCEL |
+| due_at | SET 为有效 Gregorian YYYY-MM-DD HH:mm:ss；CANCEL 为 null |
 
-时间使用现有 Asia/Shanghai 秒精度合同，并保存／返回精确配对的非负 physical epoch string；拒绝 offset、UTC 字面值、非法日历或不能表示的 epoch。过去时间可表示当前已到期行动；不伪造 SLA 或用户未确认的截止政策。SET 可明确改期；新 UUID 的合法 SET 创建新安排修订，即使时间与原值相同。CANCEL 只用于当前活动安排；没有活动安排的新 CANCEL 为409，不制造取消历史。
+时间使用 Asia/Shanghai 秒精度合同，保存／返回精确配对的非负 physical epoch string；拒绝 offset、UTC 字面值、非法日历和不能表示的 epoch。过去时间表示已到期行动，不冒充 SLA。新 UUID 的合法 SET 总是创建新修订，包括相同时间；CANCEL 只用于当前活动安排，无活动安排时为409，不制造取消历史。
 
-```json
-{"client_command_id":"22222222-2222-4222-8222-222222222222","expected_version":1,"expected_schedule_version":"0","reason_code":"WORKBENCH_FOLLOW_UP_SCHEDULE","action":"SET","due_at":"2030-01-02 09:30:00"}
-```
-
-命令在原 `P2_016:<principal>` ledger 中以服务器固定用途 `WORKBENCH_FOLLOW_UP_SCHEDULE` 和 UUID 防重，不建立第二 ledger。canonical SHA-256 沿 `hashP2016` 的递归对象 key 排序，覆盖 server ticket_id、固定用途、action、原 UUID、原 Ticket/安排版本、reason_code、精确 due_at；null 不省略，数字与字符串不互换，主体 scope 不由客户端指定。对象可读权限在每次 receipt 读取前重新核验；相同 hash 返回原 COMMITTED/FAILED，改 payload 同 UUID 为409。只有新的写入核对当前维护权、两个版本、状态和日历；重放旧成功不能再次推进版本、事件、信号或投递。
+命令复用 P2_016:<principal> ledger，服务器固定用途为 WORKBENCH_FOLLOW_UP_SCHEDULE，不建立第二 ledger。hashP2016 的 canonical SHA-256 按递归对象键排序，绑定 server ticket_id、purpose、原 UUID、两个版本、reason_code、action 和精确 due_at；null 不省略，数字与字符串不互换，主体 scope 不由客户端指定。相同 hash 返回原 COMMITTED/FAILED，同 UUID 异内容为409；只有新写入核对当前维护权、两个版本与状态。重放不能再次推进版本、事件、信号或投递。
 
 ## 当前维护权限
 
-先用现有 `authorizedTicket` 核对当前活动身份与 Ticket READ，再按以下任一当前责任允许 SET/CANCEL：当前 Ticket 处理人；当前真实关联、尚未结束会话的实际 ASSIGNED 沟通人；当前获权 DISPATCHER/ADMIN。普通同组同事只有 READ 不等于维护权。任何 Conversation VIEW/CONTROL、显式关注或旧责任均不自动授予 Ticket READ。
+先核当前活动内部身份及独立 Ticket READ，再允许当前 Ticket 处理人、真实 canonical 未结束 Session 的 ASSIGNED 本人沟通人、获权 DISPATCHER/ADMIN 维护。普通同组 READ、Conversation VIEW/CONTROL、关注和旧责任不自动授予维护权或 Ticket READ。
 
-沟通关联沿原 Intake 或已冻结 Journey/Channel Leg 的完整 canonical 关联规则，要求 Session 的实际 service_intake、Thread 与 Reporter 绑定一致，不按最近消息／群名／UUID 相似推断。多个关联会话中，存在一条当前有效且实际分配给该操作者的 canonical 会话即可取得“当前沟通人”的维护资格；本操作不修改任何会话，也不选择或复制一个新沟通负责人。全部权限与责任事实在命令事务重新核对并锁定必要活动身份／组／当前 assignment，阻止候选查询到提交之间失权。
+canonical 关联沿原 Intake 或 Journey/Channel Leg 完整关系，核实际 service_intake、Thread 与 Reporter 绑定。多个有效会话中任意一条实际 ASSIGNED 本人即可；查询先筛选本人 assignment，按 Session UUID 取最多一条，在调用方事务内保持 stream→Ticket→当前 authority→选中 Session→assignment 的锁序，再用原 getSessionAccess 复核。3和21个关联会话的实测保持固定查询数量，不锁其他会话。
 
-可维护状态为 `NEW/QUEUED/ACCEPTED/IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR/REOPENED`；`RESOLVED/CLOSED/CANCELLED/DUPLICATE_LINKED` 不接受新的 SET/CANCEL。保留旧 RESOLVED 的现有语义：仅完成关闭／取消才清活动，RESOLVED 时仍可读取保留安排，但不提供新维护。无个人处理人／沟通人时，由当前处理组作为团队待办承接；不保存第三份 owner，不扩大访问。
+可维护状态为 NEW/QUEUED/ACCEPTED/IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR/REOPENED。RESOLVED/CLOSED/CANCELLED/DUPLICATE_LINKED 不接受新 SET/CANCEL。RESOLVED 保留现有活动安排及到期提示。没有个人处理／沟通责任时，由原处理组作为团队待办承接，不保存第三份 owner。
 
-## 输出与恢复
+## 输出、卡片与恢复
 
-[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json) 闭合输出：`ticket_id,ticket_version,schedule_version,active,allowed_actions,history,history_has_more`。active 为 null 或 `{schedule_version,due_at,due_epoch_ms,is_due}`，其中修订等于顶层、时间和 epoch 精确配对；is_due 按当前权威时间派生，只有活动安排可到期。无安排初始版本为 `"0"`，取消／结束后修订不回零；终态只结束该安排，不凭开关制造新的用户安排修订。history 返回最新修订在前、同修订按真实 Ticket Event ordinal 降序、最多20条；`history_has_more` 明示还有持久历史，不能把尾部窗口当全量。每条含 `schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED`；CANCEL/ENDED 保留刚结束的时间，SET/CANCEL 的 end_reason 为 null。ENDED 引用实际关闭／取消 Event，是该修订的终结证据，不是虚构用户 CANCEL。
+[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json)闭合输出 ticket_id、ticket_version、schedule_version、active、allowed_actions、history、history_has_more。active 为 null 或四字段 {schedule_version,due_at,due_epoch_ms,is_due}，修订等于顶层，时间／epoch精确配对。无安排初始版本为"0"，取消／结束后不回零。history 按安排修订和真实 Event ordinal 降序，最多20条；history_has_more 明示持久历史尚有后页。
 
-POST [安全结果 Schema](../../../contracts/workbench_follow_up_schedule_result.schema.json)：`{ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,schedule_version,replayed}`。不返回责任、时间、正文或凭据；成功后重读实际查询，重读临时失败不推翻原成功。
+历史项为 {schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED}。CANCEL/ENDED 保留结束的时间；ENDED 引用真实关闭／取消 Event，不伪造用户 CANCEL。
 
-ACK [Schema](../../../contracts/workbench_follow_up_schedule_receipt.schema.json)：`{client_command_id,ticket_id,state}`，UNKNOWN 无额外字段；COMMITTED 只有上述安全 result，replayed=true；FAILED 只有 `{code,retryable:false}`。无收据／STARTED／其他主体、Ticket 或用途返回 UNKNOWN；不据此推定“没提交”。仍有 READ 而写开关、raw recovery 或当前维护权关闭时可核对旧结果；身份失效或对象 READ 失效拒绝。不得因为另一个人已改期，就把原 SET 成功的 ACK 改成当前安排。未知只显式 GET 原 UUID，不自动重发 POST。
+[POST结果](../../../contracts/workbench_follow_up_schedule_result.schema.json)为 {ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,schedule_version,replayed}。成功后重读当前事实；当前读取临时失败不推翻原成功。[ACK](../../../contracts/workbench_follow_up_schedule_receipt.schema.json)为 {client_command_id,ticket_id,state}：UNKNOWN 无额外字段；COMMITTED 增加上述安全 result 且 replayed=true；FAILED 增加 error:{code,retryable:false}。无收据、STARTED或不匹配主体／Ticket／用途返回 UNKNOWN，不能据此推定未提交。旧 ACK 始终核当前 Ticket READ，但不要求新写开关、raw recovery 或维护资格；后续改期不会改写原成功 ACK。UNKNOWN 只显式 GET，不自动 POST。
 
-错误沿稳定 W 错误 envelope：坏路径／字段／时间／header为400；未认证401、活动内部身份失效403、对象不可见404；当前维护拒绝403、陈旧版本或 hash 冲突409；write/view关闭503 `P2_016_DISABLED`，明确启用但049未就绪503 `P2_016_FOLLOW_UP_UNAVAILABLE`。不将网络、临时503、畸形成功响应或 ACK 缺结果转为 FAILED。
+现有 WorkbenchCard 的可选 follow_up_schedule 字段供看板、列表和 detail.item 共用，内容仅为上述 active 或 null。仅在开关开启时向已授权、已分页的 Ticket 追加，每批最多100个去重 ID，单次批量事实查询，无逐 Ticket HTTP 扇出，不附历史或维护权限；关闭时省略字段且不访问049。三处显示相同北京时间，复用严格 active 解码。到期一次提示后持续显示，显式取消后移除活动显示，详情保留历史；不改变排序、游标或全范围筛选。
 
-正式 React 后续复用当前 authorized command／draft 消费：原 UUID、两个版本与六字段冻结；current READ 恢复先验权；24h草稿、opaque未知标识、CAS清理、退出／失权清理沿既有合同。raw恢复默认false，关闭时新输入只在内存；旧未知 ACK 消费不保存新敏感快照。真实 Cookie／CSRF 不持久化。任何可信401／403／404清相应授权缓存，临时读取失败保留原意图。具体消费者须在真实生产 bundle 验证，当前未实现。
+正式 React 沿用公共加密草稿和 opaque store。follow_up_schedule_draft_recovery_enabled 由共享入口与 workbenchDraftRecoveryEnabled 共同派生，默认false。恢复先核当前身份和独立 Ticket READ，再核维护资格。敏感副本保留首次保存后的24小时，后续保存不续期；公共 store 最多20份敏感草稿、20个待核对操作，每份序列化内容≤16 KiB。过期、raw/view关闭或维护失权清敏感副本，保原 opaque UUID供独立 ACK；真实 READ/身份失效清对应授权范围。原 UUID和两个版本保持冻结，CAS失败保留实际当前操作，迟到 ACK不能清除新 UUID。已确认提交不因当前读取失败降格为UNKNOWN或重发。Cookie/CSRF不持久化。
 
-## 事实、生命周期与到期 Worker
+POST维护403需补查当前 Ticket READ：200仅收口本用途；READ401/403/404才清对应授权范围。临时读取失败保留待核对操作。错误沿现有 W envelope：坏路径／字段／时间400，Origin/CSRF403，If-Match或业务版本冲突409，body超限413，未认证401、内部身份失效403、对象不可见404。新入口关闭503 P2_016_DISABLED，所需 schema未就绪503 P2_016_FOLLOW_UP_UNAVAILABLE；网络、临时503或畸形成功响应不能单独转为终态FAILED。
 
-真实RED后新增 [049前向SQL](../../../database/migrations/049_workbench_follow_up_schedules.sql) 与[显式迁移器](../../../scripts/workbench-follow-up-schedules-migrate.mts)，当前尚未执行。源码在唯一 Ticket Core 下保存从属的当前安排与追加SET/CANCEL修订，关联原 Ticket／Event；不复制 status、assignee、resolver team 或 communication owner。PK/FK绑定原Ticket、同Ticket Event和当前修订，时间／epoch精确秒配对，稳定due索引；原事件CHECK按原目录表达式扩展保留既有词汇。迁移只接受apply/check、pool1和原031前置；固定基线及所有旧SQL不变。SET/CANCEL 的安排、Ticket version+1、追加 `ticket.follow_up_scheduled`／`ticket.follow_up_cancelled`、ledger终态及必要安全实时失效在同一事务；失败全部回滚。它们不改变 Ticket 状态、责任、Intake、轮次或外部 Outbox/Delivery，不写自由正文。初版readiness只核049checksum和两关系存在；catalog完整漂移、并发、回滚、默认off旧profile和终态fence仍需后继真实验证。
+## 数据库与生命周期
 
-处理／沟通转派、撤派和停止退回保留时间及安排修订；新责任由现有事实读取。实际 CLOSED/CANCELLED 的原 Ticket Action／工作人员完工事务产生权威终态 Event，使该活动安排同时结束；安排历史以该真实 Event 留下 ENDED 依据，不创建额外轮次或独立状态机。安排是否仍活动必须同时满足原 SET Event ordinal 之后没有真实关闭／取消／重开终结 fence，并核对当前 Ticket 状态／轮次；不能只读新增表中的旧时间或一个 enabled 位。无论切换开关，读取与 Worker 都不得复活该旧时间；关闭新入口期间的真实关闭或取消仍以原 Ticket Event 为终结事实。重开原 Ticket 后没有活动安排，须新的明确 SET。后续必须运行 disable→close/cancel→reenable、真实重开与新 SET 的验证，当前未实现；不为此增加常驻 hook／新配置所有权。关闭后旧 due 扫描不得产生有效新活动提示；关闭／改期与扫描竞争须在原 Ticket／安排锁和版本中收敛。
+[049](../../../database/migrations/049_workbench_follow_up_schedules.sql)和[迁移器](../../../scripts/workbench-follow-up-schedules-migrate.mts)保存原 Ticket 下的当前安排与追加SET/CANCEL修订，关联同一 Ticket/Event，不复制状态或责任。时间与epoch配对，PK/FK约束关联和修订，due索引稳定。迁移要求原031，check/apply显式调用，pool1且finally关闭；旧SQL字节保留。
 
-复用单一 Worker extension 的批处理 seam；每次最多20个、串行、稳定 `(due_epoch_ms,ticket_id)` 顺序及索引，不建 per-Ticket timer。到期信号以 `(ticket_id,schedule_version)` 唯一持久防重，与 signal marker 和内部 realtime 同事务；失败可恢复，重复批次／重启不重复发布该修订。信号只触发当前获权查询失效，不包含内部人物或时间正文，不创建外部通知；一次信号不清 is_due，未明确取消／改期前持续待办。默认关闭不扫描新增安排存储、不开新进程／连接池，既有投影和发送行为保持。
+SET/CANCEL 在原 ledger 事务内执行 Ticket version+1、同状态 ticket.follow_up_scheduled/ticket.follow_up_cancelled Event、049修订／当前值和内部实时失效；失败回滚业务保存点，原协议可保留终态FAILED收据。它们不改变状态、责任、Intake、轮次或外部 Delivery，不写自由正文。当前049 readiness核原checksum、两表及两个时间配对CHECK的存在、validated/enforced状态；本次删除／恢复真实约束已验证，不宣称完整表达式或catalog等价性检查。
 
-资源仍单 App/API/SSE、单 Worker、Gateway 单活、SSE≤32、批次≤20、pool≤4／全机预算≤8及各concurrency1。关闭 write/view 和新增 due batch 保留所有事实历史及旧 ACK；源码采用前向修补／revert，不删除历史 SQL／事实。本地隔离验证不授权真实外部发送、OAuth／Provider、用户数据库、部署、full／certify 或 Gate。
+转派、沟通责任交接及撤派保留原时间／修订，责任仍从原事实读取。活动状态由当前 Ticket 状态和原SET之后的关闭／取消／重开Event派生；终态不物理删除历史或额外增加用户修订。显式CANCEL才清当前指针／时间并追加取消修订。write关闭期间发生的真实关闭／取消仍结束活动；重新开启或重开不会复活旧安排，须新明确SET。T09停止退回组合留T43验证。
 
+## 到期 Worker、资源和关闭
 
-## 内部到期批处理调用合同（053 SOURCE，待运行验证）
+P2016EnabledRuntime.runFollowUpDueBatch({limit}) 为内部系统 Port，无公开HTTP批处理写入口。limit缺省20，仅接受1..20安全整数；返回 {scanned,emitted,skipped}，逐项非负且不超过limit。同实例忙或关闭返回全0，无BUSY字段。
 
-P2016EnabledRuntime.runFollowUpDueBatch({limit}) 是本票内部真实系统 Port；limit 缺省20，其他值只接受1..20安全整数，闭合返回 {scanned,emitted,skipped}，逐项均为非负安全整数且不超过limit。由既有单Worker extension调用，不开放HTTP写动作。首次公开Port tracer先经真实Core/SET/GET建立已到期安排，再断言实际Port及授权持久replay；不存在实现时记录真实缺口，不以自建成功计数器替代。
+批次按 (due_epoch_ms,ticket_id) 稳定选取，逐项串行、每项独立事务，锁序stream→Ticket→当前安排。重核当前修订、活动状态和到期时间；关闭／改期先提交则跳过旧候选，Worker先提交则保留一次历史提示，由消费者重读当前事实。后项失败不撤销前项。
 
-稳定信号复用 ticket.updated / SYSTEM / TICKET，payload仅 {ticket_id,follow_up_schedule_version,reason:FOLLOW_UP_DUE}；其业务含义为获权查询失效和重读。发布不增加Ticket version/Event、不改变安排修订或责任、不创建Delivery。安排修订防重由本票获分配的053前向marker保持；旧049不改。原777ca11e候选已在真实已到期安排之后取得缺失Port的原生RED；当前SOURCE新增053、真实有界批次和单Worker调用，尚待本源码候选验证。关闭时在任何049/053访问前返回；RESOLVED沿既有active规则保留。锁顺序为stream→Ticket→当前安排，同事务提交marker和replay事件；改期/关闭先提交时旧候选不发布，Worker先提交时保留一次历史提示，消费端必须重读当前事实。
+[053 marker](../../../database/migrations/053_workbench_follow_up_due_signals.sql)以 (ticket_id,schedule_version) 持久去重，与内部realtime同事务提交；重复批次、并发runtime或重启不重复该修订。marker不因7天realtime保留期清理而失效。[053迁移器](../../../scripts/workbench-follow-up-due-migrate.mts)要求049并核原checksum、列、PK/FK及正版本约束。启用时runtime readiness同时要求049和053；普通view/POST依赖049。due故障记录既有projection failure，继续其他Worker任务后重新抛错，不伪装成功。
+
+提示仅 ticket.updated / SYSTEM / TICKET，payload为 {ticket_id,follow_up_schedule_version,reason:FOLLOW_UP_DUE}，不含时间、人员或正文。当前Ticket READ决定可见性，Session CONTROL不扩权，SSE沿既有256授权ID总预算。发布不推进Ticket version/Event、安排修订、责任或Delivery；一次提示不清is_due。
+
+复用单App/API/SSE、单Worker和宿主连接池；Gateway单活、SSE≤32、批次≤20、pool≤4／全机建议≤8。不新建进程、连接池或每Ticket定时器，两个显式迁移器各max1并关闭。关闭新view/write/due后，due在049/053访问前返回，保留历史、marker、receipt及仍获当前READ的旧ACK；不自动down迁移或删数据。前向修补／revert保持这些边界，不授权外部服务／真实发送、部署、full/certify或Gate推进。

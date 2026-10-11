@@ -207,13 +207,13 @@
 
 ## 明确拒绝与设计路径
 
-WBINT-T37以下三条在真实原POST404后仅**SOURCE挂载／后继NOT_RUN**，原七项仍进行中；详见[共享跟进时间](workbench/follow-up-schedules.md)。
+WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，旧ACK独立核当前Ticket READ。历史RED及各被测对象见[共享跟进时间](workbench/follow-up-schedules.md)与本票执行记录。
 
 | METHOD | PATH | 状态 | 合同 |
 | --- | --- | --- | --- |
-| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，SOURCE挂载待验证：当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
-| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，SOURCE挂载待验证：显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
-| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，SOURCE挂载待验证：当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出与恢复) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
+| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出与恢复) |
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
