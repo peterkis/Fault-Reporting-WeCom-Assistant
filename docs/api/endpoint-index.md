@@ -53,7 +53,7 @@
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
 | T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
 | T05 | GET | `/api/tickets/{ticketId}/responsibility` | W | 已实现：双责任 | [工单](workbench/tickets.md) |
-| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知 | [工单](workbench/tickets.md) |
+| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知；T24 Bot轮次字段／区域默认关闭 | [工单](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24) |
 | T07 | GET | `/api/tickets/{ticketId}/eligible-principals` | W | 已实现：处理人候选 | [工单](workbench/tickets.md) |
 | T08 | GET | `/api/tickets/{ticketId}/reporter-contact` | W | 已实现：内部授权联系资料 | [工单](workbench/tickets.md) |
 | T09 | POST | `/api/tickets/{ticketId}/queue` | W | 已实现：入队 | [工单](workbench/tickets.md) |
