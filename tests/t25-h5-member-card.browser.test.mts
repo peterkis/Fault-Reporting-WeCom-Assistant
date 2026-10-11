@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
-import {t25WebOrigin,t25Object,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
+import {t25WebOrigin,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -35,7 +35,7 @@ test('the actual H5 App card opens the original safe report through independent 
     assert.equal(path,'/cgi-bin/message/send');sends++;const body=t25Object(JSON.parse(init.body)),action=t25Object(t25Object(body.template_card).card_action);assert.ok(typeof action.url==='string');cardUrl=action.url;return new Response('{"errcode":0,"msgid":"T25_H5_BROWSER_SYNTHETIC_ACK"}');
    };
    const sender=createP2016WeComSender({gateway:{getAuthenticatedClient:()=>{throw Error('NO_BOT_SDK');}},enabled:true,cardEnabled:true,reporterAccess:context.runtime.reporterAccess,origin:fixture.origin,allowedHosts:[new URL(fixture.origin).host],linkMode:'MEMBER_REQUIRED',appRoundNotifications:{pool:context.pool,notifications:source.appNotifications,agentId:Number(entryConfig.agentId),accessTokenProvider:async()=> 'T25_H5_BROWSER_SYNTHETIC_TOKEN',fetchImpl}});
-   await createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender}).runOnce();assert.equal(sends,1,JSON.stringify(await t25Deliveries(source.http,source.ticketId)));assert.ok(cardUrl);const url=new URL(cardUrl);assert.equal(url.origin,fixture.origin);assert.equal(url.pathname,'/wecom/yixiaoxiu/reports/'+source.requestRef);
+   const delivery=await createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender}).runOnce();console.log('T25_H5_CARD_TRACE '+JSON.stringify({sends,delivery}));assert.equal(sends,1,JSON.stringify(delivery));assert.ok(cardUrl);const url=new URL(cardUrl);assert.equal(url.origin,fixture.origin);assert.equal(url.pathname,'/wecom/yixiaoxiu/reports/'+source.requestRef);
    fixture.setMember('T25_H5_BROWSER_OPEN_A');tab=await fixture.launch({path:'/synthetic-start',width:600,height:900});assert.ok(tab);await tab.evaluate("location.assign('/wecom/yixiaoxiu/')",{awaitPromise:false});await tab.waitFor("document.querySelector('#home-view')?.hidden===false");
    const bootstrap=await tab.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(async response=>({status:response.status,body:await response.json()}))") as {status:number;body:Record<string,unknown>};assert.equal(bootstrap.status,200);assert.equal(bootstrap.body.read_only,true);assert.equal(bootstrap.body.can_submit,false);
    await tab.evaluate('location.assign('+JSON.stringify(url.pathname)+')',{awaitPromise:false});await tab.waitFor("document.querySelector('#detail-view')?.hidden===false&&document.querySelector('#detail-status')?.textContent.includes('处理')");assert.equal(await tab.evaluate("document.querySelector('#detail-source').textContent.startsWith('网页报修')"),true);assert.equal(await tab.evaluate("document.querySelector('#detail-description').textContent.includes('T25_PRIVATE_REPORT')"),true);assert.equal(await tab.evaluate("document.querySelector('#supplement-form').hidden"),true);
