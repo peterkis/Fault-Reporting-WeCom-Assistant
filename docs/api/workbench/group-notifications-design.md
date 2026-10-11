@@ -1,6 +1,6 @@
 # WBINT-T26：原群消息推送与 Bot 私聊合同
 
-状态：**SOURCE_ONLY / FROZEN_CONTRACT / NOT_RUN**。这是 [#81](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81) 的实施合同，不宣称新适配器已实现、REST 已挂载或原生强 @ 已验证。原 [T24](../../../plans/admin-workbench-integration/execution/t24.md) 只完成原始单聊 Bot 轮次通知。依据 [ADR-0023](../../../adr/0023_origin_based_notification_routing.md)、[ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)、[ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md)；本票原七项与未完成证据见 [执行页](../../../plans/admin-workbench-integration/execution/t26.md)。
+状态：**LOCAL_IMPLEMENTED / SYNTHETIC_VALIDATION / REAL_DELIVERY_NOT_RUN**。这是 [#81](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81) 的实施合同，群适配器已接入现有Sender factory；本票不增加REST。原生强 @ 与真实送达尚未验证。原 [T24](../../../plans/admin-workbench-integration/execution/t24.md) 只完成原始单聊 Bot 轮次通知。依据 [ADR-0023](../../../adr/0023_origin_based_notification_routing.md)、[ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)、[ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md)；本票原七项与实际运行/失败保全见 [执行页](../../../plans/admin-workbench-integration/execution/t26.md)。
 
 ## Consumer 输入、输出与来源
 
@@ -23,7 +23,7 @@
 
 现有 `personDestinationAuthorizer` 独立检查私聊资格；不以某一路拒绝改变另一条可信目的地，不转投别的 Bot、任意群或应用。失效/未证明的源不造猜测 Delivery；UI 不把缺路或一条 SENT 解释为全部完成。
 
-`WeComMessagePushAdapter.send` 复用现有 Communication Sender 请求/结果。候选实现名称 `createWorkbenchGroupNotificationSender` 目前**不存在**；不得称已挂载。它应沿 delivery_id/idempotency_key 重查真实 SENDING Delivery、exact 031/轮次/event 链、原 group/Reporter、不可变 content 和 retention，再使用服务器保存的精确 `(bot_id,group_id)` 配置。无需第二 Worker、receipt或目标登记事实源。既有 `createP2016GroupClosureWebhookSender` 仅处理旧 TICKET_CLOSED 模板，不满足新首次责任/双路合同，不能直接宣称通用 T26 adapter。
+`WeComMessagePushAdapter.send` 复用现有 Communication Sender 请求/结果。现有 `createWorkbenchGroupNotificationSender` 已由P2016 Sender/runtime可选配置接线，默认关闭。它沿 delivery_id/idempotency_key 重查真实 SENDING Delivery、exact 031/轮次/event 链、原 group/Reporter、不可变 content 和 retention，在异步资格/beforeSend等待后重新核验真实SENDING链与原源，再使用服务器保存的精确 `(bot_id,group_id)` 配置。显式resolveMentionUserId提供经核验的消息推送命名空间ID；默认null，不猜Bot userid跨命名空间等价。无需第二 Worker、receipt或目标登记事实源。既有 `createP2016GroupClosureWebhookSender` 仅处理旧 TICKET_CLOSED 模板，不满足新首次责任/双路合同，不能直接宣称通用 T26 adapter。
 
 群内容闭合为 `transport=WECOM_MESSAGE_PUSH,node,suffix,status,occurred_at`：suffix严格4位数字；首次责任只接受权威 QUEUED/ACCEPTED，完工只接受 CLOSED；time为Asia/Shanghai无offset时间。固定渲染分别是“工单尾号 {suffix} 已有人员处理。”及“工单尾号 {suffix} 处理完成。”；无患者信息、报修原文、内部过程、任意自由摘要、原身份或公开链接。真正提及所需 Reporter ID 来自发送时精确源校验，不能写进群正文或由普通文本 `@姓名` 代替；禁止 @all。实际官方请求/响应、精确群配置与发送资格需在适配器实施时核对官方资料和现有能力证据，合成验证只证明结构和状态处理。原生强 @、客户端可见和真实 Bot 私聊送达另行授权验证。
 
@@ -45,7 +45,9 @@ T22获权精确Message列表可关联实际人工消息；本票不扩大会话�
 
 ## 数据库、资源和关闭
 
-本SOURCE阶段**无数据库变更或SQL执行**。父已为后续前向迁移预留052（RESERVED_CONTRACT_ONLY_NOT_WRITTEN_NOT_APPLIED）：041当前CHECK只允许PERSON，应允许GROUP并保留已有node/唯一键、exact 031/cycle/Event guard、append-only和FK。本SOURCE只记预留，不写052文件、不执行SQL；实际首个RED后另获最小实现授权。不改041或任何历史SQL字节。复用原表，不另建Ticket、Delivery、owner、receipt或永久checkpoint；不回填不存在的历史数据。
+新增052_ticket_group_round_notifications前向迁移，隔离合成库实际应用：仅扩展041 destination CHECK至GROUP/PERSON，保留原node/唯一键/FK/append-only guard。041及历史SQL字节不变。现有migrateTicketRoundNotifications apply同caller Tx校验并应用041/052，包括已装041升级；check不写库、返回的041标识不证明052已装，运行时完整schemaReady独立验052。没有用户库迁移。
+
+复用原表，不另建Ticket、Delivery、owner、receipt或永久checkpoint；不回填不存在的历史数据。
 
 复用 `ticketRoundNotificationsEnabled=false` 的默认关闭能力；此合同不引入或开启新持久Flag。false不扫描/读取新增结构，保留既有profiles；未来新增适配配置也默认不可外发。group发送还受现有senderEnabled、externalSend、精确发送批准及范围校验约束；合成Sender显式隔离，不连接Provider/OAuth/WeCom。关闭通知能力停止生成新节点；关闭发送并停止现有Worker消费保留全部Ticket/Event/cycle/Outbox/Delivery/Attempt，不删成功、失败、UNKNOWN或历史证据。
 
