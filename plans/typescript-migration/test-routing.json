@@ -4,6 +4,9 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t37-follow-up-recovery-boundaries.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t37-follow-up-recovery-competition.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t37-follow-up-post-refusal.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-due-fault-isolation-rollback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-follow-up-recovery-first.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-due-worker.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -466,6 +469,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "wbint-t37-recovery-boundaries": ["tests/t37-follow-up-recovery-boundaries.browser.test.mts","tests/t37-follow-up-recovery-competition.browser.test.mts","tests/t37-follow-up-post-refusal.browser.test.mts"],
     "wbint-t37-due-faults": ["tests/t37-due-fault-isolation-rollback.integration.test.mts"],
     "wbint-t37-recovery-first": ["tests/t37-follow-up-recovery-first.browser.test.mts"],
     "wbint-t37-due-worker": ["tests/t37-due-worker.integration.test.mts"],
@@ -492,6 +496,9 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/t37-follow-up-recovery-boundaries.browser.test.mts",
+      "tests/t37-follow-up-recovery-competition.browser.test.mts",
+      "tests/t37-follow-up-post-refusal.browser.test.mts",
       "tests/t37-due-fault-isolation-rollback.integration.test.mts",
       "tests/t37-follow-up-recovery-first.browser.test.mts",
       "tests/t37-due-worker.integration.test.mts","tests/t37-terminal-toggle-reopen.integration.test.mts","tests/t37-transfer-due-maintenance.integration.test.mts","tests/t37-shared-follow-up-drawer.browser.test.mts","tests/t37-communicator-authority.integration.test.mts","tests/t37-follow-up-schedule.integration.test.mts",
