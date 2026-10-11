@@ -14,6 +14,8 @@ import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
 import {createP2016ReporterAccess} from '../../src/p2-016-reporter-access.mjs';
 import {createP2016TicketNotificationProjector} from '../../src/p2-016-ticket-notification-projector.mjs';
 import {textHashP2016,transactionP2016} from '../../src/p2-016-domain-contracts.mjs';
+import {createContactJourneyStore,reporterIdentityHash} from '../../src/p2-015-contact-journey.mjs';
+import {shanghaiLocalToEpochMs} from '../../src/platform/time-contract.mjs';
 import {createYxxProfile} from '../../src/p2-g2-yixiaoxiu-profile.mjs';
 import type {SelfServiceProfileOptions} from '../../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../../src/p2-g2-wecom-web-oauth.mjs';
@@ -49,20 +51,27 @@ export type T21DraftFixture=Parameters<Parameters<typeof withT21DraftFixture>[0]
 // No nested owned databases or parallel App; the original T11 fixture owns PG.
 export async function withT21DraftFixture(run:(fixture:{context:T11Fixture;ticketId:string;publicRef:string;path:string;
  completed:Awaited<ReturnType<Awaited<ReturnType<typeof t11Http>>['detail']>>;
- access:ReturnType<typeof createP2016ReporterAccess>;legacySession:string;
+ access:ReturnType<typeof createP2016ReporterAccess>;legacySession:string;associatedJourneyId:string|null;
  replaceMember(options?:Parameters<typeof t21OpenMember>[1]):Promise<ReturnType<typeof t21OpenMember> extends Promise<infer A>?A:never>;
  closeMember():Promise<void>;
  verifyStaff<T>(read:(staff:Awaited<ReturnType<typeof t11Http>>)=>Promise<T>):Promise<T>;
-})=>Promise<void>){
+})=>Promise<void>,{associatedJourney=false}:{associatedJourney?:boolean}={}){
  await withT11Fixture(async context=>{
   const intake=await seedPersistedIntake({pool:context.pool,text:'合成门诊打印故障。',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
   const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t21-draft-bot'});
-  assert.ok(created.ticket);const ticketId=created.ticket.id,staff=await t11Http(context),active=await staff.start(ticketId);
+  assert.ok(created.ticket);const ticketId=created.ticket.id,staff=await t11Http(context,0,{closeConnections:true}),active=await staff.start(ticketId);
   assert.equal((await staff.post(ticketId,'complete',staff.command(active))).status,200);
   const completed=await staff.detail(ticketId);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+  const journey=associatedJourney?await transactionP2016(context.pool,transaction=>createContactJourneyStore().ensureJourney({transaction,input:{
+   entry_mode:'DIRECT_ORGANIC',origin_intake_id:intake.intakeId,linked_ticket_id:ticketId,
+   reporter_identity_hash:reporterIdentityHash({provider:'WECOM_AIBOT',bot_id:'bot-test',reporter_external_id:'user-test',hmac_key:secret}),
+   profile_resolution_status:'NOT_REQUIRED',evaluation_due_at:intake.receivedAt,evaluation_due_epoch_ms:shanghaiLocalToEpochMs(intake.receivedAt),
+   reported_at:intake.receivedAt,last_activity_at:intake.receivedAt,privacy_class:'INTERNAL',
+   retention_until:intake.retentionUntil,retention_until_epoch_ms:shanghaiLocalToEpochMs(intake.retentionUntil),
+  }})):null;
   const access=createP2016ReporterAccess({pool:context.pool,enabled:true,hmacSecret:secret});
   const original=await transactionP2016(context.pool,transaction=>access.ensurePublicRefInTransaction({transaction,ticketId,
-   reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test']))}));
+   reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test'])),journeyId:journey?.id??null}));
   // Existing Notification/Outbox/Delivery/Grant Ports, genuine CLOSED event.
   // No fake Grant rows, fake event or Sender/SDK. This is only a legacy grant
   // prerequisite; it is NOT proof of T24 routing or delivery to the user.
@@ -87,11 +96,11 @@ export async function withT21DraftFixture(run:(fixture:{context:T11Fixture;ticke
     listenPort:Number(new URL(context.origin).port),principalIds:[context.principals[0]?.id??''],externalSendEnabled:false,
     ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true});
    if('disabled' in runtime)throw Error('T21_DRAFT_STAFF_DISABLED');
-   try{const started=await runtime.start();assert.ok(started.cookies);return await read(await t11Http({...context,runtime,cookies:started.cookies.map(c=>c.name+'='+c.value)}));}
+   try{const started=await runtime.start();assert.ok(started.cookies);return await read(await t11Http({...context,runtime,cookies:started.cookies.map(c=>c.name+'='+c.value)},0,{closeConnections:true}));}
    finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   };
   try{await run({context,ticketId,publicRef:original.public_ref,path:'/api/reporter/tickets/'+original.public_ref,
-   completed,access,legacySession:legacy.sessionToken,replaceMember,closeMember,verifyStaff});}
+   completed,access,legacySession:legacy.sessionToken,associatedJourneyId:journey?.id??null,replaceMember,closeMember,verifyStaff});}
   finally{await closeMember();}
  });
 }

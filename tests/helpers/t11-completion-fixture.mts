@@ -31,11 +31,12 @@ export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{co
     finally{await runtime.stop();if(runtime.server.listening)throw Error('T11_HTTP_RESIDUAL');}
   },{ticketSelfHandlingEnabled:true});
 }
-export async function t11Http(context:T11Fixture,index=0){
+export async function t11Http(context:T11Fixture,index=0,{closeConnections=false}:{closeConnections?:boolean}={}){
   const cookie=context.cookies[index];if(!cookie)throw Error('T11_AUTH_REQUIRED');
-  const get=async(path:string)=>fetch(context.origin+path,{headers:{cookie}});
+  const transport:Record<string,string>=closeConnections?{connection:'close'}:{};
+  const get=async(path:string)=>fetch(context.origin+path,{headers:{cookie,...transport}});
   const bootstrap=await (await get('/api/lifecycle/bootstrap')).json() as {csrf_token:string};
-  const post=async(id:string,action:string,body:{client_command_id:string;expected_version:unknown}&Record<string,unknown>,headers:Record<string,string>={})=>fetch(context.origin+'/api/tickets/'+id+'/'+action,{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"'+body.expected_version+'"','x-csrf-token':bootstrap.csrf_token,...headers},body:JSON.stringify(body)});
+  const post=async(id:string,action:string,body:{client_command_id:string;expected_version:unknown}&Record<string,unknown>,headers:Record<string,string>={})=>fetch(context.origin+'/api/tickets/'+id+'/'+action,{method:'POST',headers:{cookie,...transport,origin:context.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"'+body.expected_version+'"','x-csrf-token':bootstrap.csrf_token,...headers},body:JSON.stringify(body)});
   const detail=async(id:string)=>(await (await get('/api/tickets/'+id)).json()) as P2016TicketDetail;
   const start=async(id:string)=>{const current=await detail(id);const response=await post(id,'take-and-start',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'T11_START',resolver_team_id:current.resolver_team_id});if(response.status!==200)throw Error('T11_START_FAILED:'+response.status);return detail(id);};
   const command=(current:P2016TicketDetail)=>{if(!current.handling_cycle)throw Error('T11_CYCLE_REQUIRED');return {client_command_id:randomUUID(),expected_version:current.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:current.handling_cycle.id,internal_process:'INTERNAL_T11_CANARY：排查并重启合成设备。',external_summary:'打印服务已恢复，请重新尝试。',external_summary_confirmed:true as const};};

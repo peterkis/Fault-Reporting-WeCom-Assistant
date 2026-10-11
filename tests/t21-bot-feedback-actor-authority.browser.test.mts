@@ -133,3 +133,87 @@ test('logout from another own Bot Ticket clears all same-actor sensitive copies 
   assert.deepEqual((await copies(browser,actor)).drafts,[]);assert.equal(rows(await browser.evaluate('globalThis.__t21Attempts')).length,0);assert.equal(rows(await peer.evaluate('globalThis.__t21Attempts')).length,0);assert.equal(serverWire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback')).length,0);
  });
 });
+
+// Additional registered delayed-scope logout tracer; external first draft is retained.
+// Append after the original two cases in the CURRENT
+// tests/t21-bot-feedback-actor-authority.browser.test.mts. Reuse its existing
+// imports/withTracer/current independent Bot raw flag; this is not standalone.
+// Original two cases and their roles remain byte-for-byte untouched.
+
+// Preserve a transport cause from fixture setup too, where current withTracer
+// has not yet created its browser directory. Never retry or replace the failure.
+function t21SlowScopeFailure(value:unknown,depth=0):unknown{
+ if(depth>=4)return {truncated:true};
+ if(!(value instanceof Error))return value===null?null:String(value);
+ const code='code' in value&&typeof value.code==='string'?value.code:null;
+ return {name:value.name,message:value.message,code,stack:value.stack,
+  ...('cause' in value&&value.cause!==undefined?{cause:t21SlowScopeFailure(value.cause,depth+1)}:{}),
+  ...(value instanceof AggregateError?{errors:value.errors.map(item=>t21SlowScopeFailure(item,depth+1))}:{})};
+}
+
+// Hold only the first real recovery Response before the production caller can
+// consume its body. Native fetch has already returned the authentic server
+// status/body; no success payload, authority or invalidation is manufactured.
+// A 10s external timer fails the hold rather than silently releasing authority.
+const t21HoldFirstRecoveryResponse=`(()=>{const send=fetch;let first=true,timer=null,release=null;
+ globalThis.__t21SlowRecovery={held:false,released:false,delivered:false,timedOut:false,realStatus:null,timers:0};globalThis.__t21SlowTransportErrors=[];
+ globalThis.fetch=async(input,init)=>{const path=new URL(typeof input==='string'?input:input.url,location.origin).pathname,method=init?.method??'GET';let response;
+  try{response=await send(input,init);}catch(error){globalThis.__t21SlowTransportErrors.push({path,method,name:error?.name??'Error',message:error?.message??String(error)});throw error;}
+  if(first&&method==='GET'&&path==='/api/reporter/feedback/recovery'){
+   first=false;const facts=globalThis.__t21SlowRecovery;facts.held=true;facts.realStatus=response.status;
+   await new Promise((resolve,reject)=>{release=()=>{if(timer!==null)clearTimeout(timer);timer=null;facts.timers=0;facts.released=true;release=null;resolve();};
+    timer=setTimeout(()=>{timer=null;facts.timers=0;facts.timedOut=true;release=null;reject(new Error('T21_SLOW_SCOPE_EXTERNAL_HOLD_DEADLINE'));},10000);facts.timers=1;});
+   facts.delivered=true;
+  }return response;
+ };
+ globalThis.__t21ReleaseSlowRecovery=()=>release?.();
+ globalThis.__t21CloseSlowRecovery=()=>{release?.();if(timer!==null)clearTimeout(timer);timer=null;globalThis.__t21SlowRecovery.timers=0;globalThis.fetch=send;};
+})()`;
+
+test('logout before a newly opened other Bot Ticket first recovery response arrives clears the hidden actor copy and preserves its original opaque UUID',async()=>{
+ assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
+ const setupDirectory=join(tmpdir(),'t21-slow-scope-setup-'+randomUUID());await mkdir(setupDirectory);
+ try{
+  await withTracer(true,async({original,second,fixture,browser,peers,directory,serverWire,page})=>{
+   assert.ok(second);const actor=await principal(browser),id=await begin(browser,original),before=await copies(browser,actor);
+   assert.equal(before.drafts.length,1);assert.equal(before.drafts[0]?.id,original.ref);assert.equal(before.drafts[0]?.keyExtractable,false);assert.equal(before.operations.length,1);assert.equal(before.operations[0]?.commandId,id);
+   assert.equal(serverWire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback')).length,0,'the original UNKNOWN command never reached the server');
+   let peer:Peer|undefined,boundaryError:unknown;
+   try{
+    peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport+'\n'+t21HoldFirstRecoveryResponse});
+    await peer.command('Page.navigate',{url:page(second)});await peer.command('Page.bringToFront');
+    await peer.waitFor("globalThis.__t21SlowRecovery?.held===true&&document.querySelector('#ticket')?.hidden===false&&document.readyState==='complete'");
+    await browser.waitFor('document.hidden===true');
+    const held=object(await peer.evaluate('globalThis.__t21SlowRecovery'));assert.equal(held.realStatus,200);assert.equal(held.delivered,false);assert.equal(held.released,false);assert.equal(held.timedOut,false);assert.equal(held.timers,1);
+    assert.equal(rows(await peer.evaluate('globalThis.__t21Attempts')).length,0,'the new other Ticket has made no feedback intent');
+    assert.deepEqual(await copies(peer,actor),before,'the new other Ticket has not opened or written an actor journal while its first scope response is held');
+    // Observe only the genuine logout auth broadcast. The initial page-entry
+    // broadcast has already finished and is not counted as logout evidence.
+    await browser.evaluate("(()=>{globalThis.__t21SlowAuthEvents=0;const auth=new BroadcastChannel('yixiaoxiu-auth');auth.onmessage=()=>globalThis.__t21SlowAuthEvents++;globalThis.__t21CloseSlowAuth=()=>auth.close();})()");
+    await peer.evaluate("document.querySelector('#logout').click()");
+    await peer.waitFor("document.querySelector('#status')?.textContent.includes('已退出访问')");
+    await browser.waitFor('document.hidden===true&&globalThis.__t21SlowAuthEvents>0');
+    const logout=serverWire.find(row=>row.method==='POST'&&row.path==='/api/reporter/logout'&&row.status===200);assert.ok(logout,'the actual server confirmed logout before the held recovery response was released');
+    const deniedDetail=await read(browser,original.path),deniedReceipt=await read(browser,original.path+'/feedback/commands/'+id);
+    assert.equal(deniedDetail.status,401);assert.equal(deniedReceipt.status,401,'the hidden old page has no current READ authority');
+    const stillHeld=object(await peer.evaluate('globalThis.__t21SlowRecovery')),after=await copies(peer,actor);
+    assert.equal(stillHeld.delivered,false);assert.equal(stillHeld.released,false);assert.equal(stillHeld.timedOut,false);
+    await writeFile(join(directory,'slow-first-scope-before-cleanup-assert.json'),JSON.stringify({actor,originalUuid:id,originalRef:original.ref,otherRef:second.ref,before,after,held:stillHeld,logout,deniedDetail,deniedReceipt,hiddenView:await browser.evaluate(view),logoutView:await peer.evaluate(view),serverWire}));
+    assert.deepEqual(after.drafts,[],'known actor logout must clear its hidden original Bot ciphertext/key copy even when the initiating other page has not received its first recovery scope');
+    assert.equal(after.operations.length,1);assert.equal(after.operations[0]?.id,original.ref);assert.equal(after.operations[0]?.commandId,id,'an unresolved original opaque UUID survives actor cleanup');
+    assert.deepEqual(await copies(browser,actor),after);assert.equal(serverWire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback')).length,0);
+   }catch(error){boundaryError=error;}
+   finally{
+    // Release the authentic held Response after the asserted boundary, including
+    // on RED. Production generation/abort guards must discard this old result.
+    await closeBrowserTestResources([
+     async()=>{if(peer){await peer.evaluate('globalThis.__t21ReleaseSlowRecovery?.()');await peer.waitFor('globalThis.__t21SlowRecovery===undefined||globalThis.__t21SlowRecovery.timers===0&&(!globalThis.__t21SlowRecovery.held||globalThis.__t21SlowRecovery.delivered||globalThis.__t21SlowRecovery.timedOut)');await peer.evaluate('globalThis.__t21CloseSlowRecovery?.()');await writeFile(join(directory,'slow-scope-terminal-transport.json'),JSON.stringify(await peer.evaluate('({scope:globalThis.__t21SlowRecovery??null,errors:globalThis.__t21SlowTransportErrors??[],view:'+view+'})')));}},
+     async()=>{await browser.evaluate('globalThis.__t21CloseSlowAuth?.()');},
+    ],boundaryError);
+   }
+  });
+ }catch(error){
+  await writeFile(join(setupDirectory,'original-failure-and-transport-cause.json'),JSON.stringify(t21SlowScopeFailure(error)));
+  console.error('T21_SLOW_SCOPE_FAILURE_POINTER '+setupDirectory);throw error;
+ }
+});
