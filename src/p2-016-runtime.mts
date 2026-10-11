@@ -125,7 +125,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   let attachments:ReturnType<typeof createWorkbenchAttachments>|null=null;
   let runFollowUpDueBatch:ReturnType<typeof createWorkbenchFollowUpSchedules>['runDueBatch']|undefined;
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
-  const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
+  const runtime:ReturnType<typeof createP2G1Runtime>=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
     authentication:workbenchAuthentication,externalSendEnabled,reporterPrivateReplies:workbenchConversationsEnabled,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
@@ -205,7 +205,20 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
           ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
         staticHandler:async(pathname,response)=>(await web01Static(pathname,response))||(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
-        runOnce:async()=>{await followUpSchedules.runDueBatch();await roundNotifications.runOnce();if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await (realtimeProjector as RealtimeProjector).runOnce();await incidentExtension?.runOnce?.();},
+        runOnce:async()=>{
+          let dueFailed=false,dueError:unknown;
+          try{await followUpSchedules.runDueBatch();}
+          catch(error){
+            dueFailed=true;dueError=error;
+            // Existing projection metrics/readiness retain the failure; later work keeps its turn.
+            runtime.observability.recordProjection({failures:1});
+          }
+          await roundNotifications.runOnce();
+          if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});
+          await (realtimeProjector as RealtimeProjector).runOnce();
+          await incidentExtension?.runOnce?.();
+          if(dueFailed)throw dueError;
+        },
       };
     },
   });
