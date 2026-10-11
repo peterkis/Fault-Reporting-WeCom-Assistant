@@ -17,7 +17,7 @@
 
 输入保留原 WEB_REQUEST 或 VERIFIED_MANUAL_REPORT 的 scope/corp/app/mapping proof；MANUAL binding_proof_ref 独立核对。历史 ADMISSION 不授予未来发送权。当前受控 Resolver 要求原 authority、ACTIVE/VERIFIED/REACHABLE，不换人/应用；原 source/journey/leg、未撤销依据及物理 retention 必须有效。T17 HAND_ENTERED 保持人工联系且不要求可选045；每轮/node/原 Reporter/binding 意图稳定，模板升级不重复创建。
 
-Resolver 1秒、闭合结果≤8KiB。SDK 链共享5秒 signal，credential/fetch/body read/cancel 均有 deadline race，响应≤8KiB。token 与 SDK 在事务外；source-before-public-ref 顺序锁定原 source 与 SENDING Delivery/basis，最后 local member qualification 位于全部 DB 等待之后；COMMIT 返回后、实际 send 前再查物理 retention。源码：`src/workbench-app-notification-target.mts:28–99`；`src/workbench-app-notification-sender.mts:20–30,35–109`。
+Resolver 1秒、闭合结果≤8KiB。SDK 链共享5秒 signal，credential/fetch/body read/cancel 均有 deadline race，响应≤8KiB。token 与 SDK 在事务外；source-before-public-ref 顺序锁定原 source 与 SENDING Delivery/basis，所有 source/basis 读取与锁等待完成后，在锁内进行最后 local member qualification；COMMIT 返回后、实际 send 前同步复查 signal 和物理 retention。源码：`src/workbench-app-notification-target.mts:28–99`；`src/workbench-app-notification-sender.mts:20–30,35–109`。
 
 ## 2. HTTP 与安全投影
 
@@ -46,7 +46,7 @@ Resolver 1秒、闭合结果≤8KiB。SDK 链共享5秒 signal，credential/fetc
 
 T25无数据库变更；054仅预留，无SQL文件。旧033/041/045/051/052不改，无第二Core/Outbox/Worker或新HTTP命令。消费批次沿20候选及(cycle_id,node)游标；复用单App/Worker、Communication并发1、Gateway单活、SSE32及池总建议≤8。SDK响应≤8192字节，共享5秒截止；Resolver≤8192字节/1秒。只验证这些有界场景，不声称2C4G现场容量。
 
-关闭app.enabled、轮次消费或原Sender/外发开关停止新意图/发送；保留已有承诺、历史和失败/UNKNOWN，匹配配置下本人历史READ仍可用。移除整个app配置会移除该MANUAL读取装配；停用发送宜保留严格有效的配置而设enabled=false，不反向删除事实或旧SQL。
+app.enabled=false停止新通知入口、消费和发送；关闭轮次消费停止新意图，关闭原Sender/外发开关停止发送；保留已有承诺、历史和失败/UNKNOWN，匹配配置下本人历史READ仍可用。移除整个app配置会移除该MANUAL读取装配；停用发送宜保留严格有效的配置而设enabled=false，不反向删除事实或旧SQL。
 
 官方主站本文/当前命名空间与字段、去重或错误副作用保证仍UNCONFIRMED；既有G0只支持适配器能力边界。实际SDK-only ACK和合成人工核对不代表客户端送达。没有真实Provider/OAuth/WeCom、部署、full/certify或Gate；原失败和逐祖先结果见[T25执行记录](../../../plans/admin-workbench-integration/execution/t25.md)。
 
