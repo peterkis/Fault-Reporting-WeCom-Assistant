@@ -22,13 +22,12 @@ test('current Bot schema readiness is conditional and the default runtime keeps 
  await withT21DraftFixture(async f=>{
   await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_t21_missing' WHERE migration_id='050_bot_reporter_feedback'");
   try{for(const enabled of [false,true]){
-   const oauth=createWeComWebOAuth({...t21OAuthOptions(),publicOrigin:f.context.origin});
-   const runtime=createP2016Runtime({pool:f.context.pool,publicOrigin:f.context.origin,principalIds:[f.context.principals[0]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},externalSendEnabled:false,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:t21Config,identityMapping:await t21Mapping(),reporterHmacSecret:secret,wecomWebOAuth:oauth,botReporterFeedbackEnabled:enabled,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}});
+   const runtime=createP2016Runtime({pool:f.context.pool,publicOrigin:f.context.origin,reporterOrigin:origin,principalIds:[f.context.principals[0]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},externalSendEnabled:false,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:t21Config,identityMapping:await t21Mapping(),reporterHmacSecret:secret,wecomWebOAuth:t21OAuthOptions(),botReporterFeedbackEnabled:enabled,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}});
    if('disabled' in runtime)assert.fail('T21_ENABLED_RUNTIME_REQUIRED');
    try{await runtime.start();const result=await runtime.coordinator.runOnce();if(result.disabled)assert.fail('T21_COORDINATOR_REQUIRED');assert.equal(result.failures,0);
     const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);const checks=t21Object(t21Object(ready.json()).checks);
     if(enabled)assert.equal(checks.bot_reporter_feedback_schema,false);else assert.equal(Object.hasOwn(checks,'bot_reporter_feedback_schema'),false);
-   }finally{await runtime.stop();oauth.close();assert.equal(runtime.server.listening,false);}
+   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   }}finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_bot_reporter_feedback' WHERE migration_id='050_t21_missing'");}
  });
 });
