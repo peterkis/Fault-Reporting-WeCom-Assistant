@@ -98,6 +98,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
     sub_title_text:row.external_summary===null?'处理进度请通过下方本人入口查看。':'本轮处理结果：'+row.external_summary,
     jump_list:[{type:1,title:'查看处理进度',url}],card_action:{type:1,url},task_id:'delivery_'+request.delivery_id.replaceAll('-','')}};
    signal.throwIfAborted();
+   if(BigInt(original.source.retention_epoch)<=BigInt(Date.now()))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
   }catch{return reject('APP_NOTIFICATION_CARD_INVALID');}
   try{
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/message/send');endpoint.searchParams.set('access_token',token);
