@@ -48,6 +48,22 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
     return {principal,kind,id,intakeId,canonical:{kind:item.kind,id:item.id} as CanonicalItem,scope};
   }
   type Authorized=Awaited<ReturnType<typeof authorize>>;
+  async function lockCurrentAuthority(tx:PostgresTransaction,c:Authorized,intakeId:string){
+    // Existing authority/source rows only. Receipt waits must not preserve an earlier grant.
+    await tx.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR SHARE',[c.intakeId]);
+    if(c.kind==='review'){
+      await tx.query(`SELECT j.id FROM intake.contact_journey j JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid FOR SHARE OF j`,[c.id]);
+      await tx.query(`SELECT r.id,d.id FROM intake.manual_review_item r JOIN intake.deterministic_decision d ON d.id=r.decision_id WHERE r.id=$1::uuid FOR SHARE OF r,d`,[c.id]);
+      await tx.query(`SELECT t.id FROM pilot_ticket.ticket t JOIN intake.manual_review_item r ON r.id=$1::uuid JOIN intake.contact_journey j ON j.id=r.journey_id
+        WHERE t.id=j.linked_ticket_id OR t.id=r.linked_ticket_id OR t.source_intake_id=r.service_intake_id ORDER BY t.id FOR SHARE OF t`,[c.id]);
+    }else if(c.kind==='ticket')await tx.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR SHARE',[c.id]);
+    await tx.query(`SELECT j.id,l.id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
+      WHERE l.source_intake_id=$1::uuid FOR SHARE OF j,l`,[intakeId]);
+    await tx.query(`SELECT p.id,r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
+      WHERE p.id=$1::uuid ORDER BY r.role FOR SHARE OF p,r`,[c.principal.principal_id]);
+    await tx.query(`SELECT m.principal_id,rt.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+      WHERE m.principal_id=$1::uuid ORDER BY m.team_id FOR SHARE OF m,rt`,[c.principal.principal_id]);
+  }
   function readable(c:Authorized){return {sql:`WITH readable AS (
     SELECT i.id FROM intake.service_intake i WHERE i.retention_until>platform.local_now() AND (
       i.id=$1::uuid OR ($2='ticket' AND EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
@@ -125,6 +141,9 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
           VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,[scope,command.client_command_id,hash,PURPOSE,intakeId,c.principal.principal_id]);
         const receipt=(await tx.query<{id:string;command_hash:string;state:string;result_snapshot:unknown}>(`SELECT id::text,command_hash,state,result_snapshot FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE`,[scope,command.client_command_id])).rows[0];
         if(!receipt)failP2016('ACTION_FAILED',503);if(receipt.command_hash!==hash)failP2016('COMMAND_CONFLICT',409);
+        await lockCurrentAuthority(tx,c,intakeId);
+        const current=await authorize(tx,input),source=await material(tx,current,command);
+        if(source.intakeId!==intakeId||source.kind!==kind)failP2016('NOT_FOUND',404);
         if(receipt.state==='COMMITTED')return {...acknowledgement(receipt.result_snapshot),replayed:true};
         const row=(await tx.query<{position:string;version:string}>(`INSERT INTO pilot_ticket.personal_material_read_position(principal_id,source_kind,source_intake_id,last_read_position)
           VALUES($1::uuid,$4,$2::uuid,$3::bigint) ON CONFLICT(principal_id,source_kind,source_intake_id) DO UPDATE SET
@@ -133,6 +152,8 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
           updated_at=CASE WHEN EXCLUDED.last_read_position>personal_material_read_position.last_read_position THEN platform.local_now() ELSE personal_material_read_position.updated_at END
           RETURNING last_read_position::text AS position,row_version::text AS version`,[c.principal.principal_id,intakeId,command.revision,kind])).rows[0];
         if(!row)failP2016('ACTION_FAILED',503);
+        // Position contention may also wait; recheck retained material before committing this transaction.
+        await material(tx,await authorize(tx,input),command);
         const result:PersonalReadAcknowledgement={ok:true,client_command_id:command.client_command_id,source_key:sourceKey(kind,intakeId),source_kind:kind,last_read_position:row.position,row_version:row.version,replayed:false};
         await tx.query(`UPDATE pilot_ticket.ticket_command_receipt SET state='COMMITTED',result_snapshot=$2::jsonb,updated_at=platform.local_now(),completed_at=platform.local_now() WHERE id=$1::uuid`,[receipt.id,JSON.stringify(result)]);
         return result;
