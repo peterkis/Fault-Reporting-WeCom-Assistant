@@ -73,7 +73,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
   try{
    const credential=await sdkDeadline(accessTokenProvider({signal}),signal);signal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');endpoint.searchParams.set('access_token',token);
-   const converted=exactP2016(await sdkReply(await fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[request.target_id]})}),signal),['errcode','errmsg','open_userid_list','invalid_userid_list'],['errcode','open_userid_list']);
+   const converted=exactP2016(await sdkReply(await sdkDeadline(fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[request.target_id]})}),signal),signal),['errcode','errmsg','open_userid_list','invalid_userid_list'],['errcode','open_userid_list']);
    if(converted.errcode!==0||!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');
    const pair=exactP2016(converted.open_userid_list[0],['userid','open_userid']);if(pair.userid!==request.target_id||!singleMember(pair.open_userid))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');recipient=pair.open_userid;
   }catch{return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');}
@@ -101,7 +101,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
   }catch{return reject('APP_NOTIFICATION_CARD_INVALID');}
   try{
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/message/send');endpoint.searchParams.set('access_token',token);
-   const receipt=exactP2016(await sdkReply(await fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify(body)}),signal),['errcode','errmsg','msgid','invaliduser','invalidparty','invalidtag','unlicenseduser','response_code'],['errcode']);
+   const receipt=exactP2016(await sdkReply(await sdkDeadline(fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify(body)}),signal),signal),['errcode','errmsg','msgid','invaliduser','invalidparty','invalidtag','unlicenseduser','response_code'],['errcode']);
    if(receipt.errcode!==0||['invaliduser','invalidparty','invalidtag','unlicenseduser'].some(key=>receipt[key]!==undefined&&receipt[key]!==''))return unknown();
    if(typeof receipt.msgid!=='string'||!receipt.msgid.trim()||receipt.msgid.length>512||/[\u0000-\u001f\u007f]/u.test(receipt.msgid))return unknown();
    return {outcome:'ACKNOWLEDGED',provider_message_id:'app_ack_'+textHashP2016(receipt.msgid).slice(0,32),error_code:null,retryable:false};
