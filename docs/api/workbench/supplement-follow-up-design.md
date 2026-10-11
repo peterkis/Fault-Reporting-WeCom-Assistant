@@ -21,11 +21,13 @@
 
 Page 按源事实时间、source kind、真实 Intake identity、源 ordinal、source fact identity 升序稳定分页；同一 WEB Intake 的修订顺序保持递增。cursor 必须绑定当前 principal、Ticket、授权 scope/epoch 和排序，不可换对象或复用失效权限。权限与留存过滤在 LIMIT 前；`has_pending_supplements` 是完整当前获权留存范围的 EXISTS，不按本页长度推断。items 只含 source coordinates、kind、PENDING/FOLLOWED_UP及最小 resolution；不含正文、处置 note、成员 identity、provider receipt、SDK参数或原始错误。卡片／列表／详情共享该授权字段投影，后台无正文加载不得写 personal read。
 
-## 权限：POLICY_PENDING
+## 权限：2026-10-11 人类明确确认
 
-READ 是必要条件，不是解除权。ADR-0031 §5／WBINT-12没有单独指定处置角色。现有 [Ticket add-note](../../../src/p2-016-ticket-query.mts) 要求 ADMIN／DISPATCHER 或当前处理人；现有 [Session INTERNAL_NOTE](../../41_p2_005_assignment_handoff_generation_fence.md) 要求当前沟通人或 ADMIN。父端已向用户核对“继承各对象既有内部备注／处置权”还是“已获业务操作授权且可读材料的同事”；本 SOURCE 不批准其中任一扩大解释。首 tracer 仅使用两种选择都允许的 ADMIN。最终命令 predicate 与 UI capabilities 待该决定后同源落地，不默许团队 READ 即可解除。绑定回复仍需原 Session REPLY 权；Delivery核对／重试权限仍独立。
+用户明确回复：“允许所有获业务操作授权且可读该材料的同事”。权威原记录为 `D:/wecom-workbench-evidence/notes/t36-explicit-user-role-policy-20261011.json`，并同步到 ADR-0031 §5。T36 `RECORD_DISPOSITION` 谓词为：**当前活动且已获工作台业务操作授权的人员 AND 当前可读、仍留存的精确 source_ref/revision**。本显式处置不要求该人员是当前 Ticket assignee 或 Conversation owner；READ 单独仍不构成写权。最终命令 predicate 与 UI capabilities 应按此已确认规则同源落地，首 tracer 的 ADMIN 只是最小纵切，不代表其它获授权同事的运行验证已完成。
 
-每次新命令、重放和收据都重查当前主体、目标源留存及当前可读 Ticket/canonical关联；新写／重放另外验证最终处置 predicate。收据只核对已发生结果，不能自动重发或代为处置。失权、换账号、body迟到、retention失效时及时取消并清该 scope 的显示/恢复；保留其它仍获权对象。404对未获权/不存在材料不泄漏目标，401无身份、403动作/CSRF不允许、400字段/标记/引用格式错误、409同 UUID 异意图或原目标关系冲突、503缺必要 Schema/服务；均不得返回假成功。失败收据只返回实际已记录的安全 code；无原 receipt 为 UNKNOWN，不推断未执行。
+此决定只适用于 T36 确切补充材料的显式处置，不扩大现有 Ticket／材料读取范围。现有 [Ticket add-note](../../../src/p2-016-ticket-query.mts) 和 [Session INTERNAL_NOTE](../../41_p2_005_assignment_handoff_generation_fence.md) 保持原权限；绑定回复仍需原 Session REPLY 权，Delivery恢复／重试／核对仍独立，系统／群名／管理权限不变。新处置 note 是T36内部处置证据，不能借此调用原无权的备注或回复入口。
+
+每次新命令、重放和收据都重查当前主体、目标源留存及当前可读 Ticket/canonical关联；新写／重放另外验证上述已确认显式处置 predicate。收据只核对已发生结果，不能自动重发或代为处置。失权、换账号、body迟到、retention失效时及时取消并清该 scope 的显示/恢复；保留其它仍获权对象。404对未获权/不存在材料不泄漏目标，401无身份、403动作/CSRF不允许、400字段/标记/引用格式错误、409同 UUID 异意图或原目标关系冲突、503缺必要 Schema/服务；均不得返回假成功。失败收据只返回实际已记录的安全 code；无原 receipt 为 UNKNOWN，不推断未执行。
 
 ## 原 ledger、原通信与最小前向 DB 必要性
 
