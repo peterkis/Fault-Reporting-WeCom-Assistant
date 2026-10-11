@@ -27,9 +27,10 @@
 | CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| MR01 | POST | `/api/workbench/reports` | W | T17已挂载、默认关闭；电话／现场未核实Reporter代录，原HTTP1 GREEN；T18／T19未实现 | [代录报修](workbench/manual-reports.md) |
-| MR02 | GET | `/api/workbench/reports/capabilities` | W | T17当前创建权限及恢复配置；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
-| MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | T17原主体／用途同账本只读UNKNOWN/FAILED/COMMITTED，另需恢复开关；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
+| MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；T19 一步处理另行实施 | [代录报修](workbench/manual-reports.md) |
+| MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
+| MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |
+| MR04 | GET | `/api/workbench/reporter-candidates` | W | 已挂载、默认关闭；当前应用／对象获权候选，q/limit/cursor 有界；仅明确选择后才可提交 | [候选查询](workbench/manual-reports.md#2-候选查询-get) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |
@@ -206,6 +207,14 @@
 基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
 
 ## 明确拒绝与设计路径
+
+WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，旧ACK独立核当前Ticket READ。历史RED及各被测对象见[共享跟进时间](workbench/follow-up-schedules.md)与本票执行记录。
+
+| METHOD | PATH | 状态 | 合同 |
+| --- | --- | --- | --- |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
+| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出卡片与恢复) |
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
