@@ -4,12 +4,14 @@ import {randomUUID} from 'node:crypto';
 import {appendCommunication} from './p2-004-communication-core.mjs';
 import {failP2016,transactionP2016,textHashP2016,localP2016,versionP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
 import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
+import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
+import {normalizeAppNotificationOptions,resolveOriginalAppTarget} from './workbench-app-notification-target.mjs';
 
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';
 export interface OriginalBotSource {bot_id:string;reporter_user_id:string;group_id:string|null;retention_epoch:string;journey_id:string|null}
 interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'CLOSED';created_at:string;aggregate_version:number}
-interface RoundOptions {pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined}
+interface RoundOptions {pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined;appNotifications?:TicketAppNotificationOptions|null}
 
 export async function roundNotificationSchemaReady(tx:PostgresTransaction){
   try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('031_p2_016_ticket_lifecycle_workbench_notifications','039_ticket_self_handling_cycles','040_ticket_staff_completion','041_ticket_round_notifications','052_ticket_group_round_notifications')")).rowCount===5;}catch{return false;}
@@ -35,9 +37,10 @@ export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeI
   const source=await readOriginalBotSource(tx,intakeId,botId);return source?.group_id===null?source:null;
 }
 
-export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,templateVersion='wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication}:RoundOptions){
+export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,templateVersion='wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication,appNotifications=null}:RoundOptions){
   if(typeof enabled!=='boolean'||typeof botId!=='string'||!botId||botId.length>128||typeof templateVersion!=='string'||! /^[A-Za-z0-9_/-]{1,64}$/u.test(templateVersion)
     ||personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('FLAG_INVALID',503);
+  const app=normalizeAppNotificationOptions(appNotifications);
   let after:{cycleId:string;node:RoundNotificationNode}|null=null,busy=false;
   return Object.freeze({
     async runOnce(){
@@ -78,7 +81,26 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id
                     AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=c.staff_completion_event_id))) FOR UPDATE`,[candidate.cycle_id,candidate.ticket_id,candidate.event_id,candidate.node]);
             if(locked.rowCount!==1)return false;
-            const source=await readOriginalBotSource(tx,candidate.source_intake_id,botId);if(!source)return false;
+            const source=await readOriginalBotSource(tx,candidate.source_intake_id,botId);
+            if(!source){
+              if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type='PERSON'",[candidate.cycle_id,candidate.node])).rowCount)return false;
+              const target=await resolveOriginalAppTarget(tx,candidate.source_intake_id,app);if(!target)return false;
+              const binding=textHashP2016(JSON.stringify(['WECOM_APP',target.target.channel_account_id,target.source.scope.sourceCorpScope,target.source.scope.sourceAppScope,target.source.scope.scopeHash,target.target.target_id]));
+              const notificationType=candidate.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED';
+              const ref=await reporterAccess.ensurePublicRefInTransaction({transaction:tx,ticketId:candidate.ticket_id,reporterBindingHash:binding,journeyId:target.source.journey_id});
+              const message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',
+                client_command_id:randomUUID(),message_type:'template_card',visibility:'EXTERNAL',destination_policy:'P2_016_ORIGINAL_APP_ROUND',privacy_class:'INTERNAL',
+                content:{transport:'WECOM_APP',public_ref:ref.public_ref,request_ref:target.source.request_ref,source_kind:target.source.source_kind,node:candidate.node,suffix:candidate.ticket_no.slice(-4),status:candidate.event_status,
+                  occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType},
+                retention_until:formatEpochMsToShanghaiLocal(target.source.retention_epoch),retention_until_epoch_ms:target.source.retention_epoch},resolvedDestinations:[target.target]});
+              if(!message||!('message_id' in message)||!message.outbox_id||message.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
+              const notificationId=(await tx.query<{id:string}>(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
+                VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5,$6::uuid,$7::uuid,$8::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,templateVersion,message.message_id,message.outbox_id,message.delivery_ids[0]])).rows[0]?.id;
+              if(!notificationId)failP2016('NOTIFICATION_FAILED',503);
+              await tx.query(`INSERT INTO communication.ticket_round_notification_binding(ticket_id,cycle_id,node,recipient_binding_hash,destination_type,notification_binding_id)
+                VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5::uuid)`,[candidate.ticket_id,candidate.cycle_id,candidate.node,binding,notificationId]);
+              return true;
+            }
             let inserted=false;
             const routes:('GROUP'|'PERSON')[]=source.group_id?['GROUP','PERSON']:['PERSON'];
             for(const route of routes){

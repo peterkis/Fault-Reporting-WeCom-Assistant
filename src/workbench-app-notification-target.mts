@@ -1,0 +1,70 @@
+import type {PostgresTransaction} from './platform/postgres-pool.mjs';
+import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
+import type {TicketAppNotificationOptions,TicketAppNotificationAuthority} from '../contracts/workbench_app_notification_contracts.js';
+import {isDeepStrictEqual} from 'node:util';
+import {exactP2016,failP2016} from './p2-016-domain-contracts.mjs';
+import {assertEpochMsString,assertLocalDateTime,formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
+
+interface WebSourceRow {scope_hash:string;source_corp_scope:string;source_app_scope:string;proof_ref:string|null;request_ref:string;journey_id:string;retention_epoch:string}
+export interface OriginalAppNotificationSource {source_kind:'WEB_REQUEST';scope:YxxMemberScope;request_ref:string;journey_id:string;retention_epoch:string}
+export interface EligibleOriginalAppTarget {source:OriginalAppNotificationSource;target:{provider:'WECOM_APP';channel_account_id:string;target_type:'PERSON';target_id:string}}
+const text=(value:unknown,maximum:number)=>{if(typeof value!=='string'||!value||value.length>maximum)failP2016('FLAG_INVALID',503);return value;};
+const HASH=/^[a-f0-9]{64}$/u;
+
+export function normalizeAppNotificationOptions(input:TicketAppNotificationOptions|null):TicketAppNotificationOptions|null {
+ if(input===null)return null;
+ if(typeof input.enabled!=='boolean'||input.targetResolver?.localOnly!==true||typeof input.targetResolver.resolveCurrentTarget!=='function')failP2016('FLAG_INVALID',503);
+ const a=exactP2016(input.authority,['sourceCorpScope','sourceAppScope','channelAccountId','mappingConfigHash','mappingProofRef','proofKind','validationProfile']);
+ if(!HASH.test(text(a.mappingConfigHash,64))||!['LIVE','SYNTHETIC'].includes(text(a.proofKind,16))||!['DEPLOYMENT','ISOLATED_TEST'].includes(text(a.validationProfile,16))
+   ||a.proofKind==='SYNTHETIC'&&a.validationProfile!=='ISOLATED_TEST')failP2016('FLAG_INVALID',503);
+ const authority:TicketAppNotificationAuthority={sourceCorpScope:text(a.sourceCorpScope,128),sourceAppScope:text(a.sourceAppScope,128),channelAccountId:text(a.channelAccountId,128),
+   mappingConfigHash:text(a.mappingConfigHash,64),mappingProofRef:text(a.mappingProofRef,256),proofKind:a.proofKind as TicketAppNotificationAuthority['proofKind'],validationProfile:a.validationProfile as TicketAppNotificationAuthority['validationProfile']};
+ return Object.freeze({enabled:input.enabled,authority:Object.freeze(authority),targetResolver:input.targetResolver});
+}
+
+/** The retained original Web facts, not a recent page or a later channel. */
+export async function readOriginalAppNotificationSource(tx:PostgresTransaction,intakeId:string):Promise<OriginalAppNotificationSource|null>{
+ const q=await tx.query<WebSourceRow>(`SELECT b.canonical_reporter_binding AS scope_hash,b.source_corp_scope,b.source_app_scope,b.proof_ref,b.request_ref,j.id::text AS journey_id,
+   LEAST(i.retention_until_epoch_ms,b.retention_until_epoch_ms,s.retention_until_epoch_ms,j.retention_until_epoch_ms)::text AS retention_epoch
+   FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id AND b.canonical_reporter_binding=i.canonical_reporter_binding AND b.source_app_scope=i.source_app_scope
+   JOIN intake.web_submission s ON s.id=i.primary_web_submission_id AND s.intake_id=i.id AND s.canonical_reporter_binding=b.canonical_reporter_binding AND s.kind='SUBMIT'
+   JOIN intake.channel_leg l ON l.source_intake_id=i.id AND l.web_submission_id=s.id AND l.leg_type='WEB_FORM' AND l.reporter_identity_hash=b.canonical_reporter_binding
+   JOIN intake.contact_journey j ON j.id=l.journey_id AND j.origin_intake_id=i.id AND j.entry_mode='APP_WEB_SELF_SERVICE' AND j.origin_channel='PORTAL'
+     AND j.source_app_scope=b.source_app_scope AND j.reporter_identity_hash=b.canonical_reporter_binding
+   WHERE i.id=$1::uuid AND i.source_channel='PORTAL' AND i.source_provider='YIXIAOXIU_WEB' AND b.revoked_at IS NULL
+     AND LEAST(i.retention_until_epoch_ms,b.retention_until_epoch_ms,s.retention_until_epoch_ms,j.retention_until_epoch_ms)>platform.physical_epoch_ms()
+   FOR SHARE OF i,b,s,l,j`,[intakeId]);
+ const row=q.rows[0];if(q.rowCount!==1||!row||!HASH.test(row.scope_hash)||!row.proof_ref)return null;
+ const scope:YxxMemberScope=Object.freeze({scopeHash:row.scope_hash as YxxMemberScope['scopeHash'],sourceCorpScope:row.source_corp_scope,sourceAppScope:row.source_app_scope,proofRef:row.proof_ref});
+ return {source_kind:'WEB_REQUEST',scope,request_ref:row.request_ref,journey_id:row.journey_id,retention_epoch:row.retention_epoch};
+}
+
+/** Current local qualification is bounded; no external call belongs in this transaction. */
+export async function resolveOriginalAppTarget(tx:PostgresTransaction,intakeId:string,options:TicketAppNotificationOptions|null):Promise<EligibleOriginalAppTarget|null>{
+ if(!options?.enabled)return null;
+ const source=await readOriginalAppNotificationSource(tx,intakeId);if(!source)return null;
+ const a=options.authority;
+ if(source.scope.sourceCorpScope!==a.sourceCorpScope||source.scope.sourceAppScope!==a.sourceAppScope||source.scope.proofRef!==a.mappingProofRef)return null;
+ const signal=AbortSignal.timeout(1000),started=BigInt(Date.now());
+ let raw:unknown;
+ try{raw=await Promise.race([options.targetResolver.resolveCurrentTarget({source_kind:source.source_kind,scope:source.scope,signal}),new Promise<never>((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}))]);}
+ catch{return null;}
+ try{
+  const value=exactP2016(raw,['schema_version','state','source_kind','scope','checked_at','checked_at_epoch_ms','target','verification','reason'],['schema_version','state','source_kind','scope','checked_at','checked_at_epoch_ms']);
+  if(Buffer.byteLength(JSON.stringify(value))>8192||value.schema_version!==1||value.source_kind!==source.source_kind||!isDeepStrictEqual(value.scope,source.scope))return null;
+  const epoch=assertEpochMsString(value.checked_at_epoch_ms),local=assertLocalDateTime(value.checked_at);
+  if(formatEpochMsToShanghaiLocal(epoch)!==local||BigInt(epoch)<started||BigInt(epoch)>BigInt(Date.now())||signal.aborted)return null;
+  if(value.state==='NOT_ELIGIBLE'){
+   if(Object.hasOwn(value,'target')||Object.hasOwn(value,'verification')||!['NO_MAPPING','SCOPE_MISMATCH','STALE','REVOKED','UNREACHABLE','UNKNOWN'].includes(String(value.reason)))return null;
+   return null;
+  }
+  if(value.state!=='ELIGIBLE'||Object.hasOwn(value,'reason'))return null;
+  const target=exactP2016(value.target,['provider','channel_account_id','target_type','target_id']);
+  const verification=exactP2016(value.verification,['mapping_config_hash','mapping_proof_ref','binding_proof_ref','proof_kind','account_status','binding_state','message_reachability']);
+  if(target.provider!=='WECOM_APP'||target.channel_account_id!==a.channelAccountId||target.target_type!=='PERSON'||typeof target.target_id!=='string'||!target.target_id||target.target_id.length>256
+    ||verification.mapping_config_hash!==a.mappingConfigHash||verification.mapping_proof_ref!==a.mappingProofRef||verification.binding_proof_ref!==source.scope.proofRef||verification.proof_kind!==a.proofKind
+    ||verification.account_status!=='ACTIVE'||verification.binding_state!=='VERIFIED'||verification.message_reachability!=='REACHABLE')return null;
+  const current=await readOriginalAppNotificationSource(tx,intakeId);if(!isDeepStrictEqual(current,source))return null;
+  return {source,target:{provider:'WECOM_APP',channel_account_id:a.channelAccountId,target_type:'PERSON',target_id:target.target_id}};
+ }catch{return null;}
+}

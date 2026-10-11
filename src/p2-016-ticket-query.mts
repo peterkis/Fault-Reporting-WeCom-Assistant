@@ -265,10 +265,10 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     },
     async deliveries(input: TicketQueryInput) {
       const {ticket}=await authorizedTicket(input);
-      const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
+      const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}d.provider,b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
         d.side_effect_state,d.attempt_count,d.sent_at,b.created_at FROM communication.ticket_notification_binding b
         JOIN communication.delivery d ON d.id=b.delivery_id ${ticketRoundNotificationsEnabled?'LEFT JOIN communication.ticket_round_notification_binding r ON r.notification_binding_id=b.id LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.cycle_id AND c.ticket_id=r.ticket_id':''} WHERE b.ticket_id=$1::uuid
-        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows});
+        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows.map(({provider,...item})=>provider==='WECOM_APP'?{...item,route_kind:'YIXIAOXIU_APP'}:item)});
     },
   });
 }

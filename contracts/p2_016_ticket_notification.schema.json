@@ -15,6 +15,7 @@
     "created_at"
   ],
   "properties": {
+    "route_kind": {"const": "YIXIAOXIU_APP"},
     "notification_type": {
       "enum": [
         "TICKET_CREATED",
