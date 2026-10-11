@@ -20,9 +20,12 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
       return query&&command?{key:query.queryKey,command}:undefined;
     };
     const full=()=>client.getQueryCache().findAll({predicate:query=>query.queryKey[0]==='personal-read-command'}).length>=100;
-    let disposed=false,attempted=false,busy=false,receiptChecked=false;const readText=foregroundTextReader(element),controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
+    let disposed=false,attempted=false,busy=false,receiptChecked=false,ownCommandId:string|null=null;const readText=foregroundTextReader(element),controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
+    const discard=(commandId:string|null)=>{
+      if(commandId&&client.getQueryData<PersonalReadCommand>(pendingKey)?.client_command_id===commandId)client.removeQueries({queryKey:pendingKey,exact:true});
+    };
     const confirmed=(result:PersonalReadAcknowledgement)=>{
-      client.removeQueries({queryKey:pendingKey,exact:true});
+      discard(result.client_command_id);
       client.setQueryData(['personal-read-position',principal.principal_id,item.kind,item.id],result);
       void client.invalidateQueries({queryKey:['board',principal.principal_id]});
     };
@@ -40,7 +43,7 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
         // Another rendered copy may own these coordinates while this GET awaited.
         const saved=pending();
         if(saved){
-          receiptChecked=true;
+          receiptChecked=true;ownCommandId=saved.command.client_command_id;
           // Move only this already saved intent after current-scope authorization; no alias creates another UUID.
           client.removeQueries({queryKey:saved.key,exact:true});client.setQueryData(pendingKey,saved.command);
           const receipt=await personalReadApi.receipt(item,saved.command,controller.signal);current();if(disposed)return;
@@ -49,15 +52,16 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
         }
         if(attempted||full())return;
         const command:PersonalReadCommand={client_command_id:crypto.randomUUID(),source_ref:sourceRef,revision};
-        client.setQueryData(pendingKey,command);attempted=true;
+        client.setQueryData(pendingKey,command);attempted=true;ownCommandId=command.client_command_id;
         const result=await personalReadApi.advance(item,command,principal.csrf_token,controller.signal);current();if(disposed)return;
         confirmed(result);
       }catch(error){
         if(disposed||controller.signal.aborted||error instanceof DOMException&&error.name==='AbortError')return;
         try{current();}catch{return;}
         if(error instanceof ApiError&&[401,403,404].includes(error.status)){
+          discard(ownCommandId);
           if(error.status===401||error.status===403&&error.code==='WORKBENCH_CSRF_INVALID')await clearSessionAuthorization(client,principal.principal_id,error.status===401?401:403,'revoked');else await clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error);
-        }else if(error instanceof ApiError&&error.status>=400&&error.status<500)client.removeQueries({queryKey:pendingKey,exact:true});
+        }else if(error instanceof ApiError&&error.status>=400&&error.status<500)discard(ownCommandId);
         // UNKNOWN survives until another real foreground observation checks this same intent.
         receiptChecked=true;
       }finally{busy=false;}
