@@ -91,7 +91,7 @@ Body 最多 16 KiB。字段不得包含患者详情、口令或其它敏感业�
 | 明确绑定且目标应用 REACHABLE | `VERIFIED` | `ELIGIBLE` | `false` |
 | 明确绑定但 UNREACHABLE／UNKNOWN | `VERIFIED` | `NOT_REACHABLE` | `true` |
 
-见[手填结果 Schema](../../../contracts/workbench_manual_report_result.schema.json)、[核实结果 Schema](../../../contracts/workbench_verified_manual_report_result.schema.json)。回执不含人员姓名/联系方式、完整描述或 private proof。所有分支均 `external_notification:false`；资格不表示已创建 Delivery 或已送达。T18 不调用 SDK/Sender，后续通知由 T26 与原独立外发开关、Outbox/Delivery 合同承担。
+见[手填结果 Schema](../../../contracts/workbench_manual_report_result.schema.json)、[核实结果 Schema](../../../contracts/workbench_verified_manual_report_result.schema.json)。回执不含人员姓名/联系方式、完整描述或 private proof。所有分支均 `external_notification:false`；资格不表示已创建 Delivery 或已送达。T18 不调用 SDK/Sender，后续 H5／VERIFIED_MANUAL 通知由 T25（#80）与原独立外发开关、Outbox/Delivery 合同承担。
 
 ## 4. 幂等、确定拒绝与 GET 回执
 
