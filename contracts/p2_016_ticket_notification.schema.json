@@ -108,6 +108,10 @@
   },
   "allOf": [
     {
+      "if": {"required": ["route_kind"]},
+      "then": {"properties": {"destination_type": {"const": "PERSON"}}}
+    },
+    {
       "if": {
         "required": [
           "node"
