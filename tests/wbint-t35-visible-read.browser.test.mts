@@ -18,6 +18,7 @@ import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
 import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser, closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -79,6 +80,7 @@ test('T35 actual foreground material advances only its own source and reader, ne
     const migrationInput={databaseUrl:f.databaseUrl,mode:'apply',PoolFactory:createPostgresPool};
     await migrateP2012(migrationInput);
     await migrateYxxSelfService(migrationInput);
+    await migrateWorkbenchPersonalRead({databaseUrl:f.databaseUrl,mode:'apply'});
     const second=f.principals[1],session=f.sessions[0];assert.ok(second);assert.ok(session);
     await createPilotAccessService({pool:f.pool}).upsertPrincipal({
       wecomUserId:'web01-synthetic-1',displayName:'T35第二合成阅读者',roles:['ADMIN'],resolverTeamIds:['PILOT_IT'],
