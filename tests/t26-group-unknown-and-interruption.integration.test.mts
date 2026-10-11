@@ -33,10 +33,10 @@ test('unknown group effects and an interrupted native Worker require explicit ad
   let exited=false;const exit=once(child,'exit').then(()=>{exited=true;});
   try{
    await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('T26_CHILD_SEND_BOUNDARY_TIMEOUT')),10000);child.once('message',message=>{clearTimeout(timer);message==='T26_FETCH_ENTERED'?resolve():reject(Error('T26_CHILD_BOUNDARY_INVALID'));});child.once('error',reject);child.once('exit',()=>{clearTimeout(timer);reject(Error('T26_CHILD_EARLY_EXIT'));});});
-   assert.equal((await survivor.getDelivery(String(crashGroup.delivery_id)))?.status,'SENDING');assert.ok(child.pid);child.kill();await exit;assert.equal(exited,true);
+   assert.equal((await t26Deliveries(crash.http,crash.id)).find(row=>row.delivery_id===crashGroup.delivery_id)?.status,'SENDING');assert.ok(child.pid);child.kill();await exit;assert.equal(exited,true);
    // The actual default 30s lease expires naturally. No clock or Delivery SQL is altered.
-   await delay(31000);assert.equal(await survivor.recoverExpiredSending(),1);
-   assert.equal((await survivor.getDelivery(String(crashGroup.delivery_id)))?.status,'RECONCILIATION_REQUIRED');assert.equal(await survivor.deliver({deliveryId:String(crashGroup.delivery_id)}),null);
+   await delay(31000);assert.deepEqual(await survivor.recoverExpiredSending(),{recovered:1,delivery_ids:[String(crashGroup.delivery_id)]});
+   assert.equal((await t26Deliveries(crash.http,crash.id)).find(row=>row.delivery_id===crashGroup.delivery_id)?.status,'RECONCILIATION_REQUIRED');assert.equal(await survivor.deliver({deliveryId:String(crashGroup.delivery_id)}),null);
    const confirmed={client_command_id:randomUUID(),reason_code:'T26_EXPLICIT_SYNTHETIC_CHECK',resolution:'CONFIRMED_SENT'};
    assert.equal((await admin(crash.id,String(crashGroup.delivery_id),'reconcile',confirmed)).status,200);assert.equal(t26Object(await (await admin(crash.id,String(crashGroup.delivery_id),'reconcile',confirmed)).json()).replayed,true);
    assert.equal(await survivor.deliver({deliveryId:String(crashGroup.delivery_id)}),null);assert.deepEqual((await t26Deliveries(crash.http,crash.id)).find(row=>row.delivery_id===crashPerson.delivery_id),stable);assert.equal(personCalls,2);assert.deepEqual(await crash.http.detail(crash.id),crash.started);
