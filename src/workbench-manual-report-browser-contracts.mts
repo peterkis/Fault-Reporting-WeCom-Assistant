@@ -67,7 +67,7 @@ export function decodeManualReportReceipt(value:unknown,id:string):ManualReportA
   if(uuid(v.client_command_id)!==id)bad();const base={client_command_id:id};
   if(v.state==='UNKNOWN'){exact(v,['client_command_id','state']);return {...base,state:'UNKNOWN'};}
   if(v.state==='FAILED'){exact(v,['client_command_id','state','error']);const e=exact(v.error,['code','retryable']),code=text(e.code,64,1);if(e.retryable!==false||!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))bad();return {...base,state:'FAILED',error:{code,retryable:false}};}
-  if(v.state==='COMMITTED'){exact(v,['client_command_id','state','result']);const result=decodeManualReportResult(v.result,id);if(result.replayed!==true)bad();return {...base,state:'COMMITTED',result:{...result,replayed:true}};}bad();
+  if(v.state==='COMMITTED'){exact(v,['client_command_id','state','result']);const result=decodeManualReportResult(v.result,id);if(result.replayed!==true)bad();if(result.reporter_verification==='VERIFIED')return {...base,state:'COMMITTED',result:{...result,replayed:true}};return {...base,state:'COMMITTED',result:{...result,replayed:true}};}bad();
 }
 export function encodeManualReportDraft(value:ManualReportInput,pending:ManualReportAdmissionCommand|null):string{
   // Store a pending command only once, so bounded Unicode descriptions are not
@@ -104,7 +104,7 @@ export function decodeVerifiedManualReportProjection(value:unknown):VerifiedManu
 }
 export function decodeReporterCandidates(value:unknown):WorkbenchReporterCandidates{
   const v=exact(value,['schema_version','candidates','next_cursor','manual_fallback_available']);if(v.schema_version!==1||v.manual_fallback_available!==true||!Array.isArray(v.candidates)||v.candidates.length>10||new TextEncoder().encode(JSON.stringify(value)).length>16384)bad();
-  const candidates=v.candidates.map(value=>{const r=exact(value,['candidate_ref','candidate_version','display_name','departments','profile_source','binding_verified','message_reachability']),selection=decodeReporterSelection({verification:'VERIFIED_SELECTION',candidate_ref:r.candidate_ref,candidate_version:r.candidate_version});
+  const candidates=v.candidates.map((value):WorkbenchReporterCandidates['candidates'][number]=>{const r=exact(value,['candidate_ref','candidate_version','display_name','departments','profile_source','binding_verified','message_reachability']),selection=decodeReporterSelection({verification:'VERIFIED_SELECTION',candidate_ref:r.candidate_ref,candidate_version:r.candidate_version});
     if(r.binding_verified!==true||(r.profile_source!=='WECOM_DIRECTORY'&&r.profile_source!=='THIRD_PARTY_STAFF_DIRECTORY')||(r.message_reachability!=='REACHABLE'&&r.message_reachability!=='UNREACHABLE'&&r.message_reachability!=='UNKNOWN')||!Array.isArray(r.departments)||r.departments.length>20)bad();
     const display_name=text(r.display_name,100,1),departments=r.departments.map(item=>text(item,100,1));if(display_name!==display_name.trim()||departments.some(item=>item!==item.trim())||new Set(departments).size!==departments.length)bad();
     return {candidate_ref:selection.candidate_ref,candidate_version:selection.candidate_version,display_name,departments,profile_source:r.profile_source,binding_verified:true as const,message_reachability:r.message_reachability};});
