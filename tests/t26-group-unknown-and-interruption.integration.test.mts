@@ -19,7 +19,7 @@ test('unknown group effects and an interrupted native Worker require explicit ad
   assert.equal((await admin(id,String(group.delivery_id),'retry',{client_command_id:randomUUID(),reason_code:'T26_NO_BLIND_RETRY'})).status,409);
   assert.equal((await handler(id,String(group.delivery_id),'reconcile',reconcile)).status,403);
   assert.ok([403,404].includes((await outsider(id,String(group.delivery_id),'reconcile',reconcile)).status));
-  assert.equal((await admin(id,String(person.delivery_id),'reconcile',reconcile)).status,409);
+  assert.equal((await admin(id,String(person.delivery_id),'reconcile',{...reconcile,client_command_id:randomUUID()})).status,409);
   assert.equal((await admin(id,String(group.delivery_id),'reconcile',reconcile)).status,200);
   assert.equal(t26Object(await (await admin(id,String(group.delivery_id),'reconcile',reconcile)).json()).replayed,true);
   const recovered=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:t26Sender(context,tag,{onPerson,fetchImpl:async()=>{groupCalls++;return new Response('{"errcode":0}');}})});
