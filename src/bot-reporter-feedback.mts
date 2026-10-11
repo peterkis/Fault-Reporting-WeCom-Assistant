@@ -90,6 +90,7 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
         const recheck=async()=>{
           if(!writesEnabled())fail('FORBIDDEN',403);
           const current=await authorizer.authorizeInTransaction({transaction:tx,...input});
+          if(!writesEnabled())fail('FORBIDDEN',403);
           if(current.ticket_id!==original.ticket_id||current.source_intake_id!==original.source_intake_id||commandScope(identity(input.sessionToken))!==scopeKey)fail('NOT_FOUND',404);
         };
         if(previous){

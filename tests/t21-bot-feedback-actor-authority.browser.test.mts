@@ -85,6 +85,7 @@ async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
    assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    assert.ok(fixture);const browserOrigin=fixture.origin,page=(ticket:Ticket)=>browserOrigin+'/wecom/yixiaoxiu/tickets/'+ticket.ref;
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await browser.command('Page.navigate',{url:page(original)});await browser.waitFor(enabled);
+   await writeFile(join(directory,'eligible-member-page.png'),Buffer.from(await browser.screenshot(),'base64'));
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true);
    await run({f,original,second,fixture,browser,peers,directory,serverWire,setMyReports:value=>{myReports=value;},page});
   }catch(error){primary=error;await writeFile(join(directory,'primary-error.json'),JSON.stringify(failure(error)));}
