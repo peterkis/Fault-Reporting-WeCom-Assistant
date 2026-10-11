@@ -26,7 +26,10 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
   const groups=groupRoundNotifications?createWorkbenchGroupNotificationSender({...groupRoundNotifications,enabled}):null;
   return createCommunicationSenderPort(async request=>{
     if(!enabled)return rejected('P2_016_SENDER_DISABLED');
-    if((request.message.content as {transport?:unknown}|null)?.transport==='WECOM_MESSAGE_PUSH')return groups?groups.send(request):rejected('GROUP_PUSH_ROUTE_MISSING');
+    if((request.message.content as {transport?:unknown}|null)?.transport==='WECOM_MESSAGE_PUSH'){
+      if(request.message.message_type!=='template_card')return rejected('GROUP_PUSH_BINDING_INVALID');
+      return groups?groups.send({...request,message:{message_type:'template_card',content:request.message.content}}):rejected('GROUP_PUSH_ROUTE_MISSING');
+    }
     if((request.message.content as { transport?: unknown } | null)?.transport==='WECOM_GROUP_WEBHOOK')return rejected('P2_016_GROUP_WEBHOOK_TRANSPORT_REQUIRED');
     if(['text','markdown'].includes(request.message.message_type))return legacy.send(request);
     if(!cardEnabled)return rejected('P2_016_CARD_DISABLED');
