@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-10
+snapshot_on: 2026-10-11
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,20 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-10，T20收口）
+## 当前执行状态导航（2026-10-11，T24收口）
+
+GitHub实际快照为 **17／43 CLOSED、26 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t24-20261011-d.json)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T24 / #79 | 原七项本地验收完成，源码18d安全快进；[合同、原被测祖先与关闭方式](execution/t24.md)。[#79已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79#issuecomment-6102767418)。 |
+| 本轮验证 | 18d唯一build／strict／artifact 0/0/0，原Schema／Contract／资源各1PASS；原7340／5348／824f业务、PC与相关callback证据保留各自对象，历史FAIL和超时不升级。 |
+| 文档后继 | 仅执行／导航／API当前状态整理，不修改业务或重绑18d制品；原开关默认false，未push、部署、真实外发、full／certify或Gate推进。 |
+| WBINT-08 / A08 | T24部分本地完成；T25／T26及整组验收继续按原生依赖。 |
+| 其余在途 | T18前向051 SQL修补SOURCE_READY／运行NOT_RUN；T37共享时间UI、T21报修人PC测试源码准备不计验收。T34同步最新已交付源码，heavy继续单一拥有者。 |
+| 路径与资源 | 新工作树、缓存、测试和证据均D；T24最终自有PG0/0、进程／HTTP／browser／pool／监听0，keeper保留供下一授权窗口。用户root6原字节保持。 |
+
+## 历史执行状态导航（2026-10-10，T20收口）
 
 GitHub已关闭16／43票，剩余27票OPEN。T20经原七项父核验、安全快进及[完成态读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75#issuecomment-6098167571)收口；本地交付为`722f1d0a5b82d0455fc9cf2939bc8e70207e97ad`，真实被测祖先为`0f9af956e72880fcafdd637972e4231dfea923ae`。详见[原七项、分组证据与关闭方式](execution/t20.md)。
 
