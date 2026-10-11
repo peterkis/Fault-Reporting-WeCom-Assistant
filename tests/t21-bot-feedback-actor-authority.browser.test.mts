@@ -83,7 +83,7 @@ async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
     // Existing fixture replacement hook: closes old profile, OAuth and extension
     // before restart creates a fresh same-origin synthetic App/session.
     stopApp:async(server:Server)=>{const runtime=managed.find(candidate=>candidate.server===server);assert.ok(runtime);await runtime.stop();assert.equal(server.listening,false);}});
-   fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
+   assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    assert.ok(fixture);const browserOrigin=fixture.origin,page=(ticket:Ticket)=>browserOrigin+'/wecom/yixiaoxiu/tickets/'+ticket.ref;
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await browser.command('Page.navigate',{url:page(original)});await browser.waitFor(enabled);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true);
