@@ -24,7 +24,9 @@ test('verified reachable MANUAL admission retains its origin and creates one app
   const admitted=await fetch(context.origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(command)});
   assert.equal(admitted.status,202);const report=object(await admitted.json());
   assert.equal(report.source,'PHONE');assert.equal(report.reporter_verification,'VERIFIED');assert.equal(report.manual_contact_required,false);assert.equal(report.external_notification,false);
-  const ticket=object(report.ticket),ticketId=text(ticket.id),started=await http.start(ticketId);
+  const ticket=object(report.ticket),ticketId=text(ticket.id),beforeStart=await http.detail(ticketId);
+  const startResponse=await http.post(ticketId,'take-and-start',{client_command_id:randomUUID(),expected_version:beforeStart.version,reason_code:'T11_START',resolver_team_id:beforeStart.resolver_team_id});
+  const startBody:unknown=await startResponse.json();assert.equal(startResponse.status,200,JSON.stringify(startBody));const started=await http.detail(ticketId);
   assert.equal(started.status,'IN_PROGRESS');assert.ok(started.handling_cycle?.first_responsibility_event_id);
   const currentMapping=source.directory.verificationAuthority;assert.ok(currentMapping);
   const authority:TicketAppNotificationAuthority={...source.directory.application,channelAccountId:'T25_SYNTHETIC_MANUAL_APP_ACCOUNT',mappingConfigHash:currentMapping.mappingConfigHash,mappingProofRef:currentMapping.mappingProofRef,proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'};
