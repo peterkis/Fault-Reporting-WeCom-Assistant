@@ -213,7 +213,7 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | --- | --- | --- | --- |
 | GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
 | POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
-| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出与恢复) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出卡片与恢复) |
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |

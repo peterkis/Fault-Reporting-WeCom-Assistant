@@ -53,7 +53,7 @@ canonical 关联沿原 Intake 或 Journey/Channel Leg 完整关系，核实际 s
 
 ## 输出、卡片与恢复
 
-[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json)闭合输出 ticket_id、ticket_version、schedule_version、active、allowed_actions、history、history_has_more。active 为 null 或四字段 {schedule_version,due_at,due_epoch_ms,is_due}，修订等于顶层，时间／epoch精确配对。无安排初始版本为"0"，取消／结束后不回零。history 按安排修订和真实 Event ordinal 降序，最多20条；history_has_more 明示持久历史尚有后页。
+[查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json)闭合输出 ticket_id、ticket_version、schedule_version、active、allowed_actions、history、history_has_more。active 为 null 或四字段 {schedule_version,due_at,due_epoch_ms,is_due}，修订等于顶层，时间／epoch精确配对。无安排初始版本为"0"，取消／结束后不回零。history 按安排修订和真实 Event ordinal 降序，最多20条；history_has_more 明示还有更早的持久历史；本接口不提供cursor或翻页参数。
 
 历史项为 {schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED}。CANCEL/ENDED 保留结束的时间；ENDED 引用真实关闭／取消 Event，不伪造用户 CANCEL。
 
@@ -63,7 +63,7 @@ canonical 关联沿原 Intake 或 Journey/Channel Leg 完整关系，核实际 s
 
 正式 React 沿用公共加密草稿和 opaque store。follow_up_schedule_draft_recovery_enabled 由共享入口与 workbenchDraftRecoveryEnabled 共同派生，默认false。恢复先核当前身份和独立 Ticket READ，再核维护资格。敏感副本保留首次保存后的24小时，后续保存不续期；公共 store 最多20份敏感草稿、20个待核对操作，每份序列化内容≤16 KiB。过期、raw/view关闭或维护失权清敏感副本，保原 opaque UUID供独立 ACK；真实 READ/身份失效清对应授权范围。原 UUID和两个版本保持冻结，CAS失败保留实际当前操作，迟到 ACK不能清除新 UUID。已确认提交不因当前读取失败降格为UNKNOWN或重发。Cookie/CSRF不持久化。
 
-POST维护403需补查当前 Ticket READ：200仅收口本用途；READ401/403/404才清对应授权范围。临时读取失败保留待核对操作。错误沿现有 W envelope：坏路径／字段／时间400，Origin/CSRF403，If-Match或业务版本冲突409，body超限413，未认证401、内部身份失效403、对象不可见404。新入口关闭503 P2_016_DISABLED，所需 schema未就绪503 P2_016_FOLLOW_UP_UNAVAILABLE；网络、临时503或畸形成功响应不能单独转为终态FAILED。
+POST维护403需补查当前 Ticket READ：200仅收口本用途；READ401/403/404才清对应授权范围。临时读取失败保留待核对操作。错误沿现有 W envelope：不匹配路由的URL为404，匹配路由后的非法UUID／字段／时间为400，Origin/CSRF403，If-Match或业务版本冲突409，body超限413，未认证401、内部身份失效403、对象不可见404。新入口关闭503 P2_016_DISABLED，所需 schema未就绪503 P2_016_FOLLOW_UP_UNAVAILABLE；网络、临时503或畸形成功响应不能单独转为终态FAILED。
 
 ## 数据库与生命周期
 
