@@ -22,6 +22,8 @@ test('T35 an old visible scope cannot write for a switched account while fresh i
     await browser.evaluate('globalThis.__t35HoldIdentity=true');
     const separator=f.secondCookie.indexOf('=');assert.ok(separator>0);
     await browser.command('Network.setCookie',{name:f.secondCookie.slice(0,separator),value:f.secondCookie.slice(separator+1),url:f.origin+'/',httpOnly:true,sameSite:'Strict'});
+    // The app disables focus refetch; request a genuine identity response at the transport boundary.
+    await browser.evaluate("void fetch('/api/lifecycle/bootstrap')");
     await browser.evaluate("(()=>{document.querySelector('.activity-list p').scrollIntoView({block:'center'});globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()");
     await browser.waitFor('globalThis.__t35HeldIdentity>0&&globalThis.__t35OtherReads===0');
     await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
