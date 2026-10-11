@@ -156,15 +156,15 @@ test('the actual production form explicitly selects an authorized reporter and a
       await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${reviewId}"] .card-open'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${reviewId}"] .card-open').click()`);
-      await browser.waitFor(`globalThis.__t18NormalRequests.some(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status!==null)`);
-      const attemptedReads:unknown=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}')`);
+      await browser.waitFor(`globalThis.__t18NormalRequests.some(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status!==null&&row.result!==null)`);
+      const attemptedReads:unknown=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status!==null&&row.result!==null)`);
       assert.ok(Array.isArray(attemptedReads)&&attemptedReads.length>0);stage='ACTUAL_REVIEW_READ_RETURNED';
       assert.equal(object(attemptedReads[attemptedReads.length-1]).status,200,'existing public Review reader must return this real admission retained material');
       await browser.waitFor("Boolean(document.querySelector('[data-review-manual-report]'))");
       const expected={source_kind:'MANUAL_REPORT',source:'ON_SITE',description:'合成现场代录：打印机情况不明',location:{text:null,unknown:true},
         reporter:{verification:'VERIFIED',name:'合成成员甲',departments:['合成门诊']},identity_source:'VERIFIED_DIRECTORY_SELECTION',actor_principal_id:principal.id,
         manual_contact_required:false,external_notification:false,notification_eligibility:'ELIGIBLE'};
-      const reads=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200)`);assert.ok(Array.isArray(reads));assert.ok(reads.length>=1);
+      const reads=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200&&row.result!==null)`);assert.ok(Array.isArray(reads));assert.ok(reads.length>=1);
       const detail=object(object(reads[reads.length-1]).result);assert.deepEqual(detail.manual_report,expected);assert.deepEqual(detail.canonical_item,{kind:'review',id:reviewId});
       const text=string(await browser.evaluate("document.querySelector('[data-review-manual-report]').textContent"));
       assert.ok(text.includes('现场代录'));assert.ok(text.includes('合成成员甲'));assert.ok(text.includes('合成门诊'));assert.ok(text.includes('代录人：林舟'));
@@ -175,7 +175,7 @@ test('the actual production form explicitly selects an authorized reporter and a
       profile={display_name:'目录后来更名',departments:['目录后来调岗']};directoryVersion='T18_SYNTHETIC_DIRECTORY_V2';
       await browser.command('Page.reload');
       await browser.waitFor("document.querySelector('[data-review-manual-report]')?.textContent.includes('合成成员甲')&&document.querySelector('[data-review-manual-report]')?.textContent.includes('合成门诊')");
-      const refreshedReads:unknown=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200)`);
+      const refreshedReads:unknown=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200&&row.result!==null)`);
       assert.ok(Array.isArray(refreshedReads)&&refreshedReads.length>0,'reload must read the same real Review through current HTTP');
       assert.deepEqual(object(object(refreshedReads[refreshedReads.length-1]).result).manual_report,expected);stage='DIRECTORY_CHANGED_CURRENT_READ';
       const retained=string(await browser.evaluate("document.querySelector('[data-review-manual-report]').textContent"));assert.equal(retained.includes('目录后来'),false);assert.equal(verifyCalls,1);
