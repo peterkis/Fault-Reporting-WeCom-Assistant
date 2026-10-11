@@ -8,14 +8,14 @@ import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import type {ManualReporterDirectoryOptions,WorkbenchReporterCandidate} from '../../contracts/workbench_reporter_candidates_contracts.js';
 
 // Isolated configured authority only: no real directory, identity or message transport.
-export function createT18Directory(refusal:'SEARCH'|'VERIFY'|null=null){
-  const application={sourceCorpScope:'wbint-t18-synthetic-corp',sourceAppScope:'wbint-t18-synthetic-app'};
-  const directoryScope='WBINT_T18_SYNTHETIC_DIRECTORY',mappingHash='c'.repeat(64),mappingProof='T18_SYNTHETIC_MAPPING_PROOF';
-  const target={scopeHash:createHmac('sha256','T18_ISOLATED_SCOPE_SECRET_NOT_A_LIVE_CREDENTIAL')
-    .update(JSON.stringify(['member',application.sourceCorpScope,application.sourceAppScope,'T18_SYNTHETIC_CANONICAL_MEMBER_A'])).digest('hex'),...application,proofRef:mappingProof};
+export function createT18Directory(refusal:'SEARCH'|'VERIFY'|null=null,coordinates:{application?:{sourceCorpScope:string;sourceAppScope:string};memberId?:string;scopeSecret?:string;mappingHash?:string;mappingProof?:string;bindingProof?:string}={}){
+  const application=coordinates.application??{sourceCorpScope:'wbint-t18-synthetic-corp',sourceAppScope:'wbint-t18-synthetic-app'};
+  const directoryScope='WBINT_T18_SYNTHETIC_DIRECTORY',mappingHash=coordinates.mappingHash??'c'.repeat(64),mappingProof=coordinates.mappingProof??'T18_SYNTHETIC_MAPPING_PROOF';
+  const target={scopeHash:createHmac('sha256',coordinates.scopeSecret??'T18_ISOLATED_SCOPE_SECRET_NOT_A_LIVE_CREDENTIAL')
+    .update(JSON.stringify(['member',application.sourceCorpScope,application.sourceAppScope,coordinates.memberId??'T18_SYNTHETIC_CANONICAL_MEMBER_A'])).digest('hex'),...application,proofRef:mappingProof};
   const observation={scope:target,mapping_config_hash:mappingHash,verification_method:'VERIFIED_DELEGATED_MAPPING',profile_source:'THIRD_PARTY_STAFF_DIRECTORY',
     directory_source_scope:directoryScope,directory_snapshot_version:'T18_SYNTHETIC_DIRECTORY_V1',profile_at_report:{display_name:'合成成员甲',departments:['合成门诊']},
-    binding_proof_ref:'T18_SYNTHETIC_BINDING_PROOF',account_status:'ACTIVE',binding_state:'VERIFIED',proof_kind:'SYNTHETIC',
+    binding_proof_ref:coordinates.bindingProof??'T18_SYNTHETIC_BINDING_PROOF',account_status:'ACTIVE',binding_state:'VERIFIED',proof_kind:'SYNTHETIC',
     reachability:{status:'REACHABLE',target_scope_hash:target.scopeHash}};
   const candidate:WorkbenchReporterCandidate={candidate_ref:'t18_synthetic_allowed_candidate_01',
     candidate_version:hashP2016({candidate_ref:'t18_synthetic_allowed_candidate_01',...observation}),display_name:'合成成员甲',departments:['合成门诊'],
