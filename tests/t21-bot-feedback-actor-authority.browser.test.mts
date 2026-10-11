@@ -180,7 +180,7 @@ test('logout before a newly opened other Bot Ticket first recovery response arri
    assert.equal(serverWire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback')).length,0,'the original UNKNOWN command never reached the server');
    let peer:Peer|undefined,boundaryError:unknown;
    try{
-    peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport+'\n'+t21HoldFirstRecoveryResponse});
+    peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport+';\n'+t21HoldFirstRecoveryResponse});
     await peer.command('Page.navigate',{url:page(second)});await peer.command('Page.bringToFront');
     await peer.waitFor("globalThis.__t21SlowRecovery?.held===true&&document.querySelector('#ticket')?.hidden===false&&document.readyState==='complete'");
     await browser.waitFor('document.hidden===true');

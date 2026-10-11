@@ -36,11 +36,13 @@ test('T21 genuine associated Journey expiring during the actual source row wait 
       assert.equal(observed,true,'must observe the actual authorizer source row wait, not Promise state');
       // Fault injected only after the writer's source wait is observed. No
       // source identity/status, r.journey_id or Ticket/ledger row is rewritten.
-      const deadline=(await f.context.pool.query<{epoch:string}>(`WITH stamp AS (SELECT platform.physical_epoch_ms()+250 AS epoch)
+      // Local timestamps have second precision. The next physical second keeps
+      // retention strictly later than reported_at and still expires inside 2s.
+      const deadline=(await f.context.pool.query<{epoch:string}>(`WITH stamp AS (SELECT (platform.physical_epoch_ms()/1000+1)*1000 AS epoch)
         UPDATE intake.contact_journey SET retention_until_epoch_ms=stamp.epoch,
           retention_until=platform.local_from_epoch_ms(stamp.epoch) FROM stamp
         WHERE id=$1::uuid RETURNING retention_until_epoch_ms::text AS epoch`,[f.associatedJourneyId])).rows[0]?.epoch;
-      assert.ok(deadline);const expiryDeadline=performance.now()+700;
+      assert.ok(deadline);const expiryDeadline=performance.now()+1200;
       for(;;){
         const now=(await f.context.pool.query<{epoch:string}>('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0]?.epoch;
         assert.ok(now);if(BigInt(now)>=BigInt(deadline))break;
