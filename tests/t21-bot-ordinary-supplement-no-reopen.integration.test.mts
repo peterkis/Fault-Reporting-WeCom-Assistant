@@ -47,7 +47,15 @@ test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journ
     const actions=first.evaluated.action_results;assert.ok(Array.isArray(actions));
     const ticketAction=actions.map(t21Object).find(action=>action.result_ref_type==='TICKET');
     assert.ok(ticketAction);assert.equal(typeof ticketAction.result_ref_id,'string');const ticketId=String(ticketAction.result_ref_id);
-    const staff=await t11Http(context),started=await staff.start(ticketId);
+    const staff=await t11Http(context);
+    const responsibilityResponse=await staff.get('/api/tickets/'+ticketId+'/responsibility');assert.equal(responsibilityResponse.status,200);
+    const responsibility=t21Object(await responsibilityResponse.json());assert.ok(Array.isArray(responsibility.conversations));
+    const source=responsibility.conversations.map(t21Object)[0];assert.ok(source);
+    const bootstrap=t21Object(await (await staff.get('/api/lifecycle/bootstrap')).json());
+    const takeover={client_command_id:randomUUID(),expected_row_version:Number(source.session_row_version),reason_code:'T21_EXPLICIT_COMMUNICATOR'};
+    const taken=await fetch(context.origin+'/api/conversations/'+source.session_id+'/takeover',{method:'POST',headers:{cookie:context.cookies[0]??'',origin:context.origin,'content-type':'application/json','x-csrf-token':String(bootstrap.csrf_token),'idempotency-key':takeover.client_command_id,'if-match':'"'+takeover.expected_row_version+'"'},body:JSON.stringify(takeover)});
+    assert.equal(taken.status,200,await taken.text());
+    const started=await staff.start(ticketId);
     assert.equal((await staff.post(ticketId,'complete',staff.command(started))).status,200);
     const completed=await staff.detail(ticketId);assert.equal(completed.status,'CLOSED');
     assert.equal(completed.intake_id,first.intakeId);assert.ok(completed.handling_cycle?.staff_completion_event_id);

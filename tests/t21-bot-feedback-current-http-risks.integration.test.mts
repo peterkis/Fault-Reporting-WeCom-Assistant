@@ -1,3 +1,4 @@
+import {t21Login as login} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 // SOURCE_ONLY / NOT_REGISTERED / NOT_COMPILED / NOT_RUN.
 // Intended repository location: tests/t21-bot-feedback-current-http-risks.integration.test.mts.
 // One original owned PG fixture per test, stock concurrency 1, timeout 240s.
@@ -12,7 +13,7 @@ import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
 import {withT21DraftFixture,t21FeedbackCommand,t21Send,t21Object,t21Config,t21Mapping,t21OAuthOptions} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
-import {browser,login,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
+import {browser,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 type MemberBrowser=ReturnType<typeof browser>;
 type HttpResponse=Awaited<ReturnType<MemberBrowser['request']>>;

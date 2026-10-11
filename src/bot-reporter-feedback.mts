@@ -25,7 +25,7 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
   if(typeof enabled!=='boolean'||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<32||enabled&&(pool.options.max??4)>4
     ||Object.keys(featureFlags).some(key=>key!=='YIXIAOXIU_SELF_SERVICE_ENABLED'&&key!=='YIXIAOXIU_MY_REPORTS_ENABLED')
     ||Object.values(featureFlags).some(value=>typeof value!=='boolean'))fail('CONFIG_INVALID',503);
-  const writeEnabled=enabled&&featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED===true&&featureFlags.YIXIAOXIU_MY_REPORTS_ENABLED===true;
+  const writesEnabled=()=>enabled&&featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED===true&&featureFlags.YIXIAOXIU_MY_REPORTS_ENABLED===true;
   const digest=(purpose:string,values:unknown[])=>createHmac('sha256',scopeSecret).update(JSON.stringify([purpose,...values])).digest();
   const commandScope=(member:Readonly<YxxBotMemberScope>)=>'BOT_REPORTER_FEEDBACK:'+digest('BOT_REPORTER_FEEDBACK',[member.corpId,member.agentId,member.botId,member.userid]).toString('hex');
   const csrf=(sessionToken:unknown,member:Readonly<YxxBotMemberScope>)=>digest('BOT_FEEDBACK_CSRF',[sessionToken,commandScope(member)]).toString('hex');
@@ -49,7 +49,7 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
   const denied=(rejection:Extract<BotReporterFeedbackContext,{can_feedback:false}>['rejection']):BotReporterFeedbackContext=>({schema_version:1,can_feedback:false,completed_round_ref:null,completed_round_no:null,ticket_version:null,rejection});
   async function context(tx:PostgresTransaction,input:BotFeedbackReadInput):Promise<BotReporterFeedbackContext>{
     const member=identity(input.sessionToken),scope=await authorizer.authorizeInTransaction({transaction:tx,...input});
-    if(!writeEnabled)return denied('WRITE_DISABLED');await ready(tx);
+    if(!writesEnabled())return denied('WRITE_DISABLED');await ready(tx);
     const round=await completedTicketRound(tx,scope.ticket_id);
     if(!round||round.source_intake_id!==scope.source_intake_id){
       const current=await tx.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[scope.ticket_id]);
@@ -57,17 +57,18 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
     }
     const now=await epoch(tx);
     await authorizer.authorizeInTransaction({transaction:tx,...input});
+    if(!writesEnabled())return denied('WRITE_DISABLED');
     return {schema_version:1,can_feedback:true,completed_round_ref:credential(commandScope(member),scope.public_ref,round,now/60000n*60000n),completed_round_no:round.cycle_no,ticket_version:round.version,rejection:null};
   }
   function bootstrap(sessionToken:unknown):BotReporterFeedbackBootstrap{
-    const member=identity(sessionToken);return {schema_version:1,write_enabled:writeEnabled,csrf_token:writeEnabled?csrf(sessionToken,member):null};
+    const member=identity(sessionToken),writeEnabled=writesEnabled();return {schema_version:1,write_enabled:writeEnabled,csrf_token:writeEnabled?csrf(sessionToken,member):null};
   }
   function assertCsrf(sessionToken:unknown,value:unknown){
-    const member=identity(sessionToken);if(!writeEnabled)fail('FORBIDDEN',403);
+    const member=identity(sessionToken);if(!writesEnabled())fail('FORBIDDEN',403);
     if(typeof value!=='string'||!/^[a-f0-9]{64}$/u.test(value)||!timingSafeEqual(Buffer.from(value,'hex'),Buffer.from(csrf(sessionToken,member),'hex')))fail('CSRF_INVALID',403);
   }
   async function accept(input:BotFeedbackReadInput&{input:unknown}):Promise<BotReporterFeedbackResult>{
-    const member=identity(input.sessionToken);if(!writeEnabled)fail('FORBIDDEN',403);
+    const member=identity(input.sessionToken);if(!writesEnabled())fail('FORBIDDEN',403);
     let value:BotReporterFeedbackInput;try{value=parseYxxFeedbackInput(input.input);}catch{fail('INPUT_INVALID',400);}
     const scopeKey=commandScope(member),commandHash=hashP2016({purpose:'BOT_REPORTER_FEEDBACK',public_ref:input.publicRef,...value});
     if(inFlight>=32)fail('BUSY',503);inFlight++;
@@ -79,6 +80,7 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
         const original=await authorizer.authorizeInTransaction({transaction:tx,...input});await ready(tx);
         const previous=await readBotFeedbackCommandInTransaction({transaction:tx,commandScope:scopeKey,commandId:value.client_command_id});
         const recheck=async()=>{
+          if(!writesEnabled())fail('FORBIDDEN',403);
           const current=await authorizer.authorizeInTransaction({transaction:tx,...input});
           if(current.ticket_id!==original.ticket_id||current.source_intake_id!==original.source_intake_id||commandScope(identity(input.sessionToken))!==scopeKey)fail('NOT_FOUND',404);
         };

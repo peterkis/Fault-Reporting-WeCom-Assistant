@@ -1,10 +1,11 @@
+import {t21Login as login} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 // FORWARD_SOURCE_DRAFT / NOT_REGISTERED / NOT_COMPILED / NOT_RUN.
 // Future tests/t21-bot-current-scope-denials.integration.test.mts; two cases,
 // 240s each file / stock concurrency1 / flags[]. No historical publicRef App pin.
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT21DraftFixture,t21Object,t21FeedbackCommand,t21Send,t21Config,t21Mapping,t21OAuthOptions} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
-import {browser,login,post,input,origin,secret,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
+import {browser,post,input,origin,secret,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
 
@@ -69,7 +70,7 @@ test('a Bot command round and receipt stay in its command-time App and purpose w
   assert.equal(t21Object(untouched.json()).version,f.completed.version);
   app=await f.replaceMember({webFeedback:true});member=browser(app.server);await login(member);
   const sameApp=await t21FeedbackCommand(member,f.path);
-  assert.equal(sameApp.command.completed_round_ref,a.command.completed_round_ref);
+  assert.equal(sameApp.command.expected_ticket_version,a.command.expected_ticket_version);
   const accepted=await t21Send(member,f.path,a.command,sameApp.csrf);assert.equal(accepted.status,200,accepted.text);
   const ackPath=f.path+'/feedback/commands/'+a.command.client_command_id;
   const originalAck=await member.request(ackPath);assert.equal(originalAck.status,200,originalAck.text);

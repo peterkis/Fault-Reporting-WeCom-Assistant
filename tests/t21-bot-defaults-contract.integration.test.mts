@@ -1,6 +1,7 @@
+import {t21Login as login} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
 import {withT21DraftFixture,t21Config,t21Mapping,t21OAuthOptions,t21FeedbackCommand,t21Send,t21Object} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
-import {browser,login,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
+import {browser,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
 import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write capability or cross-source recovery',async()=>{
@@ -10,9 +11,9 @@ test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write
   for(const profile of ['MEMBER_SELF_SERVICE','MEMBER_TICKET_READONLY','OAUTH_ONLY'] as const){
    const shared={...options,oauth:createWeComWebOAuth(t21OAuthOptions()),yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}};
    const runtime=profile==='MEMBER_SELF_SERVICE'?createYxxProfile({...shared,profile}):profile==='MEMBER_TICKET_READONLY'?createYxxProfile({...shared,profile}):createYxxProfile({...shared,profile});
-   try{await runtime.start();member=browser(runtime.server);await login(member);const denied=await t21Send(member,f.path,prepared.command,prepared.csrf);assert.equal(denied.status,403,denied.text);
+   try{await runtime.start();member=browser(runtime.server);await login(member);const denied=await t21Send(member,f.path,prepared.command,prepared.csrf);assert.equal(denied.status,profile==='OAUTH_ONLY'?404:403,denied.text);
     if(profile!=='OAUTH_ONLY'){const detail=await member.request(f.path);assert.equal(detail.status,200,detail.text);assert.equal(Object.hasOwn(t21Object(detail.json()),'feedback_context'),false);}
-    const page=await member.request('/wecom/yixiaoxiu/tickets/'+f.publicRef);assert.equal(page.status,200);if(profile==='MEMBER_TICKET_READONLY')assert.equal(page.text.includes('/reporter/bot-feedback.js'),false);
+    const page=await member.request('/wecom/yixiaoxiu/tickets/'+f.publicRef);assert.equal(page.status,profile==='OAUTH_ONLY'?404:200);if(profile==='MEMBER_TICKET_READONLY')assert.equal(page.text.includes('/reporter/bot-feedback.js'),false);
    }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   }
   await f.verifyStaff(async staff=>{const detail=await staff.detail(f.ticketId);assert.equal(detail.status,'CLOSED');assert.equal(detail.version,f.completed.version);assert.deepEqual(detail.handling_cycle,f.completed.handling_cycle);});
@@ -42,7 +43,11 @@ test('Bot closed public HTTP contracts reject incidental text, spoofed identity 
   const result=await t21Send(member,f.path,command,csrf);assert.equal(result.status,200,result.text);
   const receipt=await member.request(f.path+'/feedback/commands/'+command.client_command_id);assert.equal(receipt.status,200,receipt.text);
   for(const [file,value] of [['p2_016_reporter_ticket_view.schema.json',detail],['bot_reporter_feedback_bootstrap.schema.json',bootstrap],['bot_reporter_feedback_result.schema.json',t21Object(result.json())]] as const){
-   const schema=t21Object(JSON.parse(await readFile(new URL('../contracts/'+file,import.meta.url),'utf8')));assert.equal(schema.additionalProperties,false);const properties=t21Object(schema.properties);for(const key of Object.keys(value))assert.equal(Object.hasOwn(properties,key),true,key+' must be declared in '+file);
+   const schema=t21Object(JSON.parse(await readFile(new URL('../contracts/'+file,import.meta.url),'utf8')));
+   const branches=Object.hasOwn(schema,'oneOf')?schema.oneOf:[schema];assert.ok(Array.isArray(branches));
+   const branch=branches.map(t21Object).find(candidate=>{const properties=t21Object(candidate.properties);return Object.keys(value).every(key=>Object.hasOwn(properties,key))&&Object.entries(properties).every(([key,property])=>{const definition=t21Object(property);return !Object.hasOwn(definition,'const')||definition.const===value[key];});});
+   assert.ok(branch,'actual closed DTO must match one declared branch in '+file);assert.equal(branch.additionalProperties,false);
+   const properties=t21Object(branch.properties);for(const key of Object.keys(value))assert.equal(Object.hasOwn(properties,key),true,key+' must be declared in '+file);
   }
   assert.deepEqual(Object.keys(receipt.json()).sort(),['client_command_id','public_ref','result','state']);assert.equal(t21Object(receipt.json()).state,'COMMITTED');
   assert.doesNotMatch(result.text+receipt.text,/INTERNAL_T11_CANARY|user-test|bot-test|request_ref|source_intake_id|actor_principal_id|command_hash|completed_by/u);

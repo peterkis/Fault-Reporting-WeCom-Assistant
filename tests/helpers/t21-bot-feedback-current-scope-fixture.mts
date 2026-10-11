@@ -25,7 +25,16 @@ export function t21Object(value:unknown):Record<string,unknown>{assert.ok(value!
 export const t21Config={...config,reporterUserIds:['user-test','other-user-test']};
 const appOAuthId=(selected:typeof t21Config,member:'a'|'b')=>selected.agentId===t21Config.agentId?'open-'+member:'open-'+member+'-'+selected.agentId;
 export function t21OAuthOptions(selected=t21Config){return {...oauthOptions,corpId:selected.corpId,agentId:selected.agentId,
- resolveCode:async(code:string)=>({userid:appOAuthId(selected,code==='a'?'a':'b')})};}
+ resolveCode:async(code:string)=>({userid:appOAuthId(selected,code==='a'||code.startsWith('a:')?'a':'b')})};}
+// Provider authorization codes are single-use; repeated same-member logins need
+// distinct synthetic codes rather than weakening the real OAuth replay fence.
+export async function t21Login(client:ReturnType<typeof browser>,member:'a'|'b'='a'){
+ const begin=await client.request('/wecom/yixiaoxiu/login');assert.equal(begin.status,302);
+ const location=begin.headers.location;assert.equal(typeof location,'string');
+ const state=new URL(String(location)).searchParams.get('state');assert.ok(state);
+ const code=member+':'+randomUUID();
+ assert.equal((await client.request('/wecom/yixiaoxiu/callback?state='+encodeURIComponent(state)+'&code='+encodeURIComponent(code))).status,303);
+}
 export async function t21Mapping(selected=t21Config){return createYxxDelegatedIdentityMapping({config:selected,
  accessTokenProvider:async()=> 'synthetic-t21-token-'+selected.agentId,fetchImpl:async()=>new Response(JSON.stringify({errcode:0,open_userid_list:[
  {userid:'user-test',open_userid:appOAuthId(selected,'a')},{userid:'other-user-test',open_userid:appOAuthId(selected,'b')}]}))});}

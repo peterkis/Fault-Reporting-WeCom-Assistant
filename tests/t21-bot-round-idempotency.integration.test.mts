@@ -1,17 +1,20 @@
+import {t21Login as login} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 // Registered current-scope risk tracer; original external draft retained.
 // Future tests/t21-bot-round-idempotency.integration.test.mts; one case, 240s.
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT21DraftFixture,t21Object,t21FeedbackCommand,t21Send} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
-import {browser,login} from './helpers/yxx-ss-009-http-fixture.mjs';
+import {browser} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('two Bot member tabs with different UUIDs create one new cycle; an old completed-round ref cannot reopen a later completion',async()=>{
  await withT21DraftFixture(async f=>{
   let app=await f.replaceMember(),first=browser(app.server);await login(first);
   const second=browser(app.server);await login(second);
   const one=await t21FeedbackCommand(first,f.path),two=await t21FeedbackCommand(second,f.path);
-  assert.equal(one.command.completed_round_ref,two.command.completed_round_ref);
+  assert.equal(one.command.expected_ticket_version,two.command.expected_ticket_version);
+  // Opaque credentials can differ across a physical minute; both must authorize
+  // this same completed round, as the concurrent real commands prove below.
   assert.notEqual(one.command.client_command_id,two.command.client_command_id);
   const responses=await Promise.all([t21Send(first,f.path,one.command,one.csrf),t21Send(second,f.path,two.command,two.csrf)]);
   assert.deepEqual(responses.map(r=>r.status).sort(),[200,409],responses.map(r=>r.text).join('\n'));
