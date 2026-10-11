@@ -30,7 +30,7 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,route
     const endpoint=endpoints.get(JSON.stringify([request.channel_account_id,request.target_id]));if(!endpoint)return reject('GROUP_PUSH_ROUTE_MISSING');
     if(!resolveMentionUserId)return reject('GROUP_PUSH_MENTION_UNQUALIFIED');
     if(request.signal.aborted)return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
-    const q=await pool.query<Basis>(`SELECT c.source_intake_id::text,r.node,t.ticket_no,e.new_status,e.created_at,m.content,b.recipient_binding_hash
+    const readBasis=()=>pool.query<Basis>(`SELECT c.source_intake_id::text,r.node,t.ticket_no,e.new_status,e.created_at,m.content,b.recipient_binding_hash
       FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id
       JOIN communication.ticket_notification_binding b ON b.delivery_id=d.id AND b.message_id=m.id AND b.outbox_id=o.id
       JOIN communication.ticket_round_notification_binding r ON r.notification_binding_id=b.id AND r.ticket_id=b.ticket_id AND r.destination_type=b.destination_type
@@ -50,7 +50,7 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,route
             AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND EXISTS(
               SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`,
       [request.delivery_id,request.provider,request.channel_account_id,request.target_id,request.idempotency_key]);
-    const row=q.rows[0];if(q.rowCount!==1||!row)return reject('GROUP_PUSH_BINDING_INVALID');
+    const q=await readBasis(),row=q.rows[0];if(q.rowCount!==1||!row)return reject('GROUP_PUSH_BINDING_INVALID');
     const source=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
     if(!source||source.group_id!==request.target_id||row.recipient_binding_hash!==textHashP2016(JSON.stringify(['WECOM_AIBOT',source.bot_id,source.group_id,source.reporter_user_id])))return reject('GROUP_PUSH_BINDING_INVALID');
     const model={transport:'WECOM_MESSAGE_PUSH',node:row.node,suffix:row.ticket_no.slice(-4),status:row.new_status,occurred_at:localP2016(row.created_at)};
@@ -59,6 +59,12 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,route
     try{mention=await resolveMentionUserId({botId:source.bot_id,groupId:source.group_id,reporterUserId:source.reporter_user_id});await beforeSend();}
     catch{return reject('GROUP_PUSH_NOT_AUTHORIZED');}
     if(typeof mention!=='string'||!mention||mention==='@all'||mention.length>256)return reject('GROUP_PUSH_MENTION_UNQUALIFIED');
+    // Authorization may await external qualification or a caller fence. Re-read
+    // the current sending commitment and retained original source afterwards.
+    const current=await readBasis();
+    if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return reject('GROUP_PUSH_BINDING_INVALID');
+    const currentSource=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
+    if(!currentSource||!isDeepStrictEqual(currentSource,source))return reject('GROUP_PUSH_BINDING_INVALID');
     if(request.signal.aborted)return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
     const text='工单尾号 '+model.suffix+(row.node==='FIRST_RESPONSIBILITY'?' 已有人员处理。':' 处理完成。');
     try{
