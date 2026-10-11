@@ -71,7 +71,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
   // remains local-only; the browser never supplies a scope or source identity.
   async function authorizeInTransaction({transaction,sessionToken,publicRef}:{transaction:PostgresTransaction;sessionToken:unknown;publicRef:unknown}):Promise<YxxBotReadScope>{
     const member=authenticate(sessionToken as SessionToken|null),scope=await authorize(transaction,member,publicRef);
-    if(!scope)failYxx('NOT_FOUND');authenticate(sessionToken as SessionToken|null);return scope;
+    if(!scope||scope.original_source==='VERIFIED_MANUAL_REPORT')failYxx('NOT_FOUND');authenticate(sessionToken as SessionToken|null);return scope;
   }
   async function run<T>({sessionToken,publicRef=null,locator=null,access=null}: YxxAuthorizerInput,reader: (tx: PostgresTransaction, scope: ReporterReadScope) => Promise<T>): Promise<T>{
     const member=authenticate(sessionToken as SessionToken | null);
