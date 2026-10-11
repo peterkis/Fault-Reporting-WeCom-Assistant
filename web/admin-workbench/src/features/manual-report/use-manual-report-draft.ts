@@ -2,7 +2,7 @@ import {useEffect,useRef} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {Principal} from '../../api/client';
-import type {ManualReportCommand} from '../../../../../contracts/workbench_manual_report_contracts';
+import type {ManualReportAdmissionCommand} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import {MANUAL_REPORT_DRAFT_ID,emptyManualReportInput,hasManualReportInput,encodeManualReportDraft,decodeManualReportDraft} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {ManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
@@ -24,9 +24,9 @@ export function useManualReportAuthority(principal:Principal|undefined){
     else if([403,404].includes(context.error.status))void clearManualReportAuthority(client,principal.principal_id,context.error);
   },[client,principal?.principal_id,context.error]);
 }
-export function useManualReportDraft({principal,value,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;pending:ManualReportCommand|null;onRestore:(restored:{value:ManualReportInput;pending:ManualReportCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useManualReportDraft({principal,value,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;pending:ManualReportAdmissionCommand|null;onRestore:(restored:{value:ManualReportInput;pending:ManualReportAdmissionCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),stage=useRef<'session'|'create'>('session');
-  return useAuthorizedDraft<ManualReportInput,ManualReportCommand>({scope:{principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'},enabled:principal.manual_report_draft_recovery_enabled,
+  return useAuthorizedDraft<ManualReportInput,ManualReportAdmissionCommand>({scope:{principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'},enabled:principal.manual_report_draft_recovery_enabled,
     value,pending,emptyValue:emptyManualReportInput(),hasInput:hasManualReportInput,serialise:v=>encodeManualReportDraft(v.value,v.pending),decode:text=>{try{return decodeManualReportDraft(text);}catch{throw new DraftError('DRAFT_CORRUPT');}},commandId:command=>command.client_command_id,
     authorize:async signal=>{
       stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);

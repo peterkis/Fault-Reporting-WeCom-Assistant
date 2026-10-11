@@ -3,8 +3,9 @@ import {Link} from 'react-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
-import type {ManualReportCommand,ManualReportResult} from '../../../../../contracts/workbench_manual_report_contracts';
-import {emptyManualReportInput,hasManualReportInput,manualReportCommandFromInput,decodeManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {ManualReportAdmissionCommand,ManualReportAdmissionResult} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {WorkbenchReporterCandidate,WorkbenchReporterCandidates} from '../../../../../contracts/workbench_reporter_candidates_contracts';
+import {emptyManualReportInput,hasManualReportInput,manualReportCommandFromInput,verifiedManualReportCommandFromInput,decodeManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {ManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import {clearSessionAuthorization} from '../../app/authorization';
 import {clearManualReportAuthority,manualReportCapabilitiesKey,useManualReportDraft} from './use-manual-report-draft';
@@ -17,28 +18,30 @@ export function ManualReportEntry({principal,blocked}:{principal:Principal;block
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'denied';
 export function ManualReportForm({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(value:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),mounted=useRef(true),generation=useRef(0);
-  const [value,setValue]=useState<ManualReportInput>(emptyManualReportInput),[pending,setPending]=useState<ManualReportCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[result,setResult]=useState<ManualReportResult|null>(null);
+  const [value,setValue]=useState<ManualReportInput>(emptyManualReportInput),[pending,setPending]=useState<ManualReportAdmissionCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[result,setResult]=useState<ManualReportAdmissionResult|null>(null);
+  const [selected,setSelected]=useState<WorkbenchReporterCandidate|null>(null),[manual,setManual]=useState(false),[page,setPage]=useState<WorkbenchReporterCandidates|null>(null),[searchMessage,setSearchMessage]=useState(''),[searching,setSearching]=useState(false);
+  const candidateRequest=useRef<AbortController|null>(null);
   const context=useQuery({queryKey:manualReportCapabilitiesKey(principal.principal_id),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal.manual_reports_enabled});
   const draft=useManualReportDraft({principal,value,pending,onRestore:restored=>{setValue(restored.value);setPending(restored.pending);if(restored.pending){setState('unknown');setMessage('结果未知：原报修内容和操作标识已恢复，只能只读核对。');}},
     onOperation:()=>{setState('unknown');setMessage('结果未知：敏感内容不可恢复，只能只读核对原操作。');},
-    onSensitiveClear:()=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setPending(null);setState('idle');setMessage('');setResult(null);}});
+    onSensitiveClear:()=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setSelected(null);setPage(null);candidateRequest.current?.abort();setPending(null);setState('idle');setMessage('');setResult(null);}});
   const busy=state==='submitting'||state==='checking',unresolved=state==='unknown'||Boolean(pending)||Boolean(draft.operationId);
   const blocked=(busy||unresolved||hasManualReportInput(value))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;generation.current++;request.current?.abort();};},[]);
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
-  const deny=(error:ApiError)=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setPending(null);setResult(null);setState('denied');setMessage('当前身份已没有代录权限，输入及恢复副本已清理。');
+  const deny=(error:ApiError)=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setSelected(null);setPage(null);candidateRequest.current?.abort();setPending(null);setResult(null);setState('denied');setMessage('当前身份已没有代录权限，输入及恢复副本已清理。');
     if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearManualReportAuthority(client,principal.principal_id,error);};
   useEffect(()=>{if(context.error instanceof ApiError&&[401,403,404].includes(context.error.status))deny(context.error);},[context.error]);
   const refresh=()=>{void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
-  async function accepted(id:string,accepted:ManualReportResult,label:string){
-    const cleaned=await draft.success(id);if(!mounted.current)return;setPending(null);setValue(emptyManualReportInput());setResult(accepted);setState('succeeded');
+  async function accepted(id:string,accepted:ManualReportAdmissionResult,label:string){
+    const cleaned=await draft.success(id);if(!mounted.current)return;setPending(null);setValue(emptyManualReportInput());setSelected(null);setPage(null);setResult(accepted);setState('succeeded');
     setMessage(label+(cleaned?'':' 恢复副本清理尚未确认，禁止新提交；请只读核对并重试清理。'));refresh();
   }
   async function submit(){
     if(request.current||unresolved||!draft.canSubmit||!context.data?.can_create||context.isError)return;
     if(!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，报修尚未发送；输入已保留，请重新读取。');return;}
-    let command:ManualReportCommand;try{command=manualReportCommandFromInput(value,crypto.randomUUID());}catch{setState('denied');setMessage('请完整填写报修人、联系方式和故障描述，并填写位置或选择位置暂不清楚。');return;}
+    let command:ManualReportAdmissionCommand;try{command=selected&&principal.reporter_candidates_enabled?verifiedManualReportCommandFromInput(value,crypto.randomUUID(),{verification:'VERIFIED_SELECTION',candidate_ref:selected.candidate_ref,candidate_version:selected.candidate_version}):manualReportCommandFromInput(value,crypto.randomUUID());}catch{setState('denied');setMessage('请完整填写报修人、联系方式和故障描述，并填写位置或选择位置暂不清楚。');return;}
     if(new TextEncoder().encode(JSON.stringify(command)).length>16384){setState('denied');setMessage('报修内容超出16 KiB，请减少输入后再提交。');return;}
     const controller=new AbortController(),token=generation.current;let dispatched=false;request.current=controller;setPending(command);setState('submitting');setMessage('正在受理报修…');
     try{
@@ -64,14 +67,33 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
   }
   const change=(next:ManualReportInput)=>{if(unresolved||busy)return;try{decodeManualReportInput(next);}catch{setState('denied');setMessage('这次修改包含控制字符或超过字段上限，原输入已保留。');return;}setValue(next);setResult(null);setMessage('');setState('idle');};
   const controlsDisabled=busy||unresolved||context.isError||!context.data?.can_create;
+  const candidatesEnabled=principal.reporter_candidates_enabled===true&&!manual;
+  async function searchCandidates(cursor:string|null){
+    if(!candidatesEnabled||selected||controlsDisabled)return;
+    const query=value.name.trim();if([...query].length<2)return;
+    candidateRequest.current?.abort();const controller=new AbortController(),token=generation.current;candidateRequest.current=controller;setSearching(true);setPage(null);setSearchMessage('正在查找可选择成员…');
+    try{const found=await api.reporterCandidates(query,cursor,controller.signal);if(!mounted.current||controller.signal.aborted||token!==generation.current)return;setPage(found);setSearchMessage(found.candidates.length?'请明确选择本次报修人。':'没有找到可选择成员，可以继续手填。');}
+    catch(error){if(!mounted.current||controller.signal.aborted||token!==generation.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setSearchMessage('成员目录暂不可用，原输入已保留，可以继续手填。');}
+    finally{if(candidateRequest.current===controller){candidateRequest.current=null;setSearching(false);}}
+  }
+  useEffect(()=>{
+    setPage(null);setSearchMessage('');setSearching(false);candidateRequest.current?.abort();
+    if(!candidatesEnabled||selected||controlsDisabled||[...value.name.trim()].length<2)return;
+    const timer=window.setTimeout(()=>{void searchCandidates(null);},250);
+    return()=>{window.clearTimeout(timer);candidateRequest.current?.abort();};
+  },[candidatesEnabled,selected,value.name,controlsDisabled,principal.principal_id]);
   return <section className="workspace manual-report-page"><header className="page-title"><div><h1>新报修</h1><p>电话或现场代录，先保存清楚的原始情况。</p></div><Link to="/" data-action="return-workbench" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回工作台</Link></header>
     {!principal.manual_reports_enabled?<p role="status">电话与现场代录尚未开放。</p>:context.isPending?<p role="status">正在核验当前代录权限…</p>:context.isError&&!context.data?<p role="alert">{errorMessage(context.error)} <button onClick={()=>{void context.refetch();}}>重新读取代录权限</button></p>:<form data-manual-report-form onSubmit={event=>{event.preventDefault();void submit();}}>
       <p className="manual-report-operator">代录人：{principal.display_name} <span>工作人员身份由当前会话记录。</span></p>
-      <p className="manual-report-audience">报修人身份未核实，需人工联系；本次不会自动通知。</p>
+      <p className="manual-report-audience">{selected?'已明确选择报修人，提交时将重新核验身份及通知资格；本次受理不表示通知已送达。':'报修人身份未核实，需人工联系；本次不会自动通知。'}</p>
       {!draft.operationId||pending?<fieldset disabled={controlsDisabled}><legend>本次报修情况</legend>
         <label>来源<select aria-label="报修来源" value={value.source} onChange={event=>change({...value,source:event.target.value==='ON_SITE'?'ON_SITE':'PHONE'})}><option value="PHONE">电话代录</option><option value="ON_SITE">现场代录</option></select></label>
-        <div className="manual-report-fields"><label>报修人姓名<input aria-label="报修人姓名" required value={value.name} onChange={event=>change({...value,name:event.target.value})}/></label><label>联系方式<input aria-label="联系方式" required value={value.contact} onChange={event=>change({...value,contact:event.target.value})}/></label></div>
-        <label>报修人科室（可不填）<input aria-label="报修人科室" value={value.department} onChange={event=>change({...value,department:event.target.value})}/></label>
+                <div className="manual-report-fields"><label>报修人姓名<input aria-label="报修人姓名" role={candidatesEnabled?'combobox':undefined} aria-autocomplete={candidatesEnabled?'list':undefined} aria-controls={candidatesEnabled?'reporter-candidates':undefined} aria-expanded={candidatesEnabled?Boolean(page?.candidates.length):undefined} autoComplete="off" required value={value.name} onChange={event=>{setSelected(null);change({...value,name:event.target.value});}}/></label>{!selected?<label>联系方式<input aria-label="联系方式" required value={value.contact} onChange={event=>change({...value,contact:event.target.value})}/></label>:<p data-selected-reporter>已选择：{selected.display_name} · {selected.departments.join('、')||'未提供科室'}</p>}</div>
+        {candidatesEnabled&&page?.candidates.length?<div id="reporter-candidates" role="listbox" aria-label="可选择报修人">{page.candidates.map(candidate=><button type="button" role="option" aria-selected={false} key={candidate.candidate_ref} onClick={()=>{setSelected(candidate);change({...value,name:candidate.display_name});setPage(null);setSearchMessage('');}}>{candidate.display_name} · {candidate.departments.join('、')||'未提供科室'}</button>)}</div>:null}
+        {searchMessage?<p role="status">{searchMessage}</p>:null}
+        {candidatesEnabled&&page?.next_cursor?<button type="button" disabled={searching} onClick={()=>{void searchCandidates(page?.next_cursor??null);}}>下一页候选</button>:null}
+        {principal.reporter_candidates_enabled&&!manual?<button type="button" data-action="manual-reporter-fallback" onClick={()=>{setSelected(null);setManual(true);setPage(null);setSearchMessage('');}}>改为手填报修人</button>:null}
+        {!selected?<label>报修人科室（可不填）<input aria-label="报修人科室" value={value.department} onChange={event=>change({...value,department:event.target.value})}/></label>:null}
         <label>故障描述<textarea aria-label="故障描述" required rows={5} value={value.description} onChange={event=>change({...value,description:event.target.value})}/><small>最多4000字符；不填写患者资料、口令或其它敏感业务记录。</small></label>
         <label className="manual-report-check"><input type="checkbox" aria-label="位置暂不清楚" checked={value.unknown} onChange={event=>change({...value,unknown:event.target.checked})}/>位置暂不清楚</label>
         <label>位置<input aria-label="故障位置" required={!value.unknown} disabled={value.unknown||controlsDisabled} value={value.location} onChange={event=>change({...value,location:event.target.value})}/></label>
@@ -83,6 +105,6 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
       </div>
     </form>}
     {draft.enabled?<p data-manual-report-draft-status role="status">{draft.message}</p>:null}
-    {message?<div data-manual-report-result role={state==='denied'||state==='unknown'?'alert':'status'}><p>{message}</p>{result?<><p>{result.ticket?'工单 '+result.ticket.number+'，已进入待接单队列。':result.review?'已保存原始报修，进入人工复核。':'已保存原始报修及规则处理结果。'}</p><p>需人工联系；不会自动通知报修人。</p></>:null}</div>:null}
+    {message?<div data-manual-report-result role={state==='denied'||state==='unknown'?'alert':'status'}><p>{message}</p>{result?<><p>{result.ticket?'工单 '+result.ticket.number+'，已进入待接单队列。':result.review?'已保存原始报修，进入人工复核。':'已保存原始报修及规则处理结果。'}</p><p>{result.reporter_verification==='VERIFIED'?(result.manual_contact_required?'本次成员已核实，消息暂不可达，需人工联系。':'本次成员已核实并具备通知资格；受理结果不表示消息已经送达。'):'需人工联系；不会自动通知报修人。'}</p></>:null}</div>:null}
   </section>;
 }
