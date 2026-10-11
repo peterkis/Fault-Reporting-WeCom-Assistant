@@ -53,8 +53,14 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
       i.id=$1::uuid OR ($2='ticket' AND EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
         JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=$3::uuid
         AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND ($4::boolean OR t.assignee_id=$5::uuid OR t.resolver_team_id=ANY($6::text[]))))
+      OR ($2='review' AND EXISTS(SELECT 1 FROM intake.manual_review_item r JOIN intake.deterministic_decision d ON d.id=r.decision_id
+        JOIN intake.contact_journey j ON j.id=r.journey_id JOIN intake.channel_leg basis ON basis.id=d.channel_leg_id
+        JOIN intake.channel_leg l ON l.journey_id=j.id AND l.leg_ordinal>basis.leg_ordinal
+        LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE r.id=$3::uuid AND d.source_kind<>'WEB'
+        AND l.source_intake_id=i.id AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+        AND ($4::boolean OR t.assignee_id=$5::uuid OR t.resolver_team_id=ANY($6::text[]))))
     )
-  )`,values:[c.intakeId,c.kind,c.canonical.id,c.principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'),c.principal.principal_id,c.principal.roles.includes('HANDLER')?c.principal.team_ids:[]]};}
+  )`,values:[c.intakeId,c.kind,c.kind==='review'?c.id:c.canonical.id,c.principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'),c.principal.principal_id,c.principal.roles.includes('HANDLER')?c.principal.team_ids:[]]};}
   async function sources(tx:PostgresTransaction,c:Authorized,after:{kind:PersonalReadSourceKind;id:string}|null=null,n=100):Promise<SourceRow[]>{
     const r=readable(c);
     const rows=(await tx.query<SourceRow>(r.sql+`, coordinates AS (
