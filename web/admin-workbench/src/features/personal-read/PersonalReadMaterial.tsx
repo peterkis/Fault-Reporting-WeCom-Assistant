@@ -22,7 +22,8 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
     const full=()=>client.getQueryCache().findAll({predicate:query=>query.queryKey[0]==='personal-read-command'}).length>=100;
     let disposed=false,attempted=false,busy=false,receiptChecked=false,ownCommandId:string|null=null;const readText=foregroundTextReader(element),controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
     const discard=(commandId:string|null)=>{
-      if(commandId&&client.getQueryData<PersonalReadCommand>(pendingKey)?.client_command_id===commandId)client.removeQueries({queryKey:pendingKey,exact:true});
+      const saved=pending();
+      if(commandId&&saved?.command.client_command_id===commandId)client.removeQueries({queryKey:saved.key,exact:true});
     };
     const confirmed=(result:PersonalReadAcknowledgement)=>{
       discard(result.client_command_id);
@@ -35,7 +36,7 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
       if(!workbenchTransportWritable())return;
       if(pending()?receiptChecked:attempted||full())return;
       if(!readText())return;
-      busy=true;
+      busy=true;ownCommandId=pending()?.command.client_command_id??null;
       try{
         const page=await personalReadApi.page(item,controller.signal);current();
         if(disposed||!workbenchTransportWritable()||!hasForegroundText(element))return;
