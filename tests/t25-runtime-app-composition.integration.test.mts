@@ -10,7 +10,7 @@ import type {WeComAccessTokenProvider} from '../src/p2-g2-wecom-oauth-provider.m
 
 test('the existing runtime schedules one app round consumer and Communication Worker behind its send authorization',{timeout:240000},async()=>{
  await withT24Fixture(async original=>{
-  const source=await t25WebOrigin(original);assert.deepEqual(await t25Deliveries(source.http,source.ticketId),[]);await original.runtime.stop();let sends=0,conversions=0;
+  const source=await t25WebOrigin(original),retiringHttp=await t11Http(original,0,{closeConnections:true});assert.deepEqual(await t25Deliveries(retiringHttp,source.ticketId),[]);await original.runtime.stop();let sends=0,conversions=0;
   const accessTokenProvider:WeComAccessTokenProvider=async options=>{options?.signal?.throwIfAborted();return 'T25_RUNTIME_SYNTHETIC_TOKEN_NOT_A_CREDENTIAL';};
   const fetchImpl:typeof fetch=async(input,init)=>{
    assert.ok(init?.signal instanceof AbortSignal);init.signal.throwIfAborted();assert.ok(typeof init.body==='string');const body=t25Object(JSON.parse(init.body)),path=new URL(input instanceof Request?input.url:String(input)).pathname;
@@ -26,9 +26,11 @@ test('the existing runtime schedules one app round consumer and Communication Wo
    wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}},
    appNotifications:source.appNotifications,appNotificationTransport:{agentId:Number(entryConfig.agentId),accessTokenProvider,fetchImpl}};
   assert.throws(()=>createP2016Runtime({...options,liveApproval:null}),/P2_016_LIVE_APPROVAL_REQUIRED/u);assert.equal(sends,0);
+  console.log('T25_RUNTIME_TRACE SOURCE_AND_EXISTING_SEND_APPROVAL_GUARD_REACHED');
   const runtime=createP2016Runtime(options);
   try{
-   const started=await runtime.start();assert.ok(started.cookies);const context={...original,runtime,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value),browserCookies:started.cookies},http=await t11Http(context);
+   const started=await runtime.start();assert.ok(started.cookies);console.log('T25_RUNTIME_TRACE ACTUAL_RUNTIME_STARTED');
+   const context={...original,runtime,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value),browserCookies:started.cookies},http=await t11Http(context,0,{closeConnections:true});
    let observed:Record<string,unknown>[]=[];for(let n=0;n<100;n++){observed=await t25Deliveries(http,source.ticketId);if(observed.length===1&&observed[0]?.status==='SENT')break;await delay(50);}
    assert.deepEqual(observed.map(row=>({route:row.route_kind,type:row.destination_type,status:row.status,node:row.node})),[{route:'YIXIAOXIU_APP',type:'PERSON',status:'SENT',node:'FIRST_RESPONSIBILITY'}]);
    assert.equal(sends,1);assert.equal(conversions,1);await delay(1200);assert.equal(sends,1);assert.deepEqual(await t25Deliveries(http,source.ticketId),observed);assert.deepEqual(await http.detail(source.ticketId),source.started);
