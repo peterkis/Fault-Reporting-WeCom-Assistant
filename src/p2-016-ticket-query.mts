@@ -97,18 +97,18 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId,transaction,lock});
       // Reuse the exact canonical relation; VIEW/can_takeover is never maintenance authority.
       const sessions=await transaction.query<{session_id:string}>(`SELECT s.id::text AS session_id FROM conversation.session s
-        WHERE ${relatedConversationSql} AND s.status<>'ENDED' ORDER BY s.id${lock?' FOR UPDATE OF s':''}`,[ticket.intake_id]);
-      if(lock&&sessions.rows.length){
-        // The caller already holds stream/Ticket/authority. Lock all Sessions first,
-        // then the existing assignment rows in the same UUID order as T06/Control.
+        JOIN conversation.assignment a ON a.session_id=s.id
+        WHERE ${relatedConversationSql} AND s.status<>'ENDED'
+          AND a.assignment_status='ASSIGNED' AND a.assigned_principal_id=$2::uuid
+        ORDER BY s.id LIMIT 1${lock?' FOR UPDATE OF s':''}`,[ticket.intake_id,p.principal_id]);
+      const session=sessions.rows[0];if(!session)return false;
+      if(lock){
+        // The caller holds stream/Ticket/authority; preserve Session -> assignment order.
         await transaction.query(`SELECT session_id FROM conversation.assignment
-          WHERE session_id=ANY($1::uuid[]) ORDER BY session_id FOR UPDATE`,[sessions.rows.map(row=>row.session_id)]);
+          WHERE session_id=$1::uuid FOR UPDATE`,[session.session_id]);
       }
-      for(const session of sessions.rows){
-        const access=await conversationAuthorization.getSessionAccess({principal:p,sessionId:session.session_id,queryable:transaction});
-        if(access?.assigned_to_me===true)return true;
-      }
-      return false;
+      const access=await conversationAuthorization.getSessionAccess({principal:p,sessionId:session.session_id,queryable:transaction});
+      return access?.assigned_to_me===true;
     },
     async assignmentTargets({authContext,ticketId,resolverTeamId=null,targetPrincipalId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown;targetPrincipalId?:unknown}) {
       guardP2016(ticketAssignmentEnabled);
