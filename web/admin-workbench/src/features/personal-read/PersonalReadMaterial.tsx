@@ -5,33 +5,19 @@ import type {Principal} from '../../api/client';
 import {ApiError,captureWorkbenchRead,workbenchTransportWritable} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {personalReadApi} from './client';
-
-function visiblePortion(node:HTMLElement):{start:number;end:number;height:number;width:number}|null{
-  if(document.visibilityState!=='visible'||!document.hasFocus()||!node.isConnected||!node.textContent?.trim())return null;
-  let top=0,left=0,right=window.innerWidth,bottom=window.innerHeight;
-  for(let ancestor:HTMLElement|null=node;ancestor;ancestor=ancestor.parentElement){
-    const style=getComputedStyle(ancestor);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return null;
-    if(ancestor!==node&&(style.overflowY!=='visible'||style.overflowX!=='visible')){const box=ancestor.getBoundingClientRect();top=Math.max(top,box.top);bottom=Math.min(bottom,box.bottom);left=Math.max(left,box.left);right=Math.min(right,box.right);}
-  }
-  const box=node.getBoundingClientRect();if(box.width<=0||box.height<=0||box.left<left||box.right>right||box.bottom<=top||box.top>=bottom)return null;
-  return {start:Math.max(0,top-box.top),end:Math.min(box.height,bottom-box.top),height:box.height,width:box.width};
-}
+import {foregroundTextReader,hasForegroundText} from './foreground-text';
 export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{principal:Principal;item:CanonicalItem;sourceRef:string;revision:string;text:string|null}){
   const node=useRef<HTMLParagraphElement|null>(null),client=useQueryClient();
   useEffect(()=>{
     const element=node.current;if(!element||!text?.trim()||!principal.personal_read_enabled)return;
-    let disposed=false,attempted=false,height=0,width=0,seen:{start:number;end:number}[]=[];const controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
+    let disposed=false,attempted=false;const readText=foregroundTextReader(element),controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
     const observe=async()=>{
       if(disposed||attempted||!workbenchTransportWritable())return;
-      const portion=visiblePortion(element);if(!portion)return;
-      if(height!==portion.height||width!==portion.width){height=portion.height;width=portion.width;seen=[];}
-      const ranges=[...seen,{start:portion.start,end:portion.end}].sort((a,b)=>a.start-b.start);seen=[];
-      for(const range of ranges){const previous=seen.at(-1);if(previous&&range.start<=previous.end+1)previous.end=Math.max(previous.end,range.end);else seen.push({...range});}
-      if(seen.length!==1||seen[0]!.start>1||seen[0]!.end<height-1)return;
+      if(!readText())return;
       attempted=true;
       try{
         await personalReadApi.page(item,controller.signal);current();
-        if(disposed||!workbenchTransportWritable()||!visiblePortion(element)){attempted=false;return;}
+        if(disposed||!workbenchTransportWritable()||!hasForegroundText(element)){attempted=false;return;}
         const command={client_command_id:crypto.randomUUID(),source_ref:sourceRef,revision};
         const result=await personalReadApi.advance(item,command,principal.csrf_token,controller.signal);current();if(disposed)return;
         client.setQueryData(['personal-read-position',principal.principal_id,item.kind,item.id],result);
