@@ -9,7 +9,7 @@ function key(value:unknown):string{if(typeof value!=='string'||!/^[a-f0-9]{64}$/
 export function decodePersonalReadPage(value:unknown):PersonalReadPage{
   const v=object(value,['canonical_item','sources','next_cursor']),canonical=object(v.canonical_item,['kind','id']);
   if(!['ticket','review','intake'].includes(String(canonical.kind))||typeof canonical.id!=='string'||!/^[a-f0-9-]{36}$/u.test(canonical.id)||!Array.isArray(v.sources)||v.sources.length>100||(v.next_cursor!==null&&(typeof v.next_cursor!=='string'||v.next_cursor.length<1||v.next_cursor.length>2048)))throw new ApiError(502,'INVALID_RESPONSE');
-  const sources=v.sources.map(raw=>{const row=object(raw,['source_key','source_kind','last_read_position','latest_position','row_version','has_unread_material']);
+  const sources=v.sources.map<PersonalReadPage['sources'][number]>(raw=>{const row=object(raw,['source_key','source_kind','last_read_position','latest_position','row_version','has_unread_material']);
     if(row.source_kind!=='WEB'||typeof row.has_unread_material!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
     const last=position(row.last_read_position),latest=position(row.latest_position,false),version=position(row.row_version);
     if(row.has_unread_material!==(BigInt(latest)>BigInt(last)))throw new ApiError(502,'INVALID_RESPONSE');
