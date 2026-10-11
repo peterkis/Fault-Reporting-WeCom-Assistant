@@ -12,7 +12,9 @@ test('T28 exact parent/child versions, foreign targets and same-parent competiti
     const otherCandidate=text(record(await context.f.newCandidate(3)).id);
     const otherId=await confirmIncident(http,otherCandidate,text(record(context.f.handler).id),context.f.reports.slice(3).map(value=>text(record(value).decisionId)));
     const otherPath='/api/incidents/'+otherId;
-    const firstTicket=text(record(context.f.reports[0]).ticketId),report=rows((await http.get(path+'/reports?limit=100')).items).find(value=>value.ticket_id===firstTicket),sub=rows((await http.get(path+'/subscriptions?limit=100')).items).find(value=>value.status==='ACTIVE');assert.ok(report&&sub);
+    const firstTicket=text(record(context.f.reports[0]).ticketId),report=rows((await http.get(path+'/reports?limit=100')).items).find(value=>value.ticket_id===firstTicket);assert.ok(report);
+    const sub=rows((await http.get(path+'/subscriptions?limit=100')).items).find(value=>value.status==='ACTIVE'&&value.representative_report_id!==report.id);assert.ok(sub);
+    assert.notEqual(sub.representative_report_id,report.id,'competition uses a different Reporter subscription target');
     const foreignReport=rows((await http.get(otherPath+'/reports?limit=100')).items)[0],foreignSub=rows((await http.get(otherPath+'/subscriptions?limit=100')).items)[0];assert.ok(foreignReport&&foreignSub);
     const parentVersion='9007199254740993',reportVersion='9007199254740995',subVersion='9007199254740997';
     // Only exact version counters are fault-injected; no business state/event or schema is fabricated.
