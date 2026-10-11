@@ -23,10 +23,10 @@ async function sdkDeadline<T>(operation:Promise<T>,signal:AbortSignal):Promise<T
  finally{if(abort)signal.removeEventListener('abort',abort);}
 }
 async function sdkReply(response:Response,signal:AbortSignal):Promise<unknown>{
- if(!response.ok||!response.body){await response.body?.cancel().catch(()=>{});throw Error('APP_SDK_RESPONSE_INVALID');}
+ if(!response.ok||!response.body){if(response.body)await sdkDeadline(response.body.cancel(),signal).catch(()=>{});throw Error('APP_SDK_RESPONSE_INVALID');}
  const reader=response.body.getReader(),chunks:Uint8Array[]=[];let bytes=0;
  try{for(;;){signal.throwIfAborted();const part=await sdkDeadline(reader.read(),signal);if(part.done)break;bytes+=part.value.byteLength;if(bytes>8192)throw Error('APP_SDK_RESPONSE_TOO_LARGE');chunks.push(part.value);}}
- finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+ finally{await sdkDeadline(reader.cancel(),signal).catch(()=>{});reader.releaseLock();}
  signal.throwIfAborted();return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 /** Existing App HTTP SDK leaf; no Bot SDK, browser call, credential persistence or second Outbox. */
