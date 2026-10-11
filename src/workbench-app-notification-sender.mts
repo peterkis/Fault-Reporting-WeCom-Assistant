@@ -4,7 +4,7 @@ import type {WeComAccessTokenProvider} from './p2-g2-wecom-oauth-provider.mjs';
 import type {CommunicationSenderResult} from './p2-004-communication-sender-port.mjs';
 import {isDeepStrictEqual} from 'node:util';
 import {createCommunicationSenderPort} from './p2-004-communication-sender-port.mjs';
-import {normalizeAppNotificationOptions,resolveOriginalAppTarget,readOriginalAppNotificationSource} from './workbench-app-notification-target.mjs';
+import {normalizeAppNotificationOptions,resolveOriginalAppTarget,readOriginalAppNotificationSource,qualifyOriginalAppTarget} from './workbench-app-notification-target.mjs';
 import {buildP2016TemplateCard} from './p2-016-template-card-builder.mjs';
 import {exactP2016,localP2016,textHashP2016,versionP2016} from './p2-016-domain-contracts.mjs';
 
@@ -77,7 +77,8 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    // Qualification/token/namespace conversion may wait. Never retarget the stored intent.
    const currentTarget=await resolveOriginalAppTarget(pool,row.source_intake_id,app);if(!isDeepStrictEqual(currentTarget,original))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
    const current=await readBasis();if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return reject('APP_NOTIFICATION_BINDING_INVALID');
-   const currentSource=await readOriginalAppNotificationSource(pool,row.source_intake_id);if(!isDeepStrictEqual(currentSource,original.source))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
+   const currentSource=await readOriginalAppNotificationSource(pool,row.source_intake_id);if(!currentSource||!isDeepStrictEqual(currentSource,original.source))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
+   if(!isDeepStrictEqual(await qualifyOriginalAppTarget(currentSource,app),original))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
    const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED',source:'DIRECT'};
    const card=buildP2016TemplateCard({model,origin,allowedHosts,allowLocalHttp,linkMode:'MEMBER_REQUIRED'});
    const url=original.source.source_kind==='WEB_REQUEST'?new URL('/wecom/yixiaoxiu/reports/'+original.source.request_ref,origin).href:new URL('/wecom/yixiaoxiu/tickets/'+row.public_ref,origin).href;

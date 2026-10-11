@@ -42,7 +42,7 @@ test('current member qualification revoked during a real source DB wait prevents
    revoked=true;await holder.query('ROLLBACK');held=false;await pending;
    const after=await t25Deliveries(source.http,source.ticketId);console.log('T25_LAST_AWAIT_TRACE '+JSON.stringify({observed,revoked,qualified,conversions,sends,before,after}));
    assert.equal(conversions,1);assert.equal(sends,0,'current revoked local qualification must be checked after all retained-source/binding awaits');
-   assert.equal(after[0]?.delivery_id,before[0]?.delivery_id);assert.equal(after[0]?.status,'DEAD_LETTER');assert.equal(after[0]?.side_effect_state,'REJECTED_NOT_APPLIED');assert.deepEqual(await source.http.detail(source.ticketId),source.started);
+   assert.equal(after[0]?.delivery_id,before[0]?.delivery_id);assert.equal(after[0]?.status,'DEAD_LETTER');assert.equal(after[0]?.side_effect_state,'NOT_ATTEMPTED');assert.deepEqual(await source.http.detail(source.ticketId),source.started);
   }finally{
    try{if(held){await holder.query('ROLLBACK');held=false;}if(pending)await pending.catch(()=>undefined);}
    finally{holder.release();}

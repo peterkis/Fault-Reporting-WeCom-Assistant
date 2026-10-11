@@ -62,6 +62,13 @@ export async function readOriginalAppNotificationSource(tx:PostgresTransaction,i
 export async function resolveOriginalAppTarget(tx:PostgresTransaction,intakeId:string,options:TicketAppNotificationOptions|null):Promise<EligibleOriginalAppTarget|null>{
  if(!options?.enabled)return null;
  const source=await readOriginalAppNotificationSource(tx,intakeId);if(!source)return null;
+ const current=await readOriginalAppNotificationSource(tx,intakeId);if(!isDeepStrictEqual(current,source))return null;
+ return qualifyOriginalAppTarget(source,options);
+}
+
+/** Qualify the retained source after DB waits; no further DB await can stale this local result. */
+export async function qualifyOriginalAppTarget(source:OriginalAppNotificationSource,options:TicketAppNotificationOptions|null):Promise<EligibleOriginalAppTarget|null>{
+ if(!options?.enabled)return null;
  const a=options.authority;
  if(source.scope.sourceCorpScope!==a.sourceCorpScope||source.scope.sourceAppScope!==a.sourceAppScope||source.scope.proofRef!==a.mappingProofRef)return null;
  const signal=AbortSignal.timeout(1000),started=BigInt(Date.now());
@@ -72,7 +79,7 @@ export async function resolveOriginalAppTarget(tx:PostgresTransaction,intakeId:s
   const value=exactP2016(raw,['schema_version','state','source_kind','scope','checked_at','checked_at_epoch_ms','target','verification','reason'],['schema_version','state','source_kind','scope','checked_at','checked_at_epoch_ms']);
   if(Buffer.byteLength(JSON.stringify(value))>8192||value.schema_version!==1||value.source_kind!==source.source_kind||!isDeepStrictEqual(value.scope,source.scope))return null;
   const epoch=assertEpochMsString(value.checked_at_epoch_ms),local=assertLocalDateTime(value.checked_at);
-  if(formatEpochMsToShanghaiLocal(epoch)!==local||BigInt(epoch)<started||BigInt(epoch)>BigInt(Date.now())||signal.aborted)return null;
+  if(formatEpochMsToShanghaiLocal(epoch)!==local||BigInt(epoch)<started||BigInt(epoch)>BigInt(Date.now())||BigInt(source.retention_epoch)<=BigInt(Date.now())||signal.aborted)return null;
   if(value.state==='NOT_ELIGIBLE'){
    if(Object.hasOwn(value,'target')||Object.hasOwn(value,'verification')||!['NO_MAPPING','SCOPE_MISMATCH','STALE','REVOKED','UNREACHABLE','UNKNOWN'].includes(String(value.reason)))return null;
    return null;
@@ -83,7 +90,6 @@ export async function resolveOriginalAppTarget(tx:PostgresTransaction,intakeId:s
   if(target.provider!=='WECOM_APP'||target.channel_account_id!==a.channelAccountId||target.target_type!=='PERSON'||typeof target.target_id!=='string'||!target.target_id||target.target_id.length>256
     ||verification.mapping_config_hash!==a.mappingConfigHash||verification.mapping_proof_ref!==a.mappingProofRef||verification.binding_proof_ref!==source.binding_proof_ref||verification.proof_kind!==a.proofKind
     ||verification.account_status!=='ACTIVE'||verification.binding_state!=='VERIFIED'||verification.message_reachability!=='REACHABLE')return null;
-  const current=await readOriginalAppNotificationSource(tx,intakeId);if(!isDeepStrictEqual(current,source))return null;
   return {source,target:{provider:'WECOM_APP',channel_account_id:a.channelAccountId,target_type:'PERSON',target_id:target.target_id}};
  }catch{return null;}
 }
