@@ -33,7 +33,8 @@ test('revoking the retained H5 source during the final local qualification never
    const after=await t25Deliveries(source.http,source.ticketId);console.log('T25_SOURCE_REVOKED_TRACE '+JSON.stringify({qualified,revoked,conversions,sends,before,after}));
    assert.equal(revoked,true);assert.equal(conversions,1);assert.equal(sends,0,'the retained source and current qualification must stay jointly authorized across the final local await');
    assert.equal(after[0]?.delivery_id,before[0]?.delivery_id);assert.equal(after[0]?.status,'DEAD_LETTER');assert.equal(after[0]?.side_effect_state,'NOT_ATTEMPTED');
-   await assert.rejects(source.store.getRequest({scope:source.scope,requestRef:source.requestRef}),error=>error instanceof Error&&'code' in error&&error.code==='YXX_NOT_FOUND');assert.deepEqual(await source.http.detail(source.ticketId),source.started);
+   await assert.rejects(source.store.getRequest({scope:source.scope,requestRef:source.requestRef}),error=>error instanceof Error&&'code' in error&&error.code==='YXX_NOT_FOUND');
+   const {web_report:originalReport,...core}=source.started;assert.ok(originalReport);const current=await source.http.detail(source.ticketId);assert.equal(current.web_report,undefined);assert.deepEqual(current,core);
   }finally{if(revocation)await revocation;}
  },{manualRoundConsumption:true});
 });
