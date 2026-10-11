@@ -2,8 +2,10 @@ import type { WeComGatewayClient } from './p2-g1-wecom-gateway.mjs';
 import type { CommunicationSenderResult, ValidatedSenderRequest } from './p2-004-communication-sender-port.mjs';
 import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 import type { ReporterLinkMode } from './p2-016-template-card-builder.mjs';
+import {createWorkbenchGroupNotificationSender} from './workbench-group-notification-sender.mjs';
+import type {WorkbenchGroupNotificationOptions} from './workbench-group-notification-sender.mjs';
 type ReceiptObservation = { errcode?: unknown; body?: { errcode?: unknown }; headers?: { req_id?: unknown } } | null | undefined;
-interface SenderOptions { gateway: { getAuthenticatedClient: () => Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode }
+interface SenderOptions { gateway: { getAuthenticatedClient: () => Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'enabled'> }
 
 import { createP2G1WeComCommunicationSender } from './p2-g1-wecom-sender.mjs';
 import { createCommunicationSenderPort } from './p2-004-communication-sender-port.mjs';
@@ -12,7 +14,7 @@ import { textHashP2016,snapshotP2016 } from './p2-016-domain-contracts.mjs';
 import {computeCommunicationContentHash} from './p2-004-communication-core.mjs';
 
 export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=false,cardEnabled=false,
-  reporterAccess,origin,allowedHosts=[],allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT'}: SenderOptions) {
+  reporterAccess,origin,allowedHosts=[],allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT',groupRoundNotifications}: SenderOptions) {
   if(typeof enabled!=='boolean'||typeof cardEnabled!=='boolean'||!['LEGACY_BOUND_GRANT','MEMBER_REQUIRED'].includes(linkMode))throw new TypeError('P2_016_SENDER_CONFIG_INVALID');
   if(!enabled)return createCommunicationSenderPort(async()=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'P2_016_SENDER_DISABLED',retryable:false}));
   const allowlist=new Set(allowedTargetHashes??[]);
@@ -21,8 +23,10 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
   const legacy=createP2G1WeComCommunicationSender({gateway,allowedTargetHashes:[...allowlist],enabled}) as { send: (request: ValidatedSenderRequest) => Promise<CommunicationSenderResult> };
   const rejected: (code: string,retryable?: boolean) => CommunicationSenderResult=(code,retryable=false)=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable});
   const unknown: () => CommunicationSenderResult=()=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'P2_016_PROVIDER_UNKNOWN',retryable:false});
+  const groups=groupRoundNotifications?createWorkbenchGroupNotificationSender({...groupRoundNotifications,enabled}):null;
   return createCommunicationSenderPort(async request=>{
     if(!enabled)return rejected('P2_016_SENDER_DISABLED');
+    if((request.message.content as {transport?:unknown}|null)?.transport==='WECOM_MESSAGE_PUSH')return groups?groups.send(request):rejected('GROUP_PUSH_ROUTE_MISSING');
     if((request.message.content as { transport?: unknown } | null)?.transport==='WECOM_GROUP_WEBHOOK')return rejected('P2_016_GROUP_WEBHOOK_TRANSPORT_REQUIRED');
     if(['text','markdown'].includes(request.message.message_type))return legacy.send(request);
     if(!cardEnabled)return rejected('P2_016_CARD_DISABLED');

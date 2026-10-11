@@ -26,7 +26,7 @@ import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench
 import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
 import {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
 import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
-interface P2016RuntimeOptionsInput {workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean}
+interface P2016RuntimeOptionsInput {workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'pool'|'enabled'>|null}
 interface P2016RuntimeOptionsInput { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchReporterCandidatesEnabled?:boolean;manualReporterDirectory?:ManualReporterDirectoryOptions|null;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
@@ -54,6 +54,7 @@ import { createP2016ReporterAccess } from './p2-016-reporter-access.mjs';
 import { createP2016ReporterTimeline } from './p2-016-reporter-timeline.mjs';
 import { createP2016ReporterHttp } from './p2-016-reporter-http.mjs';
 import { createP2016WeComSender } from './p2-016-wecom-sender.mjs';
+import type {WorkbenchGroupNotificationOptions} from './workbench-group-notification-sender.mjs';
 import { createP2016TicketQuery } from './p2-016-ticket-query.mjs';
 import { createP2016TicketCommandFacade } from './p2-016-ticket-command-facade.mjs';
 import { createP2016ManualReviewFacade } from './p2-016-manual-review-facade.mjs';
@@ -80,7 +81,7 @@ export function createP2016Runtime(options: P2016RuntimeOptions & { flags: { TIC
 export function createP2016Runtime(options?: P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime;
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
   reporterHmacSecret,reporterOrigin=publicOrigin,allowedHosts=[],allowedTargetHashes=[],allowLocalHttp=false,
-  gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
+  gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,groupRoundNotifications=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,botReporterFeedbackEnabled=false,botReporterFeedbackDraftRecoveryEnabled=false,
@@ -141,7 +142,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
     realtimeScopeLimit:256,
     realtimeAvailabilityFallback:workbenchRealtimeEnabled,realtimeFollowUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
-      reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
+      reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy,...(groupRoundNotifications?{groupRoundNotifications:{...groupRoundNotifications,pool}}:{})}),
     extensionFactory:({controlService,realtime,queryService,commandFacade,authorization})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
       const followUpSchedules=createWorkbenchFollowUpSchedules({pool,query,enabled:workbenchFollowUpSchedulesEnabled,realtimeProjector:realtimeProjector.ticket,wakeup:realtime.wakeup});
