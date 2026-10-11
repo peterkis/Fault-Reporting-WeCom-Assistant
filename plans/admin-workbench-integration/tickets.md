@@ -31,6 +31,8 @@ native_blocking_edges: 76
 
 2026-10-11 T18 整票收口：七项本地验收、两轴增量审查和资源释放已核对，c6e2ba27 安全快进；[#73 已关闭并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73#issuecomment-6105209273)，实际 **19／43 CLOSED、24 OPEN**。见[当前 API、真实被测祖先与历史失败](execution/t18.md)。文档后继的严格制品身份拒绝原样保留，不将后继冒称已被测试。T25 依赖已满足，WBINT-05／A05 仍待 T19。
 
+2026-10-11 T21 整票收口：原七项与各真实被测对象已父核，ba55a23f安全快进；[#76完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，当前 **20／43 CLOSED、23 OPEN**，WBINT-06／A06本地完成。见[合同、原始失败与保全](execution/t21.md)。后续T35／T26／T25等继续按原生依赖和单一运行窗口推进；SOURCE_READY不计整票验收。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -138,9 +140,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-06 / A06
 
-- [ ] **T21** — [#76 Bot原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)
+- [x] **T21** — [#76 Bot原报修人反馈仍未解决](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76)
   - **Blocked by:** [#75](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75)
   - **来源：** WBINT-06 / A06
+  - **本地执行：** [原七项、真实被测祖先与分组证据](execution/t21.md)已父核并安全快进ba55a23f，[GitHub收口已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，WBINT-06／A06本地完成；默认关闭、未发布／启用。
 
 - [x] **T22** — [#77 集中查看会话并人工回复](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)

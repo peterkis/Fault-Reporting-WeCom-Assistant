@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T18收口）
+## 当前执行状态导航（2026-10-11，T21收口）
+
+GitHub 实际快照为 **20／43 CLOSED、23 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t21-20261011-d.json)。[#76 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T21 / #76 | 原七项经父独立核对，ba55a23f 安全快进并GitHub收口；[当前合同与证据](execution/t21.md)，WBINT-06／A06 本地完成。 |
+| 验证 | 真实 5b913d7d 一次 build／strict／artifact 原生0；最终相关12／12、共享T03／T20 11／11、tooling／hosts 54／54及retired单例1／1通过，各组保留实际被测对象。两轴最终增量0新增问题。 |
+| 制品与原档 | 文档后继的严格 Artifact 实际 MIGRATION_INPUT_DRIFT／REJECTED 保留；原1245输入、1505输出、1827保全文件和31张截图已核对。Git ZIP与实际输入的换行差异用27份原字节补件覆盖，未重绑被测提交。 |
+| 后续 | 继续T35整票；T26／T25及其他SOURCE_READY按原生依赖与单一运行窗口推进，准备源码不计验收。WBINT-05／A05仍待T19，WBINT-12／A12仍待T34／T35／T36。 |
+| 资源与边界 | T21自有53个临时目录已清理，PG额外库／client／probe及相关进程／临时残留为0，共享keeper保留；根六件用户文件字节不变。默认关闭，未push、部署、真实外发、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-11，T18收口）
 
 GitHub 实际快照为 **19／43 CLOSED、24 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t18-20261011-d.json)。
 

@@ -2,7 +2,7 @@
 
 返回[Reporter接口](reporter-access.md) · [执行记录](../../../plans/admin-workbench-integration/execution/t21.md) · [共享轮次](web-feedback-design.md)。
 
-2026-10-11：本地隔离业务与生产制品浏览器验证已完成，最终运行和边界见执行记录。本地结果尚待父汇合、Issue验收；没有发布、启用或现场授权。独立宿主选项 `botReporterFeedbackEnabled=false`、`botReporterFeedbackDraftRecoveryEnabled=false`，全部持久 Feature Flag 默认false。
+2026-10-11：原七项本地隔离业务与生产制品浏览器验证已完成父独立验收、集成及[#76收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，各实际被测对象和边界见执行记录；没有发布、启用或现场授权。独立宿主选项 `botReporterFeedbackEnabled=false`、`botReporterFeedbackDraftRecoveryEnabled=false`，全部持久 Feature Flag 默认false。
 
 ## 身份、来源与HTTP
 

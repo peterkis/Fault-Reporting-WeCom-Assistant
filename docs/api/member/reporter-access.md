@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-2026-10-11 WBINT-T21的[Bot本人反馈合同](bot-feedback-design.md)已完成原七项本地隔离实现/验证，待父汇合及Issue验收。显式Bot能力在成员写profile增加同事务feedback_context、独立Bootstrap/Recovery/POST/用途Receipt和[typed成员页面](../../../web/admin-workbench/src/bot-feedback.ts)；当前Bot本人READ与原UUID核对不要求Web MY_REPORTS权限。默认Bot/write/raw关闭，Web requestRef不能替代原Bot publicRef。本页只读Reporter职责保持；各真实被测对象、原RED/FAIL及资源结果见[T21记录](../../../plans/admin-workbench-integration/execution/t21.md)，没有发布或现场授权。
+2026-10-11 WBINT-T21的[Bot本人反馈合同](bot-feedback-design.md)原七项本地隔离实现/验证已完成父独立验收、集成及[#76收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)。显式Bot能力在成员写profile增加同事务feedback_context、独立Bootstrap/Recovery/POST/用途Receipt和[typed成员页面](../../../web/admin-workbench/src/bot-feedback.ts)；当前Bot本人READ与原UUID核对不要求Web MY_REPORTS权限。默认Bot/write/raw关闭，Web requestRef不能替代原Bot publicRef。本页只读Reporter职责保持；各真实被测对象、原RED/FAIL及资源结果见[T21记录](../../../plans/admin-workbench-integration/execution/t21.md)，没有发布或现场授权。
 
 调用方：[reporter.js](../../../web/p2-reporter/reporter.js)。有两种互斥访问策略：`MEMBER_REQUIRED`（M/O/W按装配挂载）与显式 `LEGACY_BOUND_GRANT`（W）。W装配还依赖默认false的 `REPORTER_TIMELINE_ENABLED`；独立只读profile通过配置/显式装配启用handler，不直接消费此持久Flag，成员入口/OAuth条件仍适用。实现：[成员handler](../../../src/p2-g2-yixiaoxiu-http.mts)、[旧handler](../../../src/p2-016-reporter-http.mts)、[timeline](../../../src/p2-016-reporter-timeline.mts)、[访问服务](../../../src/p2-016-reporter-access.mts)。
 
