@@ -51,7 +51,7 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
       i.id=$1::uuid OR ($2='ticket' AND EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
         JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=$3::uuid
         AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND ($4::boolean OR t.assignee_id=$5::uuid OR t.resolver_team_id=ANY($6::text[]))))
-    ))
+    )
   )`,values:[c.intakeId,c.kind,c.canonical.id,c.principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'),c.principal.principal_id,c.principal.roles.includes('HANDLER')?c.principal.team_ids:[]]};}
   async function sources(tx:PostgresTransaction,c:Authorized,after:string|null=null,n=100):Promise<SourceRow[]>{
     const r=readable(c);
