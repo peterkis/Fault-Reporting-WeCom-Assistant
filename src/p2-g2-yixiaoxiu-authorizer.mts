@@ -1,7 +1,7 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { WeComOAuth, EnabledWeComOAuth, OAuthMember, OAuthMemberId, InternalMemberId, SessionToken } from './p2-g2-wecom-web-oauth.mjs';
 import type { YxxIdentityMapping } from './p2-g2-yixiaoxiu-delegated-identity.mjs';
-import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
+import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 import type {ReporterReadScope} from './p2-016-reporter-timeline.mjs';
 export interface VerifiedYxxMember {corpId:string;userid:InternalMemberId}
 export interface YxxBotReadScope extends ReporterReadScope {source_intake_id:string}
@@ -41,7 +41,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
     if(c.identityMode!=='VERIFIED_SAME_NAMESPACE')failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
     return member as VerifiedYxxMember;
   }
-  async function authorize(tx: PostgresTransaction,member: VerifiedYxxMember,publicRef: unknown){
+  async function authorize(tx: PostgresTransaction,member: VerifiedYxxMember,publicRef: unknown):Promise<YxxBotReadScope|null>{
     publicRefYxx(publicRef);
     const q=await tx.query<OwnershipRow>(`SELECT r.ticket_id::text,i.id::text AS source_intake_id,r.public_ref,r.journey_id::text,r.reporter_binding_hash,
       i.source_provider,i.source_bot_id,i.reporter_wecom_userid
