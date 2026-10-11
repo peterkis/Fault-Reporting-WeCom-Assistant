@@ -19,6 +19,7 @@ test('T35 a normal Ticket without Review advances a long actual Bot body only af
   const directory=join(tmpdir(),'t35-normal-long-'+randomUUID());await mkdir(directory);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:720,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+    await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});await browser.command('Page.enable');
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__t35Visible=false;globalThis.__t35Posts=[];Object.defineProperty(document,'visibilityState',{get:()=>globalThis.__t35Visible?'visible':'hidden',configurable:true});const fetchOriginal=fetch;globalThis.fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/read-position'))globalThis.__t35Posts.push(JSON.parse(options.body));return fetchOriginal(path,options);};})()`});assert.ok(browser);
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+selected.ticket.id+'?detail=page'});
     await browser.waitFor(`document.querySelector('.activity-list')?.textContent.includes(${JSON.stringify(text)})`);
