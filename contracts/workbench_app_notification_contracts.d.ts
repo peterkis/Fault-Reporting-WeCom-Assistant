@@ -1,7 +1,7 @@
 import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
 import type {LocalDateTime,PhysicalEpochMs} from './time_contracts.js';
 
-/** T25 SOURCE contract. No runtime factory currently implements these options. */
+/** T25 original-source App notification options implemented by the existing round consumer/runtime. */
 export type TicketAppNotificationSource='WEB_REQUEST'|'VERIFIED_MANUAL_REPORT';
 
 /** Existing mapping/application authority supplied by server composition, never HTTP JSON. */
@@ -65,5 +65,5 @@ export interface TicketAppNotificationOptions {
   readonly targetResolver:TicketAppNotificationTargetResolver;
 }
 
-/** Proposed additive safe Delivery field; PERSON continues to describe the recipient kind. */
+/** Additive safe Delivery field; PERSON continues to describe the recipient kind. */
 export interface TicketAppNotificationPublicRoute {readonly route_kind:'YIXIAOXIU_APP'}

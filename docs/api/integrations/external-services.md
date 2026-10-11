@@ -67,3 +67,7 @@ G0冻结工具另有replyWelcome/replyStream/reply/replyTemplateCard/updateTempl
 | 人员目录 | THIRD_STAFF_DIRECTORY_ENABLED、THIRD_STAFF_DIRECTORY_ROOT_ID、THIRD_STAFF_INFO_SYNC_KEY、THIRD_STAFF_DIRECTORY_BASE_URL |
 
 核对：[成员OAuth测试](../../../tests/p2-g2-wecom-web-oauth.test.mjs)、[成员目录测试](../../../tests/p2-g2-member-directory.test.mjs)、[员工认证测试](../../../tests/p2-016-workbench-wecom-auth.test.mjs)。[企业微信集成总说明](../../07_wecom_websocket_integration.md)。当前src/scripts没有业务AI/LLM/Jev HTTP client；研究文件及网络阻止探针不能列为已实现模型接口。
+
+## 原来源单人成员App通知（WBINT-T25，默认关闭）
+
+后端实际App Sender先取现有token Provider，调用 `POST https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid`，再 `POST https://qyapi.weixin.qq.com/cgi-bin/message/send`；conversion只接受精确一个核实pair，agentid等于原sourceAppScope。单PERSON template_card沿批准安全字段和本人详情URL；浏览器没有直接SDK接口。credential/fetch/body-read/cancel共享5秒截止，响应≤8KiB。完整可信技术ACK要求errcode=0及非空可核验msgid；发送后的非零/不完整/UNKNOWN都显式核对原Delivery，不猜官方去重或未应用保证。当前主站正文未获得，字段/命名空间/错误副作用保证UNCONFIRMED；实际SDK-only ACK与合成人工核对不表示客户端送达。详见[应用通知及停止线](../workbench/app-notifications.md)。

@@ -264,3 +264,7 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 9395原四实际2PASS/2FAIL已保全：START关闭广告与获权STAFF正式提示PASS；两生命周期首测分别实际新敏感record1≠0，以及真实原POST200/服务器GET200受控client503却误报拒绝。最小后继给现有共享hook独立writeEnabled（缺省仍沿原enabled），W旧opaque读消费不启用新敏感保存；只有原POST未成功时才按其明确拒绝清理，POST200后的临时读取失败保原UUID UNKNOWN。该源码后继尚NOT_RUN，旧15306/9395结果保持各自被测身份。
 
 冷raw关闭且没有旧row时，不打开或写入IndexedDB，也不在local/sessionStorage持久化UUID；此时只保证挂载页面内原UUID的GET核对，不承诺刷新后24h恢复。刷新丢失内存标识不代表原命令失败，不能自动重发。raw启用的固定24h副本，以及既有opaque在关闭raw后的只读恢复，是两个独立路径；前者到期或丢弃只清敏感payload/key，不能把原未知操作变成失败或借此换UUID。
+
+## 原H5与核实代录应用轮次通知（WBINT-T25）
+
+原 GET deliveries 沿当前 Ticket READ，可返回 PERSON 的 route_kind=YIXIAOXIU_APP；同轮FIRST/完工、各路成功/失败/UNKNOWN均独立。正式管理端仅显示安全状态，不能从投影推断外部送达。恢复仍用原 retry/reconcile、当前权限和原UUID/hash，不增加客户端SDK或HTTP发送入口。配置、SDK、本人详情、安全字段与关闭历史读取见[应用通知合同](app-notifications.md)；[本地执行](../../../plans/admin-workbench-integration/execution/t25.md)保留逐祖先证据和未运行现场边界。
