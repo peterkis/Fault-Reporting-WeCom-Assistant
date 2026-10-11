@@ -167,7 +167,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups,followUpSchedules:workbenchFollowUpSchedulesEnabled?followUpSchedules:null,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled,reviews:workbenchManualReviewEnabled?reviews:null});
       const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled});
       attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
-      const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);
+      const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups);
       const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,

@@ -10,7 +10,7 @@ export function decodePersonalReadPage(value:unknown):PersonalReadPage{
   const v=object(value,['canonical_item','sources','next_cursor']),canonical=object(v.canonical_item,['kind','id']);
   if(!['ticket','review','intake'].includes(String(canonical.kind))||typeof canonical.id!=='string'||!/^[a-f0-9-]{36}$/u.test(canonical.id)||!Array.isArray(v.sources)||v.sources.length>100||(v.next_cursor!==null&&(typeof v.next_cursor!=='string'||v.next_cursor.length<1||v.next_cursor.length>2048)))throw new ApiError(502,'INVALID_RESPONSE');
   const sources=v.sources.map<PersonalReadPage['sources'][number]>(raw=>{const row=object(raw,['source_key','source_kind','last_read_position','latest_position','row_version','has_unread_material']);
-    if(row.source_kind!=='WEB'||typeof row.has_unread_material!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
+    if((row.source_kind!=='WEB'&&row.source_kind!=='MANUAL')||typeof row.has_unread_material!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
     const last=position(row.last_read_position),latest=position(row.latest_position,false),version=position(row.row_version);
     if(row.has_unread_material!==(BigInt(latest)>BigInt(last)))throw new ApiError(502,'INVALID_RESPONSE');
     return {source_key:key(row.source_key),source_kind:row.source_kind,last_read_position:last,latest_position:latest,row_version:version,has_unread_material:row.has_unread_material};});
@@ -19,7 +19,7 @@ export function decodePersonalReadPage(value:unknown):PersonalReadPage{
 }
 function decodeAcknowledgement(value:unknown,command:PersonalReadCommand):PersonalReadAcknowledgement{
   const v=object(value,['ok','client_command_id','source_key','source_kind','last_read_position','row_version','replayed']);
-  if(v.ok!==true||v.client_command_id!==command.client_command_id||v.source_kind!=='WEB'||typeof v.replayed!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
+  if(v.ok!==true||v.client_command_id!==command.client_command_id||(v.source_kind!=='WEB'&&v.source_kind!=='MANUAL')||v.source_kind!==(command.source_ref.startsWith('manual:')?'MANUAL':'WEB')||typeof v.replayed!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
   return {ok:true,client_command_id:command.client_command_id,source_key:key(v.source_key),source_kind:v.source_kind,last_read_position:position(v.last_read_position,false),row_version:position(v.row_version,false),replayed:v.replayed};
 }
 const path=(item:CanonicalItem)=>'/api/workbench/items/'+item.kind+'/'+encodeURIComponent(item.id)+'/read-position';
