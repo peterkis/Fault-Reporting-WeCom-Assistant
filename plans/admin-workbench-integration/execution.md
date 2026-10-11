@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T37收口）
+## 当前执行状态导航（2026-10-11，T18收口）
+
+GitHub 实际快照为 **19／43 CLOSED、24 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t18-20261011-d.json)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T18 / #73 | 原七项已完成，c6e2ba27 安全快进；[当前合同与证据](execution/t18.md)，[#73 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73#issuecomment-6105209273)。 |
+| 验证 | 真实 95a400ae 一次 build／strict／artifact 通过，相关 16 PASS、工具 27 PASS；13 文件／25 个不同 T18 用例保留各自被测祖先，不合称一次全量。两轴增量无剩余发现。 |
+| 制品与文档 | 后继仅四份 Markdown。c6 对 95a 制品的严格身份复验返回 MIGRATION_INPUT_DRIFT／REJECTED，原拒绝与原成功分别保留；1220 输入／1462 输出字节核对相同，未重绑证据。 |
+| 后续 | 接续 T21 整票窗口；T25 的 #66／#73 已关闭，可按当前 GitHub 依赖领取。T35 等既有 SOURCE_READY 不计验收，实际运行前一次合入最新基线。WBINT-05／A05 仍待 T19。 |
+| 路径与资源 | 全部新增工作在 D；T18 27 个临时目录已清理，自有 PG 额外库／client 0/0、相关活动进程 0，keeper 保留。根 6 个用户文件逐字节不变。默认关闭，未 push、部署、真实外发、full／certify 或 Gate 推进。 |
+
+## 历史执行状态导航（2026-10-11，T37收口）
 
 GitHub 实际快照为 **18／43 CLOSED、25 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t37-20261011-d.json)。
 
