@@ -35,7 +35,8 @@ test('Bot closed public HTTP contracts reject incidental text, spoofed identity 
  await withT21DraftFixture(async f=>{
   const app=await f.replaceMember(),member=browser(app.server);await login(member);const {command,csrf}=await t21FeedbackCommand(member,f.path);
   for(const patch of [{feedback:'THANKS'},{actor:'REPORTER'},{ticket_id:f.ticketId},{expected_ticket_version:'5'},{expected_ticket_version:2147483648},{completed_round_ref:'not-an-opaque-round'}]){
-   const response=await member.request(f.path+'/feedback',{method:'POST',body:{...command,...patch},headers:{origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':command.client_command_id,'if-match':'"'+command.expected_ticket_version+'"'}});assert.equal(response.status,400,response.text);
+   const input={method:'POST',body:{...command,...patch},headers:{origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':command.client_command_id,'if-match':'"'+command.expected_ticket_version+'"'}};
+   const response=await member.request(f.path+'/feedback',input);assert.equal(response.status,400,response.text);
   }
   const detail=t21Object((await member.request(f.path)).json()),bootstrap=t21Object((await member.request('/api/reporter/feedback/bootstrap')).json());
   const result=await t21Send(member,f.path,command,csrf);assert.equal(result.status,200,result.text);

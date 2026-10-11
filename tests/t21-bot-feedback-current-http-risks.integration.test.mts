@@ -112,7 +112,7 @@ test('T21 local OAuth logout while waiting on the actual source row prevents com
     const {command,csrf}=await t21FeedbackCommand(member,f.path),{client,pid}=await sourceBlocker(f);let pending:Pending|null=null;
     try{
       pending=t21Send(member,f.path,command,csrf);await observedWait(f.context.pool,pid,'JOIN intake.service_intake');
-      const logout=await member.request('/api/reporter/logout',{method:'POST',body:{},headers:{origin,'content-type':'application/json'}});
+      const logoutInput={method:'POST',body:{},headers:{origin,'content-type':'application/json'}};const logout=await member.request('/api/reporter/logout',logoutInput);
       assert.equal(logout.status,200,logout.text);await client.query('COMMIT');
       assert.equal((await pending).status,401);
       assert.equal((await member.request(f.path+'/feedback/commands/'+command.client_command_id)).status,401);

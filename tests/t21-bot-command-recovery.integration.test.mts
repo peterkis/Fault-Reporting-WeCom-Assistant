@@ -27,7 +27,7 @@ test('original Bot feedback response loss is reconciled by current independent R
   assert.deepEqual(Object.keys(committed).sort(),['client_command_id','public_ref','result','state']);
   assert.equal(committed.client_command_id,command.client_command_id);assert.equal(committed.public_ref,f.publicRef);
   assert.doesNotMatch(originalAck.text,/INTERNAL_T11_CANARY|user-test|bot-test|command_hash|actor_principal_id|request_ref/u);
-  const logout=await member.request('/api/reporter/logout',{method:'POST',body:{},headers:{origin,'content-type':'application/json'}});assert.equal(logout.status,200);
+  const logoutInput={method:'POST',body:{},headers:{origin,'content-type':'application/json'}};const logout=await member.request('/api/reporter/logout',logoutInput);assert.equal(logout.status,200);
   assert.equal((await member.request(ackPath)).status,401);
   await login(member);assert.deepEqual((await member.request(ackPath)).json(),committed);
   // A stable replacement profile + fresh authentication tests lawful current

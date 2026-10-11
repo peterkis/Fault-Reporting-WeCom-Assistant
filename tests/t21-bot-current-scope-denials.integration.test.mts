@@ -38,13 +38,13 @@ test('current approved App ownership rejects another member, wrong Bot, Web ref,
    assert.throws(()=>createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:f.context.pool,publicOrigin:origin,
     reporterHmacSecret:secret,reporterMemberEntry:secondConfig,identityMapping:freshMapping,oauth:mismatchedOAuth}),
     {code:'YXX_ENTRY_CONFIG_INVALID'});
-  }finally{mismatchedOAuth.close();}
+  }finally{if(mismatchedOAuth.enabled)mismatchedOAuth.close();}
   const matchingOAuth=createWeComWebOAuth(t21OAuthOptions(secondConfig)),oldMapping=await t21Mapping();
   try{
    assert.throws(()=>createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:f.context.pool,publicOrigin:origin,
     reporterHmacSecret:secret,reporterMemberEntry:secondConfig,identityMapping:oldMapping,oauth:matchingOAuth}),
     {code:'YXX_ENTRY_IDENTITY_NAMESPACE_UNVERIFIED'});
-  }finally{matchingOAuth.close();}
+  }finally{if(matchingOAuth.enabled)matchingOAuth.close();}
   // These are startup authority failures, never a claim about message history.
   await f.verifyStaff(async staff=>{const ticket=await staff.detail(f.ticketId);assert.equal(ticket.status,'CLOSED');
    assert.equal(ticket.version,f.completed.version);assert.equal(ticket.handling_cycle?.cycle_no,f.completed.handling_cycle?.cycle_no);});
