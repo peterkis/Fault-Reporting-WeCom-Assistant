@@ -33,7 +33,8 @@ test('production Bot feedback keeps the original UUID after a committed response
    assert.equal(await tab.evaluate('globalThis.__t21Posts.length'),0,'reload/receipt recovery must never post another command');
    assert.equal(await tab.evaluate('globalThis.__t21Reads.includes('+JSON.stringify(f.path+'/feedback/commands/'+observed.command.client_command_id)+')'),true);
    assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
-   const png=Buffer.from(await tab.screenshot(),'base64'),file=join(directory,'recovered.png');await writeFile(file,png);
+   const png=Buffer.from(await tab.screenshot(),'base64');await writeFile(join(directory,'recovered.png'),png);
+   const receiptDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());await mkdir(receiptDirectory);const file=join(receiptDirectory,randomUUID()+'.png');await writeFile(file,png);
    console.log('SS010_BROWSER '+JSON.stringify({screenshots:[{file,width:png.readUInt32BE(16),height:png.readUInt32BE(20),sha256:createHash('sha256').update(png).digest('hex')}]}));
   }catch(failure){error=failure;await writeFile(join(directory,'error.json'),JSON.stringify({message:failure instanceof Error?failure.message:String(failure)}));if(tab)await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await fixture?.close();if(fixture)assert.deepEqual(fixture.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await app?.stop();}],error);
