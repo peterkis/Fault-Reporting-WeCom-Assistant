@@ -15,7 +15,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 
 test('T35 a lost Session cursor ACK is checked through its current own cursor on the next real foreground observation',{timeout:120_000},()=>withT22Fixture(async f=>{
   const session=f.sessions[0],other=f.sessions[1];assert.ok(session);assert.ok(other);
-  await f.runtime.stop();const input={databaseUrl:f.databaseUrl,mode:'apply'};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);
+  await f.runtime.stop();const input={databaseUrl:f.databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);
   const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.principals[1]?.id??''],externalSendEnabled:false,workbenchConversationsEnabled:true,workbenchManualReviewEnabled:true,workbenchPersonalReadEnabled:true});
   let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;const directory=join(tmpdir(),'t35-session-unknown-'+randomUUID());await mkdir(directory);
   try{
