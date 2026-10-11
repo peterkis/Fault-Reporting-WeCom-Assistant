@@ -1,7 +1,7 @@
 import {useEffect,useRef} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import type {Principal} from '../../api/client';
-import {ApiError,captureWorkbenchRead,readWorkbench,workbenchTransportWritable} from '../../api/client';
+import {ApiError,captureWorkbenchRead,readWorkbench,workbenchTransportWritable,rejectAuthorization} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {foregroundTextReader,hasForegroundText} from '../personal-read/foreground-text';
 import type {ConversationWorkspaceItem} from './client';
@@ -24,13 +24,13 @@ export function ConversationReadTimeline({principal,id,items}:{principal:Princip
         confirmed=Math.max(confirmed,fresh.last);if(target.sequence<=confirmed)return;
         const command={client_command_id:crypto.randomUUID(),expected_cursor_row_version:fresh.version,last_read_sequence:target.sequence};
         const response=await fetch('/api/conversations/'+id+'/read-cursor',{method:'POST',signal:controller.signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(principal.csrf_token?{'x-csrf-token':principal.csrf_token}:{})},body:JSON.stringify(command)});current();
-        if(!response.ok)throw new ApiError(response.status,'SESSION_READ_REJECTED');
+        if([401,403,404].includes(response.status))await rejectAuthorization(response);if(!response.ok)throw new ApiError(response.status,'SESSION_READ_REJECTED');
         const result=object(await response.json());current();const ack=object(result.cursor);
         if(result.ok!==true||typeof ack.last_read_sequence!=='number'||!Number.isSafeInteger(ack.last_read_sequence)||ack.last_read_sequence<target.sequence)throw new ApiError(502,'INVALID_RESPONSE');
         confirmed=Math.max(confirmed,ack.last_read_sequence);void client.invalidateQueries({queryKey:['conversations',principal.principal_id]});
       }catch(error){
         if(disposed||controller.signal.aborted)return;
-        if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearItemAuthorization(client,principal.principal_id,'conversation',id,error);}
+        if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(error.status===401||error.status===403&&error.code==='WORKBENCH_CSRF_INVALID')await clearSessionAuthorization(client,principal.principal_id,error.status===401?401:403,'revoked');else await clearItemAuthorization(client,principal.principal_id,'conversation',id,error);}
         if(!(error instanceof ApiError&&error.status===409))blocked=true;
       }finally{busy=false;}
     };

@@ -25,7 +25,7 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
       }catch(error){
         if(disposed||controller.signal.aborted||error instanceof DOMException&&error.name==='AbortError')return;
         if(error instanceof ApiError&&[401,403,404].includes(error.status)){
-          if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error);
+          if(error.status===401||error.status===403&&error.code==='WORKBENCH_CSRF_INVALID')await clearSessionAuthorization(client,principal.principal_id,error.status===401?401:403,'revoked');else await clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error);
         }
         // An unknown response is never converted into a displayed success or an automatic second POST.
       }

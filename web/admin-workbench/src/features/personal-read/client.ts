@@ -1,6 +1,6 @@
 import type {CanonicalItem} from '../../../../../contracts/workbench_review_contracts';
 import type {PersonalReadPage,PersonalReadAcknowledgement,PersonalReadCommand} from '../../../../../contracts/workbench_personal_read_contracts';
-import {ApiError,readWorkbench,captureWorkbenchRead} from '../../api/client';
+import {ApiError,readWorkbench,captureWorkbenchRead,rejectAuthorization} from '../../api/client';
 function object(value:unknown,keys:readonly string[]):Record<string,unknown>{
   if(value===null||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||Object.keys(value).some(key=>!keys.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;
 }
@@ -28,7 +28,7 @@ export const personalReadApi={
   async advance(item:CanonicalItem,command:PersonalReadCommand,csrf:string|null,signal:AbortSignal){
     const current=captureWorkbenchRead(signal);
     const response=await fetch(path(item),{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(csrf?{'x-csrf-token':csrf}:{})},body:JSON.stringify(command)});
-    current();if(!response.ok)throw new ApiError(response.status,'PERSONAL_READ_REJECTED');
+    current();if([401,403,404].includes(response.status))return rejectAuthorization(response);if(!response.ok)throw new ApiError(response.status,'PERSONAL_READ_REJECTED');
     const value:unknown=await response.json();current();return decodeAcknowledgement(value,command);
   },
 };

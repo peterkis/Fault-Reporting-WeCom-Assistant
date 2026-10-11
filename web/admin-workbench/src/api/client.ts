@@ -148,7 +148,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
   if(new Set(items.map(item=>item.delivery_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {items};
 }
-async function rejectAuthorization(response:Response):Promise<never>{
+export async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';
   try {const value:unknown=await response.json(),candidate=text(object(object(value).error).code);if(/^[A-Z][A-Z0-9_]{0,100}$/u.test(candidate))code=candidate;}
   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
