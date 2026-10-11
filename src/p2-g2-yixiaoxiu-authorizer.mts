@@ -2,8 +2,9 @@ import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool
 import type { WeComOAuth, EnabledWeComOAuth, OAuthMember, OAuthMemberId, InternalMemberId, SessionToken } from './p2-g2-wecom-web-oauth.mjs';
 import type { YxxIdentityMapping } from './p2-g2-yixiaoxiu-delegated-identity.mjs';
 import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
+import type {ReporterReadScope} from './p2-016-reporter-timeline.mjs';
 export interface VerifiedYxxMember {corpId:string;userid:InternalMemberId}
-export interface YxxBotReadScope extends Pick<ReporterScope,'ticket_id'|'public_ref'|'session_id'> {source_intake_id:string}
+export interface YxxBotReadScope extends ReporterReadScope {source_intake_id:string}
 export interface YxxBotMemberScope extends VerifiedYxxMember {agentId:string;botId:string}
 export interface YxxAuthorizerOptions {pool: PostgresPool; oauth: WeComOAuth; config: unknown; identityMapping?: YxxIdentityMapping | null | undefined;appNotifications?:TicketAppNotificationOptions|null;reporterHmacSecret?:string|undefined}
 export interface YxxAuthorizerInput {sessionToken?: unknown; publicRef?: unknown; locator?: Parameters<ReporterAccess['locateLegacyInTransaction']>[0]['locator'] | null; access?: Pick<ReporterAccess, 'locateLegacyInTransaction'> | null}
@@ -59,7 +60,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
       if(source?.source_kind!=='VERIFIED_MANUAL_REPORT'||source.journey_id!==row.journey_id||source.scope.scopeHash!==canonical
         ||source.scope.sourceCorpScope!==c.corpId||source.scope.sourceAppScope!==c.agentId||source.scope.proofRef!==c.proofRef
         ||row.reporter_binding_hash!==textHashP2016(JSON.stringify(['WECOM_APP',app.authority.channelAccountId,c.corpId,c.agentId,canonical,member.userid])))return null;
-      return Object.freeze({ticket_id:row.ticket_id,source_intake_id:row.source_intake_id,public_ref:row.public_ref,session_id:null});
+      return Object.freeze({ticket_id:row.ticket_id,source_intake_id:row.source_intake_id,public_ref:row.public_ref,session_id:null,original_source:'VERIFIED_MANUAL_REPORT' as const});
     }
     if(!row||row.source_provider!=='WECOM_AIBOT'||row.source_bot_id!==c.botId||row.reporter_wecom_userid!==member.userid
       ||row.reporter_binding_hash!==textHashP2016(JSON.stringify(['WECOM_AIBOT',c.botId,member.userid])))return null;
@@ -72,7 +73,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
     const member=authenticate(sessionToken as SessionToken|null),scope=await authorize(transaction,member,publicRef);
     if(!scope)failYxx('NOT_FOUND');authenticate(sessionToken as SessionToken|null);return scope;
   }
-  async function run<T>({sessionToken,publicRef=null,locator=null,access=null}: YxxAuthorizerInput,reader: (tx: PostgresTransaction, scope: Pick<ReporterScope, 'ticket_id' | 'public_ref' | 'session_id'>) => Promise<T>): Promise<T>{
+  async function run<T>({sessionToken,publicRef=null,locator=null,access=null}: YxxAuthorizerInput,reader: (tx: PostgresTransaction, scope: ReporterReadScope) => Promise<T>): Promise<T>{
     const member=authenticate(sessionToken as SessionToken | null);
     if(inFlight>=32)failYxx('BUSY');inFlight++;
     try{
@@ -87,7 +88,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
         }}
         const scope=await authorize(tx,member,ref);
         if(!scope){await tx.query("INSERT INTO pilot_ticket.reporter_access_event(event_type,reason_code) VALUES('ACCESS_DENIED','MEMBER_ENTRY_DENIED')");return null;}
-        const value=await reader(tx,{ticket_id:scope.ticket_id,public_ref:scope.public_ref,session_id:scope.session_id});
+        const value=await reader(tx,{ticket_id:scope.ticket_id,public_ref:scope.public_ref,session_id:scope.session_id,...(scope.original_source?{original_source:scope.original_source}:{})});
         authenticate(sessionToken as SessionToken | null); // Reject an identity revoked while the transaction awaited I/O.
         return {value};
       });
@@ -95,6 +96,6 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
       if(!result)failYxx('NOT_FOUND');return result.value;
     }finally{inFlight--;}
   }
-  return Object.freeze({authenticate,currentScope,authorizeInTransaction,read:<T,>(input: YxxAuthorizerInput,reader: (tx: PostgresTransaction,scope: Pick<ReporterScope, 'ticket_id' | 'public_ref' | 'session_id'>)=>Promise<T>)=>run(input,reader),
+  return Object.freeze({authenticate,currentScope,authorizeInTransaction,read:<T,>(input: YxxAuthorizerInput,reader: (tx: PostgresTransaction,scope: ReporterReadScope)=>Promise<T>)=>run(input,reader),
     locate:(input: YxxAuthorizerInput)=>run(input,async(_tx,scope)=>scope.public_ref),close(){closed=true;}});
 }

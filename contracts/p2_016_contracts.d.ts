@@ -39,7 +39,7 @@ export type P2016ReporterAccessGrant = { readonly grant_id: string; readonly tic
 
 export type P2016ReporterSession = { readonly public_ref: string; readonly identity_mode: "BOUND_ACCESS_SESSION"; readonly read_only: true; };
 
-export type P2016ReporterTicketView = { readonly public_ref: string; readonly ticket_no: string; readonly suffix: string; readonly title: "信息服务申请" | "信息系统故障报修"; readonly external_status: string; readonly created_at: LocalDateTime; readonly updated_at: LocalDateTime; readonly version: number; readonly guidance: "如未解决，请在企业微信机器人单聊中回复。"; };
+export type P2016ReporterTicketView = { readonly public_ref: string; readonly ticket_no: string; readonly suffix: string; readonly title: "信息服务申请" | "信息系统故障报修"; readonly external_status: string; readonly created_at: LocalDateTime; readonly updated_at: LocalDateTime; readonly version: number; readonly guidance: "如未解决，请在企业微信机器人单聊中回复。"|"如未解决，请联系工作人员补充情况。"; };
 
 export type P2016ReporterTimeline = { readonly items: ReadonlyArray<{ readonly ref: string; readonly text: string; readonly occurred_at: LocalDateTime; readonly source_rank: 0; readonly source_ordinal: number; }>; readonly next_cursor: string | null; };
 
