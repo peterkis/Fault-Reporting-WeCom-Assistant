@@ -1,14 +1,17 @@
 ---
 document_id: WBINT-ACCEPTANCE
 status: PLAN_CONFIRMED
-business_validation_status: NOT_RUN
+business_validation_status: PARTIAL_LOCAL_VERIFIED
+snapshot_on: 2026-10-11
 ---
 
 # 人工工作台验收矩阵
 
 返回 [计划入口](README.md) · [能力映射](capability-map.md) · [实施任务](implementation-plan.md)
 
-以下是未来任务的验收要求，本轮没有运行业务测试。每行必须记录实际结果和证据链接；未运行标 `NOT_RUN`，不能因已有原型／历史报告／类型通过而填 PASS。
+以下保留已确认的验收要求；各票当前结果与真实被测对象见[执行导航](execution.md)。未运行部分保持 `NOT_RUN`，不能因原型、历史报告或类型通过填 PASS。
+
+2026-10-11当前本地增量：A06的[T20 Web本人反馈](execution/t20.md)和[T21 Bot本人反馈](execution/t21.md)原七项已完成独立核对并集成，A06为LOCAL_VERIFIED；T21的最终边界12／12、共享11／11与各适用分组分别保留原对象。该增量不代表全部43票完成、发布、现场验收或Gate批准；其他组按各票执行记录保留完成与剩余范围。
 
 ## 验证环境和证据层次
 

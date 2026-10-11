@@ -50,7 +50,9 @@ export type TicketEventType =
   | 'ticket.information_added'
   | 'ticket.auto_close_reminder'
   | 'ticket.assignment_transferred'
-  | 'ticket.unassigned';
+  | 'ticket.unassigned'
+  | 'ticket.follow_up_scheduled'
+  | 'ticket.follow_up_cancelled';
 export type TicketActionErrorCode =
   | 'VALIDATION_FAILED'
   | 'INVALID_STATE_TRANSITION'

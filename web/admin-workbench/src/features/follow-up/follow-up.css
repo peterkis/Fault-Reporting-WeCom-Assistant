@@ -1,0 +1,10 @@
+.shared-follow-up input{display:block;width:100%;box-sizing:border-box;padding:8px 10px;margin:8px 0 12px;border:1px solid #d9d9d6;border-radius:6px;background:#fff;color:inherit}
+.shared-follow-up input:focus-visible{outline:2px solid #6a8bce;outline-offset:2px}
+.shared-follow-up button{margin:4px 8px 4px 0}
+.shared-follow-up-history{padding-left:20px;margin:16px 0 8px}
+.shared-follow-up-history li{margin:8px 0;overflow-wrap:anywhere}
+.shared-follow-up-history span{display:block;margin-top:2px;color:#787774;font-size:12px}
+.shared-follow-up-summary{margin:10px 0;font-size:12px;line-height:1.6;color:#595953}
+.shared-follow-up-summary strong{font-weight:500}
+.shared-follow-up-summary time{display:block;font-variant-numeric:tabular-nums;white-space:normal}
+.shared-follow-up-summary.is-due strong{color:#8a5a10}
