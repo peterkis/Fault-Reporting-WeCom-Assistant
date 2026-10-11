@@ -5,6 +5,7 @@
   "legacy_entry_count": 207,
   "entries": [
     {"path":"tests/t37-due-fault-isolation-rollback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t37-follow-up-recovery-first.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-due-worker.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-terminal-toggle-reopen.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-transfer-due-maintenance.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -466,6 +467,7 @@
   },
   "selections": {
     "wbint-t37-due-faults": ["tests/t37-due-fault-isolation-rollback.integration.test.mts"],
+    "wbint-t37-recovery-first": ["tests/t37-follow-up-recovery-first.browser.test.mts"],
     "wbint-t37-due-worker": ["tests/t37-due-worker.integration.test.mts"],
     "wbint-t37-terminal": ["tests/t37-terminal-toggle-reopen.integration.test.mts"],
     "wbint-t37-transfer-due": ["tests/t37-transfer-due-maintenance.integration.test.mts"],
@@ -491,6 +493,7 @@
     ],
     "v3-p09": [
       "tests/t37-due-fault-isolation-rollback.integration.test.mts",
+      "tests/t37-follow-up-recovery-first.browser.test.mts",
       "tests/t37-due-worker.integration.test.mts","tests/t37-terminal-toggle-reopen.integration.test.mts","tests/t37-transfer-due-maintenance.integration.test.mts","tests/t37-shared-follow-up-drawer.browser.test.mts","tests/t37-communicator-authority.integration.test.mts","tests/t37-follow-up-schedule.integration.test.mts",
       "tests/t24-default-off-and-current-read-fences.integration.test.mts",
       "tests/t24-formal-nonpending-delivery-states.browser.test.mts",

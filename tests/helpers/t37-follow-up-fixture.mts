@@ -35,7 +35,7 @@ export type T37Fixture = Readonly<{
   http(index:number):Promise<T37Http>;createTicket():Promise<string>;setHandlerTeams(teams:readonly string[]):Promise<void>;
 }>;
 /** Omitted option is the actual default-off composition; no fixture manufactures an HTTP success. */
-export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;lifecycleEnabled?:boolean}>={}){
+export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,options:Readonly<{workbenchFollowUpSchedulesEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;lifecycleEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean}>={}){
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'t37',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough030(context);
@@ -58,7 +58,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     const followUpOption=options.workbenchFollowUpSchedulesEnabled===undefined?{}:{workbenchFollowUpSchedulesEnabled:options.workbenchFollowUpSchedulesEnabled};
     const assignmentOption=options.ticketAssignmentEnabled===undefined?{}:{ticketAssignmentEnabled:options.ticketAssignmentEnabled};
     const runtimeOptions={pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:origin,listenPort:port,
-      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...(options.lifecycleEnabled===true?{ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true}:{}),...followUpOption,...assignmentOption,...(options.ticketUnassignEnabled===undefined?{}:{ticketUnassignEnabled:options.ticketUnassignEnabled})};
+      principalIds:[dispatcher.id,handler.id,otherHandler.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,...(options.lifecycleEnabled===true?{ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true}:{}),...followUpOption,...assignmentOption,...(options.ticketUnassignEnabled===undefined?{}:{ticketUnassignEnabled:options.ticketUnassignEnabled}),...(options.workbenchDraftRecoveryEnabled===undefined?{}:{workbenchDraftRecoveryEnabled:options.workbenchDraftRecoveryEnabled})};
     const runtime=createP2016Runtime(runtimeOptions);
     try{
       assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);assert.equal(runtime.selfService,null);
