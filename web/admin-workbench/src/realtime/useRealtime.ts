@@ -35,7 +35,10 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
               else query.setState({data:undefined,dataUpdatedAt:0,error:null,status:'pending',fetchStatus:'idle'});
             }
             client.setQueryData(['session'],fresh);
-            if(fresh.principal_id!==principal.principal_id)await purgeDrafts({principal:principal.principal_id,reason:'revoked'});
+            if(fresh.principal_id!==principal.principal_id){
+              client.removeQueries({predicate:query=>query.queryKey[0]==='personal-read-command'&&query.queryKey[1]===principal.principal_id});
+              await purgeDrafts({principal:principal.principal_id,reason:'revoked'});
+            }
             signal.throwIfAborted();throw new IdentityChanged();
           }
           client.setQueryData(['session'],fresh);

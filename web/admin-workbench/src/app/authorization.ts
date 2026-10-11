@@ -4,9 +4,12 @@ import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 
 export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
-  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible'].includes(String(key[0]))&&key[2]===id));
+  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position'||key[0]==='personal-read-command')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible'].includes(String(key[0]))&&key[2]===id));
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
-  for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
+  for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
+    if(query.queryKey[0]==='personal-read-command')client.removeQueries({queryKey:query.queryKey,exact:true});
+    else query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
+  }
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{
     const key=mutation.options.mutationKey;
     if(!key)return false;

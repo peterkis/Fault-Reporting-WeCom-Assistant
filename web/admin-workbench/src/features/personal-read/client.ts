@@ -1,5 +1,5 @@
 import type {CanonicalItem} from '../../../../../contracts/workbench_review_contracts';
-import type {PersonalReadPage,PersonalReadAcknowledgement,PersonalReadCommand} from '../../../../../contracts/workbench_personal_read_contracts';
+import type {PersonalReadPage,PersonalReadAcknowledgement,PersonalReadCommand,PersonalReadReceipt} from '../../../../../contracts/workbench_personal_read_contracts';
 import {ApiError,readWorkbench,captureWorkbenchRead,rejectAuthorization} from '../../api/client';
 function object(value:unknown,keys:readonly string[]):Record<string,unknown>{
   if(value===null||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||Object.keys(value).some(key=>!keys.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;
@@ -23,12 +23,24 @@ function decodeAcknowledgement(value:unknown,command:PersonalReadCommand):Person
   return {ok:true,client_command_id:command.client_command_id,source_key:key(v.source_key),source_kind:v.source_kind,last_read_position:position(v.last_read_position,false),row_version:position(v.row_version,false),replayed:v.replayed};
 }
 const path=(item:CanonicalItem)=>'/api/workbench/items/'+item.kind+'/'+encodeURIComponent(item.id)+'/read-position';
+function decodeReceipt(value:unknown,command:PersonalReadCommand):PersonalReadReceipt{
+  if(value===null||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');
+  const candidate=value as Record<string,unknown>,v=object(value,candidate.state==='COMMITTED'?['client_command_id','state','result']:['client_command_id','state']);
+  if(v.client_command_id!==command.client_command_id)throw new ApiError(502,'INVALID_RESPONSE');
+  if(v.state==='UNKNOWN')return {client_command_id:command.client_command_id,state:'UNKNOWN'};
+  if(v.state!=='COMMITTED')throw new ApiError(502,'INVALID_RESPONSE');
+  const result=decodeAcknowledgement(v.result,command);if(!result.replayed)throw new ApiError(502,'INVALID_RESPONSE');
+  return {client_command_id:command.client_command_id,state:'COMMITTED',result};
+}
 export const personalReadApi={
   page:(item:CanonicalItem,signal:AbortSignal)=>readWorkbench(path(item),signal,decodePersonalReadPage),
+  receipt:(item:CanonicalItem,command:PersonalReadCommand,signal:AbortSignal)=>readWorkbench(path(item)+'/commands/'+encodeURIComponent(command.client_command_id),signal,value=>decodeReceipt(value,command)),
   async advance(item:CanonicalItem,command:PersonalReadCommand,csrf:string|null,signal:AbortSignal){
     const current=captureWorkbenchRead(signal);
+    try{
     const response=await fetch(path(item),{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(csrf?{'x-csrf-token':csrf}:{})},body:JSON.stringify(command)});
-    current();if([401,403,404].includes(response.status))return rejectAuthorization(response);if(!response.ok)throw new ApiError(response.status,'PERSONAL_READ_REJECTED');
+    current();if([401,403,404].includes(response.status))return await rejectAuthorization(response);if(!response.ok)throw new ApiError(response.status,'PERSONAL_READ_REJECTED');
     const value:unknown=await response.json();current();return decodeAcknowledgement(value,command);
+    }catch(error){current();throw error;}
   },
 };
