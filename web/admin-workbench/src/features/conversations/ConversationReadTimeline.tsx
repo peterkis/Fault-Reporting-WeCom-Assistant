@@ -4,6 +4,7 @@ import type {Principal} from '../../api/client';
 import {ApiError,captureWorkbenchRead,readWorkbench,workbenchTransportWritable} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {foregroundTextReader,hasForegroundText} from '../personal-read/foreground-text';
+import {verifyCurrentReader} from '../personal-read/current-reader';
 import type {ConversationWorkspaceItem} from './client';
 function object(value:unknown):Record<string,unknown>{if(value===null||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function cursor(value:unknown){const v=object(object(value).read_cursor);if(typeof v.last_read_sequence!=='string'||!/^(0|[1-9][0-9]{0,15})$/u.test(v.last_read_sequence)||!Number.isSafeInteger(Number(v.last_read_sequence))||typeof v.row_version!=='number'||!Number.isSafeInteger(v.row_version)||v.row_version<0)throw new ApiError(502,'INVALID_RESPONSE');return {last:Number(v.last_read_sequence),version:v.row_version};}
@@ -19,11 +20,12 @@ export function ConversationReadTimeline({principal,id,items}:{principal:Princip
       const seen=readers.filter(reader=>reader.read()).sort((a,b)=>b.sequence-a.sequence),target=seen[0];if(!target||target.sequence<=confirmed)return;
       busy=true;
       try{
+        const reader=await verifyCurrentReader(principal,client,controller.signal);if(!reader)return;current();
         const fresh=await readWorkbench('/api/conversations/'+id,controller.signal,cursor);current();
         if(disposed||!workbenchTransportWritable()||!hasForegroundText(target.node))return;
         confirmed=Math.max(confirmed,fresh.last);if(target.sequence<=confirmed)return;
         const command={client_command_id:crypto.randomUUID(),expected_cursor_row_version:fresh.version,last_read_sequence:target.sequence};
-        const response=await fetch('/api/conversations/'+id+'/read-cursor',{method:'POST',signal:controller.signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(principal.csrf_token?{'x-csrf-token':principal.csrf_token}:{})},body:JSON.stringify(command)});current();
+        const response=await fetch('/api/conversations/'+id+'/read-cursor',{method:'POST',signal:controller.signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(reader.csrf_token?{'x-csrf-token':reader.csrf_token}:{})},body:JSON.stringify(command)});current();
         if(!response.ok)throw new ApiError(response.status,'SESSION_READ_REJECTED');
         const result=object(await response.json());current();const ack=object(result.cursor);
         if(result.ok!==true||typeof ack.last_read_sequence!=='number'||!Number.isSafeInteger(ack.last_read_sequence)||ack.last_read_sequence<target.sequence)throw new ApiError(502,'INVALID_RESPONSE');

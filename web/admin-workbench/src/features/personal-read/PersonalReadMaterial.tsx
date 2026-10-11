@@ -6,6 +6,7 @@ import {ApiError,captureWorkbenchRead,workbenchTransportWritable} from '../../ap
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {personalReadApi} from './client';
 import {foregroundTextReader,hasForegroundText} from './foreground-text';
+import {verifyCurrentReader} from './current-reader';
 export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{principal:Principal;item:CanonicalItem;sourceRef:string;revision:string;text:string|null}){
   const node=useRef<HTMLParagraphElement|null>(null),client=useQueryClient();
   useEffect(()=>{
@@ -16,10 +17,11 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
       if(!readText())return;
       attempted=true;
       try{
+        const reader=await verifyCurrentReader(principal,client,controller.signal);if(!reader)return;current();
         await personalReadApi.page(item,controller.signal);current();
         if(disposed||!workbenchTransportWritable()||!hasForegroundText(element)){attempted=false;return;}
         const command={client_command_id:crypto.randomUUID(),source_ref:sourceRef,revision};
-        const result=await personalReadApi.advance(item,command,principal.csrf_token,controller.signal);current();if(disposed)return;
+        const result=await personalReadApi.advance(item,command,reader.csrf_token,controller.signal);current();if(disposed)return;
         client.setQueryData(['personal-read-position',principal.principal_id,item.kind,item.id],result);
         void client.invalidateQueries({queryKey:['board',principal.principal_id]});
       }catch(error){
