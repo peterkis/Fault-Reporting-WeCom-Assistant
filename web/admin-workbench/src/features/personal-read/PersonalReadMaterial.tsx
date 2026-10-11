@@ -13,8 +13,12 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
     const element=node.current;if(!element||!text?.trim()||!principal.personal_read_enabled)return;
     // Safe coordinates/UUID only. The bounded in-memory family holds no text or credentials.
     client.setQueryDefaults(['personal-read-command'],{gcTime:Infinity});
-    const pendingKey=['personal-read-command',principal.principal_id,item.kind,item.id,sourceRef,revision] as const;
-    const pending=()=>client.getQueryData<PersonalReadCommand>(pendingKey);
+    let pendingKey:readonly ['personal-read-command',string,CanonicalItem['kind'],string,string,string]=['personal-read-command',principal.principal_id,item.kind,item.id,sourceRef,revision];
+    const pending=()=>{
+      const query=client.getQueryCache().findAll({predicate:query=>query.queryKey[0]==='personal-read-command'&&query.queryKey[1]===principal.principal_id&&query.queryKey[4]===sourceRef&&query.queryKey[5]===revision})[0];
+      const command=query?client.getQueryData<PersonalReadCommand>(query.queryKey):undefined;
+      return query&&command?{key:query.queryKey,command}:undefined;
+    };
     const full=()=>client.getQueryCache().findAll({predicate:query=>query.queryKey[0]==='personal-read-command'}).length>=100;
     let disposed=false,attempted=false,busy=false,receiptChecked=false;const readText=foregroundTextReader(element),controller=new AbortController(),current=captureWorkbenchRead(controller.signal);
     const confirmed=(result:PersonalReadAcknowledgement)=>{
@@ -30,13 +34,16 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
       if(!readText())return;
       busy=true;
       try{
-        await personalReadApi.page(item,controller.signal);current();
+        const page=await personalReadApi.page(item,controller.signal);current();
         if(disposed||!workbenchTransportWritable()||!hasForegroundText(element))return;
+        pendingKey=['personal-read-command',principal.principal_id,page.canonical_item.kind,page.canonical_item.id,sourceRef,revision];
         // Another rendered copy may own these coordinates while this GET awaited.
         const saved=pending();
         if(saved){
           receiptChecked=true;
-          const receipt=await personalReadApi.receipt(item,saved,controller.signal);current();if(disposed)return;
+          // Move only this already saved intent after current-scope authorization; no alias creates another UUID.
+          client.removeQueries({queryKey:saved.key,exact:true});client.setQueryData(pendingKey,saved.command);
+          const receipt=await personalReadApi.receipt(item,saved.command,controller.signal);current();if(disposed)return;
           if(receipt.state==='COMMITTED'){confirmed(receipt.result);attempted=true;}
           return;
         }
