@@ -30,13 +30,14 @@ test('T35 an unknown read survives real Review resolution and canonical Ticket n
     const target='/api/workbench/items/ticket/'+resolved.canonical_item.id+'/read-position';
     const position=async(reader:0|1)=>(await (await f.get(target,reader)).json() as {sources:{last_read_position:string}[]}).sources[0]?.last_read_position;
     assert.equal(await position(0),'1');assert.equal(await position(1),'0');console.log('T35_UNKNOWN_CANONICAL_COMMITTED '+JSON.stringify({uuid:original.client_command_id,review:admission.review.id,ticket:resolved.canonical_item.id,A:'1',B:'0',delivery_failed:true}));
-    await browser.evaluate("document.querySelector('.sidebar a[title=\"工作台\"]').click()");await browser.waitFor("Boolean(document.querySelector('.board-column.pending .ticket-card'))");
+    await browser.evaluate("globalThis.__t35Visible=false;document.dispatchEvent(new Event('visibilitychange'));document.querySelector('.sidebar a[title=\"工作台\"]').click()");await browser.waitFor("Boolean(document.querySelector('.board-column.pending .ticket-card'))");
     await browser.evaluate("[...document.querySelectorAll('.tools button')].find(button=>button.textContent.includes('刷新')).click()");
     await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"]'))`);
     await browser.evaluate("(()=>{for(const button of document.querySelectorAll('.board-column.pending [data-action=\"expand-column\"]'))if(button.getAttribute('aria-expanded')==='false')button.click();})()");
     await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open'))`);await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open').click()`);
-    await browser.waitFor(`Boolean(document.querySelector('.activity-list ${selector}'))`);await browser.evaluate(show);
-    await browser.waitFor(`globalThis.__t35Receipts.some(response=>response.status===200&&response.body.client_command_id===${JSON.stringify(original.client_command_id)}&&response.body.state==='COMMITTED')`);
+    await browser.waitFor(`Boolean(document.querySelector('.activity-list ${selector}'))`);
+    await browser.evaluate(`(()=>{document.querySelector(${JSON.stringify('.activity-list '+selector)}).scrollIntoView({block:'center'});globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
+    await browser.waitFor(`globalThis.__t35Receipts.some(response=>response.path.startsWith(${JSON.stringify(target+'/commands/')})&&response.status===200&&response.body.client_command_id===${JSON.stringify(original.client_command_id)}&&response.body.state==='COMMITTED')`);
     assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[original]);assert.equal(await position(0),'1');assert.equal(await position(1),'0');
     await writeFile(join(directory,'canonical-original-read-1280.png'),Buffer.from(await browser.screenshot(),'base64'));console.log('T35_UNKNOWN_CANONICAL_RECOVERED '+JSON.stringify({directory,original_uuid:true,posts:1}));
   }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t35Posts,commits:globalThis.__t35Commits,receipts:globalThis.__t35Receipts})')));}}
