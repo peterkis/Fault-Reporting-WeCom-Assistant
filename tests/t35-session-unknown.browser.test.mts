@@ -34,8 +34,14 @@ test('T35 a lost Session cursor ACK is checked through its current own cursor on
     assert.equal((await cursor(session.id)).last_read_sequence,'1');console.log('T35_SESSION_UNKNOWN_COMMIT '+JSON.stringify({delivery_failed:true,actual_cursor:'1',original_uuid:original[0]?.body.client_command_id}));
     await browser.evaluate("globalThis.__t35Visible=false;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('blur'))");await browser.evaluate(show);
     await browser.waitFor("globalThis.__t35CurrentChecks.some(response=>response.status===200&&response.body.read_cursor.last_read_sequence==='1')");
-    assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),original,'current cursor confirmation must not generate another UUID or POST');assert.equal((await cursor(session.id,true)).last_read_sequence,'0');assert.equal((await cursor(other.id)).last_read_sequence,'0');assert.deepEqual(await (await get(sourcePath)).json(),source);
-    await writeFile(join(directory,'session-original-cursor-check-1280.png'),Buffer.from(await browser.screenshot(),'base64'));console.log('T35_SESSION_UNKNOWN_CHECKED '+JSON.stringify({directory,own_current_cursor:true,posts:1,no_new_receipt_route:true}));
+    const after=await browser.evaluate('globalThis.__t35Posts') as typeof original;
+    assert.deepEqual(after.filter(row=>row.body.last_read_sequence===1),original,'current cursor confirmation must not repeat the unknown original coordinate');
+    if(after.length>1){
+      assert.ok(after.slice(1).every(row=>row.body.last_read_sequence===2),'only the independently visible second body is another intent');
+      assert.equal(await browser.evaluate("(()=>{const node=document.querySelector('p[data-session-read-sequence=\"2\"]'),box=node?.getBoundingClientRect();return node?.textContent==='仅供内部的合成处理记录'&&document.visibilityState==='visible'&&document.hasFocus()&&box.top>=0&&box.bottom<=innerHeight;})()"),true);
+    }
+    assert.equal((await cursor(session.id,true)).last_read_sequence,'0');assert.equal((await cursor(other.id)).last_read_sequence,'0');assert.deepEqual(await (await get(sourcePath)).json(),source);
+    await writeFile(join(directory,'session-original-cursor-check-1280.png'),Buffer.from(await browser.screenshot(),'base64'));console.log('T35_SESSION_UNKNOWN_CHECKED '+JSON.stringify({directory,own_current_cursor:true,original_coordinate_posts:1,actual_posts:after.length,no_new_receipt_route:true}));
   }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t35Posts,commits:globalThis.__t35Commits,current_checks:globalThis.__t35CurrentChecks})')));}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],failure);
 }));
