@@ -17,6 +17,9 @@ import {createTicketAssignmentService} from './workbench-ticket-assignment.mjs';
 import {createTicketUnassignService,unassignSchemaReady} from './workbench-ticket-unassign.mjs';
 import {createTicketStaffCompletionService,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
 import {createTicketRoundNotifications,roundNotificationSchemaReady} from './workbench-ticket-round-notifications.mjs';
+import {normalizeAppNotificationOptions} from './workbench-app-notification-target.mjs';
+import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
+import type {WorkbenchAppNotificationSenderOptions} from './workbench-app-notification-sender.mjs';
 import {reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
@@ -27,6 +30,7 @@ import type {ManualReporterDirectoryOptions} from '../contracts/workbench_report
 import {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
 import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
 interface P2016RuntimeOptionsInput {workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'pool'|'enabled'>|null}
+interface P2016RuntimeOptionsInput {appNotifications?:TicketAppNotificationOptions|null;appNotificationTransport?:Omit<WorkbenchAppNotificationSenderOptions,'pool'|'notifications'|'enabled'|'origin'|'allowedHosts'|'allowLocalHttp'>|null}
 interface P2016RuntimeOptionsInput { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchReporterCandidatesEnabled?:boolean;manualReporterDirectory?:ManualReporterDirectoryOptions|null;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
@@ -81,7 +85,7 @@ export function createP2016Runtime(options: P2016RuntimeOptions & { flags: { TIC
 export function createP2016Runtime(options?: P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime;
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
   reporterHmacSecret,reporterOrigin=publicOrigin,allowedHosts=[],allowedTargetHashes=[],allowLocalHttp=false,
-  gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,groupRoundNotifications=null,
+  gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,groupRoundNotifications=null,appNotifications=null,appNotificationTransport=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,botReporterFeedbackEnabled=false,botReporterFeedbackDraftRecoveryEnabled=false,
@@ -116,6 +120,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   if(typeof roundBotId!=='string'||!roundBotId||roundBotId.length>128)failP2016('ROUND_NOTIFICATIONS_CONFIG_INVALID',503);
   if(!enabled)return Object.freeze({disabled:true as const,start:async()=>({disabled:true}),stop:async()=>({stopped:true,disabled:true})});
   if((gatewayEnabled||senderEnabled)&&!(liveApproval?.live===true&&liveApproval?.scope===true&&liveApproval?.send===true))failP2016('LIVE_APPROVAL_REQUIRED',403);
+  const app=normalizeAppNotificationOptions(appNotifications);
   const scope=gatewayEnabled?createP2016InboundScope(inboundScope):null;
   if(scope&&((inboundScope as { bot_id?: unknown }).bot_id!==botId||scope.allowed_target_hashes.some(h=>!allowedTargetHashes.includes(h))||allowedTargetHashes.some(h=>!scope.allowed_target_hashes.includes(h))))failP2016('LIVE_SCOPE_REQUIRED',403);
   if(featureFlags.WECOM_TEMPLATE_CARD_ENABLED&&!featureFlags.REPORTER_TIMELINE_ENABLED)failP2016('REPORTER_REQUIRED_FOR_CARD',503);
@@ -123,7 +128,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const webOAuth: WebOAuthPort=(createWeComWebOAuth as typeof createWeComWebOAuth)({...wecomWebOAuth,publicOrigin:reporterOrigin});
   const oauthHttp: ReporterHttpHandler=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,roundNotificationBotId:ticketRoundNotificationsEnabled?roundBotId:null});
-  const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend});
+  const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend,appNotifications:app});
   const query=createP2016TicketQuery({pool,enabled,ticketReopenRoundsEnabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,ticketStaffCompletionEnabled,ticketAssignmentEnabled,ticketUnassignEnabled,ticketRoundNotificationsEnabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
   const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
@@ -142,7 +147,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
     realtimeScopeLimit:256,
     realtimeAvailabilityFallback:workbenchRealtimeEnabled,realtimeFollowUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
-      reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy,...(groupRoundNotifications?{groupRoundNotifications:{...groupRoundNotifications,pool}}:{})}),
+      reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy,...(groupRoundNotifications?{groupRoundNotifications:{...groupRoundNotifications,pool}}:{}),
+      ...(app&&appNotificationTransport?{appRoundNotifications:{...appNotificationTransport,pool,notifications:{...app,enabled:app.enabled&&externalSendEnabled}}}:{})}),
     extensionFactory:({controlService,realtime,queryService,commandFacade,authorization})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
       const followUpSchedules=createWorkbenchFollowUpSchedules({pool,query,enabled:workbenchFollowUpSchedulesEnabled,realtimeProjector:realtimeProjector.ticket,wakeup:realtime.wakeup});
