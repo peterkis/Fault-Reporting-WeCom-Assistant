@@ -173,6 +173,11 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUp
       const report=await pool.query<{summary:string|null;source_provider:string}>(`SELECT summary,source_provider FROM intake.service_intake
         WHERE id=$1::uuid AND retention_until>platform.local_now()`,[selected.intake_id]);
       const web=report.rows[0]?.source_provider==='YIXIAOXIU_WEB';
+      const manual=personalReadEnabled&&manualReportsEnabled&&report.rows[0]?.source_provider==='STAFF_MANUAL_REPORT'?await readManualReportSource(pool,selected.intake_id):null;
+      const manualRecords=manual?`UNION ALL
+        SELECT 'manual:'||i.id::text,to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS'),'报修原文',$7::text,
+          'REPORT',NULL,NULL,NULL,'manual:'||i.id::text,'1'::text FROM intake.service_intake i
+        WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()` : '';
       const webRecords=web?`UNION ALL
         SELECT 'web:'||s.id::text,to_char(s.received_at,'YYYY-MM-DD HH24:MI:SS'),
           CASE WHEN s.kind='SUBMIT' THEN '报修原文' ELSE '报修补充' END,
@@ -210,8 +215,9 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,followUp
           e.event_type,NULL,'INTERNAL','SYSTEM',NULL,NULL,NULL,NULL FROM intake.service_intake_event e
         WHERE $2='intake' AND e.intake_id=$1::uuid
         ${webRecords}
+        ${manualRecords}
       ) SELECT * FROM records WHERE ($4::text IS NULL OR (at,id)<($4::text,$5::text))
-        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1]);
+        ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1,...(manual?[manual.report.description]:[])]);
       const items=records.rows.slice(0,n).map(({material_source_ref,material_revision,...record})=>({...record,...(material_source_ref&&material_revision?{read_material:{source_ref:material_source_ref,revision:material_revision}}:{})})),last=items.at(-1);
       // The legacy responsibility view retains history. Filter current ownership
       // before its bounded result, without changing historical assignment facts.
