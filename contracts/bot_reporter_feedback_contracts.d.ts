@@ -1,4 +1,4 @@
-/** WBINT-T21 SOURCE contract; candidate routes await post-RED runtime validation. */
+/** WBINT-T21 closed member feedback and independent browser recovery contracts. */
 import type {YxxFeedbackInput,YxxFeedbackContext} from './yxx_self_service_feedback_contracts.js';
 export type BotReporterFeedbackInput = YxxFeedbackInput;
 export type BotReporterFeedbackContext = YxxFeedbackContext;
@@ -6,6 +6,11 @@ export interface BotReporterFeedbackBootstrap {
   schema_version: 1;
   write_enabled: boolean;
   csrf_token: string | null;
+}
+export interface BotReporterFeedbackRecovery {
+  schema_version: 1;
+  recovery_scope: string;
+  raw_enabled: boolean;
 }
 export interface BotReporterFeedbackResult {
   ok: true;

@@ -15,7 +15,7 @@ test('production Bot feedback keeps the original UUID after a committed response
   const directory=join(tmpdir(),'t21-recovery-'+randomUUID());await mkdir(directory);
   try{
    fixture=await createYxxBrowserFixture({pool:f.context.pool,createApp:({oauth,origin:publicOrigin}:{oauth:WeComOAuth;origin:string})=>{
-    const runtime=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:f.context.pool,oauth,publicOrigin,reporterMemberEntry:t21Config,identityMapping:mapping,reporterHmacSecret:secret,botReporterFeedbackEnabled:true,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},pollMilliseconds:100,reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true}});app=runtime;return runtime.server;
+    const runtime=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:f.context.pool,oauth,publicOrigin,reporterMemberEntry:t21Config,identityMapping:mapping,reporterHmacSecret:secret,botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:true,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},pollMilliseconds:100}});app=runtime;return runtime.server;
    }});assert.ok(fixture);fixture.setMember('open-a');tab=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(tab);
    await tab.evaluate('location.assign('+JSON.stringify('/wecom/yixiaoxiu/tickets/'+f.publicRef)+')',{awaitPromise:false});
    await tab.waitFor("document.querySelector('[data-action=submit-bot-feedback]')?.disabled===false");

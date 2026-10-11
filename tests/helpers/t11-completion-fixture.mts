@@ -19,13 +19,13 @@ export async function t11NewTicket(context:T11Fixture){
 }
 
 export interface T11Fixture {pool:PostgresPool;databaseUrl:string;tickets:{ticket:{id:string};intake:{intakeId:string;requestRef?:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string;cookies:string[];browserCookies:readonly {name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number}[]}
-export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{completionEnabled=true,installCompletionSchema=true,notesEnabled=true,recoveryEnabled=true}:{completionEnabled?:boolean;installCompletionSchema?:boolean;notesEnabled?:boolean;recoveryEnabled?:boolean}={}){
+export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{completionEnabled=true,installCompletionSchema=true,notesEnabled=true,recoveryEnabled=true,conversationHandlingEnabled=false}:{completionEnabled?:boolean;installCompletionSchema?:boolean;notesEnabled?:boolean;recoveryEnabled?:boolean;conversationHandlingEnabled?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();
     if(completionEnabled&&installCompletionSchema)await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});
     if(completionEnabled&&installCompletionSchema)await migrateTicketReopenRounds({databaseUrl:f.databaseUrl,mode:'apply'});
     if(completionEnabled&&installCompletionSchema)await migrateBotReporterFeedback({databaseUrl:f.databaseUrl,mode:'apply'});
-    const options={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:completionEnabled,workbenchInternalNotesEnabled:notesEnabled,workbenchDraftRecoveryEnabled:recoveryEnabled};
+    const options={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:conversationHandlingEnabled,ticketStaffCompletionEnabled:completionEnabled,workbenchInternalNotesEnabled:notesEnabled,workbenchDraftRecoveryEnabled:recoveryEnabled};
     const runtime=createP2016Runtime(options);
     try{const started=await runtime.start();if(!started.cookies)throw Error('T11_AUTH_REQUIRED');await run({...f,runtime,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});}
     finally{await runtime.stop();if(runtime.server.listening)throw Error('T11_HTTP_RESIDUAL');}

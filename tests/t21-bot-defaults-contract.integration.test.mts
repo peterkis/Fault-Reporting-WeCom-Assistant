@@ -13,6 +13,8 @@ test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write
    const runtime=profile==='MEMBER_SELF_SERVICE'?createYxxProfile({...shared,profile}):profile==='MEMBER_TICKET_READONLY'?createYxxProfile({...shared,profile}):createYxxProfile({...shared,profile});
    try{await runtime.start();member=browser(runtime.server);await login(member);const denied=await t21Send(member,f.path,prepared.command,prepared.csrf);assert.equal(denied.status,profile==='OAUTH_ONLY'?404:403,denied.text);
     if(profile!=='OAUTH_ONLY'){const detail=await member.request(f.path);assert.equal(detail.status,200,detail.text);assert.equal(Object.hasOwn(t21Object(detail.json()),'feedback_context'),false);}
+    const recovery=await member.request('/api/reporter/feedback/recovery');assert.equal(recovery.status,profile==='MEMBER_SELF_SERVICE'?200:profile==='OAUTH_ONLY'?404:403);
+    if(profile==='MEMBER_SELF_SERVICE'){const value=t21Object(recovery.json());assert.deepEqual(Object.keys(value).sort(),['raw_enabled','recovery_scope','schema_version']);assert.equal(value.raw_enabled,false);assert.match(String(value.recovery_scope),/^[a-f0-9]{64}$/u);}
     const page=await member.request('/wecom/yixiaoxiu/tickets/'+f.publicRef);assert.equal(page.status,profile==='OAUTH_ONLY'?404:200);if(profile==='MEMBER_TICKET_READONLY')assert.equal(page.text.includes('/reporter/bot-feedback.js'),false);
    }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   }
@@ -40,9 +42,11 @@ test('Bot closed public HTTP contracts reject incidental text, spoofed identity 
    const response=await member.request(f.path+'/feedback',input);assert.equal(response.status,400,response.text);
   }
   const detail=t21Object((await member.request(f.path)).json()),bootstrap=t21Object((await member.request('/api/reporter/feedback/bootstrap')).json());
+  const recoveryResponse=await member.request('/api/reporter/feedback/recovery');assert.equal(recoveryResponse.status,200);const recovery=t21Object(recoveryResponse.json());assert.equal(recovery.raw_enabled,false);
+  assert.equal((await member.request('/api/reporter/feedback/recovery?actor=spoofed')).status,400);
   const result=await t21Send(member,f.path,command,csrf);assert.equal(result.status,200,result.text);
   const receipt=await member.request(f.path+'/feedback/commands/'+command.client_command_id);assert.equal(receipt.status,200,receipt.text);
-  for(const [file,value] of [['p2_016_reporter_ticket_view.schema.json',detail],['bot_reporter_feedback_bootstrap.schema.json',bootstrap],['bot_reporter_feedback_result.schema.json',t21Object(result.json())]] as const){
+  for(const [file,value] of [['p2_016_reporter_ticket_view.schema.json',detail],['bot_reporter_feedback_bootstrap.schema.json',bootstrap],['bot_reporter_feedback_recovery.schema.json',recovery],['bot_reporter_feedback_result.schema.json',t21Object(result.json())]] as const){
    const schema=t21Object(JSON.parse(await readFile(new URL('../contracts/'+file,import.meta.url),'utf8')));
    const branches=Object.hasOwn(schema,'oneOf')?schema.oneOf:[schema];assert.ok(Array.isArray(branches));
    const branch=branches.map(t21Object).find(candidate=>{const properties=t21Object(candidate.properties);return Object.keys(value).every(key=>Object.hasOwn(properties,key))&&Object.entries(properties).every(([key,property])=>{const definition=t21Object(property);return !Object.hasOwn(definition,'const')||definition.const===value[key];});});

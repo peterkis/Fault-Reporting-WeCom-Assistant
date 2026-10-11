@@ -1,5 +1,5 @@
 // Independent member capability; the existing Reporter page owns progress display.
-import {openDraft,saveDraft,settleDraft,removeSensitiveDraft,hasExistingDraft,subscribeDrafts,matchesDraft} from './features/drafts/encrypted-drafts';
+import {openDraft,saveDraft,settleDraft,removeSensitiveDraft,purgeDrafts,hasExistingDraft,subscribeDrafts,matchesDraft} from './features/drafts/encrypted-drafts';
 import type {DraftHandle,DraftScope} from './features/drafts/encrypted-drafts';
 const ref=/^\/wecom\/yixiaoxiu\/tickets\/([A-Za-z0-9_-]{32})$/u.exec(location.pathname)?.[1];
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -21,7 +21,7 @@ function eligible(detail:Record<string,unknown>):Context|null{
 if(ref&&document.documentElement.dataset.identityMode==='MEMBER_REQUIRED'){
  const publicRef=ref,path='/api/reporter/tickets/'+publicRef,section=document.createElement('section'),message=document.createElement('p'),controls=document.createElement('div');
  section.id='bot-feedback-panel';message.dataset.feedbackState='';message.setAttribute('role','status');section.hidden=true;section.append(message,controls);document.querySelector('#ticket')?.append(section);
- let context:Context|null=null,detail:Record<string,unknown>|null=null,csrf:string|null=null,pending:Pending|null=null,busy=false,stopped=false,generation=0,controller:AbortController|null=null,journal:Journal|null=null,rawEnabled=false,expiry:ReturnType<typeof setTimeout>|undefined,settling=false;
+ let context:Context|null=null,detail:Record<string,unknown>|null=null,csrf:string|null=null,pending:Pending|null=null,busy=false,stopped=false,generation=0,controller:AbortController|null=null,journal:Journal|null=null,recoveryPrincipal:string|null=null,rawEnabled=false,expiry:ReturnType<typeof setTimeout>|undefined,settling=false;
  const opaque=(p:Pending):Pending=>({...p,command:null,round:null});
  async function request(url:string,options:RequestInit={}):Promise<Record<string,unknown>>{
   const response=await fetch(url,{credentials:'same-origin',cache:'no-store',signal:controller?.signal??null,...options});if(!response.ok)throw new HttpError(response.status);return object(await response.json());
@@ -37,16 +37,20 @@ if(ref&&document.documentElement.dataset.identityMode==='MEMBER_REQUIRED'){
   if(p.command&&(value.completed_round_ref!==p.command.completed_round_ref||value.reopened_round_no!==(p.round??0)+1||ticket.version!==p.command.expected_ticket_version+1))throw Error('INVALID_RESPONSE');
  }
  async function strip(reason:'expired'|'revoked'|'logout'='revoked'){
-  clearTimeout(expiry);if(pending)pending=opaque(pending);const current=journal;if(current?.handle.record)await removeSensitiveDraft(current.handle,reason);
+  clearTimeout(expiry);if(pending)pending=opaque(pending);const current=journal;
+  if(reason==='logout'&&recoveryPrincipal)await purgeDrafts({principal:recoveryPrincipal,kind:'web-feedback',purpose:'bot-reporter-feedback',reason:'logout'},{preserveOperations:true});
+  else if(current?.handle.record)await removeSensitiveDraft(current.handle,reason);
  }
  function armExpiry(){
   clearTimeout(expiry);const saved=journal?.handle.record;if(!saved)return;
   expiry=setTimeout(()=>{void strip('expired').then(()=>{message.textContent='恢复副本已到期；原反馈仍须只读核对，不会再次发送。';render();}).catch(()=>{message.textContent='恢复副本清理未确认；只读核对原结果。';render();});},Math.max(0,saved.expiresAt-Date.now()));
  }
  async function restore(current:Record<string,unknown>,g:number){
-  const bootstrap=await request('/api/yixiaoxiu/bootstrap');if(g!==generation)return;
-  if(bootstrap.authenticated!==true||bootstrap.identity_mode!=='MEMBER_SELF_SERVICE'||typeof bootstrap.recovery_scope!=='string'||!/^[a-f0-9]{64}$/u.test(bootstrap.recovery_scope)||typeof current.ticket_no!=='string')throw Error('INVALID_RESPONSE');
-  rawEnabled=bootstrap.feedback_draft_recovery_enabled===true;
+  const bootstrap=await request('/api/reporter/feedback/recovery');if(g!==generation)return;
+  exact(bootstrap,['schema_version','recovery_scope','raw_enabled']);
+  if(bootstrap.schema_version!==1||typeof bootstrap.raw_enabled!=='boolean'||typeof bootstrap.recovery_scope!=='string'||!/^[a-f0-9]{64}$/u.test(bootstrap.recovery_scope)||typeof current.ticket_no!=='string')throw Error('INVALID_RESPONSE');
+  rawEnabled=bootstrap.raw_enabled;
+  recoveryPrincipal=bootstrap.recovery_scope;
   const scope:DraftScope={principal:bootstrap.recovery_scope,kind:'web-feedback',id:publicRef,purpose:'bot-reporter-feedback'};
   // The storage kind denotes browser feedback. Bot source, ref and purpose are
   // independent; this never reads Web request data or grants Ticket authority.
@@ -56,7 +60,7 @@ if(ref&&document.documentElement.dataset.identityMode==='MEMBER_REQUIRED'){
   if(!journal){const next:Journal={scope,handle:copy.handle,unsubscribe:()=>{}};journal=next;next.unsubscribe=subscribeDrafts(event=>{
    if(journal!==next||!matchesDraft(event,scope)||settling)return;
    if(pending)pending=opaque(pending);
-   if(event.reason==='logout'||event.reason==='logout-unknown'||event.reason==='revoked'){generation++;controller?.abort();stopped=true;context=null;csrf=null;busy=false;}
+   if(event.reason==='logout'||event.reason==='logout-unknown'||event.reason==='revoked'){next.handle.record=null;generation++;controller?.abort();stopped=true;context=null;csrf=null;busy=false;}
    message.textContent='敏感恢复副本已清理；原反馈仍须当前权限下只读核对。';render();
   });}else journal.handle=copy.handle;
   if(copy.handle.operation){pending={command:null,commandId:copy.handle.operation.commandId,ticketNo:current.ticket_no,round:null};message.textContent=copy.expired?'恢复副本已过期；原操作仍待只读核对。':'已恢复原反馈操作；只读核对，不会再次发送。';}

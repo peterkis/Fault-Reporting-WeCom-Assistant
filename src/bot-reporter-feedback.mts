@@ -2,7 +2,7 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {createYxxMemberAuthorizer,YxxBotMemberScope} from './p2-g2-yixiaoxiu-authorizer.mjs';
 import type {YxxMemberFlags} from './yxx-self-service-authorization.mjs';
-import type {BotReporterFeedbackInput,BotReporterFeedbackBootstrap,BotReporterFeedbackContext,BotReporterFeedbackResult,BotReporterFeedbackReceipt} from '../contracts/bot_reporter_feedback_contracts.js';
+import type {BotReporterFeedbackInput,BotReporterFeedbackBootstrap,BotReporterFeedbackRecovery,BotReporterFeedbackContext,BotReporterFeedbackResult,BotReporterFeedbackReceipt} from '../contracts/bot_reporter_feedback_contracts.js';
 import {hashP2016,transactionP2016,uuidP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {completedTicketRound,reopenCompletedRound} from './ticket-reopen-rounds.mjs';
@@ -15,14 +15,14 @@ export class BotReporterFeedbackError extends Error{
 }
 function fail(code:string,status=409):never{throw new BotReporterFeedbackError('BOT_FEEDBACK_'+code,status);}
 interface BotFeedbackReadInput{sessionToken:unknown;publicRef:unknown}
-interface BotFeedbackOptions{pool:PostgresPool;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;scopeSecret:string;enabled?:boolean;featureFlags?:Partial<YxxMemberFlags>}
+interface BotFeedbackOptions{pool:PostgresPool;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;scopeSecret:string;enabled?:boolean;draftRecoveryEnabled?:boolean;featureFlags?:Partial<YxxMemberFlags>}
 export async function botFeedbackSchemaReady(tx:PostgresTransaction){
   try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='050_bot_reporter_feedback'")).rowCount===1;}catch{return false;}
 }
 // The trusted member authorizer supplies current approved App/Bot and mapped user.
 // It does not assert that the original Bot message has a historical App pin.
-export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=false,featureFlags={}}:BotFeedbackOptions){
-  if(typeof enabled!=='boolean'||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<32||enabled&&(pool.options.max??4)>4
+export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=false,draftRecoveryEnabled=false,featureFlags={}}:BotFeedbackOptions){
+  if(typeof enabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean'||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<32||enabled&&(pool.options.max??4)>4
     ||Object.keys(featureFlags).some(key=>key!=='YIXIAOXIU_SELF_SERVICE_ENABLED'&&key!=='YIXIAOXIU_MY_REPORTS_ENABLED')
     ||Object.values(featureFlags).some(value=>typeof value!=='boolean'))fail('CONFIG_INVALID',503);
   const writesEnabled=()=>enabled&&featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED===true&&featureFlags.YIXIAOXIU_MY_REPORTS_ENABLED===true;
@@ -62,6 +62,14 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
   }
   function bootstrap(sessionToken:unknown):BotReporterFeedbackBootstrap{
     const member=identity(sessionToken),writeEnabled=writesEnabled();return {schema_version:1,write_enabled:writeEnabled,csrf_token:writeEnabled?csrf(sessionToken,member):null};
+  }
+  function recovery(sessionToken:unknown):BotReporterFeedbackRecovery{
+    const member=identity(sessionToken);
+    // Preserve the existing browser actor partition; object and Bot purpose are
+    // separate journal keys. This local scope conveys no Ticket or write right.
+    const binding=digest('member',[member.corpId,member.agentId,member.userid]).toString('hex');
+    const recoveryScope=createHmac('sha256',scopeSecret).update(JSON.stringify([binding,member.corpId,member.agentId])).digest('hex');
+    return {schema_version:1,recovery_scope:recoveryScope,raw_enabled:draftRecoveryEnabled&&writesEnabled()};
   }
   function assertCsrf(sessionToken:unknown,value:unknown){
     const member=identity(sessionToken);if(!writesEnabled())fail('FORBIDDEN',403);
@@ -114,5 +122,5 @@ export function createBotReporterFeedback({pool,authorizer,scopeSecret,enabled=f
         ?{...base,state:'COMMITTED' as const,result:{...previous.result,replayed:true as const}}:{...base,state:'UNKNOWN' as const};
     });
   }
-  return Object.freeze({context,bootstrap,assertCsrf,accept,receipt,close(){closed=true;}});
+  return Object.freeze({context,bootstrap,recovery,assertCsrf,accept,receipt,close(){closed=true;}});
 }

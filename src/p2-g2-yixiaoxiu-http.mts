@@ -54,13 +54,13 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       if((request.method==='POST'||api)&&(request.headers.origin&&request.headers.origin!==publicOrigin||request.headers['sec-fetch-site']==='cross-site'))failYxx('ORIGIN_INVALID');
       if(request.method==='POST'&&request.headers.origin!==publicOrigin)failYxx('ORIGIN_INVALID');
       const feedbackRoute=/^\/api\/reporter\/tickets\/([A-Za-z0-9_-]{32})\/feedback(?:\/commands\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}))?$/iu.exec(path);
-      if(path==='/api/reporter/feedback/bootstrap'||feedbackRoute){
+      if(path==='/api/reporter/feedback/bootstrap'||path==='/api/reporter/feedback/recovery'||feedbackRoute){
         if(!feedback)throw new BotReporterFeedbackError('BOT_FEEDBACK_FORBIDDEN',403);
         if(url.search)failYxx('INPUT_INVALID');
         const token=readWeComCookie(request,sessionName);
         if(request.method==='GET'){
           if(request.headers['transfer-encoding']!==undefined||request.headers['content-length']!==undefined&&request.headers['content-length']!=='0')failYxx('INPUT_INVALID');
-          const result=path==='/api/reporter/feedback/bootstrap'?feedback.bootstrap(token):feedbackRoute?.[2]
+          const result=path==='/api/reporter/feedback/recovery'?feedback.recovery(token):path==='/api/reporter/feedback/bootstrap'?feedback.bootstrap(token):feedbackRoute?.[2]
             ?await feedback.receipt({sessionToken:token,publicRef:feedbackRoute[1],commandId:feedbackRoute[2]}):null;
           if(!result)failYxx('INPUT_INVALID');authorizer.authenticate(token);json(response,200,result);return true;
         }

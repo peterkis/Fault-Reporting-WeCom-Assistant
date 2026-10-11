@@ -1,5 +1,4 @@
-// SOURCE_ONLY / NOT_REGISTERED / NOT_COMPILED / NOT_RUN.
-// Intended repository location: tests/t21-bot-ordinary-supplement-no-reopen.integration.test.mts.
+// Registered durable Bot ordinary-message tracer; external first draft is retained.
 // Genuine in-process Bot callback adapter -> durable Inbox/Intake -> projected
 // Conversation Session -> original Journey Ports -> genuine staff HTTP completion.
 // No SDK, sending or public callback endpoint is claimed. No target status is seeded.
@@ -51,11 +50,10 @@ test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journ
     const responsibilityResponse=await staff.get('/api/tickets/'+ticketId+'/responsibility');assert.equal(responsibilityResponse.status,200);
     const responsibility=t21Object(await responsibilityResponse.json());assert.ok(Array.isArray(responsibility.conversations));
     const source=responsibility.conversations.map(t21Object)[0];assert.ok(source);
-    const bootstrap=t21Object(await (await staff.get('/api/lifecycle/bootstrap')).json());
-    const takeover={client_command_id:randomUUID(),expected_row_version:Number(source.session_row_version),reason_code:'T21_EXPLICIT_COMMUNICATOR'};
-    const taken=await fetch(context.origin+'/api/conversations/'+source.session_id+'/takeover',{method:'POST',headers:{cookie:context.cookies[0]??'',origin:context.origin,'content-type':'application/json','x-csrf-token':String(bootstrap.csrf_token),'idempotency-key':takeover.client_command_id,'if-match':'"'+takeover.expected_row_version+'"'},body:JSON.stringify(takeover)});
+    const before=await staff.detail(ticketId);
+    const taken=await staff.post(ticketId,'take-and-start-with-conversations',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'T21_EXPLICIT_START',resolver_team_id:before.resolver_team_id,communication_choice:'TAKE_SELECTED',sessions:[{session_id:source.session_id,expected_row_version:Number(source.session_row_version)}]});
     assert.equal(taken.status,200,await taken.text());
-    const started=await staff.start(ticketId);
+    const started=await staff.detail(ticketId);assert.equal(started.status,'IN_PROGRESS');
     assert.equal((await staff.post(ticketId,'complete',staff.command(started))).status,200);
     const completed=await staff.detail(ticketId);assert.equal(completed.status,'CLOSED');
     assert.equal(completed.intake_id,first.intakeId);assert.ok(completed.handling_cycle?.staff_completion_event_id);
@@ -79,5 +77,5 @@ test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journ
     }
     // Public message/Journey outcomes establish association; public staff detail
     // establishes no implicit reopen. No private SQL state/count assertion.
-  });
+  },{conversationHandlingEnabled:true});
 });
