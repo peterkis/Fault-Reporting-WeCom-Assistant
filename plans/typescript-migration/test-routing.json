@@ -4,6 +4,9 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t37-follow-up-command-integrity.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t37-follow-up-contracts.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t37-shared-time-card-list.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-communicator-boundaries.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-communicator-resource-bound.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t37-due-authorization.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -474,6 +477,9 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "wbint-t37-command-integrity": ["tests/t37-follow-up-command-integrity.integration.test.mts"],
+    "wbint-t37-contracts": ["tests/t37-follow-up-contracts.test.mts"],
+    "wbint-t37-card-list": ["tests/t37-shared-time-card-list.browser.test.mts"],
     "wbint-t37-authority-due-boundaries": ["tests/t37-communicator-boundaries.integration.test.mts","tests/t37-communicator-resource-bound.integration.test.mts","tests/t37-due-authorization.integration.test.mts","tests/t37-due-lifecycle-races.integration.test.mts","tests/t37-defaults-schema.integration.test.mts"],
     "wbint-t37-recovery-boundaries": ["tests/t37-follow-up-recovery-boundaries.browser.test.mts","tests/t37-follow-up-recovery-competition.browser.test.mts","tests/t37-follow-up-post-refusal.browser.test.mts"],
     "wbint-t37-due-faults": ["tests/t37-due-fault-isolation-rollback.integration.test.mts"],
@@ -502,6 +508,9 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/t37-follow-up-command-integrity.integration.test.mts",
+      "tests/t37-follow-up-contracts.test.mts",
+      "tests/t37-shared-time-card-list.browser.test.mts",
       "tests/t37-communicator-boundaries.integration.test.mts",
       "tests/t37-communicator-resource-bound.integration.test.mts",
       "tests/t37-due-authorization.integration.test.mts",
