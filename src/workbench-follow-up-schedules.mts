@@ -39,7 +39,7 @@ async function readCurrent(transaction:PostgresTransaction,ticketId:string,lock=
         AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))) AS active
     FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
     LEFT JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
-    WHERE s.ticket_id=$1::uuid${lock?' FOR UPDATE OF s':'}`,[ticketId]);
+    WHERE s.ticket_id=$1::uuid${lock?' FOR UPDATE OF s':''}`,[ticketId]);
   return result.rows[0]??null;
 }
 async function readHistory(transaction:PostgresTransaction,ticketId:string):Promise<{items:SharedFollowUpHistoryEntry[];hasMore:boolean}>{
