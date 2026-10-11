@@ -1,0 +1,44 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
+import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+
+for(const mode of ['SOURCE','SESSION'] as const)test('T35 late genuine '+mode+' committed200 body cannot restore the previous account scope',{timeout:120_000},()=>withT22Fixture(async f=>{
+  const session=f.sessions[0],ticket=f.tickets[1];assert.ok(session);assert.ok(ticket);
+  await f.runtime.stop();const input={databaseUrl:f.databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);
+  const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.principals[1]?.id??''],externalSendEnabled:false,workbenchConversationsEnabled:true,workbenchManualReviewEnabled:true,workbenchPersonalReadEnabled:true,workbenchRealtimeEnabled:true});
+  const directory=join(tmpdir(),'t35-late-success-'+mode.toLowerCase()+'-'+randomUUID());await mkdir(directory);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+  try{
+    const {cookies}=await runtime.start();assert.ok(cookies);const a=cookies[0],b=cookies[1];assert.ok(a);assert.ok(b);
+    const get=(path:string,second=false)=>fetch(f.origin+path,{headers:{cookie:(second?b:a).name+'='+(second?b:a).value}});
+    const identity=await (await get('/api/lifecycle/bootstrap',true)).json() as {principal_id:string;display_name:string};assert.equal(identity.principal_id,f.principals[1]?.id);
+    const position=async(second=false)=>mode==='SOURCE'?(await (await get('/api/workbench/items/ticket/'+ticket.ticket.id+'/read-position',second)).json() as {sources:{last_read_position:string}[]}).sources[0]?.last_read_position:(await (await get('/api/conversations/'+session.id,second)).json() as {read_cursor:{last_read_sequence:string}}).read_cursor.last_read_sequence;
+    assert.equal(await position(),'0');assert.equal(await position(true),'0');
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:1000,cookies:[{...a,url:f.origin+'/'}]});assert.ok(browser);await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});await browser.command('Page.enable');
+    const suffix=mode==='SOURCE'?'/read-position':'/read-cursor';
+    await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__t35Visible=false;globalThis.__t35Focused=true;globalThis.__t35Posts=[];globalThis.__t35Responses=[];globalThis.__t35Held=0;globalThis.__t35Delivered=0;globalThis.__t35OldAborted=false;globalThis.__t35Release=[];globalThis.__t35Identities=[];Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>globalThis.__t35Visible?'visible':'hidden'});Object.defineProperty(document,'hasFocus',{configurable:true,value:()=>globalThis.__t35Focused});const original=fetch;globalThis.fetch=(path,options)=>{const value=String(path),write=options?.method==='POST'&&value.endsWith(${JSON.stringify(suffix)});if(write){globalThis.__t35Posts.push(JSON.parse(options.body));options.signal.addEventListener('abort',()=>globalThis.__t35OldAborted=true,{once:true});}return original(path,options).then(async response=>{if(value==='/api/lifecycle/bootstrap'&&response.status===200){const actual=await response.clone().json();globalThis.__t35Identities.push({id:actual.principal_id,name:actual.display_name});}if(write&&response.status===200){const actual=await response.json();globalThis.__t35Responses.push({status:response.status,body:actual});response.json=()=>{globalThis.__t35Held++;return new Promise(resolve=>globalThis.__t35Release.push(()=>{globalThis.__t35Delivered++;resolve(actual);}));};}return response;});};document.addEventListener('DOMContentLoaded',()=>{const observer=new MutationObserver(()=>{if(globalThis.__t35Held&&document.querySelector('.account strong')?.textContent===${JSON.stringify(identity.display_name)}){globalThis.__t35ActorAtRelease=document.querySelector('.account strong').textContent;globalThis.__t35AbortBeforeRelease=globalThis.__t35OldAborted;for(const release of globalThis.__t35Release.splice(0))release();observer.disconnect();}});observer.observe(document.body,{subtree:true,childList:true,characterData:true});});})()`});
+    const selector=mode==='SOURCE'?'.activity-list p[data-personal-read-ref]':'p[data-session-read-sequence="1"]',url=mode==='SOURCE'?'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page':'/workbench/app/conversations/'+session.id;
+    await browser.command('Page.navigate',{url:f.origin+url});await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))&&Boolean(document.querySelector('.account strong'))`);assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[]);
+    // A's real command commits before B is installed; only response-body delivery is held.
+    await browser.evaluate(`(()=>{document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'});globalThis.__t35Visible=true;window.dispatchEvent(new Event('focus'));})()`);await browser.waitFor('globalThis.__t35Held===1');
+    const responses=await browser.evaluate('globalThis.__t35Responses') as {status:number;body:unknown}[];assert.equal(responses.length,1);assert.equal(responses[0]?.status,200);assert.equal(await position(),'1');assert.equal(await position(true),'0');
+    await browser.command('Network.deleteCookies',{name:a.name,url:f.origin+'/'});const changed=await browser.command('Network.setCookie',{name:b.name,value:b.value,url:f.origin+'/',httpOnly:true,sameSite:'Strict'}) as {success:boolean};assert.equal(changed.success,true);
+    await browser.evaluate("globalThis.__t35Focused=false;document.dispatchEvent(new Event('visibilitychange'))");await browser.waitFor('globalThis.__t35Delivered===1');
+    assert.equal(await browser.evaluate('globalThis.__t35ActorAtRelease'),identity.display_name);assert.equal(await browser.evaluate(`globalThis.__t35Identities.some(value=>value.id===${JSON.stringify(identity.principal_id)})`),true);
+    await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    console.log('T35_LATE_AUTHENTIC_SUCCESS '+JSON.stringify({mode,actual_status:200,new_actor_visible_at_delivery:true,old_signal_aborted_at_release:await browser.evaluate('globalThis.__t35AbortBeforeRelease'),A:'1',B:'0'}));
+    assert.equal(await browser.evaluate("document.querySelector('.account strong')?.textContent??null"),identity.display_name,'late old committed result must not restore the previous authorized account');assert.equal(await position(),'1');assert.equal(await position(true),'0');assert.equal((await browser.evaluate('globalThis.__t35Posts') as unknown[]).length,1);
+    await writeFile(join(directory,'late-body-new-account-1280.png'),Buffer.from(await browser.screenshot(),'base64'));console.log('T35_LATE_SUCCESS_FENCED '+JSON.stringify({directory,mode,new_scope_survived:true}));
+  }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t35Posts,responses:globalThis.__t35Responses,identities:globalThis.__t35Identities,held:globalThis.__t35Held,delivered:globalThis.__t35Delivered,actor_at_release:globalThis.__t35ActorAtRelease,old_abort_at_release:globalThis.__t35AbortBeforeRelease})')));}}
+  await browser?.evaluate('for(const release of globalThis.__t35Release??[])release()');
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],failure);
+}));
