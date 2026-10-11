@@ -1,4 +1,5 @@
 // STAGED_RUNTIME / first actual authority, resource or schema boundary execution pending.
+import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {createRealtimeEventStore} from '../src/p2-003-realtime-event-log.mjs';
