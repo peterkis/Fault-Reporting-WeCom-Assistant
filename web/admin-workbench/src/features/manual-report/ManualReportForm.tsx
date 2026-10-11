@@ -32,6 +32,21 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
   const deny=(error:ApiError)=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyManualReportInput());setSelected(null);setPage(null);candidateRequest.current?.abort();setPending(null);setResult(null);setState('denied');setMessage('当前身份已没有代录权限，输入及恢复副本已清理。');
     if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearManualReportAuthority(client,principal.principal_id,error);};
+  async function retainCandidateRefusal(controller:AbortController,token:number,commandId?:string){
+    const acquired=request.current===null;if(acquired)request.current=controller;
+    try{
+      const fresh=await context.refetch();
+      if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
+      if(fresh.error instanceof ApiError&&[401,403,404].includes(fresh.error.status)){deny(fresh.error);return;}
+      if(commandId){
+        try{await draft.knownFailure(commandId);}catch{if(mounted.current&&!controller.signal.aborted&&token===generation.current){setState('unknown');setMessage('成员选择已被拒绝，但恢复副本尚未核对，请先只读核对原操作。');}return;}
+        if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
+        setPending(null);
+      }
+      const notice=fresh.isError||!fresh.data?.can_create?'当前代录权限暂无法核验，输入已保留；请重新读取代录权限。':'成员选择未获准，当前代录权限仍有效；输入已保留，可明确改为手填。';
+      setPage(null);setState('denied');setMessage(notice);setSearchMessage(notice);
+    }finally{if(acquired&&request.current===controller)request.current=null;}
+  }
   useEffect(()=>{if(context.error instanceof ApiError&&[401,403,404].includes(context.error.status))deny(context.error);},[context.error]);
   const refresh=()=>{void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
   async function accepted(id:string,accepted:ManualReportAdmissionResult,label:string){
@@ -50,7 +65,7 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
       await accepted(command.client_command_id,admitted,admitted.replayed?'已受理：已核对原操作结果。':'已受理报修。');
     }catch(error){
       if(!mounted.current||controller.signal.aborted||token!==generation.current)return;
-      if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}
+      if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(command.reporter.verification==='VERIFIED_SELECTION'&&error.status!==401)await retainCandidateRefusal(controller,token,command.client_command_id);else deny(error);return;}
       if(error instanceof ApiError){await draft.knownFailure(command.client_command_id).catch(()=>{});setPending(null);setState('denied');setMessage('受理被拒绝，输入已保留：'+errorMessage(error));}
       else if(!dispatched){setPending(null);setState('denied');setMessage('恢复副本未保存，本次尚未发送；请保留并检查当前输入。');}
       else{setState('unknown');setPending(command);setMessage('结果未知：报修可能已受理。原内容和操作标识保持不变，请只读核对。');}
@@ -73,7 +88,7 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
     const query=value.name.trim();if([...query].length<2)return;
     candidateRequest.current?.abort();const controller=new AbortController(),token=generation.current;candidateRequest.current=controller;setSearching(true);setPage(null);setSearchMessage('正在查找可选择成员…');
     try{const found=await api.reporterCandidates(query,cursor,controller.signal);if(!mounted.current||controller.signal.aborted||token!==generation.current)return;setPage(found);setSearchMessage(found.candidates.length?'请明确选择本次报修人。':'没有找到可选择成员，可以继续手填。');}
-    catch(error){if(!mounted.current||controller.signal.aborted||token!==generation.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setSearchMessage('成员目录暂不可用，原输入已保留，可以继续手填。');}
+    catch(error){if(!mounted.current||controller.signal.aborted||token!==generation.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(error.status===401)deny(error);else await retainCandidateRefusal(controller,token);return;}setSearchMessage('成员目录暂不可用，原输入已保留，可以继续手填。');}
     finally{if(candidateRequest.current===controller){candidateRequest.current=null;setSearching(false);}}
   }
   useEffect(()=>{
