@@ -44,7 +44,7 @@ test('real due batches persist one safe signal per schedule revision and process
    assert.deepEqual(await run(),{scanned:1,emitted:1,skipped:0});
    const emitted=await signals(fixture);assert.equal(emitted.length,1);const first=emitted[0];assert.ok(first);
    assert.equal(first.aggregate_type,'TICKET');assert.equal(first.aggregate_id,ticketId);assert.equal(first.aggregate_version,String(before.ticket.version));
-   assert.deepEqual(first.payload,{ticket_id:ticketId,follow_up_schedule_version:'1',reason:'FOLLOW_UP_DUE'});
+   assert.deepEqual({...first.payload},{ticket_id:ticketId,follow_up_schedule_version:'1',reason:'FOLLOW_UP_DUE'});
    assert.ok(first.occurred_at>'2020-01-02 09:30:00','publication time is actual current time, not the expired due time');
    assert.deepEqual(await facts(dispatch,path),before,'a reminder is not a Ticket action, version change, assignment or Delivery');
    assert.deepEqual(await run(),{scanned:0,emitted:0,skipped:0});assert.equal((await signals(fixture)).length,1);
