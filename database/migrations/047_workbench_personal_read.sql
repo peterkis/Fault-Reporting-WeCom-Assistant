@@ -13,6 +13,7 @@ ALTER TABLE pilot_ticket.ticket_command_receipt ADD COLUMN source_intake_id UUID
     REFERENCES intake.service_intake(id) ON DELETE RESTRICT;
 ALTER TABLE pilot_ticket.ticket_command_receipt DROP CONSTRAINT p2016_command_resource;
 ALTER TABLE pilot_ticket.ticket_command_receipt ADD CONSTRAINT p2016_command_resource
-    CHECK (ticket_id IS NOT NULL OR review_id IS NOT NULL OR source_intake_id IS NOT NULL);
+    CHECK (ticket_id IS NOT NULL OR review_id IS NOT NULL OR source_intake_id IS NOT NULL OR
+      (command_type = 'WORKBENCH_MANUAL_REPORT' AND ticket_id IS NULL AND review_id IS NULL AND conversation_session_id IS NULL));
 
 COMMIT;
