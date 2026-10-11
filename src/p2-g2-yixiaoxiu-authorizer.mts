@@ -23,7 +23,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
   if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'
     &&(typeof identityMapping?.resolve!=='function'||identityMapping.configHash!==yxxIdentityConfigHash(c)))failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
   const app=normalizeAppNotificationOptions(appNotifications);
-  if(app?.enabled&&(typeof reporterHmacSecret!=='string'||Buffer.byteLength(reporterHmacSecret)<32
+  if(app&&(typeof reporterHmacSecret!=='string'||Buffer.byteLength(reporterHmacSecret)<32
     ||app.authority.sourceCorpScope!==c.corpId||app.authority.sourceAppScope!==c.agentId||app.authority.mappingProofRef!==c.proofRef
     ||app.authority.proofKind!==c.proofKind||app.authority.validationProfile!==c.validationProfile
     ||c.identityMode==='VERIFIED_DELEGATED_MAPPING'&&app.authority.mappingConfigHash!==identityMapping?.configHash))failYxx('CONFIG_INVALID');
@@ -52,7 +52,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
         AND (r.journey_id IS NULL OR j.retention_until_epoch_ms>platform.physical_epoch_ms())
       FOR SHARE OF r,t,i`,[publicRef]);
     const row=(q.rows[0] as OwnershipRow);
-    if(row&&row.source_provider==='STAFF_MANUAL_REPORT'&&app?.enabled){
+    if(row&&row.source_provider==='STAFF_MANUAL_REPORT'&&app){
       // OAuth establishes the current member; neither card possession nor send
       // reachability grants read permission. Preserve the distinct MANUAL origin.
       const source=await readOriginalAppNotificationSource(tx,row.source_intake_id);
