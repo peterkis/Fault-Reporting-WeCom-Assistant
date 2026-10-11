@@ -178,7 +178,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups);
       const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
-        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null,
+        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null,appNotifications:app,
         botReporterFeedbackEnabled,botReporterFeedbackDraftRecoveryEnabled,feedbackProfile:'FULL_SERVICE_LOOP',feedbackFeatureFlags:yxxSelfService?.featureFlags??{}});
       if(yxxSelfService!==null)selfService=(createYxxSelfServiceExtension as typeof createYxxSelfServiceExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,profile:'FULL_SERVICE_LOOP',reporterFeedbackEnabled:yxxSelfService.reporterFeedbackEnabled??false,reporterFeedbackDraftRecoveryEnabled:yxxSelfService.reporterFeedbackDraftRecoveryEnabled??false,featureFlags:yxxSelfService.featureFlags??{},quota:yxxSelfService.quota,
