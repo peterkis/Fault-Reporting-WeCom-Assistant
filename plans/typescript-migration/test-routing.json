@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t36-supplement-follow-up.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t21-final-authorizer-write-loss.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t21-associated-journey-retention.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t21-bot-feedback-actor-authority.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -537,6 +538,7 @@
     "wbint-t37-transfer-due": ["tests/t37-transfer-due-maintenance.integration.test.mts"],
     "wbint-t37-pc-drawer": ["tests/t37-shared-follow-up-drawer.browser.test.mts"],
     "wbint-t37-communicator": ["tests/t37-communicator-authority.integration.test.mts"],
+    "wbint-t36-first": ["tests/t36-supplement-follow-up.integration.test.mts"],
     "wbint-t37-first": ["tests/t37-follow-up-schedule.integration.test.mts"],
     "v3-d01": [
       "tests/yxx-current-readiness.test.mts",
