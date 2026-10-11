@@ -38,7 +38,7 @@ export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeI
 export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,templateVersion='wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication}:RoundOptions){
   if(typeof enabled!=='boolean'||typeof botId!=='string'||!botId||botId.length>128||typeof templateVersion!=='string'||! /^[A-Za-z0-9_/-]{1,64}$/u.test(templateVersion)
     ||personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('FLAG_INVALID',503);
-  let afterCycleId:string|null=null,busy=false;
+  let after:{cycleId:string;node:RoundNotificationNode}|null=null,busy=false;
   return Object.freeze({
     async runOnce(){
       if(!enabled||busy)return {scanned:0,created:0};
@@ -66,7 +66,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
               OR (n.node='STAFF_COMPLETED' AND e.event_type='ticket.closed' AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
                 AND e.reason_code='STAFF_COMPLETED' AND e.operator_id IS NOT NULL AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500))
-          WHERE ($1::uuid IS NULL OR c.id>$1::uuid) ORDER BY c.id,n.node LIMIT 20`,[afterCycleId]);
+          WHERE ($1::uuid IS NULL OR (c.id,n.node)>($1::uuid,$2::text)) ORDER BY c.id,n.node LIMIT 20`,[after?.cycleId??null,after?.node??null]);
         let created=0;
         for(const candidate of candidates.rows){
           const changed=await transactionP2016(pool,async tx=>{
@@ -109,9 +109,9 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
             }
             return inserted;
           });
-          if(changed)created++;afterCycleId=candidate.cycle_id;
+          if(changed)created++;after={cycleId:candidate.cycle_id,node:candidate.node};
         }
-        if(candidates.rows.length<20)afterCycleId=null;
+        if(candidates.rows.length<20)after=null;
         return {scanned:candidates.rows.length,created};
       }finally{busy=false;}
     },
