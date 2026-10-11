@@ -19,6 +19,7 @@ import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
 import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
 import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser, closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -80,6 +81,7 @@ test('T35 actual foreground material advances only its own source and reader, ne
     const migrationInput={databaseUrl:f.databaseUrl,mode:'apply',PoolFactory:createPostgresPool};
     await migrateP2012(migrationInput);
     await migrateYxxSelfService(migrationInput);
+    await migrateWorkbenchManualReports({databaseUrl:f.databaseUrl,mode:'apply'});
     await migrateWorkbenchPersonalRead({databaseUrl:f.databaseUrl,mode:'apply'});
     const second=f.principals[1],session=f.sessions[0];assert.ok(second);assert.ok(session);
     await createPilotAccessService({pool:f.pool}).upsertPrincipal({
