@@ -15,6 +15,7 @@ import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authori
 import {createYxxSelfServiceQuery} from '../src/yxx-self-service-query.mjs';
 import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
 import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
 import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
@@ -75,7 +76,7 @@ const visibilityAndTrace = `(()=>{
 test('T35 actual foreground material advances only its own source and reader, never hidden prefetch or another Session', {timeout:240_000}, async()=>{
   await withT22Fixture(async f=>{
     await f.runtime.stop(); // A single App owns this port, including the real member HTTP seam below.
-    const migrationInput={databaseUrl:f.databaseUrl,mode:'apply'};
+    const migrationInput={databaseUrl:f.databaseUrl,mode:'apply',PoolFactory:createPostgresPool};
     await migrateP2012(migrationInput);
     await migrateYxxSelfService(migrationInput);
     const second=f.principals[1],session=f.sessions[0];assert.ok(second);assert.ok(session);
