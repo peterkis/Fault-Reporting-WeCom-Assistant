@@ -27,6 +27,6 @@ test('T35 the real later Leg displayed by an original Review has its own persona
   const read=async(reader:0|1)=>(await (await f.get(path,reader)).json() as {sources:{source_key:string;last_read_position:string}[]}).sources;
   const a=await read(0),b=await read(1);assert.equal(a.length,2);assert.equal(new Set(a.map(value=>value.source_key)).size,2);assert.equal(a.find(value=>value.source_key===ack.source_key)?.last_read_position,'1');assert.equal(a.find(value=>value.source_key!==ack.source_key)?.last_read_position,'0');assert.ok(b.every(value=>value.last_read_position==='0'));
   const unrelated=f.tickets[2];assert.ok(unrelated);assert.equal((await f.post('/api/workbench/items/ticket/'+unrelated.ticket.id+'/read-position',{...command,client_command_id:randomUUID()})).status,404);
-  await f.pool.query("WITH expired AS (SELECT (platform.physical_epoch_ms()/1000)*1000-60000 AS epoch) UPDATE intake.contact_journey SET retention_until_epoch_ms=expired.epoch,retention_until=platform.local_from_epoch_ms(expired.epoch) FROM expired WHERE id=$1::uuid",[original.journey_id]);
+  await f.pool.query("WITH expired AS (SELECT (platform.physical_epoch_ms()/1000)*1000-60000 AS epoch) UPDATE intake.contact_journey SET retention_until_epoch_ms=expired.epoch,retention_until=platform.local_from_epoch_ms(expired.epoch),reported_at=LEAST(reported_at,platform.local_from_epoch_ms(expired.epoch-60000)) FROM expired WHERE id=$1::uuid",[original.journey_id]);
   assert.equal((await f.get(path)).status,404);assert.equal((await f.post(path,command)).status,404);
 }));
