@@ -14,7 +14,7 @@ export async function withT26Fixture(run:(context:T11Fixture)=>Promise<void>){
  await withT24Fixture(async original=>{
   await original.runtime.stop();
   const runtime=createP2016Runtime({pool:original.pool,publicOrigin:original.origin,listenPort:Number(new URL(original.origin).port),principalIds:[original.principals[0]?.id??'',original.outsider.id,original.principals[1]?.id??''],
-   flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:true,
+   flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:true,
    ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,
    reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:entryConfig,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}}});
   try{await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(original.origin).port)});const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);await run({...original,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});}
