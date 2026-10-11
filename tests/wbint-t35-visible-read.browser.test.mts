@@ -64,14 +64,18 @@ function webPosition(value:PositionPage){
   assert.match(source.source_key,/^[a-f0-9]{64}$/u);return source;
 }
 const visibilityAndTrace = `(()=>{
-  globalThis.__t35Visibility='hidden'; globalThis.__t35ReadPosts=[];
+  globalThis.__t35Visibility='hidden'; globalThis.__t35ReadPosts=[]; globalThis.__t35ReadAcks=[];
   Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>globalThis.__t35Visibility});
   Object.defineProperty(document,'hidden',{configurable:true,get:()=>globalThis.__t35Visibility!=='visible'});
   const original=globalThis.fetch;
   globalThis.fetch=(path,options)=>{
     if(options?.method==='POST'&&/\\/(read-position|read-cursor)$/.test(String(path)))
       globalThis.__t35ReadPosts.push({path:String(path),body:JSON.parse(options.body)});
-    return original(path,options);
+    const response=original(path,options);
+    if(options?.method==='POST'&&String(path).endsWith('/read-position'))return response.then(async value=>{
+      if(value.ok)globalThis.__t35ReadAcks.push(await value.clone().json());return value;
+    });
+    return response;
   };
 })()`;
 
@@ -169,6 +173,7 @@ test('T35 actual foreground material advances only its own source and reader, ne
       // Visibility/focus are simulated only at the browser platform boundary; rendering, fetch and response remain actual.
       await browser.evaluate(`(()=>{const paragraphs=[...document.querySelectorAll('[data-review-materials] li p')],target=paragraphs.find(p=>p.textContent===${JSON.stringify(supplementText)});if(!target)throw Error('T35_ACTUAL_BODY_REQUIRED');target.scrollIntoView({block:'center'});globalThis.__t35Visibility='visible';document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
       await browser.waitFor(`globalThis.__t35ReadPosts.some(row=>row.path.endsWith('/read-position')&&row.body.source_ref===${JSON.stringify(latest.source_ref)}&&row.body.revision==='2')`);
+      await browser.waitFor(`globalThis.__t35ReadAcks.some(ack=>ack.client_command_id===globalThis.__t35ReadPosts.find(row=>row.body.source_ref===${JSON.stringify(latest.source_ref)}&&row.body.revision==='2')?.body.client_command_id&&ack.last_read_position==='2')`);
       const posts=await browser.evaluate('globalThis.__t35ReadPosts') as ReadTrace[];
       assert.equal(posts.filter(row=>row.body.source_ref===latest.source_ref&&row.body.revision==='2').length,1);
       assert.equal(posts.some(row=>row.path.endsWith('/read-cursor')),false,'Web material must not advance an unrelated Conversation cursor');
