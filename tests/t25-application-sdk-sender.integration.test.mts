@@ -13,7 +13,7 @@ test('real Communication Worker routes an original H5 application intent through
   const calls:{path:string;body:Record<string,unknown>}[]=[],appUser='T25_SYNTHETIC_QUALIFIED_APP_OPEN_USER_A';
   const accessTokenProvider:WeComAccessTokenProvider=async options=>{options?.signal?.throwIfAborted();return 'T25_SYNTHETIC_SDK_TOKEN_NOT_A_CREDENTIAL';};
   const fetchImpl:typeof fetch=async(input,init)=>{
-   assert.ok(init?.signal instanceof AbortSignal);init.signal.throwIfAborted();assert.equal(init.method,'POST');assert.equal(init.redirect,'error');assert.equal(typeof init.body,'string');
+   assert.ok(init?.signal instanceof AbortSignal);init.signal.throwIfAborted();assert.equal(init.method,'POST');assert.equal(init.redirect,'error');assert.ok(typeof init.body==='string');
    const url=new URL(input instanceof Request?input.url:String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(url.searchParams.get('access_token'),'T25_SYNTHETIC_SDK_TOKEN_NOT_A_CREDENTIAL');
    const body=t25Object(JSON.parse(init.body));calls.push({path:url.pathname,body});
    if(url.pathname==='/cgi-bin/batch/userid_to_openuserid'){assert.deepEqual(body,{userid_list:[source.memberId]});return new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:source.memberId,open_userid:appUser}],invalid_userid_list:[]}));}
@@ -26,7 +26,7 @@ test('real Communication Worker routes an original H5 application intent through
    gateway:{getAuthenticatedClient:()=>{throw Error('BOT_SDK_MUST_NOT_RECEIVE_APP');}},enabled:true,cardEnabled:true,allowedTargetHashes:[],reporterAccess:context.runtime.reporterAccess,origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],linkMode:'MEMBER_REQUIRED',
    appRoundNotifications:{pool:context.pool,notifications:source.appNotifications,agentId:Number(entryConfig.agentId),accessTokenProvider,fetchImpl}};
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:createP2016WeComSender(options)});await worker.runOnce();
-  const delivered=await t25Deliveries(source.http,source.ticketId);assert.equal(delivered.length,1);assert.equal(delivered[0]?.id,pending[0]?.id);assert.equal(delivered[0]?.status,'SENT');assert.equal(delivered[0]?.attempt_count,1);assert.equal(delivered[0]?.side_effect_state,'ACKNOWLEDGED');
+  const delivered=await t25Deliveries(source.http,source.ticketId);assert.equal(delivered.length,1);assert.ok(typeof pending[0]?.delivery_id==='string');assert.equal(delivered[0]?.delivery_id,pending[0]?.delivery_id);assert.equal(delivered[0]?.status,'SENT');assert.equal(delivered[0]?.attempt_count,1);assert.equal(delivered[0]?.side_effect_state,'ACKNOWLEDGED');
   assert.deepEqual(calls.map(call=>call.path),['/cgi-bin/batch/userid_to_openuserid','/cgi-bin/message/send']);await worker.runOnce();await source.round.runOnce();assert.deepEqual(await t25Deliveries(source.http,source.ticketId),delivered);assert.equal(calls.length,2);assert.deepEqual(await source.http.detail(source.ticketId),source.started);
   assert.equal(JSON.stringify(delivered).includes(appUser),false);assert.equal(JSON.stringify(delivered).includes('T25_SYNTHETIC_PRIVATE_PROVIDER_MESSAGE_ID'),false);
  },{manualRoundConsumption:true});
