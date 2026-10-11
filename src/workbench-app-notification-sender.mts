@@ -1,4 +1,4 @@
-import type {PostgresTransaction} from './platform/postgres-pool.mjs';
+import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
 import type {WeComAccessTokenProvider} from './p2-g2-wecom-oauth-provider.mjs';
 import type {CommunicationSenderResult} from './p2-004-communication-sender-port.mjs';
@@ -6,10 +6,10 @@ import {isDeepStrictEqual} from 'node:util';
 import {createCommunicationSenderPort} from './p2-004-communication-sender-port.mjs';
 import {normalizeAppNotificationOptions,resolveOriginalAppTarget,readOriginalAppNotificationSource,qualifyOriginalAppTarget} from './workbench-app-notification-target.mjs';
 import {buildP2016TemplateCard} from './p2-016-template-card-builder.mjs';
-import {exactP2016,localP2016,textHashP2016,versionP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,localP2016,textHashP2016,versionP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 
 export interface WorkbenchAppNotificationSenderOptions {
- pool:PostgresTransaction;notifications:TicketAppNotificationOptions;agentId:number;accessTokenProvider:WeComAccessTokenProvider;
+ pool:PostgresPool;notifications:TicketAppNotificationOptions;agentId:number;accessTokenProvider:WeComAccessTokenProvider;
  enabled?:boolean;fetchImpl?:typeof fetch;origin:string;allowedHosts:readonly string[];allowLocalHttp?:boolean;
 }
 interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'CLOSED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
@@ -32,7 +32,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
   if(!enabled||!app.enabled)return reject('APP_NOTIFICATION_DISABLED');
   if(request.provider!=='WECOM_APP'||request.channel_account_id!==app.authority.channelAccountId||request.target_type!=='PERSON'||!singleMember(request.target_id)||request.message.message_type!=='template_card')return reject('APP_NOTIFICATION_TARGET_INVALID');
   if(request.signal.aborted)return reject('APP_NOTIFICATION_ABORTED_BEFORE_SEND');
-  const readBasis=()=>pool.query<Basis>(`SELECT c.source_intake_id::text,r.node,t.ticket_no,e.new_status AS status,e.created_at,e.aggregate_version AS version,
+  const readBasis=(transaction:PostgresTransaction=pool,lock=false)=>transaction.query<Basis>(`SELECT c.source_intake_id::text,r.node,t.ticket_no,e.new_status AS status,e.created_at,e.aggregate_version AS version,
     ref.public_ref,m.content,b.recipient_binding_hash,CASE WHEN r.node='STAFF_COMPLETED' THEN e.external_note ELSE NULL END AS external_summary
     FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id
     JOIN communication.ticket_notification_binding b ON b.delivery_id=d.id AND b.message_id=m.id AND b.outbox_id=o.id
@@ -52,7 +52,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
         OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_CLOSED' AND e.event_type='ticket.closed'
           AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND e.internal_note IS NOT NULL
           AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500 AND EXISTS(SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p
-            WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`,
+            WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`+(lock?' FOR SHARE OF d,m,ref':''),
     [request.delivery_id,request.channel_account_id,request.target_id,request.idempotency_key]);
   let row:Basis,original:NonNullable<Awaited<ReturnType<typeof resolveOriginalAppTarget>>>;
   try{
@@ -76,9 +76,15 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
   try{
    // Qualification/token/namespace conversion may wait. Never retarget the stored intent.
    const currentTarget=await resolveOriginalAppTarget(pool,row.source_intake_id,app);if(!isDeepStrictEqual(currentTarget,original))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
-   const current=await readBasis();if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return reject('APP_NOTIFICATION_BINDING_INVALID');
-   const currentSource=await readOriginalAppNotificationSource(pool,row.source_intake_id);if(!currentSource||!isDeepStrictEqual(currentSource,original.source))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
-   if(!isDeepStrictEqual(await qualifyOriginalAppTarget(currentSource,app),original))return reject('APP_NOTIFICATION_NOT_AUTHORIZED');
+   // Hold the retained source and active Delivery facts across local qualification.
+   // Source-before-public-ref matches consumption; token/SDK calls stay outside this transaction.
+   const denied=await transactionP2016(pool,async transaction=>{
+    await transaction.query("SET LOCAL statement_timeout='2000ms'");await transaction.query("SET LOCAL lock_timeout='2000ms'");
+    const currentSource=await readOriginalAppNotificationSource(transaction,row.source_intake_id);if(!currentSource||!isDeepStrictEqual(currentSource,original.source))return 'APP_NOTIFICATION_NOT_AUTHORIZED';
+    const current=await readBasis(transaction,true);if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return 'APP_NOTIFICATION_BINDING_INVALID';
+    return isDeepStrictEqual(await qualifyOriginalAppTarget(currentSource,app),original)?null:'APP_NOTIFICATION_NOT_AUTHORIZED';
+   });
+   if(denied)return reject(denied);
    const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED',source:'DIRECT'};
    const card=buildP2016TemplateCard({model,origin,allowedHosts,allowLocalHttp,linkMode:'MEMBER_REQUIRED'});
    const url=original.source.source_kind==='WEB_REQUEST'?new URL('/wecom/yixiaoxiu/reports/'+original.source.request_ref,origin).href:new URL('/wecom/yixiaoxiu/tickets/'+row.public_ref,origin).href;
