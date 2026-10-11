@@ -7,16 +7,16 @@ import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';
-interface OriginalSingleBotSource {bot_id:string;reporter_user_id:string;retention_epoch:string;journey_id:string|null}
+export interface OriginalBotSource {bot_id:string;reporter_user_id:string;group_id:string|null;retention_epoch:string;journey_id:string|null}
 interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'CLOSED';created_at:string;aggregate_version:number}
 interface RoundOptions {pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined}
 
 export async function roundNotificationSchemaReady(tx:PostgresTransaction){
-  try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('031_p2_016_ticket_lifecycle_workbench_notifications','039_ticket_self_handling_cycles','040_ticket_staff_completion','041_ticket_round_notifications')")).rowCount===4;}catch{return false;}
+  try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('031_p2_016_ticket_lifecycle_workbench_notifications','039_ticket_self_handling_cycles','040_ticket_staff_completion','041_ticket_round_notifications','052_ticket_group_round_notifications')")).rowCount===5;}catch{return false;}
 }
 // A missing group ID never proves a private source. Cross-check the persisted original Inbox and Journey.
-export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeId:string,botId:string):Promise<OriginalSingleBotSource|null>{
-  const q=await tx.query<OriginalSingleBotSource>(`SELECT origin.source_bot_id AS bot_id,origin.reporter_wecom_userid AS reporter_user_id,j.id::text AS journey_id,
+export async function readOriginalBotSource(tx:PostgresTransaction,intakeId:string,botId:string):Promise<OriginalBotSource|null>{
+  const q=await tx.query<OriginalBotSource>(`SELECT origin.source_bot_id AS bot_id,origin.reporter_wecom_userid AS reporter_user_id,origin.source_chat_id AS group_id,j.id::text AS journey_id,
     LEAST(i.retention_until_epoch_ms,origin.retention_until_epoch_ms,m.retention_until_epoch_ms,COALESCE(j.retention_until_epoch_ms,i.retention_until_epoch_ms))::text AS retention_epoch
     FROM intake.service_intake i LEFT JOIN intake.channel_leg l ON l.source_intake_id=i.id
     LEFT JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash
@@ -24,11 +24,15 @@ export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeI
     JOIN channel.message_inbox m ON m.id=origin.primary_message_id AND m.provider=origin.source_provider
       AND m.bot_id=origin.source_bot_id AND m.sender_user_id=origin.reporter_wecom_userid AND m.chat_type=origin.source_chat_type
     WHERE i.id=$1::uuid AND origin.source_bot_id=$2 AND origin.source_provider='WECOM_AIBOT'
-      AND origin.source_channel='WECOM_DIRECT' AND origin.source_chat_type='single' AND origin.source_chat_id IS NULL AND m.chat_id IS NULL
+      AND ((origin.source_channel='WECOM_DIRECT' AND origin.source_chat_type='single' AND origin.source_chat_id IS NULL AND m.chat_id IS NULL)
+        OR (origin.source_channel='WECOM_GROUP' AND origin.source_chat_type='group' AND char_length(origin.source_chat_id)>0 AND m.chat_id=origin.source_chat_id))
       AND i.source_provider=origin.source_provider AND i.source_bot_id=origin.source_bot_id AND i.reporter_wecom_userid=origin.reporter_wecom_userid
-      AND (l.id IS NULL OR (j.id IS NOT NULL AND j.origin_channel='WECOM_DIRECT'))
+      AND (l.id IS NULL OR (j.id IS NOT NULL AND j.origin_channel=origin.source_channel))
       AND LEAST(i.retention_until_epoch_ms,origin.retention_until_epoch_ms,m.retention_until_epoch_ms,COALESCE(j.retention_until_epoch_ms,i.retention_until_epoch_ms))>platform.physical_epoch_ms()`,[uuidP2016(intakeId),botId]);
   return q.rowCount===1?q.rows[0]??null:null;
+}
+export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeId:string,botId:string):Promise<OriginalBotSource|null>{
+  const source=await readOriginalBotSource(tx,intakeId,botId);return source?.group_id===null?source:null;
 }
 
 export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,templateVersion='wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication}:RoundOptions){
@@ -62,8 +66,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
               OR (n.node='STAFF_COMPLETED' AND e.event_type='ticket.closed' AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
                 AND e.reason_code='STAFF_COMPLETED' AND e.operator_id IS NOT NULL AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500))
-          WHERE ($1::uuid IS NULL OR c.id>$1::uuid) AND NOT EXISTS(SELECT 1 FROM communication.ticket_round_notification_binding b
-            WHERE b.cycle_id=c.id AND b.node=n.node AND b.destination_type='PERSON') ORDER BY c.id,n.node LIMIT 20`,[afterCycleId]);
+          WHERE ($1::uuid IS NULL OR c.id>$1::uuid) ORDER BY c.id,n.node LIMIT 20`,[afterCycleId]);
         let created=0;
         for(const candidate of candidates.rows){
           const changed=await transactionP2016(pool,async tx=>{
@@ -75,30 +78,36 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id
                     AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=c.staff_completion_event_id))) FOR UPDATE`,[candidate.cycle_id,candidate.ticket_id,candidate.event_id,candidate.node]);
             if(locked.rowCount!==1)return false;
-            if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type='PERSON'",[candidate.cycle_id,candidate.node])).rowCount)return false;
-            const source=await readOriginalSingleBotSource(tx,candidate.source_intake_id,botId);if(!source)return false;
-            if(personDestinationAuthorizer&&await personDestinationAuthorizer({transaction:tx,bot_id:source.bot_id,reporter_user_id:source.reporter_user_id})!==true)return false;
-            const binding=textHashP2016(JSON.stringify(['WECOM_AIBOT',source.bot_id,source.reporter_user_id]));
+            const source=await readOriginalBotSource(tx,candidate.source_intake_id,botId);if(!source)return false;
+            let inserted=false;
+            const routes:('GROUP'|'PERSON')[]=source.group_id?['GROUP','PERSON']:['PERSON'];
+            for(const route of routes){
+            if((await tx.query('SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type=$3',[candidate.cycle_id,candidate.node,route])).rowCount)continue;
+            if(route==='PERSON'&&personDestinationAuthorizer&&await personDestinationAuthorizer({transaction:tx,bot_id:source.bot_id,reporter_user_id:source.reporter_user_id})!==true)continue;
+            const binding=textHashP2016(JSON.stringify(route==='GROUP'?['WECOM_AIBOT',source.bot_id,source.group_id,source.reporter_user_id]:['WECOM_AIBOT',source.bot_id,source.reporter_user_id]));
             const notificationType=candidate.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED';
             // Adopt an already committed legacy notice for this exact basis, independent of template upgrades.
             let notificationId=(await tx.query<{id:string}>(`SELECT id::text FROM communication.ticket_notification_binding
-              WHERE ticket_id=$1::uuid AND ticket_event_id=$2::uuid AND notification_type=$3 AND recipient_binding_hash=$4 AND destination_type='PERSON'
-              ORDER BY created_at,id LIMIT 1`,[candidate.ticket_id,candidate.event_id,notificationType,binding])).rows[0]?.id;
+              WHERE ticket_id=$1::uuid AND ticket_event_id=$2::uuid AND notification_type=$3 AND recipient_binding_hash=$4 AND destination_type=$5
+              ORDER BY created_at,id LIMIT 1`,[candidate.ticket_id,candidate.event_id,notificationType,binding,route])).rows[0]?.id;
             if(!notificationId){
-              const ref=await reporterAccess.ensurePublicRefInTransaction({transaction:tx,ticketId:candidate.ticket_id,reporterBindingHash:binding,...(source.journey_id?{journeyId:source.journey_id}:{})});
+              const ref=route==='PERSON'?await reporterAccess.ensurePublicRefInTransaction({transaction:tx,ticketId:candidate.ticket_id,reporterBindingHash:binding,...(source.journey_id?{journeyId:source.journey_id}:{})}):null;
               const message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',
-                client_command_id:randomUUID(),message_type:'template_card',visibility:'EXTERNAL',destination_policy:'P2_016_REPORTER',privacy_class:'INTERNAL',
-                content:{public_ref:ref.public_ref,suffix:candidate.ticket_no.slice(-4),status:candidate.event_status,occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType,source:'DIRECT'},
+                client_command_id:randomUUID(),message_type:'template_card',visibility:'EXTERNAL',destination_policy:route==='GROUP'?'P2_016_ORIGIN_GROUP_ROUND':'P2_016_REPORTER',privacy_class:'INTERNAL',
+                content:route==='GROUP'?{transport:'WECOM_MESSAGE_PUSH',node:candidate.node,suffix:candidate.ticket_no.slice(-4),status:candidate.event_status,occurred_at:localP2016(candidate.created_at)}:
+                  {public_ref:ref?.public_ref??'',suffix:candidate.ticket_no.slice(-4),status:candidate.event_status,occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType,source:source.group_id?'GROUP':'DIRECT'},
                 retention_until:formatEpochMsToShanghaiLocal(source.retention_epoch),retention_until_epoch_ms:source.retention_epoch},
-                resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.bot_id,target_type:'PERSON',target_id:source.reporter_user_id}]});
+                resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.bot_id,target_type:route,target_id:route==='GROUP'?source.group_id??'':source.reporter_user_id}]});
               if(!message||!('message_id' in message)||!message.outbox_id||message.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
               notificationId=(await tx.query<{id:string}>(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
-                VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5,$6::uuid,$7::uuid,$8::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,templateVersion,message.message_id,message.outbox_id,message.delivery_ids[0]])).rows[0]?.id;
+                VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7::uuid,$8::uuid,$9::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,route,templateVersion,message.message_id,message.outbox_id,message.delivery_ids[0]])).rows[0]?.id;
               if(!notificationId)failP2016('NOTIFICATION_FAILED',503);
             }
             await tx.query(`INSERT INTO communication.ticket_round_notification_binding(ticket_id,cycle_id,node,recipient_binding_hash,destination_type,notification_binding_id)
-              VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5::uuid)`,[candidate.ticket_id,candidate.cycle_id,candidate.node,binding,notificationId]);
-            return true;
+              VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid)`,[candidate.ticket_id,candidate.cycle_id,candidate.node,binding,route,notificationId]);
+            inserted=true;
+            }
+            return inserted;
           });
           if(changed)created++;afterCycleId=candidate.cycle_id;
         }

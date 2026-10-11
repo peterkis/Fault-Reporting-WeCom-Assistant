@@ -12,7 +12,7 @@ import { appendCommunication } from './p2-004-communication-core.mjs';
 import { ticketNotificationP2016 } from './p2-016-ticket-notification-policy.mjs';
 import { failP2016,guardP2016,textHashP2016,stampP2016 } from './p2-016-domain-contracts.mjs';
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
-import {readOriginalSingleBotSource} from './workbench-ticket-round-notifications.mjs';
+import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 
 export function createP2016TicketNotificationProjector({enabled=false,cardEnabled=false,reporterAccess,explicitReferenceEnabled=false,
   personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication,roundNotificationBotId=null}: NotificationOptions) {
@@ -29,7 +29,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       const nodeEvent=fact.rows[0];if(!nodeEvent)failP2016('NOTIFICATION_EVENT_INVALID');
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
       if(roundNotificationBotId!==null&&(nodeEvent.event_type==='ticket.accepted'||nodeEvent.event_type==='ticket.closed')
-        &&await readOriginalSingleBotSource(tx,ticket.intake_id as string,roundNotificationBotId)){
+        &&await readOriginalBotSource(tx,ticket.intake_id as string,roundNotificationBotId)){
         const round=nodeEvent.trace_id.startsWith('t04:')||(await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
           JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
           WHERE t.id=$1::uuid AND c.first_responsibility_event_id IS NOT NULL`,[ticket.id])).rowCount===1;
