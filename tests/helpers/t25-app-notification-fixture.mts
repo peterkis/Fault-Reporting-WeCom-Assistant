@@ -19,6 +19,7 @@ export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<voi
    ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,
    reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:entryConfig,
    wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}}});
+  if('disabled' in runtime)throw Error('T25_MANUAL_FIXTURE_DISABLED');
   try{
    await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(f.origin).port)});
    const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);
