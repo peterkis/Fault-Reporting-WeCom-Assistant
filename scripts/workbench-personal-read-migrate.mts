@@ -11,6 +11,8 @@ export async function personalReadSchemaReady(tx:PostgresTransaction):Promise<bo
   const row=(await tx.query<{ready:boolean}>(`SELECT EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id=$1)
     AND EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id='042_workbench_manual_reports')
     AND to_regclass('pilot_ticket.personal_material_read_position') IS NOT NULL
+    AND EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('pilot_ticket.personal_material_read_position')
+      AND contype='p' AND convalidated AND regexp_replace(pg_get_constraintdef(oid),'\\s','','g')='PRIMARYKEY(principal_id,source_kind,source_intake_id)')
     AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='source_intake_id' AND data_type='uuid') AS ready`,[PERSONAL_READ_MIGRATION_ID])).rows[0];
   return row?.ready===true;
 }
