@@ -25,6 +25,9 @@ test('T35 a real committed read with lost ACK delivery keeps its UUID across rem
     console.log('T35_READ_UNKNOWN_COMMITTED '+JSON.stringify({original_command_id:original.client_command_id,A:'1',B:'0',delivery_failed:true}));
     // Real React Router navigation unmounts the observer without reloading the JS process.
     await browser.evaluate("document.querySelector('.sidebar a[title=\"工作台\"]').click()");await browser.waitFor("Boolean(document.querySelector('.board-column'))");
+    await browser.waitFor("Boolean(document.querySelector('.board-column.pending .ticket-card'))");
+    await browser.evaluate("(()=>{for(const button of document.querySelectorAll('.board-column.pending [data-action=\"expand-column\"]'))if(button.getAttribute('aria-expanded')==='false')button.click();})()");
+    await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${selected.ticket.id}"] .card-open'))`);
     await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${selected.ticket.id}"] .card-open').click()`);
     await browser.waitFor("Boolean(document.querySelector('.activity-list p[data-personal-read-ref]'))");await browser.evaluate(show);
     await browser.waitFor(`globalThis.__t35ReceiptResults.some(response=>response.status===200&&response.body.client_command_id===${JSON.stringify(original.client_command_id)}&&response.body.state==='COMMITTED')`);
