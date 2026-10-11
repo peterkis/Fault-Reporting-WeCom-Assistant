@@ -11,7 +11,7 @@ import {assertLocalDateTime,assertEpochMsString,formatEpochMsToShanghaiLocal} fr
 import type {TicketAppNotificationAuthority,EligibleTicketAppNotificationTarget,TicketAppNotificationOptions,TicketAppNotificationTargetResolver} from '../../contracts/workbench_app_notification_contracts.js';
 
 /** Real original Web Store/Core/staff HTTP and round Port; only the configured local identity authority is synthetic. */
-export async function t25WebOrigin(context:T11Fixture,{memberId='T25_SYNTHETIC_INTERNAL_MEMBER_A'}:{memberId?:string}={}){
+export async function t25WebOrigin(context:T11Fixture,{memberId='T25_SYNTHETIC_INTERNAL_MEMBER_A',start=true}:{memberId?:string;start?:boolean}={}){
  const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
  const canonical=createHmac('sha256',entryKey).update(JSON.stringify(['member',entryConfig.corpId,entryConfig.agentId,memberId])).digest('hex');
  const authenticate=()=>({profile:'MEMBER_SELF_SERVICE',flags,write_flag:true,canonical_reporter_binding:canonical,source_corp_scope:entryConfig.corpId,source_app_scope:entryConfig.agentId,proof_ref:entryConfig.proofRef});
@@ -20,7 +20,7 @@ export async function t25WebOrigin(context:T11Fixture,{memberId='T25_SYNTHETIC_I
  const accepted=await store.accept({scope,input:{schema_version:1,client_command_id:randomUUID(),description:'T25_PRIVATE_REPORT：合成打印机无法打印，请协助处理。',location:{text:'合成门诊',unknown:false},service_code:null,impact_scope:'SELF',reported_department_text:null,extension:null}});
  const intake=(await context.pool.query<{intake_id:string}>('SELECT intake_id::text FROM intake.web_request_binding WHERE request_ref=$1',[accepted.receipt.request_ref])).rows[0];assert.ok(intake);
  const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intake_id,occurredAt:assertLocalDateTime(accepted.receipt.accepted_at),traceId:'t25-real-web-origin'});assert.ok(created.ticket);
- const ticketId=created.ticket.id,http=await t11Http(context),started=await http.start(ticketId);
+ const ticketId=created.ticket.id,http=await t11Http(context),started=start?await http.start(ticketId):await http.detail(ticketId);
  const authority:TicketAppNotificationAuthority={sourceCorpScope:entryConfig.corpId,sourceAppScope:entryConfig.agentId,channelAccountId:'T25_SYNTHETIC_APP_ACCOUNT',mappingConfigHash:createHash('sha256').update('T25_CURRENT_SYNTHETIC_MAPPING').digest('hex'),mappingProofRef:entryConfig.proofRef,proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'};
  const resolver:TicketAppNotificationTargetResolver={localOnly:true,async resolveCurrentTarget(input){
   assert.equal(input.source_kind,'WEB_REQUEST');assert.deepEqual(input.scope,scope);input.signal.throwIfAborted();const checked=assertEpochMsString(String(Date.now()));
