@@ -353,3 +353,13 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 ## 原H5与核实代录应用轮次通知（WBINT-T25）
 
 原 GET deliveries 沿当前 Ticket READ，可返回 PERSON 的 route_kind=YIXIAOXIU_APP；同轮FIRST/完工、各路成功/失败/UNKNOWN均独立。正式管理端仅显示安全状态，不能从投影推断外部送达。恢复仍用原 retry/reconcile、当前权限和原UUID/hash，不增加客户端SDK或HTTP发送入口。配置、SDK、本人详情、安全字段与关闭历史读取见[应用通知合同](app-notifications.md)；[本地执行](../../../plans/admin-workbench-integration/execution/t25.md)保留逐祖先证据和未运行现场边界。
+
+### T10 连续 WHOLE：四动作消费合同冻结与首个菜单源码（2026-10-12）
+
+本段替代旧未实施 SOURCE 提案中将安全 ACK 绑定 mode/raw 的假定，依据本次 Root586 连续授权和已交付恢复边界；旧记录与旧回执不改写。四条 POST 路由仍为 request-information、wait-vendor、resume、cancel，复用原 frozen 五字段 waiting command、七字段安全结果和真实 event↔cycle 合同。等待／恢复留人、组、沟通和本轮；取消仅原 ADMIN/DISPATCHER、QUEUED/ACCEPTED 与内部必填原因／独立确认，不替代撤派／退回。当前第一菜单源码只消费 request-information，其他三项仍待公开竖切。
+
+[独立 capability 片段](../../../contracts/p2_016_waiting_capability.schema.json)冻结 ticket_waiting_actions_enabled 和 ticket_waiting_action_draft_recovery_enabled 两 boolean，缺省 false、raw 能力蕴含动作能力；只由原宿主 option 与原 recovery option 提供，不修改持久默认 Flag。每次新提交先核当前 bootstrap/Ticket Action/版本、T38 transport 与 epoch／abort／generation，再保存原命令、一次 POST。409 保留用户输入，经当前 GET 后由明确新提交产生新的 UUID；UNKNOWN 保留原 UUID/body/version，不自动再 POST。
+
+[安全 ACK 合同](../../../contracts/p2_016_waiting_action_receipt.schema.json)为四个 GET /api/tickets/{id}/{action}/commands/{uuid} 的最小 UNKNOWN／FAILED／COMMITTED。该原 actor／Ticket／服务器 route-action purpose／UUID 只读核对仅要求当前 W 认证与 Ticket READ，与新写和 raw 恢复分开；不返回 note、原 command 或 private snapshot。四用途为 waiting-requester、waiting-vendor、waiting-resume、waiting-cancel，沿 T03 当前浏览器密文、24h／20份／16KiB及 storage CAS。ACK 宿主及其负向验证在首菜单片段尚未实现，不能把合同冻结视为已有 HTTP。
+
+无新 SQL、表、Core、owner、ledger、SSE、轮询或通知权限。关闭动作 option 禁止新菜单提交，保留既有事实；安全 ACK 的原操作消费者在后续实现保持挂载。原 first/fixture/browser 与三 frozen Schema 不改。当前源码未经本对象运行；原 d563 首 HTTP GREEN 与原 browser 菜单 RED 仍分别绑定 d563，不作为整七验收。
