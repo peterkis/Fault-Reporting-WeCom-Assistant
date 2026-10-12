@@ -6,7 +6,7 @@ import {prepareFollowup,personalSnapshots,navigateFollowup,chooseFollowup,observ
 
 // SOURCE_ONLY / NOT_BUILT_NOT_RUN: future reply loss leaves the actual HTTP command unchanged.
 test('T28 follow-up preserves unsubmitted input across parent conflict and retains exact UNKNOWN intent',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28-followup-input',reporters:3},async context=>{
+  await candidateBrowser({purpose:'t28input',reporters:3},async context=>{
     const {http,id,path}=await prepareFollowup(context),personal=await personalSnapshots(http,context.f.reports);
     await navigateFollowup(context,id);await observeFollowupPosts(context.browser);
     await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');

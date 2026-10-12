@@ -7,7 +7,7 @@ import {prepareFollowup,confirmIncident,followupHttp,personalSnapshots,rows} fro
 
 // SOURCE_ONLY / NOT_BUILT_NOT_RUN. Future counter faults retain real SQL/Core/ledger and public HTTP.
 test('T28 exact parent/child versions, foreign targets and same-parent competition remain atomic',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28-exact-parent-child',reporters:6},async context=>{
+  await candidateBrowser({purpose:'t28versions',reporters:6},async context=>{
     const {http,id,path}=await prepareFollowup(context,3);
     const otherCandidate=text(record(await context.f.newCandidate(3)).id);
     const otherId=await confirmIncident(http,otherCandidate,text(record(context.f.handler).id),context.f.reports.slice(3).map(value=>text(record(value).decisionId)));
@@ -48,7 +48,7 @@ test('T28 exact parent/child versions, foreign targets and same-parent competiti
 });
 
 test('T28 current Incident purpose and scope authority do not follow owner identity or stale ADMIN Cookie',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28-current-purpose',reporters:3},async context=>{
+  await candidateBrowser({purpose:'t28authority',reporters:3},async context=>{
     const http=await followupHttp(context.browser),access=createPilotAccessService({pool:context.pool});
     const roles=async(value:Array<'ADMIN'|'DISPATCHER'|'HANDLER'>)=>access.upsertPrincipal({wecomUserId:'synthetic-incident-admin',displayName:'合成管理员',roles:value,resolverTeamIds:['PILOT_IT']});
     await roles(['DISPATCHER']);

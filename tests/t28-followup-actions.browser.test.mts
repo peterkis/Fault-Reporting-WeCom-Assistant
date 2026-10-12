@@ -8,7 +8,7 @@ import {prepareFollowup,personalSnapshots,navigateFollowup,observeFollowupPosts,
 // SOURCE_ONLY / NOT_BUILT_NOT_RUN; no missing selector is labelled a current RED.
 const actions=['CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT'] as const;
 for(const action of actions)test('T28 production follow-up '+action+' uses its original closed command and preserves individual Tickets',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28-followup-'+String(actions.indexOf(action)),reporters:3},async context=>{
+  await candidateBrowser({purpose:'t28action'+String(actions.indexOf(action)),reporters:3},async context=>{
     const {http,id,path}=await prepareFollowup(context,action==='LINK_REPORT'?2:3);
     let reports=rows((await http.get(path+'/reports?limit=100')).items),subscriptions=rows((await http.get(path+'/subscriptions?limit=100')).items);
     const firstTicket=text(record(context.f.reports[0]).ticketId),report=reports.find(item=>item.ticket_id===firstTicket);assert.ok(report);
