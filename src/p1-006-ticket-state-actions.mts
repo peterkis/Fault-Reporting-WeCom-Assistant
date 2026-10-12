@@ -52,7 +52,8 @@ export type TicketEventType =
   | 'ticket.assignment_transferred'
   | 'ticket.unassigned'
   | 'ticket.follow_up_scheduled'
-  | 'ticket.follow_up_cancelled';
+  | 'ticket.follow_up_cancelled'
+  | 'ticket.returned_to_dispatch';
 export type TicketActionErrorCode =
   | 'VALIDATION_FAILED'
   | 'INVALID_STATE_TRANSITION'
@@ -444,7 +445,7 @@ export async function appendTicketEvent({
       || ![Object.prototype,null].includes(Object.getPrototypeOf(assignmentMetadata))
       || Reflect.ownKeys(assignmentMetadata).length!==4
       || Reflect.ownKeys(assignmentMetadata).some(key => typeof key !== 'string' || !keys.includes(key as typeof keys[number]))
-      || !['ticket.assignment_transferred','ticket.unassigned'].includes(eventType)) throw new TicketActionError('VALIDATION_FAILED');
+      || !['ticket.assignment_transferred','ticket.unassigned','ticket.returned_to_dispatch'].includes(eventType)) throw new TicketActionError('VALIDATION_FAILED');
     const copy: AssignmentMetadata = {
       old_assignee_id: null,
       new_assignee_id: '',
@@ -461,7 +462,7 @@ export async function appendTicketEvent({
         }
         copy.old_assignee_id = value;
       } else if (key === 'new_assignee_id') {
-        if (!(eventType==='ticket.unassigned'&&value===null) && (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value))) {
+        if (!(['ticket.unassigned','ticket.returned_to_dispatch'].includes(eventType)&&value===null) && (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value))) {
           throw new TicketActionError('VALIDATION_FAILED');
         }
         copy.new_assignee_id = value as string | null;
@@ -480,9 +481,13 @@ export async function appendTicketEvent({
     if(eventType==='ticket.unassigned'&&(copy.old_assignee_id===null||copy.new_assignee_id!==null||copy.old_team_id!==copy.new_team_id
       ||!['QUEUED','ACCEPTED'].includes(oldStatus??'')||newStatus!=='QUEUED'||actor.type!=='PILOT_USER'
       ||typeof internalNote!=='string'||!internalNote.trim()||internalNote.length>2000||externalNote!==null))throw new TicketActionError('VALIDATION_FAILED');
+    if(eventType==='ticket.returned_to_dispatch'&&(copy.old_assignee_id===null||copy.new_assignee_id!==null||copy.old_team_id!==copy.new_team_id
+      ||!['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'].includes(oldStatus??'')||newStatus!=='QUEUED'||actor.type!=='PILOT_USER'
+      ||typeof internalNote!=='string'||!internalNote.trim()||internalNote.length>2000||externalNote!==null
+      ||typeof reasonCode!=='string'||!/^[A-Z][A-Z0-9_]{0,63}$/u.test(reasonCode)))throw new TicketActionError('VALIDATION_FAILED');
     assignmentMetadata=copy;
   }
-  if(eventType==='ticket.unassigned'&&assignmentMetadata===undefined)throw new TicketActionError('VALIDATION_FAILED');
+  if(['ticket.unassigned','ticket.returned_to_dispatch'].includes(eventType)&&assignmentMetadata===undefined)throw new TicketActionError('VALIDATION_FAILED');
   const inserted = await transaction.query<TicketEventRow>(
     `INSERT INTO pilot_ticket.ticket_event (
         ticket_id, event_type, old_status, new_status, aggregate_version,
