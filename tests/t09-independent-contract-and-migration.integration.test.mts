@@ -7,6 +7,7 @@ import {object,rows,text,version} from './helpers/t09-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {migrateTicketReturnToDispatch} from '../scripts/ticket-return-to-dispatch-migrate.mjs';
 import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
+import type {P2016TicketDetail} from '../contracts/p2_016_contracts.js';
 
 async function started(f:T09IndependentFixture){const handler=await f.http(2),admin=await f.http(0),ticketId=await f.createTicket(),path='/api/tickets/'+ticketId;
  await f.runtime.coordinator.runOnce();
@@ -15,7 +16,8 @@ async function started(f:T09IndependentFixture){const handler=await f.http(2),ad
 const followUp=(v:number,scheduleVersion:string,action:'SET'|'CANCEL')=>({client_command_id:randomUUID(),expected_version:v,expected_schedule_version:scheduleVersion,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action,...(action==='SET'?{due_at:assertLocalDateTime('2030-01-02 09:30:00')}: {})});
 
 test('a real started Ticket advertises the independent return action inside the closed published detail contract',async()=>{
- await withT09IndependentFixture(async f=>{const s=await started(f);assert.ok(Array.isArray(s.before.allowed_actions)&&s.before.allowed_actions.includes('return-to-dispatch'));await assertP2016Schema('p2_016_ticket_detail',s.before);});
+ const action:P2016TicketDetail['allowed_actions'][number]='return-to-dispatch';
+ await withT09IndependentFixture(async f=>{const s=await started(f);assert.ok(Array.isArray(s.before.allowed_actions)&&s.before.allowed_actions.includes(action));await assertP2016Schema('p2_016_ticket_detail',s.before);});
 });
 
 test('T09 alone reads canonical related Sessions and submits one explicitly selected transfer without any T05/T06/T07/T08 capability',async()=>{

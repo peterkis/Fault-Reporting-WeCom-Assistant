@@ -294,6 +294,14 @@ body恰为七字段：`client_command_id:UUID,expected_version:number(1..2147483
 
 `ticketReturnToDispatchEnabled=false`仍为独立默认关闭源码option，不偷开T05／T06／T08。关闭T09停止POST及动作能力，安全ACK仍以整个W读启用、当前认证／TicketREAD及原actor／Ticket／专用purpose／UUID读取原031 ledger；不查048、不检查当前写状态／版本／target。PC保持安全ACK消费者可挂载，关闭写能力或raw恢复不允许创建新操作；整个W关闭／身份失效／失权仍拒绝。literal T09=false 边界已在历史 69ae 对象验证，当前组装对象尚未重跑。退回不创建轮次、不改首责任basis、不取消／关闭，不创建退回Message／Outbox／Delivery；同轮后续承接不应重复已有首次责任承诺，下一重开轮次仍独立。单App／Worker、Gateway单活、SSE32、pool max4／总预算8、选Session≤8、target每页≤100、关联恢复≤10页、单表单in-flight1保持，无新SSE／轮询／worker。原bd412编译FAIL、aab2／b618／0a0ffcb真实HTTP RED、9eab／cca730／1528各原首GREEN及55c PC FORM_PRESENT RED独立保全；当前源码的build／strict／artifact／SQL／HTTP／browser均NOT_RUN，整七项仍IN_PROGRESS。
 
+### 2026-10-12 审查后前向接缝修补（SOURCE，待本对象验证）
+
+正式 TicketDetail 的闭合 Schema 和 TypeScript `allowed_actions` 同时加入 `return-to-dispatch`。关联会话 GET 的原宿主围栏追加独立 T09；当前 Ticket READ、canonical 关系、分页和逐 Session／target 权限保持，不要求打开 T05／T06／T07／T08。
+
+旧 048／049 SQL 字节和旧 checksum 保留。原迁移入口在没有 049 时仍实际应用 048；已集成 049 时选择前向 057，保留当前完整 event check，再追加退回及已集成跟进词汇。metadata check 保留所有非退回规则，退回严格沿原 048 的同组旧 owner→null、三种已开始状态、内部说明及零外发约束，无新事实表。入口复用原 049 DDL 锁，在锁后选择实际路径；057 只记自己的 checksum／stamp，未执行 048 就不生成 048 stamp。T09 启用且存在 049 时，readiness 和写命令要求真实 057；关闭 T09 后的安全 ACK 仍只按当前 Ticket READ 和原 actor／purpose／UUID 读取原回执，不依赖 048／057。
+
+三项缺口在冻结 `f2bcd11d5476306767db3f112eb5b60ce55e5058` 上实际产生五条 RED：合法 GET 被详情 enum 拒绝；仅 T09 的 related GET 503；049 既有事件时旧 048 原生 23514；049 空历史及联合能力下后续真实跟进写 503。本 SOURCE 后继尚未验证，原失败及原九例保持；结果和剩余原七项见[本票执行记录](../../../plans/admin-workbench-integration/execution/t09.md)。
+
 ## Bot 原报修人轮次通知读取（WBINT-T24）
 
 本票已完成本地隔离验收；能力默认关闭，未部署或现场外发。沿用获权 `GET /api/tickets/{ticketId}/deliveries`，宿主 W、当前 Ticket READ、原认证与失败规则不变，没有新增通知读取路径。最多100条，不作为全历史分页。新节点通知沿原 Bot 单聊报修人绑定生成，041 只增加轮次／节点与既有通知的绑定，不建立第二套 Ticket 或 Delivery。

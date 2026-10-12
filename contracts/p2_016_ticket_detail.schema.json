@@ -126,7 +126,8 @@
           "accept-for-later",
           "take-and-start-with-conversations",
           "accept-for-later-with-conversations",
-          "complete"
+          "complete",
+          "return-to-dispatch"
         ]
       }
     },

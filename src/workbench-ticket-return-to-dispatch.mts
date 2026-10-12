@@ -10,6 +10,7 @@ import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
+import {returnToDispatchMigrationReady} from '../scripts/ticket-return-to-dispatch-migrate.mjs';
 
 const startedStates=['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'];
 export interface ReturnToDispatchCommand {
@@ -30,7 +31,7 @@ export function normalizeReturnToDispatchCommand(input:unknown):ReturnToDispatch
    reason:value.reason.trim(),unfinished_work:value.unfinished_work.trim(),communication_choice:value.communication_choice,communication_target_principal_id:target,sessions});
 }
 export async function returnToDispatchSchemaReady(tx:PostgresTransaction) {
- try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('039_ticket_self_handling_cycles','046_ticket_unassign','048_ticket_return_to_dispatch')")).rowCount===3;}catch{return false;}
+ return returnToDispatchMigrationReady(tx);
 }
 interface ResponsibilityEvent {
  event_type:string;event_ordinal:number;aggregate_version:number;old_status:string|null;new_status:string;operator_id:string|null;
