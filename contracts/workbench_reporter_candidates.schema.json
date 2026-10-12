@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_reporter_candidates.schema.json",
+  "title":"Planned T18 authorized minimal reporter candidates",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","candidates","next_cursor","manual_fallback_available"],
+  "properties":{
+    "schema_version":{"const":1},
+    "manual_fallback_available":{"const":true},
+    "next_cursor":{"anyOf":[{"type":"null"},{"type":"string","minLength":1,"maxLength":512,"pattern":"^[A-Za-z0-9_-]+$"}]},
+    "candidates":{"type":"array","maxItems":20,"items":{
+      "type":"object","additionalProperties":false,
+      "required":["candidate_ref","candidate_version","display_name","departments","profile_source","binding_verified","message_reachability"],
+      "properties":{
+        "candidate_ref":{"type":"string","minLength":32,"maxLength":256,"pattern":"^[A-Za-z0-9_-]+$"},
+        "candidate_version":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+        "display_name":{"type":"string","minLength":1,"maxLength":100},
+        "departments":{"type":"array","maxItems":20,"uniqueItems":true,"items":{"type":"string","minLength":1,"maxLength":100}},
+        "profile_source":{"enum":["WECOM_DIRECTORY","THIRD_PARTY_STAFF_DIRECTORY"]},
+        "binding_verified":{"const":true},
+        "message_reachability":{"enum":["REACHABLE","UNREACHABLE","UNKNOWN"]}
+      }
+    }}
+  }
+}

@@ -4,6 +4,8 @@
 
 WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#撤销未开始派工wbint-t08plannednot_run)。计划路径不表示已挂载。
 
+WBINT-T37 的[共享跟进安排合同](follow-up-schedules.md)完整业务仍进行中：原调度员POST404形成真实RED后，后继仅SOURCE挂载三条W路径与049，尚未构建／迁移／HTTP验证。当前处理人／获权调度源码已补，canonical沟通人、Worker、生命周期与正式页面待逐片验收；不能当作已交付的预约服务。
+
 宿主：W，P2-016 扩展。调用方：[lifecycle UI](../../../web/p2-workbench/lifecycle.js)。默认关闭：`TICKET_LIFECYCLE_WORKBENCH_ENABLED`。实现：[HTTP](../../../src/p2-016-workbench-http.mts)、[query](../../../src/p2-016-ticket-query.mts)、[command facade](../../../src/p2-016-ticket-command-facade.mts)、[command ledger](../../../src/p2-016-ticket-command-ledger.mts)。Ticket 是唯一编号/状态/处理责任事实源，Conversation Assignment 单独管理沟通责任。
 
 ## 查询
@@ -297,3 +299,7 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 9395原四实际2PASS/2FAIL已保全：START关闭广告与获权STAFF正式提示PASS；两生命周期首测分别实际新敏感record1≠0，以及真实原POST200/服务器GET200受控client503却误报拒绝。最小后继给现有共享hook独立writeEnabled（缺省仍沿原enabled），W旧opaque读消费不启用新敏感保存；只有原POST未成功时才按其明确拒绝清理，POST200后的临时读取失败保原UUID UNKNOWN。该源码后继尚NOT_RUN，旧15306/9395结果保持各自被测身份。
 
 冷raw关闭且没有旧row时，不打开或写入IndexedDB，也不在local/sessionStorage持久化UUID；此时只保证挂载页面内原UUID的GET核对，不承诺刷新后24h恢复。刷新丢失内存标识不代表原命令失败，不能自动重发。raw启用的固定24h副本，以及既有opaque在关闭raw后的只读恢复，是两个独立路径；前者到期或丢弃只清敏感payload/key，不能把原未知操作变成失败或借此换UUID。
+
+## 原H5与核实代录应用轮次通知（WBINT-T25）
+
+原 GET deliveries 沿当前 Ticket READ，可返回 PERSON 的 route_kind=YIXIAOXIU_APP；同轮FIRST/完工、各路成功/失败/UNKNOWN均独立。正式管理端仅显示安全状态，不能从投影推断外部送达。恢复仍用原 retry/reconcile、当前权限和原UUID/hash，不增加客户端SDK或HTTP发送入口。配置、SDK、本人详情、安全字段与关闭历史读取见[应用通知合同](app-notifications.md)；[本地执行](../../../plans/admin-workbench-integration/execution/t25.md)保留逐祖先证据和未运行现场边界。

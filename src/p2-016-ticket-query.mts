@@ -92,6 +92,24 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
   }
   return Object.freeze({
     principal,authorizedTicket,
+    /** Caller Tx only: independent of the legacy conversation write gates. */
+    async isCurrentCommunicator({authContext,ticketId,transaction,lock=false}:TicketQueryInput&{transaction:PostgresTransaction}):Promise<boolean>{
+      const {ticket,principal:p}=await authorizedTicket({authContext,ticketId,transaction,lock});
+      // Reuse the exact canonical relation; VIEW/can_takeover is never maintenance authority.
+      const sessions=await transaction.query<{session_id:string}>(`SELECT s.id::text AS session_id FROM conversation.session s
+        JOIN conversation.assignment a ON a.session_id=s.id
+        WHERE ${relatedConversationSql} AND s.status<>'ENDED'
+          AND a.assignment_status='ASSIGNED' AND a.assigned_principal_id=$2::uuid
+        ORDER BY s.id LIMIT 1${lock?' FOR UPDATE OF s':''}`,[ticket.intake_id,p.principal_id]);
+      const session=sessions.rows[0];if(!session)return false;
+      if(lock){
+        // The caller holds stream/Ticket/authority; preserve Session -> assignment order.
+        await transaction.query(`SELECT session_id FROM conversation.assignment
+          WHERE session_id=$1::uuid FOR UPDATE`,[session.session_id]);
+      }
+      const access=await conversationAuthorization.getSessionAccess({principal:p,sessionId:session.session_id,queryable:transaction});
+      return access?.assigned_to_me===true;
+    },
     async assignmentTargets({authContext,ticketId,resolverTeamId=null,targetPrincipalId=null}: {authContext:unknown;ticketId:unknown;resolverTeamId?:unknown;targetPrincipalId?:unknown}) {
       guardP2016(ticketAssignmentEnabled);
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId});
@@ -247,10 +265,10 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     },
     async deliveries(input: TicketQueryInput) {
       const {ticket}=await authorizedTicket(input);
-      const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
+      const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}d.provider,b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
         d.side_effect_state,d.attempt_count,d.sent_at,b.created_at FROM communication.ticket_notification_binding b
         JOIN communication.delivery d ON d.id=b.delivery_id ${ticketRoundNotificationsEnabled?'LEFT JOIN communication.ticket_round_notification_binding r ON r.notification_binding_id=b.id LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.cycle_id AND c.ticket_id=r.ticket_id':''} WHERE b.ticket_id=$1::uuid
-        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows});
+        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows.map(({provider,...item})=>provider==='WECOM_APP'?{...item,route_kind:'YIXIAOXIU_APP'}:item)});
     },
   });
 }

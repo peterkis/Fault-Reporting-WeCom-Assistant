@@ -198,6 +198,7 @@
         "origin": {
           "enum": [
             "WEB_REPORTER",
+            "BOT_REPORTER",
             "STAFF"
           ]
         },

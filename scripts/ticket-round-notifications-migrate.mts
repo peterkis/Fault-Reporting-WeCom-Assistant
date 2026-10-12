@@ -17,8 +17,22 @@ export async function migrateTicketRoundNotifications({databaseUrl,mode='check'}
     const previous=await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='040_ticket_staff_completion'");
     if(previous.rowCount!==1)failP2016('ACTION_FAILED',409);
     const applied=await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[ROUND_NOTIFICATION_MIGRATION_ID]);
+    const upgradeGroups=async()=>{
+      if(mode!=='apply')return;
+      const id='052_ticket_group_round_notifications';
+      const next=await readFile(new URL('../database/migrations/'+id+'.sql',import.meta.url),'utf8');
+      const nextBody=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(next)?.[1];if(!nextBody)failP2016();
+      const nextChecksum=createHash('sha256').update(next).digest('hex');
+      const existing=await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[id]);
+      if(existing.rows[0]){if(existing.rows[0].checksum_sha256!==nextChecksum)failP2016('ACTION_FAILED',409);return;}
+      await tx.query(nextBody);
+      await tx.query(`WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch)
+        INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
+        SELECT $1,$2,platform.local_from_epoch_ms(epoch),epoch FROM stamp`,[id,nextChecksum]);
+    };
     if(applied.rows[0]){
       if(applied.rows[0].checksum_sha256!==checksum)failP2016('ACTION_FAILED',409);
+      await upgradeGroups();
       return {status:'NOOP_ALREADY_APPLIED',migration_id:ROUND_NOTIFICATION_MIGRATION_ID};
     }
     if(mode==='check')return {status:'PENDING',migration_id:ROUND_NOTIFICATION_MIGRATION_ID};
@@ -26,6 +40,7 @@ export async function migrateTicketRoundNotifications({databaseUrl,mode='check'}
     await tx.query(`WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch)
       INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
       SELECT $1,$2,platform.local_from_epoch_ms(epoch),epoch FROM stamp`,[ROUND_NOTIFICATION_MIGRATION_ID,checksum]);
+    await upgradeGroups();
     return {status:'APPLIED',migration_id:ROUND_NOTIFICATION_MIGRATION_ID};
   });}finally{await pool.end();}
 }

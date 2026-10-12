@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/bot_reporter_feedback_result.schema.json",
+  "title": "Bot member feedback committed result (WBINT-T21 SOURCE contract)",
+  "type": "object", "additionalProperties": false,
+  "required": ["ok", "replayed", "public_ref", "completed_round_ref", "reopened_round_no", "ticket"],
+  "properties": {
+    "ok": {"const": true}, "replayed": {"type": "boolean"},
+    "public_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "completed_round_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "reopened_round_no": {"type": "integer", "minimum": 2, "maximum": 2147483647},
+    "ticket": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticket_no", "status", "version"],
+      "properties": {
+        "ticket_no": {"type": "string", "minLength": 1, "maxLength": 64},
+        "status": {"const": "REOPENED"},
+        "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+      }
+    }
+  }
+}
