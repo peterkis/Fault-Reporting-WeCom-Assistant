@@ -6,7 +6,7 @@ import {assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {transferTicketAssignmentP2016} from './p2-016-ticket-assignment.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 
 export interface TicketTakeoverCommand {
   action:'takeover';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
@@ -19,7 +19,23 @@ export function normalizeTicketTakeoverCommand(input:unknown):TicketTakeoverComm
 }
 export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
-  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
+  return Object.freeze({
+  async targets({authContext,ticketId,resolverTeamId=null}:{authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}){
+    guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
+    const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');const {ticket,principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+      if(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+      const own=`FROM pilot_ticket.resolver_team rt WHERE rt.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m WHERE m.team_id=rt.team_id AND m.principal_id=$1::uuid)`;
+      const groups=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name ${own} ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
+      const chosen=selected===null?null:(await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name ${own} AND rt.team_id=$2`,[principal.principal_id,selected])).rows[0];
+      if(selected!==null&&!chosen)failP2016('TARGET_INVALID',403);
+      const teams=chosen&&!groups.rows.some(row=>row.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
+      const available=selected===null?teams:chosen?[chosen]:[];
+      const actions=ticket.status==='ACCEPTED'&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover']:[];
+      return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:actions});
+    });
+  },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeTicketTakeoverCommand(input);
     if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
     return ledger.execute({command,receiptType:'WORKBENCH_TICKET_TAKEOVER',authorize:async transaction=>{

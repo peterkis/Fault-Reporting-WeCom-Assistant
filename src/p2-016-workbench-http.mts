@@ -37,6 +37,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const takeoverTargets=/^\/api\/tickets\/([0-9a-f-]{36})\/takeover-targets$/iu.exec(url.pathname);
+      if(takeoverTargets){if(!takeover)failP2016('DISABLED',503);queryKeys(url,['resolver_team_id']);json(response,200,await takeover.targets({authContext,ticketId:takeoverTargets[1],resolverTeamId:url.searchParams.get('resolver_team_id')}));return true;}
       const followUpReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/follow-up-schedule\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(followUpReceipt){if(!followUpSchedules)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await followUpSchedules.acknowledgement({authContext,ticketId:followUpReceipt[1],commandId:followUpReceipt[2]}));return true;}
       const followUpView=/^\/api\/tickets\/([0-9a-f-]{36})\/follow-up-schedule$/iu.exec(url.pathname);
