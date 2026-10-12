@@ -11,7 +11,7 @@ export async function http(f:T07Fixture,index:number){
  const cookie=f.cookies[index];assert.ok(cookie);
  const get=async(path:string)=>{const r=await fetch(f.origin+path,{headers:{cookie}});return {status:r.status,value:object(await r.json())};};
  const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);const csrf=text(bootstrap.value.csrf_token);
- const post=async(path:string,body:Readonly<Record<string,unknown>>)=>{const r=await fetch(f.origin+path,{method:'POST',headers:{cookie,origin:f.origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':text(body.client_command_id),...(body.expected_version!==undefined?{'if-match':'"'+version(body.expected_version)+'"'}:{})},body:JSON.stringify(body)});return {status:r.status,value:object(await r.json())};};
+ const post=async(path:string,body:Readonly<Record<string,unknown>>)=>{const expected=body.expected_version??body.expected_row_version;const r=await fetch(f.origin+path,{method:'POST',headers:{cookie,origin:f.origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':text(body.client_command_id),...(expected!==undefined?{'if-match':'"'+version(expected)+'"'}:{})},body:JSON.stringify(body)});return {status:r.status,value:object(await r.json())};};
  return {get,post};
 }
 export async function acceptedSetup(f:T07Fixture){
