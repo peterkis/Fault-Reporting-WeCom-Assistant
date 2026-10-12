@@ -58,7 +58,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
     async perform({authContext,command:input,internalNote=false}: { authContext: unknown; command: unknown;internalNote?:boolean }) {
       guardP2016(enabled);const command=normalizeP2016TicketCommand(input);
       if(internalNote&&command.action!=='add-note')failP2016();
-      const cycleAware=ticketWaitingActionsEnabled&&command.action==='request-information';
+      const cycleAware=ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume','cancel'].includes(command.action);
       if(cycleAware){
         if(typeof command.note!=='string'||!command.note.trim()||command.external_visible!==false)failP2016();
         if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);

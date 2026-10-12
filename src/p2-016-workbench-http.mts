@@ -134,6 +134,10 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       }
       const ticket=/^\/api\/tickets\/([0-9a-f-]{36})\/(queue|accept|start|request-information|wait-vendor|resume|resolve|confirm|reopen|cancel|notes|internal-notes|transfer)$/iu.exec(url.pathname);
       if(ticket){checkVersion(request,body.expected_version);
+        if(ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume','cancel'].includes(ticket[2]??'')){
+          exactP2016(body,['client_command_id','expected_version','reason_code','note','external_visible']);
+          if(body.external_visible!==false||typeof body.note!=='string'||!body.note.trim()||body.note.length>2000)failP2016();
+        }
         if(ticket[2]==='internal-notes'){
           guardP2016(workbenchInternalNotesEnabled);
           exactP2016(body,['client_command_id','expected_version','reason_code','note','external_visible']);

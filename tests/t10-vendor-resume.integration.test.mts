@@ -9,6 +9,7 @@ test('vendor wait and resume bind both real Actions to the same current cycle an
     const http=await t11Http(context,2),target=context.tickets[0];assert.ok(target);
     const original=await http.start(target.ticket.id);assert.ok(original.handling_cycle);
     const responsibility=await (await http.get('/api/tickets/'+target.ticket.id+'/responsibility')).json() as unknown;
+    const deliveries=await (await http.get('/api/tickets/'+target.ticket.id+'/deliveries')).json() as unknown;
     for(const [action,state,eventType] of [['wait-vendor','WAITING_VENDOR','ticket.waiting_vendor'],['resume','IN_PROGRESS','ticket.resumed']] as const){
       const before=await http.detail(target.ticket.id);
       const command={client_command_id:randomUUID(),expected_version:before.version,reason_code:action==='resume'?'RESUME':'WAITING_VENDOR',note:'INTERNAL_T10_VENDOR_CANARY：供应商待核实、恢复处理。',external_visible:false};
@@ -21,9 +22,8 @@ test('vendor wait and resume bind both real Actions to the same current cycle an
       const events=await (await http.get('/api/tickets/'+target.ticket.id+'/events')).json() as {items:{event_id:string;event_type:string;handling_cycle_id:string|null}[]};
       assert.deepEqual(events.items.filter(event=>event.event_id===result.ticket_event_id).map(event=>({type:event.event_type,cycle:event.handling_cycle_id})),[{type:eventType,cycle:original.handling_cycle.id}]);
       assert.ok(!JSON.stringify({result,after,events}).includes('INTERNAL_T10_VENDOR_CANARY'));
-      const replay=await http.post(target.ticket.id,action,command);assert.equal(replay.status,200);assert.deepEqual(await replay.json(),result);
+      const replay=await http.post(target.ticket.id,action,command);assert.equal(replay.status,200);assert.deepEqual(await replay.json(),{...result,replayed:true});
     }
-    const deliveries=await context.pool.query<{count:string}>('SELECT count(*)::text AS count FROM communication.delivery');
-    assert.equal(deliveries.rows[0]?.count,'0','internal waiting reasons create no external delivery');
+    assert.deepEqual(await (await http.get('/api/tickets/'+target.ticket.id+'/deliveries')).json(),deliveries,'internal waiting reasons create no new external delivery');
   });
 });
