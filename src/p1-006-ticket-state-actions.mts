@@ -51,6 +51,8 @@ export type TicketEventType =
   | 'ticket.auto_close_reminder'
   | 'ticket.assignment_transferred'
   | 'ticket.unassigned'
+  | 'ticket.follow_up_scheduled'
+  | 'ticket.follow_up_cancelled'
   | 'ticket.returned_to_dispatch';
 export type TicketActionErrorCode =
   | 'VALIDATION_FAILED'

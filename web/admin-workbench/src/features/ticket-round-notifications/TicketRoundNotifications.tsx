@@ -34,7 +34,7 @@ export function TicketRoundNotifications({ticketId,principalId}:{ticketId:string
     <h3>报修人通知送达</h3>
     {loading?<p role="status">正在读取通知送达状态…</p>:message?<p role="status">{message}</p>:!nodes.length?<p>当前没有可读取的轮次节点通知。</p>:<ul>{nodes.map(item=><li key={item.delivery_id}><span>
       <strong>{item.node?nodeLabels[item.node]:''}</strong>
-      <small>处理轮次 {item.cycle_no} · {item.destination_type==='PERSON'?'原报修人单聊':'群聊'} · {deliveryLabels[item.status]}</small>
+      <small>处理轮次 {item.cycle_no} · {item.route_kind==='YIXIAOXIU_APP'?'医小修应用':item.destination_type==='PERSON'?'原报修人单聊':'群聊'} · {deliveryLabels[item.status]}</small>
       <small>尝试次数 {item.attempt_count} · {effectLabels[item.side_effect_state]}</small>
       {item.sent_at?<small>发送时间 {item.sent_at}（北京时间）</small>:null}
     </span></li>)}</ul>}

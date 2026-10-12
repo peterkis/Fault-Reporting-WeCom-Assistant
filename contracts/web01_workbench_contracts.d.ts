@@ -15,6 +15,8 @@ export interface WorkbenchCard {
   location: string | null; reporter_name: string | null;
   assignee_name: string | null; review_reason: string | null;
   created_at: string; updated_at: string; completed_at: string | null;
+  /** Present only on authorized Ticket cards while shared-time viewing is enabled. */
+  follow_up_schedule?:import('./workbench_follow_up_schedule_contracts.js').SharedFollowUpActive|null;
 }
 export interface BoardPage {
   items: WorkbenchCard[]; next_cursor: string | null; column: BoardColumn;
@@ -24,6 +26,7 @@ export interface WorkbenchRecord {
   id: string; at: string; type: string; text: string | null;
   audience: 'REPORT' | 'INTERNAL' | 'EXTERNAL'; actor: string | null;
   old_status: string | null; new_status: string | null;
+  read_material?:{source_ref:string;revision:string};
 }
 export interface WorkbenchDetail {
   item: WorkbenchCard; description: string | null;

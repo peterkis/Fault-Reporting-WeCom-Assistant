@@ -16,6 +16,9 @@
     "guidance"
   ],
   "properties": {
+    "feedback_context": {
+      "$ref": "yxx_self_service_feedback_context.schema.json"
+    },
     "public_ref": {
       "type": "string",
       "minLength": 32,
@@ -56,7 +59,7 @@
       "maximum": 2147483647
     },
     "guidance": {
-      "const": "如未解决，请在企业微信机器人单聊中回复。"
+      "enum": ["如未解决，请在企业微信机器人单聊中回复。", "如未解决，请联系工作人员补充情况。"]
     },
     "incident_milestones": {
       "type": "array",

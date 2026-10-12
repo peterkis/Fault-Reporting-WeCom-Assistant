@@ -12,7 +12,7 @@ import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
 import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
 import {migrateTicketReturnToDispatch} from '../../scripts/ticket-return-to-dispatch-migrate.mjs';
 
-export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,manualRoundConsumption=false,roundNotificationsOff=false}:{ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;manualRoundConsumption?:boolean;roundNotificationsOff?:boolean}={}){
+export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,manualRoundConsumption=false,roundNotificationsOff=false,externalSendEnabled=false}:{ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;manualRoundConsumption?:boolean;roundNotificationsOff?:boolean;externalSendEnabled?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
     if(ticketUnassignEnabled||ticketReturnToDispatchEnabled)await migrateTicketUnassign({databaseUrl:f.databaseUrl,mode:'apply'});
@@ -24,7 +24,7 @@ export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string}
     assert.ok(created.ticket);
     const options={pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
-      externalSendEnabled:false,ticketReturnToDispatchEnabled,ticketAssignmentEnabled,ticketUnassignEnabled,ticketConversationSelfHandlingEnabled,ticketReopenRoundsEnabled,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,
+      externalSendEnabled,ticketReturnToDispatchEnabled,ticketAssignmentEnabled,ticketUnassignEnabled,ticketConversationSelfHandlingEnabled,ticketReopenRoundsEnabled,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,
       reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED' as const,reporterMemberEntry:entryConfig,
       wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}},
       ticketRoundNotificationsEnabled:!roundNotificationsOff};

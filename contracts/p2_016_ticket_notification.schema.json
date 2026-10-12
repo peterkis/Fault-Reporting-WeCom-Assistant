@@ -15,6 +15,7 @@
     "created_at"
   ],
   "properties": {
+    "route_kind": {"const": "YIXIAOXIU_APP"},
     "notification_type": {
       "enum": [
         "TICKET_CREATED",
@@ -106,6 +107,10 @@
     ]
   },
   "allOf": [
+    {
+      "if": {"required": ["route_kind"]},
+      "then": {"properties": {"destination_type": {"const": "PERSON"}}}
+    },
     {
       "if": {
         "required": [

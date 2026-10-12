@@ -347,7 +347,7 @@ function normalizeDestinations(destinations: readonly CommunicationDestination[]
     const channelAccountId = requiredString(destination.channel_account_id, 256);
     const targetType = requiredString(destination.target_type, 16) as CommunicationDestination['target_type'];
     const targetId = requiredString(destination.target_id, 512);
-    if (provider !== 'WECOM_AIBOT' || !['PERSON', 'GROUP'].includes(targetType)) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
+    if ((provider !== 'WECOM_AIBOT' && !(provider === 'WECOM_APP' && targetType === 'PERSON')) || !['PERSON', 'GROUP'].includes(targetType)) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
     const targetHash = sha256(targetId);
     if (destination.target_hash !== undefined && destination.target_hash !== targetHash) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
     const identity = `${provider}\u0000${channelAccountId}\u0000${targetType}\u0000${targetHash}`;
