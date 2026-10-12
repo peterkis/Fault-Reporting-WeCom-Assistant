@@ -9,7 +9,8 @@ import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
+import type {P2016TakeoverAcknowledgement} from '../contracts/p2_016_takeover_contracts.js';
 
 export interface TicketTakeoverCommand {
   action:'takeover'|'takeover-and-start';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
@@ -26,6 +27,19 @@ export function normalizeTicketTakeoverCommand(input:unknown):TicketTakeoverComm
 export function createTicketTakeoverService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeResponsibilityInTransaction'>|null;enabled?:boolean}&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
+  async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016TakeoverAcknowledgement>{
+    guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+      // Current READ + original actor/Ticket/UUID/purpose only. Never load the private result snapshot.
+      const selected=await transaction.query<{state:unknown;version:unknown;event:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable FROM pilot_ticket.ticket_command_receipt
+        WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid AND actor_principal_id=$4::uuid AND command_type='WORKBENCH_TICKET_TAKEOVER' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId,principal.principal_id]);
+      const row=selected.rows[0];if(!row||row.state==='STARTED')return {state:'UNKNOWN'};
+      if(row.state==='COMMITTED')return {state:'COMMITTED',ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)};
+      if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return {state:'FAILED',error:{code:row.error,retryable:false}};
+      failP2016('ACTION_FAILED',503);
+    });
+  },
   async targets({authContext,ticketId,resolverTeamId=null}:{authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}){
     guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);
     const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
