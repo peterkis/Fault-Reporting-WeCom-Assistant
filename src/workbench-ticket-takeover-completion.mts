@@ -2,7 +2,7 @@ import type {PostgresPool} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
-import type {P2016TakeoverCompletionCommand} from '../contracts/p2_016_takeover_completion_contracts.js';
+import type {P2016TakeoverCompletionCommand,P2016TakeoverCompletionAcknowledgement} from '../contracts/p2_016_takeover_completion_contracts.js';
 import {takeoverTicketInTransaction,takeoverAllowedActions} from './workbench-ticket-takeover.mjs';
 import {completeTicketInTransaction,staffCompletionEligibility,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
@@ -35,6 +35,23 @@ export function createTicketTakeoverCompletionService({pool,query,controlService
 }&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
+  async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016TakeoverCompletionAcknowledgement>{
+    guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+    if(!await staffCompletionSchemaReady(pool))failP2016('STAFF_COMPLETION_UNAVAILABLE',503);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+      // Original actor/Ticket/UUID/purpose, plus current READ. Never load private command/result snapshots.
+      const selected=await transaction.query<{state:string;version:unknown;event:unknown;control:unknown;error:unknown;retryable:unknown;cycle_id:unknown;cycle_no:unknown}>(`SELECT r.state,r.result_ticket_version AS version,r.result_ticket_event_id::text AS event,r.result_control_event_id::text AS control,r.error_code AS error,r.retryable,
+        c.id::text AS cycle_id,c.cycle_no FROM pilot_ticket.ticket_command_receipt r LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.staff_completion_event_id=r.result_ticket_event_id AND c.ticket_id=r.ticket_id
+        WHERE r.command_scope=$1 AND r.client_command_id=$2::uuid AND r.ticket_id=$3::uuid AND r.actor_principal_id=$4::uuid
+          AND r.command_type='WORKBENCH_TICKET_TAKEOVER_COMPLETION' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId,principal.principal_id]);
+      const row=selected.rows[0];if(!row||row.state==='STARTED')return {state:'UNKNOWN'};
+      if(row.state==='FAILED'&&row.retryable===false)return {state:'FAILED',error:{code:codeP2016(row.error),retryable:false}};
+      if(row.state==='COMMITTED'&&row.control===null)return {state:'COMMITTED',ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event),
+        completion:{cycle_id:uuidP2016(row.cycle_id),cycle_no:versionP2016(row.cycle_no),event_id:uuidP2016(row.event),basis:'STAFF_COMPLETED'}};
+      failP2016('ACTION_FAILED',503);
+    });
+  },
   async targets({authContext,ticketId,resolverTeamId=null}:{authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}){
     guardP2016(enabled);if(!await staffCompletionSchemaReady(pool))failP2016('STAFF_COMPLETION_UNAVAILABLE',503);
     const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
