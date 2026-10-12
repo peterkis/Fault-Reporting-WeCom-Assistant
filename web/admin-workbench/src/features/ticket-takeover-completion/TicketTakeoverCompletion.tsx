@@ -2,7 +2,6 @@ import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016TakeoverCompletionCommand} from '../../api/client';
-import type {P2016TakeoverCompletionSession} from '../../../../../contracts/p2_016_takeover_completion_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 import {useTakeoverCompletionDraft,EMPTY_TAKEOVER_COMPLETION} from './use-takeover-completion-draft';
 import type {TakeoverCompletionInput} from './use-takeover-completion-draft';
