@@ -532,6 +532,7 @@
     {"path":"tests/yxx-ss-010-contract.test.mjs","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/yxx-ss-010-runtime.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/wbint-t28-investigating.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t10-vendor-resume.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t10-waiting.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t10-waiting.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false}
   ],
@@ -834,6 +835,7 @@
       "tests/t20-staff-recovery-first.browser.test.mts",
       "tests/t20-staff-hint-first.browser.test.mts",
       "tests/t21-bot-feedback-pc-happy.browser.test.mts",
+      "tests/t10-vendor-resume.integration.test.mts",
       "tests/t10-waiting.integration.test.mts",
       "tests/t10-waiting.browser.test.mts"
     ],
