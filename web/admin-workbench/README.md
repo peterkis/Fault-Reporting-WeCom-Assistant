@@ -68,6 +68,6 @@ purpose=staff-completion复用T03公共加密store和共享useAuthorizedDraft，
 
 ## 后继本人跨团队接管（WBINT-T07，默认关闭）
 
-宿主`ticketTakeoverEnabled=false`独立装配600px详情表单。只按当前READ和活动业务权限读取本人真实有效组，多组明确选择；处理人由服务器派生为本人。ADR0031默认同时接管沟通，但不预选Session；独立“本次接管的沟通责任”决定本次POST，原T04/T05表单只在其当前动作可用时显示。仅接管保留合法当前状态／原可空轮次，一步开始用单POST与原Core合法原子动作，不在浏览器串联命令。
+宿主`ticketTakeoverEnabled=false`独立装配600px详情表单。只按当前READ和活动业务权限读取本人真实有效组，多组明确选择；处理人由服务器派生为本人。ADR0031默认同时接管沟通，但不预选Session；独立“本次接管的沟通责任”决定本次POST，原T04/T05恢复控制器保持挂载，无可用新动作且无原intent/result/input或opaque时只隐藏闲置呈现。仅接管保留合法当前状态／原可空轮次，一步开始用单POST与原Core合法原子动作，不在浏览器串联命令。
 
 purpose= ticket-takeover复用T03密文store；原动作、UUID、版本、组与逐Session版本冻结。503隐藏未经核验的恢复选择并保留密文，首次授权临时失败仍可按opaque原UUID显式只读核对；终态按原revision清理，未初始化的表单要求重新读取。raw关闭不创建恢复库，只显式重放内存原POST。丢弃仅清本用途，真实本地会话退出清主体副本，迟到解密／POST／ACK不复活私有视图。[API与关闭方式](../../docs/api/workbench/tickets.md#跨团队本人接管wbint-t07-source)／[本票实际证据](../../plans/admin-workbench-integration/execution/t07.md)。
