@@ -21,7 +21,7 @@ test('formal production detail requires explicit SELF group, separate blank publ
   const requests:RequestFact[]=[],observe=(request:IncomingMessage,response:ServerResponse)=>{
    if(!request.headers.cookie?.includes(cookie.name+'='+cookie.value))return;const path=new URL(request.url??'/',f.origin).pathname;if(!path.startsWith('/api/'))return;
    const fact:RequestFact={order:requests.length,method:request.method??'',path,status:null,body:null,idempotency:request.headers['idempotency-key'],if_match:request.headers['if-match'],csrf:typeof request.headers['x-csrf-token']==='string',origin:request.headers.origin===f.origin};requests.push(fact);response.once('finish',()=>{fact.status=response.statusCode;});
-   if(fact.method==='POST'){const chunks:Buffer[]=[];request.on('data',(chunk:unknown)=>{if(Buffer.isBuffer(chunk))chunks.push(chunk);});request.once('end',()=>{try{fact.body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fact.body=null;}});}
+   if(fact.method==='POST'){request.pause();const chunks:Buffer[]=[];request.on('data',(chunk:unknown)=>{if(Buffer.isBuffer(chunk))chunks.push(chunk);});request.once('end',()=>{try{fact.body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fact.body=null;}});}
   };
   const directory=join(tmpdir(),'t12-ui-'+randomUUID());await mkdir(directory);const screenshots:{file:string;width:number;height:number;sha256:string}[]=[];let browser:Browser|undefined,primary:unknown;
   f.runtime.server.on('request',observe);
