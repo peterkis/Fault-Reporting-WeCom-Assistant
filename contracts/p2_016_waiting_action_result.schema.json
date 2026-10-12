@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_waiting_action_result.schema.json",
+  "title":"Committed waiting, resume or cancellation result without internal reason",
+  "type":"object","additionalProperties":false,
+  "required":["ok","ticket_id","ticket_version","ticket_event_id","control_event_id","replayed","handling_cycle_id"],
+  "properties":{
+    "ok":{"const":true},
+    "ticket_id":{"type":"string","format":"uuid"},
+    "ticket_version":{"type":"integer","minimum":1,"maximum":2147483647},
+    "ticket_event_id":{"type":"string","format":"uuid"},
+    "control_event_id":{"type":"null"},
+    "replayed":{"type":"boolean"},
+    "handling_cycle_id":{"type":["string","null"],"format":"uuid"}
+  }
+}
