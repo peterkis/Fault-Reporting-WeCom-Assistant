@@ -156,6 +156,18 @@ NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先�
 
 核对测试：[HTTP integration](../../../tests/p2-016-workbench-http.integration.test.mjs)、[auth integration](../../../tests/p2-016-workbench-auth.integration.test.mjs)、[T04](../../../tests/t04-self-handling.integration.test.mjs)。背景：[生命周期与双责任](../../59_p2_016_ticket_lifecycle_and_responsibility.md)。本票仅显式增加039轮次结构；生产权限未改变。
 
+## 同事接管并工作人员完工（WBINT-T12 SOURCE）
+
+实现状态：**PLANNED／SOURCE候选／所有native NOT_RUN**，尚无新handler或React实现。原T07/T11已实现合同保持；[本票原七项](../../../plans/admin-workbench-integration/execution/t12.md)及独立[command](../../../contracts/p2_016_takeover_completion_command.schema.json)、[result](../../../contracts/p2_016_takeover_completion_result.schema.json)、[targets](../../../contracts/p2_016_takeover_completion_targets.schema.json)、[safeACK](../../../contracts/p2_016_takeover_completion_receipt.schema.json)、[DTS](../../../contracts/p2_016_takeover_completion_contracts.d.ts)为后续WHOLE冻结输入，不将候选加入已实现endpoint索引。
+
+W候选`POST /api/tickets/{ticketId}/takeover-and-complete`，`ticketTakeoverCompletionEnabled=false`。闭合十字段client_command_id/expected_version/reason_code=STAFF_COMPLETED/resolver_team_id/handling_cycle_id/communication_choice/sessions/internal_process/external_summary/external_summary_confirmed=true；UUID/整数1..2147483647/CODE沿现有guard，RETAIN_CURRENT必须[]，TAKE_SELECTED为1..8个规范去重Session+各原版本。单body32KiB，Origin/CSRF/Idempotency-Key=UUID/If-Match=原Ticket版本；拒绝actor、target、force及额外字段。默认同时沟通但不预选组/Session；用户明确选真实本人组及关联对象或保留。内部过程≤2000与独立空白公开摘要≤500分离，预览确认，编辑/恢复后重确认。
+
+前态仅T11合法IN_PROGRESS、WAITING_REQUESTER/VENDOR及有效当前未结束cycle/首次责任依据；等待态同事务resume→complete。不能隐式start、回填cycle或以Requester确认关闭。当前Ticket/worker/旧scope/真实SELF目标组/每Session关系、READ/Control、版本及authority锁均重验至commit。一次UUID、一个WORKBENCH_TICKET_TAKEOVER_COMPLETION ledger/callerTx覆盖Control/transfer/StaffClosed/追加事件/cycle/end/040通知承诺及安全投影，失败全回滚；不嵌套T07/T11两个perform/receipt，不串两个POST。039/040复用，无新SQL；承诺沿T24原source Outbox/Delivery，不直接发送或重复同轮FIRST。
+
+候选`GET /api/tickets/{ticketId}/takeover-completion-targets?resolver_team_id=CODE`返回SELF实际活动组≤100/所选组/合法action，100外明确组独立核验。候选`GET /api/tickets/{ticketId}/takeover-completion/commands/{commandId}`仅空query与本能力&&raw recovery、当前READ+原actor/Ticket/UUID/purpose，最小UNKNOWN/COMMITTED Ticket/版本/event/STAFF_COMPLETED basis或FAILED稳定code/retryable:false，无原body/文案/组/人/Session，不读result_snapshot。200新POST结果仅安全Ticket/event/cycle basis、显式沟通choice及所选Session版本/Control结果；不是Reporter恢复确认或已送达。
+
+401/403/404清可信scope；409保留独立输入、fresh GET后明确新意图；网络/畸形/未知冻结原UUID/body/version/cycle，零自动POST；原pending/opaque在动作消失后controller继续挂载，仅隐藏闲置新提交。purpose=ticket-takeover-completion复用T03 AES-GCM/24h/20份/16KiB/500ms、当前授权及generation/revision fence，不另建store/epoch。关闭flag拒绝新操作并保留已提交责任/关闭/历史/receipt/Outbox承诺。缺039/040开启时503先于receipt；所有行为仍待真实WHOLE RED→GREEN。
+
 ## 工作人员完工（WBINT-T11）
 
 W 的 `POST /api/tickets/{ticketId}/complete` 使用宿主 `ticketStaffCompletionEnabled:boolean=false`。启用前显式安装039与前向040；关闭时隐藏并拒绝新完工入口，不读取040的新字段或承诺表，旧 resolve/confirm 和旧 Pilot profile 保留。缺少任一迁移时 readiness 与新命令返回503，不插入命令receipt。[输入 Schema](../../../contracts/p2_016_completion_command.schema.json)、[安全结果 Schema](../../../contracts/p2_016_completion_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[本票执行](../../../plans/admin-workbench-integration/execution/t11.md)。
