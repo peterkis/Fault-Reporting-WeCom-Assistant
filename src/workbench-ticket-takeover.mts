@@ -1,5 +1,6 @@
-import type {PostgresPool} from './platform/postgres-pool.mjs';
-import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
+import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
+import type {P2016TicketQuery,P2016TicketRow} from './p2-016-ticket-query.mjs';
+import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
@@ -17,6 +18,15 @@ export interface TicketTakeoverCommand {
   resolver_team_id:string;communication_choice:'RETAIN_CURRENT'|'TAKE_SELECTED';sessions:{session_id:string;expected_row_version:number}[];
 }
 const TRANSFER_STATES=['QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'];
+export async function takeoverAllowedActions(transaction:PostgresTransaction,principal:WorkbenchPrincipal,ticket:P2016TicketRow,selectedTeam:string|null=null):Promise<TicketTakeoverCommand['action'][]>{
+  if(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))||!TRANSFER_STATES.includes(ticket.status)||ticket.assignee_id===null)return [];
+  const changed=await transaction.query(`SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id JOIN pilot_ticket.pilot_principal p ON p.id=m.principal_id
+    WHERE p.id=$1::uuid AND p.is_active AND rt.is_active AND ($2::text IS NULL OR m.team_id=$2)
+      AND ($3::uuid<>p.id OR m.team_id<>$4) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')) LIMIT 1`,[principal.principal_id,selectedTeam,ticket.assignee_id,ticket.resolver_team_id]);
+  if(!changed.rowCount)return [];const cycle=await assignmentCycle(transaction,ticket.id);
+  if(!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)return [];
+  return ['takeover',...(['QUEUED','ACCEPTED'].includes(ticket.status)&&cycle?.first_responsibility_event_id?['takeover-and-start' as const]:[])];
+}
 export function normalizeTicketTakeoverCommand(input:unknown):TicketTakeoverCommand {
   const v=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','resolver_team_id','communication_choice','sessions']);
   if(v.action!=='takeover'&&v.action!=='takeover-and-start'||v.communication_choice!=='RETAIN_CURRENT'&&v.communication_choice!=='TAKE_SELECTED'||!Array.isArray(v.sessions)||v.sessions.length>8)failP2016();
@@ -51,9 +61,7 @@ export function createTicketTakeoverService({pool,query,controlService=null,enab
       const chosen=selected===null?null:(await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name ${own} AND rt.team_id=$2`,[principal.principal_id,selected])).rows[0];
       if(selected!==null&&!chosen)failP2016('TARGET_INVALID',403);
       const teams=chosen&&!groups.rows.some(row=>row.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
-      const available=selected===null?teams:chosen?[chosen]:[];
-      const cycle=await assignmentCycle(transaction,ticket.id);
-      const actions=TRANSFER_STATES.includes(ticket.status)&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(['QUEUED','ACCEPTED'].includes(ticket.status)&&cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
+      const actions=await takeoverAllowedActions(transaction,principal,ticket,selected);
       return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:actions});
     });
   },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){

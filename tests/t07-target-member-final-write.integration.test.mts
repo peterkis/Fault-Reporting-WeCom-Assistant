@@ -1,6 +1,6 @@
-// SOURCE-only next vertical after the protected first has actually run.
-// Intended test-root path: tests/t07-target-member-final-write.integration.test.mts
-// NOT_REGISTERED / NOT_COMPILED / NOT_BUILT / NOT_RUN. No observed RED or GREEN.
+// Activated after the immutable original first reached real RED and GREEN.
+// The original D source draft is preserved; the success snapshot compares only
+// communication.conversations because the enclosing DTO also projects Ticket responsibility.
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';

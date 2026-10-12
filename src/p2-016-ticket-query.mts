@@ -16,6 +16,7 @@ import { failP2016,guardP2016,uuidP2016,codeP2016,limitP2016,localP2016,cursorP2
 
 import {staffCompletionEligibility} from './workbench-ticket-completion.mjs';
 import {assignmentActions,assignmentCycle} from './workbench-ticket-assignment.mjs';
+import {takeoverAllowedActions} from './workbench-ticket-takeover.mjs';
 import {unassignEligible,unassignSchemaReady} from './workbench-ticket-unassign.mjs';
 import {reopenedRoundFollowUp,unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import {selfHandlingEligibility,selfHandlingResponsibilityEligibility,selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
@@ -159,6 +160,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         result=publicP2016({...result,handling_cycle:eligibility.cycle,allowed_actions:[...result.allowed_actions,...(ticketSelfHandlingEnabled?eligibility.actions:[]),...(combined?.actions.map(a=>a+'-with-conversations')??[])]});
       }
       if(ticketAssignmentEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...new Set([...result.allowed_actions,...assignmentActions(p,ticket)])]});}
+      if(ticketTakeoverEnabled){if(!await selfHandlingSchemaReady(pool))failP2016('ASSIGNMENT_UNAVAILABLE',503);result=publicP2016({...result,handling_cycle:await assignmentCycle(pool,ticket.id),allowed_actions:[...new Set([...result.allowed_actions,...await takeoverAllowedActions(pool,p,ticket)])]});}
       if(ticketUnassignEnabled){if(!await unassignSchemaReady(pool))failP2016('UNASSIGN_UNAVAILABLE',503);if(await unassignEligible(pool,p,ticket))result=publicP2016({...result,allowed_actions:[...result.allowed_actions,'unassign']});}
       if(ticketStaffCompletionEnabled){const eligibility=await staffCompletionEligibility(pool,p,ticket),cycle=eligibility.cycle;result=publicP2016({...result,handling_cycle:cycle?{id:cycle.id,cycle_no:cycle.cycle_no,first_responsibility_event_id:cycle.first_responsibility_event_id,staff_completion_event_id:cycle.staff_completion_event_id}:null,allowed_actions:[...result.allowed_actions,...(eligibility.allowed?['complete']:[])]});}
       if(ticket.status==='REOPENED'&&ticket.assignee_id===null&&await unassignedReopenedRound(pool,ticket.id)){
