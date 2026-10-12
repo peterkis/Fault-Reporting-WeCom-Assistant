@@ -3,11 +3,11 @@ import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import type {P2016TakeoverCompletionCommand} from '../contracts/p2_016_takeover_completion_contracts.js';
-import {takeoverTicketInTransaction} from './workbench-ticket-takeover.mjs';
+import {takeoverTicketInTransaction,takeoverAllowedActions} from './workbench-ticket-takeover.mjs';
 import {completeTicketInTransaction,staffCompletionEligibility,staffCompletionSchemaReady} from './workbench-ticket-completion.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 
 type TakeoverCompletionCommand=Omit<P2016TakeoverCompletionCommand,'communication_choice'|'sessions'>&{
   action:'takeover-and-complete';ticket_id:string;communication_choice:'RETAIN_CURRENT'|'TAKE_SELECTED';
@@ -34,7 +34,28 @@ export function createTicketTakeoverCompletionService({pool,query,controlService
   controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeResponsibilityInTransaction'>|null;
 }&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
-  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
+  return Object.freeze({
+  async targets({authContext,ticketId,resolverTeamId=null}:{authContext:unknown;ticketId:unknown;resolverTeamId?:unknown}){
+    guardP2016(enabled);if(!await staffCompletionSchemaReady(pool))failP2016('STAFF_COMPLETION_UNAVAILABLE',503);
+    const selected=resolverTeamId===null?null:codeP2016(resolverTeamId);
+    return transactionP2016(pool,async transaction=>{
+      await transaction.query('SET TRANSACTION READ ONLY');
+      const {ticket,principal}=await query.authorizedTicket({authContext,ticketId,transaction});
+      if(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+      const own=`FROM pilot_ticket.resolver_team rt WHERE rt.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member m WHERE m.team_id=rt.team_id AND m.principal_id=$1::uuid)`;
+      const groups=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name ${own} ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
+      const chosen=selected===null?null:(await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name ${own} AND rt.team_id=$2`,[principal.principal_id,selected])).rows[0];
+      if(selected!==null&&!chosen)failP2016('TARGET_INVALID',403);
+      const teams=chosen&&!groups.rows.some(team=>team.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
+      const originalGroup=await transaction.query('SELECT 1 FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid AND team_id=$2 LIMIT 1',[principal.principal_id,ticket.resolver_team_id]);
+      const operational=principal.roles.some(role=>['ADMIN','DISPATCHER'].includes(role))||ticket.assignee_id===principal.principal_id||Boolean(originalGroup.rowCount);
+      const {cycle}=await staffCompletionEligibility(transaction,principal,ticket);
+      const canTransfer=(await takeoverAllowedActions(transaction,principal,ticket,selected)).includes('takeover');
+      const permitted=operational&&canTransfer&&['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'].includes(ticket.status)
+        &&cycle!==null&&cycle.first_responsibility_event_id!==null&&cycle.staff_completion_event_id===null&&cycle.source_intake_id===ticket.intake_id;
+      return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:permitted?['takeover-and-complete' as const]:[]});
+    });
+  },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeTakeoverCompletionCommand(input);
     if(!await staffCompletionSchemaReady(pool))failP2016('STAFF_COMPLETION_UNAVAILABLE',503);
     return ledger.execute({command,receiptType:'WORKBENCH_TICKET_TAKEOVER_COMPLETION',authorize:async transaction=>{

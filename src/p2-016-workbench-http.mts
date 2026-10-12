@@ -46,6 +46,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       if(returnReceipt){if(!returnToDispatchAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await returnToDispatchAcknowledgement({authContext,ticketId:returnReceipt[1],commandId:returnReceipt[2]}));return true;}
       const takeoverReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/takeover\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(takeoverReceipt){if(!takeover)failP2016('DISABLED',503);guardP2016(workbenchDraftRecoveryEnabled);queryKeys(url,[]);json(response,200,await takeover.acknowledgement({authContext,ticketId:takeoverReceipt[1],commandId:takeoverReceipt[2]}));return true;}
+      const completionTargets=/^\/api\/tickets\/([0-9a-f-]{36})\/takeover-completion-targets$/iu.exec(url.pathname);
+      if(completionTargets){if(!takeoverCompletion)failP2016('DISABLED',503);queryKeys(url,['resolver_team_id']);if(url.searchParams.getAll('resolver_team_id').length>1)failP2016();json(response,200,await takeoverCompletion.targets({authContext,ticketId:completionTargets[1],resolverTeamId:url.searchParams.get('resolver_team_id')}));return true;}
       const takeoverTargets=/^\/api\/tickets\/([0-9a-f-]{36})\/takeover-targets$/iu.exec(url.pathname);
       if(takeoverTargets){if(!takeover)failP2016('DISABLED',503);queryKeys(url,['resolver_team_id']);json(response,200,await takeover.targets({authContext,ticketId:takeoverTargets[1],resolverTeamId:url.searchParams.get('resolver_team_id')}));return true;}
       const followUpReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/follow-up-schedule\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
