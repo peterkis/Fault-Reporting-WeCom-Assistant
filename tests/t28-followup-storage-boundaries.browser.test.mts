@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
-import {prepareFollowup,confirmIncident,navigateFollowup,chooseFollowup,rows} from './helpers/t28-followup-source-fixture.mjs';
+import {prepareFollowup,confirmIncident,navigateFollowup,chooseFollowup,rows,submitFollowup,observeFollowupPosts,personalSnapshots} from './helpers/t28-followup-source-fixture.mjs';
 
 test('T28 purpose-only denial fences a held native encryption and preserves a separate still-authorized Incident draft',{timeout:240000},async()=>{
   await candidateBrowser({purpose:'t28latestore',reporters:6,recovery:true},async context=>{
@@ -31,5 +32,54 @@ test('T28 an actual UNKNOWN receipt permits only explicit replay with the origin
     const {http,id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
     await context.browser.evaluate(`(()=>{const send=fetch;globalThis.__t28Attempts=[];globalThis.fetch=async(input,options)=>{if(options?.method==='POST'&&String(input)===${JSON.stringify(path+'/correct-scope')}){const h=new Headers(options.headers);globalThis.__t28Attempts.push({body:options.body,key:h.get('idempotency-key'),version:h.get('if-match')});if(globalThis.__t28Attempts.length===1)throw new TypeError('T28_CONTROLLED_NO_WIRE');}return send(input,options);};})()`);await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');assert.equal((await http.get(path)).row_version,'1');assert.equal(rows(await context.browser.evaluate('globalThis.__t28Attempts')).length,1);
     await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-action=replay-incident-operation]"))');assert.equal((await http.get(path)).row_version,'1');assert.equal(rows(await context.browser.evaluate('globalThis.__t28Attempts')).length,1);await context.browser.evaluate('document.querySelector("[data-action=replay-incident-operation]").click()');await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("已提交")');const attempts=rows(await context.browser.evaluate('globalThis.__t28Attempts'));assert.equal(attempts.length,2);assert.deepEqual(attempts[1],attempts[0]);assert.equal((await http.get(path)).row_version,'2');assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);
+  });
+});
+
+test('T28 a clean committed result permits an explicit next intent in the same mounted detail with a fresh UUID and current version',{timeout:240000},async()=>{
+  await candidateBrowser({purpose:'t28nextintent',reporters:3,recovery:true},async context=>{
+    const {http,id,path}=await prepareFollowup(context),before=await personalSnapshots(http,context.f.reports);
+    await navigateFollowup(context,id);await observeFollowupPosts(context.browser);
+    await submitFollowup(context,id,'START_INVESTIGATING','OPERATOR_REVIEWED',[],'2');
+    await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("已提交")');
+    assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);
+    assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=new-incident-intent]"))'),true,'known clean settlement offers an explicit next intent');
+    for(const [action,reason,version] of [['RESOLVE_INCIDENT','RECOVERY_CONFIRMED','3'],['CLOSE_INCIDENT','CLOSURE_CONFIRMED','4']] as const){
+      await context.browser.evaluate('document.querySelector("[data-action=new-incident-intent]").click()');
+      assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=公共故障操作]").value'),'');
+      assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=决定原因]").value'),'');
+      const count=rows(await context.browser.evaluate('globalThis.__t28Posts')).length;
+      await submitFollowup(context,id,action,reason,[],version);
+      assert.equal(rows(await context.browser.evaluate('globalThis.__t28Posts')).length,count+1,'new intent does not autoPOST');
+      assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);
+    }
+    const posts=rows(await context.browser.evaluate('globalThis.__t28Posts')),bodies=posts.map(post=>record(JSON.parse(text(post.body))));
+    assert.equal(posts.length,3);assert.equal(new Set(bodies.map(body=>body.client_command_id)).size,3);
+    assert.deepEqual(bodies.map(body=>body.expected_row_version),['1','2','3']);
+    assert.deepEqual(posts.map(post=>post.if_match),['"1"','"2"','"3"']);
+    assert.ok(posts.every((post,index)=>post.idempotency_key===bodies[index]?.client_command_id));
+    assert.equal((await http.get(path)).status,'CLOSED');assert.deepEqual(await personalSnapshots(http,context.f.reports),before);
+  });
+});
+
+test('T28 an original UNKNOWN replay reaches the existing ledger after a competing version advance and settles stable FAILED without a new intent',{timeout:240000},async()=>{
+  await candidateBrowser({purpose:'t28replayrace',reporters:3,recovery:true},async context=>{
+    const {http,id,path}=await prepareFollowup(context);await navigateFollowup(context,id);
+    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+    await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
+    await context.browser.evaluate(`(()=>{const send=fetch;globalThis.__t28Attempts=[];globalThis.fetch=async(input,options)=>{if(options?.method==='POST'&&String(input)===${JSON.stringify(path+'/correct-scope')}){const h=new Headers(options.headers);globalThis.__t28Attempts.push({body:options.body,key:h.get('idempotency-key'),version:h.get('if-match')});if(globalThis.__t28Attempts.length===1)throw new TypeError('T28_CONTROLLED_NO_WIRE');}return send(input,options);};})()`);
+    await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');
+    await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');const original=record(rows(await context.browser.evaluate('globalThis.__t28Attempts'))[0]),body=record(JSON.parse(text(original.body)));
+    assert.equal((await http.get(path)).row_version,'1');
+    await http.post(path+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
+    const events=rows((await http.get(path+'/events?limit=200')).items);assert.equal((await http.get(path)).row_version,'2');
+    assert.equal((await http.get(path+'/commands/'+text(body.client_command_id))).state,'UNKNOWN');
+    await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-action=replay-incident-operation]"))');
+    assert.equal(rows(await context.browser.evaluate('globalThis.__t28Attempts')).length,1);
+    await context.browser.evaluate('document.querySelector("[data-action=replay-incident-operation]").click()');
+    await context.browser.waitFor('(()=>{const text=document.querySelector("[data-incident-outcome]")?.textContent??"";return text.includes("原操作已明确失败")||text.includes("尚未重放");})()');
+    const attempts=rows(await context.browser.evaluate('globalThis.__t28Attempts'));assert.equal(attempts.length,2,'explicit original replay reaches the real ledger despite newer parent facts');assert.deepEqual(attempts[1],original);
+    assert.deepEqual(await http.get(path+'/commands/'+text(body.client_command_id)),{incident_id:id,client_command_id:body.client_command_id,state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}});
+    assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-incident-unknown]"))'),false);
+    assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=确认范围]").value'),'BUILDING');assert.equal((await http.get(path)).row_version,'2');assert.deepEqual(rows((await http.get(path+'/events?limit=200')).items),events);
   });
 });
