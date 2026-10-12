@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_assignment_history_page.schema.json",
+    "contracts/p2_016_assignment_history_contracts.d.ts",
     "contracts/p2_016_takeover_command.schema.json",
     "contracts/p2_016_takeover_result.schema.json",
     "contracts/p2_016_takeover_targets.schema.json",

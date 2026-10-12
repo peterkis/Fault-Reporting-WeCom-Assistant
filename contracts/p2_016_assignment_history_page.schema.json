@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_016_assignment_history_page.schema.json",
+  "title": "WBINT-T13 proposed safe assignment history page — NOT_MOUNTED",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ticket_id",
+    "initial_basis",
+    "items",
+    "next_cursor"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "ticket_id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "initial_basis": {
+      "enum": [
+        "RECORDED",
+        "UNKNOWN"
+      ]
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/history_item"
+      }
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "name_proof": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "name"
+          ],
+          "properties": {
+            "state": {
+              "const": "KNOWN"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "NONE"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        }
+      ]
+    },
+    "responsibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "person",
+        "team"
+      ],
+      "properties": {
+        "person": {
+          "$ref": "#/$defs/name_proof"
+        },
+        "team": {
+          "$ref": "#/$defs/name_proof"
+        }
+      }
+    },
+    "cycle": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "cycle_no"
+          ],
+          "properties": {
+            "state": {
+              "const": "KNOWN"
+            },
+            "cycle_no": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        }
+      ]
+    },
+    "communication_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "control_event_id",
+        "occurred_at",
+        "actor",
+        "previous",
+        "next"
+      ],
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "control_event_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "occurred_at": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "actor": {
+          "$ref": "#/$defs/name_proof"
+        },
+        "previous": {
+          "$ref": "#/$defs/name_proof"
+        },
+        "next": {
+          "$ref": "#/$defs/name_proof"
+        }
+      }
+    },
+    "history_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticket_event_id",
+        "event_ordinal",
+        "kind",
+        "occurred_at",
+        "actor",
+        "handling_cycle",
+        "previous",
+        "next",
+        "communication"
+      ],
+      "properties": {
+        "ticket_event_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "event_ordinal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "enum": [
+            "FIRST_RESPONSIBILITY",
+            "RESPONSIBILITY_CHANGE"
+          ]
+        },
+        "occurred_at": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "actor": {
+          "$ref": "#/$defs/name_proof"
+        },
+        "handling_cycle": {
+          "$ref": "#/$defs/cycle"
+        },
+        "previous": {
+          "$ref": "#/$defs/responsibility"
+        },
+        "next": {
+          "$ref": "#/$defs/responsibility"
+        },
+        "communication": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/communication_change"
+          }
+        }
+      }
+    }
+  }
+}
+

@@ -305,3 +305,10 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 ## 原H5与核实代录应用轮次通知（WBINT-T25）
 
 原 GET deliveries 沿当前 Ticket READ，可返回 PERSON 的 route_kind=YIXIAOXIU_APP；同轮FIRST/完工、各路成功/失败/UNKNOWN均独立。正式管理端仅显示安全状态，不能从投影推断外部送达。恢复仍用原 retry/reconcile、当前权限和原UUID/hash，不增加客户端SDK或HTTP发送入口。配置、SDK、本人详情、安全字段与关闭历史读取见[应用通知合同](app-notifications.md)；[本地执行](../../../plans/admin-workbench-integration/execution/t25.md)保留逐祖先证据和未运行现场边界。
+
+## WBINT-T13 安全责任链候选（SOURCE / PROPOSED_NOT_MOUNTED）
+
+候选 `GET /api/tickets/{ticketId}/assignment-history` 和 additive read Query interface 已在 [T13 SOURCE 合同](../../../plans/admin-workbench-integration/execution/t13.md)冻结；本节不表示该路径、生产查询或正式视图已挂载。独立 [闭合 Page Schema](../../../contracts/p2_016_assignment_history_page.schema.json) / [类型](../../../contracts/p2_016_assignment_history_contracts.d.ts) 保持原 P2-016/Incident 合同及 SQL。
+
+候选仅当前 Ticket READ，逐 Session 独立 VIEW 在 LIMIT 前裁剪；default20/max100、稳定 event ordinal cursor、名称/前任/轮次明确 KNOWN/NONE/UNKNOWN，缺初始事实不得用当前负责人回填。真实 Ticket/cycle/Control 及原 composite references 提供事实，返回安全显示而非 private receipt dump。原首例源码已登记，全部 runtime NOT_RUN，原七项 PENDING。候选配置 `workbenchAssignmentHistoryEnabled=false` 尚未装配；无数据库变更、无新事实表/权限，详见 own SOURCE 合同。
+
