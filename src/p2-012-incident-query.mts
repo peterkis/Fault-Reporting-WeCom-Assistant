@@ -1,6 +1,6 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { WorkbenchPrincipal, WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
-import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt } from '../contracts/p2_012_contracts.js';
+import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt,IncidentFollowupReceipt } from '../contracts/p2_012_contracts.js';
 type Kind = 'candidate' | 'incident';
 export type CandidateQueryRow = Omit<CandidateReview, 'source_versions' | 'reason_codes' | 'evidence_fact_ids' | 'roles' | 'source_decision' | 'manual_review' | 'eligible_owners' | 'report_sources'> & { source_versions: unknown; reason_codes: unknown; evidence_fact_ids: unknown };
 type ResourceRow = CandidateQueryRow | Incident;
@@ -45,6 +45,30 @@ export function createP2012IncidentQuery({pool,enabled=false,allowDispatcherCamp
   }
   const publicIncident=(r: Incident): IncidentPublicView=>Object.fromEntries(['id','incident_no','status','confirmed_scope','service_family','symptom_family','severity','safe_title','row_version','confirmed_at','investigating_at','resolved_at','closed_at','created_at','updated_at'].map(k=>[k,r[k as keyof Incident]])) as IncidentPublicView;
   return Object.freeze({principal,resource,source,
+    async incidentCommandReceipt({authContext,id,commandId}:{authContext:unknown;id:string;commandId:string}):Promise<IncidentFollowupReceipt>{
+      const {principal:p,row}=await resource({authContext,id,kind:'incident'}),clientId=uuid(commandId),base={incident_id:row.id,client_command_id:clientId};
+      if(!broad(p)&&!p.roles.includes('HANDLER'))fail('FORBIDDEN',403);
+      // Only identity metadata is read first. Original-purpose authorization
+      // precedes every outcome read from the existing principal-bound ledger.
+      const identity=(await pool.query<{id:string;command_type:string;incident_report_id:string|null}>(`SELECT id::text,command_type,incident_report_id::text FROM incident.command_receipt
+        WHERE command_scope=$1 AND client_command_id=$2::uuid AND actor_principal_id=$3::uuid AND incident_id=$4::uuid
+        AND command_type IN ('START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT')`,['P2_012:'+p.principal_id,clientId,p.principal_id,row.id])).rows[0];
+      // An absent command has no recorded purpose or outcome. UNKNOWN grants
+      // no right to replay: a POST always rechecks its actual action and target.
+      if(!identity)return frozen({...base,state:'UNKNOWN'});
+      if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(identity.command_type)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
+      if(!broad(p)){
+        if(identity.command_type!=='MARK_REPORTER_RECOVERED'||!identity.incident_report_id)fail('FORBIDDEN',403);
+        const target=await pool.query('SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.id=$1::uuid AND r.incident_id=$2::uuid AND t.assignee_id=$3::uuid',[identity.incident_report_id,row.id,p.principal_id]);
+        if(target.rowCount!==1)fail('FORBIDDEN',403);
+      }
+      const receipt=(await pool.query<{state:string;result_ref_type:string|null;result_ref_id:string|null;result_row_version:string|null;result_event_id:string|null;error_code:string|null;retryable:boolean|null}>(`SELECT state,result_ref_type,result_ref_id::text,result_row_version::text,result_event_id::text,error_code,retryable
+        FROM incident.command_receipt WHERE id=$1::uuid AND command_scope=$2 AND client_command_id=$3::uuid AND incident_id=$4::uuid AND actor_principal_id=$5::uuid`,[identity.id,'P2_012:'+p.principal_id,clientId,row.id,p.principal_id])).rows[0];
+      if(!receipt||receipt.state==='STARTED')return frozen({...base,state:'UNKNOWN'});
+      if(receipt.state==='FAILED'){if(!receipt.error_code||!ERROR_CODES.includes(receipt.error_code)||receipt.retryable!==false)fail('COMMAND_FAILED',503);return frozen({...base,state:'FAILED',error:{code:receipt.error_code,retryable:false}});}
+      if(receipt.state!=='COMMITTED'||receipt.result_ref_type!=='INCIDENT'||receipt.result_ref_id!==row.id||!receipt.result_row_version||!receipt.result_event_id)fail('COMMAND_FAILED',503);
+      return frozen({...base,state:'COMMITTED',result:{ok:true,result_ref_type:'INCIDENT',result_ref_id:row.id,result_row_version:version(receipt.result_row_version),result_event_id:uuid(receipt.result_event_id),replayed:true}});
+    },
     async candidateCommandReceipt({authContext,id,commandId}: {authContext:unknown;id:string;commandId:string}):Promise<CandidateCommandReceipt>{
       // Current object and purpose authority precede every principal-scoped ledger read.
       const {principal:p,row}=await resource({authContext,id,kind:'candidate'});

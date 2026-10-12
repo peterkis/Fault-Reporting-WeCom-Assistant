@@ -13,11 +13,12 @@ export function createP2012WorkbenchHttp({query,commands,enabled=false,candidate
     const candidate=url.pathname.startsWith('/api/incident-candidates'),root=candidate?'/api/incident-candidates':'/api/incidents',kind=candidate?'candidate':'incident';
     const suffix=url.pathname.slice(root.length),match=/^\/([a-f0-9-]{36})(?:\/(.*))?$/iu.exec(suffix);
     if(request.method==='GET'){
-      const receipt=candidate&&match?/^commands\/([a-f0-9-]{36})$/iu.exec(match[2]??''):null;
+      const receipt=match?/^commands\/([a-f0-9-]{36})$/iu.exec(match[2]??''):null;
       if(receipt&&match){
         if(!candidateWorkspaceEnabled)fail('NOT_FOUND',404);
         if(url.search)fail();
-        json(response,200,await query.candidateCommandReceipt({authContext,id:match[1] as string,commandId:receipt[1] as string}));return true;
+        const input={authContext,id:match[1] as string,commandId:receipt[1] as string};
+        json(response,200,candidate?await query.candidateCommandReceipt(input):await query.incidentCommandReceipt(input));return true;
       }
       if([...url.searchParams.keys()].some(k=>!['state','cursor','limit'].includes(k)))fail();
       let result: { row_version?: unknown } & Record<string, unknown>;
