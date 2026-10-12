@@ -57,7 +57,7 @@ for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed
       }
     });}catch(error){observedFailure=error;}finally{context.runtime.server.removeListener('request',observe);}
     if(cleanupMode==='primary-and-cleanup-failed'){
-      const errors=errorMessages(observedFailure);console.log('T10_DOUBLE_FAILURE_STAGE '+JSON.stringify({errors,evidence:errorEvidence(observedFailure)}));try{assert.ok(errors.includes('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK'),'cleanup must preserve the original body failure');assert.ok(errors.includes('P2_006_BROWSER_DISCONNECTED'));assert.deepEqual(new Set(errors),new Set(['T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK','P2_006_BROWSER_DISCONNECTED']));}catch(error){throw new AggregateError([observedFailure,error],'T10_ORIGINAL_FAILURE_AND_SECONDARY_CHECK_FAILED');}
+      try{const errors=errorMessages(observedFailure);console.log('T10_DOUBLE_FAILURE_STAGE '+JSON.stringify({errors,evidence:errorEvidence(observedFailure)}));assert.ok(errors.includes('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK'),'cleanup must preserve the original body failure');assert.ok(errors.includes('P2_006_BROWSER_DISCONNECTED'));assert.deepEqual(new Set(errors),new Set(['T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK','P2_006_BROWSER_DISCONNECTED']));}catch(error){throw new AggregateError([observedFailure,error],'T10_ORIGINAL_FAILURE_AND_SECONDARY_CHECK_FAILED');}
     }else if(observedFailure)throw observedFailure;
   });
 });
