@@ -67,7 +67,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
           if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
-          if(ticketStaffCompletionEnabled||ticketReopenRoundsEnabled){
+          if(ticketStaffCompletionEnabled||ticketReopenRoundsEnabled||cycleAware){
             // Completion and existing commands must take the same stream mutex before receipt FK locks.
             if(realtimeProjector?.lock)await realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
             context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
@@ -77,7 +77,8 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             if(q.rowCount!==1||(q.rows[0] as (typeof q.rows)[number]).service_intake_id!==context.ticket.intake_id)failP2016('NOT_FOUND',404);
           }return context;
         },
-        run:async(transaction,{principal,ticket:authorizedTicket})=>{
+        run:async(transaction,initial)=>{
+          let {principal,ticket:authorizedTicket}=initial;
           await realtimeProjector?.lock?.(transaction);
           const action=command.action==='takeover-and-accept-ticket'?'accept':command.action;
           if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(authorizedTicket.status))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
@@ -93,6 +94,17 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             if(!control?.ok||control.no_op)failP2016('CONTROL_CONFLICT',409);
           }
           const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
+          if(cycleAware){
+            // The Ticket wait can outlive the initial authorization. Stabilize the
+            // current active role/group rows, then resolve authority again before Core writes.
+            const roles=await transaction.query(`SELECT r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
+              WHERE p.id=$1::uuid AND p.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER') ORDER BY r.role FOR SHARE OF p,r`,[principal.principal_id]);
+            if(!roles.rowCount)failP2016('FORBIDDEN',403);
+            const membership=await transaction.query(`SELECT m.principal_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+              WHERE m.principal_id=$1::uuid AND m.team_id=$2 AND rt.is_active FOR SHARE OF m,rt`,[principal.principal_id,ticket.resolver_team_id]);
+            principal=(await query.authorizedTicket({authContext,ticketId:ticket.id,transaction})).principal;
+            if(!ticketActionAllowedP2016(principal,ticket,action)||!principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!membership.rowCount)failP2016('FORBIDDEN',403);
+          }
           if(command.action==='start'&&ticket.status==='REOPENED'&&ticket.assignee_id===null&&await unassignedReopenedRound(transaction,ticket.id))failP2016('SELF_HANDLING_STATE_CONFLICT',409);
           let result: { ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent };
           let newCycle:{id:string;cycle_no:number;first_responsibility_event_id:null;staff_completion_event_id:null}|null=null;
