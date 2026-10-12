@@ -2,6 +2,8 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
+2026-10-11 WBINT-T21的[Bot本人反馈合同](bot-feedback-design.md)原七项本地隔离实现/验证已完成父独立验收、集成及[#76收口](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)。显式Bot能力在成员写profile增加同事务feedback_context、独立Bootstrap/Recovery/POST/用途Receipt和[typed成员页面](../../../web/admin-workbench/src/bot-feedback.ts)；当前Bot本人READ与原UUID核对不要求Web MY_REPORTS权限。默认Bot/write/raw关闭，Web requestRef不能替代原Bot publicRef。本页只读Reporter职责保持；各真实被测对象、原RED/FAIL及资源结果见[T21记录](../../../plans/admin-workbench-integration/execution/t21.md)，没有发布或现场授权。
+
 调用方：[reporter.js](../../../web/p2-reporter/reporter.js)。有两种互斥访问策略：`MEMBER_REQUIRED`（M/O/W按装配挂载）与显式 `LEGACY_BOUND_GRANT`（W）。W装配还依赖默认false的 `REPORTER_TIMELINE_ENABLED`；独立只读profile通过配置/显式装配启用handler，不直接消费此持久Flag，成员入口/OAuth条件仍适用。实现：[成员handler](../../../src/p2-g2-yixiaoxiu-http.mts)、[旧handler](../../../src/p2-016-reporter-http.mts)、[timeline](../../../src/p2-016-reporter-timeline.mts)、[访问服务](../../../src/p2-016-reporter-access.mts)。
 
 ## 读取与退出
@@ -46,3 +48,7 @@ ETag 命中304无正文；不能当空Ticket重置页面。权限、绑定、有
 
 
 WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF_COMPLETED的ticket.closed追加事件为依据。本人/绑定授权timeline仅展示其已单独确认且≤500字的external_note；internal_note处理过程和普通内部备注仍不可见。不会伪造REPORTER或REQUESTER_CONFIRMED，不生成旧Reporter确认task；legacy RESOLVED-confirm保持原语义。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
+
+## 核实代录原应用本人读取（WBINT-T25）
+
+经核实MANUAL App卡片沿原 publicRef 页面/GET ticket/timeline，当前OAuth成员及对象归属独立验证；精确原 scope/journey、当前有效App通知binding和物理留存共同核验，卡片URL不是授权。匹配App配置保留而enabled=false不阻断本人历史READ；读取不调用发送资格Resolver。MANUAL不进入BOT_TICKET或Bot feedback，内部过程/身份/绑定/SDK回执不公开。H5仍用原requestRef自助读取。完整装配和恢复见[应用通知](../workbench/app-notifications.md)。

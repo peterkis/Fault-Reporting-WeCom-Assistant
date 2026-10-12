@@ -1,12 +1,12 @@
 import {ApiError,UnknownCommandOutcome} from '../../api/client';
 import type {CanonicalItem,ReviewCommand,ReviewCommandResult,ReviewMaterialProjection,ReviewReceipt} from '../../../../../contracts/workbench_review_contracts';
 import {decodeManualReportProjection} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
-import type {ManualReportProjection} from '../../../../../contracts/workbench_manual_report_contracts';
+import type {ManualReportSourceProjection} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 export type {ReviewCommand,ReviewReceipt};
 export const resolutions={CONFIRM_TICKET_ELIGIBLE:'确认为故障，受理工单',CLASSIFY_SERVICE_REQUEST:'确认为服务请求',REQUEST_DESCRIPTION:'请求补充描述',CLASSIFY_BUSINESS_CONSULTATION:'记录业务咨询',ACKNOWLEDGE:'记录确认回应',MARK_OUT_OF_SCOPE:'记录范围外诉求',KEEP_INCIDENT_REVIEW_CANDIDATE:'保留公共故障审核候选',CANCEL_REVIEW:'取消此复核'} as const;
 export type Resolution=keyof typeof resolutions;
 export interface ReviewView extends ReviewMaterialProjection {
-  manual_report?:ManualReportProjection;
+  manual_report?:ManualReportSourceProjection;
   id:string;decision_id:string;service_intake_id:string;review_reason:string;row_version:string;status:'PENDING'|'RESOLVED'|'CANCELLED';canonical_item:CanonicalItem;
   evidence:{result:string;reason:string;known:{field:string;value:string}[];missing:string[];conflicts:{code:string;sources:string[]}[];
     sources:string[];versions:string[];risk:string;provenance:{field:string;value:string;source:string;confidence:string}[];suggestions:{type:string;policy:string}[]};
@@ -40,7 +40,7 @@ function decodeReview(value:unknown,target:string):ReviewView{
   const v=object(value),s=object(v.safe_result),basis=exact(v.material_basis,['source_kind','original_revision','current_revision','original_hash','current_hash','stale','reason']);
   if(uuid(v.id).toLowerCase()!==target.toLowerCase()||(v.status!=='PENDING'&&v.status!=='RESOLVED'&&v.status!=='CANCELLED')
     ||(basis.source_kind!=='BOT'&&basis.source_kind!=='WEB'&&basis.source_kind!=='MANUAL')||!['CURRENT','SOURCE_CHANGED','NEW_CHANNEL_LEG'].includes(text(basis.reason,32)))invalid();
-  let manual:ManualReportProjection|undefined;
+  let manual:ManualReportSourceProjection|undefined;
   if(basis.source_kind==='MANUAL'){try{manual=decodeManualReportProjection(v.manual_report);}catch{invalid();}}
   else if(Object.hasOwn(v,'manual_report'))invalid();
   const stale=flag(basis.stale),reason=basis.reason as ReviewView['material_basis']['reason'];if(stale===(reason==='CURRENT'))invalid();

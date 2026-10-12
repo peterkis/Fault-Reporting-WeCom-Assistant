@@ -3,6 +3,6 @@
   "anyOf":[
     {"type":"object","additionalProperties":false,"required":["client_command_id","state"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"state":{"const":"UNKNOWN"}}},
     {"type":"object","additionalProperties":false,"required":["client_command_id","state","error"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"state":{"const":"FAILED"},"error":{"type":"object","additionalProperties":false,"required":["code","retryable"],"properties":{"code":{"type":"string","pattern":"^P2_016_[A-Z][A-Z0-9_]{0,55}$"},"retryable":{"const":false}}}}},
-    {"type":"object","additionalProperties":false,"required":["client_command_id","state","result"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"state":{"const":"COMMITTED"},"result":{"$ref":"workbench_manual_report_result.schema.json","properties":{"replayed":{"const":true}}}}}
+    {"type":"object","additionalProperties":false,"required":["client_command_id","state","result"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"state":{"const":"COMMITTED"},"result":{"anyOf":[{"$ref":"workbench_manual_report_result.schema.json"},{"$ref":"workbench_verified_manual_report_result.schema.json"}],"properties":{"replayed":{"const":true}}}}}
   ]
 }

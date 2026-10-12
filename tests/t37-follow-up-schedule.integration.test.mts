@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {test} from 'node:test';
+import type {SharedFollowUpCommand} from '../contracts/workbench_follow_up_schedule_contracts.js';
+import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
+import {withT37Fixture,object,rows} from './helpers/t37-follow-up-fixture.mjs';
+
+test('an authorized dispatcher sets one shared next action on an unassigned Ticket and reconciles its original UUID without changing lifecycle or responsibility', {timeout:240000},async()=>{
+  await withT37Fixture(async fixture=>{
+    const ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+    const dispatcher=await fixture.http(0);
+    const beforeResponse=await dispatcher.get(path);assert.equal(beforeResponse.status,200);
+    const before=beforeResponse.value;assert.equal(before.status,'QUEUED');assert.equal(before.assignee_id,null);assert.equal(before.version,1);
+    const responsibilityBefore=await dispatcher.get(path+'/responsibility');assert.equal(responsibilityBefore.status,200);
+    const eventsBefore=await dispatcher.get(path+'/events?limit=200');assert.equal(eventsBefore.status,200);
+    const deliveriesBefore=await dispatcher.get(path+'/deliveries');assert.equal(deliveriesBefore.status,200);
+    const command:SharedFollowUpCommand={client_command_id:randomUUID(),expected_version:1,expected_schedule_version:'0',
+      reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:assertLocalDateTime('2030-01-02 09:30:00')};
+    const result=await dispatcher.post(path+'/follow-up-schedule',command);
+    assert.equal(result.status,200,JSON.stringify(result.value));
+    assert.deepEqual(Object.keys(result.value).sort(),['ok','ticket_id','ticket_version','ticket_event_id','control_event_id','schedule_version','replayed'].sort());
+    assert.equal(result.value.ok,true);assert.equal(result.value.ticket_id,ticketId);assert.equal(result.value.ticket_version,2);
+    assert.equal(result.value.control_event_id,null);assert.equal(result.value.schedule_version,'1');assert.equal(result.value.replayed,false);
+    const scheduleResponse=await dispatcher.get(path+'/follow-up-schedule');assert.equal(scheduleResponse.status,200);
+    const schedule=scheduleResponse.value;
+    assert.deepEqual(Object.keys(schedule).sort(),['ticket_id','ticket_version','schedule_version','active','allowed_actions','history','history_has_more'].sort());
+    assert.equal(schedule.ticket_id,ticketId);assert.equal(schedule.ticket_version,2);assert.equal(schedule.schedule_version,'1');
+    const active=object(schedule.active);
+    assert.deepEqual(Object.keys(active).sort(),['schedule_version','due_at','due_epoch_ms','is_due'].sort());
+    assert.equal(active.schedule_version,'1');assert.equal(active.due_at,'2030-01-02 09:30:00');assert.equal(active.is_due,false);
+    assert.equal(active.due_epoch_ms,'1893547800000');
+    assert.deepEqual(schedule.allowed_actions,['SET','CANCEL']);assert.equal(schedule.history_has_more,false);
+    const history=rows(schedule.history);assert.equal(history.length,1);const entry=history[0];assert.ok(entry);
+    assert.equal(entry.action,'SET');assert.equal(entry.schedule_version,'1');assert.equal(entry.due_at,command.due_at);
+    assert.equal(entry.ticket_event_id,result.value.ticket_event_id);assert.equal(entry.end_reason,null);
+    const afterResponse=await dispatcher.get(path);assert.equal(afterResponse.status,200);const after=afterResponse.value;
+    assert.equal(after.version,2);assert.equal(after.status,before.status);assert.equal(after.assignee_id,before.assignee_id);
+    assert.equal(after.resolver_team_id,before.resolver_team_id);assert.equal(after.intake_id,before.intake_id);
+    assert.deepEqual((await dispatcher.get(path+'/responsibility')).value,responsibilityBefore.value);
+    const events=rows((await dispatcher.get(path+'/events?limit=200')).value.items),oldEvents=rows(eventsBefore.value.items);
+    assert.equal(events.length,oldEvents.length+1);assert.deepEqual(events.slice(0,-1),oldEvents);
+    const event=events.at(-1);assert.ok(event);assert.equal(event.event_id,result.value.ticket_event_id);
+    assert.equal(event.event_type,'ticket.follow_up_scheduled');assert.equal(event.old_status,'QUEUED');assert.equal(event.new_status,'QUEUED');
+    assert.equal(event.aggregate_version,2);assert.equal(event.has_internal_note,false);assert.equal(event.has_external_note,false);
+    assert.deepEqual((await dispatcher.get(path+'/deliveries')).value,deliveriesBefore.value);
+    const acknowledgement=await dispatcher.get(path+'/follow-up-schedule/commands/'+command.client_command_id);assert.equal(acknowledgement.status,200);
+    assert.deepEqual(acknowledgement.value,{client_command_id:command.client_command_id,ticket_id:ticketId,state:'COMMITTED',result:{...result.value,replayed:true}});
+    const replay=await dispatcher.post(path+'/follow-up-schedule',command);assert.equal(replay.status,200);
+    assert.deepEqual(replay.value,{...result.value,replayed:true});
+    assert.deepEqual((await dispatcher.get(path+'/follow-up-schedule')).value,schedule);
+    assert.deepEqual((await dispatcher.get(path)).value,after);
+    assert.deepEqual((await dispatcher.get(path+'/events?limit=200')).value.items,events);
+    assert.deepEqual((await dispatcher.get(path+'/deliveries')).value,deliveriesBefore.value);
+  },{workbenchFollowUpSchedulesEnabled:true});
+});
