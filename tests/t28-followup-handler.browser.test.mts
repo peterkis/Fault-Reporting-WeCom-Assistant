@@ -14,8 +14,9 @@ test('T28 current-assignee HANDLER records only one recovery through the formal 
     const assign=async(target:string)=>{const ticket=await http.get('/api/tickets/'+ticketId);return tickets.perform({authContext:{principal_id:text(record(context.f.dispatcher).id)},command:{action:'transfer-assignment',ticket_id:ticketId,client_command_id:randomUUID(),expected_version:ticket.version,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT'}});};
     assert.equal((await assign(actorId)).ok,true);
     const beforeReports=rows((await http.get(path+'/reports?limit=100')).items),target=beforeReports.find(row=>row.ticket_id===ticketId);assert.ok(target);
-    const beforeSubs=rows((await http.get(path+'/subscriptions?limit=100')).items),personal=await personalSnapshots(http,context.f.reports);
+    const beforeSubs=rows((await http.get(path+'/subscriptions?limit=100')).items);
     await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'synthetic-incident-admin',displayName:'合成管理员',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+    const personal=await personalSnapshots(http,context.f.reports);
     await navigateFollowup(context,id);await observeFollowupPosts(context.browser);
     assert.equal((await http.get(path)).owner_principal_id,undefined,'owner fields remain cropped for HANDLER');
     assert.equal(await context.browser.evaluate('Boolean(document.querySelector("section[aria-label=通知订阅窗口]"))'),false);

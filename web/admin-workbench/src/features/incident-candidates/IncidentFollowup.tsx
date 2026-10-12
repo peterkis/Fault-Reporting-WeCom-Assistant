@@ -42,7 +42,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
   const client=useQueryClient(),queryKey=['incident-result',principal.principal_id,incidentId,'standalone'];
   const query=useQuery({queryKey,queryFn:({signal})=>candidateApi.incident(incidentId,signal)}),detail=query.data;
   const readable=Boolean(detail&&!unavailable(query.error)),wide=readable&&broad(principal.roles)&&broad(detail?.roles??[]);
-  const reports=usePart(principal,incidentId,'reports',readable,incidentApi.reports),subscriptions=usePart(principal,incidentId,'subscriptions',wide,incidentApi.subscriptions),linkable=usePart(principal,incidentId,'linkable-reports',wide,incidentApi.linkable);
+  const reports=usePart(principal,incidentId,'reports',readable,incidentApi.reports),history=usePart(principal,incidentId,'events',readable,incidentApi.history),subscriptions=usePart(principal,incidentId,'subscriptions',wide,incidentApi.subscriptions),linkable=usePart(principal,incidentId,'linkable-reports',wide,incidentApi.linkable);
   const request=useRef<AbortController|null>(null),knownCommit=useRef(false);
   const [action,setAction]=useState<IncidentAction|''>(''),[reason,setReason]=useState(''),[capturedVersion,setCapturedVersion]=useState<string|null>(null);
   const [scope,setScope]=useState(''),[primary,setPrimary]=useState(''),[source,setSource]=useState(''),[report,setReport]=useState<IncidentReportItem|null>(null),[subscription,setSubscription]=useState<IncidentSubscriptionItem|null>(null);
@@ -51,7 +51,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
   const selectedTicket=report?.ticket_id??null;
   const assignee=useQuery({queryKey:['incident-report-assignee',principal.principal_id,incidentId,selectedTicket],enabled:Boolean(readable&&action==='MARK_REPORTER_RECOVERED'&&!wide&&selectedTicket),queryFn:({signal})=>incidentApi.ticketAssignee(selectedTicket??'',signal)});
   const readDenied=unavailable(query.error)||unavailable(reports.error),purposeDenied=Boolean(detail&&action&&(!incidentRoleAllowed(action,principal.roles)||!incidentRoleAllowed(action,detail.roles)));
-  const readReady=Boolean(detail&&!query.isFetching&&!query.isError&&reports.isSuccess&&(!wide||(subscriptions.isSuccess&&linkable.isSuccess)));
+  const readReady=Boolean(detail&&!query.isFetching&&!query.isError&&reports.isSuccess&&history.isSuccess&&(!wide||(subscriptions.isSuccess&&linkable.isSuccess)));
   const allowed=Boolean(detail&&action&&actionAllowed(action,detail)&&!purposeDenied);
   const required=action==='CORRECT_SCOPE'?Boolean(scope):action==='SET_PRIMARY_TICKET'?Boolean(primary):action==='LINK_REPORT'?Boolean(source):action==='UNLINK_REPORT'||action==='MARK_REPORTER_RECOVERED'?Boolean(report&&report.link_state==='LINKED'&&(wide||assignee.data===principal.principal_id)):action==='PAUSE_SUBSCRIPTION'||action==='RESUME_SUBSCRIPTION'?Boolean(subscription&&subscription.status!=='ENDED'):true;
   const clearInput=()=>{setAction('');setReason('');setCapturedVersion(null);setScope('');setPrimary('');setSource('');setReport(null);setSubscription(null);setReviewRequired(false);};
@@ -64,7 +64,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
   useEffect(()=>{if(!readDenied&&!purposeDenied)return;request.current?.abort();request.current=null;draft.revoke(new DraftError('DRAFT_ACTION_REVOKED'));clearInput();setPending(null);setState(knownCommit.current?'committed':'denied');setMessage(knownCommit.current?'原操作已提交；当前权限已变化，原输入已停止展示。':'当前操作权限不可用；原输入已停止展示。');},[readDenied,purposeDenied]);
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault(),retained={location:window.location.href,state:window.history.state as unknown};retainedNavigation=retained;window.addEventListener('beforeunload',warn);return()=>{window.removeEventListener('beforeunload',warn);if(retainedNavigation===retained)retainedNavigation=null;};},[blocked]);
   const capture=()=>{if(detail)setCapturedVersion(current=>current??detail.row_version);};
-  const refresh=()=>{void query.refetch();void reports.refetch();if(wide){void subscriptions.refetch();void linkable.refetch();}if(selectedTicket&&!wide)void assignee.refetch();};
+  const refresh=()=>{void query.refetch();void reports.refetch();void history.refetch();if(wide){void subscriptions.refetch();void linkable.refetch();}if(selectedTicket&&!wide)void assignee.refetch();};
   function operation():IncidentOperation{
     if(!action||!capturedVersion)throw new ApiError(400,'INVALID_INPUT');
     const base={client_command_id:crypto.randomUUID(),expected_row_version:capturedVersion,reason_code:reason};
@@ -124,6 +124,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
     {pending&&checkedUnknown&&unknown?<button type="button" data-action="replay-incident-operation" disabled={busy||draft.restoring} onClick={()=>{void send(pending,true);}}>明确重放原操作（原 UUID 和正文）</button>:null}
     {draft.enabled&&hasInput?<button type="button" data-action="discard-incident-draft" disabled={busy||draft.restoring} onClick={()=>{void draft.discard();}}>丢弃敏感恢复内容</button>:null}
     {showDetail?<section aria-label="关联个人报修"><h2>关联个人报修</h2>{reports.isError?<p role="alert">{errorMessage(reports.error)}</p>:null}<ul>{reports.items.map(item=><li key={item.id}>{item.ticket_no??'无个人工单'} · {item.link_state} · {item.impact_state} · 版本 {item.row_version}</li>)}</ul>{page('报修',reports)}</section>:null}
+    {showDetail?<section aria-label="公共故障历史"><h2>公共故障历史</h2>{history.isError?<p role="alert">{errorMessage(history.error)}</p>:null}<ul>{history.items.map(item=><li key={item.id}>记录 {item.event_ordinal} · {item.event_type} · {item.occurred_at}{item.new_status?' · '+item.new_status:''}{item.new_scope?' · '+item.new_scope:''}</li>)}</ul>{page('历史',history)}</section>:null}
     {showDetail&&wide?<><section aria-label="通知订阅窗口"><h2>各人通知订阅</h2><ul>{subscriptions.items.map(item=><li key={item.id}>{item.id} · {item.status} · {item.impact_state} · 版本 {item.row_version}</li>)}</ul>{page('订阅',subscriptions)}</section><section aria-label="可关联来源窗口"><h2>可关联报修来源</h2><ul>{linkable.items.map(item=><li key={item.id}>{item.ticket_no}</li>)}</ul>{page('来源',linkable)}</section></>:null}
   </div></article>;
 }
