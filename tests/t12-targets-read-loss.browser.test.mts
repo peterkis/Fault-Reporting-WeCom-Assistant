@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {randomUUID,createHash} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import type {IncomingMessage,ServerResponse} from 'node:http';
+import {withT12Profile} from './helpers/t12-profile-fixture.mjs';
+import {acceptedSetup,text,version} from './helpers/t07-public-fixture.mjs';
+import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+async function input(browser:Browser,selector:string,value:string){await browser.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(element,${JSON.stringify(value)});element.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+
+for(const lostTicketRead of [true,false])test(lostTicketRead?'a trusted targets404 clears sensitive T12 input and shared Ticket caches before the independently delayed context can reject':'TARGET_INVALID403 never substitutes for loss of current Ticket READ or clears the shared detail',async()=>{
+ await withT12Profile(async f=>{
+  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_TARGETS_SCOPE_START'})).status,200);
+  const cookie=f.browserCookies[2];assert.ok(cookie);const directory=join(tmpdir(),'t12-targets-scope-'+randomUUID());await mkdir(directory);
+  const network:{method:string;path:string;status:number|null}[]=[],observe=(request:IncomingMessage,response:ServerResponse)=>{if(!request.headers.cookie?.includes(cookie.name+'='+cookie.value))return;const fact={method:request.method??'',path:request.url??'',status:null as number|null};network.push(fact);response.once('finish',()=>{fact.status=response.statusCode;});};
+  let browser:Browser|undefined,primary:unknown;const screenshots:{file:string;sha256:string}[]=[];f.runtime.server.on('request',observe);
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);
+   await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
+   await input(browser,'#takeover-completion-process','T12_TARGETS_PRIVATE_PROCESS_CANARY');await input(browser,'#takeover-completion-summary','T12_TARGETS_PRIVATE_DRAFT_SUMMARY');
+   // Delay only future actual context transport. Responses are never fabricated; targets still use the real public HTTP handler.
+   await browser.evaluate(`(()=>{const original=fetch;globalThis.__t12ContextGate=true;globalThis.__t12ContextRelease=[];globalThis.__t12TargetStatus=[];globalThis.fetch=(path,options)=>{if(globalThis.__t12ContextGate&&String(path)===${JSON.stringify(s.path)}&&(!options?.method||options.method==='GET'))return new Promise((resolve,reject)=>{const abort=()=>reject(new DOMException('Aborted','AbortError'));options?.signal?.addEventListener('abort',abort,{once:true});globalThis.__t12ContextRelease.push(()=>{options?.signal?.removeEventListener('abort',abort);if(options?.signal?.aborted){abort();return;}original(path,options).then(resolve,reject);});});return original(path,options).then(response=>{if(String(path).includes('/takeover-completion-targets'))globalThis.__t12TargetStatus.push(response.status);return response;});};globalThis.__t12ReleaseContext=()=>{globalThis.__t12ContextGate=false;for(const release of globalThis.__t12ContextRelease)release();globalThis.__t12ContextRelease=[];};})()`);
+   await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-1',displayName:'陈悦',roles:['HANDLER'],resolverTeamIds:lostTicketRead?[]:['PILOT_IT']});
+   assert.equal((await s.b.get(s.path)).status,lostTicketRead?404:200,'the current actual Ticket READ boundary precedes the target qualification boundary');
+   await browser.evaluate("(()=>{const element=document.querySelector('.ticket-takeover-completion select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(element,'T07_NETWORK');element.dispatchEvent(new Event('change',{bubbles:true}));})()");
+   await browser.waitFor(`globalThis.__t12TargetStatus.includes(${lostTicketRead?404:403})`);await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+   const visible=await browser.evaluate("({process:document.querySelector('#takeover-completion-process')?.value??'',summary:document.querySelector('#takeover-completion-summary')?.value??'',detail:Boolean(document.querySelector('#detail-title'))})") as {process:string;summary:string;detail:boolean};
+   if(lostTicketRead){assert.equal(visible.process,'','targets404 must clear sensitive input even when the context query has only its old successful cache');assert.equal(visible.summary,'');assert.equal(visible.detail,false,'trusted Ticket404 clears the shared cached detail, not only a target alert');}
+   else{assert.equal(visible.process,'T12_TARGETS_PRIVATE_PROCESS_CANARY');assert.equal(visible.summary,'T12_TARGETS_PRIVATE_DRAFT_SUMMARY');assert.equal(visible.detail,true);assert.equal((await s.b.get(s.path)).status,200);}
+   assert.equal(network.filter(row=>row.method==='POST').length,0);assert.equal((await f.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_TICKET_TAKEOVER_COMPLETION'")).rowCount,0);
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate("document.querySelector('.ticket-takeover-completion')?.scrollIntoView({block:'center'})");const bytes=Buffer.from(text(await browser.screenshot()),'base64'),file=join(directory,primary?'failure.png':'scope.png');await writeFile(file,bytes);screenshots.push({file:file.replaceAll('\\','/'),sha256:createHash('sha256').update(bytes).digest('hex')});await writeFile(join(directory,'page.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,process:document.querySelector('#takeover-completion-process')?.value,summary:document.querySelector('#takeover-completion-summary')?.value})")));}},async()=>{await browser?.evaluate('globalThis.__t12ReleaseContext?.()');await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{f.runtime.server.removeListener('request',observe);assert.equal((await f.runtime.observability.metrics()).sse_clients,0);const file=join(directory,'receipt.json');await writeFile(file,JSON.stringify({lostTicketRead,network,screenshots,primary_failure:primary instanceof Error?primary.message:null}));console.log('T12_TARGETS_SCOPE_DIAGNOSTIC '+JSON.stringify({file:file.replaceAll('\\','/'),screenshots}));}],primary);
+ },{recoveryEnabled:false});
+});
