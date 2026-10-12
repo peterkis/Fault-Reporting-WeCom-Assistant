@@ -8,22 +8,23 @@ import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {candidateApi,incidentApi,incidentActions,candidateReasons,incidentScopes,decodeIncidentOperation,decodeIncidentReportItem,decodeIncidentSubscriptionItem,incidentRoleAllowed} from './client';
 import type {IncidentAction,IncidentOperation,IncidentReportItem,IncidentSubscriptionItem} from './client';
 
-export interface IncidentDraftValue {action:IncidentAction|'';reason:string;capturedVersion:string|null;scope:string;primary:string;source:string;report:IncidentReportItem|null;subscription:IncidentSubscriptionItem|null}
+export interface IncidentDraftValue {action:IncidentAction|'';reason:string;capturedVersion:string|null;scope:string;primary:string;source:string;report:IncidentReportItem|null;subscription:IncidentSubscriptionItem|null;direct:string}
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function identity(value:unknown){if(typeof value!=='string'||!UUID.test(value))throw new DraftError('DRAFT_CORRUPT');return value;}
 function member(value:unknown,allowed:readonly string[]){if(typeof value!=='string'||value!==''&&!allowed.includes(value))throw new DraftError('DRAFT_CORRUPT');return value;}
 function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new DraftError('DRAFT_CORRUPT');return value as Record<string,unknown>;}
 function exact(value:Record<string,unknown>,keys:readonly string[]){if(Object.keys(value).length!==keys.length||keys.some(key=>!Object.hasOwn(value,key)))throw new DraftError('DRAFT_CORRUPT');}
 function decode(text:string,incidentId:string){
-  const row=object(JSON.parse(text));exact(row,['schema','value','pending']);if(row.schema!==1)throw new DraftError('DRAFT_CORRUPT');const input=object(row.value);exact(input,['action','reason','capturedVersion','scope','primary','source','report','subscription']);
+  const row=object(JSON.parse(text));exact(row,['schema','value','pending']);if(row.schema!==1)throw new DraftError('DRAFT_CORRUPT');const input=object(row.value);exact(input,['action','reason','capturedVersion','scope','primary','source','report','subscription',...(Object.hasOwn(input,'direct')?['direct']:[])]);
   const action=member(input.action,incidentActions) as IncidentAction|'';
   let capturedVersion:string|null=null;if(input.capturedVersion!==null){if(typeof input.capturedVersion!=='string'||!/^[1-9][0-9]{0,18}$/u.test(input.capturedVersion)||BigInt(input.capturedVersion)>9223372036854775807n)throw new DraftError('DRAFT_CORRUPT');capturedVersion=input.capturedVersion;}
-  const value:IncidentDraftValue={action,reason:member(input.reason,candidateReasons),capturedVersion,scope:member(input.scope,incidentScopes),primary:input.primary===''||input.primary==='NONE'?input.primary:identity(input.primary),source:input.source===''?'':identity(input.source),report:input.report===null?null:decodeIncidentReportItem(input.report),subscription:input.subscription===null?null:decodeIncidentSubscriptionItem(input.subscription)};
+  const value:IncidentDraftValue={action,reason:member(input.reason,candidateReasons),capturedVersion,scope:member(input.scope,incidentScopes),primary:input.primary===''||input.primary==='NONE'?input.primary:identity(input.primary),source:input.source===''?'':identity(input.source),report:input.report===null?null:decodeIncidentReportItem(input.report),subscription:input.subscription===null?null:decodeIncidentSubscriptionItem(input.subscription),direct:input.direct===undefined||input.direct===''?'':identity(input.direct)};
   const pending=row.pending===null?null:decodeIncidentOperation(row.pending);
   if(pending&&(pending.incidentId!==incidentId||pending.action!==value.action||pending.body.reason_code!==value.reason||pending.body.expected_row_version!==value.capturedVersion))throw new DraftError('DRAFT_CORRUPT');
   if(pending?.action==='CORRECT_SCOPE'&&pending.body.confirmed_scope!==value.scope||pending?.action==='SET_PRIMARY_TICKET'&&pending.body.primary_ticket_id!==(value.primary==='NONE'?null:value.primary)||pending?.action==='LINK_REPORT'&&pending.body.source_decision_id!==value.source)throw new DraftError('DRAFT_CORRUPT');
   if(pending&&(pending.action==='UNLINK_REPORT'||pending.action==='MARK_REPORTER_RECOVERED')&&(pending.reportId!==value.report?.id||pending.body.expected_report_version!==value.report.row_version))throw new DraftError('DRAFT_CORRUPT');
   if(pending&&(pending.action==='PAUSE_SUBSCRIPTION'||pending.action==='RESUME_SUBSCRIPTION')&&(pending.subscriptionId!==value.subscription?.id||pending.body.expected_subscription_version!==value.subscription.row_version))throw new DraftError('DRAFT_CORRUPT');
+  if(pending?.action==='RESUME_SUBSCRIPTION'&&(pending.body.direct_channel_leg_id??'')!==value.direct)throw new DraftError('DRAFT_CORRUPT');
   return {value,pending};
 }
 export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,onRestore,onOperation,onSensitiveClear}:{principal:Principal;incidentId:string;value:IncidentDraftValue;pending:IncidentOperation|null;emptyValue:IncidentDraftValue;onRestore:(copy:{value:IncidentDraftValue;pending:IncidentOperation|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){

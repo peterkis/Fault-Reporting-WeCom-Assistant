@@ -17,7 +17,7 @@ test('T28 real report/history pages retain at most three pages and keep an expli
     assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=主工单]").value'),first.ticket_id,'eviction is not an implicit change of selected primary');
     assert.equal(await context.browser.evaluate('document.querySelector("section[aria-label=关联个人报修]").innerText.includes("已加载窗口 70 项")'),true);
     assert.equal(await context.browser.evaluate('document.body.innerText.includes("共100")'),false);
-    assert.equal(await context.browser.evaluate('globalThis.__t27DomainReads.filter(path=>/\/(reports|events|subscriptions|linkable-reports)\?/.test(path)).every(path=>new URL(path,location.href).searchParams.get("limit")==="30")'),true);
+    assert.equal(await context.browser.evaluate('globalThis.__t27DomainReads.filter(path=>["reports","events","subscriptions","linkable-reports"].includes(new URL(path,location.href).pathname.split("/").at(-1))).every(path=>new URL(path,location.href).searchParams.get("limit")==="30")'),true);
     const children=rows(reportPage.items);assert.equal(children.some(row=>Object.hasOwn(row,'reporter_identity_hash')),false);const events=rows(eventPage.items);assert.equal(events.some(row=>['payload_hash','safe_payload','source_command_id','actor_principal_id'].some(key=>Object.hasOwn(row,key))),false);
     assert.equal((await http.get(path)).primary_ticket_id,null,'loading pages and preserving selection do not submit a primary change');
     await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await context.capture();
