@@ -39,6 +39,8 @@ native_blocking_edges: 76
 
 2026-10-12 T25 整票收口：原七项、334ab203业务28／28、ef62c657定向工具18+1、两轴增量审查、4411保全及813原窗口字节、人工清理与有限最终资源审计均父核，8e34df31安全快进；[#80完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80#issuecomment-6115603975)，当前 **23／43 CLOSED、20 OPEN**。见[原应用通知合同、真实被测对象与原失败](execution/t25.md)。WBINT-08／A08本地完成；下一串行整票为T28，#82已关闭，SOURCE_ONLY准备不计验收，默认关闭与现场停止线保持。
 
+2026-10-12 T28 整票收口：原七项、cb5c8484的35／35及相关19／19、必要tooling／hosts54项和具名retired-T02、两轴源码收口、200原始输出及8回执、16冻结输入与精确自有清理均父核；8095d05a安全快进，[#83完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83#issuecomment-6118553402)。当前 **24／43 CLOSED、19 OPEN**，见[合同与实际被测祖先](execution/t28.md)。扩大batches诊断69／64／5和15／13／2均exit1，FAIL保留；活动155项全集未跑。WBINT-09／A09本地完成，下一连续整票为T07；T29／T30已解除#83阻塞，但尚未实施。T29目标必须已有该Incident读取权、交接不扩权的用户决定独立记录，不改写旧确认事实。全43最终审查／工作树清理仍待完成，默认关闭与现场停止线保持。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -178,11 +180,12 @@ native_blocking_edges: 76
 - [x] **T27** — [#82 人工复核并确认公共故障候选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-09 / A09
-  - **本地执行：** [LOCAL_VERIFIED：原七项、独立Incident、材料与命令恢复、分组证据及清理](execution/t27.md)已核对；交付aac2d438已安全快进，GitHub CLOSED已读回。真实被测源6607ace4及早先分组各保留原身份，未发布／启用；T28及A09整组未完成。
+  - **本地执行：** [LOCAL_VERIFIED：原七项、独立Incident、材料与命令恢复、分组证据及清理](execution/t27.md)已核对；交付aac2d438已安全快进，GitHub CLOSED已读回。真实被测源6607ace4及早先分组各保留原身份，未发布／启用；T28现已独立收口，A09本地完成。
 
-- [ ] **T28** — [#83 跟进公共故障及关联个人报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
+- [x] **T28** — [#83 跟进公共故障及关联个人报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **Blocked by:** [#82](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
   - **来源：** WBINT-09 / A09
+  - **本地执行：** [LOCAL_VERIFIED：原七项与独立事实、精确版本、输入／UNKNOWN恢复、源审及清理](execution/t28.md)经父核；8095d05a已安全快进，GitHub CLOSED已读回。cb5c实际35／35及相关19／19、必要工具按适用范围记录，扩大batches FAIL和活动全集NOT_RUN保持。WBINT-09／A09本地完成，不推进现场或Gate。
 
 - [ ] **T29** — [#84 交接公共故障负责人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84)
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
