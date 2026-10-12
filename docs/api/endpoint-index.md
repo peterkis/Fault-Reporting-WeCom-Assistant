@@ -4,6 +4,15 @@
 
 按 `METHOD + PATH` 搜索。参数 `{...}` 是占位标识，不是字面URL。W/M/O/P定义见公共约定。`已实现`表示源码有handler并依赖相应装配/默认关闭开关，**不表示当前部署已启用**；`条件兼容`仅特定访问策略，`拒绝`不是可用服务。各行链接包含请求/响应/认证/失败规则及源码/测试。
 
+## T30 内部处置候选合同（PROPOSED_NOT_MOUNTED）
+
+| 方法 | 完整路径 | 宿主 | 当前状态／候选用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/incidents/{incidentId}/internal-notes` | W | PROPOSED_NOT_MOUNTED：Incident 内部处置追加，独立默认关闭 | [T30内部记录](workbench/incident-internal-notes.md) |
+| GET | `/api/incidents/{incidentId}/internal-notes` | W | PROPOSED_NOT_MOUNTED：当前内部用途获权分页，非Reporter timeline | [T30内部记录](workbench/incident-internal-notes.md) |
+
+原 `/api/incidents/{incidentId}/commands/{commandId}` 的 T28 读取仍为既有入口；T30 新 ADD_INTERNAL_NOTE 原用途回执尚未挂载，不另建 ledger 或回执路径。
+
 ## 工作台REST
 
 来源群名称增量默认关闭，启用条件和原始来源语义见 [来源群名称](workbench/source-groups-design.md)。

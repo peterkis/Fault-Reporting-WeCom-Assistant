@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/workbench_incident_internal_notes_contracts.d.ts",
+    "contracts/workbench_incident_internal_note_command.schema.json",
+    "contracts/workbench_incident_internal_note_page.schema.json",
     "database/migrations/052_ticket_group_round_notifications.sql",
     "database/migrations/047_workbench_personal_read.sql",
     "contracts/workbench_personal_read_contracts.d.ts",
