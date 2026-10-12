@@ -48,3 +48,7 @@ ETag 命中304无正文；不能当空Ticket重置页面。权限、绑定、有
 
 
 WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF_COMPLETED的ticket.closed追加事件为依据。本人/绑定授权timeline仅展示其已单独确认且≤500字的external_note；internal_note处理过程和普通内部备注仍不可见。不会伪造REPORTER或REQUESTER_CONFIRMED，不生成旧Reporter确认task；legacy RESOLVED-confirm保持原语义。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
+
+## 核实代录原应用本人读取（WBINT-T25）
+
+经核实MANUAL App卡片沿原 publicRef 页面/GET ticket/timeline，当前OAuth成员及对象归属独立验证；精确原 scope/journey、当前有效App通知binding和物理留存共同核验，卡片URL不是授权。匹配App配置保留而enabled=false不阻断本人历史READ；读取不调用发送资格Resolver。MANUAL不进入BOT_TICKET或Bot feedback，内部过程/身份/绑定/SDK回执不公开。H5仍用原requestRef自助读取。完整装配和恢复见[应用通知](../workbench/app-notifications.md)。

@@ -13,6 +13,7 @@
 | 会话列表、消息、接管、转派、内部备注、通信投递 | [会话工作台](workbench/conversations.md) |
 | 集中获权服务主题、独立沟通责任、当前浏览器回复恢复与专用安全收据 | [集中会话（T22，默认关闭）](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | 工单列表、详情、状态动作、双责任、通知投递 | [工单生命周期](workbench/tickets.md) |
+| 原H5／已核实代录本人 App 通知、当前资格、独立投递与安全详情（默认关闭） | [原来源应用通知](workbench/app-notifications.md)／[T25 执行记录](../../plans/admin-workbench-integration/execution/t25.md) |
 | 工单共享下次行动（T37，本地定向验证完成，默认关闭） | [共享跟进时间](workbench/follow-up-schedules.md) |
 | Bot单聊每轮首次责任／完工通知与真实隔离送达状态（默认关闭） | [轮次节点通知](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)／[T24本地七项证据](../../plans/admin-workbench-integration/execution/t24.md) |
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |

@@ -55,7 +55,7 @@
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
 | T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
 | T05 | GET | `/api/tickets/{ticketId}/responsibility` | W | 已实现：双责任 | [工单](workbench/tickets.md) |
-| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知；T24 Bot轮次字段／区域默认关闭 | [工单](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24) |
+| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知；T24 Bot／T25 App／T26 GROUP 独立轮次默认关闭 | [工单](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)、[App](workbench/app-notifications.md) |
 | T07 | GET | `/api/tickets/{ticketId}/eligible-principals` | W | 已实现：处理人候选 | [工单](workbench/tickets.md) |
 | T08 | GET | `/api/tickets/{ticketId}/reporter-contact` | W | 已实现：内部授权联系资料 | [工单](workbench/tickets.md) |
 | T09 | POST | `/api/tickets/{ticketId}/queue` | W | 已实现：入队 | [工单](workbench/tickets.md) |
@@ -135,7 +135,7 @@
 | E01 | GET | `/api/reporter/member/session` | M/O/W成员扩展 | 已实现：成员认证状态 | [Reporter](member/reporter-access.md) |
 | E02 | GET | `/api/reporter/bootstrap` | 成员或W legacy | 已实现：依策略返回不同DTO | [Reporter](member/reporter-access.md) |
 | E03 | POST | `/api/reporter/member-entry/prepare` | 成员扩展 | 已实现：旧卡片浏览器继续入口 | [Reporter](member/reporter-access.md) |
-| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度；T21显式Bot能力可加同事务feedback_context | [Reporter](member/reporter-access.md)、[Bot反馈](member/bot-feedback-design.md) |
+| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度；T25核实MANUAL独立READ，T21仅Bot可加feedback_context | [Reporter](member/reporter-access.md)、[App](workbench/app-notifications.md)、[Bot反馈](member/bot-feedback-design.md) |
 | E05 | GET | `/api/reporter/tickets/{publicRef}/timeline` | 成员或W legacy | 已实现：公开时间线 | [Reporter](member/reporter-access.md) |
 | E06 | POST | `/api/reporter/logout` | 成员或W legacy | 已实现：清对应访问会话 | [Reporter](member/reporter-access.md) |
 | E07 | POST | `/api/reporter/access/exchange` | W legacy / 成员扩展 | 条件兼容：旧Grant；成员模式403 | [Reporter](member/reporter-access.md) |
