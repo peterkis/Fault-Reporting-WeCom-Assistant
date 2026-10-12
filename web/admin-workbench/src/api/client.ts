@@ -220,10 +220,6 @@ export const api={
     if(v.state==='FAILED'&&Object.keys(v).length===2){const error=object(v.error),code=text(error.code);if(Object.keys(error).length===2&&error.retryable===false&&/^(P2_016|TICKET)_[A-Z][A-Z0-9_]{0,80}$/u.test(code))return {state:'FAILED',error:{code,retryable:false}};}
     throw new ApiError(502,'INVALID_RESPONSE');
   }),
-  waitForReporter:(ticketId:string,command:WaitingCommand,csrfToken:string|null,signal:AbortSignal):Promise<WaitingResult>=>postTicketCommand(ticketId,'request-information',command,csrfToken,signal,v=>{
-    if(Object.keys(v).length!==7||!Object.hasOwn(v,'handling_cycle_id'))throw new UnknownCommandOutcome();
-    return {...decodeTicketReceipt(v,ticketId),handling_cycle_id:v.handling_cycle_id===null?null:id(v.handling_cycle_id)};
-  }),
   // Existing canonical Session READ endpoints only; an absent member in a truncated list is not revocation evidence.
   returnCommunicationTargets:async(ticketId:string,_target:string|null,sessions:readonly P2016ReturnSession[],signal:AbortSignal):Promise<P2016ReturnToDispatchTargets>=>{
     id(ticketId);if(sessions.length>8||new Set(sessions.map(row=>id(row.session_id).toLowerCase())).size!==sessions.length)throw new ApiError(400,'INVALID_INPUT');

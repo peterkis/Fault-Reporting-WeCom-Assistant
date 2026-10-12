@@ -139,7 +139,14 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
     try{return subscribeDrafts(value=>{
       if(value.principal!==principal.principal_id||value.principal!==client.getQueryData<Principal>(['session'])?.principal_id)return;
       if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
-      else if(value.reason==='revoked'){if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-unassign')void clearTicketUnassignView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-takeover')void clearTicketTakeoverView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-return-to-dispatch')void clearTicketReturnView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
+      else if(value.reason==='revoked'){
+        if(value.kind==='ticket'&&value.id&&['waiting-requester','waiting-vendor','waiting-resume','waiting-cancel'].includes(value.purpose??''))void client.invalidateQueries({queryKey:['ticket-command-context',value.principal,value.id]});
+        else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-unassign')void clearTicketUnassignView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
+        else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-takeover')void clearTicketTakeoverView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
+        else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-return-to-dispatch')void clearTicketReturnView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
+        else if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
+        else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');
+      }
     });}catch{return;}
   },[client,principal.principal_id,principal.draft_recovery_enabled,principal.manual_review_draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.staff_completion_draft_recovery_enabled,principal.conversation_draft_recovery_enabled,principal.manual_report_draft_recovery_enabled,principal.ticket_unassign_draft_recovery_enabled,principal.ticket_takeover_draft_recovery_enabled,principal.ticket_return_to_dispatch_enabled,principal.logout_enabled]);
   const currentPath=useLocation().pathname,conversationPage=currentPath.startsWith('/conversations'),settings=currentPath.startsWith('/settings/'),canNameGroups=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
