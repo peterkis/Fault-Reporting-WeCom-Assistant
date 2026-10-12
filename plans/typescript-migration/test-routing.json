@@ -543,6 +543,7 @@
     {"path":"tests/t10-waiting.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t10-vendor-resume.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t10-unknown-recovery.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/t10-capability-recovery.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t10-waiting.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false}
   ],
   "legacy_commands": {
@@ -855,6 +856,7 @@
       "tests/t10-waiting.integration.test.mts",
       "tests/t10-vendor-resume.browser.test.mts",
       "tests/t10-unknown-recovery.browser.test.mts",
+      "tests/t10-capability-recovery.browser.test.mts",
       "tests/t10-waiting.browser.test.mts"
     ],
     "v3-p08": ["tests/p2-g2-send-budget.test.mjs", "tests/p2-g2-send-guard.integration.test.mjs", "tests/p2-g2-candidate-scope.integration.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/yxx-ss-010-contract.test.mjs", "tests/yxx-ss-010-runtime.integration.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/yxx-current-readiness-cli.test.mts", "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs", "tests/p2-g2-yixiaoxiu-readiness.test.mjs"],

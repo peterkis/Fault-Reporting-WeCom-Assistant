@@ -13,7 +13,7 @@ test('legal cancellation is ADMIN or DISPATCHER only and retains both real accep
     const before=await admin.detail(queued.ticket.id);assert.equal(before.status,'QUEUED');assert.equal(before.handling_cycle,null);
     assert.equal((await handler.post(queued.ticket.id,'cancel',body(before.version))).status,403);assert.deepEqual(await admin.detail(queued.ticket.id),before);
     const canceled=await admin.post(queued.ticket.id,'cancel',body(before.version));assert.equal(canceled.status,200);const result=await canceled.json() as {handling_cycle_id:string|null};await assertP2016Schema('p2_016_waiting_action_result',result);assert.equal(result.handling_cycle_id,null);
-    const id=await t11NewTicket(context),initial=await admin.detail(id);assert.equal(initial.status,'NEW');assert.equal((await admin.post(id,'queue',{client_command_id:randomUUID(),expected_version:initial.version,reason_code:'T10_REAL_QUEUE'})).status,200);
+    const id=await t11NewTicket(context),initial=await admin.detail(id);assert.equal(initial.status,'QUEUED','the real Core admission already queues this source without a Conversation');
     const current=await handler.detail(id),accepted=await handler.post(id,'accept-for-later',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'T10_REAL_ACCEPT',resolver_team_id:current.resolver_team_id});assert.equal(accepted.status,200);
     const round=await admin.detail(id);assert.equal(round.status,'ACCEPTED');assert.ok(round.handling_cycle?.first_responsibility_event_id);
     const communication=await (await admin.get('/api/tickets/'+id+'/responsibility')).json() as unknown,deliveries=await (await admin.get('/api/tickets/'+id+'/deliveries')).json() as unknown;
