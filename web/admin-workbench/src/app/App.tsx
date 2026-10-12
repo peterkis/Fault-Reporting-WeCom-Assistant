@@ -18,6 +18,7 @@ import {TicketConversationHandling} from '../features/ticket-handling/TicketConv
 import {TicketCompletion} from '../features/ticket-completion/TicketCompletion';
 import {TicketRoundNotifications} from '../features/ticket-round-notifications/TicketRoundNotifications';
 import {TicketReopen} from '../features/ticket-reopen/TicketReopen';
+import {SharedFollowUp} from '../features/follow-up/SharedFollowUp';
 import {TicketAssignment} from '../features/ticket-assignment/TicketAssignment';
 import {TicketUnassign} from '../features/ticket-unassign/TicketUnassign';
 import {AttachmentSection} from '../features/attachments/AttachmentSection';
@@ -28,6 +29,7 @@ import {IncidentCandidates} from '../features/incident-candidates/IncidentCandid
 import {CandidateDetailPage} from '../features/incident-candidates/CandidateDetail';
 import {IncidentResultPage} from '../features/incident-candidates/IncidentResult';
 import {ReviewWorkspace} from '../features/manual-review/ReviewWorkspace';
+import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMaterial';
 import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
 import {useManualReportAuthority} from '../features/manual-report/use-manual-report-draft';
 import {useWorkbenchRealtime,realtimeLabels} from '../realtime/useRealtime';
@@ -78,6 +80,13 @@ function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
 }
+function SharedFollowUpSummary({value}:{value:WorkbenchCard['follow_up_schedule']}){
+  if(!value)return null;
+  return <p className={'shared-follow-up-summary'+(value.is_due?' is-due':'')}>
+    <strong>共享跟进 · {value.is_due?'已到期':'已安排'}</strong>
+    <time dateTime={value.due_at.replace(' ','T')+'+08:00'}>{value.due_at}（北京时间）</time>
+  </p>;
+}
 function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selected:boolean;now:number}){
   return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id}>
     <Link className="card-open" to={itemLink(item,search)} state={{fromBoard:true}}>
@@ -85,6 +94,7 @@ function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selec
       <h3>{item.title}</h3>
       <p className="card-meta" title={(item.location??'位置未提供')+' · '+(item.reporter_name??'报修人资料未提供')}>{item.location??'位置未提供'} · {item.reporter_name??'报修人资料未提供'}</p>
       <div className="card-tags"><Status item={item}/><span className="neutral-chip" title={item.source_label}>{item.source_label}</span></div>
+      <SharedFollowUpSummary value={item.follow_up_schedule}/>
       <footer className="card-footer"><Owner name={item.assignee_name}/><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>更新 {relativeTime(item.updated_at,now)}</time></footer>
       <span className="sr-only">查看详情</span>
     </Link>
@@ -99,7 +109,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
   const [expanded,setExpanded]=useState(false),visible=expanded?items:items.slice(0,3);
   const tableColumns=tableHelper.columns([
     tableHelper.accessor('number',{header:'编号'}),
-    tableHelper.accessor('title',{header:'问题',cell:({row})=><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link>}),
+    tableHelper.accessor('title',{header:'问题',cell:({row})=><><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link><SharedFollowUpSummary value={row.original.follow_up_schedule}/></>}),
     tableHelper.accessor('status',{header:'状态',cell:({row})=><Status item={row.original}/>}),
     tableHelper.accessor('source_label',{header:'来源',cell:({row})=><span className="neutral-chip">{row.original.source_label}</span>}),
     tableHelper.accessor('location',{header:'位置',cell:({getValue})=>getValue()??'未提供'}),
@@ -143,8 +153,8 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
 }
 function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false);
-  const [reopenBlocked,setReopenBlocked]=useState(false);
-  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||unassignBlocked||reopenBlocked;
+  const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false);
+  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||unassignBlocked||reopenBlocked||followUpBlocked;
   useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),dialog=useRef<HTMLDialogElement>(null),previousFocus=useRef<HTMLElement|null>(null),pageHeading=useRef<HTMLHeadingElement>(null);
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
@@ -184,6 +194,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled?<TicketCompletion key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
+      {detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id}/>:null}
       {detail.item.kind==='ticket'?<TicketReopen key={principal.principal_id+':reopen:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReopenBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setAssignmentBlocked}/>:null}
@@ -194,7 +205,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
       <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
-        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
+        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header>{record.read_material?<PersonalReadMaterial principal={principal} item={{kind:detail.item.kind,id:detail.item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={record.text}/>:<p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p>}</div></li>)}</ol>
         {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button variant="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}</section>
     </div>:null}
   </>;
@@ -254,7 +265,7 @@ function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useU
   if(/^\/conversations(?:\/[^/]+)?\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><Conversations key={bootstrap.data.principal_id} principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>;
   if(/^\/incidents\/candidates\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentCandidates principal={bootstrap.data}/></Shell>;
   if(/^\/incidents\/candidates\/[^/]+\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><CandidateDetailPage principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>;
-  if(/^\/incidents\/[^/]+\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentResultPage principal={bootstrap.data}/></Shell>;
+  if(/^\/incidents\/[^/]+\/?$/iu.test(location.pathname))return <Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentResultPage principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>;
   return /^\/settings\/source-groups\/?$/iu.test(location.pathname)?<Shell principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked}><SourceGroupDirectory key={bootstrap.data.principal_id} principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>:<Workbench key={bootstrap.data.principal_id} principal={bootstrap.data} realtime={realtime}/>;
 }
 export function App(){return <Routes><Route path="/" element={<Session/>}/><Route path="items/:kind/:id" element={<Session/>}/><Route path="settings/source-groups" element={<Session/>}/><Route path="reports/new" element={<Session/>}/><Route path="conversations" element={<Session/>}/><Route path="conversations/:sessionId" element={<Session/>}/><Route path="incidents/candidates" element={<Session/>}/><Route path="incidents/candidates/:id" element={<Session/>}/><Route path="incidents/:id" element={<Session/>}/><Route path="*" element={<div className="entry-state"><Message text="页面不存在。"/><Link to="/">返回工作台</Link></div>}/></Routes>;}
