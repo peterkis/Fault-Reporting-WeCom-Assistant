@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_verified_manual_report_command.schema.json",
+  "title":"Planned T18 verified selection, never browser supplied identity or profile",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","client_command_id","source","description","location","reporter"],
+  "properties":{
+    "schema_version":{"const":1},
+    "client_command_id":{"type":"string","format":"uuid"},
+    "source":{"$ref":"workbench_manual_report_command.schema.json#/properties/source"},
+    "description":{"$ref":"workbench_manual_report_command.schema.json#/properties/description"},
+    "location":{"$ref":"workbench_manual_report_command.schema.json#/properties/location"},
+    "reporter":{"type":"object","additionalProperties":false,"required":["verification","candidate_ref","candidate_version"],"properties":{
+      "verification":{"const":"VERIFIED_SELECTION"},
+      "candidate_ref":{"$ref":"workbench_reporter_candidates.schema.json#/properties/candidates/items/properties/candidate_ref"},
+      "candidate_version":{"$ref":"workbench_reporter_candidates.schema.json#/properties/candidates/items/properties/candidate_version"}
+    }}
+  }
+}

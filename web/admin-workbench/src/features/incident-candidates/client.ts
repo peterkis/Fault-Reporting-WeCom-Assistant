@@ -1,4 +1,5 @@
 import {ApiError,UnknownCommandOutcome,captureWorkbenchRead} from '../../api/client';
+import type {IncidentFollowupReceipt} from '../../../../../contracts/workbench_incident_followup_contracts';
 
 export const candidateStates=['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED'] as const;
 export type CandidateState=typeof candidateStates[number];
@@ -127,4 +128,88 @@ export const candidateApi={
       return result;
     }catch(error){if(error instanceof CandidateCommandRefusal||(error instanceof ApiError&&[401,403,404].includes(error.status)))throw error;throw new UnknownCommandOutcome();}
   },
+};
+
+export type IncidentInvestigationCommand=Readonly<{client_command_id:string;expected_row_version:string;reason_code:'OPERATOR_REVIEWED'}>;
+export interface IncidentCommandResult extends Omit<CandidateCommandResult,'result_ref_type'>{result_ref_type:'INCIDENT'}
+export class IncidentCommandRefusal extends ApiError {}
+export const incidentActions=['START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT'] as const;
+export type IncidentAction=typeof incidentActions[number];
+export function incidentRoleAllowed(action:IncidentAction,roles:readonly string[]){const wide=roles.some(role=>role==='ADMIN'||role==='DISPATCHER');return action==='MARK_REPORTER_RECOVERED'?wide||roles.includes('HANDLER'):wide&&(!['CORRECT_SCOPE','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','CLOSE_INCIDENT'].includes(action)||roles.includes('ADMIN'));}
+type IncidentBody=Readonly<CommandBase&{expected_row_version:string}>;
+export type IncidentOperation={incidentId:string}&(
+  {action:'START_INVESTIGATING'|'RESOLVE_INCIDENT'|'CLOSE_INCIDENT';body:IncidentBody}|
+  {action:'CORRECT_SCOPE';body:IncidentBody&{confirmed_scope:IncidentScope}}|
+  {action:'SET_PRIMARY_TICKET';body:IncidentBody&{primary_ticket_id:string|null}}|
+  {action:'LINK_REPORT';body:IncidentBody&{source_decision_id:string}}|
+  {action:'UNLINK_REPORT'|'MARK_REPORTER_RECOVERED';reportId:string;body:IncidentBody&{expected_report_version:string}}|
+  {action:'PAUSE_SUBSCRIPTION'|'RESUME_SUBSCRIPTION';subscriptionId:string;body:IncidentBody&{expected_subscription_version:string;direct_channel_leg_id?:string|null}});
+export interface IncidentChildPage<T>{items:T[];next_cursor:string|null}
+export interface IncidentReportItem{id:string;ticket_id:string|null;ticket_no:string|null;service_intake_id:string;link_state:'CANDIDATE'|'LINKED'|'UNLINKED'|'REJECTED';impact_state:'UNKNOWN'|'IMPACTED'|'RECOVERED';row_version:string;linked_at:string|null;unlinked_at:string|null;recovered_at:string|null}
+export interface IncidentLinkableItem{id:string;source_decision_id:string;ticket_no:string}
+export interface IncidentSubscriptionItem{id:string;representative_report_id:string;status:'PENDING_DESTINATION'|'ACTIVE'|'PAUSED'|'ENDED';impact_state:'UNKNOWN'|'IMPACTED'|'RECOVERED';row_version:string;last_notified_incident_version:string|null;created_at:string;updated_at:string}
+export interface IncidentDestinationItem{id:string;subscription_id:string;source_intake_no:string}
+export interface IncidentNotificationItem{id:string;audience_type:'GROUP'|'REPORTER_DIRECT';template_code:'INCIDENT_CONFIRMED_GROUP'|'INCIDENT_CONFIRMED_DIRECT'|'INCIDENT_INVESTIGATING_DIRECT'|'INCIDENT_RESOLVED_GROUP'|'INCIDENT_RESOLVED_DIRECT'|'INCIDENT_CLOSED_DIRECT';delivery_id:string;status:'PENDING'|'LEASED'|'SENDING'|'SENT'|'RECONCILIATION_REQUIRED'|'DEAD_LETTER'|'CANCELLED';side_effect_state:'NOT_ATTEMPTED'|'ACKNOWLEDGED'|'UNKNOWN';attempt_count:number;created_at:string}
+function notificationItem(value:unknown):IncidentNotificationItem{
+  const r=object(value);exact(r,['id','audience_type','template_code','delivery_id','status','side_effect_state','attempt_count','created_at']);const attempt=count(r.attempt_count);if(attempt===null||attempt>2147483647)throw new ApiError(502,'INVALID_RESPONSE');
+  return {id:id(r.id),audience_type:member(r.audience_type,['GROUP','REPORTER_DIRECT'] as const),template_code:member(r.template_code,['INCIDENT_CONFIRMED_GROUP','INCIDENT_CONFIRMED_DIRECT','INCIDENT_INVESTIGATING_DIRECT','INCIDENT_RESOLVED_GROUP','INCIDENT_RESOLVED_DIRECT','INCIDENT_CLOSED_DIRECT'] as const),delivery_id:id(r.delivery_id),status:member(r.status,['PENDING','LEASED','SENDING','SENT','RECONCILIATION_REQUIRED','DEAD_LETTER','CANCELLED'] as const),side_effect_state:member(r.side_effect_state,['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'] as const),attempt_count:attempt,created_at:timestamp(r.created_at)};
+}
+const incidentStatuses=['CONFIRMED_LOCAL','CONFIRMED_BUILDING','CONFIRMED_CAMPUS','CONFIRMED_HOSPITAL_WIDE','INVESTIGATING','RESOLVED','CLOSED'] as const;
+const incidentEventTypes=['incident.confirmed','incident.investigating','incident.resolved','incident.closed','incident.scope.corrected','incident.primary_ticket_changed','incident.report.linked','incident.report.unlinked','incident.report.recovered','incident.subscription.created','incident.subscription.activated','incident.subscription.paused','incident.subscription.ended'] as const;
+export interface IncidentHistoryItem{id:string;event_type:typeof incidentEventTypes[number];event_ordinal:string;old_status:string|null;new_status:string|null;old_scope:IncidentScope|null;new_scope:IncidentScope|null;occurred_at:string}
+function historyItem(value:unknown):IncidentHistoryItem{
+  const r=object(value);exact(r,['id','event_type','event_ordinal','old_status','new_status','old_scope','new_scope','occurred_at']);
+  return {id:id(r.id),event_type:member(r.event_type,incidentEventTypes),event_ordinal:version(r.event_ordinal),old_status:r.old_status===null?null:member(r.old_status,incidentStatuses),new_status:r.new_status===null?null:member(r.new_status,incidentStatuses),old_scope:r.old_scope===null?null:member(r.old_scope,incidentScopes),new_scope:r.new_scope===null?null:member(r.new_scope,incidentScopes),occurred_at:timestamp(r.occurred_at)};
+}
+const nullableId=(value:unknown)=>value===null?null:id(value);
+const nullableTimestamp=(value:unknown)=>value===null?null:timestamp(value);
+function zeroVersion(value:unknown):string{const result=text(value);if(!/^(0|[1-9][0-9]{0,18})$/u.test(result)||BigInt(result)>9223372036854775807n)throw new ApiError(502,'INVALID_RESPONSE');return result;}
+function childPage<T>(value:unknown,decode:(value:unknown)=>T,identity:(item:T)=>string):IncidentChildPage<T>{const page=object(value);exact(page,['items','next_cursor']);return {items:unique(list(page.items,30,decode),identity),next_cursor:page.next_cursor===null?null:text(page.next_cursor,2048)};}
+function reportItem(value:unknown):IncidentReportItem{
+  const r=object(value);exact(r,['id','ticket_id','ticket_no','service_intake_id','link_state','impact_state','row_version','linked_at','unlinked_at','recovered_at']);
+  return {id:id(r.id),ticket_id:nullableId(r.ticket_id),ticket_no:nullableText(r.ticket_no),service_intake_id:id(r.service_intake_id),link_state:member(r.link_state,['CANDIDATE','LINKED','UNLINKED','REJECTED'] as const),impact_state:member(r.impact_state,['UNKNOWN','IMPACTED','RECOVERED'] as const),row_version:version(r.row_version),linked_at:nullableTimestamp(r.linked_at),unlinked_at:nullableTimestamp(r.unlinked_at),recovered_at:nullableTimestamp(r.recovered_at)};
+}
+function subscriptionItem(value:unknown):IncidentSubscriptionItem{
+  const s=object(value);exact(s,['id','representative_report_id','status','impact_state','row_version','last_notified_incident_version','created_at','updated_at']);
+  return {id:id(s.id),representative_report_id:id(s.representative_report_id),status:member(s.status,['PENDING_DESTINATION','ACTIVE','PAUSED','ENDED'] as const),impact_state:member(s.impact_state,['UNKNOWN','IMPACTED','RECOVERED'] as const),row_version:version(s.row_version),last_notified_incident_version:s.last_notified_incident_version===null?null:zeroVersion(s.last_notified_incident_version),created_at:timestamp(s.created_at),updated_at:timestamp(s.updated_at)};
+}
+export function decodeIncidentOperation(value:unknown):IncidentOperation{
+  const op=object(value),target=id(op.incidentId),action=member(op.action,incidentActions),body=object(op.body),base={client_command_id:id(body.client_command_id),expected_row_version:version(body.expected_row_version),reason_code:member(body.reason_code,candidateReasons)},keys=['client_command_id','expected_row_version','reason_code'];
+  exact(op,['incidentId','action','body',...(['UNLINK_REPORT','MARK_REPORTER_RECOVERED'].includes(action)?['reportId']:['PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(action)?['subscriptionId']:[])]);
+  if(action==='CORRECT_SCOPE'){exact(body,[...keys,'confirmed_scope']);return {incidentId:target,action,body:{...base,confirmed_scope:member(body.confirmed_scope,incidentScopes)}};}
+  if(action==='SET_PRIMARY_TICKET'){exact(body,[...keys,'primary_ticket_id']);return {incidentId:target,action,body:{...base,primary_ticket_id:nullableId(body.primary_ticket_id)}};}
+  if(action==='LINK_REPORT'){exact(body,[...keys,'source_decision_id']);return {incidentId:target,action,body:{...base,source_decision_id:id(body.source_decision_id)}};}
+  if(action==='UNLINK_REPORT'||action==='MARK_REPORTER_RECOVERED'){exact(body,[...keys,'expected_report_version']);return {incidentId:target,action,reportId:id(op.reportId),body:{...base,expected_report_version:version(body.expected_report_version)}};}
+  if(action==='PAUSE_SUBSCRIPTION'||action==='RESUME_SUBSCRIPTION'){
+    const direct=action==='RESUME_SUBSCRIPTION'&&Object.hasOwn(body,'direct_channel_leg_id');exact(body,[...keys,'expected_subscription_version',...(direct?['direct_channel_leg_id']:[])]);
+    return {incidentId:target,action,subscriptionId:id(op.subscriptionId),body:{...base,expected_subscription_version:version(body.expected_subscription_version),...(direct?{direct_channel_leg_id:nullableId(body.direct_channel_leg_id)}:{})}};
+  }
+  exact(body,keys);if(action==='START_INVESTIGATING'&&base.reason_code!=='OPERATOR_REVIEWED')throw new ApiError(502,'INVALID_RESPONSE');return {incidentId:target,action,body:base};
+}
+async function performIncident(operation:IncidentOperation,csrfToken:string|null,signal:AbortSignal):Promise<IncidentCommandResult>{
+  const original=decodeIncidentOperation(operation),body=original.body,requireCurrent=captureWorkbenchRead(signal);requireCurrent();
+  const route=original.action==='UNLINK_REPORT'||original.action==='MARK_REPORTER_RECOVERED'?'reports/'+original.reportId+(original.action==='UNLINK_REPORT'?'/unlink':'/mark-recovered'):
+    original.action==='PAUSE_SUBSCRIPTION'||original.action==='RESUME_SUBSCRIPTION'?'subscriptions/'+original.subscriptionId+(original.action==='PAUSE_SUBSCRIPTION'?'/pause':'/resume'):
+    {START_INVESTIGATING:'start-investigating',CORRECT_SCOPE:'correct-scope',SET_PRIMARY_TICKET:'primary-ticket',LINK_REPORT:'reports/link',RESOLVE_INCIDENT:'resolve',CLOSE_INCIDENT:'close'}[original.action];
+  try{
+    const response=await fetch('/api/incidents/'+original.incidentId+'/'+route,{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"'+body.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(body)});
+    requireCurrent();if([401,403,404].includes(response.status))throw new ApiError(response.status,'AUTHORIZATION_REJECTED');
+    if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();const value:unknown=await response.json();requireCurrent();const r=object(value);
+    if(!response.ok){const error=object(r.error),code=errorCode(error.code);if(r.ok===false&&typeof r.replayed==='boolean'&&error.retryable===false){exact(r,['ok','error','replayed']);exact(error,['code','retryable']);throw new IncidentCommandRefusal(response.status,code);}throw new UnknownCommandOutcome();}
+    const result=decodeResult(r,original.incidentId);if(response.status!==200||result.result_ref_type!=='INCIDENT'||result.result_ref_id!==original.incidentId||result.result_row_version!==(BigInt(body.expected_row_version)+1n).toString())throw new UnknownCommandOutcome();return {...result,result_ref_type:'INCIDENT'};
+  }catch(error){if(error instanceof IncidentCommandRefusal||(error instanceof ApiError&&[401,403,404].includes(error.status)))throw error;throw new UnknownCommandOutcome();}
+}
+const childPath=(incidentId:string,part:string,cursor:string|null)=>'/api/incidents/'+id(incidentId)+'/'+part+'?'+new URLSearchParams({limit:'30',...(cursor?{cursor}:{})});
+export {reportItem as decodeIncidentReportItem,subscriptionItem as decodeIncidentSubscriptionItem};
+export const incidentApi={
+  receipt:(incidentId:string,commandId:string,signal:AbortSignal):Promise<IncidentFollowupReceipt>=>get('/api/incidents/'+id(incidentId)+'/commands/'+id(commandId),signal,input=>{const r=object(input);if(id(r.incident_id)!==incidentId||id(r.client_command_id)!==commandId)throw new ApiError(502,'INVALID_RESPONSE');const base={incident_id:incidentId,client_command_id:commandId};if(r.state==='UNKNOWN'){exact(r,['incident_id','client_command_id','state']);return {...base,state:'UNKNOWN'};}if(r.state==='FAILED'){exact(r,['incident_id','client_command_id','state','error']);const error=object(r.error);exact(error,['code','retryable']);if(error.retryable!==false)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'FAILED',error:{code:errorCode(error.code),retryable:false}};}if(r.state==='COMMITTED'){exact(r,['incident_id','client_command_id','state','result']);const result=decodeResult(r.result,incidentId);if(result.result_ref_type!=='INCIDENT'||result.result_ref_id!==incidentId||!result.replayed)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'COMMITTED',result:{...result,result_ref_type:'INCIDENT',replayed:true}};}throw new ApiError(502,'INVALID_RESPONSE');}),
+  startInvestigation:(incidentId:string,body:IncidentInvestigationCommand,csrfToken:string|null,signal:AbortSignal)=>performIncident({incidentId,action:'START_INVESTIGATING',body},csrfToken,signal),
+  perform:performIncident,
+  history:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'events',cursor),signal,value=>childPage(value,historyItem,item=>item.id)),
+  notifications:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'notifications',cursor),signal,value=>childPage(value,notificationItem,item=>item.id)),
+  reports:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'reports',cursor),signal,value=>childPage(value,reportItem,item=>item.id)),
+  subscriptions:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'subscriptions',cursor),signal,value=>childPage(value,subscriptionItem,item=>item.id)),
+  destinations:(incidentId:string,subscriptionId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'subscriptions/'+id(subscriptionId)+'/direct-destinations',cursor),signal,value=>childPage(value,input=>{const r=object(input);exact(r,['id','subscription_id','source_intake_no']);const target=id(r.subscription_id);if(target!==subscriptionId)throw new ApiError(502,'INVALID_RESPONSE');return {id:id(r.id),subscription_id:target,source_intake_no:text(r.source_intake_no)};},item=>item.id)),
+  linkable:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'linkable-reports',cursor),signal,value=>childPage(value,input=>{const r=object(input);exact(r,['source_decision_id','id','ticket_no']);return {id:id(r.id),source_decision_id:id(r.source_decision_id),ticket_no:text(r.ticket_no)};},item=>item.id)),
+  ticketAssignee:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+id(ticketId),signal,value=>{const r=object(value);if(id(r.id)!==ticketId)throw new ApiError(502,'INVALID_RESPONSE');return nullableId(r.assignee_id);}),
 };

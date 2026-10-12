@@ -13,6 +13,7 @@
 | `GET /api/incident-candidates/{candidateId}/commands/{commandId}` | 不接受 query | 当前 principal/candidate 的只读安全回执；额外要求宿主 `incidentCandidateWorkspaceEnabled=true`，默认关闭 |
 | `GET /api/incidents` | state?、cursor?、limit 默认30/最大100 | `{items:[IncidentPublicView],next_cursor}` |
 | `GET /api/incidents/{incidentId}` | 无必需 query | IncidentDetail；ETag；按角色裁剪 |
+| `GET /api/incidents/{incidentId}/commands/{commandId}` | 不接受 query | T28 原 Incident 操作只读回执；宿主 `incidentCandidateWorkspaceEnabled=true`（默认关闭），当前原动作用途授权 |
 | `GET /api/incidents/{incidentId}/events` | cursor?、limit 默认30/最大200 | `{items,next_cursor}`；窄权限仅公开事件类型 |
 | `GET /api/incidents/{incidentId}/reports` | cursor?、limit 默认30/最大100 | `{items,next_cursor}`；按可见工单过滤 |
 | `GET /api/incidents/{incidentId}/linkable-reports` | 同上 | ADMIN/DISPATCHER |
@@ -100,3 +101,27 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 直接成功 ACK、明确稳定 FAILED，以及 COMMITTED/FAILED 回执均结算恢复记录。浏览器清理失败不能把已知结果变成 UNKNOWN；保留已知结果与原 UUID，禁止新提交，只能只读核对及重试清理。当前授权 epoch 和原请求撤销状态共同阻止迟到读取、恢复授权及错误回调恢复已清理的缓存、输入或 UNKNOWN。权限变化后仍需当前 bootstrap 和当前资源读取，旧 ADMIN 响应不能复活受保护投影。
 
 资源复用原 App/Worker/Gateway和单条 SSE（默认32客户端），应用池预算不超过8；确认 body沿原32KiB、Report100/owner100/各组20及材料101上限。关闭新宿主能力停止入口、恢复与专用回执，已提交事实及旧 API 保留；外发开关与独立现场授权保持原边界。当前隔离 PostgreSQL、真实 loopback HTTP、production bundle 与清理证据见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)，不等同于真实外部服务、发送、部署、full/certify或Gate批准。
+
+## 公共故障跟进（WBINT-T28）
+
+正式独立入口为 `/workbench/app/incidents/{incidentId}`。操作和原因均须明确选择，现有十个 POST 消费原 UUID、父字符串版本及所选 Report/Subscription 字符串版本，Header 为同 UUID 的 Idempotency-Key 和精确双引号 If-Match。设置主工单可明确选择无主工单。候选确认页内嵌的 Incident 结果继续只读。
+
+角色和状态提示取当前安全 detail，Incident 没有另造 allowed_actions/allowed_scopes 或所有权。HANDLER 单人恢复须通过现有个人 Ticket GET 核对当前本人 assignee；写入事务再次锁定核验。Incident owner 不增加权限。父、子、来源和主工单归属由原 CommandPort 判断；分页缺席不证明失权，保留的原选择仍须提交时核验。公共恢复、关闭和个人恢复保持个人 Ticket 状态、事件、处理责任与沟通责任独立。
+
+Report、历史、订阅、通知、来源和所选 subscription 的 DIRECT 渠道均从 unknown 按封闭安全字段解码，每页请求30，最多保留最近三页。各段独立游标，下一页与回到起点明确。界面显示当前页及已加载窗口项数，不能用页面长度推断关联总数或受影响人数。HANDLER 继续只读其当前获权的裁剪投影。DIRECT 候选仅来自当前所选同一 Reporter 的有效个人渠道；待配置订阅须明确选渠道，已有订阅可省略字段保留仍有效的原渠道。群聊、他人或过期渠道由原事务拒绝。同人多条 Report 复用一条订阅，PAUSED 不因关联自动恢复，最后一条解除才 ENDED，重新关联复用原 Report。
+
+`GET /api/incidents/{incidentId}/commands/{commandId}` 已挂载，要求当前 workspace 能力。查询绑定当前 principal、Incident、原 UUID 和本票十种动作的原 `incident.command_receipt`。先核验当前父 READ，再核验原动作及子目标当前用途权限，之后才能读终态。ADMIN 专用动作降为 DISPATCHER 后不能核对；HANDLER 仅能核对当前仍由本人负责 Ticket 的原单人恢复。该主体/对象没有原记录时返回 UNKNOWN，不能据此获得重放权。
+
+响应共同字段为 `incident_id,client_command_id,state`。UNKNOWN 无结果；FAILED 仅白名单稳定错误；COMMITTED 仅封闭六字段 Incident ACK、`replayed:true`。见[回执 Schema](../../../contracts/p2_012_incident_followup_receipt.schema.json)及[独立增量声明](../../../contracts/workbench_incident_followup_contracts.d.ts)。不返回正文、hash、身份、目的地或 Provider 错误。原13份 P2-012合同和032保持原字节，无数据库变更或第二套事实。
+
+可用时复用原浏览器加密恢复库，scope 为当前 principal / `incident` / Incident UUID / `incident-followup`，并在展示敏感恢复内容前重新核对原动作用途及 HANDLER 当前 assignee。使用非导出 AES-GCM 密钥、首次保存固定24小时、UTF-8 16KiB、最多20草稿及20操作标记。完整 UNKNOWN 保留原 UUID、正文和捕获版本；页面、刷新、恢复及 SSE 不自动核对或 POST。用户只读核对为 UNKNOWN 后，完整未过期且当前获权的正文才可明确重放原意图。过期或丢弃仅保留 opaque UUID 核对，不能推断未提交。
+
+原用途/对象失权仅清该 Incident 跟进 scope 并撤销其旧回调；真正401或 bootstrap 会话拒绝沿原全会话清理。新目的拒绝不能由恢复开关是否打开推断为全局会话失效。当前授权 epoch、请求身份、原请求撤销和恢复 generation 防止迟到读取、加密、解密、POST及回执恢复旧输入、受保护投影或 UNKNOWN。已知提交或稳定失败保持原结论；清理失败保留 UUID、阻止新提交并允许再次只读核对和清理。
+
+已知提交且恢复副本完全结算后，可在同一详情明确开始下一次操作。上一 ACK 及历史事实保留，新的操作和原因均为空；新意图取得新的 UUID、当前捕获版本并再次验权，没有自动 POST。UNKNOWN 或副本清理失败不能开启新意图。原 UNKNOWN 的显式重放仍重新核对当前原动作用途及 HANDLER assignee，但不以已推进的父版本或状态阻止原正文到达现有账本；原 UUID、正文、父子版本保持，终态由原幂等回执及事务版本检查结算。
+
+现有单条 SSE 控制器同时更新 Incident 父、各子窗口及当前 Report assignee 查询，保留原输入和捕获版本，版本变化须明确采用。通知窗口显示各路 Delivery 的当前结果及尝试次数：已发送、发送结果待核对或失败分别来自各条实际投递；订阅状态和群通知不替代个人投递结果。读取没有重试或核对控制授权（另属 T32）。
+
+资源沿原单 App/Worker、零新增 Gateway、SSE默认32及总池建议≤8；body32KiB和原页数/草稿上限保持。workspace 与浏览器恢复能力默认关闭；关闭入口、专用恢复或 workspace 停止相应消费与专用回执，保留所有原 Ticket/Incident/Report/Subscription/Event/Outbox/Delivery。新增负责人转交、内部处置和显式发布仍属 T29–T31。
+
+当前本地定向测试使用真实隔离 PG、loopback Cookie HTTP、正式 production bundle 与合成外部适配器。原 RED、后继各风险验证、原七项和最终被测对象以[T28执行记录](../../../plans/admin-workbench-integration/execution/t28.md)及外置原始报告为准；真实外部服务/发送、部署、full/certify与Gate仍按原独立停止线。

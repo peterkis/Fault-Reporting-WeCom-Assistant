@@ -95,3 +95,7 @@ WBINT-T20 的[Web明确未解决反馈合同](web-feedback-design.md)现已实�
 
 
 WBINT-T11完工后，实际获权的本人Web/Bot安全时间线只读取STAFF_COMPLETED明确关闭事件的已确认外部摘要（≤500字）；内部处理过程与普通备注不进入H5投影。它依赖原Intake/Journey本人授权，不因工作人员BROAD权限变成任意成员可见，不增加客户端完工动作。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
+
+## 原H5 App通知详情（WBINT-T25）
+
+原H5 FIRST/工作人员完工卡片指向 `/wecom/yixiaoxiu/reports/{requestRef}`，数据仍沿本模块当前MEMBER_SELF_SERVICE与原requestRef归属。MY_REPORTS启用、SELF_SERVICE关闭时本人可只读历史，卡片不会授予补充或反馈写权。通知来源/current资格和Sender在后端，独立成员B及退出后的当前浏览器拒绝读取；安全外显结果与内部过程分离。没有新命令或浏览器SDK，见[应用通知](../workbench/app-notifications.md)。

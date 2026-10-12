@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/bot_reporter_feedback_bootstrap.schema.json",
+  "title": "Bot member feedback bootstrap (WBINT-T21 SOURCE contract)",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "write_enabled", "csrf_token"],
+      "properties": {
+        "schema_version": {"const": 1}, "write_enabled": {"const": true},
+        "csrf_token": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "write_enabled", "csrf_token"],
+      "properties": {
+        "schema_version": {"const": 1}, "write_enabled": {"const": false},
+        "csrf_token": {"type": "null"}
+      }
+    }
+  ]
+}
