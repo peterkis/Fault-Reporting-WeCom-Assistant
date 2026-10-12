@@ -4,17 +4,18 @@ import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {selfHandlingSchemaReady} from './workbench-ticket-self-handling.mjs';
 import {assignmentCycle} from './workbench-ticket-assignment.mjs';
 import {transferTicketAssignmentP2016} from './p2-016-ticket-assignment.mjs';
+import {createTicketActionService} from './p1-006-ticket-state-actions.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 
 export interface TicketTakeoverCommand {
-  action:'takeover';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
+  action:'takeover'|'takeover-and-start';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
   resolver_team_id:string;communication_choice:'RETAIN_CURRENT';sessions:[];
 }
 export function normalizeTicketTakeoverCommand(input:unknown):TicketTakeoverCommand {
   const v=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','resolver_team_id','communication_choice','sessions']);
-  if(v.action!=='takeover'||v.communication_choice!=='RETAIN_CURRENT'||!Array.isArray(v.sessions)||v.sessions.length!==0)failP2016();
+  if(v.action!=='takeover'&&v.action!=='takeover-and-start'||v.communication_choice!=='RETAIN_CURRENT'||!Array.isArray(v.sessions)||v.sessions.length!==0)failP2016();
   return publicP2016({action:v.action,ticket_id:uuidP2016(v.ticket_id),client_command_id:uuidP2016(v.client_command_id),expected_version:versionP2016(v.expected_version),reason_code:codeP2016(v.reason_code),resolver_team_id:codeP2016(v.resolver_team_id),communication_choice:v.communication_choice,sessions:[]});
 }
 export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}&SelfHandlingHooks){
@@ -32,7 +33,8 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       if(selected!==null&&!chosen)failP2016('TARGET_INVALID',403);
       const teams=chosen&&!groups.rows.some(row=>row.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
       const available=selected===null?teams:chosen?[chosen]:[];
-      const actions=ticket.status==='ACCEPTED'&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover']:[];
+      const cycle=await assignmentCycle(transaction,ticket.id);
+      const actions=ticket.status==='ACCEPTED'&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
       return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:actions});
     });
   },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
@@ -55,11 +57,20 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       if(ticket.status!=='ACCEPTED'||ticket.assignee_id===null||ticket.assignee_id===principal.principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       const cycle=await assignmentCycle(transaction,ticket.id);
       if(!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+      if(command.action==='takeover-and-start'&&(!cycle||cycle.first_responsibility_event_id===null))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       const result=await transferTicketAssignmentP2016({transaction,principal,ticket,command:{action:'transfer-assignment',ticket_id:ticket.id,client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:command.reason_code,target_principal_id:principal.principal_id,resolver_team_id:command.resolver_team_id},workbenchBusinessAssignment:true});
       if(cycle)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
       await hooks.notificationProjector?.project({transaction,...result});
       await hooks.realtimeProjector?.({transaction,...result,command});
-      return {ok:true as const,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};
+      let finalVersion=result.ticket.version,finalEvent=result.event.event_id;
+      if(command.action==='takeover-and-start'){
+        if(!cycle||!cycle.first_responsibility_event_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+        const started=await createTicketActionService({authorize:async()=>true,afterAction:hooks.closure?.afterTicketAction??null}).performInTransaction({ticketId:ticket.id,action:'start',actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:result.ticket.version,reasonCode:command.reason_code,traceId:'t07:'+command.client_command_id},transaction);
+        await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,started.event.event_id]);
+        if(hooks.notificationProjector&&!hooks.closure)await hooks.notificationProjector.project({transaction,...started});
+        await hooks.realtimeProjector?.({transaction,...started,command});finalVersion=started.ticket.version;finalEvent=started.event.event_id;
+      }
+      return {ok:true as const,ticket_id:ticket.id,ticket_version:finalVersion,ticket_event_id:finalEvent,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};
     }});
   }});
 }
