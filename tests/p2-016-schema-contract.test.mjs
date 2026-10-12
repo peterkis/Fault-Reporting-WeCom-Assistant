@@ -32,7 +32,7 @@ test('P2-016 default validator still requires readiness Evidence; deferred sourc
 });
 test('P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials',async()=>{
   const files=(await readdir('contracts')).filter(n=>/^p2_016_.*\.schema\.json$/u.test(n));assert.ok(files.length>=15);
-  for(const name of files){const s=JSON.parse(await readFile('contracts/'+name,'utf8'));assert.equal(s.additionalProperties,false);assert.ok(s.$id);}
+  for(const name of files){const s=JSON.parse(await readFile('contracts/'+name,'utf8'));const shapes=s.additionalProperties===false?[s]:s.anyOf??s.oneOf;assert.ok(Array.isArray(shapes)&&shapes.length>0,name+' has a nonempty closed object shape');for(const shape of shapes){assert.equal(shape.type,'object',name+' object branch');assert.equal(shape.additionalProperties,false,name+' closed branch');}assert.ok(s.$id);}
   for(const name of ['p2_016_reporter_session','p2_016_reporter_ticket_view','p2_016_reporter_timeline']){
     const text=await readFile('contracts/'+name+'.schema.json','utf8');assert.doesNotMatch(text,/"(?:ticket_id|reporter_wecom_userid|chatid|nonce|token_hash|session_token_hash|internal_note|provider_error)"/u);
   }
