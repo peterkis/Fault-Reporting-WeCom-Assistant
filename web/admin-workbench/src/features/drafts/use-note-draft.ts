@@ -34,7 +34,7 @@ function failureMessage(error:unknown):string{
 }
 export interface AuthorizedDraftValue<T,C> {value:T;pending:C|null}
 export interface AuthorizedDraftOptions<T,C> {
-  scope:DraftScope;enabled:boolean;writeEnabled?:boolean;value:T;pending:C|null;emptyValue:T;
+  scope:DraftScope;enabled:boolean;writeEnabled?:boolean;refreshBlankAfterPurposeRemoval?:boolean;value:T;pending:C|null;emptyValue:T;
   hasInput:(value:T)=>boolean;serialise:(value:AuthorizedDraftValue<T,C>)=>string;
   decode:(text:string)=>AuthorizedDraftValue<T,C>;commandId:(command:C)=>string;
   authorize:(signal:AbortSignal)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
@@ -117,7 +117,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     try{return subscribeDrafts(value=>{
       if(!matchesDraft(value,scope)){
         const target=handle.current;
-        if(value.reason!=='settled'||value.principal!==scope.principal||!value.kind||!value.id||!value.purpose||!target||target.record!==null||target.operation!==null||hasInput(latest.current.value)||latest.current.pending!==null||blankRefreshPending.current)return;
+        const refreshOtherPurpose=value.reason==='settled'||protocol.current.refreshBlankAfterPurposeRemoval===true&&['expired','discard','revoked'].includes(value.reason);
+        if(!refreshOtherPurpose||value.principal!==scope.principal||!value.kind||!value.id||!value.purpose||!target||target.record!==null||target.operation!==null||hasInput(latest.current.value)||latest.current.pending!==null||blankRefreshPending.current)return;
         // Capture blankness before any new input; never reopen a stale null
         // handle using the private value that a purge may have cleared.
         const token=generation.current;blankRefreshPending.current=true;

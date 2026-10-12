@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_waiting_capability.schema.json",
+    "contracts/p2_016_waiting_action_receipt.schema.json",
     "database/migrations/057_ticket_return_follow_up_compatibility.sql",
     "contracts/p2_016_return_to_dispatch_capability.schema.json",
     "contracts/p2_016_return_to_dispatch_receipt.schema.json",
@@ -309,6 +311,9 @@
     "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql",
     "contracts/workbench_activity_contracts.d.ts",
     "contracts/workbench_activity_command.schema.json",
-    "contracts/workbench_activity_view.schema.json"
+    "contracts/workbench_activity_view.schema.json",
+    "contracts/p2_016_waiting_action_command.schema.json",
+    "contracts/p2_016_waiting_action_result.schema.json",
+    "contracts/p2_016_waiting_event_page.schema.json"
   ]
 }
