@@ -1,4 +1,4 @@
-import type {WaitingCommand,WaitingResult,WaitingCapability} from '../../../../contracts/workbench_waiting_contracts';
+import type {WaitingAction,WaitingCommand,WaitingResult,WaitingCapability,WaitingAcknowledgement} from '../../../../contracts/workbench_waiting_contracts';
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
@@ -209,6 +209,17 @@ export async function postTicketCommand<T>(ticketId:string,action:string,command
 
 }
 export const api={
+  waitingAction:(ticketId:string,action:WaitingAction,command:WaitingCommand,csrfToken:string|null,signal:AbortSignal):Promise<WaitingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
+    if(Object.keys(v).length!==7||!Object.hasOwn(v,'handling_cycle_id'))throw new UnknownCommandOutcome();
+    return {...decodeTicketReceipt(v,ticketId),handling_cycle_id:v.handling_cycle_id===null?null:id(v.handling_cycle_id)};
+  }),
+  waitingAcknowledgement:(ticketId:string,action:WaitingAction,commandId:string,signal:AbortSignal):Promise<WaitingAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action+'/commands/'+encodeURIComponent(commandId),signal,value=>{
+    const v=object(value);
+    if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
+    if(v.state==='COMMITTED'&&Object.keys(v).length===4&&v.ticket_id===ticketId)return {state:'COMMITTED',ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id)};
+    if(v.state==='FAILED'&&Object.keys(v).length===2){const error=object(v.error),code=text(error.code);if(Object.keys(error).length===2&&error.retryable===false&&/^(P2_016|TICKET)_[A-Z][A-Z0-9_]{0,80}$/u.test(code))return {state:'FAILED',error:{code,retryable:false}};}
+    throw new ApiError(502,'INVALID_RESPONSE');
+  }),
   waitForReporter:(ticketId:string,command:WaitingCommand,csrfToken:string|null,signal:AbortSignal):Promise<WaitingResult>=>postTicketCommand(ticketId,'request-information',command,csrfToken,signal,v=>{
     if(Object.keys(v).length!==7||!Object.hasOwn(v,'handling_cycle_id'))throw new UnknownCommandOutcome();
     return {...decodeTicketReceipt(v,ticketId),handling_cycle_id:v.handling_cycle_id===null?null:id(v.handling_cycle_id)};
