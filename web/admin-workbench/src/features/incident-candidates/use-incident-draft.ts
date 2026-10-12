@@ -28,12 +28,13 @@ function decode(text:string,incidentId:string){
 }
 export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,onRestore,onOperation,onSensitiveClear}:{principal:Principal;incidentId:string;value:IncidentDraftValue;pending:IncidentOperation|null;emptyValue:IncidentDraftValue;onRestore:(copy:{value:IncidentDraftValue;pending:IncidentOperation|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),[restoring,setRestoring]=useState(false),[authorityNotice,setAuthorityNotice]=useState(''),scope={principal:principal.principal_id,kind:'incident' as const,id:incidentId,purpose:'incident-followup'},stage=useRef<'session'|'incident'>('session');
+  const restoreRequest=useRef<AbortController|null>(null),revocation=useRef(0);
   const revoke=(error:unknown)=>{
     if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');
-    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('恢复副本清理尚未确认；当前内容已停止展示，禁止新提交。');});}
+    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){revocation.current++;restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('恢复副本清理尚未确认；当前内容已停止展示，禁止新提交。');});}
   };
   async function authorize(signal:AbortSignal,copy?:{value:IncidentDraftValue;pending:IncidentOperation|null}){
-    const requireCurrent=captureWorkbenchRead(signal);stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
+    const epoch=captureWorkbenchRead(signal),revision=revocation.current,requireCurrent=()=>{epoch();if(revocation.current!==revision)throw new DraftError('DRAFT_ACTION_REVOKED');};stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
     if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.incident_candidate_workspace_enabled||!fresh.incident_candidate_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');
     client.setQueryData(['session'],fresh);stage.current='incident';const current=await candidateApi.incident(incidentId,signal);requireCurrent();client.setQueryData(['incident-result',scope.principal,incidentId,'standalone'],current);
     const action=copy?.pending?.action||copy?.value.action;
@@ -43,7 +44,6 @@ export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,
     }
     return fresh.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))&&current.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));
   }
-  const restoreRequest=useRef<AbortController|null>(null);
   useEffect(()=>()=>{restoreRequest.current?.abort();restoreRequest.current=null;},[incidentId,principal.principal_id]);
   const draft=useAuthorizedDraft<IncidentDraftValue,IncidentOperation>({scope,enabled:principal.incident_candidate_draft_recovery_enabled,value,pending,emptyValue,hasInput:value=>Boolean(value.action||value.reason||value.capturedVersion),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:text=>decode(text,incidentId),commandId:command=>command.body.client_command_id,authorize,onAuthorityFailure:revoke,
     onRestore:copy=>{const controller=new AbortController();restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);void authorize(controller.signal,copy).then(allowed=>{controller.signal.throwIfAborted();if(restoreRequest.current!==controller)return;if(!allowed)throw new DraftError('DRAFT_ACTION_REVOKED');onRestore(copy);}).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller)revoke(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},

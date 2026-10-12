@@ -9,6 +9,7 @@ import type {IncidentAction,IncidentOperation,IncidentResult,IncidentChildPage,I
 import {IncidentResultFacts} from './IncidentResult';
 import {useIncidentDraft} from './use-incident-draft';
 import type {IncidentDraftValue} from './use-incident-draft';
+import {DraftError} from '../drafts/encrypted-drafts';
 
 const broad=(roles:readonly string[])=>roles.some(role=>role==='ADMIN'||role==='DISPATCHER');
 const admin=(roles:readonly string[])=>roles.includes('ADMIN');
@@ -60,7 +61,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
   const canSubmit=readReady&&allowed&&Boolean(reason)&&required&&(action!=='START_INVESTIGATING'||reason==='OPERATOR_REVIEWED')&&capturedVersion===detail?.row_version&&!busy&&!unknown&&!pending&&!originalId&&!reviewRequired&&state!=='committed'&&draft.canSubmit&&!draft.restoring&&workbenchTransportWritable()&&navigator.onLine;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();request.current=null;},[]);
-  useEffect(()=>{if(!readDenied&&!purposeDenied)return;request.current?.abort();request.current=null;clearInput();setPending(null);setState(knownCommit.current?'committed':'denied');setMessage(knownCommit.current?'原操作已提交；当前权限已变化，原输入已停止展示。':'当前操作权限不可用；原输入已停止展示。');},[readDenied,purposeDenied]);
+  useEffect(()=>{if(!readDenied&&!purposeDenied)return;request.current?.abort();request.current=null;draft.revoke(new DraftError('DRAFT_ACTION_REVOKED'));clearInput();setPending(null);setState(knownCommit.current?'committed':'denied');setMessage(knownCommit.current?'原操作已提交；当前权限已变化，原输入已停止展示。':'当前操作权限不可用；原输入已停止展示。');},[readDenied,purposeDenied]);
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault(),retained={location:window.location.href,state:window.history.state as unknown};retainedNavigation=retained;window.addEventListener('beforeunload',warn);return()=>{window.removeEventListener('beforeunload',warn);if(retainedNavigation===retained)retainedNavigation=null;};},[blocked]);
   const capture=()=>{if(detail)setCapturedVersion(current=>current??detail.row_version);};
   const refresh=()=>{void query.refetch();void reports.refetch();if(wide){void subscriptions.refetch();void linkable.refetch();}if(selectedTicket&&!wide)void assignee.refetch();};
