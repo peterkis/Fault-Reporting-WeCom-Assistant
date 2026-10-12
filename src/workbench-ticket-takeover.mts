@@ -13,6 +13,7 @@ export interface TicketTakeoverCommand {
   action:'takeover'|'takeover-and-start';ticket_id:string;client_command_id:string;expected_version:number;reason_code:string;
   resolver_team_id:string;communication_choice:'RETAIN_CURRENT';sessions:[];
 }
+const TRANSFER_STATES=['QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'];
 export function normalizeTicketTakeoverCommand(input:unknown):TicketTakeoverCommand {
   const v=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','resolver_team_id','communication_choice','sessions']);
   if(v.action!=='takeover'&&v.action!=='takeover-and-start'||v.communication_choice!=='RETAIN_CURRENT'||!Array.isArray(v.sessions)||v.sessions.length!==0)failP2016();
@@ -34,7 +35,7 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       const teams=chosen&&!groups.rows.some(row=>row.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
       const available=selected===null?teams:chosen?[chosen]:[];
       const cycle=await assignmentCycle(transaction,ticket.id);
-      const actions=['QUEUED','ACCEPTED'].includes(ticket.status)&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
+      const actions=TRANSFER_STATES.includes(ticket.status)&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(['QUEUED','ACCEPTED'].includes(ticket.status)&&cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
       return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:actions});
     });
   },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
@@ -54,10 +55,10 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       if(!worker.rows.some(row=>['ADMIN','DISPATCHER'].includes(row.role))&&ticket.assignee_id!==visiblePrincipal.principal_id&&!membership.rowCount)failP2016('FORBIDDEN',403);
       const {principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
-      if(!['QUEUED','ACCEPTED'].includes(ticket.status)||ticket.assignee_id===null||ticket.assignee_id===principal.principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+      if(!TRANSFER_STATES.includes(ticket.status)||ticket.assignee_id===null||ticket.assignee_id===principal.principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       const cycle=await assignmentCycle(transaction,ticket.id);
       if(!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
-      if(command.action==='takeover-and-start'&&(!cycle||cycle.first_responsibility_event_id===null))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+      if(command.action==='takeover-and-start'&&(!['QUEUED','ACCEPTED'].includes(ticket.status)||!cycle||cycle.first_responsibility_event_id===null))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       const result=await transferTicketAssignmentP2016({transaction,principal,ticket,command:{action:'transfer-assignment',ticket_id:ticket.id,client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:command.reason_code,target_principal_id:principal.principal_id,resolver_team_id:command.resolver_team_id},workbenchBusinessAssignment:true});
       if(cycle)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
       await hooks.notificationProjector?.project({transaction,...result});
