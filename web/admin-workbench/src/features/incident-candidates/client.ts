@@ -1,4 +1,5 @@
 import {ApiError,UnknownCommandOutcome,captureWorkbenchRead} from '../../api/client';
+import type {IncidentFollowupReceipt} from '../../../../../contracts/workbench_incident_followup_contracts';
 
 export const candidateStates=['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED'] as const;
 export type CandidateState=typeof candidateStates[number];
@@ -134,6 +135,7 @@ export interface IncidentCommandResult extends Omit<CandidateCommandResult,'resu
 export class IncidentCommandRefusal extends ApiError {}
 export const incidentActions=['START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT'] as const;
 export type IncidentAction=typeof incidentActions[number];
+export function incidentRoleAllowed(action:IncidentAction,roles:readonly string[]){const wide=roles.some(role=>role==='ADMIN'||role==='DISPATCHER');return action==='MARK_REPORTER_RECOVERED'?wide||roles.includes('HANDLER'):wide&&(!['CORRECT_SCOPE','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','CLOSE_INCIDENT'].includes(action)||roles.includes('ADMIN'));}
 type IncidentBody=Readonly<CommandBase&{expected_row_version:string}>;
 export type IncidentOperation={incidentId:string}&(
   {action:'START_INVESTIGATING'|'RESOLVE_INCIDENT'|'CLOSE_INCIDENT';body:IncidentBody}|
@@ -185,7 +187,9 @@ async function performIncident(operation:IncidentOperation,csrfToken:string|null
   }catch(error){if(error instanceof IncidentCommandRefusal||(error instanceof ApiError&&[401,403,404].includes(error.status)))throw error;throw new UnknownCommandOutcome();}
 }
 const childPath=(incidentId:string,part:string,cursor:string|null)=>'/api/incidents/'+id(incidentId)+'/'+part+'?'+new URLSearchParams({limit:'30',...(cursor?{cursor}:{})});
+export {reportItem as decodeIncidentReportItem,subscriptionItem as decodeIncidentSubscriptionItem};
 export const incidentApi={
+  receipt:(incidentId:string,commandId:string,signal:AbortSignal):Promise<IncidentFollowupReceipt>=>get('/api/incidents/'+id(incidentId)+'/commands/'+id(commandId),signal,input=>{const r=object(input);if(id(r.incident_id)!==incidentId||id(r.client_command_id)!==commandId)throw new ApiError(502,'INVALID_RESPONSE');const base={incident_id:incidentId,client_command_id:commandId};if(r.state==='UNKNOWN'){exact(r,['incident_id','client_command_id','state']);return {...base,state:'UNKNOWN'};}if(r.state==='FAILED'){exact(r,['incident_id','client_command_id','state','error']);const error=object(r.error);exact(error,['code','retryable']);if(error.retryable!==false)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'FAILED',error:{code:errorCode(error.code),retryable:false}};}if(r.state==='COMMITTED'){exact(r,['incident_id','client_command_id','state','result']);const result=decodeResult(r.result,incidentId);if(result.result_ref_type!=='INCIDENT'||result.result_ref_id!==incidentId||!result.replayed)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'COMMITTED',result:{...result,result_ref_type:'INCIDENT',replayed:true}};}throw new ApiError(502,'INVALID_RESPONSE');}),
   startInvestigation:(incidentId:string,body:IncidentInvestigationCommand,csrfToken:string|null,signal:AbortSignal)=>performIncident({incidentId,action:'START_INVESTIGATING',body},csrfToken,signal),
   perform:performIncident,
   reports:(incidentId:string,cursor:string|null,signal:AbortSignal)=>get(childPath(incidentId,'reports',cursor),signal,value=>childPage(value,reportItem,item=>item.id)),
