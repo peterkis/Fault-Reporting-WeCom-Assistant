@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
 import {withT09IndependentFixture} from './helpers/t09-independent-fixture.mjs';
 import type {T09IndependentFixture} from './helpers/t09-independent-fixture.mjs';
@@ -8,12 +9,16 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {migrateTicketReturnToDispatch} from '../scripts/ticket-return-to-dispatch-migrate.mjs';
 import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
 import type {P2016TicketDetail} from '../contracts/p2_016_contracts.js';
+import type {SharedFollowUpCommand} from '../contracts/workbench_follow_up_schedule_contracts.js';
 
 async function started(f:T09IndependentFixture){const handler=await f.http(2),admin=await f.http(0),ticketId=await f.createTicket(),path='/api/tickets/'+ticketId;
  await f.runtime.coordinator.runOnce();
  for(const action of ['accept','start','wait-vendor']){const before=await handler.get(path);assert.equal(before.status,200);const result=await handler.post(path+'/'+action,{client_command_id:randomUUID(),expected_version:version(before.value.version),reason_code:'T09_INDEPENDENT_'+action.replaceAll('-','_').toUpperCase()});assert.equal(result.status,200,JSON.stringify(result.value));}
  const before=await admin.get(path);assert.equal(before.status,200);assert.equal(before.value.status,'WAITING_VENDOR');assert.equal(before.value.assignee_id,f.handler);return{handler,admin,ticketId,path,before:before.value};}
-const followUp=(v:number,scheduleVersion:string,action:'SET'|'CANCEL')=>({client_command_id:randomUUID(),expected_version:v,expected_schedule_version:scheduleVersion,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action,...(action==='SET'?{due_at:assertLocalDateTime('2030-01-02 09:30:00')}: {})});
+const followUp=(v:number,scheduleVersion:string,action:'SET'|'CANCEL'):SharedFollowUpCommand=>{
+ const base={client_command_id:randomUUID(),expected_version:v,expected_schedule_version:scheduleVersion,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE' as const};
+ return action==='SET'?{...base,action,due_at:assertLocalDateTime('2030-01-02 09:30:00')}:{...base,action,due_at:null};
+};
 
 test('a real started Ticket advertises the independent return action inside the closed published detail contract',async()=>{
  const action:P2016TicketDetail['allowed_actions'][number]='return-to-dispatch';
@@ -48,6 +53,13 @@ for(const existing of [true,false])test(existing?'return migration after 049 pre
   const before=(await dispatcher.get(path+'/events?limit=200')).value,stamp=(await f.pool.query("SELECT migration_id,checksum_sha256,applied_at::text,applied_epoch_ms::text FROM platform.schema_migration WHERE migration_id='049_workbench_follow_up_schedules'")).rows;
   console.log('T09_REVERSE_MIGRATION_PRECONDITION '+JSON.stringify({applied_049:true,existing_real_follow_up:existing,event_count:rows(before.items).length}));
   const migration=await migrateTicketReturnToDispatch({databaseUrl:f.databaseUrl,mode:'apply'});assert.equal(migration.status,'APPLIED');
+  assert.equal(migration.migration_id,'057_ticket_return_follow_up_compatibility');
+  assert.equal((await f.pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='048_ticket_return_to_dispatch'")).rowCount,0,'057 does not pretend that the frozen 048 SQL was executed');
+  const checksum=createHash('sha256').update(await readFile(new URL('../database/migrations/057_ticket_return_follow_up_compatibility.sql',import.meta.url))).digest('hex');
+  const applied=(await f.pool.query("SELECT migration_id,checksum_sha256,applied_at::text,applied_epoch_ms::text FROM platform.schema_migration WHERE migration_id='057_ticket_return_follow_up_compatibility'")).rows;assert.equal(applied.length,1);assert.equal(applied[0]?.checksum_sha256,checksum);
+  assert.deepEqual(await migrateTicketReturnToDispatch({databaseUrl:f.databaseUrl,mode:'check'}),{status:'NOOP_ALREADY_APPLIED',migration_id:'057_ticket_return_follow_up_compatibility'});
+  assert.deepEqual(await migrateTicketReturnToDispatch({databaseUrl:f.databaseUrl,mode:'apply'}),{status:'NOOP_ALREADY_APPLIED',migration_id:'057_ticket_return_follow_up_compatibility'});
+  assert.deepEqual((await f.pool.query("SELECT migration_id,checksum_sha256,applied_at::text,applied_epoch_ms::text FROM platform.schema_migration WHERE migration_id='057_ticket_return_follow_up_compatibility'")).rows,applied);
   assert.deepEqual((await dispatcher.get(path)).value,current);assert.deepEqual((await dispatcher.get(path+'/events?limit=200')).value,before);assert.deepEqual((await f.pool.query("SELECT migration_id,checksum_sha256,applied_at::text,applied_epoch_ms::text FROM platform.schema_migration WHERE migration_id='049_workbench_follow_up_schedules'")).rows,stamp);
   const next=await dispatcher.post(path+'/follow-up-schedule',followUp(version(current.version),scheduleVersion,existing?'CANCEL':'SET'));assert.equal(next.status,200,JSON.stringify(next.value));
   const after=(await dispatcher.get(path)).value;assert.equal(after.status,current.status);assert.equal(after.assignee_id,current.assignee_id);assert.equal(after.resolver_team_id,current.resolver_team_id);assert.equal(after.version,version(current.version)+1);
