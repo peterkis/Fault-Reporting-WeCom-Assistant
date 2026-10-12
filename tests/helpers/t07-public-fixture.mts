@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-export interface T07Fixture {pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];principals:{id:string}[];runtime:{coordinator:{runOnce:()=>Promise<unknown>}}}
+export interface T07Fixture {pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];principals:{id:string}[];runtime:{coordinator:{runOnce:()=>Promise<unknown>};realtimeProjector:{runOnce:(input:{limit:number})=>Promise<{processed:number}>}}}
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
