@@ -208,6 +208,43 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 
 复用原pool≤4/同机建议≤8、单App/API/SSE与Worker、Gateway单活、SSE32；无新进程/轮询/外发。回退关闭option，保留责任/event/cycle/receipt；本片段和整票状态区分，真实外部服务/发送、部署、full/certify/Gate仍NOT_RUN。
 
+## 跨团队本人接管（WBINT-T07 SOURCE）
+
+2026-10-12：原SOURCE合同已在T07私树接入真实HTTP、唯一Ticket Core／Control事务、当前权限投影和正式React制品；本地合成PG／HTTP／浏览器证据见[本票记录](../../../plans/admin-workbench-integration/execution/t07.md)。五份冻结Schema／DTS保留2026-10-09原字节，其SOURCE题注属于历史准备元信息。最终严格检查、独立审查、资源清理和原七项收口以本票最终交接为准；本地能力不改变默认关闭、生产授权、外部发送或Gate。
+
+| 已挂载HTTP（默认关闭） | 用途 |
+| --- | --- |
+| `POST /api/tickets/{ticketId}/takeover` | 仅交接当前处理人及有效处理组；保留合法状态 |
+| `POST /api/tickets/{ticketId}/takeover-and-start` | 同事务交接及合法accept/start；浏览器只提交一次 |
+| `GET /api/tickets/{ticketId}/takeover-targets?resolver_team_id=CODE` | 当前原读权及业务权限下，本人实际所属有效组；多组明确选择 |
+| `GET /api/tickets/{ticketId}/takeover/commands/{commandId}` | raw恢复开关开启时，原Principal/Ticket/UUID/专用用途的READ ONLY安全核对 |
+
+两个POST共享闭合[command Schema](../../../contracts/p2_016_takeover_command.schema.json)，仅六字段：`client_command_id:UUID`、`expected_version:integer`、`reason_code:CODE`、`resolver_team_id:CODE`、`communication_choice`、`sessions`。path决定动作和Ticket，服务端当前认证主体即新处理人；拒绝`target_principal_id`、`actor_principal_id`、角色、force、状态或任意额外字段。沿用W的Origin/CSRF、32KiB、Idempotency-Key等于body原UUID、If-Match等于Ticket版本。UUID规范化后拒绝重复Session；`TAKE_SELECTED`须明确选择1–8个规范关联Session及各原`expected_row_version:integer`，`RETAIN_CURRENT`须`sessions=[]`且不写任何Conversation。不得根据换组后的新可见性倒推原沟通交接权限。
+
+| 前态（须已有当前处理人） | `takeover` | `takeover-and-start` |
+| --- | --- | --- |
+| QUEUED | 人和组交接，仍QUEUED，保留原可空轮次/依据 | 须有效current cycle及已有非空first basis；交接后原Core合法accept→start，同一事务/轮次 |
+| ACCEPTED | 人和组交接，仍ACCEPTED，保留原可空轮次/依据 | 须有效current cycle及已有非空first basis；交接后原Core合法start→IN_PROGRESS |
+| IN_PROGRESS | 人和组交接，仍IN_PROGRESS | 409，不重复started |
+| WAITING_REQUESTER / WAITING_VENDOR | 人和组交接，保留等待 | 409，不把resume混为start |
+| NEW / REOPENED / RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED，或无当前处理人 | 409 | 409 |
+
+仅接管沿已集成T06合法transfer的当前状态/责任事实；`current_handling_cycle_id=null`且不存在已有cycle时允许交接并返回`handling_cycle:null`，不为旧活跃事实虚构轮次或历史首次责任。原有效cycle及其可空first basis保持原值；有cycle才追加该真实责任事件的cycle link。损坏current pointer、指向他Ticket的cycle，或current为空但存在孤立cycle均fail-closed/409，不以null掩盖损坏。一步开始独立要求有效current cycle及已有非空first basis；缺此依据409，不自动历史回填、创轮次或补首次通知。
+
+同本人同组且无责任变化返回409；相同原UUID合法重放按原结果核对。仅拥有读取权限仍须具备活动ADMIN/DISPATCHER/HANDLER业务角色；普通HANDLER不须为旧owner，但必须在原Ticket本人/实际所属旧组读取范围内。新组必须活动、实际包含本人且本次可用；不能复用T06“任意内部目标人”的候选列表作为本人接管授权。活动主体/角色、原可见组及目标本人/成员/组在事务内重新取得并持锁到commit，Ticket版本、Session原版本和逐对象Control动作同时核验。Ticket接管不授予他人沟通TRANSFER权限、全院读取、管理或通知核对权限。
+
+[targets Schema](../../../contracts/p2_016_takeover_targets.schema.json)闭合为`{resolver_teams:[{team_id,display_name}],resolver_team_id:CODE|null,allowed_actions:[...]}`。查询只接受可选`resolver_team_id`；组按CODE排序、最多100展示项，不返回人员目录/联系方式/外部身份。显式所选组独立验证有效本人membership后纳入最多100项响应，列表缺席不等同撤权；查询不构成稍后提交的授权租约。既有`related-conversations`规范关系、20项keyset及逐对象当前Session读取继续复用；T07可独立读取规范选择，不启用T05独立写能力。detail与targets都按当前合法责任、实际本人组和有效轮次投影动作。
+
+[result Schema](../../../contracts/p2_016_takeover_result.schema.json)与[独立类型](../../../contracts/p2_016_takeover_contracts.d.ts)仅返回Ticket/version/最后Ticket event、`control_event_id:null`、原可空handling_cycle（已有cycle的first basis也可空）、沟通选择及安全Session结果。一步开始使用同Schema的`#/$defs/started_result`及`P2016TakeoverAndStartResult`非空轮次/依据约束。仅接管追加唯一`ticket.assignment_transferred`，保留原/新人及组/实际操作者metadata；一步开始另追加合法accept/start。存在有效039 current cycle时保留原first responsibility basis并追加同轮event links；无cycle仅交接当前责任，不回填任意历史accept、不创建新轮次、不重复或新造首次责任通知、不改原Intake/来源。既有公开events仍仅含安全字段；本票隔离PG独立核验实际metadata及同轮持久event links，未向HTTP扩大私有字段。
+
+所有责任、合法状态动作、Control/generation、轮次链接、通知/实时投影及原ledger回执同事务提交。复用T06 stream mutex→receipt→Ticket→UUID排序Session及authority锁约束，选定沟通在Ticket换组前按原scope验证，并使用既有`takeResponsibilityInTransaction`本人caller-Tx seam；第二对象及后段start event、cycle link、COMMITTED receipt失败均全回滚。复用原`ticket_command_receipt`及专用用途`WORKBENCH_TICKET_TAKEOVER`；同UUID异payload409，重放前重验当前Ticket与所选Session READ scope，失去原写权不等同失去核对读权。[receipt Schema](../../../contracts/p2_016_takeover_receipt.schema.json)只返回UNKNOWN、COMMITTED最小四字段或FAILED稳定code/retryable:false，不查询组/Session/完整snapshot；UNKNOWN不表示未提交。
+
+宿主选项`ticketTakeoverEnabled:boolean=false`；关闭及缺039在插入receipt前503，缺039沿用`ASSIGNMENT_UNAVAILABLE`，非法前态沿用`ASSIGNMENT_STATE_CONFLICT/409`，其余W现有INPUT_INVALID/TARGET_INVALID/FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED保持。bootstrap返回`ticket_takeover_enabled`和`ticket_takeover_draft_recovery_enabled = ticketTakeoverEnabled && raw workbenchDraftRecoveryEnabled`。正式表单按ADR0031默认TAKE_SELECTED，组选项仍为空且不预选Session；保留沟通由用户明确选择。其独立“本次接管的沟通责任”决定该次POST；原T04/T05恢复控制器保持挂载；只有无可用新动作、原intent/result/input或opaque时隐藏闲置呈现。无关联会话的Ticket不创建虚构Session，用户可明确RETAIN_CURRENT。
+
+专用purpose`ticket-takeover`复用T03唯一AES-GCM、24h、20份/16KiB及原主体/事项/用途AAD。原UUID、动作、Ticket版本、原目标组、沟通选择和Session原版本全部冻结；恢复前真实核验，503保留密文但不显示未核验内容或提交。首次授权暂不可用时也保留opaque原UUID，仅允许用户显式只读ACK；核对终态后按原revision清理，未初始化的写表单要求重新读取。成功／丢弃／退出／明确失权清理，过期仅保留opaque原操作核对；用途清理不删除同Ticket内部备注草稿。raw关闭不创建恢复库、不访问ACK，只能用户显式重放内存原POST。真实本地会话退出后迟到解密／POST／ACK不得恢复表单或副本；不可把当前GET版本替换到原pending命令。
+
+明确无新数据库变更：复用唯一Ticket/Event/039 cycle与event links/原ledger/Control；原29份SQL保持字节，不使用预留056。每池≤4、同机建议总≤8、单App/Worker、Gateway单活、SSE32、Session选择≤8；无新常驻进程／轮询。关闭新option停止新接管入口及投影，保留已提交责任／历史／回执／Outbox。原7729字节首tracer已真实404 RED→PASS且不修改；状态、独立沟通、并发／authority锁、原子失败、恢复及正式制品浏览器逐项实际结果和历史FAIL／NOT_REACHED均由本票执行记录及D证据保留。
+
 ## WBINT-T08 撤销未开始派工
 
 本节为当前冻结合同及本票实现进度。POST、安全 GET ACK、沟通目标 GET 及正式管理端 UI 已在自有隔离 PG、真实 HTTP 和生产 bundle 浏览器局部验证。原七项已完成本地整票验证：固定 20 个本票文件 32PASS、15 个直接相关文件 106PASS、既有 hosts 原生 27PASS。原 source 与文档后继身份分开记录，GitHub/工作包收口由父独立验收。准确被测源码与原始FAIL/PASS见[逐票执行与原七项](../../../plans/admin-workbench-integration/execution/t08.md)、[闭合command Schema](../../../contracts/p2_016_unassign_command.schema.json)、[safe result](../../../contracts/p2_016_unassign_result.schema.json)、[private event fact](../../../contracts/p2_016_unassign_event.schema.json)、[独立types](../../../contracts/workbench_unassign_contracts.d.ts)。局部验证不构成整票完成、真实外发或部署授权。

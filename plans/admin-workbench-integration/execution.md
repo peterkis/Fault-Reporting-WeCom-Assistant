@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-12，T28收口）
+## 当前执行状态导航（2026-10-12，T07收口）
+
+GitHub 实际快照为 **25／43 CLOSED、18 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t07-20261012.json)。[#62 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62#issuecomment-6123961995)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T07 / #62 | 原七项经父独立核对，c5898b85 安全快进并 GitHub 收口；[本人及有效组接管、关联沟通与原子开始](execution/t07.md)。WBINT-02／A02 的 T07 切片完成，A02 仍待 T09／T10。 |
+| 验证 | 实际被测和源码审查对象 3454ed05：build／strict／artifact 原生0／0／0；18个本票入口33／33、受影响 T04／T05 浏览器13／13、tooling／hosts54／54（包含具名 retired）通过。Schema6与PG callback4在真实修补祖先分别补验；两轴新增问题0，旧恢复入口问题已关闭。040的105PASS／1FAIL及末项NOT_RUN、041三FAIL均保留，不拼成新HEAD的full。 |
+| 保全与清理 | [父核七项](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/parent-t07-final-seven-acceptance.json)核对147原输出、14诊断、40图片及副本、35私树原件与真实祖先；[快进回执](D:/wecom-workbench-evidence/t07/whole-20261012/merge-final/receipt.json)及父读回确认6用户文件和231个Root既有冻结文件字节保持。新增6文件按既有CRLF配置物化，Git内容与私树原件一致，未冒称Root新文件原始哈希等于私树LF原件。自有PG smart-stop0／status3、native handles0，配置及数据保留。 |
+| 后续 | 下一连续整票为 T09／#64，原生#58／#63已CLOSED，先合入最新本地集成再完成原七项。T12／T13的#62依赖已解除，须重新核对原生正文及领取后独立准备SOURCE。T29已有读取权的交接规则、T31独立人工公开摘要与仅定向有效未暂停订阅人的规则已确认；T31仍被#85阻塞。SOURCE准备不计整票验收。 |
+| 边界 | 默认关闭，未push／PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进；全43最终两轴审查、后续票和实现工作树清理仍待完成。 |
+
+## 历史执行状态导航（2026-10-12，T28收口）
 
 GitHub 实际快照为 **24／43 CLOSED、19 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t28-20261012-d.json)。[#83 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83#issuecomment-6118553402)。
 

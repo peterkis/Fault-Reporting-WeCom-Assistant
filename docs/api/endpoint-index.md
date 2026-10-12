@@ -84,6 +84,10 @@
 | WB-T06-A1 | POST | `/api/tickets/{ticketId}/assign` | W | 已挂载、默认关闭，验证进行中：明确内部处理人/组，不接单或开始 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
 | WB-T06-A2 | POST | `/api/tickets/{ticketId}/transfer-assignment` | W | 源码已挂载、默认关闭，待本候选验证：显式转派处理人/组，保留状态和轮次 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
 | WB-T06-Q1 | GET | `/api/tickets/{ticketId}/assignment-targets` | W | 已挂载、默认关闭，待本候选验证：当前工单权限下的有效处理组与明确所选组成员 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
+| WB-T07-A1 | POST | `/api/tickets/{ticketId}/takeover` | W（计划） | PLANNED／NOT_RUN：本人和实际有效组一起接管，保留状态及同轮首次责任依据；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-A2 | POST | `/api/tickets/{ticketId}/takeover-and-start` | W（计划） | PLANNED／NOT_RUN：本人接管与合法accept/start同事务；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-Q1 | GET | `/api/tickets/{ticketId}/takeover-targets` | W（计划） | PLANNED／NOT_RUN：当前Ticket原读权下本人实际有效组；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-Q2 | GET | `/api/tickets/{ticketId}/takeover/commands/{commandId}` | W（计划） | PLANNED／NOT_RUN：原UUID及专用用途的最小Ticket安全核对；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
 | R03 | POST | `/api/manual-reviews/{reviewId}/resolve` | W | 已实现：人工结论 | [复核](workbench/manual-reviews.md) |
