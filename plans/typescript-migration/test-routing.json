@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t12-raw-off-unknown.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t12-production-form.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t12-independent-profile.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t12-command-contract.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -639,6 +640,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "t12-raw-off-unknown": ["tests/t12-raw-off-unknown.browser.test.mts"],
     "t12-production-form": ["tests/t12-production-form.browser.test.mts"],
     "t12-profile-boundaries": ["tests/t12-independent-profile.integration.test.mts","tests/t12-command-contract.test.mts"],
     "t12-safe-ack": ["tests/t12-safe-ack.integration.test.mts"],
