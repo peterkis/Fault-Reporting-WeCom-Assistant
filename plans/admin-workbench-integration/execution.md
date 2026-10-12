@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-11
+snapshot_on: 2026-10-12
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T26收口）
+## 当前执行状态导航（2026-10-12，T25收口）
+
+GitHub 实际快照为 **23／43 CLOSED、20 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t25-20261012-d.json)。[#80 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80#issuecomment-6115603975)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T25 / #80 | 原七项经父独立核对，8e34df31 安全快进并 GitHub 收口；[当前合同、被测祖先与原失败](execution/t25.md)。T24／T25／T26均已本地集成和关票，WBINT-08／A08本地完成。 |
+| 验证 | 334ab203业务15文件28 PASS，ef62c657定向工具18+1 PASS；两者各自严格build／types／artifact原生0／0／0，未累加为新HEAD的full。适用完整源审及2c83／8e34窄增量两轴均无剩余问题；原工具52 PASS／2 FAIL、业务TRUE RED与拒绝记录保留。 |
+| 保全与清理 | 4411保全文件、1324物理输入、1644运行输出、813原窗口文件与新审计输入均父核；[完整交接](D:/wecom-workbench-evidence/t25/final/handoff.json)。用户人工清理后七个字面目录为空或不存在，2c83有限最终审计PG18身份匹配、额外库／客户端0／0、池0／0／0、自有Node／浏览器0；编译输入仍绑定原ef62，后继Markdown不自证current artifact，共享keeper保留。 |
+| 后续 | 接续T28整票，其原生#82已CLOSED；现有SOURCE_ONLY准备仍NOT_BUILT／NOT_RUN，须正常合入最终根基线后执行原首并完成全部七项。其它SOURCE_READY按原生依赖及单一运行窗口推进。 |
+| 边界 | 默认关闭，根六件用户文件保持原字节；未push、PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。真实客户端送达和2C4G容量仍未验证。 |
+
+## 历史执行状态导航（2026-10-11，T26收口）
 
 GitHub 实际快照为 **22／43 CLOSED、21 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t26-20261011-d.json)。[#81 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)。
 

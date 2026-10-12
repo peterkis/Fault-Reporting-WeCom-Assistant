@@ -24,7 +24,7 @@ execution_status: IN_PROGRESS
 | WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：[T17代录](execution/t17.md)及[T18核实成员](execution/t18.md)原七项已核对、集成并关票；T19同事务本人开始尚未完成，A05整组尚未验收 | A05 |
 | WBINT-06 | 原 Reporter 反馈与重开 | 03 | LOCAL_VERIFIED：[T20 Web本人反馈](execution/t20.md)与[T21 Bot本人反馈](execution/t21.md)原七项均经父独立核对、集成并GitHub收口；A06本地完成，默认关闭、未发布／启用 | A06 |
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | LOCAL_VERIFIED：[T22原七项](execution/t22.md)经父独立核对、合入本地集成并GitHub收口；A07本地完成，默认关闭，未发布／启用 | A07 |
-| WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | IN_PROGRESS：[T24单聊Bot节点通知](execution/t24.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项已父核、合入本地集成并关票；两路记账／恢复和正式详情已有隔离证据，T25尚未完成，A08整组尚未验收；真实强@／送达未验证 | A08 |
+| WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | IN_PROGRESS：[T27公共故障候选LOCAL_VERIFIED](execution/t27.md)原七项已核对、集成并关票；T28的原生blocker已关闭，仍待独立实施，A09整组尚未验收 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | NOT_STARTED | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
