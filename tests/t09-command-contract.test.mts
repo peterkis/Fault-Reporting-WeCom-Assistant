@@ -15,8 +15,8 @@ test('the public return command port freezes original intent, enforces canonical
  const canonical=normalized.sessions[0];assert.ok(canonical);
  for(const invalid of [{...base(),reason:'😀'.repeat(251)},{...base(),unfinished_work:'😀'.repeat(701)},{...base(),expected_version:2147483648},{...base(),external_visible:true},{...base(),communication_target_principal_id:randomUUID()},{...base(),sessions:[canonical]},{...selected,communication_target_principal_id:null},{...selected,sessions:[]},{...selected,sessions:[canonical,{...canonical,session_id:canonical.session_id.toUpperCase()}]},{...selected,sessions:Array.from({length:9},()=>({session_id:randomUUID(),expected_row_version:1}))},{...selected,sessions:[{session_id:randomUUID(),expected_row_version:0}]}])assert.throws(()=>normalizeReturnToDispatchCommand(invalid),{code:'P2_016_INPUT_INVALID'});
  assert.equal(normalizeReturnToDispatchCommand({...selected,sessions:Array.from({length:8},()=>({session_id:randomUUID(),expected_row_version:1}))}).sessions.length,8);
- // @ts-expect-error Deliberate invalid external configuration must also fail at the runtime constructor.
- assert.throws(()=>createP2016Runtime({ticketReturnToDispatchEnabled:'true'}),{code:'P2_016_FLAG_INVALID'});
+ // Dynamic JavaScript callers can supply invalid configuration despite the TypeScript signature.
+ assert.throws(()=>Reflect.apply(createP2016Runtime,undefined,[{ticketReturnToDispatchEnabled:'true'}]),{code:'P2_016_FLAG_INVALID'});
 });
 
 test('the frozen published command and capability contracts retain exact wire keys, selection bounds and literal false defaults',async()=>{
