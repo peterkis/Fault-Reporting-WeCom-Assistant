@@ -23,3 +23,12 @@ test('T28 real report/history pages retain at most three pages and keep an expli
     await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await context.capture();
   });
 });
+
+test('T28 a selected source survives bounded page eviction without guessing a replacement or sending',{timeout:240000},async()=>{
+  await candidateBrowser({purpose:'t28srcwindow',reporters:100},async context=>{
+    const {http,id,path}=await prepareFollowup(context,1),first=rows((await http.get(path+'/linkable-reports?limit=30')).items)[0];assert.ok(first);
+    await navigateFollowup(context,id);await chooseFollowup(context.browser,'公共故障操作','LINK_REPORT');await chooseFollowup(context.browser,'决定原因','CONFIRMED_SHARED_FAULT');await chooseFollowup(context.browser,'报修来源',text(first.source_decision_id));
+    for(const expected of [60,90,69]){await context.browser.evaluate('Array.from(document.querySelectorAll("button")).find(button=>button.textContent==="下一页来源").click()');await context.browser.waitFor(`document.querySelector('section[aria-label="可关联来源窗口"]').querySelectorAll('li').length===${expected}`);}
+    assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=报修来源]").value'),first.source_decision_id);assert.equal(await context.browser.evaluate('document.querySelector("section[aria-label=可关联来源窗口]").innerText.includes("已加载窗口 69 项")'),true);assert.equal((await http.get(path)).row_version,'1');assert.equal(rows(await context.browser.evaluate('globalThis.__t27Posts')).length,0);
+  });
+});
