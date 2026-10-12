@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t12-selected-communication.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {
       "path": "tests/t12-targets.integration.test.mts",
       "mode": "STAGED_RUNTIME",
@@ -634,6 +635,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "t12-selected-communication": ["tests/t12-selected-communication.integration.test.mts"],
     "t12-targets": ["tests/t12-targets.integration.test.mts"],
     "t09-whole-risk-gaps": ["tests/t09-command-contract.test.mts","tests/t09-second-session-rollback.integration.test.mts","tests/t09-defaults-and-readiness.integration.test.mts"],
     "t09-independent-contract-migration": ["tests/t09-independent-contract-and-migration.integration.test.mts"],
