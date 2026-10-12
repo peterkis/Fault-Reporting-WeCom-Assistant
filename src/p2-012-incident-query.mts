@@ -1,6 +1,7 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { WorkbenchPrincipal, WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
-import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt,IncidentFollowupReceipt } from '../contracts/p2_012_contracts.js';
+import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt } from '../contracts/p2_012_contracts.js';
+import type {IncidentFollowupReceipt} from '../contracts/workbench_incident_followup_contracts.js';
 type Kind = 'candidate' | 'incident';
 export type CandidateQueryRow = Omit<CandidateReview, 'source_versions' | 'reason_codes' | 'evidence_fact_ids' | 'roles' | 'source_decision' | 'manual_review' | 'eligible_owners' | 'report_sources'> & { source_versions: unknown; reason_codes: unknown; evidence_fact_ids: unknown };
 type ResourceRow = CandidateQueryRow | Incident;

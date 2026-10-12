@@ -15,7 +15,7 @@ export type ReporterSubscription = { readonly id: string; readonly incident_id: 
 export interface AuthContext { readonly principal_id: string; }
 export interface IncidentCommandResult { readonly ok:true; readonly result_ref_type:'INCIDENT'|'CANDIDATE'; readonly result_ref_id:string; readonly result_row_version:string; readonly result_event_id:string; readonly replayed:boolean; }
 export interface IncidentCommandPort { perform(input:{authContext:AuthContext;command:IncidentCommand}):Promise<IncidentCommandResult|{readonly ok:false;readonly error:{readonly code:string;readonly retryable:false};readonly replayed:boolean}>; }
-export interface IncidentQueryPort { list(input:{authContext:AuthContext;kind?:'candidate'|'incident';state?:string;after?:string;pageLimit?:number}):Promise<IncidentList>;detail(input:{authContext:AuthContext;id:string;kind?:'candidate'|'incident'}):Promise<IncidentDetail|CandidateReview>;candidateCommandReceipt(input:{authContext:AuthContext;id:string;commandId:string}):Promise<CandidateCommandReceipt>;incidentCommandReceipt(input:{authContext:AuthContext;id:string;commandId:string}):Promise<IncidentFollowupReceipt>; }
+export interface IncidentQueryPort { list(input:{authContext:AuthContext;kind?:'candidate'|'incident';state?:string;after?:string;pageLimit?:number}):Promise<IncidentList>;detail(input:{authContext:AuthContext;id:string;kind?:'candidate'|'incident'}):Promise<IncidentDetail|CandidateReview>;candidateCommandReceipt(input:{authContext:AuthContext;id:string;commandId:string}):Promise<CandidateCommandReceipt>; }
 
 export type CandidateCommandReceipt = {readonly candidate_review_id:string;readonly client_command_id:string} & (
   {readonly state:'UNKNOWN'} |
@@ -24,9 +24,4 @@ export type CandidateCommandReceipt = {readonly candidate_review_id:string;reado
 );
 
 export type CandidateAction="START_REVIEW"|"REJECT_CANDIDATE"|"CONFIRM_INCIDENT";
-export type IncidentFollowupReceipt = {readonly incident_id:string;readonly client_command_id:string} & (
-  {readonly state:'UNKNOWN'} |
-  {readonly state:'FAILED';readonly error:{readonly code:string;readonly retryable:false}} |
-  {readonly state:'COMMITTED';readonly result:IncidentCommandResult & {readonly result_ref_type:'INCIDENT';readonly replayed:true}}
-);
 export interface CandidateMaterial {readonly source_decision_id:string;readonly source_kind:"BOT"|"WEB";readonly original_revision:string;readonly current_revision:string|null;readonly original_source_hash:string;readonly current_source_hash:string|null;readonly status:"CURRENT"|"CHANGED"|"EXPIRED"}

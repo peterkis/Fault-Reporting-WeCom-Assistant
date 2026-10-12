@@ -116,6 +116,7 @@
 | I22 | POST | `/api/incidents/{incidentId}/subscriptions/{subscriptionId}/resume` | W | 已实现：恢复订阅 | [公共故障](workbench/incidents.md) |
 | I23 | POST | `/api/incidents/{incidentId}/resolve` | W | 已实现：解决 | [公共故障](workbench/incidents.md) |
 | I24 | POST | `/api/incidents/{incidentId}/close` | W | 已实现：关闭 | [公共故障](workbench/incidents.md) |
+| I26 | GET | `/api/incidents/{incidentId}/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/父与原动作用途的安全只读核对；T28整票待验证 | [公共故障](workbench/incidents.md) |
 | B01 | GET | `/api/workbench/board` | W | 已实现：WEB01看板 | [看板](workbench/board.md) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
 
