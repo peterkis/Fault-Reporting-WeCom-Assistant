@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_takeover_command.schema.json",
+  "title": "PLANNED self Ticket takeover command - WBINT-T07, runtime NOT_RUN",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client_command_id", "expected_version", "reason_code", "resolver_team_id", "communication_choice", "sessions"],
+  "properties": {
+    "client_command_id": {"$ref": "#/$defs/uuid"},
+    "expected_version": {"$ref": "#/$defs/version"},
+    "reason_code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "resolver_team_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "communication_choice": {"enum": ["TAKE_SELECTED", "RETAIN_CURRENT"]},
+    "sessions": {
+      "type": "array", "maxItems": 8, "x-unique-canonical-session-id": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "expected_row_version"],
+        "properties": {
+          "session_id": {"$ref": "#/$defs/uuid"},
+          "expected_row_version": {"$ref": "#/$defs/version"}
+        }
+      }
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"communication_choice": {"const": "TAKE_SELECTED"}}},
+    "then": {"properties": {"sessions": {"minItems": 1}}},
+    "else": {"properties": {"sessions": {"maxItems": 0}}}
+  }],
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+  },
+  "description": "PLANNED only. The path supplies the Ticket and action; the authenticated current principal is always the new handler. Actor, target, role and force fields are forbidden. The selected active team must currently contain that principal. The runtime must reject repeated canonical Session IDs."
+}
