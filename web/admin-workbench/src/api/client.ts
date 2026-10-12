@@ -2,7 +2,7 @@ import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchD
 import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle,P2016CompletionCommand,P2016CompletionResult,P2016CompletionReceipt,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016ConversationHandlingResult,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../../../contracts/p2_016_contracts';
 import type {WorkbenchRealtimeCapability} from '../../../../contracts/workbench_realtime_contracts';
 import type {P2016TicketNotification} from '../../../../contracts/p2_016_contracts';
-import type {LocalDateTime} from '../../../../contracts/time_contracts';
+import type {LocalDateTime,PhysicalEpochMs} from '../../../../contracts/time_contracts';
 export type {P2016TicketNotification};
 import type {P2016ReopenResult,P2016ReopenReceipt} from '../../../../contracts/p2_016_contracts';
 import type {P2016TicketDetail} from '../../../../contracts/p2_016_contracts';
@@ -10,8 +10,11 @@ import type {P2016AssignmentAction,P2016AssignmentCommand,P2016AssignmentTargets
 import type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets} from '../../../../contracts/workbench_unassign_contracts';
 export type {P2016UnassignCommand,P2016UnassignResult,P2016UnassignAcknowledgement,P2016UnassignTargets};
 export type {P2016AssignmentAction,P2016AssignmentCommand};
-import type {ManualReportCommand,ManualReportCapabilities,ManualReportReceipt,ManualReportResult} from '../../../../contracts/workbench_manual_report_contracts';
-import {decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {ManualReportCapabilities} from '../../../../contracts/workbench_manual_report_contracts';
+import type {ManualReportAdmissionCommand,ManualReportAdmissionResult,ManualReportAdmissionReceipt} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {WorkbenchReporterCandidates} from '../../../../contracts/workbench_reporter_candidates_contracts';
+import {decodeVerifiedManualReportRejection,decodeReporterCandidates,decodeManualReportCapabilities,decodeManualReportReceipt,decodeManualReportResult} from '../../../../src/workbench-manual-report-browser-contracts.mjs';
+import type {SharedFollowUpCommand,SharedFollowUpActive} from '../../../../contracts/workbench_follow_up_schedule_contracts';
 import type {CanonicalItem,ReviewReference} from '../../../../contracts/workbench_review_contracts';
 let authorizationEpoch=0,transportWritable=true;
 export function setWorkbenchTransportWritable(value:boolean){transportWritable=value;}
@@ -26,6 +29,7 @@ export interface TicketCommandContext {id:string;version:number;allowed_actions:
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
+export class ConfirmedManualReportRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}
 function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function text(value:unknown): string {if(typeof value!=='string')throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function nullable(value:unknown): string|null {return value===null?null:text(value);}
@@ -53,11 +57,22 @@ function decodeGroupPage(value:unknown):SourceGroupPage {
   const items=v.items.map(decodeGroup);if(new Set(items.map(group=>group.ref)).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {items,next_cursor:nullable(v.next_cursor)};
 }
+/** The same closed active value is consumed by authorized cards and the detail view. */
+export function decodeSharedFollowUpActive(value:unknown):SharedFollowUpActive {
+  const v=object(value),keys=['schedule_version','due_at','due_epoch_ms','is_due'];
+  if(Object.keys(v).length!==keys.length||Object.keys(v).some(key=>!keys.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');
+  const revision=text(v.schedule_version),due=notificationDatetime(v.due_at),epoch=text(v.due_epoch_ms),expected=Date.parse(due.replace(' ','T')+'+08:00');
+  if(!/^[1-9][0-9]{0,18}$/u.test(revision)||BigInt(revision)>9223372036854775807n||typeof v.is_due!=='boolean'
+    ||!/^(0|[1-9][0-9]{0,18})$/u.test(epoch)||!Number.isSafeInteger(expected)||expected<0||BigInt(epoch)!==BigInt(expected)||BigInt(epoch)%1000n!==0n)throw new ApiError(502,'INVALID_RESPONSE');
+  // Explicit Shanghai parsing, nonnegative integer equality and second precision establish the epoch brand.
+  return {schedule_version:revision,due_at:due,due_epoch_ms:epoch as PhysicalEpochMs,is_due:v.is_due};
+}
 function decodeCard(value:unknown):WorkbenchCard {
-  const v=object(value);if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
+  const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
   return {kind:v.kind as WorkbenchCard['kind'],id:id(v.id),intake_id:id(v.intake_id),column:v.column as BoardColumn,
     number:text(v.number),title:text(v.title),status:text(v.status),priority:nullable(v.priority),source:text(v.source),
     source_label:text(v.source_label),source_group:v.source_group===null?null:decodeGroup(v.source_group),
+    ...(Object.hasOwn(v,'follow_up_schedule')?{follow_up_schedule:v.follow_up_schedule===null?null:decodeSharedFollowUpActive(v.follow_up_schedule)}:{}),
     location:nullable(v.location),reporter_name:nullable(v.reporter_name),assignee_name:nullable(v.assignee_name),review_reason:nullable(v.review_reason),
     created_at:datetime(v.created_at),updated_at:datetime(v.updated_at),completed_at:v.completed_at===null?null:datetime(v.completed_at)};
 }
@@ -69,7 +84,9 @@ function decodePage(value:unknown):BoardPage {
 }
 function decodeRecord(value:unknown):WorkbenchRecord {
   const v=object(value);if(!['REPORT','INTERNAL','EXTERNAL'].includes(text(v.audience)))throw new ApiError(502,'INVALID_RESPONSE');
-  return {id:text(v.id),at:datetime(v.at),type:text(v.type),text:nullable(v.text),audience:v.audience as WorkbenchRecord['audience'],actor:nullable(v.actor),old_status:nullable(v.old_status),new_status:nullable(v.new_status)};
+  const material=Object.hasOwn(v,'read_material')?object(v.read_material):null;
+  if(material&&(v.audience!=='REPORT'||Object.keys(material).length!==2||typeof material.source_ref!=='string'||!/^(?:channel:[1-9][0-9]{0,18}|(?:web|manual):[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u.test(material.source_ref)||typeof material.revision!=='string'||!/^[1-9][0-9]{0,18}$/u.test(material.revision)||BigInt(material.revision)>9223372036854775807n))throw new ApiError(502,'INVALID_RESPONSE');
+  return {id:text(v.id),at:datetime(v.at),type:text(v.type),text:nullable(v.text),audience:v.audience as WorkbenchRecord['audience'],actor:nullable(v.actor),old_status:nullable(v.old_status),new_status:nullable(v.new_status),...(material?{read_material:{source_ref:text(material.source_ref),revision:text(material.revision)}}:{})};
 }
 function decodeDetail(value:unknown):WorkbenchDetail {
   const v=object(value),r=object(v.responsibility);if(!Array.isArray(v.records)||v.records.length>100)throw new ApiError(502,'INVALID_RESPONSE');
@@ -86,14 +103,14 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)},...(refs?{review_refs:refs}:{}),...(requested?{requested_item:requested}:{})};
 }
-export interface Principal extends WorkbenchRealtimeCapability {ticket_round_notifications_enabled:boolean;ticket_reopen_draft_recovery_enabled?:boolean;ticket_reopen_rounds_enabled:boolean;ticket_unassign_enabled:boolean;ticket_unassign_draft_recovery_enabled:boolean;ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;conversation_workspace_enabled:boolean;conversation_draft_recovery_enabled:boolean;incident_candidate_workspace_enabled:boolean;incident_candidate_draft_recovery_enabled:boolean;logout_enabled:boolean}
+export interface Principal extends WorkbenchRealtimeCapability {personal_read_enabled?:boolean;ticket_round_notifications_enabled:boolean;follow_up_schedules_enabled:boolean;follow_up_schedule_receipt_enabled:boolean;follow_up_schedule_draft_recovery_enabled?:boolean;ticket_reopen_draft_recovery_enabled?:boolean;ticket_reopen_rounds_enabled:boolean;ticket_unassign_enabled:boolean;ticket_unassign_draft_recovery_enabled:boolean;ticket_assignment_enabled:boolean;ticket_assignment_draft_recovery_enabled:boolean;manual_reports_enabled:boolean;reporter_candidates_enabled?:boolean;manual_report_draft_recovery_enabled:boolean;principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;ticket_conversation_self_handling_enabled:boolean;ticket_conversation_draft_recovery_enabled:boolean;ticket_staff_completion_enabled:boolean;draft_recovery_enabled:boolean;staff_completion_draft_recovery_enabled:boolean;manual_review_enabled:boolean;manual_review_draft_recovery_enabled:boolean;conversation_workspace_enabled:boolean;conversation_draft_recovery_enabled:boolean;incident_candidate_workspace_enabled:boolean;incident_candidate_draft_recovery_enabled:boolean;logout_enabled:boolean}
 function optionalFlag(value:unknown):boolean{if(value===undefined)return false;if(typeof value!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return value;} function decodePrincipal(value:unknown):Principal {
-  const v=object(value),unassign=optionalFlag(v.ticket_unassign_enabled),unassignRecovery=optionalFlag(v.ticket_unassign_draft_recovery_enabled),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision),manual=optionalFlag(v.manual_review_enabled),recovery=optionalFlag(v.manual_review_draft_recovery_enabled),manualReports=optionalFlag(v.manual_reports_enabled),manualReportRecovery=optionalFlag(v.manual_report_draft_recovery_enabled);
+  const v=object(value),unassign=optionalFlag(v.ticket_unassign_enabled),unassignRecovery=optionalFlag(v.ticket_unassign_draft_recovery_enabled),interval=v.polling_interval_ms,expires=text(v.expires_epoch_ms),revision=nullable(v.authorization_revision),manual=optionalFlag(v.manual_review_enabled),recovery=optionalFlag(v.manual_review_draft_recovery_enabled),manualReports=optionalFlag(v.manual_reports_enabled),reporterCandidates=optionalFlag(v.reporter_candidates_enabled),manualReportRecovery=optionalFlag(v.manual_report_draft_recovery_enabled),followUp=optionalFlag(v.follow_up_schedules_enabled),followUpRecovery=optionalFlag(v.follow_up_schedule_draft_recovery_enabled);
   if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_self_handling_enabled!=='boolean'||typeof v.ticket_conversation_draft_recovery_enabled!=='boolean'||typeof v.ticket_staff_completion_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.staff_completion_draft_recovery_enabled!=='boolean'||typeof v.conversation_workspace_enabled!=='boolean'||typeof v.conversation_draft_recovery_enabled!=='boolean'||typeof v.incident_candidate_workspace_enabled!=='boolean'||typeof v.incident_candidate_draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean'
-    ||(unassignRecovery&&!unassign)||(recovery&&!manual)||(manualReportRecovery&&!manualReports)||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
+    ||(followUpRecovery&&!followUp)||(unassignRecovery&&!unassign)||(recovery&&!manual)||(reporterCandidates&&!manualReports)||(manualReportRecovery&&!manualReports)||typeof v.realtime_sse_enabled!=='boolean'||typeof v.realtime_sse_available!=='boolean'||typeof interval!=='number'||!Number.isInteger(interval)||interval<1000||interval>300000
     ||!/^(0|[1-9][0-9]{0,18})$/u.test(expires)||BigInt(expires)>9223372036854775807n||v.sse_endpoint!==(v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null)
     ||(v.realtime_sse_enabled?(revision===null||!/^[a-f0-9]{64}$/u.test(revision)):(revision!==null||v.realtime_sse_available)))throw new ApiError(502,'INVALID_RESPONSE');
-  return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_round_notifications_enabled:optionalFlag(v.ticket_round_notifications_enabled),ticket_reopen_rounds_enabled:optionalFlag(v.ticket_reopen_rounds_enabled),ticket_reopen_draft_recovery_enabled:optionalFlag(v.ticket_reopen_draft_recovery_enabled),ticket_unassign_enabled:unassign,ticket_unassign_draft_recovery_enabled:unassignRecovery,ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,manual_report_draft_recovery_enabled:manualReportRecovery,conversation_workspace_enabled:v.conversation_workspace_enabled,conversation_draft_recovery_enabled:v.conversation_draft_recovery_enabled,incident_candidate_workspace_enabled:v.incident_candidate_workspace_enabled,incident_candidate_draft_recovery_enabled:v.incident_candidate_draft_recovery_enabled,logout_enabled:v.logout_enabled,
+  return {personal_read_enabled:optionalFlag(v.personal_read_enabled),principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),ticket_round_notifications_enabled:optionalFlag(v.ticket_round_notifications_enabled),follow_up_schedules_enabled:followUp,follow_up_schedule_receipt_enabled:optionalFlag(v.follow_up_schedule_receipt_enabled),follow_up_schedule_draft_recovery_enabled:followUpRecovery,ticket_reopen_rounds_enabled:optionalFlag(v.ticket_reopen_rounds_enabled),ticket_reopen_draft_recovery_enabled:optionalFlag(v.ticket_reopen_draft_recovery_enabled),ticket_unassign_enabled:unassign,ticket_unassign_draft_recovery_enabled:unassignRecovery,ticket_assignment_enabled:optionalFlag(v.ticket_assignment_enabled),ticket_assignment_draft_recovery_enabled:optionalFlag(v.ticket_assignment_draft_recovery_enabled),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,ticket_conversation_self_handling_enabled:v.ticket_conversation_self_handling_enabled,ticket_conversation_draft_recovery_enabled:v.ticket_conversation_draft_recovery_enabled,ticket_staff_completion_enabled:v.ticket_staff_completion_enabled,draft_recovery_enabled:v.draft_recovery_enabled,staff_completion_draft_recovery_enabled:v.staff_completion_draft_recovery_enabled,manual_review_enabled:manual,manual_review_draft_recovery_enabled:recovery,manual_reports_enabled:manualReports,reporter_candidates_enabled:reporterCandidates,manual_report_draft_recovery_enabled:manualReportRecovery,conversation_workspace_enabled:v.conversation_workspace_enabled,conversation_draft_recovery_enabled:v.conversation_draft_recovery_enabled,incident_candidate_workspace_enabled:v.incident_candidate_workspace_enabled,incident_candidate_draft_recovery_enabled:v.incident_candidate_draft_recovery_enabled,logout_enabled:v.logout_enabled,
     realtime_sse_enabled:v.realtime_sse_enabled,realtime_sse_available:v.realtime_sse_available,sse_endpoint:v.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null,polling_interval_ms:interval,expires_epoch_ms:expires,authorization_revision:revision};
 }
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
@@ -103,19 +120,20 @@ function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext
   const team=text(v.resolver_team_id);if(!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))throw new ApiError(502,'INVALID_RESPONSE');
   if(actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations','complete'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
   let followUp:NonNullable<P2016TicketDetail['reopen_follow_up']>|undefined;
-  if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
+  if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='BOT_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
   return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
 }
 function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification[]} {
   const page=object(value);
   if(Object.keys(page).length!==1||!Array.isArray(page.items)||page.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
   const items=page.items.map(value=>{
-    const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no');
-    const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[])];
+    const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no'),hasRoute=Object.hasOwn(row,'route_kind');
+    const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[]),...(hasRoute?['route_kind']:[])];
     if(hasNode!==hasCycle||Object.keys(row).length!==keys.length||Object.keys(row).some(key=>!keys.includes(key))
       ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
       ||!['PERSON','GROUP'].includes(text(row.destination_type))||!['PENDING','LEASED','SENDING','SENT','DEAD_LETTER','RECONCILIATION_REQUIRED','CANCELLED'].includes(text(row.status))
       ||!['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'].includes(text(row.side_effect_state))
+      ||hasRoute&&(row.route_kind!=='YIXIAOXIU_APP'||row.destination_type!=='PERSON')
       ||typeof row.attempt_count!=='number'||!Number.isInteger(row.attempt_count)||row.attempt_count<0||row.attempt_count>2147483647)throw new ApiError(502,'INVALID_RESPONSE');
     let round:Pick<P2016TicketNotification,'node'|'cycle_no'>={};
     if(hasNode){
@@ -123,7 +141,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
       if(node===null){if(row.cycle_no!==null)throw new ApiError(502,'INVALID_RESPONSE');round={node:null,cycle_no:null};}
       else {if(node!=='FIRST_RESPONSIBILITY'&&node!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');round={node,cycle_no:version(row.cycle_no)};}
     }
-    return {...round,notification_type:row.notification_type as P2016TicketNotification['notification_type'],
+    return {...round,...(hasRoute?{route_kind:'YIXIAOXIU_APP' as const}:{}),notification_type:row.notification_type as P2016TicketNotification['notification_type'],
       destination_type:row.destination_type as P2016TicketNotification['destination_type'],delivery_id:id(row.delivery_id),
       status:row.status as P2016TicketNotification['status'],side_effect_state:row.side_effect_state as P2016TicketNotification['side_effect_state'],
       attempt_count:row.attempt_count,sent_at:row.sent_at===null?null:notificationDatetime(row.sent_at),created_at:notificationDatetime(row.created_at)};
@@ -131,7 +149,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
   if(new Set(items.map(item=>item.delivery_id.toLowerCase())).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {items};
 }
-async function rejectAuthorization(response:Response):Promise<never>{
+export async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';
   try {const value:unknown=await response.json(),candidate=text(object(object(value).error).code);if(/^[A-Z][A-Z0-9_]{0,100}$/u.test(candidate))code=candidate;}
   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
@@ -165,7 +183,7 @@ function decodeReopen(value:unknown,ticketId:string):P2016ReopenResult {
     ||Object.keys(c).length!==4||version(c.cycle_no)<2||c.first_responsibility_event_id!==null||c.staff_completion_event_id!==null)throw new ApiError(502,'INVALID_RESPONSE');
   return {...decodeTicketReceipt(v,ticketId),handling_cycle:{id:id(c.id),cycle_no:version(c.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}};
 }
-async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016UnassignCommand|P2016ReopenCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016UnassignCommand|P2016ReopenCommand|SharedFollowUpCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
@@ -177,7 +195,7 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
         const code=text(object(v.error).code);
         if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
         // A durable FAILED receipt is a known refusal. An unstructured server failure may follow a commit.
-        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||['P2_016_DISABLED','P2_016_SELF_HANDLING_UNAVAILABLE','P2_016_STAFF_COMPLETION_UNAVAILABLE'].includes(code)||(action==='unassign'&&code==='P2_016_UNASSIGN_UNAVAILABLE'))throw new ApiError(response.status,code);
+        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||['P2_016_DISABLED','P2_016_SELF_HANDLING_UNAVAILABLE','P2_016_STAFF_COMPLETION_UNAVAILABLE'].includes(code)||(action==='unassign'&&code==='P2_016_UNASSIGN_UNAVAILABLE')||(action==='follow-up-schedule'&&code==='P2_016_FOLLOW_UP_UNAVAILABLE'))throw new ApiError(response.status,code);
         throw new UnknownCommandOutcome();
       }
       if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
@@ -234,17 +252,22 @@ export const api={
     if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();
     return {...decodeTicketReceipt(v,ticketId),handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle),communication_choice:command.communication_choice,conversations};
   }),
+  reporterCandidates:(query:string,cursor:string|null,signal:AbortSignal):Promise<WorkbenchReporterCandidates>=>get('/api/workbench/reporter-candidates?'+new URLSearchParams({q:query,limit:'10',...(cursor?{cursor}:{})}),signal,value=>{try{return decodeReporterCandidates(value);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   manualReportCapabilities:(signal:AbortSignal):Promise<ManualReportCapabilities>=>get('/api/workbench/reports/capabilities',signal,value=>{try{return decodeManualReportCapabilities(value);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
-  manualReportReceipt:(commandId:string,signal:AbortSignal):Promise<ManualReportReceipt>=>get('/api/workbench/reports/commands/'+encodeURIComponent(commandId),signal,value=>{try{return decodeManualReportReceipt(value,commandId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
-  submitManualReport:async(command:ManualReportCommand,csrfToken:string|null,signal:AbortSignal):Promise<ManualReportResult>=>{
+  manualReportReceipt:(commandId:string,signal:AbortSignal):Promise<ManualReportAdmissionReceipt>=>get('/api/workbench/reports/commands/'+encodeURIComponent(commandId),signal,value=>{try{return decodeManualReportReceipt(value,commandId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
+  submitManualReport:async(command:ManualReportAdmissionCommand,csrfToken:string|null,signal:AbortSignal):Promise<ManualReportAdmissionResult>=>{
     try{
       const response=await fetch('/api/workbench/reports',{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if(!response.ok&&response.status!==401&&command.reporter.verification==='VERIFIED_SELECTION'&&response.headers.get('content-type')?.startsWith('application/json')){
+        try{const rejected=decodeVerifiedManualReportRejection(await response.clone().json(),command.client_command_id);throw new ConfirmedManualReportRejection(response.status,rejected.error.code,rejected.receipt.client_command_id);}
+        catch(error){if(error instanceof ConfirmedManualReportRejection)throw error;}
+      }
       if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const value:unknown=await response.json(),v=object(value);
       if(!response.ok){const e=object(v.error),code=text(e.code);if(!/^P2_016_[A-Z][A-Z0-9_]{0,55}$/u.test(code))throw new UnknownCommandOutcome();
         if(response.status<500||v.ok===false&&typeof v.replayed==='boolean'&&e.retryable===false||code==='P2_016_DISABLED')throw new ApiError(response.status,code);throw new UnknownCommandOutcome();}
-      const result=decodeManualReportResult(v,command.client_command_id);if(result.source!==command.source||response.status!==(result.replayed?200:202))throw new UnknownCommandOutcome();return result;
+      const result=decodeManualReportResult(v,command.client_command_id);if(result.source!==command.source||result.reporter_verification!==(command.reporter.verification==='VERIFIED_SELECTION'?'VERIFIED':'UNVERIFIED')||response.status!==(result.replayed?200:202))throw new UnknownCommandOutcome();return result;
     }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
   },
   relatedConversations:(ticketId:string,cursor:string|null,signal:AbortSignal):Promise<P2016RelatedConversationPage>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/related-conversations?'+new URLSearchParams({limit:'20',...(cursor?{cursor}:{})}),signal,value=>{

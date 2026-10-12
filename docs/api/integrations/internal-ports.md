@@ -39,3 +39,7 @@ payload不含秘密/未脱敏患者文本，内部备注保持内部。资源遵
 [completion service](../../../src/workbench-ticket-completion.mts) 的perform使用同一Unified Ticket Core/command ledger，HTTP见[完工](../workbench/tickets.md#工作人员完工wbint-t11)。进程内 `readCommittedStaffCompletions({afterCycleId:null或UUID,limit:默认20/最大100})` 从040的只含引用承诺读取同cycle/end event/原source与权威event安全摘要，返回items及next_cursor。items为cycle_id/cycle_no/node:STAFF_COMPLETED/ticket_id/ticket_event_id/source_intake_id/external_summary/业务occurred_at。新的pool/service实例可重发现相同稳定依据，无内存注册、重复正文、另一套状态/owner/receipt或Delivery。
 
 cursor用于全扫描分页，不能作为永久增量水位：较早UUID的cycle可能稍后才结束。未来消费者完整重扫并按cycle/node/event幂等；T24持有路由、模板、Outbox生成/Delivery与发送范围。此reader默认关闭、无独立HTTP或浏览器调用，不将可恢复承诺称为通知已经投递。
+
+## 原来源App轮次与Sender（WBINT-T25）
+
+原 `createTicketRoundNotifications.runOnce()` 可装配默认null的appNotifications；同Unified Core与Communication Worker消费WEB_REQUEST/VERIFIED_MANUAL_REPORT，不增加消费REST或活动Worker。localOnly currentTargetResolver接收source_kind/scope/signal，closed unknown结果在宿主核验（1秒/8KiB）；资格、原来源、account与App不能由目录标签/哈希替代。实际App Sender复用SenderPort→Worker→原Outbox/Delivery，默认关闭；完整types/权限/恢复/资源边界见[应用通知](../workbench/app-notifications.md)。

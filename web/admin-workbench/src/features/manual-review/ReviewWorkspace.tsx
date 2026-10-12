@@ -1,3 +1,4 @@
+import {PersonalReadMaterial} from '../personal-read/PersonalReadMaterial';
 import {useEffect,useRef,useState} from 'react';
 import {Link} from 'react-router';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -18,11 +19,11 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
   const e=view.evidence;
   return <>
     {view.manual_report?<section data-review-manual-report aria-label="本次代录事实"><h4>{view.manual_report.source==='PHONE'?'电话代录':'现场代录'}</h4>
-      <p>报修人身份未核实，需人工联系；本次不会自动通知。</p>
-      <dl><div><dt>报修人</dt><dd>{view.manual_report.reporter.name}</dd></div><div><dt>联系方式</dt><dd>{view.manual_report.reporter.contact}</dd></div>
-        <div><dt>报修人科室</dt><dd>{view.manual_report.reporter.department??'未填写'}</dd></div><div><dt>位置</dt><dd>{view.manual_report.location.unknown?'位置暂不清楚':view.manual_report.location.text}</dd></div></dl>
+      <p>{view.manual_report.identity_source==='VERIFIED_DIRECTORY_SELECTION'?'本次已核实选择；人员与科室保留报修时资料。':'报修人身份未核实，需人工联系；本次不会自动通知。'}</p>
+      <dl><div><dt>报修人</dt><dd>{view.manual_report.reporter.name}</dd></div>{view.manual_report.reporter.verification==='UNVERIFIED'?<div><dt>联系方式</dt><dd>{view.manual_report.reporter.contact}</dd></div>:null}
+        <div><dt>报修人科室</dt><dd>{view.manual_report.reporter.verification==='VERIFIED'?view.manual_report.reporter.departments.join('、')||'未提供':view.manual_report.reporter.department??'未填写'}</dd></div><div><dt>位置</dt><dd>{view.manual_report.location.unknown?'位置暂不清楚':view.manual_report.location.text}</dd></div></dl>
       <p>代录人：{view.manual_report.actor_principal_id===principal.principal_id?principal.display_name:'工作人员身份已记录'}</p>
-      <details><summary>代录主体记录</summary><p>{view.manual_report.actor_principal_id}</p><p>报修人资料来自本次手工填报，尚未核实身份。</p></details>
+      <details><summary>代录主体记录</summary><p>{view.manual_report.actor_principal_id}</p><p>{view.manual_report.identity_source==='VERIFIED_DIRECTORY_SELECTION'?'报修人资料来自本次核实选择，后续目录变化不会改写此记录。':'报修人资料来自本次手工填报，尚未核实身份。'}</p></details>
     </section>:null}
     <section data-review-original aria-label="原判断"><h4>原判断</h4><p>{e.result} · {e.reason}</p><p>安全提示：{e.risk}</p>
       <dl>{e.known.map(item=><div key={item.field}><dt>{fields[item.field]??item.field}</dt><dd>{item.value}</dd></div>)}</dl>{!e.known.length?<p>暂无结构化已知字段，请核对来源材料。</p>:null}
@@ -35,7 +36,7 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
     <section data-review-materials aria-label="当前来源材料"><h4>当前来源材料</h4><p>原材料修订 {view.material_basis.original_revision}；当前修订 {view.material_basis.current_revision}（{view.material_basis.source_kind}）。</p>
       {view.material_basis.stale?<p role="alert">来源材料已变化，旧判断只能明确取消。请选择仍待判断的新复核项。</p>:null}
       {view.materials_truncated?<p>当前只展示保留期内的有界材料，部分内容未展示。</p>:null}
-      <ol>{view.materials.map(item=><li key={item.source_ref}><small>{item.source_ref} · 修订 {item.revision} · {item.in_original_basis?'原判断范围':'后来补充'}</small><p>{item.text??'当前没有可展示的文本内容。'}</p></li>)}</ol>
+      <ol>{view.materials.map(item=><li key={item.source_ref}><small>{item.source_ref} · 修订 {item.revision} · {item.in_original_basis?'原判断范围':'后来补充'}</small><PersonalReadMaterial principal={principal} item={{kind:'review',id:view.id}} sourceRef={item.source_ref} revision={item.revision} text={item.text}/></li>)}</ol>
       {!view.materials.length?<p>暂无保留期内的可展示材料。</p>:null}
     </section>
   </>;

@@ -1,7 +1,7 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "$id":"workbench_manual_report_projection.schema.json",
-  "type":"object","additionalProperties":false,
+  "anyOf":[{"type":"object","additionalProperties":false,
   "required":["source_kind","source","description","location","reporter","identity_source","actor_principal_id","manual_contact_required","external_notification"],
   "properties":{
     "source_kind":{"const":"MANUAL_REPORT"},"source":{"enum":["PHONE","ON_SITE"]},
@@ -16,5 +16,5 @@
     }},
     "identity_source":{"const":"HAND_ENTERED"},"actor_principal_id":{"type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
     "manual_contact_required":{"const":true},"external_notification":{"const":false}
-  }
+  }},{"$ref":"workbench_verified_manual_report_projection.schema.json"}]
 }
