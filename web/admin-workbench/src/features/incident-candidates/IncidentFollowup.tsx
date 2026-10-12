@@ -52,7 +52,8 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
   const busy=state==='preparing'||state==='submitting'||state==='checking',unknown=state==='unknown',hasInput=Boolean(action||reason||capturedVersion),blocked=busy||unknown||hasInput;
   const selectedTicket=report?.ticket_id??null;
   const assignee=useQuery({queryKey:['incident-report-assignee',principal.principal_id,incidentId,selectedTicket],enabled:Boolean(readable&&action==='MARK_REPORTER_RECOVERED'&&!wide&&selectedTicket),queryFn:({signal})=>incidentApi.ticketAssignee(selectedTicket??'',signal)});
-  const readDenied=unavailable(query.error)||unavailable(reports.error),purposeDenied=Boolean(detail&&action&&(!incidentRoleAllowed(action,principal.roles)||!incidentRoleAllowed(action,detail.roles)));
+  const assigneeDenied=Boolean(readable&&action==='MARK_REPORTER_RECOVERED'&&!wide&&selectedTicket&&(unavailable(assignee.error)||assignee.isSuccess&&assignee.data!==principal.principal_id));
+  const readDenied=unavailable(query.error)||unavailable(reports.error),purposeDenied=assigneeDenied||Boolean(detail&&action&&(!incidentRoleAllowed(action,principal.roles)||!incidentRoleAllowed(action,detail.roles)));
   const readReady=Boolean(detail&&!query.isFetching&&!query.isError&&reports.isSuccess&&history.isSuccess&&(!wide||(subscriptions.isSuccess&&linkable.isSuccess)));
   const allowed=Boolean(detail&&action&&actionAllowed(action,detail)&&!purposeDenied);
   const required=action==='CORRECT_SCOPE'?Boolean(scope):action==='SET_PRIMARY_TICKET'?Boolean(primary):action==='LINK_REPORT'?Boolean(source):action==='UNLINK_REPORT'||action==='MARK_REPORTER_RECOVERED'?Boolean(report&&report.link_state==='LINKED'&&(wide||assignee.data===principal.principal_id)):action==='PAUSE_SUBSCRIPTION'||action==='RESUME_SUBSCRIPTION'?Boolean(subscription&&subscription.status!=='ENDED'&&(action!=='RESUME_SUBSCRIPTION'||subscription.status!=='PENDING_DESTINATION'||direct)):true;
@@ -97,7 +98,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
     }catch(error){
       if(request.current!==controller||controller.signal.aborted)return;
       try{requireCurrent();}catch{setState(sent?'unknown':'failed');setReviewRequired(true);if(!sent)setPending(null);setMessage(sent?'授权上下文已更新，原操作结果仍未知；原 UUID、版本和正文保留，不能发起新操作。':'当前授权上下文已更新，尚未发送；请重新读取并核对。');return;}
-      if(unavailable(error)){clearInput();setPending(null);setState('denied');setMessage('当前权限已变化；原输入已停止展示。');if(error instanceof ApiError&&error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else refresh();}
+      if(unavailable(error)){draft.revoke(error);clearInput();setPending(null);setState('denied');setMessage('当前权限已变化；原输入已停止展示。');if(error instanceof ApiError&&error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else refresh();}
       else if(!sent&&replay){setState('unknown');setMessage('尚未重放；原操作结果仍未知、UUID 和正文保持，请再次只读核对。');}
       else if(!sent||error instanceof IncidentCommandRefusal){let cleaned=true;try{await draft.knownFailure(command.body.client_command_id);}catch{cleaned=false;}setPending(null);setState('failed');setReviewRequired(true);setMessage((sent?'原操作已明确失败：':'尚未发送：')+errorMessage(error)+' 输入保留，请重新核对当前事实。'+(cleaned?'':'恢复副本清理失败；原 UUID 保留，禁止新提交。'));refresh();}
       else{setState('unknown');setMessage('结果未知：原 UUID、父子版本和正文保留。当前状态读取不能确认原操作结果；请核对原操作，不能重复提交。');}

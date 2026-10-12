@@ -20,7 +20,7 @@ test('T28 real report/history pages retain at most three pages and keep an expli
     assert.equal(await context.browser.evaluate('globalThis.__t27DomainReads.filter(path=>["reports","events","subscriptions","linkable-reports"].includes(new URL(path,location.href).pathname.split("/").at(-1))).every(path=>new URL(path,location.href).searchParams.get("limit")==="30")'),true);
     const children=rows(reportPage.items);assert.equal(children.some(row=>Object.hasOwn(row,'reporter_identity_hash')),false);const events=rows(eventPage.items);assert.equal(events.some(row=>['payload_hash','safe_payload','source_command_id','actor_principal_id'].some(key=>Object.hasOwn(row,key))),false);
     assert.equal((await http.get(path)).primary_ticket_id,null,'loading pages and preserving selection do not submit a primary change');
-    await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await context.capture();
+    await context.capture();await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
   });
 });
 
