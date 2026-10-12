@@ -36,7 +36,7 @@ test('T28 an actual UNKNOWN receipt permits only explicit replay with the origin
 });
 
 test('T28 a clean committed result permits an explicit next intent in the same mounted detail with a fresh UUID and current version',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28nextintent',reporters:3,recovery:true},async context=>{
+  await candidateBrowser({purpose:'t28next',reporters:3,recovery:true},async context=>{
     const {http,id,path}=await prepareFollowup(context),before=await personalSnapshots(http,context.f.reports);
     await navigateFollowup(context,id);await observeFollowupPosts(context.browser);
     await submitFollowup(context,id,'START_INVESTIGATING','OPERATOR_REVIEWED',[],'2');
@@ -62,7 +62,7 @@ test('T28 a clean committed result permits an explicit next intent in the same m
 });
 
 test('T28 an original UNKNOWN replay reaches the existing ledger after a competing version advance and settles stable FAILED without a new intent',{timeout:240000},async()=>{
-  await candidateBrowser({purpose:'t28replayrace',reporters:3,recovery:true},async context=>{
+  await candidateBrowser({purpose:'t28replayx',reporters:3,recovery:true},async context=>{
     const {http,id,path}=await prepareFollowup(context);await navigateFollowup(context,id);
     await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
     await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
