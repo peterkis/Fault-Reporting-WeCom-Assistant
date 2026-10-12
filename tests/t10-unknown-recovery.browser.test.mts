@@ -25,7 +25,7 @@ test('production UNKNOWN keeps the original waiting UUID and uses only explicit 
       await browser.evaluate("document.querySelector('[data-action=check-request-information-command]').click()");await browser.waitFor("document.querySelector('.ticket-waiting-actions')?.innerText.includes('原操作已核对为提交')");
       const after=await http.detail(target.ticket.id);assert.equal(after.version,before.version+1);assert.deepEqual(after.handling_cycle,before.handling_cycle);assert.equal(after.assignee_id,before.assignee_id);
       assert.deepEqual(requests.filter(row=>row.method==='POST').map(row=>row.uuid),[original.body.client_command_id]);assert.deepEqual(requests.filter(row=>row.method==='GET').map(row=>row.path),[path+'/commands/'+original.body.client_command_id]);
-      await capture('new-detail-original-unknown-ack.png');
+      await capture('new-detail-1920.png');
     });}finally{context.runtime.server.removeListener('request',observe);}
   });
 });

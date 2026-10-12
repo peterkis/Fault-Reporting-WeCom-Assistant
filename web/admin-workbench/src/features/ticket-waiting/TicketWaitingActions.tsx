@@ -88,7 +88,7 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange}:{ac
     catch(error){if(!current(job))return;if(readDenied(error))return;const terminal=known.current?.id===id?known.current:null;if(terminal)setCleanupBlocked(true);setState(terminal?terminal.state==='COMMITTED'?'succeeded':'denied':'unknown');setMessage(terminal?'原操作终态已确认，本地清理或当前事实仍须重读；未发送新的操作。':'只读核对暂未完成，原 UUID 保留；未发送新的操作。');}finally{end(job);}
   };
   const discard=async()=>{if(request.current||busy)return;const copy={value:latest.current,pending:pendingRef.current},job=begin('privacy');if(!job)return;try{await freshRead(job);job.requireCurrent();const cleaned=await draft.dropSensitive(copy,job);if(!cleaned){setCleanupBlocked(true);setMessage('存在不同恢复修订，未删除其内容；当前输入保留。');}}catch(error){if(current(job)&&!readDenied(error))setMessage('敏感副本清理暂未确认，当前输入保留。');}finally{end(job);}};
-  if(!allowed&&!originalId&&!note&&!busy&&!draft.restoring)return null;
+  if(!allowed&&!originalId&&!note&&!busy&&!draft.restoring&&!message)return null;
   return <section className="ticket-notes ticket-waiting-actions" data-waiting-purpose={action} aria-label={labels[action]}>
     {allowed?<button type="button" data-action={action} disabled={blocked} onClick={()=>setOpen(true)}>{labels[action]}</button>:null}
     {open&&(allowed||note||originalId)?<form aria-label={labels[action]} onSubmit={event=>{event.preventDefault();void submit();}}>

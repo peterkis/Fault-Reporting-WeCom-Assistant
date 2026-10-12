@@ -22,7 +22,7 @@ test('production current handler explicitly waits for a vendor and resumes with 
       }
       const posts=await browser.evaluate('globalThis.__t10Posts') as {path:string;body:Record<string,unknown>}[];assert.equal(posts.length,2);assert.notEqual(posts[0]?.body.client_command_id,posts[1]?.body.client_command_id);
       for(const post of posts){assert.equal(post.body.external_visible,false);assert.deepEqual(Object.keys(post.body).sort(),['client_command_id','expected_version','external_visible','note','reason_code']);}
-      await capture('new-detail-vendor-resumed.png');
+      await capture('new-detail-1920.png');
     });
   });
 });
