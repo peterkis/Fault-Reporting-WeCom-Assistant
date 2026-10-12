@@ -17,11 +17,12 @@ import {createTicketReturnToDispatchService,normalizeReturnToDispatchCommand} fr
 import {createHash} from 'node:crypto';
 import {RealtimeScopeUnavailable} from './p2-006-workbench-authorization.mjs';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
+import type {WaitingAction} from '../contracts/workbench_waiting_contracts.js';
 type HttpContext = Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 interface HttpOptions {ticketWaitingActionsEnabled?:boolean;workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean;followUpSchedules?:ReturnType<typeof createWorkbenchFollowUpSchedules>|null}
 // Preserve the original HTTP port for existing consumers. The new dedicated ACK
 // adapter is optional here and fail-closed; the real runtime facade always supplies it.
-type TicketHttpPort=Pick<ReturnType<typeof createP2016TicketCommandFacade>,'perform'|'internalNoteReceipt'>&Partial<Pick<ReturnType<typeof createP2016TicketCommandFacade>,'reopenReceipt'>>;
+type TicketHttpPort=Pick<ReturnType<typeof createP2016TicketCommandFacade>,'perform'|'internalNoteReceipt'>&Partial<Pick<ReturnType<typeof createP2016TicketCommandFacade>,'reopenReceipt'|'waitingAcknowledgement'>>;
 interface ReviewPort { manualReviewReceipt:(input:{authContext:unknown;reviewId:unknown;commandId:unknown})=>Promise<unknown>;listManualReviews: (input: { authContext: unknown; status: string; priority: string | null; cursor: string | null; limit: string | null }) => Promise<unknown>; getManualReviewDetail: (input: { authContext: unknown; reviewId: string }) => Promise<unknown>; journey: (input: { authContext: unknown; journeyId: string; part: string | null }) => Promise<unknown>; resolveManualReview: (input: { authContext: unknown; reviewId: string; body: unknown }) => Promise<LedgerResult<LedgerSuccess>> }
 interface HttpOptions { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;returnToDispatchAcknowledgement?:ReturnType<typeof createTicketReturnToDispatchService>['acknowledgement']|null;returnToDispatch?:ReturnType<typeof createTicketReturnToDispatchService>|null;unassign?:ReturnType<typeof createTicketUnassignService>|null;assignment?:ReturnType<typeof createTicketAssignmentService>|null;takeover?:ReturnType<typeof createTicketTakeoverService>|null;workbenchManualReviewEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchReporterCandidatesEnabled?:boolean;workbenchRealtimeEnabled?:boolean;realtimeAuthorization?:(principal:WorkbenchPrincipal)=>Promise<unknown>;staffCompletion?:ReturnType<typeof createTicketStaffCompletionService>|null;conversationHandling?:ReturnType<typeof createTicketConversationHandlingService>|null;selfHandling?:ReturnType<typeof createTicketSelfHandlingService>|null; query: P2016TicketQuery; tickets: TicketHttpPort; reviews: ReviewPort; deliveryControl: ReturnType<typeof createP2016DeliveryControl>; enabled?: boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchConversationsEnabled?:boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentCandidateDraftRecoveryEnabled?:boolean;logoutReady?:()=>boolean }
 
@@ -38,6 +39,8 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const waitingReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/(request-information|wait-vendor|resume|cancel)\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(waitingReceipt){if(!tickets.waitingAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await tickets.waitingAcknowledgement({authContext,ticketId:waitingReceipt[1],action:waitingReceipt[2]?.toLowerCase() as WaitingAction,commandId:waitingReceipt[3]}));return true;}
       const returnReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/return-to-dispatch\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(returnReceipt){if(!returnToDispatchAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await returnToDispatchAcknowledgement({authContext,ticketId:returnReceipt[1],commandId:returnReceipt[2]}));return true;}
       const takeoverReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/takeover\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);

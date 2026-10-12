@@ -6,7 +6,7 @@ export interface LedgerFailure { ok: false; error: { code: string; retryable: bo
 // A committed DB snapshot follows the ledger write contract, but its consumer-specific payload is unknown.
 export type StoredLedgerSuccess = LedgerSuccess & Record<string, unknown>;
 export type LedgerResult<R extends LedgerSuccess> = (R & { replayed: false }) | (StoredLedgerSuccess & { replayed: true }) | LedgerFailure;
-export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
+export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; afterReceiptLock?: (transaction:PostgresTransaction)=>Promise<unknown>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
 interface ReceiptRow { id: string; command_hash: string; state: string; result_snapshot: StoredLedgerSuccess; error_code: string; retryable: boolean }
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';
@@ -17,6 +17,7 @@ import type {P2016ConversationHandlingAcknowledgement} from '../contracts/p2_016
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
 import type {BotReporterFeedbackResult} from '../contracts/bot_reporter_feedback_contracts.js';
 import {exactP2016} from './p2-016-domain-contracts.mjs';
+import type {WaitingAction,WaitingAcknowledgement} from '../contracts/workbench_waiting_contracts.js';
 
 const BOT_FEEDBACK_TYPE='BOT_REPORTER_FEEDBACK';
 function botFeedbackScope(value:string){if(!/^BOT_REPORTER_FEEDBACK:[a-f0-9]{64}$/u.test(value))failP2016();return value;}
@@ -54,6 +55,21 @@ export async function commitBotFeedbackCommandInTransaction({transaction:tx,comm
 
 export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'connect'> }) {
   return Object.freeze({
+    async waitingAcknowledgement({ticketId,commandId,action,authorize}:{ticketId:string;commandId:string;action:WaitingAction;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<WaitingAcknowledgement>{
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(transaction);
+        const selected=await transaction.query<{state:string;version:unknown;event:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_ticket_version AS version,result_ticket_event_id::text AS event,error_code AS error,retryable
+          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND ticket_id=$3::uuid
+          AND actor_principal_id=$4::uuid AND command_type=$5 LIMIT 1`,['P2_016:'+principal.principal_id,commandId,ticketId,principal.principal_id,action]);
+        const row=selected.rows[0];if(!row||row.state==='STARTED')return {state:'UNKNOWN'};
+        if(row.state==='COMMITTED')return {state:'COMMITTED',ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event)};
+        if(row.state==='FAILED'&&row.retryable===false){
+          const code=row.error==='FORBIDDEN'?'P2_016_FORBIDDEN':row.error==='INVALID_STATE_TRANSITION'?'P2_016_ACTION_FAILED':row.error;
+          if(typeof code==='string'&&(P2016_ERROR_CODES.includes(code)||code==='TICKET_VERSION_CONFLICT'))return {state:'FAILED',error:{code,retryable:false}};
+        }
+        failP2016('ACTION_FAILED',503);
+      });
+    },
     async reopenReceipt({ticketId,commandId,authorize}:{ticketId:string;commandId:string;authorize:(transaction:PostgresTransaction)=>Promise<LedgerContext>}):Promise<P2016ReopenReceipt>{
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(transaction);
@@ -108,7 +124,7 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
         failP2016('ACTION_FAILED',503);
       });
     },
-    async execute<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand>({command,receiptType,authorize,run}: LedgerExecution<C, R, D>): Promise<LedgerResult<R>> {
+    async execute<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand>({command,receiptType,authorize,afterReceiptLock,run}: LedgerExecution<C, R, D>): Promise<LedgerResult<R>> {
       return transactionP2016(pool,async tx=>{
         // Authorization precedes every receipt lookup, including a replay.
         const context=await authorize(tx);
@@ -123,6 +139,7 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
         const selected=await tx.query<ReceiptRow>(`SELECT id::text,command_hash,state,result_snapshot,error_code,retryable
           FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE`,[scope,command.client_command_id]);
         const receipt=(selected.rows[0] as (typeof selected.rows)[number]);
+        await afterReceiptLock?.(tx);
         if(receipt.command_hash!==hash)failP2016('COMMAND_CONFLICT',409);
         if(receipt.state==='COMMITTED')return publicP2016({...receipt.result_snapshot,replayed:true});
         if(receipt.state==='FAILED')return publicP2016({ok:false,error:{code:receipt.error_code,retryable:receipt.retryable},replayed:true});

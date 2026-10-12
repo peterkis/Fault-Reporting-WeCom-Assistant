@@ -20,6 +20,7 @@ import {completedTicketRound,reopenCompletedRound,reopenRoundsSchemaReady,unassi
 import { transferTicketAssignmentP2016 } from './p2-016-ticket-assignment.mjs';
 import { selfHandlingSchemaReady } from './workbench-ticket-self-handling.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
+import type {WaitingAction} from '../contracts/workbench_waiting_contracts.js';
 
 const ACTIONS=['queue','accept','start','request-information','wait-vendor','resume','resolve','confirm','reopen','cancel','add-note','transfer-assignment','takeover-and-accept-ticket'];
 export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
@@ -47,6 +48,11 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
   if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
+    async waitingAcknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand,action}:{authContext:unknown;ticketId:unknown;commandId:unknown;action:WaitingAction}){
+      guardP2016(enabled);if(!['request-information','wait-vendor','resume','cancel'].includes(action))failP2016();
+      const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+      return ledger.waitingAcknowledgement({ticketId,commandId,action,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
+    },
     async reopenReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
       guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
       return ledger.reopenReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
@@ -64,6 +70,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
         if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       }
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
+        ...(cycleAware?{afterReceiptLock:(transaction:PostgresTransaction)=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction})}:{}),
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
           if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
