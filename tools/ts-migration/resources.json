@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_takeover_command.schema.json",
+    "contracts/p2_016_takeover_result.schema.json",
+    "contracts/p2_016_takeover_targets.schema.json",
+    "contracts/p2_016_takeover_receipt.schema.json",
+    "contracts/p2_016_takeover_contracts.d.ts",
     "database/migrations/052_ticket_group_round_notifications.sql",
     "database/migrations/047_workbench_personal_read.sql",
     "contracts/workbench_personal_read_contracts.d.ts",
@@ -292,11 +297,6 @@
     "web/p2-workbench/workbench-state.mjs",
     "web/p2-workbench/workbench.css",
     "web/p2-workbench/workbench.js",
-    "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql",
-    "contracts/p2_016_takeover_command.schema.json",
-    "contracts/p2_016_takeover_result.schema.json",
-    "contracts/p2_016_takeover_targets.schema.json",
-    "contracts/p2_016_takeover_receipt.schema.json",
-    "contracts/p2_016_takeover_contracts.d.ts"
+    "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql"
   ]
 }
