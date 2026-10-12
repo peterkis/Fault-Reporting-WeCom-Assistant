@@ -7,11 +7,14 @@ import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
-for(const disconnectBeforeCleanup of [false,true])test('closing only waiting write and raw recovery preserves current readable detail and the original explicit safe ACK with '+(disconnectBeforeCleanup?'a real disconnected browser cleanup':'connected browser cleanup'),async()=>{
+const errorMessages=(value:unknown):string[]=>{if(value instanceof AggregateError){const causes:readonly unknown[]=value.errors;return causes.flatMap(errorMessages);}return value instanceof Error?[value.message]:value===undefined?[]:[String(value)];};
+for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed'] as const)test('closing only waiting write and raw recovery preserves current readable detail and the original explicit safe ACK with '+cleanupMode,async()=>{
+  const disconnectBeforeCleanup=cleanupMode==='disconnected';
   await withT10Fixture(async context=>{
     const handler=await t11Http(context,2,{closeConnections:true}),target=context.tickets[0];assert.ok(target);await handler.start(target.ticket.id);
     const path='/api/tickets/'+target.ticket.id+'/request-information',requests:{method:string;path:string}[]=[];
     const observe=(request:IncomingMessage)=>{if(request.url===path||request.url?.startsWith(path+'/commands/'))requests.push({method:request.method??'',path:request.url});};context.runtime.server.on('request',observe);
+    let observedFailure:unknown;
     try{await withT10Browser(context,target.ticket.id,2,'T10_WAITING_ONLY_CAPABILITY_CLOSE',async(browser,capture)=>{
       await browser.evaluate(`(()=>{const original=fetch;globalThis.__t10Posts=[];globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(options?.method==='POST'&&String(path)===${JSON.stringify(path)}&&response.status===200){globalThis.__t10Posts.push(JSON.parse(options.body));throw new TypeError('T10_ACTUAL_COMMITTED_RESPONSE_LOST');}return response;};})()`);
       await browser.waitFor("Boolean(document.querySelector('[data-action=request-information]'))&&!document.querySelector('[data-action=request-information]').disabled");await browser.evaluate("document.querySelector('[data-action=request-information]').click()");
@@ -38,7 +41,8 @@ for(const disconnectBeforeCleanup of [false,true])test('closing only waiting wri
         await browser.evaluate("document.querySelector('[data-action=check-request-information-command]').click()");await browser.waitFor("document.querySelector('[data-waiting-purpose=request-information]')?.innerText.includes('原操作已核对为提交')");
         assert.deepEqual(requests.filter(row=>row.method==='GET').map(row=>row.path),[path+'/commands/'+original.client_command_id]);assert.equal(requests.filter(row=>row.method==='POST').length,1);assert.equal((await closed.get('/api/tickets/'+target.ticket.id)).status,200);
         await capture('new-detail-1920.png');
-        if(disconnectBeforeCleanup){await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}
+        if(cleanupMode!=='connected'){await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}
+        if(cleanupMode==='primary-and-cleanup-failed'){console.log('T10_PRIMARY_BODY_FAILURE_STAGE '+JSON.stringify({actualAckReached:true,browserClosed:true}));throw new Error('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK');}
       }finally{
         let cleanupError:unknown;
         try{await closeBrowserTestResources([async()=>{await browser.evaluate('globalThis.__t10CloseObserver?.()');},async()=>{runtime.server.removeListener('request',observe);await runtime.stop();assert.equal(runtime.server.listening,false);}]);}catch(error){cleanupError=error;}
@@ -49,6 +53,9 @@ for(const disconnectBeforeCleanup of [false,true])test('closing only waiting wri
         if(disconnectBeforeCleanup&&listeningBeforeRescue)throw new AggregateError([cleanupError,new Error('T10_NEW_HOST_FINALLY_SKIPPED_BEFORE_OWNED_RESCUE')],'T10_NEW_HOST_CLEANUP_NOT_REACHED');
         if(cleanupError){if(disconnectBeforeCleanup){assert.ok(cleanupError instanceof Error);assert.equal(cleanupError.message,'P2_006_BROWSER_DISCONNECTED');}else throw cleanupError;}
       }
-    });}finally{context.runtime.server.removeListener('request',observe);}
+    });}catch(error){observedFailure=error;}finally{context.runtime.server.removeListener('request',observe);}
+    if(cleanupMode==='primary-and-cleanup-failed'){
+      const errors=errorMessages(observedFailure);console.log('T10_DOUBLE_FAILURE_STAGE '+JSON.stringify({errors}));assert.ok(errors.includes('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK'),'cleanup must preserve the original body failure');assert.ok(errors.includes('P2_006_BROWSER_DISCONNECTED'));assert.deepEqual(new Set(errors),new Set(['T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK','P2_006_BROWSER_DISCONNECTED']));
+    }else if(observedFailure)throw observedFailure;
   });
 });
