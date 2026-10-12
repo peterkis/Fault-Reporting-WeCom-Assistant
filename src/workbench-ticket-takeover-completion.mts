@@ -57,7 +57,7 @@ export function createTicketTakeoverCompletionService({pool,query,controlService
       const transferred=await takeoverTicketInTransaction({transaction,authContext,query,controlService,...hooks,
         command:{action:'takeover',ticket_id:command.ticket_id,client_command_id:command.client_command_id,expected_version:command.expected_version,
           reason_code:command.reason_code,resolver_team_id:command.resolver_team_id,communication_choice:command.communication_choice,sessions:command.sessions}});
-      const completed=await completeTicketInTransaction({transaction,authContext,query,realtimeProjector:hooks.realtimeProjector,
+      const completed=await completeTicketInTransaction({transaction,authContext,query,realtimeProjector:hooks.realtimeProjector??null,
         command:{action:'complete',ticket_id:command.ticket_id,client_command_id:command.client_command_id,expected_version:transferred.ticket_version,
           reason_code:'STAFF_COMPLETED',handling_cycle_id:command.handling_cycle_id,internal_process:command.internal_process,
           external_summary:command.external_summary,external_summary_confirmed:true}});
