@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_waiting_action_receipt.schema.json",
+  "title":"T10 current Ticket READ original actor resource action and UUID safe acknowledgement",
+  "oneOf":[
+    {"type":"object","additionalProperties":false,"required":["state"],"properties":{"state":{"const":"UNKNOWN"}}},
+    {"type":"object","additionalProperties":false,"required":["state","ticket_id","ticket_version","ticket_event_id"],"properties":{"state":{"const":"COMMITTED"},"ticket_id":{"type":"string","format":"uuid"},"ticket_version":{"type":"integer","minimum":1,"maximum":2147483647},"ticket_event_id":{"type":"string","format":"uuid"}}},
+    {"type":"object","additionalProperties":false,"required":["state","error"],"properties":{"state":{"const":"FAILED"},"error":{"type":"object","additionalProperties":false,"required":["code","retryable"],"properties":{"code":{"type":"string","pattern":"^(P2_016|TICKET)_[A-Z][A-Z0-9_]{0,80}$"},"retryable":{"const":false}}}}}
+  ],
+  "x-authority":"W current authentication and current Ticket READ, original actor Ticket UUID and exact route/action command_type; independent of new write/raw capability. Never return note, raw command or private snapshot.",
+  "x-command":"GET /api/tickets/{id}/{request-information|wait-vendor|resume|cancel}/commands/{uuid}; not yet implemented at the first Reporter menu slice"
+}

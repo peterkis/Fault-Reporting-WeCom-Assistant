@@ -4,6 +4,8 @@
     "contracts/workbench_incident_internal_notes_contracts.d.ts",
     "contracts/workbench_incident_internal_note_command.schema.json",
     "contracts/workbench_incident_internal_note_page.schema.json",
+    "contracts/p2_016_waiting_capability.schema.json",
+    "contracts/p2_016_waiting_action_receipt.schema.json",
     "database/migrations/057_ticket_return_follow_up_compatibility.sql",
     "contracts/p2_016_return_to_dispatch_capability.schema.json",
     "contracts/p2_016_return_to_dispatch_receipt.schema.json",
@@ -309,6 +311,9 @@
     "web/p2-workbench/workbench-state.mjs",
     "web/p2-workbench/workbench.css",
     "web/p2-workbench/workbench.js",
-    "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql"
+    "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql",
+    "contracts/p2_016_waiting_action_command.schema.json",
+    "contracts/p2_016_waiting_action_result.schema.json",
+    "contracts/p2_016_waiting_event_page.schema.json"
   ]
 }
