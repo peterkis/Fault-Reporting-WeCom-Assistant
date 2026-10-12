@@ -22,7 +22,7 @@
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
 | 工作人员电话／现场代录与经核实成员选择（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)；一步处理由 T19 继续实施 |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
-| 当前 Incident 原 UUID 的安全只读核对（默认关闭，T28整票待验证） | [公共故障回执](workbench/incidents.md#公共故障跟进接入准备wbint-t28) |
+| Incident 跟进及原 UUID 安全只读核对（默认关闭） | [公共故障回执](workbench/incidents.md#公共故障跟进wbint-t28) |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
 | 完整人工工作台怎样分批接入、有哪些后端缺口 | [实施计划](../../plans/admin-workbench-integration/README.md)／[能力映射](../../plans/admin-workbench-integration/capability-map.md)；其中候选路径尚未挂载 |

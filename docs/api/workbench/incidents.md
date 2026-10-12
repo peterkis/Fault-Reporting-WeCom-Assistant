@@ -13,7 +13,7 @@
 | `GET /api/incident-candidates/{candidateId}/commands/{commandId}` | 不接受 query | 当前 principal/candidate 的只读安全回执；额外要求宿主 `incidentCandidateWorkspaceEnabled=true`，默认关闭 |
 | `GET /api/incidents` | state?、cursor?、limit 默认30/最大100 | `{items:[IncidentPublicView],next_cursor}` |
 | `GET /api/incidents/{incidentId}` | 无必需 query | IncidentDetail；ETag；按角色裁剪 |
-| `GET /api/incidents/{incidentId}/commands/{commandId}` | 不接受 query | T28 原 Incident 操作只读回执；宿主 `incidentCandidateWorkspaceEnabled=true`（默认关闭），当前本地切片待验证 |
+| `GET /api/incidents/{incidentId}/commands/{commandId}` | 不接受 query | T28 原 Incident 操作只读回执；宿主 `incidentCandidateWorkspaceEnabled=true`（默认关闭），当前原动作用途授权 |
 | `GET /api/incidents/{incidentId}/events` | cursor?、limit 默认30/最大200 | `{items,next_cursor}`；窄权限仅公开事件类型 |
 | `GET /api/incidents/{incidentId}/reports` | cursor?、limit 默认30/最大100 | `{items,next_cursor}`；按可见工单过滤 |
 | `GET /api/incidents/{incidentId}/linkable-reports` | 同上 | ADMIN/DISPATCHER |
@@ -102,17 +102,24 @@ confirmed_scope=`LOCAL|BUILDING|CAMPUS|HOSPITAL_WIDE`，更广范围由 ADMIN �
 
 资源复用原 App/Worker/Gateway和单条 SSE（默认32客户端），应用池预算不超过8；确认 body沿原32KiB、Report100/owner100/各组20及材料101上限。关闭新宿主能力停止入口、恢复与专用回执，已提交事实及旧 API 保留；外发开关与独立现场授权保持原边界。当前隔离 PostgreSQL、真实 loopback HTTP、production bundle 与清理证据见 [T27执行记录](../../../plans/admin-workbench-integration/execution/t27.md)，不等同于真实外部服务、发送、部署、full/certify或Gate批准。
 
-## 公共故障跟进接入准备（WBINT-T28）
+## 公共故障跟进（WBINT-T28）
 
-T28 回执纵向切片：原 d78ba6d5 的真实 HTTP 测试证明拟议命令核对路径返回400 `P2_012_INPUT_INVALID`，其后回执断言尚未到达。当前后继源码为该实际失败补齐上表 GET，沿原032 `incident.command_receipt`，不增加数据库表、命令或发送。回执绑定当前 principal、Incident 和原 UUID；先核验当前父读取权，再读取原动作及报修目标的身份元数据，并在读取终态前核验当前动作用途。ADMIN 专用动作不得由降权 DISPATCHER 核对；HANDLER 仅能核对原单人恢复且个人 Ticket 当前仍由本人负责。缺少该主体/对象的原账本记录只返回 UNKNOWN，没有重放授权。
+正式独立入口为 `/workbench/app/incidents/{incidentId}`。操作和原因均须明确选择，现有十个 POST 消费原 UUID、父字符串版本及所选 Report/Subscription 字符串版本，Header 为同 UUID 的 Idempotency-Key 和精确双引号 If-Match。设置主工单可明确选择无主工单。候选确认页内嵌的 Incident 结果继续只读。
 
-响应共同字段是 `incident_id,client_command_id,state`；UNKNOWN 不带结果，FAILED 仅白名单错误，COMMITTED 仅封闭六字段 Incident ACK（`replayed:true`），见[新回执 Schema](../../../contracts/p2_012_incident_followup_receipt.schema.json)。不返回 payload、hash、身份或目的地。关闭 workspace 使专用回执404，保留所有旧 API 与已有事实。当前新源码待构建及原公开测试验证；下面暂停前的 SOURCE 说明保留历史语义，不代表当前整票完成。
+角色和状态提示取当前安全 detail，Incident 没有另造 allowed_actions/allowed_scopes 或所有权。HANDLER 单人恢复须通过现有个人 Ticket GET 核对当前本人 assignee；写入事务再次锁定核验。Incident owner 不增加权限。父、子、来源和主工单归属由原 CommandPort 判断；分页缺席不证明失权，保留的原选择仍须提交时核验。公共恢复、关闭和个人恢复保持个人 Ticket 状态、事件、处理责任与沟通责任独立。
 
-[T28合同和原七项验证计划](../../../plans/admin-workbench-integration/execution/t28.md)已按实际十个POST冻结。原固定源bb337246cb0054a8f5445b72b296eddb1cdbba25的[生产bundle调查tracer](../../../tests/wbint-t28-investigating.browser.test.mts)实际1 FAIL：正式详情缺少公共故障操作选择；其后POST、版本、事件、个人Ticket／责任及刷新断言均NOT_REACHED。当前后继仅准备该真实RED对应的最小调查接入：独立详情由当前ADMIN／DISPATCHER明确选择开始调查和原因，按原UUID、字符串版本及精确If-Match调用现有POST，收到封闭成功ACK后重新GET当前详情。候选确认页嵌入结果仍为只读。新源码build／types／artifact／browser均NOT_RUN，不称调查或整票已通过；032数据库、后端既有动作、默认关闭和原FAIL证据保持。
+Report、历史、订阅、通知、来源和所选 subscription 的 DIRECT 渠道均从 unknown 按封闭安全字段解码，每页请求30，最多保留最近三页。各段独立游标，下一页与回到起点明确。界面显示当前页及已加载窗口项数，不能用页面长度推断关联总数或受影响人数。HANDLER 继续只读其当前获权的裁剪投影。DIRECT 候选仅来自当前所选同一 Reporter 的有效个人渠道；待配置订阅须明确选渠道，已有订阅可省略字段保留仍有效的原渠道。群聊、他人或过期渠道由原事务拒绝。同人多条 Report 复用一条订阅，PAUSED 不因关联自动恢复，最后一条解除才 ENDED，重新关联复用原 Report。
 
-T28所需拟议 `GET /api/incidents/{incidentId}/commands/{commandId}` 是 **PROPOSED_PATH／NOT_IMPLEMENTED**；当前候选专用回执不能核对Incident命令。必要恢复入口须在真实RED后沿原ledger及当前Incident读取权限实现／验证，再同步路径索引。Report／Subscription／events／通知读取沿当前安全投影和独立cursor，页数不能冒充关联总数；Incident owner不产生新的管理权，公共恢复／关闭不关闭个人Ticket。
+`GET /api/incidents/{incidentId}/commands/{commandId}` 已挂载，要求当前 workspace 能力。查询绑定当前 principal、Incident、原 UUID 和本票十种动作的原 `incident.command_receipt`。先核验当前父 READ，再核验原动作及子目标当前用途权限，之后才能读终态。ADMIN 专用动作降为 DISPATCHER 后不能核对；HANDLER 仅能核对当前仍由本人负责 Ticket 的原单人恢复。该主体/对象没有原记录时返回 UNKNOWN，不能据此获得重放权。
 
+响应共同字段为 `incident_id,client_command_id,state`。UNKNOWN 无结果；FAILED 仅白名单稳定错误；COMMITTED 仅封闭六字段 Incident ACK、`replayed:true`。见[回执 Schema](../../../contracts/p2_012_incident_followup_receipt.schema.json)及[独立增量声明](../../../contracts/workbench_incident_followup_contracts.d.ts)。不返回正文、hash、身份、目的地或 Provider 错误。原13份 P2-012合同和032保持原字节，无数据库变更或第二套事实。
 
-当前 root4fe 的 Incident detail 仅包含安全字段与 roles；Incident 没有 allowed_actions／allowed_scopes，这两项当前仅属于 Candidate。T28 操作提示依据当前 roles／status，提交仍由既有事务核验实际权限、父子版本与归属。拟议 Incident receipt 继续 PROPOSED_PATH／NOT_IMPLEMENTED，其用途权限须包含原动作及子目标的当前权限；父 Incident 的读取权不能替代 ADMIN 专用动作或 HANDLER 当前本人 assignee 权限。Incident owner 字段不增加操作授权。新增负责人转交、内部处置和显式发布属于 WBINT-10／T29–T31。
+可用时复用原浏览器加密恢复库，scope 为当前 principal / `incident` / Incident UUID / `incident-followup`，并在展示敏感恢复内容前重新核对原动作用途及 HANDLER 当前 assignee。使用非导出 AES-GCM 密钥、首次保存固定24小时、UTF-8 16KiB、最多20草稿及20操作标记。完整 UNKNOWN 保留原 UUID、正文和捕获版本；页面、刷新、恢复及 SSE 不自动核对或 POST。用户只读核对为 UNKNOWN 后，完整未过期且当前获权的正文才可明确重放原意图。过期或丢弃仅保留 opaque UUID 核对，不能推断未提交。
 
-首调查SOURCE阶段的传输UNKNOWN仅在当前页面保留原UUID／父版本／正文，阻止新提交与意外导航；当前事实GET不结算原意图，也不自动重放。跨刷新加密恢复及Incident原操作回执仍待对应实际RED切片，本段不宣称它们可用。
+原用途/对象失权仅清该 Incident 跟进 scope 并撤销其旧回调；真正401或 bootstrap 会话拒绝沿原全会话清理。新目的拒绝不能由恢复开关是否打开推断为全局会话失效。当前授权 epoch、请求身份、原请求撤销和恢复 generation 防止迟到读取、加密、解密、POST及回执恢复旧输入、受保护投影或 UNKNOWN。已知提交或稳定失败保持原结论；清理失败保留 UUID、阻止新提交并允许再次只读核对和清理。
+
+现有单条 SSE 控制器同时更新 Incident 父、各子窗口及当前 Report assignee 查询，保留原输入和捕获版本，版本变化须明确采用。通知窗口显示各路 Delivery 的当前结果及尝试次数：已发送、发送结果待核对或失败分别来自各条实际投递；订阅状态和群通知不替代个人投递结果。读取没有重试或核对控制授权（另属 T32）。
+
+资源沿原单 App/Worker、零新增 Gateway、SSE默认32及总池建议≤8；body32KiB和原页数/草稿上限保持。workspace 与浏览器恢复能力默认关闭；关闭入口、专用恢复或 workspace 停止相应消费与专用回执，保留所有原 Ticket/Incident/Report/Subscription/Event/Outbox/Delivery。新增负责人转交、内部处置和显式发布仍属 T29–T31。
+
+当前本地定向测试使用真实隔离 PG、loopback Cookie HTTP、正式 production bundle 与合成外部适配器。原 RED、后继各风险验证、原七项和最终被测对象以[T28执行记录](../../../plans/admin-workbench-integration/execution/t28.md)及外置原始报告为准；真实外部服务/发送、部署、full/certify与Gate仍按原独立停止线。
