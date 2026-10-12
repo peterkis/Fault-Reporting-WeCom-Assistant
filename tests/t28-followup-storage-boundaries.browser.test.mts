@@ -43,7 +43,9 @@ test('T28 a clean committed result permits an explicit next intent in the same m
     await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("已提交")');
     assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);
     assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=new-incident-intent]"))'),true,'known clean settlement offers an explicit next intent');
+    await context.capture();
     for(const [action,reason,version] of [['RESOLVE_INCIDENT','RECOVERY_CONFIRMED','3'],['CLOSE_INCIDENT','RECOVERY_CONFIRMED','4']] as const){
+      await context.browser.waitFor('document.querySelector("[data-action=new-incident-intent]")?.disabled===false');
       await context.browser.evaluate('document.querySelector("[data-action=new-incident-intent]").click()');
       assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=公共故障操作]").value'),'');
       assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=决定原因]").value'),'');
@@ -58,6 +60,7 @@ test('T28 a clean committed result permits an explicit next intent in the same m
     assert.deepEqual(posts.map(post=>post.if_match),['"1"','"2"','"3"']);
     assert.ok(posts.every((post,index)=>post.idempotency_key===bodies[index]?.client_command_id));
     assert.equal((await http.get(path)).status,'CLOSED');assert.deepEqual(await personalSnapshots(http,context.f.reports),before);
+    await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
   });
 });
 
@@ -69,6 +72,7 @@ test('T28 an original UNKNOWN replay reaches the existing ledger after a competi
     await context.browser.evaluate(`(()=>{const send=fetch;globalThis.__t28Attempts=[];globalThis.fetch=async(input,options)=>{if(options?.method==='POST'&&String(input)===${JSON.stringify(path+'/correct-scope')}){const h=new Headers(options.headers);globalThis.__t28Attempts.push({body:options.body,key:h.get('idempotency-key'),version:h.get('if-match')});if(globalThis.__t28Attempts.length===1)throw new TypeError('T28_CONTROLLED_NO_WIRE');}return send(input,options);};})()`);
     await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');
     await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');const original=record(rows(await context.browser.evaluate('globalThis.__t28Attempts'))[0]),body=record(JSON.parse(text(original.body)));
+    assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=new-incident-intent]"))'),false,'UNKNOWN cannot start a new intent');
     assert.equal((await http.get(path)).row_version,'1');
     await http.post(path+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
     const events=rows((await http.get(path+'/events?limit=200')).items);assert.equal((await http.get(path)).row_version,'2');
