@@ -20,6 +20,7 @@ import {TicketRoundNotifications} from '../features/ticket-round-notifications/T
 import {TicketReopen} from '../features/ticket-reopen/TicketReopen';
 import {SharedFollowUp} from '../features/follow-up/SharedFollowUp';
 import {TicketAssignment} from '../features/ticket-assignment/TicketAssignment';
+import {TicketTakeover} from '../features/ticket-takeover/TicketTakeover';
 import {TicketUnassign} from '../features/ticket-unassign/TicketUnassign';
 import {AttachmentSection} from '../features/attachments/AttachmentSection';
 import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
@@ -197,7 +198,8 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id}/>:null}
       {detail.item.kind==='ticket'?<TicketReopen key={principal.principal_id+':reopen:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReopenBlocked}/>:null}
-      {detail.item.kind==='ticket'&&principal.ticket_takeover_enabled?<TicketTakeover key={principal.principal_id+':takeover:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverBlocked}/>:null} key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setAssignmentBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.ticket_takeover_enabled?<TicketTakeover key={principal.principal_id+':takeover:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setAssignmentBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_unassign_enabled?<TicketUnassign key={principal.principal_id+':unassign:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setUnassignBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
       <ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id}/>
