@@ -168,6 +168,9 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
     return()=>{dialog.current?.close();if(previousFocus.current?.isConnected)previousFocus.current.focus();};
   },[fullPage]);
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
+  const handlingContext=useQuery({queryKey:['ticket-command-context',principal.principal_id,detail?.item.id??id],queryFn:({signal})=>api.ticketCommandContext(detail?.item.id??id,signal),enabled:principal.ticket_takeover_enabled===true&&detail?.item.kind==='ticket'&&(principal.ticket_conversation_self_handling_enabled||principal.ticket_self_handling_enabled)});
+  const showConversationHandling=!principal.ticket_takeover_enabled||handlingContext.data?.allowed_actions.some(action=>action==='take-and-start-with-conversations'||action==='accept-for-later-with-conversations')===true;
+  const showSelfHandling=!principal.ticket_takeover_enabled||handlingContext.data?.allowed_actions.some(action=>action==='take-and-start'||action==='accept-for-later')===true;
   // Re-reading an open item must not take focus from an editor or move its target.
   const detailPresent=Boolean(detail);
   useEffect(()=>{if(fullPage&&detailPresent)pageHeading.current?.focus();},[fullPage,detailPresent,kind,id]);
@@ -193,7 +196,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
         <dt>实际完结</dt><dd>{detail.item.completed_at??'尚无完结事件'}</dd>
       </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
-      {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled&&showConversationHandling?<TicketConversationHandling key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled&&showSelfHandling?<TicketSelfHandling key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled?<TicketCompletion key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
       {detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id}/>:null}

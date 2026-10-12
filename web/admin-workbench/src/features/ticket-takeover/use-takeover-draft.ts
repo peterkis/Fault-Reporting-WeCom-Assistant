@@ -8,7 +8,7 @@ import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 export type TakeoverIntent=Readonly<{action:P2016TakeoverAction;command:P2016TakeoverCommand}>;
 export interface TakeoverInput {team:string;choice:P2016TakeoverCommand['communication_choice']|null;sessions:readonly P2016TakeoverSession[]}
-export const EMPTY_TAKEOVER:TakeoverInput=Object.freeze({team:'',choice:null,sessions:[]});
+export const EMPTY_TAKEOVER:TakeoverInput=Object.freeze({team:'',choice:'TAKE_SELECTED',sessions:[]});
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu,CODE=/^[A-Z][A-Z0-9_]{0,63}$/u;
 function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new DraftError('DRAFT_CORRUPT');return value as Record<string,unknown>;}
 function identity(value:unknown):string{if(typeof value!=='string'||!UUID.test(value))throw new DraftError('DRAFT_CORRUPT');return value;}
@@ -27,7 +27,7 @@ export function useTakeoverDraft({ticketId,principal,value,pending,onRestore,onO
  const serialise=(copy:{value:TakeoverInput;pending:TakeoverIntent|null})=>JSON.stringify({schema:1,...copy});
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;setUnavailable(false);setRestoring(false);onSensitiveClear();};
  const opaque=()=>{const token=generation.current;void openDraft(scope,{restore:false}).then(copy=>{if(generation.current===token&&copy.handle.operation)onOperation(copy.handle.operation.commandId);}).catch(()=>{});};
- const draft=useAuthorizedDraft<TakeoverInput,TakeoverIntent>({scope,enabled,value,pending,emptyValue:EMPTY_TAKEOVER,hasInput:value=>Boolean(value.team||value.choice||value.sessions.length),serialise,decode,commandId:intent=>intent.command.client_command_id,
+ const draft=useAuthorizedDraft<TakeoverInput,TakeoverIntent>({scope,enabled,value,pending,emptyValue:EMPTY_TAKEOVER,hasInput:value=>Boolean(value.team||value.choice==='RETAIN_CURRENT'||value.sessions.length),serialise,decode,commandId:intent=>intent.command.client_command_id,
   authorize:async signal=>{stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.ticket_takeover_enabled||!fresh.ticket_takeover_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');stage.current='ticket';const context=await api.ticketCommandContext(ticketId,signal);client.setQueryData(['ticket-command-context',scope.principal,ticketId],context);actions.current=context.allowed_actions;return true;},
   onAuthorityFailure:error=>{if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,scope.principal,ticketId,error);else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')void purgeDrafts({...scope,reason:'revoked'});else{setUnavailable(true);setRestoring(false);opaque();}},
   onRestore:copy=>{const token=++generation.current,controller=new AbortController();request.current?.abort();request.current=controller;validating.current=true;setUnavailable(false);setRestoring(true);
