@@ -14,6 +14,7 @@ export async function assertP2016Schema(name,input){
       const external=await load(schema.$ref);return visit(external,v,location,external);
     }
     if(schema.anyOf){let matched=false;for(const candidate of schema.anyOf){try{await visit(candidate,v,location,document);matched=true;break;}catch{/* next defined alternative */}}assert.ok(matched,location+' matches no alternative');}
+    if(schema.oneOf){let matches=0;for(const candidate of schema.oneOf){try{await visit(candidate,v,location,document);matches++;}catch{/* next defined alternative */}}assert.equal(matches,1,location+' must match exactly one alternative');}
     for(const candidate of schema.allOf??[])await visit(candidate,v,location,document);
     if(schema.if){let matches=true;try{await visit(schema.if,v,location,document);}catch{matches=false;}const branch=matches?schema.then:schema.else;if(branch)await visit(branch,v,location,document);}
     if(Object.hasOwn(schema,'const'))assert.deepEqual(v,schema.const,location);

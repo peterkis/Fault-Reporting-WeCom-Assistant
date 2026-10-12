@@ -1,5 +1,7 @@
 # 设计接口、兼容路径与已知差异
 
+2026-10-10 WBINT-T37 已冻结[共享跟进时间目标合同](workbench/follow-up-schedules.md)：W GET/POST `/api/tickets/{ticketId}/follow-up-schedule` 与专用GET命令核对。原f9d native build/types/artifact0后，真实调度员原POST404为实际RED；后继仅SOURCE补049从属安排／修订、原Ledger事务、三条路由和defaultfalse，尚未构建／迁移／HTTP验证。canonical沟通人、due Worker、完整生命周期与正式React消费仍待后继片段；不是整票已交付。当前责任和Ticket READ仍是授权依据，安排不建立第三owner／SLA或外部通知。
+
 返回 [导航](README.md) · [完整路径索引](endpoint-index.md)
 
 本页是2026-10-07源码核对结果。本轮整理记录差异，没有实施API重构或修改历史证据。设计路径可以保留为需求参考，不能让前端按其直接调用。

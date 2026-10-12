@@ -1,0 +1,30 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_follow_up_schedule_view.schema.json",
+  "title":"WBINT-T37 currently authorized shared follow-up view (planned)",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["ticket_id","ticket_version","schedule_version","active","allowed_actions","history","history_has_more"],
+  "properties":{
+    "ticket_id":{"type":"string","format":"uuid"},
+    "ticket_version":{"type":"integer","minimum":1,"maximum":2147483647},
+    "schedule_version":{"type":"string","pattern":"^(0|[1-9][0-9]{0,18})$"},
+    "active":{"oneOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["schedule_version","due_at","due_epoch_ms","is_due"],"properties":{
+      "schedule_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},
+      "due_at":{"$ref":"local_datetime.schema.json"},
+      "due_epoch_ms":{"$ref":"epoch_ms_string.schema.json"},
+      "is_due":{"type":"boolean"}
+    }}]},
+    "allowed_actions":{"type":"array","maxItems":2,"uniqueItems":true,"items":{"enum":["SET","CANCEL"]}},
+    "history":{"type":"array","maxItems":20,"items":{"type":"object","additionalProperties":false,"required":["schedule_version","action","due_at","occurred_at","ticket_event_id","end_reason"],"properties":{
+      "schedule_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},
+      "action":{"enum":["SET","CANCEL","ENDED"]},
+      "due_at":{"oneOf":[{"$ref":"local_datetime.schema.json"},{"type":"null"}]},
+      "occurred_at":{"$ref":"local_datetime.schema.json"},
+      "ticket_event_id":{"type":"string","format":"uuid"},
+      "end_reason":{"enum":[null,"CLOSED","CANCELLED"]}
+    }}},
+    "history_has_more":{"type":"boolean"}
+  },
+  "x-runtime-validation":["All schedule versions <= PostgreSQL BIGINT maximum","active schedule_version equals top-level schedule_version","due_epoch_ms exactly matches Asia/Shanghai due_at","history newest revision first; same revision uses real Ticket Event ordinal descending","SET/CANCEL end_reason null; ENDED references the actual terminal Event for that revision","active schedule is fenced by current Ticket state/cycle and authoritative terminal/reopen Event order, regardless of prior feature toggle"]
+}

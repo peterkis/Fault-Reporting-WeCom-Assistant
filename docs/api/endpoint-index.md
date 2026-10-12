@@ -10,6 +10,9 @@
 
 | ID | 方法 | 完整路径 | 宿主 | 状态 / 用途 | 契约文档 |
 | --- | --- | --- | --- | --- | --- |
+| PR01 | GET | `/api/workbench/items/{kind}/{id}/read-position` | W | 已挂载、默认关闭：当前获权来源的本人位置，kind=ticket/review/intake，有界分页 | [个人阅读位置](workbench/personal-read.md) |
+| PR02 | POST | `/api/workbench/items/{kind}/{id}/read-position` | W | 已挂载、默认关闭：确切 source_ref/revision 的本人单调推进，原 UUID | [个人阅读位置](workbench/personal-read.md) |
+| PR03 | GET | `/api/workbench/items/{kind}/{id}/read-position/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/来源下原用途 UUID 的安全 UNKNOWN/COMMITTED核对 | [个人阅读位置](workbench/personal-read.md) |
 | G01 | GET | `/api/workbench/source-groups` | W | 本地实现：ADMIN观察群目录、q检索、绑定搜索的分页；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | G02 | POST | `/api/workbench/source-groups/{groupRef}/name` | W | 已实现：ADMIN登记/改名；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | CW01 | GET | `/api/workbench/conversations` | W | 已实现、默认关闭：获权参与者/服务主题分页 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
@@ -27,9 +30,10 @@
 | CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| MR01 | POST | `/api/workbench/reports` | W | T17已挂载、默认关闭；电话／现场未核实Reporter代录，原HTTP1 GREEN；T18／T19未实现 | [代录报修](workbench/manual-reports.md) |
-| MR02 | GET | `/api/workbench/reports/capabilities` | W | T17当前创建权限及恢复配置；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
-| MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | T17原主体／用途同账本只读UNKNOWN/FAILED/COMMITTED，另需恢复开关；原HTTP1 GREEN | [代录报修](workbench/manual-reports.md) |
+| MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；T19 一步处理另行实施 | [代录报修](workbench/manual-reports.md) |
+| MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
+| MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |
+| MR04 | GET | `/api/workbench/reporter-candidates` | W | 已挂载、默认关闭；当前应用／对象获权候选，q/limit/cursor 有界；仅明确选择后才可提交 | [候选查询](workbench/manual-reports.md#2-候选查询-get) |
 | A01 | POST | `/api/workbench/activity` | W | T39候选合同，尚未挂载：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
 | A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | T39候选合同，尚未挂载：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
@@ -53,7 +57,7 @@
 | T03 | GET | `/api/tickets/{ticketId}` | W | 已实现：工单详情 | [工单](workbench/tickets.md) |
 | T04 | GET | `/api/tickets/{ticketId}/events` | W | 已实现：事件分页 | [工单](workbench/tickets.md) |
 | T05 | GET | `/api/tickets/{ticketId}/responsibility` | W | 已实现：双责任 | [工单](workbench/tickets.md) |
-| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知；T24 Bot轮次字段／区域默认关闭 | [工单](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24) |
+| T06 | GET | `/api/tickets/{ticketId}/deliveries` | W | 已实现：工单通知；T24 Bot／T25 App／T26 GROUP 独立轮次默认关闭 | [工单](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)、[App](workbench/app-notifications.md) |
 | T07 | GET | `/api/tickets/{ticketId}/eligible-principals` | W | 已实现：处理人候选 | [工单](workbench/tickets.md) |
 | T08 | GET | `/api/tickets/{ticketId}/reporter-contact` | W | 已实现：内部授权联系资料 | [工单](workbench/tickets.md) |
 | T09 | POST | `/api/tickets/{ticketId}/queue` | W | 已实现：入队 | [工单](workbench/tickets.md) |
@@ -114,6 +118,7 @@
 | I22 | POST | `/api/incidents/{incidentId}/subscriptions/{subscriptionId}/resume` | W | 已实现：恢复订阅 | [公共故障](workbench/incidents.md) |
 | I23 | POST | `/api/incidents/{incidentId}/resolve` | W | 已实现：解决 | [公共故障](workbench/incidents.md) |
 | I24 | POST | `/api/incidents/{incidentId}/close` | W | 已实现：关闭 | [公共故障](workbench/incidents.md) |
+| I26 | GET | `/api/incidents/{incidentId}/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/父与原动作用途的安全只读核对；原UUID/当前原动作与子目标权限，沿原ledger | [公共故障](workbench/incidents.md) |
 | B01 | GET | `/api/workbench/board` | W | 已实现：WEB01看板 | [看板](workbench/board.md) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
 
@@ -133,10 +138,14 @@
 | E01 | GET | `/api/reporter/member/session` | M/O/W成员扩展 | 已实现：成员认证状态 | [Reporter](member/reporter-access.md) |
 | E02 | GET | `/api/reporter/bootstrap` | 成员或W legacy | 已实现：依策略返回不同DTO | [Reporter](member/reporter-access.md) |
 | E03 | POST | `/api/reporter/member-entry/prepare` | 成员扩展 | 已实现：旧卡片浏览器继续入口 | [Reporter](member/reporter-access.md) |
-| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度 | [Reporter](member/reporter-access.md) |
+| E04 | GET | `/api/reporter/tickets/{publicRef}` | 成员或W legacy | 已实现：本人/绑定进度；T25核实MANUAL独立READ，T21仅Bot可加feedback_context | [Reporter](member/reporter-access.md)、[App](workbench/app-notifications.md)、[Bot反馈](member/bot-feedback-design.md) |
 | E05 | GET | `/api/reporter/tickets/{publicRef}/timeline` | 成员或W legacy | 已实现：公开时间线 | [Reporter](member/reporter-access.md) |
 | E06 | POST | `/api/reporter/logout` | 成员或W legacy | 已实现：清对应访问会话 | [Reporter](member/reporter-access.md) |
 | E07 | POST | `/api/reporter/access/exchange` | W legacy / 成员扩展 | 条件兼容：旧Grant；成员模式403 | [Reporter](member/reporter-access.md) |
+| E08 | GET | `/api/reporter/feedback/bootstrap` | M成员写扩展 | T21已实现，默认关闭：当前WRITE/CSRF | [Bot反馈](member/bot-feedback-design.md) |
+| E09 | GET | `/api/reporter/feedback/recovery` | M成员写扩展 | T21已实现：当前Bot独立恢复scope；raw默认关闭，不依赖Web MY_REPORTS | [Bot反馈](member/bot-feedback-design.md) |
+| E10 | POST | `/api/reporter/tickets/{publicRef}/feedback` | M成员写扩展 | T21已实现，默认关闭：原Bot本人明确仍未解决 | [Bot反馈](member/bot-feedback-design.md) |
+| E11 | GET | `/api/reporter/tickets/{publicRef}/feedback/commands/{clientCommandId}` | M成员写扩展 | T21已实现：当前Bot本人READ下原用途UUID安全核对，与新WRITE分开 | [Bot反馈](member/bot-feedback-design.md) |
 
 ## SSE、认证与健康
 
@@ -197,6 +206,8 @@
 | U16 | GET | `/reporter/`、`/reporter/open` | Reporter | 页面：只读进度 | [Reporter](member/reporter-access.md) |
 | U17 | GET | `/reporter/reporter.js`、`/reporter/reporter.css` | Reporter | 静态：Reporter | [平台](platform/auth-health.md) |
 | U18 | GET | `/`、`/static/pilot-workbench.js`、`/static/pilot-workbench.css` | P | 历史页面/资源 | [平台](platform/auth-health.md) |
+| U19 | GET | `/reporter/bot-feedback.js` | M成员写扩展 | T21默认关闭：302到当前Vite第三entry的编译资源 | [Bot反馈](member/bot-feedback-design.md) |
+| U20 | GET | `/reporter/feedback-assets/{buildAsset}.js` | M成员写扩展 | T21闭合manifest JS graph；未知404，无源码回退 | [Bot反馈](member/bot-feedback-design.md) |
 
 ## 已保存附件（WBINT-T16，默认关闭）
 
@@ -208,6 +219,14 @@
 基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
 
 ## 明确拒绝与设计路径
+
+WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，旧ACK独立核当前Ticket READ。历史RED及各被测对象见[共享跟进时间](workbench/follow-up-schedules.md)与本票执行记录。
+
+| METHOD | PATH | 状态 | 合同 |
+| --- | --- | --- | --- |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule` | W，当前获权安排和最近20条历史 | [共享安排](workbench/follow-up-schedules.md) |
+| POST | `/api/tickets/{ticketId}/follow-up-schedule` | W，显式SET/CANCEL，两个版本与原UUID | [维护命令](workbench/follow-up-schedules.md#输入并发与幂等) |
+| GET | `/api/tickets/{ticketId}/follow-up-schedule/commands/{commandId}` | W，当前READ下的原主体／用途安全终态 | [原命令核对](workbench/follow-up-schedules.md#输出卡片与恢复) |
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
