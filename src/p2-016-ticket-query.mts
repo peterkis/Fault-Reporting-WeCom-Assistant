@@ -4,7 +4,7 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean }
+interface QueryOptions { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketTakeoverEnabled?:boolean;ticketUnassignEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
@@ -79,7 +79,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
   const conversationAuthorization=createPilotWorkbenchAuthorizationAdapter({pool});
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
@@ -223,7 +223,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         resolver_team_id:ticket.resolver_team_id,resolver_team_name:owner.rows[0]?.team_name??null,conversations:q.rows});
     },
     async authorizedRelatedConversation({authContext,ticketId,sessionId,transaction=pool,lock=false}:TicketQueryInput&{sessionId:string}){
-      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketUnassignEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled||ticketUnassignEnabled);
       const {ticket,principal:p}=await authorizedTicket({authContext,ticketId,transaction});
       const q=await transaction.query<RelatedConversationRow>(`SELECT ${relatedFields} FROM conversation.session s
         LEFT JOIN conversation.assignment a ON a.session_id=s.id LEFT JOIN pilot_ticket.pilot_principal p ON p.id=a.assigned_principal_id
@@ -238,7 +238,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         action:session.assignment_status==='ASSIGNED'&&session.conversation_principal_id!==p.principal_id?'TRANSFER':'TAKEOVER'});
     },
     async relatedConversations({cursor=null,limit,...input}:TicketQueryInput&{cursor?:unknown;limit?:unknown}){
-      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketUnassignEnabled);
+      guardP2016(ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled||ticketUnassignEnabled);
       if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const {ticket,principal:p}=await authorizedTicket(input),n=limitP2016(limit??20,20);
       const page=cursor?decodeCursorP2016(cursor,['v','ticket','id']):null;
