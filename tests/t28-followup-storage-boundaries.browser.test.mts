@@ -43,7 +43,7 @@ test('T28 a clean committed result permits an explicit next intent in the same m
     await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("已提交")');
     assert.deepEqual(record(await context.browser.evaluate(candidateCopies)).operations,[]);
     assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=new-incident-intent]"))'),true,'known clean settlement offers an explicit next intent');
-    for(const [action,reason,version] of [['RESOLVE_INCIDENT','RECOVERY_CONFIRMED','3'],['CLOSE_INCIDENT','CLOSURE_CONFIRMED','4']] as const){
+    for(const [action,reason,version] of [['RESOLVE_INCIDENT','RECOVERY_CONFIRMED','3'],['CLOSE_INCIDENT','RECOVERY_CONFIRMED','4']] as const){
       await context.browser.evaluate('document.querySelector("[data-action=new-incident-intent]").click()');
       assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=公共故障操作]").value'),'');
       assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=决定原因]").value'),'');
