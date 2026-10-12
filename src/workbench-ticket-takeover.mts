@@ -34,7 +34,7 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       const teams=chosen&&!groups.rows.some(row=>row.team_id===chosen.team_id)?[...groups.rows.slice(0,99),chosen].sort((a,b)=>a.team_id.localeCompare(b.team_id)):groups.rows;
       const available=selected===null?teams:chosen?[chosen]:[];
       const cycle=await assignmentCycle(transaction,ticket.id);
-      const actions=ticket.status==='ACCEPTED'&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
+      const actions=['QUEUED','ACCEPTED'].includes(ticket.status)&&ticket.assignee_id!==null&&available.some(team=>ticket.assignee_id!==principal.principal_id||team.team_id!==ticket.resolver_team_id)?['takeover',...(cycle?.first_responsibility_event_id?['takeover-and-start']:[])]:[];
       return publicP2016({resolver_teams:teams,resolver_team_id:selected,allowed_actions:actions});
     });
   },async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
@@ -54,7 +54,7 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       if(!worker.rows.some(row=>['ADMIN','DISPATCHER'].includes(row.role))&&ticket.assignee_id!==visiblePrincipal.principal_id&&!membership.rowCount)failP2016('FORBIDDEN',403);
       const {principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
-      if(ticket.status!=='ACCEPTED'||ticket.assignee_id===null||ticket.assignee_id===principal.principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+      if(!['QUEUED','ACCEPTED'].includes(ticket.status)||ticket.assignee_id===null||ticket.assignee_id===principal.principal_id&&ticket.resolver_team_id===command.resolver_team_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       const cycle=await assignmentCycle(transaction,ticket.id);
       if(!cycle&&(await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
       if(command.action==='takeover-and-start'&&(!cycle||cycle.first_responsibility_event_id===null))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
@@ -65,10 +65,14 @@ export function createTicketTakeoverService({pool,query,enabled=false,...hooks}:
       let finalVersion=result.ticket.version,finalEvent=result.event.event_id;
       if(command.action==='takeover-and-start'){
         if(!cycle||!cycle.first_responsibility_event_id)failP2016('ASSIGNMENT_STATE_CONFLICT',409);
-        const started=await createTicketActionService({authorize:async()=>true,afterAction:hooks.closure?.afterTicketAction??null}).performInTransaction({ticketId:ticket.id,action:'start',actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:result.ticket.version,reasonCode:command.reason_code,traceId:'t07:'+command.client_command_id},transaction);
-        await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,started.event.event_id]);
-        if(hooks.notificationProjector&&!hooks.closure)await hooks.notificationProjector.project({transaction,...started});
-        await hooks.realtimeProjector?.({transaction,...started,command});finalVersion=started.ticket.version;finalEvent=started.event.event_id;
+        const actions=createTicketActionService({authorize:async()=>true,afterAction:hooks.closure?.afterTicketAction??null});
+        const chain:('accept'|'start')[]=ticket.status==='QUEUED'?['accept','start']:['start'];
+        for(const action of chain){
+          const changed=await actions.performInTransaction({ticketId:ticket.id,action,actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:finalVersion,reasonCode:command.reason_code,traceId:'t07:'+command.client_command_id},transaction);
+          await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,changed.event.event_id]);
+          if(hooks.notificationProjector&&!hooks.closure)await hooks.notificationProjector.project({transaction,...changed});
+          await hooks.realtimeProjector?.({transaction,...changed,command});finalVersion=changed.ticket.version;finalEvent=changed.event.event_id;
+        }
       }
       return {ok:true as const,ticket_id:ticket.id,ticket_version:finalVersion,ticket_event_id:finalEvent,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations:[]};
     }});
