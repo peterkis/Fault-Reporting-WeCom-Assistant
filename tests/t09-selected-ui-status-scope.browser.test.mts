@@ -48,6 +48,8 @@ async function prepare(fixture:T09Fixture){
  const origin=object(await orchestrator.processPersistedIntake({service_intake_id:text(initial.intake_id),feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}}));assert.equal(origin.ok,true);assert.equal(origin.model_provider_calls,0);assert.equal(origin.sender_calls,0);await drain(fixture);
  const originalRows=rows((await get(admin,path+'/responsibility')).conversations);assert.equal(originalRows.length,1);const source=originalRows[0];assert.ok(source);
  await post(handler,'/api/conversations/'+text(source.session_id)+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(Number(text(source.session_row_version))),reason_code:'T09_UI_ORIGINAL_COMMUNICATOR'});
+ // Project this earlier real Control before subsequent Ticket facts move the same timeline tail.
+ await drain(fixture);
  for(const[actionName,reasonCode]of[['accept','T09_UI_ACCEPT'],['start','T09_UI_START'],['wait-vendor','T09_UI_WAIT']]as const)await post(handler,path+'/'+actionName,{client_command_id:randomUUID(),expected_version:version((await get(handler,path)).version),reason_code:reasonCode});
  const leg=(await fixture.pool.query<{journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}>(`SELECT l.journey_id::text,l.reporter_identity_hash,l.provider_context_hash,l.channel_identity_hash FROM intake.channel_leg l JOIN pilot_ticket.ticket t ON t.source_intake_id=l.source_intake_id WHERE t.id=$1::uuid`,[ticketId])).rows[0];assert.ok(leg);
  const selected:Selected[]=[];
