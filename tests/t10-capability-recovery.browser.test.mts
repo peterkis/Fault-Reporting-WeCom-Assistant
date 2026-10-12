@@ -5,6 +5,7 @@ import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
+import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 for(const disconnectBeforeCleanup of [false,true])test('closing only waiting write and raw recovery preserves current readable detail and the original explicit safe ACK with '+(disconnectBeforeCleanup?'a real disconnected browser cleanup':'connected browser cleanup'),async()=>{
   await withT10Fixture(async context=>{
@@ -40,7 +41,7 @@ for(const disconnectBeforeCleanup of [false,true])test('closing only waiting wri
         if(disconnectBeforeCleanup){await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}
       }finally{
         let cleanupError:unknown;
-        try{await browser.evaluate('globalThis.__t10CloseObserver?.()');runtime.server.removeListener('request',observe);await runtime.stop();assert.equal(runtime.server.listening,false);}catch(error){cleanupError=error;}
+        try{await closeBrowserTestResources([async()=>{await browser.evaluate('globalThis.__t10CloseObserver?.()');},async()=>{runtime.server.removeListener('request',observe);await runtime.stop();assert.equal(runtime.server.listening,false);}]);}catch(error){cleanupError=error;}
         const listeningBeforeRescue=runtime.server.listening;
         if(listeningBeforeRescue){runtime.server.removeListener('request',observe);await runtime.stop();}
         assert.equal(runtime.server.listening,false);
