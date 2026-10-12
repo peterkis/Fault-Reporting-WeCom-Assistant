@@ -127,12 +127,13 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
   const page=object(value);
   if(Object.keys(page).length!==1||!Array.isArray(page.items)||page.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
   const items=page.items.map(value=>{
-    const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no');
-    const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[])];
+    const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no'),hasRoute=Object.hasOwn(row,'route_kind');
+    const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[]),...(hasRoute?['route_kind']:[])];
     if(hasNode!==hasCycle||Object.keys(row).length!==keys.length||Object.keys(row).some(key=>!keys.includes(key))
       ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
       ||!['PERSON','GROUP'].includes(text(row.destination_type))||!['PENDING','LEASED','SENDING','SENT','DEAD_LETTER','RECONCILIATION_REQUIRED','CANCELLED'].includes(text(row.status))
       ||!['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'].includes(text(row.side_effect_state))
+      ||hasRoute&&(row.route_kind!=='YIXIAOXIU_APP'||row.destination_type!=='PERSON')
       ||typeof row.attempt_count!=='number'||!Number.isInteger(row.attempt_count)||row.attempt_count<0||row.attempt_count>2147483647)throw new ApiError(502,'INVALID_RESPONSE');
     let round:Pick<P2016TicketNotification,'node'|'cycle_no'>={};
     if(hasNode){
@@ -140,7 +141,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
       if(node===null){if(row.cycle_no!==null)throw new ApiError(502,'INVALID_RESPONSE');round={node:null,cycle_no:null};}
       else {if(node!=='FIRST_RESPONSIBILITY'&&node!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');round={node,cycle_no:version(row.cycle_no)};}
     }
-    return {...round,notification_type:row.notification_type as P2016TicketNotification['notification_type'],
+    return {...round,...(hasRoute?{route_kind:'YIXIAOXIU_APP' as const}:{}),notification_type:row.notification_type as P2016TicketNotification['notification_type'],
       destination_type:row.destination_type as P2016TicketNotification['destination_type'],delivery_id:id(row.delivery_id),
       status:row.status as P2016TicketNotification['status'],side_effect_state:row.side_effect_state as P2016TicketNotification['side_effect_state'],
       attempt_count:row.attempt_count,sent_at:row.sent_at===null?null:notificationDatetime(row.sent_at),created_at:notificationDatetime(row.created_at)};

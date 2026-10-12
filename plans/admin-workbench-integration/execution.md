@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-11
+snapshot_on: 2026-10-12
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,43 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-11，T35收口）
+## 当前执行状态导航（2026-10-12，T28收口）
+
+GitHub 实际快照为 **24／43 CLOSED、19 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t28-20261012-d.json)。[#83 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83#issuecomment-6118553402)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T28 / #83 | 原七项经父独立核对，8095d05a 安全快进并 GitHub 收口；[现有人工动作、独立个人工单及输入恢复](execution/t28.md)。T27／T28 均已本地集成和关票，WBINT-09／A09 本地完成；WBINT-10／A10 尚未实施。 |
+| 验证 | 真实功能被测祖先 cb5c8484：build／strict／artifact 原生0／0／0，同产物17文件35／35与相关8文件19／19。两轴源审问题已收口；必要 tooling／hosts 的54项在原聚合内通过，具名 retired-T02 1／1原生0。扩大 batches CLI 诊断69／64／5及单文件15／13／2均原生1，FAIL保留；未冒称全工具、活动155项全集或full通过。 |
+| 保全与清理 | [父核七项](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/parent-t28-final-handoff-seven-acceptance.json)实际核对200原始输出、8最终回执及私树16冻结输入；[快进回执](D:/wecom-workbench-evidence/t28/final/root-ff-20261012/receipt.json)与父读回确认6用户原件和Root既有15原件字节不变、index0。全部native终态；停前额外库／客户端／池0，自有PG smart stop0／停后status3，原启动12743自然terminal0，配置及数据保留。 |
+| 后续 | 下一连续整票为T07／#62，最新原生#61已CLOSED；先正常合入本次最新集成，再原首RED和原七项交付。T29／T30的#83已CLOSED，开始前重新读取原生依赖；T29用户已明确交接目标必须已有该Incident读取权，候选列表及同事务重验均不扩权，见[明确决定](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/t29-explicit-target-read-policy.json)。 |
+| 边界 | 默认关闭，未push／PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进；本地A09完成不代表全部43票、正式现场、生产或真实2C4G容量验收。最终全43两轴审查及全部实现工作树清理仍待完成。 |
+
+## 历史执行状态导航（2026-10-12，T25收口）
+
+GitHub 实际快照为 **23／43 CLOSED、20 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t25-20261012-d.json)。[#80 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80#issuecomment-6115603975)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T25 / #80 | 原七项经父独立核对，8e34df31 安全快进并 GitHub 收口；[当前合同、被测祖先与原失败](execution/t25.md)。T24／T25／T26均已本地集成和关票，WBINT-08／A08本地完成。 |
+| 验证 | 334ab203业务15文件28 PASS，ef62c657定向工具18+1 PASS；两者各自严格build／types／artifact原生0／0／0，未累加为新HEAD的full。适用完整源审及2c83／8e34窄增量两轴均无剩余问题；原工具52 PASS／2 FAIL、业务TRUE RED与拒绝记录保留。 |
+| 保全与清理 | 4411保全文件、1324物理输入、1644运行输出、813原窗口文件与新审计输入均父核；[完整交接](D:/wecom-workbench-evidence/t25/final/handoff.json)。用户人工清理后七个字面目录为空或不存在，2c83有限最终审计PG18身份匹配、额外库／客户端0／0、池0／0／0、自有Node／浏览器0；编译输入仍绑定原ef62，后继Markdown不自证current artifact，共享keeper保留。 |
+| 后续 | 接续T28整票，其原生#82已CLOSED；现有SOURCE_ONLY准备仍NOT_BUILT／NOT_RUN，须正常合入最终根基线后执行原首并完成全部七项。其它SOURCE_READY按原生依赖及单一运行窗口推进。 |
+| 边界 | 默认关闭，根六件用户文件保持原字节；未push、PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。真实客户端送达和2C4G容量仍未验证。 |
+
+## 历史执行状态导航（2026-10-11，T26收口）
+
+GitHub 实际快照为 **22／43 CLOSED、21 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t26-20261011-d.json)。[#81 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T26 / #81 | 原七项经父独立核对，308b9a9d 安全快进并 GitHub 收口；[当前合同与真实被测祖先](execution/t26.md)。原群和 Bot 私聊分别记账、恢复，WBINT-08／A08 整组仍待 T25。 |
+| 验证 | 8f7fb416 同一冻结对象 build／strict／artifact 原生0／0／0，26相关文件40／40及适用工具18／18 PASS；Standards／Spec 分别收口异步来源与分页 P1，均无新增 actionable。最后后继仅本票执行 Markdown，1293输入不变，原制品不重绑。 |
+| 保全与清理 | 3914保全文件、1293物理输入、134原build副本、137历史native和原失败PNG均父核；[完整交接](D:/wecom-workbench-evidence/t26/final/handoff.json)。三次自动清理拒绝保留，用户手动清空精确tmp后父／子实际读回；原活动资源0终态与无后续运行分别记录，共享keeper保留。 |
+| 后续 | 接续 T25 整票；其原生 #66／#73 已 CLOSED。其它 SOURCE_READY 按当前原生依赖和单一运行窗口推进，准备源码不计验收；T36 权限已按用户选择冻结于私树，尚未运行。 |
+| 边界 | 默认关闭，根六件用户文件保持原字节；未push、PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。真实强@、客户端送达与2C4G容量仍未验证。 |
+
+## 历史执行状态导航（2026-10-11，T35收口）
 
 GitHub 实际快照为 **21／43 CLOSED、22 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/issues-current-after-t35-20261011-d.json)。[#90 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90#issuecomment-6108623843)。
 

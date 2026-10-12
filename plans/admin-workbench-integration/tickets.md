@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-11
+snapshot_on: 2026-10-12
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -34,6 +34,12 @@ native_blocking_edges: 76
 2026-10-11 T21 整票收口：原七项与各真实被测对象已父核，ba55a23f安全快进；[#76完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76#issuecomment-6106118749)，当前 **20／43 CLOSED、23 OPEN**，WBINT-06／A06本地完成。见[合同、原始失败与保全](execution/t21.md)。后续T35／T26／T25等继续按原生依赖和单一运行窗口推进；SOURCE_READY不计整票验收。
 
 2026-10-11 T35 整票收口：原七项、逐被测祖先结果、两轴修补及保全／清理后继已父核，e7ebc2e8安全快进；[#90完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90#issuecomment-6108623843)，当前 **21／43 CLOSED、22 OPEN**。见[当前合同、历史失败与真实记录](execution/t35.md)。T26接续整票，T36的原生#90已关闭；WBINT-12／A12仍待T34／T36，默认关闭与现场停止线保持。
+
+2026-10-11 T26 整票收口：原七项、8f7fb416同制品40／40、适用工具18／18、两轴修补、完整保全及人工tmp清空实际读回均父核，308b9a9d安全快进；[#81完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81#issuecomment-6109979192)，当前 **22／43 CLOSED、21 OPEN**。见[合同、原失败与真实被测祖先](execution/t26.md)。WBINT-08／A08仍待T25，其原生#66／#73已关闭；默认关闭，真实强@、客户端送达与现场授权保持独立。
+
+2026-10-12 T25 整票收口：原七项、334ab203业务28／28、ef62c657定向工具18+1、两轴增量审查、4411保全及813原窗口字节、人工清理与有限最终资源审计均父核，8e34df31安全快进；[#80完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80#issuecomment-6115603975)，当前 **23／43 CLOSED、20 OPEN**。见[原应用通知合同、真实被测对象与原失败](execution/t25.md)。WBINT-08／A08本地完成；下一串行整票为T28，#82已关闭，SOURCE_ONLY准备不计验收，默认关闭与现场停止线保持。
+
+2026-10-12 T28 整票收口：原七项、cb5c8484的35／35及相关19／19、必要tooling／hosts54项和具名retired-T02、两轴源码收口、200原始输出及8回执、16冻结输入与精确自有清理均父核；8095d05a安全快进，[#83完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83#issuecomment-6118553402)。当前 **24／43 CLOSED、19 OPEN**，见[合同与实际被测祖先](execution/t28.md)。扩大batches诊断69／64／5和15／13／2均exit1，FAIL保留；活动155项全集未跑。WBINT-09／A09本地完成，下一连续整票为T07；T29／T30已解除#83阻塞，但尚未实施。T29目标必须已有该Incident读取权、交接不扩权的用户决定独立记录，不改写旧确认事实。全43最终审查／工作树清理仍待完成，默认关闭与现场停止线保持。
 
 ## 导航与配置
 
@@ -163,22 +169,23 @@ native_blocking_edges: 76
   - **来源：** WBINT-08 / A08
   - **领取记录（历史）：** 父读取当前正文／评论／依赖后领取给peterkis，#66已CLOSED；当时为独立实施准备，当前验收以本票执行记录为准。
 
-- [ ] **T25** — [#80 通知H5与已核实代录报修人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80)
+- [x] **T25** — [#80 通知H5与已核实代录报修人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80)
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)、[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)
   - **来源：** WBINT-08 / A08
 
-- [ ] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
+- [x] **T26** — [#81 群来源强@与Bot私聊独立投递](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)
   - **Blocked by:** [#79](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **来源：** WBINT-08 / A08
 
 - [x] **T27** — [#82 人工复核并确认公共故障候选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-09 / A09
-  - **本地执行：** [LOCAL_VERIFIED：原七项、独立Incident、材料与命令恢复、分组证据及清理](execution/t27.md)已核对；交付aac2d438已安全快进，GitHub CLOSED已读回。真实被测源6607ace4及早先分组各保留原身份，未发布／启用；T28及A09整组未完成。
+  - **本地执行：** [LOCAL_VERIFIED：原七项、独立Incident、材料与命令恢复、分组证据及清理](execution/t27.md)已核对；交付aac2d438已安全快进，GitHub CLOSED已读回。真实被测源6607ace4及早先分组各保留原身份，未发布／启用；T28现已独立收口，A09本地完成。
 
-- [ ] **T28** — [#83 跟进公共故障及关联个人报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
+- [x] **T28** — [#83 跟进公共故障及关联个人报修](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **Blocked by:** [#82](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82)
   - **来源：** WBINT-09 / A09
+  - **本地执行：** [LOCAL_VERIFIED：原七项与独立事实、精确版本、输入／UNKNOWN恢复、源审及清理](execution/t28.md)经父核；8095d05a已安全快进，GitHub CLOSED已读回。cb5c实际35／35及相关19／19、必要工具按适用范围记录，扩大batches FAIL和活动全集NOT_RUN保持。WBINT-09／A09本地完成，不推进现场或Gate。
 
 - [ ] **T29** — [#84 交接公共故障负责人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84)
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)

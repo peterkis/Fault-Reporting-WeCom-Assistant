@@ -17,7 +17,7 @@ const clockMetadata=`SELECT p.oid::text AS oid,pg_get_functiondef(p.oid) AS defi
   obj_description(p.oid,'pg_proc') AS comment FROM pg_proc p WHERE p.oid='platform.physical_epoch_ms()'::regprocedure`;
 // Deliberately the exact current production authorizer statement, observed in
 // pg_stat_activity. If that statement changes, review this narrow tracer first.
-const lastAuthorizationSql=`SELECT r.ticket_id::text,i.id::text AS source_intake_id,r.public_ref,r.reporter_binding_hash,
+const lastAuthorizationSql=`SELECT r.ticket_id::text,i.id::text AS source_intake_id,r.public_ref,r.journey_id::text,r.reporter_binding_hash,
       i.source_provider,i.source_bot_id,i.reporter_wecom_userid
       FROM pilot_ticket.reporter_public_ref r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
       JOIN intake.service_intake i ON i.id=t.source_intake_id

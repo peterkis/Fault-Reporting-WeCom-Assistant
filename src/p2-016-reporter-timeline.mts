@@ -2,7 +2,8 @@ import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
 import type {BotReporterFeedbackContext} from '../contracts/bot_reporter_feedback_contracts.js';
-type ReadScope = Pick<ReporterScope, 'ticket_id' | 'session_id' | 'public_ref'>;
+export type ReporterReadScope = Pick<ReporterScope, 'ticket_id' | 'session_id' | 'public_ref'> & {original_source?:'VERIFIED_MANUAL_REPORT'};
+type ReadScope = ReporterReadScope;
 interface ReadInput { sessionToken: unknown; publicRef?: unknown }
 type Reader<T> = (transaction: PostgresTransaction, scope: ReadScope) => Promise<T>;
 interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null; feedbackContext?:((transaction:PostgresTransaction,input:ReadInput)=>Promise<BotReporterFeedbackContext>)|null }
@@ -32,8 +33,8 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       return publicP2016({public_ref:publicRef,ticket_no:t.ticket_no,suffix:t.ticket_no.slice(-4),
         title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:EXTERNAL_TICKET_STATUS[t.status],
         created_at:localP2016(t.created_at),updated_at:localP2016(t.updated_at),version:t.version,
-        guidance:'如未解决，请在企业微信机器人单聊中回复。',
-        ...(feedbackContext?{feedback_context:await feedbackContext(tx,{sessionToken,publicRef})}:{}),
+        guidance:s.original_source==='VERIFIED_MANUAL_REPORT'?'如未解决，请联系工作人员补充情况。':'如未解决，请在企业微信机器人单聊中回复。',
+        ...(feedbackContext&&s.original_source!=='VERIFIED_MANUAL_REPORT'?{feedback_context:await feedbackContext(tx,{sessionToken,publicRef})}:{}),
         ...(incidentAdapter?{incident_milestones:await incidentAdapter.milestones({ticketId:s.ticket_id,transaction:tx,memberRead:s.session_id===null})}:{})});
       });
     },
