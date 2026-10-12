@@ -4,20 +4,22 @@ import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
-import {t11Http} from './helpers/t11-completion-fixture.mjs';
+import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
 import {acceptedSetup,http,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 
 test('T12 alone exposes its current cycle and canonical choices without enabling either legacy T07 or T11 commands',async()=>{
+ let phase='INITIAL_FIXTURE';
+ try{
  await withT12Fixture(async f=>{
-  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_ONLY_START'})).status,200);
+  phase='PUBLIC_ACCEPT_SETUP';const s=await acceptedSetup(f);phase='PUBLIC_START';assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_ONLY_START'})).status,200);
+  phase='ORIGINAL_CYCLE_READ';
   const started=(await s.b.get(s.path)).value,basis=object(started.handling_cycle);
-  await f.runtime.stop();
+  phase='ORIGINAL_STOP';await f.runtime.stop();
   const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),
    principalIds:[s.owner.id,f.outsider.id,s.actor.id],externalSendEnabled:false,ticketTakeoverCompletionEnabled:true,workbenchDraftRecoveryEnabled:true});
-  try{const result=await runtime.start();assert.ok(result.cookies);const standalone={...f,runtime,cookies:result.cookies.map(c=>c.name+'='+c.value)},transport=await t11Http(standalone,2,{closeConnections:true});
-   const b={get:async(path:string)=>{const response=await transport.get(path);return {status:response.status,value:object(await response.json())};},
-    post:async(path:string,body:Record<string,unknown>)=>{assert.ok(path.startsWith(s.path+'/'));const response=await transport.post(s.first.ticket.id,path.slice(s.path.length+1),{...body,client_command_id:text(body.client_command_id),expected_version:body.expected_version});return {status:response.status,value:object(await response.json())};}};
+  try{phase='STANDALONE_START';const result=await runtime.start();assert.ok(result.cookies);phase='STANDALONE_AUTH';const b=await t12FreshHttp({origin:f.origin,cookies:result.cookies.map(c=>c.name+'='+c.value)},2);
+   phase='CANONICAL_CHOICES';
    const choices=await b.get(s.path+'/related-conversations');assert.equal(choices.status,200,JSON.stringify(choices.value));assert.ok(rows(choices.value.items).length>0);
    const current=await b.get(s.path);assert.equal(current.status,200);assert.equal(object(current.value.handling_cycle).id,basis.id);
    const bootstrap=(await b.get('/api/lifecycle/bootstrap')).value;assert.equal(bootstrap.ticket_takeover_completion_enabled,true);assert.equal(bootstrap.ticket_takeover_completion_draft_recovery_enabled,true);
@@ -29,6 +31,7 @@ test('T12 alone exposes its current cycle and canonical choices without enabling
    assert.equal((await b.get(s.path)).value.status,'CLOSED');assert.equal((await b.get(s.path+'/takeover-completion/commands/'+command.client_command_id)).value.state,'COMMITTED');
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
  });
+ }catch(error){const cause=error instanceof Error?error.cause:null;console.log('T12_PROFILE_PHASE '+JSON.stringify({phase,error:error instanceof Error?error.name:'UNKNOWN',cause_code:typeof cause==='object'&&cause!==null&&typeof Reflect.get(cause,'code')==='string'?Reflect.get(cause,'code'):null}));throw error;}
 });
 
 test('omitted and literal false T12 options avoid both new migrations and expose no composite write or ACK',async()=>{
