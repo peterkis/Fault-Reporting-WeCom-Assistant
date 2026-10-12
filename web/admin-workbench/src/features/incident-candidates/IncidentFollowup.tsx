@@ -94,7 +94,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
     }finally{if(request.current===controller)request.current=null;}
   };
   const showDetail=Boolean(detail&&!readDenied&&(broad(principal.roles)||!broad(detail.roles))),locked=busy||unknown||state==='committed'||!readReady;
-  const page=(title:string,part:{items:unknown[];data?:{pages:Array<{items:unknown[]}>};hasNextPage:boolean;isFetching:boolean;fetchNextPage:()=>unknown;restart:()=>unknown})=><PageControls title={title} count={part.items.length} current={part.data?.pages.at(-1)?.items.length??0} more={part.hasNextPage} busy={part.isFetching||busy} next={()=>{void part.fetchNextPage();}} restart={()=>{void part.restart();}}/>;
+  const page=(title:string,part:{items:unknown[];data:{pages:Array<{items:unknown[]}>}|undefined;hasNextPage:boolean;isFetching:boolean;fetchNextPage:()=>unknown;restart:()=>unknown})=><PageControls title={title} count={part.items.length} current={part.data?.pages.at(-1)?.items.length??0} more={part.hasNextPage} busy={part.isFetching||busy} next={()=>{void part.fetchNextPage();}} restart={()=>{void part.restart();}}/>;
   return <article className="detail-page"><div className="detail-navigation"><Link to="/incidents/candidates" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><button type="button" data-action="refresh-incident" disabled={busy} onClick={refresh}>刷新当前事实</button></div><div className="detail-body">
     {!readReady&&!readDenied&&!query.isError?<p role="status">正在读取当前获权的公共故障及关联窗口…</p>:null}
     {query.isError?<p role="alert">{errorMessage(query.error)} 已知结果和原输入不会由读取失败改写。</p>:null}
