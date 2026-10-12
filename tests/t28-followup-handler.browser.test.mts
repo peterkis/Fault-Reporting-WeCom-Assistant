@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
-import {createTicketAssignmentService} from '../src/workbench-ticket-assignment.mjs';
+import {createP2016TicketCommandFacade} from '../src/p2-016-ticket-command-facade.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {prepareFollowup,navigateFollowup,chooseFollowup,personalSnapshots,rows,observeFollowupPosts} from './helpers/t28-followup-source-fixture.mjs';
 
@@ -11,9 +10,9 @@ test('T28 current-assignee HANDLER records only one recovery through the formal 
   await candidateBrowser({purpose:'t28handler',reporters:3},async context=>{
     const {http,id,path}=await prepareFollowup(context),actorId=text(record(context.f.admin).id),ownerId=text(record(context.f.handler).id),ticketId=text(record(context.f.reports[0]).ticketId);
     assert.notEqual(actorId,ownerId);
-    const query=createP2016TicketQuery({pool:context.pool,enabled:true,ticketAssignmentEnabled:true}),assignment=createTicketAssignmentService({pool:context.pool,query,enabled:true});
-    const assign=async(action:'assign'|'transfer-assignment',target:string)=>{const ticket=await http.get('/api/tickets/'+ticketId);return assignment.perform({authContext:{principal_id:text(record(context.f.dispatcher).id)},command:{action,ticket_id:ticketId,client_command_id:randomUUID(),expected_version:ticket.version,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]}});};
-    assert.equal((await assign('assign',actorId)).ok,true);
+    const tickets=createP2016TicketCommandFacade({pool:context.pool,enabled:true});
+    const assign=async(target:string)=>{const ticket=await http.get('/api/tickets/'+ticketId);return tickets.perform({authContext:{principal_id:text(record(context.f.dispatcher).id)},command:{action:'transfer-assignment',ticket_id:ticketId,client_command_id:randomUUID(),expected_version:ticket.version,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT'}});};
+    assert.equal((await assign(actorId)).ok,true);
     const beforeReports=rows((await http.get(path+'/reports?limit=100')).items),target=beforeReports.find(row=>row.ticket_id===ticketId);assert.ok(target);
     const beforeSubs=rows((await http.get(path+'/subscriptions?limit=100')).items),personal=await personalSnapshots(http,context.f.reports);
     await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'synthetic-incident-admin',displayName:'合成管理员',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
@@ -26,7 +25,7 @@ test('T28 current-assignee HANDLER records only one recovery through the formal 
     assert.equal(body.expected_row_version,'1');assert.equal(body.expected_report_version,target.row_version);assert.equal(post.if_match,'"1"');assert.equal(post.idempotency_key,body.client_command_id);
     const afterReports=rows((await http.get(path+'/reports?limit=100')).items);assert.equal(afterReports.find(row=>row.id===target.id)?.impact_state,'RECOVERED');assert.deepEqual(afterReports.filter(row=>row.id!==target.id),beforeReports.filter(row=>row.id!==target.id));
     assert.deepEqual(await personalSnapshots(http,context.f.reports),personal);assert.equal((await http.get(path+'/commands/'+text(body.client_command_id))).state,'COMMITTED');
-    assert.equal((await assign('transfer-assignment',ownerId)).ok,true);assert.equal((await http.read(path+'/commands/'+text(body.client_command_id))).status,403);await http.post(text(post.path),body,403);
+    assert.equal((await assign(ownerId)).ok,true);assert.equal((await http.read(path+'/commands/'+text(body.client_command_id))).status,403);await http.post(text(post.path),body,403);
     assert.equal((await http.get(path)).row_version,'2');assert.deepEqual(rows((await http.get(path+'/reports?limit=100')).items),afterReports);
     // A separate current ADMIN projection checks only this reporter's subscription changed.
     await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'synthetic-incident-admin',displayName:'合成管理员',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
