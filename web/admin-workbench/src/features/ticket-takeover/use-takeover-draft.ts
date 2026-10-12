@@ -3,7 +3,8 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {Principal,P2016TakeoverAction,P2016TakeoverCommand} from '../../api/client';
 import type {P2016TakeoverSession} from '../../../../../contracts/p2_016_takeover_contracts';
-import {DraftError,openDraft,removeSensitiveDraft,purgeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,openDraft,removeSensitiveDraft,purgeDrafts,settleDraft} from '../drafts/encrypted-drafts';
+import type {DraftHandle} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 export type TakeoverIntent=Readonly<{action:P2016TakeoverAction;command:P2016TakeoverCommand}>;
@@ -23,10 +24,10 @@ function decode(text:string){const value=object(JSON.parse(text)),input=object(v
 }
 export function useTakeoverDraft({ticketId,principal,value,pending,onRestore,onOperation,onSensitiveClear}:{ticketId:string;principal:Principal;value:TakeoverInput;pending:TakeoverIntent|null;onRestore:(copy:{value:TakeoverInput;pending:TakeoverIntent|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
  const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'ticket-takeover'},enabled=principal.ticket_takeover_draft_recovery_enabled===true;
- const [restoring,setRestoring]=useState(enabled),[unavailable,setUnavailable]=useState(false),generation=useRef(0),validating=useRef(false),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),actions=useRef<readonly string[]>([]);
+ const [restoring,setRestoring]=useState(enabled),[unavailable,setUnavailable]=useState(false),[opaqueId,setOpaqueId]=useState<string|null>(null),[needsReload,setNeedsReload]=useState(false),opaqueHandle=useRef<DraftHandle|null>(null),generation=useRef(0),validating=useRef(false),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),actions=useRef<readonly string[]>([]);
  const serialise=(copy:{value:TakeoverInput;pending:TakeoverIntent|null})=>JSON.stringify({schema:1,...copy});
- const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;setUnavailable(false);setRestoring(false);onSensitiveClear();};
- const opaque=()=>{const token=generation.current;void openDraft(scope,{restore:false}).then(copy=>{if(generation.current===token&&copy.handle.operation)onOperation(copy.handle.operation.commandId);}).catch(()=>{});};
+ const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;opaqueHandle.current=null;setOpaqueId(null);setUnavailable(false);setRestoring(false);onSensitiveClear();};
+ const opaque=()=>{const token=generation.current;void openDraft(scope,{restore:false}).then(copy=>{if(generation.current===token&&copy.handle.operation){opaqueHandle.current=copy.handle;setOpaqueId(copy.handle.operation.commandId);onOperation(copy.handle.operation.commandId);}}).catch(()=>{});};
  const draft=useAuthorizedDraft<TakeoverInput,TakeoverIntent>({scope,enabled,value,pending,emptyValue:EMPTY_TAKEOVER,hasInput:value=>Boolean(value.team||value.choice==='RETAIN_CURRENT'||value.sessions.length),serialise,decode,commandId:intent=>intent.command.client_command_id,
   authorize:async signal=>{stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.ticket_takeover_enabled||!fresh.ticket_takeover_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');stage.current='ticket';const context=await api.ticketCommandContext(ticketId,signal);client.setQueryData(['ticket-command-context',scope.principal,ticketId],context);actions.current=context.allowed_actions;return true;},
   onAuthorityFailure:error=>{if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,scope.principal,ticketId,error);else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')void purgeDrafts({...scope,reason:'revoked'});else{setUnavailable(true);setRestoring(false);opaque();}},
@@ -39,5 +40,6 @@ export function useTakeoverDraft({ticketId,principal,value,pending,onRestore,onO
   },onOperation,onSensitiveClear:clear,
  });
  useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后刷新重试。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
+ const settle=async(id:string)=>{const target=opaqueHandle.current;if(!target)return draft.success(id);if(target.operation?.commandId!==id)return false;try{await settleDraft(target,id,target.record?.revision);}catch{return false;}if(target.operation!==null)return false;setNeedsReload(true);return true;};
+ return {...draft,operationId:draft.operationId??opaqueId,needsReload,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&!needsReload&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:needsReload?'原操作已核对，恢复副本已清理；请刷新页面后重新选择。':unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后刷新重试。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle};
 }
