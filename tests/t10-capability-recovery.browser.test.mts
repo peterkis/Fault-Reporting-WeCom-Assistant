@@ -8,6 +8,7 @@ import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 const errorMessages=(value:unknown):string[]=>{if(value instanceof AggregateError){const causes:readonly unknown[]=value.errors;return causes.flatMap(errorMessages);}return value instanceof Error?[value.message]:value===undefined?[]:[String(value)];};
+const errorEvidence=(value:unknown):unknown=>{if(!(value instanceof Error))return value===undefined?null:String(value);const detail={name:value.name,message:value.message,stack:value.stack};if(value instanceof AggregateError){const causes:readonly unknown[]=value.errors;return {...detail,errors:causes.map(errorEvidence)};}return {...detail,...('cause' in value?{cause:errorEvidence(value.cause)}:{})};};
 for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed'] as const)test('closing only waiting write and raw recovery preserves current readable detail and the original explicit safe ACK with '+cleanupMode,async()=>{
   const disconnectBeforeCleanup=cleanupMode==='disconnected';
   await withT10Fixture(async context=>{
@@ -25,6 +26,7 @@ for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed
       await context.runtime.stop();
       const runtime=createP2016Runtime({pool:context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:context.origin,listenPort:Number(new URL(context.origin).port),principalIds:[context.principals[0]?.id??'',context.outsider.id,context.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketWaitingActionsEnabled:false,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
       runtime.server.on('request',observe);
+      let primaryError:unknown;
       try{
         const started=await runtime.start();assert.ok(started.cookies);const closed=await t11Http({...context,runtime,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value)},2,{closeConnections:true});
         const bootstrap=await (await closed.get('/api/lifecycle/bootstrap')).json() as {ticket_waiting_actions_enabled:boolean;ticket_waiting_action_draft_recovery_enabled:boolean;draft_recovery_enabled:boolean};assert.equal(bootstrap.ticket_waiting_actions_enabled,false);assert.equal(bootstrap.ticket_waiting_action_draft_recovery_enabled,false);assert.equal(bootstrap.draft_recovery_enabled,true,'the existing Shell listener stays active for the unrelated internal note purpose');
@@ -43,19 +45,19 @@ for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed
         await capture('new-detail-1920.png');
         if(cleanupMode!=='connected'){await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}
         if(cleanupMode==='primary-and-cleanup-failed'){console.log('T10_PRIMARY_BODY_FAILURE_STAGE '+JSON.stringify({actualAckReached:true,browserClosed:true}));throw new Error('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK');}
-      }finally{
-        let cleanupError:unknown;
-        try{await closeBrowserTestResources([async()=>{await browser.evaluate('globalThis.__t10CloseObserver?.()');},async()=>{runtime.server.removeListener('request',observe);await runtime.stop();assert.equal(runtime.server.listening,false);}]);}catch(error){cleanupError=error;}
-        const listeningBeforeRescue=runtime.server.listening;
-        if(listeningBeforeRescue){runtime.server.removeListener('request',observe);await runtime.stop();}
-        assert.equal(runtime.server.listening,false);
-        console.log('T10_CAPABILITY_CLEANUP_STAGE '+JSON.stringify({disconnectBeforeCleanup,listeningBeforeRescue,listeningAfterRescue:runtime.server.listening,cleanupError:cleanupError instanceof Error?{name:cleanupError.name,message:cleanupError.message}:cleanupError??null,browser:browser.ownedResourceState()}));
-        if(disconnectBeforeCleanup&&listeningBeforeRescue)throw new AggregateError([cleanupError,new Error('T10_NEW_HOST_FINALLY_SKIPPED_BEFORE_OWNED_RESCUE')],'T10_NEW_HOST_CLEANUP_NOT_REACHED');
-        if(cleanupError){if(disconnectBeforeCleanup){assert.ok(cleanupError instanceof Error);assert.equal(cleanupError.message,'P2_006_BROWSER_DISCONNECTED');}else throw cleanupError;}
+      }catch(error){primaryError=error||new Error('T10_BODY_NON_ERROR_FAILURE',{cause:error});}finally{
+        let cleanupError:unknown,listeningBeforeRescue=false;
+        try{await closeBrowserTestResources([
+          async()=>{await browser.evaluate('globalThis.__t10CloseObserver?.()');},
+          async()=>{runtime.server.removeListener('request',observe);await runtime.stop();assert.equal(runtime.server.listening,false);},
+          async()=>{listeningBeforeRescue=runtime.server.listening;if(listeningBeforeRescue){runtime.server.removeListener('request',observe);await runtime.stop();}assert.equal(runtime.server.listening,false);},
+        ],primaryError);}catch(error){cleanupError=error;}
+        try{console.log('T10_CAPABILITY_CLEANUP_STAGE '+JSON.stringify({disconnectBeforeCleanup,listeningBeforeRescue,listeningAfterRescue:runtime.server.listening,primaryError:errorEvidence(primaryError),cleanupError:errorEvidence(cleanupError),browser:browser.ownedResourceState()}));}catch(error){cleanupError=cleanupError?new AggregateError([cleanupError,error],'T10_CLEANUP_AND_DIAGNOSTIC_FAILED'):error;}
+        if(cleanupError&&!(disconnectBeforeCleanup&&!primaryError&&!listeningBeforeRescue&&cleanupError instanceof Error&&!(cleanupError instanceof AggregateError)&&cleanupError.message==='P2_006_BROWSER_DISCONNECTED'))throw cleanupError;
       }
     });}catch(error){observedFailure=error;}finally{context.runtime.server.removeListener('request',observe);}
     if(cleanupMode==='primary-and-cleanup-failed'){
-      const errors=errorMessages(observedFailure);console.log('T10_DOUBLE_FAILURE_STAGE '+JSON.stringify({errors}));assert.ok(errors.includes('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK'),'cleanup must preserve the original body failure');assert.ok(errors.includes('P2_006_BROWSER_DISCONNECTED'));assert.deepEqual(new Set(errors),new Set(['T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK','P2_006_BROWSER_DISCONNECTED']));
+      const errors=errorMessages(observedFailure);console.log('T10_DOUBLE_FAILURE_STAGE '+JSON.stringify({errors,evidence:errorEvidence(observedFailure)}));try{assert.ok(errors.includes('T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK'),'cleanup must preserve the original body failure');assert.ok(errors.includes('P2_006_BROWSER_DISCONNECTED'));assert.deepEqual(new Set(errors),new Set(['T10_PRIMARY_BODY_FAILURE_AFTER_REAL_ACK','P2_006_BROWSER_DISCONNECTED']));}catch(error){throw new AggregateError([observedFailure,error],'T10_ORIGINAL_FAILURE_AND_SECONDARY_CHECK_FAILED');}
     }else if(observedFailure)throw observedFailure;
   });
 });
