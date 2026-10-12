@@ -1,0 +1,8 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_return_to_dispatch_receipt.schema.json",
+  "title":"Original actor currently authorized Ticket return acknowledgement without internal command or conversation details",
+  "$ref":"p2_016_assignment_receipt.schema.json",
+  "$comment":"Reuse the existing closed UNKNOWN/COMMITTED/FAILED union. The whole W read surface must be enabled and currently authenticated Ticket READ valid. Safe ACK remains available when ticketReturnToDispatchEnabled or sensitive draft recovery is false; it does not check 048 readiness or write eligibility. Current Ticket READ precedes original principal scope, actor, Ticket, WORKBENCH_TICKET_RETURN_TO_DISPATCH purpose and command UUID lookup. No action/target/version write eligibility check, no command replay and no original internal or selected Session fields.",
+  "x-status":"SOURCE_ACK_AFTER_ORIGINAL_404_NOT_BUILT_NOT_RUN"
+}

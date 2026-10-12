@@ -1,0 +1,23 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_return_to_dispatch_command.schema.json",
+  "title":"Planned WBINT-T09 independent started Ticket return command",
+  "type":"object","additionalProperties":false,
+  "required":["client_command_id","expected_version","reason_code","reason","unfinished_work","communication_choice","communication_target_principal_id","sessions"],
+  "properties":{
+    "client_command_id":{"$ref":"p2_016_unassign_command.schema.json#/$defs/uuid"},
+    "expected_version":{"$ref":"p2_016_unassign_command.schema.json#/$defs/version"},
+    "reason_code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},
+    "reason":{"type":"string","minLength":1,"maxLength":500,"pattern":"\\S"},
+    "unfinished_work":{"type":"string","minLength":1,"maxLength":1400,"pattern":"\\S"},
+    "communication_choice":{"enum":["RETAIN_CURRENT","TRANSFER_SELECTED"]},
+    "communication_target_principal_id":{"anyOf":[{"$ref":"p2_016_unassign_command.schema.json#/$defs/uuid"},{"type":"null"}]},
+    "sessions":{"type":"array","maxItems":8,"x-unique-canonical-session-id":true,"items":{
+      "type":"object","additionalProperties":false,"required":["session_id","expected_row_version"],
+      "properties":{"session_id":{"$ref":"p2_016_unassign_command.schema.json#/$defs/uuid"},"expected_row_version":{"$ref":"p2_016_unassign_command.schema.json#/$defs/version"}}
+    }}
+  },
+  "allOf":[{"if":{"properties":{"communication_choice":{"const":"TRANSFER_SELECTED"}}},"then":{"properties":{"communication_target_principal_id":{"$ref":"p2_016_unassign_command.schema.json#/$defs/uuid"},"sessions":{"minItems":1}}},"else":{"properties":{"communication_target_principal_id":{"type":"null"},"sessions":{"maxItems":0}}}}],
+  "x-runtime-normalization":"Check original UTF16 lengths before trim; both texts must remain nonempty. Store server-labelled reason and unfinished work in the same existing internal_note (at most 2000 units), never external_note. Recheck canonical duplicate UUIDs and all current object permissions.",
+  "x-status":"PLANNED_NOT_IMPLEMENTED_NOT_RUN"
+}

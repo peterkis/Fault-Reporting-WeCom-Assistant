@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_takeover_targets.schema.json",
+  "title": "PLANNED current principal effective takeover teams - WBINT-T07, runtime NOT_RUN",
+  "type": "object", "additionalProperties": false,
+  "required": ["resolver_teams", "resolver_team_id", "allowed_actions"],
+  "properties": {
+    "resolver_teams": {
+      "type": "array", "maxItems": 100, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["team_id", "display_name"],
+        "properties": {
+          "team_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    },
+    "resolver_team_id": {"anyOf": [{"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}, {"type": "null"}]},
+    "allowed_actions": {"type": "array", "maxItems": 2, "uniqueItems": true, "items": {"enum": ["takeover", "takeover-and-start"]}}
+  },
+  "description": "PLANNED only. Current Ticket read scope and internal business authority precede this bounded query. Only active teams actually containing the authenticated principal are returned, ordered by code. A selected valid team is independently checked and included within the display cap; absence from the first display page is not revocation. No person directory or new read grant is returned."
+}
