@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_return_to_dispatch_event.schema.json",
+  "title":"Planned WBINT-T09 private append-only return fact, not an HTTP DTO",
+  "type":"object","additionalProperties":false,
+  "required":["event_id","ticket_id","event_type","old_status","new_status","aggregate_version","event_ordinal","operator_type","operator_id","internal_note","external_note","reason_code","assignment_metadata","trace_id","created_at"],
+  "properties":{
+    "event_id":{"$ref":"p2_016_unassign_event.schema.json#/$defs/uuid"},"ticket_id":{"$ref":"p2_016_unassign_event.schema.json#/$defs/uuid"},
+    "event_type":{"const":"ticket.returned_to_dispatch"},"old_status":{"enum":["IN_PROGRESS","WAITING_REQUESTER","WAITING_VENDOR"]},"new_status":{"const":"QUEUED"},
+    "aggregate_version":{"$ref":"p2_016_unassign_event.schema.json#/$defs/version"},"event_ordinal":{"$ref":"p2_016_unassign_event.schema.json#/$defs/version"},
+    "operator_type":{"const":"PILOT_USER"},"operator_id":{"$ref":"p2_016_unassign_event.schema.json#/$defs/uuid"},
+    "internal_note":{"type":"string","minLength":1,"maxLength":2000,"pattern":"\\S","x-runtime-invariant":"Fixed server labels preserve both normalized reason and unfinished_work; the original ledger command preserves both fields. Not parsed as state authority."},
+    "external_note":{"type":"null"},"reason_code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},
+    "assignment_metadata":{"$ref":"p2_016_unassign_event.schema.json#/properties/assignment_metadata"},
+    "trace_id":{"type":"string","minLength":1,"maxLength":128},"created_at":{"$ref":"p2_016_unassign_event.schema.json#/properties/created_at"}
+  },
+  "x-runtime-invariant":"Old owner is the locked current nonnull Ticket owner, new owner JSON null, old/new team equal. Started current responsibility segment must be proved from canonical ordered facts. No new cycle or first-basis rewrite.",
+  "x-audience":"Private persistence fact. Internal reason and unfinished work excluded from Reporter/member, Delivery, ordinary events and SSE projections.",
+  "x-status":"PLANNED_NOT_IMPLEMENTED_NOT_RUN"
+}
