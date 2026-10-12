@@ -25,7 +25,7 @@ state：`queued|accepted|in_progress|waiting_requester|waiting_vendor|resolved|c
 
 TicketDetail：`id,ticket_no,request_type,status,priority,resolver_team_id,assignee_id,version:number,created_at,updated_at,intake_id,external_status,allowed_actions[]`；Web 来源可增加 `web_report`。后者含 `source_kind,description,location:{text,unknown},service_code,impact_scope,reported_department_text,extension,supplements:[{input_revision,text}]`，保留期后字段可能不可用，不是任意原始 Channel payload。
 
-事件投影：`event_id,event_type,old_status,new_status,aggregate_version,event_ordinal,created_at,has_internal_note,has_external_note`。责任投影：`ticket_id,ticket_assignee_id,ticket_assignee_name,resolver_team_id,resolver_team_name,conversations[]`；每条 conversation 含 `session_id,session_row_version:string,combined_accept_allowed,conversation_principal_id,conversation_principal_name,assignment_status,assignment_version`。复合命令使用前须按命令要求将可验证的会话版本转成安全整数。
+事件投影：`event_id,event_type,old_status,new_status,aggregate_version,event_ordinal,created_at,has_internal_note,has_external_note`；T10默认false源码增量的`handling_cycle_id`见[首片段合同](#等待报修人的同轮次关联wbint-t10首片段)。责任投影：`ticket_id,ticket_assignee_id,ticket_assignee_name,resolver_team_id,resolver_team_name,conversations[]`；每条 conversation 含 `session_id,session_row_version:string,combined_accept_allowed,conversation_principal_id,conversation_principal_name,assignment_status,assignment_version`。复合命令使用前须按命令要求将可验证的会话版本转成安全整数。
 
 Notification：`notification_type,destination_type,delivery_id,status,side_effect_state,attempt_count,sent_at,created_at`；T24开启时另含成对的node:FIRST_RESPONSIBILITY|STAFF_COMPLETED|null与cycle_no:positive integer|null，未绑定轮次的既有通知两值均null；SENT/ACKNOWLEDGED 的技术含义不替代现场客户端观察。
 
@@ -66,6 +66,20 @@ Notification：`notification_type,destination_type,delivery_id,status,side_effec
 ```json
 {"client_command_id":"22222222-2222-4222-8222-222222222222","expected_version":4,"reason_code":"WORKBENCH_CONFIRMED"}
 ```
+
+## 等待报修人的同轮次关联（WBINT-T10，首片段）
+
+本段是T10首个公开RED后准备的**源码增量，新的候选仍SOURCE_UNVERIFIED**；不是整票完成、发布或启用。实际原RED及归档见[T10执行](../../../plans/admin-workbench-integration/execution/t10.md)。本片段只扩展既有W `POST /api/tickets/{ticketId}/request-information`；厂商等待、恢复、取消的T10消费合同与菜单／草稿／只读核对尚待后续片段，不由本段声明已完成。
+
+新显式宿主选项`ticketWaitingActionsEnabled:boolean=false`，在当前首片段仅启用request-information的轮次关联和事件引用投影。false保留原路由可选note／external_visible与原六字段结果，新增分支不读039。true要求已安装039；命令在receipt和业务写入前核对迁移标记，缺失返回503 `P2_016_SELF_HANDLING_UNAVAILABLE`，readiness同样不就绪。没有新迁移、表、Ticket、责任或receipt事实源。
+
+开启此profile的request-information闭合body沿[输入Schema](../../../contracts/p2_016_waiting_action_command.schema.json)：`client_command_id:UUID,expected_version:number(1..2147483647),reason_code:大写code(1..64),note:string(原长1..2000且trim非空),external_visible:false`。服务器不改原正文／hash。Origin/CSRF、Idempotency-Key、If-Match、32KiB与当前活动角色／对象权限沿原W合同；HANDLER仍须是同组当前处理人，ADMIN/DISPATCHER沿既有许可，状态只允许IN_PROGRESS→WAITING_REQUESTER。
+
+原Core Action持有Ticket行锁，在同一ledger业务SAVEPOINT内从该Ticket读取真实`current_handling_cycle_id`，把本次真实waiting_requester event写入已有`ticket_handling_cycle_event`。既有同Ticket FK保证归属；不创建轮次，不改cycle_no、source、首次责任、人／组或Conversation责任。旧合法无轮次Ticket返回null并保留真实历史。关联、原通知／实时投影与COMMITTED receipt均在同一事务；事务故障与竞争行为尚待本候选运行证据。
+
+新写入的安全200结果为[结果Schema](../../../contracts/p2_016_waiting_action_result.schema.json)的原六字段加`handling_cycle_id:UUID|null`，无原因正文。原receipt重放读取原快照；既有兼容profile已提交的六字段收据不被回填或改造为新历史。`GET /api/tickets/{ticketId}/events`在该选项true时，为每个获权事件增加`handling_cycle_id:UUID|null`，从该event的已持久关联读取；不能把Ticket当前cycle投射给未关联的旧事件。[事件页Schema](../../../contracts/p2_016_waiting_event_page.schema.json)仅描述该true profile，原时间／排序／分页字段沿实际原合同。类型见[P2016RequestInformationResult／P2016TicketEventProjection](../../../contracts/p2_016_contracts.d.ts)。
+
+复用原App/API/SSE、池和查询分页；新profile不增加进程、轮询或外发。关闭ticketWaitingActionsEnabled回到原合同，保留已提交event／cycle关联／receipt；源码撤销使用独立forward/revert，不删除事实。本片段未接bootstrap菜单能力或新增只读receipt URL。整票角色／版本／幂等／原子性矩阵、正式bundle菜单和原因恢复仍IN_PROGRESS；本候选build／strict／HTTP验证均NOT_RUN。
 
 ## 可靠内部备注（WBINT-T02）
 
@@ -339,3 +353,25 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 ## 原H5与核实代录应用轮次通知（WBINT-T25）
 
 原 GET deliveries 沿当前 Ticket READ，可返回 PERSON 的 route_kind=YIXIAOXIU_APP；同轮FIRST/完工、各路成功/失败/UNKNOWN均独立。正式管理端仅显示安全状态，不能从投影推断外部送达。恢复仍用原 retry/reconcile、当前权限和原UUID/hash，不增加客户端SDK或HTTP发送入口。配置、SDK、本人详情、安全字段与关闭历史读取见[应用通知合同](app-notifications.md)；[本地执行](../../../plans/admin-workbench-integration/execution/t25.md)保留逐祖先证据和未运行现场边界。
+
+### T10 历史首片段：四动作消费合同冻结与首个菜单源码（2026-10-12）
+
+本段替代旧未实施 SOURCE 提案中将安全 ACK 绑定 mode/raw 的假定，依据本次 Root586 连续授权和已交付恢复边界；旧记录与旧回执不改写。四条 POST 路由仍为 request-information、wait-vendor、resume、cancel，复用原 frozen 五字段 waiting command、七字段安全结果和真实 event↔cycle 合同。等待／恢复留人、组、沟通和本轮；取消仅原 ADMIN/DISPATCHER、QUEUED/ACCEPTED 与内部必填原因／独立确认，不替代撤派／退回。当前第一菜单源码只消费 request-information，其他三项仍待公开竖切。
+
+[独立 capability 片段](../../../contracts/p2_016_waiting_capability.schema.json)冻结 ticket_waiting_actions_enabled 和 ticket_waiting_action_draft_recovery_enabled 两 boolean，缺省 false、raw 能力蕴含动作能力；只由原宿主 option 与原 recovery option 提供，不修改持久默认 Flag。每次新提交先核当前 bootstrap/Ticket Action/版本、T38 transport 与 epoch／abort／generation，再保存原命令、一次 POST。409 保留用户输入，经当前 GET 后由明确新提交产生新的 UUID；UNKNOWN 保留原 UUID/body/version，不自动再 POST。
+
+[安全 ACK 合同](../../../contracts/p2_016_waiting_action_receipt.schema.json)为四个 GET /api/tickets/{id}/{action}/commands/{uuid} 的最小 UNKNOWN／FAILED／COMMITTED。该原 actor／Ticket／服务器 route-action purpose／UUID 只读核对仅要求当前 W 认证与 Ticket READ，与新写和 raw 恢复分开；不返回 note、原 command 或 private snapshot。四用途为 waiting-requester、waiting-vendor、waiting-resume、waiting-cancel，沿 T03 当前浏览器密文、24h／20份／16KiB及 storage CAS。ACK 宿主及其负向验证在首菜单片段尚未实现，不能把合同冻结视为已有 HTTP。
+
+无新 SQL、表、Core、owner、ledger、SSE、轮询或通知权限。关闭动作 option 禁止新菜单提交，保留既有事实；安全 ACK 的原操作消费者在后续实现保持挂载。原 first/fixture/browser 与三 frozen Schema 不改。当前源码未经本对象运行；原 d563 首 HTTP GREEN 与原 browser 菜单 RED 仍分别绑定 d563，不作为整七验收。
+
+### T10 当前四动作本地交付（2026-10-13）
+
+四动作均已在正式工单菜单实现，沿原 HTTP 与 frozen command/result/event-page Schema。等待报修人和厂商只从 IN_PROGRESS 进入 WAITING_REQUESTER/WAITING_VENDOR，恢复只从两种等待态回到 IN_PROGRESS；当前有效 ADMIN/DISPATCHER 或原处理人且仍属于有效处理组才可执行。独立取消仅 ADMIN/DISPATCHER、QUEUED/ACCEPTED，要求内部原因与一次独立人工复选确认；它不替代撤派、停止处理或退回。等待与恢复保留当前人、组、沟通、轮次及首次责任；取消也保留已有轮次，原 nullable cycle 仍为 null，不新开历史。
+
+五字段 POST 仍为 client_command_id、expected_version、reason_code、note、external_visible:false；每次执行 Origin、CSRF、Idempotency-Key、If-Match、当前身份／Ticket授权与合法状态。数字版本范围1..2147483647，原因按UTF-16最长2000且trim后非空，前端只trim一次，服务端不改原raw body或hash。同UUID重放仍重查当前READ，锁等待后重查当前角色／处理组权限；单一ledger事务内状态、event、现存event↔cycle关系和相关投影全部成功或全部回滚。无新数据库迁移、表、Core、owner、ledger或通知规则，内部原因不进入外部Delivery；原宿主通知策略和发送关闭保持。
+
+四个独立 purpose 控制器使用原T03密文与storage CAS：waiting-requester、waiting-vendor、waiting-resume、waiting-cancel。新动作消失时继续挂载原操作，只保原UUID／正文／版本，用户明确点四条专用GET才核对，不自动POST、ACK或换UUID。409保输入，当前获权事实重读后由明确新提交生成新UUID。首次保存24h不续期、不可导出AES-GCM key、20份／16KiB限值保持；过期／只关闭WRITE或raw只清敏感payload/key，原opaque在当前READ下仍供GET。冷raw关闭不打开或写IDB，只保证当前页面内核对，不承诺刷新恢复。真实Ticket404、身份失权和退出清理各自受限范围；迟到POST、ACK和解密结果不能恢复旧内容。
+
+ticketWaitingActionsEnabled默认false，两bootstrap capability也缺省false，raw须同时有原recovery与新写能力。关闭新写禁止新菜单提交，保留已提交Ticket／event／责任及原操作的当前READ核对；不删除历史或扩大通知权限。复用现有App/API/SSE与池，不增加后台服务、SSE连接或轮询；单App/Worker、Gateway单活、SSE32／原池预算保持。
+
+本地未发布对象69d5619ee31cd69aa8b6378a16bfaf0eeb92f6bc完成当前一次build／strict含负向类型／artifact 0/0/0、22文件41PASS（T10 28＋相关13）、13 accepted PNG；三适用工具风险组真实20PASS/native0，外部wrapper误读嵌套失败计数的原FAIL和外层解释分别保留。自有PG stop0/status3/pidnull/62775拒绝连接、data/config保留，extraDB／client／probe池0。原3 tracer与3Schema、所有历史FAIL／NOT_REACHED／NOT_RUN和5d逐原SHA恢复边界保持。完整逐项证据与两轴固定SOURCE收口见[本票执行记录](../../../plans/admin-workbench-integration/execution/t10.md)及外部D最终handoff；该纯记录后继不重绑tested_head。父独立整票验收、Root聚合／安全FF／原生Issue收口由父完成，不改变真实外部服务／发送、部署、full/certify或Gate停止线。
