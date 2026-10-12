@@ -32,7 +32,7 @@ export function useWaitingDraft({ticketId,action,principal,value,pending,allowed
     else if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){setExisting(false);onSensitiveClear();}
     else if(!(error instanceof DOMException&&error.name==='AbortError'))setUnavailable(true);
   };
-  const draft=useAuthorizedDraft<string,WaitingCommand>({scope,enabled,writeEnabled:raw&&allowed,value,pending,emptyValue:'',hasInput:note=>Boolean(note)&&allowed,serialise:serialiseWaiting,decode,commandId:command=>command.client_command_id,
+  const draft=useAuthorizedDraft<string,WaitingCommand>({scope,enabled,writeEnabled:raw&&allowed,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:'',hasInput:note=>Boolean(note)&&allowed,serialise:serialiseWaiting,decode,commandId:command=>command.client_command_id,
     authorize:async signal=>{
       const read=captureWorkbenchRead(signal);restoreRead.current=read;stage.current='session';const fresh=await api.bootstrap(signal);read();if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');client.setQueryData(['session'],fresh);
       stage.current='ticket';const ticket=await api.ticketCommandContext(ticketId,signal);read();client.setQueryData(['ticket-command-context',scope.principal,ticketId],ticket);
