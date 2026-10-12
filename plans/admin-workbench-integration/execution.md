@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-12
+snapshot_on: 2026-10-13
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,20 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-12，T09收口）
+## 当前执行状态导航（2026-10-13，T10收口）
+
+GitHub实际快照为 **27／43 CLOSED、16 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t10-20261013.json)。[#65已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)。WBINT-02／A02所属T02、T04–T10八票均已本地交付并原生CLOSED/completed，来源工作包本地完成。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T10 / #65 | 原七项经父独立核对，70ceb31d已由独立合并代理安全快进并GitHub收口；[等待、恢复和独立合法取消](execution/t10.md)及既有API文档已更新。WBINT-02／A02本地完成。 |
+| 验证 | 真实被测69d5619e的 build／strict（含负向类型）／artifact 原生0／0／0；22个业务及兼容入口41 PASS／0 FAIL／0 SKIP／0 NOT_RUN。三组适用工具实际外层20 PASS／native0，原汇总器误读嵌套负向用例的 FAIL 与单独解释回执均保留，未重跑或声称完整工具全集通过。 |
+| 审查与保全 | 独立Standards／Spec及最终两份文档复核无新增可行动问题；3193项归档、1815运行输出、原首例／Schema及历史失败已父核。5d逐原SHA恢复保留原compiled tools未证明、非预先归档的限制；后继仅文档，不重绑真实tested69。 |
+| 集成与清理 | [父实际读回](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/parent-t10-actual-ff-full-read.json)确认六件用户原件、888件保护文件（含原231）及真实被测祖先保持，index0。40路径Git／规范LF内容相同，32件Root／private原字节差异逐路径记录。自有PG smart-stop0／status3／PIDnull，临时库／客户端／池0；配置及数据保留。 |
+| 后续 | 下一连续整票为T12／#67，须重读当前原生#62／#66及正常合入最新集成后完成原七项。其余八票SOURCE准备未运行或验收。T29交接必须已有Incident读取权；T31独立人工公开摘要、预览确认及仅定向有效未暂停个人订阅者的决定保持，#86仍被#85阻塞。 |
+| 边界 | 默认关闭，无新SQL／第二套Core／外部通知权。未push／PR、部署、真实依赖／外发、full／certify或Gate推进。全部43票的最终两轴审查、其余票和实现工作树清理继续待完成。 |
+
+## 历史执行状态导航（2026-10-12，T09收口）
 
 GitHub 实际快照为 **26／43 CLOSED、17 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t09-20261012.json)。[#64 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64#issuecomment-6126429394)。
 

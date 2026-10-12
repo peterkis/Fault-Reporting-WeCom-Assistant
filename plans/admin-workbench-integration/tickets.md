@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-12
+snapshot_on: 2026-10-13
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -44,6 +44,8 @@ native_blocking_edges: 76
 2026-10-12 T07 整票收口：原七项、3454ed05的严格0／0／0、本票33／33及受影响浏览器13／13、工具54／54含具名retired、两轴修补和最终字节／自有清理均父核；c5898b85安全快进，[#62完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62#issuecomment-6123961995)。当前 **25／43 CLOSED、18 OPEN**，见[实际被测祖先及历史失败](execution/t07.md)。WBINT-02／A02仍待T09／T10；下一连续整票T09，T12／T13已解除#62依赖，SOURCE准备不计验收。默认关闭，全43最终审查及工作树清理继续待完成。
 
 2026-10-12 T09 整票收口：原七项、c638e931严格0／0／0与当前同制品23 PASS、两轴修补收口、54原件和143raw／9PNG／10诊断保全、精确自有清理均父核；a58bd2bf保留真实被测祖先安全快进，[#64完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64#issuecomment-6126429394)。当前 **26／43 CLOSED、17 OPEN**，见[合同、原始失败及逐项结论](execution/t09.md)。原selected UI两FAIL和五RED未重标；未变工具原54PASS按同blob复用。WBINT-02／A02仍待T10，其原生阻塞仅#58／#59且已关闭；T12／T13与T29／T30的SOURCE准备不计验收。默认关闭，全43最终审查及工作树清理继续待完成。
+
+2026-10-13 T10整票收口：原七项、真实69d5619e同制品严格0／0／0与41 PASS、适用工具外层20 PASS／native0、独立两轴及最终文档复核、3193项归档和精确自有停止均父核；70ceb31d安全快进，[#65完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)。当前 **27／43 CLOSED、16 OPEN**，见[执行记录](execution/t10.md)。原业务失败、汇总器FAIL、observer错误及5d逐原SHA恢复限制保留。WBINT-02／A02所属T02、T04–T10八票均本地交付、原生CLOSED/completed；此前逐票“A02仍未完成”记载为当次历史，当前来源工作包本地完成。下一连续整票T12；其它SOURCE准备不计验收，默认关闭，全43最终审查与工作树清理继续待完成。
 
 ## 导航与配置
 
@@ -100,10 +102,10 @@ native_blocking_edges: 76
   - **来源：** WBINT-02 / A02
   - **本地执行：** [原七项LOCAL_VERIFIED、停止退回及显式原子交接](execution/t09.md)已父核、a58bd2bf集成并关票；真实tested c638祖先、原FAIL／NOT_REACHED及54冻结原件保留。默认关闭，A02仍待T10，未发布／启用。
 
-- [ ] **T10** — [#65 执行等待、恢复和合法取消](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65)
+- [x] **T10** — [#65 执行等待、恢复和合法取消](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **来源：** WBINT-02 / A02
-  - **本地执行：** 实时核对正文、评论和原生依赖，#58／#59已CLOSED；领取给peterkis，独立工作树准备等待、恢复和合法取消，尚未验收。
+  - **本地执行：** [原七项LOCAL_VERIFIED、等待／恢复／独立合法取消](execution/t10.md)已父核，70ceb31d安全快进并[关票读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)，真实tested69祖先与历史失败保留；41 PASS及工具外层20 PASS，原汇总器FAIL单独解释。WBINT-02／A02本地完成，默认关闭、未发布／启用。
 
 - [x] **T11** — [#66 工作人员记录内外结果并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)、[#59](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
