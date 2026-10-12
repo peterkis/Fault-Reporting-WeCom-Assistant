@@ -13,7 +13,19 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-12，T07收口）
+## 当前执行状态导航（2026-10-12，T09收口）
+
+GitHub 实际快照为 **26／43 CLOSED、17 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t09-20261012.json)。[#64 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64#issuecomment-6126429394)。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T09 / #64 | 原七项经父独立核对，a58bd2bf 安全快进并 GitHub 收口；[独立停止退回、显式沟通交接及原命令核对](execution/t09.md)。WBINT-02／A02 的 T09 切片完成，整组仍待 T10。 |
+| 验证 | 实际被测 c638e931 的 build／strict／artifact 原生0／0／0；同一制品当前23 PASS／0 FAIL／0 SKIP，包含独立T09、049-first真实057、第二Control实际写后全回滚、默认关闭、041 FIRST、原HTTP／生产PC恢复／并发／重放。两轴固定9b修补审查三项CLOSED_SOURCE、新问题0，c638产品同blob；原selected UI两FAIL、五RED及其它历史失败保留，未将原九例全称PASS。 |
+| 保全与清理 | [父核七项](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/parent-t09-final-seven-acceptance.json)与[完整交接](D:/wecom-workbench-evidence/t09/whole-after-t07-20261012/final/handoff.json)保留54原件、143raw／9PNG／10诊断和1405输入／2988制品。未变27工具与原54PASS对象同blob，按授权复用；[快进回执](D:/wecom-workbench-evidence/t09/whole-after-t07-20261012/merge-final/receipt.json)确认6用户物件、231历史冻结与真实被测祖先保持。31新文件依既有CRLF物化，Git内容匹配私树原件，不声称原始SHA相同；PG精确smart-stop0／status3／PIDnull，DB／client／pool0，配置数据保留。 |
+| 后续 | 下一连续整票为T10／#65，实时原生阻塞仅#58／#59且均CLOSED，不把#64另造为依赖；先正常合入最新集成，再继续原七项。T12／T13、T29／T30已完成独立SOURCE准备，未运行或验收。T29已有Incident读取权、不扩权及T31独立人工公开摘要、仅定向有效未暂停订阅人的用户决定保持；T31仍被#85阻塞。 |
+| 边界 | 默认关闭，未push／PR、部署、用户库、真实Provider／OAuth／WeCom／发送、full／certify或Gate推进。全43最终两轴审查、后续票和实现工作树清理继续待完成。 |
+
+## 历史执行状态导航（2026-10-12，T07收口）
 
 GitHub 实际快照为 **25／43 CLOSED、18 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t07-20261012.json)。[#62 已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62#issuecomment-6123961995)。
 
