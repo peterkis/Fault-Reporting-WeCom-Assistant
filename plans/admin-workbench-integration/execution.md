@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-14，T31收口）
+## 当前执行状态导航（2026-10-14，T32收口）
+
+GitHub实际快照为 **32／43 CLOSED、11 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t32-20261014.json)。[#87原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。WBINT-11／A11已本地交付T32，T33仍待普通Incident重试角色的人类决定。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T32 / #87 | 原七项经父验收，b2cfff8b由独立代理安全快进；[各域获权分页、分路事实与正式详情](execution/t32.md)已接入。授权先于LIMIT，隐藏对象、wrong parent与混用游标拒绝；摘要不复制内部正文，Incident没有新增控制动作。 |
+| 验证 | 实际功能3f51／60ee／MF7e360保留040严格／一次build／artifact原生0、042正式浏览器两例PASS与052真实功能checkout的两个冻结API首例2PASS／0SKIP。022 Incident完整query／Scope／assembly至3f51未变，按精确对象复用；035本票6PASS、036失权1PASS、039相关12PASS各自保留原对象，不合称full或同次三API回归。 |
+| 审查与保全 | 25路径两轴、8路径修补及终稿三MD无剩余行动项，LOW重复安全SQL为可选。3929原封存与7050新增源／制品独立实际核验，134原保护对象、41SQL、597入口／131 selections／335资源并集及用户六原件保全；schema_draft的raw独立核对，不计入1537MF输入。 |
+| 集成与清理 | Root已纳入b2cfff8b，index0、用户三status行／六raw不变；31Root物化文件中18份仅行尾不同，原件分别封存。053本次自有PG26124 stop0／status3、单62775 LISTEN0、keeper STOPPED／pidnull且配置保留；全部自有native终态，两私树留待全43结束清理。 |
+| 历史限制 | 048文档头对功能MF的身份拒绝、050物化／owner前置失败以及原FAIL／NOT_REACHED保持。真实3f51 checkout通过原工具后复用制品，未放宽守卫或重绑b2；owner标记只有复制记录／verifier0，派生target argv不冒称OS探测。 |
+| 来源工作包与后续 | WBINT-11／A11为IN_PROGRESS，T32 LOCAL_VERIFIED，T33原生#87阻塞已解除但普通Incident重试角色仍待决定。下一连续整票T29／#84，唯一#83实际completed，目标须已有该Incident读取权且交接不扩权；WBINT-10／A10已交付T30／T31，仍待T29。 |
+| 边界 | 新开关默认false，无DB变更；全43最终审查与实现工作树清理继续待完成。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T31收口）
 
 GitHub实际快照为 **31／43 CLOSED、12 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t31-20261014.json)。[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。WBINT-10／A10已本地交付T30／T31，T29仍待完成。
 

@@ -27,7 +27,7 @@ execution_status: IN_PROGRESS
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | IN_PROGRESS：[T30内部处置LOCAL_VERIFIED](execution/t30.md)、[T31显式安全发布LOCAL_VERIFIED](execution/t31.md)已父验收、集成并原生CLOSED/completed；T29仍待，A10整组未完成 | A10 |
-| WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：T32／#87已核对原生#80／#81／#86完成状态并领取，进入连续整票实施准备；T33仍待#87，A11尚未验收 | A11 |
+| WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：[T32获权异常查询LOCAL_VERIFIED](execution/t32.md)原七项已父验收、独立集成并原生CLOSED/completed；T33的原生依赖已解除，普通Incident重试角色仍待人类决定，A11整组未完成 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T35个人已读原七项](execution/t35.md)与[T37共享时间原七项](execution/t37.md)均已父核、集成并GitHub关闭；T34仍待整票验收，T36的原生#90已关闭但实施未完成，A12整组未完成；默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
@@ -156,6 +156,10 @@ execution_status: IN_PROGRESS
 - **验证／证据／开关／资源**：A10：越权owner转交、目标不在组、并发发布、旧版本／相同UUID、暂停订阅／无有效个人目的地、内部泄漏、Incident与个人工单互不越界。默认false，停止新发布／转交入口，保留旧事件／Outbox；有界通知生成和concurrency1。
 
 ## WBINT-11：通知异常工作区与受控恢复
+
+以下为T32提交时的本地交接快照；当前父验收／集成／原生收口见上表与[最新导航](execution.md)。
+
+2026-10-14 T32/#87本地原七贡献已实现并完成适用隔离验证，PENDING_PARENT，详见[本票执行记录](execution/t32.md)。按当前各域/用途先授权再有界分页、每路安全事实和正式App只读详情已接入，无DB变更，新增默认false。T33新增Incident控制及整个A11收口仍待后续；不从本票VIEW扩权，不称全43或生产完成。原计划条目保持其T32/T33联合范围。
 
 - **负责范围**：跨域有界异常查询、Incident专用Delivery控制、React异常列表／安全详情；原Ticket／Conversation控制不改成共享万能授权。
 - **输入／HTTP**：08、10真实各路结果；新增notification-exceptions、Incident delivery retry/reconcile，复用已有Ticket和Conversation精确控制入口。

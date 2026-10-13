@@ -1,4 +1,5 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+import type {NotificationExceptionIncidentScope} from './workbench-notification-exceptions.mjs';
 import type { WorkbenchPrincipal, WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt } from '../contracts/p2_012_contracts.js';
 import type {IncidentFollowupReceipt} from '../contracts/workbench_incident_followup_contracts.js';
@@ -62,7 +63,13 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     if(!await publicProgressSchemaReady(input.tx??pool))fail('DISABLED',503);return ctx;
   }
   const publicationScope=(p:WorkbenchPrincipal,row:ResourceRow)=>hash({principal:p.principal_id,roles:[...p.roles].sort(),scope:(row as Incident).confirmed_scope,allowed:allowedIncidentScopes(p.roles,allowDispatcherCampus)});
-  return Object.freeze({principal,resource,source,internalNoteResource,publicProgressResource,
+  async function notificationExceptionScope({authContext,tx=pool}:{authContext:unknown;tx?:PostgresTransaction}):Promise<NotificationExceptionIncidentScope|null>{
+    if(!enabled)return null;
+    const p=await principal(authContext,tx);
+    if(!broad(p))return {lifecycle:false,publicProgress:false,publicScopes:[]};
+    return {lifecycle:true,publicProgress:publicProgressEnabled&&await publicProgressSchemaReady(tx),publicScopes:allowedIncidentScopes(p.roles,allowDispatcherCampus)};
+  }
+  return Object.freeze({principal,resource,source,internalNoteResource,publicProgressResource,notificationExceptionScope,
     async publicProgress({authContext,incidentId,cursor:after=null,limit:pageLimit}:{authContext:unknown;incidentId:string;cursor?:string|null;limit?:unknown}):Promise<IncidentPublicProgressPage>{
       const {principal:p,row}=await publicProgressResource({authContext,id:incidentId}),n=pageLimit==null?10:limit(pageLimit,30),scope=publicationScope(p,row);
       const c=after?decodeCursor(after,['incident','scope','ordinal','id']):null;

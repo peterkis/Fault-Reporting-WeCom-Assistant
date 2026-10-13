@@ -50,7 +50,7 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes
   const maintenance=createP2012IncidentCommandService({pool,enabled,query,realtime:projector,maintenanceEnabled:true});
   const importer=createP2012CandidateReviewStore({pool,enabled});
   const correlation=createIncidentCorrelationWorker({pool,enabled});
-  return Object.freeze({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,
+  return Object.freeze({query,commands,enabled,notificationExceptionScope:query.notificationExceptionScope,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,
     async ready(){if(!enabled)return true;try{return (!publicProgressEnabled||await publicProgressSchemaReady(pool))&&(!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
     reporterAdapter:enabled?createP2012ReporterTimelineAdapter({pool,enabled}):null,
     authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled}),
