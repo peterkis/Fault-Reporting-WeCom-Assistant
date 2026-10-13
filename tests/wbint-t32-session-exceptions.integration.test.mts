@@ -15,7 +15,7 @@ test('T32 Session failures and UNKNOWN use independent current VIEW and real con
     const deliveryIds:string[]=[];let senderCalls=0;
     for(const unknown of [false,true]){
       const detail=(await f.get(path)).body;
-      const response=await f.post(path+'/messages',{client_command_id:randomUUID(),expected_row_version:t32Record(detail.session).row_version,text:'T32_PRIVATE_REPLY_CANARY',message_type:'TEXT'});
+      const response=await f.post(path+'/messages',{client_command_id:randomUUID(),expected_row_version:t32Record(detail.session).row_version,text:'T32_PRIVATE_REPLY_CANARY',message_type:'text'});
       assert.equal(response.status,202,JSON.stringify(response.body));assert.ok(Array.isArray(response.body.delivery_ids));const id=t32Text(response.body.delivery_ids[0]);deliveryIds.push(id);
       const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:createCommunicationSenderPort(()=>{senderCalls++;return {outcome:unknown?'UNKNOWN':'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'T32_RAW_ERROR_CANARY',retryable:false};})});
       assert.ok(await worker.deliver({deliveryId:id}));
