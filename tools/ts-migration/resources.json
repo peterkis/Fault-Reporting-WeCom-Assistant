@@ -318,6 +318,7 @@
     "database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql",
     "contracts/p2_016_waiting_action_command.schema.json",
     "contracts/p2_016_waiting_action_result.schema.json",
-    "contracts/p2_016_waiting_event_page.schema.json"
+    "contracts/p2_016_waiting_event_page.schema.json",
+    "contracts/p2_016_assignment_history_capability.schema.json"
   ]
 }
