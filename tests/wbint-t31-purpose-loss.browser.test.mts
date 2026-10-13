@@ -21,3 +21,13 @@ test('T31 recovery-off route purpose403 clears only public progress while the sa
     assert.equal(await browser.evaluate('Boolean(document.querySelector("textarea[aria-label=公开进展摘要]"))'),false);assert.equal(await browser.evaluate(`document.querySelector('[aria-label="已发布公开进展"]')?.textContent.includes(${JSON.stringify(summary)})`),false);assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-public-progress-routes]"))'),false);
   },{recovery:false});
 });
+
+test('T31 a real route401 still closes the invalid browser session rather than preserving its old data',async()=>{
+  await t31Browser('t31route401',async({browser,incidentId,post,cookies,origin})=>{
+    const path='/api/incidents/'+incidentId;
+    assert.equal((await post(path+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'合成真实会话失效边界摘要',preview_confirmed:true})).status,200);
+    await browser.evaluate("(()=>{const send=fetch;globalThis.__t31PageReady=false;globalThis.__t31ReleasePage=null;globalThis.__t31RouteStatus=null;globalThis.fetch=async(path,options)=>{const url=String(path);if(url.includes('/public-progress?')){const response=await send(path,options),bytes=await response.arrayBuffer(),headers=[...response.headers];return new Promise(resolve=>{globalThis.__t31PageReady=true;globalThis.__t31ReleasePage=()=>resolve(new Response(bytes,{status:response.status,headers}));});}const response=await send(path,options);if(url.includes('/deliveries?'))globalThis.__t31RouteStatus=response.status;return response;};})()");
+    await browser.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='回到公开进展起点').click()");await browser.waitFor('globalThis.__t31PageReady');const cookie=cookies[0];assert.ok(cookie);await browser.command('Network.deleteCookies',{name:text(cookie.name),url:origin});
+    assert.equal(await browser.evaluate('fetch("/api/lifecycle/bootstrap").then(response=>response.status)'),401);await browser.evaluate('globalThis.__t31ReleasePage()');await browser.waitFor('globalThis.__t31RouteStatus===401');await browser.waitFor('document.body.innerText.includes("会话已失效")');assert.equal(await browser.evaluate(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))`),false);
+  },{recovery:false});
+});

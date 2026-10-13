@@ -63,7 +63,9 @@ export function IncidentPublicProgress({principal,detail,otherBlocked,onBlockedC
   const items=readable?history.data?.pages.flatMap(page=>page.items)??[]:[];
   const routeKey=['incident-public-progress-routes',principal.principal_id,incidentId,selectedPublication],routes=useInfiniteQuery({queryKey:routeKey,enabled:readable&&selectedPublication!==null,initialPageParam:null as string|null,queryFn:({pageParam,signal})=>publicProgressApi.deliveries(incidentId,selectedPublication??'',pageParam,signal),getNextPageParam:page=>page.next_cursor??undefined,maxPages:3});
   useEffect(()=>{if(!selectedPublication&&items.length)setSelectedPublication(items.at(-1)?.id??null);},[selectedPublication,items]);
-  useEffect(()=>{if(denied(routes.error))revoke(routes.error);},[routes.error]);
+  // This request's scope is known. Purpose403/404 cannot be classified as a
+  // bootstrap failure by the mutable stage of a separate draft authorization.
+  useEffect(()=>{if(denied(routes.error))revoke(routes.error instanceof ApiError&&routes.error.status===401?routes.error:new DraftError('DRAFT_ACTION_REVOKED'));},[routes.error]);
   const labels={PENDING:'待发送',LEASED:'已领取待发送',SENDING:'发送中',SENT:'已发送',RECONCILIATION_REQUIRED:'结果未知待核对',DEAD_LETTER:'发送失败',CANCELLED:'已取消'};
 
   return <section className="candidate-decision" aria-label="公开进展摘要"><h2>公开进展摘要</h2><p>独立填写安全公开摘要，只定向有效个人订阅。不复制内部处置，不改变个人工单；已发布不代表已发送。</p>
