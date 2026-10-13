@@ -6703,7 +6703,8 @@
       "tests/wbint-t30-internal-note-risks.integration.test.mts",
       "tests/wbint-t30-contracts.test.mts",
       "tests/wbint-t30-migration.integration.test.mts",
-      "tests/wbint-t30-recovery.browser.test.mts"
+      "tests/wbint-t30-recovery.browser.test.mts",
+      "tests/wbint-t30-review-recovery.browser.test.mts"
     ],
     "wbint-t30-related": [
       "tests/p2-012-domain-contracts.test.mjs",
@@ -6712,6 +6713,9 @@
       "tests/p2-012-workbench.integration.test.mjs",
       "tests/wbint-t28-investigating.browser.test.mts",
       "tests/wbint-t27-draft.browser.test.mts"
+    ],
+    "wbint-t30-review-recovery": [
+      "tests/wbint-t30-review-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {
