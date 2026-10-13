@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/p2_016_takeover_completion_command.schema.json",
+    "contracts/p2_016_takeover_completion_result.schema.json",
+    "contracts/p2_016_takeover_completion_targets.schema.json",
+    "contracts/p2_016_takeover_completion_receipt.schema.json",
+    "contracts/p2_016_takeover_completion_contracts.d.ts",
     "contracts/p2_016_assignment_history_page.schema.json",
     "contracts/p2_016_assignment_history_contracts.d.ts",
     "contracts/p2_016_waiting_capability.schema.json",

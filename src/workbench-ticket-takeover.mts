@@ -73,7 +73,13 @@ export function createTicketTakeoverService({pool,query,controlService=null,enab
       const current=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       for(const selected of [...command.sessions].sort((a,b)=>a.session_id.localeCompare(b.session_id)))await query.authorizedRelatedConversation({authContext,ticketId:command.ticket_id,sessionId:selected.session_id,transaction});
       return current;
-    },run:async transaction=>{
+    },run:transaction=>takeoverTicketInTransaction({transaction,authContext,command,query,controlService,...hooks})});
+  }});
+}
+
+
+/** Reuses the current T07 authority and write sequence in the caller's transaction. */
+export async function takeoverTicketInTransaction({transaction,authContext,command,query,controlService,...hooks}:{transaction:PostgresTransaction;authContext:unknown;command:TicketTakeoverCommand;query:P2016TicketQuery;controlService:Pick<ReturnType<typeof createConversationControlService>,'takeResponsibilityInTransaction'>|null}&SelfHandlingHooks){
       const {ticket,principal:visiblePrincipal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
       const worker=await transaction.query<{role:string}>(`SELECT r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
         WHERE p.id=$1::uuid AND p.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER') ORDER BY r.role FOR SHARE OF p,r`,[visiblePrincipal.principal_id]);
@@ -134,6 +140,4 @@ export function createTicketTakeoverService({pool,query,controlService=null,enab
         }
       }
       return {ok:true as const,ticket_id:ticket.id,ticket_version:finalVersion,ticket_event_id:finalEvent,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations};
-    }});
-  }});
 }
