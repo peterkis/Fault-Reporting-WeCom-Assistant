@@ -5488,6 +5488,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t29-caller-wait.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7042,6 +7051,9 @@
       "tests/wbint-t29-owner-transfer-http.integration.test.mts",
       "tests/wbint-t29-owner-transfer.browser.test.mts",
       "tests/wbint-t29-production-owner-transfer.browser.test.mts"
+    ],
+    "wbint-t29-caller-wait": [
+      "tests/wbint-t29-caller-wait.integration.test.mts"
     ]
   },
   "subprocess_entries": {
