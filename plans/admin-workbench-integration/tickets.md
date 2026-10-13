@@ -55,6 +55,8 @@ native_blocking_edges: 76
 
 2026-10-14 T31 原七项已父验收，dd270af3由独立合并代理安全快进，[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。实际功能被测84093163的严格／一次build／artifact及目的403／真实401、原三例恢复已核对；各窗口保留原对象与范围，全部旧FAIL、044清理UNKNOWN／NOT_REACHED保持。源码及文档两轴、3478件保存文件和精确自有清理收口，详见[本票记录](execution/t31.md)。当前 **31／43 CLOSED、12 OPEN**；WBINT-10／A10已完成T30／T31，仍待T29。下一连续整票T32／#87，fresh原生#80／#81／#86均CLOSED/completed，已领取；T33仍待#87。默认关闭，全43最终审查与工作树清理继续待完成。
 
+2026-10-14 T32 原七项已父验收，b2cfff8b由独立代理安全快进，[#87完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。功能3f51／MF7e360的040严格／build／artifact原生0、042正式浏览器2PASS和052两个冻结API首例2PASS已核；Incident022按完整未变查询复用，各窗口不合计full。25＋8路径及三MD两轴、3929原保存与7050新增源／制品、134原保护对象及精确自有停机收口，见[执行与历史限制](execution/t32.md)。原失败、物化差异和证据类型边界保留，未重绑文档后继。当前 **32／43 CLOSED、11 OPEN**；WBINT-11／A11已交付T32，T33原生依赖已解除但普通Incident重试角色仍待人类选择。下一连续整票T29／#84，唯一#83已completed，目标已有精确Incident读取权、交接不扩权。默认关闭，全43最终审查及工作树清理继续待完成。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -217,7 +219,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#85](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
   - **来源：** WBINT-10 / A10
 
-- [ ] **T32** — [#87 查看获权通知异常队列](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87)
+- [x] **T32** — [#87 查看获权通知异常队列](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87)
   - **Blocked by:** [#80](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80)、[#81](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81)、[#86](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86)
   - **来源：** WBINT-11 / A11
 

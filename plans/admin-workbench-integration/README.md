@@ -27,6 +27,8 @@ scope: full_human_workbench_and_required_backend
 
 2026-10-14 T31 原七项已父验收，dd270af3由独立合并代理安全快进，[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。独立空白公开摘要、预览确认、有效未暂停个人定向发布及按路结果已本地交付，见[公开进展与恢复记录](execution/t31.md)。实际功能被测84093163保留045严格／一次build／artifact原生0、046两例与047原三例恢复通过；各历史窗口保留自己的被测身份与范围，不合称full。两轴修补和最终两MD复核收口，1519源码／1959制品、冻结原件与精确自有清理已核；原044清理UNKNOWN／NOT_REACHED和全部旧FAIL保留。当前 **31／43 CLOSED、12 OPEN**，WBINT-10／A10已完成T30／T31，仍待T29。T32／#87当前三个原生依赖#80／#81／#86均completed，已领取为下一连续整票。默认关闭，全43最终审查与工作树清理继续待完成。
 
+2026-10-14 T32 原七项已父验收，b2cfff8b由独立代理安全快进，[#87完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。[获权异常查询与正式详情](execution/t32.md)按各域／用途先授权再分页，群／个人／应用和UNKNOWN各自记账；内部记录不进入摘要，Incident不新增控制。功能3f51／MF7e360保留040三原生0、042正式浏览器2PASS、052两个冻结API首例2PASS；Incident按完整未变源码复用，各对象不合称full。两轴及完整保全、自有停机均已核，旧失败与物化／证据类型限制保留。当前 **32／43 CLOSED、11 OPEN**；下一连续整票T29／#84，按已有读取权交接且不扩权。T33的普通Incident重试角色仍待人类决定，默认关闭与现场停止线保持，全43最终审查及工作树清理仍待完成。
+
 ## 快速导航
 
 | 阅读目的 | 文档 |
