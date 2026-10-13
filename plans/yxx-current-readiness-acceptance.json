@@ -238,7 +238,8 @@
     "tests/wbint-t32-notification-exceptions.browser.test.mts",
     "tests/wbint-t32-exception-contract.test.mts",
     "tests/wbint-t32-exception-compatibility.integration.test.mts",
-    "tests/wbint-t32-exception-authorization.browser.test.mts"
+    "tests/wbint-t32-exception-authorization.browser.test.mts",
+    "tests/wbint-t32-exception-route.browser.test.mts"
   ],
   "historical_registered_files": [
     "tests/yxx-ss-008-validation-scope.test.mjs"
