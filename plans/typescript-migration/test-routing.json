@@ -5416,6 +5416,36 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t32-exception-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_postgres": false
+    },
+    {
+      "path": "tests/wbint-t32-exception-compatibility.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_postgres": true
+    },
+    {
+      "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_postgres": true
     }
   ],
   "legacy_commands": {
@@ -6498,7 +6528,10 @@
       "tests/wbint-t32-notification-exceptions.integration.test.mts",
       "tests/wbint-t32-session-exceptions.integration.test.mts",
       "tests/wbint-t32-incident-exceptions.integration.test.mts",
-      "tests/wbint-t32-notification-exceptions.browser.test.mts"
+      "tests/wbint-t32-notification-exceptions.browser.test.mts",
+      "tests/wbint-t32-exception-contract.test.mts",
+      "tests/wbint-t32-exception-compatibility.integration.test.mts",
+      "tests/wbint-t32-exception-authorization.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6933,6 +6966,18 @@
     ],
     "wbint-t32-browser": [
       "tests/wbint-t32-notification-exceptions.browser.test.mts"
+    ],
+    "wbint-t32-risk": [
+      "tests/wbint-t32-exception-contract.test.mts",
+      "tests/wbint-t32-exception-compatibility.integration.test.mts",
+      "tests/wbint-t32-exception-authorization.browser.test.mts"
+    ],
+    "wbint-t32-compat": [
+      "tests/wbint-t32-exception-contract.test.mts",
+      "tests/wbint-t32-exception-compatibility.integration.test.mts"
+    ],
+    "wbint-t32-browser-risk": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts"
     ]
   },
   "subprocess_entries": {
