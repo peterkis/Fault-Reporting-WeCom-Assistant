@@ -14,6 +14,7 @@ export type CommunicationDeliveryView = ReturnType<typeof deliveryView>;
 type TxExecutor = <T>(operation: (transaction: PostgresTransaction) => Promise<T>) => Promise<T>;
 type ClockOptions = { pool?: PostgresPool; now?: () => Date; nowEpochMs?: (() => unknown) | null };
 export interface CommunicationWorkerOptions extends ClockOptions {
+  attemptAdmission?:((input:{transaction:PostgresTransaction;deliveryId:string})=>Promise<boolean>)|null;
   sender?: { send(request: CommunicationSenderRequest): Promise<CommunicationSenderResult> }; enabled?: boolean; batchSize?: number; leaseMs?: number; sendTimeoutMs?: number; retryBaseMs?: number; maxAttempts?: number; maxDeliveriesPerTargetWindow?: number; rateLimitWindowMs?: number;
 }
 export interface ReconciliationInput { deliveryId: string; expectedStatus: 'RECONCILIATION_REQUIRED'; resolution: 'CONFIRMED_SENT' | 'CONFIRMED_NOT_SENT_REQUEUE' | 'CANCEL'; reasonCode: string; authorized?: boolean; transaction?: PostgresTransaction | null }
@@ -107,8 +108,10 @@ export function createCommunicationDeliveryWorker({
   maxAttempts = 5,
   maxDeliveriesPerTargetWindow = 20,
   rateLimitWindowMs = 60_000,
+  attemptAdmission=null,
 }: CommunicationWorkerOptions = {}) {
   if (typeof enabled !== 'boolean' || !sender || typeof sender.send !== 'function'
+    || (attemptAdmission!==null&&typeof attemptAdmission!=='function')
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') throw new TypeError('Communication worker configuration is invalid.');
   validatePositiveIntegers({ batchSize, leaseMs, sendTimeoutMs, retryBaseMs, maxAttempts, maxDeliveriesPerTargetWindow, rateLimitWindowMs });
   if (batchSize > 20 || sendTimeoutMs > leaseMs) throw new TypeError('Communication worker limits are invalid.');
@@ -198,6 +201,10 @@ export function createCommunicationDeliveryWorker({
   async function startClaim(claim: ClaimedDelivery) {
     const startedAt = validClock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
+      if(attemptAdmission&&!await attemptAdmission({transaction,deliveryId:claim.id})){
+        const cancelled=await transaction.query<AttemptRow>(`UPDATE communication.delivery SET status='CANCELLED',side_effect_state='NOT_ATTEMPTED',attempt_count=attempt_count+1,lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,send_started_at=NULL,send_started_epoch_ms=NULL,last_error_code='COMMUNICATION_DESTINATION_NO_LONGER_ELIGIBLE',updated_at=$3::timestamp without time zone WHERE id=$1::uuid AND status='LEASED' AND lease_token=$2::uuid RETURNING attempt_count`,[claim.id,claim.lease_token,startedAt.local_datetime]);
+        const count=cancelled.rows[0]?.attempt_count;if(count!==undefined)await transaction.query(`INSERT INTO communication.delivery_attempt(delivery_id,attempt_no,outcome,side_effect_state,error_code,started_at,started_epoch_ms,completed_at,completed_epoch_ms) VALUES($1::uuid,$2,'CANCELLED','NOT_ATTEMPTED','COMMUNICATION_DESTINATION_NO_LONGER_ELIGIBLE',$3::timestamp without time zone,$4::bigint,$3::timestamp without time zone,$4::bigint)`,[claim.id,count,startedAt.local_datetime,startedAt.epoch_ms]);return null;
+      }
       const updated = await transaction.query<AttemptRow>(
         `UPDATE communication.delivery
             SET status = 'SENDING', attempt_count = attempt_count + 1,
@@ -370,6 +377,7 @@ export function createCommunicationDeliveryWorker({
 
 export function createCommunicationReconciliationPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
+    || (attemptAdmission!==null&&typeof attemptAdmission!=='function')
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Reconciliation port configuration is invalid.');
   return Object.freeze({
     async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false, transaction = null }: ReconciliationInput) {
@@ -428,6 +436,7 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
 
 export function createCommunicationDeliveryOperatorPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
+    || (attemptAdmission!==null&&typeof attemptAdmission!=='function')
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Delivery operator port configuration is invalid.');
   return Object.freeze({
     async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY', transaction = null }: DeliveryRetryInput) {

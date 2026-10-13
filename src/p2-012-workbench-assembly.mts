@@ -18,6 +18,7 @@ import { flags } from './p2-012-domain-contracts.mjs';
 import { fail } from './p2-012-domain-contracts.mjs';
 import { createP2016Runtime } from './p2-016-runtime.mjs';
 import { createIncidentCorrelationWorker } from './p2-015-incident-correlation.mjs';
+import {createIncidentPublicProgressAdmission} from './p2-012-public-progress-admission.mjs';
 import {publicProgressSchemaReady} from './p2-012-public-progress-schema.mjs';
 import {createPublicProgressNotifications} from './p2-012-public-progress-notifications.mjs';
 import {internalNoteSchemaReady} from './p2-012-internal-note-schema.mjs';
@@ -32,7 +33,8 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i
   if(f.INCIDENT_CORRELATION_ENABLED&&(options.gatewayEnabled||options.senderEnabled)){
     if(!['live','scope','send','publicNotice','privateNotice'].every(k=>incidentLiveApproval?.[k as keyof P2012LiveApproval]===true))fail('LIVE_APPROVAL_REQUIRED',403);
   }
-  return createP2016Runtime({...options,incidentExtensionFactory:context=>createP2012WorkbenchExtension({
+  const admission=createIncidentPublicProgressAdmission({enabled:f.INCIDENT_CORRELATION_ENABLED&&incidentPublicProgressEnabled});
+  return createP2016Runtime({...options,deliveryAttemptAdmission:async input=>(!options.deliveryAttemptAdmission||await options.deliveryAttemptAdmission(input))&&await admission(input),incidentExtensionFactory:context=>createP2012WorkbenchExtension({
     ...context,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,internalNotesEnabled:incidentInternalNotesEnabled,publicProgressEnabled:incidentPublicProgressEnabled,communicationAppend:options.communicationAppend})});
 }
 export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,communicationAppend}: ExtensionOptions){

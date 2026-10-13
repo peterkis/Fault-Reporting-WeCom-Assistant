@@ -329,6 +329,7 @@
     "contracts/workbench_incident_public_progress_command.schema.json",
     "contracts/workbench_incident_public_progress_page.schema.json",
     "contracts/workbench_incident_public_progress_delivery_page.schema.json",
-    "database/migrations/058_workbench_incident_public_progress.sql"
+    "database/migrations/058_workbench_incident_public_progress.sql",
+    "contracts/workbench_incident_public_progress_capability.schema.json"
   ]
 }
