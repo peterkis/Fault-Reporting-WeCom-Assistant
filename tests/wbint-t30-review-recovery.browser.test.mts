@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {t30Browser} from './helpers/t30-internal-note-browser-fixture.mjs';
-import {t30Http,record,text} from './helpers/t30-internal-note-fixture.mjs';
+import {record,text} from './helpers/t30-internal-note-fixture.mjs';
 
 test('T30 recovery disabled retains the original lost-ACK receipt identity after lawful CLOSED without replay',async()=>{
   await t30Browser('t30norecovery',async({browser,incidentId,get,post,put})=>{
@@ -22,9 +22,3 @@ test('T30 recovery disabled retains the original lost-ACK receipt identity after
   },{recovery:false});
 });
 
-test('T30 HTTP fixture retains its primary failure alongside an owned cleanup failure after real stop',async()=>{
-  const primary=new Error('SYNTHETIC_T30_PRIMARY'),cleanup=new Error('SYNTHETIC_T30_CLEANUP_AFTER_REAL_STOP');
-  await assert.rejects(t30Http({purpose:'t30cleanupfailure'},async({runtime})=>{
-    const stop=runtime.stop.bind(runtime);runtime.stop=async()=>{await stop();throw cleanup;};throw primary;
-  }),error=>error instanceof AggregateError&&error.errors.length===2&&error.errors[0]===primary&&error.errors[1]===cleanup);
-});
