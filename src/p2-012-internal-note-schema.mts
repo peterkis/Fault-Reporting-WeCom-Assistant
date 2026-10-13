@@ -12,9 +12,10 @@ export async function internalNoteSchemaInventory(tx:PostgresTransaction){
   return {columns:columns.rows,constraints:constraints.rows,indexes:indexes.rows};
 }
 export const internalNoteSchemaHash=(value:Awaited<ReturnType<typeof internalNoteSchemaInventory>>)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+export const INTERNAL_NOTE_SCHEMA_SHA256='485113befa00e22cbc3fcd54bf4f7eb30c13cd7d4fa072e724d91b8cc6e982e8';
 export async function internalNoteSchemaReady(tx:PostgresTransaction){
   try{
     const inventory=await internalNoteSchemaInventory(tx);
-    return inventory.columns.length===2&&inventory.constraints.length===3&&inventory.constraints.every(c=>c.convalidated===true)&&inventory.indexes.length===1&&inventory.indexes[0]?.indisvalid===true&&inventory.indexes[0]?.indisready===true;
+    return internalNoteSchemaHash(inventory)===INTERNAL_NOTE_SCHEMA_SHA256;
   }catch{return false;}
 }
