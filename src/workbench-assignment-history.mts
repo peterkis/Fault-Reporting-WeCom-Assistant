@@ -44,9 +44,9 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
    LEFT JOIN pilot_ticket.ticket_handling_cycle_event link ON link.ticket_id=e.ticket_id AND link.ticket_event_id=e.event_id
    LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.ticket_id=link.ticket_id AND c.id=link.cycle_id
    LEFT JOIN LATERAL (SELECT count(*)=e.event_ordinal-1 AND min(h.event_ordinal)=1
-     AND bool_or(h.event_ordinal=1 AND h.event_type='ticket.created')
+     AND bool_or(h.event_ordinal=1 AND (h.event_type='ticket.created' OR (h.event_type='ticket.queued' AND h.old_status='NEW')))
      AND bool_and(h.event_type NOT IN (${assignmentTypes})) AS proven
-     FROM (SELECT event_ordinal,event_type FROM pilot_ticket.ticket_event h WHERE h.ticket_id=e.ticket_id
+     FROM (SELECT event_ordinal,event_type,old_status FROM pilot_ticket.ticket_event h WHERE h.ticket_id=e.ticket_id
        AND h.event_ordinal<e.event_ordinal ORDER BY h.event_ordinal DESC LIMIT 200) h
      WHERE c.cycle_no=1 AND c.first_responsibility_event_id=e.event_id AND e.event_type='ticket.accepted'
        AND e.operator_type='PILOT_USER' AND e.operator_id=c.first_responsibility_principal_id::text) prefix ON TRUE
