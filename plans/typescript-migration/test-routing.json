@@ -5200,6 +5200,15 @@
       "node_flags": [],
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "node_flags": [],
+      "requires_powershell": false,
+      "requires_browser": true,
+      "requires_database": true,
+      "requires_pyyaml": false,
+      "path": "tests/t13-history-window.browser.test.mts",
+      "mode": "STAGED_RUNTIME"
     }
   ],
   "legacy_commands": {
@@ -6266,7 +6275,8 @@
       "tests/t10-waiting.browser.test.mts",
       "tests/t13-production-history.browser.test.mts",
       "tests/t13-contract-boundaries.test.mts",
-      "tests/t13-history-boundaries.integration.test.mts"
+      "tests/t13-history-boundaries.integration.test.mts",
+      "tests/t13-history-window.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6556,13 +6566,17 @@
       "tests/wbint-t13-assignment-history.integration.test.mts",
       "tests/t13-contract-boundaries.test.mts",
       "tests/t13-history-boundaries.integration.test.mts",
-      "tests/t13-production-history.browser.test.mts"
+      "tests/t13-production-history.browser.test.mts",
+      "tests/t13-history-window.browser.test.mts"
     ],
     "wbint-t13-contract-boundaries": [
       "tests/t13-contract-boundaries.test.mts"
     ],
     "wbint-t13-history-boundaries": [
       "tests/t13-history-boundaries.integration.test.mts"
+    ],
+    "wbint-t13-history-window": [
+      "tests/t13-history-window.browser.test.mts"
     ]
   },
   "subprocess_entries": {
