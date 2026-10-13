@@ -47,6 +47,8 @@ native_blocking_edges: 76
 
 2026-10-13 T10整票收口：原七项、真实69d5619e同制品严格0／0／0与41 PASS、适用工具外层20 PASS／native0、独立两轴及最终文档复核、3193项归档和精确自有停止均父核；70ceb31d安全快进，[#65完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)。当前 **27／43 CLOSED、16 OPEN**，见[执行记录](execution/t10.md)。原业务失败、汇总器FAIL、observer错误及5d逐原SHA恢复限制保留。WBINT-02／A02所属T02、T04–T10八票均本地交付、原生CLOSED/completed；此前逐票“A02仍未完成”记载为当次历史，当前来源工作包本地完成。下一连续整票T12；其它SOURCE准备不计验收，默认关闭，全43最终审查与工作树清理继续待完成。
 
+2026-10-13 T12 原七项经父独立核对，82729c90由独立合并代理安全快进，[#67完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)。d279本票21入口／36 PASS及关联前六入口21 PASS保留原被测身份；c9受影响10 PASS与build／strict／artifact原生0／0／0、适用工具20 PASS及独立retired1 PASS已核对，111／113扫描失败、118缺依赖setup FAIL与全部旧RED／NOT_RUN保持。最终纯文档两轴无新增问题、归档原件和精确自有停机已核验。当前 **28／43 CLOSED、15 OPEN**，见[逐项执行记录](execution/t12.md)。WBINT-03／A03已完成T11／T12切片，仍待T13；下一连续整票T13，其唯一原生阻塞#62已完成，#67仅为运行排程前序。默认关闭，全43最终审查和工作树清理继续待完成。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -112,9 +114,10 @@ native_blocking_edges: 76
   - **来源：** WBINT-03 / A03
   - **本地执行：** [LOCAL_VERIFIED：七项验收、独立摘要、原子关闭与恢复承诺](execution/t11.md)已整票集成并[关票](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66#issuecomment-6051952458)，未发布／启用；T12／T13及A03整组另行验收。
 
-- [ ] **T12** — [#67 同事接管并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67)
+- [x] **T12** — [#67 同事接管并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67)
   - **Blocked by:** [#62](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)、[#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-03 / A03
+  - **本地执行：** [LOCAL_VERIFIED：七项验收、原子接管关闭与原操作恢复](execution/t12.md)已集成并[关票](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)，原RED／被测身份／自有清理保持；未发布／启用，T13与A03整组仍待。
 
 - [ ] **T13** — [#68 查看完整接单与交接链](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68)
   - **Blocked by:** [#62](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)
