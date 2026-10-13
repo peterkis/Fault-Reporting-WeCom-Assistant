@@ -4,7 +4,7 @@ import {appendCommunication} from './p2-004-communication-core.mjs';
 import {randomUUID} from 'node:crypto';
 import {fail} from './p2-012-domain-contracts.mjs';
 export const PUBLIC_PROGRESS_TEMPLATE='INCIDENT_PUBLIC_PROGRESS_DIRECT';
-export function createPublicProgressNotifications({testLabel=false,communicationAppend=appendCommunication}:{testLabel?:boolean;communicationAppend?:typeof appendCommunication}={}){
+export function createPublicProgressNotifications({testLabel=false,communicationAppend=appendCommunication}:{testLabel?:boolean;communicationAppend?:typeof appendCommunication|undefined}={}){
   return async({transaction:tx,incident,eventId,summary}:{transaction:PostgresTransaction;incident:Incident;eventId:string;summary:string})=>{
     const destinations=await tx.query<{subscription_id:string;leg_id:string;binding:string;account:string;target:string}>(`SELECT s.id::text AS subscription_id,l.id::text AS leg_id,s.reporter_identity_hash AS binding,i.source_bot_id AS account,i.reporter_wecom_userid AS target
       FROM incident.reporter_subscription s JOIN intake.channel_leg l ON l.id=s.direct_channel_leg_id AND l.reporter_identity_hash=s.reporter_identity_hash
