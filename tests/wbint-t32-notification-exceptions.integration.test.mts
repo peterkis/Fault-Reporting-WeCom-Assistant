@@ -27,7 +27,7 @@ test('T32 public exceptions paginate only current readable Ticket failures and r
       listenPort: Number(new URL(original.origin).port),
       principalIds: [original.principals[0]?.id ?? '', original.outsider.id, original.principals[1]?.id ?? ''],
       flags: {TICKET_LIFECYCLE_WORKBENCH_ENABLED: true as const, REPORTER_TIMELINE_ENABLED: true, WECOM_TEMPLATE_CARD_ENABLED: true},
-      ticketSelfHandlingEnabled: true, ticketRoundNotificationsEnabled: true,
+      ticketSelfHandlingEnabled: true, ticketStaffCompletionEnabled: true, ticketRoundNotificationsEnabled: true,
       externalSendEnabled: true, notificationExceptionsEnabled: true,
       reporterOrigin: 'https://reporter.example.test', reporterHmacSecret: entryKey,
       reporterPolicy: 'MEMBER_REQUIRED' as const, reporterMemberEntry: entryConfig,
