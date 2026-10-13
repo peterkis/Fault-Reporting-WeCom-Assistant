@@ -3,8 +3,8 @@ import type { P2016RuntimeOptions, P2016EnabledRuntime, P2016DisabledRuntime, P2
 import type { G1RuntimeExtension } from './p2-g1-runtime.mjs';
 import type { P2012NotificationPolicy } from './p2-012-notification-policy.mjs';
 export type P2012LiveApproval = Partial<Record<'live' | 'scope' | 'send' | 'publicNotice' | 'privateNotice', boolean>>;
-export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean }
-type ExtensionOptions = { pool: PostgresPool; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'] };
+export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentInternalNotesEnabled?:boolean }
+type ExtensionOptions = { pool: PostgresPool; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; internalNotesEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'] };
 export type P2012WorkbenchExtension = ReturnType<typeof createP2012WorkbenchExtension>;
 import { readFile } from 'node:fs/promises';
 import { createP2012IncidentQuery } from './p2-012-incident-query.mjs';
@@ -18,33 +18,34 @@ import { flags } from './p2-012-domain-contracts.mjs';
 import { fail } from './p2-012-domain-contracts.mjs';
 import { createP2016Runtime } from './p2-016-runtime.mjs';
 import { createIncidentCorrelationWorker } from './p2-015-incident-correlation.mjs';
+import {internalNoteSchemaReady} from './p2-012-internal-note-schema.mjs';
 
 export function createP2012Runtime(options: P2012RuntimeOptions & { flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true } }): P2016EnabledRuntime;
 export function createP2012Runtime(options?: P2012RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime;
-export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
-  if(typeof incidentCandidateWorkspaceEnabled!=='boolean')fail();
+export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,incidentInternalNotesEnabled=false,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
+  if(typeof incidentCandidateWorkspaceEnabled!=='boolean'||typeof incidentInternalNotesEnabled!=='boolean')fail();if(incidentInternalNotesEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentTestLabel!=='boolean'||typeof incidentBackgroundMaintenance!=='boolean')fail();
   const f=flags(incidentFlags);
   if(f.INCIDENT_CORRELATION_ENABLED&&(options.gatewayEnabled||options.senderEnabled)){
     if(!['live','scope','send','publicNotice','privateNotice'].every(k=>incidentLiveApproval?.[k as keyof P2012LiveApproval]===true))fail('LIVE_APPROVAL_REQUIRED',403);
   }
   return createP2016Runtime({...options,incidentExtensionFactory:context=>createP2012WorkbenchExtension({
-    ...context,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,communicationAppend:options.communicationAppend})});
+    ...context,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,internalNotesEnabled:incidentInternalNotesEnabled,communicationAppend:options.communicationAppend})});
 }
-export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,communicationAppend}: ExtensionOptions){
-  if(typeof candidateWorkspaceEnabled!=='boolean')fail();
+export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,internalNotesEnabled=false,communicationAppend}: ExtensionOptions){
+  if(typeof candidateWorkspaceEnabled!=='boolean'||typeof internalNotesEnabled!=='boolean')fail();
   if(typeof backgroundMaintenance!=='boolean')fail();
-  const f=flags(featureFlags),enabled=f.INCIDENT_CORRELATION_ENABLED,query=createP2012IncidentQuery({pool,enabled});
+  const f=flags(featureFlags),enabled=f.INCIDENT_CORRELATION_ENABLED,query=createP2012IncidentQuery({pool,enabled,internalNotesEnabled});
   const projector=createP2012RealtimeProjector({pool,enabled,wakeup:realtime?.wakeup});
   const notifications=createP2012NotificationPolicy({enabled,publicEnabled:f.INCIDENT_PUBLIC_NOTICE_ENABLED,privateEnabled:f.INCIDENT_PRIVATE_NOTICE_ENABLED,testLabel,communicationAppend});
-  const commands=createP2012IncidentCommandService({pool,enabled,query,notifications,realtime:projector,maintenanceEnabled:false});
+  const commands=createP2012IncidentCommandService({pool,enabled,query,notifications,realtime:projector,maintenanceEnabled:false,internalNotesEnabled});
   const maintenance=createP2012IncidentCommandService({pool,enabled,query,realtime:projector,maintenanceEnabled:true});
   const importer=createP2012CandidateReviewStore({pool,enabled});
   const correlation=createIncidentCorrelationWorker({pool,enabled});
-  return Object.freeze({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,
-    async ready(){if(!enabled)return true;try{return (await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
+  return Object.freeze({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,
+    async ready(){if(!enabled)return true;try{return (!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
     reporterAdapter:enabled?createP2012ReporterTimelineAdapter({pool,enabled}):null,
-    authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled}),
+    authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled}),
     async staticHandler(pathname: string,response: Parameters<NonNullable<G1RuntimeExtension['staticHandler']>>[1]){
       const files: Record<string, readonly [string, string]>={'/workbench/incidents':['incidents.html','text/html'],'/static/workbench/incidents.js':['incidents.js','text/javascript']};
       const item=files[pathname];if(!item)return false;

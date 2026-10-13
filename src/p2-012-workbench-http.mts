@@ -7,12 +7,18 @@ import { guard,fail,p2012HttpStatusForCommandResult } from './p2-012-domain-cont
 const ROUTES=Object.freeze({'start-review':'START_REVIEW',reject:'REJECT_CANDIDATE',confirm:'CONFIRM_INCIDENT',
   'start-investigating':'START_INVESTIGATING','correct-scope':'CORRECT_SCOPE','primary-ticket':'SET_PRIMARY_TICKET',
   'reports/link':'LINK_REPORT',resolve:'RESOLVE_INCIDENT',close:'CLOSE_INCIDENT'});
-export function createP2012WorkbenchHttp({query,commands,enabled=false,candidateWorkspaceEnabled=false}: { query: P2012IncidentQuery; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean;candidateWorkspaceEnabled?:boolean }){
+export function createP2012WorkbenchHttp({query,commands,enabled=false,candidateWorkspaceEnabled=false,internalNotesEnabled=false}: { query: P2012IncidentQuery; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean;candidateWorkspaceEnabled?:boolean;internalNotesEnabled?:boolean }){
   return (async({request,response,url,authContext,readJson,validateWriteRequest,json}: Parameters<G1AuthenticatedExtension>[0])=>{
     if(!/^\/api\/(incident-candidates|incidents)(?:\/|$)/u.test(url.pathname))return false;guard(enabled);
     const candidate=url.pathname.startsWith('/api/incident-candidates'),root=candidate?'/api/incident-candidates':'/api/incidents',kind=candidate?'candidate':'incident';
     const suffix=url.pathname.slice(root.length),match=/^\/([a-f0-9-]{36})(?:\/(.*))?$/iu.exec(suffix);
+    const internal=!candidate&&match?.[2]==='internal-notes';
+    if(internal&&!internalNotesEnabled)fail('NOT_FOUND',404);
     if(request.method==='GET'){
+      if(internal&&match){
+        if([...url.searchParams.keys()].some(k=>!['cursor','limit'].includes(k))||[...url.searchParams.keys()].some(k=>url.searchParams.getAll(k).length!==1))fail();
+        json(response,200,await query.internalNotes({authContext,incidentId:match[1] as string,cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;
+      }
       const receipt=match?/^commands\/([a-f0-9-]{36})$/iu.exec(match[2]??''):null;
       if(receipt&&match){
         if(!candidateWorkspaceEnabled)fail('NOT_FOUND',404);
@@ -33,6 +39,7 @@ export function createP2012WorkbenchHttp({query,commands,enabled=false,candidate
       const version=body.expected_candidate_version??body.expected_row_version;
       if(request.headers['if-match']!=='"'+version+'"')fail('VERSION_CONFLICT',409);
       let action=(ROUTES as Record<string, string>)[(match[2] as string)],extra: Record<string, string | undefined>={};
+      if(internal)action='ADD_INTERNAL_NOTE';
       const report=/^reports\/([a-f0-9-]{36})\/(unlink|mark-recovered)$/iu.exec(match[2]??'');
       const sub=/^subscriptions\/([a-f0-9-]{36})\/(pause|resume)$/iu.exec(match[2]??'');
       if(report){action=report[2]==='unlink'?'UNLINK_REPORT':'MARK_REPORTER_RECOVERED';extra.incident_report_id=report[1];}
