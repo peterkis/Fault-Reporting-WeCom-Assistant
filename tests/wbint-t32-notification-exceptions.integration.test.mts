@@ -91,6 +91,6 @@ test('T32 public exceptions paginate only current readable Ticket failures and r
       assert.equal(/T32_INTERNAL_FORBIDDEN|target_id|target_hash|channel_account|provider_message|raw_identity|content_hash|binding_hash/u.test(JSON.stringify([page, second])), false);
       assert.equal(senderCalls, 3, 'reading does not deliver or retry');
     } catch (error) { primaryError = error; throw error; }
-    finally { await closeBrowserTestResources(primaryError, [async () => {await runtime.stop(); assert.equal(runtime.server.listening, false);}]); }
+    finally { await closeBrowserTestResources([async () => {await runtime.stop(); assert.equal(runtime.server.listening, false);}], primaryError); }
   }, {manualRoundConsumption: true, externalSendEnabled: true});
 });
