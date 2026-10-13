@@ -199,6 +199,7 @@
     "tests/wbint-t31-public-progress.browser.test.mts",
     "tests/wbint-t31-public-progress.integration.test.mts",
     "tests/wbint-t31-recovery-results.browser.test.mts",
+    "tests/wbint-t31-unmounted-worker.integration.test.mts",
     "tests/web01-workbench.browser.test.mjs",
     "tests/web01-workbench.integration.test.mjs",
     "tests/web01-workbench.test.mts",
