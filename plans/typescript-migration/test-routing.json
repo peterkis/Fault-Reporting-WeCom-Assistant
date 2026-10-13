@@ -6619,6 +6619,12 @@
     "wbint-t30-next-risk": [
       "tests/wbint-t30-schema.integration.test.mts",
       "tests/wbint-t30-internal-note.browser.test.mts"
+    ],
+    "wbint-t30-schema": [
+      "tests/wbint-t30-schema.integration.test.mts"
+    ],
+    "wbint-t30-browser": [
+      "tests/wbint-t30-internal-note.browser.test.mts"
     ]
   },
   "subprocess_entries": {
