@@ -5421,11 +5421,10 @@
       "path": "tests/wbint-t32-exception-contract.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
-      "requires_database": true,
+      "requires_database": false,
       "requires_browser": false,
       "requires_powershell": false,
-      "requires_pyyaml": false,
-      "requires_postgres": false
+      "requires_pyyaml": false
     },
     {
       "path": "tests/wbint-t32-exception-compatibility.integration.test.mts",
@@ -5434,8 +5433,7 @@
       "requires_database": true,
       "requires_browser": false,
       "requires_powershell": false,
-      "requires_pyyaml": false,
-      "requires_postgres": true
+      "requires_pyyaml": false
     },
     {
       "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
@@ -5444,8 +5442,7 @@
       "requires_database": true,
       "requires_browser": true,
       "requires_powershell": false,
-      "requires_pyyaml": false,
-      "requires_postgres": true
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
