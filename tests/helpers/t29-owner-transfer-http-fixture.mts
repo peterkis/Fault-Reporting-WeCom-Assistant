@@ -21,9 +21,9 @@ type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
 type FutureHostOptions=P2012RuntimeOptions & IncidentOwnerTransferHostOptions & {flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}};
 export interface OwnerTransferHttpContext {
   pool:PostgresPool;f:Fixture;
-  origin:string;cookies:ReadonlyArray<Record<string,unknown>>;
+  origin:string;cookies:ReadonlyArray<Record<string,unknown>>;databaseUrl:string;
   get:(path:string,actor?:number)=>Promise<HttpResult>;
-  post:(path:string,body:Record<string,unknown>,actor?:number)=>Promise<HttpResult>;
+  post:(path:string,body:Record<string,unknown>,actor?:number,headers?:Readonly<Record<string,string>>)=>Promise<HttpResult>;
   confirm:()=>Promise<string>;
   posts:ReadonlyArray<{path:string;body:string}>;
 }
@@ -34,14 +34,12 @@ const closeProbe=(server:Server)=>new Promise<void>((resolve,reject)=>server.clo
  * a real054 migrator belongs in this own fixture's separately preserved successor.
  * The future flag is declared input, currently unimplemented; no missing-module catch.
  */
-export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>Promise<void>,options:{recovery?:boolean;ownerEnabled?:boolean}={}){
+export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>Promise<void>,options:{recovery?:boolean;ownerEnabled?:boolean;ddl?:boolean;ownerDDL?:boolean;notes?:boolean;publication?:boolean}={}){
   let outerError:unknown;
   try{
     await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t29ownerhttp',run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
       await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
-      await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});
-      await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});
-      await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});
+      if(options.ddl??true){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});if(options.ownerDDL??true)await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});}
       const f=await fixtureP2012(pool,{reporters:3});
       let probe:Server|undefined,runtime:P2016EnabledRuntime|undefined,primaryError:unknown;
       try{
@@ -55,7 +53,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
           publicOrigin:origin,listenPort:port,
           flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},
           incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,
-          incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:false,
+          incidentInternalNotesEnabled:options.notes??false,incidentPublicProgressEnabled:options.publication??false,
           incidentOwnerTransferEnabled:options.ownerEnabled??true,workbenchDraftRecoveryEnabled:options.recovery??false,externalSendEnabled:false,
         };
         runtime=createP2012Runtime(hostOptions);
@@ -68,7 +66,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
           return {status:response.status,body:record(await response.json())};
         };
         for(let actor=0;actor<cookies.length;actor++){const response=await get('/api/lifecycle/bootstrap',actor);assert.equal(response.status,200);csrf.push(text(response.body.csrf_token));}
-        const post=async(path:string,body:Record<string,unknown>,actor=0):Promise<HttpResult>=>{
+        const post=async(path:string,body:Record<string,unknown>,actor=0,headers:Readonly<Record<string,string>>={}):Promise<HttpResult>=>{
           const cookie=cookies[actor],token=csrf[actor];assert.ok(cookie&&token);
           const serialized=JSON.stringify(body);posts.push({path,body:serialized});
           const response=await fetch(origin+path,{method:'POST',headers:{
@@ -76,6 +74,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
             'content-type':'application/json','x-csrf-token':token,
             'idempotency-key':String(body.client_command_id),
             'if-match':'"'+String(body.expected_candidate_version??body.expected_row_version)+'"',
+            ...headers,
           },body:serialized});
           return {status:response.status,body:record(await response.json())};
         };
@@ -89,7 +88,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
             selected_report_refs:f.reports.map(report=>text(record(report).decisionId)),primary_ticket_id:null});
           assert.equal(response.status,200,JSON.stringify(response.body));return text(response.body.result_ref_id);
         };
-        await run({pool,f,get,post,confirm,posts,origin,cookies});
+        await run({pool,f,get,post,confirm,posts,origin,cookies,databaseUrl});
       }catch(error){primaryError=error;}
       await closeBrowserTestResources([
         async()=>{if(probe?.listening)await closeProbe(probe);probe?.removeAllListeners();assert.equal(probe?.listening??false,false);},
