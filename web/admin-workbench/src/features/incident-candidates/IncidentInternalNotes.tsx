@@ -16,7 +16,7 @@ const denied=(error:unknown)=>error instanceof ApiError&&[401,403,404].includes(
 export function IncidentInternalNotes({principal,detail,otherBlocked,onBlockedChange,onChanged}:{principal:Principal;detail:IncidentResult;otherBlocked:boolean;onBlockedChange:(value:boolean)=>void;onChanged:()=>void}){
   const client=useQueryClient(),incidentId=detail.id,scope={principal:principal.principal_id,kind:'incident' as const,id:incidentId,purpose:'incident-internal-note'};
   const [value,setValue]=useState<Value>(EMPTY),[pending,setPending]=useState<InternalNoteOperation|null>(null),[state,setState]=useState<'idle'|'preparing'|'submitting'|'unknown'|'checking'|'failed'|'committed'|'denied'>('idle'),[message,setMessage]=useState(''),[review,setReview]=useState(false),[checked,setChecked]=useState(false),[revoked,setRevoked]=useState(false);
-  const request=useRef<AbortController|null>(null),restoreRequest=useRef<AbortController|null>(null),revision=useRef(0),known=useRef(false),stage=useRef<'session'|'incident'>('session');
+  const request=useRef<AbortController|null>(null),restoreRequest=useRef<AbortController|null>(null),revision=useRef(0),known=useRef(false),closedHandled=useRef(false),stage=useRef<'session'|'incident'>('session');
   const readable=principal.incident_internal_notes_enabled===true&&allowed(principal.roles,detail.confirmed_scope)&&allowed(detail.roles,detail.confirmed_scope)&&!revoked;
   const queryKey=['incident-internal-notes',principal.principal_id,incidentId],history=useInfiniteQuery({queryKey,enabled:readable,initialPageParam:null as string|null,queryFn:({pageParam,signal})=>internalNoteApi.page(incidentId,pageParam,signal),getNextPageParam:page=>page.next_cursor??undefined,maxPages:3});
   const clear=()=>{setValue(EMPTY);setPending(null);setChecked(false);};
@@ -35,11 +35,17 @@ export function IncidentInternalNotes({principal,detail,otherBlocked,onBlockedCh
     decode:text=>{const input:unknown=JSON.parse(text);if(!input||typeof input!=='object'||Array.isArray(input))throw new DraftError('DRAFT_CORRUPT');const r=input as Record<string,unknown>,v=r.value;if(Object.keys(r).length!==3||r.schema!==1||!v||typeof v!=='object'||Array.isArray(v))throw new DraftError('DRAFT_CORRUPT');const field=v as Record<string,unknown>;if(Object.keys(field).length!==2||typeof field.text!=='string'||[...field.text].length>2000||field.version!==null&&(typeof field.version!=='string'||!/^[1-9][0-9]{0,18}$/u.test(field.version)||BigInt(field.version)>9223372036854775807n))throw new DraftError('DRAFT_CORRUPT');const op=r.pending===null?null:decodeInternalOperation(r.pending,incidentId);if(op&&(op.body.text!==field.text||op.body.expected_row_version!==field.version))throw new DraftError('DRAFT_CORRUPT');return {value:{text:field.text,version:field.version as string|null},pending:op};},
     authorize:async signal=>{const result=await authorize(signal);return result.fresh.incident_internal_note_draft_recovery_enabled===true&&result.incident.status!=='CLOSED';},onAuthorityFailure:revoke,
     onRestore:copy=>{const controller=new AbortController();restoreRequest.current?.abort();restoreRequest.current=controller;void authorize(controller.signal).then(({incident,requireCurrent})=>{requireCurrent();if(restoreRequest.current!==controller)return;if(incident.status==='CLOSED')throw new DraftError('DRAFT_ACTION_REVOKED');setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('已恢复原 UUID、正文及提交版本；结果未知，不会自动发送。');}}).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller)revoke(error);}).finally(()=>{if(restoreRequest.current===controller)restoreRequest.current=null;});},
-    onOperation:()=>{setState('unknown');setMessage('原操作仍未知；敏感恢复正文不可用，只能只读核对。');},onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;clear();}});
+    onOperation:()=>{setState(known.current?'committed':'unknown');setMessage(known.current?'内部处置已提交；恢复副本清理未确认，只能核对原操作。':'原操作仍未知；敏感恢复正文不可用，只能只读核对。');},onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;clear();}});
   const id=pending?.body.client_command_id??draft.operationId,busy=['preparing','submitting','checking'].includes(state),blocked=busy||state==='unknown'||Boolean(value.text||id);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();restoreRequest.current?.abort();},[]);
   useEffect(()=>{if(denied(history.error)||!readable&&!revoked)revoke(new DraftError('DRAFT_ACTION_REVOKED'));},[history.error,readable,revoked]);
+  useEffect(()=>{
+    if(detail.status!=='CLOSED'||closedHandled.current)return;closedHandled.current=true;
+    revision.current++;request.current?.abort();request.current=null;restoreRequest.current?.abort();restoreRequest.current=null;clear();
+    setState(known.current?'committed':id?'unknown':'idle');setMessage(known.current?'已知提交保留；公共故障已关闭，未提交恢复正文已停止展示。':'公共故障已关闭，未提交恢复正文已停止展示；已有内部历史仍按当前权限读取。');
+    void purgeDrafts({...scope,reason:'revoked'}).catch(()=>setMessage('公共故障已关闭；恢复正文清理未确认，原未知操作仍须只读核对。'));
+  },[detail.status]);
   const refresh=()=>{void history.refetch();onChanged();};
   const settle=async(commandId:string)=>{known.current=true;setState('committed');clear();setMessage('内部处置已提交；没有改变个人工单或发送通知。');const cleaned=await draft.success(commandId);if(!cleaned)setMessage('内部处置已提交；恢复副本清理未确认，禁止新提交，请只读核对重试清理。');refresh();};
   const send=async(op:InternalNoteOperation,replay=false)=>{
