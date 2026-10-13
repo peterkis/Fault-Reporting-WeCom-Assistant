@@ -10,7 +10,7 @@ export type TicketCommand = CommandBase & (
   | { action: 'takeover-and-accept-ticket'; session_id: string; expected_session_row_version: number; target_principal_id?: never; resolver_team_id?: never });
 export interface TicketProjectionInput { transaction: PostgresTransaction; ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent; command?: TicketCommand | null }
 export type TicketRealtimeProjector = ((input: TicketProjectionInput) => Promise<unknown>) & { lock?: (transaction: PostgresTransaction) => Promise<unknown> };
-interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; ticketWaitingActionsEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
+interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; ticketTakeoverCompletionEnabled?: boolean; ticketWaitingActionsEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
 
 import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016 } from './p2-016-ticket-query.mjs';
@@ -41,10 +41,11 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   // The existing exact-key, action-specific and scalar guards above establish this union.
   return result as TicketCommand;
 }
-export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReopenRoundsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
+export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReopenRoundsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
   notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions & {ticketReopenRoundsEnabled?:boolean}) {
   if(typeof ticketReopenRoundsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof ticketTakeoverCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
@@ -74,7 +75,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
           if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
-          if(ticketStaffCompletionEnabled||ticketReopenRoundsEnabled||cycleAware){
+          if(ticketStaffCompletionEnabled||ticketTakeoverCompletionEnabled||ticketReopenRoundsEnabled||cycleAware){
             // Completion and existing commands must take the same stream mutex before receipt FK locks.
             if(realtimeProjector?.lock)await realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
             context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});

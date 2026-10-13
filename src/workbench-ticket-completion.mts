@@ -73,7 +73,14 @@ export function createTicketStaffCompletionService({pool,query,enabled=false,rea
         // Waiting until run() can deadlock with a second UUID upgrading its own FK lock.
         if(realtimeProjector?.lock)await realtimeProjector.lock(tx);else await lockP2016Realtime(tx);
         return query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx});
-      },run:async tx=>{
+      },run:tx=>completeTicketInTransaction({transaction:tx,authContext,command,query,realtimeProjector})});
+    },
+  });
+}
+
+
+/** Existing T11 legal completion, cycle and commitment writes in one caller transaction. */
+export async function completeTicketInTransaction({transaction:tx,authContext,command,query,realtimeProjector=null}:{transaction:PostgresTransaction;authContext:unknown;command:ReturnType<typeof normalizeCompletionCommand>;query:P2016TicketQuery;realtimeProjector?:Projector|null}){
         const {principal,ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx,lock:true});
         if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
         const eligibility=await staffCompletionEligibility(tx,principal,ticket,true),cycle=eligibility.cycle;
@@ -89,7 +96,4 @@ export function createTicketStaffCompletionService({pool,query,enabled=false,rea
         await tx.query('INSERT INTO pilot_ticket.staff_completion_notification_commitment(ticket_id,cycle_id,ticket_event_id,source_intake_id) VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid)',[ticket.id,cycle.id,result.event.event_id,cycle.source_intake_id]);
         for(const entry of results)await realtimeProjector?.({transaction:tx,...entry,command});
         return {ok:true as const,ticket_id:ticket.id,ticket_version:result.ticket.version,ticket_event_id:result.event.event_id,control_event_id:null,completion:{cycle_id:cycle.id,cycle_no:cycle.cycle_no,event_id:result.event.event_id,basis:'STAFF_COMPLETED' as const}};
-      }});
-    },
-  });
 }
