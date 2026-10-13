@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-13
+snapshot_on: 2026-10-14
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -52,6 +52,8 @@ native_blocking_edges: 76
 2026-10-13 T13 原七项已父验收，69afe5c1由独立合并代理安全快进，[#68完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68#issuecomment-6140905877)。真实被测c6ec52保留040严格／build／artifact原生0、042本票17 PASS、相关五文件71项经两窗口通过和044工具外层27 PASS；原043超时FAIL、045字节比较误判及启动观察器整体exit1均保留。两轴源码及最终文档无未解决行动项，原件与精确自有清理已核。当前 **29／43 CLOSED、14 OPEN**，见[接单与交接链执行记录](execution/t13.md)。WBINT-03／A03所属T11–T13均本地交付；下一连续整票T30／#85，其唯一原生#83已完成。默认关闭，全43最终审查和工作树清理仍待。
 
 2026-10-13 T30 原七项经父验收，13872854由独立合并代理安全快进，[#85完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85#issuecomment-6144089454)。真实被测b44cdc保留039严格／build／artifact原生0及040单轮9文件14 PASS；029相关12 PASS仍属61f1，不改绑。两轴源码修补和最终四MD复核收口，1495源码／1921制品、冻结原件及精确自有清理均核实，原FAIL／NOT_REACHED／CONNECT UNKNOWN保留。当前 **30／43 CLOSED、13 OPEN**，见[内部处置与原命令恢复记录](execution/t30.md)。WBINT-10／A10已完成T30，T29／T31仍待；#86唯一原生#85已completed，下一连续整票T31按独立人工安全摘要、预览确认、仅定向有效未暂停个人的既定规则推进。默认关闭，全43最终审查与工作树清理继续待完成。
+
+2026-10-14 T31 原七项已父验收，dd270af3由独立合并代理安全快进，[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。实际功能被测84093163的严格／一次build／artifact及目的403／真实401、原三例恢复已核对；各窗口保留原对象与范围，全部旧FAIL、044清理UNKNOWN／NOT_REACHED保持。源码及文档两轴、3478件保存文件和精确自有清理收口，详见[本票记录](execution/t31.md)。当前 **31／43 CLOSED、12 OPEN**；WBINT-10／A10已完成T30／T31，仍待T29。下一连续整票T32／#87，fresh原生#80／#81／#86均CLOSED/completed，已领取；T33仍待#87。默认关闭，全43最终审查与工作树清理继续待完成。
 
 ## 导航与配置
 
@@ -211,7 +213,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **来源：** WBINT-10 / A10
 
-- [ ] **T31** — [#86 显式发布公共故障安全进展](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86)
+- [x] **T31** — [#86 显式发布公共故障安全进展](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86)
   - **Blocked by:** [#85](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
   - **来源：** WBINT-10 / A10
 

@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-13
+snapshot_on: 2026-10-14
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-13，T30收口）
+## 当前执行状态导航（2026-10-14，T31收口）
+
+GitHub实际快照为 **31／43 CLOSED、12 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t31-20261014.json)。[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。WBINT-10／A10已本地交付T30／T31，T29仍待完成。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T31 / #86 | 原七项经父验收，dd270af3由独立代理安全快进；[独立空白摘要、预览确认、定向个人发布与恢复](execution/t31.md)及既有API同步。新进展不复制内部处置，不广播共享群，个人Ticket事实独立。 |
+| 验证 | 实际功能被测84093163／92996926／MF e5c8814a保留045严格／一次build／artifact原生0，046目的403与真实401两例及047原三例恢复各自通过。032本票15 PASS／034关联32 PASS属于bdbe，040修补关联19 PASS属于2f18，各窗口独立，不相加称full；dd270仅后继两MD，未重绑制品。 |
+| 审查与保全 | 源码两轴及S1／S2修补增量、终稿两MD复核无剩余行动项，H1 LOW为可选。1519源码／1959制品共3478件、60保护原件、40旧SQL（含schema_draft）、历史Evidence及用户六份原件已实际核验；新058为独立增量。 |
+| 集成与清理 | Root已纳入dd270，589入口／123 selections／330资源完整并集、index0。四件Root新物化CRLF与私树原件LF差异分别记录，未归一化或重绑。049已知自有浏览器／原HTTP／隔离库范围归零，050自有PG stop0／status3／PIDnull／单62775 LISTEN0且配置保留，全部自有native终态；044原AggregateError叶原因UNKNOWN、残留断言NOT_REACHED及旧FAIL不改为PASS。 |
+| 来源工作包 | WBINT-10／A10为IN_PROGRESS，T30／T31 LOCAL_VERIFIED，T29仍待；其余12票、全43最终审查及实现工作树清理继续推进。 |
+| 后续 | 已fresh核对T32／#87正文、0评论、ready及原生#80／#81／#86全部CLOSED/completed并领取。下一连续整票为获权通知异常队列；T33重试／核对仍待#87。不从对象卡片、订阅、目的地或旧Incident通知入口扩权，沿各域及用途当前可见性先过滤再分页。 |
+| 边界 | 新用途与恢复默认false，单App／Worker、Gateway单活、SSE32及池预算保持。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进；历史阶段与现场停止线保持。 |
+
+## 历史执行状态导航（2026-10-13，T30收口）
 
 GitHub实际快照为 **30／43 CLOSED、13 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t30-20261013.json)。[#85完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85#issuecomment-6144089454)。WBINT-10／A10仅T30已本地交付，T29／T31仍待完成。
 

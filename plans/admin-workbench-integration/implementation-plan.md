@@ -26,8 +26,8 @@ execution_status: IN_PROGRESS
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | LOCAL_VERIFIED：[T22原七项](execution/t22.md)经父独立核对、合入本地集成并GitHub收口；A07本地完成，默认关闭，未发布／启用 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
-| WBINT-10 | 公共故障责任／记录／发布 | 09 | IN_PROGRESS：[T30内部处置LOCAL_VERIFIED](execution/t30.md)；T29／T31未完成 | A10 |
-| WBINT-11 | 通知异常队列与恢复 | 08、10 | NOT_STARTED | A11 |
+| WBINT-10 | 公共故障责任／记录／发布 | 09 | IN_PROGRESS：[T30内部处置LOCAL_VERIFIED](execution/t30.md)、[T31显式安全发布LOCAL_VERIFIED](execution/t31.md)已父验收、集成并原生CLOSED/completed；T29仍待，A10整组未完成 | A10 |
+| WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：T32／#87已核对原生#80／#81／#86完成状态并领取，进入连续整票实施准备；T33仍待#87，A11尚未验收 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T35个人已读原七项](execution/t35.md)与[T37共享时间原七项](execution/t37.md)均已父核、集成并GitHub关闭；T34仍待整票验收，T36的原生#90已关闭但实施未完成，A12整组未完成；默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
