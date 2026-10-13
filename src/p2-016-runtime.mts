@@ -28,6 +28,7 @@ import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
 import {createWorkbenchConversations} from './workbench-conversations.mjs';
 import {createWorkbenchNotificationExceptions} from './workbench-notification-exceptions.mjs';
+import type {NotificationExceptionIncidentScopePort} from './workbench-notification-exceptions.mjs';
 import {createWorkbenchPersonalRead,createWorkbenchPersonalReadHttp} from './workbench-personal-read.mjs';
 import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench-manual-reports.mjs';
 import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
@@ -42,7 +43,7 @@ type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
 type TicketFacade = ReturnType<typeof createP2016TicketCommandFacade>;
 type ReviewFacade = ReturnType<typeof createP2016ManualReviewFacade>;
 type IncidentReporterAdapter = NonNullable<Parameters<typeof createP2016ReporterTimeline>[0]>['incidentAdapter'];
-export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter;candidateWorkspaceEnabled?:boolean;internalNotesEnabled?:boolean;publicProgressEnabled?:boolean }
+export interface P2016IncidentExtension extends G1RuntimeExtension { notificationExceptionScope?:NotificationExceptionIncidentScopePort; ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter;candidateWorkspaceEnabled?:boolean;internalNotesEnabled?:boolean;publicProgressEnabled?:boolean }
 export interface P2016HttpExtension { handler: ReporterHttpHandler; close(): unknown | Promise<unknown> }
 type WebOAuthPort = import('./p2-g2-wecom-web-oauth.mjs').WeComOAuth;
 export interface P2016ClosurePort extends Pick<ReturnType<typeof createTicketClosureService>, 'runAutoClose' | 'runAutoCloseReminders'> { afterTicketAction: TicketActionAfterHook }
@@ -187,7 +188,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups,followUpSchedules:workbenchFollowUpSchedulesEnabled?followUpSchedules:null,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled,personalReadEnabled:workbenchPersonalReadEnabled,reviews:workbenchManualReviewEnabled?reviews:null});
       const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled});
       attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
-      const notificationExceptions=createWorkbenchNotificationExceptions({pool,query,enabled:notificationExceptionsEnabled,externalSendEnabled});
+      const notificationExceptions=createWorkbenchNotificationExceptions({pool,query,enabled:notificationExceptionsEnabled,externalSendEnabled,incidentScope:incidentExtension?.notificationExceptionScope??null});
       const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups);
       const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled});
