@@ -5281,6 +5281,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "requires_pyyaml": false,
+      "requires_browser": true,
+      "node_flags": [],
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "path": "tests/wbint-t30-review-recovery.browser.test.mts"
     }
   ],
   "legacy_commands": {
