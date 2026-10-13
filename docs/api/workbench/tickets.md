@@ -416,3 +416,20 @@ GET无body，只接受各一次cursor/limit（重复或额外参数400）；limi
 
 候选仅当前 Ticket READ，逐 Session 独立 VIEW 在 LIMIT 前裁剪；default20/max100、稳定 event ordinal cursor、名称/前任/轮次明确 KNOWN/NONE/UNKNOWN，缺初始事实不得用当前负责人回填。真实 Ticket/cycle/Control 及原 composite references 提供事实，返回安全显示而非 private receipt dump。原首例源码已登记，全部 runtime NOT_RUN，原七项 PENDING。候选配置 `workbenchAssignmentHistoryEnabled=false` 尚未装配；无数据库变更、无新事实表/权限，详见 own SOURCE 合同。
 
+
+
+## 2026-10-14 T29 Incident 负责人交接（本地验证，默认关闭）
+
+来源WBINT-10/A10，当前实现/历史证据详见[执行记录](../../../plans/admin-workbench-integration/execution/t29.md)和[合同及事务设计](incident-owner-transfer-design.md)。功能实际被测28230562/tree66a5/MF14719c9d；030本票13PASS和031相关16PASS各保存自己的范围，纯文档后继不重绑被测身份。父验收/Root/GH集成待处理，不称full、业务Gate或生产启用。
+
+| 操作 | 显式宿主选项与合同 |
+| --- | --- |
+| `GET /api/incidents/{incidentId}/owner-transfer-targets` | `incidentOwnerTransferEnabled:true`且当前用途已授权；闭合`{items,next_cursor}`，每人`{id,display_name,teams,teams_truncated}`。有效worker且已经拥有精确Incident READ先过滤后分页；limit默认30/max100，每人20有效组、名称200、cursor2048，页面最多保留三页，不返回隐形人计数。 |
+| `POST /api/incidents/{incidentId}/transfer-owner` | 必填闭合五字段`client_command_id/reason_code/expected_row_version/owner_principal_id/owner_team_id`；team是合法原code或明确null，真实`NONE`是字符串。UUID、原八种reason、string BIGINT版本及Idempotency-Key/精确quoted If-Match、Origin/CSRF/32KiB沿原HTTP fence。成功只返回原六字段Incident ACK。 |
+| `GET /api/incidents/{incidentId}/commands/{commandId}` | 原单ledger新增TRANSFER_OWNER用途白名单；先按当前caller原交接用途授权，再观察原结果。旧COMMITTED只观察原ACK，不因target后失效反转、不给新意图扩权；UNKNOWN沿原UUID/body，manual GET后才可显式重放，不自动POST或换版本。 |
+
+当前caller须ADMIN/DISPATCHER及精确Incident原范围，owner/HANDLER身份不授交接权。原receipt等待后锁稳并重查current active/roles/用途；父版本、target active/role/team membership/exactREAD在同事务重验。非CLOSED仅改原Incident owner字段、版本+1、追加一次HUMAN`incident.owner.transferred`及原ACK，不写个人Ticket/Conversation责任、不产生SSE责任内容或任何外发意图。
+
+内部责任历史只向授权broad事件读面提供actor及previous/next principal/team与原原因/平台秒精度时间，不直返safe_payload，不向HANDLER/Reporter/通知泄漏。正式表单显式选择和一次button POST后fresh GET；不乐观伪成功。known T29 purpose403/404局部清理scope/cache，Session和合法一般Incident READ保留；真实bootstrap401/403或身份会话边界才清Session。迟到结果受generation/cancel约束，不复活清除输入。
+
+054 typed迁移复用原表/ledger，完整17command/20event目录保留055内部处置及058公开进展的shape/列/FK/索引、原SQLchecksum与marker。合法组合仅由完整054 catalog证明，不接受子集或假058 stamp；默认OFF/缺054旧宿主保持可用，新purpose failclosed。冻结四Schema+一DTS、两个first、旧SQL/合同/Evidence不改。关闭新选项保留历史，无破坏性down。全部默认false；资源单App/既有Worker、零新增Gateway/SSE32、池总建议≤8、concurrency1；外部真实服务/send、部署、full/certify/Gate未运行。
