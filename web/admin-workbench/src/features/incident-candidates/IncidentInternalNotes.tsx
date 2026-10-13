@@ -23,7 +23,7 @@ export function IncidentInternalNotes({principal,detail,otherBlocked,onBlockedCh
   const revoke=(error:unknown)=>{
     revision.current++;request.current?.abort();request.current=null;restoreRequest.current?.abort();restoreRequest.current=null;clear();setRevoked(true);client.removeQueries({queryKey});setState(known.current?'committed':'denied');setMessage(known.current?'已知提交结果保留；当前内部用途已失权，内容停止展示。':'当前内部用途已失权，敏感内容停止展示。');
     if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');
-    else void purgeDrafts({...scope,reason:'revoked'}).catch(()=>setMessage('内容已停止展示；恢复副本清理尚未确认，禁止新提交。'));
+    else void purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true}).catch(()=>setMessage('内容已停止展示；恢复副本清理尚未确认，禁止新提交。'));
   };
   async function authorize(signal:AbortSignal){
     const current=captureWorkbenchRead(signal),captured=revision.current,requireCurrent=()=>{current();if(revision.current!==captured)throw new DraftError('DRAFT_ACTION_REVOKED');};stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
@@ -44,7 +44,7 @@ export function IncidentInternalNotes({principal,detail,otherBlocked,onBlockedCh
     if(detail.status!=='CLOSED'||closedHandled.current)return;closedHandled.current=true;
     revision.current++;request.current?.abort();request.current=null;restoreRequest.current?.abort();restoreRequest.current=null;clear();
     setState(known.current?'committed':id?'unknown':'idle');setMessage(known.current?'已知提交保留；公共故障已关闭，未提交恢复正文已停止展示。':'公共故障已关闭，未提交恢复正文已停止展示；已有内部历史仍按当前权限读取。');
-    void purgeDrafts({...scope,reason:'revoked'}).catch(()=>setMessage('公共故障已关闭；恢复正文清理未确认，原未知操作仍须只读核对。'));
+    void purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true}).catch(()=>setMessage('公共故障已关闭；恢复正文清理未确认，原未知操作仍须只读核对。'));
   },[detail.status]);
   const refresh=()=>{void history.refetch();onChanged();};
   const settle=async(commandId:string)=>{known.current=true;setState('committed');clear();setMessage('内部处置已提交；没有改变个人工单或发送通知。');const cleaned=await draft.success(commandId);if(!cleaned)setMessage('内部处置已提交；恢复副本清理未确认，禁止新提交，请只读核对重试清理。');refresh();};
