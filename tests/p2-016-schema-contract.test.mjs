@@ -16,7 +16,13 @@ function assertClosedObjectDocument(documents,name,ancestors=new Set()){
   const shapes=s.type==='object'||s.additionalProperties===false?[s]:[];
   for(const key of ['anyOf','oneOf'])if(s[key]!==undefined){assert.ok(Array.isArray(s[key])&&s[key].length>0,name+' has a nonempty '+key);shapes.push(...s[key]);}
   assert.ok(shapes.length>0||s.$ref!==undefined,name+' has a nonempty closed object shape');
-  for(const shape of shapes){assert.equal(shape.type,'object',name+' object branch');assert.equal(shape.additionalProperties,false,name+' closed branch');}
+  for(const shape of shapes){
+    // The frozen command has properties-only conditions under its closed object root.
+    if(s.type==='object'&&s.additionalProperties===false&&Object.keys(shape).length===1&&shape.properties){
+      const keys=Object.keys(shape.properties);assert.ok(keys.length>0&&keys.every(key=>Object.hasOwn(s.properties,key)),name+' condition only constrains declared root keys');continue;
+    }
+    assert.equal(shape.type,'object',name+' object branch');assert.equal(shape.additionalProperties,false,name+' closed branch');
+  }
 }
 function verifySuccessorClassification(result) {
   if(result.status!=='HISTORICAL_PREDECESSOR_CHECK_NOT_APPLICABLE_ON_SUCCESSOR_CHECKOUT')return false;
@@ -51,6 +57,10 @@ test('P2-016 schemas and declarations exist; Reporter outputs cannot contain int
   for(const replacement of [{$id:name,$ref:'missing.schema.json'},{$id:name,$ref:name},{$id:name,$ref:'../'+target},{$id:name,$ref:'https://hospital.local/'+target},{$id:name,anyOf:[]}])assert.throws(()=>assertClosedObjectDocument(new Map([[name,replacement]]),name));
   const openBranch=structuredClone(documents.get(target));openBranch.anyOf[2].additionalProperties=true;
   assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(target,openBranch),name));
+  const command='p2_016_takeover_completion_command.schema.json',openRoot=structuredClone(documents.get(command));openRoot.additionalProperties=true;
+  assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(command,openRoot),command));
+  const extraCondition=structuredClone(documents.get(command));extraCondition.oneOf[1].properties.internal_note={type:'string'};
+  assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(command,extraCondition),command));
   for(const receipt of [{state:'UNKNOWN'},{state:'COMMITTED',ticket_id:randomUUID(),ticket_version:1,ticket_event_id:randomUUID()},{state:'FAILED',error:{code:'P2_016_TARGET_INVALID',retryable:false}}]){
     await assertP2016Schema('p2_016_return_to_dispatch_receipt',receipt);
     await assert.rejects(assertP2016Schema('p2_016_return_to_dispatch_receipt',{...receipt,internal_note:'PRIVATE'}));
