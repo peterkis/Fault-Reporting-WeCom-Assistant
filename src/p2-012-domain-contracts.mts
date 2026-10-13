@@ -4,9 +4,10 @@ import type {IncidentInternalNoteCommand} from '../contracts/workbench_incident_
 export type { CandidateReview, Incident, IncidentPublicView, ReporterMilestone };
 type UnionKeys<T> = T extends T ? keyof T : never;
 type Exclusive<T, All = T> = T extends T ? T & Partial<Record<Exclude<UnionKeys<All>, keyof T>, never>> : never;
-export type IncidentCommand = Exclusive<ContractCommand | IncidentInternalNoteCommand>;
+import type {IncidentPublicProgressCommand} from '../contracts/workbench_incident_public_progress_contracts.js';
+export type IncidentCommand = Exclusive<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand>;
 type Normalize<T> = T extends T ? Omit<T, 'expected_row_version'> & { readonly expected_row_version: string } : never;
-export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand | IncidentInternalNoteCommand>>;
+export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand>>;
 export type IncidentCommandSuccess = { readonly ok: true; readonly result_ref_type: 'INCIDENT' | 'CANDIDATE'; readonly result_ref_id: string; readonly result_row_version: string; readonly result_event_id: string; readonly replayed: boolean };
 export type IncidentCommandFailure = { readonly ok: false; readonly error: { readonly code: string; readonly retryable: false }; readonly replayed: boolean };
 export type IncidentCommandResult = IncidentCommandSuccess | IncidentCommandFailure;
@@ -79,6 +80,11 @@ export async function transaction<T>(pool: PostgresPool,run: (tx: PostgresTransa
 export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   const base=['action','client_command_id','reason_code'];
   const v=snapshot(input) as JsonObservation;
+  if(v?.action==='PUBLISH_PUBLIC_PROGRESS'){
+    exact(v,[...base,'incident_id','expected_row_version','summary','preview_confirmed']);
+    if(v.reason_code!=='WORKBENCH_PUBLIC_PROGRESS'||v.preview_confirmed!==true||typeof v.summary!=='string'||!v.summary.trim()||[...v.summary].length>1000||Buffer.byteLength(v.summary,'utf8')>4096||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ud800-\udfff]/u.test(v.summary))fail();
+    return frozen({action:'PUBLISH_PUBLIC_PROGRESS',incident_id:uuid(v.incident_id),client_command_id:uuid(v.client_command_id),expected_row_version:version(v.expected_row_version),reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:v.summary,preview_confirmed:true});
+  }
   if(v?.action==='ADD_INTERNAL_NOTE'){
     exact(v,[...base,'incident_id','expected_row_version','audience','text']);
     if(v.reason_code!=='WORKBENCH_INTERNAL_DISPOSITION'||v.audience!=='INTERNAL'||typeof v.text!=='string'||!v.text.trim()||[...v.text].length>2000||Buffer.byteLength(v.text,'utf8')>8192||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ud800-\udfff]/u.test(v.text))fail();

@@ -17,22 +17,23 @@ type ReceiptSuccess = Omit<IncidentCommandSuccess, 'ok' | 'replayed'>;
 type ResourceRow = { id: string; row_version: string; status: string; primary_ticket_id?: string | null; confirmed_scope?: Incident['confirmed_scope']; expires_epoch_ms?: string; source_decision_id?: string; source_result_hash?: string; service_family: string; symptom_family: string; clinical_severity_candidate?: string };
 interface Authority { row: ResourceRow; principal: WorkbenchPrincipal | null; kind: 'candidate' | 'incident' }
 interface BusinessContext extends Authority { command: NormalizedIncidentCommand; receipt: P2012CommandReceipt; candidate?: CandidateReview; incident?: Incident }
-type Options = { pool: PostgresPool; enabled?: boolean; query?: P2012IncidentQuery; notifications?: Pick<P2012NotificationPolicy, 'project'> | null; realtime?: Pick<P2012RealtimeProjector, 'append' | 'wakeup'> | null; allowDispatcherCampus?: boolean; maintenanceEnabled?: boolean; internalNotesEnabled?: boolean };
+type Options = { pool: PostgresPool; enabled?: boolean; query?: P2012IncidentQuery; notifications?: Pick<P2012NotificationPolicy, 'project'> | null; realtime?: Pick<P2012RealtimeProjector, 'append' | 'wakeup'> | null; allowDispatcherCampus?: boolean; maintenanceEnabled?: boolean; internalNotesEnabled?: boolean;publicProgressEnabled?:boolean;publicProgressNotifications?:ReturnType<typeof createPublicProgressNotifications> };
 export type P2012IncidentCommandService = ReturnType<typeof createP2012IncidentCommandService>;
 import { randomUUID } from 'node:crypto';
 import { createP2012IncidentQuery,broad } from './p2-012-incident-query.mjs';
 import { normalizeCommand,guard,hash,frozen,fail,transaction,ERROR_CODES,allowedIncidentScopes } from './p2-012-domain-contracts.mjs';
+import {createPublicProgressNotifications} from './p2-012-public-progress-notifications.mjs';
 import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 
-export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,internalNotesEnabled=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus,internalNotesEnabled}),
-  notifications=null,realtime=null,maintenanceEnabled=false}: Options){
+export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,internalNotesEnabled=false,publicProgressEnabled=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus,internalNotesEnabled,publicProgressEnabled}),
+  notifications=null,realtime=null,maintenanceEnabled=false,publicProgressNotifications=createPublicProgressNotifications()}: Options){
   async function authorize(tx: PostgresTransaction,authContext: unknown,c: NormalizedIncidentCommand,system: boolean): Promise<Authority>{
     const kind=c.candidate_review_id?'candidate':'incident';
     if(system){if(c.action!=='EXPIRE_CANDIDATE'||!maintenanceEnabled)fail('FORBIDDEN',403);
       const q=await tx.query<CandidateReview>('SELECT * FROM incident.candidate_review WHERE id=$1::uuid',[c.candidate_review_id]);if(q.rowCount!==1)fail('NOT_FOUND',404);
       return {row:(q.rows[0] as CandidateReview),principal:null,kind};}
     if(c.action==='EXPIRE_CANDIDATE')fail('FORBIDDEN',403);
-    const ctx=c.action==='ADD_INTERNAL_NOTE'?await query.internalNoteResource({authContext,id:c.incident_id,tx}):await query.resource({authContext,id:((c.candidate_review_id??c.incident_id) as string),kind,tx});const p=ctx.principal;
+    const ctx=c.action==='PUBLISH_PUBLIC_PROGRESS'?await query.publicProgressResource({authContext,id:c.incident_id,tx}):c.action==='ADD_INTERNAL_NOTE'?await query.internalNoteResource({authContext,id:c.incident_id,tx}):await query.resource({authContext,id:((c.candidate_review_id??c.incident_id) as string),kind,tx});const p=ctx.principal;
     if(!broad(p)&&c.action!=='MARK_REPORTER_RECOVERED')fail('FORBIDDEN',403);
     if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(c.action)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
     if(c.confirmed_scope!==undefined&&!allowedIncidentScopes(p.roles,allowDispatcherCampus).includes(c.confirmed_scope))fail('FORBIDDEN',403);
@@ -148,7 +149,13 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
     if(row.status==='CLOSED')fail('STATE_CONFLICT',409);
     ctx.incident=((await tx.query<Incident>('UPDATE incident.incident SET row_version=row_version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *',[row.id])).rows[0] as Incident);
     let event: P2012Event | { id: string } | undefined;
-    if(c.action==='ADD_INTERNAL_NOTE'){
+    if(c.action==='PUBLISH_PUBLIC_PROGRESS'){
+      const id=randomUUID(),ordinal=(await tx.query<{event_ordinal:string}>('UPDATE incident.incident SET event_ordinal=event_ordinal+1 WHERE id=$1::uuid RETURNING event_ordinal',[row.id])).rows[0]?.event_ordinal;
+      if(!ordinal)fail('COMMAND_FAILED',503);
+      await tx.query(`INSERT INTO incident.incident_event(id,event_key,incident_id,event_ordinal,event_type,actor_kind,actor_principal_id,source_command_id,safe_payload,payload_hash,public_progress_summary,public_progress_incident_version)
+        VALUES($1::uuid,$2,$3::uuid,$4,'incident.public_progress_published','HUMAN',$5::uuid,$6::uuid,'{}'::jsonb,$7,$8,$9)`,[id,'incident_event_v1_'+hash({receipt:ctx.receipt.id,type:'incident.public_progress_published',ordinal}),row.id,ordinal,p?.principal_id,ctx.receipt.id,hash({}),c.summary,ctx.incident.row_version]);
+      await publicProgressNotifications({transaction:tx,incident:ctx.incident,eventId:id,summary:c.summary});event={id};
+    }else if(c.action==='ADD_INTERNAL_NOTE'){
       const id=randomUUID(),ordinal=(await tx.query<{event_ordinal:string}>('UPDATE incident.incident SET event_ordinal=event_ordinal+1 WHERE id=$1::uuid RETURNING event_ordinal',[row.id])).rows[0]?.event_ordinal;
       if(!ordinal)fail('COMMAND_FAILED',503);
       await tx.query(`INSERT INTO incident.incident_event(id,event_key,incident_id,event_ordinal,event_type,actor_kind,actor_principal_id,source_command_id,safe_payload,payload_hash,internal_note_text,internal_note_incident_version)
@@ -204,7 +211,7 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
     return {result_ref_type:'INCIDENT',result_ref_id:row.id,result_row_version:String((ctx.incident as Incident).row_version),result_event_id:(event as P2012Event | { id: string; }).id};
   }
   async function perform({authContext,command:input}: { authContext?: unknown; command: unknown },system=false): Promise<IncidentCommandResult>{
-    guard(enabled);const c=normalizeCommand(input);if(c.action==='ADD_INTERNAL_NOTE')guard(internalNotesEnabled);
+    guard(enabled);const c=normalizeCommand(input);if(c.action==='ADD_INTERNAL_NOTE')guard(internalNotesEnabled);if(c.action==='PUBLISH_PUBLIC_PROGRESS')guard(publicProgressEnabled);
     const result=await transaction<IncidentCommandResult>(pool,async tx=>{
       // Consistent global lock order with the existing single durable SSE stream.
       await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_003_REALTIME_STREAM:CONVERSATION_WORKBENCH',0))");

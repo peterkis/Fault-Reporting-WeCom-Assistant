@@ -1,5 +1,6 @@
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {createHash} from 'node:crypto';
+import {publicProgressSchemaReady} from './p2-012-public-progress-schema.mjs';
 /** Only the additive 055 surface; other accepted Ticket migrations are independent. */
 export async function internalNoteSchemaInventory(tx:PostgresTransaction){
   const columns=await tx.query(`SELECT attname,format_type(atttypid,atttypmod) AS type,attnotnull FROM pg_attribute
@@ -16,6 +17,6 @@ export const INTERNAL_NOTE_SCHEMA_SHA256='485113befa00e22cbc3fcd54bf4f7eb30c13cd
 export async function internalNoteSchemaReady(tx:PostgresTransaction){
   try{
     const inventory=await internalNoteSchemaInventory(tx);
-    return internalNoteSchemaHash(inventory)===INTERNAL_NOTE_SCHEMA_SHA256;
+    return internalNoteSchemaHash(inventory)===INTERNAL_NOTE_SCHEMA_SHA256||await publicProgressSchemaReady(tx);
   }catch{return false;}
 }
