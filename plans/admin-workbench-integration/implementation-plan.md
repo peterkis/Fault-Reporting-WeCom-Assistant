@@ -26,7 +26,7 @@ execution_status: IN_PROGRESS
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | LOCAL_VERIFIED：[T22原七项](execution/t22.md)经父独立核对、合入本地集成并GitHub收口；A07本地完成，默认关闭，未发布／启用 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
-| WBINT-10 | 公共故障责任／记录／发布 | 09 | IN_PROGRESS：[T30内部处置LOCAL_VERIFIED](execution/t30.md)、[T31显式安全发布LOCAL_VERIFIED](execution/t31.md)已父验收、集成并原生CLOSED/completed；T29仍待，A10整组未完成 | A10 |
+| WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：[T32获权异常查询LOCAL_VERIFIED](execution/t32.md)原七项已父验收、独立集成并原生CLOSED/completed；T33的原生依赖已解除，普通Incident重试角色仍待人类决定，A11整组未完成 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T35个人已读原七项](execution/t35.md)与[T37共享时间原七项](execution/t37.md)均已父核、集成并GitHub关闭；T34仍待整票验收，T36的原生#90已关闭但实施未完成，A12整组未完成；默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
@@ -154,6 +154,8 @@ execution_status: IN_PROGRESS
 - **输出／受众**：追加负责人交接链、内部处置记录、安全公开进展。记录默认内部不外发，只有显式发布经确认摘要产生独立事件／通知意图；订阅及目的地保持既有来源、暂停和direct绑定规则。相同发布命令只产生一次意图，不通过编辑已发历史替换事实。
 - **数据库／前端**：最小事件／记录和发布receipt／投递身份扩展，沿现有IncidentCore／Communication；两类输入明确分区。对外失败保留发布事实、按路显示恢复入口；个人Ticket状态仍独立。
 - **验证／证据／开关／资源**：A10：越权owner转交、目标不在组、并发发布、旧版本／相同UUID、暂停订阅／无有效个人目的地、内部泄漏、Incident与个人工单互不越界。默认false，停止新发布／转交入口，保留旧事件／Outbox；有界通知生成和concurrency1。
+
+2026-10-14 当前本地交付：T29／#84原七项已父验收、独立快进d5f6abc8并原生CLOSED/completed，详见[交接执行与适用证据](execution/t29.md)。目标须已有精确Incident读取权，有效人员／团队、当前调用者与父版本同事务核验；责任不授读取权，个人Ticket状态和通知事实保持独立。T30、T31此前已本地交付，WBINT-10／A10整组LOCAL_VERIFIED。实际功能28230562及原MF保持，旧失败／限制和默认关闭保留，不代表全部43票或生产／Gate完成。
 
 ## WBINT-11：通知异常工作区与受控恢复
 

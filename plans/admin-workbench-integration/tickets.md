@@ -57,6 +57,8 @@ native_blocking_edges: 76
 
 2026-10-14 T32 原七项已父验收，b2cfff8b由独立代理安全快进，[#87完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。功能3f51／MF7e360的040严格／build／artifact原生0、042正式浏览器2PASS和052两个冻结API首例2PASS已核；Incident022按完整未变查询复用，各窗口不合计full。25＋8路径及三MD两轴、3929原保存与7050新增源／制品、134原保护对象及精确自有停机收口，见[执行与历史限制](execution/t32.md)。原失败、物化差异和证据类型边界保留，未重绑文档后继。当前 **32／43 CLOSED、11 OPEN**；WBINT-11／A11已交付T32，T33原生依赖已解除但普通Incident重试角色仍待人类选择。下一连续整票T29／#84，唯一#83已completed，目标已有精确Incident读取权、交接不扩权。默认关闭，全43最终审查及工作树清理继续待完成。
 
+2026-10-14 T29 原七项已父验收，d5f6abc8由独立代理唯一安全快进，[#84完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。[Incident已有读取权交接、当前授权与原操作恢复](execution/t29.md)已接入；有效人员／团队和精确Incident读取权同事务核验，责任本身不扩权，个人Ticket状态与通知事实独立。实际功能28230562／MF14719保持029严格／一次build／artifact原生0、030本票13 PASS、031相关16 PASS和032适用工具21 PASS，各窗口不合称full。40路径／18提交的源码与终稿两轴、完整归档／冻结原件和精确自有清理已收口，原RED／FAIL／NOT_REACHED及启动观察器outer1保留。当前 **33／43 CLOSED、10 OPEN**；WBINT-10／A10所属T29／T30／T31均已本地交付。下一连续整票T34／#89，fresh唯一#60已completed；T33普通Incident重试角色仍待人类决定。默认关闭，全43最终审查与工作树清理继续待完成，现场及Gate停止线保持。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -207,9 +209,10 @@ native_blocking_edges: 76
   - **来源：** WBINT-09 / A09
   - **本地执行：** [LOCAL_VERIFIED：原七项与独立事实、精确版本、输入／UNKNOWN恢复、源审及清理](execution/t28.md)经父核；8095d05a已安全快进，GitHub CLOSED已读回。cb5c实际35／35及相关19／19、必要工具按适用范围记录，扩大batches FAIL和活动全集NOT_RUN保持。WBINT-09／A09本地完成，不推进现场或Gate。
 
-- [ ] **T29** — [#84 交接公共故障负责人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84)
+- [x] **T29** — [#84 交接公共故障负责人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84)
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **来源：** WBINT-10 / A10
+  - **本地执行：** [原七项LOCAL_VERIFIED、当前调用者／目标读取权、并发与草稿／UNKNOWN恢复证据](execution/t29.md)已父核；d5f6abc8由独立代理唯一快进，[#84完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。功能28230562与原MF不改绑，历史失败、资源清理和证据限制保留；WBINT-10／A10本地完成，默认关闭、未发布／启用。
 
 - [x] **T30** — [#85 记录公共故障内部处置](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)

@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-14，T32收口）
+## 当前执行状态导航（2026-10-14，T29收口）
+
+GitHub实际快照为 **33／43 CLOSED、10 OPEN**；[本地完整读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t29-20261014.json)。[#84原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。WBINT-10／A10所属T29、T30、T31均已本地交付；全部43票仍在执行。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T29 / #84 | 原七项已父验收，d5f6abc8由独立代理唯一快进native0；[负责人交接与原操作恢复](execution/t29.md)已接入。当前ADMIN／DISPATCHER及精确Incident范围独立授权，目标必须为有效人员、有效团队且已拥有该Incident读取权；交接不扩权。显式null与真实NONE团队分别保留，Ticket状态与外发事实独立。 |
+| 验证 | 实际功能28230562／tree66a5／MF14719保持029严格／一次build／artifact原生0、030本票9文件13 PASS、031相关10文件16 PASS、032适用工具外层含17嵌套共21 PASS／native0。真实HTTP与生产制品浏览器覆盖并发、重复、当前调用者等待后撤权、目标离组／失权、目的403、真实401、原UUID／UNKNOWN及显式无团队恢复。各窗口保留自身范围，不相加称full。 |
+| 审查与保全 | 最终40路径／18提交的Standards与Spec两轴无未解决行动项；d5仅三MD后继，未重绑功能制品。1559源码／2020制品、相关执行绑定、物理vendor并集、冻结first／合同、42私树SQL与41Root旧SQL、旧Evidence及用户六份原件已分别核对；606入口／143 selections／342资源为原成员完整并集。 |
+| 集成与清理 | Root已纳入d5，index0、原分支与用户三status／六raw不变；40条物化canonical匹配，31份raw行尾差异分别保存而未归一化。036自有PG36804 stop0／status3、单62775 LISTEN0、pid不存在；037 keeper前向记录STOPPED／pidnull，旧字段保留。全部自有native终态，工作树留待全43结束清理。 |
+| 历史限制 | 原RED、FAIL、NOT_REACHED及006启动观察器outer1保留，实际pg_ctl start0、007running0与036stop0分别记录。目的403后的晚到200在导航前释放，031为358份有限实际绑定核对，032无编译器逐模块load trace；未新增运行范围和未达步骤不称已验证。 |
+| 来源工作包与后续 | WBINT-10／A10 LOCAL_VERIFIED：T29／T30／T31原七项均已父核、集成并原生CLOSED/completed。下一连续整票T34／#89，其完整正文／空评论／ready／领取及唯一原生#60 completed已重读。T33／#88的普通Incident重试角色仍待人类决定，其余可执行票继续。 |
+| 边界 | 新054为最小追加迁移，新增开关默认false，单App／Worker、Gateway单活、SSE32及池预算保持。全43最终审查与实现工作树清理仍待。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T32收口）
 
 GitHub实际快照为 **32／43 CLOSED、11 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t32-20261014.json)。[#87原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。WBINT-11／A11已本地交付T32，T33仍待普通Incident重试角色的人类决定。
 
