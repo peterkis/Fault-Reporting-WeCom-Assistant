@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-13，T10收口）
+## 当前执行状态导航（2026-10-13，T12收口）
+
+GitHub实际快照为 **28／43 CLOSED、15 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t12-20261013.json)。[#67已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)。WBINT-03／A03的T11／T12已本地交付并原生CLOSED/completed，T13仍待完成。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T12 / #67 | 原七项经父独立核对，82729c90已由独立合并代理安全快进并GitHub收口；[一次接管关闭、独立摘要与原操作恢复](execution/t12.md)及既有API已更新。 |
+| 验证 | d279本票21入口36 PASS、关联前六入口21 PASS；c9受影响schema／PG callback10 PASS与build／strict（含负向类型）／artifact原生0／0／0。工具原118保留20 PASS＋1 setup FAIL，补齐原workflow固定PyYAML6.0.2的D盘隔离依赖后，120仅原retired单项1 PASS；不将118整次改称通过。 |
+| 审查与保全 | 独立Standards／Spec及最终纯文档复核无新增可行动问题；H1保持可选非阻断。原first／49冻结输入、3170 build／1466 raw源、330诊断含124原PNG和23收尾原件已核验。d279／c9真实被测祖先与111／113原FAIL及NOT_RUN保持，827仅文档后继。 |
+| 集成与清理 | 父实际读回确认六件用户原件、231历史保护输入、49冻结blob、565入口／316资源并集及真实祖先保持，index0。自有PG stop0／status3／PIDnull、配置不变、临时库／客户端／池0；浏览器和HTTP由自有closers完成。 |
+| 来源工作包 | WBINT-02／A02八票本地完成；WBINT-03／A03只有T11／T12切片完成，T13及整组仍待。工作包状态导航同步最新事实，保留此前各次执行历史。 |
+| 后续 | 下一连续整票T13／#68，当前完整原生正文／0评论／ready及唯一#62 CLOSED/completed已读；正常合入最新集成后完成原七项。其余SOURCE准备不计验收。T29已有Incident读取权交接、不扩权；T31独立人工摘要与仅定向有效未暂停订阅人的决定保持，#86仍被#85阻塞。 |
+| 边界 | 所有新增能力默认false，无新SQL／第二Core／真实外部发送；未push／PR、部署、full／certify或Gate推进。剩余15票、全43最终两轴审查及实现工作树清理继续待完成。 |
+
+## 历史执行状态导航（2026-10-13，T10收口）
 
 GitHub实际快照为 **27／43 CLOSED、16 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t10-20261013.json)。[#65已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)。WBINT-02／A02所属T02、T04–T10八票均已本地交付并原生CLOSED/completed，来源工作包本地完成。
 

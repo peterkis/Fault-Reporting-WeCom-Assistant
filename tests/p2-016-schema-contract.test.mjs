@@ -6,6 +6,24 @@ import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 import { validateP2016,p2016FrozenInputsMatch,p2016CompletionEvidenceValid } from '../scripts/validate-p2-016-ticket-lifecycle-workbench.mjs';
 import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
 let historicalResult;
+function assertClosedObjectDocument(documents,name,ancestors=new Set()){
+  assert.match(name,/^[a-z0-9_-]+\.schema\.json$/u,'controlled local schema basename');
+  assert.ok(documents.has(name),name+' exists');
+  assert.ok(!ancestors.has(name),name+' has no reference cycle');
+  const s=documents.get(name);assert.ok(s.$id,name+' has an id');
+  const next=new Set([...ancestors,name]);
+  if(s.$ref!==undefined)assertClosedObjectDocument(documents,s.$ref,next);
+  const shapes=s.type==='object'||s.additionalProperties===false?[s]:[];
+  for(const key of ['anyOf','oneOf'])if(s[key]!==undefined){assert.ok(Array.isArray(s[key])&&s[key].length>0,name+' has a nonempty '+key);shapes.push(...s[key]);}
+  assert.ok(shapes.length>0||s.$ref!==undefined,name+' has a nonempty closed object shape');
+  for(const shape of shapes){
+    // The frozen command has properties-only conditions under its closed object root.
+    if(s.type==='object'&&s.additionalProperties===false&&Object.keys(shape).length===1&&shape.properties){
+      const keys=Object.keys(shape.properties);assert.ok(keys.length>0&&keys.every(key=>Object.hasOwn(s.properties,key)),name+' condition only constrains declared root keys');continue;
+    }
+    assert.equal(shape.type,'object',name+' object branch');assert.equal(shape.additionalProperties,false,name+' closed branch');
+  }
+}
 function verifySuccessorClassification(result) {
   if(result.status!=='HISTORICAL_PREDECESSOR_CHECK_NOT_APPLICABLE_ON_SUCCESSOR_CHECKOUT')return false;
   assert.equal(result.ok,false);
@@ -32,7 +50,21 @@ test('P2-016 default validator still requires readiness Evidence; deferred sourc
 });
 test('P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials',async()=>{
   const files=(await readdir('contracts')).filter(n=>/^p2_016_.*\.schema\.json$/u.test(n));assert.ok(files.length>=15);
-  for(const name of files){const s=JSON.parse(await readFile('contracts/'+name,'utf8'));const shapes=s.additionalProperties===false?[s]:s.anyOf??s.oneOf;assert.ok(Array.isArray(shapes)&&shapes.length>0,name+' has a nonempty closed object shape');for(const shape of shapes){assert.equal(shape.type,'object',name+' object branch');assert.equal(shape.additionalProperties,false,name+' closed branch');}assert.ok(s.$id);}
+  const documents=new Map(await Promise.all(files.map(async name=>[name,JSON.parse(await readFile('contracts/'+name,'utf8'))])));
+  for(const name of files)assertClosedObjectDocument(documents,name);
+  // Exercise this scan's local-reference entry, including every closed union branch.
+  const name='p2_016_return_to_dispatch_receipt.schema.json',target='p2_016_assignment_receipt.schema.json';
+  for(const replacement of [{$id:name,$ref:'missing.schema.json'},{$id:name,$ref:name},{$id:name,$ref:'../'+target},{$id:name,$ref:'https://hospital.local/'+target},{$id:name,anyOf:[]}])assert.throws(()=>assertClosedObjectDocument(new Map([[name,replacement]]),name));
+  const openBranch=structuredClone(documents.get(target));openBranch.anyOf[2].additionalProperties=true;
+  assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(target,openBranch),name));
+  const command='p2_016_takeover_completion_command.schema.json',openRoot=structuredClone(documents.get(command));openRoot.additionalProperties=true;
+  assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(command,openRoot),command));
+  const extraCondition=structuredClone(documents.get(command));extraCondition.oneOf[1].properties.internal_note={type:'string'};
+  assert.throws(()=>assertClosedObjectDocument(new Map(documents).set(command,extraCondition),command));
+  for(const receipt of [{state:'UNKNOWN'},{state:'COMMITTED',ticket_id:randomUUID(),ticket_version:1,ticket_event_id:randomUUID()},{state:'FAILED',error:{code:'P2_016_TARGET_INVALID',retryable:false}}]){
+    await assertP2016Schema('p2_016_return_to_dispatch_receipt',receipt);
+    await assert.rejects(assertP2016Schema('p2_016_return_to_dispatch_receipt',{...receipt,internal_note:'PRIVATE'}));
+  }
   for(const name of ['p2_016_reporter_session','p2_016_reporter_ticket_view','p2_016_reporter_timeline']){
     const text=await readFile('contracts/'+name+'.schema.json','utf8');assert.doesNotMatch(text,/"(?:ticket_id|reporter_wecom_userid|chatid|nonce|token_hash|session_token_hash|internal_note|provider_error)"/u);
   }
