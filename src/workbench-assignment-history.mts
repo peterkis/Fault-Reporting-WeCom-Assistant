@@ -51,25 +51,34 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
    COALESCE(c.first_responsibility_event_id=e.event_id,false) AS first,c.cycle_no,actor.display_name AS actor_name,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_assignee_id' ELSE NULL END AS previous_person_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_assignee_id'
+     WHEN accepted.proven THEN e.operator_id
      WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_principal_id::text ELSE NULL END AS next_person_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_team_id'
-     WHEN prefix.proven OR reopened.proven THEN c.first_responsibility_team_id ELSE NULL END AS previous_team_id,
+     WHEN prefix.proven OR reopened.proven THEN c.first_responsibility_team_id
+     WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' ELSE NULL END AS previous_team_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_team_id'
-     WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_team_id ELSE NULL END AS next_team_id,
+     WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_team_id
+     WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' ELSE NULL END AS next_team_id,
    previous_person.display_name AS previous_person_name,next_person.display_name AS next_person_name,
    previous_team.display_name AS previous_team_name,next_team.display_name AS next_team_name,
    (COALESCE(e.assignment_metadata->'old_assignee_id'='null'::jsonb OR (jsonb_typeof(e.assignment_metadata->'old_assignee_id')='string'
      AND e.assignment_metadata->>'old_assignee_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'),false)
-     OR COALESCE(prefix.proven,false) OR reopened.proven) AS previous_person_proven,
+     OR COALESCE(prefix.proven,false) OR reopened.proven OR (accepted.proven AND predecessor.same_cycle
+       AND e.old_status='QUEUED' AND predecessor.new_status='QUEUED'
+       AND predecessor.assignment_metadata->'new_assignee_id'='null'::jsonb)) AS previous_person_proven,
    (COALESCE(e.assignment_metadata->'new_assignee_id'='null'::jsonb OR (jsonb_typeof(e.assignment_metadata->'new_assignee_id')='string'
      AND e.assignment_metadata->>'new_assignee_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'),false)
-     OR (e.assignment_metadata IS NULL AND c.first_responsibility_event_id=e.event_id AND ${firstProof})) AS next_person_proven,
+     OR accepted.proven OR (e.assignment_metadata IS NULL AND c.first_responsibility_event_id=e.event_id AND ${firstProof})) AS next_person_proven,
    (COALESCE(jsonb_typeof(e.assignment_metadata->'old_team_id')='string'
      AND e.assignment_metadata->>'old_team_id' ~ '^[A-Z][A-Z0-9_]{0,63}$',false)
-     OR COALESCE(prefix.proven,false) OR reopened.proven) AS previous_team_proven,
+     OR COALESCE(prefix.proven,false) OR reopened.proven OR (accepted.proven AND predecessor.same_cycle
+       AND jsonb_typeof(predecessor.assignment_metadata->'new_team_id')='string'
+       AND predecessor.assignment_metadata->>'new_team_id' ~ '^[A-Z][A-Z0-9_]{0,63}$')) AS previous_team_proven,
    (COALESCE(jsonb_typeof(e.assignment_metadata->'new_team_id')='string'
      AND e.assignment_metadata->>'new_team_id' ~ '^[A-Z][A-Z0-9_]{0,63}$',false)
-     OR (e.assignment_metadata IS NULL AND c.first_responsibility_event_id=e.event_id AND ${firstProof})) AS next_team_proven
+     OR (e.assignment_metadata IS NULL AND c.first_responsibility_event_id=e.event_id AND ${firstProof})
+     OR (accepted.proven AND predecessor.same_cycle AND jsonb_typeof(predecessor.assignment_metadata->'new_team_id')='string'
+       AND predecessor.assignment_metadata->>'new_team_id' ~ '^[A-Z][A-Z0-9_]{0,63}$')) AS next_team_proven
    FROM pilot_ticket.ticket_event e
    LEFT JOIN pilot_ticket.ticket_handling_cycle_event link ON link.ticket_id=e.ticket_id AND link.ticket_event_id=e.event_id
    LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.ticket_id=link.ticket_id AND c.id=link.cycle_id
@@ -81,11 +90,28 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
      WHERE e.assignment_metadata IS NULL AND c.cycle_no=1 AND c.first_responsibility_event_id=e.event_id AND e.event_type='ticket.accepted'
        AND e.operator_type='PILOT_USER' AND e.operator_id=c.first_responsibility_principal_id::text) prefix ON TRUE
    LEFT JOIN LATERAL (${reopenedProof}) reopened ON TRUE
+   LEFT JOIN LATERAL (SELECT EXISTS(SELECT 1 FROM pilot_ticket.ticket_command_receipt l
+     JOIN pilot_ticket.ticket_event final ON final.ticket_id=l.ticket_id AND final.event_id=l.result_ticket_event_id
+       AND final.aggregate_version=l.result_ticket_version AND final.event_ordinal>=e.event_ordinal
+       AND final.operator_type='PILOT_USER' AND final.operator_id=l.actor_principal_id::text
+       AND final.trace_id=e.trace_id
+     WHERE e.event_type='ticket.accepted' AND e.assignment_metadata IS NULL AND e.operator_type='PILOT_USER'
+       AND l.ticket_id=e.ticket_id AND l.state='COMMITTED' AND l.actor_principal_id::text=e.operator_id
+       AND l.command_scope='P2_016:'||l.actor_principal_id::text
+       AND l.command_type IN ('take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations')
+       AND e.trace_id IN ('t04:'||l.client_command_id::text,'t05:'||l.client_command_id::text)
+       AND l.result_snapshot->>'ticket_id'=e.ticket_id::text
+       AND l.result_snapshot->'handling_cycle'->>'id'=c.id::text) AS proven) accepted ON TRUE
+   LEFT JOIN LATERAL (SELECT h.assignment_metadata,h.new_status,prior_link.cycle_id=c.id AS same_cycle
+     FROM (SELECT event_id,event_ordinal,event_type,assignment_metadata,new_status FROM pilot_ticket.ticket_event h
+       WHERE h.ticket_id=e.ticket_id AND h.event_ordinal<e.event_ordinal ORDER BY h.event_ordinal DESC LIMIT 200) h
+     LEFT JOIN pilot_ticket.ticket_handling_cycle_event prior_link ON prior_link.ticket_id=e.ticket_id AND prior_link.ticket_event_id=h.event_id
+     WHERE h.event_type IN (${assignmentTypes}) ORDER BY h.event_ordinal DESC LIMIT 1) predecessor ON TRUE
    LEFT JOIN pilot_ticket.pilot_principal actor ON actor.id::text=e.operator_id AND e.operator_type='PILOT_USER'
    LEFT JOIN pilot_ticket.pilot_principal previous_person ON previous_person.id::text=e.assignment_metadata->>'old_assignee_id'
-   LEFT JOIN pilot_ticket.pilot_principal next_person ON next_person.id::text=COALESCE(e.assignment_metadata->>'new_assignee_id',c.first_responsibility_principal_id::text)
-   LEFT JOIN pilot_ticket.resolver_team previous_team ON previous_team.team_id=COALESCE(e.assignment_metadata->>'old_team_id',CASE WHEN prefix.proven OR reopened.proven THEN c.first_responsibility_team_id END)
-   LEFT JOIN pilot_ticket.resolver_team next_team ON next_team.team_id=COALESCE(e.assignment_metadata->>'new_team_id',c.first_responsibility_team_id)
+   LEFT JOIN pilot_ticket.pilot_principal next_person ON next_person.id::text=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_assignee_id' WHEN accepted.proven THEN e.operator_id ELSE c.first_responsibility_principal_id::text END
+   LEFT JOIN pilot_ticket.resolver_team previous_team ON previous_team.team_id=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_team_id' WHEN prefix.proven OR reopened.proven THEN c.first_responsibility_team_id WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' END
+   LEFT JOIN pilot_ticket.resolver_team next_team ON next_team.team_id=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_team_id' WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_team_id WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' END
    WHERE e.ticket_id=$1::uuid AND e.event_type IN (${assignmentTypes})
      AND (e.event_ordinal,e.event_id)>($2::integer,COALESCE($3::uuid,'00000000-0000-0000-0000-000000000000'::uuid))
    ORDER BY e.event_ordinal,e.event_id LIMIT $4`,[ticketId,ordinal,id,n+1]);
