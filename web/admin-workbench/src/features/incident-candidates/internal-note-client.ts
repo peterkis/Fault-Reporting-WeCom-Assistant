@@ -1,4 +1,4 @@
-import {ApiError,UnknownCommandOutcome,captureWorkbenchRead} from '../../api/client';
+import {ApiError,UnknownCommandOutcome,captureWorkbenchRead,decodeWorkbenchDateTime} from '../../api/client';
 import {IncidentCommandRefusal,incidentApi} from './client';
 import type {IncidentInternalNoteInput,IncidentInternalNotePage} from '../../../../../contracts/workbench_incident_internal_notes_contracts';
 export interface InternalNoteOperation {incidentId:string;body:IncidentInternalNoteInput}
@@ -15,7 +15,7 @@ export function decodeInternalOperation(v:unknown,incidentId:string):InternalNot
 }
 function page(v:unknown,incidentId:string):IncidentInternalNotePage{
   const r=object(v);exact(r,['incident_id','items','next_cursor']);if(id(r.incident_id)!==incidentId||!Array.isArray(r.items)||r.items.length>100||r.next_cursor!==null&&(typeof r.next_cursor!=='string'||r.next_cursor.length>2048))throw new ApiError(502,'INVALID_RESPONSE');
-  const items=r.items.map(value=>{const n=object(value);exact(n,['id','incident_id','event_ordinal','incident_row_version','actor_principal_id','actor_display_name','occurred_at','audience','text']);if(id(n.incident_id)!==incidentId||n.audience!=='INTERNAL'||!validInternalText(n.text)||n.actor_display_name!==null&&(typeof n.actor_display_name!=='string'||[...n.actor_display_name].length>200)||typeof n.occurred_at!=='string'||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u.test(n.occurred_at))throw new ApiError(502,'INVALID_RESPONSE');return {id:id(n.id),incident_id:incidentId,event_ordinal:version(n.event_ordinal),incident_row_version:version(n.incident_row_version),actor_principal_id:id(n.actor_principal_id),actor_display_name:n.actor_display_name,occurred_at:n.occurred_at,audience:'INTERNAL' as const,text:n.text};});
+  const items=r.items.map(value=>{const n=object(value);exact(n,['id','incident_id','event_ordinal','incident_row_version','actor_principal_id','actor_display_name','occurred_at','audience','text']);if(id(n.incident_id)!==incidentId||n.audience!=='INTERNAL'||!validInternalText(n.text)||n.actor_display_name!==null&&(typeof n.actor_display_name!=='string'||[...n.actor_display_name].length>200)||typeof n.occurred_at!=='string'||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u.test(n.occurred_at))throw new ApiError(502,'INVALID_RESPONSE');return {id:id(n.id),incident_id:incidentId,event_ordinal:version(n.event_ordinal),incident_row_version:version(n.incident_row_version),actor_principal_id:id(n.actor_principal_id),actor_display_name:n.actor_display_name,occurred_at:decodeWorkbenchDateTime(n.occurred_at),audience:'INTERNAL' as const,text:n.text};});
   if(new Set(items.map(n=>n.id)).size!==items.length||items.some((n,i)=>i>0&&BigInt(n.event_ordinal)<=BigInt(items[i-1]?.event_ordinal??'0')))throw new ApiError(502,'INVALID_RESPONSE');return {incident_id:incidentId,items,next_cursor:r.next_cursor as string|null};
 }
 export const internalNoteApi={receipt:incidentApi.receipt,
