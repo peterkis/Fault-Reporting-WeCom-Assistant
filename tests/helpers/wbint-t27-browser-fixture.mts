@@ -26,7 +26,7 @@ export async function candidateBrowser(options:{purpose:string;recovery?:boolean
     // The frozen T29 caller explicitly selects this synthetic host profile.
     // Other callers keep the original032 setup and the production default OFF.
     const ownerTransferProfile=options.purpose==='t29owner';
-    if(ownerTransferProfile){await migrateIncidentInternalNotes(migrationInput);await migrateIncidentPublicProgress(migrationInput);await migrateIncidentOwnerTransfer(migrationInput);}
+    if(ownerTransferProfile){const ownerMigrationInput={databaseUrl,mode:'apply' as const};await migrateIncidentInternalNotes(ownerMigrationInput);await migrateIncidentPublicProgress(ownerMigrationInput);await migrateIncidentOwnerTransfer(ownerMigrationInput);}
     const reporters=options.reporters??3;assert.ok(Number.isInteger(reporters)&&reporters>=3&&reporters<=100);const f=await fixtureP2012(pool,{reporters}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;
     await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));

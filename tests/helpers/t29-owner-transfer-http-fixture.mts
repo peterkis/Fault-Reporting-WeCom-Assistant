@@ -50,7 +50,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
         const address=portProbe.address();assert.ok(address&&typeof address==='object');
         const port=address.port;await closeProbe(portProbe);probe=undefined;
         const origin='http://127.0.0.1:'+port;
-        const options:FutureHostOptions={
+        const hostOptions:FutureHostOptions={
           pool,principalIds:[text(record(f.admin).id),text(record(f.dispatcher).id),text(record(f.handler).id),text(record(f.outsider).id)],
           publicOrigin:origin,listenPort:port,
           flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},
@@ -58,7 +58,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
           incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:false,
           incidentOwnerTransferEnabled:options.ownerEnabled??true,workbenchDraftRecoveryEnabled:options.recovery??false,externalSendEnabled:false,
         };
-        runtime=createP2012Runtime(options);
+        runtime=createP2012Runtime(hostOptions);
         const started=record(await runtime.start());assert.ok(Array.isArray(started.cookies));
         const cookies=started.cookies.map(record);assert.equal(cookies.length,4);
         const csrf:string[]=[],posts:{path:string;body:string}[]=[];
