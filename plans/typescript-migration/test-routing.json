@@ -5380,6 +5380,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t32-notification-exceptions.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6458,7 +6467,8 @@
       "tests/wbint-t31-delivery-results.integration.test.mts",
       "tests/wbint-t31-recovery-results.browser.test.mts",
       "tests/wbint-t31-unmounted-worker.integration.test.mts",
-      "tests/wbint-t31-purpose-loss.browser.test.mts"
+      "tests/wbint-t31-purpose-loss.browser.test.mts",
+      "tests/wbint-t32-notification-exceptions.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6881,6 +6891,9 @@
     ],
     "wbint-t31-purpose-loss": [
       "tests/wbint-t31-purpose-loss.browser.test.mts"
+    ],
+    "wbint-t32-first": [
+      "tests/wbint-t32-notification-exceptions.integration.test.mts"
     ]
   },
   "subprocess_entries": {
