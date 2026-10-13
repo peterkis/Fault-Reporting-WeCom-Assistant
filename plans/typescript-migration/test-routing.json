@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/wbint-t29-owner-transfer-http.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/wbint-t29-owner-transfer.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -6056,6 +6065,9 @@
     }
   },
   "selections": {
+    "wbint-t29-http-first": [
+      "tests/wbint-t29-owner-transfer-http.integration.test.mts"
+    ],
     "wbint-t29-first": [
       "tests/wbint-t29-owner-transfer.browser.test.mts"
     ],
@@ -6952,6 +6964,7 @@
       "tests/helpers/yxx-ss-009-resources.mjs"
     ],
     "LOCAL_HTTP_SSE_RUNTIME": [
+      "tests/helpers/t29-owner-transfer-http-fixture.mts",
       "tests/helpers/p2-003-client-harness.mjs",
       "tests/helpers/p2-003-sse-harness.mjs",
       "tests/helpers/p2-g2-runtime-harness.mjs"

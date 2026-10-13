@@ -1,6 +1,6 @@
 # T29 Incident 负责人交接拟议合同
 
-状态：**PROPOSED／NOT_MOUNTED／NOT_RUN**。来源 WBINT-T29/#84、WBINT-10/A10；基线为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 的人类明确目标读取规则。本文件不是现有 API 清单或启用授权。当前 [Incident handler](../../../src/p2-012-workbench-http.mts) 没有这两个操作，当前事件投影亦没有责任交接详情。
+状态：**SOURCE_FROZEN／PROPOSED_NOT_MOUNTED／NOT_RUN**。来源 WBINT-T29/#84、WBINT-10/A10；基线为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 的人类明确目标读取规则。本文件不是现有 API 清单或启用授权。当前 [Incident handler](../../../src/p2-012-workbench-http.mts) 没有这两个操作，当前事件投影亦没有责任交接详情。
 
 ## 当前事实与拟议入口
 
@@ -28,3 +28,25 @@
 沿默认false的既有 workspace／Incident capability，当前没有启用或新增持久Flag；将来若确需新增能力仍defaultfalse并实测关闭。关闭新入口保留所有已提交 owner历史及Ticket／Incident／Outbox／Delivery。资源沿单App／Worker、零新增Gateway、SSE32、总池建议≤8、native concurrency1，有界页面／最多三页窗口；不声称真实2C4G容量验证。
 
 首tracer：[owner-transfer.browser](../../../tests/wbint-t29-owner-transfer.browser.test.mts)，只写一个公开W HTTP交接主链，复用原T27 fixture、032及真实确认 setup；先核对合法目标，再显式POST、ACK／新owner／追加历史／个人Ticket和通知不变。当前源码检查不是RED；全部build/types/artifact/Unit/Contract/PG/HTTP/browser/cleanup均NOT_RUN。未来WHOLE grant后原样实际运行，按真实缺口逐片最小实现；原七项仍见 [own执行记录](../../../plans/admin-workbench-integration/execution/t29.md)。
+
+## 2026-10-14 有限 SOURCE 合同与 HTTP 首例冻结
+
+本轮正常 merge 固定 Root `db0317a3b8b0d8e49884e1cd1e23ce527bc08172`，保留旧 `91d6f16e` SOURCE祖先和原browser first，不是T29 WHOLE或接口实现。当前完整合同如下，全部 **SOURCE_FROZEN／NOT_MOUNTED／NOT_RUN**：
+
+- [闭合五字段HTTP body](../../../contracts/workbench_incident_owner_transfer_command.schema.json)／[独立声明](../../../contracts/workbench_incident_owner_transfer_contracts.d.ts)：沿原八种reason_code、UUID、string BIGINT父版本；team为原code语法（大写、最多64字符）或必填null。Schema结构格式不替代原runtime BIGINT_MAX守卫。
+- [目标页](../../../contracts/workbench_incident_owner_transfer_targets.schema.json)：闭合items/next_cursor，每页默认30/max100，每人最多20有效组，名称最多200字符，cursor最多2048字符；过滤当前有效角色/团队及精确Incident READ后才分页，不返回不可见人计数。原confirm目标选择不追溯改变。
+- [成功ACK](../../../contracts/workbench_incident_owner_transfer_result.schema.json)：原六字段成功形状，result_ref_type只为INCIDENT；没有新增receipt事实源。
+- [责任事件安全变体](../../../contracts/workbench_incident_owner_transfer_event.schema.json)：原history基础字段加actor及previous/next owner/team；该事件状态/范围字段均null，时间为Asia/Shanghai秒精度。仅授权broad读面，不向HANDLER/Reporter或SSE/通知外推私有责任字段。原内部处置/公开进展独立页及其可见性不变。
+
+未来宿主选项名为`incidentOwnerTransferEnabled`，默认false；当前生产Options/guard/handler/UI均未实现该选项。新自有[HTTP fixture](../../../tests/helpers/t29-owner-transfer-http-fixture.mts)以明确的未来合同交叉类型传入true，不是类型逃逸或启用生产功能；它使用现有支持的四个principal、真实隔离fixture、W Cookie、032→055→058、原cleanup allclosers/primaryError。没有不存在模块的catch、伪迁移或源码跳板。
+
+[新HTTP first](../../../tests/wbint-t29-owner-transfer-http.integration.test.mts)没有浏览器前置：真实确认LOCAL Incident、真实GET证明目标现有READ，随后期望targets GET200及一次显式POST200，核六字段ACK/新责任/一次actor时间事件、个人Ticket及notifications不变。当前NOT_RUN，不能称RED或GREEN。历史[原browser first](../../../tests/wbint-t29-owner-transfer.browser.test.mts) raw4575/affddc0e、canonical4534/d45d6399逐字节保留，继续负责未来正式UI与reload证明。后续真正054迁移接入只属于独立WHOLE中的自有fixture后继，不改写本次SOURCE冻结或重绑其被测身份。
+
+## 未来054与已交付055／058的精确组成
+
+当前Root全仓跟踪SQL为41（migration40＋schema_draft1）；旧47e2为39（38＋1），T30 Root9a92为40（39＋1），各是自己的输入身份。055和058现行SQL原件、checksum及marker不改，054仍 **RESERVED_NOT_IMPLEMENTED**，本窗口无SQL054或任何DDL执行。
+
+055封闭目录为15 command/18 event；058为16/19，完整保留055并只增加PUBLISH_PUBLIC_PROGRESS及incident.public_progress_published。未来054若加入TRANSFER_OWNER／incident.owner.transferred，必须在最新Root的完整目录上追加，不能回退到032枚举或丢掉ADD_INTERNAL_NOTE／internal_note_added。原note/public shape、列、已validated检查、FK和索引、订阅/Communication模板全部保留；owner交接不创建外发意图。
+
+现行[055 guard](../../../src/p2-012-internal-note-schema.mts)只接受原055摘要或通过完整[058 guard](../../../src/p2-012-public-progress-schema.mts)；055／058 typed migrator还核原SQLchecksum、marker和具体catalog，正常新增枚举会改变这些精确摘要。后续在真实first RED后通过原受控机制证明合法054＋055＋058目录及status/check/apply，不改旧SQL，不用枚举包含、宽松hash、假058 stamp或新验证平台。最小已有指针为T30 migration/schema与T31 migration，再按实际common consumer diff选原command-port/public-progress/contracts；本窗口全部未运行。
+
