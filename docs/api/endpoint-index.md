@@ -279,3 +279,13 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | GET | `/api/tickets/{ticketId}/unassign/communication-targets` | 当前合法动作的活动内部沟通目标；可用 `target_principal_id=UUID` 验证保存的目标；结果至多 100，不授予 Control 写权 | [目标读取](workbench/tickets.md#wbint-t08-撤销未开始派工) |
 
 三入口和正式管理端消费已完成本机合成隔离 PG、真实 loopback HTTP、生产 bundle 浏览器及相关兼容验证。独立 `ticketUnassignEnabled` 默认 false；准确被测源码、原七项、原始 FAIL/PASS、制品与资源证据见[本票执行](../../plans/admin-workbench-integration/execution/t08.md)。本地验证不构成真实外发、部署或 Gate 授权。
+
+## WBINT-T12 同事接管并工作人员完工（默认关闭）
+
+| 方法 | 完整路径 | 当前用途 | 合同 |
+| --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/takeover-and-complete` | 当前获权同事、真实 SELF 组与逐 Session 选择，一次原子接管并工作人员关闭 | [复合完工](workbench/tickets.md#同事接管并工作人员完工wbint-t12默认关闭) |
+| GET | `/api/tickets/{ticketId}/takeover-completion-targets` | 当前合法动作的 SELF 活动组；可选 resolver_team_id独立核验，展示最多100 | [SELF 候选](workbench/tickets.md#同事接管并工作人员完工wbint-t12默认关闭) |
+| GET | `/api/tickets/{ticketId}/takeover-completion/commands/{commandId}` | 当前 Ticket READ及原 actor/用途/UUID 的安全终态，只读；另需 raw recovery | [原操作核对](workbench/tickets.md#同事接管并工作人员完工wbint-t12默认关闭) |
+
+独立 `ticketTakeoverCompletionEnabled` 默认 false，复用039/040、无新 SQL。已实现并有隔离公开 PG/HTTP/生产 bundle 验证；最终整票检查、原始 FAIL/PASS、两轴审查和清理以[本票执行](../../plans/admin-workbench-integration/execution/t12.md)为准。本地验证不授权外发、部署或 Gate。
