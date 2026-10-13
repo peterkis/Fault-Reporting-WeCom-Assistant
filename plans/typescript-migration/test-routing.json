@@ -5290,6 +5290,15 @@
       "requires_powershell": false,
       "requires_database": true,
       "path": "tests/wbint-t30-review-recovery.browser.test.mts"
+    },
+    {
+      "path": "tests/wbint-t31-public-progress.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6358,7 +6367,8 @@
       "tests/t13-contract-boundaries.test.mts",
       "tests/t13-history-boundaries.integration.test.mts",
       "tests/t13-history-window.browser.test.mts",
-      "tests/wbint-t30-internal-note.integration.test.mts"
+      "tests/wbint-t30-internal-note.integration.test.mts",
+      "tests/wbint-t31-public-progress.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6716,6 +6726,9 @@
     ],
     "wbint-t30-review-recovery": [
       "tests/wbint-t30-review-recovery.browser.test.mts"
+    ],
+    "wbint-t31-first": [
+      "tests/wbint-t31-public-progress.integration.test.mts"
     ]
   },
   "subprocess_entries": {

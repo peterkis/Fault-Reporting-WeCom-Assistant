@@ -191,6 +191,7 @@
     "tests/platform-time-contract.test.mjs",
     "tests/v1-3-architecture-baseline.test.mjs",
     "tests/v1-4-architecture-baseline.test.mjs",
+    "tests/wbint-t31-public-progress.integration.test.mts",
     "tests/web01-workbench.browser.test.mjs",
     "tests/web01-workbench.integration.test.mjs",
     "tests/web01-workbench.test.mts",

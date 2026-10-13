@@ -324,6 +324,10 @@
     "contracts/p2_016_waiting_event_page.schema.json",
     "contracts/p2_016_assignment_history_capability.schema.json",
     "database/migrations/055_workbench_incident_internal_notes.sql",
-    "contracts/workbench_incident_internal_note_capability.schema.json"
+    "contracts/workbench_incident_internal_note_capability.schema.json",
+    "contracts/workbench_incident_public_progress_contracts.d.ts",
+    "contracts/workbench_incident_public_progress_command.schema.json",
+    "contracts/workbench_incident_public_progress_page.schema.json",
+    "contracts/workbench_incident_public_progress_delivery_page.schema.json"
   ]
 }
