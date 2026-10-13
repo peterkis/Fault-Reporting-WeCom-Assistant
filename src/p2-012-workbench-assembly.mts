@@ -30,6 +30,9 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i
   if(typeof incidentCandidateWorkspaceEnabled!=='boolean'||typeof incidentInternalNotesEnabled!=='boolean')fail();if(incidentInternalNotesEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentTestLabel!=='boolean'||typeof incidentBackgroundMaintenance!=='boolean')fail();
   const f=flags(incidentFlags);
+  // The existing five approvals cover the frozen lifecycle purposes only.
+  // This new purpose has no live authorization in the current delivery.
+  if(incidentPublicProgressEnabled&&(options.gatewayEnabled||options.senderEnabled))fail('LIVE_APPROVAL_REQUIRED',403);
   if(f.INCIDENT_CORRELATION_ENABLED&&(options.gatewayEnabled||options.senderEnabled)){
     if(!['live','scope','send','publicNotice','privateNotice'].every(k=>incidentLiveApproval?.[k as keyof P2012LiveApproval]===true))fail('LIVE_APPROVAL_REQUIRED',403);
   }
