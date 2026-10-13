@@ -10,6 +10,7 @@ import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
 import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
 import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
 import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
+import {migrateIncidentOwnerTransfer} from '../../scripts/incident-owner-transfer-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 import {record,text} from './wbint-t27-browser-fixture.mjs';
@@ -39,6 +40,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
       await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
       await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});
       await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});
+      await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});
       const f=await fixtureP2012(pool,{reporters:3});
       let probe:Server|undefined,runtime:P2016EnabledRuntime|undefined,primaryError:unknown;
       try{

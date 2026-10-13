@@ -1,5 +1,6 @@
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {createHash} from 'node:crypto';
+import {ownerTransferSchemaReady} from './p2-012-owner-transfer-schema.mjs';
 /** Includes the complete 055 surface and its shared checks, not enum containment. */
 export async function publicProgressSchemaInventory(tx:PostgresTransaction){
   const columns=await tx.query(`SELECT attrelid::regclass::text AS relation,attname,format_type(atttypid,atttypmod) AS type,attnotnull FROM pg_attribute
@@ -15,4 +16,4 @@ export async function publicProgressSchemaInventory(tx:PostgresTransaction){
 }
 export const publicProgressSchemaHash=(value:Awaited<ReturnType<typeof publicProgressSchemaInventory>>)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export const PUBLIC_PROGRESS_SCHEMA_SHA256='d1f95e25c15637aafb3d3f72eae8e1756731345133f0b447df3277e6057401f6';
-export async function publicProgressSchemaReady(tx:PostgresTransaction){try{return publicProgressSchemaHash(await publicProgressSchemaInventory(tx))===PUBLIC_PROGRESS_SCHEMA_SHA256;}catch{return false;}}
+export async function publicProgressSchemaReady(tx:PostgresTransaction){try{return publicProgressSchemaHash(await publicProgressSchemaInventory(tx))===PUBLIC_PROGRESS_SCHEMA_SHA256||await ownerTransferSchemaReady(tx);}catch{return false;}}

@@ -21,6 +21,7 @@ import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 import type {IncidentPublicProgressPage,IncidentPublicProgressRecord,IncidentPublicProgressDeliveryPage,IncidentPublicProgressDelivery} from '../contracts/workbench_incident_public_progress_contracts.js';
 import {publicProgressSchemaReady} from './p2-012-public-progress-schema.mjs';
 import {internalNoteSchemaReady} from './p2-012-internal-note-schema.mjs';
+import {ownerTransferSchemaReady} from './p2-012-owner-transfer-schema.mjs';
 import type {CandidateMaterial} from './p2-012-candidate-material.mjs';
 export interface CandidateOwner {id:string;display_name:string;teams:{team_id:string;display_name:string}[];teams_truncated:boolean}
 export type CandidateAction='START_REVIEW'|'REJECT_CANDIDATE'|'CONFIRM_INCIDENT';
@@ -31,7 +32,7 @@ function publicCandidate(row:CandidateQueryRow,p:WorkbenchPrincipal):CandidateQu
   if(broad(p))return safe;
   return {...safe,cluster_key_hash:null,distinct_reporters:null,distinct_departments:null,distinct_locations:null,correlation_window_ms:null,first_seen_at:null,last_seen_at:null,evidence_fact_ids:[],opened_by_principal_id:null,confirmed_incident_id:null};
 }
-export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnabled=false,publicProgressEnabled=false,allowDispatcherCampus=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool})}: { pool: PostgresTransaction; enabled?: boolean; internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;allowDispatcherCampus?:boolean;authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'> }){
+export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,allowDispatcherCampus=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool})}: { pool: PostgresTransaction; enabled?: boolean; internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean;allowDispatcherCampus?:boolean;authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'> }){
   async function principal(authContext: unknown,tx: PostgresTransaction=pool){guard(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable:tx});if(!p)fail('FORBIDDEN',403);return p;}
   function access(p: WorkbenchPrincipal,kind: Kind,start=2){const pred=ticketPredicateP2016(p,start);return {values:pred.values,sql:kind==='candidate'?
     `EXISTS(SELECT 1 FROM intake.deterministic_decision d LEFT JOIN pilot_ticket.ticket t ON t.id=d.linked_ticket_id WHERE d.id=c.source_decision_id AND ${pred.sql})`:
@@ -62,6 +63,12 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     if(!broad(ctx.principal)||!allowedIncidentScopes(ctx.principal.roles,allowDispatcherCampus).includes((ctx.row as Incident).confirmed_scope))fail('FORBIDDEN',403);
     if(!await publicProgressSchemaReady(input.tx??pool))fail('DISABLED',503);return ctx;
   }
+  async function ownerTransferResource(input:Omit<ReadInput,'kind'>){
+    guard(ownerTransferEnabled);const ctx=await resource({...input,kind:'incident'});
+    if(!broad(ctx.principal)||!allowedIncidentScopes(ctx.principal.roles,allowDispatcherCampus).includes((ctx.row as Incident).confirmed_scope))fail('FORBIDDEN',403);
+    if(!await ownerTransferSchemaReady(input.tx??pool))fail('DISABLED',503);
+    return ctx;
+  }
   const publicationScope=(p:WorkbenchPrincipal,row:ResourceRow)=>hash({principal:p.principal_id,roles:[...p.roles].sort(),scope:(row as Incident).confirmed_scope,allowed:allowedIncidentScopes(p.roles,allowDispatcherCampus)});
   async function notificationExceptionScope({authContext,tx=pool}:{authContext:unknown;tx?:PostgresTransaction}):Promise<NotificationExceptionIncidentScope|null>{
     if(!enabled)return null;
@@ -69,7 +76,22 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     if(!broad(p))return {lifecycle:false,publicProgress:false,publicScopes:[]};
     return {lifecycle:true,publicProgress:publicProgressEnabled&&await publicProgressSchemaReady(tx),publicScopes:allowedIncidentScopes(p.roles,allowDispatcherCampus)};
   }
-  return Object.freeze({principal,resource,source,internalNoteResource,publicProgressResource,notificationExceptionScope,
+  return Object.freeze({principal,resource,source,internalNoteResource,publicProgressResource,ownerTransferResource,notificationExceptionScope,
+    async ownerTransferTargets({authContext,id,cursor:after=null,limit:pageLimit}:{authContext:unknown;id:string;cursor?:string|null;limit?:unknown}){
+      const {principal:p,row}=await ownerTransferResource({authContext,id}),n=limit(pageLimit),scope=hash({purpose:'TRANSFER_OWNER',principal:p.principal_id,roles:[...p.roles].sort(),incident:row.id,version:row.row_version,allowed:allowedIncidentScopes(p.roles,allowDispatcherCampus)});
+      const c=after?decodeCursor(after,['incident','scope','id']):null;
+      if(c&&(c.incident!==row.id||c.scope!==scope))fail('CURSOR_INVALID');if(c)uuid(c.id);
+      // Apply the target's existing Incident READ relationship before LIMIT.
+      const q=await pool.query<{id:string;display_name:string}>(`SELECT p.id::text,left(p.display_name,200) AS display_name FROM pilot_ticket.pilot_principal p
+        WHERE p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role role WHERE role.principal_id=p.id AND role.role IN ('ADMIN','DISPATCHER','HANDLER'))
+        AND (EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role role WHERE role.principal_id=p.id AND role.role IN ('ADMIN','DISPATCHER'))
+          OR EXISTS(SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.incident_id=$1::uuid AND r.link_state='LINKED'
+            AND (t.assignee_id=p.id OR EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role role JOIN pilot_ticket.pilot_team_member m ON m.principal_id=role.principal_id WHERE role.principal_id=p.id AND role.role='HANDLER' AND m.team_id=t.resolver_team_id))))
+        AND ($2::uuid IS NULL OR p.id>$2::uuid) ORDER BY p.id LIMIT $3`,[row.id,c?.id??null,n+1]);
+      const items:CandidateOwner[]=[];
+      for(const owner of q.rows.slice(0,n)){const teams=(await pool.query<{team_id:string;display_name:string}>(`SELECT team.team_id,left(team.display_name,200) AS display_name FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team team ON team.team_id=m.team_id WHERE m.principal_id=$1::uuid AND team.is_active ORDER BY team.team_id LIMIT 21`,[owner.id])).rows;items.push({...owner,teams:teams.slice(0,20),teams_truncated:teams.length>20});}
+      const last=items.at(-1);return frozen({items,next_cursor:q.rows.length>n&&last?cursor({incident:row.id,scope,id:last.id}):null});
+    },
     async publicProgress({authContext,incidentId,cursor:after=null,limit:pageLimit}:{authContext:unknown;incidentId:string;cursor?:string|null;limit?:unknown}):Promise<IncidentPublicProgressPage>{
       const {principal:p,row}=await publicProgressResource({authContext,id:incidentId}),n=pageLimit==null?10:limit(pageLimit,30),scope=publicationScope(p,row);
       const c=after?decodeCursor(after,['incident','scope','ordinal','id']):null;
@@ -107,10 +129,11 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       // precedes every outcome read from the existing principal-bound ledger.
       const identity=(await pool.query<{id:string;command_type:string;incident_report_id:string|null}>(`SELECT id::text,command_type,incident_report_id::text FROM incident.command_receipt
         WHERE command_scope=$1 AND client_command_id=$2::uuid AND actor_principal_id=$3::uuid AND incident_id=$4::uuid
-        AND (command_type IN ('START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT') OR ($5::boolean AND command_type='ADD_INTERNAL_NOTE') OR ($6::boolean AND command_type='PUBLISH_PUBLIC_PROGRESS'))`,['P2_012:'+p.principal_id,clientId,p.principal_id,row.id,internalNotesEnabled,publicProgressEnabled])).rows[0];
+        AND (command_type IN ('START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT') OR ($5::boolean AND command_type='ADD_INTERNAL_NOTE') OR ($6::boolean AND command_type='PUBLISH_PUBLIC_PROGRESS') OR ($7::boolean AND command_type='TRANSFER_OWNER'))`,['P2_012:'+p.principal_id,clientId,p.principal_id,row.id,internalNotesEnabled,publicProgressEnabled,ownerTransferEnabled])).rows[0];
       // An absent command has no recorded purpose or outcome. UNKNOWN grants
       // no right to replay: a POST always rechecks its actual action and target.
       if(!identity)return frozen({...base,state:'UNKNOWN'});
+      if(identity.command_type==='TRANSFER_OWNER')await ownerTransferResource({authContext,id:row.id});
       if(identity.command_type==='PUBLISH_PUBLIC_PROGRESS')await publicProgressResource({authContext,id:row.id});
       if(identity.command_type==='ADD_INTERNAL_NOTE')await internalNoteResource({authContext,id:row.id});
       if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(identity.command_type)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
@@ -223,7 +246,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       const directSubscription=/^subscriptions\/([a-f0-9-]{36})\/direct-destinations$/iu.exec(part);
       let sql: string,values: unknown[]=[row.id,c?.id??null,n+1];
       if(part==='events'){
-        sql=`SELECT id,event_type,event_ordinal,old_status,new_status,old_scope,new_scope,occurred_at FROM incident.incident_event WHERE incident_id=$1::uuid AND event_type NOT IN ('incident.internal_note_added','incident.public_progress_published') AND ($2::bigint IS NULL OR event_ordinal>$2::bigint) AND ($4::boolean OR event_type IN ('incident.confirmed','incident.investigating','incident.resolved','incident.closed')) ORDER BY event_ordinal,id LIMIT $3`;values[1]=c?.ordinal??null;values.push(broad(p));
+        sql=`SELECT id,event_type,event_ordinal,old_status,new_status,old_scope,new_scope,occurred_at,CASE WHEN $5::boolean AND event_type='incident.owner.transferred' THEN actor_principal_id::text END AS _owner_actor,CASE WHEN $5::boolean AND event_type='incident.owner.transferred' THEN safe_payload->'owner_transfer' END AS _owner_transfer FROM incident.incident_event WHERE incident_id=$1::uuid AND event_type NOT IN ('incident.internal_note_added','incident.public_progress_published') AND ($2::bigint IS NULL OR event_ordinal>$2::bigint) AND ($4::boolean OR event_type IN ('incident.confirmed','incident.investigating','incident.resolved','incident.closed')) ORDER BY event_ordinal,id LIMIT $3`;values[1]=c?.ordinal??null;values.push(broad(p),ownerTransferEnabled&&broad(p)&&allowedIncidentScopes(p.roles,allowDispatcherCampus).includes((row as Incident).confirmed_scope));
       }else if(part==='reports'){
         const pred=ticketPredicateP2016(p,4);values.push(...pred.values);
         sql=`SELECT r.id,r.ticket_id,t.ticket_no,r.service_intake_id,r.link_state,r.impact_state,r.row_version,r.linked_at,r.unlinked_at,r.recovered_at FROM incident.incident_report r LEFT JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.incident_id=$1::uuid AND ($2::uuid IS NULL OR r.id>$2::uuid) AND ${pred.sql} ORDER BY r.id LIMIT $3`;
@@ -250,7 +273,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
         if(!broad(p))fail('FORBIDDEN',403);
         sql=`SELECT b.id,b.audience_type,b.template_code,d.id AS delivery_id,d.status,d.side_effect_state,d.attempt_count,b.created_at FROM communication.incident_notification_binding b JOIN communication.outbox o ON o.message_id=b.communication_message_id JOIN communication.delivery d ON d.outbox_id=o.id WHERE b.incident_id=$1::uuid AND b.template_code<>'INCIDENT_PUBLIC_PROGRESS_DIRECT' AND ($2::uuid IS NULL OR b.id>$2::uuid) ORDER BY b.id LIMIT $3`;
       }else fail();
-      const q=await pool.query(sql,values),items=q.rows.slice(0,n);return frozen({items,next_cursor:q.rows.length>n?cursor({incident:id,part,id:(items.at(-1) as Record<string, unknown>).id,...(part==='events'?{ordinal:String((items.at(-1) as Record<string, unknown>).event_ordinal)}:{})}):null});
+      const q=await pool.query(sql,values),items=q.rows.slice(0,n).map(item=>{if(part!=='events')return item;const {_owner_actor,_owner_transfer,...safe}=item;return _owner_actor&&_owner_transfer?{...safe,actor_principal_id:_owner_actor,owner_transfer:_owner_transfer}:safe;});return frozen({items,next_cursor:q.rows.length>n?cursor({incident:id,part,id:(items.at(-1) as Record<string, unknown>).id,...(part==='events'?{ordinal:String((items.at(-1) as Record<string, unknown>).event_ordinal)}:{})}):null});
     },
   });
 }

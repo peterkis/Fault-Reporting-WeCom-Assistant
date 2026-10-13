@@ -1,13 +1,14 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { IncidentCommand as ContractCommand, CandidateReview, Incident, IncidentPublicView, ReporterMilestone } from '../contracts/p2_012_contracts.js';
 import type {IncidentInternalNoteCommand} from '../contracts/workbench_incident_internal_notes_contracts.js';
+import type {IncidentOwnerTransferCommand} from '../contracts/workbench_incident_owner_transfer_contracts.js';
 export type { CandidateReview, Incident, IncidentPublicView, ReporterMilestone };
 type UnionKeys<T> = T extends T ? keyof T : never;
 type Exclusive<T, All = T> = T extends T ? T & Partial<Record<Exclude<UnionKeys<All>, keyof T>, never>> : never;
 import type {IncidentPublicProgressCommand} from '../contracts/workbench_incident_public_progress_contracts.js';
-export type IncidentCommand = Exclusive<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand>;
+export type IncidentCommand = Exclusive<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand | IncidentOwnerTransferCommand>;
 type Normalize<T> = T extends T ? Omit<T, 'expected_row_version'> & { readonly expected_row_version: string } : never;
-export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand>>;
+export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand | IncidentOwnerTransferCommand>>;
 export type IncidentCommandSuccess = { readonly ok: true; readonly result_ref_type: 'INCIDENT' | 'CANDIDATE'; readonly result_ref_id: string; readonly result_row_version: string; readonly result_event_id: string; readonly replayed: boolean };
 export type IncidentCommandFailure = { readonly ok: false; readonly error: { readonly code: string; readonly retryable: false }; readonly replayed: boolean };
 export type IncidentCommandResult = IncidentCommandSuccess | IncidentCommandFailure;
@@ -80,6 +81,11 @@ export async function transaction<T>(pool: PostgresPool,run: (tx: PostgresTransa
 export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   const base=['action','client_command_id','reason_code'];
   const v=snapshot(input) as JsonObservation;
+  if(v?.action==='TRANSFER_OWNER'){
+    exact(v,[...base,'incident_id','expected_row_version','owner_principal_id','owner_team_id']);
+    if(!REASONS.includes(v.reason_code as string))fail();
+    return frozen({action:'TRANSFER_OWNER',incident_id:uuid(v.incident_id),client_command_id:uuid(v.client_command_id),reason_code:v.reason_code as IncidentOwnerTransferCommand['reason_code'],expected_row_version:version(v.expected_row_version),owner_principal_id:uuid(v.owner_principal_id),owner_team_id:v.owner_team_id===null?null:code(v.owner_team_id)});
+  }
   if(v?.action==='PUBLISH_PUBLIC_PROGRESS'){
     exact(v,[...base,'incident_id','expected_row_version','summary','preview_confirmed']);
     if(v.reason_code!=='WORKBENCH_PUBLIC_PROGRESS'||v.preview_confirmed!==true||typeof v.summary!=='string'||!v.summary.trim()||[...v.summary].length>1000||Buffer.byteLength(v.summary,'utf8')>4096||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ud800-\udfff]/u.test(v.summary))fail();
