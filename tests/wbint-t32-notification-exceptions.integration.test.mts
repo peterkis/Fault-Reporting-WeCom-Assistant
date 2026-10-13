@@ -11,6 +11,7 @@ import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mj
 import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
 import {createCommunicationSenderPort} from '../src/p2-004-communication-sender-port.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {entryConfig, entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import type {NotificationExceptionPage, NotificationExceptionItem, NotificationExceptionHostOptions} from '../contracts/workbench_notification_exception_contracts.js';
 
 function record(value: unknown): Record<string, unknown> {
@@ -25,9 +26,12 @@ test('T32 public exceptions paginate only current readable Ticket failures and r
       pool: original.pool, publicOrigin: original.origin,
       listenPort: Number(new URL(original.origin).port),
       principalIds: [original.principals[0]?.id ?? '', original.outsider.id, original.principals[1]?.id ?? ''],
-      flags: {TICKET_LIFECYCLE_WORKBENCH_ENABLED: true as const},
+      flags: {TICKET_LIFECYCLE_WORKBENCH_ENABLED: true as const, REPORTER_TIMELINE_ENABLED: true, WECOM_TEMPLATE_CARD_ENABLED: true},
       ticketSelfHandlingEnabled: true, ticketRoundNotificationsEnabled: true,
       externalSendEnabled: true, notificationExceptionsEnabled: true,
+      reporterOrigin: 'https://reporter.example.test', reporterHmacSecret: entryKey,
+      reporterPolicy: 'MEMBER_REQUIRED' as const, reporterMemberEntry: entryConfig,
+      wecomWebOAuth: {enabled: true, corpId: entryConfig.corpId, agentId: entryConfig.agentId, resolveCode: async () => {throw Error('T32_NO_REAL_OAUTH');}},
     } satisfies Parameters<typeof createP2016Runtime>[0] & NotificationExceptionHostOptions;
     const runtime = createP2016Runtime(options);
     let primaryError: unknown;
