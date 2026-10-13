@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "workbench_item_follow_attention.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "following",
+    "follow_version",
+    "related_reasons"
+  ],
+  "properties": {
+    "following": {
+      "type": "boolean"
+    },
+    "follow_version": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "related_reasons": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "HANDLING",
+          "COMMUNICATION",
+          "FOLLOW"
+        ]
+      }
+    }
+  }
+}

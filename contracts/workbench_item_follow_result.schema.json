@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "workbench_item_follow_result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "client_command_id",
+    "requested_item",
+    "canonical_item",
+    "following",
+    "follow_version",
+    "replayed"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "requested_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ticket",
+            "review",
+            "intake"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "canonical_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ticket",
+            "review",
+            "intake"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "following": {
+      "type": "boolean"
+    },
+    "follow_version": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "replayed": {
+      "type": "boolean"
+    }
+  }
+}
