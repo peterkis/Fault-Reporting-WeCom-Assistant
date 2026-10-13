@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_016_assignment_history_capability.schema.json",
+  "title": "T13 lifecycle bootstrap capability fragment",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "assignment_history_enabled": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "x-contract-scope": "Optional closed fragment from /api/lifecycle/bootstrap. Missing capability decodes false. Does not grant Ticket or Session READ."
+}

@@ -24,6 +24,8 @@
 | 工作人员电话／现场代录与经核实成员选择（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)；一步处理由 T19 继续实施 |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
 | Incident 跟进及原 UUID 安全只读核对（默认关闭） | [公共故障回执](workbench/incidents.md#公共故障跟进wbint-t28) |
+| Incident 内部处置（T30，默认关闭） | [内部处置合同](workbench/incident-internal-notes.md)；本地合成验证，当前授权内部输入/有界历史/原用途回执 |
+| Incident 独立安全摘要、有效个人定向意图和按路结果（T31，默认关闭） | [显式公开进展](workbench/incident-public-progress.md)；本地合成实现，旧现场批准不覆盖新目的 |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
 | 明确关注及“与我有关”的实施前合同（尚未挂载） | [T34 关注设计](workbench/follow-design.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |

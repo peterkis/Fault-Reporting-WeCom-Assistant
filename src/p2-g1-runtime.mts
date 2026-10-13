@@ -17,6 +17,7 @@ interface G1RuntimeOptionsInput {
   publicOrigin?: string; listenPort?: number; botId?: string; secret?: string; wsUrl?: string;
   allowedTargetHashes?: readonly string[] | ReadonlySet<string>; gatewayEnabled?: boolean; senderEnabled?: boolean;
   senderAdapter?: G1SenderPort | null;
+  deliveryAttemptAdmission?:CommunicationWorkerOptions['attemptAdmission'];
   senderFactory?: ((input: { gateway: ReturnType<typeof createP2G1WeComGateway> }) => G1SenderPort) | null;
   extensionFactory?: ((input: { controlService: ReturnType<typeof createConversationControlService>; authorization: ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>; realtime: ReturnType<typeof createRealtimeSseHandler>; coordinator: ReturnType<typeof createP2G1InboundProjectionCoordinator>; queryService: ReturnType<typeof createConversationWorkbenchQueryService>; commandFacade: ReturnType<typeof createConversationWorkbenchCommandFacade> }) => G1RuntimeExtension) | null;
   realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;realtimeAvailabilityFallback?:boolean;realtimeFollowUpSchedulesEnabled?:boolean;
@@ -58,6 +59,7 @@ export function createP2G1Runtime({
   senderEnabled = false,
   senderAdapter = null,
   senderFactory = null,
+  deliveryAttemptAdmission=null,
   extensionFactory = null,
   realtimeAppender = appendRealtimeEvent,
   projectionTransactionStart = null,
@@ -141,7 +143,7 @@ export function createP2G1Runtime({
   });
   const sender = senderAdapter ?? (senderFactory ? senderFactory({gateway}) : createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled }));
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
-  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20 });
+  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20,attemptAdmission:deliveryAttemptAdmission });
   const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup,
     projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,transactionStartHook:projectionTransactionStart,wakeup:realtime.wakeup}) });
   const observedGateway = gatewayStatusProvider ?? gateway;
