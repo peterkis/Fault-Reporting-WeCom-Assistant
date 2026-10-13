@@ -5524,6 +5524,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t29-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7094,6 +7103,20 @@
     "wbint-t29-core-risk": [
       "tests/wbint-t29-owner-risks.integration.test.mts",
       "tests/wbint-t29-migration.integration.test.mts"
+    ],
+    "wbint-t29-recovery": [
+      "tests/wbint-t29-recovery.browser.test.mts"
+    ],
+    "wbint-t29-own": [
+      "tests/wbint-t29-contracts.test.mts",
+      "tests/wbint-t29-owner-transfer-http.integration.test.mts",
+      "tests/wbint-t29-owner-transfer.browser.test.mts",
+      "tests/wbint-t29-production-owner-transfer.browser.test.mts",
+      "tests/wbint-t29-caller-wait.integration.test.mts",
+      "tests/wbint-t29-purpose-loss.browser.test.mts",
+      "tests/wbint-t29-owner-risks.integration.test.mts",
+      "tests/wbint-t29-migration.integration.test.mts",
+      "tests/wbint-t29-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {

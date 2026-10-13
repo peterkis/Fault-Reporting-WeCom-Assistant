@@ -159,6 +159,9 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
       // Keep the existing linked Ticket READ relationship stable until commit.
       await tx.query(`SELECT t.id FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.incident_id=$1::uuid AND r.link_state='LINKED' FOR SHARE OF r,t`,[row.id]);
       try{await query.resource({authContext:{principal_id:c.owner_principal_id},id:row.id,kind:'incident',tx});}catch(error){if(error instanceof Error&&'code' in error&&['P2_012_NOT_FOUND','P2_012_FORBIDDEN'].includes(String(error.code)))fail('OWNER_INVALID',409);throw error;}
+      // Parent/target/team locks can wait. The caller authority rows were locked
+      // after the receipt FK wait; recheck the current locked Incident purpose.
+      ctx.principal=(await query.ownerTransferResource({authContext:{principal_id:p?.principal_id},id:row.id,tx})).principal;
       const previous={owner_principal_id:(row as Incident).owner_principal_id,owner_team_id:(row as Incident).owner_team_id};
       const next={owner_principal_id:c.owner_principal_id,owner_team_id:c.owner_team_id};
       ctx.incident=((await tx.query<Incident>('UPDATE incident.incident SET owner_principal_id=$2::uuid,owner_team_id=$3 WHERE id=$1::uuid RETURNING *',[row.id,c.owner_principal_id,c.owner_team_id])).rows[0] as Incident);
@@ -235,6 +238,14 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
         VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid,$9) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
         [scope,c.client_command_id,digest,c.action,c.candidate_review_id??null,c.incident_id??null,c.incident_report_id??null,ctx.principal?.principal_id??null,c.expected_row_version]);
       const receipt=((await tx.query<P2012CommandReceipt>('SELECT * FROM incident.command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE',[scope,c.client_command_id])).rows[0] as P2012CommandReceipt);
+      if(c.action==='TRANSFER_OWNER'){
+        // The INSERT's Incident FK and receipt lock can wait after initial auth.
+        // Stabilize caller active/roles before exposing an outcome or doing work.
+        const actor=ctx.principal?.principal_id;if(!actor)fail('FORBIDDEN',403);
+        await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[actor]);
+        await tx.query('SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid FOR SHARE',[actor]);
+        ctx.principal=(await query.ownerTransferResource({authContext:{principal_id:actor},id:ctx.row.id,tx})).principal;
+      }
       if(receipt.command_hash!==digest)fail('COMMAND_CONFLICT',409);
       const receiptResult=(r: Extract<P2012CommandReceipt, { state: 'COMMITTED' }>): Omit<IncidentCommandSuccess, 'replayed'>=>({ok:true,result_ref_type:r.result_ref_type,result_ref_id:r.result_ref_id,result_row_version:String(r.result_row_version),result_event_id:r.result_event_id});
       if(receipt.state==='COMMITTED')return frozen({...receiptResult(receipt),replayed:true});

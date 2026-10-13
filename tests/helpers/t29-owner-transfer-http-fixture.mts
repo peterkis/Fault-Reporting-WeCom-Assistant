@@ -18,7 +18,7 @@ export {record,text};
 
 type HttpResult={status:number;body:Record<string,unknown>};
 type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
-type FutureHostOptions=P2012RuntimeOptions & IncidentOwnerTransferHostOptions & {flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}};
+type OwnerTransferRuntimeOptions=P2012RuntimeOptions & IncidentOwnerTransferHostOptions & {flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}};
 export interface OwnerTransferHttpContext {
   pool:PostgresPool;f:Fixture;
   origin:string;cookies:ReadonlyArray<Record<string,unknown>>;databaseUrl:string;
@@ -29,10 +29,9 @@ export interface OwnerTransferHttpContext {
 }
 const closeProbe=(server:Server)=>new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
 
-/** SOURCE / NOT_RUN. Real loopback HTTP, no browser or mocked command.
- * Existing032->055->058 is the current setup. After genuine future first RED,
- * a real054 migrator belongs in this own fixture's separately preserved successor.
- * The future flag is declared input, currently unimplemented; no missing-module catch.
+/** Real loopback HTTP and isolated synthetic PG, no mocked command.
+ * The original032->055->058 setup and genuine first RED are preserved in008.
+ * This current successor explicitly applies054 and supplies the default-OFF host flag.
  */
 export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>Promise<void>,options:{recovery?:boolean;ownerEnabled?:boolean;ddl?:boolean;ownerDDL?:boolean;notes?:boolean;publication?:boolean}={}){
   let outerError:unknown;
@@ -48,7 +47,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
         const address=portProbe.address();assert.ok(address&&typeof address==='object');
         const port=address.port;await closeProbe(portProbe);probe=undefined;
         const origin='http://127.0.0.1:'+port;
-        const hostOptions:FutureHostOptions={
+        const hostOptions:OwnerTransferRuntimeOptions={
           pool,principalIds:[text(record(f.admin).id),text(record(f.dispatcher).id),text(record(f.handler).id),text(record(f.outsider).id)],
           publicOrigin:origin,listenPort:port,
           flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},
