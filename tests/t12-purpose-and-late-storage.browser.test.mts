@@ -8,6 +8,7 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT12Profile} from './helpers/t12-profile-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
+import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
@@ -20,7 +21,7 @@ async function finish(f:T11Fixture,browser:Browser|undefined,directory:string,fa
 
 test('T12 discard and committed local cleanup failure preserve another purpose, and manual original GET plus successful cleanup release the navigation guard without another POST',async()=>{
  await withT12Profile(async f=>{
-  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_PURPOSE_START'})).status,200);const initial=(await s.b.get(s.path)).value,cookie=f.browserCookies[2];assert.ok(cookie);const facts:Fact[]=[],listener=observer(cookie,f.origin,facts),directory=join(tmpdir(),'t12-purpose-settlement-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,primary:unknown;f.runtime.server.on('request',listener);
+  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_PURPOSE_START'})).status,200);assert.equal((await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT','T07_NETWORK']})).id,s.owner.id);const initial=(await s.a.get(s.path)).value;assert.ok(Array.isArray(initial.allowed_actions)&&initial.allowed_actions.includes('add-note'));assert.deepEqual((await s.a.get(s.path+'/takeover-completion-targets?resolver_team_id=T07_NETWORK')).value.allowed_actions,['takeover-and-complete']);const cookie=f.browserCookies[0];assert.ok(cookie);const facts:Fact[]=[],listener=observer(cookie,f.origin,facts),directory=join(tmpdir(),'t12-purpose-settlement-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,primary:unknown;f.runtime.server.on('request',listener);
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);await browser.waitFor("Boolean(document.querySelector('#internal-note'))");await input(browser,'#internal-note','T12_INDEPENDENT_UNSENT_NOTE');await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");await fill(browser);
    const before=object(await browser.evaluate(stored)),note=rows(before.drafts).filter(row=>row.purpose==='internal-note');assert.equal(note.length,1);assert.equal(rows(before.drafts).filter(row=>row.purpose==='ticket-takeover-completion').length,1);assert.equal(JSON.stringify(before).includes('T12_PURPOSE_PRIVATE_CANARY'),false);assert.equal(JSON.stringify(before).includes('T12_INDEPENDENT_UNSENT_NOTE'),false);
