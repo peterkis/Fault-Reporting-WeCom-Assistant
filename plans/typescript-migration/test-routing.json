@@ -7117,6 +7117,18 @@
       "tests/wbint-t29-owner-risks.integration.test.mts",
       "tests/wbint-t29-migration.integration.test.mts",
       "tests/wbint-t29-recovery.browser.test.mts"
+    ],
+    "wbint-t29-related": [
+      "tests/p2-012-domain-contracts.test.mjs",
+      "tests/p2-012-migration.integration.test.mjs",
+      "tests/p2-012-incident.integration.test.mjs",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "tests/wbint-t27-draft.browser.test.mts",
+      "tests/wbint-t28-investigating.browser.test.mts",
+      "tests/wbint-t30-command-port.integration.test.mts",
+      "tests/wbint-t30-schema.integration.test.mts",
+      "tests/wbint-t31-public-progress.integration.test.mts",
+      "tests/wbint-t31-migration.integration.test.mts"
     ]
   },
   "subprocess_entries": {
