@@ -17,6 +17,7 @@ import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-aut
 import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { guard,uuid,limit,cursor,decodeCursor,frozen,fail,assertLocalDateTime,version,hash,CANDIDATE_STATES,INCIDENT_STATES,allowedIncidentScopes,ERROR_CODES,safeCandidateSourceRefs } from './p2-012-domain-contracts.mjs';
 import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
+import {internalNoteSchemaReady} from './p2-012-internal-note-schema.mjs';
 import type {CandidateMaterial} from './p2-012-candidate-material.mjs';
 export interface CandidateOwner {id:string;display_name:string;teams:{team_id:string;display_name:string}[];teams_truncated:boolean}
 export type CandidateAction='START_REVIEW'|'REJECT_CANDIDATE'|'CONFIRM_INCIDENT';
@@ -50,6 +51,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     guard(internalNotesEnabled);
     const ctx=await resource({...input,kind:'incident'});
     if(!broad(ctx.principal)||!allowedIncidentScopes(ctx.principal.roles,allowDispatcherCampus).includes((ctx.row as Incident).confirmed_scope))fail('FORBIDDEN',403);
+    if(!await internalNoteSchemaReady(input.tx??pool))fail('DISABLED',503);
     return ctx;
   }
   return Object.freeze({principal,resource,source,internalNoteResource,
@@ -59,7 +61,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       const c=after?decodeCursor(after,['incident','scope','ordinal','id']):null;
       if(c&&(c.incident!==row.id||c.scope!==scope))fail('CURSOR_INVALID');if(c){version(c.ordinal);uuid(c.id);}
       const q=await pool.query<IncidentInternalNoteRecord>(`SELECT e.id::text,e.incident_id::text,e.event_ordinal::text,e.internal_note_incident_version::text AS incident_row_version,
-        e.actor_principal_id::text,p.display_name AS actor_display_name,e.occurred_at,'INTERNAL' AS audience,e.internal_note_text AS text
+        e.actor_principal_id::text,left(p.display_name,200) AS actor_display_name,e.occurred_at,'INTERNAL' AS audience,e.internal_note_text AS text
         FROM incident.incident_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id=e.actor_principal_id
         WHERE e.incident_id=$1::uuid AND e.event_type='incident.internal_note_added'
         AND ($2::bigint IS NULL OR (e.event_ordinal,e.id)>($2::bigint,$3::uuid)) ORDER BY e.event_ordinal,e.id LIMIT $4`,[row.id,c?.ordinal??null,c?.id??null,n+1]);

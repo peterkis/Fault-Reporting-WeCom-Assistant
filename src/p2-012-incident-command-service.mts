@@ -24,8 +24,8 @@ import { createP2012IncidentQuery,broad } from './p2-012-incident-query.mjs';
 import { normalizeCommand,guard,hash,frozen,fail,transaction,ERROR_CODES,allowedIncidentScopes } from './p2-012-domain-contracts.mjs';
 import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 
-export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus}),
-  notifications=null,realtime=null,maintenanceEnabled=false,internalNotesEnabled=false}: Options){
+export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,internalNotesEnabled=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus,internalNotesEnabled}),
+  notifications=null,realtime=null,maintenanceEnabled=false}: Options){
   async function authorize(tx: PostgresTransaction,authContext: unknown,c: NormalizedIncidentCommand,system: boolean): Promise<Authority>{
     const kind=c.candidate_review_id?'candidate':'incident';
     if(system){if(c.action!=='EXPIRE_CANDIDATE'||!maintenanceEnabled)fail('FORBIDDEN',403);

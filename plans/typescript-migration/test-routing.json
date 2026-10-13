@@ -5254,6 +5254,33 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t30-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t30-migration.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t30-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6649,6 +6676,33 @@
     ],
     "wbint-t30-http-risks": [
       "tests/wbint-t30-internal-note-risks.integration.test.mts"
+    ],
+    "wbint-t30-contracts": [
+      "tests/wbint-t30-contracts.test.mts"
+    ],
+    "wbint-t30-migration": [
+      "tests/wbint-t30-migration.integration.test.mts"
+    ],
+    "wbint-t30-recovery": [
+      "tests/wbint-t30-recovery.browser.test.mts"
+    ],
+    "wbint-t30-whole": [
+      "tests/wbint-t30-internal-note.integration.test.mts",
+      "tests/wbint-t30-schema.integration.test.mts",
+      "tests/wbint-t30-internal-note.browser.test.mts",
+      "tests/wbint-t30-command-port.integration.test.mts",
+      "tests/wbint-t30-internal-note-risks.integration.test.mts",
+      "tests/wbint-t30-contracts.test.mts",
+      "tests/wbint-t30-migration.integration.test.mts",
+      "tests/wbint-t30-recovery.browser.test.mts"
+    ],
+    "wbint-t30-related": [
+      "tests/p2-012-domain-contracts.test.mjs",
+      "tests/p2-012-migration.integration.test.mjs",
+      "tests/p2-012-incident.integration.test.mjs",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "tests/wbint-t28-investigating.browser.test.mts",
+      "tests/wbint-t27-draft.browser.test.mts"
     ]
   },
   "subprocess_entries": {

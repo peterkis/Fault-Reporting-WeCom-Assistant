@@ -5,7 +5,7 @@ import {t30Http,record,text} from './helpers/t30-internal-note-fixture.mjs';
 import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
 const input=(version:string,note='合成内部检查')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:note});
 test('T30 real HTTP enforces exact input, current purpose, stable private pages, concurrency and original-ledger recovery without outward effects',async()=>{
-  await t30Http({purpose:'t30risk'},async({pool,f,confirm,get,post})=>{
+  await t30Http({purpose:'t30risk',notifications:true},async({pool,f,confirm,get,post})=>{
     const incident=await confirm(),path='/api/incidents/'+incident,notes=path+'/internal-notes';
     const outward=await pool.query(`SELECT (SELECT count(*) FROM communication.incident_notification_binding)::text AS bindings,(SELECT count(*) FROM communication.outbox)::text AS outbox,(SELECT count(*) FROM communication.delivery)::text AS deliveries,(SELECT count(*) FROM conversation.realtime_event)::text AS sse`);
     const reporter=createP2012ReporterTimelineAdapter({pool,enabled:true}),ticketId=text(record(f.reports[0]).ticketId),milestones=await reporter.milestones({ticketId}),personal=(await get('/api/tickets/'+ticketId)).body,events=(await get(path+'/events')).body;
@@ -34,4 +34,15 @@ test('T30 real HTTP enforces exact input, current purpose, stable private pages,
 });
 test('T30 disabled host mounts no private purpose on the unchanged 032 schema',async()=>{
   await t30Http({purpose:'t30off',notes:false,ddl:false},async({confirm,get,post,pool})=>{const incident=await confirm(),path='/api/incidents/'+incident+'/internal-notes';assert.equal((await get(path)).status,404);assert.equal((await post(path,input('1'))).status,404);assert.equal((await pool.query("SELECT 1 FROM information_schema.columns WHERE table_schema='incident' AND table_name='incident_event' AND column_name='internal_note_text'")).rowCount,0);});
+});
+test('T30 a note in RESOLVED remains a note, CLOSED rejects new writes and original committed replay keeps its submission version',async()=>{
+  await t30Http({purpose:'t30closed'},async({confirm,post,get})=>{
+    const incident=await confirm(),path='/api/incidents/'+incident;
+    assert.equal((await post(path+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'})).status,200);
+    assert.equal((await post(path+'/resolve',{client_command_id:randomUUID(),expected_row_version:'2',reason_code:'RECOVERY_CONFIRMED'})).status,200);
+    const command=input('3','合成恢复之后的内部交接');assert.equal((await post(path+'/internal-notes',command)).status,200);assert.equal((await get(path)).body.status,'RESOLVED');
+    assert.equal((await post(path+'/close',{client_command_id:randomUUID(),expected_row_version:'4',reason_code:'RECOVERY_CONFIRMED'})).status,200);
+    assert.equal((await post(path+'/internal-notes',input('5'))).status,409);assert.equal((await get(path)).body.row_version,'5');
+    const page=(await get(path+'/internal-notes')).body;assert.ok(Array.isArray(page.items));assert.equal(page.items.length,1);assert.equal(record(page.items[0]).incident_row_version,'4');assert.equal((await post(path+'/internal-notes',command)).body.replayed,true);
+  });
 });
