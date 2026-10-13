@@ -341,6 +341,7 @@
     "contracts/workbench_incident_owner_transfer_result.schema.json",
     "contracts/workbench_incident_owner_transfer_event.schema.json",
     "contracts/workbench_incident_owner_transfer_contracts.d.ts",
-    "database/migrations/054_workbench_incident_owner_transfer.sql"
+    "database/migrations/054_workbench_incident_owner_transfer.sql",
+    "contracts/workbench_incident_owner_transfer_capability.schema.json"
   ]
 }

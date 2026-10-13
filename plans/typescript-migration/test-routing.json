@@ -5470,6 +5470,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t29-production-owner-transfer.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t29-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7012,6 +7030,18 @@
     ],
     "wbint-t32-route": [
       "tests/wbint-t32-exception-route.browser.test.mts"
+    ],
+    "wbint-t29-production-browser": [
+      "tests/wbint-t29-production-owner-transfer.browser.test.mts"
+    ],
+    "wbint-t29-contracts": [
+      "tests/wbint-t29-contracts.test.mts"
+    ],
+    "wbint-t29-functional-smoke": [
+      "tests/wbint-t29-contracts.test.mts",
+      "tests/wbint-t29-owner-transfer-http.integration.test.mts",
+      "tests/wbint-t29-owner-transfer.browser.test.mts",
+      "tests/wbint-t29-production-owner-transfer.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7094,7 +7124,8 @@
       "tests/helpers/p2-006-browser-harness.mjs",
       "tests/helpers/p2-016-browser-fixture.mjs",
       "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
-      "tests/helpers/t32-notification-exception-browser-fixture.mts"
+      "tests/helpers/t32-notification-exception-browser-fixture.mts",
+      "tests/helpers/t29-owner-transfer-browser-fixture.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",

@@ -21,6 +21,7 @@ type Fixture=Awaited<ReturnType<typeof fixtureP2012>>;
 type FutureHostOptions=P2012RuntimeOptions & IncidentOwnerTransferHostOptions & {flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}};
 export interface OwnerTransferHttpContext {
   pool:PostgresPool;f:Fixture;
+  origin:string;cookies:ReadonlyArray<Record<string,unknown>>;
   get:(path:string,actor?:number)=>Promise<HttpResult>;
   post:(path:string,body:Record<string,unknown>,actor?:number)=>Promise<HttpResult>;
   confirm:()=>Promise<string>;
@@ -33,7 +34,7 @@ const closeProbe=(server:Server)=>new Promise<void>((resolve,reject)=>server.clo
  * a real054 migrator belongs in this own fixture's separately preserved successor.
  * The future flag is declared input, currently unimplemented; no missing-module catch.
  */
-export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>Promise<void>){
+export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>Promise<void>,options:{recovery?:boolean;ownerEnabled?:boolean}={}){
   let outerError:unknown;
   try{
     await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t29ownerhttp',run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
@@ -55,7 +56,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
           flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},
           incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,
           incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:false,
-          incidentOwnerTransferEnabled:true,externalSendEnabled:false,
+          incidentOwnerTransferEnabled:options.ownerEnabled??true,workbenchDraftRecoveryEnabled:options.recovery??false,externalSendEnabled:false,
         };
         runtime=createP2012Runtime(options);
         const started=record(await runtime.start());assert.ok(Array.isArray(started.cookies));
@@ -88,7 +89,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
             selected_report_refs:f.reports.map(report=>text(record(report).decisionId)),primary_ticket_id:null});
           assert.equal(response.status,200,JSON.stringify(response.body));return text(response.body.result_ref_id);
         };
-        await run({pool,f,get,post,confirm,posts});
+        await run({pool,f,get,post,confirm,posts,origin,cookies});
       }catch(error){primaryError=error;}
       await closeBrowserTestResources([
         async()=>{if(probe?.listening)await closeProbe(probe);probe?.removeAllListeners();assert.equal(probe?.listening??false,false);},
