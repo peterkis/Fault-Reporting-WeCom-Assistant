@@ -6845,6 +6845,14 @@
       "tests/wbint-t31-http-risks.integration.test.mts",
       "tests/wbint-t31-delivery-admission.integration.test.mts",
       "tests/wbint-t31-delivery-results.integration.test.mts"
+    ],
+    "wbint-t31-related": [
+      "tests/p2-004-communication-core.test.mjs",
+      "tests/p2-004-communication-core.integration.test.mjs",
+      "tests/p2-012-subscription-notification.integration.test.mjs",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "tests/wbint-t30-command-port.integration.test.mts",
+      "tests/wbint-t30-schema.integration.test.mts"
     ]
   },
   "subprocess_entries": {
