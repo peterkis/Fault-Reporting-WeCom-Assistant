@@ -4,6 +4,16 @@
 
 按 `METHOD + PATH` 搜索。参数 `{...}` 是占位标识，不是字面URL。W/M/O/P定义见公共约定。`已实现`表示源码有handler并依赖相应装配/默认关闭开关，**不表示当前部署已启用**；`条件兼容`仅特定访问策略，`拒绝`不是可用服务。各行链接包含请求/响应/认证/失败规则及源码/测试。
 
+## T31 显式安全公开进展（独立默认关闭）
+
+| 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/incidents/{incidentId}/publish-update` | W | 本地已实现、默认关闭：独立人工摘要预览确认，不复制内部记录 | [T31公开进展](workbench/incident-public-progress.md) |
+| GET | `/api/incidents/{incidentId}/public-progress` | W | 本地已实现、默认关闭：当前用途获权有界发布页 | [T31公开进展](workbench/incident-public-progress.md) |
+| GET | `/api/incidents/{incidentId}/public-progress/{publicationId}/deliveries` | W | 本地已实现、默认关闭：具体发布的独立安全按路结果 | [T31公开进展](workbench/incident-public-progress.md) |
+
+原Incident commands读取按同主体原PUBLISH用途及当前授权核对，不另建ledger。新用途不继承旧生命周期现场批准；没有GROUP路由。以上不表示部署已启用。
+
 ## T30 内部处置（独立默认关闭）
 
 | 方法 | 完整路径 | 宿主 | 当前状态／候选用途 | 契约文档 |
