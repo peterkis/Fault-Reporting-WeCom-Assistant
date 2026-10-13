@@ -6577,6 +6577,13 @@
     ],
     "wbint-t13-history-window": [
       "tests/t13-history-window.browser.test.mts"
+    ],
+    "wbint-t13-related": [
+      "tests/p2-016-contracts.test.mjs",
+      "tests/p2-016-workbench-http.integration.test.mjs",
+      "tests/t04-self-handling.integration.test.mjs",
+      "tests/t05-conversation-handling.integration.test.mts",
+      "tests/wbint-t38-realtime.test.mts"
     ]
   },
   "subprocess_entries": {
