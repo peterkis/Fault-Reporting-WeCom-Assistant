@@ -36,7 +36,7 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i
     ...context,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,internalNotesEnabled:incidentInternalNotesEnabled,publicProgressEnabled:incidentPublicProgressEnabled,communicationAppend:options.communicationAppend})});
 }
 export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,communicationAppend}: ExtensionOptions){
-  if(typeof candidateWorkspaceEnabled!=='boolean'||typeof internalNotesEnabled!=='boolean')fail();
+  if(typeof candidateWorkspaceEnabled!=='boolean'||typeof internalNotesEnabled!=='boolean'||typeof publicProgressEnabled!=='boolean')fail();
   if(typeof backgroundMaintenance!=='boolean')fail();
   const f=flags(featureFlags),enabled=f.INCIDENT_CORRELATION_ENABLED,query=createP2012IncidentQuery({pool,enabled,internalNotesEnabled,publicProgressEnabled});
   const projector=createP2012RealtimeProjector({pool,enabled,wakeup:realtime?.wakeup});
@@ -48,7 +48,7 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes
   return Object.freeze({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,
     async ready(){if(!enabled)return true;try{return (!publicProgressEnabled||await publicProgressSchemaReady(pool))&&(!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
     reporterAdapter:enabled?createP2012ReporterTimelineAdapter({pool,enabled}):null,
-    authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled}),
+    authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled}),
     async staticHandler(pathname: string,response: Parameters<NonNullable<G1RuntimeExtension['staticHandler']>>[1]){
       const files: Record<string, readonly [string, string]>={'/workbench/incidents':['incidents.html','text/html'],'/static/workbench/incidents.js':['incidents.js','text/javascript']};
       const item=files[pathname];if(!item)return false;
