@@ -5407,6 +5407,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t32-notification-exceptions.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6488,7 +6497,8 @@
       "tests/wbint-t31-purpose-loss.browser.test.mts",
       "tests/wbint-t32-notification-exceptions.integration.test.mts",
       "tests/wbint-t32-session-exceptions.integration.test.mts",
-      "tests/wbint-t32-incident-exceptions.integration.test.mts"
+      "tests/wbint-t32-incident-exceptions.integration.test.mts",
+      "tests/wbint-t32-notification-exceptions.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6920,6 +6930,9 @@
     ],
     "wbint-t32-incident": [
       "tests/wbint-t32-incident-exceptions.integration.test.mts"
+    ],
+    "wbint-t32-browser": [
+      "tests/wbint-t32-notification-exceptions.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7000,7 +7013,8 @@
     "BROWSER_AND_STATIC_RESOURCES": [
       "tests/helpers/p2-006-browser-harness.mjs",
       "tests/helpers/p2-016-browser-fixture.mjs",
-      "tests/helpers/p2-g2-yixiaoxiu-browser.mjs"
+      "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
+      "tests/helpers/t32-notification-exception-browser-fixture.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",

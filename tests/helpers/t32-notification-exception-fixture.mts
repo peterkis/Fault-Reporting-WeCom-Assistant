@@ -9,6 +9,8 @@ import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progr
 import {fixtureP2012} from './p2-012-postgres-harness.mjs';
 import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../../src/p2-004-communication-sender-port.mjs';
 
 export function t32Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t32Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -18,6 +20,19 @@ export interface T32Fixture extends T11Fixture {
   get:(path:string,actor?:number)=>Promise<{status:number;body:Record<string,unknown>}>;
   post:(path:string,body:Record<string,unknown>,actor?:number)=>Promise<{status:number;body:Record<string,unknown>}>;
   confirm:(scope?:string)=>Promise<string>;
+}
+/** Real existing Session commands and Delivery outcomes; only the external Sender is synthetic. */
+export async function seedT32SessionExceptions(f:T32Fixture,count=2){
+  const row=(await f.pool.query<{id:string}>('SELECT id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[f.tickets[0]?.intake.intakeId])).rows[0];assert.ok(row);
+  const path='/api/conversations/'+row.id,current=(await f.get(path)).body;
+  assert.equal((await f.post(path+'/takeover',{client_command_id:randomUUID(),expected_row_version:t32Record(current.session).row_version})).status,200);
+  let calls=0;const ids:string[]=[];
+  const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:createCommunicationSenderPort(()=>{calls++;return {outcome:calls%2?'REJECTED_NOT_APPLIED':'UNKNOWN',provider_message_id:null,error_code:'T32_RAW_PROVIDER_CANARY',retryable:false};})});
+  for(let index=0;index<count;index++){
+    const detail=(await f.get(path)).body,response=await f.post(path+'/messages',{client_command_id:randomUUID(),expected_row_version:t32Record(detail.session).row_version,message_type:'text',text:'T32_PRIVATE_SESSION_CANARY'});
+    assert.equal(response.status,202,JSON.stringify(response.body));assert.ok(Array.isArray(response.body.delivery_ids));const id=t32Text(response.body.delivery_ids[0]);ids.push(id);assert.ok(await worker.deliver({deliveryId:id}));
+  }
+  assert.equal(calls,count);return {sessionId:row.id,deliveryIds:ids,senderCalls:()=>calls};
 }
 export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{enabled?:boolean;publication?:boolean;ddl?:boolean;externalSend?:boolean}={}) {
   await withWeb01Fixture(async(original:T11Fixture)=>{
