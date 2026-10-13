@@ -5182,6 +5182,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t13-contract-boundaries.test.mts",
+      "requires_database": false,
+      "requires_browser": false,
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t13-history-boundaries.integration.test.mts",
+      "requires_database": true,
+      "requires_browser": false,
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6246,7 +6264,9 @@
       "tests/t10-late-session.browser.test.mts",
       "tests/t10-privacy-boundaries.browser.test.mts",
       "tests/t10-waiting.browser.test.mts",
-      "tests/t13-production-history.browser.test.mts"
+      "tests/t13-production-history.browser.test.mts",
+      "tests/t13-contract-boundaries.test.mts",
+      "tests/t13-history-boundaries.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6534,7 +6554,15 @@
     ],
     "wbint-t13-current": [
       "tests/wbint-t13-assignment-history.integration.test.mts",
+      "tests/t13-contract-boundaries.test.mts",
+      "tests/t13-history-boundaries.integration.test.mts",
       "tests/t13-production-history.browser.test.mts"
+    ],
+    "wbint-t13-contract-boundaries": [
+      "tests/t13-contract-boundaries.test.mts"
+    ],
+    "wbint-t13-history-boundaries": [
+      "tests/t13-history-boundaries.integration.test.mts"
     ]
   },
   "subprocess_entries": {
