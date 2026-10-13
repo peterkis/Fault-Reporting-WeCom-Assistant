@@ -5,7 +5,7 @@ import {t30Browser} from './helpers/t30-internal-note-browser-fixture.mjs';
 import {record,text} from './helpers/t30-internal-note-fixture.mjs';
 
 test('T30 recovery disabled retains the original lost-ACK receipt identity after lawful CLOSED without replay',async()=>{
-  await t30Browser('t30norecovery',async({browser,incidentId,get,post,put})=>{
+  await t30Browser('t30norecov',async({browser,incidentId,get,post,put})=>{
     const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);assert.equal(bootstrap.body.incident_internal_notes_enabled,true);assert.equal(bootstrap.body.incident_internal_note_draft_recovery_enabled,false);
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-internal-note-draft]"))'),false);
     await browser.evaluate("(()=>{const send=fetch;globalThis.__t30Original=null;globalThis.__t30Writes=0;globalThis.__t30ReceiptReads=[];globalThis.fetch=async(path,options)=>{const url=String(path);if(options?.method==='POST'&&url.endsWith('/internal-notes')){globalThis.__t30Writes++;globalThis.__t30Original=JSON.parse(options.body);const response=await send(path,options);await response.arrayBuffer();throw new TypeError('SYNTHETIC_ACK_LOSS_AFTER_REAL_COMMIT');}if(url.includes('/commands/'))globalThis.__t30ReceiptReads.push(url);return send(path,options);};})()");
