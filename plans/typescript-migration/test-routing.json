@@ -5173,6 +5173,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t13-production-history.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -6236,7 +6245,8 @@
       "tests/t10-purpose-expiry.browser.test.mts",
       "tests/t10-late-session.browser.test.mts",
       "tests/t10-privacy-boundaries.browser.test.mts",
-      "tests/t10-waiting.browser.test.mts"
+      "tests/t10-waiting.browser.test.mts",
+      "tests/t13-production-history.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -6518,6 +6528,13 @@
     ],
     "wbint-t13-assignment-history-source": [
       "tests/wbint-t13-assignment-history.integration.test.mts"
+    ],
+    "wbint-t13-production-history": [
+      "tests/t13-production-history.browser.test.mts"
+    ],
+    "wbint-t13-current": [
+      "tests/wbint-t13-assignment-history.integration.test.mts",
+      "tests/t13-production-history.browser.test.mts"
     ]
   },
   "subprocess_entries": {
