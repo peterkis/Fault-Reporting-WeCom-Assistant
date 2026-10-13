@@ -2,8 +2,8 @@ import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 /** Existing committed purpose and binding, rechecked at attempt admission. */
 export function createIncidentPublicProgressAdmission({enabled=false}:{enabled?:boolean}={}){
   return async({transaction:tx,deliveryId}:{transaction:PostgresTransaction;deliveryId:string})=>{
-    const purpose=await tx.query<{destination_policy:string}>(`SELECT m.destination_policy FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id WHERE d.id=$1::uuid`,[deliveryId]);
-    if(purpose.rows[0]?.destination_policy!=='INCIDENT_PUBLIC_PROGRESS_DIRECT')return true;
+    const purpose=await tx.query<{sender_system_code:string}>(`SELECT m.sender_system_code FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id WHERE d.id=$1::uuid`,[deliveryId]);
+    if(purpose.rows[0]?.sender_system_code!=='INCIDENT_PUBLIC_PROGRESS')return true;
     if(!enabled)return false;
     // Same lock as publication and pause/change commands, held until the
     // LEASED->SENDING transaction commits. After admission it is in-flight.
