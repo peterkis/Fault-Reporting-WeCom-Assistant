@@ -8,15 +8,15 @@ interface HistoryRow {
  event_id:string;event_ordinal:number;occurred_at:string;first:boolean;cycle_no:number|null;
  actor_name:string|null;previous_person_id:string|null;next_person_id:string|null;
  previous_team_id:string|null;next_team_id:string|null;previous_person_name:string|null;next_person_name:string|null;
- previous_team_name:string|null;next_team_name:string|null;previous_person_proven:boolean;next_person_proven:boolean;
- previous_team_proven:boolean;next_team_proven:boolean;
+ previous_team_name:string|null;next_team_name:string|null;previous_person_proven:boolean|null;next_person_proven:boolean|null;
+ previous_team_proven:boolean|null;next_team_proven:boolean|null;
 }
 interface CommunicationRow {ticket_event_id:string;session_id:string;control_event_id:string;occurred_at:string;actor_name:string|null;old_assignment_status:string|null;new_assignment_status:string|null;previous_target:string|null;previous_status:string|null;previous_name:string|null;next_target:string|null;next_name:string|null}
 type Predicate={sql:string;values:readonly unknown[]};
 const assignmentTypes="'ticket.accepted','ticket.assignment_transferred','ticket.unassigned','ticket.returned_to_dispatch'";
 const assignmentControls="'ASSIGNMENT_ASSIGNED','ASSIGNMENT_TRANSFERRED','ASSIGNMENT_RELEASED','HANDOFF_ACCEPTED','HANDOFF_RELEASED'";
 const known=(name:unknown):P2016AssignmentHistoryName=>typeof name==='string'&&name.trim().length>0&&name.length<=128&&!/[\u0000-\u001f\u007f]/u.test(name)?{state:'KNOWN',name}:{state:'UNKNOWN'};
-function person(id:string|null,name:string|null,proven:boolean):P2016AssignmentHistoryName{return !proven?{state:'UNKNOWN'}:id===null?{state:'NONE'}:known(name);}
+function person(id:string|null,name:string|null,proven:boolean|null):P2016AssignmentHistoryName{return !proven?{state:'UNKNOWN'}:id===null?{state:'NONE'}:known(name);}
 
 /** Existing append-only facts only. No command, snapshot, raw identity or current owner is returned. */
 export async function assignmentHistoryPage({queryable,ticketId,principal,sessionPredicate,cursor=null,limit}:{queryable:PostgresTransaction;ticketId:string;principal:WorkbenchPrincipal;sessionPredicate:Predicate;cursor?:unknown;limit?:unknown}):Promise<P2016AssignmentHistoryPage>{
@@ -49,7 +49,8 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
    WHERE c.ticket_id=$1::uuid AND c.cycle_no=1 AND ${firstProof}) AS recorded`,[ticketId]);
  const result=await queryable.query<HistoryRow>(`SELECT e.event_id::text,e.event_ordinal,e.created_at AS occurred_at,
    COALESCE(c.first_responsibility_event_id=e.event_id,false) AS first,c.cycle_no,actor.display_name AS actor_name,
-   CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_assignee_id' ELSE NULL END AS previous_person_id,
+   CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_assignee_id'
+     WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_assignee_id' ELSE NULL END AS previous_person_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_assignee_id'
      WHEN accepted.proven THEN e.operator_id
      WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_principal_id::text ELSE NULL END AS next_person_id,
@@ -65,7 +66,9 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
      AND e.assignment_metadata->>'old_assignee_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'),false)
      OR COALESCE(prefix.proven,false) OR reopened.proven OR (accepted.proven AND predecessor.same_cycle
        AND e.old_status='QUEUED' AND predecessor.new_status='QUEUED'
-       AND predecessor.assignment_metadata->'new_assignee_id'='null'::jsonb)) AS previous_person_proven,
+       AND (predecessor.assignment_metadata->'new_assignee_id'='null'::jsonb OR
+         (jsonb_typeof(predecessor.assignment_metadata->'new_assignee_id')='string'
+           AND predecessor.assignment_metadata->>'new_assignee_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')))) AS previous_person_proven,
    (COALESCE(e.assignment_metadata->'new_assignee_id'='null'::jsonb OR (jsonb_typeof(e.assignment_metadata->'new_assignee_id')='string'
      AND e.assignment_metadata->>'new_assignee_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'),false)
      OR accepted.proven OR (e.assignment_metadata IS NULL AND c.first_responsibility_event_id=e.event_id AND ${firstProof})) AS next_person_proven,
@@ -98,8 +101,9 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
      WHERE e.event_type='ticket.accepted' AND e.assignment_metadata IS NULL AND e.operator_type='PILOT_USER'
        AND l.ticket_id=e.ticket_id AND l.state='COMMITTED' AND l.actor_principal_id::text=e.operator_id
        AND l.command_scope='P2_016:'||l.actor_principal_id::text
-       AND l.command_type IN ('take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations')
-       AND e.trace_id IN ('t04:'||l.client_command_id::text,'t05:'||l.client_command_id::text)
+       AND ((l.command_type IN ('take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations')
+         AND e.trace_id IN ('t04:'||l.client_command_id::text,'t05:'||l.client_command_id::text))
+         OR (l.command_type='WORKBENCH_TICKET_TAKEOVER' AND e.trace_id='t07:'||l.client_command_id::text))
        AND l.result_snapshot->>'ticket_id'=e.ticket_id::text
        AND l.result_snapshot->'handling_cycle'->>'id'=c.id::text) AS proven) accepted ON TRUE
    LEFT JOIN LATERAL (SELECT h.assignment_metadata,h.new_status,prior_link.cycle_id=c.id AS same_cycle
@@ -108,7 +112,7 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
      LEFT JOIN pilot_ticket.ticket_handling_cycle_event prior_link ON prior_link.ticket_id=e.ticket_id AND prior_link.ticket_event_id=h.event_id
      WHERE h.event_type IN (${assignmentTypes}) ORDER BY h.event_ordinal DESC LIMIT 1) predecessor ON TRUE
    LEFT JOIN pilot_ticket.pilot_principal actor ON actor.id::text=e.operator_id AND e.operator_type='PILOT_USER'
-   LEFT JOIN pilot_ticket.pilot_principal previous_person ON previous_person.id::text=e.assignment_metadata->>'old_assignee_id'
+   LEFT JOIN pilot_ticket.pilot_principal previous_person ON previous_person.id::text=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_assignee_id' WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_assignee_id' END
    LEFT JOIN pilot_ticket.pilot_principal next_person ON next_person.id::text=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_assignee_id' WHEN accepted.proven THEN e.operator_id ELSE c.first_responsibility_principal_id::text END
    LEFT JOIN pilot_ticket.resolver_team previous_team ON previous_team.team_id=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_team_id' WHEN prefix.proven OR reopened.proven THEN c.first_responsibility_team_id WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' END
    LEFT JOIN pilot_ticket.resolver_team next_team ON next_team.team_id=CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_team_id' WHEN c.first_responsibility_event_id=e.event_id THEN c.first_responsibility_team_id WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_team_id' END
