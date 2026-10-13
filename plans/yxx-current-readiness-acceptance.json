@@ -233,7 +233,8 @@
     "tests/yxx-ss-010-contract.test.mjs",
     "tests/yxx-ss-010-runtime.integration.test.mjs",
     "tests/wbint-t32-notification-exceptions.integration.test.mts",
-    "tests/wbint-t32-session-exceptions.integration.test.mts"
+    "tests/wbint-t32-session-exceptions.integration.test.mts",
+    "tests/wbint-t32-incident-exceptions.integration.test.mts"
   ],
   "historical_registered_files": [
     "tests/yxx-ss-008-validation-scope.test.mjs"
