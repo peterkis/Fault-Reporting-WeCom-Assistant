@@ -1,6 +1,6 @@
 import type {LocalDateTime} from '../contracts/time_contracts.js';
 import type {P2016AssignmentHistoryPage,P2016AssignmentHistoryName,P2016AssignmentHistoryResponsibility,P2016AssignmentHistoryItem,P2016AssignmentHistoryCommunication} from '../contracts/p2_016_assignment_history_contracts.js';
-const invalid=():never=>{throw new TypeError('ASSIGNMENT_HISTORY_INVALID_RESPONSE');};
+function invalid():never{throw new TypeError('ASSIGNMENT_HISTORY_INVALID_RESPONSE');}
 function object(value:unknown,keys:readonly string[]):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||keys.some(key=>!Object.hasOwn(value,key)))invalid();return value as Record<string,unknown>;}
 function text(value:unknown):string{if(typeof value!=='string')invalid();return value;}
 function uuid(value:unknown):string{const v=text(value);if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(v))invalid();return v;}
