@@ -19,7 +19,7 @@ execution_status: IN_PROGRESS
 | WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | T01文档与[T23来源群目录LOCAL_VERIFIED](execution/t23.md)已本地集成、关票；各详细合同继续由所属票冻结 | A00 |
 | WBINT-01 | 命令上下文、错误与草稿基础 | 00 | [T02可靠备注LOCAL_VERIFIED](execution/t02.md)与[T03持久恢复LOCAL_VERIFIED](execution/t03.md)均已集成、关票；后续表单分别验证其消费合同，整体证据由T43汇总 | A01 |
 | WBINT-02 | 轮次与责任／一步处理／退回 | 01 | LOCAL_VERIFIED：T02、T04–T10八票原七项均已父核、集成并原生CLOSED/completed；[T10完成记录](execution/t10.md)与[各票证据导航](execution.md)保留原失败、真实被测祖先及清理限制。A02本地完成，默认关闭，未发布／启用 | A02 |
-| WBINT-03 | 完工、接管关闭、责任链 | 02 | IN_PROGRESS：[T11工作人员完工LOCAL_VERIFIED](execution/t11.md)与[T12一次接管关闭LOCAL_VERIFIED](execution/t12.md)原七项均已父核、集成并原生CLOSED/completed；内部过程、独立安全摘要、原轮次及唯一通知承诺保持。T13只有SOURCE准备、尚未整票验收，A03整组仍待 | A03 |
+| WBINT-03 | 完工、接管关闭、责任链 | 02 | LOCAL_VERIFIED：[T11工作人员完工](execution/t11.md)、[T12一次接管关闭](execution/t12.md)、[T13接单与交接链](execution/t13.md)原七项均经父核、集成并原生CLOSED/completed；原轮次、独立内部过程／公开摘要、唯一通知承诺及当前获权历史保持。A03本地完成，默认关闭，未发布／启用 | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | IN_PROGRESS：[T14同事项人工复核LOCAL_VERIFIED](execution/t14.md)与[T16已有附件读取LOCAL_VERIFIED](execution/t16.md)均已本地集成并关票；T15已按原生依赖领取并独立准备，A04整组尚未验收 | A04 |
 | WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：[T17代录](execution/t17.md)及[T18核实成员](execution/t18.md)原七项已核对、集成并关票；T19同事务本人开始尚未完成，A05整组尚未验收 | A05 |
 | WBINT-06 | 原 Reporter 反馈与重开 | 03 | LOCAL_VERIFIED：[T20 Web本人反馈](execution/t20.md)与[T21 Bot本人反馈](execution/t21.md)原七项均经父独立核对、集成并GitHub收口；A06本地完成，默认关闭、未发布／启用 | A06 |

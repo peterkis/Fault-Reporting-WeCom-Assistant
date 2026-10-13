@@ -290,3 +290,5 @@ strong { font-weight: var(--fw-medium); }
 .ticket-takeover fieldset{min-width:0;border:0;padding:0;margin:12px 0;display:grid;gap:8px}
 .ticket-takeover select{display:block;width:100%;max-width:100%;margin-top:6px}
 .ticket-takeover>button{margin:8px 8px 0 0}
+
+.ticket-assignment-history li>span{min-width:0;overflow-wrap:anywhere}.ticket-assignment-history ul ul{margin-top:6px;padding-left:12px}
