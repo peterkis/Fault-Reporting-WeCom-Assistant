@@ -157,6 +157,8 @@ execution_status: IN_PROGRESS
 
 ## WBINT-11：通知异常工作区与受控恢复
 
+2026-10-14 T32/#87本地原七贡献已实现并完成适用隔离验证，PENDING_PARENT，详见[本票执行记录](execution/t32.md)。按当前各域/用途先授权再有界分页、每路安全事实和正式App只读详情已接入，无DB变更，新增默认false。T33新增Incident控制及整个A11收口仍待后续；不从本票VIEW扩权，不称全43或生产完成。原计划条目保持其T32/T33联合范围。
+
 - **负责范围**：跨域有界异常查询、Incident专用Delivery控制、React异常列表／安全详情；原Ticket／Conversation控制不改成共享万能授权。
 - **输入／HTTP**：08、10真实各路结果；新增notification-exceptions、Incident delivery retry/reconcile，复用已有Ticket和Conversation精确控制入口。
 - **输出／合同**：业务kind＋opaque ref／授权链接、路由／安全摘要、结果与最近尝试、允许控制动作；各域先授权再分页，全局游标不能暴露隐藏对象计数。UNKNOWN→核对，普通retry仅符合现有确定未应用／允许状态条件；核对需独立权限及理由／结论。

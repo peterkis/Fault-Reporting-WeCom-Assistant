@@ -337,3 +337,19 @@ Phase 3 实施前必须补充机器可读 Ticket Adapter Contract，至少覆盖
 - 切换状态与只读保护。
 
 在 P3-003 前，本文件不构成 Hospital Tickets 的可调用契约。
+
+
+## 12. T32 获权通知异常只读入口
+
+内部职员Session。宿主 `notificationExceptionsEnabled=false` 为默认；能力 `notification_exceptions_enabled` false时GET/static入口404。启用不授新的域或用途权限。
+
+| HTTP | 输入 | 输出/拒绝 |
+|---|---|---|
+| GET `/api/notification-exceptions` | domain=ALL/TICKET/SESSION/INCIDENT；route=ALL/GROUP/BOT_DIRECT/YIXIAOXIU_APP；state=ALL/FAILED/UNKNOWN；limit默认30/最大50；opaque cursor | items≤limit、has_more、next_cursor；没有total/count；重复/多余字段或混用游标400 |
+| GET `/api/notification-exceptions/{ticket\|session\|incident}/{parent_id}/{delivery_id}` | 当前获权同域parent和opaque Delivery ID，无query参数 | 精确安全item；wrong parent/隐藏对象404；未认证401 |
+
+DTO/DTS见 `contracts/workbench_notification_exception_contracts.d.ts`、query/page/item/capability四同名前缀Schema。来源分别为Ticket binding、获权Session外部Message、Incident lifecycle binding以及仍获原T31用途权的public-progress。授权先于分页与has_more；stable created_at/id倒序，HMAC cursor绑定当前主体/范围/筛选，host重启旧cursor重新从首页读。最多四分支各n+1行、最近Attempt一条；事务READ ONLY、statement_timeout2秒，无数据库变更/新长期事实源。
+
+items闭合字段为domain/parent_id/delivery_id/source_kind/route_kind/destination_type/status/side_effect_state/attempt_count/last_attempt/safe_summary/error_code/created_at/updated_at/sent_at/allowed_actions/parent_link。时间为北京时间本地ISO格式、最多6位小数；sent_at不是本人已读。错误仅FAILURE_RECORDED或RESULT_UNCONFIRMED，绝无原始身份、目标/hash/provider/raw receipt、通用Message正文或内部备注。DEAD_LETTER与UNKNOWN待核对独立；仅UNKNOWN的CANCELLED可列。
+
+Ticket/Session actions按现有域控制与当前角色/状态/发送开关投影，正式页面只链接既有域入口，不执行新命令；Incident actions=[]，T33新retry/reconcile仍后续票。public-progress关闭/缺058/失去当前scope时在LIMIT前排除，旧Incident入口不绕读。关闭新查询保留全部原Delivery/Attempt/事件。正式App `/workbench/app/notification-exceptions[/]` 当前页最多10、一条当前已选item，不从每张卡片扇出投递；取消迟到读取，403/404局部裁剪、真实401统一失效。执行证据见本票 `plans/admin-workbench-integration/execution/t32.md`，本地实现待父验收，不等于现场授权。
