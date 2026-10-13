@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
-import {readFile} from 'node:fs/promises';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
+import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
 import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {record,text} from './wbint-t27-browser-fixture.mjs';
@@ -12,7 +13,7 @@ export {record,text};
 export async function t31Http(options:{purpose:string;notes?:boolean;ddl?:boolean;recovery?:boolean;notifications?:boolean;publication?:boolean;reporters?:number},run:(context:{pool:PostgresPool;databaseUrl:string;f:Awaited<ReturnType<typeof fixtureP2012>>;origin:string;runtime:ReturnType<typeof createP2012Runtime>;cookies:Record<string,unknown>[];get:(path:string,actor?:number)=>Promise<{status:number;body:Record<string,unknown>}>;post:(path:string,body:Record<string,unknown>,actor?:number,headers?:Record<string,string>)=>Promise<{status:number;body:Record<string,unknown>}>;confirm:(scope?:string)=>Promise<string>})=>Promise<void>){
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:options.purpose,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
-    if(options.ddl!==false){await pool.query(await readFile(new URL('../../database/migrations/055_workbench_incident_internal_notes.sql',import.meta.url),'utf8'));await pool.query(await readFile(new URL('../../database/migrations/058_workbench_incident_public_progress.sql',import.meta.url),'utf8'));}
+    if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});}
     const f=await fixtureP2012(pool,{reporters:options.reporters??4}),probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
     const origin='http://127.0.0.1:'+port,runtime=createP2012Runtime({pool,principalIds:[text(record(f.admin).id),text(record(f.dispatcher).id),text(record(f.handler).id),text(record(f.outsider).id)],publicOrigin:origin,listenPort:port,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:options.notifications??false,INCIDENT_PRIVATE_NOTICE_ENABLED:options.notifications??false},incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:options.notes??true,incidentPublicProgressEnabled:options.publication??true,workbenchDraftRecoveryEnabled:options.recovery??false,externalSendEnabled:false});
     let primaryError:unknown;

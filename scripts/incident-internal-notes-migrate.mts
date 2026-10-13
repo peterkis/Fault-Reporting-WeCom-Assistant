@@ -17,7 +17,11 @@ export async function migrateIncidentInternalNotes({databaseUrl,mode='check'}:{d
     await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_012_COMMAND',0))");
     const previous=await tx.query<{checksum_sha256:string}>("SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'");if(previous.rows[0]?.checksum_sha256!==sha(previousSql))fail('COMMAND_FAILED',503);
     const marker=await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[INTERNAL_NOTE_MIGRATION_ID]);
-    if(marker.rows[0]){if(marker.rows[0].checksum_sha256!==checksum||!await internalNoteSchemaReady(tx))fail('COMMAND_FAILED',503);return {status:'NOOP_ALREADY_APPLIED',migration_id:INTERNAL_NOTE_MIGRATION_ID,catalog_sha256:internalNoteSchemaHash(await internalNoteSchemaInventory(tx))};}
+    if(marker.rows[0]){if(marker.rows[0].checksum_sha256!==checksum||!await internalNoteSchemaReady(tx))fail('COMMAND_FAILED',503);
+      if(internalNoteSchemaHash(await internalNoteSchemaInventory(tx))!=='485113befa00e22cbc3fcd54bf4f7eb30c13cd7d4fa072e724d91b8cc6e982e8'){
+        const extensionSql=await readFile(new URL('../database/migrations/058_workbench_incident_public_progress.sql',import.meta.url),'utf8'),extensionMarker=await tx.query<{checksum_sha256:string}>("SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id='058_workbench_incident_public_progress'");if(extensionMarker.rows[0]?.checksum_sha256!==sha(extensionSql))fail('COMMAND_FAILED',503);
+      }
+      return {status:'NOOP_ALREADY_APPLIED',migration_id:INTERNAL_NOTE_MIGRATION_ID,catalog_sha256:internalNoteSchemaHash(await internalNoteSchemaInventory(tx))};}
     if(internalNoteSchemaHash(await internalNoteSchemaInventory(tx))!==BASELINE_SHA256)fail('COMMAND_FAILED',503);
     if(mode==='status')return {status:'READY_FOR_055',migration_id:INTERNAL_NOTE_MIGRATION_ID};
     if(mode==='check')await tx.query('SAVEPOINT note_schema_check');

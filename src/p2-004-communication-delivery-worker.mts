@@ -377,7 +377,6 @@ export function createCommunicationDeliveryWorker({
 
 export function createCommunicationReconciliationPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
-    || (attemptAdmission!==null&&typeof attemptAdmission!=='function')
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Reconciliation port configuration is invalid.');
   return Object.freeze({
     async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false, transaction = null }: ReconciliationInput) {
@@ -436,7 +435,6 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
 
 export function createCommunicationDeliveryOperatorPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
-    || (attemptAdmission!==null&&typeof attemptAdmission!=='function')
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Delivery operator port configuration is invalid.');
   return Object.freeze({
     async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY', transaction = null }: DeliveryRetryInput) {
