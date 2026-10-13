@@ -395,3 +395,24 @@ raw关闭后允许已有UNKNOWN opaque操作在当前READ下显式GET，不允�
 ticketWaitingActionsEnabled默认false，两bootstrap capability也缺省false，raw须同时有原recovery与新写能力。关闭新写禁止新菜单提交，保留已提交Ticket／event／责任及原操作的当前READ核对；不删除历史或扩大通知权限。复用现有App/API/SSE与池，不增加后台服务、SSE连接或轮询；单App/Worker、Gateway单活、SSE32／原池预算保持。
 
 本地未发布对象69d5619ee31cd69aa8b6378a16bfaf0eeb92f6bc完成当前一次build／strict含负向类型／artifact 0/0/0、22文件41PASS（T10 28＋相关13）、13 accepted PNG；三适用工具风险组真实20PASS/native0，外部wrapper误读嵌套失败计数的原FAIL和外层解释分别保留。自有PG stop0/status3/pidnull/62775拒绝连接、data/config保留，extraDB／client／probe池0。原3 tracer与3Schema、所有历史FAIL／NOT_REACHED／NOT_RUN和5d逐原SHA恢复边界保持。完整逐项证据与两轴固定SOURCE收口见[本票执行记录](../../../plans/admin-workbench-integration/execution/t10.md)及外部D最终handoff；该纯记录后继不重绑tested_head。父独立整票验收、Root聚合／安全FF／原生Issue收口由父完成，不改变真实外部服务／发送、部署、full/certify或Gate停止线。
+
+## WBINT-T13 当前安全责任链（本地验证，2026-10-13）
+
+当前独立只读 GET /api/tickets/{ticketId}/assignment-history 已由原 W/P2-016 宿主挂载，并在正式 Detail 显示；[本票 WBINT-03/A03 执行记录](../../../plans/admin-workbench-integration/execution/t13.md)保留原 SOURCE 与当前证据。宿主 option workbenchAssignmentHistoryEnabled=false、bootstrap assignment_history_enabled 缺省false；关闭历史入口保留全部 Ticket/Event/cycle/Control 事实及其他获权入口。无数据库变更、第二 Core/历史表/ledger、写命令、池、poller 或通知授权变化。
+
+GET无body，只接受各一次cursor/limit（重复或额外参数400）；limit默认20、正整数最大100，cursor最多2048字符。每页重新认证并核当前Ticket READ，既有039 ready未成立时503；不能借cursor或Ticket写许可获取读取权。event_ordinal/event_id稳定升序keyset，以n+1判定next_cursor，不用OFFSET、total或hidden_count；cursor绑定Ticket、主体、角色/组授权范围及查询版本。
+
+[原Page Schema](../../../contracts/p2_016_assignment_history_page.schema.json)/[类型](../../../contracts/p2_016_assignment_history_contracts.d.ts)保持冻结闭合字段schema_version/ticket_id/initial_basis/items/next_cursor，每页最多100行、每行当前可读沟通最多8项、显示名最长128字符。KNOWN安全当前名字、NONE有事实证明无人/无组、UNKNOWN缺记录三态保持；安全名字不承诺旧历史拼写。缺首任、前序、metadata或有界完整前缀证明不拿当前负责人填补；空页items=[]/next_cursor=null，initial_basis不足为UNKNOWN。转派/等待/退回及同轮再次接单不新开轮次，结束/合法重开保留旧记录。
+
+既有Ticket event/cycle、真实assignment_metadata、021 Control和已COMMITTED复合引用是唯一来源。T06首次由调度员指派他人按真实target/team证明，后来同轮accept用该次receipt及同轮前序，不借首任组；T07/T12仅实际transfer关联沟通，不误绑最终start/close。每条历史Session先核真实Ticket关系及当前独立VIEW/保留边界再LIMIT8；隐藏对象不返回ID、名称、计数或存在标志。communication=[]只表示当前获权范围无可返回实际交接，RETAIN/no-op或独立沟通不会按时间伪造关联；不返raw principal identity、内部原因、原命令/hash/private receipt。
+
+正式视图按20条请求、maxPages10/gcTime0限界，显示已加载范围、缺证/空白/失败、后续页及显式重读；沿原epoch/abort、clearItemView和Realtime失效，不自动POST/ACK或创建草稿。实际生产浏览器测得DOM峰值200/末次185/重读20；cache内容未实测，200缓存上限为SOURCE配置。真实合成Cookie生产logout后释放旧server200，DOM未恢复且当前读401；旧body送达/解析未观测。固定本地未发布c6ec52f312dbf9d05f872039587fa31e22b02252完成040一次build/strict/artifact及042五文件17PASS、4accepted PNG；相关五文件71PASS经043/043b两个窗口，原超时FAIL不改，044工具外层27PASS。两轴SOURCE0产品修补、046精确自有PG清理通过；本段纯文档后继不重绑测试SHA，不表示Root集成、GH关票、生产/临床上线或Gate批准。
+
+以下为原 SOURCE 候选历史原文，按当时状态保留。
+
+## WBINT-T13 安全责任链候选（SOURCE / PROPOSED_NOT_MOUNTED）
+
+候选 `GET /api/tickets/{ticketId}/assignment-history` 和 additive read Query interface 已在 [T13 SOURCE 合同](../../../plans/admin-workbench-integration/execution/t13.md)冻结；本节不表示该路径、生产查询或正式视图已挂载。独立 [闭合 Page Schema](../../../contracts/p2_016_assignment_history_page.schema.json) / [类型](../../../contracts/p2_016_assignment_history_contracts.d.ts) 保持原 P2-016/Incident 合同及 SQL。
+
+候选仅当前 Ticket READ，逐 Session 独立 VIEW 在 LIMIT 前裁剪；default20/max100、稳定 event ordinal cursor、名称/前任/轮次明确 KNOWN/NONE/UNKNOWN，缺初始事实不得用当前负责人回填。真实 Ticket/cycle/Control 及原 composite references 提供事实，返回安全显示而非 private receipt dump。原首例源码已登记，全部 runtime NOT_RUN，原七项 PENDING。候选配置 `workbenchAssignmentHistoryEnabled=false` 尚未装配；无数据库变更、无新事实表/权限，详见 own SOURCE 合同。
+

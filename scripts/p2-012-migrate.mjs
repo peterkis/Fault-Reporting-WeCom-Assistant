@@ -42,6 +42,7 @@ export async function validateP2012Catalog(tx){
   if(p2012CatalogHash(inventory)!==EXPECTED_CATALOG_SHA256)fail('P2_012_SCHEMA_DRIFT');
   return inventory;
 }
+/** @param {{databaseUrl?: string, mode?: string, PoolFactory?: typeof createPostgresPool}} [options] */
 export async function migrateP2012({databaseUrl,mode='apply',PoolFactory=createPostgresPool}={}){
   if(typeof databaseUrl!=='string'||!databaseUrl||!['apply','check','status'].includes(mode))fail('P2_012_MIGRATION_INPUT_INVALID');
   const sql=await readFile(FILE,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];

@@ -18,6 +18,7 @@ import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling
 import {TicketConversationHandling} from '../features/ticket-handling/TicketConversationHandling';
 import {TicketCompletion} from '../features/ticket-completion/TicketCompletion';
 import {TicketTakeoverCompletion} from '../features/ticket-takeover-completion/TicketTakeoverCompletion';
+import {TicketAssignmentHistory} from '../features/assignment-history/TicketAssignmentHistory';
 import {TicketRoundNotifications} from '../features/ticket-round-notifications/TicketRoundNotifications';
 import {TicketReopen} from '../features/ticket-reopen/TicketReopen';
 import {SharedFollowUp} from '../features/follow-up/SharedFollowUp';
@@ -207,6 +208,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {detail.item.kind==='ticket'&&principal.ticket_takeover_completion_enabled?<TicketTakeoverCompletion key={principal.principal_id+':takeover-completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverCompletionBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled?<TicketCompletion key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
       {detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.assignment_history_enabled?<TicketAssignmentHistory key={principal.principal_id+':history:'+detail.item.id} ticketId={detail.item.id} principal={principal}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id}/>:null}
       {detail.item.kind==='ticket'?<TicketReopen key={principal.principal_id+':reopen:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReopenBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_takeover_enabled?<TicketTakeover key={principal.principal_id+':takeover:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverBlocked}/>:null}

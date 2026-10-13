@@ -3,7 +3,7 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-13
+snapshot_on: 2026-10-14
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
@@ -48,6 +48,12 @@ native_blocking_edges: 76
 2026-10-13 T10整票收口：原七项、真实69d5619e同制品严格0／0／0与41 PASS、适用工具外层20 PASS／native0、独立两轴及最终文档复核、3193项归档和精确自有停止均父核；70ceb31d安全快进，[#65完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65#issuecomment-6131558408)。当前 **27／43 CLOSED、16 OPEN**，见[执行记录](execution/t10.md)。原业务失败、汇总器FAIL、observer错误及5d逐原SHA恢复限制保留。WBINT-02／A02所属T02、T04–T10八票均本地交付、原生CLOSED/completed；此前逐票“A02仍未完成”记载为当次历史，当前来源工作包本地完成。下一连续整票T12；其它SOURCE准备不计验收，默认关闭，全43最终审查与工作树清理继续待完成。
 
 2026-10-13 T12 原七项经父独立核对，82729c90由独立合并代理安全快进，[#67完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)。d279本票21入口／36 PASS及关联前六入口21 PASS保留原被测身份；c9受影响10 PASS与build／strict／artifact原生0／0／0、适用工具20 PASS及独立retired1 PASS已核对，111／113扫描失败、118缺依赖setup FAIL与全部旧RED／NOT_RUN保持。最终纯文档两轴无新增问题、归档原件和精确自有停机已核验。当前 **28／43 CLOSED、15 OPEN**，见[逐项执行记录](execution/t12.md)。WBINT-03／A03已完成T11／T12切片，仍待T13；下一连续整票T13，其唯一原生阻塞#62已完成，#67仅为运行排程前序。默认关闭，全43最终审查和工作树清理继续待完成。
+
+2026-10-13 T13 原七项已父验收，69afe5c1由独立合并代理安全快进，[#68完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68#issuecomment-6140905877)。真实被测c6ec52保留040严格／build／artifact原生0、042本票17 PASS、相关五文件71项经两窗口通过和044工具外层27 PASS；原043超时FAIL、045字节比较误判及启动观察器整体exit1均保留。两轴源码及最终文档无未解决行动项，原件与精确自有清理已核。当前 **29／43 CLOSED、14 OPEN**，见[接单与交接链执行记录](execution/t13.md)。WBINT-03／A03所属T11–T13均本地交付；下一连续整票T30／#85，其唯一原生#83已完成。默认关闭，全43最终审查和工作树清理仍待。
+
+2026-10-13 T30 原七项经父验收，13872854由独立合并代理安全快进，[#85完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85#issuecomment-6144089454)。真实被测b44cdc保留039严格／build／artifact原生0及040单轮9文件14 PASS；029相关12 PASS仍属61f1，不改绑。两轴源码修补和最终四MD复核收口，1495源码／1921制品、冻结原件及精确自有清理均核实，原FAIL／NOT_REACHED／CONNECT UNKNOWN保留。当前 **30／43 CLOSED、13 OPEN**，见[内部处置与原命令恢复记录](execution/t30.md)。WBINT-10／A10已完成T30，T29／T31仍待；#86唯一原生#85已completed，下一连续整票T31按独立人工安全摘要、预览确认、仅定向有效未暂停个人的既定规则推进。默认关闭，全43最终审查与工作树清理继续待完成。
+
+2026-10-14 T31 原七项已父验收，dd270af3由独立合并代理安全快进，[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。实际功能被测84093163的严格／一次build／artifact及目的403／真实401、原三例恢复已核对；各窗口保留原对象与范围，全部旧FAIL、044清理UNKNOWN／NOT_REACHED保持。源码及文档两轴、3478件保存文件和精确自有清理收口，详见[本票记录](execution/t31.md)。当前 **31／43 CLOSED、12 OPEN**；WBINT-10／A10已完成T30／T31，仍待T29。下一连续整票T32／#87，fresh原生#80／#81／#86均CLOSED/completed，已领取；T33仍待#87。默认关闭，全43最终审查与工作树清理继续待完成。
 
 ## 导航与配置
 
@@ -117,11 +123,12 @@ native_blocking_edges: 76
 - [x] **T12** — [#67 同事接管并完工关闭](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67)
   - **Blocked by:** [#62](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)、[#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
   - **来源：** WBINT-03 / A03
-  - **本地执行：** [LOCAL_VERIFIED：七项验收、原子接管关闭与原操作恢复](execution/t12.md)已集成并[关票](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)，原RED／被测身份／自有清理保持；未发布／启用，T13与A03整组仍待。
+  - **本地执行：** [LOCAL_VERIFIED：七项验收、原子接管关闭与原操作恢复](execution/t12.md)已集成并[关票](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)，原RED／被测身份／自有清理保持；未发布／启用。当次收口时T13与A03整组仍待，当前A03已随T13完成。
 
-- [ ] **T13** — [#68 查看完整接单与交接链](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68)
+- [x] **T13** — [#68 查看完整接单与交接链](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68)
   - **Blocked by:** [#62](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62)
   - **来源：** WBINT-03 / A03
+  - **本地执行：** [原七项LOCAL_VERIFIED及真实被测证据](execution/t13.md)已父核、69afe5c1集成并[关票读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68#issuecomment-6140905877)；原失败、当前权限与精确自有清理保持。A03本地完成，默认关闭、未发布／启用。
 
 - [x] **T14** — [#69 在同一事项中阅读并处置人工复核](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
@@ -202,11 +209,11 @@ native_blocking_edges: 76
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **来源：** WBINT-10 / A10
 
-- [ ] **T30** — [#85 记录公共故障内部处置](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
+- [x] **T30** — [#85 记录公共故障内部处置](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
   - **Blocked by:** [#83](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83)
   - **来源：** WBINT-10 / A10
 
-- [ ] **T31** — [#86 显式发布公共故障安全进展](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86)
+- [x] **T31** — [#86 显式发布公共故障安全进展](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86)
   - **Blocked by:** [#85](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85)
   - **来源：** WBINT-10 / A10
 
