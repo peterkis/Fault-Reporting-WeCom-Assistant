@@ -4,11 +4,12 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketTakeoverEnabled?:boolean;ticketTakeoverCompletionEnabled?:boolean;ticketWaitingActionsEnabled?:boolean;ticketReturnToDispatchEnabled?:boolean;ticketUnassignEnabled?:boolean }
+interface QueryOptions { workbenchAssignmentHistoryEnabled?:boolean; ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketTakeoverEnabled?:boolean;ticketTakeoverCompletionEnabled?:boolean;ticketWaitingActionsEnabled?:boolean;ticketReturnToDispatchEnabled?:boolean;ticketUnassignEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
 
+import {assignmentHistoryPage} from './workbench-assignment-history.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
@@ -81,7 +82,8 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHistoryEnabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
+  if(typeof workbenchAssignmentHistoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const conversationAuthorization=createPilotWorkbenchAuthorizationAdapter({pool});
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
@@ -199,6 +201,12 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         avatar_url:url(current.avatar_url),departments:(Array.isArray(current.memberships)?current.memberships:[]).slice(0,20).map(m=>({
           name:string(m?.name),department_ref:null,role:'MEMBER'})),fetched_at:string(current.fetched_at),
       }:{status:'STALE',contact:null,sex:null,avatar_url:null,departments:[],fetched_at:null}});
+    },
+    async assignmentHistory({cursor=null,limit,...input}:TicketQueryInput&{cursor?:unknown;limit?:unknown}){
+      guardP2016(workbenchAssignmentHistoryEnabled);
+      const {ticket,principal:p}=await authorizedTicket(input);
+      if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      return assignmentHistoryPage({queryable:pool,ticketId:ticket.id,principal:p,cursor,limit,sessionPredicate:conversationAuthorization.sessionAccessPredicate(p,{ticketAlias:'st',start:3})});
     },
     async events({cursor=null,limit,...input}: TicketQueryInput & { cursor?: unknown; limit?: unknown }) {
       const {ticket}=await authorizedTicket(input),n=limitP2016(limit,200);

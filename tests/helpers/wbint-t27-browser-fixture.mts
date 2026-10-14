@@ -8,6 +8,9 @@ import {tmpdir} from 'node:os';
 import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
+import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
+import {migrateIncidentOwnerTransfer} from '../../scripts/incident-owner-transfer-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 
@@ -20,12 +23,16 @@ export interface Context extends Setup {browser:Browser;root:string;origin:strin
 export async function candidateBrowser(options:{purpose:string;recovery?:boolean;workspace?:boolean;reporters?:number;observeHistory?:boolean;setup?:(context:Setup)=>Promise<void>},run:(context:Context)=>Promise<void>){
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:options.purpose,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     const migrationInput={databaseUrl,mode:'apply'};await applyThrough031({pool,databaseUrl});await migrateP2012(migrationInput);
+    // The frozen T29 caller explicitly selects this synthetic host profile.
+    // Other callers keep the original032 setup and the production default OFF.
+    const ownerTransferProfile=options.purpose==='t29owner';
+    if(ownerTransferProfile){const ownerMigrationInput={databaseUrl,mode:'apply' as const};await migrateIncidentInternalNotes(ownerMigrationInput);await migrateIncidentPublicProgress(ownerMigrationInput);await migrateIncidentOwnerTransfer(ownerMigrationInput);}
     const reporters=options.reporters??3;assert.ok(Number.isInteger(reporters)&&reporters>=3&&reporters<=100);const f=await fixtureP2012(pool,{reporters}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;
     await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
     const origin='http://127.0.0.1:'+port,runtime=createP2012Runtime({pool,principalIds:[text(record(f.admin).id),text(record(f.handler).id)],publicOrigin:origin,listenPort:port,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentBackgroundMaintenance:false,
-      incidentCandidateWorkspaceEnabled:options.workspace??true,workbenchDraftRecoveryEnabled:options.recovery??false,workbenchInternalNotesEnabled:false,externalSendEnabled:false});
+      incidentCandidateWorkspaceEnabled:options.workspace??true,incidentOwnerTransferEnabled:ownerTransferProfile,workbenchDraftRecoveryEnabled:options.recovery??false,workbenchInternalNotesEnabled:false,externalSendEnabled:false});
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,error:unknown;
     const screenshots:{file:string;width:number;height:number;sha256:string}[]=[],root=`article[data-candidate-id="${candidateId}"]`;
     const capture=async()=>{assert.ok(browser);const shot=await browser.screenshot();assert.equal(typeof shot,'string');if(typeof shot!=='string')throw Error('SCREENSHOT_REQUIRED');const bytes=Buffer.from(shot,'base64'),width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20),file=join(directory,'new-detail-'+width+'.png');await writeFile(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});};

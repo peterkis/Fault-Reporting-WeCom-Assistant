@@ -42,3 +42,9 @@ Page 按源事实时间、source kind、真实 Intake identity、源 ordinal、s
 计划 option `workbenchSupplementFollowUpEnabled`／bootstrap capability 默认 false；关闭不接受新T36命令，不展示新提醒，保留原证据、个人位置与业务事实。单App/Worker/Gateway单活，SSE32，现有pool总预算≤8；page≤100、query/body采用原W32KiB与2048-byte URL预算，reply text≤20480/UI≤2000。复用原Worker有界批次，不为材料开timer或新增poller/常驻服务；原消息既有完成事实仍可安全恢复，关闭不触发新发送。
 
 本 SOURCE 首测试、strict、build、artifact、Unit/Contract/Integration、真实HTTP／浏览器和全部运行清理均 **NOT_RUN**。新Schema未注册为运行制品，必须在实际实现消费它们时按既有资源登记规则补齐。下一独占窗口先冻结真实测试对象并运行原 first，保留真实 RED，再做一个最小纵切；其余七项矩阵见 [本票执行记录](../../../plans/admin-workbench-integration/execution/t36.md)。不引用静态接口存在作为运行验收，不启真实依赖/发送/部署或Gate。
+
+## 2026-10-14 固定 Rootb580 SOURCE 同步
+
+普通 merge 继承 `b5808ee88ee749df61a6a82708d1d5bd26971743` 的 T13/T29/T30/T31/T32/T34 已集成事实与当前授权／恢复边界；本票仍 SOURCE_PROPOSED_NOT_MOUNTED，原typed、五Schema和首例未改。T36仅精确补充材料显式处置，不是 Ticket/Incident 接管，也不授现有 REPLY/INTERNAL_NOTE/Delivery控制权。当前人类规则仍为 active business-authorized staff AND exact material READ+retained，无assignee/Conversationowner前提。
+
+本有限授权没有数据库迁移编号或DDL，不运行严格类型／构建／制品／测试／PG／HTTP／浏览器；全部原七 PENDING、runtime NOT_RUN。未来连续 WHOLE 先普通合并届时最新Root，冻结实际Source/制品并运行原public first，真实RED后才做最小生产实现；不改旧031/042/047/050/044/055/058或其目的guard，不新建Ticket/通知/命令事实源。

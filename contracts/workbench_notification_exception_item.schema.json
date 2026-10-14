@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_notification_exception_item.schema.json",
+  "$ref": "workbench_notification_exception_page.schema.json#/$defs/item"
+}
