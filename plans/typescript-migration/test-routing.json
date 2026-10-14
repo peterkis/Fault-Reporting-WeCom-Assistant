@@ -5605,6 +5605,33 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-v2.integration.test.mts",
+      "node_flags": [],
+      "requires_browser": false,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-authority.integration.test.mts",
+      "node_flags": [],
+      "requires_browser": false,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-production.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7217,6 +7244,15 @@
     ],
     "wbint-t33-aba": [
       "tests/wbint-t33-incident-delivery-aba.integration.test.mts"
+    ],
+    "wbint-t33-v2": [
+      "tests/wbint-t33-incident-delivery-v2.integration.test.mts"
+    ],
+    "wbint-t33-authority": [
+      "tests/wbint-t33-incident-delivery-authority.integration.test.mts"
+    ],
+    "wbint-t33-production-browser-first": [
+      "tests/wbint-t33-incident-delivery-production.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7275,14 +7311,16 @@
       "tests/helpers/p2-016-postgres-harness.mjs",
       "tests/helpers/yxx-ss-009-resources.mjs",
       "tests/helpers/t32-notification-exception-fixture.mts",
-      "tests/helpers/t33-incident-delivery-control-fixture.mts"
+      "tests/helpers/t33-incident-delivery-control-fixture.mts",
+      "tests/helpers/t33-whole-fixture.mts"
     ],
     "LOCAL_HTTP_SSE_RUNTIME": [
       "tests/helpers/t29-owner-transfer-http-fixture.mts",
       "tests/helpers/p2-003-client-harness.mjs",
       "tests/helpers/p2-003-sse-harness.mjs",
       "tests/helpers/p2-g2-runtime-harness.mjs",
-      "tests/helpers/t33-incident-delivery-control-fixture.mts"
+      "tests/helpers/t33-incident-delivery-control-fixture.mts",
+      "tests/helpers/t33-whole-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
@@ -7302,7 +7340,8 @@
       "tests/helpers/p2-016-browser-fixture.mjs",
       "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
       "tests/helpers/t32-notification-exception-browser-fixture.mts",
-      "tests/helpers/t29-owner-transfer-browser-fixture.mts"
+      "tests/helpers/t29-owner-transfer-browser-fixture.mts",
+      "tests/helpers/t33-incident-delivery-browser-fixture.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",
