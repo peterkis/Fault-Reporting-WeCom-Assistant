@@ -115,7 +115,7 @@ test('T34 an actual bootstrap401 from an inactive staff principal closes the ses
    await browser.waitFor('Boolean(document.querySelector("[data-action=toggle-item-follow]")&&!document.querySelector("[data-action=toggle-item-follow]").disabled)');
    await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[actor.id]);
    assert.equal((await fetch(f.origin+'/api/lifecycle/bootstrap',{headers:{cookie:f.cookies[2]}})).status,401);
-   await browser.evaluate('document.querySelector("[data-action=toggle-item-follow]").click()');
+   await browser.evaluate('document.dispatchEvent(new Event("visibilitychange"));window.dispatchEvent(new Event("focus"));');
    await browser.waitFor('document.body.textContent.includes("会话已失效，请重新进入已授权工作台。")');
    assert.equal(await browser.evaluate('Boolean(document.querySelector("#detail-title, [data-action=toggle-item-follow]"))'),false);assert.equal(posts,0);
   }catch(error){primary=error;}
