@@ -9,7 +9,7 @@ export const SUPPLEMENT_FOLLOW_UP_MIGRATION_ID='062_workbench_supplement_follow_
 const FILE=new URL('../database/migrations/'+SUPPLEMENT_FOLLOW_UP_MIGRATION_ID+'.sql',import.meta.url);
 const RELATIONS=['pilot_ticket.workbench_supplement_disposition'];
 // Frozen after the actual isolated PG18 catalog-only preparation; never a business PASS.
-export const SUPPLEMENT_CATALOG_SHA256='UNFROZEN_FAIL_CLOSED';
+export const SUPPLEMENT_CATALOG_SHA256='df5e110097b39d2997d8ea9e2febe78fa57a6d95558e8b3a578e5f993ea51f3c';
 export async function supplementFollowUpCatalog(tx:PostgresTransaction){
  const relations=(await tx.query(`SELECT n.nspname||'.'||c.relname AS relation,c.relkind,c.relpersistence,c.relispartition,c.relrowsecurity,c.relforcerowsecurity
   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname||'.'||c.relname=ANY($1::text[]) ORDER BY relation`,[RELATIONS])).rows;
