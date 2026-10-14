@@ -23,6 +23,7 @@ export interface T36BoundReplyFixture {
  origin:string;browserCookie:NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>[number];
  takeoverSelf():Promise<Response>;
  setActorRoles(roles:PilotRole[]):Promise<void>;
+ expire(target:SupplementFollowUpTarget):Promise<void>;
  pool:PostgresPool;sessionId:string;ticketId:string;actorId:string;reporterId:string;
  r2:SupplementFollowUpTarget;rowVersion:number;internalCanary:string;
  postReply(body:SupplementFollowUpReplyCommand):Promise<Response>;
@@ -32,13 +33,13 @@ export interface T36BoundReplyFixture {
  get(path:string):Promise<Response>;
  read<T>(path:string):Promise<T>;
 }
-export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>){return withT35Fixture(async base=>{
+export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>,{recovery=false}:{recovery?:boolean}={}){return withT35Fixture(async base=>{
  await base.runtime.stop();await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});
  const admin=base.principals[0];assert.ok(admin);
  const runtime=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
   listenPort:Number(new URL(base.origin).port),principalIds:[admin.id],externalSendEnabled:false,
   workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchConversationsEnabled:true,
-  workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:true});
+  workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:true,workbenchDraftRecoveryEnabled:recovery});
  if('disabled' in runtime)throw Error('T36_REAL_RUNTIME_REQUIRED');let primaryError:unknown;
  try{
   const [cookie]=(await runtime.start()).cookies??[];assert.ok(cookie);const cookieHeader=cookie.name+'='+cookie.value;
@@ -69,8 +70,8 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const sessionPath='/api/workbench/conversations/'+sessionId;
   const target=async(text:string):Promise<SupplementFollowUpTarget>=>{
    const next=await accept(text);assert.equal(next.intakeId,initial.intakeId);
-   const detail=await read<{records:{text:string|null;audience:string;read_material?:SupplementFollowUpTarget}[]}>(itemPath);
-   const found=detail.records.find(r=>r.audience==='REPORT'&&r.read_material?.source_ref===next.sourceRef&&r.read_material.revision===next.revision)?.read_material;assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return found;
+   const detail=await read<SupplementFollowUpPage>(followPath+'?limit=100');
+   const found=detail.items.find(r=>r.source_ref===next.sourceRef&&r.revision===next.revision);assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return found;
   };
   const r2=await target('补充：T36同一主题当前错误提示403。');assert.equal(r2.revision,'2');
   const internalCanary='T36_INTERNAL_ONLY_'+randomUUID();
@@ -88,6 +89,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
    setActorRoles:async roles=>{const actor=(await base.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[admin.id])).rows[0];assert.ok(actor);const changed=await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles,resolverTeamIds:[]});assert.equal(changed.id,admin.id);},
    takeoverSelf:async()=>{const current=await currentSession(),command={client_command_id:randomUUID(),expected_row_version:current.session.row_version};return ownedHttp(base.origin+sessionPath+'/takeover',{method:'POST',headers:{cookie:cookieHeader,origin:base.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf,'if-match':'\"'+command.expected_row_version+'\"'},body:JSON.stringify(command)});},
    origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},
+   expire:async target=>{assert.match(target.source_ref,/^channel:[1-9][0-9]*$/u);await base.pool.query('UPDATE channel.message_inbox SET retention_until_epoch_ms=platform.physical_epoch_ms()-1 WHERE id=$1::bigint',[target.source_ref.slice(8)]);},
    postReply,page,appendR3:()=>target('补充：T36发送在途以后新收到的材料。'),get,read,
    independentFacts:async()=>({ticket:await read(ticketPath),responsibility:await read(ticketPath+'/responsibility'),events:await read(ticketPath+'/events'),read:await read(itemPath+'/read-position')})});
  }catch(error){primaryError=error;}

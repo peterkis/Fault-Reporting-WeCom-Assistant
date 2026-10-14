@@ -5,6 +5,33 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-later-material.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-bound-draft-target.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-reply-purpose-isolation.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-bound-reply-receipt-authority.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7490,6 +7517,15 @@
     ],
     "wbint-t36-bound-reply-current-read-receipt": [
       "tests/t36-bound-reply-receipt-authority.integration.test.mts"
+    ],
+    "wbint-t36-later-material": [
+      "tests/t36-later-material.browser.test.mts"
+    ],
+    "wbint-t36-bound-draft-target": [
+      "tests/t36-bound-draft-target.browser.test.mts"
+    ],
+    "wbint-t36-reply-purpose-isolation": [
+      "tests/t36-reply-purpose-isolation.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7581,7 +7617,8 @@
       "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
       "tests/helpers/t32-notification-exception-browser-fixture.mts",
       "tests/helpers/t29-owner-transfer-browser-fixture.mts",
-      "tests/helpers/t33-incident-delivery-browser-fixture.mts"
+      "tests/helpers/t33-incident-delivery-browser-fixture.mts",
+      "tests/helpers/t36-browser-risk-journey.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",
