@@ -38,6 +38,8 @@ export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>
   const row=(await tx.query<{ready:boolean}>(`SELECT
     EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id=$1 AND checksum_sha256=$2)
     AND EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read')
+    AND EXISTS(SELECT 1 FROM pg_class WHERE oid=to_regclass('pilot_ticket.workbench_item_follow') AND relkind='r' AND relpersistence='p' AND NOT relispartition AND NOT relrowsecurity AND NOT relforcerowsecurity)
+    AND NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('pilot_ticket.workbench_item_follow') AND NOT tgisinternal)
     AND (SELECT count(*)=6 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow')
     AND (SELECT count(*)=6 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow' AND is_nullable='NO' AND
       ((column_name IN ('principal_id','source_intake_id') AND data_type='uuid' AND column_default IS NULL)
@@ -53,7 +55,10 @@ export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>
     AND EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('pilot_ticket.workbench_item_follow') AND contype='f' AND convalidated AND pg_get_constraintdef(oid)='FOREIGN KEY (source_intake_id) REFERENCES intake.service_intake(id) ON DELETE RESTRICT')
     AND (SELECT count(*)=2 FROM pg_index WHERE indrelid=to_regclass('pilot_ticket.workbench_item_follow'))
     AND EXISTS(SELECT 1 FROM pg_index WHERE indrelid=to_regclass('pilot_ticket.workbench_item_follow') AND indisvalid AND indisready AND indisunique AND indisprimary)
-    AND EXISTS(SELECT 1 FROM pg_indexes WHERE schemaname='pilot_ticket' AND tablename='workbench_item_follow' AND indexname='workbench_item_follow_active_idx' AND indexdef='CREATE INDEX workbench_item_follow_active_idx ON pilot_ticket.workbench_item_follow USING btree (principal_id, source_intake_id) WHERE following') AS ready`,[FOLLOW_MIGRATION_ID,checksum])).rows[0];
+    AND EXISTS(SELECT 1 FROM pg_index i JOIN pg_class ix ON ix.oid=i.indexrelid
+      WHERE i.indrelid=to_regclass('pilot_ticket.workbench_item_follow') AND ix.relname='workbench_item_follow_active_idx'
+        AND i.indisvalid AND i.indisready AND NOT i.indisunique AND NOT i.indisprimary
+        AND pg_get_indexdef(i.indexrelid)='CREATE INDEX workbench_item_follow_active_idx ON pilot_ticket.workbench_item_follow USING btree (principal_id, source_intake_id) WHERE following') AS ready`,[FOLLOW_MIGRATION_ID,checksum])).rows[0];
   return row?.ready===true;
 }
 export async function migrateWorkbenchFollow({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){

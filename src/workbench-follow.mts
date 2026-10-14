@@ -78,9 +78,14 @@ export function createWorkbenchFollow({pool,query,reviews,manualReviewEnabled=fa
     await lockAuthority(tx,context);const c=await authorize(tx,input);
     if(JSON.stringify(c.canonical)!==JSON.stringify(body.canonical_item)||body.expected_follow_version!==token(c))failP2016('VERSION_CONFLICT',409);
     const targets=body.following?c.anchors.filter(a=>a.id===c.item.intake_id):c.anchors;
-    for(const a of targets)if(a.following!==body.following)await tx.query(`INSERT INTO pilot_ticket.workbench_item_follow(principal_id,source_intake_id,following) VALUES($1::uuid,$2::uuid,$3)
+    for(const a of targets)if(a.following!==body.following){
+     const changed=await tx.query(`INSERT INTO pilot_ticket.workbench_item_follow(principal_id,source_intake_id,following) VALUES($1::uuid,$2::uuid,$3)
        ON CONFLICT(principal_id,source_intake_id) DO UPDATE SET following=EXCLUDED.following,row_version=pilot_ticket.workbench_item_follow.row_version+1,updated_at=platform.local_now()`,[c.principal.principal_id,a.id,body.following]);
-    const after=await authorize(tx,input);return {ok:true as const,client_command_id:body.client_command_id,requested_item:requested,canonical_item:after.canonical,following:after.anchors.some(a=>a.following),follow_version:token(after)};
+     if(changed.rowCount!==1)failP2016('ACTION_FAILED',503);
+    }
+    const after=await authorize(tx,input),following=after.anchors.some(a=>a.following);
+    if(following!==body.following)failP2016('ACTION_FAILED',503);
+    return {ok:true as const,client_command_id:body.client_command_id,requested_item:requested,canonical_item:after.canonical,following,follow_version:token(after)};
    }});
    if(outcome.ok!==true){const code=outcome.error.code.replace(/^P2_016_/,'');failP2016(code,code==='NOT_FOUND'?404:code==='FORBIDDEN'?403:code==='DISABLED'||code==='ACTION_FAILED'?503:409);}return publicP2016(result(outcome));
   },
