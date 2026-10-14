@@ -29,7 +29,7 @@ function decodeCopy(text:string,incidentId:string,purpose:IncidentDeliveryPurpos
 interface Options {
  principal:Principal;incidentId:string;purpose:IncidentDeliveryPurpose;readReady:boolean;writeReady:boolean;
  value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null;
- authorize:(signal:AbortSignal)=>Promise<boolean>;
+ authorize:(signal:AbortSignal,copy?:{value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null})=>Promise<boolean>;
  onAuthorityFailure:(error:unknown)=>void;
  onRestore:(copy:{value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null},signal:AbortSignal)=>Promise<void>;
  onOperation:(id:string)=>void;onSensitiveClear:()=>void;
@@ -51,7 +51,7 @@ export function useIncidentDeliveryDraft(options:Options){
  useEffect(()=>{setRestoring(false);return()=>{restoreRequest.current?.abort();restoreRequest.current=null;};},[identity]);
  const draft=useAuthorizedDraft<IncidentDeliveryDraftValue,IncidentDeliveryOperation>({scope,enabled:rawEnabled||existing,writeEnabled:rawEnabled&&options.writeReady,value,pending,emptyValue:EMPTY_INCIDENT_DELIVERY_DRAFT,hasInput:input=>Boolean(input.deliveryId||input.action||input.reason||input.version),
   serialise:copy=>JSON.stringify({schema:2,...copy}),decode:text=>decodeCopy(text,incidentId,purpose),commandId:operation=>operation.body.client_command_id,
-  authorize:signal=>latest.current.authorize(signal),onAuthorityFailure:error=>latest.current.onAuthorityFailure(error),
+  authorize:(signal,copy)=>latest.current.authorize(signal,copy),onAuthorityFailure:error=>latest.current.onAuthorityFailure(error),
   onRestore:copy=>{
    const controller=new AbortController(),captured=currentIdentity.current;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);
    void latest.current.onRestore(copy,controller.signal).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller&&captured===currentIdentity.current)latest.current.onAuthorityFailure(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});

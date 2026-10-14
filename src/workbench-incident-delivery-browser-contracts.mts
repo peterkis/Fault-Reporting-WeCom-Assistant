@@ -77,3 +77,14 @@ export function decodeIncidentDeliveryReceipt(value:unknown,incidentId:string,co
  }
  return invalid();
 }
+
+/** The existing HTTP host returns the one-field shared error envelope. */
+export function decodeIncidentDeliveryRefusal(value:unknown):string|null{
+ if(!value||typeof value!=='object'||Array.isArray(value))return null;
+ const row=value as Record<string,unknown>,keys=Object.keys(row),error=row.error;
+ const shared=keys.length===1&&Object.hasOwn(row,'error'),legacy=keys.length===3&&row.ok===false&&typeof row.replayed==='boolean'&&Object.hasOwn(row,'error');
+ if(!shared&&!legacy||!error||typeof error!=='object'||Array.isArray(error))return null;
+ const detail=error as Record<string,unknown>;
+ if(Object.keys(detail).length!==2||detail.retryable!==false||typeof detail.code!=='string'||!/^P2_012_[A-Z0-9_]{1,96}$/u.test(detail.code))return null;
+ return detail.code;
+}

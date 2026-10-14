@@ -178,7 +178,7 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    phase='exact-old-body-real-cas409-original-failed';
    await capture('state-not-purpose-original-failed-cas-sent-current-unchanged');
   }finally{
-   console.log('T33_STATE_NOT_PURPOSE_REQUESTS '+JSON.stringify((await events()).map(row=>({...row,headers:{...record(row.headers),csrf:record(row.headers).csrf===null?null:'PRESENT'}}))));
+   console.log('T33_STATE_NOT_PURPOSE_REQUESTS '+JSON.stringify((await events()).filter(row=>row.controlPost===true||text(row.path).startsWith(endpoints.receiptPrefix)).map(row=>({...row,headers:{...record(row.headers),csrf:record(row.headers).csrf===null?null:'PRESENT'}}))));
 
    console.log('T33_STATE_NOT_PURPOSE_BOUNDARY '+JSON.stringify({phase,refreshMode,originalId,originalBodyHash,currentCapability,clientAttemptCountsKnownOnlyWithinPage:true,initialPreviousFetchCalled,nodeOtherPostAttempted,nodeOtherAckObserved,uiReplayHttp409Observed}));
   }

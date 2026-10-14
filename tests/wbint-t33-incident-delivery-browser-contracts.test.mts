@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {decodeIncidentDeliveryAuthority,INCIDENT_DELIVERY_AUTHORITY_HEADERS} from '../src/workbench-incident-delivery-authority.mjs';
-import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,matchesIncidentDeliveryResult} from '../src/workbench-incident-delivery-browser-contracts.mjs';
+import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,decodeIncidentDeliveryRefusal,matchesIncidentDeliveryResult} from '../src/workbench-incident-delivery-browser-contracts.mjs';
 const incidentId='11111111-1111-4111-8111-111111111111',deliveryId='22222222-2222-4222-8222-222222222222',commandId='33333333-3333-4333-8333-333333333333',other='44444444-4444-4444-8444-444444444444';
 const expected={incidentId,deliveryId,purpose:'INCIDENT_LIFECYCLE' as const};
 const body={client_command_id:commandId,expected_row_version:'9223372036854775807',expected_status:'RECONCILIATION_REQUIRED',expected_side_effect_state:'UNKNOWN',expected_delivery_attempt_count:1,reason_code:'OPERATOR_VERIFIED_DELIVERY',resolution:'CONFIRMED_SENT'};
@@ -50,4 +50,11 @@ test('T33 current purpose authority is separate from state availability and reje
  assert.throws(()=>decodeIncidentDeliveryAuthority(headers('0','1'),{...cap,retry:true}),TypeError);
  assert.throws(()=>decodeIncidentDeliveryAuthority(headers('1','0'),{...cap,reconcile:true}),TypeError);
  assert.throws(()=>decodeIncidentDeliveryAuthority(headers('1','1'),{...cap,receipt_read:false}),TypeError);
+});
+
+test('T33 explicit delivery replay recognizes the shared nonretryable HTTP refusal without treating malformed or uncertain outcomes as terminal',()=>{
+ const error={code:'P2_012_STATE_CONFLICT',retryable:false};
+ assert.equal(decodeIncidentDeliveryRefusal({error}),'P2_012_STATE_CONFLICT');
+ assert.equal(decodeIncidentDeliveryRefusal({ok:false,error,replayed:true}),'P2_012_STATE_CONFLICT');
+ for(const value of [null,{error:{...error,retryable:true}},{error:{...error,code:'UNKNOWN_PROVIDER_OUTCOME'}},{error:{...error,detail:'private'}},{error,raw_receipt:'private'},{ok:true,error,replayed:false},{ok:false,error},{error:{code:'P2_012_STATE_CONFLICT'}}])assert.equal(decodeIncidentDeliveryRefusal(value),null);
 });

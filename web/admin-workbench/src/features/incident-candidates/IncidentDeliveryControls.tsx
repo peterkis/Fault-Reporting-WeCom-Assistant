@@ -50,9 +50,15 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   client.setQueryData(['session'],fresh);
   if(identity(fresh)!==startIdentity)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
  }
- async function authorizeDraft(signal:AbortSignal){
-  const startIdentity=currentIdentity.current,current=captureWorkbenchRead(signal),read=await incidentDeliveryApi.context(incidentId,purpose,null,signal);current();requirePrincipal(read.principal,startIdentity);
-  return read.principal.incident_delivery_control_enabled===true&&read.principal.incident_delivery_control_draft_recovery_enabled===true;
+ async function authorizeDraft(signal:AbortSignal,copy?:{value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null}){
+  const deliveryId=copy?.pending?.deliveryId??copy?.value.deliveryId??null,action=copy?.pending?.action??copy?.value.action??'';
+  const startIdentity=currentIdentity.current,current=captureWorkbenchRead(signal),read=await incidentDeliveryApi.context(incidentId,purpose,deliveryId,signal);current();requirePrincipal(read.principal,startIdentity);
+  if(!read.principal.incident_delivery_control_enabled||!read.principal.incident_delivery_control_draft_recovery_enabled)return false;
+  // Opening a blank handle is preliminary. onRestore separately checks its
+  // decoded selected route before displaying private input. Rebase receives
+  // the exact captured copy that this queued write would save.
+  if(!deliveryId)return true;
+  const cap=read.capability;return Boolean(cap&&!cap.disabled&&cap.receipt_read&&(action==='RETRY'?cap.retry_authorized:action==='RECONCILE'?cap.reconcile_authorized:true));
  }
  const draft=useIncidentDeliveryDraft({principal,incidentId,purpose,readReady,writeReady:!revoked&&readReady&&capability.data?.receipt_read===true,value,pending,authorize:authorizeDraft,onAuthorityFailure:authorityFailure,
   onRestore:async(copy,signal)=>{
