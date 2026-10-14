@@ -5,25 +5,31 @@ import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {failP2016} from '../src/p2-016-domain-contracts.mjs';
+import {p2016CatalogInventory} from './p2-016-migrate.mjs';
 
 export const FOLLOW_MIGRATION_ID='044_workbench_item_follow';
 const SQL_URL=new URL('../database/migrations/'+FOLLOW_MIGRATION_ID+'.sql',import.meta.url);
-// Whole critical definitions captured from the actual unchanged 047 / 047+050
-// migrations. The optional Reporter purpose remains an independent capability.
-const RECEIPT_047='b5f22d5a32c458824b837ce1e5a2f301b41486348da3e1cab1e921354fab2b70';
-const RECEIPT_047_050='8746f1f5b11db5c6bb53c5c210805b0fe63463bc817975853d47e47241e8056a';
+// Complete receipt inventory captured after the unchanged 031 -> 042 -> 047
+// migrations, and after optional 050. Includes every column, constraint, index,
+// and trigger; other capabilities retain their own schema inventories.
+const RECEIPT_047='a7184f19a7bae6b9fcd94aa2099dd63187a25f3f988c6d79c91f0e2c4187c9b3';
+const RECEIPT_047_050='383852a01474f598915d2e58548f6d95f5b64bd7810052ba5f6047e2e079ecff';
+const RECEIPT_PREDECESSORS=['031_p2_016_ticket_lifecycle_workbench_notifications','042_workbench_manual_reports','047_workbench_personal_read'] as const;
+function isRecord(value:unknown):value is Record<string,unknown>{return typeof value==='object'&&value!==null&&!Array.isArray(value);}
 export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<boolean>{
-  const markers=(await tx.query<{migration_id:string;checksum_sha256:string}>("SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id IN ('047_workbench_personal_read','050_bot_reporter_feedback') ORDER BY migration_id")).rows;
-  const personal=markers.find(row=>row.migration_id==='047_workbench_personal_read'),bot=markers.find(row=>row.migration_id==='050_bot_reporter_feedback');
-  if(!personal)return false;
+  const markers=(await tx.query<{migration_id:string;checksum_sha256:string}>("SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[]) ORDER BY migration_id",[[...RECEIPT_PREDECESSORS,'050_bot_reporter_feedback']])).rows;
+  const bot=markers.find(row=>row.migration_id==='050_bot_reporter_feedback');
+  if(RECEIPT_PREDECESSORS.some(id=>!markers.some(row=>row.migration_id===id)))return false;
   const checksum=async(name:string)=>createHash('sha256').update(await readFile(new URL('../database/migrations/'+name+'.sql',import.meta.url))).digest('hex');
-  if(personal.checksum_sha256!==await checksum(personal.migration_id)||bot&&bot.checksum_sha256!==await checksum(bot.migration_id))return false;
-  const constraints=(await tx.query(`SELECT conname,contype,convalidated,pg_get_constraintdef(oid,true) AS definition FROM pg_constraint
-    WHERE conrelid=to_regclass('pilot_ticket.ticket_command_receipt') AND conname IN ('p2016_command_resource','bot_feedback_actor_purpose','ticket_command_receipt_source_intake_id_fkey') ORDER BY conname`)).rows;
-  const actor=(await tx.query("SELECT column_name,data_type,is_nullable FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='actor_principal_id'")).rows;
-  const source=(await tx.query("SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='source_intake_id' AND data_type='uuid' AND is_nullable='YES'")).rowCount;
-  const inventory=createHash('sha256').update(JSON.stringify({constraints,actor})).digest('hex');
-  return source===1&&inventory===(bot?RECEIPT_047_050:RECEIPT_047);
+  for(const marker of markers)if(marker.checksum_sha256!==await checksum(marker.migration_id))return false;
+  const complete:unknown=await p2016CatalogInventory(tx);
+  if(!isRecord(complete))return false;
+  const receipt:Record<string,unknown>={};
+  for(const category of ['relations','columns','constraints','indexes','triggers']){
+    const rows=complete[category];if(!Array.isArray(rows)||!rows.every(isRecord))return false;
+    receipt[category]=rows.filter(row=>row.relation==='pilot_ticket.ticket_command_receipt');
+  }
+  return createHash('sha256').update(JSON.stringify(receipt)).digest('hex')===(bot?RECEIPT_047_050:RECEIPT_047);
 }
 /** Exact feature inventory. No weakening of the existing receipt resource/purpose guards. */
 export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>{

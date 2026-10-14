@@ -8,6 +8,10 @@ import {followSchemaReady,migrateWorkbenchFollow} from '../scripts/workbench-fol
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {WorkbenchFollowCommand} from '../contracts/workbench_item_follow_contracts.js';
 import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../scripts/bot-reporter-feedback-migrate.mjs';
 interface Fixture {runtime:P2016EnabledRuntime;pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];processReviewIntake:(id:string)=>Promise<unknown>}
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function text(v:unknown):string{assert.equal(typeof v,'string');return v as string;}
@@ -75,7 +79,20 @@ test('T34 exact readiness rejects weakened follow CHECK, changed migration check
    await tx.query('BEGIN');await tx.query('ALTER TABLE pilot_ticket.ticket_command_receipt DROP CONSTRAINT p2016_command_resource');
    await tx.query('ALTER TABLE pilot_ticket.ticket_command_receipt ADD CONSTRAINT p2016_command_resource CHECK(true)');
    assert.equal(await followSchemaReady(tx),false,'the new source-anchored purpose still requires the exact existing receipt resource fence');await tx.query('ROLLBACK');
+   for(const change of [
+    'ALTER TABLE pilot_ticket.ticket_command_receipt DROP CONSTRAINT p2016_command_identity',
+    'ALTER TABLE pilot_ticket.ticket_command_receipt ALTER COLUMN expected_session_version TYPE integer',
+    'DROP INDEX pilot_ticket.p2016_command_actor_idx',
+   ]){await tx.query('BEGIN');await tx.query(change);assert.equal(await followSchemaReady(tx),false,'receipt identity, column shape and indexes are part of readiness');await tx.query('ROLLBACK');}
   }finally{await tx.query('ROLLBACK').catch(()=>{});tx.release();}
+  for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketReopenRounds,migrateBotReporterFeedback])await migrate({databaseUrl:f.databaseUrl,mode:'apply'});
+  assert.equal(await followSchemaReady(f.pool),true,'the complete existing 050 actor-purpose guard is a legal optional predecessor');
+  assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'status'})).status,'NOOP_ALREADY_APPLIED');
+  const botTx=await f.pool.connect();try{
+   await botTx.query('BEGIN');await botTx.query('ALTER TABLE pilot_ticket.ticket_command_receipt DROP CONSTRAINT bot_feedback_actor_purpose');
+   await botTx.query('ALTER TABLE pilot_ticket.ticket_command_receipt ADD CONSTRAINT bot_feedback_actor_purpose CHECK(true)');
+   assert.equal(await followSchemaReady(botTx),false,'optional Reporter support cannot weaken its full actor-purpose fence');
+  }finally{await botTx.query('ROLLBACK');botTx.release();}
  },{workbenchFollowEnabled:true,manualProjection:true});
 });
 
