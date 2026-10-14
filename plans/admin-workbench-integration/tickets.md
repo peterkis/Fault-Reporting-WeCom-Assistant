@@ -59,6 +59,8 @@ native_blocking_edges: 76
 
 2026-10-14 T29 原七项已父验收，d5f6abc8由独立代理唯一安全快进，[#84完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。[Incident已有读取权交接、当前授权与原操作恢复](execution/t29.md)已接入；有效人员／团队和精确Incident读取权同事务核验，责任本身不扩权，个人Ticket状态与通知事实独立。实际功能28230562／MF14719保持029严格／一次build／artifact原生0、030本票13 PASS、031相关16 PASS和032适用工具21 PASS，各窗口不合称full。40路径／18提交的源码与终稿两轴、完整归档／冻结原件和精确自有清理已收口，原RED／FAIL／NOT_REACHED及启动观察器outer1保留。当前 **33／43 CLOSED、10 OPEN**；WBINT-10／A10所属T29／T30／T31均已本地交付。下一连续整票T34／#89，fresh唯一#60已completed；T33普通Incident重试角色仍待人类决定。默认关闭，全43最终审查与工作树清理继续待完成，现场及Gate停止线保持。
 
+2026-10-14 T34 原七項已父驗收，9b5f4f12由獨立代理唯一快進native0，[#89完成並讀回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89#issuecomment-6161469967)。[明確關注與當前獲權責任並集](execution/t34.md)已接入，查看／編輯不自動關注，關注不授READ／所有權，Review轉Ticket規範去重，原UUID／UNKNOWN與當前失權恢復已驗證。功能2ea28212／MF0ccb保持050嚴格／一次build／artifact原生0及051／052／053獨立10／5／9 PASS，044工具3功能PASS但NOT_WALLCLOCK_BUDGET_PASS；歷史失敗及捕獲限制保留。完整Source＋delta＋五MD兩軸與歸檔／自有清理已收口；第二first的新Root物化行尾和凍結私樹raw分別記賬，canonical精確相同。當前 **34／43 CLOSED、9 OPEN**；WBINT-12／A12仍待T36。下一連續整票T33／#88，ADMIN或當前獲權DISPATCHER＋獨立RETRY＋已有精確Incident READ／範圍；UNKNOWN仍ADMIN＋獨立RECONCILE。T40／#95原生依賴均completed，已領取作並行Source／first準備；T41仍受T36阻塞。新開關默認false，全43最終審查與工作樹清理繼續待，未發布／部署／現場／full／certify或Gate。
+
 ## 导航与配置
 
 - [GitHub任务列表](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues?q=is%3Aissue%20label%3Aready-for-agent%20WBINT)
@@ -230,10 +232,11 @@ native_blocking_edges: 76
   - **Blocked by:** [#87](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87)
   - **来源：** WBINT-11 / A11
 
-- [ ] **T34** — [#89 明确关注并查看与我有关](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)
+- [x] **T34** — [#89 明确关注并查看与我有关](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)
   - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签与原生blocker #60 CLOSED，领取给peterkis；独立准备明确关注与获权责任并集合同，尚未验证。
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)
   - **来源：** WBINT-12 / A12
+  - **当前本地执行：** [原七项与完整适用证据](execution/t34.md)已父核、独立唯一快进9b5f4f12、[#89原生CLOSED/completed](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89#issuecomment-6161469967)。功能2ea／MF0ccb不重绑，原失败／超时／捕获限制、raw与canonical独立保留；本票贡献已完成，A12仍待T36，默认关闭、未发布／启用。
 
 - [x] **T35** — [#90 实际阅读后推进个人已读](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
   - **当前本地执行：** [原七项LOCAL_VERIFIED](execution/t35.md)已父核、e7ebc2e8安全快进并GitHub关闭；实际来源／会话、本人可见正文、单调位置、规范映射、授权与UNKNOWN恢复证据及原失败保留。保全工作字节和全部自有清理已核对；A12仍待T34／T36。
