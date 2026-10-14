@@ -117,7 +117,7 @@ export function createIncidentDeliveryControl({pool,query,enabled=false,permissi
     // A new legacy UUID can prove only the initial delivery attempt; v2 binds its exact attempt in command_hash.
     const expectedAttempt='expected_delivery_attempt_count'in c?c.expected_delivery_attempt_count:c.expected_status==='PENDING'?0:1;
     if(ctx.binding.status!==c.expected_status||ctx.binding.side_effect_state!==c.expected_side_effect_state||ctx.binding.attempt_count!==expectedAttempt)fail('STATE_CONFLICT',409);
-    if(c.action==='retry'||c.resolution==='CONFIRMED_NOT_SENT_REQUEUE'){if(!await sendAdmission(tx,ctx))fail('FORBIDDEN',403);}
+    if(c.action==='retry'||c.resolution==='CONFIRMED_NOT_SENT_REQUEUE'){if(!await sendAdmission(tx,ctx))fail('STATE_CONFLICT',409);}
     if(ctx.binding.attempt_count>=2147483647&&!(c.action==='retry'&&ctx.binding.status==='PENDING'))fail('STATE_CONFLICT',409);
     // Authorization after all permission, binding, catalog and destination waits.
     ctx=await current(tx,authContext,c.incident_id,c.delivery_id,c.action,true);

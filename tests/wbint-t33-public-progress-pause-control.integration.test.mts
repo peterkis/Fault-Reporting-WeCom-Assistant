@@ -159,11 +159,12 @@ test('T33 paused public-progress subscription rejects requeue and cancels its si
       current_status:afterRejected.status,current_side_effect_state:afterRejected.side_effect_state,
       current_attempt_count:attempt(afterRejected.attempt_count),sender_calls:senderCalls(),
     }));
-    assert.equal(requeue.status,403,JSON.stringify(requeue.body));
+    assert.equal(requeue.status,409,JSON.stringify(requeue.body));
+    assert.deepEqual(requeue.body,{error:{code:'P2_012_STATE_CONFLICT',retryable:false}});
     assert.deepEqual(afterRejected,unknown);assert.equal(senderCalls(),1);
     assert.deepEqual(await selectedRow(second.publicationId,sibling.delivery_id),siblingBefore);
     const receipt=await get(parent+'/notification-commands/'+commandId);
-    assert.equal(receipt.status,200,JSON.stringify(receipt.body));assert.equal(receipt.body.state,'FAILED');
+    assert.equal(receipt.status,200,JSON.stringify(receipt.body));assert.equal(receipt.body.state,'FAILED');assert.deepEqual(receipt.body.error,{code:'P2_012_STATE_CONFLICT',retryable:false});
 
     await deliver(sibling.delivery_id);
     const cancelled=await selectedRow(second.publicationId,sibling.delivery_id);
