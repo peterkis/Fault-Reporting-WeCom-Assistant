@@ -21,7 +21,7 @@ export function t33Text(value:unknown):string{assert.equal(typeof value,'string'
 interface Response {status:number;body:Record<string,unknown>}
 export interface T33WholeOptions {externalSend?:boolean;draftRecovery?:boolean;publicProgress?:boolean}
 interface Context {
-  origin:string;cookies:{name:string;value:string}[];pool:PostgresPool;grants:Set<string>;runtime:ReturnType<typeof createP2012Runtime>;dispatcherId:string;handlerId:string;outsiderId:string;secondIncident:()=>Promise<string>;getLifecycleRows:()=>Promise<Record<string,unknown>[]>;setSenderOutcome:(value:'UNKNOWN'|'REJECTED_NOT_APPLIED'|'ACKNOWLEDGED')=>void;
+  restartControl:(enabled:boolean)=>Promise<void>;origin:string;cookies:{name:string;value:string}[];pool:PostgresPool;grants:Set<string>;runtime:ReturnType<typeof createP2012Runtime>;dispatcherId:string;handlerId:string;outsiderId:string;secondIncident:()=>Promise<string>;getLifecycleRows:()=>Promise<Record<string,unknown>[]>;setSenderOutcome:(value:'UNKNOWN'|'REJECTED_NOT_APPLIED'|'ACKNOWLEDGED')=>void;
   incidentId:string;adminId:string;senderCalls:()=>number;
   get:(path:string,actor?:number)=>Promise<Response>;
   post:(path:string,body:Record<string,unknown>,actor?:number)=>Promise<Response>;
@@ -49,10 +49,10 @@ export async function t33WholeHttp(run:(context:Context)=>Promise<void>,options:
     const sender=createCommunicationSenderPort(async()=>{sends++;return {outcome,provider_message_id:null,error_code:outcome==='ACKNOWLEDGED'?null:'SYNTHETIC_T33_'+outcome,retryable:false};});
     // One manually invoked original Worker; no server-side automatic send interval.
     const worker=createCommunicationDeliveryWorker({pool,sender,enabled:true,batchSize:1,attemptAdmission:createIncidentPublicProgressAdmission({enabled:options.publicProgress===true})});
-    const runtime=createP2012Runtime({pool,principalIds:[adminId,dispatcherId,handlerId,outsiderId],listenPort:port,publicOrigin:origin,
+    const makeRuntime=(control:boolean)=>createP2012Runtime({pool,principalIds:[adminId,dispatcherId,handlerId,outsiderId],listenPort:port,publicOrigin:origin,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},
       incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:options.publicProgress===true,incidentOwnerTransferEnabled:false,
-      incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:options.externalSend===true,workbenchDraftRecoveryEnabled:options.draftRecovery===true,notificationExceptionsEnabled:true,workbenchRealtimeEnabled:true});
+      incidentDeliveryControlEnabled:control,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:options.externalSend===true,workbenchDraftRecoveryEnabled:options.draftRecovery===true,notificationExceptionsEnabled:true,workbenchRealtimeEnabled:true});let runtime=makeRuntime(true);
     let primary:unknown;
     try{
       const start=t33Record(await runtime.start());assert.ok(Array.isArray(start.cookies));const cookies=start.cookies.map(t33Record),csrf:string[]=[];
@@ -75,7 +75,8 @@ export async function t33WholeHttp(run:(context:Context)=>Promise<void>,options:
         assert.equal(confirmed.status,200,JSON.stringify(confirmed.body));const id=t33Text(confirmed.body.result_ref_id);
         grants.add(adminId+'|'+id+'|INCIDENT_DELIVERY_RETRY');grants.add(adminId+'|'+id+'|INCIDENT_DELIVERY_RECONCILE');return id;
       };
-      await run({origin,cookies:cookies.map(cookie=>({name:t33Text(cookie.name),value:t33Text(cookie.value)})),pool,grants,runtime,incidentId,adminId,dispatcherId,handlerId,outsiderId,secondIncident,getLifecycleRows,setSenderOutcome:value=>{outcome=value;},senderCalls:()=>sends,get,post,deliver:deliveryId=>worker.deliver({deliveryId})});
+      const restartControl=async(enabled:boolean)=>{await runtime.stop();assert.equal(runtime.server.listening,false);runtime=makeRuntime(enabled);const started=t33Record(await runtime.start());assert.ok(Array.isArray(started.cookies));cookies.splice(0,cookies.length,...started.cookies.map(t33Record));csrf.length=0;for(let i=0;i<cookies.length;i++){const bootstrap=await get('/api/lifecycle/bootstrap',i);assert.equal(bootstrap.status,200);csrf.push(t33Text(bootstrap.body.csrf_token));}};
+      await run({restartControl,origin,cookies:cookies.map(cookie=>({name:t33Text(cookie.name),value:t33Text(cookie.value)})),pool,grants,runtime,incidentId,adminId,dispatcherId,handlerId,outsiderId,secondIncident,getLifecycleRows,setSenderOutcome:value=>{outcome=value;},senderCalls:()=>sends,get,post,deliver:deliveryId=>worker.deliver({deliveryId})});
     }catch(error){primary=error;}
     await closeBrowserTestResources([()=>runtime.stop(),()=>{assert.equal(runtime.server.listening,false);}],primary);
   }});}catch(error){outerError=error;}
