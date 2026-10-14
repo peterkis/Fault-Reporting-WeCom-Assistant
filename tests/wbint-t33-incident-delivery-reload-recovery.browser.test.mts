@@ -167,7 +167,7 @@ test('T33 production detail reloads its encrypted original v2 command after real
   const restorePrincipal=record(restoreAuth.response);
   assert.equal(restorePrincipal.principal_id,adminId);assert.equal(restorePrincipal.incident_delivery_control_enabled,true);assert.equal(restorePrincipal.incident_delivery_control_draft_recovery_enabled,true);
   const cap=closed(restoreCap.response,['incident_id','delivery_id','purpose','retry','reconcile','receipt_read','disabled','attempt_count']);
-  assert.equal(cap.incident_id,incidentId);assert.equal(cap.delivery_id,deliveryId);assert.equal(cap.purpose,'INCIDENT_LIFECYCLE');assert.equal(cap.receipt_read,true);assert.equal(cap.reconcile,true);
+  assert.equal(cap.incident_id,incidentId);assert.equal(cap.delivery_id,deliveryId);assert.equal(cap.purpose,'INCIDENT_LIFECYCLE');assert.equal(cap.receipt_read,true);assert.equal(cap.reconcile,false,'current SENT state forbids a new reconcile; it does not revoke the original UUID purpose');
   assert.equal(await input('选择通知路'),deliveryId);assert.equal(await input('投递控制操作'),'RECONCILE');
   assert.equal(await input('投递操作原因'),body.reason_code);assert.equal(await input('未知发送核对结论'),body.resolution);
   const restoredContent=await content();

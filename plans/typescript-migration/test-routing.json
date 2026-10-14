@@ -5713,6 +5713,24 @@
       "requires_database": true,
       "mode": "STAGED_RUNTIME",
       "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-scoped-rebase.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-g1-delivery-command-compat.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7358,6 +7376,12 @@
     ],
     "wbint-t33-reload-recovery": [
       "tests/wbint-t33-incident-delivery-reload-recovery.browser.test.mts"
+    ],
+    "wbint-t33-scoped-rebase": [
+      "tests/wbint-t33-incident-delivery-scoped-rebase.browser.test.mts"
+    ],
+    "wbint-t33-g1-compat": [
+      "tests/wbint-t33-g1-delivery-command-compat.integration.test.mts"
     ]
   },
   "subprocess_entries": {
