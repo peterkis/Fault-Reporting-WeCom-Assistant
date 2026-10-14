@@ -219,5 +219,5 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
   if(primaryError!==undefined&&closureErrors.length)throw new AggregateError([primaryError,...closureErrors],'T33_SCOPED_REBASE_AND_OWN_TARGET_CLOSURE_FAILED');
   if(primaryError!==undefined)throw primaryError;
   if(closureErrors.length)throw new AggregateError(closureErrors,'T33_SCOPED_REBASE_OWN_TARGET_CLOSURE_FAILED');
- },{draftRecovery:true});
+ },{draftRecovery:true,externalSend:true});
 });
