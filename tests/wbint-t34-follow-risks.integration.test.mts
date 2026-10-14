@@ -196,3 +196,32 @@ test('T34 readiness and migration NOOP reject the actual active index when inval
   assert.equal(await followSchemaReady(f.pool),true);
  },{workbenchFollowEnabled:true,manualProjection:true});
 });
+
+test('T34 a non-durable Follow relation is refused by readiness and migration status',async t=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  await f.pool.query('ALTER TABLE pilot_ticket.workbench_item_follow SET UNLOGGED');
+  try{
+   const relation=(await f.pool.query("SELECT relkind,relpersistence,relispartition FROM pg_class WHERE oid=to_regclass('pilot_ticket.workbench_item_follow')")).rows[0];
+   assert.equal(relation?.relpersistence,'u');t.diagnostic('T34_ACTUAL_OWNED_RELATION '+JSON.stringify(relation));
+   assert.equal(await followSchemaReady(f.pool),false,'a marker and matching columns cannot certify a non-durable personal fact');
+   await assert.rejects(migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'status'}),{code:'P2_016_ACTION_FAILED'});
+  }finally{await f.pool.query('ALTER TABLE pilot_ticket.workbench_item_follow SET LOGGED');}
+ },{workbenchFollowEnabled:true,manualProjection:true});
+});
+
+test('T34 an actual write-suppressing trigger cannot produce a successful Follow acknowledgement',async t=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  const http=client(f),target=f.tickets[1];assert.ok(target);const path='/api/workbench/items/ticket/'+target.ticket.id;
+  const bootstrap=await http.read('/api/lifecycle/bootstrap'),original=command(await http.read(path),true);
+  await f.pool.query('CREATE FUNCTION pilot_ticket.t34_suppress_follow() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$');
+  await f.pool.query('CREATE TRIGGER t34_suppress_follow BEFORE INSERT OR UPDATE ON pilot_ticket.workbench_item_follow FOR EACH ROW EXECUTE FUNCTION pilot_ticket.t34_suppress_follow()');
+  try{
+   const response=await http.post(path,original,bootstrap.csrf_token),body:unknown=await response.json();
+   t.diagnostic('T34_ACTUAL_SUPPRESSED_WRITE_ACK '+JSON.stringify({status:response.status,body}));
+   assert.equal(response.status,503,'catalog drift must fail closed before an unfulfilled intent is acknowledged');
+   assert.equal(await followSchemaReady(f.pool),false);
+   assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.workbench_item_follow')).rows[0]?.n,0);
+   assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_ITEM_FOLLOW' AND state='COMMITTED'")).rows[0]?.n,0);
+  }finally{await f.pool.query('DROP TRIGGER t34_suppress_follow ON pilot_ticket.workbench_item_follow');await f.pool.query('DROP FUNCTION pilot_ticket.t34_suppress_follow()');}
+ },{workbenchFollowEnabled:true,manualProjection:true});
+});
