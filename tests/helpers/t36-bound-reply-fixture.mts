@@ -24,6 +24,7 @@ export interface T36BoundReplyFixture {
  takeoverSelf():Promise<Response>;
  setActorRoles(roles:PilotRole[]):Promise<void>;
  expire(target:SupplementFollowUpTarget):Promise<void>;
+ disableEntry():Promise<void>;
  pool:PostgresPool;sessionId:string;ticketId:string;actorId:string;reporterId:string;
  r2:SupplementFollowUpTarget;rowVersion:number;internalCanary:string;
  postReply(body:SupplementFollowUpReplyCommand):Promise<Response>;
@@ -36,28 +37,28 @@ export interface T36BoundReplyFixture {
 export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>,{recovery=false}:{recovery?:boolean}={}){return withT35Fixture(async base=>{
  await base.runtime.stop();await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});
  const admin=base.principals[0];assert.ok(admin);
- const runtime=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
+ const makeRuntime=(supplementEnabled:boolean)=>{const next=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
   listenPort:Number(new URL(base.origin).port),principalIds:[admin.id],externalSendEnabled:false,
   workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchConversationsEnabled:true,
-  workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:true,workbenchDraftRecoveryEnabled:recovery});
- if('disabled' in runtime)throw Error('T36_REAL_RUNTIME_REQUIRED');let primaryError:unknown;
+  workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:supplementEnabled,workbenchDraftRecoveryEnabled:recovery});if("disabled" in next)throw Error("T36_REAL_RUNTIME_REQUIRED");return next;};let runtime=makeRuntime(true);
+ let primaryError:unknown;
  try{
-  const [cookie]=(await runtime.start()).cookies??[];assert.ok(cookie);const cookieHeader=cookie.name+'='+cookie.value;
+  const [cookie]=(await runtime.start()).cookies??[];assert.ok(cookie);let cookieHeader=cookie.name+'='+cookie.value;
   const get=(path:string)=>ownedHttp(base.origin+path,{headers:{cookie:cookieHeader}});
   const read=async<T,>(path:string):Promise<T>=>{const response=await get(path);assert.equal(response.status,200,path);return await response.json() as T;};
-  const csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;assert.ok(csrf);
+  let csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;assert.ok(csrf);
   const decisions=createDecisionStore(),orchestrator=createRuleFirstOrchestrator({pool:base.pool,
    identityHmacKey:'t36-real-bot-journey-synthetic-key',decisionStore:decisions,
    safeActionExecutor:createSafeActionExecutor({decisionStore:decisions,intakeDecisionPort:createServiceIntakeDecisionPort(),
     manualReviewStore:createManualReviewStore(),ticketCommandPort:createExistingTicketCommandPort({ticketCore:createPilotTicketCore({pool:base.pool})}),communicationPort:createP2004FixedCommunicationPort()})});
   const nonce=randomUUID(),reporterId='t36-reporter-'+nonce,bot='t36-bot-'+nonce;
-  const accept=async(text:string)=>{
+  const accept=async(text:string,evaluate=true)=>{
    const msgid='t36-'+randomUUID(),accepted=await runtime.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},
     body:{msgid,aibotid:bot,chattype:'single',from:{userid:reporterId},msgtype:'text',text:{content:text}}});
    assert.equal(accepted.ok,true);const intakeId=object(object(object(accepted).result).intake).id;assert.equal(typeof intakeId,'string');
    for(let attempt=0;attempt<20;attempt++){await runtime.coordinator.runOnce();if(object(await runtime.coordinator.backlog()).channel_messages===0)break;}
    assert.equal(object(await runtime.coordinator.backlog()).channel_messages,0);
-   const evaluated=await orchestrator.processPersistedIntake({service_intake_id:String(intakeId),feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},trace_id:'t36-'+msgid});
+   const evaluated=evaluate?await orchestrator.processPersistedIntake({service_intake_id:String(intakeId),feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},trace_id:'t36-'+msgid}):{};
    const material=object(object(accepted).result),message=object(material.message);assert.equal(typeof message.channel_message_id,'string');assert.equal(typeof message.sequence_no,'number');
    return {intakeId:String(intakeId),evaluated:object(evaluated),sourceRef:'channel:'+String(message.channel_message_id),revision:String(message.sequence_no)};
   };
@@ -69,7 +70,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const sessionId=related.items[0]?.session.session_id;assert.ok(sessionId);
   const sessionPath='/api/workbench/conversations/'+sessionId;
   const target=async(text:string):Promise<SupplementFollowUpTarget>=>{
-   const next=await accept(text);assert.equal(next.intakeId,initial.intakeId);
+   const next=await accept(text,false);assert.equal(next.intakeId,initial.intakeId);
    const detail=await read<SupplementFollowUpPage>(followPath+'?limit=100');
    const found=detail.items.find(r=>r.source_ref===next.sourceRef&&r.revision===next.revision);assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return {source_ref:found.source_ref,revision:found.revision};
   };
@@ -89,6 +90,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
    setActorRoles:async roles=>{const actor=(await base.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[admin.id])).rows[0];assert.ok(actor);const changed=await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles,resolverTeamIds:[]});assert.equal(changed.id,admin.id);},
    takeoverSelf:async()=>{const current=await currentSession(),command={client_command_id:randomUUID(),expected_row_version:current.session.row_version};return ownedHttp(base.origin+sessionPath+'/takeover',{method:'POST',headers:{cookie:cookieHeader,origin:base.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf,'if-match':'\"'+command.expected_row_version+'\"'},body:JSON.stringify(command)});},
    origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},
+   disableEntry:async()=>{await runtime.stop();runtime=makeRuntime(false);const [next]=(await runtime.start()).cookies??[];assert.ok(next);cookieHeader=next.name+'='+next.value;csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;},
    expire:async target=>{assert.match(target.source_ref,/^channel:[1-9][0-9]*$/u);await base.pool.query('UPDATE channel.message_inbox SET retention_until_epoch_ms=platform.physical_epoch_ms()-1 WHERE id=$1::bigint',[target.source_ref.slice(8)]);},
    postReply,page,appendR3:()=>target('补充：T36发送在途以后新收到的材料。'),get,read,
    independentFacts:async()=>({ticket:await read(ticketPath),responsibility:await read(ticketPath+'/responsibility'),events:await read(ticketPath+'/events'),read:await read(itemPath+'/read-position')})});

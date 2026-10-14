@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-bound-entry-off-receipt.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-bound-service-failure.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7538,6 +7547,9 @@
     ],
     "wbint-t36-bound-service-failure": [
       "tests/t36-bound-service-failure.browser.test.mts"
+    ],
+    "wbint-t36-entry-off-bound-receipt": [
+      "tests/t36-bound-entry-off-receipt.integration.test.mts"
     ]
   },
   "subprocess_entries": {
