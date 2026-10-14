@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-default-off-and-schema.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-contract.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7562,6 +7571,9 @@
     ],
     "wbint-t36-contract": [
       "tests/t36-contract.test.mts"
+    ],
+    "wbint-t36-default-off-and-schema": [
+      "tests/t36-default-off-and-schema.integration.test.mts"
     ]
   },
   "subprocess_entries": {

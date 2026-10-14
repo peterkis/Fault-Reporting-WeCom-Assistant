@@ -1,3 +1,4 @@
+import type {SupplementFollowUpMaterial} from '../../../../../contracts/workbench_supplement_follow_up_material_contracts';
 import type {LocalDateTime} from '../../../../../contracts/time_contracts';
 import type {SupplementFollowUpCommand,SupplementFollowUpItem,SupplementFollowUpPage,SupplementFollowUpReceipt,SupplementFollowUpResult,SupplementFollowUpTarget} from '../../../../../contracts/workbench_supplement_follow_up_contracts';
 export type {SupplementFollowUpCommand,SupplementFollowUpItem,SupplementFollowUpPage,SupplementFollowUpReceipt,SupplementFollowUpResult,SupplementFollowUpTarget};
@@ -33,11 +34,7 @@ export function decodeSupplementCommand(value:unknown):SupplementFollowUpCommand
 export function decodeSupplementSummary(value:unknown):SupplementFollowUpSummary{
  const row=closed(value,['has_pending_supplements']);if(typeof row.has_pending_supplements!=='boolean')return invalid();return {has_pending_supplements:row.has_pending_supplements};
 }
-export function decodeSupplementPage(value:unknown,ticketId:string):SupplementFollowUpPage{
- const row=closed(value,['ticket_id','items','next_cursor','has_pending_supplements']);
- if(uuid(row.ticket_id).toLowerCase()!==ticketId.toLowerCase()||!Array.isArray(row.items)||row.items.length>100||typeof row.has_pending_supplements!=='boolean'
-  ||row.next_cursor!==null&&(typeof row.next_cursor!=='string'||!row.next_cursor||row.next_cursor.length>4096))return invalid();
- const items=row.items.map((value):SupplementFollowUpItem=>{
+export function decodeSupplementItem(value:unknown):SupplementFollowUpItem{
   const item=closed(value,['source_ref','source_kind','revision','follow_up_state','resolution']),target=decodeSupplementTarget({source_ref:item.source_ref,revision:item.revision});
   if(item.source_kind!=='WEB'&&item.source_kind!=='BOT'||(item.source_kind==='WEB')!==target.source_ref.startsWith('web:'))return invalid();
   const base:SupplementFollowUpTarget&{source_kind:'WEB'|'BOT'}={...target,source_kind:item.source_kind};
@@ -46,9 +43,18 @@ export function decodeSupplementPage(value:unknown,ticketId:string):SupplementFo
   const resolution=closed(item.resolution,['resolution_id','basis','occurred_at']);
   if(resolution.basis!=='RECORDED_DISPOSITION'&&resolution.basis!=='VERIFIED_REPLY')return invalid();
   return {...base,follow_up_state:'FOLLOWED_UP',resolution:{resolution_id:uuid(resolution.resolution_id),basis:resolution.basis,occurred_at:datetime(resolution.occurred_at)}};
- });
+}
+export function decodeSupplementPage(value:unknown,ticketId:string):SupplementFollowUpPage{
+ const row=closed(value,['ticket_id','items','next_cursor','has_pending_supplements']);
+ if(uuid(row.ticket_id).toLowerCase()!==ticketId.toLowerCase()||!Array.isArray(row.items)||row.items.length>100||typeof row.has_pending_supplements!=='boolean'
+  ||row.next_cursor!==null&&(typeof row.next_cursor!=='string'||!row.next_cursor||row.next_cursor.length>4096))return invalid();
+ const items=row.items.map(decodeSupplementItem);
  if(new Set(items.map(item=>JSON.stringify([item.source_ref,item.revision]))).size!==items.length||!row.has_pending_supplements&&items.some(item=>item.follow_up_state==='PENDING'))return invalid();
  return {ticket_id:ticketId,items,next_cursor:row.next_cursor,has_pending_supplements:row.has_pending_supplements};
+}
+export function decodeSupplementMaterial(value:unknown,ticketId:string,target:SupplementFollowUpTarget):SupplementFollowUpMaterial{
+ const row=closed(value,['ticket_id','item']);if(uuid(row.ticket_id).toLowerCase()!==ticketId.toLowerCase())return invalid();
+ const item=decodeSupplementItem(row.item);if(!sameSupplementTarget(item,target))return invalid();return {ticket_id:ticketId,item};
 }
 export function decodeSupplementResult(value:unknown,ticketId:string,commandId:string,target?:SupplementFollowUpTarget):SupplementFollowUpResult{
  const row=closed(value,['ok','client_command_id','ticket_id','source_ref','revision','follow_up_state','resolution_id','basis','replayed']);

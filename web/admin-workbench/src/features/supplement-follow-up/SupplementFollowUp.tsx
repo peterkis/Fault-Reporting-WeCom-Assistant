@@ -3,9 +3,9 @@ import {useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearSessionAuthorization,clearSupplementAuthorization} from '../../app/authorization';
-import {DraftError,purgeDrafts,subscribeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,subscribeDrafts} from '../drafts/encrypted-drafts';
 import {sameSupplementTarget} from './client';
-import type {SupplementFollowUpCommand,SupplementFollowUpTarget,SupplementFollowUpResult} from './client';
+import type {SupplementFollowUpCommand,SupplementFollowUpTarget,SupplementFollowUpResult,SupplementFollowUpItem} from './client';
 import {EMPTY_SUPPLEMENT_INPUT,useSupplementDraft} from './use-supplement-draft';
 import type {SupplementDispositionInput} from './use-supplement-draft';
 import {conversations} from '../conversations/client';
@@ -18,49 +18,46 @@ export function SupplementFollowUpSummary({pending}:{pending:boolean|undefined})
  return pending===true?<p className="supplement-pending-summary" data-supplement-follow-up-pending="true"><strong>补充待跟进</strong></p>:null;
 }
 export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange}:{ticketId:string;principal:Principal;readReady:boolean;onBlockedChange:(blocked:boolean)=>void}){
- const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),original=useRef<string|null>(null);
+ const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),original=useRef<string|null>(null),materialRead=useRef<AbortController|null>(null);
  const [value,setValue]=useState<SupplementDispositionInput>(EMPTY_SUPPLEMENT_INPUT),[pending,setPending]=useState<SupplementFollowUpCommand|null>(null),[operationId,setOperationId]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
- const [bound,setBound]=useState<{target:SupplementFollowUpTarget;entry:ConversationWorkspaceEntry}|null>(null),[replyBlocked,setReplyBlocked]=useState(false);
+ const [bound,setBound]=useState<{target:SupplementFollowUpTarget;entry:ConversationWorkspaceEntry}|null>(null),[replyBlocked,setReplyBlocked]=useState(false),[restoredMaterial,setRestoredMaterial]=useState<SupplementFollowUpItem|null>(null);
  const enabled=principal.supplement_follow_up_enabled===true;
  const sessions=useQuery({queryKey:['supplement-reply-sessions',principal.principal_id,ticketId,principal.authorization_revision,principal.expires_epoch_ms],enabled:enabled&&readReady&&principal.conversation_workspace_enabled,queryFn:({signal})=>conversations.links('ticket',ticketId,signal)});
  const replySessions=sessions.data?.items.filter(entry=>entry.capabilities.includes('REPLY')&&entry.session.status!=='ENDED')??[];
  const page=useInfiniteQuery({queryKey:['ticket-supplement-follow-up',principal.principal_id,ticketId,principal.authorization_revision,principal.expires_epoch_ms],enabled:enabled&&readReady,initialPageParam:null as string|null,
   queryFn:({pageParam,signal})=>api.supplementFollowUpPage(ticketId,pageParam,signal),getNextPageParam:current=>current.next_cursor??undefined});
- const rows=page.data?.pages.flatMap(current=>current.items)??[],unique=[...new Map(rows.map(item=>[JSON.stringify([item.source_ref,item.revision]),item])).values()];
+ const rows=page.data?.pages.flatMap(current=>current.items)??[],unique=[...new Map([...(restoredMaterial?[restoredMaterial]:[]),...rows].map(item=>[JSON.stringify([item.source_ref,item.revision]),item])).values()];
  const currentRead=readReady&&page.isSuccess&&!page.isFetching&&!page.isError,staff=isStaff(principal),stage=useRef<'session'|'purpose'>('purpose');
  const resetInput=()=>{setValue(EMPTY_SUPPLEMENT_INPUT);setPending(null);};
- const sensitiveClear=()=>{resetInput();if(!settling.current){generation.current++;request.current?.abort();request.current=null;}};
+ const sensitiveClear=()=>{resetInput();if(!settling.current){generation.current++;request.current?.abort();materialRead.current?.abort();request.current=null;}};
  async function authorityFailure(error:unknown,commandId?:string|null){
   const id=commandId===undefined?original.current:commandId;
   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session')){
    await clearSessionAuthorization(client,principal.principal_id,error instanceof ApiError?error.status as 401|403:undefined,'revoked');sensitiveClear();return;
   }
   if(error instanceof ApiError&&[403,404].includes(error.status)){
-   await clearSupplementAuthorization(client,principal.principal_id,ticketId,error);sensitiveClear();setOperationId(id);setState(id?'unknown':'denied');setMessage(id?'补充材料或处置权限已失效，敏感输入已清理；原操作只能只读核对。':'补充材料或处置权限已失效，敏感输入已清理。');
+   await clearSupplementAuthorization(client,principal.principal_id,ticketId,error);setRestoredMaterial(null);sensitiveClear();setOperationId(id);setState(id?'unknown':'denied');setMessage(id?'补充材料或处置权限已失效，敏感输入已清理；原操作只能只读核对。':'补充材料或处置权限已失效，敏感输入已清理。');
   }
  }
- async function authorize(signal:AbortSignal){
+ async function authorize(signal:AbortSignal,copy?:{value:SupplementDispositionInput;pending:SupplementFollowUpCommand|null}){
   stage.current='session';const fresh=await api.bootstrap(signal);if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');client.setQueryData(['session'],fresh);
-  stage.current='purpose';await api.supplementFollowUpPage(ticketId,null,signal);
+  stage.current='purpose';const target=copy?.pending??copy?.value.target??value.target;if(target)await api.supplementFollowUpMaterial(ticketId,target,signal);else await api.supplementFollowUpPage(ticketId,null,signal);
   return fresh.supplement_follow_up_enabled===true&&fresh.supplement_follow_up_draft_recovery_enabled===true&&isStaff(fresh);
  }
  const draft=useSupplementDraft({ticketId,principal,readReady:currentRead,value,pending,authorize,onAuthorityFailure:error=>{void authorityFailure(error);},onSensitiveClear:sensitiveClear,
   onOperation:id=>{setOperationId(id);if(!settling.current){setState('unknown');setMessage('原补充处置结果尚未确认，请只读核对原操作。');}},
   onRestore:async(copy,signal)=>{
-   stage.current='purpose';const fresh=await api.supplementFollowUpPage(ticketId,null,signal);signal.throwIfAborted();
-   const target=copy.pending??copy.value.target;
-   if(!target||!fresh.items.some(item=>sameSupplementTarget(item,target))){
-    await purgeDrafts({principal:principal.principal_id,kind:'ticket',id:ticketId,purpose:'supplement-disposition',reason:'revoked'},{preserveOperations:true});
-    signal.throwIfAborted();resetInput();if(copy.pending){setOperationId(copy.pending.client_command_id);setState('unknown');setMessage('原修订未出现在本次授权材料页，敏感内容已清理；原操作只能只读核对。');}return;
-   }
-   setValue(copy.value);setPending(copy.pending);setOperationId(copy.pending?.client_command_id??null);setState(copy.pending?'unknown':'idle');setMessage(copy.pending?'原补充处置结果尚未确认，原 UUID、正文和修订保持不变。':'已恢复原补充修订的内部处置输入。');
+   stage.current='purpose';const target=copy.pending??copy.value.target;
+   if(!target){resetInput();return;}
+   const current=await api.supplementFollowUpMaterial(ticketId,target,signal);signal.throwIfAborted();
+   setRestoredMaterial(current.item);setValue(copy.value);setPending(copy.pending);setOperationId(copy.pending?.client_command_id??null);setState(copy.pending?'unknown':'idle');setMessage(copy.pending?'原补充处置结果尚未确认，原 UUID、正文和修订保持不变。':'已恢复原补充修订的内部处置输入。');
   }
  });
  const originalId=pending?.client_command_id??operationId??draft.operationId,busy=state==='submitting'||state==='checking',locked=busy||Boolean(originalId),hasInput=Boolean(value.note);
  original.current=originalId;
  const blocked=((locked||hasInput)&&!draft.safeToLeave)||replyBlocked;
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
- useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
+ useEffect(()=>()=>{generation.current++;request.current?.abort();materialRead.current?.abort();},[]);
  useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
  useEffect(()=>{
   if(!enabled||!principal.logout_enabled&&!principal.supplement_follow_up_draft_recovery_enabled)return;
@@ -72,8 +69,15 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
  useEffect(()=>{if(page.error instanceof ApiError&&[401,403,404].includes(page.error.status)){stage.current='purpose';void authorityFailure(page.error);}},[page.error]);
  useEffect(()=>{if(!staff&&(value.note||pending)){stage.current='purpose';void authorityFailure(new ApiError(403,'P2_016_FORBIDDEN'));}},[staff]);
  const refresh=async()=>{
-  // Reading current material and projections never resubmits the original command.
-  await page.refetch();void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});
+  // An exact restore fact remains independent of the currently loaded cursor page.
+  materialRead.current?.abort();const controller=new AbortController(),token=generation.current;materialRead.current=controller;
+  const current=()=>!controller.signal.aborted&&generation.current===token;
+  try{
+   await page.refetch();if(!current())return;const target=pending??value.target??restoredMaterial;
+   if(target){const exact=await api.supplementFollowUpMaterial(ticketId,target,controller.signal);if(!current())return;setRestoredMaterial(exact.item);}
+   void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});
+  }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){stage.current='purpose';await authorityFailure(error);}else setMessage('当前补充重新读取失败，原命令结果未变化。');}
+  finally{if(materialRead.current===controller)materialRead.current=null;controller.abort();}
  };
  async function submit(target:SupplementFollowUpTarget){
   if(request.current||locked||!currentRead||!staff||!value.target||!sameSupplementTarget(target,value.target)||!value.note.trim()||Array.from(value.note).length>2000)return;

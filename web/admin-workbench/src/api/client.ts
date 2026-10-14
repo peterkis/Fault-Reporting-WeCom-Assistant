@@ -1,7 +1,7 @@
 import {decodeFollowAttention,decodeFollowReceipt,decodeFollowResult,matchesFollowResult} from '../../../../src/workbench-follow-browser-contracts.mjs';
 import type {FollowItem,WorkbenchFollowAttention,WorkbenchFollowCommand,WorkbenchFollowResult,WorkbenchFollowReceipt} from '../../../../src/workbench-follow-browser-contracts.mjs';
-import {decodeSupplementPage,decodeSupplementResult,decodeSupplementReceipt,decodeSupplementSummary} from '../features/supplement-follow-up/client';
-import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUpResult,SupplementFollowUpReceipt,SupplementFollowUpSummary} from '../features/supplement-follow-up/client';
+import {decodeSupplementPage,decodeSupplementMaterial,decodeSupplementResult,decodeSupplementReceipt,decodeSupplementSummary} from '../features/supplement-follow-up/client';
+import type {SupplementFollowUpCommand,SupplementFollowUpTarget,SupplementFollowUpPage,SupplementFollowUpResult,SupplementFollowUpReceipt,SupplementFollowUpSummary} from '../features/supplement-follow-up/client';
 type WorkbenchCard=CoreWorkbenchCard&{attention?:WorkbenchFollowAttention;supplement_follow_up?:SupplementFollowUpSummary};
 type BoardPage=Omit<CoreBoardPage,'items'>&{items:WorkbenchCard[]};
 type WorkbenchDetail=Omit<CoreWorkbenchDetail,'item'>&{item:WorkbenchCard};
@@ -253,6 +253,7 @@ async function postFollow(requested:FollowItem,command:WorkbenchFollowCommand,cs
   }catch(error){current();if(error instanceof ApiError&&error.code!=='INVALID_RESPONSE')throw error;throw new UnknownCommandOutcome();}
 }
 export const api={
+  supplementFollowUpMaterial:(ticketId:string,target:SupplementFollowUpTarget,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/supplement-follow-up/material?'+new URLSearchParams({source_ref:target.source_ref,revision:target.revision}),signal,value=>{try{return decodeSupplementMaterial(value,ticketId,target);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   supplementFollowUpPage:(ticketId:string,cursor:string|null,signal:AbortSignal):Promise<SupplementFollowUpPage>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/supplement-follow-up?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{try{return decodeSupplementPage(value,ticketId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   supplementFollowUpReceipt:(ticketId:string,commandId:string,signal:AbortSignal):Promise<SupplementFollowUpReceipt>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/supplement-follow-up/commands/'+encodeURIComponent(commandId),signal,value=>{try{return decodeSupplementReceipt(value,ticketId,commandId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   recordSupplementDisposition:async(ticketId:string,command:SupplementFollowUpCommand,csrfToken:string|null,signal:AbortSignal):Promise<SupplementFollowUpResult>=>{
