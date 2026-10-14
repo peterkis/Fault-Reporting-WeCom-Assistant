@@ -39,7 +39,7 @@ export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, 
          JOIN communication.outbox o ON o.id=d.outbox_id
          JOIN communication.message m ON m.id=o.message_id
         WHERE d.id=$1::uuid`, [id]);
-    if (result.rowCount !== 1 || !await (authorize as Authorizer).authorizeSession({ principal, sessionId: (result.rows[0] as DeliveryRow).session_id as string, action: 'VIEW' })) {
+    if (result.rowCount !== 1 || (result.rows[0] as DeliveryRow).session_id === null || !await (authorize as Authorizer).authorizeSession({ principal, sessionId: (result.rows[0] as DeliveryRow).session_id as string, action: 'VIEW' })) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.notFound, 404);
     }
     return { principal, row: result.rows[0] as DeliveryRow, deliveryId: id };

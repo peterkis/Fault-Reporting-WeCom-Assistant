@@ -5632,6 +5632,24 @@
       "requires_database": true,
       "mode": "STAGED_RUNTIME",
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": false,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-command.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7253,6 +7271,13 @@
     ],
     "wbint-t33-production-browser-first": [
       "tests/wbint-t33-incident-delivery-production.browser.test.mts"
+    ],
+    "wbint-t33-ui-v2": [
+      "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "tests/wbint-t33-incident-delivery-production.browser.test.mts"
+    ],
+    "wbint-t33-conversation-uuid": [
+      "tests/wbint-t33-conversation-delivery-command.integration.test.mts"
     ]
   },
   "subprocess_entries": {

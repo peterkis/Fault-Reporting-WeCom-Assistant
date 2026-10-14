@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,matchesIncidentDeliveryResult} from '../src/workbench-incident-delivery-browser-contracts.mjs';
+const incidentId='11111111-1111-4111-8111-111111111111',deliveryId='22222222-2222-4222-8222-222222222222',commandId='33333333-3333-4333-8333-333333333333',other='44444444-4444-4444-8444-444444444444';
+const expected={incidentId,deliveryId,purpose:'INCIDENT_LIFECYCLE' as const};
+const body={client_command_id:commandId,expected_row_version:'9223372036854775807',expected_status:'RECONCILIATION_REQUIRED',expected_side_effect_state:'UNKNOWN',expected_delivery_attempt_count:1,reason_code:'OPERATOR_VERIFIED_DELIVERY',resolution:'CONFIRMED_SENT'};
+const operation={...expected,action:'RECONCILE',body};
+const result={ok:true,incident_id:incidentId,delivery_id:deliveryId,client_command_id:commandId,status:'SENT',side_effect_state:'ACKNOWLEDGED',attempt_count:2,replayed:false};
+test('T33 browser capability accepts only the exact parent, delivery, purpose, and closed safe fields',()=>{
+ const capability={incident_id:incidentId,delivery_id:deliveryId,purpose:'INCIDENT_LIFECYCLE',retry:false,reconcile:true,receipt_read:true,disabled:false,attempt_count:1};
+ assert.equal(decodeIncidentDeliveryCapability(capability,expected).reconcile,true);
+ assert.equal(decodeIncidentDeliveryCapability(capability,expected).attempt_count,1);
+ const {attempt_count:omitted,...v1}=capability;assert.equal(omitted,1);assert.throws(()=>decodeIncidentDeliveryCapability(v1,expected),TypeError);
+ for(const count of [-1,1.5,2147483648])assert.throws(()=>decodeIncidentDeliveryCapability({...capability,attempt_count:count},expected),TypeError);
+ for(const changed of [{...capability,incident_id:other},{...capability,delivery_id:other},{...capability,purpose:'INCIDENT_PUBLIC_PROGRESS'},{...capability,provider_receipt:'synthetic-private-provider-value'},{...capability,disabled:true}])assert.throws(()=>decodeIncidentDeliveryCapability(changed,expected),TypeError);
+});
+test('T33 v2 browser preserves parent decimal versions plus the captured delivery attempt and rejects unsafe input',()=>{
+ assert.equal(decodeIncidentDeliveryOperation(operation,expected).body.expected_row_version,'9223372036854775807');
+ assert.equal(decodeIncidentDeliveryOperation(operation,expected).body.expected_delivery_attempt_count,1);
+ for(const count of [-1,1.5,2147483648])assert.throws(()=>decodeIncidentDeliveryOperation({...operation,body:{...body,expected_delivery_attempt_count:count}}),TypeError);
+ const {expected_delivery_attempt_count:omitted,...v1}=body;assert.equal(omitted,1);assert.throws(()=>decodeIncidentDeliveryOperation({...operation,body:v1}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryOperation({...operation,body:{...body,expected_row_version:'9223372036854775808'}}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryOperation({...operation,body:{...body,expected_row_version:'0'}}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryOperation({...operation,body:{...body,raw_target:'synthetic-private-target'}}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryOperation({...operation,deliveryId:other},expected),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryOperation({...expected,action:'RETRY',body:{client_command_id:commandId,expected_row_version:'1',expected_status:'RECONCILIATION_REQUIRED',expected_side_effect_state:'UNKNOWN',expected_delivery_attempt_count:1,reason_code:'OPERATOR_CONFIRMED_NOT_ATTEMPTED'}}),TypeError);
+});
+test('T33 browser binds terminal receipts to the original UUID and requires the original conclusion rather than a read mark',()=>{
+ const original=decodeIncidentDeliveryOperation(operation,expected),decoded=decodeIncidentDeliveryResult(result);
+ assert.equal(matchesIncidentDeliveryResult(original,decoded),true);
+ assert.equal(matchesIncidentDeliveryResult(original,decodeIncidentDeliveryResult({...result,delivery_id:other})),false);
+ assert.equal(matchesIncidentDeliveryResult(original,decodeIncidentDeliveryResult({...result,status:'PENDING',side_effect_state:'NOT_ATTEMPTED'})),false);
+ assert.throws(()=>decodeIncidentDeliveryResult({...result,attempt_count:2147483648}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryResult({...result,reporter_read:true}),TypeError);
+ const receipt=decodeIncidentDeliveryReceipt({state:'COMMITTED',incident_id:incidentId,client_command_id:commandId,result},incidentId,commandId);
+ assert.equal(receipt.state,'COMMITTED');
+ assert.throws(()=>decodeIncidentDeliveryReceipt({state:'COMMITTED',incident_id:incidentId,client_command_id:other,result},incidentId,commandId),TypeError);
+ assert.equal(decodeIncidentDeliveryReceipt({state:'COMMITTED',incident_id:incidentId,client_command_id:commandId,result:{...result,replayed:true}},incidentId,commandId).state,'COMMITTED');
+ assert.equal(decodeIncidentDeliveryReceipt({state:'UNKNOWN',incident_id:incidentId,client_command_id:commandId},incidentId,commandId).state,'UNKNOWN');
+});
