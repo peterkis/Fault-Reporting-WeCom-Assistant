@@ -4,10 +4,51 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
-    {"path":"tests/t36-bound-reply.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
-    {"path":"tests/t36-current-material-authority.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
-    {"path":"tests/t36-supplement-production.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
-    {"path":"tests/t36-supplement-follow-up.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {
+      "path": "tests/t36-bound-reply-risks.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-bound-reply.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-current-material-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-supplement-production.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t36-supplement-follow-up.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
     {
       "path": "tests/wbint-t29-owner-transfer-http.integration.test.mts",
       "mode": "STAGED_RUNTIME",
@@ -6420,9 +6461,15 @@
     }
   },
   "selections": {
-    "wbint-t36-bound-reply-first": ["tests/t36-bound-reply.integration.test.mts"],
-    "wbint-t36-current-material-authority": ["tests/t36-current-material-authority.integration.test.mts"],
-    "wbint-t36-production-supplement-first": ["tests/t36-supplement-production.browser.test.mts"],
+    "wbint-t36-bound-reply-first": [
+      "tests/t36-bound-reply.integration.test.mts"
+    ],
+    "wbint-t36-current-material-authority": [
+      "tests/t36-current-material-authority.integration.test.mts"
+    ],
+    "wbint-t36-production-supplement-first": [
+      "tests/t36-supplement-production.browser.test.mts"
+    ],
     "wbint-t29-http-first": [
       "tests/wbint-t29-owner-transfer-http.integration.test.mts"
     ],
@@ -6619,7 +6666,9 @@
     "wbint-t37-communicator": [
       "tests/t37-communicator-authority.integration.test.mts"
     ],
-    "wbint-t36-first": ["tests/t36-supplement-follow-up.integration.test.mts"],
+    "wbint-t36-first": [
+      "tests/t36-supplement-follow-up.integration.test.mts"
+    ],
     "wbint-t37-first": [
       "tests/t37-follow-up-schedule.integration.test.mts"
     ],
@@ -7414,6 +7463,9 @@
     ],
     "wbint-t33-public-progress-paused-requeue": [
       "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts"
+    ],
+    "wbint-t36-bound-reply-risks": [
+      "tests/t36-bound-reply-risks.integration.test.mts"
     ]
   },
   "subprocess_entries": {
