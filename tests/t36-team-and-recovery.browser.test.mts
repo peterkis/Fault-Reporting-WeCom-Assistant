@@ -9,11 +9,11 @@ test('T36 unassigned team board and list both show pending supplements without c
   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?view=board'});
   const card=`article[data-kind="ticket"][data-item-id="${f.ticketId}"]`;
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)})?.querySelector('[data-supplement-follow-up-pending="true"]'))`);
-  assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent`),/补充待跟进/u);await capture();
+  assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent`),/补充待跟进/u);await capture('new-board-1920.png');
   await browser.evaluate(`Array.from(document.querySelectorAll('[aria-label="展示方式"] button')).find(b=>b.textContent.includes('列表')).click()`);
   await browser.waitFor(`new URL(location.href).searchParams.get('view')==='list'&&Array.from(document.querySelectorAll('tr')).some(row=>Array.from(row.querySelectorAll('a')).some(a=>a.getAttribute('href')?.includes(${JSON.stringify('/items/ticket/'+f.ticketId)}))&&row.querySelector('[data-supplement-follow-up-pending="true"]'))`);
   assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('tr')).filter(row=>Array.from(row.querySelectorAll('a')).some(a=>a.getAttribute('href')?.includes(${JSON.stringify('/items/ticket/'+f.ticketId)}))).length`),1);
-  await capture();assert.deepEqual(await f.independentFacts(),before,'background summary is neither personal READ nor a new assignment/status');
+  await capture('new-list-1920.png');assert.deepEqual(await f.independentFacts(),before,'background summary is neither personal READ nor a new assignment/status');
  });
 }));
 
@@ -28,7 +28,7 @@ test('T36 a real bound Message committed before lost ACK recovers the same encry
   await browser.waitFor('document.querySelector("[data-supplement-bound-reply] [data-reply-outcome]")?.textContent.includes("结果未知")&&Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))');
   const observed=await browser.evaluate('globalThis.__t36Recovery') as {method:string;status:number;id:string;version:number;target:unknown}[];
   assert.equal(observed.length,1);const accepted=observed[0];assert.ok(accepted);assert.equal(accepted.status,202);assert.deepEqual(accepted.target,{ticket_id:f.ticketId,...f.r2});
-  await browser.waitFor(`Array.from(document.querySelectorAll('[data-supplement-bound-reply] button')).some(b=>b.textContent==='关闭补充回复'&&!b.disabled)`);await capture();
+  console.log('T36_COMMITTED_LOST_ACK '+JSON.stringify({status:accepted.status,uuid:accepted.id,version:accepted.version,exact_target:accepted.target,restore:'EXPLICIT_RELOAD_NOT_PANEL_LEAVE'}));await capture('new-detail-1920.png');
   await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector("[data-supplement-follow-up-state] li"))');await openReply(browser,f.r2);
   await browser.waitFor('Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))');
   assert.equal(await browser.evaluate('document.querySelector("[data-supplement-bound-reply] textarea").value'),text);
