@@ -5,7 +5,7 @@ import type { G1RuntimeExtension } from './p2-g1-runtime.mjs';
 import type { P2012NotificationPolicy } from './p2-012-notification-policy.mjs';
 export type P2012LiveApproval = Partial<Record<'live' | 'scope' | 'send' | 'publicNotice' | 'privateNotice', boolean>>;
 export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentInternalNotesEnabled?:boolean;incidentPublicProgressEnabled?:boolean;incidentOwnerTransferEnabled?:boolean;incidentDeliveryControlEnabled?:boolean;incidentDeliveryControlPermissions?:IncidentDeliveryControlPermissionPort|null }
-type ExtensionOptions = { pool: PostgresPool; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; internalNotesEnabled?:boolean; publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'] };
+type ExtensionOptions = { pool: PostgresPool;deliveryControlEnabled?:boolean;deliveryControlPermissions?:IncidentDeliveryControlPermissionPort|null;externalSendEnabled?:boolean; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; internalNotesEnabled?:boolean; publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'] };
 export type P2012WorkbenchExtension = ReturnType<typeof createP2012WorkbenchExtension>;
 import { readFile } from 'node:fs/promises';
 import { createP2012IncidentQuery } from './p2-012-incident-query.mjs';
@@ -23,15 +23,16 @@ import {createIncidentPublicProgressAdmission} from './p2-012-public-progress-ad
 import {publicProgressSchemaReady} from './p2-012-public-progress-schema.mjs';
 import {createPublicProgressNotifications} from './p2-012-public-progress-notifications.mjs';
 import {internalNoteSchemaReady} from './p2-012-internal-note-schema.mjs';
+import {createIncidentDeliveryControl} from './p2-012-incident-delivery-control.mjs';
 import {ownerTransferSchemaReady} from './p2-012-owner-transfer-schema.mjs';
 
 export function createP2012Runtime(options: P2012RuntimeOptions & { flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true } }): P2016EnabledRuntime;
 export function createP2012Runtime(options?: P2012RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime;
 export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,incidentInternalNotesEnabled=false,incidentPublicProgressEnabled=false,incidentOwnerTransferEnabled=false,incidentDeliveryControlEnabled=false,incidentDeliveryControlPermissions=null,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
-  // T33 SOURCE declarations only: no control handler, permission mapping or Worker change.
+  // Independent Incident control permission; default null grants nothing.
   if(typeof incidentDeliveryControlEnabled!=='boolean')fail();
   if(incidentDeliveryControlPermissions!==null&&(typeof incidentDeliveryControlPermissions!=='object'||typeof incidentDeliveryControlPermissions.hasPermission!=='function'))fail();
-  void incidentDeliveryControlPermissions;
+  if(incidentDeliveryControlEnabled&&!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED)fail();
   if(typeof incidentOwnerTransferEnabled!=='boolean'||incidentOwnerTransferEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentPublicProgressEnabled!=='boolean'||incidentPublicProgressEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentCandidateWorkspaceEnabled!=='boolean'||typeof incidentInternalNotesEnabled!=='boolean')fail();if(incidentInternalNotesEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
@@ -45,22 +46,23 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i
   }
   const admission=createIncidentPublicProgressAdmission({enabled:f.INCIDENT_CORRELATION_ENABLED&&incidentPublicProgressEnabled});
   return createP2016Runtime({...options,deliveryAttemptAdmission:async input=>(!options.deliveryAttemptAdmission||await options.deliveryAttemptAdmission(input))&&await admission(input),incidentExtensionFactory:context=>createP2012WorkbenchExtension({
-    ...context,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,internalNotesEnabled:incidentInternalNotesEnabled,publicProgressEnabled:incidentPublicProgressEnabled,ownerTransferEnabled:incidentOwnerTransferEnabled,communicationAppend:options.communicationAppend})});
+    ...context,deliveryControlEnabled:incidentDeliveryControlEnabled,deliveryControlPermissions:incidentDeliveryControlPermissions,externalSendEnabled:options.externalSendEnabled??true,featureFlags:f,testLabel:incidentTestLabel||options.gatewayEnabled===true||options.senderEnabled===true,backgroundMaintenance:incidentBackgroundMaintenance,candidateWorkspaceEnabled:incidentCandidateWorkspaceEnabled,internalNotesEnabled:incidentInternalNotesEnabled,publicProgressEnabled:incidentPublicProgressEnabled,ownerTransferEnabled:incidentOwnerTransferEnabled,communicationAppend:options.communicationAppend})});
 }
-export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,communicationAppend}: ExtensionOptions){
+export function createP2012WorkbenchExtension({pool,deliveryControlEnabled=false,deliveryControlPermissions=null,externalSendEnabled=true,realtime,featureFlags={},testLabel=false,backgroundMaintenance=true,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,communicationAppend}: ExtensionOptions){
   if(typeof candidateWorkspaceEnabled!=='boolean'||typeof internalNotesEnabled!=='boolean'||typeof publicProgressEnabled!=='boolean'||typeof ownerTransferEnabled!=='boolean')fail();
   if(typeof backgroundMaintenance!=='boolean')fail();
   const f=flags(featureFlags),enabled=f.INCIDENT_CORRELATION_ENABLED,query=createP2012IncidentQuery({pool,enabled,internalNotesEnabled,publicProgressEnabled,ownerTransferEnabled});
+  const deliveryControl=createIncidentDeliveryControl({pool,query,enabled:enabled&&deliveryControlEnabled,permissions:deliveryControlPermissions,externalSendEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,publicNoticeEnabled:f.INCIDENT_PUBLIC_NOTICE_ENABLED,privateNoticeEnabled:f.INCIDENT_PRIVATE_NOTICE_ENABLED});
   const projector=createP2012RealtimeProjector({pool,enabled,wakeup:realtime?.wakeup});
   const notifications=createP2012NotificationPolicy({enabled,publicEnabled:f.INCIDENT_PUBLIC_NOTICE_ENABLED,privateEnabled:f.INCIDENT_PRIVATE_NOTICE_ENABLED,testLabel,communicationAppend});
   const commands=createP2012IncidentCommandService({pool,enabled,query,notifications,realtime:projector,maintenanceEnabled:false,internalNotesEnabled,publicProgressEnabled,ownerTransferEnabled,publicProgressNotifications:createPublicProgressNotifications({testLabel,communicationAppend})});
   const maintenance=createP2012IncidentCommandService({pool,enabled,query,realtime:projector,maintenanceEnabled:true});
   const importer=createP2012CandidateReviewStore({pool,enabled});
   const correlation=createIncidentCorrelationWorker({pool,enabled});
-  return Object.freeze({query,commands,enabled,notificationExceptionScope:query.notificationExceptionScope,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,ownerTransferEnabled:enabled&&ownerTransferEnabled,
-    async ready(){if(!enabled)return true;try{return (!ownerTransferEnabled||await ownerTransferSchemaReady(pool))&&(!publicProgressEnabled||await publicProgressSchemaReady(pool))&&(!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
+  return Object.freeze({query,commands,deliveryControl,enabled,deliveryControlEnabled:enabled&&deliveryControlEnabled,notificationExceptionScope:query.notificationExceptionScope,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,ownerTransferEnabled:enabled&&ownerTransferEnabled,
+    async ready(){if(!enabled)return true;try{return await deliveryControl.ready()&&(!ownerTransferEnabled||await ownerTransferSchemaReady(pool))&&(!publicProgressEnabled||await publicProgressSchemaReady(pool))&&(!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
     reporterAdapter:enabled?createP2012ReporterTimelineAdapter({pool,enabled}):null,
-    authenticatedHandler:createP2012WorkbenchHttp({query,commands,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,ownerTransferEnabled:enabled&&ownerTransferEnabled}),
+    authenticatedHandler:createP2012WorkbenchHttp({query,commands,deliveryControl,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,ownerTransferEnabled:enabled&&ownerTransferEnabled}),
     async staticHandler(pathname: string,response: Parameters<NonNullable<G1RuntimeExtension['staticHandler']>>[1]){
       const files: Record<string, readonly [string, string]>={'/workbench/incidents':['incidents.html','text/html'],'/static/workbench/incidents.js':['incidents.js','text/javascript']};
       const item=files[pathname];if(!item)return false;

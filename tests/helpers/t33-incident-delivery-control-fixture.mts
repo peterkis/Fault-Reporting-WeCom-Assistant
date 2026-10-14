@@ -1,3 +1,7 @@
+import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
+import {migrateIncidentOwnerTransfer} from '../../scripts/incident-owner-transfer-migrate.mjs';
+import {migrateIncidentDeliveryControl} from '../../scripts/incident-delivery-control-migrate.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
@@ -25,6 +29,11 @@ export async function t33IncidentHttp(run:(context:Context)=>Promise<void>):Prom
   let outerError:unknown;
   try{await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t33first',max:2,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
     await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
+    // Explicit T33 test-only prerequisite; old 6679B fixture remains frozen in evidence.
+    await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});
+    await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});
+    await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});
+    await migrateIncidentDeliveryControl({databaseUrl,mode:'apply'});
     const f=await fixtureP2012(pool,{reporters:4});
     const adminId=t33Text(t33Record(f.admin).id),dispatcherId=t33Text(t33Record(f.dispatcher).id),handlerId=t33Text(t33Record(f.handler).id);
     const grants=new Set<string>();
