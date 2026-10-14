@@ -91,7 +91,13 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
    takeoverSelf:async()=>{const current=await currentSession(),command={client_command_id:randomUUID(),expected_row_version:current.session.row_version};return ownedHttp(base.origin+sessionPath+'/takeover',{method:'POST',headers:{cookie:cookieHeader,origin:base.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf,'if-match':'\"'+command.expected_row_version+'\"'},body:JSON.stringify(command)});},
    origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},
    disableEntry:async()=>{await runtime.stop();runtime=makeRuntime(false);const [next]=(await runtime.start()).cookies??[];assert.ok(next);cookieHeader=next.name+'='+next.value;csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;},
-   expire:async target=>{assert.match(target.source_ref,/^channel:[1-9][0-9]*$/u);await base.pool.query('UPDATE channel.message_inbox SET retention_until_epoch_ms=platform.physical_epoch_ms()-1 WHERE id=$1::bigint',[target.source_ref.slice(8)]);},
+   expire:async target=>{
+    assert.match(target.source_ref,/^channel:[1-9][0-9]*$/u);
+    // Preserve the original second-precision local CHECK, then observe actual expiry.
+    const deadline=(await base.pool.query<{deadline:string}>('UPDATE channel.message_inbox SET retention_until_epoch_ms=received_epoch_ms+1000 WHERE id=$1::bigint RETURNING retention_until_epoch_ms::text AS deadline',[target.source_ref.slice(8)])).rows[0]?.deadline;assert.ok(deadline);
+    let expired=false;for(let attempt=0;attempt<300;attempt++){expired=(await base.pool.query<{expired:boolean}>('SELECT platform.physical_epoch_ms()>$1::bigint AS expired',[deadline])).rows[0]?.expired===true;if(expired)break;await new Promise(resolve=>setTimeout(resolve,10));}
+    assert.equal(expired,true,'the owned material deadline actually expired, without changing the original local time constraint');
+   },
    postReply,page,appendR3:()=>target('补充：T36发送在途以后新收到的材料。'),get,read,
    independentFacts:async()=>({ticket:await read(ticketPath),responsibility:await read(ticketPath+'/responsibility'),events:await read(ticketPath+'/events'),read:await read(itemPath+'/read-position')})});
  }catch(error){primaryError=error;}
