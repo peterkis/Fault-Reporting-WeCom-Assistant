@@ -77,7 +77,7 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    const row=(await tx.query<{state:string;result_snapshot:unknown;source_ref:string|null;revision:string|null;error_code:string;retryable:boolean}>(`SELECT l.state,l.result_snapshot,d.source_ref,d.revision::text,l.error_code,l.retryable
     FROM pilot_ticket.ticket_command_receipt l LEFT JOIN pilot_ticket.workbench_supplement_disposition d ON d.command_receipt_id=l.id WHERE l.command_scope=$1 AND l.client_command_id=$2::uuid AND l.command_type=$3 AND l.ticket_id=$4::uuid AND l.actor_principal_id=$5::uuid`,['P2_016:'+c.principal.principal_id,id,PURPOSE,c.ticket.id,c.principal.principal_id])).rows[0];
    if(!row)return {...base,state:'UNKNOWN'};if(row.source_ref&&row.revision)await material(tx,c,{source_ref:row.source_ref,revision:row.revision});
-   if(row.state==='COMMITTED'){if(!row.source_ref||!row.revision)failP2016('ACTION_FAILED',503);return {...base,state:'COMMITTED',result:dispositionResult({...exactP2016(row.result_snapshot,['ok','client_command_id','ticket_id','source_ref','revision','follow_up_state','resolution_id','basis']),replayed:true})};}
+   if(row.state==='COMMITTED'){if(!row.source_ref||!row.revision)failP2016('ACTION_FAILED',503);return {...base,state:'COMMITTED',result:{...dispositionResult({...exactP2016(row.result_snapshot,['ok','client_command_id','ticket_id','source_ref','revision','follow_up_state','resolution_id','basis']),replayed:true}),replayed:true as const}};}
    if(row.state==='FAILED'&&row.retryable===false&&/^[A-Z][A-Z0-9_]{0,63}$/u.test(row.error_code))return {...base,state:'FAILED',error:{code:row.error_code,retryable:false}};return {...base,state:'UNKNOWN'};
   });}
  });
