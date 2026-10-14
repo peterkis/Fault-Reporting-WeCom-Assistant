@@ -27,9 +27,9 @@ execution_status: IN_PROGRESS
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
-| WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：[T32获权异常查询LOCAL_VERIFIED](execution/t32.md)原七项已父验收、独立集成并原生CLOSED/completed；T33的原生依赖已解除，普通Incident重试角色仍待人类决定，A11整组未完成 | A11 |
+| WBINT-11 | 通知异常队列与恢复 | 08、10 | LOCAL_VERIFIED：[T32获权异常查询](execution/t32.md)与[T33专用权限／受控重试和结果核对](execution/t33.md)原七均已父核、非实现者集成并原生CLOSED/completed；A11本地完成，默认关闭／无现场或Gate授权 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T34明确关注与当前获权责任并集](execution/t34.md)、[T35个人已读](execution/t35.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；T36依赖已完成但实施未完，A12整组仍待T36；默认关闭／无生产或Gate授权 | A12 |
-| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
+| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39／T40已领取，仅Source准备未验收 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
 | WBINT-16 | 人工工作台整体隔离验收 | 00–15 | NOT_STARTED | A16 |
@@ -169,6 +169,8 @@ execution_status: IN_PROGRESS
 - **前端**：群、私聊、应用逐路显示；重新获取事实不等于发送成功。“查看此工单”权限不自动获得全域队列／核对权限；请求被拒绝清理相关缓存。
 - **数据库／开关**：尽量复用各域记录，有必要时仅增加可重建有界索引／投影；投影不是事实源。默认false，停止控制入口不删除待核对事实，发送停止与队列保留分开。
 - **验证／证据／资源**：A11：跨域越权、隐藏对象游标、wrong parent delivery、UNKNOWN拒盲重发、确认已发不二次发、确定未发授权重队列、多路局部结果和失败恢复；PG＋HTTP。禁止抓取所有卡片下全部投递做前端全局队列，不增发送并发。
+
+2026-10-14 T33原七项已父验收，b4de2b4c由非实现者精确快进native0，[#88完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/88#issuecomment-6168544303)。[Incident专用控制与原UUID结果核对](execution/t33.md)已接入，ADMIN或当前获权DISPATCHER须独立RETRY、精确READ与当前范围；UNKNOWN核对限ADMIN及独立RECONCILE。业务准入409与真401／403／404失权分开，正式页面保留已知拒绝输入、显式只读刷新。真实被测0b1c2828／MF616b的088严格／一次build／artifact／bootstrap四原生0，最新092／093／094独立1／5／7 PASS；本票26及相关24适用case各保原pin，不称50同head全轮。完整74路径与12类质量检查两轴、9717归档成员、旧8036真Git及物化原字节／43旧SQL／六用户原件保护与自有清理已核。原RED、FAIL、NOT_REACHED及读取器错误保留；当前 **35／43 CLOSED、8 OPEN**，WBINT-11／A11所属T32／T33本地完成。下一连续整票T36／#91，fresh原七／空评论／ready／已领取及唯一#90 completed已核；T41仍待91。默认关闭，全43最终审查和工作树清理继续待，未push／PR、部署、真实外发、full／certify或Gate。
 
 ## WBINT-12：个人已读／关注、团队待跟进与共享预约
 

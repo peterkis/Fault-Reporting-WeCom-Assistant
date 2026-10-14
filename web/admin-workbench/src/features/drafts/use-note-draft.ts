@@ -37,7 +37,7 @@ export interface AuthorizedDraftOptions<T,C> {
   scope:DraftScope;enabled:boolean;writeEnabled?:boolean;refreshBlankAfterPurposeRemoval?:boolean;value:T;pending:C|null;emptyValue:T;
   hasInput:(value:T)=>boolean;serialise:(value:AuthorizedDraftValue<T,C>)=>string;
   decode:(text:string)=>AuthorizedDraftValue<T,C>;commandId:(command:C)=>string;
-  authorize:(signal:AbortSignal)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
+  authorize:(signal:AbortSignal,copy?:AuthorizedDraftValue<T,C>)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
   onRestore:(value:AuthorizedDraftValue<T,C>)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
 }
 export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
@@ -70,9 +70,9 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         if(!(error instanceof DraftError)||error.message!=='DRAFT_CHANGED'||!target.record)throw error;
         const controller=new AbortController();authorityRequest.current=controller;
         try{
-          const allowed=await protocol.current.authorize(controller.signal);
+          const allowed=await protocol.current.authorize(controller.signal,value);
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)throw new DraftError('DRAFT_CHANGED');
-          if(!allowed){await removeSensitiveDraft(target);throw new DraftError('DRAFT_ACTION_REVOKED');}
+          if(!allowed){await removeSensitiveDraft(target,'revoked');throw new DraftError('DRAFT_ACTION_REVOKED');}
           await rebaseDraft(target);
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)throw new DraftError('DRAFT_CHANGED');
           record=await saveDraft(target,text,saveOptions);

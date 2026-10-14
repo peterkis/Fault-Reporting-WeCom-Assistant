@@ -5589,6 +5589,168 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/wbint-t33-incident-delivery-control.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-aba.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-v2.integration.test.mts",
+      "node_flags": [],
+      "requires_browser": false,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-authority.integration.test.mts",
+      "node_flags": [],
+      "requires_browser": false,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-production.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": false,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-command.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-aba.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-v2.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-response-loss.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-control-risks.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-schema.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-public-progress-pause-control.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-reload-recovery.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-scoped-rebase.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-g1-delivery-command-compat.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-state-not-purpose.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/wbint-t15-review-start.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7213,6 +7375,57 @@
       "tests/wbint-t34-follow-production.browser.test.mts",
       "tests/wbint-t34-follow-contracts.test.mts",
       "tests/wbint-t34-follow-recovery.browser.test.mts"
+    ],
+    "wbint-t33-first": [
+      "tests/wbint-t33-incident-delivery-control.integration.test.mts"
+    ],
+    "wbint-t33-aba": [
+      "tests/wbint-t33-incident-delivery-aba.integration.test.mts"
+    ],
+    "wbint-t33-v2": [
+      "tests/wbint-t33-incident-delivery-v2.integration.test.mts"
+    ],
+    "wbint-t33-authority": [
+      "tests/wbint-t33-incident-delivery-authority.integration.test.mts"
+    ],
+    "wbint-t33-production-browser-first": [
+      "tests/wbint-t33-incident-delivery-production.browser.test.mts"
+    ],
+    "wbint-t33-ui-v2": [
+      "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "tests/wbint-t33-incident-delivery-production.browser.test.mts"
+    ],
+    "wbint-t33-conversation-uuid": [
+      "tests/wbint-t33-conversation-delivery-command.integration.test.mts"
+    ],
+    "wbint-t33-conversation-aba": [
+      "tests/wbint-t33-conversation-delivery-aba.integration.test.mts"
+    ],
+    "wbint-t33-conversation-v2": [
+      "tests/wbint-t33-conversation-delivery-v2.integration.test.mts"
+    ],
+    "wbint-t33-response-loss": [
+      "tests/wbint-t33-incident-delivery-response-loss.browser.test.mts"
+    ],
+    "wbint-t33-current-core-risks": [
+      "tests/wbint-t33-incident-delivery-control-risks.integration.test.mts",
+      "tests/wbint-t33-conversation-delivery-schema.integration.test.mts",
+      "tests/wbint-t33-public-progress-pause-control.integration.test.mts"
+    ],
+    "wbint-t33-reload-recovery": [
+      "tests/wbint-t33-incident-delivery-reload-recovery.browser.test.mts"
+    ],
+    "wbint-t33-scoped-rebase": [
+      "tests/wbint-t33-incident-delivery-scoped-rebase.browser.test.mts"
+    ],
+    "wbint-t33-g1-compat": [
+      "tests/wbint-t33-g1-delivery-command-compat.integration.test.mts"
+    ],
+    "wbint-t33-state-not-purpose": [
+      "tests/wbint-t33-incident-delivery-state-not-purpose.browser.test.mts"
+    ],
+    "wbint-t33-public-progress-paused-requeue": [
+      "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7270,13 +7483,17 @@
       "tests/helpers/p2-015-postgres-harness.mjs",
       "tests/helpers/p2-016-postgres-harness.mjs",
       "tests/helpers/yxx-ss-009-resources.mjs",
-      "tests/helpers/t32-notification-exception-fixture.mts"
+      "tests/helpers/t32-notification-exception-fixture.mts",
+      "tests/helpers/t33-incident-delivery-control-fixture.mts",
+      "tests/helpers/t33-whole-fixture.mts"
     ],
     "LOCAL_HTTP_SSE_RUNTIME": [
       "tests/helpers/t29-owner-transfer-http-fixture.mts",
       "tests/helpers/p2-003-client-harness.mjs",
       "tests/helpers/p2-003-sse-harness.mjs",
-      "tests/helpers/p2-g2-runtime-harness.mjs"
+      "tests/helpers/p2-g2-runtime-harness.mjs",
+      "tests/helpers/t33-incident-delivery-control-fixture.mts",
+      "tests/helpers/t33-whole-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
@@ -7296,7 +7513,8 @@
       "tests/helpers/p2-016-browser-fixture.mjs",
       "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
       "tests/helpers/t32-notification-exception-browser-fixture.mts",
-      "tests/helpers/t29-owner-transfer-browser-fixture.mts"
+      "tests/helpers/t29-owner-transfer-browser-fixture.mts",
+      "tests/helpers/t33-incident-delivery-browser-fixture.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",
