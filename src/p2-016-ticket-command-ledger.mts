@@ -132,9 +132,9 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
         const hash=hashP2016(command);
         if(receiptType==='WORKBENCH_ITEM_FOLLOW'){
           const source=uuidP2016(command.source_intake_id);
-          await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,command_type,source_intake_id,actor_principal_id)
-            VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
-            [scope,command.client_command_id,hash,receiptType,source,context.principal.principal_id]);
+          await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,command_type,source_intake_id,actor_principal_id,ticket_id,review_id)
+            VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
+            [scope,command.client_command_id,hash,receiptType,source,context.principal.principal_id,command.ticket_id??null,command.review_id??null]);
         }else{
         await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,
           command_type,ticket_id,review_id,conversation_session_id,actor_principal_id,expected_ticket_version,expected_session_version)

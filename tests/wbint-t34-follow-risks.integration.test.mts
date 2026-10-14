@@ -7,7 +7,8 @@ import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {followSchemaReady,migrateWorkbenchFollow} from '../scripts/workbench-follow-migrate.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {WorkbenchFollowCommand} from '../contracts/workbench_item_follow_contracts.js';
-interface Fixture {pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];processReviewIntake:(id:string)=>Promise<unknown>}
+import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+interface Fixture {runtime:P2016EnabledRuntime;pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];processReviewIntake:(id:string)=>Promise<unknown>}
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function text(v:unknown):string{assert.equal(typeof v,'string');return v as string;}
 function rows(v:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(v));return v.map(object);}
@@ -34,8 +35,11 @@ test('T34 default OFF keeps the existing host ready without 044 or follow SQL',a
   assert.equal((await http.get('/api/workbench/board?column=pending&scope=related')).status,400);
   assert.equal((await http.get(path+'/follow/commands/'+randomUUID())).status,404);
   assert.equal((await f.pool.query("SELECT to_regclass('pilot_ticket.workbench_item_follow') AS relation")).rows[0]?.relation,null);
+  const initial=await f.runtime.coordinator.backlog(),bound=Math.ceil(initial.total/f.runtime.coordinator.batchSize)+3;
+  let drained=false;for(let step=0;step<bound;step++){const result=await f.runtime.coordinator.runOnce();assert.ok(result.streams.every(stream=>stream.failures.length===0));const remaining=await f.runtime.coordinator.backlog();if(result.processed===0&&remaining.total===0){drained=true;break;}}
+  assert.equal(drained,true,'the existing host requires the actual fixture projection to finish before readiness');
   const ready=await fetch(f.origin+'/health/ready');assert.equal(ready.status,200);
- },{manualProjection:true});
+ },{chronologicalTicketEvents:true});
 });
 
 test('T34 explicit intent uses exact HTTP fences and concurrent CAS, with caller-only receipts and current READ before replay',async()=>{

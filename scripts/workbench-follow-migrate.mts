@@ -8,8 +8,26 @@ import {failP2016} from '../src/p2-016-domain-contracts.mjs';
 
 export const FOLLOW_MIGRATION_ID='044_workbench_item_follow';
 const SQL_URL=new URL('../database/migrations/'+FOLLOW_MIGRATION_ID+'.sql',import.meta.url);
+// Whole critical definitions captured from the actual unchanged 047 / 047+050
+// migrations. The optional Reporter purpose remains an independent capability.
+const RECEIPT_047='b5f22d5a32c458824b837ce1e5a2f301b41486348da3e1cab1e921354fab2b70';
+const RECEIPT_047_050='8746f1f5b11db5c6bb53c5c210805b0fe63463bc817975853d47e47241e8056a';
+export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<boolean>{
+  const markers=(await tx.query<{migration_id:string;checksum_sha256:string}>("SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id IN ('047_workbench_personal_read','050_bot_reporter_feedback') ORDER BY migration_id")).rows;
+  const personal=markers.find(row=>row.migration_id==='047_workbench_personal_read'),bot=markers.find(row=>row.migration_id==='050_bot_reporter_feedback');
+  if(!personal)return false;
+  const checksum=async(name:string)=>createHash('sha256').update(await readFile(new URL('../database/migrations/'+name+'.sql',import.meta.url))).digest('hex');
+  if(personal.checksum_sha256!==await checksum(personal.migration_id)||bot&&bot.checksum_sha256!==await checksum(bot.migration_id))return false;
+  const constraints=(await tx.query(`SELECT conname,contype,convalidated,pg_get_constraintdef(oid,true) AS definition FROM pg_constraint
+    WHERE conrelid=to_regclass('pilot_ticket.ticket_command_receipt') AND conname IN ('p2016_command_resource','bot_feedback_actor_purpose','ticket_command_receipt_source_intake_id_fkey') ORDER BY conname`)).rows;
+  const actor=(await tx.query("SELECT column_name,data_type,is_nullable FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='actor_principal_id'")).rows;
+  const source=(await tx.query("SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='source_intake_id' AND data_type='uuid' AND is_nullable='YES'")).rowCount;
+  const inventory=createHash('sha256').update(JSON.stringify({constraints,actor})).digest('hex');
+  return source===1&&inventory===(bot?RECEIPT_047_050:RECEIPT_047);
+}
 /** Exact feature inventory. No weakening of the existing receipt resource/purpose guards. */
 export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>{
+  if(!await followReceiptSchemaReady(tx))return false;
   const sql=await readFile(SQL_URL,'utf8'),checksum=createHash('sha256').update(sql).digest('hex');
   const row=(await tx.query<{ready:boolean}>(`SELECT
     EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id=$1 AND checksum_sha256=$2)

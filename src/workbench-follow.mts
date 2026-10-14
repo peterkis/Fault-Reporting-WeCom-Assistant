@@ -58,10 +58,10 @@ export function createWorkbenchFollow({pool,query,reviews,manualReviewEnabled=fa
   await tx.query('SELECT id FROM intake.service_intake WHERE id=ANY($1::uuid[]) ORDER BY id FOR UPDATE',[ids]);
   await tx.query('SELECT j.id FROM intake.contact_journey j WHERE EXISTS(SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=ANY($1::uuid[])) ORDER BY j.id FOR UPDATE',[ids]);
   await tx.query('SELECT id FROM intake.manual_review_item WHERE service_intake_id=ANY($1::uuid[]) ORDER BY id FOR UPDATE',[ids]);
-  if(c.canonical.kind==='ticket')await tx.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR SHARE',[c.canonical.id]);
+  if(c.canonical.kind==='ticket')await tx.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE',[c.canonical.id]);
   await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[c.principal.principal_id]);
   await tx.query('SELECT principal_id,role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid ORDER BY role FOR SHARE',[c.principal.principal_id]);
-  await tx.query('SELECT principal_id,team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid ORDER BY team_id FOR SHARE',[c.principal.principal_id]);
+  await tx.query('SELECT m.principal_id,m.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team t ON t.team_id=m.team_id WHERE m.principal_id=$1::uuid ORDER BY m.team_id FOR SHARE OF m,t',[c.principal.principal_id]);
  }
  return Object.freeze({
   ready,
@@ -72,7 +72,8 @@ export function createWorkbenchFollow({pool,query,reviews,manualReviewEnabled=fa
   async save(input:Input&{body:unknown}):Promise<WorkbenchFollowResult>{
    const body=followCommand(input.body),requested=followItem({kind:input.kind,id:input.id});
    const initial=await authorize(pool,input);
-   const command={...body,requested_item:requested,action:PURPOSE,source_intake_id:initial.requestedAnchor};
+   const command={...body,requested_item:requested,action:PURPOSE,source_intake_id:initial.requestedAnchor,
+    ticket_id:requested.kind==='ticket'?requested.id:null,review_id:requested.kind==='review'?requested.id:null};
    const outcome=await ledger.execute({command,receiptType:PURPOSE,authorize:tx=>authorize(tx,input),afterReceiptLock:tx=>authorize(tx,input),run:async(tx,context)=>{
     await lockAuthority(tx,context);const c=await authorize(tx,input);
     if(JSON.stringify(c.canonical)!==JSON.stringify(body.canonical_item)||body.expected_follow_version!==token(c))failP2016('VERSION_CONFLICT',409);
@@ -81,12 +82,13 @@ export function createWorkbenchFollow({pool,query,reviews,manualReviewEnabled=fa
        ON CONFLICT(principal_id,source_intake_id) DO UPDATE SET following=EXCLUDED.following,row_version=pilot_ticket.workbench_item_follow.row_version+1,updated_at=platform.local_now()`,[c.principal.principal_id,a.id,body.following]);
     const after=await authorize(tx,input);return {ok:true as const,client_command_id:body.client_command_id,requested_item:requested,canonical_item:after.canonical,following:after.anchors.some(a=>a.following),follow_version:token(after)};
    }});
-   if(outcome.ok!==true)failP2016(outcome.error.code.replace(/^P2_016_/,''),409);return publicP2016(result(outcome));
+   if(outcome.ok!==true){const code=outcome.error.code.replace(/^P2_016_/,'');failP2016(code,code==='NOT_FOUND'?404:code==='FORBIDDEN'?403:code==='DISABLED'||code==='ACTION_FAILED'?503:409);}return publicP2016(result(outcome));
   },
   async receipt(input:Input&{commandId:unknown}):Promise<WorkbenchFollowReceipt>{
    return transactionP2016(pool,async tx=>{
     const c=await authorize(tx,input),id=uuidP2016(input.commandId),base={client_command_id:id,requested_item:c.requested};
-    const row=(await tx.query<{state:string;result_snapshot:unknown;error_code:string;retryable:boolean}>('SELECT state,result_snapshot,error_code,retryable FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type=$3 AND actor_principal_id=$4::uuid AND source_intake_id=$5::uuid',['P2_016:'+c.principal.principal_id,id,PURPOSE,c.principal.principal_id,c.requestedAnchor])).rows[0];
+    const row=(await tx.query<{state:string;result_snapshot:unknown;error_code:string;retryable:boolean}>(`SELECT state,result_snapshot,error_code,retryable FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type=$3 AND actor_principal_id=$4::uuid AND source_intake_id=$5::uuid
+      AND ticket_id IS NOT DISTINCT FROM $6::uuid AND review_id IS NOT DISTINCT FROM $7::uuid`,['P2_016:'+c.principal.principal_id,id,PURPOSE,c.principal.principal_id,c.requestedAnchor,c.requested.kind==='ticket'?c.requested.id:null,c.requested.kind==='review'?c.requested.id:null])).rows[0];
     if(!row)return publicP2016({...base,state:'UNKNOWN' as const});
     if(row.state==='FAILED')return publicP2016({...base,state:'FAILED' as const,error:{code:row.error_code,retryable:false as const}});
     if(row.state!=='COMMITTED')return publicP2016({...base,state:'UNKNOWN' as const});
