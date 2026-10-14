@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_incident_delivery_receipt.schema.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "incident_id",
+        "client_command_id"
+      ],
+      "properties": {
+        "state": {
+          "const": "UNKNOWN"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "client_command_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "incident_id",
+        "client_command_id",
+        "result"
+      ],
+      "properties": {
+        "state": {
+          "const": "COMMITTED"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "client_command_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "result": {
+          "$ref": "workbench_incident_delivery_result.schema.json"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "incident_id",
+        "client_command_id",
+        "error"
+      ],
+      "properties": {
+        "state": {
+          "const": "FAILED"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "client_command_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "retryable"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "pattern": "^P2_012_[A-Z0-9_]{1,96}$"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

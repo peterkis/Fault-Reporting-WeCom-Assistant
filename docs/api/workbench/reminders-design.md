@@ -1,6 +1,6 @@
 # T40 站内提醒与个人偏好：闭合 SOURCE 合同
 
-状态：SOURCE_PREPARED / RUNTIME_NOT_RUN。基于 integration b5808ee88ee749df61a6a82708d1d5bd26971743。本票 handler、控制器、React 设置/提示、音频和桌面适配未实现/挂载；default-false 仅为 unused composition 声明。原 API、Ticket/Incident、Delivery 和 SQL 不变。不能由源码缺失推导已观测 RED，不能由准备完成关闭 Issue。
+状态：SOURCE_PREPARED / RUNTIME_NOT_RUN。基于 integration f941e24e74e65a0181024f38bf1ac38bc947ea4e。本票 handler、控制器、React 设置/提示、音频和桌面适配未实现/挂载；default-false 仅为 unused composition 声明。原 API、Ticket/Incident、Delivery 和 SQL 不变。不能由源码缺失推导已观测 RED，不能由准备完成关闭 Issue。
 
 依据 [WBINT-13/15](../../../plans/admin-workbench-integration/implementation-plan.md)、[A13/15](../../../plans/admin-workbench-integration/acceptance-matrix.md)和 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md)。T34 的 current READ 下实际处理责任/活动沟通责任/本人明确关注并集是 related 权威；T35 实际阅读、T37 共享安排及原到期信号独立。提醒不授读取或处置权，不推进个人已读、Follow、补充处置、责任、状态或送达。
 
@@ -65,3 +65,12 @@ tests/wbint-t40-reminder-first.browser.test.mts + own helper复用T37原隔离wr
 本窗口 types/build/artifact/tests/PG/HTTP/browser/audio/desktop 全NOT_RUN。下一整票先普通merge最新integration，保全first/旧SQL/合同/registry并集；独占heavy后严格types、一次build、制品证明，再原首例真实RED→最小实现→同首例。setup/编译/宿主未到达不算产品RED。随后按实际风险补时钟/合同Unit、权限/身份/延迟投影/重复源/新旧材料/重开/到期真实HTTP、多tab与主动启用/拒播/desktop拒绝、recovery/hidden/late/account及清零证据，不预写一揽子假成功。
 
 WBINT-13/A13和WBINT-15/A15只记本票SOURCE贡献，整组未因此完成；Root/GH/coordinator和部署/发送/full/certify/Gate由父按原授权边界管理。
+
+
+## 2026-10-14 固定 Rootf941 的有限 Source 后继
+
+本轮仅正常合入固定Rootf941e24e74e65a0181024f38bf1ac38bc947ea4e，沿原first、helper、六闭合Schema及DTS与defaultfalse声明；没有提供新的GET、UI、声音或桌面实现，不产生新case／DDL／运行证据。完整旧章节保持，当前header仅精确换固定Source。
+
+Root630／160／364与原单entry、wbint-t40-first selection、helper支持及7合同资源合为631／161／371，所有tuple／scalar／ordered member完整保留。原first raw10382／940ead与canonical10242／67e7、helper raw7551／14db与canonical7423／e357独立，原字节和真正Git对象不混称／归一化。实际原事实、当前READ与related资格、一个原SSE、默认静音、不得补响或自动打开／处置的合同不变；不以T33或T36扩权。
+
+原七全部PENDING，所有准备／业务／浏览器／音频／桌面及资源验证NOT_RUN，未启动不作cleanupPASS，平台观察器不构成实体音频或OS到达证明。未来WHOLE先普通合届时最新Root，再同候选真实first与当前适用范围验证。详见[本票记录](../../../plans/admin-workbench-integration/execution/t40.md)与D盘source-sync-rootf941-20261014新交接；当前有限grant DONE STOP。

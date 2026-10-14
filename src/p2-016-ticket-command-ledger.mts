@@ -6,7 +6,7 @@ export interface LedgerFailure { ok: false; error: { code: string; retryable: bo
 // A committed DB snapshot follows the ledger write contract, but its consumer-specific payload is unknown.
 export type StoredLedgerSuccess = LedgerSuccess & Record<string, unknown>;
 export type LedgerResult<R extends LedgerSuccess> = (R & { replayed: false }) | (StoredLedgerSuccess & { replayed: true }) | LedgerFailure;
-export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_ITEM_FOLLOW'|'WORKBENCH_TICKET_TAKEOVER_COMPLETION'|'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; afterReceiptLock?: (transaction:PostgresTransaction)=>Promise<unknown>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
+export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'CONVERSATION_DELIVERY_RETRY'|'CONVERSATION_DELIVERY_RECONCILE'|'WORKBENCH_ITEM_FOLLOW'|'WORKBENCH_TICKET_TAKEOVER_COMPLETION'|'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; afterReceiptLock?: (transaction:PostgresTransaction)=>Promise<unknown>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
 interface ReceiptRow { id: string; command_hash: string; state: string; result_snapshot: StoredLedgerSuccess; error_code: string; retryable: boolean }
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';
@@ -128,7 +128,8 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
       return transactionP2016(pool,async tx=>{
         // Authorization precedes every receipt lookup, including a replay.
         const context=await authorize(tx);
-        const scope='P2_016:'+context.principal.principal_id;
+        const conversation=receiptType==='CONVERSATION_DELIVERY_RETRY'||receiptType==='CONVERSATION_DELIVERY_RECONCILE';
+        const scope=(conversation?'P2_006_DELIVERY:':'P2_016:')+context.principal.principal_id;
         const hash=hashP2016(command);
         if(receiptType==='WORKBENCH_ITEM_FOLLOW'){
           const source=uuidP2016(command.source_intake_id);
