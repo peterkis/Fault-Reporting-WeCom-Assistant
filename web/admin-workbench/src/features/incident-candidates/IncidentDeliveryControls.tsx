@@ -61,8 +61,9 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    if(token!==generation.current||signal.aborted)throw new DOMException('INCIDENT_DELIVERY_REPLACED','AbortError');
    if(!read.principal.incident_delivery_control_enabled||!read.principal.incident_delivery_control_draft_recovery_enabled||!read.capability?.receipt_read)throw new DraftError('DRAFT_ACTION_REVOKED');
    // Restoration never checks or settles an original receipt automatically.
-   // Only the exact current action capability permits a full body to appear.
-   const actionAllowed=copy.value.action==='RETRY'?read.capability.retry:copy.value.action==='RECONCILE'?read.capability.reconcile:true;
+   // Current action authority permits the original body; current state availability
+   // controls only a new intent and does not revoke an existing UUID.
+   const actionAllowed=copy.value.action==='RETRY'?read.capability.retry_authorized:copy.value.action==='RECONCILE'?read.capability.reconcile_authorized:true;
    if(!actionAllowed){
     if(copy.pending){clearSensitive();setOpaque(copy.pending.body.client_command_id);setState('unknown');setNeedsRead(true);setMessage('当前完整原操作不可重放；原 UUID 保留，请明确只读核对。');return;}
     throw new DraftError('DRAFT_ACTION_REVOKED');
@@ -101,7 +102,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(busy||revoked||capability.isFetching||!capability.data||!value.deliveryId)return;
   if(!capability.data.receipt_read){revoke(new ApiError(403,'AUTHORIZATION_REJECTED'));return;}
   if(!pending)return;
-  const permitted=pending.action==='RETRY'?capability.data.retry:capability.data.reconcile;
+  const permitted=pending.action==='RETRY'?capability.data.retry_authorized:capability.data.reconcile_authorized;
   if(!permitted){setOpaque(pending.body.client_command_id);clearSensitive();setState(known.current?'committed':'unknown');setChecked(false);setNeedsRead(true);setMessage('当前完整原操作不可重放；原 UUID 和已知结果保留，仅明确只读核对。');void draft.discard();}
  },[capability.data,capability.isFetching,busy,revoked,value.deliveryId]);
 
@@ -159,7 +160,8 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   try{
    const fresh=await readCurrent(operation.deliveryId,controller,current,startIdentity);current();
    if(!fresh.principal.incident_delivery_control_enabled||fresh.capability?.disabled)throw new ControlDisabled();
-   if(!fresh.capability||(operation.action==='RETRY'?!fresh.capability.retry:!fresh.capability.reconcile))throw new ApiError(403,'AUTHORIZATION_REJECTED');
+   if(!fresh.capability||(operation.action==='RETRY'?!fresh.capability.retry_authorized:!fresh.capability.reconcile_authorized))throw new ApiError(403,'AUTHORIZATION_REJECTED');
+   if(!replay&&(operation.action==='RETRY'?!fresh.capability.retry:!fresh.capability.reconcile))throw new ApiError(409,'P2_012_VERSION_CONFLICT');
    if(!replay&&(fresh.incident.row_version!==operation.body.expected_row_version||fresh.capability.attempt_count!==operation.body.expected_delivery_attempt_count))throw new ApiError(409,'P2_012_VERSION_CONFLICT');
    if(!workbenchTransportWritable()||!navigator.onLine||!fresh.principal.csrf_token)throw new ApiError(503,'WORKBENCH_OFFLINE');
    if(!replay)await draft.prepare(operation);current();dispatched=true;setState('submitting');setMessage(replay?'正在明确重放同一原通知操作…':'正在提交本路明确通知操作…');
@@ -204,7 +206,8 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  const snapshotMatches=Boolean(selected&&selected.status===value.status&&selected.effect===value.effect&&selected.attemptCount===value.attemptCount&&capability.data?.attempt_count===value.attemptCount&&detail.row_version===value.version);
  const locked=otherBlocked||busy||Boolean(originalId)||draft.probing||draft.restoring||revoked||!readReady||!principal.incident_delivery_control_enabled||state==='committed';
  const canSubmit=!locked&&!needsRead&&!capability.isFetching&&!capability.isError&&snapshotMatches&&actionAllowed&&statusAllowed&&Boolean(value.reason)&&confirmed&&(value.action!=='RECONCILE'||Boolean(value.resolution))&&draft.canSubmit&&workbenchTransportWritable()&&navigator.onLine&&Boolean(principal.csrf_token);
- const canReplay=Boolean(pending&&checked&&confirmed&&principal.incident_delivery_control_enabled&&!capability.data?.disabled&&actionAllowed&&!otherBlocked&&!busy&&!revoked&&readReady&&!draft.probing&&!draft.restoring&&!capability.isFetching&&!capability.isError&&draft.status!=='failed'&&workbenchTransportWritable()&&navigator.onLine);
+ const originalAuthorized=pending?.action==='RETRY'?capability.data?.retry_authorized===true:pending?.action==='RECONCILE'?capability.data?.reconcile_authorized===true:false;
+ const canReplay=Boolean(pending&&checked&&confirmed&&principal.incident_delivery_control_enabled&&!capability.data?.disabled&&originalAuthorized&&!otherBlocked&&!busy&&!revoked&&readReady&&!draft.probing&&!draft.restoring&&!capability.isFetching&&!capability.isError&&draft.status!=='failed'&&workbenchTransportWritable()&&navigator.onLine);
  if(!principal.incident_delivery_control_enabled&&!originalId&&!draft.existing&&!pending)return null;
  return <section className="candidate-decision" aria-label={purpose==='INCIDENT_LIFECYCLE'?'生命周期通知控制':'公开进展通知控制'} data-incident-delivery-controls data-control-purpose={purpose}>
   <h3>{purpose==='INCIDENT_LIFECYCLE'?'生命周期通知控制':'公开进展通知控制'}</h3><p>只操作选定通知路。结果未知须先核对；确认已发不再发送，核实未发才重新排队。发送结果不代表报修人已读。</p>

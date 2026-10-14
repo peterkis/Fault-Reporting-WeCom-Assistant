@@ -180,7 +180,7 @@ export async function rejectAuthorization(response:Response):Promise<never>{
   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
   throw new ApiError(response.status,code);
 }
-async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):Promise<T> {
+async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,response:Response)=>T):Promise<T> {
   const epoch=authorizationEpoch;
   try{
   const response=await fetch(path,{signal,credentials:'same-origin',redirect:'error',headers:{accept:'application/json'},cache:'no-store'});
@@ -191,7 +191,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
   const value:unknown=await response.json();
   requireCurrentRead(epoch,signal);
   if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}
-  return decode(value);
+  return decode(value,response);
   }catch(error){requireCurrentRead(epoch,signal);throw error;}
 }
 export {get as readWorkbench};

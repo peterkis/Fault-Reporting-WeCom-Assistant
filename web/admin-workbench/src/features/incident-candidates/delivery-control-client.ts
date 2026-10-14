@@ -1,5 +1,6 @@
 import {ApiError,UnknownCommandOutcome,api,captureWorkbenchRead,readWorkbench} from '../../api/client';
 import {candidateApi} from './client';
+import {decodeIncidentDeliveryAuthority} from '../../../../../src/workbench-incident-delivery-authority.mjs';
 import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,matchesIncidentDeliveryResult} from '../../../../../src/workbench-incident-delivery-browser-contracts.mjs';
 import type {IncidentDeliveryExpectation,IncidentDeliveryOperation,IncidentDeliveryPurpose} from '../../../../../src/workbench-incident-delivery-browser-contracts.mjs';
 
@@ -19,7 +20,7 @@ function refusal(value:unknown):string|null{
  return detail.code;
 }
 export const incidentDeliveryApi={
- control:(expected:IncidentDeliveryExpectation,signal:AbortSignal)=>readWorkbench(prefix(expected.incidentId,expected.deliveryId)+'/control',signal,value=>decode(()=>decodeIncidentDeliveryCapability(value,expected))),
+ control:(expected:IncidentDeliveryExpectation,signal:AbortSignal)=>readWorkbench(prefix(expected.incidentId,expected.deliveryId)+'/control',signal,(value,response)=>decode(()=>{const capability=decodeIncidentDeliveryCapability(value,expected);return {...capability,...decodeIncidentDeliveryAuthority(response.headers,capability)};})),
  receipt:(incidentId:string,commandId:string,signal:AbortSignal)=>readWorkbench('/api/incidents/'+encodeURIComponent(incidentId)+'/notification-commands/'+encodeURIComponent(commandId),signal,value=>decode(()=>decodeIncidentDeliveryReceipt(value,incidentId,commandId))),
  async context(incidentId:string,purpose:IncidentDeliveryPurpose,deliveryId:string|null,signal:AbortSignal){
   const current=captureWorkbenchRead(signal),principal=await readIncidentDeliverySession(signal);current();

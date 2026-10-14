@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {decodeIncidentDeliveryAuthority,INCIDENT_DELIVERY_AUTHORITY_HEADERS} from '../src/workbench-incident-delivery-authority.mjs';
 import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,matchesIncidentDeliveryResult} from '../src/workbench-incident-delivery-browser-contracts.mjs';
 const incidentId='11111111-1111-4111-8111-111111111111',deliveryId='22222222-2222-4222-8222-222222222222',commandId='33333333-3333-4333-8333-333333333333',other='44444444-4444-4444-8444-444444444444';
 const expected={incidentId,deliveryId,purpose:'INCIDENT_LIFECYCLE' as const};
@@ -37,4 +38,16 @@ test('T33 browser binds terminal receipts to the original UUID and requires the 
  assert.throws(()=>decodeIncidentDeliveryReceipt({state:'COMMITTED',incident_id:incidentId,client_command_id:other,result},incidentId,commandId),TypeError);
  assert.equal(decodeIncidentDeliveryReceipt({state:'COMMITTED',incident_id:incidentId,client_command_id:commandId,result:{...result,replayed:true}},incidentId,commandId).state,'COMMITTED');
  assert.equal(decodeIncidentDeliveryReceipt({state:'UNKNOWN',incident_id:incidentId,client_command_id:commandId},incidentId,commandId).state,'UNKNOWN');
+});
+
+test('T33 current purpose authority is separate from state availability and rejects absent or inconsistent authority headers',()=>{
+ const cap={retry:false,reconcile:false,receipt_read:true};
+ const headers=(retry:string|null,reconcile:string|null)=>({get:(name:string)=>name===INCIDENT_DELIVERY_AUTHORITY_HEADERS.retry?retry:name===INCIDENT_DELIVERY_AUTHORITY_HEADERS.reconcile?reconcile:null});
+ assert.deepEqual(decodeIncidentDeliveryAuthority(headers('1','1'),cap),{retry_authorized:true,reconcile_authorized:true});
+ assert.deepEqual(decodeIncidentDeliveryAuthority(headers('0','1'),cap),{retry_authorized:false,reconcile_authorized:true});
+ assert.deepEqual(decodeIncidentDeliveryAuthority(headers('0','0'),{...cap,receipt_read:false}),{retry_authorized:false,reconcile_authorized:false});
+ for(const [retry,reconcile]of [[null,'1'],['1',null],['true','1'],['1',''],['0','0'],['1, 0','1']])assert.throws(()=>decodeIncidentDeliveryAuthority(headers(retry??null,reconcile??null),cap),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryAuthority(headers('0','1'),{...cap,retry:true}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryAuthority(headers('1','0'),{...cap,reconcile:true}),TypeError);
+ assert.throws(()=>decodeIncidentDeliveryAuthority(headers('1','1'),{...cap,receipt_read:false}),TypeError);
 });

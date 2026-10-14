@@ -3,6 +3,7 @@ type G1AuthenticatedExtension = NonNullable<G1RuntimeExtension['authenticatedHan
 import type { IncidentCommand } from './p2-012-domain-contracts.mjs';
 import type { P2012IncidentQuery } from './p2-012-incident-query.mjs';
 import type {createIncidentDeliveryControl} from './p2-012-incident-delivery-control.mjs';
+import {INCIDENT_DELIVERY_AUTHORITY_HEADERS} from './workbench-incident-delivery-authority.mjs';
 import type { P2012IncidentCommandService } from './p2-012-incident-command-service.mjs';
 import { guard,fail,p2012HttpStatusForCommandResult } from './p2-012-domain-contracts.mjs';
 const ROUTES=Object.freeze({'start-review':'START_REVIEW',reject:'REJECT_CANDIDATE',confirm:'CONFIRM_INCIDENT',
@@ -25,7 +26,7 @@ export function createP2012WorkbenchHttp({query,commands,deliveryControl,enabled
       if(!match||!deliveryControl)fail('NOT_FOUND',404);if(url.search)fail();
       const incidentId=match[1] as string;
       if(request.method==='GET'&&controlReceipt){json(response,200,await deliveryControl.receipt({authContext,incidentId,commandId:controlReceipt[1] as string}));return true;}
-      if(request.method==='GET'&&controlRoute?.[2]==='control'){json(response,200,await deliveryControl.capability({authContext,incidentId,deliveryId:controlRoute[1] as string}));return true;}
+      if(request.method==='GET'&&controlRoute?.[2]==='control'){const current=await deliveryControl.capabilityWithAuthority({authContext,incidentId,deliveryId:controlRoute[1] as string});json(response,200,current.capability,{[INCIDENT_DELIVERY_AUTHORITY_HEADERS.retry]:current.authority.retry_authorized?'1':'0',[INCIDENT_DELIVERY_AUTHORITY_HEADERS.reconcile]:current.authority.reconcile_authorized?'1':'0'});return true;}
       if(request.method==='POST'&&controlRoute&&(controlRoute[2]==='retry'||controlRoute[2]==='reconcile')){
         const body=await readJson(request) as Record<string,unknown>;validateWriteRequest(request,authContext,body,{sessionMutation:false});
         if(request.headers['if-match']!=='"'+body.expected_row_version+'"')fail('VERSION_CONFLICT',409);

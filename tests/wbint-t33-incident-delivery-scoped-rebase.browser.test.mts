@@ -142,21 +142,7 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
    assert.equal(record(cached.response).receipt_read,true);assert.equal(record(cached.response).reconcile,true);
    assert.equal(await input(first,'投递操作原因'),'OPERATOR_VERIFIED_DELIVERY');
    phase='saved-with-current-independent-grants';
-   assert.equal(grants.delete(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RETRY'),true);
-   assert.equal(grants.delete(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RECONCILE'),true);grantRevoked=true;
-   const currentBootstrap=await get('/api/lifecycle/bootstrap'),stillPrimary=await get('/api/incidents/'+incidentId),stillOther=await get('/api/incidents/'+otherId);
-   assert.equal(currentBootstrap.status,200);assert.equal(stillPrimary.status,200);assert.equal(stillOther.status,200);
-   assert.equal(currentBootstrap.body.principal_id,adminId);assert.deepEqual(currentBootstrap.body.roles,bootstrap.body.roles);
-   assert.equal(currentBootstrap.body.authorization_revision,bootstrap.body.authorization_revision);
-   assert.equal(currentBootstrap.body.incident_delivery_control_enabled,true);assert.equal(currentBootstrap.body.incident_delivery_control_draft_recovery_enabled,true);
-   const denied=await get(primaryControl),allowedOther=await get(otherControl);assert.equal(denied.status,200);assert.equal(allowedOther.status,200);
-   const cap=closed(denied.body,['incident_id','delivery_id','purpose','retry','reconcile','receipt_read','disabled','attempt_count']);
-   assert.equal(cap.incident_id,incidentId);assert.equal(cap.delivery_id,deliveryId);assert.equal(cap.purpose,'INCIDENT_LIFECYCLE');
-   assert.equal(cap.retry,false);assert.equal(cap.reconcile,false);assert.equal(cap.receipt_read,false);assert.equal(cap.disabled,false);
-   assert.equal(allowedOther.body.receipt_read,true);
-   // These server-side GETs do not update either browser's React Query cache.
-   assert.equal(await first('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+').disabled'),false,'original cached capability must remain old true until the real rebase entry');
-   phase='independent-grants-only-revoked';
+
    const clear=root+' [data-action="clear-incident-delivery-input"]';
    await waitIn(second,'document.querySelector('+JSON.stringify(clear)+')?.disabled===false');
    assert.equal(await second('(()=>{document.querySelector('+JSON.stringify(clear)+').click();return true;})()'),true);
@@ -181,6 +167,21 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
    assert.equal(record(beforeWrite.metadata).revision,originalMeta.revision);assert.equal(beforeWrite.epoch,afterDiscard.epoch);
    assert.equal(await input(first,'投递操作原因'),'OPERATOR_VERIFIED_DELIVERY');
    assert.equal(await first('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+').disabled'),false);
+   assert.equal(grants.delete(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RETRY'),true);
+   assert.equal(grants.delete(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RECONCILE'),true);grantRevoked=true;
+   const currentBootstrap=await get('/api/lifecycle/bootstrap'),stillPrimary=await get('/api/incidents/'+incidentId),stillOther=await get('/api/incidents/'+otherId);
+   assert.equal(currentBootstrap.status,200);assert.equal(stillPrimary.status,200);assert.equal(stillOther.status,200);
+   assert.equal(currentBootstrap.body.principal_id,adminId);assert.deepEqual(currentBootstrap.body.roles,bootstrap.body.roles);
+   assert.equal(currentBootstrap.body.authorization_revision,bootstrap.body.authorization_revision);
+   assert.equal(currentBootstrap.body.incident_delivery_control_enabled,true);assert.equal(currentBootstrap.body.incident_delivery_control_draft_recovery_enabled,true);
+   const denied=await get(primaryControl),allowedOther=await get(otherControl);assert.equal(denied.status,200);assert.equal(allowedOther.status,200);
+   const cap=closed(denied.body,['incident_id','delivery_id','purpose','retry','reconcile','receipt_read','disabled','attempt_count']);
+   assert.equal(cap.incident_id,incidentId);assert.equal(cap.delivery_id,deliveryId);assert.equal(cap.purpose,'INCIDENT_LIFECYCLE');
+   assert.equal(cap.retry,false);assert.equal(cap.reconcile,false);assert.equal(cap.receipt_read,false);assert.equal(cap.disabled,false);
+   assert.equal(allowedOther.body.receipt_read,true);
+   // These server-side GETs do not update either browser's React Query cache.
+   assert.equal(await first('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+').disabled'),false,'original cached capability must remain old true until the real rebase entry');
+   phase='independent-grants-only-revoked';
    const mark=records((await trace(first)).requests).length;
    await capture('scoped-rebase-real-epoch-change-cached-grant');
    await choose(first,'投递操作原因','OPERATOR_CANCEL_UNKNOWN_DELIVERY');editIssued=true;phase='visible-edit-at-real-stale-epoch';

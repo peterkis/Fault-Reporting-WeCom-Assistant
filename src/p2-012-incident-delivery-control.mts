@@ -9,6 +9,7 @@ import {createIncidentPublicProgressAdmission} from './p2-012-public-progress-ad
 import {incidentDeliveryControlSchemaReady} from './p2-012-incident-delivery-schema.mjs';
 import {allowedIncidentScopes,transaction,exact,uuid,version,hash,frozen,fail,ERROR_CODES,p2012HttpStatusForErrorCode} from './p2-012-domain-contracts.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
+import type {IncidentDeliveryAuthority} from './workbench-incident-delivery-authority.mjs';
 type Action='retry'|'reconcile';
 type Resolution='CONFIRMED_SENT'|'CONFIRMED_NOT_SENT_REQUEUE'|'CANCEL';
 interface CommandV1 {client_command_id:string;expected_row_version:string;expected_status:string;expected_side_effect_state:string;reason_code:string;resolution:Resolution|null;incident_id:string;delivery_id:string;action:Action}
@@ -72,14 +73,15 @@ export function createIncidentDeliveryControl({pool,query,enabled=false,permissi
   if(!privateNoticeEnabled)return false;
   return (await tx.query("SELECT 1 FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.incident_notification_binding b ON b.communication_message_id=o.message_id JOIN incident.reporter_subscription s ON s.id=b.reporter_subscription_id AND s.incident_id=b.incident_id AND s.reporter_identity_hash=b.audience_binding_hash JOIN intake.channel_leg l ON l.id=s.direct_channel_leg_id AND l.reporter_identity_hash=s.reporter_identity_hash JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash JOIN intake.service_intake i ON i.id=l.source_intake_id WHERE d.id=$1::uuid AND b.audience_type='REPORTER_DIRECT' AND s.status='ACTIVE' AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC') AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND i.source_chat_type='single' AND d.provider='WECOM_AIBOT' AND d.target_type='PERSON' AND d.channel_account_id=i.source_bot_id AND d.target_id=i.reporter_wecom_userid FOR SHARE OF b,s,l,j,i",[id])).rowCount===1;
  }
- async function capability({authContext,incidentId,deliveryId}:{authContext:unknown;incidentId:string;deliveryId:string}):Promise<IncidentDeliveryCapabilityV2>{
+ async function capabilityWithAuthority({authContext,incidentId,deliveryId}:{authContext:unknown;incidentId:string;deliveryId:string}):Promise<{capability:IncidentDeliveryCapabilityV2;authority:IncidentDeliveryAuthority}>{
   const id=uuid(incidentId),delivery=uuid(deliveryId);
   return transaction(pool,async tx=>{await lock(tx);
    const ctx=await stable(tx,authContext,id,delivery,null),hasRetry=scope(ctx.principal,ctx.incident)&&role(ctx.principal,'retry')&&await permission(ctx.principal,id,'INCIDENT_DELIVERY_RETRY',tx),hasReconcile=scope(ctx.principal,ctx.incident)&&role(ctx.principal,'reconcile')&&await permission(ctx.principal,id,'INCIDENT_DELIVERY_RECONCILE',tx),disabled=!enabled||permissions===null||!await incidentDeliveryControlSchemaReady(tx);
    const retry=hasRetry&&!disabled&&['PENDING','DEAD_LETTER'].includes(ctx.binding.status)&&ctx.binding.side_effect_state==='NOT_ATTEMPTED'&&await sendAdmission(tx,ctx);
-   return frozen({incident_id:id,delivery_id:delivery,attempt_count:ctx.binding.attempt_count,purpose:ctx.binding.template_code==='INCIDENT_PUBLIC_PROGRESS_DIRECT'?'INCIDENT_PUBLIC_PROGRESS':'INCIDENT_LIFECYCLE',retry,reconcile:hasReconcile&&!disabled&&ctx.binding.status==='RECONCILIATION_REQUIRED'&&ctx.binding.side_effect_state==='UNKNOWN',receipt_read:hasRetry||hasReconcile,disabled});
+   return frozen({capability:frozen({incident_id:id,delivery_id:delivery,attempt_count:ctx.binding.attempt_count,purpose:ctx.binding.template_code==='INCIDENT_PUBLIC_PROGRESS_DIRECT'?'INCIDENT_PUBLIC_PROGRESS':'INCIDENT_LIFECYCLE',retry,reconcile:hasReconcile&&!disabled&&ctx.binding.status==='RECONCILIATION_REQUIRED'&&ctx.binding.side_effect_state==='UNKNOWN',receipt_read:hasRetry||hasReconcile,disabled}),authority:frozen({retry_authorized:hasRetry,reconcile_authorized:hasReconcile})});
   });
  }
+ async function capability(input:Parameters<typeof capabilityWithAuthority>[0]):Promise<IncidentDeliveryCapabilityV2>{return (await capabilityWithAuthority(input)).capability;}
  async function receipt({authContext,incidentId,commandId}:{authContext:unknown;incidentId:string;commandId:string}):Promise<IncidentDeliveryReceipt>{
   const id=uuid(incidentId),command=uuid(commandId),base={incident_id:id,client_command_id:command};
   return transaction(pool,async tx=>{await lock(tx);
@@ -133,5 +135,5 @@ export function createIncidentDeliveryControl({pool,query,enabled=false,permissi
   if(outcome.error||!outcome.result)throw new WorkbenchError(outcome.error??'P2_012_COMMAND_FAILED',p2012HttpStatusForErrorCode(outcome.error));
   return frozen(outcome.result);
  }
- return Object.freeze({capability,receipt,perform,ready:()=>enabled&&permissions!==null?incidentDeliveryControlSchemaReady(pool):Promise.resolve(!enabled)});
+ return Object.freeze({capability,capabilityWithAuthority,receipt,perform,ready:()=>enabled&&permissions!==null?incidentDeliveryControlSchemaReady(pool):Promise.resolve(!enabled)});
 }
