@@ -189,7 +189,7 @@ export function runNode(root: string, args: string[]): void {
   // Outer coverage observes execution. Compiling or parsing the full program
   // must not inherit that extra observer; actual tests retain their own coverage.
   const env = {...process.env};
-  if (compilerChild || parseOnly) delete env.NODE_V8_COVERAGE;
+  if (compilerChild || parseOnly) env.NODE_V8_COVERAGE='';
   const r = spawnSync(process.execPath, args, { cwd: root, env, stdio: 'inherit', windowsHide: true });
   if (r.error) throw r.error;
   if (r.status !== 0) throw new Error('MIGRATION_COMMAND_FAILED: ' + String(r.status));
