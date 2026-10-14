@@ -119,3 +119,13 @@ POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie
 
 2026-10-10 本地整票验证的实际源码为 `06f3c880c6d759497eb68f44a8865a3c45d1fff3`，制品 manifest `7f7766c7eb05f675d7cd88028e18169034886de3bc013b17214e34a1fa7f5277`。原九文件22项、相关既有14文件46项和有限工具保护原生27/18/1项均通过；回复终态使用隔离PG与明确的合成Sender Port，实际SSE及当前授权GET来自生产bundle/真实loopback HTTP。默认关闭、单一事实源及停止线保持。此文档后继只记录原结果，不重建或重绑被测源码；完整原报告、失败与资源清理指针见执行记录。
 
+
+## T33 会话 UUID 投递控制前向合同
+
+公共 HTTP retry/reconcile 保持上述路径、Cookie/CSRF 和无 If-Match 约定。新增可选 expected_delivery_attempt_count:安全整数 0..2147483647，使 v2 原意图绑定真实尝试；不借 Session row_version 或 generation_version 推断一次新的 UNKNOWN。原 UUID 先当前 Session READ/当前动作授权，再读取原结果；后续尝试不重复执行。v1 hash 保持，新的 v1 UUID 只允许可证明初次尝试；晚于初次须明确带 v2 尝试。重复 UUID 返回闭合八字段安全 ACK，并标 replayed:true；PENDING no-op 不制造发送尝试。原未带 UUID 的低层调用保持原分支，该兼容不表示公共 HTTP 会降级绕过 ledger。
+
+真实无 Ticket Session 复用 pilot_ticket.ticket_command_receipt 的 CONVERSATION_DELIVERY_RETRY/RECONCILE，命名空间为 P2_006_DELIVERY:<actor>，FK 绑定真实 Session，业务和 receipt 同 caller-owned 事务；Ticket/Review、事件与旧命令/约束保持。061_workbench_conversation_delivery_commands 只增加这个窄用途的既有约束分支，没有第二份 ledger 或伪 ControlEvent。
+
+P2-G1 的现有 bootstrap / migrateCurrentBaseline 不自动安装 061。其组装显式开启 UUID receipt Port 后，缺少目录前置的新 UUID 控制安全返回 503，READ 和回复保持可用；不会自动 DDL 或退回无 UUID 执行。需要显式运行已编译 scripts/conversation-delivery-commands-migrate.mjs --status / --check / --apply，使用既有 PILOT_DATABASE_URL 配置；check 回滚，BASE/MANUAL/INTAKE/BOT 完整目录、旧校验和和前向 031/032/T34 护栏分别核验。Port 工厂默认关闭。
+
+实际原 G1 前置→503→显式 061→同 Cookie/同正文/同 UUID 首次 200 与重放 200 的隔离证据见 [T33 记录](../../../plans/admin-workbench-integration/execution/t33.md)。这不是新的现场或发送批准。

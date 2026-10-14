@@ -55,7 +55,7 @@ export async function p2016CatalogInventory(tx) {
 export function p2016CatalogHash(inventory) { return sha(JSON.stringify(inventory)); }
 export async function validateP2016Catalog(tx) {
   const inventory = await p2016CatalogInventory(tx);
-  if (p2016CatalogHash(inventory) !== EXPECTED_CATALOG_SHA256) fail('P2_016_SCHEMA_DRIFT');
+  if (p2016CatalogHash(inventory) !== EXPECTED_CATALOG_SHA256 && !await (await import('../src/p2-006-delivery-command-schema.mjs')).conversationDeliveryBaseCatalogReady(tx,inventory,'031')) fail('P2_016_SCHEMA_DRIFT');
   return inventory;
 }
 

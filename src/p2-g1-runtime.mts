@@ -34,6 +34,7 @@ import { createRealtimeSseHandler } from './p2-003-realtime-sse.mjs';
 import { createAssignedCommunicationAuthorizer, createConversationControlService, createPilotConversationControlAuthorization } from './p2-005-conversation-control.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { createConversationWorkbenchCommandFacade } from './p2-006-workbench-command-facade.mjs';
+import {createConversationDeliveryCommandPort} from './p2-006-delivery-command-port.mjs';
 import { createWorkbenchDeliveryControl } from './p2-006-workbench-delivery-control.mjs';
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer, listenConversationWorkbenchServer } from './p2-006-workbench-http.mjs';
 import { createConversationWorkbenchQueryService } from './p2-006-workbench-query.mjs';
@@ -114,6 +115,7 @@ export function createP2G1Runtime({
     authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }),
   });
   const deliveryControl = createWorkbenchDeliveryControl({
+    receiptPort:createConversationDeliveryCommandPort({pool,authorize:authorization,enabled:true}),
     pool,
     authorize: authorization,
     enabled: true,

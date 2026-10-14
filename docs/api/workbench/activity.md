@@ -55,3 +55,10 @@
 普通合并已完成的固定依赖基线 `b5808ee88ee749df61a6a82708d1d5bd26971743`，本节只记录 SOURCE 准备。三份 Schema／DTS、原 HTTP 首例与上述输入、输出、权限、期限和容量合同保持冻结；活动路径仍未挂载，`workbenchActivityEnabled=false` 仍仅为测试 helper 的准备参数。共享 helper 完整继承当前基线的迁移、T13／T34、实际身份与原业务配置，只保留本票原一个默认 false 参数和两处 runtime 参数转发；没有新增活动实现或业务开关启用。
 
 本次没有数据库变更或编号分配，不触碰 T33 的 060／061；不新增业务事实、责任、已读、第二 SSE、常驻 timer 或心跳写库。真正 VIEWING／EDITING、当前双方 READ／字段权限、TTL／失活／后台／断线／退出／失权、有界单 App／现有真实流及正式前端行为仍待未来整票验证。原七项均 PENDING，全部 runtime／PG／HTTP／浏览器及自有资源清理为 NOT_RUN；SOURCE 同步不构成 RED／GREEN、验收、部署或 Gate。实际字节、规范 Git 对象、冲突与 clean pin 记录在 `D:/wecom-workbench-evidence/t39/prepared/source-sync-rootb5808-20261014/`。
+
+
+## 2026-10-14 固定 Rootf941 的有限 SOURCE 前向记录
+
+本票准备树普通合入固定 `f941e24e74e65a0181024f38bf1ac38bc947ea4e`；该输入已包含父任务完成的 T33 和当前实际 registry 630 entries／160 selections／364 resources。本轮仅继承这些来源与当前授权／流／草稿／目录边界，不把 T33 或 T36 用途扩为 presence 权限。Root 完整 tuple、scalar、原成员次序与本票原一 HTTP entry／三合同 resource 并集为 631／160／367。原 3118B HTTP 首例、三份 closed Schema／DTS、上述 TTL15秒／心跳5秒及全部字段、数量、授权、隐私边界保持冻结。
+
+生产仍没有本票活动挂载；原 helper 只保留 workbenchActivityEnabled=false 和两处 bare runtime 参数透传，没有包装或重复开关。本轮无新 case、模块、数据库／DDL或永久事实，真实 SSE／可控时钟／浏览器及业务验证全部 NOT_RUN。原七项全部 PENDING，当前只完成有限 Source 同步，不构成验收或清理PASS。精确普通两parent、真实Git blob／物理raw、旧SQL／Evidence／用户六原件和实际native见 D:/wecom-workbench-evidence/t39/prepared/source-sync-rootf941-20261014/handoff.json。未来独占 WHOLE 仍须再合最新 Root 后运行未改原first取得真实RED，才最小实现与收口。

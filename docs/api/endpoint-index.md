@@ -304,3 +304,12 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | GET | `/api/tickets/{ticketId}/takeover-completion/commands/{commandId}` | 当前 Ticket READ及原 actor/用途/UUID 的安全终态，只读；另需 raw recovery | [原操作核对](workbench/tickets.md#同事接管并工作人员完工wbint-t12默认关闭) |
 
 独立 `ticketTakeoverCompletionEnabled` 默认 false，复用039/040、无新 SQL。已实现并有隔离公开 PG/HTTP/生产 bundle 验证；最终整票检查、原始 FAIL/PASS、两轴审查和清理以[本票执行](../../plans/admin-workbench-integration/execution/t12.md)为准。本地验证不授权外发、部署或 Gate。
+
+## Incident 分路投递控制（T33）
+
+| ID | METHOD | PATH | 宿主 | 当前状态 | 详情 |
+| --- | --- | --- | --- | --- | --- |
+| IDC01 | GET | /api/incidents/{incidentId}/notifications/{deliveryId}/control | W | 当前精确READ/绑定与独立用途；闭合JSON8及authority Header | [投递控制](workbench/incident-delivery-control.md) |
+| IDC02 | POST | /api/incidents/{incidentId}/notifications/{deliveryId}/retry | W | 已实现、默认关闭；确定未应用/独立RETRY/v2尝试 | [投递控制](workbench/incident-delivery-control.md) |
+| IDC03 | POST | /api/incidents/{incidentId}/notifications/{deliveryId}/reconcile | W | 已实现、默认关闭；ADMIN/独立RECONCILE/明确结论 | [投递控制](workbench/incident-delivery-control.md) |
+| IDC04 | GET | /api/incidents/{incidentId}/notification-commands/{commandId} | W | 当前原动作用途安全只读原UUID；关闭控制不删除事实 | [投递控制](workbench/incident-delivery-control.md) |

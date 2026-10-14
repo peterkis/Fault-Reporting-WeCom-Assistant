@@ -58,3 +58,7 @@
 覆盖仓库中的 HTTP REST、SSE、OAuth/页面入口，以及外部调用和内部接口索引。设计路径、默认关闭接口、兼容模式和合成原型都有明确标记。静态资源按宿主列出路径范围，不作为业务 REST API。
 
 初次接口盘点为文档整理：没有数据库、运行时代码或Feature Flag变更。后继[来源群名称增量](workbench/source-groups-design.md)和[已保存附件读取](workbench/attachments.md)有独立本地实现状态；[人工工作台接入计划](../../plans/admin-workbench-integration/README.md)中的其他候选路径不据此列为现有。资源上限、Gate、旧证据、认证与现场授权保持原约束。验证记录和后续维护方式见[维护规则](maintenance.md)。
+
+## 通知控制（T33，默认关闭）
+
+[Incident 分路投递控制](workbench/incident-delivery-control.md) 记录独立当前授权、v2 尝试、原 UUID/正文与 scoped 恢复；[Conversation 前向合同](workbench/conversations.md#t33-会话-uuid-投递控制前向合同) 记录真实 Session 既有 receipt 用途及显式 061 前置。原 Ticket 路由沿 [Ticket 合同](workbench/tickets.md)。

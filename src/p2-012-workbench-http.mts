@@ -2,12 +2,14 @@ import type { G1RuntimeExtension } from './p2-g1-runtime.mjs';
 type G1AuthenticatedExtension = NonNullable<G1RuntimeExtension['authenticatedHandler']>;
 import type { IncidentCommand } from './p2-012-domain-contracts.mjs';
 import type { P2012IncidentQuery } from './p2-012-incident-query.mjs';
+import type {createIncidentDeliveryControl} from './p2-012-incident-delivery-control.mjs';
+import {INCIDENT_DELIVERY_AUTHORITY_HEADERS} from './workbench-incident-delivery-authority.mjs';
 import type { P2012IncidentCommandService } from './p2-012-incident-command-service.mjs';
 import { guard,fail,p2012HttpStatusForCommandResult } from './p2-012-domain-contracts.mjs';
 const ROUTES=Object.freeze({'start-review':'START_REVIEW',reject:'REJECT_CANDIDATE',confirm:'CONFIRM_INCIDENT',
   'start-investigating':'START_INVESTIGATING','correct-scope':'CORRECT_SCOPE','primary-ticket':'SET_PRIMARY_TICKET',
   'reports/link':'LINK_REPORT',resolve:'RESOLVE_INCIDENT',close:'CLOSE_INCIDENT'});
-export function createP2012WorkbenchHttp({query,commands,enabled=false,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false}: { query: P2012IncidentQuery; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean;candidateWorkspaceEnabled?:boolean;internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean }){
+export function createP2012WorkbenchHttp({query,commands,deliveryControl,enabled=false,candidateWorkspaceEnabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false}: { query: P2012IncidentQuery; deliveryControl?:ReturnType<typeof createIncidentDeliveryControl>; commands: Pick<P2012IncidentCommandService, 'perform'>; enabled?: boolean;candidateWorkspaceEnabled?:boolean;internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean }){
   return (async({request,response,url,authContext,readJson,validateWriteRequest,json}: Parameters<G1AuthenticatedExtension>[0])=>{
     if(!/^\/api\/(incident-candidates|incidents)(?:\/|$)/u.test(url.pathname))return false;guard(enabled);
     const candidate=url.pathname.startsWith('/api/incident-candidates'),root=candidate?'/api/incident-candidates':'/api/incidents',kind=candidate?'candidate':'incident';
@@ -18,6 +20,20 @@ export function createP2012WorkbenchHttp({query,commands,enabled=false,candidate
     const publication=!candidate&&(match?.[2]==='publish-update'||match?.[2]?.startsWith('public-progress'));
     if(publication&&!publicProgressEnabled)fail('NOT_FOUND',404);
     if(internal&&!internalNotesEnabled)fail('NOT_FOUND',404);
+    const controlRoute=!candidate&&match?/^notifications\/([a-f0-9-]{36})\/(control|retry|reconcile)$/iu.exec(match[2]??''):null;
+    const controlReceipt=!candidate&&match?/^notification-commands\/([a-f0-9-]{36})$/iu.exec(match[2]??''):null;
+    if(controlRoute||controlReceipt){
+      if(!match||!deliveryControl)fail('NOT_FOUND',404);if(url.search)fail();
+      const incidentId=match[1] as string;
+      if(request.method==='GET'&&controlReceipt){json(response,200,await deliveryControl.receipt({authContext,incidentId,commandId:controlReceipt[1] as string}));return true;}
+      if(request.method==='GET'&&controlRoute?.[2]==='control'){const current=await deliveryControl.capabilityWithAuthority({authContext,incidentId,deliveryId:controlRoute[1] as string});json(response,200,current.capability,{[INCIDENT_DELIVERY_AUTHORITY_HEADERS.retry]:current.authority.retry_authorized?'1':'0',[INCIDENT_DELIVERY_AUTHORITY_HEADERS.reconcile]:current.authority.reconcile_authorized?'1':'0'});return true;}
+      if(request.method==='POST'&&controlRoute&&(controlRoute[2]==='retry'||controlRoute[2]==='reconcile')){
+        const body=await readJson(request) as Record<string,unknown>;validateWriteRequest(request,authContext,body,{sessionMutation:false});
+        if(request.headers['if-match']!=='"'+body.expected_row_version+'"')fail('VERSION_CONFLICT',409);
+        json(response,200,await deliveryControl.perform({authContext,incidentId,deliveryId:controlRoute[1] as string,action:controlRoute[2],body}));return true;
+      }
+      fail('NOT_FOUND',404);
+    }
     if(request.method==='GET'){
       if(ownerTransfer&&match){
         if(match[2]!=='owner-transfer-targets')fail('NOT_FOUND',404);
