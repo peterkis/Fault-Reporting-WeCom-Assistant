@@ -35,6 +35,7 @@ async function facts(f:Fixture){return (await f.pool.query(`SELECT
 test('T34 default OFF keeps the existing host ready without 044 or follow SQL',async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
   const http=client(f),target=f.tickets[1];assert.ok(target);const path='/api/workbench/items/ticket/'+target.ticket.id;
+  const bootstrap=await http.read('/api/lifecycle/bootstrap');assert.equal(bootstrap.workbench_follow_enabled,false);assert.equal(bootstrap.workbench_follow_draft_recovery_enabled,false);
   const detail=await http.read(path);assert.equal(Object.hasOwn(object(detail.item),'attention'),false);
   assert.equal((await http.get('/api/workbench/board?column=pending&scope=related')).status,400);
   assert.equal((await http.get(path+'/follow/commands/'+randomUUID())).status,404);
@@ -50,6 +51,7 @@ test('T34 explicit intent uses exact HTTP fences and concurrent CAS, with caller
  await withWeb01Fixture(async(f:Fixture)=>{
   const http=client(f),target=f.tickets[1],principal=f.principals[1];assert.ok(target&&principal);
   const path='/api/workbench/items/ticket/'+target.ticket.id,bootstrap=await http.read('/api/lifecycle/bootstrap'),before=await facts(f),initial=command(await http.read(path),true);
+  assert.equal(bootstrap.workbench_follow_enabled,true);assert.equal(bootstrap.workbench_follow_draft_recovery_enabled,false,'Follow is available independently of optional browser recovery');
   for(const [headers,status] of [[{'idempotency-key':randomUUID()},400],[{'if-match':'"'+ '0'.repeat(64)+'"'},409],[{'x-csrf-token':'invalid'},403],[{origin:'https://attacker.invalid'},403]] as const)
    assert.equal((await http.post(path,initial,bootstrap.csrf_token,headers)).status,status);
   assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.workbench_item_follow')).rows[0]?.n,0);
