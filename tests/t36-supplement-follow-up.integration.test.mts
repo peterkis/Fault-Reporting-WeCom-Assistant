@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {migrateWorkbenchSupplementFollowUp} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
 import {request as requestHttp} from 'node:http';
 // The fixture deliberately restarts its App on the same port. Each test-owned
 // request uses its own connection instead of retaining the stopped App's socket.
@@ -29,7 +30,9 @@ interface Responsibility {ticket_assignee_id:string|null;conversations:unknown[]
 
 // SOURCE tracer: all runtime NOT_RUN. The first planned T36 GET is the missing public seam.
 test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pending and old UUID replay preserves independent facts',{timeout:240_000},()=>withT35Fixture(async f=>{
-  await f.runtime.stop(); // Reuse the real isolated fixture with one App on its original port.
+  await f.runtime.stop();
+  await migrateWorkbenchSupplementFollowUp({databaseUrl:f.databaseUrl,mode:'apply'}); // Test-owned schema, no production startup migration.
+  // Reuse the real isolated fixture with one App on its original port.
   const admin=f.principals[0];assert.ok(admin);
   const runtimeOptions={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,
     listenPort:Number(new URL(f.origin).port),principalIds:[admin.id],externalSendEnabled:false,
