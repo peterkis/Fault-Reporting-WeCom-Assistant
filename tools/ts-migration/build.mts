@@ -2,7 +2,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { cleanGenerated, controlledBuildRoot, hash, identity, mappings, program, sourceRoot, runNode, type BuildManifest } from './common.mjs';
+import { cleanGenerated, controlledBuildRoot, hash, identity, mappings, sourceRoot, runNode, type BuildManifest } from './common.mjs';
 import {buildWeb} from './web.mjs';
 
 export function build(root: string): BuildManifest {
@@ -12,9 +12,9 @@ export function build(root: string): BuildManifest {
   const before = identity(root);
   // Preserve source collisions and resource guards before compiling or invoking Vite.
   mappings(root);
-  const compiler = program(root, 'tsconfig.migration.json');
-  const emitted = compiler.emit();
-  if (emitted.emitSkipped || emitted.diagnostics.length) throw new Error('MIGRATION_EMIT_FAILED');
+  // Wait for the full strict emit child to exit before Go/Vite starts. Its AST
+  // need not remain in the parent while the frontend allocates its build graph.
+  runNode(root,[fileURLToPath(new URL('./emit.mjs',import.meta.url)),'--root',root]);
   const output = path.join(controlledBuildRoot(root), 'runtime');
   try {
     buildWeb(root);
