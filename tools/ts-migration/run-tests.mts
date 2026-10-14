@@ -100,6 +100,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
       '--test-reporter-destination=' + path.resolve(log, casePath), target.file];
     const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path),
       executed_path: slash(path.relative(root, target.file)), execution_cwd: slash(path.relative(root, target.cwd)) || '.',
+      executable: process.execPath, argv: args,
       source_sha256: hash(readFileSync(path.join(root, entry.path))), executed_sha256: hash(readFileSync(target.file)),
       case_line_basis: 'EXECUTED_FILE', mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
     files.push(fileResult);
@@ -122,6 +123,8 @@ export function runSelection(root: string, selection: Selection, options: { refe
       writeFileSync(path.join(log, casePath), trace);
       Object.assign(fileResult, { case_trace_path: casePath, case_trace_sha256: hash(trace), case_trace_bytes: Buffer.byteLength(trace) });
       const c = counts(text), loaded = loadedFiles(coverage);
+      // Preserve the already observed V8 load provenance before its owned scratch is removed.
+      fileResult.loaded_files = loaded.map(file => {const bytes=readFileSync(file);return {path:file,bytes:bytes.length,sha256:hash(bytes)};});
       fileResult.counts = c;
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
       if (!loaded.some(p => path.relative(p, target.file) === '')) throw new Error('MIGRATION_TEST_NOT_EXECUTED: ' + entry.path);

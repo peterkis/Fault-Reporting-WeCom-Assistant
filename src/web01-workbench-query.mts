@@ -1,3 +1,4 @@
+import type {FollowProjectionPort} from './workbench-follow.mjs';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord } from '../contracts/web01_workbench_contracts.js';
@@ -79,9 +80,9 @@ const CARD_SQL = `WITH cards AS (
    AND NOT EXISTS (SELECT 1 FROM intake.manual_review_item r WHERE r.service_intake_id=i.id AND r.status='PENDING')
 )`;
 // Narrow the already authorized canonical card, without multiplying it by Sessions or Legs.
-const RELATED_CARD_SQL = `(kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket handling
-  WHERE handling.id=cards.id::uuid AND handling.assignee_id=$2::uuid)
- OR EXISTS(SELECT 1 FROM conversation.session s JOIN conversation.assignment a ON a.session_id=s.id
+const HANDLING_CARD_SQL = `kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket handling
+  WHERE handling.id=cards.id::uuid AND handling.assignee_id=$2::uuid)`;
+const COMMUNICATION_CARD_SQL = `EXISTS(SELECT 1 FROM conversation.session s JOIN conversation.assignment a ON a.session_id=s.id
   JOIN intake.service_intake anchor ON anchor.id=cards.intake_id::uuid AND anchor.retention_until>platform.local_now()
   JOIN intake.service_intake material ON material.id=s.service_intake_id AND material.retention_until>platform.local_now()
   WHERE a.assignment_status='ASSIGNED' AND a.assigned_principal_id=$2::uuid AND s.status<>'ENDED'
@@ -99,7 +100,13 @@ const RELATED_CARD_SQL = `(kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.t
           AND linked_material.retention_until>platform.local_now() AND linked_material.reporter_wecom_userid=s.participant_key
           AND linked.reporter_identity_hash=j.reporter_identity_hash
           AND (linked.conversation_session_id=s.id OR linked.source_intake_id=s.service_intake_id)
-          AND (linked.conversation_thread_id=s.thread_id OR linked.conversation_thread_id IS NULL))))))`;
+          AND (linked.conversation_thread_id=s.thread_id OR linked.conversation_thread_id IS NULL)))))`;
+const RELATED_CARD_SQL = `(${HANDLING_CARD_SQL} OR ${COMMUNICATION_CARD_SQL})`;
+const FOLLOW_CARD_SQL = `EXISTS(SELECT 1 FROM pilot_ticket.workbench_item_follow f JOIN intake.service_intake material ON material.id=f.source_intake_id
+ WHERE f.principal_id=$2::uuid AND f.following AND (f.source_intake_id=cards.intake_id::uuid OR (cards.kind='ticket' AND material.retention_until>platform.local_now() AND (
+  EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=f.source_intake_id AND j.linked_ticket_id=cards.id::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())
+  OR EXISTS(SELECT 1 FROM intake.manual_review_item r JOIN intake.contact_journey j ON j.id=r.journey_id WHERE r.service_intake_id=f.source_intake_id AND r.linked_ticket_id=cards.id::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())))))`;
+
 function card(row: CardRow): WorkbenchCard {
   return { kind: row.kind, id: row.id, intake_id: row.intake_id, number: row.number, title: row.title,
     status: row.status, column: boardColumn(row.status), priority: row.priority, source: row.source,
@@ -109,8 +116,8 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
-  async function decorate(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null}) {
+  async function decorate(items:WorkbenchCard[],authContext?:unknown):Promise<WorkbenchCard[]>{
     let sourced=sourceGroups?await sourceGroups.decorate(items):items;
     if(followUpSchedules){
       const ticketIds=[...new Set(sourced.filter(item=>item.kind==='ticket').map(item=>item.id))];
@@ -118,6 +125,15 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         const active=await followUpSchedules.activeForAuthorizedTickets(ticketIds);
         sourced=sourced.map(item=>item.kind==='ticket'?{...item,follow_up_schedule:active.get(item.id)??null}:item);
       }
+    }
+    if(follow&&authContext!==undefined){
+      const p=await scope(authContext);const decorated:WorkbenchCard[]=[];
+      for(const item of sourced){
+        const relation=(await pool.query<{handling:boolean;communication:boolean}>(CARD_SQL+` SELECT (${HANDLING_CARD_SQL}) AS handling,(${COMMUNICATION_CARD_SQL}) AS communication FROM cards WHERE kind=$4 AND id=$5`,[...p.values,item.kind,item.id])).rows[0];
+        const reasons:('HANDLING'|'COMMUNICATION')[]=[];if(relation?.handling)reasons.push('HANDLING');if(relation?.communication)reasons.push('COMMUNICATION');
+        decorated.push({...item,...{attention:await follow.attention({authContext,kind:item.kind,id:item.id},item,reasons)}});
+      }
+      sourced=decorated;
     }
     if(!manualReportsEnabled)return sourced;
     const result:WorkbenchCard[]=[];
@@ -155,7 +171,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       row=retained.rows[0];
     }
     if(!row)failP2016('NOT_FOUND',404);
-    const selected=card(row);return (await decorate([selected]))[0]??selected;
+    const selected=card(row);return (await decorate([selected],authContext))[0]??selected;
   }
   return Object.freeze({
     authorizedItem:item,
@@ -175,7 +191,8 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       if(page&&(typeof page.kind!=='string'||!['ticket','review','intake'].includes(page.kind)))failP2016('CURSOR_INVALID');
       if(page&&page.order_group!==0&&page.order_group!==1)failP2016('CURSOR_INVALID');
       const states=STATUS_COLUMNS[selectedColumn].filter(state=>selectedColumn!=='closed'||(selectedRange==='cancelled'?state==='CANCELLED':state!=='CANCELLED'));
-      const related=boardScope==='related'?` WHERE ${RELATED_CARD_SQL}`:'';
+      if(follow&&!await follow.ready())failP2016('DISABLED',503);
+      const related=boardScope==='related'?` WHERE (${RELATED_CARD_SQL}${follow?` OR ${FOLLOW_CARD_SQL}`:''})`:'';
       const r=await pool.query<CardRow & {order_at:string;order_group:number}>(CARD_SQL+`, ordered AS (SELECT *,
         CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN 1 ELSE 0 END AS order_group,
         CASE WHEN $12::boolean AND completed_at IS NOT NULL THEN completed_at ELSE sort_at END AS order_at FROM cards${related})
@@ -184,7 +201,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
           selectedColumn!=='closed'||selectedRange!=='recent',window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
-      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card)),last=rows.at(-1);
+      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card),input.authContext),last=rows.at(-1);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },

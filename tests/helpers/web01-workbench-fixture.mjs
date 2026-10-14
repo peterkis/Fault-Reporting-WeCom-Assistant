@@ -1,3 +1,5 @@
+import {migrateWorkbenchFollow} from '../../scripts/workbench-follow-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
@@ -65,6 +67,7 @@ export async function withWeb01Fixture(run,{workbenchAssignmentHistoryEnabled=fa
     if(workbenchManualReportsEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});}
     if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
+    if(workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});

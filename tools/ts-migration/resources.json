@@ -342,6 +342,12 @@
     "contracts/workbench_incident_owner_transfer_event.schema.json",
     "contracts/workbench_incident_owner_transfer_contracts.d.ts",
     "database/migrations/054_workbench_incident_owner_transfer.sql",
-    "contracts/workbench_incident_owner_transfer_capability.schema.json"
+    "contracts/workbench_incident_owner_transfer_capability.schema.json",
+    "database/migrations/044_workbench_item_follow.sql",
+    "contracts/workbench_item_follow_command.schema.json",
+    "contracts/workbench_item_follow_attention.schema.json",
+    "contracts/workbench_item_follow_result.schema.json",
+    "contracts/workbench_item_follow_receipt.schema.json",
+    "contracts/workbench_item_follow_contracts.d.ts"
   ]
 }
