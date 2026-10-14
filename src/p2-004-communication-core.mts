@@ -342,7 +342,7 @@ export function computeCommunicationCommandHash(command: CommunicationCommand | 
     attachment_ids: normalized.attachment_ids,
     destination_policy: normalized.destination_policy,
     privacy_class: normalized.privacy_class,
-    ...(normalized.follow_up_target?{follow_up_target:normalized.follow_up_target}:{}),
+    ...(normalized.follow_up_target?{follow_up_target:{ticket_id:normalized.follow_up_target.ticket_id,source_ref:normalized.follow_up_target.source_ref,revision:normalized.follow_up_target.revision}}:{}),
   }));
 }
 
