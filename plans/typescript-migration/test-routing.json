@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/t36-bound-reply.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t36-current-material-authority.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t36-supplement-production.browser.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t36-supplement-follow-up.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -6419,6 +6420,7 @@
     }
   },
   "selections": {
+    "wbint-t36-bound-reply-first": ["tests/t36-bound-reply.integration.test.mts"],
     "wbint-t36-current-material-authority": ["tests/t36-current-material-authority.integration.test.mts"],
     "wbint-t36-production-supplement-first": ["tests/t36-supplement-production.browser.test.mts"],
     "wbint-t29-http-first": [
@@ -7474,6 +7476,8 @@
       "tests/helpers/t33-whole-fixture.mts"
     ],
     "LOCAL_HTTP_SSE_RUNTIME": [
+      "tests/helpers/t36-bound-reply-fixture.mts",
+      "tests/helpers/t36-bound-reply-scenes.mts",
       "tests/helpers/t36-supplement-fixture.mts",
       "tests/helpers/t29-owner-transfer-http-fixture.mts",
       "tests/helpers/p2-003-client-harness.mjs",

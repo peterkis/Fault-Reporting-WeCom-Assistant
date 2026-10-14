@@ -1,7 +1,7 @@
 import {request as requestHttp} from 'node:http';
 // The fixture deliberately restarts its App on the same port. Each test-owned
 // request uses its own connection instead of retaining the stopped App's socket.
-function ownedHttp(url:string,options:{method?:string;headers:Record<string,string>;body?:string}):Promise<Response>{
+export function ownedHttp(url:string,options:{method?:string;headers:Record<string,string>;body?:string}):Promise<Response>{
   return new Promise((resolve,reject)=>{
     const request=requestHttp(url,{method:options.method??'GET',headers:options.headers,agent:false},response=>{
       const chunks:Buffer[]=[];response.on('data',(chunk:Buffer)=>chunks.push(chunk));response.once('error',reject);
