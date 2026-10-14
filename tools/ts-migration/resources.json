@@ -355,6 +355,10 @@
     "contracts/workbench_incident_delivery_reconcile.schema.json",
     "contracts/workbench_incident_delivery_result.schema.json",
     "contracts/workbench_incident_delivery_retry.schema.json",
-    "database/migrations/060_workbench_incident_delivery_control.sql"
+    "database/migrations/060_workbench_incident_delivery_control.sql",
+    "contracts/workbench_incident_delivery_control_v2_contracts.d.ts",
+    "contracts/workbench_incident_delivery_retry_v2.schema.json",
+    "contracts/workbench_incident_delivery_reconcile_v2.schema.json",
+    "contracts/workbench_incident_delivery_capability_v2.schema.json"
   ]
 }

@@ -2,7 +2,8 @@ import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mj
 import type {Incident} from '../contracts/p2_012_contracts.js';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
 import type {P2012IncidentQuery} from './p2-012-incident-query.mjs';
-import type {IncidentDeliveryControlPermissionPort,IncidentDeliveryControlResult,IncidentDeliveryCapability,IncidentDeliveryReceipt,IncidentDeliveryPermission,IncidentDeliveryStatus,IncidentDeliverySideEffect} from '../contracts/workbench_incident_delivery_control_contracts.js';
+import type {IncidentDeliveryControlPermissionPort,IncidentDeliveryControlResult,IncidentDeliveryReceipt,IncidentDeliveryPermission,IncidentDeliveryStatus,IncidentDeliverySideEffect} from '../contracts/workbench_incident_delivery_control_contracts.js';
+import type {IncidentDeliveryCapabilityV2} from '../contracts/workbench_incident_delivery_control_v2_contracts.js';
 import {createCommunicationDeliveryOperatorPort,createCommunicationReconciliationPort} from './p2-004-communication-delivery-worker.mjs';
 import {createIncidentPublicProgressAdmission} from './p2-012-public-progress-admission.mjs';
 import {incidentDeliveryControlSchemaReady} from './p2-012-incident-delivery-schema.mjs';
@@ -10,7 +11,9 @@ import {allowedIncidentScopes,transaction,exact,uuid,version,hash,frozen,fail,ER
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
 type Action='retry'|'reconcile';
 type Resolution='CONFIRMED_SENT'|'CONFIRMED_NOT_SENT_REQUEUE'|'CANCEL';
-interface Command {client_command_id:string;expected_row_version:string;expected_status:string;expected_side_effect_state:string;reason_code:string;resolution:Resolution|null;incident_id:string;delivery_id:string;action:Action}
+interface CommandV1 {client_command_id:string;expected_row_version:string;expected_status:string;expected_side_effect_state:string;reason_code:string;resolution:Resolution|null;incident_id:string;delivery_id:string;action:Action}
+interface CommandV2 extends CommandV1 {expected_delivery_attempt_count:number}
+type Command=CommandV1|CommandV2;
 interface Binding {delivery_id:string;status:IncidentDeliveryStatus;side_effect_state:IncidentDeliverySideEffect;attempt_count:number;template_code:string;audience_type:string;sender_system_code:string;session_id:string|null}
 interface Authority {principal:WorkbenchPrincipal;incident:Incident;binding:Binding}
 interface ReceiptRow {id:string;command_hash:string;command_type:string;delivery_id:string;state:string;delivery_control_result:unknown;error_code:string|null;retryable:boolean|null}
@@ -21,9 +24,12 @@ const resolutions=['CONFIRMED_SENT','CONFIRMED_NOT_SENT_REQUEUE','CANCEL'];
 function reason(input:unknown):string{if(typeof input!=='string'||!/^[A-Z0-9_]{1,128}$/u.test(input))fail();return input;}
 export function normalizeIncidentDeliveryCommand(incidentId:unknown,deliveryId:unknown,action:unknown,body:unknown):Command{
  if(action!=='retry'&&action!=='reconcile')fail();
- const keys=['client_command_id','expected_row_version','expected_status','expected_side_effect_state','reason_code',...(action==='reconcile'?['resolution']:[])],v=exact(body,keys);
+ const keys=['client_command_id','expected_row_version','expected_status','expected_side_effect_state','reason_code',...(action==='reconcile'?['resolution']:[])],v=exact(body,[...keys,'expected_delivery_attempt_count'],keys);
  if(action==='retry'&&(!['PENDING','DEAD_LETTER'].includes(v.expected_status as string)||v.expected_side_effect_state!=='NOT_ATTEMPTED')||action==='reconcile'&&(v.expected_status!=='RECONCILIATION_REQUIRED'||v.expected_side_effect_state!=='UNKNOWN'||!resolutions.includes(v.resolution as string)))fail();
- return {client_command_id:uuid(v.client_command_id),expected_row_version:version(v.expected_row_version),expected_status:v.expected_status as string,expected_side_effect_state:v.expected_side_effect_state as string,reason_code:reason(v.reason_code),resolution:action==='reconcile'?v.resolution as Resolution:null,incident_id:uuid(incidentId),delivery_id:uuid(deliveryId),action};
+ const base:CommandV1={client_command_id:uuid(v.client_command_id),expected_row_version:version(v.expected_row_version),expected_status:v.expected_status as string,expected_side_effect_state:v.expected_side_effect_state as string,reason_code:reason(v.reason_code),resolution:action==='reconcile'?v.resolution as Resolution:null,incident_id:uuid(incidentId),delivery_id:uuid(deliveryId),action};
+ if(!Object.hasOwn(v,'expected_delivery_attempt_count'))return base;
+ const attempt=v.expected_delivery_attempt_count;if(typeof attempt!=='number'||!Number.isInteger(attempt)||attempt<0||attempt>2147483647)fail();
+ return {...base,expected_delivery_attempt_count:attempt};
 }
 function resultSnapshot(input:unknown,incidentId:string,deliveryId:string,commandId:string):IncidentDeliveryControlResult{
  const v=exact(input,['ok','incident_id','delivery_id','client_command_id','status','side_effect_state','attempt_count','replayed']);
@@ -66,12 +72,12 @@ export function createIncidentDeliveryControl({pool,query,enabled=false,permissi
   if(!privateNoticeEnabled)return false;
   return (await tx.query("SELECT 1 FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.incident_notification_binding b ON b.communication_message_id=o.message_id JOIN incident.reporter_subscription s ON s.id=b.reporter_subscription_id AND s.incident_id=b.incident_id AND s.reporter_identity_hash=b.audience_binding_hash JOIN intake.channel_leg l ON l.id=s.direct_channel_leg_id AND l.reporter_identity_hash=s.reporter_identity_hash JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash JOIN intake.service_intake i ON i.id=l.source_intake_id WHERE d.id=$1::uuid AND b.audience_type='REPORTER_DIRECT' AND s.status='ACTIVE' AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC') AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND i.source_chat_type='single' AND d.provider='WECOM_AIBOT' AND d.target_type='PERSON' AND d.channel_account_id=i.source_bot_id AND d.target_id=i.reporter_wecom_userid FOR SHARE OF b,s,l,j,i",[id])).rowCount===1;
  }
- async function capability({authContext,incidentId,deliveryId}:{authContext:unknown;incidentId:string;deliveryId:string}):Promise<IncidentDeliveryCapability>{
+ async function capability({authContext,incidentId,deliveryId}:{authContext:unknown;incidentId:string;deliveryId:string}):Promise<IncidentDeliveryCapabilityV2>{
   const id=uuid(incidentId),delivery=uuid(deliveryId);
   return transaction(pool,async tx=>{await lock(tx);
    const ctx=await stable(tx,authContext,id,delivery,null),hasRetry=scope(ctx.principal,ctx.incident)&&role(ctx.principal,'retry')&&await permission(ctx.principal,id,'INCIDENT_DELIVERY_RETRY',tx),hasReconcile=scope(ctx.principal,ctx.incident)&&role(ctx.principal,'reconcile')&&await permission(ctx.principal,id,'INCIDENT_DELIVERY_RECONCILE',tx),disabled=!enabled||permissions===null||!await incidentDeliveryControlSchemaReady(tx);
    const retry=hasRetry&&!disabled&&['PENDING','DEAD_LETTER'].includes(ctx.binding.status)&&ctx.binding.side_effect_state==='NOT_ATTEMPTED'&&await sendAdmission(tx,ctx);
-   return frozen({incident_id:id,delivery_id:delivery,purpose:ctx.binding.template_code==='INCIDENT_PUBLIC_PROGRESS_DIRECT'?'INCIDENT_PUBLIC_PROGRESS':'INCIDENT_LIFECYCLE',retry,reconcile:hasReconcile&&!disabled&&ctx.binding.status==='RECONCILIATION_REQUIRED'&&ctx.binding.side_effect_state==='UNKNOWN',receipt_read:hasRetry||hasReconcile,disabled});
+   return frozen({incident_id:id,delivery_id:delivery,attempt_count:ctx.binding.attempt_count,purpose:ctx.binding.template_code==='INCIDENT_PUBLIC_PROGRESS_DIRECT'?'INCIDENT_PUBLIC_PROGRESS':'INCIDENT_LIFECYCLE',retry,reconcile:hasReconcile&&!disabled&&ctx.binding.status==='RECONCILIATION_REQUIRED'&&ctx.binding.side_effect_state==='UNKNOWN',receipt_read:hasRetry||hasReconcile,disabled});
   });
  }
  async function receipt({authContext,incidentId,commandId}:{authContext:unknown;incidentId:string;commandId:string}):Promise<IncidentDeliveryReceipt>{
@@ -105,7 +111,10 @@ export function createIncidentDeliveryControl({pool,query,enabled=false,permissi
    await tx.query('SAVEPOINT p2012_delivery_business');
    try{
     if(String(ctx.incident.row_version)!==c.expected_row_version)fail('VERSION_CONFLICT',409);
-    if(ctx.binding.status!==c.expected_status||ctx.binding.side_effect_state!==c.expected_side_effect_state)fail('STATE_CONFLICT',409);
+    // The legacy normalized command remains byte-identical for historical UUID receipts.
+    // A new legacy UUID can prove only the initial delivery attempt; v2 binds its exact attempt in command_hash.
+    const expectedAttempt='expected_delivery_attempt_count'in c?c.expected_delivery_attempt_count:c.expected_status==='PENDING'?0:1;
+    if(ctx.binding.status!==c.expected_status||ctx.binding.side_effect_state!==c.expected_side_effect_state||ctx.binding.attempt_count!==expectedAttempt)fail('STATE_CONFLICT',409);
     if(c.action==='retry'||c.resolution==='CONFIRMED_NOT_SENT_REQUEUE'){if(!await sendAdmission(tx,ctx))fail('FORBIDDEN',403);}
     if(ctx.binding.attempt_count>=2147483647&&!(c.action==='retry'&&ctx.binding.status==='PENDING'))fail('STATE_CONFLICT',409);
     // Authorization after all permission, binding, catalog and destination waits.
