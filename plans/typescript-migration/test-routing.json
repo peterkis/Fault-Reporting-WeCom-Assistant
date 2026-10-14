@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-bound-service-failure.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-later-material.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7526,6 +7535,9 @@
     ],
     "wbint-t36-reply-purpose-isolation": [
       "tests/t36-reply-purpose-isolation.browser.test.mts"
+    ],
+    "wbint-t36-bound-service-failure": [
+      "tests/t36-bound-service-failure.browser.test.mts"
     ]
   },
   "subprocess_entries": {

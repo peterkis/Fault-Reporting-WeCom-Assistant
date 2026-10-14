@@ -71,7 +71,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const target=async(text:string):Promise<SupplementFollowUpTarget>=>{
    const next=await accept(text);assert.equal(next.intakeId,initial.intakeId);
    const detail=await read<SupplementFollowUpPage>(followPath+'?limit=100');
-   const found=detail.items.find(r=>r.source_ref===next.sourceRef&&r.revision===next.revision);assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return found;
+   const found=detail.items.find(r=>r.source_ref===next.sourceRef&&r.revision===next.revision);assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return {source_ref:found.source_ref,revision:found.revision};
   };
   const r2=await target('补充：T36同一主题当前错误提示403。');assert.equal(r2.revision,'2');
   const internalCanary='T36_INTERNAL_ONLY_'+randomUUID();
