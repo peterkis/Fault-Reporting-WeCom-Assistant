@@ -217,7 +217,9 @@ test('T34 an actual write-suppressing trigger cannot produce a successful Follow
   await f.pool.query('CREATE TRIGGER t34_suppress_follow BEFORE INSERT OR UPDATE ON pilot_ticket.workbench_item_follow FOR EACH ROW EXECUTE FUNCTION pilot_ticket.t34_suppress_follow()');
   try{
    const response=await http.post(path,original,bootstrap.csrf_token),body:unknown=await response.json();
-   t.diagnostic('T34_ACTUAL_SUPPRESSED_WRITE_ACK '+JSON.stringify({status:response.status,body}));
+   const persisted=(await f.pool.query('SELECT source_intake_id::text,following FROM pilot_ticket.workbench_item_follow')).rows;
+   const receipt=(await f.pool.query('SELECT state FROM pilot_ticket.ticket_command_receipt WHERE client_command_id=$1::uuid',[original.client_command_id])).rows;
+   t.diagnostic('T34_ACTUAL_SUPPRESSED_WRITE_ACK '+JSON.stringify({status:response.status,body,persisted,receipt}));
    assert.equal(response.status,503,'catalog drift must fail closed before an unfulfilled intent is acknowledged');
    assert.equal(await followSchemaReady(f.pool),false);
    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.workbench_item_follow')).rows[0]?.n,0);
