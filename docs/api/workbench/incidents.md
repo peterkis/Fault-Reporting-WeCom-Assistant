@@ -129,3 +129,7 @@ Report、历史、订阅、通知、来源和所选 subscription 的 DIRECT 渠�
 ## T33 控制合同准备（2026-10-14）
 
 [Incident独立Delivery控制合同](incident-delivery-control-design.md)已冻结SOURCE，原七PENDING／runtime NOT_RUN／WHOLE_NOT_GRANTED。普通retry按当前人类角色答复，UNKNOWN保持ADMIN-only独立核对；VIEW／PUBLISH／owner／HANDLER不授控制权。拟议control/retry/reconcile/notification-commands入口均NOT_MOUNTED，默认关闭；不改变本页既有HTTP、Ticket／Conversation控制或原SQL／历史Evidence。
+
+## 分路投递控制（T33，默认关闭）
+
+当前专用授权、四个 HTTP 路由、v2 尝试快照、原 UUID 回执/恢复与显式 060 迁移见 [Incident 投递控制](incident-delivery-control.md)。读取或发布权、负责人身份和一般会话权限不授予此独立用途；通知状态变化不代替权限撤回。
