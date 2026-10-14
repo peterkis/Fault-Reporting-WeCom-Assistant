@@ -102,17 +102,20 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  async function send(command:WorkbenchFollowCommand,replay=false){
   if(request.current||!principal.workbench_follow_enabled||!attention||!principal.csrf_token||!workbenchTransportWritable()||!draft.canSubmit&&!replay)return;
   if(replay&&(!pending||pending.client_command_id!==commandId||probing||draft.status==='loading'||draft.status==='failed'))return;
-  const controller=new AbortController(),token=++generation.current,startIdentity=latestIdentity.current,current=currentRequest(controller,token,startIdentity,captureWorkbenchRead(controller.signal));request.current=controller;setPending(command);setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false;
+  const controller=new AbortController(),token=++generation.current,startIdentity=latestIdentity.current,current=currentRequest(controller,token,startIdentity,captureWorkbenchRead(controller.signal));request.current=controller;setPending(command);setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false,postRejection:ApiError|null=null;
   try{
    await verifySession(controller.signal,current);await draft.prepare(command);if(!current())return;dispatched=true;
-   const result=await api.follow(requested,command,principal.csrf_token,controller.signal);if(!current())return;await verifySession(controller.signal,current);
+   let result:WorkbenchFollowResult;
+   try{result=await api.follow(requested,command,principal.csrf_token,controller.signal);}
+   catch(error){if(error instanceof ApiError&&error.status>=400&&error.status<500)postRejection=error;throw error;}
+   if(!current())return;await verifySession(controller.signal,current);
    await terminal(command.client_command_id,result,controller,current);
   }catch(error){
    if(!current())return;
    if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&error.status===401)authorityFailure(error);
    else if(!dispatched){if(replay){setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}else{setPending(null);setOpaque(null);setState('denied');setMessage('恢复副本未能确认，关注操作尚未发送。');}}
    else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,command.client_command_id,controller,current);
-   else if(error instanceof ApiError)await terminal(command.client_command_id,null,controller,current);
+   else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current);
    else{setState('unknown');setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');}
   }finally{if(generation.current===token)request.current=null;}
  }

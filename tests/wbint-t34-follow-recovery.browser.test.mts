@@ -21,7 +21,7 @@ test('T34 a real committed POST followed by HTTP bootstrap503 preserves its UUID
    await browser.waitFor('Boolean(document.querySelector("[data-action=toggle-item-follow]")&&!document.querySelector("[data-action=toggle-item-follow]").disabled)');
    await browser.evaluate(`window.__t34Posts=[];const actual=window.fetch.bind(window);window.fetch=async(input,init)=>{const url=typeof input==='string'?input:input.url;if(init?.method==='POST'&&url.endsWith('/follow'))window.__t34Posts.push(JSON.parse(init.body));return actual(input,init);};document.querySelector('[data-action=toggle-item-follow]').click();`);
    await browser.waitFor('Boolean(document.querySelector("[data-follow-state=unknown], [data-follow-state=conflict], [data-follow-state=succeeded]"))');
-   await screenshot(browser,directory,'follow-after-bootstrap-failure.png');
+   await screenshot(browser,directory,'new-detail-1920.png');
    const fault=f.followBootstrapFaultState();assert.equal(fault.committed_responses,1);assert.ok(fault.failed_bootstrap_reads>=1);
    const rows=(await f.pool.query<{client_command_id:string;state:string}>("SELECT client_command_id::text,state FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_ITEM_FOLLOW'")).rows;
    assert.equal(rows.length,1);assert.equal(rows[0]?.state,'COMMITTED');
@@ -34,7 +34,7 @@ test('T34 a real committed POST followed by HTTP bootstrap503 preserves its UUID
    await browser.waitFor('document.querySelector("[data-action=toggle-item-follow]")?.getAttribute("aria-pressed")==="true"&&!document.querySelector("[data-action=follow-ack]")');
    assert.equal(await browser.evaluate('window.__t34Posts.length'),1,'read-only recovery cannot issue another POST');
    assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_ITEM_FOLLOW'")).rows[0]?.n,1);
-   await screenshot(browser,directory,'follow-after-readonly-ack.png');
+   await screenshot(browser,directory,'new-detail-page-1920.png');
   }catch(error){primary=error;}
   finally{f.restoreFollowBootstrapResponses();await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
  },{workbenchFollowEnabled:true,failFollowBootstrapAfterCommit:true,manualProjection:true,chronologicalTicketEvents:true});
