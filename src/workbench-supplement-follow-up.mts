@@ -9,7 +9,7 @@ import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
 import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUpResult,SupplementFollowUpReceipt} from '../contracts/workbench_supplement_follow_up_contracts.js';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {exactP2016,uuidP2016,failP2016,hashP2016,transactionP2016,localP2016,limitP2016,cursorP2016,decodeCursorP2016} from './p2-016-domain-contracts.mjs';
-import {supplementFollowUpSchemaReady} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
+import {supplementFollowUpSchemaReady,SUPPLEMENT_FOLLOW_UP_MIGRATION_ID} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
 const PURPOSE='WORKBENCH_SUPPLEMENT_FOLLOW_UP';
 interface Material {source_intake_id:string;source_kind:'WEB'|'BOT';source_ref:string;revision:string;at:string;ordinal:string;source_id:string}
 export function supplementRevision(value:unknown):string{if(typeof value!=='string'||!/^[1-9][0-9]{0,18}$/u.test(value)||BigInt(value)>9223372036854775807n)failP2016();return value;}
@@ -93,7 +93,12 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    await tx.query('SET TRANSACTION READ ONLY');
    // An old host without 062 keeps its original unbound HUMAN_REPLY receipt path.
    // A real binding retains its exact purpose even when the new entry is OFF.
-   if((await tx.query<{present:boolean}>("SELECT to_regclass('pilot_ticket.workbench_supplement_reply_binding') IS NOT NULL AS present")).rows[0]?.present!==true)return;
+   const relations=(await tx.query<{binding_present:boolean;migrations_present:boolean}>("SELECT to_regclass('pilot_ticket.workbench_supplement_reply_binding') IS NOT NULL AS binding_present,to_regclass('platform.schema_migration') IS NOT NULL AS migrations_present")).rows[0];
+   if(relations?.binding_present!==true){
+    // Only a host that never applied 062 retains the cold legacy receipt path.
+    if(relations?.migrations_present&&(await tx.query('SELECT 1 FROM platform.schema_migration WHERE migration_id=$1',[SUPPLEMENT_FOLLOW_UP_MIGRATION_ID])).rowCount)failP2016('DISABLED',503);
+    return;
+   }
    const target=(await tx.query<{ticket_id:string;source_ref:string;revision:string}>('SELECT ticket_id::text,source_ref,revision::text FROM pilot_ticket.workbench_supplement_reply_binding WHERE message_id=$1::uuid',[uuidP2016(input.messageId)])).rows[0];
    if(target){const c=await authorize(tx,{authContext:input.authContext,ticketId:target.ticket_id},true);await material(tx,c,target);}
   });},
