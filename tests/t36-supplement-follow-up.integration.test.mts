@@ -28,7 +28,7 @@ test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pendin
     const started=await runtime.start(),cookie=started.cookies?.[0];assert.ok(cookie);
     const cookieHeader=cookie.name+'='+cookie.value;
     const get=(path:string)=>fetch(f.origin+path,{headers:{cookie:cookieHeader}});
-    const read=async<T>(path:string):Promise<T>=>{const response=await get(path);assert.equal(response.status,200,path);return await response.json() as T;};
+    const read=async<T,>(path:string):Promise<T>=>{const response=await get(path);assert.equal(response.status,200,path);return await response.json() as T;};
     const csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;assert.ok(csrf);
     const post=(path:string,body:SupplementFollowUpCommand)=>fetch(f.origin+path,{method:'POST',headers:{cookie:cookieHeader,
       origin:f.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(body)});
