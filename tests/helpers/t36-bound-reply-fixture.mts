@@ -4,6 +4,7 @@ import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import type {SupplementFollowUpPage,SupplementFollowUpTarget,SupplementFollowUpReplyCommand} from '../../contracts/workbench_supplement_follow_up_contracts.js';
 import {withT35Fixture} from './t35-read-fixture.mjs';
 import {ownedHttp} from './t36-supplement-fixture.mjs';
+import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 import {migrateWorkbenchSupplementFollowUp} from '../../scripts/workbench-supplement-follow-up-migrate.mjs';
 import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
@@ -19,6 +20,7 @@ import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004Fixe
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export interface T36BoundReplyFixture {
  setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER';
+ origin:string;browserCookie:NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>[number];
  setActorRoles(roles:PilotRole[]):Promise<void>;
  pool:PostgresPool;sessionId:string;ticketId:string;actorId:string;reporterId:string;
  r2:SupplementFollowUpTarget;rowVersion:number;internalCanary:string;
@@ -83,6 +85,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
    origin:base.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'x-csrf-token':csrf,'if-match':'"'+body.expected_row_version+'"'},body:JSON.stringify(body)});
   await run({setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER',pool:base.pool,sessionId,ticketId,actorId:admin.id,reporterId,r2,rowVersion,internalCanary,
    setActorRoles:async roles=>{const actor=(await base.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[admin.id])).rows[0];assert.ok(actor);const changed=await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles,resolverTeamIds:[]});assert.equal(changed.id,admin.id);},
+   origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},
    postReply,page,appendR3:()=>target('补充：T36发送在途以后新收到的材料。'),get,read,
    independentFacts:async()=>({ticket:await read(ticketPath),responsibility:await read(ticketPath+'/responsibility'),events:await read(ticketPath+'/events'),read:await read(itemPath+'/read-position')})});
  }catch(error){primaryError=error;}

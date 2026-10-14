@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-bound-reply-production.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-bound-reply-risks.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7466,6 +7475,9 @@
     ],
     "wbint-t36-bound-reply-risks": [
       "tests/t36-bound-reply-risks.integration.test.mts"
+    ],
+    "wbint-t36-bound-reply-production-first": [
+      "tests/t36-bound-reply-production.browser.test.mts"
     ]
   },
   "subprocess_entries": {
