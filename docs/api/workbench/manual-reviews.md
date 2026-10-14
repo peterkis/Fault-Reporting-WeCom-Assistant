@@ -77,3 +77,12 @@ Cookie、Origin／CSRF及宿主body上限32KiB沿原认证入口；`Idempotency-
 正式界面后续在原Item/Review workspace内捕获材料、显式确认与选Session，最后一次复合POST；不能串联旧resolve／take／start模拟原子成功。Review转Ticket后继续同URL／document／面板，重新读取有权canonical，保留一张卡片并停用旧版本操作。冲突或UNKNOWN保留原捕获版本、选择、UUID与完整命令；不自动重试、不根据新资料重写原意图。恢复沿T03账号／用途／当前浏览器24h及T38 epoch／abort／组件generation，晚返回不能恢复失权事实。
 
 `workbenchReviewResolveAndStartEnabled=false`为计划默认值，需原lifecycle／T14材料能力和相应合法业务操作。关闭停止新复合动作／能力／UI，原resolve及追加事实保留。本票计划无数据库变更，复用039轮次与既有事实／账本；不新增Ticket／owner／receipt、SSE、轮询或后台服务。单表单in-flight1、最多8 Session，原材料50条／20k字符、引用100、App／Worker各1、Gateway单活、SSE32、共享pool max4／总预算8保持。先原HTTP1实际RED→最小GREEN，后原production browser1独立RED→GREEN；两者240s和原roles／flags／assertions不变，本次全部运行NOT_RUN。
+
+
+### 2026-10-14 有限 Source 同步补充
+
+T15 准备树本次普通合入固定 Root b5808ee88ee749df61a6a82708d1d5bd26971743，保留当前 T14 实际 resolve、材料、canonical 与恢复接口，以及当前 Ticket / Conversation 各自权威。上述 T15 九字段命令和复合结果仍为计划合同，原两份首例与两份专属合同保持原字节；本轮未实现或运行 resolve-and-start，没有将它登记为已存在产品 API。
+
+完整 Root registry 与本票原两个入口 / 两个合同资源并集为 614 entries / 144 selections / 350 resources。共享 fixture 保留当前 Root 的全部实现，仅透传原 T15 默认关闭计划选项。该选项仍未被生产消费，不使读取或按钮展示获得处理权限。未来业务仍须当前 actor、Review / Journey / Ticket、有效处理组与每个明确选择 Session 的同事务核验，保持材料 fence、完整原 UUID 意图、唯一 Ticket 和全部失败回滚。
+
+原七项全部 PENDING，Node / dependency / strict / build / artifact / tests / PG / HTTP / production browser / cleanup 全部 NOT_RUN，详情与真实 Source 结果见 T15 执行记录及 D:/wecom-workbench-evidence/t15/prepared/source-sync-rootb5808-20261014/handoff.json。后续独占 WHOLE 从原 HTTP first 开始，原正向预期、角色、预算和 HTTP-before-browser 次序不改。本轮无数据库变更、业务写入、真实发送、部署或 Gate 推进。
