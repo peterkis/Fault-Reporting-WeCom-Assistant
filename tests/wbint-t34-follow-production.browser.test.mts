@@ -8,7 +8,7 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 type BrowserCookie=NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>[number];
 interface Fixture {origin:string;cookies:string[];browserCookies:BrowserCookie[];tickets:{ticket:{id:string}}[]}
-type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
+type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function image(browser:Browser,directory:string,name='new-detail-1920.png'){
  const file=join(directory,name),bytes=Buffer.from(await browser.screenshot(),'base64');await writeFile(file,bytes);
  console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));
@@ -20,7 +20,7 @@ test('T34 formal production detail explicitly follows once and server related sc
   const before=await read('/api/tickets/'+target.ticket.id),directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
   let browser:Browser|undefined,primary:unknown;
   try{
-   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.ticket.id,width:1920,height:1080,cookies:[cookie]});
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.ticket.id,width:1920,height:1080,cookies:[cookie]});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector("#detail-title"))');await image(browser,directory);
    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=toggle-item-follow]"))'),true,'authorized real production detail must expose the explicit follow control');
    assert.equal(await browser.evaluate('document.querySelector("[data-action=toggle-item-follow]").getAttribute("aria-pressed")'),'false');
