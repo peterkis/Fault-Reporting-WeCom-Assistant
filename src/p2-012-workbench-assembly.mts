@@ -1,9 +1,10 @@
 import type { PostgresPool } from './platform/postgres-pool.mjs';
+import type {IncidentDeliveryControlPermissionPort} from '../contracts/workbench_incident_delivery_control_contracts.js';
 import type { P2016RuntimeOptions, P2016EnabledRuntime, P2016DisabledRuntime, P2016IncidentExtension } from './p2-016-runtime.mjs';
 import type { G1RuntimeExtension } from './p2-g1-runtime.mjs';
 import type { P2012NotificationPolicy } from './p2-012-notification-policy.mjs';
 export type P2012LiveApproval = Partial<Record<'live' | 'scope' | 'send' | 'publicNotice' | 'privateNotice', boolean>>;
-export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentInternalNotesEnabled?:boolean;incidentPublicProgressEnabled?:boolean;incidentOwnerTransferEnabled?:boolean }
+export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentInternalNotesEnabled?:boolean;incidentPublicProgressEnabled?:boolean;incidentOwnerTransferEnabled?:boolean;incidentDeliveryControlEnabled?:boolean;incidentDeliveryControlPermissions?:IncidentDeliveryControlPermissionPort|null }
 type ExtensionOptions = { pool: PostgresPool; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; internalNotesEnabled?:boolean; publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'] };
 export type P2012WorkbenchExtension = ReturnType<typeof createP2012WorkbenchExtension>;
 import { readFile } from 'node:fs/promises';
@@ -26,7 +27,10 @@ import {ownerTransferSchemaReady} from './p2-012-owner-transfer-schema.mjs';
 
 export function createP2012Runtime(options: P2012RuntimeOptions & { flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true } }): P2016EnabledRuntime;
 export function createP2012Runtime(options?: P2012RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime;
-export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,incidentInternalNotesEnabled=false,incidentPublicProgressEnabled=false,incidentOwnerTransferEnabled=false,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
+export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,incidentInternalNotesEnabled=false,incidentPublicProgressEnabled=false,incidentOwnerTransferEnabled=false,incidentDeliveryControlEnabled=false,incidentDeliveryControlPermissions=null,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
+  // T33 SOURCE declarations only: no control handler, permission mapping or Worker change.
+  if(typeof incidentDeliveryControlEnabled!=='boolean')fail();
+  void incidentDeliveryControlPermissions;
   if(typeof incidentOwnerTransferEnabled!=='boolean'||incidentOwnerTransferEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentPublicProgressEnabled!=='boolean'||incidentPublicProgressEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentCandidateWorkspaceEnabled!=='boolean'||typeof incidentInternalNotesEnabled!=='boolean')fail();if(incidentInternalNotesEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();

@@ -125,3 +125,7 @@ Report、历史、订阅、通知、来源和所选 subscription 的 DIRECT 渠�
 资源沿原单 App/Worker、零新增 Gateway、SSE默认32及总池建议≤8；body32KiB和原页数/草稿上限保持。workspace 与浏览器恢复能力默认关闭；关闭入口、专用恢复或 workspace 停止相应消费与专用回执，保留所有原 Ticket/Incident/Report/Subscription/Event/Outbox/Delivery。新增负责人转交、内部处置和显式发布仍属 T29–T31。
 
 当前本地定向测试使用真实隔离 PG、loopback Cookie HTTP、正式 production bundle 与合成外部适配器。原 RED、后继各风险验证、原七项和最终被测对象以[T28执行记录](../../../plans/admin-workbench-integration/execution/t28.md)及外置原始报告为准；真实外部服务/发送、部署、full/certify与Gate仍按原独立停止线。
+
+## T33 控制合同准备（2026-10-14）
+
+[Incident独立Delivery控制合同](incident-delivery-control-design.md)已冻结SOURCE，原七PENDING／runtime NOT_RUN／WHOLE_NOT_GRANTED。普通retry按当前人类角色答复，UNKNOWN保持ADMIN-only独立核对；VIEW／PUBLISH／owner／HANDLER不授控制权。拟议control/retry/reconcile/notification-commands入口均NOT_MOUNTED，默认关闭；不改变本页既有HTTP、Ticket／Conversation控制或原SQL／历史Evidence。

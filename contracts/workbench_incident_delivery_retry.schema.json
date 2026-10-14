@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_incident_delivery_retry.schema.json",
+  "title": "T33 Incident notification control — SOURCE frozen, not mounted",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_incident_version",
+    "expected_status",
+    "expected_side_effect_state",
+    "reason_code"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_incident_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "expected_status": {
+      "enum": [
+        "PENDING",
+        "DEAD_LETTER"
+      ]
+    },
+    "expected_side_effect_state": {
+      "const": "NOT_ATTEMPTED"
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{1,128}$"
+    }
+  }
+}
