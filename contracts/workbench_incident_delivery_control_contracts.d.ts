@@ -7,11 +7,11 @@ export interface IncidentDeliveryControlPermissionPort {
 export type IncidentDeliveryStatus='PENDING'|'LEASED'|'SENDING'|'SENT'|'RECONCILIATION_REQUIRED'|'DEAD_LETTER'|'CANCELLED';
 export type IncidentDeliverySideEffect='NOT_ATTEMPTED'|'ACKNOWLEDGED'|'UNKNOWN';
 export interface IncidentDeliveryRetryCommand {
-  client_command_id:string;expected_incident_version:string;expected_status:'PENDING'|'DEAD_LETTER';
+  client_command_id:string;expected_row_version:string;expected_status:'PENDING'|'DEAD_LETTER';
   expected_side_effect_state:'NOT_ATTEMPTED';reason_code:string;
 }
 export interface IncidentDeliveryReconcileCommand {
-  client_command_id:string;expected_incident_version:string;expected_status:'RECONCILIATION_REQUIRED';
+  client_command_id:string;expected_row_version:string;expected_status:'RECONCILIATION_REQUIRED';
   expected_side_effect_state:'UNKNOWN';reason_code:string;
   resolution:'CONFIRMED_SENT'|'CONFIRMED_NOT_SENT_REQUEUE'|'CANCEL';
 }

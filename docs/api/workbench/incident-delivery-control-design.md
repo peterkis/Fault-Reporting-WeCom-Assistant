@@ -18,7 +18,7 @@ Incident→原 `communication.incident_notification_binding`→Message→Outbox�
 | POST `/api/incidents/{incidentId}/notifications/{deliveryId}/reconcile` | 闭合reconcile body；200 result或409结果竞争 |
 | GET `/api/incidents/{incidentId}/notification-commands/{commandId}` | 无query；UNKNOWN／COMMITTED／FAILED闭合receipt，不写、不发送 |
 
-Cookie认证、Origin、CSRF沿现有宿主。POST `Idempotency-Key`必须匹配body UUID，`If-Match`等于带引号的十进制string `expected_incident_version`。body最大32KiB，拒额外键；parent/delivery从path取得，actor只来自当前认证。expected_status和expected_side_effect_state是明确原快照，不从浏览器推断已发送。确认已发与CANCEL不调用Sender；确认未发重队列和retry还须当前发送开关／用途准入，通过原Worker发送guard，不绕过它。CONFIRMED_SENT记录SENT/ACKNOWLEDGED，**不代表报修人已读**。CANCEL保留UNKNOWN副作用事实。
+Cookie认证、Origin、CSRF沿现有宿主。POST `Idempotency-Key`必须匹配body UUID，`If-Match`等于带引号的十进制string `expected_row_version`。body最大32KiB，拒额外键；parent/delivery从path取得，actor只来自当前认证。expected_status和expected_side_effect_state是明确原快照，不从浏览器推断已发送。确认已发与CANCEL不调用Sender；确认未发重队列和retry还须当前发送开关／用途准入，通过原Worker发送guard，不绕过它。CONFIRMED_SENT记录SENT/ACKNOWLEDGED，**不代表报修人已读**。CANCEL保留UNKNOWN副作用事实。
 
 retry仅PENDING/NOT_ATTEMPTED合法noop，或DEAD_LETTER/NOT_ATTEMPTED经原operator重队列；UNKNOWN、SENT/ACKNOWLEDGED、SENDING、其它状态不盲发。reconcile仅RECONCILIATION_REQUIRED/UNKNOWN，以原Communication reconciliation port执行CONFIRMED_SENT／CONFIRMED_NOT_SENT_REQUEUE／CANCEL；理由必填。锁及CAS拒绝竞争结论。wrong parent／隐藏binding为安全404；当前用途权限失效403，登录失效401，UUID改正文和版本／状态竞争409，未知或额外输入400；不泄漏目标或原Provider错误。
 

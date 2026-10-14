@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "client_command_id",
-    "expected_incident_version",
+    "expected_row_version",
     "expected_status",
     "expected_side_effect_state",
     "reason_code",
@@ -17,7 +17,7 @@
       "type": "string",
       "format": "uuid"
     },
-    "expected_incident_version": {
+    "expected_row_version": {
       "type": "string",
       "pattern": "^[1-9][0-9]{0,18}$"
     },
