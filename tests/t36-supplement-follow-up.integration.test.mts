@@ -1,4 +1,18 @@
 import {test} from 'node:test';
+import {request as requestHttp} from 'node:http';
+// The fixture deliberately restarts its App on the same port. Each test-owned
+// request uses its own connection instead of retaining the stopped App's socket.
+function ownedHttp(url:string,options:{method?:string;headers:Record<string,string>;body?:string}):Promise<Response>{
+  return new Promise((resolve,reject)=>{
+    const request=requestHttp(url,{method:options.method??'GET',headers:options.headers,agent:false},response=>{
+      const chunks:Buffer[]=[];response.on('data',(chunk:Buffer)=>chunks.push(chunk));response.once('error',reject);
+      response.once('end',()=>resolve(new Response(Buffer.concat(chunks).toString('utf8'),{status:response.statusCode??500})));
+    });
+    request.once('error',reject);request.end(options.body);
+  });
+}
+
+
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
@@ -27,10 +41,10 @@ test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pendin
   try{
     const started=await runtime.start(),cookie=started.cookies?.[0];assert.ok(cookie);
     const cookieHeader=cookie.name+'='+cookie.value;
-    const get=async(path:string)=>{try{return await fetch(f.origin+path,{headers:{cookie:cookieHeader}});}catch(error){const cause=error instanceof Error?error.cause:null;console.log('T36_FIRST_TRANSPORT '+JSON.stringify({method:'GET',path,origin:f.origin,address:runtime.server.address(),cause_code:typeof cause==='object'&&cause!==null&&'code' in cause?cause.code:null}));throw error;}};
+    const get=async(path:string)=>{try{return await ownedHttp(f.origin+path,{headers:{cookie:cookieHeader}});}catch(error){const cause=error instanceof Error?error.cause:null;console.log('T36_FIRST_TRANSPORT '+JSON.stringify({method:'GET',path,origin:f.origin,address:runtime.server.address(),cause_code:typeof cause==='object'&&cause!==null&&'code' in cause?cause.code:null}));throw error;}};
     const read=async<T,>(path:string):Promise<T>=>{const response=await get(path);assert.equal(response.status,200,path);return await response.json() as T;};
     const csrf=(await read<{csrf_token:string}>('/api/lifecycle/bootstrap')).csrf_token;assert.ok(csrf);
-    const post=(path:string,body:SupplementFollowUpCommand)=>fetch(f.origin+path,{method:'POST',headers:{cookie:cookieHeader,
+    const post=(path:string,body:SupplementFollowUpCommand)=>ownedHttp(f.origin+path,{method:'POST',headers:{cookie:cookieHeader,
       origin:f.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'x-csrf-token':csrf},body:JSON.stringify(body)});
 
     const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
