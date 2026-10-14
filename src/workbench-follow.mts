@@ -4,7 +4,7 @@ import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.
 import type {WorkbenchCard} from '../contracts/web01_workbench_contracts.js';
 import type {FollowItem,WorkbenchFollowCommand,WorkbenchFollowAttention,WorkbenchFollowResult,WorkbenchFollowReceipt} from '../contracts/workbench_item_follow_contracts.js';
 import {createWeb01WorkbenchQuery} from './web01-workbench-query.mjs';
-import {createP2016TicketCommandLedger} from './p2-016-ticket-command-ledger.mjs';
+import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {exactP2016,uuidP2016,hashP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 import {followSchemaReady} from '../scripts/workbench-follow-migrate.mjs';
 
@@ -27,7 +27,7 @@ interface Anchor {id:string;following:boolean;row_version:string}
 export interface FollowProjectionPort {ready():Promise<boolean>;attention(input:Input,item:WorkbenchCard,reasons:readonly ('HANDLING'|'COMMUNICATION')[]):Promise<WorkbenchFollowAttention>}
 export function createWorkbenchFollow({pool,query,reviews,manualReviewEnabled=false,manualReportsEnabled=false,enabled=false}:{pool:PostgresPool;query:P2016TicketQuery;reviews:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;enabled?:boolean}){
  if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);
- const ledger=createP2016TicketCommandLedger({pool});
+ const ledger=createP2016CommandLedger({pool});
  async function ready(){return enabled&&await followSchemaReady(pool);}
  async function authorize(tx:PostgresTransaction,input:Input){
   guardP2016(enabled);if(!await followSchemaReady(tx))failP2016('DISABLED',503);

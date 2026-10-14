@@ -124,7 +124,10 @@ export function runSelection(root: string, selection: Selection, options: { refe
       Object.assign(fileResult, { case_trace_path: casePath, case_trace_sha256: hash(trace), case_trace_bytes: Buffer.byteLength(trace) });
       const c = counts(text), loaded = loadedFiles(coverage);
       // Preserve the already observed V8 load provenance before its owned scratch is removed.
-      fileResult.loaded_files = loaded.map(file => {const bytes=readFileSync(file);return {path:file,bytes:bytes.length,sha256:hash(bytes)};});
+      fileResult.loaded_files = loaded.map(file => {
+        try {const bytes=readFileSync(file);return {path:file,bytes:bytes.length,sha256:hash(bytes)};}
+        catch {return {path:file,hash_status:'NOT_READABLE_AFTER_RUN'};}
+      });
       fileResult.counts = c;
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
       if (!loaded.some(p => path.relative(p, target.file) === '')) throw new Error('MIGRATION_TEST_NOT_EXECUTED: ' + entry.path);
