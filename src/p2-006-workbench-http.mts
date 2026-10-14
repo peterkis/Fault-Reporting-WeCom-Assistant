@@ -220,12 +220,12 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
       const deliveryMatch = url.pathname.match(/^\/api\/deliveries\/([0-9a-f-]+)\/(retry|reconcile)$/iu);
       if (request.method === 'POST' && deliveryMatch) {
         const body = await readJson(request);
-        if ((deliveryMatch[2] as string).toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code'], ['client_command_id']);
-        else exactKeys(body, ['client_command_id', 'resolution', 'reason_code'], ['client_command_id', 'resolution', 'reason_code']);
+        if ((deliveryMatch[2] as string).toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code', 'expected_delivery_attempt_count'], ['client_command_id']);
+        else exactKeys(body, ['client_command_id', 'resolution', 'reason_code', 'expected_delivery_attempt_count'], ['client_command_id', 'resolution', 'reason_code']);
         validateWriteRequest(request, authContext, body, { sessionMutation: false });
         const result = (deliveryMatch[2] as string).toLowerCase() === 'retry'
-          ? await (commandFacade as CommandFacade).retryDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, reason_code: body.reason_code as string })
-          : await (commandFacade as CommandFacade).reconcileDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, resolution: body.resolution as DeliveryResolution, reason_code: body.reason_code as string });
+          ? await (commandFacade as CommandFacade).retryDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, expected_delivery_attempt_count:body.expected_delivery_attempt_count as number|undefined, reason_code: body.reason_code as string })
+          : await (commandFacade as CommandFacade).reconcileDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, expected_delivery_attempt_count:body.expected_delivery_attempt_count as number|undefined, resolution: body.resolution as DeliveryResolution, reason_code: body.reason_code as string });
         json(response, 200, result); return;
       }
       if (request.method === 'GET' && /^\/api\/attachments\//u.test(url.pathname)) {

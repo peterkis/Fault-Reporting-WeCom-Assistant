@@ -9,7 +9,7 @@ import {conversationDeliveryReceiptSchemaReady} from './p2-006-delivery-command-
 import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {ConversationDeliveryAcknowledgement} from '../contracts/workbench_conversation_delivery_control_contracts.js';
 
-interface Input {authContext:unknown;deliveryId:string;clientCommandId:string;action:'retry'|'reconcile';reasonCode:string;resolution:DeliveryResolution|null}
+interface Input {authContext:unknown;deliveryId:string;clientCommandId:string;action:'retry'|'reconcile';reasonCode:string;resolution:DeliveryResolution|null;expectedDeliveryAttemptCount?:number|undefined}
 interface Binding {delivery_id:string;session_id:string;status:CommunicationDeliveryStatus;side_effect_state:ProviderSideEffectState;attempt_count:number}
 interface Context {principal:WorkbenchPrincipal;binding:Binding}
 type Authorizer=Pick<WorkbenchAuthorizationAdapter,'resolvePrincipal'|'authorizeSession'|'isAdmin'>;
@@ -46,7 +46,10 @@ export function createConversationDeliveryCommandPort({pool,authorize,enabled=fa
  async function execute(input:Input):Promise<ConversationDeliveryAcknowledgement>{
   if(!enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
   const initial=await current(pool,input),sessionId=initial.binding.session_id;
-  const command={client_command_id:input.clientCommandId,action:input.action,session_id:sessionId,delivery_id:input.deliveryId,reason_code:input.reasonCode,resolution:input.resolution};
+  if(input.expectedDeliveryAttemptCount!==undefined&&!integer(input.expectedDeliveryAttemptCount))throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid,400);
+  const base={client_command_id:input.clientCommandId,action:input.action,session_id:sessionId,delivery_id:input.deliveryId,reason_code:input.reasonCode,resolution:input.resolution};
+  // Keep v1 normalized hashes unchanged. Only an explicit v2 snapshot enters the hash.
+  const command=input.expectedDeliveryAttemptCount===undefined?base:{...base,expected_delivery_attempt_count:input.expectedDeliveryAttemptCount};
   try{
    const result=await ledger.execute({
     command,receiptType:input.action==='retry'?'CONVERSATION_DELIVERY_RETRY':'CONVERSATION_DELIVERY_RECONCILE',
@@ -54,6 +57,8 @@ export function createConversationDeliveryCommandPort({pool,authorize,enabled=fa
     afterReceiptLock:tx=>current(tx,input,sessionId,true),
     run:async(tx,ctx)=>{
      if(!integer(ctx.binding.attempt_count)||ctx.binding.attempt_count===2147483647&&!(input.action==='retry'&&ctx.binding.status==='PENDING'))failP2016('DELIVERY_STATE_CONFLICT',409);
+     const expected=input.expectedDeliveryAttemptCount??(ctx.binding.status==='PENDING'?0:1);
+     if(ctx.binding.attempt_count!==expected)failP2016('DELIVERY_STATE_CONFLICT',409);
      const value=input.action==='retry'?await operator.scheduleRetry({deliveryId:input.deliveryId,authorized:true,reasonCode:input.reasonCode,transaction:tx}):await reconciler.reconcileUnknownDelivery({deliveryId:input.deliveryId,authorized:true,reasonCode:input.reasonCode,resolution:input.resolution as DeliveryResolution,expectedStatus:'RECONCILIATION_REQUIRED',transaction:tx});
      if('ok'in value)failP2016('DELIVERY_STATE_CONFLICT',409);
      const safe=acknowledgement({ok:true,session_id:sessionId,delivery_id:input.deliveryId,client_command_id:input.clientCommandId,status:value.status,side_effect_state:value.side_effect_state,attempt_count:value.attempt_count,replayed:false},input,sessionId);

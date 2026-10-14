@@ -5659,6 +5659,24 @@
       "requires_browser": false,
       "node_flags": [],
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-v2.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-incident-delivery-response-loss.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7290,6 +7308,12 @@
     ],
     "wbint-t33-conversation-aba": [
       "tests/wbint-t33-conversation-delivery-aba.integration.test.mts"
+    ],
+    "wbint-t33-conversation-v2": [
+      "tests/wbint-t33-conversation-delivery-v2.integration.test.mts"
+    ],
+    "wbint-t33-response-loss": [
+      "tests/wbint-t33-incident-delivery-response-loss.browser.test.mts"
     ]
   },
   "subprocess_entries": {
