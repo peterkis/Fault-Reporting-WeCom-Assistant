@@ -5740,6 +5740,15 @@
       "requires_database": true,
       "mode": "STAGED_RUNTIME",
       "requires_pyyaml": false
+    },
+    {
+      "requires_powershell": false,
+      "path": "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts",
+      "node_flags": [],
+      "requires_browser": true,
+      "requires_database": true,
+      "mode": "STAGED_RUNTIME",
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7394,6 +7403,9 @@
     ],
     "wbint-t33-state-not-purpose": [
       "tests/wbint-t33-incident-delivery-state-not-purpose.browser.test.mts"
+    ],
+    "wbint-t33-public-progress-paused-requeue": [
+      "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts"
     ]
   },
   "subprocess_entries": {

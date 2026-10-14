@@ -8,7 +8,7 @@ import type {Browser} from './wbint-t27-browser-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 
 type Http=Parameters<Parameters<typeof t33WholeHttp>[0]>[0];
-interface Context extends Http {browser:Browser;deliveryId:string;siblingId:string;capture:(label:string)=>Promise<void>}
+interface Context extends Http {browser:Browser;deliveryId:string;siblingId:string;capture:(label:string,selector?:string)=>Promise<void>}
 function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
 export async function t33IncidentBrowser(run:(context:Context)=>Promise<void>,options:{draftRecovery?:boolean;publicProgress?:boolean;externalSend?:boolean;realtime?:boolean}={}):Promise<void>{
  await t33WholeHttp(async context=>{
@@ -25,9 +25,9 @@ export async function t33IncidentBrowser(run:(context:Context)=>Promise<void>,op
   const cookie=context.cookies[0];assert.ok(cookie);
   let browser:Browser|undefined,primaryError:unknown;
   const screenshots:{file:string;width:number;height:number;sha256:string}[]=[];
-  const capture=async(label:string)=>{
+  const capture=async(label:string,selector='[data-incident-delivery-controls]')=>{
    assert.ok(browser);
-   await browser.evaluate('document.querySelector("[data-incident-delivery-controls]")?.scrollIntoView({block:"start"})');
+   await browser.evaluate('document.querySelector('+JSON.stringify(selector)+')?.scrollIntoView({block:"start"})');
    const png=await browser.screenshot();assert.equal(typeof png,'string');
    const bytes=Buffer.from(text(png),'base64'),directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
    const file=join(directory,'new-detail-'+bytes.readUInt32BE(16)+'.png');await writeFile(file,bytes);
