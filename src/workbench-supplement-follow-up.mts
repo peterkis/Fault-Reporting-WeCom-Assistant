@@ -87,6 +87,14 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
  }
  return Object.freeze({
   replyBinding,
+  async authorizeReplyReceipt(input:{authContext:unknown;messageId:string}){return transactionP2016(pool,async tx=>{
+   await tx.query('SET TRANSACTION READ ONLY');
+   // An old host without 062 keeps its original unbound HUMAN_REPLY receipt path.
+   // A real binding retains its exact purpose even when the new entry is OFF.
+   if((await tx.query<{present:boolean}>("SELECT to_regclass('pilot_ticket.workbench_supplement_reply_binding') IS NOT NULL AS present")).rows[0]?.present!==true)return;
+   const target=(await tx.query<{ticket_id:string;source_ref:string;revision:string}>('SELECT ticket_id::text,source_ref,revision::text FROM pilot_ticket.workbench_supplement_reply_binding WHERE message_id=$1::uuid',[uuidP2016(input.messageId)])).rows[0];
+   if(target)await writable(tx,{authContext:input.authContext,ticketId:target.ticket_id},target);
+  });},
   async summary(input:Input):Promise<{has_pending_supplements:boolean}>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c);
    return {has_pending_supplements:(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${evidence})) AS pending`,m.values)).rows[0]?.pending===true};
