@@ -5650,6 +5650,15 @@
       "requires_browser": false,
       "node_flags": [],
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t33-conversation-delivery-aba.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "requires_powershell": false,
+      "requires_database": true,
+      "requires_browser": false,
+      "node_flags": [],
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7278,6 +7287,9 @@
     ],
     "wbint-t33-conversation-uuid": [
       "tests/wbint-t33-conversation-delivery-command.integration.test.mts"
+    ],
+    "wbint-t33-conversation-aba": [
+      "tests/wbint-t33-conversation-delivery-aba.integration.test.mts"
     ]
   },
   "subprocess_entries": {

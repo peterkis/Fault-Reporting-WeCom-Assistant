@@ -1,4 +1,5 @@
 
+import type {ConversationDeliveryCommandPort} from './p2-006-delivery-command-port.mjs';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import type { CommunicationDeliveryStatus, ProviderSideEffectState } from '../contracts/communication_contracts.js';
@@ -8,9 +9,9 @@ type Operator = ReturnType<typeof createCommunicationDeliveryOperatorPort>;
 type Reconciler = ReturnType<typeof createCommunicationReconciliationPort>;
 export type DeliveryResolution = 'CONFIRMED_SENT' | 'CONFIRMED_NOT_SENT_REQUEUE' | 'CANCEL';
 interface DeliveryRow { id: string; status: CommunicationDeliveryStatus; side_effect_state: ProviderSideEffectState; session_id: string | null }
-interface Options { pool?: PostgresTransaction; authorize?: Authorizer; operatorPort?: Operator; reconciliationPort?: Reconciler; enabled?: boolean; externalSendEnabled?: boolean }
-export interface WorkbenchDeliveryRetry { authContext: unknown; deliveryId: string; reason_code?: string | undefined }
-export interface WorkbenchDeliveryReconcile { authContext: unknown; deliveryId: string; resolution: DeliveryResolution; reason_code: string }
+interface Options { pool?: PostgresTransaction; authorize?: Authorizer; operatorPort?: Operator; reconciliationPort?: Reconciler; enabled?: boolean; externalSendEnabled?: boolean; receiptPort?:ConversationDeliveryCommandPort|null }
+export interface WorkbenchDeliveryRetry { authContext: unknown; deliveryId: string; reason_code?: string | undefined; client_command_id?:string }
+export interface WorkbenchDeliveryReconcile { authContext: unknown; deliveryId: string; resolution: DeliveryResolution; reason_code: string; client_command_id?:string }
 
 import { WORKBENCH_ERROR_CODES, WorkbenchError } from './p2-006-workbench-query.mjs';
 
@@ -22,7 +23,7 @@ function uuid(value: unknown): string { if (typeof value !== 'string' || !UUID_P
 function reason(value: unknown): string { if (typeof value !== 'string' || !/^[A-Z0-9_]{1,128}$/u.test(value)) invalid(); return value; }
 
 export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, reconciliationPort, enabled = false,
-  externalSendEnabled = true }: Options = {}) {
+  externalSendEnabled = true, receiptPort=null }: Options = {}) {
   if (!pool || typeof pool.query !== 'function' || !authorize
     || !operatorPort || typeof (operatorPort as Operator).scheduleRetry !== 'function'
     || !reconciliationPort || typeof (reconciliationPort as Reconciler).reconcileUnknownDelivery !== 'function'
@@ -45,12 +46,13 @@ export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, 
     return { principal, row: result.rows[0] as DeliveryRow, deliveryId: id };
   }
 
-  async function retry({ authContext, deliveryId, reason_code = 'OPERATOR_RETRY' }: WorkbenchDeliveryRetry) {
+  async function retry({ authContext, deliveryId, reason_code = 'OPERATOR_RETRY', client_command_id }: WorkbenchDeliveryRetry) {
     if (!externalSendEnabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.externalSendDisabled, 403);
     const { principal, row, deliveryId: id } = await context({ authContext, deliveryId });
     if (!await (authorize as Authorizer).authorizeSession({ principal, sessionId: row.session_id as string, action: 'DELIVERY_RETRY' })) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.forbidden, 403);
     }
+    if(client_command_id!==undefined){if(!receiptPort)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);return receiptPort.execute({authContext,deliveryId:id,clientCommandId:uuid(client_command_id),action:'retry',reasonCode:reason(reason_code),resolution:null});}
     if (row.status === 'RECONCILIATION_REQUIRED') {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.deliveryReconciliationRequired, 409);
     }
@@ -59,12 +61,13 @@ export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, 
     return result;
   }
 
-  async function reconcile({ authContext, deliveryId, resolution, reason_code }: WorkbenchDeliveryReconcile) {
+  async function reconcile({ authContext, deliveryId, resolution, reason_code, client_command_id }: WorkbenchDeliveryReconcile) {
     if (!externalSendEnabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.externalSendDisabled, 403);
     const { principal, row, deliveryId: id } = await context({ authContext, deliveryId });
     if (!(authorize as Authorizer).isAdmin(principal) || !RESOLUTIONS.has(resolution)) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.forbidden, 403);
     }
+    if(client_command_id!==undefined){if(!receiptPort)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);return receiptPort.execute({authContext,deliveryId:id,clientCommandId:uuid(client_command_id),action:'reconcile',reasonCode:reason(reason_code),resolution});}
     const result = await (reconciliationPort as Reconciler).reconcileUnknownDelivery({
       deliveryId: id, expectedStatus: 'RECONCILIATION_REQUIRED', resolution,
       reasonCode: reason(reason_code), authorized: true,
