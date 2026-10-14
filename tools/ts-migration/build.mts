@@ -24,7 +24,7 @@ export function build(root: string): BuildManifest {
       const to = path.join(output, item.path);
       mkdirSync(path.dirname(to), { recursive: true }); copyFileSync(from, to);
     }
-    for (const item of map.filter(f => f.kind === 'COMPILED' && f.path.endsWith('.mjs'))) runNode(root, ['--check', path.join(output, item.path)]);
+    runNode(root,[fileURLToPath(new URL('./syntax-check.mjs',import.meta.url)),'--root',root]);
     const after = identity(root);
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('MIGRATION_SOURCE_CHANGED_DURING_BUILD');
     const manifest: BuildManifest = {

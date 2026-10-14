@@ -7,6 +7,7 @@ import path from 'node:path';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles } from './common.mjs';
+import {checkCompiledSyntax} from './syntax-check.mjs';
 
 const original = sourceRoot();
 
@@ -253,4 +254,23 @@ test('ARCH-006 CLI rejects content changes within an already reviewed path', () 
     }
     rmSync(report, { recursive: true, force: true });
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test('bounded native syntax jobs parse every emitted file without executing code',async()=>{
+ const root=mkdtempSync(path.join(tmpdir(),'migration-syntax-check-'));
+ try{
+  const output=path.join(root,'.build/runtime');mkdirSync(output,{recursive:true});
+  const files=['one.mjs','two.mjs','three.mjs'].map(name=>path.join(output,name));
+  for(const file of files)writeFileSync(file,"throw new Error('PARSE_ONLY_MUST_NOT_EXECUTE'); export const value=1;\n");
+  const state=await checkCompiledSyntax(root,files);
+  assert.deepEqual(state,{started:3,checked:3,active:0,max_active:2});
+  assert.ok(files[0]);writeFileSync(files[0],"export const =1;\n");
+  await assert.rejects(checkCompiledSyntax(root,files),error=>{
+   assert.ok(error instanceof Error);assert.match(error.message,/MIGRATION_COMMAND_FAILED/u);
+   assert.ok('syntax_state' in error);const state=error.syntax_state;
+   assert.ok(state!==null&&typeof state==='object'&&'active' in state&&'max_active' in state);
+   assert.equal(state.active,0);assert.equal(state.max_active,2);return true;
+  });
+ }finally{assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-syntax-check-'));rmSync(root,{recursive:true,force:true});}
 });
