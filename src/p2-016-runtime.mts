@@ -152,9 +152,11 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   let attachments:ReturnType<typeof createWorkbenchAttachments>|null=null;
   let runFollowUpDueBatch:ReturnType<typeof createWorkbenchFollowUpSchedules>['runDueBatch']|undefined;
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
+  const supplementFollowUp=createWorkbenchSupplementFollowUp({pool,query,enabled:workbenchSupplementFollowUpEnabled});
   const runtime:ReturnType<typeof createP2G1Runtime>=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,deliveryAttemptAdmission,clientFactory,testAuthTtlMs,
     authentication:workbenchAuthentication,externalSendEnabled,reporterPrivateReplies:workbenchConversationsEnabled,
+    supplementReplyBindingFactory:authorization=>supplementFollowUp.replyBinding(authorization),
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
     realtimeAppender:appendP2016Realtime,
     projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
@@ -191,10 +193,9 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const follow=createWorkbenchFollow({pool,query,reviews,enabled:workbenchFollowEnabled,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled});
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups,workbenchFollowEnabled,follow:workbenchFollowEnabled?follow:null,followUpSchedules:workbenchFollowUpSchedulesEnabled?followUpSchedules:null,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled,personalReadEnabled:workbenchPersonalReadEnabled,reviews:workbenchManualReviewEnabled?reviews:null});
-      const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled});
+      const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled,supplementFollowUpEnabled:workbenchSupplementFollowUpEnabled});
       attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
       const notificationExceptions=createWorkbenchNotificationExceptions({pool,query,enabled:notificationExceptionsEnabled,externalSendEnabled,incidentScope:incidentExtension?.notificationExceptionScope??null});
-      const supplementFollowUp=createWorkbenchSupplementFollowUp({pool,query,enabled:workbenchSupplementFollowUpEnabled});
       const supplementFollowUpHttp=createWorkbenchSupplementFollowUpHttp(supplementFollowUp,workbenchSupplementFollowUpEnabled);
       const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups,workbenchFollowEnabled,workbenchFollowEnabled?follow:null);

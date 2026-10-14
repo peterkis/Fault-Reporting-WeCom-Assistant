@@ -14,7 +14,7 @@ type Summary=Pick<Awaited<ReturnType<Query['listConversations']>>['items'][numbe
 interface LabelRow {session_id:string;participant_label:string|null;topic:string|null;ticket_id:string|null;review_id:string|null;intake_id:string|null;chat_type:string;reply_binding:boolean}
 function invalid(status=400):never{throw new WorkbenchError(status===404?WORKBENCH_ERROR_CODES.notFound:WORKBENCH_ERROR_CODES.requestInvalid,status);}
 function keys(url:URL,allowed:readonly string[]){const names=[...url.searchParams.keys()];if(names.some(key=>!allowed.includes(key))||new Set(names).size!==names.length)invalid();}
-export function createWorkbenchConversations({pool,query,itemQuery,commands,enabled=false}:{pool:PostgresTransaction;query:Query;itemQuery:ReturnType<typeof createWeb01WorkbenchQuery>;commands:ReturnType<typeof createConversationWorkbenchCommandFacade>;enabled?:boolean}){
+export function createWorkbenchConversations({pool,query,itemQuery,commands,enabled=false,supplementFollowUpEnabled=false}:{pool:PostgresTransaction;query:Query;itemQuery:ReturnType<typeof createWeb01WorkbenchQuery>;commands:ReturnType<typeof createConversationWorkbenchCommandFacade>;enabled?:boolean;supplementFollowUpEnabled?:boolean}){
   async function enrich(authContext:WorkbenchAuthContext,items:readonly Summary[]):Promise<ConversationWorkspaceEntry[]>{
     if(!items.length)return [];
     const labels=await pool.query<LabelRow>(`SELECT s.id::text AS session_id,i.id::text AS intake_id,i.summary AS topic,th.chat_type,
@@ -101,7 +101,8 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
     if(request.method==='POST'&&session?.[2]){
       keys(url,[]);const action=session[2].toLowerCase(),body=await readJson(request);
       const common=['client_command_id','expected_row_version','reason_code'];
-      if(action==='messages'||action==='internal-notes')exactP2016(body,['client_command_id','expected_row_version','text'],['client_command_id','expected_row_version','text']);
+      if(action==='messages'){exactP2016(body,['client_command_id','expected_row_version','text','follow_up_target'],['client_command_id','expected_row_version','text']);if(body.follow_up_target!==undefined&&!supplementFollowUpEnabled)invalid(404);}
+      else if(action==='internal-notes')exactP2016(body,['client_command_id','expected_row_version','text'],['client_command_id','expected_row_version','text']);
       else if(action==='transfer')exactP2016(body,[...common,'target_principal_id','force'],['client_command_id','expected_row_version','target_principal_id']);
       else if(action==='takeover'||action==='handoff/cancel')exactP2016(body,[...common,'handoff_id'],['client_command_id','expected_row_version']);
       else if(action==='release'||action==='handoff/request')exactP2016(body,common,['client_command_id','expected_row_version']);else invalid(404);
