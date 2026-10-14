@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_reminder_coordination.schema.json",
+  "title": "T40 transient same-origin cross-tab coordination only",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "authority_scope",
+    "kind",
+    "reminder_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "authority_scope": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "kind": {
+      "enum": [
+        "RESET",
+        "SEEN"
+      ]
+    },
+    "reminder_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "kind": {
+          "const": "RESET"
+        },
+        "reminder_id": {
+          "const": null
+        }
+      }
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "SEEN"
+        },
+        "reminder_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        }
+      }
+    }
+  ],
+  "x-maximum-utf8-bytes": 256,
+  "x-maximum-memory-claims": 256,
+  "x-claim-ttl-ms": 600000,
+  "x-runtime-constraints": [
+    "authority_scope is an in-memory hash of the currently reverified principal and effective authorization revision, without token/CSRF",
+    "BroadcastChannel is a bounded dedup hint, never authorization or a business event source; foreign/stale scope and malformed messages are ignored",
+    "only the current same-origin exclusive Web Lock leader may start automatic sound/desktop notification",
+    "leader acquisition, identity/authorization change, reload, hidden/online recovery and transport gap establish a fresh baseline before future live eligibility; they do not play older retained events",
+    "unsupported or rejected coordination keeps visual notices and manual test available but disables automatic sound/desktop notifications"
+  ]
+}
