@@ -4,6 +4,8 @@ import {createServer} from 'node:net';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import type {IncidentDeliveryControlPermissionPort} from '../../contracts/workbench_incident_delivery_control_contracts.js';
 import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
+import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../../src/p2-004-communication-sender-port.mjs';
 import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
@@ -31,11 +33,13 @@ export async function t33IncidentHttp(run:(context:Context)=>Promise<void>):Prom
     try{await new Promise<void>((resolve,reject)=>{probe.once('error',reject);probe.listen(0,'127.0.0.1',resolve);});const address=probe.address();assert.ok(address&&typeof address==='object');port=address.port;}catch(error){probeError=error;}
     await closeBrowserTestResources([()=>new Promise<void>((resolve,reject)=>{if(!probe.listening){resolve();return;}probe.close(error=>error?reject(error):resolve());})],probeError);
     const origin='http://127.0.0.1:'+port;let sends=0;
+    const sender=createCommunicationSenderPort(async()=>{sends++;return {outcome:'UNKNOWN',provider_message_id:null,error_code:'SYNTHETIC_T33_UNKNOWN',retryable:false};});
+    // One manually invoked original Worker; no server-side automatic send interval.
+    const worker=createCommunicationDeliveryWorker({pool,sender,enabled:true,batchSize:1});
     const runtime=createP2012Runtime({pool,principalIds:[adminId,dispatcherId,handlerId],listenPort:port,publicOrigin:origin,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},
       incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:false,incidentOwnerTransferEnabled:false,
-      incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:false,
-      senderAdapter:{send:async()=>{sends++;return {outcome:'UNKNOWN',provider_message_id:null,error_code:'SYNTHETIC_T33_UNKNOWN',retryable:false};}}});
+      incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});
     let primary:unknown;
     try{
       const start=t33Record(await runtime.start());assert.ok(Array.isArray(start.cookies));const cookies=start.cookies.map(t33Record),csrf:string[]=[];
@@ -49,7 +53,7 @@ export async function t33IncidentHttp(run:(context:Context)=>Promise<void>):Prom
       assert.equal(confirmed.status,200,JSON.stringify(confirmed.body));const incidentId=t33Text(confirmed.body.result_ref_id);
       // Explicit independent server-side test grants; neither role nor body is a grant.
       grants.add(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RETRY');grants.add(adminId+'|'+incidentId+'|INCIDENT_DELIVERY_RECONCILE');
-      await run({incidentId,adminId,senderCalls:()=>sends,get,post,deliver:deliveryId=>runtime.communicationWorker.deliver({deliveryId})});
+      await run({incidentId,adminId,senderCalls:()=>sends,get,post,deliver:deliveryId=>worker.deliver({deliveryId})});
     }catch(error){primary=error;}
     await closeBrowserTestResources([()=>runtime.stop(),()=>{assert.equal(runtime.server.listening,false);}],primary);
   }});}catch(error){outerError=error;}
