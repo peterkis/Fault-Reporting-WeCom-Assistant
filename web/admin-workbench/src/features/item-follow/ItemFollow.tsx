@@ -10,6 +10,12 @@ import {decodeFollowCommand,matchesFollowResult} from '../../../../../src/workbe
 import type {FollowItem,WorkbenchFollowCommand,WorkbenchFollowResult} from '../../../../../src/workbench-follow-browser-contracts.mjs';
 
 type State='idle'|'submitting'|'checking'|'reading'|'succeeded'|'conflict'|'unknown'|'denied';
+// A rejection from bootstrap has session scope. A purpose or object rejection
+// must not borrow this classification from a mutable restoration stage.
+class FollowSessionRejected extends ApiError {}
+async function readSession(signal:AbortSignal){
+ try{return await api.bootstrap(signal);}catch(error){if(error instanceof ApiError&&error.status===403)throw new FollowSessionRejected(error.status,error.code);throw error;}
+}
 function decodeCopy(serialized:string):{value:string;pending:WorkbenchFollowCommand|null}{
  try{
   const parsed:unknown=JSON.parse(serialized);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error();
@@ -29,12 +35,13 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;setPending(null);setOpaque(null);setState('idle');setMessage('');};
  const authorityFailure=(error:unknown)=>{
   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,principal.principal_id,undefined,'revoked');
+  else if(error instanceof FollowSessionRejected)void clearSessionAuthorization(client,principal.principal_id,403,'revoked');
   else if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');
   else if(error instanceof ApiError&&[403,404].includes(error.status))void clearItemAuthorization(client,principal.principal_id,requested.kind,requested.id,error);
  };
  async function authorize(signal:AbortSignal){
   const currentRead=captureWorkbenchRead(signal),startIdentity=latestIdentity.current;
-  const fresh=await api.bootstrap(signal);currentRead();if(startIdentity!==latestIdentity.current)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
+  const fresh=await readSession(signal);currentRead();if(startIdentity!==latestIdentity.current)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
   if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');
   const detail=await api.detail(requested.kind,requested.id,null,signal);currentRead();if(startIdentity!==latestIdentity.current)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
   // Current object READ precedes restoration; a switched-off purpose keeps only the old operation.
@@ -75,7 +82,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  },[principal.principal_id,requested.kind,requested.id,principal.workbench_follow_enabled,commandId,existing]);
  function currentRequest(controller:AbortController,token:number,startIdentity:string,check:()=>void){return()=>{const active=client.getQueryData<Principal>(['session']);if(!active||active.principal_id!==principal.principal_id||active.csrf_token!==principal.csrf_token||active.authorization_revision!==principal.authorization_revision||active.expires_epoch_ms!==principal.expires_epoch_ms||JSON.stringify(active.roles)!==JSON.stringify(principal.roles)||active.workbench_follow_enabled!==principal.workbench_follow_enabled||active.workbench_follow_draft_recovery_enabled!==principal.workbench_follow_draft_recovery_enabled||controller.signal.aborted||generation.current!==token||latestIdentity.current!==startIdentity)return false;try{check();return true;}catch{return false;}};}
  async function verifySession(signal:AbortSignal,current:()=>boolean){
-  const fresh=await api.bootstrap(signal);if(!current())throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
+  const fresh=await readSession(signal);if(!current())throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
   if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');
   client.setQueryData(['session'],fresh);if(!current())throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');
  }
@@ -94,7 +101,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   if(current())refresh();
  }
  async function rejectedPurpose(error:ApiError,id:string,controller:AbortController,current:()=>boolean){
-  if(error.status===401){authorityFailure(error);return;}
+  if(error.status===401||error instanceof FollowSessionRejected){authorityFailure(error);return;}
   // A purpose OFF404 is not loss of the underlying object READ and never settles an UNKNOWN intent.
   try{await readLatest(controller.signal,current);}catch(readError){if(!current())return;if(readError instanceof DraftError&&readError.message==='DRAFT_IDENTITY_CHANGED'||readError instanceof ApiError&&[401,403,404].includes(readError.status)){authorityFailure(readError);return;}}
   if(!current())return;setOpaque(id);setState('unknown');setMessage('当前关注操作或核对不可用；原操作仍保留，不会发送新的操作。');
@@ -112,7 +119,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
    await terminal(command.client_command_id,result,controller,current);
   }catch(error){
    if(!current())return;
-   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&error.status===401)authorityFailure(error);
+   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof FollowSessionRejected||error instanceof ApiError&&error.status===401)authorityFailure(error);
    else if(!dispatched){if(replay){setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}else{setPending(null);setOpaque(null);setState('denied');setMessage('恢复副本未能确认，关注操作尚未发送。');}}
    else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,command.client_command_id,controller,current);
    else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current);
