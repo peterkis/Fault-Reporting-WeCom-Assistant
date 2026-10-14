@@ -30,6 +30,7 @@ export function createP2012Runtime(options?: P2012RuntimeOptions): P2016EnabledR
 export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,incidentTestLabel=false,incidentBackgroundMaintenance=true,incidentCandidateWorkspaceEnabled=false,incidentInternalNotesEnabled=false,incidentPublicProgressEnabled=false,incidentOwnerTransferEnabled=false,incidentDeliveryControlEnabled=false,incidentDeliveryControlPermissions=null,...options}: P2012RuntimeOptions={} as P2012RuntimeOptions){
   // T33 SOURCE declarations only: no control handler, permission mapping or Worker change.
   if(typeof incidentDeliveryControlEnabled!=='boolean')fail();
+  if(incidentDeliveryControlPermissions!==null&&(typeof incidentDeliveryControlPermissions!=='object'||typeof incidentDeliveryControlPermissions.hasPermission!=='function'))fail();
   void incidentDeliveryControlPermissions;
   if(typeof incidentOwnerTransferEnabled!=='boolean'||incidentOwnerTransferEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
   if(typeof incidentPublicProgressEnabled!=='boolean'||incidentPublicProgressEnabled&&(!incidentCandidateWorkspaceEnabled||!flags(incidentFlags).INCIDENT_CORRELATION_ENABLED))fail();
