@@ -10,7 +10,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-ha
 type Http=Parameters<Parameters<typeof t33WholeHttp>[0]>[0];
 interface Context extends Http {browser:Browser;deliveryId:string;siblingId:string;capture:(label:string)=>Promise<void>}
 function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
-export async function t33IncidentBrowser(run:(context:Context)=>Promise<void>,options:{draftRecovery?:boolean;publicProgress?:boolean;externalSend?:boolean}={}):Promise<void>{
+export async function t33IncidentBrowser(run:(context:Context)=>Promise<void>,options:{draftRecovery?:boolean;publicProgress?:boolean;externalSend?:boolean;realtime?:boolean}={}):Promise<void>{
  await t33WholeHttp(async context=>{
   const rows=await context.getLifecycleRows();
   const first=rows.find(row=>row.status==='PENDING'&&row.side_effect_state==='NOT_ATTEMPTED');

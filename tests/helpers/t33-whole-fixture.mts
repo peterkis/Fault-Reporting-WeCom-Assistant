@@ -19,7 +19,7 @@ import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 export function t33Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t33Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
 interface Response {status:number;body:Record<string,unknown>}
-export interface T33WholeOptions {externalSend?:boolean;draftRecovery?:boolean;publicProgress?:boolean}
+export interface T33WholeOptions {externalSend?:boolean;draftRecovery?:boolean;publicProgress?:boolean;realtime?:boolean}
 interface Context {
   restartControl:(enabled:boolean)=>Promise<void>;origin:string;cookies:{name:string;value:string}[];pool:PostgresPool;grants:Set<string>;runtime:ReturnType<typeof createP2012Runtime>;dispatcherId:string;handlerId:string;outsiderId:string;secondIncident:()=>Promise<string>;getLifecycleRows:()=>Promise<Record<string,unknown>[]>;setSenderOutcome:(value:'UNKNOWN'|'REJECTED_NOT_APPLIED'|'ACKNOWLEDGED')=>void;
   incidentId:string;adminId:string;senderCalls:()=>number;
@@ -52,7 +52,7 @@ export async function t33WholeHttp(run:(context:Context)=>Promise<void>,options:
     const makeRuntime=(control:boolean)=>createP2012Runtime({pool,principalIds:[adminId,dispatcherId,handlerId,outsiderId],listenPort:port,publicOrigin:origin,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},
       incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:false,incidentPublicProgressEnabled:options.publicProgress===true,incidentOwnerTransferEnabled:false,
-      incidentDeliveryControlEnabled:control,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:options.externalSend===true,workbenchDraftRecoveryEnabled:options.draftRecovery===true,notificationExceptionsEnabled:true,workbenchRealtimeEnabled:true});let runtime=makeRuntime(true);
+      incidentDeliveryControlEnabled:control,incidentDeliveryControlPermissions:permissions,incidentTestLabel:true,incidentBackgroundMaintenance:false,externalSendEnabled:options.externalSend===true,workbenchDraftRecoveryEnabled:options.draftRecovery===true,notificationExceptionsEnabled:true,workbenchRealtimeEnabled:options.realtime??true});let runtime=makeRuntime(true);
     let primary:unknown;
     try{
       const start=t33Record(await runtime.start());assert.ok(Array.isArray(start.cookies));const cookies=start.cookies.map(t33Record),csrf:string[]=[];

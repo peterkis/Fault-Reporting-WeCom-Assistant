@@ -61,7 +61,7 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
   const bootstrap=await get('/api/lifecycle/bootstrap'),primaryRead=await get('/api/incidents/'+incidentId),otherRead=await get('/api/incidents/'+otherId);
   assert.equal(bootstrap.status,200);assert.equal(primaryRead.status,200);assert.equal(otherRead.status,200);
   assert.equal(bootstrap.body.principal_id,adminId);assert.ok(Array.isArray(bootstrap.body.roles)&&bootstrap.body.roles.includes('ADMIN'));
-  assert.equal(bootstrap.body.incident_delivery_control_enabled,true);assert.equal(bootstrap.body.incident_delivery_control_draft_recovery_enabled,true);
+  assert.equal(bootstrap.body.realtime_sse_enabled,false,'explicit existing default-OFF realtime profile isolates the real DRAFT_CHANGED reauthorization from periodic control refresh');assert.equal(bootstrap.body.incident_delivery_control_enabled,true);assert.equal(bootstrap.body.incident_delivery_control_draft_recovery_enabled,true);
   const otherRows=await get('/api/incidents/'+otherId+'/notifications?limit=10');assert.equal(otherRows.status,200);
   const otherRoute=records(otherRows.body.items).find(row=>row.status==='PENDING'&&row.side_effect_state==='NOT_ATTEMPTED');assert.ok(otherRoute);
   const otherDeliveryId=text(otherRoute.delivery_id),root='[data-control-purpose="INCIDENT_LIFECYCLE"]';
@@ -220,5 +220,5 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
   if(primaryError!==undefined&&closureErrors.length)throw new AggregateError([primaryError,...closureErrors],'T33_SCOPED_REBASE_AND_OWN_TARGET_CLOSURE_FAILED');
   if(primaryError!==undefined)throw primaryError;
   if(closureErrors.length)throw new AggregateError(closureErrors,'T33_SCOPED_REBASE_OWN_TARGET_CLOSURE_FAILED');
- },{draftRecovery:true,externalSend:true});
+ },{draftRecovery:true,externalSend:true,realtime:false});
 });
