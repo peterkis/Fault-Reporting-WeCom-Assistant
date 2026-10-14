@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/workbench_incident_public_progress_page.schema.json",
+  "title": "T31 frozen SOURCE PROPOSED_NOT_MOUNTED",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "incident_id",
+    "items",
+    "next_cursor"
+  ],
+  "properties": {
+    "incident_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "incident_id",
+          "event_ordinal",
+          "incident_row_version",
+          "actor_principal_id",
+          "actor_display_name",
+          "occurred_at",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_ordinal": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "incident_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "actor_principal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

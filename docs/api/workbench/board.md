@@ -7,10 +7,10 @@
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |
 | `GET /api/lifecycle/bootstrap` | 无 query | 内部 principal_id,display_name,roles 等，见 [工单](tickets.md) |
-| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|closed`；range 默认 recent：`recent\|all\|cancelled`；cursor?；limit 默认50/最大100 | BoardPage |
+| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|closed`；range 默认 recent：`recent\|all\|cancelled`；cursor?；limit 默认50/最大100；仅 `workbenchFollowEnabled=true` 接纳 scope=`team\|related`、默认team，见下文当前验证状态 | BoardPage |
 | `GET /api/workbench/items/{kind}/{id}` | kind=`ticket\|review\|intake`，id UUID；cursor?；limit 默认50/最大100 | WorkbenchDetail |
 
-仅允许表内query，重复参数也拒绝。board列表cursor绑定principal、授权范围、column/range/时间窗口，切换条件须重置；detail cursor绑定kind/id/at/record_id，访问仍每次授权。权限过滤先于LIMIT；不能用intake卡片旁路读到不可见工单。
+仅允许表内query，重复参数也拒绝。board列表cursor绑定principal、当前授权范围、column/range/时间窗口；责任查询能力开启时另绑定team/related，切换范围或能力须重置。开关false保持原query allowlist，所有显式scope均拒绝。detail cursor绑定kind/id/at/record_id，访问仍每次授权。权限过滤先于LIMIT；不能用intake卡片旁路读到不可见工单。
 
 完整 DTO：[types](../../../contracts/web01_workbench_contracts.d.ts)。字段如下：
 
@@ -42,4 +42,13 @@ Accept: application/json
 
 基础接口核对：[unit](../../../tests/web01-workbench.test.mts)、[integration](../../../tests/web01-workbench.integration.test.mjs)、[browser](../../../tests/web01-workbench.browser.test.mjs)。本票增量如下。
 
+WBINT-T34 原被测提交 `f3e551f461c96c2a6a3d846d23a46aa744d1a3ee` 的首条真实HTTP已取得 `scope=related` 返回400的RED，原件与清理见[本票记录](../../../plans/admin-workbench-integration/execution/t34.md)。后继 d89547f4 已通过一次 build／strict／artifact 及原首真实HTTP 1/1（仅责任查询片）：related在原获权、规范去重的卡片上取本人当前处理责任或ASSIGNED且非ENDED的真实沟通关系，再排序、分页；沟通材料须仍在保留期，历史责任、团队可见性、最新消息都不产生该关系。它不修改任何责任或事项，不返回Session引用或其他人的关系。
+
+本片默认 `workbenchFollowEnabled=false`，无数据库变更、不读取044；GREEN只覆盖上述原首查询测试。完整[关注／与我有关合同](follow-design.md)中的FOLLOW写入、attention、follow_version、完整迁移readiness与正式UI仍为后续目标，不能将本片称为完整关注服务，也不改变个人已读或团队待跟进。
+
 WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:string}]`，每项独立Journey/保留期授权。Review发生合法canonical转换时响应可增加 `requested_item:{kind:'review',id}`，实际item和活动来自当前有权Ticket/Review/Intake，cursor仍绑定请求；客户端只接受准确原请求的Review alias。相同关联Ticket不重复计卡片；多个材料版本明确选择，刷新不静默改选或丢失输入。正式600px详情/全页展示原原因、缺失与冲突、安全材料和当前支持/不支持结论；React按文本呈现。默认关闭、无DB变更及实际证据见[本票记录](../../../plans/admin-workbench-integration/execution/t14.md)。
+
+
+## 当前 T34 完整关注实现（2026-10-14）
+
+上述d895责任查询片为历史阶段。当前related包含本人处理、实际ASSIGNED且非ENDED沟通及明确关注的当前READ并集，先规范去重再分页；列表／看板／详情共用caller-only `attention={following,follow_version,related_reasons}`，不显示他人的关注或隐藏计数。bootstrap独立Follow／恢复能力决定控件，空列表不能代替开关证明。显式POST、原UUID只读核对、044精确readiness与关闭／隐私见[当前合同](follow-current-contract.md)。默认关闭，旧SQL／事实源／关闭态查询语义保持；本地证据与父验收状态见[本票执行](../../../plans/admin-workbench-integration/execution/t34.md)。

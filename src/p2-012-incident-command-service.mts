@@ -17,22 +17,23 @@ type ReceiptSuccess = Omit<IncidentCommandSuccess, 'ok' | 'replayed'>;
 type ResourceRow = { id: string; row_version: string; status: string; primary_ticket_id?: string | null; confirmed_scope?: Incident['confirmed_scope']; expires_epoch_ms?: string; source_decision_id?: string; source_result_hash?: string; service_family: string; symptom_family: string; clinical_severity_candidate?: string };
 interface Authority { row: ResourceRow; principal: WorkbenchPrincipal | null; kind: 'candidate' | 'incident' }
 interface BusinessContext extends Authority { command: NormalizedIncidentCommand; receipt: P2012CommandReceipt; candidate?: CandidateReview; incident?: Incident }
-type Options = { pool: PostgresPool; enabled?: boolean; query?: P2012IncidentQuery; notifications?: Pick<P2012NotificationPolicy, 'project'> | null; realtime?: Pick<P2012RealtimeProjector, 'append' | 'wakeup'> | null; allowDispatcherCampus?: boolean; maintenanceEnabled?: boolean };
+type Options = { pool: PostgresPool; enabled?: boolean; query?: P2012IncidentQuery; notifications?: Pick<P2012NotificationPolicy, 'project'> | null; realtime?: Pick<P2012RealtimeProjector, 'append' | 'wakeup'> | null; allowDispatcherCampus?: boolean; maintenanceEnabled?: boolean; internalNotesEnabled?: boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean;publicProgressNotifications?:ReturnType<typeof createPublicProgressNotifications> };
 export type P2012IncidentCommandService = ReturnType<typeof createP2012IncidentCommandService>;
 import { randomUUID } from 'node:crypto';
 import { createP2012IncidentQuery,broad } from './p2-012-incident-query.mjs';
 import { normalizeCommand,guard,hash,frozen,fail,transaction,ERROR_CODES,allowedIncidentScopes } from './p2-012-domain-contracts.mjs';
+import {createPublicProgressNotifications} from './p2-012-public-progress-notifications.mjs';
 import {readCandidateMaterial} from './p2-012-candidate-material.mjs';
 
-export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus}),
-  notifications=null,realtime=null,maintenanceEnabled=false}: Options){
+export function createP2012IncidentCommandService({pool,enabled=false,allowDispatcherCampus=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,query=createP2012IncidentQuery({pool,enabled,allowDispatcherCampus,internalNotesEnabled,publicProgressEnabled,ownerTransferEnabled}),
+  notifications=null,realtime=null,maintenanceEnabled=false,publicProgressNotifications=createPublicProgressNotifications()}: Options){
   async function authorize(tx: PostgresTransaction,authContext: unknown,c: NormalizedIncidentCommand,system: boolean): Promise<Authority>{
     const kind=c.candidate_review_id?'candidate':'incident';
     if(system){if(c.action!=='EXPIRE_CANDIDATE'||!maintenanceEnabled)fail('FORBIDDEN',403);
       const q=await tx.query<CandidateReview>('SELECT * FROM incident.candidate_review WHERE id=$1::uuid',[c.candidate_review_id]);if(q.rowCount!==1)fail('NOT_FOUND',404);
       return {row:(q.rows[0] as CandidateReview),principal:null,kind};}
     if(c.action==='EXPIRE_CANDIDATE')fail('FORBIDDEN',403);
-    const ctx=await query.resource({authContext,id:((c.candidate_review_id??c.incident_id) as string),kind,tx});const p=ctx.principal;
+    const ctx=c.action==='TRANSFER_OWNER'?await query.ownerTransferResource({authContext,id:c.incident_id,tx}):c.action==='PUBLISH_PUBLIC_PROGRESS'?await query.publicProgressResource({authContext,id:c.incident_id,tx}):c.action==='ADD_INTERNAL_NOTE'?await query.internalNoteResource({authContext,id:c.incident_id,tx}):await query.resource({authContext,id:((c.candidate_review_id??c.incident_id) as string),kind,tx});const p=ctx.principal;
     if(!broad(p)&&c.action!=='MARK_REPORTER_RECOVERED')fail('FORBIDDEN',403);
     if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(c.action)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
     if(c.confirmed_scope!==undefined&&!allowedIncidentScopes(p.roles,allowDispatcherCampus).includes(c.confirmed_scope))fail('FORBIDDEN',403);
@@ -54,7 +55,8 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
       VALUES($1::uuid,$2,$3::uuid,$4::uuid,$5,$6,$7,$8::uuid,$9,$10,$11,$12,$13::uuid,$14::jsonb,$15) RETURNING *`,
       [id,'incident_event_v1_'+hash({receipt:ctx.receipt.id,type,ordinal:String(n)}),candidate?null:(target as CandidateReview | Incident).id,candidate?(target as CandidateReview | Incident).id:null,n,type,
         ctx.principal?'HUMAN':'SYSTEM',ctx.principal?.principal_id??null,oldStatus,newStatus,oldScope,newScope,ctx.receipt.id,JSON.stringify(payload),hash(payload)]);
-    const event=(r.rows[0] as P2012Event);if(realtime)await realtime.append({transaction:tx,event,incident:ctx.incident,candidate:ctx.candidate});return event;
+    // Private responsibility history has no SSE or external notification projection.
+    const event=(r.rows[0] as P2012Event);if(realtime&&type!=='incident.owner.transferred')await realtime.append({transaction:tx,event,incident:ctx.incident,candidate:ctx.candidate});return event;
   }
   async function linkedSubscription(tx: PostgresTransaction,ctx: BusinessContext,report: IncidentReport){
     const old=((await tx.query<ReporterSubscription>('SELECT * FROM incident.reporter_subscription WHERE incident_id=$1::uuid AND reporter_identity_hash=$2 FOR UPDATE',[(ctx.incident as Incident).id,report.reporter_identity_hash])).rows[0] as ReporterSubscription);
@@ -148,7 +150,37 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
     if(row.status==='CLOSED')fail('STATE_CONFLICT',409);
     ctx.incident=((await tx.query<Incident>('UPDATE incident.incident SET row_version=row_version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *',[row.id])).rows[0] as Incident);
     let event: P2012Event | { id: string } | undefined;
-    if(['START_INVESTIGATING','RESOLVE_INCIDENT','CLOSE_INCIDENT'].includes(c.action)){
+    if(c.action==='TRANSFER_OWNER'){
+      const target=await tx.query<{id:string}>('SELECT id::text FROM pilot_ticket.pilot_principal WHERE id=$1::uuid AND is_active FOR SHARE',[c.owner_principal_id]);
+      const roles=await tx.query<{role:string}>('SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid FOR SHARE',[c.owner_principal_id]);
+      await tx.query('SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid FOR SHARE',[c.owner_principal_id]);
+      if(target.rowCount!==1||!roles.rows.some(r=>['ADMIN','DISPATCHER','HANDLER'].includes(r.role)))fail('OWNER_INVALID',409);
+      if(c.owner_team_id!==null){const team=await tx.query(`SELECT m.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team team ON team.team_id=m.team_id WHERE m.principal_id=$1::uuid AND m.team_id=$2 AND team.is_active FOR SHARE OF m,team`,[c.owner_principal_id,c.owner_team_id]);if(team.rowCount!==1)fail('OWNER_INVALID',409);}
+      // Keep the existing linked Ticket READ relationship stable until commit.
+      await tx.query(`SELECT t.id FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.incident_id=$1::uuid AND r.link_state='LINKED' FOR SHARE OF r,t`,[row.id]);
+      try{await query.resource({authContext:{principal_id:c.owner_principal_id},id:row.id,kind:'incident',tx});}catch(error){if(error instanceof Error&&'code' in error&&['P2_012_NOT_FOUND','P2_012_FORBIDDEN'].includes(String(error.code)))fail('OWNER_INVALID',409);throw error;}
+      // Parent/target/team locks can wait. The caller authority rows were locked
+      // after the receipt FK wait; recheck the current locked Incident purpose.
+      ctx.principal=(await query.ownerTransferResource({authContext:{principal_id:p?.principal_id},id:row.id,tx})).principal;
+      const previous={owner_principal_id:(row as Incident).owner_principal_id,owner_team_id:(row as Incident).owner_team_id};
+      const next={owner_principal_id:c.owner_principal_id,owner_team_id:c.owner_team_id};
+      ctx.incident=((await tx.query<Incident>('UPDATE incident.incident SET owner_principal_id=$2::uuid,owner_team_id=$3 WHERE id=$1::uuid RETURNING *',[row.id,c.owner_principal_id,c.owner_team_id])).rows[0] as Incident);
+      event=await append(tx,ctx,'incident.owner.transferred',{payload:{reason_code:c.reason_code,owner_transfer:{previous,next}}});
+    }else if(c.action==='PUBLISH_PUBLIC_PROGRESS'){
+      const id=randomUUID(),ordinal=(await tx.query<{event_ordinal:string}>('UPDATE incident.incident SET event_ordinal=event_ordinal+1 WHERE id=$1::uuid RETURNING event_ordinal',[row.id])).rows[0]?.event_ordinal;
+      if(!ordinal)fail('COMMAND_FAILED',503);
+      await tx.query(`INSERT INTO incident.incident_event(id,event_key,incident_id,event_ordinal,event_type,actor_kind,actor_principal_id,source_command_id,safe_payload,payload_hash,public_progress_summary,public_progress_incident_version)
+        VALUES($1::uuid,$2,$3::uuid,$4,'incident.public_progress_published','HUMAN',$5::uuid,$6::uuid,'{}'::jsonb,$7,$8,$9)`,[id,'incident_event_v1_'+hash({receipt:ctx.receipt.id,type:'incident.public_progress_published',ordinal}),row.id,ordinal,p?.principal_id,ctx.receipt.id,hash({}),c.summary,ctx.incident.row_version]);
+      await publicProgressNotifications({transaction:tx,incident:ctx.incident,eventId:id,summary:c.summary});event={id};
+    }else if(c.action==='ADD_INTERNAL_NOTE'){
+      const id=randomUUID(),ordinal=(await tx.query<{event_ordinal:string}>('UPDATE incident.incident SET event_ordinal=event_ordinal+1 WHERE id=$1::uuid RETURNING event_ordinal',[row.id])).rows[0]?.event_ordinal;
+      if(!ordinal)fail('COMMAND_FAILED',503);
+      await tx.query(`INSERT INTO incident.incident_event(id,event_key,incident_id,event_ordinal,event_type,actor_kind,actor_principal_id,source_command_id,safe_payload,payload_hash,internal_note_text,internal_note_incident_version)
+        VALUES($1::uuid,$2,$3::uuid,$4,'incident.internal_note_added','HUMAN',$5::uuid,$6::uuid,'{}'::jsonb,$7,$8,$9)`,
+        [id,'incident_event_v1_'+hash({receipt:ctx.receipt.id,type:'incident.internal_note_added',ordinal}),row.id,ordinal,p?.principal_id,ctx.receipt.id,hash({}),c.text,ctx.incident.row_version]);
+      // Private content has no SSE or notification projection.
+      event={id};
+    }else if(['START_INVESTIGATING','RESOLVE_INCIDENT','CLOSE_INCIDENT'].includes(c.action)){
       const next=(({START_INVESTIGATING:'INVESTIGATING',RESOLVE_INCIDENT:'RESOLVED',CLOSE_INCIDENT:'CLOSED'} as Partial<Record<NormalizedIncidentCommand['action'], string>>)[c.action] as string);
       if(c.action==='START_INVESTIGATING'?!row.status.startsWith('CONFIRMED_'):c.action==='RESOLVE_INCIDENT'?row.status!=='INVESTIGATING':row.status!=='RESOLVED')fail('STATE_CONFLICT',409);
       const column=({INVESTIGATING:'investigating_at',RESOLVED:'resolved_at',CLOSED:'closed_at'} as Record<string, string>)[(next as string)];
@@ -196,7 +228,7 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
     return {result_ref_type:'INCIDENT',result_ref_id:row.id,result_row_version:String((ctx.incident as Incident).row_version),result_event_id:(event as P2012Event | { id: string; }).id};
   }
   async function perform({authContext,command:input}: { authContext?: unknown; command: unknown },system=false): Promise<IncidentCommandResult>{
-    guard(enabled);const c=normalizeCommand(input);
+    guard(enabled);const c=normalizeCommand(input);if(c.action==='TRANSFER_OWNER')guard(ownerTransferEnabled);if(c.action==='ADD_INTERNAL_NOTE')guard(internalNotesEnabled);if(c.action==='PUBLISH_PUBLIC_PROGRESS')guard(publicProgressEnabled);
     const result=await transaction<IncidentCommandResult>(pool,async tx=>{
       // Consistent global lock order with the existing single durable SSE stream.
       await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_003_REALTIME_STREAM:CONVERSATION_WORKBENCH',0))");
@@ -206,6 +238,14 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
         VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid,$9) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
         [scope,c.client_command_id,digest,c.action,c.candidate_review_id??null,c.incident_id??null,c.incident_report_id??null,ctx.principal?.principal_id??null,c.expected_row_version]);
       const receipt=((await tx.query<P2012CommandReceipt>('SELECT * FROM incident.command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE',[scope,c.client_command_id])).rows[0] as P2012CommandReceipt);
+      if(c.action==='TRANSFER_OWNER'){
+        // The INSERT's Incident FK and receipt lock can wait after initial auth.
+        // Stabilize caller active/roles before exposing an outcome or doing work.
+        const actor=ctx.principal?.principal_id;if(!actor)fail('FORBIDDEN',403);
+        await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[actor]);
+        await tx.query('SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid FOR SHARE',[actor]);
+        ctx.principal=(await query.ownerTransferResource({authContext:{principal_id:actor},id:ctx.row.id,tx})).principal;
+      }
       if(receipt.command_hash!==digest)fail('COMMAND_CONFLICT',409);
       const receiptResult=(r: Extract<P2012CommandReceipt, { state: 'COMMITTED' }>): Omit<IncidentCommandSuccess, 'replayed'>=>({ok:true,result_ref_type:r.result_ref_type,result_ref_id:r.result_ref_id,result_row_version:String(r.result_row_version),result_event_id:r.result_event_id});
       if(receipt.state==='COMMITTED')return frozen({...receiptResult(receipt),replayed:true});
