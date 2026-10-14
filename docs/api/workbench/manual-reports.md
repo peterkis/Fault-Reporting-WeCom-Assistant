@@ -259,3 +259,9 @@ FAILED保留原失败账本，业务savepoint全部回滚；同UUID失败重放�
 正式T17新表单将保留“提交报修”，在当前context获准时增加“由我处理”与明确组选择。新action草稿使用T03同一当前浏览器AES-GCM／不可导出key／首次保存固定24h，独立`manual-report-self-handling`用途与T17固定槽位，保存原body、mode和UNKNOWN UUID，不改普通`manual-report`草稿。恢复前重新验当前principal、创建权与所选真实组；成功／丢弃／退出／失权／过期沿原清理，UNKNOWN只留规定opaque核对元数据。连接与epoch围栏复用T38，不从动画或点击推导提交成功。此段前端尚未实现或验证。
 
 本票无目录网络依赖，现有UNVERIFIED电话／现场路径在目录不可用时可使用；保留人工联系提示，零新增Message／Communication／Outbox／Delivery／Reporter Grant或外发。资源沿单App／Worker、Gateway单活、SSE32、共享pool4／总预算8，单表单in-flight1，无新worker／timer。关闭任一新入口依赖隐藏按钮、拒绝新复合命令；已提交受理、责任、轮次、事件及原回执保留。尚未运行的验证覆盖授权／合法组、默认关闭／缺readiness、规则Review拒绝、完整回滚、并发／原UUID冲突、原T17恢复兼容、UNKNOWN、撤权、固定24h和真实production bundle；不能据本合同推导已验收。
+
+### 2026-10-14 SOURCE 同步与后续验证边界
+
+本票只普通同步固定 Root `b5808ee88ee749df61a6a82708d1d5bd26971743`。四份候选合同与原首 HTTP 输入、首次202／重放200及原 UUID 断言保持原字节；继承当前 T17／T18、共享 fixture 和后续业务模块，不预补 take-and-start／context／表单。当前候选仍只含原 UNVERIFIED 分支，不能以 T18 已完成推导核实复合处理已具备，也不能擅自自动回落为手填或普通受理。
+
+本次无 SQL／DDL；上文“计划无新增SQL”仍是待验证设计，旧 admit 用途与 042 receipt 约束的技术适配尚未证明。未来 WHOLE 先以同一真实编译候选和原正向首例验证公开 POST，受理、唯一 Core、有效组本人承接／开始及原账本同事务完成；Reporter、Recorder、Handler、电话／现场来源保持独立，禁止虚构 Conversation。七项验收全部 PENDING，types／build／tests／PG／HTTP／production browser 与资源清理均 NOT_RUN，默认 false、现权与预算不变；当前不宣称接口挂载或业务验收通过。完整原件、真实 merge 冲突及后继身份见[本票 SOURCE 同步记录](../../../plans/admin-workbench-integration/execution/t19.md#2026-10-14-固定-rootb580-的有限-source-同步)。
