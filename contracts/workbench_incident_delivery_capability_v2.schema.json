@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_incident_delivery_capability_v2.schema.json",
+  "title": "T33 Incident notification control v2 — explicit Delivery attempt snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "incident_id",
+    "delivery_id",
+    "purpose",
+    "retry",
+    "reconcile",
+    "receipt_read",
+    "disabled",
+    "attempt_count"
+  ],
+  "properties": {
+    "incident_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "delivery_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "purpose": {
+      "enum": [
+        "INCIDENT_LIFECYCLE",
+        "INCIDENT_PUBLIC_PROGRESS"
+      ]
+    },
+    "retry": {
+      "type": "boolean"
+    },
+    "reconcile": {
+      "type": "boolean"
+    },
+    "receipt_read": {
+      "type": "boolean"
+    },
+    "disabled": {
+      "type": "boolean"
+    },
+    "attempt_count": {
+      "minimum": 0,
+      "type": "integer",
+      "maximum": 2147483647
+    }
+  }
+}

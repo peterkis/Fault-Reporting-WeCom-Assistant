@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Conversation delivery retry v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_delivery_attempt_count"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{1,128}$"
+    },
+    "expected_delivery_attempt_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    }
+  }
+}

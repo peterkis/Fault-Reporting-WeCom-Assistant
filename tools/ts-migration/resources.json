@@ -348,6 +348,22 @@
     "contracts/workbench_item_follow_attention.schema.json",
     "contracts/workbench_item_follow_result.schema.json",
     "contracts/workbench_item_follow_receipt.schema.json",
-    "contracts/workbench_item_follow_contracts.d.ts"
+    "contracts/workbench_item_follow_contracts.d.ts",
+    "contracts/workbench_incident_delivery_capability.schema.json",
+    "contracts/workbench_incident_delivery_control_contracts.d.ts",
+    "contracts/workbench_incident_delivery_receipt.schema.json",
+    "contracts/workbench_incident_delivery_reconcile.schema.json",
+    "contracts/workbench_incident_delivery_result.schema.json",
+    "contracts/workbench_incident_delivery_retry.schema.json",
+    "database/migrations/060_workbench_incident_delivery_control.sql",
+    "contracts/workbench_incident_delivery_control_v2_contracts.d.ts",
+    "contracts/workbench_incident_delivery_retry_v2.schema.json",
+    "contracts/workbench_incident_delivery_reconcile_v2.schema.json",
+    "contracts/workbench_incident_delivery_capability_v2.schema.json",
+    "database/migrations/061_workbench_conversation_delivery_commands.sql",
+    "contracts/workbench_conversation_delivery_control_contracts.d.ts",
+    "contracts/workbench_conversation_delivery_control_v2_contracts.d.ts",
+    "contracts/workbench_conversation_delivery_retry_v2.schema.json",
+    "contracts/workbench_conversation_delivery_reconcile_v2.schema.json"
   ]
 }
