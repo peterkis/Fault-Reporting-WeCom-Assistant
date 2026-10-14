@@ -265,3 +265,5 @@ FAILED保留原失败账本，业务savepoint全部回滚；同UUID失败重放�
 本票只普通同步固定 Root `b5808ee88ee749df61a6a82708d1d5bd26971743`。四份候选合同与原首 HTTP 输入、首次202／重放200及原 UUID 断言保持原字节；继承当前 T17／T18、共享 fixture 和后续业务模块，不预补 take-and-start／context／表单。当前候选仍只含原 UNVERIFIED 分支，不能以 T18 已完成推导核实复合处理已具备，也不能擅自自动回落为手填或普通受理。
 
 本次无 SQL／DDL；上文“计划无新增SQL”仍是待验证设计，旧 admit 用途与 042 receipt 约束的技术适配尚未证明。未来 WHOLE 先以同一真实编译候选和原正向首例验证公开 POST，受理、唯一 Core、有效组本人承接／开始及原账本同事务完成；Reporter、Recorder、Handler、电话／现场来源保持独立，禁止虚构 Conversation。七项验收全部 PENDING，types／build／tests／PG／HTTP／production browser 与资源清理均 NOT_RUN，默认 false、现权与预算不变；当前不宣称接口挂载或业务验收通过。完整原件、真实 merge 冲突及后继身份见[本票 SOURCE 同步记录](../../../plans/admin-workbench-integration/execution/t19.md#2026-10-14-固定-rootb580-的有限-source-同步)。
+
+本次 Source 保存还区分两种字节表示：旧 `git archive` 导出可带 CRLF，不称真 Git blob canonical；原记录和失败保留，新 `git-canonical-forward/receipt.json` 以固定对象 `cat-file --batch` 做前向绑定。原首及四个候选合同前后物理字节与 Git blob 均不变，没有归一化测试、合同或历史原件；该表示更正不构成业务运行或验收。
