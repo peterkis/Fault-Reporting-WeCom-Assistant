@@ -13,7 +13,22 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-14，T29收口）
+## 当前执行状态导航（2026-10-14，T34收口）
+
+GitHub实际为 **34／43 CLOSED、9 OPEN**，见[完整当前快照](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t34-20261014.json)。[#89原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89#issuecomment-6161469967)。全部43票仍ACTIVE，WBINT-12／A12尚待T36。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T34 / #89 | [明确关注与我有关](execution/t34.md)原七已父核、独立唯一快进9b5f4f12/native0。当前READ下处理责任、非ENDED当前沟通责任和本人显式关注规范并集；查看／编辑不自动关注，关注不授READ／所有权，Review关联Ticket单卡／单关注，失权停止显示。 |
+| 操作与正式页面 | 原UUID／body／If-Match、当前授权和锁后回查，取消全部本人当前锚点及tombstone；真实HTTP／生产bundle覆盖单卡、转出、并发／重放、未知结果只读核对与显式重试、加密草稿、目的403与真401、晚到HTTP／SSE清理。 |
+| 被测对象与适用检查 | 功能2ea28212／tree9bd0／MF0ccb：050 strict／一次build／artifact六native0；051后端10PASS、052正式恢复5PASS／8PNG、053相关5文件9PASS，各窗口独立不称full。原首／合同／formalUI先前PASS保持原对象。044工具native0／3功能PASS但单例及总914282ms超240k，NOT_WALLCLOCK_BUDGET_PASS；156observed／153available＋3deletedScratch未重构。T35 CHANNEL失败0／other3原诊断保留。 |
+| 两轴与归档 | Source完整33＋准确delta3、最终5MD的Standards／Spec均无未解决行动项；独立完整保存核验0异常。1575source／2045runtime／54tools、43SQL含旧42＋新044、registry612／144／348保原606／143／342完整tuple及有序成员，当前needed vendor复用不可变009保存字节。 |
+| 集成与原件 | Root9b5／treeea0、index0和原三status；sixraw、9633未改旧Root物理输入及8030旧SQL／合同／Evidence Git对象不变，33changed canonical相符。冻结private两first原字节不变；第二first首次Root checkout多61个CR，其5309／5370raw分别记录、同Gitblob，未归一化。初中文路径reader及原POST_EXCEPTION前向说明保留。 |
+| 精确自有清理 | 055自有隔离DB0／otherclient0，原032残留PNG先保存匹配再精确清理；056 PG24724 pre0／stop0／post3、pidfile无、single62775 LISTEN0／config2ab相同、keeperSTOPPED／pidnull／cleanuptrue；062全部自有handles终态。实现树留待全43结束清理。 |
+| 当前frontier | 下一连续整票T33／#88，fresh原七／0comments／ready／peterkis／sole87completed已核。普通retry人类规则已明确：ADMIN或当前获权DISPATCHER＋独立RETRY＋已有exact Incident READ和范围，owner／HANDLER／VIEW／PUBLISH不额外授retry；UNKNOWN独立核对ADMIN-only＋RECONCILE。T40／#95四原生依赖89／90／92／93均completed并已领取，仅并行SOURCE／first准备；T41仍待91。 |
+| 边界 | WBINT-12贡献T34／T35／T37已本地完成，T36尚待；旧RED／FAIL／NOT_REACHED／NOT_RUN、006捕获不足、032partialarchive、059状态口径纠正保留。新开关defaultfalse，全43最终两轴及工作树清理待。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T29收口）
 
 GitHub实际快照为 **33／43 CLOSED、10 OPEN**；[本地完整读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t29-20261014.json)。[#84原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。WBINT-10／A10所属T29、T30、T31均已本地交付；全部43票仍在执行。
 

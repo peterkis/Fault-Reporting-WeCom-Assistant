@@ -28,7 +28,7 @@ execution_status: IN_PROGRESS
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | IN_PROGRESS：[T32获权异常查询LOCAL_VERIFIED](execution/t32.md)原七项已父验收、独立集成并原生CLOSED/completed；T33的原生依赖已解除，普通Incident重试角色仍待人类决定，A11整组未完成 | A11 |
-| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T35个人已读原七项](execution/t35.md)与[T37共享时间原七项](execution/t37.md)均已父核、集成并GitHub关闭；T34仍待整票验收，T36的原生#90已关闭但实施未完成，A12整组未完成；默认关闭／无生产或Gate授权 | A12 |
+| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T34明确关注与当前获权责任并集](execution/t34.md)、[T35个人已读](execution/t35.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；T36依赖已完成但实施未完，A12整组仍待T36；默认关闭／无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39已领取，T40未启动 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
@@ -178,6 +178,8 @@ execution_status: IN_PROGRESS
 - **跟进／预约合同**：团队待跟进精确针对材料修订；普通备注／阅读／承接不清，回复202不清，失败／UNKNOWN继续待跟进；可记录处置并明确标记，旧目标不能清新材料。共享时间由已确认角色维护，交接保留，关闭／取消清活动留历史，重开新安排，到期一次信号并持续待办，不冒充SLA。
 - **数据库／前端**：最小个人read/follow关系、补充处置依据、共享安排与版本历史；不复制Ticket状态／负责人。卡片／列表／详情统一字段、排序和筛选，时间Asia/Shanghai；失权及时停止展示，个人关系不扩权。
 - **验证／证据／开关／资源**：A12：两人独立已读、新旧补充竞态、reply ACK与未知、内部备注可选处置、未分配团队跟进、交接／关闭／重开预约、不同标签重复到期、完整与我有关。默认false，关闭新提醒不改Ticket；复用Worker的有界到期查询，唯一安排版本避免重复信号，不为每工单开timer。
+
+2026-10-14 当前本地交付：T34／#89原七已父验收、独立唯一快进9b5f4f12并原生CLOSED/completed，详见[当前关注合同与原被测证据](execution/t34.md)。READ下责任与本人关注规范并集、幂等取消、Review转Ticket、真实失权／原UUID UNKNOWN恢复已接入；功能2ea／MF0ccb及所有原失败／限制保留。WBINT-12贡献T34／T35／T37完成，T36及A12整组仍待；新开关默认false，不代表全43或生产／Gate完成。
 
 ## WBINT-13：SSE、协作活动、站内提醒和声音
 
