@@ -1,3 +1,4 @@
+import {conversationDeliveryReceiptSchemaShape} from '../src/p2-006-delivery-command-schema.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -29,7 +30,8 @@ export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<b
     const rows=complete[category];if(!Array.isArray(rows)||!rows.every(isRecord))return false;
     receipt[category]=rows.filter(row=>row.relation==='pilot_ticket.ticket_command_receipt');
   }
-  return createHash('sha256').update(JSON.stringify(receipt)).digest('hex')===(bot?RECEIPT_047_050:RECEIPT_047);
+  const digest=createHash('sha256').update(JSON.stringify(receipt)).digest('hex');
+  return digest===(bot?RECEIPT_047_050:RECEIPT_047)||await conversationDeliveryReceiptSchemaShape(tx)===(bot?'BOT':'INTAKE');
 }
 /** Exact feature inventory. No weakening of the existing receipt resource/purpose guards. */
 export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>{

@@ -15,7 +15,7 @@ export async function ownerTransferSchemaInventory(tx:PostgresTransaction){
  return {prerequisite,constraints:constraints.rows};
 }
 export const ownerTransferSchemaHash=(value:Awaited<ReturnType<typeof ownerTransferSchemaInventory>>)=>sha(JSON.stringify(value));
-export async function ownerTransferCatalogReady(tx:PostgresTransaction){try{return ownerTransferSchemaHash(await ownerTransferSchemaInventory(tx))===OWNER_TRANSFER_SCHEMA_SHA256;}catch{return false;}}
+export async function ownerTransferCatalogReady(tx:PostgresTransaction){try{return ownerTransferSchemaHash(await ownerTransferSchemaInventory(tx))===OWNER_TRANSFER_SCHEMA_SHA256||await (await import('./p2-012-incident-delivery-schema.mjs')).incidentDeliveryControlSchemaReady(tx);}catch{return false;}}
 export async function ownerTransferSchemaReady(tx:PostgresTransaction){
  try{const inputs=await ownerTransferMigrationInputs(),markers=await tx.query<{migration_id:string;checksum_sha256:string}>('SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[inputs.map(input=>input.id)]);
   return markers.rowCount===inputs.length&&inputs.every(input=>markers.rows.some(marker=>marker.migration_id===input.id&&marker.checksum_sha256===input.checksum_sha256))&&await ownerTransferCatalogReady(tx);

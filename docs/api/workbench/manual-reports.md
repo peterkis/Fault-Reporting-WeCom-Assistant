@@ -267,3 +267,12 @@ FAILED保留原失败账本，业务savepoint全部回滚；同UUID失败重放�
 本次无 SQL／DDL；上文“计划无新增SQL”仍是待验证设计，旧 admit 用途与 042 receipt 约束的技术适配尚未证明。未来 WHOLE 先以同一真实编译候选和原正向首例验证公开 POST，受理、唯一 Core、有效组本人承接／开始及原账本同事务完成；Reporter、Recorder、Handler、电话／现场来源保持独立，禁止虚构 Conversation。七项验收全部 PENDING，types／build／tests／PG／HTTP／production browser 与资源清理均 NOT_RUN，默认 false、现权与预算不变；当前不宣称接口挂载或业务验收通过。完整原件、真实 merge 冲突及后继身份见[本票 SOURCE 同步记录](../../../plans/admin-workbench-integration/execution/t19.md#2026-10-14-固定-rootb580-的有限-source-同步)。
 
 本次 Source 保存还区分两种字节表示：旧 `git archive` 导出可带 CRLF，不称真 Git blob canonical；原记录和失败保留，新 `git-canonical-forward/receipt.json` 以固定对象 `cat-file --batch` 做前向绑定。原首及四个候选合同前后物理字节与 Git blob 均不变，没有归一化测试、合同或历史原件；该表示更正不构成业务运行或验收。
+
+
+### 2026-10-14 固定 Root6dfe 的有限 Source 交接
+
+仅同步固定Root6dfe0ffda54358889e406bde0d17bde3d5e44604与原T19冻结Source，原四候选合同、原first4280B／65690e2b及helper不变；没有挂载新API或实施表单。原七全PENDING，运行与资源清理全NOT_RUN；未来WHOLE先合入届时最新Root，再用同一真实制品执行原正向首例。
+
+T33新Conversation receipt用途用P2_006_DELIVERY:<actor>，MANUAL原用途／P2_016:<actor>和普通canonical hash保持。061保有效旧资源predicate，不把Ticket／MANUAL套入Conversation控制，不授当前创建、组、Ticket READ或核对权。T19仍须在原MANUAL同事务／savepoint内真实受理、新Core和accept→start；原UUID跨action／改组冲突、锁后当前授权、UNKNOWN只读核对与闭合原结果沿上文合同。Ticket复合ACK或Conversation envelope不能替换ManualReportResult。有限源码分析未发现必须改变四合同或新增DDL的依据，不预造首例或机制；旧admit／042技术适配仍待真正WHOLE证明。
+
+固定Root630／160／364与T19原一入口、四资源形成631／160／368并集。SQL45、历史合同／Evidence、用户原件、旧Source／未运行身份保留。真实merge和完整保护见[本票执行记录](../../../plans/admin-workbench-integration/execution/t19.md#2026-10-14-固定-root6dfe-的有限-source-同步)及D盘新交接。
