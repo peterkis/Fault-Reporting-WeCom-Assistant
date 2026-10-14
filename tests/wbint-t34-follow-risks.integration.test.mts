@@ -93,6 +93,14 @@ test('T34 exact readiness rejects weakened follow CHECK, changed migration check
    await botTx.query('ALTER TABLE pilot_ticket.ticket_command_receipt ADD CONSTRAINT bot_feedback_actor_purpose CHECK(true)');
    assert.equal(await followSchemaReady(botTx),false,'optional Reporter support cannot weaken its full actor-purpose fence');
   }finally{await botTx.query('ROLLBACK');botTx.release();}
+  // Reapply only this capability in the owned isolated database. The original
+  // predecessor tables and SQL remain in place throughout check/apply/NOOP.
+  await f.pool.query("DELETE FROM platform.schema_migration WHERE migration_id='044_workbench_item_follow'");
+  await f.pool.query('DROP TABLE pilot_ticket.workbench_item_follow');
+  assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'check'})).status,'CHECK_ROLLBACK_SUCCEEDED');
+  assert.equal((await f.pool.query("SELECT to_regclass('pilot_ticket.workbench_item_follow') AS relation")).rows[0]?.relation,null);
+  assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'apply'})).status,'APPLIED');
+  assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'apply'})).status,'NOOP_ALREADY_APPLIED');
  },{workbenchFollowEnabled:true,manualProjection:true});
 });
 
@@ -142,4 +150,32 @@ test('T34 Review conversion preserves the original UUID, canonical de-duplicatio
   assert.equal((await http.post(alias,original,bootstrap.csrf_token)).status,200,'historical replay acknowledges the earlier result without re-following');
   assert.equal(object(object((await http.read(currentPath)).item).attention).following,false);
  },{workbenchFollowEnabled:true,workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,manualProjection:true,chronologicalTicketEvents:true});
+});
+
+test('T34 a real communication transfer removes only responsibility, while explicit caller follow remains until cancelled',async()=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  const http=client(f),admin=client(f,0),target=f.tickets[0],next=f.principals[0];assert.ok(target&&next);
+  const backlog=await f.runtime.coordinator.backlog(),bound=Math.ceil(backlog.total/f.runtime.coordinator.batchSize)+3;
+  let drained=false;for(let i=0;i<bound;i++){const result=await f.runtime.coordinator.runOnce();assert.ok(result.streams.every(stream=>stream.failures.length===0));if(result.processed===0&&(await f.runtime.coordinator.backlog()).total===0){drained=true;break;}}assert.equal(drained,true);
+  const path='/api/workbench/items/ticket/'+target.ticket.id,bootstrap=await http.read('/api/lifecycle/bootstrap');
+  assert.equal(rows((await http.read('/api/workbench/board?column=pending&scope=related')).items).length,0,'ordinary reads and visibility never add personal attention');
+  const context=rows((await http.read('/api/tickets/'+target.ticket.id+'/related-conversations')).items)[0];assert.ok(context);
+  const sessionId=text(context.session_id),control=async(action:string,rowVersion:unknown,extra:Record<string,unknown>={})=>{
+   const body={client_command_id:randomUUID(),expected_row_version:Number(rowVersion),reason_code:'T34_EXPLICIT_COMMUNICATION',...extra};
+   assert.ok(Number.isSafeInteger(body.expected_row_version)&&body.expected_row_version>=1);
+   const response=await fetch(f.origin+'/api/conversations/'+sessionId+'/'+action,{method:'POST',headers:{cookie:f.cookies[2],origin:f.origin,'content-type':'application/json','x-csrf-token':text(bootstrap.csrf_token),'idempotency-key':body.client_command_id,'if-match':'"'+body.expected_row_version+'"'},body:JSON.stringify(body)});
+   assert.equal(response.status,200,await response.clone().text());return object(await response.json());
+  };
+  await control('takeover',context.session_row_version);
+  const communicating=await http.read(path);assert.deepEqual(object(object(communicating.item).attention).related_reasons,['COMMUNICATION']);
+  const explicit=command(communicating,true);assert.equal((await http.post(path,explicit,bootstrap.csrf_token)).status,200);
+  const current=rows((await http.read('/api/tickets/'+target.ticket.id+'/related-conversations')).items)[0];assert.ok(current);
+  await control('transfer',current.session_row_version,{target_principal_id:next.id});
+  const transferred=await http.read(path);assert.deepEqual(object(object(transferred.item).attention).related_reasons,['FOLLOW']);
+  assert.equal(rows((await http.read('/api/workbench/board?column=pending&scope=related')).items).filter(item=>item.id===target.ticket.id).length,1);
+  const cancel=command(transferred,false);assert.equal((await http.post(path,cancel,bootstrap.csrf_token)).status,200);
+  assert.equal(rows((await http.read('/api/workbench/board?column=pending&scope=related')).items).some(item=>item.id===target.ticket.id),false);
+  assert.equal(object(object((await http.read(path)).item).attention).following,false);
+  assert.equal((await admin.read('/api/tickets/'+target.ticket.id)).assignee_id,null,'communication and personal attention never give Ticket handling ownership');
+ },{ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,chronologicalTicketEvents:true,manualProjection:true,workbenchFollowEnabled:true});
 });
