@@ -41,7 +41,7 @@ export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>
     AND EXISTS(SELECT 1 FROM pg_class WHERE oid=to_regclass('pilot_ticket.workbench_item_follow') AND relkind='r' AND relpersistence='p' AND NOT relispartition AND NOT relrowsecurity AND NOT relforcerowsecurity)
     AND NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('pilot_ticket.workbench_item_follow') AND NOT tgisinternal)
     AND (SELECT count(*)=6 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow')
-    AND (SELECT count(*)=6 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow' AND is_nullable='NO' AND
+    AND (SELECT count(*)=6 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow' AND is_nullable='NO' AND is_generated='NEVER' AND
       ((column_name IN ('principal_id','source_intake_id') AND data_type='uuid' AND column_default IS NULL)
        OR (column_name='following' AND data_type='boolean' AND column_default IS NULL)
        OR (column_name='row_version' AND data_type='bigint' AND column_default='1')
