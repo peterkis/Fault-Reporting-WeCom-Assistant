@@ -48,3 +48,10 @@
 成功退出移除该主体活动绑定；认证／对象失权拒绝也移除相应已有租期，晚到请求与旧 GET 不能恢复旧身份提示。关闭 `workbenchActivityEnabled=false` 不建立新活动内存或续租；UI 清提示，服务停止清空已有短暂状态，业务事实与 T38 REST/流原配置保持。
 
 验证计划与原 RED／GREEN、被测 source／artifact、资源清理和七项状态见 [T39 执行记录](../../../plans/admin-workbench-integration/execution/t39.md)。本合同不授权真实 OAuth／WeCom／Provider／发送／用户数据库、部署、push、full/certify 或 Gate。
+
+
+## 2026-10-14 Rootb5808 有限 SOURCE 同步
+
+普通合并已完成的固定依赖基线 `b5808ee88ee749df61a6a82708d1d5bd26971743`，本节只记录 SOURCE 准备。三份 Schema／DTS、原 HTTP 首例与上述输入、输出、权限、期限和容量合同保持冻结；活动路径仍未挂载，`workbenchActivityEnabled=false` 仍仅为测试 helper 的准备参数。共享 helper 完整继承当前基线的迁移、T13／T34、实际身份与原业务配置，只保留本票原一个默认 false 参数和两处 runtime 参数转发；没有新增活动实现或业务开关启用。
+
+本次没有数据库变更或编号分配，不触碰 T33 的 060／061；不新增业务事实、责任、已读、第二 SSE、常驻 timer 或心跳写库。真正 VIEWING／EDITING、当前双方 READ／字段权限、TTL／失活／后台／断线／退出／失权、有界单 App／现有真实流及正式前端行为仍待未来整票验证。原七项均 PENDING，全部 runtime／PG／HTTP／浏览器及自有资源清理为 NOT_RUN；SOURCE 同步不构成 RED／GREEN、验收、部署或 Gate。实际字节、规范 Git 对象、冲突与 clean pin 记录在 `D:/wecom-workbench-evidence/t39/prepared/source-sync-rootb5808-20261014/`。

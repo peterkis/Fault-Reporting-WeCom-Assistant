@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_notification_exception_page.schema.json",
+  "$defs": {
+    "uuid": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "time": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?$"},
+    "effect": {"enum": ["NOT_ATTEMPTED", "ACKNOWLEDGED", "UNKNOWN"]},
+    "attempt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attempt_no", "outcome", "side_effect_state", "started_at", "finished_at"],
+      "properties": {
+        "attempt_no": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "outcome": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+        "side_effect_state": {"$ref": "#/$defs/effect"},
+        "started_at": {"$ref": "#/$defs/time"},
+        "finished_at": {"anyOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]}
+      }
+    },
+    "item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["domain", "parent_id", "delivery_id", "source_kind", "route_kind", "destination_type", "status", "side_effect_state", "attempt_count", "last_attempt", "safe_summary", "error_code", "created_at", "updated_at", "sent_at", "allowed_actions", "parent_link"],
+      "properties": {
+        "domain": {"enum": ["TICKET", "SESSION", "INCIDENT"]},
+        "parent_id": {"$ref": "#/$defs/uuid"},
+        "delivery_id": {"$ref": "#/$defs/uuid"},
+        "source_kind": {"enum": ["TICKET_NOTIFICATION", "SESSION_MESSAGE", "INCIDENT_LIFECYCLE", "INCIDENT_PUBLIC_PROGRESS"]},
+        "route_kind": {"enum": ["GROUP", "BOT_DIRECT", "YIXIAOXIU_APP"]},
+        "destination_type": {"enum": ["GROUP", "PERSON"]},
+        "status": {"enum": ["DEAD_LETTER", "RECONCILIATION_REQUIRED", "CANCELLED"]},
+        "side_effect_state": {"$ref": "#/$defs/effect"},
+        "attempt_count": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+        "last_attempt": {"anyOf": [{"$ref": "#/$defs/attempt"}, {"type": "null"}]},
+        "safe_summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "error_code": {"enum": ["FAILURE_RECORDED", "RESULT_UNCONFIRMED", null]},
+        "created_at": {"$ref": "#/$defs/time"}, "updated_at": {"$ref": "#/$defs/time"},
+        "sent_at": {"anyOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
+        "allowed_actions": {"type": "array", "maxItems": 2, "uniqueItems": true, "items": {"enum": ["RETRY", "RECONCILE"]}},
+        "parent_link": {"type": "string", "maxLength": 160, "pattern": "^/workbench/"}
+      }
+    }
+  },
+  "type": "object", "additionalProperties": false,
+  "required": ["items", "has_more", "next_cursor"],
+  "properties": {
+    "items": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/item"}},
+    "has_more": {"type": "boolean"},
+    "next_cursor": {"type": ["string", "null"], "maxLength": 2048}
+  }
+}

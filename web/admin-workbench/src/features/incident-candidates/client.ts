@@ -1,5 +1,6 @@
-import {ApiError,UnknownCommandOutcome,captureWorkbenchRead} from '../../api/client';
+import {ApiError,UnknownCommandOutcome,captureWorkbenchRead,decodeWorkbenchDateTime} from '../../api/client';
 import type {IncidentFollowupReceipt} from '../../../../../contracts/workbench_incident_followup_contracts';
+import type {IncidentOwnerTransferEvent} from '../../../../../contracts/workbench_incident_owner_transfer_contracts';
 
 export const candidateStates=['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED'] as const;
 export type CandidateState=typeof candidateStates[number];
@@ -156,9 +157,18 @@ function notificationItem(value:unknown):IncidentNotificationItem{
 }
 const incidentStatuses=['CONFIRMED_LOCAL','CONFIRMED_BUILDING','CONFIRMED_CAMPUS','CONFIRMED_HOSPITAL_WIDE','INVESTIGATING','RESOLVED','CLOSED'] as const;
 const incidentEventTypes=['incident.confirmed','incident.investigating','incident.resolved','incident.closed','incident.scope.corrected','incident.primary_ticket_changed','incident.report.linked','incident.report.unlinked','incident.report.recovered','incident.subscription.created','incident.subscription.activated','incident.subscription.paused','incident.subscription.ended'] as const;
-export interface IncidentHistoryItem{id:string;event_type:typeof incidentEventTypes[number];event_ordinal:string;old_status:string|null;new_status:string|null;old_scope:IncidentScope|null;new_scope:IncidentScope|null;occurred_at:string}
+interface LegacyIncidentHistoryItem{id:string;event_type:typeof incidentEventTypes[number];event_ordinal:string;old_status:string|null;new_status:string|null;old_scope:IncidentScope|null;new_scope:IncidentScope|null;occurred_at:string}
+export type IncidentHistoryItem=LegacyIncidentHistoryItem|IncidentOwnerTransferEvent;
 function historyItem(value:unknown):IncidentHistoryItem{
-  const r=object(value);exact(r,['id','event_type','event_ordinal','old_status','new_status','old_scope','new_scope','occurred_at']);
+  const r=object(value);
+  if(r.event_type==='incident.owner.transferred'){
+    exact(r,['id','event_type','event_ordinal','old_status','new_status','old_scope','new_scope','occurred_at','actor_principal_id','owner_transfer']);
+    if(r.old_status!==null||r.new_status!==null||r.old_scope!==null||r.new_scope!==null)throw new ApiError(502,'INVALID_RESPONSE');
+    const transfer=object(r.owner_transfer);exact(transfer,['previous','next']);
+    const responsibility=(value:unknown)=>{const owner=object(value);exact(owner,['owner_principal_id','owner_team_id']);if(owner.owner_team_id!==null&&(typeof owner.owner_team_id!=='string'||!/^[A-Z0-9_]{1,64}$/u.test(owner.owner_team_id)))throw new ApiError(502,'INVALID_RESPONSE');return {owner_principal_id:id(owner.owner_principal_id),owner_team_id:owner.owner_team_id as string|null};};
+    return {id:id(r.id),event_type:'incident.owner.transferred',event_ordinal:version(r.event_ordinal),old_status:null,new_status:null,old_scope:null,new_scope:null,occurred_at:decodeWorkbenchDateTime(r.occurred_at),actor_principal_id:id(r.actor_principal_id),owner_transfer:{previous:responsibility(transfer.previous),next:responsibility(transfer.next)}};
+  }
+  exact(r,['id','event_type','event_ordinal','old_status','new_status','old_scope','new_scope','occurred_at']);
   return {id:id(r.id),event_type:member(r.event_type,incidentEventTypes),event_ordinal:version(r.event_ordinal),old_status:r.old_status===null?null:member(r.old_status,incidentStatuses),new_status:r.new_status===null?null:member(r.new_status,incidentStatuses),old_scope:r.old_scope===null?null:member(r.old_scope,incidentScopes),new_scope:r.new_scope===null?null:member(r.new_scope,incidentScopes),occurred_at:timestamp(r.occurred_at)};
 }
 const nullableId=(value:unknown)=>value===null?null:id(value);

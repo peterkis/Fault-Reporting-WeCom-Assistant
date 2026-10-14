@@ -1,12 +1,12 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
-export interface LedgerCommand { client_command_id: string; action: string; ticket_id?: string | null; review_id?: string | null; session_id?: string | null; expected_version?: number | null; expected_session_row_version?: number | string | null }
+export interface LedgerCommand { client_command_id: string; action: string; ticket_id?: string | null; review_id?: string | null; source_intake_id?: string | null; session_id?: string | null; expected_version?: number | null; expected_session_row_version?: number | string | null }
 export interface LedgerContext { principal: { principal_id: string } }
 export interface LedgerSuccess { ok: true; ticket_version?: number; ticket_event_id?: string; control_event_id?: string | null }
 export interface LedgerFailure { ok: false; error: { code: string; retryable: boolean }; replayed: boolean }
 // A committed DB snapshot follows the ledger write contract, but its consumer-specific payload is unknown.
 export type StoredLedgerSuccess = LedgerSuccess & Record<string, unknown>;
 export type LedgerResult<R extends LedgerSuccess> = (R & { replayed: false }) | (StoredLedgerSuccess & { replayed: true }) | LedgerFailure;
-export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_TICKET_TAKEOVER_COMPLETION'|'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; afterReceiptLock?: (transaction:PostgresTransaction)=>Promise<unknown>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
+export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; receiptType?:'WORKBENCH_ITEM_FOLLOW'|'WORKBENCH_TICKET_TAKEOVER_COMPLETION'|'WORKBENCH_TICKET_TAKEOVER'|'WORKBENCH_FOLLOW_UP_SCHEDULE'|'WORKBENCH_INTERNAL_NOTE'|'WORKBENCH_STAFF_COMPLETION'|'WORKBENCH_TICKET_ASSIGNMENT'|'WORKBENCH_TICKET_UNASSIGN'|'WORKBENCH_TICKET_RETURN_TO_DISPATCH'|'WORKBENCH_MANUAL_REPORT'; authorize: (transaction: PostgresTransaction) => Promise<C>; afterReceiptLock?: (transaction:PostgresTransaction)=>Promise<unknown>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
 interface ReceiptRow { id: string; command_hash: string; state: string; result_snapshot: StoredLedgerSuccess; error_code: string; retryable: boolean }
 
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES,uuidP2016,versionP2016,codeP2016 } from './p2-016-domain-contracts.mjs';
@@ -130,12 +130,19 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
         const context=await authorize(tx);
         const scope='P2_016:'+context.principal.principal_id;
         const hash=hashP2016(command);
+        if(receiptType==='WORKBENCH_ITEM_FOLLOW'){
+          const source=uuidP2016(command.source_intake_id);
+          await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,command_type,source_intake_id,actor_principal_id,ticket_id,review_id)
+            VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
+            [scope,command.client_command_id,hash,receiptType,source,context.principal.principal_id,command.ticket_id??null,command.review_id??null]);
+        }else{
         await tx.query(`INSERT INTO pilot_ticket.ticket_command_receipt(command_scope,client_command_id,command_hash,
           command_type,ticket_id,review_id,conversation_session_id,actor_principal_id,expected_ticket_version,expected_session_version)
           VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid,$9,$10::bigint)
           ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
         [scope,command.client_command_id,hash,receiptType??command.action,command.ticket_id??null,command.review_id??null,
           command.session_id??null,context.principal.principal_id,command.expected_version??null,command.expected_session_row_version??null]);
+        }
         const selected=await tx.query<ReceiptRow>(`SELECT id::text,command_hash,state,result_snapshot,error_code,retryable
           FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE`,[scope,command.client_command_id]);
         const receipt=(selected.rows[0] as (typeof selected.rows)[number]);

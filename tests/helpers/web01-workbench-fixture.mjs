@@ -1,3 +1,5 @@
+import {migrateWorkbenchFollow} from '../../scripts/workbench-follow-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
@@ -57,7 +59,7 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
@@ -65,6 +67,7 @@ export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workb
     if(workbenchManualReportsEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});}
     if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
+    if(workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});
@@ -103,7 +106,7 @@ export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workb
             const users=JSON.parse(init.body).userid_list;assert.equal(users.length,5);
             return new Response(JSON.stringify({errcode:0,open_userid_list:users.map(userid=>({userid,open_userid:openId(userid)}))}),{headers:{'content-type':'application/json'}});
           }});
-          runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,externalSendEnabled:false,ticketTakeoverEnabled,ticketAssignmentEnabled,workbenchActivityEnabled,workbenchRealtimeEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,manualReporterDirectory,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});return runtime.server;
+          runtime=createP2016Runtime({...{workbenchAssignmentHistoryEnabled,workbenchFollowEnabled},pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,externalSendEnabled:false,ticketTakeoverEnabled,ticketAssignmentEnabled,workbenchActivityEnabled,workbenchRealtimeEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,manualReporterDirectory,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});return runtime.server;
         },startApp:async app=>{assert.equal(app,runtime.server);await auth.initialize();const started=await runtime.start();return 'http://127.0.0.1:'+started.address.port;},stopApp:async()=>{await runtime?.stop();}});
         const sessionToken=randomBytes(32).toString('base64url'),csrfToken=randomBytes(32).toString('base64url'),issued=Date.now(),expires=issued+8*3600000;
         const hash=value=>createHash('sha256').update(value).digest('hex'),identityHash=createHmac('sha256',identityHashKey).update(JSON.stringify(['workbench-identity-v1',corpId,agentId,openId('web01-synthetic-0')])).digest('hex');
@@ -115,7 +118,7 @@ export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workb
       }finally{await closeBrowserTestResources([async()=>{await tls?.close();if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await runtime?.stop();await auth?.close();if(runtime)assert.equal(runtime.server.listening,false);}]);}
     }
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketTakeoverEnabled,ticketAssignmentEnabled,workbenchActivityEnabled,workbenchRealtimeEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,manualReporterDirectory,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
+    const runtime=createP2016Runtime({...{workbenchAssignmentHistoryEnabled,workbenchFollowEnabled},pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketTakeoverEnabled,ticketAssignmentEnabled,workbenchActivityEnabled,workbenchRealtimeEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,manualReporterDirectory,workbenchManualReviewEnabled,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
     try{
     // Manual finite batches own projection in this explicit profile; ordinary UI fixtures still start the scheduled worker.
     if(manualProjection){assert.equal(runtime.orchestrationWorker,null);assert.equal(runtime.incidentExtension,null);}
@@ -123,6 +126,19 @@ export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workb
     assert.ok(Array.isArray(started.cookies)&&started.cookies.length===3);const cookies=started.cookies.map(c=>c.name+'='+c.value);
     if(workbenchManualReportsEnabled&&!manualProjection)await settleManualFixtureProjection(runtime);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
+    let failFollowBootstrap=failFollowBootstrapAfterCommit,followCommitResponses=0,failedFollowBootstrapReads=0;
+    const restoreFollowBootstrapResponses=()=>{failFollowBootstrap=false;};
+    const followBootstrapFaultState=()=>({committed_responses:followCommitResponses,failed_bootstrap_reads:failedFollowBootstrapReads});
+    if(failFollowBootstrapAfterCommit)runtime.server.on('request',(request,response)=>{
+      if(request.method==='POST'&&/^\/api\/workbench\/items\/(ticket|review|intake)\/[0-9a-f-]{36}\/follow$/iu.test(request.url??'')){
+        response.once('finish',()=>{if(response.statusCode===200)followCommitResponses++;});
+      }
+      if(request.method==='GET'&&request.url==='/api/lifecycle/bootstrap'&&followCommitResponses>0&&failFollowBootstrap){
+        failedFollowBootstrapReads++;const head=response.writeHead.bind(response),end=response.end.bind(response);
+        response.writeHead=()=>head(503,{'content-type':'application/json','cache-control':'no-store'});
+        response.end=()=>end('{"error":{"code":"P2_016_ACTION_FAILED","retryable":true}}');
+      }
+    });
     let dropNoteResponses=dropInternalNoteResponses;
     let malformedNoteSuccess=malformedInternalNoteSuccess;
     const restoreInternalNoteResponses=()=>{dropNoteResponses=false;malformedNoteSuccess=false;};
@@ -151,7 +167,7 @@ export async function withWeb01Fixture(run,{workbenchActivityEnabled=false,workb
       response.end=(...args)=>response.statusCode===200&&malformedReviewResponse&&request.url?.endsWith('/resolve')?end('{"ok":true}'):
         malformedReviewDenial&&[401,403,404].includes(response.statusCode)?end('{'):end(...args);
     });
-    return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
+    return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreFollowBootstrapResponses,followBootstrapFaultState,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
     finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');if(manualProjection){
       const connections=await new Promise((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),metrics=await runtime.observability.metrics();
       assert.equal(connections,0);assert.equal(metrics.sse_clients,0);

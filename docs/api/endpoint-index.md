@@ -4,6 +4,25 @@
 
 按 `METHOD + PATH` 搜索。参数 `{...}` 是占位标识，不是字面URL。W/M/O/P定义见公共约定。`已实现`表示源码有handler并依赖相应装配/默认关闭开关，**不表示当前部署已启用**；`条件兼容`仅特定访问策略，`拒绝`不是可用服务。各行链接包含请求/响应/认证/失败规则及源码/测试。
 
+## T31 显式安全公开进展（独立默认关闭）
+
+| 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/incidents/{incidentId}/publish-update` | W | 本地已实现、默认关闭：独立人工摘要预览确认，不复制内部记录 | [T31公开进展](workbench/incident-public-progress.md) |
+| GET | `/api/incidents/{incidentId}/public-progress` | W | 本地已实现、默认关闭：当前用途获权有界发布页 | [T31公开进展](workbench/incident-public-progress.md) |
+| GET | `/api/incidents/{incidentId}/public-progress/{publicationId}/deliveries` | W | 本地已实现、默认关闭：具体发布的独立安全按路结果 | [T31公开进展](workbench/incident-public-progress.md) |
+
+原Incident commands读取按同主体原PUBLISH用途及当前授权核对，不另建ledger。新用途不继承旧生命周期现场批准；没有GROUP路由。以上不表示部署已启用。
+
+## T30 内部处置（独立默认关闭）
+
+| 方法 | 完整路径 | 宿主 | 当前状态／候选用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/incidents/{incidentId}/internal-notes` | W | 已实现、默认关闭：当前获权内部处置追加，不外发 | [T30内部记录](workbench/incident-internal-notes.md) |
+| GET | `/api/incidents/{incidentId}/internal-notes` | W | 已实现、默认关闭：当前内部用途获权有界分页 | [T30内部记录](workbench/incident-internal-notes.md) |
+
+原 `/api/incidents/{incidentId}/commands/{commandId}` 的 T28 读取仍为既有入口；默认关闭的 T30 ADD_INTERNAL_NOTE 沿该入口按当前原用途授权核对，不另建 ledger 或回执路径。以上本地实现不表示部署已启用。
+
 ## 工作台REST
 
 来源群名称增量默认关闭，启用条件和原始来源语义见 [来源群名称](workbench/source-groups-design.md)。
@@ -251,6 +270,9 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | POST | `/api/v1/tickets/{ticketId}/actions/confirm` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/reopen` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | GET | `/metrics` | 早期设计示例，未挂载 | [当前health/metrics](platform/auth-health.md) |
+| GET | `/api/workbench/board?scope=related` | W，当前READ交集处理／沟通／显式关注并集，规范去重后分页；默认关闭 | [当前关注合同](workbench/follow-current-contract.md) |
+| POST | `/api/workbench/items/{kind}/{id}/follow` | W，当前READ、原UUID／canonical／opaque版本，显式个人关注／取消；默认关闭 | [当前关注输入](workbench/follow-current-contract.md#当前输入输出与-http) |
+| GET | `/api/workbench/items/{kind}/{id}/follow/commands/{commandId}` | W，当前READ下原主体／原请求父项／用途的UNKNOWN、FAILED或COMMITTED；默认关闭 | [安全核对](workbench/follow-current-contract.md) |
 
 后端外部Provider的完整URL见 [外部服务索引](integrations/external-services.md)，群内 @Bot 的 `aibot_msg_callback`、chatid及群名称实测见 [WebSocket消息回调](integrations/wecom-message-callback.md)，无REST的Port/事件见 [内部接口索引](integrations/internal-ports.md)。模拟预览和设计不计为当前业务接口。
 

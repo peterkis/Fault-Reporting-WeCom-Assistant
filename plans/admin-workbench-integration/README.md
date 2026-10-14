@@ -21,6 +21,18 @@ scope: full_human_workbench_and_required_backend
 
 2026-10-13 T12 原七项经父独立核对，82729c90由独立合并代理安全快进，[#67完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)。d279本票21入口／36 PASS及关联前六入口21 PASS保留原被测身份；c9受影响10 PASS与build／strict／artifact原生0／0／0、适用工具20 PASS及独立retired1 PASS已核对，111／113扫描失败、118缺依赖setup FAIL与全部旧RED／NOT_RUN保持。最终纯文档两轴无新增问题、归档原件和精确自有停机已核验。当前 **28／43 CLOSED、15 OPEN**，见[逐项执行记录](execution/t12.md)。WBINT-03／A03已完成T11／T12切片，仍待T13；下一连续整票T13，其唯一原生阻塞#62已完成，#67仅为运行排程前序。默认关闭，全43最终审查和工作树清理继续待完成。
 
+2026-10-13 T13 原七项已父验收，69afe5c1由独立合并代理安全快进，[#68完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68#issuecomment-6140905877)。真实被测c6ec52保留040严格／build／artifact原生0、042本票17 PASS、相关五文件71项经两窗口通过和044工具外层27 PASS；原043超时FAIL、045字节比较误判及启动观察器整体exit1均保留。两轴源码及最终文档无未解决行动项，原件与精确自有清理已核。当前 **29／43 CLOSED、14 OPEN**，见[接单与交接链执行记录](execution/t13.md)。WBINT-03／A03所属T11–T13均本地交付；下一连续整票T30／#85，其唯一原生#83已完成。默认关闭，全43最终审查和工作树清理仍待。
+
+2026-10-13 T30 原七项经父验收，13872854由独立合并代理安全快进，[#85完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85#issuecomment-6144089454)。真实被测b44cdc保留039严格／build／artifact原生0及040单轮9文件14 PASS；029相关12 PASS仍属61f1，不改绑。两轴源码修补和最终四MD复核收口，1495源码／1921制品、冻结原件及精确自有清理均核实，原FAIL／NOT_REACHED／CONNECT UNKNOWN保留。当前 **30／43 CLOSED、13 OPEN**，见[内部处置与原命令恢复记录](execution/t30.md)。WBINT-10／A10已完成T30，T29／T31仍待；#86唯一原生#85已completed，下一连续整票T31按独立人工安全摘要、预览确认、仅定向有效未暂停个人的既定规则推进。默认关闭，全43最终审查与工作树清理继续待完成。
+
+2026-10-14 T31 原七项已父验收，dd270af3由独立合并代理安全快进，[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。独立空白公开摘要、预览确认、有效未暂停个人定向发布及按路结果已本地交付，见[公开进展与恢复记录](execution/t31.md)。实际功能被测84093163保留045严格／一次build／artifact原生0、046两例与047原三例恢复通过；各历史窗口保留自己的被测身份与范围，不合称full。两轴修补和最终两MD复核收口，1519源码／1959制品、冻结原件与精确自有清理已核；原044清理UNKNOWN／NOT_REACHED和全部旧FAIL保留。当前 **31／43 CLOSED、12 OPEN**，WBINT-10／A10已完成T30／T31，仍待T29。T32／#87当前三个原生依赖#80／#81／#86均completed，已领取为下一连续整票。默认关闭，全43最终审查与工作树清理继续待完成。
+
+2026-10-14 T32 原七项已父验收，b2cfff8b由独立代理安全快进，[#87完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。[获权异常查询与正式详情](execution/t32.md)按各域／用途先授权再分页，群／个人／应用和UNKNOWN各自记账；内部记录不进入摘要，Incident不新增控制。功能3f51／MF7e360保留040三原生0、042正式浏览器2PASS、052两个冻结API首例2PASS；Incident按完整未变源码复用，各对象不合称full。两轴及完整保全、自有停机均已核，旧失败与物化／证据类型限制保留。当前 **32／43 CLOSED、11 OPEN**；下一连续整票T29／#84，按已有读取权交接且不扩权。T33的普通Incident重试角色仍待人类决定，默认关闭与现场停止线保持，全43最终审查及工作树清理仍待完成。
+
+2026-10-14 T29 原七项已父验收，d5f6abc8由独立代理唯一安全快进，[#84完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。[Incident已有读取权交接、当前授权与原操作恢复](execution/t29.md)已接入；有效人员／团队和精确Incident读取权同事务核验，责任本身不扩权，个人Ticket状态与通知事实独立。实际功能28230562／MF14719保持029严格／一次build／artifact原生0、030本票13 PASS、031相关16 PASS和032适用工具21 PASS，各窗口不合称full。40路径／18提交的源码与终稿两轴、完整归档／冻结原件和精确自有清理已收口，原RED／FAIL／NOT_REACHED及启动观察器outer1保留。当前 **33／43 CLOSED、10 OPEN**；WBINT-10／A10所属T29／T30／T31均已本地交付。下一连续整票T34／#89，fresh唯一#60已completed；T33普通Incident重试角色仍待人类决定。默认关闭，全43最终审查与工作树清理继续待完成，现场及Gate停止线保持。
+
+2026-10-14 T34 原七項已父驗收，9b5f4f12由獨立代理唯一快進native0，[#89完成並讀回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89#issuecomment-6161469967)。[明確關注與當前獲權責任並集](execution/t34.md)已接入，查看／編輯不自動關注，關注不授READ／所有權，Review轉Ticket規範去重，原UUID／UNKNOWN與當前失權恢復已驗證。功能2ea28212／MF0ccb保持050嚴格／一次build／artifact原生0及051／052／053獨立10／5／9 PASS，044工具3功能PASS但NOT_WALLCLOCK_BUDGET_PASS；歷史失敗及捕獲限制保留。完整Source＋delta＋五MD兩軸與歸檔／自有清理已收口；第二first的新Root物化行尾和凍結私樹raw分別記賬，canonical精確相同。當前 **34／43 CLOSED、9 OPEN**；WBINT-12／A12仍待T36。下一連續整票T33／#88，ADMIN或當前獲權DISPATCHER＋獨立RETRY＋已有精確Incident READ／範圍；UNKNOWN仍ADMIN＋獨立RECONCILE。T40／#95原生依賴均completed，已領取作並行Source／first準備；T41仍受T36阻塞。新開關默認false，全43最終審查與工作樹清理繼續待，未發布／部署／現場／full／certify或Gate。
+
 ## 快速导航
 
 | 阅读目的 | 文档 |

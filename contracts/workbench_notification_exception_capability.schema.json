@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_notification_exception_capability.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["notification_exceptions_enabled"],
+  "properties": {"notification_exceptions_enabled": {"type": "boolean"}}
+}
