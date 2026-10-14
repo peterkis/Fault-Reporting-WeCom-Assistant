@@ -24,13 +24,13 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
   }
 }
 export async function clearSupplementView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){
-  const matches=(key:readonly unknown[])=>key[0]==='ticket-supplement-follow-up'&&key[1]===principal&&key[2]===ticketId;
+  const matches=(key:readonly unknown[])=>(key[0]==='ticket-supplement-follow-up'||key[0]==='supplement-reply-sessions')&&key[1]===principal&&key[2]===ticketId;
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
 }
 export async function clearSupplementAuthorization(client:QueryClient,principal:string,ticketId:string,error:ApiError){
   await clearSupplementView(client,principal,ticketId,error);
-  await purgeDrafts({principal,kind:'ticket',id:ticketId,purpose:'supplement-disposition',reason:'revoked'},{preserveOperations:true}).catch(()=>{});
+  await Promise.all(['supplement-disposition','supplement-reply'].map(purpose=>purgeDrafts({principal,kind:'ticket',id:ticketId,purpose,reason:'revoked'},{preserveOperations:true}).catch(()=>{})));
 }
 export function clearTicketView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemView(client,principal,'ticket',ticketId,error);}
 export async function clearTicketTakeoverView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){

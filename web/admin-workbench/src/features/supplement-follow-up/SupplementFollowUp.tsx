@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
+import {useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearSessionAuthorization,clearSupplementAuthorization} from '../../app/authorization';
@@ -8,6 +8,9 @@ import {sameSupplementTarget} from './client';
 import type {SupplementFollowUpCommand,SupplementFollowUpTarget,SupplementFollowUpResult} from './client';
 import {EMPTY_SUPPLEMENT_INPUT,useSupplementDraft} from './use-supplement-draft';
 import type {SupplementDispositionInput} from './use-supplement-draft';
+import {conversations} from '../conversations/client';
+import type {ConversationWorkspaceEntry} from '../conversations/client';
+import {ConversationComposer} from '../conversations/ConversationComposer';
 import './supplement-follow-up.css';
 type State='idle'|'submitting'|'checking'|'succeeded'|'failed'|'unknown'|'denied';
 function isStaff(principal:Principal){return principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));}
@@ -17,7 +20,10 @@ export function SupplementFollowUpSummary({pending}:{pending:boolean|undefined})
 export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange}:{ticketId:string;principal:Principal;readReady:boolean;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),original=useRef<string|null>(null);
  const [value,setValue]=useState<SupplementDispositionInput>(EMPTY_SUPPLEMENT_INPUT),[pending,setPending]=useState<SupplementFollowUpCommand|null>(null),[operationId,setOperationId]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
+ const [bound,setBound]=useState<{target:SupplementFollowUpTarget;entry:ConversationWorkspaceEntry}|null>(null),[replyBlocked,setReplyBlocked]=useState(false);
  const enabled=principal.supplement_follow_up_enabled===true;
+ const sessions=useQuery({queryKey:['supplement-reply-sessions',principal.principal_id,ticketId,principal.authorization_revision,principal.expires_epoch_ms],enabled:enabled&&readReady&&principal.conversation_workspace_enabled,queryFn:({signal})=>conversations.links('ticket',ticketId,signal)});
+ const replySessions=sessions.data?.items.filter(entry=>entry.capabilities.includes('REPLY')&&entry.session.status!=='ENDED')??[];
  const page=useInfiniteQuery({queryKey:['ticket-supplement-follow-up',principal.principal_id,ticketId,principal.authorization_revision,principal.expires_epoch_ms],enabled:enabled&&readReady,initialPageParam:null as string|null,
   queryFn:({pageParam,signal})=>api.supplementFollowUpPage(ticketId,pageParam,signal),getNextPageParam:current=>current.next_cursor??undefined});
  const rows=page.data?.pages.flatMap(current=>current.items)??[],unique=[...new Map(rows.map(item=>[JSON.stringify([item.source_ref,item.revision]),item])).values()];
@@ -52,7 +58,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
  });
  const originalId=pending?.client_command_id??operationId??draft.operationId,busy=state==='submitting'||state==='checking',locked=busy||Boolean(originalId),hasInput=Boolean(value.note);
  original.current=originalId;
- const blocked=(locked||hasInput)&&!draft.safeToLeave;
+ const blocked=((locked||hasInput)&&!draft.safeToLeave)||replyBlocked;
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
  useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
@@ -127,11 +133,18 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
      <label htmlFor={fieldId}>内部处置</label><p id={fieldId+'-audience'}>仅供获权工作人员协作；提交后明确标记本条补充已跟进。</p>
      <textarea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/>
      <button type="submit" data-action="record-supplement-disposition" disabled={!canSubmit}>记录处置并标记已跟进</button>
+     {replySessions.length&&!bound&&!locked?<button type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}}>通过已有会话回复本条补充</button>:null}
     </form>}
    </li>;
   })}</ol>
   {page.isSuccess&&!unique.length?<p>当前授权范围内没有补充材料。</p>:null}
   {page.hasNextPage?<button type="button" disabled={page.isFetchingNextPage||busy} onClick={()=>{void page.fetchNextPage();}}>加载更多补充</button>:null}
+  {bound?<section data-supplement-bound-reply="" aria-label="精确补充回复">
+   <p>独立人工回复修订 {bound.target.revision}；内部处置不会复制到外发正文。202 仅表示已受理，待全部必要投递可靠成功后才解除本条待办。</p>
+   {replySessions.length>1?<label>已有获权会话<select value={bound.entry.session.session_id} disabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event.target.value);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><option key={entry.session.session_id} value={entry.session.session_id}>{entry.topic} · {entry.channel_label}</option>)}</select></label>:null}
+   <ConversationComposer key={JSON.stringify([bound.target,bound.entry.session.session_id])} entry={bound.entry} principal={principal} purpose="messages" followUpTarget={{ticket_id:ticketId,...bound.target}} onBlockedChange={setReplyBlocked} onCommitted={()=>{void refresh();}}/>
+   <button type="button" disabled={replyBlocked} onClick={()=>setBound(null)}>关闭补充回复</button>
+  </section>:null}
   <div className="note-controls">
    {originalId?<button type="button" data-action="check-supplement-receipt" disabled={busy} onClick={()=>{void checkReceipt();}}>只读核对原处置</button>:null}
    <button type="button" data-action="refresh-supplement-follow-up" disabled={busy} onClick={()=>{void refresh();}}>重新读取补充</button>
