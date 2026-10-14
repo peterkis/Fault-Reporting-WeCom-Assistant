@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/workbench_incident_public_progress_command.schema.json",
+  "title": "T31 frozen SOURCE PROPOSED_NOT_MOUNTED",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_row_version",
+    "reason_code",
+    "summary",
+    "preview_confirmed"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_row_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "reason_code": {
+      "const": "WORKBENCH_PUBLIC_PROGRESS"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "preview_confirmed": {
+      "const": true
+    }
+  }
+}

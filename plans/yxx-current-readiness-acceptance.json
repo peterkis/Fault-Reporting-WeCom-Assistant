@@ -191,6 +191,16 @@
     "tests/platform-time-contract.test.mjs",
     "tests/v1-3-architecture-baseline.test.mjs",
     "tests/v1-4-architecture-baseline.test.mjs",
+    "tests/wbint-t31-contracts.test.mts",
+    "tests/wbint-t31-delivery-admission.integration.test.mts",
+    "tests/wbint-t31-delivery-results.integration.test.mts",
+    "tests/wbint-t31-http-risks.integration.test.mts",
+    "tests/wbint-t31-migration.integration.test.mts",
+    "tests/wbint-t31-public-progress.browser.test.mts",
+    "tests/wbint-t31-public-progress.integration.test.mts",
+    "tests/wbint-t31-purpose-loss.browser.test.mts",
+    "tests/wbint-t31-recovery-results.browser.test.mts",
+    "tests/wbint-t31-unmounted-worker.integration.test.mts",
     "tests/web01-workbench.browser.test.mjs",
     "tests/web01-workbench.integration.test.mjs",
     "tests/web01-workbench.test.mts",
@@ -221,7 +231,15 @@
     "tests/yxx-ss-009-review-regressions.integration.test.mjs",
     "tests/yxx-ss-010-browser.integration.test.mjs",
     "tests/yxx-ss-010-contract.test.mjs",
-    "tests/yxx-ss-010-runtime.integration.test.mjs"
+    "tests/yxx-ss-010-runtime.integration.test.mjs",
+    "tests/wbint-t32-notification-exceptions.integration.test.mts",
+    "tests/wbint-t32-session-exceptions.integration.test.mts",
+    "tests/wbint-t32-incident-exceptions.integration.test.mts",
+    "tests/wbint-t32-notification-exceptions.browser.test.mts",
+    "tests/wbint-t32-exception-contract.test.mts",
+    "tests/wbint-t32-exception-compatibility.integration.test.mts",
+    "tests/wbint-t32-exception-authorization.browser.test.mts",
+    "tests/wbint-t32-exception-route.browser.test.mts"
   ],
   "historical_registered_files": [
     "tests/yxx-ss-008-validation-scope.test.mjs"

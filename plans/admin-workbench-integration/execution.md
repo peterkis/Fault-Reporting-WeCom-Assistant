@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-13
+snapshot_on: 2026-10-14
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,92 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-13，T12收口）
+## 当前执行状态导航（2026-10-14，T34收口）
+
+GitHub实际为 **34／43 CLOSED、9 OPEN**，见[完整当前快照](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t34-20261014.json)。[#89原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89#issuecomment-6161469967)。全部43票仍ACTIVE，WBINT-12／A12尚待T36。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T34 / #89 | [明确关注与我有关](execution/t34.md)原七已父核、独立唯一快进9b5f4f12/native0。当前READ下处理责任、非ENDED当前沟通责任和本人显式关注规范并集；查看／编辑不自动关注，关注不授READ／所有权，Review关联Ticket单卡／单关注，失权停止显示。 |
+| 操作与正式页面 | 原UUID／body／If-Match、当前授权和锁后回查，取消全部本人当前锚点及tombstone；真实HTTP／生产bundle覆盖单卡、转出、并发／重放、未知结果只读核对与显式重试、加密草稿、目的403与真401、晚到HTTP／SSE清理。 |
+| 被测对象与适用检查 | 功能2ea28212／tree9bd0／MF0ccb：050 strict／一次build／artifact六native0；051后端10PASS、052正式恢复5PASS／8PNG、053相关5文件9PASS，各窗口独立不称full。原首／合同／formalUI先前PASS保持原对象。044工具native0／3功能PASS但单例及总914282ms超240k，NOT_WALLCLOCK_BUDGET_PASS；156observed／153available＋3deletedScratch未重构。T35 CHANNEL失败0／other3原诊断保留。 |
+| 两轴与归档 | Source完整33＋准确delta3、最终5MD的Standards／Spec均无未解决行动项；独立完整保存核验0异常。1575source／2045runtime／54tools、43SQL含旧42＋新044、registry612／144／348保原606／143／342完整tuple及有序成员，当前needed vendor复用不可变009保存字节。 |
+| 集成与原件 | Root9b5／treeea0、index0和原三status；sixraw、9633未改旧Root物理输入及8030旧SQL／合同／Evidence Git对象不变，33changed canonical相符。冻结private两first原字节不变；第二first首次Root checkout多61个CR，其5309／5370raw分别记录、同Gitblob，未归一化。初中文路径reader及原POST_EXCEPTION前向说明保留。 |
+| 精确自有清理 | 055自有隔离DB0／otherclient0，原032残留PNG先保存匹配再精确清理；056 PG24724 pre0／stop0／post3、pidfile无、single62775 LISTEN0／config2ab相同、keeperSTOPPED／pidnull／cleanuptrue；062全部自有handles终态。实现树留待全43结束清理。 |
+| 当前frontier | 下一连续整票T33／#88，fresh原七／0comments／ready／peterkis／sole87completed已核。普通retry人类规则已明确：ADMIN或当前获权DISPATCHER＋独立RETRY＋已有exact Incident READ和范围，owner／HANDLER／VIEW／PUBLISH不额外授retry；UNKNOWN独立核对ADMIN-only＋RECONCILE。T40／#95四原生依赖89／90／92／93均completed并已领取，仅并行SOURCE／first准备；T41仍待91。 |
+| 边界 | WBINT-12贡献T34／T35／T37已本地完成，T36尚待；旧RED／FAIL／NOT_REACHED／NOT_RUN、006捕获不足、032partialarchive、059状态口径纠正保留。新开关defaultfalse，全43最终两轴及工作树清理待。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T29收口）
+
+GitHub实际快照为 **33／43 CLOSED、10 OPEN**；[本地完整读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t29-20261014.json)。[#84原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84#issuecomment-6156993035)。WBINT-10／A10所属T29、T30、T31均已本地交付；全部43票仍在执行。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T29 / #84 | 原七项已父验收，d5f6abc8由独立代理唯一快进native0；[负责人交接与原操作恢复](execution/t29.md)已接入。当前ADMIN／DISPATCHER及精确Incident范围独立授权，目标必须为有效人员、有效团队且已拥有该Incident读取权；交接不扩权。显式null与真实NONE团队分别保留，Ticket状态与外发事实独立。 |
+| 验证 | 实际功能28230562／tree66a5／MF14719保持029严格／一次build／artifact原生0、030本票9文件13 PASS、031相关10文件16 PASS、032适用工具外层含17嵌套共21 PASS／native0。真实HTTP与生产制品浏览器覆盖并发、重复、当前调用者等待后撤权、目标离组／失权、目的403、真实401、原UUID／UNKNOWN及显式无团队恢复。各窗口保留自身范围，不相加称full。 |
+| 审查与保全 | 最终40路径／18提交的Standards与Spec两轴无未解决行动项；d5仅三MD后继，未重绑功能制品。1559源码／2020制品、相关执行绑定、物理vendor并集、冻结first／合同、42私树SQL与41Root旧SQL、旧Evidence及用户六份原件已分别核对；606入口／143 selections／342资源为原成员完整并集。 |
+| 集成与清理 | Root已纳入d5，index0、原分支与用户三status／六raw不变；40条物化canonical匹配，31份raw行尾差异分别保存而未归一化。036自有PG36804 stop0／status3、单62775 LISTEN0、pid不存在；037 keeper前向记录STOPPED／pidnull，旧字段保留。全部自有native终态，工作树留待全43结束清理。 |
+| 历史限制 | 原RED、FAIL、NOT_REACHED及006启动观察器outer1保留，实际pg_ctl start0、007running0与036stop0分别记录。目的403后的晚到200在导航前释放，031为358份有限实际绑定核对，032无编译器逐模块load trace；未新增运行范围和未达步骤不称已验证。 |
+| 来源工作包与后续 | WBINT-10／A10 LOCAL_VERIFIED：T29／T30／T31原七项均已父核、集成并原生CLOSED/completed。下一连续整票T34／#89，其完整正文／空评论／ready／领取及唯一原生#60 completed已重读。T33／#88的普通Incident重试角色仍待人类决定，其余可执行票继续。 |
+| 边界 | 新054为最小追加迁移，新增开关默认false，单App／Worker、Gateway单活、SSE32及池预算保持。全43最终审查与实现工作树清理仍待。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T32收口）
+
+GitHub实际快照为 **32／43 CLOSED、11 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t32-20261014.json)。[#87原七项完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87#issuecomment-6153988160)。WBINT-11／A11已本地交付T32，T33仍待普通Incident重试角色的人类决定。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T32 / #87 | 原七项经父验收，b2cfff8b由独立代理安全快进；[各域获权分页、分路事实与正式详情](execution/t32.md)已接入。授权先于LIMIT，隐藏对象、wrong parent与混用游标拒绝；摘要不复制内部正文，Incident没有新增控制动作。 |
+| 验证 | 实际功能3f51／60ee／MF7e360保留040严格／一次build／artifact原生0、042正式浏览器两例PASS与052真实功能checkout的两个冻结API首例2PASS／0SKIP。022 Incident完整query／Scope／assembly至3f51未变，按精确对象复用；035本票6PASS、036失权1PASS、039相关12PASS各自保留原对象，不合称full或同次三API回归。 |
+| 审查与保全 | 25路径两轴、8路径修补及终稿三MD无剩余行动项，LOW重复安全SQL为可选。3929原封存与7050新增源／制品独立实际核验，134原保护对象、41SQL、597入口／131 selections／335资源并集及用户六原件保全；schema_draft的raw独立核对，不计入1537MF输入。 |
+| 集成与清理 | Root已纳入b2cfff8b，index0、用户三status行／六raw不变；31Root物化文件中18份仅行尾不同，原件分别封存。053本次自有PG26124 stop0／status3、单62775 LISTEN0、keeper STOPPED／pidnull且配置保留；全部自有native终态，两私树留待全43结束清理。 |
+| 历史限制 | 048文档头对功能MF的身份拒绝、050物化／owner前置失败以及原FAIL／NOT_REACHED保持。真实3f51 checkout通过原工具后复用制品，未放宽守卫或重绑b2；owner标记只有复制记录／verifier0，派生target argv不冒称OS探测。 |
+| 来源工作包与后续 | WBINT-11／A11为IN_PROGRESS，T32 LOCAL_VERIFIED，T33原生#87阻塞已解除但普通Incident重试角色仍待决定。下一连续整票T29／#84，唯一#83实际completed，目标须已有该Incident读取权且交接不扩权；WBINT-10／A10已交付T30／T31，仍待T29。 |
+| 边界 | 新开关默认false，无DB变更；全43最终审查与实现工作树清理继续待完成。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进。 |
+
+## 历史执行状态导航（2026-10-14，T31收口）
+
+GitHub实际快照为 **31／43 CLOSED、12 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t31-20261014.json)。[#86完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86#issuecomment-6149728080)。WBINT-10／A10已本地交付T30／T31，T29仍待完成。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T31 / #86 | 原七项经父验收，dd270af3由独立代理安全快进；[独立空白摘要、预览确认、定向个人发布与恢复](execution/t31.md)及既有API同步。新进展不复制内部处置，不广播共享群，个人Ticket事实独立。 |
+| 验证 | 实际功能被测84093163／92996926／MF e5c8814a保留045严格／一次build／artifact原生0，046目的403与真实401两例及047原三例恢复各自通过。032本票15 PASS／034关联32 PASS属于bdbe，040修补关联19 PASS属于2f18，各窗口独立，不相加称full；dd270仅后继两MD，未重绑制品。 |
+| 审查与保全 | 源码两轴及S1／S2修补增量、终稿两MD复核无剩余行动项，H1 LOW为可选。1519源码／1959制品共3478件、60保护原件、40旧SQL（含schema_draft）、历史Evidence及用户六份原件已实际核验；新058为独立增量。 |
+| 集成与清理 | Root已纳入dd270，589入口／123 selections／330资源完整并集、index0。四件Root新物化CRLF与私树原件LF差异分别记录，未归一化或重绑。049已知自有浏览器／原HTTP／隔离库范围归零，050自有PG stop0／status3／PIDnull／单62775 LISTEN0且配置保留，全部自有native终态；044原AggregateError叶原因UNKNOWN、残留断言NOT_REACHED及旧FAIL不改为PASS。 |
+| 来源工作包 | WBINT-10／A10为IN_PROGRESS，T30／T31 LOCAL_VERIFIED，T29仍待；其余12票、全43最终审查及实现工作树清理继续推进。 |
+| 后续 | 已fresh核对T32／#87正文、0评论、ready及原生#80／#81／#86全部CLOSED/completed并领取。下一连续整票为获权通知异常队列；T33重试／核对仍待#87。不从对象卡片、订阅、目的地或旧Incident通知入口扩权，沿各域及用途当前可见性先过滤再分页。 |
+| 边界 | 新用途与恢复默认false，单App／Worker、Gateway单活、SSE32及池预算保持。未push／PR、部署、真实外部服务／发送、full／certify或Gate推进；历史阶段与现场停止线保持。 |
+
+## 历史执行状态导航（2026-10-13，T30收口）
+
+GitHub实际快照为 **30／43 CLOSED、13 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t30-20261013.json)。[#85完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85#issuecomment-6144089454)。WBINT-10／A10仅T30已本地交付，T29／T31仍待完成。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T30 / #85 | 原七项经父验收，13872854由独立合并代理安全快进；[内部处置、私有历史与原命令恢复](execution/t30.md)及API已同步。 |
+| 验证 | 真正被测b44cdc的039严格／一次build／artifact原生0，040单轮9文件14 PASS／0 SKIP及7张正式bundle归档PNG；029相关六文件12 PASS保留61f1实际身份，未改绑。 |
+| 审查与保全 | 两轴源码及纯四MD复核收口：Spec001和Standards S1已修补，H1为LOW可选非阻断。1495源码／1921制品、原first7976B、57保护项／39旧SQL、历史Evidence及六份用户原件保全。26处Root/private换行物化差异独立记录，未归一化。 |
+| 集成与清理 | Root已纳入13872854，579入口／108 selections／324资源完整并集，index0。044自有PG stop0／status3／PIDnull、精确62775 LISTEN0及配置保留；成功fixture的数据库、池、HTTP与浏览器清理已核，不声称全局扫描。030／031 CONNECT UNKNOWN和各原FAIL／NOT_REACHED／观察器错误保留。 |
+| 来源工作包 | WBINT-10／A10为IN_PROGRESS，T30 LOCAL_VERIFIED；其余13票、全部43票最终审查及实现工作树清理继续待完成。 |
+| 后续 | 下一连续整票T31／#86，已重读原生正文、0评论、ready和唯一#85 CLOSED/completed。独立人工安全摘要默认空白、预览确认后发布；只定向有效未暂停个人，不广播共享群、不复制内部记录。T29交接须已有Incident读取权、不扩权的决定保持。 |
+| 边界 | 新增最小055及独立默认false开关；没有第二Core或真实外发。未push／PR、部署、full／certify或Gate推进，历史阶段与现场停止线保持。 |
+
+## 历史执行状态导航（2026-10-13，T13收口）
+
+GitHub实际快照为 **29／43 CLOSED、14 OPEN**；[本地读取记录](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t13-20261013.json)。[#68完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68#issuecomment-6140905877)。WBINT-03／A03的T11、T12、T13均已本地交付并原生CLOSED/completed。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T13 / #68 | 原七项经父独立验收，69afe5c1已由独立合并代理安全快进；[安全责任与实际沟通交接链](execution/t13.md)和既有API已同步。 |
+| 验证 | c6ec52严格／一次build／artifact原生0；当前五文件17 PASS。相关五文件71项来自043前三文件49 PASS与043b两文件22 PASS，原043的64 PASS／1 FAIL保留；044工具外层27 PASS，内嵌负向夹具不作业务失败或浏览器验收。 |
+| 审查与保全 | 独立Standards／Spec及最终两份文档复核无未解决行动项，H1为LOW可选。1475 raw输入／3205编译文件及真实被测祖先保留；原first、合同、SQL、历史证据和六份用户原件未改。Root checkout与private raw的22处换行物化差异单独记录，不归一化或重绑测试身份。 |
+| 集成与清理 | 本地Root已到69afe5c1，570入口／96 selections／319资源保留原并集，index0。自有PG stop0／status3／PIDnull、配置保留；各fixture独立DROP／池关闭／浏览器与HTTP清理有证据，不声称全局扫描。原启动观察器整体exit1与内层start0、延迟status3分别保留。 |
+| 来源工作包 | WBINT-03／A03三票本地完成；完整人工工作台、其余14票及全43最终审查仍待，既有阶段与现场停止线保持。 |
+| 后续 | 下一连续整票T30／#85，当前原生正文／0评论／ready及唯一#83 CLOSED/completed已读；正式启动时正常合入最新Root并完成原七项。其余SOURCE准备不计验收。T29目标已有Incident读取权、不扩权；T31独立人工摘要／仅个人定向新进展决定保持，#86仍被#85阻塞。 |
+| 边界 | 默认false，无新数据库变更／第二Core／真实外发；未push／PR、部署、full／certify或Gate推进，实现工作树按全43结束后统一清理。 |
+
+## 历史执行状态导航（2026-10-13，T12收口）
 
 GitHub实际快照为 **28／43 CLOSED、15 OPEN**；[读取结果](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t12-20261013.json)。[#67已完成并读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67#issuecomment-6137509105)。WBINT-03／A03的T11／T12已本地交付并原生CLOSED/completed，T13仍待完成。
 

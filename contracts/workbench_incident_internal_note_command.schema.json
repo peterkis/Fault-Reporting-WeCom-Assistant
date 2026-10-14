@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_incident_internal_note_command.schema.json",
+  "title":"WBINT-T30 Incident internal disposition input (PROPOSED_NOT_MOUNTED)",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["client_command_id","expected_row_version","reason_code","audience","text"],
+  "properties":{
+    "client_command_id":{"type":"string","format":"uuid"},
+    "expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$","x-postgresql-bigint-maximum":"9223372036854775807"},
+    "reason_code":{"const":"WORKBENCH_INTERNAL_DISPOSITION"},
+    "audience":{"const":"INTERNAL"},
+    "text":{"type":"string","minLength":1,"maxLength":2000,"pattern":"^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]*$"}
+  },
+  "x-runtime-validation":[
+    "Current Cookie, same-origin Origin, CSRF; Idempotency-Key equals client_command_id",
+    "If-Match is the exactly quoted expected_row_version; decimal string <= PostgreSQL BIGINT maximum",
+    "Text is plain text, not whitespace-only, at most 2000 Unicode code points and 8192 UTF-8 bytes",
+    "Current Incident ADMIN/DISPATCHER action and scope authority before original receipt replay"
+  ]
+}

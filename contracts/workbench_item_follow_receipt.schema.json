@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "workbench_item_follow_receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "requested_item",
+    "state"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "requested_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ticket",
+            "review",
+            "intake"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "state": {
+      "enum": [
+        "UNKNOWN",
+        "COMMITTED",
+        "FAILED"
+      ]
+    },
+    "result": {
+      "$ref": "workbench_item_follow_result.schema.json"
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]{1,128}$"
+        },
+        "retryable": {
+          "const": false
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "COMMITTED"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "result"
+        ],
+        "not": {
+          "required": [
+            "error"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "FAILED"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "error"
+        ],
+        "not": {
+          "required": [
+            "result"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "UNKNOWN"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "result"
+              ]
+            },
+            {
+              "required": [
+                "error"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

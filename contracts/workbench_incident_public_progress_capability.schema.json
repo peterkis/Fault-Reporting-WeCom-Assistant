@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "T31 additive public progress capability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "incident_public_progress_enabled",
+    "incident_public_progress_draft_recovery_enabled"
+  ],
+  "properties": {
+    "incident_public_progress_enabled": {
+      "type": "boolean"
+    },
+    "incident_public_progress_draft_recovery_enabled": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "incident_public_progress_draft_recovery_enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "incident_public_progress_enabled": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
+}

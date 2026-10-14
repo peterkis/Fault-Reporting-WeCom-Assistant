@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/workbench_incident_owner_transfer_result.schema.json",
+  "title": "T29 frozen SOURCE / NOT_MOUNTED / NOT_RUN",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "result_ref_type",
+    "result_ref_id",
+    "result_row_version",
+    "result_event_id",
+    "replayed"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "result_ref_type": {
+      "const": "INCIDENT"
+    },
+    "result_ref_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "result_row_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "description": "Decimal PostgreSQL BIGINT string; existing runtime guard enforces 1..9223372036854775807."
+    },
+    "result_event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "replayed": {
+      "type": "boolean"
+    }
+  }
+}
