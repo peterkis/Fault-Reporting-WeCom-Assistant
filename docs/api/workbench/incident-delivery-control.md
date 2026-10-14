@@ -23,6 +23,8 @@ resolution 为 CONFIRMED_SENT、CONFIRMED_NOT_SENT_REQUEUE 或 CANCEL。确认�
 
 ACK 闭合为 ok, incident_id, delivery_id, client_command_id, status, side_effect_state, attempt_count, replayed。原 UUID 当前验权后先读原 ledger，再做新命令 CAS；其后 Delivery 变化不能导致同一 UUID 再执行。新的 UUID 必须带当前真实快照。v1 规范化 hash 保持，原 UUID 可核对/重放；新 v1 UUID 只允许可证明的初次尝试（PENDING 0 或确定失败/UNKNOWN 1），晚于初次必须显式使用 v2。改变同一 UUID 的正文返回冲突。共享 HTTP 拒绝为单字段 {error:{code,retryable:false}}；安全 FAILED 回执是独立只读合同，不能混为 POST 的外层格式。
 
+当前 Actor 的会话、精确 READ、角色、范围或独立动作用途失效仍返回 401/403/404，界面立即停止该用途敏感展示。已获权命令的发送准入变化（例如当前个人订阅已暂停）属于既有 409 / P2_012_STATE_CONFLICT；同事务记录 FAILED，Delivery 与 Sender 不变。界面把它显示为已知拒绝并保留捕获的路、原因和结论，允许显式只读刷新。明确终态已核对且恢复清理成功后，可以释放原 UUID 屏障，不要求永久展示已终结操作。
+
 ## 权限与状态分开
 
 同一 GET control 事务返回两个前向 Header：X-Incident-Delivery-Retry-Authorized 和 X-Incident-Delivery-Reconcile-Authorized，值严格为 1 或 0。它们包含当前独立权限、角色、范围、精确 READ 和绑定，不因当前 Delivery 状态改变。八字段 JSON 不增加字段；retry/reconcile 继续表示当前状态是否允许一个新意图。浏览器拒绝缺失、非法或与 receipt_read/状态能力矛盾的 Header。服务器始终独立验权，Header 不能授权业务执行。
