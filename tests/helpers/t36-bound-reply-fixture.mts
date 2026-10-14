@@ -51,7 +51,8 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
    for(let attempt=0;attempt<20;attempt++){await runtime.coordinator.runOnce();if(object(await runtime.coordinator.backlog()).channel_messages===0)break;}
    assert.equal(object(await runtime.coordinator.backlog()).channel_messages,0);
    const evaluated=await orchestrator.processPersistedIntake({service_intake_id:String(intakeId),feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},trace_id:'t36-'+msgid});
-   return {intakeId:String(intakeId),evaluated:object(evaluated)};
+   const material=object(object(accepted).result),message=object(material.message);assert.equal(typeof message.channel_message_id,'string');assert.equal(typeof message.sequence_no,'number');
+   return {intakeId:String(intakeId),evaluated:object(evaluated),sourceRef:'channel:'+String(message.channel_message_id),revision:String(message.sequence_no)};
   };
   const initial=await accept('3楼护士站HIS登录报错'),actions=initial.evaluated.action_results;assert.ok(Array.isArray(actions));
   const ticket=actions.map(object).find(a=>a.result_ref_type==='TICKET');assert.ok(ticket);assert.equal(typeof ticket.result_ref_id,'string');
@@ -63,7 +64,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const target=async(text:string):Promise<SupplementFollowUpTarget>=>{
    const next=await accept(text);assert.equal(next.intakeId,initial.intakeId);
    const detail=await read<{records:{text:string|null;audience:string;read_material?:SupplementFollowUpTarget}[]}>(itemPath);
-   const found=detail.records.find(r=>r.audience==='REPORT'&&r.text===text)?.read_material;assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return found;
+   const found=detail.records.find(r=>r.audience==='REPORT'&&r.read_material?.source_ref===next.sourceRef&&r.read_material.revision===next.revision)?.read_material;assert.ok(found);assert.match(found.source_ref,/^channel:[1-9][0-9]*$/u);return found;
   };
   const r2=await target('补充：T36同一主题当前错误提示403。');assert.equal(r2.revision,'2');
   const internalCanary='T36_INTERNAL_ONLY_'+randomUUID();
