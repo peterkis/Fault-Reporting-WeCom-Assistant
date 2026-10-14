@@ -87,6 +87,10 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
  }
  return Object.freeze({
   replyBinding,
+  async summary(input:Input):Promise<{has_pending_supplements:boolean}>{return transactionP2016(pool,async tx=>{
+   await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c);
+   return {has_pending_supplements:(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${evidence})) AS pending`,m.values)).rows[0]?.pending===true};
+  });},
   ready:async()=>enabled&&await supplementFollowUpSchemaReady(pool),
   async page(input:Input&{limit?:unknown;cursor?:unknown}):Promise<SupplementFollowUpPage>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c),n=limitP2016(input.limit??'50');

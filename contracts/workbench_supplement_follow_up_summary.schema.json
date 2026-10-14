@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_supplement_follow_up_summary.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "has_pending_supplements"
+  ],
+  "properties": {
+    "has_pending_supplements": {
+      "type": "boolean"
+    }
+  }
+}
