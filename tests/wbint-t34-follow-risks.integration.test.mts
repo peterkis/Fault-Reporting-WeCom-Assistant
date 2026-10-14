@@ -181,3 +181,18 @@ test('T34 a real communication transfer removes only responsibility, while expli
   assert.equal((await admin.read('/api/tickets/'+target.ticket.id)).assignee_id,null,'communication and personal attention never give Ticket handling ownership');
  },{ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,chronologicalTicketEvents:true,manualProjection:true,workbenchFollowEnabled:true});
 });
+
+test('T34 readiness and migration NOOP reject the actual active index when invalid or not ready',async t=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  for(const attribute of ['indisvalid','indisready'] as const){
+   const changed=await f.pool.query<{indisvalid:boolean;indisready:boolean}>(`UPDATE pg_index SET ${attribute}=false WHERE indexrelid=to_regclass('pilot_ticket.workbench_item_follow_active_idx') AND indrelid=to_regclass('pilot_ticket.workbench_item_follow') RETURNING indisvalid,indisready`);
+   assert.equal(changed.rowCount,1);assert.equal(changed.rows[0]?.[attribute],false);
+   t.diagnostic('T34_ACTUAL_OWNED_INDEX_STATE '+JSON.stringify({attribute,...changed.rows[0]}));
+   try{
+    assert.equal(await followSchemaReady(f.pool),false,'the active index definition alone cannot prove a valid, ready index');
+    await assert.rejects(migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'status'}),{code:'P2_016_ACTION_FAILED'});
+   }finally{await f.pool.query(`UPDATE pg_index SET ${attribute}=true WHERE indexrelid=to_regclass('pilot_ticket.workbench_item_follow_active_idx') AND indrelid=to_regclass('pilot_ticket.workbench_item_follow')`);}
+  }
+  assert.equal(await followSchemaReady(f.pool),true);
+ },{workbenchFollowEnabled:true,manualProjection:true});
+});
