@@ -311,3 +311,15 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | IDC02 | POST | /api/incidents/{incidentId}/notifications/{deliveryId}/retry | W | 已实现、默认关闭；确定未应用/独立RETRY/v2尝试 | [投递控制](workbench/incident-delivery-control.md) |
 | IDC03 | POST | /api/incidents/{incidentId}/notifications/{deliveryId}/reconcile | W | 已实现、默认关闭；ADMIN/独立RECONCILE/明确结论 | [投递控制](workbench/incident-delivery-control.md) |
 | IDC04 | GET | /api/incidents/{incidentId}/notification-commands/{commandId} | W | 当前原动作用途安全只读原UUID；关闭控制不删除事实 | [投递控制](workbench/incident-delivery-control.md) |
+
+## 补充待跟进（T36，默认关闭）
+
+| 方法 | 完整路径 | 宿主 | 状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| GET | `/api/tickets/{ticketId}/supplement-follow-up` | W | 已实现：当前获权留存补充页与完整范围 pending | [精确补充跟进](workbench/supplement-follow-up-design.md) |
+| GET | `/api/tickets/{ticketId}/supplement-follow-up/material` | W | 已实现：source_ref/revision 精确当前材料，不依赖首页成员判断 | [精确补充跟进](workbench/supplement-follow-up-design.md) |
+| POST | `/api/tickets/{ticketId}/supplement-follow-up` | W | 已实现：内部处置＋明确标记，仅原精确修订 | [精确补充跟进](workbench/supplement-follow-up-design.md) |
+| GET | `/api/tickets/{ticketId}/supplement-follow-up/commands/{commandId}` | W | 已实现：当前原主体/用途的安全只读收据 | [精确补充跟进](workbench/supplement-follow-up-design.md) |
+
+可选 bound reply 复用 `POST /api/workbench/conversations/{sessionId}/messages` 和 `GET /api/workbench/conversations/{sessionId}/messages/commands/{commandId}`；仍202受理，全部必要原 Delivery可靠完成才解除原材料，既有无绑定合同不变。关闭新入口不阻断获权旧 bound Message 的只读核对；已应用062后必需binding表缺失返回503，冷旧宿主原路径兼容。无 Session 不造 Conversation。部署/真实外发仍未授权。
+
