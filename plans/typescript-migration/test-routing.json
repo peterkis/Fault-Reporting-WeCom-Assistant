@@ -5569,6 +5569,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t34-follow-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t34-follow-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7172,7 +7190,9 @@
       "tests/wbint-t34-explicit-follow.integration.test.mts",
       "tests/wbint-t34-follow.integration.test.mts",
       "tests/wbint-t34-follow-risks.integration.test.mts",
-      "tests/wbint-t34-follow-production.browser.test.mts"
+      "tests/wbint-t34-follow-production.browser.test.mts",
+      "tests/wbint-t34-follow-contracts.test.mts",
+      "tests/wbint-t34-follow-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {

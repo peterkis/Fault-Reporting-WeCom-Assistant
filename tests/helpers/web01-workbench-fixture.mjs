@@ -59,7 +59,7 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
@@ -126,6 +126,19 @@ export async function withWeb01Fixture(run,{workbenchAssignmentHistoryEnabled=fa
     assert.ok(Array.isArray(started.cookies)&&started.cookies.length===3);const cookies=started.cookies.map(c=>c.name+'='+c.value);
     if(workbenchManualReportsEnabled&&!manualProjection)await settleManualFixtureProjection(runtime);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
+    let failFollowBootstrap=failFollowBootstrapAfterCommit,followCommitResponses=0,failedFollowBootstrapReads=0;
+    const restoreFollowBootstrapResponses=()=>{failFollowBootstrap=false;};
+    const followBootstrapFaultState=()=>({committed_responses:followCommitResponses,failed_bootstrap_reads:failedFollowBootstrapReads});
+    if(failFollowBootstrapAfterCommit)runtime.server.on('request',(request,response)=>{
+      if(request.method==='POST'&&/^\/api\/workbench\/items\/(ticket|review|intake)\/[0-9a-f-]{36}\/follow$/iu.test(request.url??'')){
+        response.once('finish',()=>{if(response.statusCode===200)followCommitResponses++;});
+      }
+      if(request.method==='GET'&&request.url==='/api/lifecycle/bootstrap'&&followCommitResponses>0&&failFollowBootstrap){
+        failedFollowBootstrapReads++;const head=response.writeHead.bind(response),end=response.end.bind(response);
+        response.writeHead=()=>head(503,{'content-type':'application/json','cache-control':'no-store'});
+        response.end=()=>end('{"error":{"code":"P2_016_ACTION_FAILED","retryable":true}}');
+      }
+    });
     let dropNoteResponses=dropInternalNoteResponses;
     let malformedNoteSuccess=malformedInternalNoteSuccess;
     const restoreInternalNoteResponses=()=>{dropNoteResponses=false;malformedNoteSuccess=false;};
@@ -154,7 +167,7 @@ export async function withWeb01Fixture(run,{workbenchAssignmentHistoryEnabled=fa
       response.end=(...args)=>response.statusCode===200&&malformedReviewResponse&&request.url?.endsWith('/resolve')?end('{"ok":true}'):
         malformedReviewDenial&&[401,403,404].includes(response.statusCode)?end('{'):end(...args);
     });
-    return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
+    return await run({...context,tickets,waiting,principals,outsider,runtime,processReviewIntake,origin,cookies,browserCookies:started.cookies,restoreFollowBootstrapResponses,followBootstrapFaultState,restoreInternalNoteResponses,restoreSelfHandlingResponses,restoreReviewResponses});}
     finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');if(manualProjection){
       const connections=await new Promise((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),metrics=await runtime.observability.metrics();
       assert.equal(connections,0);assert.equal(metrics.sse_clients,0);
