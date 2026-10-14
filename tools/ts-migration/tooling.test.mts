@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
-import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles } from './common.mjs';
+import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles,runNode } from './common.mjs';
 import {checkCompiledSyntax} from './syntax-check.mjs';
 
 const original = sourceRoot();
@@ -273,4 +273,20 @@ test('bounded native syntax jobs parse every emitted file without executing code
    assert.equal(state.active,0);assert.equal(state.max_active,2);return true;
   });
  }finally{assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-syntax-check-'));rmSync(root,{recursive:true,force:true});}
+});
+
+
+test('compile-only observer boundary keeps actual execution coverage and native checks',()=>{
+ const root=mkdtempSync(path.join(tmpdir(),'migration-coverage-boundary-')),prior=process.env.NODE_V8_COVERAGE;
+ try{
+  const coverage=path.join(root,'coverage'),file=path.join(root,'real.mjs');mkdirSync(coverage);
+  writeFileSync(file,"export const value=1;\n");process.env.NODE_V8_COVERAGE=coverage;
+  runNode(root,['--check',file]);assert.deepEqual(readdirSync(coverage).filter(name=>name.endsWith('.json')),[]);
+  writeFileSync(file,"export const =1;\n");assert.throws(()=>runNode(root,['--check',file]),/MIGRATION_COMMAND_FAILED/u);
+  assert.deepEqual(readdirSync(coverage).filter(name=>name.endsWith('.json')),[]);
+  writeFileSync(file,"export const value=1;\n");runNode(root,[file]);assert.ok(readdirSync(coverage).filter(name=>name.endsWith('.json')).length>0);
+ }finally{
+  if(prior===undefined)delete process.env.NODE_V8_COVERAGE;else process.env.NODE_V8_COVERAGE=prior;
+  assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-coverage-boundary-'));rmSync(root,{recursive:true,force:true});
+ }
 });
