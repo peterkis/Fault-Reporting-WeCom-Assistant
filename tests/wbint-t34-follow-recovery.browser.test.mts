@@ -105,7 +105,7 @@ test('T34 current object READ loss clears the personal projection while its sess
  },{workbenchFollowEnabled:true,workbenchRealtimeEnabled:true,manualProjection:true,chronologicalTicketEvents:true});
 });
 
-test('T34 an actual bootstrap403 from an inactive staff principal closes the session before a new Follow POST',{timeout:240000},async()=>{
+test('T34 an actual bootstrap401 from an inactive staff principal closes the session before a new Follow POST',{timeout:240000},async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
   const target=f.tickets[1],cookie=f.browserCookies[2],actor=f.principals[1];assert.ok(target&&cookie&&actor);let posts=0;
   f.runtime.server.on('request',request=>{if(request.method==='POST'&&request.url?.endsWith('/follow'))posts++;});
@@ -114,9 +114,9 @@ test('T34 an actual bootstrap403 from an inactive staff principal closes the ses
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.ticket.id,width:1920,height:1080,cookies:[cookie]});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector("[data-action=toggle-item-follow]")&&!document.querySelector("[data-action=toggle-item-follow]").disabled)');
    await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[actor.id]);
-   assert.equal((await fetch(f.origin+'/api/lifecycle/bootstrap',{headers:{cookie:f.cookies[2]}})).status,403);
+   assert.equal((await fetch(f.origin+'/api/lifecycle/bootstrap',{headers:{cookie:f.cookies[2]}})).status,401);
    await browser.evaluate('document.querySelector("[data-action=toggle-item-follow]").click()');
-   await browser.waitFor('document.body.textContent.includes("当前身份没有查看权限。")');
+   await browser.waitFor('document.body.textContent.includes("会话已失效，请重新进入已授权工作台。")');
    assert.equal(await browser.evaluate('Boolean(document.querySelector("#detail-title, [data-action=toggle-item-follow]"))'),false);assert.equal(posts,0);
   }catch(error){primary=error;}
   finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
