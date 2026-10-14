@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-team-and-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-default-off-and-schema.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7574,6 +7583,9 @@
     ],
     "wbint-t36-default-off-and-schema": [
       "tests/t36-default-off-and-schema.integration.test.mts"
+    ],
+    "wbint-t36-team-and-recovery": [
+      "tests/t36-team-and-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {
