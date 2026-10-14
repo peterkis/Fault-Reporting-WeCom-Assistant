@@ -7,7 +7,7 @@
 
 Incident→原 `communication.incident_notification_binding`→Message→Outbox→Delivery必须逐项精确关联；没有虚构Conversation Session或Ticket控制授权。每次控制、回执读取及重放，先核当前活动主体、该Incident既有精确READ和当前scope，再核原控制用途权限与当前父子绑定。普通retry只允许ADMIN或当前获权DISPATCHER，再经独立 `INCIDENT_DELIVERY_RETRY` permission；owner、HANDLER、VIEW和PUBLISH不授此权。UNKNOWN核对保持ADMIN-only，并须独立 `INCIDENT_DELIVERY_RECONCILE` permission。
 
-权限Port是服务端注入、默认拒绝的只读能力，接收当前事务；不得从浏览器角色、请求body、发布权或负责人身份造grant。调用者与权限在获得锁后同事务再验；回执不能绕过当前授权。发送用途分开：旧生命周期通知与T31个人公开进展沿各自当前flags、scope、retention、ACTIVE/未暂停订阅、原身份和精确渠道绑定；不得重定向或用group fallback。Ticket和Conversation保持原入口、原授权及原无UUID低层消费者。
+权限Port是服务端注入、默认拒绝的只读能力，接收当前事务；不得从浏览器角色、请求body、发布权或负责人身份造grant。调用者与权限在获得锁后同事务再验；回执不能绕过当前授权。发送用途分开：旧生命周期通知保留其已冻结的四用途／六模板及原GROUP／DIRECT准入；T31个人公开进展单独核验自己的当前flags、scope、retention、ACTIVE/未暂停订阅、原身份与精确DIRECT绑定，不重定向或group fallback。不能把T31新个人用途的ACTIVE/DIRECT规则追溯套到旧生命周期通知。Ticket和Conversation保持原入口、原授权及原无UUID低层消费者。
 
 ## 拟议HTTP（全部NOT_MOUNTED）
 
