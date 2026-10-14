@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/t36-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-bound-entry-off-receipt.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7550,6 +7559,9 @@
     ],
     "wbint-t36-entry-off-bound-receipt": [
       "tests/t36-bound-entry-off-receipt.integration.test.mts"
+    ],
+    "wbint-t36-contract": [
+      "tests/t36-contract.test.mts"
     ]
   },
   "subprocess_entries": {

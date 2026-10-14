@@ -1,4 +1,6 @@
 import type {CommunicationAuthorizationContext,SupplementReplyBindingPort,CommunicationSuccess} from './p2-004-communication-core.mjs';
+import {WorkbenchError} from './p2-006-workbench-query.mjs';
+import type {SupplementFollowUpMaterial} from '../contracts/workbench_supplement_follow_up_material_contracts.js';
 import {CommunicationError,COMMUNICATION_ERROR_CODES} from './p2-004-communication-core.mjs';
 import type {WorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
@@ -18,7 +20,7 @@ function dispositionResult(value:unknown):SupplementFollowUpResult{const v=exact
 interface Input {authContext:unknown;ticketId:unknown}
 export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}){
  if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);const ledger=createP2016CommandLedger({pool});
- async function authorize(tx:PostgresTransaction,input:Input){if(!enabled)failP2016('NOT_FOUND',404);const c=await query.authorizedTicket({authContext:input.authContext,ticketId:input.ticketId,transaction:tx});if(!await supplementFollowUpSchemaReady(tx))failP2016('DISABLED',503);return {...c,scope:hashP2016([PURPOSE,c.principal.principal_id,[...c.principal.roles].sort(),[...c.principal.team_ids].sort(),c.ticket.id,c.ticket.resolver_team_id,c.ticket.assignee_id])};}
+ async function authorize(tx:PostgresTransaction,input:Input,existingMessageReceipt=false){if(!enabled&&!existingMessageReceipt)failP2016('NOT_FOUND',404);const c=await query.authorizedTicket({authContext:input.authContext,ticketId:input.ticketId,transaction:tx});if(!await supplementFollowUpSchemaReady(tx))failP2016('DISABLED',503);return {...c,scope:hashP2016([PURPOSE,c.principal.principal_id,[...c.principal.roles].sort(),[...c.principal.team_ids].sort(),c.ticket.id,c.ticket.resolver_team_id,c.ticket.assignee_id])};}
  type Context=Awaited<ReturnType<typeof authorize>>;
  function materials(c:Context){return {sql:`WITH readable AS (
   SELECT i.id FROM intake.service_intake i WHERE i.retention_until_epoch_ms>platform.physical_epoch_ms() AND (i.id=$1::uuid OR EXISTS(
@@ -66,7 +68,7 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
  ) proof ORDER BY proof.occurred_at,proof.id LIMIT 1`;
  function replyBinding(authorization:WorkbenchAuthorizationAdapter):SupplementReplyBindingPort{
   function inputFor(context:Pick<CommunicationAuthorizationContext,'command'|'actor'>){const target=context.command.follow_up_target;if(!target||!context.actor?.principal_id)throw new CommunicationError(COMMUNICATION_ERROR_CODES.senderUnauthorized);return {input:{authContext:{principal_id:context.actor.principal_id},ticketId:target.ticket_id},target};}
-  async function guarded<T>(run:()=>Promise<T>):Promise<T>{try{return await run();}catch(error){if(error instanceof CommunicationError)throw error;throw new CommunicationError(COMMUNICATION_ERROR_CODES.senderUnauthorized);}}
+  async function guarded<T>(run:()=>Promise<T>):Promise<T>{try{return await run();}catch(error){if(error instanceof CommunicationError)throw error;if(error instanceof WorkbenchError&&error.status<500)throw new CommunicationError(COMMUNICATION_ERROR_CODES.senderUnauthorized);throw new CommunicationError(COMMUNICATION_ERROR_CODES.disabled);}}
   return {
    prepare:context=>guarded(async()=>{const {input,target}=inputFor(context);const c=await writable(context.transaction,input,target);await lockAuthority(context.transaction,c,target,false);}),
    authorize:context=>guarded(async()=>{const {input,target}=inputFor(context);const c=await writable(context.transaction,input,target,true);
@@ -93,7 +95,15 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    // A real binding retains its exact purpose even when the new entry is OFF.
    if((await tx.query<{present:boolean}>("SELECT to_regclass('pilot_ticket.workbench_supplement_reply_binding') IS NOT NULL AS present")).rows[0]?.present!==true)return;
    const target=(await tx.query<{ticket_id:string;source_ref:string;revision:string}>('SELECT ticket_id::text,source_ref,revision::text FROM pilot_ticket.workbench_supplement_reply_binding WHERE message_id=$1::uuid',[uuidP2016(input.messageId)])).rows[0];
-   if(target)await writable(tx,{authContext:input.authContext,ticketId:target.ticket_id},target);
+   if(target){const c=await authorize(tx,{authContext:input.authContext,ticketId:target.ticket_id},true);await material(tx,c,target);}
+  });},
+  async exactMaterial(input:Input&{target:unknown}):Promise<SupplementFollowUpMaterial>{return transactionP2016(pool,async tx=>{
+   await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),target=supplementTarget(input.target),m=materials(c);
+   const result=await tx.query<Material&{resolution_id:string|null;occurred_at:string|null;basis:'RECORDED_DISPOSITION'|'VERIFIED_REPLY'}>(m.sql+` SELECT m.source_kind,m.source_ref,m.revision::text,
+    e.id::text AS resolution_id,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.basis FROM materials m LEFT JOIN LATERAL (${evidence}) e ON TRUE
+    WHERE m.source_ref=$3 AND m.revision=$4::bigint LIMIT 2`,[...m.values,target.source_ref,target.revision]);
+   const row=result.rows[0];if(!row)failP2016('NOT_FOUND',404);if(result.rows.length!==1)failP2016('ACTION_FAILED',503);
+   return {ticket_id:c.ticket.id,item:{source_ref:row.source_ref,source_kind:row.source_kind,revision:row.revision,...(row.resolution_id&&row.occurred_at?{follow_up_state:'FOLLOWED_UP' as const,resolution:{resolution_id:row.resolution_id,basis:row.basis,occurred_at:localP2016(row.occurred_at)}}:{follow_up_state:'PENDING' as const,resolution:null})}};
   });},
   async summary(input:Input):Promise<{has_pending_supplements:boolean}>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c);
@@ -133,6 +143,11 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
 }
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 export function createWorkbenchSupplementFollowUpHttp(port:ReturnType<typeof createWorkbenchSupplementFollowUp>,enabled=false){return {async handler({request,response,url,authContext,json,readJson,validateWriteRequest}:HttpContext){
+ const exact=/^\/api\/tickets\/([a-f0-9-]{36})\/supplement-follow-up\/material$/iu.exec(url.pathname);
+ if(exact){if(!enabled)failP2016('NOT_FOUND',404);if(request.method!=='GET')failP2016('NOT_FOUND',404);const names=[...url.searchParams.keys()];
+  if(names.length!==2||new Set(names).size!==2||names.some(key=>!['source_ref','revision'].includes(key)))failP2016();
+  json(response,200,await port.exactMaterial({authContext,ticketId:exact[1],target:{source_ref:url.searchParams.get('source_ref'),revision:url.searchParams.get('revision')}}));return true;
+ }
  const route=/^\/api\/tickets\/([a-f0-9-]{36})\/supplement-follow-up(?:\/commands\/([a-f0-9-]{36}))?$/iu.exec(url.pathname);if(!route)return false;if(!enabled)failP2016('NOT_FOUND',404);
  const names=[...url.searchParams.keys()];if(new Set(names).size!==names.length||names.some(key=>!['limit','cursor'].includes(key))||(route[2]&&names.length))failP2016();
  if(request.method==='GET'){json(response,200,route[2]?await port.receipt({authContext,ticketId:route[1],commandId:route[2]}):await port.page({authContext,ticketId:route[1],limit:url.searchParams.get('limit'),cursor:url.searchParams.get('cursor')}));return true;}
