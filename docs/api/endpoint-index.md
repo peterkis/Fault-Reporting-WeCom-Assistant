@@ -268,8 +268,9 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | POST | `/api/v1/tickets/{ticketId}/actions/confirm` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/reopen` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | GET | `/metrics` | 早期设计示例，未挂载 | [当前health/metrics](platform/auth-health.md) |
-| GET | `/api/workbench/board?scope=related` | T34本人处理／沟通责任查询已隔离HTTP首1/1，默认关闭；原HTTP400 RED保留，完整FOLLOW仍目标 | [看板当前状态](workbench/board.md)／[完整关注设计](workbench/follow-design.md) |
-| POST | `/api/workbench/items/{kind}/{id}/follow` | T34实施前合同，尚未挂载；044仅预留，默认关闭目标 | [关注设计](workbench/follow-design.md) |
+| GET | `/api/workbench/board?scope=related` | W，当前READ交集处理／沟通／显式关注并集，规范去重后分页；默认关闭 | [当前关注合同](workbench/follow-current-contract.md) |
+| POST | `/api/workbench/items/{kind}/{id}/follow` | W，当前READ、原UUID／canonical／opaque版本，显式个人关注／取消；默认关闭 | [当前关注输入](workbench/follow-current-contract.md#当前输入输出与-http) |
+| GET | `/api/workbench/items/{kind}/{id}/follow/commands/{commandId}` | W，当前READ下原主体／原请求父项／用途的UNKNOWN、FAILED或COMMITTED；默认关闭 | [安全核对](workbench/follow-current-contract.md) |
 
 后端外部Provider的完整URL见 [外部服务索引](integrations/external-services.md)，群内 @Bot 的 `aibot_msg_callback`、chatid及群名称实测见 [WebSocket消息回调](integrations/wecom-message-callback.md)，无REST的Port/事件见 [内部接口索引](integrations/internal-ports.md)。模拟预览和设计不计为当前业务接口。
 
