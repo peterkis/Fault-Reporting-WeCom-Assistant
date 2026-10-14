@@ -107,18 +107,21 @@ test('T34 current object READ loss clears the personal projection while its sess
 
 test('T34 an actual bootstrap401 from an inactive staff principal closes the session before a new Follow POST',{timeout:240000},async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
-  const target=f.tickets[1],cookie=f.browserCookies[2],actor=f.principals[1];assert.ok(target&&cookie&&actor);let posts=0;
+  const target=f.tickets[1],cookie=f.browserCookies[2],actor=f.principals[1];assert.ok(target&&cookie&&actor);let posts=0;const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
   f.runtime.server.on('request',request=>{if(request.method==='POST'&&request.url?.endsWith('/follow'))posts++;});
   let browser:Browser|undefined,primary:unknown;
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.ticket.id,width:1920,height:1080,cookies:[cookie]});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector("[data-action=toggle-item-follow]")&&!document.querySelector("[data-action=toggle-item-follow]").disabled)');
+   await browser.evaluate(`window.__t34Denied401=0;const actual=window.fetch.bind(window);window.fetch=async(...args)=>{const response=await actual(...args);if(response.status===401)window.__t34Denied401++;return response;};`);
    await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[actor.id]);
    assert.equal((await fetch(f.origin+'/api/lifecycle/bootstrap',{headers:{cookie:f.cookies[2]}})).status,401);
-   await browser.evaluate('document.dispatchEvent(new Event("visibilitychange"));window.dispatchEvent(new Event("focus"));');
-   await browser.waitFor('document.body.textContent.includes("会话已失效，请重新进入已授权工作台。")');
+   await browser.evaluate('const control=document.querySelector("[data-action=toggle-item-follow]");window.__t34ControlRemained=Boolean(control);control?.click();');
+   await browser.waitFor('window.__t34Denied401>0&&Boolean(document.querySelector(".entry-state"))&&(document.body.textContent.includes("会话已失效")||document.body.textContent.includes("会话需要重新核验"))');
+   console.log('T34_BROWSER_SESSION_DENIED '+JSON.stringify(await browser.evaluate('({actual_browser_401:window.__t34Denied401,old_control_remained:window.__t34ControlRemained,closed_entry:Boolean(document.querySelector(".entry-state")),protected_detail:Boolean(document.querySelector("#detail-title, [data-action=toggle-item-follow]"))})')));
+   await screenshot(browser,directory,'new-detail-1920.png');
    assert.equal(await browser.evaluate('Boolean(document.querySelector("#detail-title, [data-action=toggle-item-follow]"))'),false);assert.equal(posts,0);
-  }catch(error){primary=error;}
+  }catch(error){primary=error;if(browser){try{console.log('T34_BROWSER_SESSION_DENIED_DIAGNOSTIC '+JSON.stringify(await browser.evaluate('({actual_browser_401:window.__t34Denied401,old_control_remained:window.__t34ControlRemained,entry:document.querySelector(".entry-state")?.textContent??null,protected_detail:Boolean(document.querySelector("#detail-title, [data-action=toggle-item-follow]"))})')));await screenshot(browser,directory,'new-detail-1920.png');}catch{console.log('T34_SESSION_DIAGNOSTIC_NOT_CAPTURED_PRIMARY_ERROR_RETAINED');}}}
   finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
  },{workbenchFollowEnabled:true,manualProjection:true,chronologicalTicketEvents:true});
 });

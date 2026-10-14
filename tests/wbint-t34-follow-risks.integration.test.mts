@@ -227,3 +227,28 @@ test('T34 an actual write-suppressing trigger cannot produce a successful Follow
   }finally{await f.pool.query('DROP TRIGGER t34_suppress_follow ON pilot_ticket.workbench_item_follow');await f.pool.query('DROP FUNCTION pilot_ticket.t34_suppress_follow()');}
  },{workbenchFollowEnabled:true,manualProjection:true});
 });
+
+
+test('T34 a generated following column cannot certify a cancelled personal fact as explicit FOLLOW',async t=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  const http=client(f),target=f.tickets[1];assert.ok(target);const path='/api/workbench/items/ticket/'+target.ticket.id;
+  const bootstrap=await http.read('/api/lifecycle/bootstrap');
+  for(const following of [true,false]){
+   const original=command(await http.read(path),following),response=await http.post(path,original,bootstrap.csrf_token);
+   assert.equal(response.status,200,await response.clone().text());
+  }
+  const readFact=async()=>((await f.pool.query<{following:boolean;revision:string}>('SELECT following,row_version::text AS revision FROM pilot_ticket.workbench_item_follow')).rows);
+  const before=await readFact();assert.equal(before.length,1);assert.equal(before[0]?.following,false);assert.equal(before[0]?.revision,'2');
+  const receiptCount=(await f.pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_ITEM_FOLLOW'")).rows[0]?.n;
+  await f.pool.query('ALTER TABLE pilot_ticket.workbench_item_follow DROP COLUMN following CASCADE');
+  await f.pool.query('ALTER TABLE pilot_ticket.workbench_item_follow ADD COLUMN following boolean GENERATED ALWAYS AS (true) STORED NOT NULL');
+  await f.pool.query('CREATE INDEX workbench_item_follow_active_idx ON pilot_ticket.workbench_item_follow(principal_id,source_intake_id) WHERE following');
+  const column=(await f.pool.query("SELECT column_name,is_generated,generation_expression,is_nullable,data_type,column_default FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='workbench_item_follow' AND column_name='following'")).rows[0];
+  const derived=await readFact(),ready=await followSchemaReady(f.pool);
+  assert.equal(column?.is_generated,'ALWAYS');assert.equal(derived[0]?.following,true);
+  assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_ITEM_FOLLOW'")).rows[0]?.n,receiptCount);
+  t.diagnostic('T34_ACTUAL_GENERATED_FOLLOW_DRIFT '+JSON.stringify({column,before,derived,ready,receipt_count:receiptCount}));
+  assert.equal(ready,false,'derived column values cannot stand in for the caller explicit personal fact');
+  await assert.rejects(migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'status'}),{code:'P2_016_ACTION_FAILED'});
+ },{workbenchFollowEnabled:true,manualProjection:true,chronologicalTicketEvents:true});
+});
