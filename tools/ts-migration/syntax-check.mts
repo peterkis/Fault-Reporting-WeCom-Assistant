@@ -19,7 +19,7 @@ export async function checkCompiledSyntax(root:string,files:readonly string[]):P
     let settled=false;
     const finish=(error?:Error):void=>{if(settled)return;settled=true;state.active--;if(error){failure??=error;}else state.checked++;resolve();};
     try{
-     const child=spawn(process.execPath,['--check',file],{cwd:root,stdio:'inherit',windowsHide:true});
+     const child=spawn(process.execPath,['--check',file],{cwd:root,env:{...process.env,NODE_V8_COVERAGE:''},stdio:'inherit',windowsHide:true});
      child.once('error',error=>finish(error));
      child.once('close',(code,signal)=>finish(code===0&&signal===null?undefined:new Error('MIGRATION_COMMAND_FAILED: '+String(code))));
     }catch(error){finish(error instanceof Error?error:new Error('MIGRATION_SYNTAX_CHECK_FAILED'));}
