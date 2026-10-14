@@ -72,7 +72,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         try{
           const allowed=await protocol.current.authorize(controller.signal,value);
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)throw new DraftError('DRAFT_CHANGED');
-          if(!allowed){await removeSensitiveDraft(target);throw new DraftError('DRAFT_ACTION_REVOKED');}
+          if(!allowed){await removeSensitiveDraft(target,'revoked');throw new DraftError('DRAFT_ACTION_REVOKED');}
           await rebaseDraft(target);
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)throw new DraftError('DRAFT_CHANGED');
           record=await saveDraft(target,text,saveOptions);

@@ -124,11 +124,12 @@ test('T33 paused public-progress subscription rejects requeue and cancels its si
     assert.ok(Array.isArray(subscriptions.body.items));assert.equal(subscriptions.body.next_cursor,null);
     const currentSubscriptions=subscriptions.body.items.map(t33Record);
     assert.equal(currentSubscriptions.length,4);
-    assert.ok(currentSubscriptions.some(row=>row.id===selected.subscription_id));
+    assert.ok(currentSubscriptions.some(row=>row.id===selected.subscription_id&&row.status==='ACTIVE'));
+    assert.deepEqual(currentSubscriptions.map(row=>row.status).sort(),['ACTIVE','ACTIVE','PENDING_DESTINATION','PENDING_DESTINATION']);
     // Pause every real subscription so the later legacy GROUP observation also
     // covers its original reporters; all writes use the official pause command.
     for(const subscription of currentSubscriptions){
-      assert.equal(subscription.status,'ACTIVE');
+      assert.ok(subscription.status==='ACTIVE'||subscription.status==='PENDING_DESTINATION','the original official pause command permits either non-ended subscription status');
       const paused=await post(parent+'/subscriptions/'+t33Text(subscription.id)+'/pause',{
         client_command_id:randomUUID(),expected_row_version:t33Text((await incident()).row_version),
         expected_subscription_version:t33Text(subscription.row_version),reason_code:'SUBSCRIPTION_REQUEST',

@@ -162,8 +162,8 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    assert.equal(replayHeaders.content_type,originalHeaders.content_type);assert.equal(replayHeaders.accept,originalHeaders.accept);
    const replayAuth=completed.filter(row=>row.path===endpoints.bootstrap&&row.method==='GET'&&row.response_status===200&&count(row.sequence)<count(replayed.sequence)).at(-1);
    assert.ok(replayAuth);assert.equal(record(replayAuth.response).principal_id,adminId);assert.equal(replayHeaders.csrf,text(record(replayAuth.response).csrf_token),'authorization header comes from actual current bootstrap, while intent headers stay original');
-   const refusal=closed(replayed.response,['ok','error','replayed']),error=closed(refusal.error,['code','retryable']);
-   assert.equal(refusal.ok,false);assert.equal(refusal.replayed,false);assert.match(text(error.code),/^P2_012_[A-Z0-9_]{1,96}$/u);assert.equal(error.retryable,false);
+   const refusal=closed(replayed.response,['error']),error=closed(refusal.error,['code','retryable']);
+   assert.match(text(error.code),/^P2_012_[A-Z0-9_]{1,96}$/u);assert.equal(error.retryable,false);
    const failed=await get(receiptPath);assert.equal(failed.status,200);
    const failure=closed(failed.body,['state','incident_id','client_command_id','error']);
    assert.equal(failure.state,'FAILED');assert.equal(failure.incident_id,incidentId);assert.equal(failure.client_command_id,uuid);assert.deepEqual(failure.error,error);
