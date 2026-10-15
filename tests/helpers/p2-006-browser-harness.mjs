@@ -73,7 +73,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-gpu','--disable-background-networking',
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
-    `--window-size=${width},${height}`,url,
+    `--window-size=${width},${height}`,'about:blank',
   ],{stdio:'ignore',windowsHide:true});
   let socket=null,sequence=0,closePromise=null,launchError=null;
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
@@ -135,7 +135,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     },{signal:startupSignal});
     const target=await waitFor(async()=>{
       const response=await fetch(`http://127.0.0.1:${active}/json/list`,{signal:startupSignal});
-      return selectBrowserTarget(await response.json(),{url,redirectPaths});
+      return selectBrowserTarget(await response.json(),{url:'about:blank'});
     },{signal:startupSignal});
     socket=socketFactory(target.webSocketDebuggerUrl);
     socket.addEventListener('close',rejectPending);socket.addEventListener('error',rejectPending);
@@ -154,9 +154,12 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     await command('Runtime.enable');
     if(cookies.length){
       assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
-      await command('Network.enable');await command('Network.setCookies',{cookies});await command('Page.reload');
+      await command('Network.enable');await command('Network.setCookies',{cookies});
     }
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
+    // Navigate only after the owned blank target is connected and cookies are set.
+    const navigation=await command('Page.navigate',{url});
+    if(typeof navigation?.errorText==='string'&&navigation.errorText)throw new Error('P2_006_BROWSER_NAVIGATION_FAILED');
     async function evaluate(expression,{awaitPromise=true}={}){
       const result=await command('Runtime.evaluate',{expression,awaitPromise,returnByValue:true});
       if(result.exceptionDetails){
