@@ -4,15 +4,15 @@ import {randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import {withWeb01Fixture,seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
+import {object} from './helpers/t41-search-risk-fixture.mjs';
 import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
-interface Fixture {pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;certificateSpki:string;
+interface Fixture {pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;backendOrigin:string;cookies:string[];certificateSpki:string;
  browserCookies:NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>}
 async function settle(runtime:P2016EnabledRuntime){
  const initial=await runtime.coordinator.backlog(),bound=Math.ceil(initial.total/runtime.coordinator.batchSize)+3;
@@ -27,7 +27,7 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
  await withWeb01Fixture(async(f:Fixture)=>{
   const q=scenario==='unicode128'?'😀'.repeat(128):'T41_TWO_PAGE_SYNTHETIC',core=createPilotTicketCore({pool:f.pool});
   for(let index=0;index<51;index++){
-   const intake=await seedPersistedIntake({pool:f.pool,text:q,requestType:'INCIDENT',status:'RECEIVED'});
+   const intake=await seedWeb01NoConversationIntake({pool:f.pool,text:q,location:'T41 synthetic two-page location'});
    await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t41-two-pages-'+index});
   }await settle(f.runtime);
   const seen:{method:string;bytes:number;status:number}[]=[];
@@ -57,6 +57,10 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
     assert.equal(seen.length,2,'unchanged T38 refresh cycles must not re-run either search page');
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-search-state=error]"))'),false);
     assert.equal(await browser.evaluate('document.querySelectorAll("article[data-kind=ticket]").length'),51);
+    const target=await browser.evaluate('document.querySelector("article[data-kind=ticket]").dataset.itemId');assert.ok(typeof target==='string');
+    const contextResponse=await fetch(f.backendOrigin+'/api/tickets/'+target,{headers:{cookie:f.cookies[0]??''},signal:AbortSignal.timeout(15000)});
+    assert.equal(contextResponse.status,200);const context=object(await contextResponse.json());
+    assert.ok(Array.isArray(context.allowed_actions)&&context.allowed_actions.includes('take-and-start'),'the actual chosen no-conversation Ticket must permit the unchanged T04 command: '+JSON.stringify(context));
     await browser.evaluate('document.querySelector("article[data-kind=ticket] a").click()');
     await browser.waitFor('Boolean(document.querySelector("button[data-action=take-and-start]:not(:disabled)"))');
     await browser.evaluate('document.querySelector("button[data-action=take-and-start]").click()');

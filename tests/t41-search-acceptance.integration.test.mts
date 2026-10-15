@@ -16,6 +16,8 @@ import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
 import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
 import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
 import {migrateP2016} from '../scripts/p2-016-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
+import {migrateWorkbenchFollow} from '../scripts/workbench-follow-migrate.mjs';
 import {migrateWorkbenchSupplementFollowUp} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
 import {migrateWorkbenchFollowUpSchedules} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
 import type {PostgresPool,PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
@@ -43,6 +45,8 @@ function only(items:Record<string,unknown>[],kind:string,id:string){assert.deepE
 async function withSearchFixture(run:(fixture:SearchFixture)=>Promise<void>,{states=false}:{states?:boolean}={}){
  return withWeb01Fixture(async(base:Base)=>{
   await base.runtime.stop();
+  await migrateWorkbenchPersonalRead({databaseUrl:base.databaseUrl,mode:'apply'});
+  await migrateWorkbenchFollow({databaseUrl:base.databaseUrl,mode:'apply'});
   if(states){await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpSchedules({databaseUrl:base.databaseUrl,mode:'apply'});}
   const admin=base.principals[0],staff=base.principals[2];assert.ok(admin&&staff);
   const runtime=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
@@ -62,7 +66,7 @@ async function withSearchFixture(run:(fixture:SearchFixture)=>Promise<void>,{sta
    await run({...base,runtime,staffId:staff.id,get,post});
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);assert.equal((await runtime.observability.metrics()).sse_clients,0);
    assert.equal(await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),0);}
- },{manualProjection:true,chronologicalTicketEvents:true,workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchFollowEnabled:true,sourceGroupDirectoryEnabled:true});
+ },{manualProjection:true,chronologicalTicketEvents:true,workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,sourceGroupDirectoryEnabled:true});
 }
 async function webReport(f:SearchFixture,description:string,location:string,department:string){
  const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
