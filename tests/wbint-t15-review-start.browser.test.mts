@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {createHash} from 'node:crypto';
-import {mkdtemp,writeFile,rmdir} from 'node:fs/promises';
+import {createHash,randomUUID} from 'node:crypto';
+import {mkdir,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -66,7 +66,7 @@ test('T15 production Item explicitly confirms captured fault material and a real
     const related=list((await get('/api/tickets/'+known.ticket.id+'/related-conversations')).items);assert.equal(related.length,1);
     const session=related[0];assert.ok(session);assert.equal(session.take_allowed,true);
     const sessionId=text(session.session_id),startPath='/api/manual-reviews/'+reviewId+'/resolve-and-start';
-    const directory=await mkdtemp(join(tmpdir(),'web01-ui-'));
+    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
     const screenshots:{file:string;width:number;height:number;sha256:string}[]=[];
     let browser:Browser|undefined,error:unknown;
     const capture=async(name:string)=>{
@@ -127,8 +127,8 @@ test('T15 production Item explicitly confirms captured fault material and a real
       assert.equal(await browser.evaluate(`document.querySelectorAll('[data-kind="ticket"][data-item-id="${known.ticket.id}"]').length`),1);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]:not(:disabled)'))"),false,'a resolved Review must not leave an old-version operation active');
       assert.equal(requests.filter(request=>request.method==='POST').length,1);
-      await capture('t15-review-start-900.png');
-    }catch(failure){error=failure;if(browser)await capture('t15-review-start-failure-900.png').catch(captureError=>{error=new AggregateError([failure,captureError],'T15_BROWSER_AND_CAPTURE_FAILED');});}
+      await capture('new-detail-900.png');
+    }catch(failure){error=failure;if(browser)await capture('new-detail-900.png').catch(captureError=>{error=new AggregateError([failure,captureError],'T15_BROWSER_AND_CAPTURE_FAILED');});}
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',review_resolve_and_start:true,screenshots}));
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{if(!screenshots.length)await rmdir(directory);}],error);
   },{workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false});

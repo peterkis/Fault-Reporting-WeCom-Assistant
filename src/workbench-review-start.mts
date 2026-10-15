@@ -7,7 +7,12 @@ import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {selfHandlingSchemaReady,selfHandlingResponsibilityEligibility,performFirstTicketResponsibilityInTransaction} from './workbench-ticket-self-handling.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
+
+function capturedVersion(value:unknown):number{
+  if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1)failP2016();
+  return value;
+}
 
 export function normalizeReviewStartCommand(input:unknown):ReviewResolveAndStartCommand{
   const v=exactP2016(input,['client_command_id','expected_row_version','expected_material_basis','resolution_code','resolution_reason_code','expected_ticket','resolver_team_id','communication_choice','sessions']);
@@ -15,10 +20,10 @@ export function normalizeReviewStartCommand(input:unknown):ReviewResolveAndStart
     ||typeof v.expected_material_basis!=='string'||!/^[a-f0-9]{64}$/u.test(v.expected_material_basis)||v.resolution_code!=='CONFIRM_TICKET_ELIGIBLE')failP2016();
   const ticket=v.expected_ticket===null?null:exactP2016(v.expected_ticket,['ticket_id','expected_version']);
   if(v.communication_choice!=='TAKE_SELECTED'&&v.communication_choice!=='RETAIN_CURRENT'||!Array.isArray(v.sessions)||v.sessions.length>8)failP2016();
-  const sessions=v.sessions.map(value=>{const s=exactP2016(value,['session_id','expected_row_version']);return {session_id:uuidP2016(s.session_id),expected_row_version:versionP2016(s.expected_row_version)};});
+  const sessions=v.sessions.map(value=>{const s=exactP2016(value,['session_id','expected_row_version']);return {session_id:uuidP2016(s.session_id),expected_row_version:capturedVersion(s.expected_row_version)};});
   if(new Set(sessions.map(s=>s.session_id)).size!==sessions.length||(v.communication_choice==='TAKE_SELECTED'?sessions.length===0:sessions.length!==0))failP2016();
   return publicP2016({client_command_id:uuidP2016(v.client_command_id),expected_row_version:v.expected_row_version,expected_material_basis:v.expected_material_basis,
-    resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:codeP2016(v.resolution_reason_code),expected_ticket:ticket===null?null:{ticket_id:uuidP2016(ticket.ticket_id),expected_version:versionP2016(ticket.expected_version)},
+    resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:codeP2016(v.resolution_reason_code),expected_ticket:ticket===null?null:{ticket_id:uuidP2016(ticket.ticket_id),expected_version:capturedVersion(ticket.expected_version)},
     resolver_team_id:codeP2016(v.resolver_team_id),communication_choice:v.communication_choice,sessions});
 }
 
