@@ -5911,6 +5911,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t15-review-start.contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7618,6 +7627,9 @@
     ],
     "wbint-t15-staff-authority": [
       "tests/wbint-t15-staff-reopen-current-authority-wait.integration.test.mts"
+    ],
+    "wbint-t15-contract": [
+      "tests/wbint-t15-review-start.contract.test.mts"
     ]
   },
   "subprocess_entries": {
