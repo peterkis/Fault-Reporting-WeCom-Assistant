@@ -11,7 +11,7 @@ interface Fixture {origin:string;certificateSpki:string;browserCookies:{name:str
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function text(v:unknown):string{assert.equal(typeof v,'string');return v as string;}
 const trace="(()=>{globalThis.__t19Posts=[];const original=fetch;globalThis.fetch=(path,init)=>{if(init?.method==='POST')globalThis.__t19Posts.push({path:String(path),body:JSON.parse(init.body)});return original(path,init);};})()";
-async function fill(browser:Browser,label:string,value:string){await browser.evaluate(`(()=>{const e=document.querySelector('[aria-label="${label}"]'),p=e instanceof HTMLTextAreaElement?HTMLTextAreaElement:HTMLInputElement;Object.getOwnPropertyDescriptor(p.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+async function fill(browser:Browser,label:string,value:string){await browser.waitFor(`Boolean(document.querySelector('[aria-label="${label}"]'))&&!document.querySelector('[aria-label="${label}"]').matches(':disabled')`);await browser.evaluate(`(()=>{const e=document.querySelector('[aria-label="${label}"]'),p=e instanceof HTMLTextAreaElement?HTMLTextAreaElement:HTMLInputElement;Object.getOwnPropertyDescriptor(p.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);assert.equal(await browser.evaluate(`document.querySelector('[aria-label="${label}"]').value`),value);}
 
 test('T19 production form explicitly chooses self handling, restores the encrypted original intent and starts one native Ticket in one POST',async()=>{
   await withWeb01Fixture(async({origin,certificateSpki,browserCookies,cookies,principals}:Fixture)=>{
@@ -46,7 +46,7 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
       const result=object(object(await receiptResponse.json()).result),ticket=object(result.ticket);assert.equal(ticket.status,'IN_PROGRESS');assert.equal(result.review,null);
       const detail=await fetch(origin+'/api/tickets/'+text(ticket.id),{headers:{cookie}});assert.equal(detail.status,200);const actual=object(await detail.json());assert.equal(actual.assignee_id,principals[0]?.id);assert.equal(actual.version,3);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',manual_report_self_handling:true,screenshots}));
-    }catch(failure){error=failure;console.log('T19_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t19Posts})'):{}));}
+    }catch(failure){error=failure;console.log('T19_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t19Posts,fields:[...document.querySelectorAll("input,textarea,select")].map(e=>({label:e.getAttribute("aria-label"),value:e.value,disabled:e.matches(":disabled")}))})'):{}));}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });
