@@ -22,7 +22,7 @@ export function useWorkbenchSearch(principal:Principal,criteria:WorkbenchSearchC
  const client=useQueryClient(),key=criteria?searchCriteriaKey(criteria):'invalid';
  const roles=[...principal.roles].sort().join(','),queryKey=['board',principal.principal_id,'search',key,principal.authorization_revision,principal.expires_epoch_ms,roles] as const;
  const query=useInfiniteQuery({queryKey,initialPageParam:null as string|null,enabled:enabled&&criteria!==null,
-  queryFn:({pageParam,signal})=>{if(!criteria)throw new TypeError('SEARCH_CRITERIA_REQUIRED');return api.search(criteria,pageParam,signal);},
+   queryFn:({pageParam,signal})=>{if(!criteria)throw new TypeError('SEARCH_CRITERIA_REQUIRED');return api.search(criteria,pageParam,signal,principal.csrf_token);},
   getNextPageParam:page=>page.next_cursor??undefined,retry:false,gcTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false,maxPages:5});
  useEffect(()=>{
   let current=true;

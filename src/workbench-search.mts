@@ -1,10 +1,11 @@
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
-import {WorkbenchError} from './p2-006-workbench-query.mjs';
+import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {createWeb01WorkbenchQuery,Web01CardRow} from './web01-workbench-query.mjs';
-import {WEB01_AUTHORIZED_CARDS_SQL,HANDLING_CARD_SQL,COMMUNICATION_CARD_SQL,FOLLOW_CARD_SQL} from './web01-workbench-query.mjs';
+import {workbenchSearchCardsSql,HANDLING_CARD_SQL,COMMUNICATION_CARD_SQL,FOLLOW_CARD_SQL} from './web01-workbench-query.mjs';
+import type {WorkbenchSessionPredicate,createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import {SOURCE_GROUP_ORIGIN_BINDING_SQL,GROUP_REF_SQL,VALID_GROUP_SQL} from './workbench-source-groups.mjs';
 import {SUPPLEMENT_MATERIALS_SQL,SUPPLEMENT_RESOLUTION_SQL} from './workbench-supplement-follow-up.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
@@ -18,16 +19,17 @@ import {supplementFollowUpSchemaReady} from '../scripts/workbench-supplement-fol
 import {followSchemaReady} from '../scripts/workbench-follow-migrate.mjs';
 import type {WorkbenchSearchPort} from './workbench-search-port.mjs';
 
-interface Features {follow:boolean;supplements:boolean;schedules:boolean;manual:boolean;sourceGroups:boolean}
-interface Options {pool:PostgresPool;query:P2016TicketQuery;cards:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;localTestProfile?:boolean;features:Features}
-interface SearchRow extends Web01CardRow {order_at:string;order_group:number}
+interface Features {follow:boolean;supplements:boolean;schedules:boolean;manual:boolean;manualReview:boolean;sourceGroups:boolean}
+interface Options {pool:PostgresPool;query:P2016TicketQuery;cards:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;localTestProfile?:boolean;features:Features;
+ currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined}
+interface SearchRow extends Web01CardRow {order_at:string;order_group:number;safety_signature:string}
 interface Window {from:string;until:string}
 interface Cursor {v:1;binding:string;criteria:string;from:string;until:string;at:string;order_group:0|1;kind:'ticket'|'review'|'intake';id:string}
 function hash(value:string):string{return createHash('sha256').update(value).digest('hex');}
 function object(value:unknown):Record<string,unknown>{
  if(!value||typeof value!=='object'||Array.isArray(value))failP2016('CURSOR_INVALID');return value as Record<string,unknown>;
 }
-export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestProfile=false,features}:Options):WorkbenchSearchPort{
+export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestProfile=false,features,currentSessionPredicate}:Options):WorkbenchSearchPort{
  if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);
  const secret=randomBytes(32),rates=new Map<string,{started:number;count:number}>();let busy=false;
  function rate(principalId:string){
@@ -42,6 +44,13 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
   else if(localTestProfile&&typeof auth.csrf_token==='string'&&auth.csrf_token.length>=16)session='local-test:'+auth.csrf_token;
   else failP2016('DISABLED',503);
   return createHmac('sha256',secret).update(JSON.stringify([p.principal_id,session,auth.auth_method,auth.expires_epoch_ms,[...p.roles].sort(),[...p.team_ids].sort()])).digest('hex');
+ }
+ function sessionPredicate(authContext:unknown,p:WorkbenchPrincipal,start=1):WorkbenchSessionPredicate{
+  const auth=object(authContext);
+  if(currentSessionPredicate)return currentSessionPredicate(authContext,p.principal_id,start);
+  if(!localTestProfile||auth.session_id!==undefined)failP2016('DISABLED',503);
+  if(auth.principal_id!==p.principal_id||typeof auth.expires_epoch_ms!=='string'||!/^[1-9][0-9]{0,15}$/u.test(auth.expires_epoch_ms))throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+  return {sql:`$${start}::bigint>platform.physical_epoch_ms()`,values:[auth.expires_epoch_ms]};
  }
  function encode(value:Cursor):string{
   const payload=Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -101,7 +110,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
   const source=manual?`CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN 'WEB_REQUEST'
     WHEN i.source_channel='MANUAL' THEN CASE i.manual_report_snapshot->>'source' WHEN 'PHONE' THEN 'MANUAL_PHONE' WHEN 'ON_SITE' THEN 'MANUAL_ON_SITE' END
     ELSE i.source_channel END`:`CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN 'WEB_REQUEST' ELSE i.source_channel END`;
-  return WEB01_AUTHORIZED_CARDS_SQL.replace('WITH cards AS (','WITH cards AS MATERIALIZED (')+`,
+  return workbenchSearchCardsSql(features.manualReview).replace('WITH cards AS (','WITH cards AS MATERIALIZED (')+`,
   origins AS (SELECT r.*,CASE WHEN binding.count=0 THEN r.intake_id::uuid
     WHEN binding.count=1 AND binding.retained THEN binding.origin::uuid ELSE NULL END AS origin_intake_id
    FROM cards r LEFT JOIN LATERAL (${SOURCE_GROUP_ORIGIN_BINDING_SQL}) binding ON TRUE),
@@ -142,7 +151,8 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     OR ($5='closed' AND status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')))
    AND (status NOT IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')
     OR CASE WHEN $6::text='all' THEN TRUE WHEN $6='cancelled' THEN status='CANCELLED' ELSE status<>'CANCELLED' AND
-      (status='RESOLVED' OR completed_at::timestamp>=$7::timestamp AND completed_at::timestamp<$8::timestamp) END)
+      (status='RESOLVED' OR COALESCE(completed_at,CASE WHEN kind='intake' AND status IN ('COMPLETED','IGNORED') THEN updated_at END)::timestamp>=$7::timestamp
+       AND COALESCE(completed_at,CASE WHEN kind='intake' AND status IN ('COMPLETED','IGNORED') THEN updated_at END)::timestamp<$8::timestamp) END)
    AND ($9::text='team' OR handling OR communication OR following)
    AND ($10::text='any' OR $10='handling' AND handling OR $10='communication' AND communication
     OR $10='following' AND following OR $10='unassigned' AND kind='ticket' AND handling_person IS NULL)
@@ -166,6 +176,8 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    const prepared=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
     const p=await query.principal(authContext,tx),scope=ticketPredicateP2016(p),bound=binding(authContext,p);await ready(tx,c);
+    const session=sessionPredicate(authContext,p),valid=(await tx.query<{valid:boolean}>('SELECT '+session.sql+' AS valid',session.values)).rows[0];
+    if(valid?.valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
     const window=(await tx.query<Window>(`SELECT to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
       to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`)).rows[0];if(!window)failP2016('ACTION_FAILED',503);
     if(cursor&&(cursor.binding!==bound||cursor.criteria!==criteria||cursor.from!==window.from||cursor.until!==window.until))failP2016('CURSOR_INVALID');
@@ -174,7 +186,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     if(features.schedules&&!await followUpSchemaReady(tx))failP2016('DISABLED',503);
     if(features.follow&&!await followSchemaReady(tx))failP2016('DISABLED',503);
     if(optional?.web!==true){
-     const material=await tx.query(WEB01_AUTHORIZED_CARDS_SQL+" SELECT 1 FROM cards c JOIN intake.service_intake i ON i.id=c.intake_id::uuid WHERE i.source_provider='YIXIAOXIU_WEB' AND i.retention_until_epoch_ms>platform.physical_epoch_ms() LIMIT 1",scope.values);
+     const material=await tx.query(workbenchSearchCardsSql(features.manualReview)+" SELECT 1 FROM cards c JOIN intake.service_intake i ON i.id=c.intake_id::uuid WHERE i.source_provider='YIXIAOXIU_WEB' AND i.retention_until_epoch_ms>platform.physical_epoch_ms() LIMIT 1",scope.values);
      if(material.rowCount||c.sources.includes('WEB_REQUEST'))failP2016('DISABLED',503);
     }
     const relation=sql({web:optional?.web===true,manual:features.manual,supplements:features.supplements,schedules:features.schedules});
@@ -183,7 +195,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
      const anchor=await tx.query(relation+' SELECT 1 FROM matched WHERE kind=$18 AND id=$19 AND order_at=$20 AND order_group=$21',[...values,cursor.kind,cursor.id,cursor.at,cursor.order_group]);
      if(anchor.rowCount!==1)failP2016('CURSOR_INVALID');
     }
-    const result=await tx.query<SearchRow>(relation+` SELECT * FROM matched
+    const result=await tx.query<SearchRow>(relation+` SELECT *,encode(sha256(convert_to(to_jsonb(matched)::text,'UTF8')),'hex') AS safety_signature FROM matched
      WHERE ($18::text IS NULL OR (order_group,order_at,kind,id)<($19::integer,$18::text,$20::text,$21::text))
      ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $22`,
      [...values,cursor?.at??null,cursor?.order_group??null,cursor?.kind??null,cursor?.id??null,limit+1]);
@@ -198,24 +210,27 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    const more=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
     const p=await query.principal(authContext,tx);if(binding(authContext,p)!==prepared.bound)failP2016('CURSOR_INVALID');await ready(tx,c);
-    if(cursor){
-     const anchor=await tx.query(prepared.relation+' SELECT 1 FROM matched WHERE kind=$18 AND id=$19 AND order_at=$20 AND order_group=$21',
-      [...prepared.values,cursor.kind,cursor.id,cursor.at,cursor.order_group]);
-     if(anchor.rowCount!==1)failP2016('CURSOR_INVALID');
-    }
-    if(prepared.selected.length){
-     const retained=await tx.query<{kind:string;id:string;order_at:string;order_group:number}>(prepared.relation+` SELECT kind,id,order_at,order_group FROM matched WHERE (kind||':'||id)=ANY($18::text[])`,
-      [...prepared.values,prepared.selected.map(row=>row.kind+':'+row.id)]);
-     const byKey=new Map(retained.rows.map(row=>[row.kind+':'+row.id,row]));
-     if(retained.rows.length!==prepared.selected.length||prepared.selected.some(row=>{
-      const current=byKey.get(row.kind+':'+row.id);return !current||current.order_at!==row.order_at||current.order_group!==row.order_group;
-     }))failP2016('CURSOR_INVALID');
-    }
+    const values:unknown[]=[...prepared.values],session=sessionPredicate(authContext,p,values.length+1);values.push(...session.values);
+    const parameter=(value:unknown)=>{values.push(value);return '$'+values.length;};
+    const selected=parameter(prepared.selected.map(row=>row.kind+':'+row.id));
+    const anchor=cursor?`EXISTS(SELECT 1 FROM matched WHERE kind=${parameter(cursor.kind)}::text AND id=${parameter(cursor.id)}::text
+      AND order_at=${parameter(cursor.at)}::text AND order_group=${parameter(cursor.order_group)}::integer)`:'TRUE';
     const last=prepared.selected.at(-1);
-    const next=last?await tx.query(prepared.relation+` SELECT 1 FROM matched WHERE (order_group,order_at,kind,id)<($18::integer,$19::text,$20::text,$21::text) LIMIT 1`,
-     [...prepared.values,last.order_group,last.order_at,last.kind,last.id]):null;
-    const current=await query.principal(authContext,tx);if(binding(authContext,current)!==prepared.bound)failP2016('CURSOR_INVALID');
-    return (next?.rowCount??0)>0;
+    const next=last?`EXISTS(SELECT 1 FROM matched WHERE (order_group,order_at,kind,id)<(${parameter(last.order_group)}::integer,
+      ${parameter(last.order_at)}::text,${parameter(last.kind)}::text,${parameter(last.id)}::text))`:'FALSE';
+    // Recheck actual session state and the complete retained projection inputs in
+    // one final statement. Surviving identity/order cannot authorize old names,
+    // source decorations or other material captured before a later card waited.
+    const proof=(await tx.query<{session_valid:boolean;anchor_valid:boolean;more:boolean;
+      items:{kind:string;id:string;safety_signature:string}[]}>(prepared.relation+` SELECT (${session.sql}) AS session_valid,
+      (${anchor}) AS anchor_valid,(${next}) AS more,
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',m.kind,'id',m.id,'safety_signature',encode(sha256(convert_to(to_jsonb(m)::text,'UTF8')),'hex')))
+        FROM matched m WHERE (m.kind||':'||m.id)=ANY(${selected}::text[])),'[]'::jsonb) AS items`,values)).rows[0];
+    if(proof?.session_valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    if(!proof.anchor_valid)failP2016('CURSOR_INVALID');
+    const current=new Map(proof.items.map(row=>[row.kind+':'+row.id,row.safety_signature]));
+    if(proof.items.length!==prepared.selected.length||prepared.selected.some(row=>current.get(row.kind+':'+row.id)!==row.safety_signature))failP2016('CURSOR_INVALID');
+    return proof.more;
    });
    const last=prepared.selected.at(-1),next=more&&last?encode({v:1,binding:prepared.bound,criteria,...prepared.window,at:last.order_at,order_group:last.order_group===1?1:0,kind:last.kind,id:last.id}):null;
    return publicP2016({items,next_cursor:next,column:c.column,range:{...prepared.window,mode:c.range,timezone:'Asia/Shanghai' as const},criteria:c});

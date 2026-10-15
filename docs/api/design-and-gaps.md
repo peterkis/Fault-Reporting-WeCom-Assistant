@@ -66,4 +66,4 @@
 
 ## T41 全量授权检索 SOURCE 准备
 
-619d的[冻结合同和原first](workbench/search-design.md)原字节保留。[后继Source候选](workbench/search-source-forward.md)已写授权SQL搜索、组合筛选、签名游标、默认false宿主与React/URL接线；尚未types/build/tests/PG/browser，不得列为已验证接口。无DDL；T41原七项和WBINT-14/A14仍全部PENDING，whole窗口先在未实施基线上证明原first实际RED。
+619d的[冻结合同和原first](workbench/search-design.md)原字节保留。[后继Source候选](workbench/search-source-forward.md)已写授权SQL搜索、组合筛选、签名游标、默认false宿主与React/URL接线；GET保留，超过原URL上限的完整合法条件补充同路径有界只读POST，使用原闭合DTO和当前认证。尚未types/build/tests/PG/browser，不得列为已验证接口。无DDL；T41原七项和WBINT-14/A14仍全部PENDING，whole窗口先在未实施基线上证明原first实际RED。

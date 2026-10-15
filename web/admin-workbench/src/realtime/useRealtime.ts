@@ -8,6 +8,8 @@ import {clearSessionAuthorization} from '../app/authorization';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 const families=new Set(['board','detail','personal-read-position','ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result','incident-children','incident-report-assignee','incident-delivery-control']);
 export const isWorkbenchRealtimeQuery=(key:readonly unknown[],principal:string)=>key[1]===principal&&typeof key[0]==='string'&&families.has(key[0]);
+const isSearchQuery=(key:readonly unknown[],principal:string)=>key[0]==='board'&&key[1]===principal&&key[2]==='search';
+const isPeriodicQuery=(key:readonly unknown[],principal:string)=>isWorkbenchRealtimeQuery(key,principal)&&!isSearchQuery(key,principal);
 const identity=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 class IdentityChanged extends Error{}
 export interface RealtimeView {status:WorkbenchRealtimeStatus;lastReadAt:number|null}
@@ -19,6 +21,14 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
     if(!enabled){setWorkbenchTransportWritable(true);setView({status:'disabled',lastReadAt:null});return;}
     let mounted=true;
     const owned=createWorkbenchRealtimeClient({capability:principal,now:Date.now,schedule:(callback,delay)=>window.setTimeout(callback,delay),cancel:handle=>window.clearTimeout(handle as number),
+      onHint:()=>{
+        const matches=(key:readonly unknown[])=>isSearchQuery(key,principal.principal_id);
+        void client.cancelQueries({predicate:query=>matches(query.queryKey)&&query.state.data!==undefined},{revert:false});
+        for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
+          if(query.state.data===undefined)continue;
+          query.setState({data:undefined,dataUpdatedAt:0,error:new ApiError(409,'SEARCH_REFRESH_REQUIRED'),status:'error',fetchStatus:'idle'});
+        }
+      },
       connect:endpoint=>{
         const source=new EventSource(endpoint);
         return {state:()=>source.readyState,close:()=>source.close(),listen:(name,listener)=>{const fn=(event:Event)=>listener(event instanceof MessageEvent?{data:event.data,lastEventId:event.lastEventId}:{});source.addEventListener(name,fn);return()=>source.removeEventListener(name,fn);}};
@@ -42,12 +52,12 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
             signal.throwIfAborted();throw new IdentityChanged();
           }
           client.setQueryData(['session'],fresh);
-          const abort=()=>{void client.cancelQueries({predicate:query=>isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive()},{revert:false});};
+          const abort=()=>{void client.cancelQueries({predicate:query=>isPeriodicQuery(query.queryKey,principal.principal_id)&&query.isActive()},{revert:false});};
           signal.addEventListener('abort',abort,{once:true});
-          try{await client.invalidateQueries({predicate:query=>isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});}
+          try{await client.invalidateQueries({predicate:query=>isPeriodicQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});}
           finally{signal.removeEventListener('abort',abort);}
           signal.throwIfAborted();
-          const failed=client.getQueryCache().findAll({predicate:query=>isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive()}).find(query=>query.state.status==='error'&&!(query.state.error instanceof ApiError&&[403,404].includes(query.state.error.status)));
+          const failed=client.getQueryCache().findAll({predicate:query=>isPeriodicQuery(query.queryKey,principal.principal_id)&&query.isActive()}).find(query=>query.state.status==='error'&&!(query.state.error instanceof ApiError&&[403,404].includes(query.state.error.status)));
           if(failed)throw failed.state.error;
           setWorkbenchTransportWritable(true);return {available:fresh.realtime_sse_available};
         }catch(error){if(!signal.aborted&&error instanceof ApiError&&[401,403].includes(error.status))await clearSessionAuthorization(client,principal.principal_id,error.status as 401|403,'revoked');throw error;}

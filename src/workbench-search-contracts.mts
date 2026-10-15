@@ -47,6 +47,12 @@ export function parseSearchRequest(params:URLSearchParams):WorkbenchSearchReques
   statuses:csv(params.get('statuses')),supplement:params.get('supplement')??'any',schedule:params.get('schedule')??'any'});
  return {criteria,cursor,limit:Number(rawLimit)};
 }
+export function parseSearchBody(value:unknown):WorkbenchSearchRequest{
+ const body=plain(value,['criteria','cursor','limit']);
+ if(typeof body.limit!=='number'||!Number.isInteger(body.limit)||body.limit<1||body.limit>100)throw new SearchInputError('LIMIT_INVALID');
+ if(body.cursor!==null&&(typeof body.cursor!=='string'||body.cursor.length<1||body.cursor.length>2048||!/^[A-Za-z0-9_.-]+$/u.test(body.cursor)))throw new SearchInputError('CURSOR_INVALID');
+ return {criteria:normalizeSearchCriteria(body.criteria),cursor:body.cursor,limit:body.limit};
+}
 export function searchCriteriaKey(criteria:WorkbenchSearchCriteria):string{return JSON.stringify(normalizeSearchCriteria(criteria));}
 export function searchParameters(criteria:WorkbenchSearchCriteria):URLSearchParams{
  const value=normalizeSearchCriteria(criteria),params=new URLSearchParams();

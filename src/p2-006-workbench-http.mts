@@ -80,6 +80,18 @@ function exactKeys(body: Record<string, unknown>, allowed: readonly string[], re
   }
 }
 
+export function validateWorkbenchReadRequest(request:IncomingMessage,authContext:WorkbenchHttpAuthContext) {
+  if (authContext.auth_method === 'COOKIE') {
+    if (request.headers.origin !== authContext.public_origin) throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
+    if (request.headers['sec-fetch-site'] === 'cross-site') throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
+    if (!secureEqual(request.headers['x-csrf-token'], authContext.csrf_token)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.csrfInvalid, 403);
+  } else if (authContext.auth_method === 'BEARER') {
+    if (typeof request.headers.authorization !== 'string' || !request.headers.authorization.startsWith('Bearer ')) {
+      throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+    }
+  } else throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+}
+
 function validateWriteRequest(request: IncomingMessage, authContext: WorkbenchHttpAuthContext, body: Record<string, unknown>, { sessionMutation = true } = {}) {
   const commandId = request.headers['idempotency-key'];
   if (typeof commandId !== 'string' || !UUID_PATTERN.test(commandId) || commandId.toLowerCase() !== (body.client_command_id as string | null | undefined)?.toLowerCase()) {
@@ -92,15 +104,7 @@ function validateWriteRequest(request: IncomingMessage, authContext: WorkbenchHt
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.versionConflict, 409);
     }
   }
-  if (authContext.auth_method === 'COOKIE') {
-    if (request.headers.origin !== authContext.public_origin) throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
-    if (request.headers['sec-fetch-site'] === 'cross-site') throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
-    if (!secureEqual(request.headers['x-csrf-token'], authContext.csrf_token)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.csrfInvalid, 403);
-  } else if (authContext.auth_method === 'BEARER') {
-    if (typeof request.headers.authorization !== 'string' || !request.headers.authorization.startsWith('Bearer ')) {
-      throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
-    }
-  } else throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+  validateWorkbenchReadRequest(request,authContext);
 }
 
 function authExpired(authContext: WorkbenchHttpAuthContext | null | undefined) {

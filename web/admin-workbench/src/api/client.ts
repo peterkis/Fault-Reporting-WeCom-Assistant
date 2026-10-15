@@ -203,10 +203,10 @@ export async function rejectAuthorization(response:Response):Promise<never>{
   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
   throw new ApiError(response.status,code);
 }
-async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,response:Response)=>T):Promise<T> {
+async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,response:Response)=>T,readInit:{method?:'POST';body?:string;headers?:Record<string,string>}={}):Promise<T> {
   const epoch=authorizationEpoch;
   try{
-  const response=await fetch(path,{signal,credentials:'same-origin',redirect:'error',headers:{accept:'application/json'},cache:'no-store'});
+  const response=await fetch(path,{...readInit,signal,credentials:'same-origin',redirect:'error',headers:{accept:'application/json',...readInit.headers},cache:'no-store'});
   requireCurrentRead(epoch,signal);
   // A credible HTTP authorization rejection fences cached authority even if its error body cannot be decoded.
   if([401,403,404].includes(response.status))return rejectAuthorization(response);
@@ -271,9 +271,11 @@ async function postFollow(requested:FollowItem,command:WorkbenchFollowCommand,cs
   }catch(error){current();if(error instanceof ApiError&&error.code!=='INVALID_RESPONSE')throw error;throw new UnknownCommandOutcome();}
 }
 export const api={
-  search:(criteria:WorkbenchSearchCriteria,cursor:string|null,signal:AbortSignal):Promise<WorkbenchSearchPage>=>{
+  search:(criteria:WorkbenchSearchCriteria,cursor:string|null,signal:AbortSignal,csrfToken:string|null=null):Promise<WorkbenchSearchPage>=>{
     const params=searchParameters(criteria);params.set('limit','50');if(cursor!==null)params.set('cursor',cursor);
-    return get('/api/workbench/search?'+params,signal,value=>decodeSearchPage(value,criteria));
+    const target='/api/workbench/search?'+params,decode=(value:unknown)=>decodeSearchPage(value,criteria);
+    if(new TextEncoder().encode(target).byteLength<=2048)return get(target,signal,decode);
+    return get('/api/workbench/search',signal,decode,{method:'POST',headers:{'content-type':'application/json',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify({criteria,cursor,limit:50})});
   },
   supplementFollowUpMaterial:(ticketId:string,target:SupplementFollowUpTarget,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/supplement-follow-up/material?'+new URLSearchParams({source_ref:target.source_ref,revision:target.revision}),signal,value=>{try{return decodeSupplementMaterial(value,ticketId,target);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
   supplementFollowUpPage:(ticketId:string,cursor:string|null,signal:AbortSignal):Promise<SupplementFollowUpPage>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/supplement-follow-up?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{try{return decodeSupplementPage(value,ticketId);}catch{throw new ApiError(502,'INVALID_RESPONSE');}}),
@@ -549,6 +551,6 @@ export const api={
 export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',CLOSED:'已关闭',CANCELLED:'已取消',DUPLICATE_LINKED:'已关联重复单'};
 export const sourceLabels:Record<string,string>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'Bot 私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修'};
 export function errorMessage(error:unknown):string {
-  if(error instanceof ApiError){if(error.status===401)return '会话已失效，请重新进入已授权工作台。';if(error.status===403)return '当前身份没有操作权限。';if(error.status===404)return '事项不存在，或不在当前授权范围内。';if(error.status===409)return '资料已被其他人修改，请重新读取后再保存。';return '服务请求失败（'+error.status+'），请重试。';}
+  if(error instanceof ApiError){if(error.code==='SEARCH_REFRESH_REQUIRED')return '事项资料已变化，请重新提交搜索或点击刷新。';if(error.status===401)return '会话已失效，请重新进入已授权工作台。';if(error.status===403)return '当前身份没有操作权限。';if(error.status===404)return '事项不存在，或不在当前授权范围内。';if(error.status===409)return '资料已被其他人修改，请重新读取后再保存。';return '服务请求失败（'+error.status+'），请重试。';}
   return '连接失败，暂时无法读取服务端数据。';
 }
