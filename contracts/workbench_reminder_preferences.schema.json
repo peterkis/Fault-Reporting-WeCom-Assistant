@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_reminder_preferences.schema.json",
+  "title": "T40 browser-local settings only; never authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sound_enabled",
+    "desktop_enabled"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "sound_enabled": {
+      "type": "boolean"
+    },
+    "desktop_enabled": {
+      "type": "boolean"
+    }
+  },
+  "x-maximum-utf8-bytes": 128,
+  "x-storage-key": "wbint-reminder-preferences-v1",
+  "x-default": {
+    "schema_version": 1,
+    "sound_enabled": false,
+    "desktop_enabled": false
+  },
+  "x-runtime-constraints": [
+    "unknown fields, invalid booleans, invalid JSON or more than 128 UTF8 bytes reset to muted defaults",
+    "do not persist principal/session/authorization identities, credentials, event/object IDs, drafts, content or a playback queue in preferences",
+    "a saved preference cannot arm sound or request desktop permission; every new document/identity requires an explicit current user gesture",
+    "account change, logout, scope loss or disabled capability disarms and clears the owned preference key; never clear unrelated browser storage"
+  ]
+}

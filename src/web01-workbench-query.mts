@@ -23,7 +23,7 @@ export function boardColumn(status: string): BoardColumn {
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'|'follow_up_schedule'> { sort_at: string }
 interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; cursor: unknown; limit: unknown }
-const CARD_SQL = `WITH cards AS (
+export const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
    t.title,t.status,t.priority,t.reported_location_text AS location,profile.name AS reporter_name,
    COALESCE(i.source_channel,'未提供') AS source,p.display_name AS assignee_name,
@@ -101,8 +101,8 @@ const COMMUNICATION_CARD_SQL = `EXISTS(SELECT 1 FROM conversation.session s JOIN
           AND linked.reporter_identity_hash=j.reporter_identity_hash
           AND (linked.conversation_session_id=s.id OR linked.source_intake_id=s.service_intake_id)
           AND (linked.conversation_thread_id=s.thread_id OR linked.conversation_thread_id IS NULL)))))`;
-const RELATED_CARD_SQL = `(${HANDLING_CARD_SQL} OR ${COMMUNICATION_CARD_SQL})`;
-const FOLLOW_CARD_SQL = `EXISTS(SELECT 1 FROM pilot_ticket.workbench_item_follow f JOIN intake.service_intake material ON material.id=f.source_intake_id
+export const RELATED_CARD_SQL = `(${HANDLING_CARD_SQL} OR ${COMMUNICATION_CARD_SQL})`;
+export const FOLLOW_CARD_SQL = `EXISTS(SELECT 1 FROM pilot_ticket.workbench_item_follow f JOIN intake.service_intake material ON material.id=f.source_intake_id
  WHERE f.principal_id=$2::uuid AND f.following AND (f.source_intake_id=cards.intake_id::uuid OR (cards.kind='ticket' AND material.retention_until>platform.local_now() AND (
   EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=f.source_intake_id AND j.linked_ticket_id=cards.id::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())
   OR EXISTS(SELECT 1 FROM intake.manual_review_item r JOIN intake.contact_journey j ON j.id=r.journey_id WHERE r.service_intake_id=f.source_intake_id AND r.linked_ticket_id=cards.id::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())))))`;

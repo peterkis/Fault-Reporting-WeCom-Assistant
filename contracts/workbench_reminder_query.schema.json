@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_reminder_query.schema.json",
+  "title": "T40 normalized authorized reminder query; SOURCE_ONLY_NOT_MOUNTED",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "after_event_id",
+    "cursor",
+    "limit",
+    "baseline_token"
+  ],
+  "properties": {
+    "after_event_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+          "minLength": 1,
+          "maxLength": 19,
+          "x-maximum-decimal": "9223372036854775807"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "baseline_token": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "x-http-method": "GET",
+  "x-http-path": "/api/workbench/reminders",
+  "x-runtime-constraints": [
+    "HTTP omitted fields normalize to after_event_id null, cursor null, limit50 and baseline_token null; reject unknown or duplicate parameters",
+    "only an initial all-null window returns an empty baseline plus its bounded opaque baseline_token",
+    "live reads require the token to bind the original principal, effective authorization revision, source-fact cutoff, after/as-of ID floor and ten-minute expiry; current READ is still independently required",
+    "cursor binds that token, principal, effective authorization revision, after/as-of IDs and limit; it cannot change the query",
+    "initial/recovery or stale/mismatched token is not historical playback authority; a verified current scope can establish a new empty baseline",
+    "all decimal IDs are at most 9223372036854775807; do not convert them to JS Number"
+  ]
+}

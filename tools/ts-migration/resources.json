@@ -393,6 +393,13 @@
     "contracts/workbench_manual_report_self_handling_result.schema.json",
     "contracts/workbench_search_contracts.d.ts",
     "contracts/workbench_search_criteria.schema.json",
-    "contracts/workbench_search_page.schema.json"
+    "contracts/workbench_search_page.schema.json",
+    "contracts/workbench_reminder_query.schema.json",
+    "contracts/workbench_reminder_item.schema.json",
+    "contracts/workbench_reminder_page.schema.json",
+    "contracts/workbench_reminder_preferences.schema.json",
+    "contracts/workbench_reminder_capability.schema.json",
+    "contracts/workbench_reminder_coordination.schema.json",
+    "contracts/workbench_reminder_contracts.d.ts"
   ]
 }

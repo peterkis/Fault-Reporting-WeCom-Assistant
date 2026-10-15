@@ -83,6 +83,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
   const rejectPending=()=>{for(const request of pending.values()){
     clearTimeout(request.timer);request.reject(new Error('P2_006_BROWSER_DISCONNECTED'));
   }pending.clear();};
+  /** @param {string|null} sessionId */
   function command(method,params={},sessionId=null){
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
