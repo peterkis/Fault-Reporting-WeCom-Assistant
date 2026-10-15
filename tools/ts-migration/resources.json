@@ -381,6 +381,8 @@
     "contracts/workbench_review_start_context_contracts.d.ts",
     "contracts/workbench_review_start_context.schema.json",
     "contracts/workbench_review_start_receipt_contracts.d.ts",
-    "contracts/workbench_review_start_receipt.schema.json"
+    "contracts/workbench_review_start_receipt.schema.json",
+    "contracts/workbench_review_start_related_session_contracts.d.ts",
+    "contracts/workbench_review_start_related_session.schema.json"
   ]
 }

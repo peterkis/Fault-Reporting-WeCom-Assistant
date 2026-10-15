@@ -52,6 +52,20 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
     return {principal:current,review};
   }
   return Object.freeze({
+    async relatedSession({authContext,reviewId:inputReview,sessionId:inputSession}:{authContext:unknown;reviewId:unknown;sessionId:unknown}){
+      guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      const reviewId=uuidP2016(inputReview),sessionId=uuidP2016(inputSession);
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');
+        await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+        const principal=await query.principal(authContext,transaction);
+        if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+        const canonical=await reviews.canonicalItem({authContext,reviewId,transaction});
+        if(canonical.kind!=='ticket')failP2016('NOT_FOUND',404);
+        await query.authorizedRelatedConversation({authContext,ticketId:canonical.id,sessionId,transaction});
+        return publicP2016({review_id:reviewId,ticket_id:canonical.id,session_id:sessionId});
+      });
+    },
     async receipt({authContext,reviewId:inputReview,commandId:inputCommand}:{authContext:unknown;reviewId:unknown;commandId:unknown}):Promise<ReviewStartReceipt>{
       guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const reviewId=uuidP2016(inputReview),commandId=uuidP2016(inputCommand);

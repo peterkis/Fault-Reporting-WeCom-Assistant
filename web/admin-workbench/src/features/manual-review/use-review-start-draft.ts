@@ -44,21 +44,28 @@ function decode(text:string,reviewId:string):Copy{
 export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,onSensitiveClear,onOperation}:{principal:Principal;reviewId:string;value:ReviewStartInput;pending:ReviewResolveAndStartCommand|null;onRestore:(copy:Copy)=>void;onSensitiveClear:()=>void;onOperation:(id:string)=>void}){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'review' as const,id:reviewId,purpose:'review-resolve-start'},capability=principal.manual_review_resolve_and_start_enabled===true;
   const writeEnabled=capability&&principal.manual_review_draft_recovery_enabled,[existing,setExisting]=useState(false),[restoring,setRestoring]=useState(writeEnabled),[unavailable,setUnavailable]=useState(false);
-  const revision=useRef(0),restoreRequest=useRef<AbortController|null>(null),validating=useRef(false);
+  const revision=useRef(0),restoreRequest=useRef<AbortController|null>(null),validating=useRef(false),revoked=useRef(false);
   useEffect(()=>{let ignore=false;void hasExistingDraft(scope).then(async found=>{if(ignore)return;if(found&&!capability){await purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true});return;}setExisting(found);}).catch(()=>{if(!ignore)setUnavailable(true);});return()=>{ignore=true;};},[principal.principal_id,reviewId,capability]);
   const clear=()=>{revision.current++;restoreRequest.current?.abort();restoreRequest.current=null;validating.current=false;setRestoring(false);onSensitiveClear();};
   const revoke=async(error:unknown)=>{
+    if(revoked.current)return;
+    revoked.current=true;
     clear();
-    if(error instanceof ApiError&&error.status===401){await clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
-    await purgeDrafts({...scope,reason:'revoked'});
+    try{
+      if(error instanceof ApiError&&error.status===401){await clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
+      await purgeDrafts({...scope,reason:'revoked'});
+    }catch(failure){revoked.current=false;throw failure;}
   };
   const draft=useAuthorizedDraft<ReviewStartInput,ReviewResolveAndStartCommand>({scope,enabled:capability&&(writeEnabled||existing),writeEnabled,value,pending,emptyValue:emptyReviewStartInput(reviewId),hasInput:value=>value.touched,
     serialise:copy=>JSON.stringify({schema:1,value:{...copy.value,original:copy.pending??copy.value.original},pending:copy.pending}),decode:text=>decode(text,reviewId),commandId:command=>command.client_command_id,
     authorize:async signal=>{
+      const token=revision.current;
       const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);
       if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');
       if(!fresh.manual_review_resolve_and_start_enabled)throw new DraftError('DRAFT_ACTION_REVOKED');
       try{await reviewStartApi.context(reviewId,signal);}catch(error){if(error instanceof ApiError&&[403,404].includes(error.status))throw new DraftError('DRAFT_ACTION_REVOKED');throw error;}
+      if(signal.aborted||token!==revision.current)throw new DraftError('DRAFT_CHANGED');
+      revoked.current=false;
       return fresh.manual_review_draft_recovery_enabled;
     },onAuthorityFailure:error=>{
       if(error instanceof ApiError&&(error.status===401||error.status===403))void clearSessionAuthorization(client,scope.principal,error.status,'revoked');
@@ -71,21 +78,20 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
         const context=await reviewStartApi.context(reviewId,controller.signal);current();
         if(copy.value.capture?.team&&!context.resolver_teams.some(team=>team.team_id===copy.value.capture?.team))throw new DraftError('DRAFT_ACTION_REVOKED');
         const selected=copy.value.sessions;
-        for(const row of selected){await api.readConversation(row.session_id,controller.signal);current();}
-        const remaining=new Set(selected.map(row=>row.session_id)),ticketId=copy.value.capture?.ticket?.ticket_id??context.expected_ticket?.ticket_id;
-        if(remaining.size&&!ticketId)throw new DraftError('DRAFT_RELATION_CHANGED');
-        let cursor:string|null=null;const seen=new Set<string>();
-        for(let pageNo=0;remaining.size&&ticketId&&pageNo<10;pageNo++){
-          const page=await api.relatedConversations(ticketId,cursor,controller.signal);current();for(const row of page.items)remaining.delete(row.session_id);
-          if(!page.next_cursor)break;if(seen.has(page.next_cursor))throw new DraftError('DRAFT_RELATION_CHANGED');seen.add(page.next_cursor);cursor=page.next_cursor;
+        const ticketId=copy.value.capture?.ticket?.ticket_id??context.expected_ticket?.ticket_id;
+        if(selected.length&&!ticketId)throw new DraftError('DRAFT_RELATION_CHANGED');
+        for(const row of selected){
+          await api.readConversation(row.session_id,controller.signal);current();
+          const related=await reviewStartApi.relatedSession(reviewId,row.session_id,controller.signal);current();
+          if(related.ticket_id!==ticketId)throw new DraftError('DRAFT_RELATION_CHANGED');
         }
-        if(remaining.size)throw new DraftError('DRAFT_RELATION_CHANGED');
         const stored=await openDraft(scope);current();
         if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');
         if(controller.signal.aborted||token!==revision.current)return;
         onRestore(copy);validating.current=false;setRestoring(false);restoreRequest.current=null;
       })().catch(error=>{if(controller.signal.aborted||token!==revision.current)return;validating.current=false;restoreRequest.current=null;setRestoring(false);setUnavailable(true);
         if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,scope.principal,401,'revoked');
+        else if(error instanceof ApiError&&[403,404].includes(error.status))void revoke(error).catch(()=>setUnavailable(true));
         else if(error instanceof DraftError&&error.message!=='DRAFT_CHANGED')void draft.discard();
       });
     },onSensitiveClear:clear,onOperation});

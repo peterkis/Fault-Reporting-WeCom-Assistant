@@ -72,7 +72,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{const receipt=await reviewStartApi.receipt(reviewId,originalId,controller.signal);current();if(!mounted.current||generation.current!==token)return;
       if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知；无终态回执不代表没有提交。不会自动发送。');return;}
       if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');await finish(originalId,current,token);return;}
-      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);return;}}finally{settling.current=false;}}
+      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('原操作失败已确认，但恢复副本清理尚未确认。禁止新操作，请只读核对并重试清理。');return;}}finally{settling.current=false;}}
       current();if(!mounted.current||generation.current!==token)return;setOpaque(null);setCleanupBlocked(false);setState('failed');setMessage('已只读确认原操作失败；原完整意图保留，新的意图须明确采用当前事实。');onRefresh();
     }catch(error){if(!mounted.current||generation.current!==token||controller.signal.aborted)return;try{current();}catch{return;}
       if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else{setState('unknown');setMessage('只读核对未完成，原操作身份保留，没有发送新操作。');}

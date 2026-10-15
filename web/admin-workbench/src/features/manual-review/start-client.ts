@@ -2,6 +2,7 @@ import {ApiError,UnknownCommandOutcome,captureWorkbenchRead,workbenchTransportWr
 import type {ReviewResolveAndStartCommand,ReviewResolveAndStartResult} from '../../../../../contracts/workbench_review_start_contracts';
 import type {ReviewStartContext} from '../../../../../contracts/workbench_review_start_context_contracts';
 import type {ReviewStartReceipt} from '../../../../../contracts/workbench_review_start_receipt_contracts';
+import type {ReviewStartRelatedSession} from '../../../../../contracts/workbench_review_start_related_session_contracts';
 export type {ReviewResolveAndStartCommand,ReviewResolveAndStartResult};
 export type {ReviewStartContext};
 export type {ReviewStartReceipt};
@@ -59,6 +60,12 @@ async function body(response:Response,current:()=>void):Promise<unknown>{
   return value;
 }
 export const reviewStartApi={
+  async relatedSession(reviewId:string,sessionId:string,signal:AbortSignal):Promise<ReviewStartRelatedSession>{
+    const current=captureWorkbenchRead(signal),response=await fetch('/api/manual-reviews/'+encodeURIComponent(reviewId)+'/resolve-and-start/related-sessions/'+encodeURIComponent(sessionId),{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});current();
+    const value=object(await body(response,current),['review_id','ticket_id','session_id']);
+    if(id(value.review_id)!==reviewId||id(value.session_id)!==sessionId)invalid();
+    return {review_id:reviewId,ticket_id:id(value.ticket_id),session_id:sessionId};
+  },
   async receipt(reviewId:string,commandId:string,signal:AbortSignal):Promise<ReviewStartReceipt>{
     const current=captureWorkbenchRead(signal),response=await fetch('/api/manual-reviews/'+encodeURIComponent(reviewId)+'/resolve-and-start/commands/'+encodeURIComponent(commandId),{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});current();
     const value=await body(response,current);if(!value||typeof value!=='object'||Array.isArray(value))invalid();const state=(value as Record<string,unknown>).state;

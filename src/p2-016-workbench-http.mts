@@ -69,6 +69,8 @@ export function createP2016WorkbenchHttp({workbenchSupplementFollowUpEnabled=fal
       if(assignmentReceipt){if(!assignment)failP2016('DISABLED',503);guardP2016(workbenchDraftRecoveryEnabled);queryKeys(url,[]);json(response,200,await assignment.acknowledgement({authContext,ticketId:assignmentReceipt[1],commandId:assignmentReceipt[2]}));return true;}
       const startContext=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/resolve-and-start-context$/iu.exec(url.pathname);
       if(startContext){if(!reviewStart)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await reviewStart.context({authContext,reviewId:startContext[1]}));return true;}
+      const startRelated=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/resolve-and-start\/related-sessions\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      if(startRelated){if(!reviewStart)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await reviewStart.relatedSession({authContext,reviewId:startRelated[1],sessionId:startRelated[2]}));return true;}
       const startReceipt=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/resolve-and-start\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(startReceipt){if(!reviewStart)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await reviewStart.receipt({authContext,reviewId:startReceipt[1],commandId:startReceipt[2]}));return true;}
       const reviewReceipt=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
