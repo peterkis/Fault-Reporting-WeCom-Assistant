@@ -8255,6 +8255,16 @@
     ],
     "wbint-t42-board-complete-reopen": [
       "tests/wbint-t42-board-complete-reopen.browser.test.mts"
+    ],
+    "wbint-t42-whole": [
+      "tests/wbint-t42-board-legal-action.browser.test.mts",
+      "tests/wbint-t42-board-intent.contract.test.mts",
+      "tests/wbint-t42-board-capability.integration.test.mts",
+      "tests/wbint-t42-board-boundaries.browser.test.mts",
+      "tests/wbint-t42-board-capability-fallback.browser.test.mts",
+      "tests/wbint-t42-board-authority-navigation.browser.test.mts",
+      "tests/wbint-t42-board-review.browser.test.mts",
+      "tests/wbint-t42-board-complete-reopen.browser.test.mts"
     ]
   },
   "subprocess_entries": {
