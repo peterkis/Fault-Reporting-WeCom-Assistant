@@ -23,6 +23,7 @@ async function settle(runtime:P2016EnabledRuntime){
  }assert.fail('bounded synthetic search fixture projection did not settle');
 }
 for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real production pages: '+scenario,{timeout:240000},async()=>{
+ assert.match(tmpdir(),/^D:[\\/]/iu,'the owned TLS/browser fixture must use D temp before creating resources');
  await withWeb01Fixture(async(f:Fixture)=>{
   const q=scenario==='unicode128'?'😀'.repeat(128):'T41_TWO_PAGE_SYNTHETIC',core=createPilotTicketCore({pool:f.pool});
   for(let index=0;index<51;index++){
