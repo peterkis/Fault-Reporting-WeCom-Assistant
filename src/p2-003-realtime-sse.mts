@@ -33,6 +33,7 @@ interface StreamState {
   request: IncomingMessage; response: ServerResponse; principal: unknown; authorization: NormalizedAuthorization;
   configuration: Configuration; metrics: Metrics; lease: unknown; resolveClosed: () => void;
   responseOff: Listener | null; requestOff: Listener | null; abortController: AbortController;
+  activitySignature: string | null;
   scanCursor: string | null; closed: boolean; streaming: boolean; running: boolean; scheduled: boolean; eventsDue: boolean; heartbeatDue: boolean;
   heartbeatTimer: ReturnType<typeof setInterval> | null; recoveryTimer: ReturnType<typeof setInterval> | null;
   heartbeatTimerActive: boolean; recoveryTimerActive: boolean; onResponseClose: (() => void) | null; onRequestAborted: (() => void) | null; cancelDrain: (() => void) | null;
@@ -40,6 +41,7 @@ interface StreamState {
 export interface RealtimeSseHandler {
   (request: IncomingMessage, response: ServerResponse): Promise<void>;
   handle: RealtimeSseHandler; close(): Promise<Readonly<Metrics>>; getMetrics(): Readonly<Metrics>; metrics(): Readonly<Metrics>;
+  setWorkbenchActivity?(hook: ((authContext: unknown) => Promise<string | null>) | null): void;
   wakeup(): unknown; notify(): unknown; disconnectPrincipal(principalId: string): Readonly<{ disconnected_count: number }>;
   wakeupHub: unknown; hubSnapshot(): unknown;
 }
@@ -917,6 +919,7 @@ function configureSseHeaders(response: ServerResponse) {
 }
 
 export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOptions<P> = {}): RealtimeSseHandler {
+  let activityHook: ((authContext: unknown) => Promise<string | null>) | null = null;
   const configuration = normalizeHandlerConfiguration(options);
   const pool = ownData(options, 'pool');
   const eventStore = ownData(options, 'eventStore');
@@ -1067,6 +1070,13 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
         if (state.eventsDue) {
           state.eventsDue = false;
           await replayAvailable(state);
+          if (!state.closed && activityHook) {
+            const signature = await activityHook(state.principal);
+            if (!state.closed && signature !== state.activitySignature && signature !== null) {
+              if (!await writeSseFrame(state, 'event: workbench.activity.changed\ndata: {"schema_version":1}\n\n')) { cleanupStream(state); return; }
+            }
+            state.activitySignature = signature;
+          }
         }
         if (!state.closed && state.heartbeatDue) {
           state.heartbeatDue = false;
@@ -1271,6 +1281,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
       responseOff,
       requestOff,
       abortController: new AbortController(),
+      activitySignature: null,
       scanCursor: requestedCursor,
       closed: false,
       streaming: false,
@@ -1395,6 +1406,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
 
   async function close() {
     handlerClosed = true;
+    activityHook = null;
     for (const state of [...streams]) {
       cleanupStream(state, { destroy: true });
     }
@@ -1434,6 +1446,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     wakeup: { value: wakeup, enumerable: true },
     notify: { value: wakeup, enumerable: true },
     disconnectPrincipal: { value: disconnectPrincipal, enumerable: true },
+    setWorkbenchActivity: { value: (hook: ((authContext: unknown) => Promise<string | null>) | null) => { activityHook = hook; }, enumerable: true },
     wakeupHub: { value: wakeupHub, enumerable: true },
     hubSnapshot: {
       value: () => (hubSnapshot ? hubSnapshot.call(wakeupHub) : null),

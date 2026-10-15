@@ -37,7 +37,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange}:{ticketI
   const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[];
   // Keep the original request/result controller mounted; only its idle presentation is optional.
   if(principal.ticket_takeover_enabled&&!allowed.some(action=>action==='take-and-start'||action==='accept-for-later')&&!pending&&state==='idle')return null;
-  return <section className="ticket-notes ticket-self-handling" aria-label="本人承接工单">
+  return <section data-activity-field="ticket-handling" className="ticket-notes ticket-self-handling" aria-label="本人承接工单">
     {context.isPending?<p role="status">正在读取工单处理权限与版本…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">

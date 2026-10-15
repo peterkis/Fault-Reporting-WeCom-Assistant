@@ -49,10 +49,14 @@
 | CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；T19 一步处理另行实施 | [代录报修](workbench/manual-reports.md) |
+| MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；本人立即处理使用 MR06 独立原子命令 | [代录报修](workbench/manual-reports.md) |
 | MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
 | MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |
 | MR04 | GET | `/api/workbench/reporter-candidates` | W | 已挂载、默认关闭；当前应用／对象获权候选，q/limit/cursor 有界；仅明确选择后才可提交 | [候选查询](workbench/manual-reports.md#2-候选查询-get) |
+| MR05 | GET | `/api/workbench/reports/self-handling-context` | W | 已挂载、默认关闭；当前创建／真实活动组成员许可，有界候选或精确原组恢复核验 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
+| MR06 | POST | `/api/workbench/reports/take-and-start` | W | 已挂载、默认关闭；原 MANUAL 账本同事务受理／唯一 Core／本人合法组承接开始，仅原 UNVERIFIED 合同 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
+| A01 | POST | `/api/workbench/activity` | W | 已实现、默认关闭；本地验证完成待父验收：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
+| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | 已实现、默认关闭；本地验证完成待父验收：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |
@@ -114,6 +118,10 @@
 | R05 | GET | `/api/contact-journeys/{journeyId}/legs` | W | 已实现：渠道链 | [复核](workbench/manual-reviews.md) |
 | R06 | GET | `/api/contact-journeys/{journeyId}/decisions` | W | 已实现：确定性判定 | [复核](workbench/manual-reviews.md) |
 | R07 | GET | `/api/manual-reviews/{reviewId}/commands/{commandId}` | W | 已实现、默认关闭：当前Review授权/原UUID只读核对 | [同事项复核](workbench/manual-reviews.md#同事项复核与恢复wbint-t14) |
+| WB-T15-Q1 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start-context` | W | 已实现、默认关闭：当前获权原子处理选项，精确原组 hint＋有界100并集 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-Q2 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start/related-sessions/{sessionId}` | W | 已实现、默认关闭：当前精确关联／独立读权，历史 ENDED 不授新接管 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-A1 | POST | `/api/manual-reviews/{reviewId}/resolve-and-start` | W | 已实现、默认关闭：确认／唯一 Ticket／本人处理与显式沟通同事务 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-Q3 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start/commands/{commandId}` | W | 已实现、默认关闭：当前授权／原 UUID 专用安全只读终态 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
 | I01 | GET | `/api/incident-candidates` | W | 已实现：候选列表 | [公共故障](workbench/incidents.md) |
 | I02 | GET | `/api/incident-candidates/{candidateId}` | W | 已实现：候选详情 | [公共故障](workbench/incidents.md) |
 | I03 | POST | `/api/incident-candidates/{candidateId}/start-review` | W | 已实现：开始复核 | [公共故障](workbench/incidents.md) |

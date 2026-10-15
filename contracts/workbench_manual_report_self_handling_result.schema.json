@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_manual_report_self_handling_result.schema.json",
+  "title":"Proposed WBINT-T19 completed atomic report, acceptance and start",
+  "allOf":[
+    {"$ref":"workbench_manual_report_result.schema.json"},
+    {"type":"object","properties":{
+      "result_code":{"enum":["TICKET_ELIGIBLE","SERVICE_REQUEST"]},
+      "ticket":{"type":"object","properties":{"status":{"const":"IN_PROGRESS"}},"required":["status"]},
+      "review":{"type":"null"}
+    }}
+  ]
+}

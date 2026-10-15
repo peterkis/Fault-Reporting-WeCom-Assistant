@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_manual_report_self_handling_context.schema.json",
+  "title":"Proposed WBINT-T19 current self-handling eligibility and actual groups",
+  "type":"object","additionalProperties":false,
+  "required":["can_take_and_start","resolver_teams","manual_contact_required","external_notification","draft_recovery_enabled"],
+  "properties":{
+    "can_take_and_start":{"type":"boolean"},
+    "resolver_teams":{"type":"array","maxItems":100,"items":{
+      "type":"object","additionalProperties":false,"required":["id","name"],
+      "properties":{"id":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"name":{"type":"string","minLength":1,"maxLength":100}}
+    }},
+    "manual_contact_required":{"const":true},"external_notification":{"const":false},
+    "draft_recovery_enabled":{"type":"boolean"}
+  },
+  "allOf":[
+    {"if":{"properties":{"can_take_and_start":{"const":false}}},"then":{"properties":{"resolver_teams":{"maxItems":0}}}},
+    {"if":{"properties":{"can_take_and_start":{"const":true}}},"then":{"properties":{"resolver_teams":{"minItems":1}}}}
+  ]
+}

@@ -38,6 +38,7 @@ export interface RealtimeClientOptions {
   capability:WorkbenchRealtimeCapability;
   connect:(endpoint:string)=>RealtimeTransport;
   refresh:(signal:AbortSignal)=>Promise<{available:boolean}>;
+  activityTick?:(signal:AbortSignal,isLive:boolean)=>Promise<void>;
   authorizationDenied:(error:unknown)=>boolean;
   report:(state:{status:WorkbenchRealtimeStatus;lastReadAt:number|null})=>void;
   now:()=>number;
@@ -49,12 +50,13 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
   const interval=options.capability.polling_interval_ms;
   if(!Number.isInteger(interval)||interval<1000||interval>300000||options.capability.sse_endpoint!==(options.capability.realtime_sse_enabled?'/api/realtime/events?scope=workbench':null))throw new TypeError('WORKBENCH_REALTIME_CAPABILITY_INVALID');
   let disposed=false,blocked=false,online=true,visible=true,available=options.capability.realtime_sse_available;
-  let source:RealtimeTransport|null=null,sourceEpoch=0,unlisten:(()=>void)[]=[],timer:unknown=null,request:AbortController|null=null;
+  let source:RealtimeTransport|null=null,sourceEpoch=0,unlisten:(()=>void)[]=[],timer:unknown=null,request:AbortController|null=null,activityRequest:AbortController|null=null;
   let running=false,pending=false,replacementAllowed=false,lastReadAt:number|null=null,status:WorkbenchRealtimeStatus=options.capability.realtime_sse_enabled?'connecting':'disabled';
   const alive=()=>!disposed&&!blocked&&online&&visible&&options.capability.realtime_sse_enabled;
   const report=(next:WorkbenchRealtimeStatus)=>{status=next;options.report({status,lastReadAt});};
   const cancelTimer=()=>{if(timer!==null)options.cancel(timer);timer=null;};
-  function closeSource(){sourceEpoch++;for(const remove of unlisten)remove();unlisten=[];const old=source;source=null;old?.close();}
+  function stopActivity(){activityRequest?.abort();activityRequest=null;}
+  function closeSource(){stopActivity();sourceEpoch++;for(const remove of unlisten)remove();unlisten=[];const old=source;source=null;old?.close();}
   function schedule(delay=interval){cancelTimer();if(alive())timer=options.schedule(()=>{timer=null;replacementAllowed=true;refresh();},delay);}
   function openSource(){
     if(!alive()||!available||source)return;
@@ -62,12 +64,12 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     const current=options.connect(options.capability.sse_endpoint as string),epoch=++sourceEpoch;source=current;
     const valid=()=>alive()&&source===current&&epoch===sourceEpoch;
     unlisten=[current.listen('open',()=>{if(valid()){report('live');refresh();}}),current.listen('error',()=>{if(valid()){report(current.state()===2?'polling':'reconnecting');refresh();}}),
-      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){decodeWorkbenchRealtimeHint(event.data,name);refresh();}})),current.listen('message',()=>{if(valid())refresh();})];
+      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){decodeWorkbenchRealtimeHint(event.data,name);refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}')refresh();})]:[]),current.listen('message',()=>{if(valid())refresh();})];
     report('connecting');
   }
   function refresh(){
     if(!alive())return;
-    if(running){pending=true;return;}running=true;pending=false;cancelTimer();
+    if(running){pending=true;return;}running=true;pending=false;cancelTimer();stopActivity();
     const cycle=new AbortController();request=cycle;
     let expired=false;
     const deadline=new Promise<never>((_resolve,reject)=>{timer=options.schedule(()=>{timer=null;expired=true;cycle.abort();if(alive())report('offline');reject(new Error('WORKBENCH_REFRESH_TIMED_OUT'));},interval);});
@@ -77,6 +79,12 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
       if(!available){closeSource();report('polling');}
       else if(!source||source.state()===2&&replacementAllowed){closeSource();openSource();}
       else report(source.state()===2?'polling':source.state()===1?'live':'reconnecting');
+      if(options.activityTick){
+        const activityCycle=new AbortController();activityRequest=activityCycle;
+        // Optional presence has no authority over business availability. The next
+        // existing refresh cadence bounds it without another timer or stream.
+        void Promise.resolve().then(()=>{if(alive()&&!activityCycle.signal.aborted)return options.activityTick?.(activityCycle.signal,source?.state()===1);}).catch(()=>{}).finally(()=>{if(activityRequest===activityCycle)activityRequest=null;});
+      }
     }).catch(error=>{
       if(disposed||cycle.signal.aborted)return;
       if(options.authorizationDenied(error)){blocked=true;closeSource();cancelTimer();report('auth-blocked');}

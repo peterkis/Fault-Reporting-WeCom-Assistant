@@ -113,6 +113,90 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       ORDER BY r.created_at,r.id LIMIT 1`,[review.service_intake_id,...predicate.values]);
     return pending.rows[0]?{kind:'review',id:pending.rows[0].id}:{kind:'intake',id:review.service_intake_id};
   }
+  function normalizeResolution(reviewId:unknown,body:unknown){
+      guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis'],
+        ['client_command_id','expected_row_version','resolution_code','resolution_reason_code']) as ReviewBody;
+      if(!Object.hasOwn(ACTIONS,v.resolution_code)||v.target_journey_id!==undefined)failP2016('RESOLUTION_NOT_PERMITTED',403);
+      if(typeof v.expected_row_version!=='string')failP2016();
+      const expected=String(v.expected_row_version);
+      if(!/^[1-9][0-9]{0,18}$/u.test(expected)||BigInt(expected)>9223372036854775807n)failP2016();
+      const {expected_material_basis:materialBasis,...fields}=v;
+      if(materialBasis!==undefined){guardP2016(workspaceEnabled);if(typeof materialBasis!=='string'||!/^[a-f0-9]{64}$/u.test(materialBasis))failP2016();}
+      const command={...fields,...(typeof materialBasis==='string'?{expected_material_basis:materialBasis}:{}),expected_row_version:expected,client_command_id:uuidP2016(v.client_command_id),review_id:uuidP2016(reviewId),action:'MANUAL_REVIEW',
+        resolution_reason_code:codeP2016(v.resolution_reason_code)};
+      return {command,v};
+  }
+  async function authorizeResolution(authContext:unknown,reviewId:unknown,transaction:PostgresTransaction){
+        const c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);return {...c,ticket:null};
+  }
+  async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>,creationResolverTeamId?:string):Promise<ManualReviewCurrentResult>{
+        await realtimeProjector?.lock?.(transaction);
+        await transaction.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[review.service_intake_id]);
+        await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
+         const resolvedAt=stampP2016(now).local;
+         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:resolvedAt}});
+        if(!(resolution as { resolution_decision_id?: string }).resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
+        const source=(await transaction.query<SourceRow>(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,i.summary,
+          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
+          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
+          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0] as SourceRow;
+        const webSource=source?.source_provider==='YIXIAOXIU_WEB';
+        const appOnly=webSource||manualSourceEnabled&&source?.source_provider==='STAFF_MANUAL_REPORT';
+        const actionTypes=workspaceEnabled&&!appOnly&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE'].includes(v.resolution_code)
+          ? ['APPLY_INTAKE_CLASSIFICATION',...ACTIONS[v.resolution_code]] as SafeActionType[] : (appOnly?WEB_ACTIONS:ACTIONS)[v.resolution_code];
+        const suggestions: SafeActionSuggestion[]=actionTypes.map((type,index)=>{
+          const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
+          return {action_type:type,action_ordinal:index+1,execution_policy:'HUMAN_CONFIRM_REQUIRED',safe_payload:payload,payload_hash:safeHash(payload)};
+        });
+        const decision=await decisions.ensureHumanActions({transaction,decisionId:(resolution as { resolution_decision_id: string }).resolution_decision_id,suggestions});
+        const fixed=appOnly?null:createP2004FixedCommunicationPort({append:async input=>{
+          const group=source.source_chat_type==='group';
+          const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
+          const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
+          const primary={...input.command,...(source.session_id?{expected_row_version:source.row_version}:{}),
+            content:guided?{text:'已收到您的消息。可直接在群里补充故障情况，也可选择机器人单聊。请勿在群内提供患者、账号或联系方式等敏感信息。'}:input.command.content};
+          const result=await communicationAppend({...input,command:primary}) as CommunicationObservation;
+          if(result.error)failP2016('ACTION_FAILED',503);
+          if(personAllowed) {
+            const direct=await communicationAppend({...input,command:{...primary,client_command_id:derivedCommand(primary.client_command_id),
+              content:input.command.content},resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,target_type:'PERSON',target_id:source.reporter_wecom_userid}]});
+            if((direct as CommunicationObservation).error)failP2016('ACTION_FAILED',503);
+          }return result;
+        }});
+        const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
+          ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
+            const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
+            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary),...(creationResolverTeamId===undefined?{}:{resolverTeamId:creationResolverTeamId})});
+            if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
+              actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
+              if(!appOnly&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
+              if(realtimeProjector)await realtimeProjector.ticket({transaction:tx,ticket:result.ticket,event});}
+            return result;
+          }}});
+        const actionContext: SafeActionContext={trace_id:'p2-016:'+command.client_command_id,session_id:source.session_id??null,
+          privacy_class:appOnly?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
+          retention_until_epoch_ms:source.retention_until_epoch_ms,
+          ...(!appOnly?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
+            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
+        const actions=await executor.execute({transaction,decision:appOnly?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
+        if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
+        if(appOnly&&v.resolution_code==='REQUEST_DESCRIPTION') {
+          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
+            SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
+            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
+          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
+        } else if(appOnly&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
+          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
+            SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
+                updated_at=GREATEST(created_at,$2::timestamp without time zone)
+            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id,resolvedAt]);
+          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
+        }
+        const result:ManualReviewCurrentResult={ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
+        await afterResolution?.(result);
+        if(realtimeProjector)await realtimeProjector.review({transaction,reviewId:reviewId as string});
+        return result;
+  }
   return Object.freeze({
     async listManualReviews({authContext,priority=null,cursor=null,limit,status='PENDING'}: { authContext: unknown; priority?: string | null; cursor?: string | null; limit?: unknown; status?: string }) {
       guardP2016(enabled);if(status!=='PENDING')failP2016();
@@ -175,85 +259,14 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       if(part==='decisions')return publicP2016((await pool.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE journey_id=$1::uuid ORDER BY decision_ordinal LIMIT 100',[journeyId])).rows.map(projectDecision));
       failP2016();
     },
+    async resolveManualReviewInTransaction({authContext,reviewId,body,transaction,afterResolution,creationResolverTeamId}:{authContext:unknown;reviewId:unknown;body:unknown;transaction:PostgresTransaction;afterResolution?:(result:ManualReviewCurrentResult)=>Promise<void>;creationResolverTeamId?:string}):Promise<ManualReviewCurrentResult>{
+      const normalized=normalizeResolution(reviewId,body),context=await authorizeResolution(authContext,reviewId,transaction);
+      return runResolution(transaction,context,reviewId,normalized,afterResolution,creationResolverTeamId===undefined?undefined:codeP2016(creationResolverTeamId));
+    },
     async resolveManualReview({authContext,reviewId,body}: { authContext: unknown; reviewId: unknown; body: unknown }): Promise<ManualReviewLedgerResult> {
-      guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis'],
-        ['client_command_id','expected_row_version','resolution_code','resolution_reason_code']) as ReviewBody;
-      if(!Object.hasOwn(ACTIONS,v.resolution_code)||v.target_journey_id!==undefined)failP2016('RESOLUTION_NOT_PERMITTED',403);
-      if(typeof v.expected_row_version!=='string')failP2016();
-      const expected=String(v.expected_row_version);
-      if(!/^[1-9][0-9]{0,18}$/u.test(expected)||BigInt(expected)>9223372036854775807n)failP2016();
-      const {expected_material_basis:materialBasis,...fields}=v;
-      if(materialBasis!==undefined){guardP2016(workspaceEnabled);if(typeof materialBasis!=='string'||!/^[a-f0-9]{64}$/u.test(materialBasis))failP2016();}
-      const command={...fields,...(typeof materialBasis==='string'?{expected_material_basis:materialBasis}:{}),expected_row_version:expected,client_command_id:uuidP2016(v.client_command_id),review_id:uuidP2016(reviewId),action:'MANUAL_REVIEW',
-        resolution_reason_code:codeP2016(v.resolution_reason_code)};
-      return ledger.execute({command,authorize:async transaction=>{
-        const c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);return {...c,ticket:null};
-      },run:async(transaction,{principal,review,store}): Promise<ManualReviewCurrentResult>=>{
-        await realtimeProjector?.lock?.(transaction);
-        await transaction.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[review.service_intake_id]);
-        await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
-         const resolvedAt=stampP2016(now).local;
-         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:resolvedAt}});
-        if(!(resolution as { resolution_decision_id?: string }).resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
-        const source=(await transaction.query<SourceRow>(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,i.summary,
-          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
-          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
-          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0] as SourceRow;
-        const webSource=source?.source_provider==='YIXIAOXIU_WEB';
-        const appOnly=webSource||manualSourceEnabled&&source?.source_provider==='STAFF_MANUAL_REPORT';
-        const actionTypes=workspaceEnabled&&!appOnly&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE'].includes(v.resolution_code)
-          ? ['APPLY_INTAKE_CLASSIFICATION',...ACTIONS[v.resolution_code]] as SafeActionType[] : (appOnly?WEB_ACTIONS:ACTIONS)[v.resolution_code];
-        const suggestions: SafeActionSuggestion[]=actionTypes.map((type,index)=>{
-          const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
-          return {action_type:type,action_ordinal:index+1,execution_policy:'HUMAN_CONFIRM_REQUIRED',safe_payload:payload,payload_hash:safeHash(payload)};
-        });
-        const decision=await decisions.ensureHumanActions({transaction,decisionId:(resolution as { resolution_decision_id: string }).resolution_decision_id,suggestions});
-        const fixed=appOnly?null:createP2004FixedCommunicationPort({append:async input=>{
-          const group=source.source_chat_type==='group';
-          const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
-          const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
-          const primary={...input.command,...(source.session_id?{expected_row_version:source.row_version}:{}),
-            content:guided?{text:'已收到您的消息。可直接在群里补充故障情况，也可选择机器人单聊。请勿在群内提供患者、账号或联系方式等敏感信息。'}:input.command.content};
-          const result=await communicationAppend({...input,command:primary}) as CommunicationObservation;
-          if(result.error)failP2016('ACTION_FAILED',503);
-          if(personAllowed) {
-            const direct=await communicationAppend({...input,command:{...primary,client_command_id:derivedCommand(primary.client_command_id),
-              content:input.command.content},resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,target_type:'PERSON',target_id:source.reporter_wecom_userid}]});
-            if((direct as CommunicationObservation).error)failP2016('ACTION_FAILED',503);
-          }return result;
-        }});
-        const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
-          ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
-            const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
-            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary)});
-            if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
-              actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
-              if(!appOnly&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
-              if(realtimeProjector)await realtimeProjector.ticket({transaction:tx,ticket:result.ticket,event});}
-            return result;
-          }}});
-        const actionContext: SafeActionContext={trace_id:'p2-016:'+command.client_command_id,session_id:source.session_id??null,
-          privacy_class:appOnly?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
-          retention_until_epoch_ms:source.retention_until_epoch_ms,
-          ...(!appOnly?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
-            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
-        const actions=await executor.execute({transaction,decision:appOnly?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
-        if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
-        if(appOnly&&v.resolution_code==='REQUEST_DESCRIPTION') {
-          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
-            SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
-            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
-          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
-        } else if(appOnly&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
-          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
-            SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
-                updated_at=GREATEST(created_at,$2::timestamp without time zone)
-            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id,resolvedAt]);
-          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
-        }
-        if(realtimeProjector)await realtimeProjector.review({transaction,reviewId:reviewId as string});
-        return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
-      }});
+      const normalized=normalizeResolution(reviewId,body);
+      return ledger.execute({command:normalized.command,authorize:transaction=>authorizeResolution(authContext,reviewId,transaction),
+        run:(transaction,context)=>runResolution(transaction,context,reviewId,normalized)});
     },
   });
 }

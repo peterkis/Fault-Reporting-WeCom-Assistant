@@ -24,13 +24,16 @@ import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,Verified
 import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
 import {createWorkbenchReporterCandidates} from './workbench-reporter-candidates.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
+import type {ManualReportSelfHandlingCommand,ManualReportSelfHandlingContext} from '../contracts/workbench_manual_report_self_handling_contracts.js';
+import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
+import {selfHandlingSchemaReady,selfHandlingEligibility,performFirstTicketResponsibilityInTransaction} from './workbench-ticket-self-handling.mjs';
 import {verifiedManualReportCommand,retainedReporterTarget} from './workbench-reporter-verification.mjs';
 class ConfirmedReporterRejection extends WorkbenchError {
   constructor(status:number,readonly rejection:VerifiedManualReportRejection){super(rejection.error.code,status);}
 }
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Realtime=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
-interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;draftRecoveryEnabled?:boolean;reporterCandidatesEnabled?:boolean;reporterDirectory?:ManualReporterDirectoryOptions|null;realtimeProjector?:Realtime|null}
+interface Options {pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;selfHandlingEnabled?:boolean;selfHandlingHooks?:Omit<SelfHandlingHooks,'realtimeProjector'>;draftRecoveryEnabled?:boolean;reporterCandidatesEnabled?:boolean;reporterDirectory?:ManualReporterDirectoryOptions|null;realtimeProjector?:Realtime|null}
 type AdmissionCommand=ManualReportCommand|VerifiedManualReportCommand;
 type AdmissionResult=ManualReportResult|VerifiedManualReportResult;
 type AdmissionReceipt=Exclude<ManualReportReceipt,{state:'COMMITTED'}>|{client_command_id:string;state:'COMMITTED';result:AdmissionResult&{replayed:true}};
@@ -38,6 +41,12 @@ export function manualReportCommand(input:unknown):ManualReportCommand{
   const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter']);
   if(v.schema_version!==1)failP2016();
   return publicP2016({schema_version:1,client_command_id:uuidP2016(v.client_command_id),...manualReportFields({source:v.source,description:v.description,location:v.location,reporter:v.reporter})});
+}
+export function manualReportSelfHandlingCommand(input:unknown):ManualReportSelfHandlingCommand{
+  const v=exactP2016(input,['schema_version','client_command_id','source','description','location','reporter','resolver_team_id']);
+  const {resolver_team_id,...base}=v;
+  if(typeof resolver_team_id!=='string'||!/^[A-Z][A-Z0-9_]{0,63}$/u.test(resolver_team_id))failP2016();
+  return publicP2016({...manualReportCommand(base),resolver_team_id});
 }
 export async function manualReportsSchemaReady(pool:PostgresTransaction){
   try{return (await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('033_yxx_self_service_intake','042_workbench_manual_reports')")).rowCount===2;}catch{return false;}
@@ -67,8 +76,8 @@ function storedResult(input:unknown,commandId:string):AdmissionResult&{replayed:
     return publicP2016({...base,reporter_verification:'UNVERIFIED',manual_contact_required:true});
   }catch{failP2016('ACTION_FAILED',503);}
 }
-export function createWorkbenchManualReports({pool,query,enabled=false,draftRecoveryEnabled=false,reporterCandidatesEnabled=false,reporterDirectory=null,realtimeProjector=null}:Options){
-  if(typeof enabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean'||typeof reporterCandidatesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+export function createWorkbenchManualReports({pool,query,enabled=false,selfHandlingEnabled=false,selfHandlingHooks={},draftRecoveryEnabled=false,reporterCandidatesEnabled=false,reporterDirectory=null,realtimeProjector=null}:Options){
+  if(typeof enabled!=='boolean'||typeof selfHandlingEnabled!=='boolean'||typeof draftRecoveryEnabled!=='boolean'||typeof reporterCandidatesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const reporterCandidates=createWorkbenchReporterCandidates({enabled:enabled&&reporterCandidatesEnabled,directory:reporterDirectory});
   const ledger=createP2016CommandLedger({pool}),core=createPilotTicketCore({pool});
   const decisions=createDecisionStore({webSource:true,manualSource:true}),reviews=createManualReviewStore({webSource:true}),intakes=createServiceIntakeDecisionPort();
@@ -86,6 +95,46 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
   async function capabilities(authContext:unknown):Promise<ManualReportCapabilities>{
     return transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorize(authContext,tx);
       return publicP2016({can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});});
+  }
+  async function currentAuthentication(authContext:unknown,tx:PostgresTransaction,lock=false){
+    if(!authContext||typeof authContext!=='object'||Array.isArray(authContext))failP2016('FORBIDDEN',403);
+    const context=authContext as Record<string,unknown>,expiry=context.expires_epoch_ms;
+    if(typeof expiry!=='string'||!/^[1-9][0-9]{0,18}$/u.test(expiry)||BigInt(expiry)>9223372036854775807n)failP2016('FORBIDDEN',403);
+    const principal=uuidP2016(context.principal_id);
+    const current=context.session_id===undefined
+      ?await tx.query('SELECT 1 WHERE $1::bigint>platform.physical_epoch_ms()',[expiry])
+      :await tx.query(`SELECT session_id FROM pilot_ticket.workbench_auth_session
+        WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE'
+          AND expires_epoch_ms>platform.physical_epoch_ms() AND $3::bigint>platform.physical_epoch_ms()${lock?' FOR SHARE':''}`,
+      [uuidP2016(context.session_id),principal,expiry]);
+    if(current.rowCount!==1)failP2016('FORBIDDEN',403);
+    // PostgreSQL may evaluate the physical-time predicate before a row-lock
+    // wait. Recheck in a new statement while holding the unchanged session row.
+    if(lock)await currentAuthentication(authContext,tx);
+  }
+  async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
+    guardP2016(enabled&&selfHandlingEnabled);
+    await currentAuthentication(authContext,transaction);
+    if(!await selfHandlingSchemaReady(transaction))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+    const {principal}=await authorize(authContext,transaction);
+    const teams=await transaction.query<{id:string;name:string}>(`SELECT rt.team_id AS id,rt.display_name AS name
+      FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
+      JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+      WHERE p.id=$1::uuid AND p.is_active AND rt.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER')
+        AND ($2::text IS NULL OR rt.team_id=$2) ORDER BY rt.team_id,r.role LIMIT 301${lock?' FOR SHARE OF p,r,m,rt':''}`,
+    [principal.principal_id,teamId??null]);
+    if(teamId&&!teams.rowCount)failP2016('FORBIDDEN',403);
+    const current=await authorize(authContext,transaction);
+    if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+    await currentAuthentication(authContext,transaction);
+    return {principal:current.principal,teams:[...new Map(teams.rows.map(team=>[team.id,team])).values()]};
+  }
+  async function selfHandlingContext(authContext:unknown,teamId?:string):Promise<ManualReportSelfHandlingContext>{
+    return transactionP2016(pool,async tx=>{
+      await tx.query('SET TRANSACTION READ ONLY');const {teams}=await authorizeSelfHandling(authContext,tx,teamId);
+      if(teams.length>100)failP2016('LIMIT_INVALID',503);
+      return publicP2016({can_take_and_start:teams.length>0,resolver_teams:teams,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});
+    });
   }
   const currentPrincipal=(authContext:unknown)=>transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');return (await authorize(authContext,tx)).principal;});
   async function committedTarget(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:VerifiedManualReportCommand):Promise<YxxMemberScope|null>{
@@ -126,19 +175,20 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
   async function receipt(authContext:unknown,commandId:string):Promise<AdmissionReceipt>{
     guardP2016(draftRecoveryEnabled);
     return transactionP2016(pool,async tx=>{
-      await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
+      await tx.query('SET TRANSACTION READ ONLY');await currentAuthentication(authContext,tx);const {principal}=await authorize(authContext,tx);
       const row=(await tx.query<{state:unknown;result:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS result,error_code AS error,retryable
         FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type='WORKBENCH_MANUAL_REPORT' LIMIT 1`,
       ['P2_016:'+principal.principal_id,commandId])).rows[0];
       const base={client_command_id:commandId};
       const current=await authorize(authContext,tx);if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+      await currentAuthentication(authContext,tx);
       if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
       if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({...base,state:'FAILED',error:{code:row.error,retryable:false}});
       if(row.state==='COMMITTED')return publicP2016({...base,state:'COMMITTED',result:storedResult(row.result,commandId)});
       failP2016('ACTION_FAILED',503);
     });
   }
-  async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:AdmissionCommand,verification:ManualReporterAdmissionEnvelope|null=null):Promise<Omit<ManualReportResult,'replayed'>|Omit<VerifiedManualReportResult,'replayed'>>{
+  async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:AdmissionCommand,verification:ManualReporterAdmissionEnvelope|null=null,resolverTeamId?:string):Promise<Omit<ManualReportResult,'replayed'>|Omit<VerifiedManualReportResult,'replayed'>>{
     if((command.reporter.verification==='VERIFIED_SELECTION')!==(verification!==null))failP2016('ACTION_FAILED',503);
     if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(principal.principal_id,command.reporter,verification,null);
     await realtimeProjector?.lock(tx);
@@ -178,7 +228,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
       source_window_start_sequence:1,source_window_end_sequence:1,source_message_count:1,source_hash:safeHash(snapshot),safe_result:route,requires_manual_review:route.manual_review_required,
       ticket_creation_recommended:route.ticket_creation_recommended,incident_review_candidate:route.incident_review_candidate,observed_at:stamp.local as LocalDateTime}});
     const executor=createSafeActionExecutor({decisionStore:decisions,manualReviewStore:reviews,intakeDecisionPort:intakes,ticketCommandPort:{async createMinimalTicket({transaction,intake_id,occurred_at,trace_id}){
-      const created=await core.createForIntakeInTransaction({transaction,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id,title:manualExcerpt(command.description,200)});
+      const created=await core.createForIntakeInTransaction({transaction,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id,title:manualExcerpt(command.description,200),...(resolverTeamId?{resolverTeamId}:{})});
       if(created.created){const event=await appendTicketEvent({transaction,ticket:created.ticket,eventType:'ticket.created',actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});await realtimeProjector?.ticket({transaction,ticket:created.ticket,event});}return created;
     }}});
     await executor.execute({transaction:tx,decision,context:{trace_id:trace,privacy_class:'PERSONAL',retention_until:retention,retention_until_epoch_ms:retentionEpoch}});
@@ -193,6 +243,41 @@ export function createWorkbenchManualReports({pool,query,enabled=false,draftReco
   }
   return Object.freeze({
     async handler({request,response,url,authContext,readJson,validateWriteRequest,json}:HttpContext){
+      if(url.pathname==='/api/workbench/reports/self-handling-context'){
+        if(request.method!=='GET')failP2016('NOT_FOUND',404);
+        const params=[...url.searchParams.keys()];if(params.length>1||params.some(key=>key!=='resolver_team_id'))failP2016();
+        const team=url.searchParams.get('resolver_team_id');if(team!==null&&!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))failP2016();
+        json(response,200,await selfHandlingContext(authContext,team??undefined));return true;
+      }
+      if(url.pathname==='/api/workbench/reports/take-and-start'){
+        guardP2016(enabled&&selfHandlingEnabled);if(request.method!=='POST')failP2016('NOT_FOUND',404);if(url.searchParams.size)failP2016();
+        const body=await readJson(request);if(Buffer.byteLength(JSON.stringify(body),'utf8')>16*1024)failP2016('BODY_TOO_LARGE',413);
+        validateWriteRequest(request,authContext,body,{sessionMutation:false});const command=manualReportSelfHandlingCommand(body);
+        const result=await ledger.execute({command:{...command,action:'manual-report-take-and-start'},receiptType:'WORKBENCH_MANUAL_REPORT',
+          authorize:tx=>authorizeSelfHandling(authContext,tx,command.resolver_team_id),
+          afterReceiptLock:async tx=>{await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);},
+          run:async tx=>{
+            const {principal}=await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
+            const admitted=await admit(tx,principal,command,null,command.resolver_team_id);
+            if(!admitted.ticket||admitted.review!==null||admitted.result_code!=='TICKET_ELIGIBLE'&&admitted.result_code!=='SERVICE_REQUEST')failP2016('SELF_HANDLING_STATE_CONFLICT',409);
+            const {ticket}=await query.authorizedTicket({authContext,ticketId:admitted.ticket.id,transaction:tx,lock:true});
+            const current=await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
+            if(ticket.resolver_team_id!==command.resolver_team_id)failP2016('FORBIDDEN',403);
+            const eligibility=await selfHandlingEligibility(tx,current.principal,ticket,true);
+            if(!eligibility.actions.includes('take-and-start'))failP2016('SELF_HANDLING_STATE_CONFLICT',409);
+            await performFirstTicketResponsibilityInTransaction({transaction:tx,ticket,principal:current.principal,
+              command:{action:'take-and-start',ticket_id:ticket.id,client_command_id:command.client_command_id,expected_version:ticket.version,reason_code:'MANUAL_REPORT_SELF_HANDLING',resolver_team_id:command.resolver_team_id},
+              initialCycle:eligibility.cycle,tracePrefix:'t19:',realtimeProjector:realtimeProjector?.ticket??null,...selfHandlingHooks});
+            await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
+            // Acquire the current real session only after all business waits.
+            // A pending official logout must be able to finish while we wait.
+            await currentAuthentication(authContext,tx,true);
+            return publicP2016({...admitted,ticket:{...admitted.ticket,status:'IN_PROGRESS' as const}});
+          }});
+        await transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorizeSelfHandling(authContext,tx,command.resolver_team_id);});
+        const reply=result.ok===true&&result.replayed?storedResult(Object.fromEntries(Object.entries(result).filter(([key])=>key!=='replayed')),command.client_command_id):result;
+        json(response,reply.ok===false?503:reply.replayed?200:202,reply);return true;
+      }
       if(url.pathname==='/api/workbench/reporter-candidates'){
         guardP2016(enabled&&reporterCandidatesEnabled);if(request.method!=='GET')failP2016('NOT_FOUND',404);
         const principal=await currentPrincipal(authContext);

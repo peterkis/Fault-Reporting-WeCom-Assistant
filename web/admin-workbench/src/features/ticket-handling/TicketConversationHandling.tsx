@@ -45,7 +45,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange}:
   const allowed=context.data?.allowed_actions??[];
   // The purpose hook must also mount on refresh when only an old pending/opaque operation remains.
   if(principal.ticket_takeover_enabled&&!actions.some(action=>allowed.includes(action))&&!pending&&!draft.operationId&&state==='idle'&&selected.length===0&&choice!=='RETAIN_CURRENT')return null;
-  return <section className="ticket-notes ticket-conversation-handling" aria-label="本人承接工单与沟通">
+  return <section data-activity-field="ticket-handling" className="ticket-notes ticket-conversation-handling" aria-label="本人承接工单与沟通">
     {context.isPending?<p role="status">正在读取工单处理权限与版本…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p>工单版本 {context.data.version}{context.data.handling_cycle?' · 处理轮次 '+context.data.handling_cycle.cycle_no:''}</p>}
     <fieldset disabled={blocked||draft.status==='loading'}><legend>沟通责任</legend>
       <label><input type="radio" name={'communication-'+ticketId} value="TAKE_SELECTED" checked={choice==='TAKE_SELECTED'} onChange={()=>setChoice('TAKE_SELECTED')}/>同时承接下方明确选择的沟通会话</label>

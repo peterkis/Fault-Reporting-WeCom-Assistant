@@ -22,7 +22,8 @@
 | 精确补充修订的团队待跟进、明确内部处置与可靠绑定回复（T36，默认关闭；本地证据待父验收） | [当前精确跟进合同](workbench/supplement-follow-up-design.md)／[原七执行记录](../../plans/admin-workbench-integration/execution/t36.md) |
 | 本人实际看到材料后的独立阅读位置、原UUID安全核对与原 Session cursor（默认关闭） | [个人阅读位置](workbench/personal-read.md)／[T35执行记录](../../plans/admin-workbench-integration/execution/t35.md) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
-| 工作人员电话／现场代录与经核实成员选择（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)；一步处理由 T19 继续实施 |
+| 明确故障确认并原子开始、显式关联沟通、原用途24h恢复／安全核对（T15，默认关闭） | [复核到处理](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| 工作人员代录、经核实成员选择及本人立即处理（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)／[T19 本地隔离证据](../../plans/admin-workbench-integration/execution/t19.md) |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
 | Incident 跟进及原 UUID 安全只读核对（默认关闭） | [公共故障回执](workbench/incidents.md#公共故障跟进wbint-t28) |
 | Incident 内部处置（T30，默认关闭） | [内部处置合同](workbench/incident-internal-notes.md)；本地合成验证，当前授权内部输入/有界历史/原用途回执 |
@@ -37,6 +38,7 @@
 | Bot原报修人明确仍未解决、同Ticket新轮待承接、原UUID恢复核对（默认关闭） | [Bot反馈与当前恢复合同](member/bot-feedback-design.md)／[T21本地七项证据](../../plans/admin-workbench-integration/execution/t21.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
 | SSE 重放、正式管理端授权重读与轮询降级 | [实时事件](platform/realtime.md) |
+| 获权查看／编辑短租期活动（T39已实现，默认关闭；本地验证完成，待父验收） | [活动合同](workbench/activity.md) |
 | 后端调用的企业微信、人员目录和通道 SDK | [外部服务](integrations/external-services.md) |
 | 群内 @Bot 回调的群ID/群名称、来源识别与本次现场验证 | [企业微信消息回调](integrations/wecom-message-callback.md) |
 | 没有 REST 入口的进程内 Port、事件、Worker | [内部接口](integrations/internal-ports.md) |

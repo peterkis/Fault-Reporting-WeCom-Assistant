@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {Link} from 'react-router';
+import {Link,useSearchParams} from 'react-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,ConfirmedManualReportRejection,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
@@ -9,6 +9,9 @@ import {emptyManualReportInput,hasManualReportInput,manualReportCommandFromInput
 import type {ManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import {clearSessionAuthorization} from '../../app/authorization';
 import {clearManualReportAuthority,manualReportCapabilitiesKey,useManualReportDraft} from './use-manual-report-draft';
+import {hasExistingDraft} from '../drafts/encrypted-drafts';
+import {MANUAL_REPORT_DRAFT_ID} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
+import {ManualSelfHandlingForm} from './ManualSelfHandlingForm';
 import './manual-report.css';
 export function ManualReportEntry({principal,blocked}:{principal:Principal;blocked:boolean}){
   const context=useQuery({queryKey:manualReportCapabilitiesKey(principal.principal_id),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal.manual_reports_enabled});
@@ -17,8 +20,15 @@ export function ManualReportEntry({principal,blocked}:{principal:Principal;block
 }
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'denied';
 export function ManualReportForm({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(value:boolean)=>void}){
+  const [parameters,setParameters]=useSearchParams(),[seed,setSeed]=useState<ManualReportInput>(emptyManualReportInput);
+  const self=parameters.get('handling')==='self';
+  const mode=(self:boolean,value:ManualReportInput)=>{setSeed(value);const next=new URLSearchParams(parameters);if(self)next.set('handling','self');else next.delete('handling');setParameters(next,{replace:true});};
+  return self?<ManualSelfHandlingForm key="self" principal={principal} initialValue={seed} onOrdinary={value=>mode(false,value)} onBlockedChange={onBlockedChange}/>
+    :<OrdinaryManualReportForm key="ordinary" principal={principal} initialValue={seed} onSelf={value=>mode(true,value)} onBlockedChange={onBlockedChange}/>;
+}
+function OrdinaryManualReportForm({principal,initialValue,onSelf,onBlockedChange}:{principal:Principal;initialValue:ManualReportInput;onSelf:(value:ManualReportInput)=>void;onBlockedChange:(value:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),mounted=useRef(true),generation=useRef(0);
-  const [value,setValue]=useState<ManualReportInput>(emptyManualReportInput),[pending,setPending]=useState<ManualReportAdmissionCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[result,setResult]=useState<ManualReportAdmissionResult|null>(null);
+  const [value,setValue]=useState<ManualReportInput>(initialValue),[pending,setPending]=useState<ManualReportAdmissionCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[result,setResult]=useState<ManualReportAdmissionResult|null>(null);
   const [selected,setSelected]=useState<WorkbenchReporterCandidate|null>(null),[manual,setManual]=useState(false),[selectionIntent,setSelectionIntent]=useState(false),[page,setPage]=useState<WorkbenchReporterCandidates|null>(null),[searchMessage,setSearchMessage]=useState(''),[searching,setSearching]=useState(false);
   const candidateRequest=useRef<AbortController|null>(null);
   const context=useQuery({queryKey:manualReportCapabilitiesKey(principal.principal_id),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal.manual_reports_enabled});
@@ -108,6 +118,7 @@ export function ManualReportForm({principal,onBlockedChange}:{principal:Principa
     {!principal.manual_reports_enabled?<p role="status">电话与现场代录尚未开放。</p>:context.isPending?<p role="status">正在核验当前代录权限…</p>:context.isError&&!context.data?<p role="alert">{errorMessage(context.error)} <button onClick={()=>{void context.refetch();}}>重新读取代录权限</button></p>:<form data-manual-report-form onSubmit={event=>{event.preventDefault();void submit();}}>
       <p className="manual-report-operator">代录人：{principal.display_name} <span>工作人员身份由当前会话记录。</span></p>
       <p className="manual-report-audience">{selected?'已明确选择报修人，提交时将重新核验身份及通知资格；本次受理不表示通知已送达。':'报修人身份未核实，需人工联系；本次不会自动通知。'}</p>
+      {principal.ticket_self_handling_enabled?<label className="manual-report-check"><input type="checkbox" data-action="choose-manual-self-handling" checked={false} disabled={controlsDisabled||selectionIntent||Boolean(selected)} onChange={()=>{const captured=value;void(async()=>{await draft.discard();if(await hasExistingDraft({principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'})){setMessage('原草稿清理尚未确认，请保留当前输入。');return;}onSelf(captured);})();}}/>由我处理{selectionIntent||selected?'（先明确改为手填报修人）':''}</label>:null}
       {selectionRequired&&!unresolved?<p role="status">{principal.reporter_candidates_enabled?'已恢复先前选择成员的意图，请重新选择报修人，或明确改为手填。':'成员选择当前不可用，先前选择不能继续提交；请明确改为手填。'}</p>:null}
       {!draft.operationId||pending?<fieldset disabled={controlsDisabled}><legend>本次报修情况</legend>
         <label>来源<select aria-label="报修来源" value={value.source} onChange={event=>change({...value,source:event.target.value==='ON_SITE'?'ON_SITE':'PHONE'})}><option value="PHONE">电话代录</option><option value="ON_SITE">现场代录</option></select></label>
