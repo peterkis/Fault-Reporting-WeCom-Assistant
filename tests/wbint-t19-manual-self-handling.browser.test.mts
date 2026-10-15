@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
+type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;certificateSpki:string;browserCookies:{name:string;value:string;url:string}[];cookies:string[];principals:{id:string}[]}
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function text(v:unknown):string{assert.equal(typeof v,'string');return v as string;}
@@ -18,6 +18,7 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
     let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/reports/new',width:900,height:900,cookies:browserCookies,certificateSpki});
+      assert.ok(browser);
       await browser.waitFor("Boolean(document.querySelector('[data-manual-report-form]'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=choose-manual-self-handling]'))"),true,'the production manual report form must offer the explicit self handling choice');
       await browser.evaluate("document.querySelector('[data-action=choose-manual-self-handling]').click()");
