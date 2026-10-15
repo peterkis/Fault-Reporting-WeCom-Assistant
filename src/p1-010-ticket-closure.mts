@@ -219,8 +219,8 @@ async function withTransaction<T>(
   }
 }
 
-async function reporterForTicket(transaction: PostgresTransaction, ticket: PublicPilotTicket): Promise<string> {
-  const reporter = await transaction.query<{ reporter_wecom_userid: string }>(
+async function reporterForTicket(transaction: PostgresTransaction, ticket: PublicPilotTicket): Promise<string | null> {
+  const reporter = await transaction.query<{ reporter_wecom_userid: string | null }>(
     `SELECT reporter_wecom_userid
        FROM intake.service_intake
       WHERE id = $1::uuid`,
@@ -307,6 +307,8 @@ export function createTicketClosureService({
       return [];
     }
     const reporterWeComUserId = await reporterForTicket(transaction, ticket);
+    // Manual admission has no Bot recipient; it cannot mint a Bot card capability.
+    if (reporterWeComUserId === null) return [];
     const createdAt = validNow(now);
     const expiresEpochMs = addEpochMilliseconds(createdAt.epoch_ms, cardTtlMs);
     const expiresAt = formatEpochMsToShanghaiLocal(expiresEpochMs);
