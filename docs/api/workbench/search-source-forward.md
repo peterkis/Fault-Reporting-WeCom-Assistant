@@ -22,6 +22,8 @@ SQL分页完成先释放连接，再复用原公开事项投影，随后以新�
 
 输入与已提交条件分开；切换展示或外部范围不会覆盖尚未提交的q。提交/改条件传递原AbortSignal，关闭或权限开关回落会取消并清理本票查询；旧回包继续受原读取epoch围栏约束。缓存至多5页、每页50，显示已加载条数而非总数。空条件、无匹配、读取失败分别显示；失败不展示旧搜索卡片，不触碰备注/回复草稿。原有SSE和事项失权使board查询族失效，新搜索沿该族重新读取。
 
+T15验收后的bfd0331ea060f0830d2d85df9868e60ae73e856c通过普通merge并入本票源码。确认复核并开始处理仍沿用原canonical Ticket查询；装配保留两项独立默认false开关和T15用途清理分支。新增tests/t41-search-review-start.integration.test.mts覆盖真实T15命令后的同Ticket搜索去重、待处理/处理中条件及无权人员隐藏结果，selection为wbint-t41-review-start，并追加到wbint-t41-search。此组合测试只有源码，尚未执行；619d与原HTTP first、helper及三份Contract保持不变。
+
 全App同时最多1次搜索，单principal每60秒20次，限流记录最多256、TTL60秒。新的主查询及末次权限/匹配复核使用局部只读事务和每statement 2000ms超时。原认证及事项安全投影继续走原有受限接口，其实际耗时必须在whole窗口测量；不能把新主查询的statement上限说成整个端到端请求耗时证明。池总<=8、fixture<=4、单App/Worker、Gateway单活、SSE32不变。没有新队列、搜索服务、DDL或索引。
 
 ## 待执行与停止线

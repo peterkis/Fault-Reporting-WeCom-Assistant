@@ -11,6 +11,8 @@ native_blocking_edges: 76
 
 # 人工工作台 GitHub 任务清单
 
+2026-10-15 T15原七项已父验收，b7ac320b由非实现者唯一FF/native0，[#70 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70#issuecomment-6184037530)。当前 **37／43 CLOSED、6 OPEN**，WBINT-04／A04本地完成；d3b同制品的22与87PASS分窗记账，37路径两轴、完整9781归档及自有清理闭合。原FAIL、host预算FALSE及捕获限制保留，见[本票记录](execution/t15.md)。下一连续整票T19，T39／T40／T41候选源码未运行，T42的#70阻塞已解除，T43仍待#74／#94／#95／#96／#97。全43最终审查与工作树清理继续；以下各段保留历史时点，默认关闭与现场停止线保持。
+
 2026-10-15 T36 原七项已父验收，433b0814 由非实现者唯一FF/native0，[#91 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91#issuecomment-6181051804)。当前 **36／43 CLOSED、7 OPEN**，WBINT-12／A12本地完成；业务de99与工具059c证据分列，64路径两轴及归档／自有清理收口，历史FAIL／预算FALSE／NOT_CAPTURED和时点限制保留。下一连续整票T15，其#60／#69均completed；T19／T39／T40／T41原生依赖也已解除，Source准备仍不计验收。T42待#70，T43待#74／#94／#95／#96／#97；全43最终审查和工作树清理继续待。下文旧日期为当时快照，默认关闭与现场停止线保持。
 
 43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`；发布时快照全部开放且未领取，业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文保留发布快照；执行前重新读取正文、评论、领取人和依赖。
@@ -143,12 +145,12 @@ native_blocking_edges: 76
 - [x] **T14** — [#69 在同一事项中阅读并处置人工复核](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-04 / A04
-  - **本地执行：** [LOCAL_VERIFIED：七项验收、真实业务34与工具19、原制品和资源清理](execution/t14.md)；已集成、关票，未发布／启用；T15及A04整组仍未完成。
+  - **本地执行：** [LOCAL_VERIFIED：七项验收、真实业务34与工具19、原制品和资源清理](execution/t14.md)；已集成、关票，未发布／启用。T15已于2026-10-15收口，A04本地完成。
 
-- [ ] **T15** — [#70 确认明确故障并立即开始处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)
+- [x] **T15** — [#70 确认明确故障并立即开始处理](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)
   - **Blocked by:** [#60](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60)、[#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)
   - **来源：** WBINT-04 / A04
-  - **本地执行：** 2026-10-09 实读完整正文／评论／标签及原生依赖，两项 blocker 已 CLOSED；领取给 peterkis，独立分支准备明确故障的原子确认并开始。当前未验证、未集成，A04 整组未完成。
+  - **本地执行：** [LOCAL_VERIFIED：原七父验收、22与87PASS分窗、两轴及自有清理](execution/t15.md)；b7ac320b由非实现者合入，#70已CLOSED/completed，A04本地完成。原失败与采集限制保留，默认关闭，未发布／启用。
 
 - [x] **T16** — [#71 安全查看已有报修附件](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71)
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)

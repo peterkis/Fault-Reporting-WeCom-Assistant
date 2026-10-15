@@ -22,6 +22,7 @@
 | 精确补充修订的团队待跟进、明确内部处置与可靠绑定回复（T36，默认关闭；本地证据待父验收） | [当前精确跟进合同](workbench/supplement-follow-up-design.md)／[原七执行记录](../../plans/admin-workbench-integration/execution/t36.md) |
 | 本人实际看到材料后的独立阅读位置、原UUID安全核对与原 Session cursor（默认关闭） | [个人阅读位置](workbench/personal-read.md)／[T35执行记录](../../plans/admin-workbench-integration/execution/t35.md) |
 | 人工复核、Contact Journey 与确定性决策 | [人工复核](workbench/manual-reviews.md) |
+| 明确故障确认并原子开始、显式关联沟通、原用途24h恢复／安全核对（T15，默认关闭） | [复核到处理](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
 | 工作人员电话／现场代录与经核实成员选择（默认关闭） | [代录报修与候选、回执、恢复合同](workbench/manual-reports.md)；[T17](../../plans/admin-workbench-integration/execution/t17.md)／[T18 本地隔离证据](../../plans/admin-workbench-integration/execution/t18.md)；一步处理由 T19 继续实施 |
 | 公共故障候选、人工确认、报告关联、订阅 | [公共故障](workbench/incidents.md) |
 | Incident 跟进及原 UUID 安全只读核对（默认关闭） | [公共故障回执](workbench/incidents.md#公共故障跟进wbint-t28) |

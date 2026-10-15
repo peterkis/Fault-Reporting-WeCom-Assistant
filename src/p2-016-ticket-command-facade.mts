@@ -66,12 +66,13 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
       guardP2016(enabled);const command=normalizeP2016TicketCommand(input);
       if(internalNote&&command.action!=='add-note')failP2016();
       const cycleAware=ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume','cancel'].includes(command.action);
+      const currentAuthority=cycleAware||command.action==='reopen';
       if(cycleAware){
         if(typeof command.note!=='string'||!command.note.trim()||command.external_visible!==false)failP2016();
         if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       }
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
-        ...(cycleAware?{afterReceiptLock:(transaction:PostgresTransaction)=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction})}:{}),
+        ...(currentAuthority?{afterReceiptLock:(transaction:PostgresTransaction)=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction})}:{}),
         authorize:async transaction=>{
           let context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
           if(ticketReopenRoundsEnabled&&!await reopenRoundsSchemaReady(transaction))failP2016('ACTION_FAILED',503);
@@ -102,14 +103,14 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             if(!control?.ok||control.no_op)failP2016('CONTROL_CONFLICT',409);
           }
           const {ticket}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
-          if(cycleAware){
+          if(currentAuthority){
             // The Ticket wait can outlive the initial authorization. Stabilize the
             // current active role/group rows, then resolve authority again before Core writes.
             const roles=await transaction.query(`SELECT r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
               WHERE p.id=$1::uuid AND p.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER') ORDER BY r.role FOR SHARE OF p,r`,[principal.principal_id]);
             if(!roles.rowCount)failP2016('FORBIDDEN',403);
             const membership=await transaction.query(`SELECT m.principal_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
-              WHERE m.principal_id=$1::uuid AND m.team_id=$2 AND rt.is_active FOR SHARE OF m,rt`,[principal.principal_id,ticket.resolver_team_id]);
+              WHERE m.principal_id=$1::uuid AND m.team_id=$2${command.action==='reopen'?'':' AND rt.is_active'} FOR SHARE OF m,rt`,[principal.principal_id,ticket.resolver_team_id]);
             principal=(await query.authorizedTicket({authContext,ticketId:ticket.id,transaction})).principal;
             if(!ticketActionAllowedP2016(principal,ticket,action)||!principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!membership.rowCount)failP2016('FORBIDDEN',403);
           }
