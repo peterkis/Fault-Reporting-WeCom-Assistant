@@ -4,16 +4,22 @@ import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearSessionAuthorization} from '../../app/authorization';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
-import {DraftError,purgeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,purgeDrafts,matchesDraft,subscribeDrafts} from '../drafts/encrypted-drafts';
+import type {DraftInvalidation} from '../drafts/encrypted-drafts';
 import {MANUAL_REPORT_DRAFT_ID,emptyManualReportInput,hasManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import type {ManualReportInput} from '../../../../../src/workbench-manual-report-browser-contracts.mjs';
 import {MANUAL_SELF_HANDLING_PURPOSE,encodeManualSelfHandlingDraft,decodeManualSelfHandlingDraft} from '../../../../../src/workbench-manual-self-handling-browser-contracts.mjs';
 import type {ManualReportSelfHandlingCommand,ManualSelfHandlingCopy} from '../../../../../src/workbench-manual-self-handling-browser-contracts.mjs';
 import {manualSelfHandlingApi} from './self-handling-client';
 export const manualSelfHandlingContextKey=(principal:string)=>['manual-report-self-handling-context',principal] as const;
-export function useManualSelfHandlingDraft({principal,value,team,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;team:string;pending:ManualReportSelfHandlingCommand|null;onRestore:(copy:ManualSelfHandlingCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useManualSelfHandlingDraft({principal,value,team,pending,onRestore,onOperation,onSensitiveClear}:{principal:Principal;value:ManualReportInput;team:string;pending:ManualReportSelfHandlingCommand|null;onRestore:(copy:ManualSelfHandlingCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:(settled?:boolean)=>void}){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'intake' as const,id:MANUAL_REPORT_DRAFT_ID,purpose:MANUAL_SELF_HANDLING_PURPOSE};
   const [restoring,setRestoring]=useState(principal.manual_report_draft_recovery_enabled),[unavailable,setUnavailable]=useState(false),request=useRef<AbortController|null>(null),epoch=useRef(0),revoked=useRef(false),validating=useRef(false);
+  const clearing=useRef<DraftInvalidation['reason']|null>(null);
+  useEffect(()=>{
+    if(!principal.manual_report_draft_recovery_enabled)return;
+    try{return subscribeDrafts(notice=>{if(!matchesDraft(notice,scope))return;clearing.current=notice.reason;queueMicrotask(()=>{clearing.current=null;});});}catch{setUnavailable(true);}
+  },[principal.principal_id,principal.manual_report_draft_recovery_enabled]);
   useEffect(()=>{if(hasManualReportInput(value)||team)revoked.current=false;},[value,team]);
   const revoke=async()=>{if(revoked.current)return;revoked.current=true;epoch.current++;request.current?.abort();request.current=null;validating.current=false;setRestoring(false);onSensitiveClear();
     try{await purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true});}catch(error){revoked.current=false;setUnavailable(true);throw error;}};
@@ -47,7 +53,7 @@ export function useManualSelfHandlingDraft({principal,value,team,pending,onResto
         else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED')void revoke().catch(()=>{});
         else setUnavailable(true);
       });
-    },onOperation,onSensitiveClear:()=>{epoch.current++;request.current?.abort();request.current=null;validating.current=false;setRestoring(false);onSensitiveClear();}});
+    },onOperation,onSensitiveClear:()=>{const settled=clearing.current==='settled';if(!settled){epoch.current++;request.current?.abort();request.current=null;validating.current=false;setRestoring(false);}onSensitiveClear(settled);}});
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{epoch.current++;request.current?.abort();},[]);
   return {...draft,revoke,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable,safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,

@@ -96,8 +96,22 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
     return transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorize(authContext,tx);
       return publicP2016({can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});});
   }
+  async function currentAuthentication(authContext:unknown,tx:PostgresTransaction,lock=false){
+    if(!authContext||typeof authContext!=='object'||Array.isArray(authContext))failP2016('FORBIDDEN',403);
+    const context=authContext as Record<string,unknown>,expiry=context.expires_epoch_ms;
+    if(typeof expiry!=='string'||!/^[1-9][0-9]{0,18}$/u.test(expiry)||BigInt(expiry)>9223372036854775807n)failP2016('FORBIDDEN',403);
+    const principal=uuidP2016(context.principal_id);
+    const current=context.session_id===undefined
+      ?await tx.query('SELECT 1 WHERE $1::bigint>platform.physical_epoch_ms()',[expiry])
+      :await tx.query(`SELECT session_id FROM pilot_ticket.workbench_auth_session
+        WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE'
+          AND expires_epoch_ms>platform.physical_epoch_ms() AND $3::bigint>platform.physical_epoch_ms()${lock?' FOR SHARE':''}`,
+      [uuidP2016(context.session_id),principal,expiry]);
+    if(current.rowCount!==1)failP2016('FORBIDDEN',403);
+  }
   async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
     guardP2016(enabled&&selfHandlingEnabled);
+    await currentAuthentication(authContext,transaction);
     if(!await selfHandlingSchemaReady(transaction))failP2016('SELF_HANDLING_UNAVAILABLE',503);
     const {principal}=await authorize(authContext,transaction);
     const teams=await transaction.query<{id:string;name:string}>(`SELECT rt.team_id AS id,rt.display_name AS name
@@ -109,6 +123,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
     if(teamId&&!teams.rowCount)failP2016('FORBIDDEN',403);
     const current=await authorize(authContext,transaction);
     if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+    await currentAuthentication(authContext,transaction);
     return {principal:current.principal,teams:[...new Map(teams.rows.map(team=>[team.id,team])).values()]};
   }
   async function selfHandlingContext(authContext:unknown,teamId?:string):Promise<ManualReportSelfHandlingContext>{
@@ -157,12 +172,13 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
   async function receipt(authContext:unknown,commandId:string):Promise<AdmissionReceipt>{
     guardP2016(draftRecoveryEnabled);
     return transactionP2016(pool,async tx=>{
-      await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,tx);
+      await tx.query('SET TRANSACTION READ ONLY');await currentAuthentication(authContext,tx);const {principal}=await authorize(authContext,tx);
       const row=(await tx.query<{state:unknown;result:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS result,error_code AS error,retryable
         FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND command_type='WORKBENCH_MANUAL_REPORT' LIMIT 1`,
       ['P2_016:'+principal.principal_id,commandId])).rows[0];
       const base={client_command_id:commandId};
       const current=await authorize(authContext,tx);if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
+      await currentAuthentication(authContext,tx);
       if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
       if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({...base,state:'FAILED',error:{code:row.error,retryable:false}});
       if(row.state==='COMMITTED')return publicP2016({...base,state:'COMMITTED',result:storedResult(row.result,commandId)});
@@ -250,8 +266,12 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
               command:{action:'take-and-start',ticket_id:ticket.id,client_command_id:command.client_command_id,expected_version:ticket.version,reason_code:'MANUAL_REPORT_SELF_HANDLING',resolver_team_id:command.resolver_team_id},
               initialCycle:eligibility.cycle,tracePrefix:'t19:',realtimeProjector:realtimeProjector?.ticket??null,...selfHandlingHooks});
             await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
+            // Acquire the current real session only after all business waits.
+            // A pending official logout must be able to finish while we wait.
+            await currentAuthentication(authContext,tx,true);
             return publicP2016({...admitted,ticket:{...admitted.ticket,status:'IN_PROGRESS' as const}});
           }});
+        await transactionP2016(pool,async tx=>{await tx.query('SET TRANSACTION READ ONLY');await authorizeSelfHandling(authContext,tx,command.resolver_team_id);});
         const reply=result.ok===true&&result.replayed?storedResult(Object.fromEntries(Object.entries(result).filter(([key])=>key!=='replayed')),command.client_command_id):result;
         json(response,reply.ok===false?503:reply.replayed?200:202,reply);return true;
       }
