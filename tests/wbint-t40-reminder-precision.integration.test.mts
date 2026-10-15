@@ -18,7 +18,7 @@ async function assertOriginalInitialEventPublished(f:T40ReminderRiskFixture,id:s
     JOIN conversation.realtime_event e ON e.source_id=ci.id::text AND e.aggregate_id=ci.id::text
     WHERE t.id=$1::uuid AND e.publisher_name='CONVERSATION_TIMELINE_PROJECTOR' AND e.source_type='CONVERSATION_ITEM'
       AND e.event_type='conversation.item.created' AND e.aggregate_type='CONVERSATION_ITEM'
-      AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id::text AND e.event_id>$2::bigint`,[id,text(b.as_of_event_id)]);
+      AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id AND e.event_id>$2::bigint`,[id,text(b.as_of_event_id)]);
   assert.ok(events.rows.length>0,'the original coordinator must actually publish this Intake original primary item after the baseline watermark');
 }
 test('T40 genuinely new team report in the same business second is a new authorized reminder',async()=>withT40ReminderRiskFixture(async f=>{

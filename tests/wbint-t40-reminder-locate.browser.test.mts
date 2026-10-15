@@ -55,7 +55,7 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
       const explicitLink=text(await browser.evaluate('document.querySelector('+JSON.stringify(card+' a.card-open')+').href'));assert.equal(new URL(explicitLink).searchParams.has('locate'),false,'only an explicit detail link opens the ordinary detail route');
       assert.deepEqual(await fixture.currentFacts(),facts,'locate is not a command, read-position advancement or follow/disposition');
-      assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('beyond-first-page-located');
+      assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('new-board');
 
       // The failed request has no fabricated HTTP response. Retry must cross the same genuine GET seam.
       await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:text(installed.identifier)});
@@ -73,7 +73,7 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false);
       assert.equal(await browser.evaluate('document.body.innerText.includes('+JSON.stringify(fixture.targetTitle)+')'),false);
       assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
-      assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('actual-current-read-denied');
+      assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('new-detail');
       console.log('WBINT_T40_LOCATE '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',original_first_unchanged:true,
         first_page_limit:50,target_beyond_first_page:true,canonical_ticket:fixture.ticketId,automatic_posts:0,auto_opened:false,
         failure_injection:'ONE_CLIENT_TRANSPORT_REJECTION_NO_HTTP_REPLY_MOCK',retry:'ORIGINAL_AUTHORIZED_ITEM_GET',revocation:'REAL_ASSIGNMENT_TRANSFER_AND_TEAM_WITHDRAWAL',

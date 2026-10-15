@@ -102,7 +102,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
                SELECT 1 FROM conversation.item ci JOIN conversation.session s ON s.id=ci.session_id AND s.service_intake_id=a.original_id
                JOIN channel.message_inbox m ON m.id=a.primary_message_id AND ci.source_id=m.id::text
                WHERE ci.id::text=e.aggregate_id AND ci.id::text=e.source_id AND ci.source_type='CHANNEL_MESSAGE' AND ci.item_type='USER_MESSAGE'
-                 AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id::text
+                 AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id
                  AND ci.retention_until_epoch_ms>platform.physical_epoch_ms() AND m.retention_until_epoch_ms>platform.physical_epoch_ms()))
           WHERE (a.initial_at>$4::timestamp OR (a.initial_at=date_trunc('second',$4::timestamp) AND (
             -- These two original admission paths omit id and use the server's native uuidv7 default.
