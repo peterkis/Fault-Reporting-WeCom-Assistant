@@ -130,7 +130,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
       const prior=await reviews.canonicalItem({authContext,reviewId,transaction:tx});
       if(input.expected_ticket?(prior.kind!=='ticket'||prior.id!==input.expected_ticket.ticket_id):prior.kind==='ticket')failP2016('VERSION_CONFLICT',409);
       let result:StartSuccess|undefined;
-      await reviews.resolveManualReviewInTransaction({authContext,reviewId,transaction:tx,body:{client_command_id:input.client_command_id,
+      await reviews.resolveManualReviewInTransaction({authContext,reviewId,transaction:tx,creationResolverTeamId:input.resolver_team_id,body:{client_command_id:input.client_command_id,
         expected_row_version:input.expected_row_version,expected_material_basis:input.expected_material_basis,resolution_code:input.resolution_code,resolution_reason_code:input.resolution_reason_code},afterResolution:async resolution=>{
         const canonical=await reviews.canonicalItem({authContext,reviewId,transaction:tx});if(canonical.kind!=='ticket')failP2016('ACTION_FAILED',503);
         if(input.expected_ticket&&canonical.id!==input.expected_ticket.ticket_id)failP2016('VERSION_CONFLICT',409);

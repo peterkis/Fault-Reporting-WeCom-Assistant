@@ -45,6 +45,9 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'review' as const,id:reviewId,purpose:'review-resolve-start'},capability=principal.manual_review_resolve_and_start_enabled===true;
   const writeEnabled=capability&&principal.manual_review_draft_recovery_enabled,[existing,setExisting]=useState(false),[restoring,setRestoring]=useState(writeEnabled),[unavailable,setUnavailable]=useState(false);
   const revision=useRef(0),restoreRequest=useRef<AbortController|null>(null),validating=useRef(false),revoked=useRef(false);
+  // Clearing resets touched. A later explicit purpose input owns a new cleanup
+  // epoch; repeated error broadcasts without new input still share one purge.
+  useEffect(()=>{if(value.touched)revoked.current=false;},[value.touched]);
   useEffect(()=>{let ignore=false;void hasExistingDraft(scope).then(async found=>{if(ignore)return;if(found&&!capability){await purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true});return;}setExisting(found);}).catch(()=>{if(!ignore)setUnavailable(true);});return()=>{ignore=true;};},[principal.principal_id,reviewId,capability]);
   const clear=()=>{revision.current++;restoreRequest.current?.abort();restoreRequest.current=null;validating.current=false;setRestoring(false);onSensitiveClear();};
   const revoke=async(error:unknown)=>{

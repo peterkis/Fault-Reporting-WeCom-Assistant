@@ -129,7 +129,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
   async function authorizeResolution(authContext:unknown,reviewId:unknown,transaction:PostgresTransaction){
         const c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);return {...c,ticket:null};
   }
-  async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>):Promise<ManualReviewCurrentResult>{
+  async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>,creationResolverTeamId?:string):Promise<ManualReviewCurrentResult>{
         await realtimeProjector?.lock?.(transaction);
         await transaction.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[review.service_intake_id]);
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
@@ -166,7 +166,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
         const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
           ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
             const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
-            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary)});
+            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary),...(creationResolverTeamId===undefined?{}:{resolverTeamId:creationResolverTeamId})});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
               if(!appOnly&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
@@ -259,9 +259,9 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       if(part==='decisions')return publicP2016((await pool.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE journey_id=$1::uuid ORDER BY decision_ordinal LIMIT 100',[journeyId])).rows.map(projectDecision));
       failP2016();
     },
-    async resolveManualReviewInTransaction({authContext,reviewId,body,transaction,afterResolution}:{authContext:unknown;reviewId:unknown;body:unknown;transaction:PostgresTransaction;afterResolution?:(result:ManualReviewCurrentResult)=>Promise<void>}):Promise<ManualReviewCurrentResult>{
+    async resolveManualReviewInTransaction({authContext,reviewId,body,transaction,afterResolution,creationResolverTeamId}:{authContext:unknown;reviewId:unknown;body:unknown;transaction:PostgresTransaction;afterResolution?:(result:ManualReviewCurrentResult)=>Promise<void>;creationResolverTeamId?:string}):Promise<ManualReviewCurrentResult>{
       const normalized=normalizeResolution(reviewId,body),context=await authorizeResolution(authContext,reviewId,transaction);
-      return runResolution(transaction,context,reviewId,normalized,afterResolution);
+      return runResolution(transaction,context,reviewId,normalized,afterResolution,creationResolverTeamId===undefined?undefined:codeP2016(creationResolverTeamId));
     },
     async resolveManualReview({authContext,reviewId,body}: { authContext: unknown; reviewId: unknown; body: unknown }): Promise<ManualReviewLedgerResult> {
       const normalized=normalizeResolution(reviewId,body);

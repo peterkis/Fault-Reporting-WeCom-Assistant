@@ -56,7 +56,9 @@ test('T15 new confirmed fault creates a unique minimum Ticket in the explicitly 
 test('T15 original COMMITTED ACK and explicit replay both require current original-purpose authority',async()=>{
   await withWeb01Fixture(async(f:Fixture)=>{await project(f);const c=await capture(f);assert.equal((await c.a.post(c.path+'/resolve-and-start',c.command)).status,200);const receiptPath=c.path+'/resolve-and-start/commands/'+c.command.client_command_id;assert.equal((await c.a.get(receiptPath)).value.state,'COMMITTED');
     const known=f.tickets[0];assert.ok(known);const before=await snapshot(f,known.ticket.id,c.id);await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['REPORTER'],resolverTeamIds:['PILOT_IT']});
-    assert.equal((await c.a.get(receiptPath)).status,403);assert.equal((await c.a.post(c.path+'/resolve-and-start',c.command)).status,403);assert.deepEqual(await snapshot(f,known.ticket.id,c.id),before);
+    // REPORTER has lost the existing Workbench session boundary itself: the
+    // official HTTP layer returns 401 before this purpose's domain handler.
+    assert.equal((await c.a.get(receiptPath)).status,401);assert.equal((await c.a.post(c.path+'/resolve-and-start',c.command)).status,401);assert.deepEqual(await snapshot(f,known.ticket.id,c.id),before);
   },profile);
 });
 test('T15 default-off and missing self-handling schema close only the new public capability',async()=>{
