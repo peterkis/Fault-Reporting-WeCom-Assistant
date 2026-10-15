@@ -11,6 +11,8 @@ native_blocking_edges: 76
 
 # 人工工作台 GitHub 任务清单
 
+2026-10-15 T39 原七项已父验收，55714977由非实现者唯一精确快进native0，[#94 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94#issuecomment-6186714331)。[获权短租期活动](execution/t39.md)已交付：真实查看／字段编辑、TTL／断线／退出／失权消失，不领取、锁单、推进已读或替代责任；单App有界内存复用原SSE和5秒节奏，无心跳业务写库。本票20、相关69、bounded-parse工具1按真实head／MF分窗通过；最终f4cb／MFf1c736，纯四MD后继不重绑。完整双轴及有限复审、9815项raw／真Git归档、324份loaded原件、1715输入／2248输出与自有释放已父核。旧FAIL／NOT_REACHED／NOT_RUN、032额外冻结计划工具FAIL与受控visibility限制保留。当前 **39／43 CLOSED、4 OPEN**；WBINT-13／A13已完成T38／T39，仍待T40。T40为唯一运行窗口，原strict／startup准备失败未当产品RED；T41／T42候选有限双轴均无新增问题、未运行，T43待#95／#96／#97。默认关闭，全43最终分支审查及工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
+
 2026-10-15 T19 原七项已父验收，fda417d5 由非实现者唯一精确快进 native0，[#74 CLOSED/completed 已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74#issuecomment-6185093476)。[代录后本人原子开始](execution/t19.md)已交付；受理、唯一最小 Ticket、当前合法组承接与开始同事务，报修人／代录人／处理人及电话／现场来源独立。真实被测589b／MF73ab保留本票17 PASS、相关61 PASS、工具3 PASS的独立窗口，纯四MD后继不重绑；两轴及有限复审、9798项raw／真Git归档、原件与精确自有清理已核。旧RED／FAIL／NOT_REACHED与观察器限制保留。当前 **38／43 CLOSED、5 OPEN**，WBINT-05／A05本地完成；T39为唯一运行窗口，T40九因源码有限双轴无新增问题、尚未运行，T41／T42继续有限修补，T43待#94／#95／#96／#97。默认关闭，全43最终分支审查和工作树清理继续待；以下旧段保留各自时点，不授予发布、现场或Gate。
 
 2026-10-15 T15原七项已父验收，b7ac320b由非实现者唯一FF/native0，[#70 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70#issuecomment-6184037530)。当前 **37／43 CLOSED、6 OPEN**，WBINT-04／A04本地完成；d3b同制品的22与87PASS分窗记账，37路径两轴、完整9781归档及自有清理闭合。原FAIL、host预算FALSE及捕获限制保留，见[本票记录](execution/t15.md)。下一连续整票T19，T39／T40／T41候选源码未运行，T42的#70阻塞已解除，T43仍待#74／#94／#95／#96／#97。全43最终审查与工作树清理继续；以下各段保留历史时点，默认关闭与现场停止线保持。
@@ -269,7 +271,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#58](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **来源：** WBINT-13 / A13
 
-- [ ] **T39** — [#94 提示当前查看与编辑活动](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94)
+- [x] **T39** — [#94 提示当前查看与编辑活动](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94)
   - **执行：** 2026-10-09 已核对完整正文／空评论／ready标签及原生blocker #93 CLOSED，领取给peterkis；准备基于当前integration的独立实施，尚未验证。
   - **Blocked by:** [#93](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
   - **来源：** WBINT-13 / A13
