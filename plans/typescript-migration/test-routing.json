@@ -7668,7 +7668,8 @@
       "tests/helpers/p2-003-sse-harness.mjs",
       "tests/helpers/p2-g2-runtime-harness.mjs",
       "tests/helpers/t33-incident-delivery-control-fixture.mts",
-      "tests/helpers/t33-whole-fixture.mts"
+      "tests/helpers/t33-whole-fixture.mts",
+      "tests/helpers/t40-reminder-first-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
