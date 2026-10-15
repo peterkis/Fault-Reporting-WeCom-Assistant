@@ -10,8 +10,9 @@ export async function assertP2016Schema(name,input){
   async function visit(schema,v,location,document){
     if(schema.$ref){
       if(schema.$ref.startsWith('#/')){assert.match(schema.$ref,/^#\/\$defs\/[a-zA-Z0-9_-]+$/u);const key=schema.$ref.slice('#/$defs/'.length);assert.ok(document.$defs&&Object.hasOwn(document.$defs,key),location+' defined local ref');return visit(document.$defs[key],v,location,document);}
-      if(schema.$ref==='local_datetime.schema.json')assertLocalDateTime(v);if(schema.$ref==='epoch_ms_string.schema.json')assertEpochMsString(v);
-      const external=await load(schema.$ref);return visit(external,v,location,external);
+      const reference=schema.$ref.replace(/^\.\//u,'');
+      if(reference==='local_datetime.schema.json')assertLocalDateTime(v);if(reference==='epoch_ms_string.schema.json')assertEpochMsString(v);
+      const external=await load(reference);return visit(external,v,location,external);
     }
     if(schema.anyOf){let matched=false;for(const candidate of schema.anyOf){try{await visit(candidate,v,location,document);matched=true;break;}catch{/* next defined alternative */}}assert.ok(matched,location+' matches no alternative');}
     if(schema.oneOf){let matches=0;for(const candidate of schema.oneOf){try{await visit(candidate,v,location,document);matches++;}catch{/* next defined alternative */}}assert.equal(matches,1,location+' must match exactly one alternative');}
