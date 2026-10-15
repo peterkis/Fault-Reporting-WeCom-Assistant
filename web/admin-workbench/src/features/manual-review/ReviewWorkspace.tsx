@@ -47,7 +47,7 @@ export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange}:
   const [blocked,setBlocked]=useState(false);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   if(!refs.length&&!selected)return null;
-  return <section className="manual-review" data-review-workspace aria-label="材料与人工复核"><h3>材料与人工复核</h3>
+  return <section data-activity-field="manual-review" className="manual-review" data-review-workspace aria-label="材料与人工复核"><h3>材料与人工复核</h3>
     <label>复核项 <select aria-label="选择复核项" value={selected} disabled={blocked} onChange={event=>setSelected(event.target.value)}><option value="">请选择复核项</option>
       {refs.map(ref=><option key={ref.id} value={ref.id}>{ref.id} · {ref.status} · 版本 {ref.row_version}</option>)}
       {selected&&!refs.some(ref=>ref.id===selected)?<option value={selected}>已选择的复核项 {selected}</option>:null}
