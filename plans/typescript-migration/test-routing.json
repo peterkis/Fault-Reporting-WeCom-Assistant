@@ -6028,6 +6028,33 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-current-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-long-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7790,10 +7817,27 @@
       "tests/t41-search-contract.test.mts",
       "tests/t41-search-pagination-authority.integration.test.mts",
       "tests/t41-search-production.browser.test.mts",
-      "tests/t41-search-review-start.integration.test.mts"
+      "tests/t41-search-review-start.integration.test.mts",
+      "tests/t41-search-current-read.integration.test.mts",
+      "tests/t41-search-long-read.integration.test.mts",
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
     ],
     "wbint-t41-review-start": [
       "tests/t41-search-review-start.integration.test.mts"
+    ],
+    "wbint-t41-current-read": [
+      "tests/t41-search-current-read.integration.test.mts"
+    ],
+    "wbint-t41-long-read": [
+      "tests/t41-search-long-read.integration.test.mts"
+    ],
+    "wbint-t41-refresh-long-browser": [
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
+    ],
+    "wbint-t41-five-causes": [
+      "tests/t41-search-current-read.integration.test.mts",
+      "tests/t41-search-long-read.integration.test.mts",
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
     ]
   },
   "subprocess_entries": {
