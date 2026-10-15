@@ -1,4 +1,6 @@
 ---
+
+2026-10-15 T40 原七项已父验收，35b4caee由非实现者唯一精确快进native0，[#95 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/95#issuecomment-6189172898)。[获权站内提醒、声音与本浏览器偏好](execution/t40.md)已交付：四类原事实、当前READ、显式跨页定位、主动声音／桌面选择、跨标签去重和恢复不补响；不自动打开、处置或推进已读。九文件20个本票用例按真实head／MF分段通过，相关六文件19项通过；最终运行88f／MFeabc61f，纯四MD后继不重绑。原first028 RED→065 GREEN、所有旧FAIL／前提未证／未捕获与受控音频／OS边界保留；9841项raw／真Git归档、1738输入／2283输出、305份最终loaded及精确自有释放已父核，两轴收口。当前 **40／43 CLOSED、3 OPEN**；WBINT-13／A13的T38／T39／T40本地完成，A15已有T23／T40贡献、仍待T42。T41为唯一运行窗口，原未实施first已真实RED并保留被测祖先，正正常合入最新Root；T42两条同步源码有限双轴无新增问题、运行仍待，T43待#96／#97。默认关闭，全部43最终分支审查与自有工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
 document_id: WBINT-TASKS
 status: PLAN_CONFIRMED
 execution_status: IN_PROGRESS
@@ -33,9 +35,9 @@ execution_status: IN_PROGRESS
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | LOCAL_VERIFIED：[T32获权异常查询](execution/t32.md)与[T33专用权限／受控重试和结果核对](execution/t33.md)原七均已父核、非实现者集成并原生CLOSED/completed；A11本地完成，默认关闭／无现场或Gate授权 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | LOCAL_VERIFIED：[T34明确关注](execution/t34.md)、[T35个人已读](execution/t35.md)、[T36确切补充处置及原可靠回复](execution/t36.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；A12本地完成，分对象证据／原FAIL／预算FALSE／采集及清理范围限制保留；默认关闭，无生产或Gate授权 | A12 |
-| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38／[T39获权短租期活动](execution/t39.md)原七已父核、独立集成且原生CLOSED/completed；T40持续隔离验证，A13整组仍待 | A13 |
+| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | LOCAL_VERIFIED；T38／[T39获权短租期活动](execution/t39.md)／[T40提醒与声音](execution/t40.md)原七已父核、独立集成且原生CLOSED/completed；A13本地验收完成 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | IN_PROGRESS；T41合同和候选源码已封存、未构建或运行，A14未验收 | A14 |
-| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
+| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)／[T40本浏览器偏好LOCAL_VERIFIED](execution/t40.md)；仍待T42 | A15 |
 | WBINT-16 | 人工工作台整体隔离验收 | 00–15 | NOT_STARTED | A16 |
 
 依赖是合同与实际能力，不能由任务名称或页面存在代替。独立子任务可提前推进，例如 04 的受控资料读取、07 的已有会话读取、09 的已有 Incident 读取；面向用户启用动作时必须满足完整依赖。
