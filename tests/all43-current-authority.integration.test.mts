@@ -22,7 +22,7 @@ async function configure(pool:PostgresPool,id:string,roles:('ADMIN'|'HANDLER')[]
 }
 
 for(const purpose of ['internal-notes','public-progress'] as const)test('ALL43 Incident '+purpose+' rechecks caller purpose after a real parent wait',{timeout:120000},async()=>{
- await t31Http({purpose:'all43incidentwait',notes:true,publication:true},async({pool,f,confirm,post,get})=>{
+ await t31Http({purpose:'a43incwait',notes:true,publication:true},async({pool,f,confirm,post,get})=>{
   const id=await confirm(),path='/api/incidents/'+id,actor=text(record(f.admin).id),base={client_command_id:randomUUID(),expected_row_version:'1'},command=purpose==='internal-notes'?{...base,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:'仅供最终审查竞争回归的独立合成正文'}:{...base,reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'最终审查竞争回归的独立合成公开摘要',preview_confirmed:true};
   const before=(await get(path)).body,events=(await pool.query('SELECT * FROM incident.incident_event WHERE incident_id=$1::uuid ORDER BY event_ordinal',[id])).rows;
   const blocker=await pool.connect();let open=false,pending:ReturnType<typeof post>|undefined,primary:unknown;

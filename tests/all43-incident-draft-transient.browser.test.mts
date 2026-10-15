@@ -24,14 +24,14 @@ async function transient(browser:Browser,incidentId:string,purposePath:string,dr
 }
 
 test('ALL43 internal-note recovery keeps its encrypted original during temporary purpose GET503',{timeout:180000},async()=>{
- await t30Browser('all43notedraft',async({browser,incidentId,put,get})=>{
+ await t30Browser('a43notedraft',async({browser,incidentId,put,get})=>{
   const input='合成内部草稿，网络恢复后仍需人工确认';await put(input);
   await transient(browser,incidentId,'internal-notes','[data-internal-note-draft]','textarea[aria-label="内部处置记录"]',input);
   assert.equal((await get('/api/incidents/'+incidentId)).status,200);
  });
 });
 test('ALL43 public-summary recovery keeps its independent encrypted original during temporary purpose GET503',{timeout:180000},async()=>{
- await t31Browser('all43publicdraft',async({browser,incidentId,put,get})=>{
+ await t31Browser('a43pubdraft',async({browser,incidentId,put,get})=>{
   const input='合成人工公开摘要，尚未预览确认或发布';await put(input);
   await transient(browser,incidentId,'public-progress','[data-public-progress-draft]','textarea[aria-label="公开进展摘要"]',input);
   assert.equal((await get('/api/incidents/'+incidentId)).status,200);
