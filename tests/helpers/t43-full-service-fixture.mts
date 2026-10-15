@@ -44,6 +44,7 @@ import {createP2016DirectIntakeProcessor} from '../../src/p2-016-direct-intake.m
 import {createP2G1HumanOnlyAssembly} from '../../src/p2-g1-human-only-assembly.mjs';
 import {createIncidentCorrelationWorker} from '../../src/p2-015-incident-correlation.mjs';
 import {createP2012CandidateReviewStore} from '../../src/p2-012-candidate-source-adapter.mjs';
+import {createYxxDelegatedIdentityMapping} from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -94,12 +95,15 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>,{syntheti
   const senderCalls:ValidatedSenderRequest[]=[];let outcome:SenderOutcome='UNKNOWN';
   const sender=createCommunicationSenderPort(async request=>{assert.equal(syntheticDelivery,true,'only the explicit isolated recording Sender may run');senderCalls.push(request);return {outcome,provider_message_id:null,error_code:outcome==='ACKNOWLEDGED'?null:'SYNTHETIC_T43_'+outcome,retryable:false};});
   const delivery=createCommunicationDeliveryWorker({pool,sender,enabled:syntheticDelivery,batchSize:1,attemptAdmission:createIncidentPublicProgressAdmission({enabled:true})});
+  // FULL_SERVICE_LOOP requires the original delegated mapping contract, unlike the read-only entry fixture.
+  const memberConfig={...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:['synthetic-A','synthetic-B']};
+  const identityMapping=await createYxxDelegatedIdentityMapping({config:memberConfig,accessTokenProvider:async()=> 't43-synthetic-mapping-only',fetchImpl:async input=>{const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(url.pathname,'/cgi-bin/batch/userid_to_openuserid');return new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'synthetic-A',open_userid:'t43-open-A'},{userid:'synthetic-B',open_userid:'t43-open-B'}]}));}});
   let runtime:P2016EnabledRuntime|undefined,worker:ReturnType<typeof createP2016OrchestrationWorker>|undefined,tls:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,backendOrigin='';
   let failure:unknown;
   try{
    tls=await createYxxBrowserFixture({pool,createApp:({origin}:{origin:string})=>{
     const created=createYxxProfile({profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',pool,publicOrigin:origin,reporterOrigin:origin,listenPort:0,principalIds:principals,
-     reporterMemberEntry:entryConfig,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'synthetic-B':'synthetic-A'})},
+     reporterMemberEntry:memberConfig,identityMapping,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'t43-open-B':'t43-open-A'})},
      flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
      yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true},
      gatewayEnabled:false,senderEnabled:false,externalSendEnabled:syntheticDelivery,incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentPublicProgressEnabled:true,incidentOwnerTransferEnabled:true,incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,
