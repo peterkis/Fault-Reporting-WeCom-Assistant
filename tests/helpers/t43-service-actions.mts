@@ -11,7 +11,7 @@ export interface Screenshot {file:string;width:number;height:number;sha256:strin
 
 export async function get(http:HttpClient,path:string):Promise<Record<string,unknown>>{const response=await http.get(path);assert.equal(response.status,200,response.raw);return response.body;}
 export async function post(http:HttpClient,path:string,body:Record<string,unknown>):Promise<Record<string,unknown>>{const response=await http.post(path,body);assert.equal(response.status,200,response.raw);return response.body;}
-export async function startCommand(f:T43Fixture,report:Intake){
+export async function startCommand(f:T43Fixture,report:Intake):Promise<{path:string;body:Record<string,unknown>}>{
  const admin=f.staff[0];assert.ok(admin);const current=await f.intake(report.intakeId);
  if(current.reviewId){const path='/api/manual-reviews/'+current.reviewId,review=await get(admin,path),context=await get(admin,path+'/resolve-and-start-context');assert.equal(context.allowed,true);assert.equal(object(review.material_basis).stale,false);
   const ticket=context.expected_ticket===null?null:object(context.expected_ticket);
@@ -19,6 +19,8 @@ export async function startCommand(f:T43Fixture,report:Intake){
   return {path:path+'/resolve-and-start',body:{client_command_id:randomUUID(),expected_row_version:text(review.row_version),expected_material_basis:text(object(review.material_basis).current_hash),resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'CLEAR_FAULT_HUMAN_CONFIRMED',expected_ticket:ticket===null?null:{ticket_id:text(ticket.ticket_id),expected_version:version(ticket.expected_version)},resolver_team_id:context.resolver_team_id===null?'PILOT_IT':text(context.resolver_team_id),communication_choice:sessions.length?'TAKE_SELECTED':'RETAIN_CURRENT',sessions}};
  }
  assert.ok(current.ticketId);const ticket=await get(admin,'/api/tickets/'+current.ticketId);
+ const related=rows((await get(admin,'/api/tickets/'+current.ticketId+'/related-conversations')).items);
+ if(related.length){const sessions=related.filter(s=>s.take_allowed===true).map(s=>({session_id:text(s.session_id),expected_row_version:version(Number(text(s.session_row_version)))}));return {path:'/api/tickets/'+current.ticketId+'/take-and-start-with-conversations',body:{client_command_id:randomUUID(),expected_version:version(ticket.version),reason_code:'T43_EXPLICIT_START',resolver_team_id:text(ticket.resolver_team_id),communication_choice:sessions.length?'TAKE_SELECTED':'RETAIN_CURRENT',sessions}};}
  return {path:'/api/tickets/'+current.ticketId+'/take-and-start',body:{client_command_id:randomUUID(),expected_version:version(ticket.version),reason_code:'T43_EXPLICIT_START',resolver_team_id:text(ticket.resolver_team_id)}};
 }
 export async function start(f:T43Fixture,report:Intake){const admin=f.staff[0];assert.ok(admin);const command=await startCommand(f,report),receipt=await post(admin,command.path,command.body);const id=text(receipt.ticket_id);const ticket=await get(admin,'/api/tickets/'+id);assert.equal(ticket.status,'IN_PROGRESS');assert.equal(ticket.assignee_id,f.principals[0]);return ticket;}
