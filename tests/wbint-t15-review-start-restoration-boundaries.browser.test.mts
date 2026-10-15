@@ -9,9 +9,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
 import {evaluateConversationSessionStatusTransition} from '../src/p2-001-conversation-contracts.mjs';
-import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {appendReviewMaterial} from './helpers/wbint-t14-review-material.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 import type {ReviewResolveAndStartCommand} from '../contracts/workbench_review_start_contracts.js';
@@ -39,16 +37,6 @@ async function projectFixtureMaterial(runtime:P2016EnabledRuntime){
 }
 
 type Boundary='ended'|'purpose-denied'|'restore-denied'|'opaque-failed';
-async function additionalSession(fixture:Fixture){
-  const known=fixture.tickets[0];assert.ok(known);
-  const leg=(await fixture.pool.query<{journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}>('SELECT journey_id::text,reporter_identity_hash,provider_context_hash,channel_identity_hash FROM intake.channel_leg WHERE source_intake_id=$1::uuid',[known.intake.intakeId])).rows[0];assert.ok(leg);
-  const input=object(await seedPersistedIntake({pool:fixture.pool,text:'T15 authorized related continuation without a second Ticket',requestType:'INCIDENT',status:'RECEIVED'}));
-  await projectFixtureMaterial(fixture.runtime);
-  const session=(await fixture.pool.query<{id:string;thread_id:string}>('SELECT id::text,thread_id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[input.intakeId])).rows[0];assert.ok(session);
-  await createContactJourneyStore().ensureLeg({transaction:fixture.pool,input:{journey_id:leg.journey_id,leg_type:'GROUP_CONTINUATION',source_intake_id:text(input.intakeId),conversation_thread_id:session.thread_id,conversation_session_id:session.id,origin_channel_message_id:text(input.messageId),provider_context_hash:leg.provider_context_hash,channel_identity_hash:leg.channel_identity_hash,reporter_identity_hash:leg.reporter_identity_hash,opened_at:text(input.receivedAt)}});
-  assert.equal((await fixture.pool.query('SELECT id FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid',[input.intakeId])).rowCount,0);
-  return session.id;
-}
 const snapshot=(reviewId:string)=>`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('wecom-workbench-drafts-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const load=name=>new Promise((resolve,reject)=>{const tx=db.transaction(name,'readonly'),r=tx.objectStore(name).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const drafts=await load('drafts'),operations=await load('operations');db.close();return {sensitive:drafts.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='review-resolve-start').length,ordinary:drafts.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='manual-review').length,operations:operations.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='review-resolve-start').map(r=>r.commandId)};})()`;
 function installTrace(mode:Boundary,reviewId:string){return `(()=>{
   const original=globalThis.fetch;globalThis.__t15Writes=[];globalThis.__t15Responses=[];globalThis.__t15Revokes=0;
@@ -65,7 +53,6 @@ function installTrace(mode:Boundary,reviewId:string){return `(()=>{
 async function runBoundary(mode:Boundary){
   await withWeb01Fixture(async(fixture:Fixture)=>{
     await projectFixtureMaterial(fixture.runtime);
-    const extra=mode==='restore-denied'?await additionalSession(fixture):null;
     const actor=fixture.principals[0],known=fixture.tickets[0],browserCookie=fixture.browserCookies[0],cookie=fixture.cookies[0];
     assert.ok(actor&&known&&browserCookie&&cookie);
     const access=createPilotAccessService({pool:fixture.pool});
@@ -84,8 +71,8 @@ async function runBoundary(mode:Boundary){
     const originalTicket=await get('/api/tickets/'+known.ticket.id);assert.equal(originalTicket.status,'QUEUED');
     const eligible=list((await get('/api/tickets/'+known.ticket.id+'/eligible-principals')).items);
     assert.ok(eligible.some(principal=>principal.principal_id===actor.id),'the actor must currently be an effective member of the Ticket group');
-    const related=list((await get('/api/tickets/'+known.ticket.id+'/related-conversations')).items);assert.equal(related.length,extra?2:1);
-    const session=extra?related.find(row=>row.session_id===extra):related[0];assert.ok(session);assert.equal(session.take_allowed,true);
+    const related=list((await get('/api/tickets/'+known.ticket.id+'/related-conversations')).items);assert.equal(related.length,1);
+    const session=related[0];assert.ok(session);assert.equal(session.take_allowed,true);
     const sessionId=text(session.session_id),startPath='/api/manual-reviews/'+reviewId+'/resolve-and-start';
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
     const screenshots:{file:string;width:number;height:number;sha256:string}[]=[];
@@ -161,10 +148,20 @@ async function runBoundary(mode:Boundary){
           const moved=await fetch(fixture.origin+'/api/conversations/'+sessionId+'/transfer',{method:'POST',headers:{cookie,origin:fixture.origin,'content-type':'application/json','idempotency-key':transfer.client_command_id,'if-match':'"'+transfer.expected_row_version+'"','x-csrf-token':text(bootstrap.csrf_token)},body:JSON.stringify(transfer)});assert.equal(moved.status,200,await moved.clone().text());
           await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
           await get('/api/manual-reviews/'+reviewId);await get('/api/tickets/'+known.ticket.id);await get('/api/manual-reviews/'+reviewId+'/resolve-and-start-context');
-          const denied=await fetch(fixture.origin+'/api/conversations/'+sessionId,{headers:{cookie}});assert.equal(denied.status,404,await denied.clone().text());
+          await get('/api/conversations/'+sessionId);
+          // Hold this precise restore read after its current context/team check.
+          // Official membership loss then removes Session VIEW while the assigned Ticket and Review remain readable.
+          await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.fetch=async(path,options)=>{if(String(options?.method??'GET').toUpperCase()==='GET'&&String(path)===${JSON.stringify('/api/conversations/'+sessionId)}&&!globalThis.__t15SessionHeld){globalThis.__t15SessionHeld=true;await new Promise(resolve=>{globalThis.__t15SessionRelease=resolve;});}return original(path,options);};})()`);
         }
         if(mode==='opaque-failed')await browser.evaluate(`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('wecom-workbench-drafts-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),r=store.getAll();r.onsuccess=()=>{for(const row of r.result)if(row.id===${JSON.stringify(reviewId)}&&row.purpose==='review-resolve-start'){row.firstSavedAt=Date.now()-86401000;row.expiresAt=row.firstSavedAt+86400000;store.put(row);}};tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});db.close();})()`);
         await reopen();
+        if(mode==='restore-denied'){
+          await browser.waitFor('globalThis.__t15SessionHeld===true');
+          await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['HANDLER'],resolverTeamIds:[]});
+          await get('/api/manual-reviews/'+reviewId);await get('/api/tickets/'+known.ticket.id);
+          const denied=await fetch(fixture.origin+'/api/conversations/'+sessionId,{headers:{cookie}});assert.equal(denied.status,404,await denied.clone().text());
+          await browser.evaluate('globalThis.__t15SessionRelease()');
+        }
         if(mode==='ended'){
           await browser.waitFor("Boolean(document.querySelector('[data-action=replay-review-start]'))");
           assert.equal(object(await browser.evaluate(snapshot(reviewId))).sensitive,1);
