@@ -6,6 +6,10 @@ execution_status: IN_PROGRESS
 
 # 实施任务与交付规则
 
+2026-10-15 T39 原七项已父验收，55714977由非实现者唯一精确快进native0，[#94 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94#issuecomment-6186714331)。[获权短租期活动](execution/t39.md)已交付：真实查看／字段编辑、TTL／断线／退出／失权消失，不领取、锁单、推进已读或替代责任；单App有界内存复用原SSE和5秒节奏，无心跳业务写库。本票20、相关69、bounded-parse工具1按真实head／MF分窗通过；最终f4cb／MFf1c736，纯四MD后继不重绑。完整双轴及有限复审、9815项raw／真Git归档、324份loaded原件、1715输入／2248输出与自有释放已父核。旧FAIL／NOT_REACHED／NOT_RUN、032额外冻结计划工具FAIL与受控visibility限制保留。当前 **39／43 CLOSED、4 OPEN**；WBINT-13／A13已完成T38／T39，仍待T40。T40为唯一运行窗口，原strict／startup准备失败未当产品RED；T41／T42候选有限双轴均无新增问题、未运行，T43待#95／#96／#97。默认关闭，全43最终分支审查及工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
+
+2026-10-15 T19 原七项已父验收，fda417d5 由非实现者唯一精确快进 native0，[#74 CLOSED/completed 已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74#issuecomment-6185093476)。[代录后本人原子开始](execution/t19.md)已交付；受理、唯一最小 Ticket、当前合法组承接与开始同事务，报修人／代录人／处理人及电话／现场来源独立。真实被测589b／MF73ab保留本票17 PASS、相关61 PASS、工具3 PASS的独立窗口，纯四MD后继不重绑；两轴及有限复审、9798项raw／真Git归档、原件与精确自有清理已核。旧RED／FAIL／NOT_REACHED与观察器限制保留。当前 **38／43 CLOSED、5 OPEN**，WBINT-05／A05本地完成；T39为唯一运行窗口，T40九因源码有限双轴无新增问题、尚未运行，T41／T42继续有限修补，T43待#94／#95／#96／#97。默认关闭，全43最终分支审查和工作树清理继续待；以下旧段保留各自时点，不授予发布、现场或Gate。
+
 返回 [计划入口](README.md) · [接口映射](capability-map.md) · [验收矩阵](acceptance-matrix.md)
 
 ## 任务状态和依赖
@@ -21,7 +25,7 @@ execution_status: IN_PROGRESS
 | WBINT-02 | 轮次与责任／一步处理／退回 | 01 | LOCAL_VERIFIED：T02、T04–T10八票原七项均已父核、集成并原生CLOSED/completed；[T10完成记录](execution/t10.md)与[各票证据导航](execution.md)保留原失败、真实被测祖先及清理限制。A02本地完成，默认关闭，未发布／启用 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | LOCAL_VERIFIED：[T11工作人员完工](execution/t11.md)、[T12一次接管关闭](execution/t12.md)、[T13接单与交接链](execution/t13.md)原七项均经父核、集成并原生CLOSED/completed；原轮次、独立内部过程／公开摘要、唯一通知承诺及当前获权历史保持。A03本地完成，默认关闭，未发布／启用 | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | LOCAL_VERIFIED：[T14同事项人工复核](execution/t14.md)、[T15确认明确故障并原子开始](execution/t15.md)与[T16已有附件读取](execution/t16.md)原七均已父核、非实现者集成并原生CLOSED/completed；A04本地完成，原失败／预算与采集限制保留，默认关闭，无生产或Gate授权 | A04 |
-| WBINT-05 | 工作人员代录、成员候选 | 02、04 | IN_PROGRESS：[T17代录](execution/t17.md)及[T18核实成员](execution/t18.md)原七项已核对、集成并关票；T19同事务本人开始尚未完成，A05整组尚未验收 | A05 |
+| WBINT-05 | 工作人员代录、成员候选 | 02、04 | LOCAL_VERIFIED：[T17代录](execution/t17.md)、[T18核实成员](execution/t18.md)、[T19代录后原子本人开始](execution/t19.md)原七均已父核、非实现者集成并原生CLOSED/completed；A05本地完成，历史失败／分窗口证据及原被测身份保留，默认关闭、未发布／启用 | A05 |
 | WBINT-06 | 原 Reporter 反馈与重开 | 03 | LOCAL_VERIFIED：[T20 Web本人反馈](execution/t20.md)与[T21 Bot本人反馈](execution/t21.md)原七项均经父独立核对、集成并GitHub收口；A06本地完成，默认关闭、未发布／启用 | A06 |
 | WBINT-07 | 集中会话与人工沟通 | 01；复合责任依赖02 | LOCAL_VERIFIED：[T22原七项](execution/t22.md)经父独立核对、合入本地集成并GitHub收口；A07本地完成，默认关闭，未发布／启用 | A07 |
 | WBINT-08 | 原始来源通知策略及各路适配 | 02、03、05、06、07的事件／绑定合同 | LOCAL_VERIFIED：[T24单聊Bot节点通知](execution/t24.md)、[T25原应用本人通知](execution/t25.md)与[T26原群及独立Bot私聊](execution/t26.md)原七项均已父核、合入本地集成并关票；各路独立记账／恢复、正式详情和自有资源交接已有隔离证据，A08本地完成；默认关闭，真实强@／送达未验证 | A08 |
@@ -29,7 +33,7 @@ execution_status: IN_PROGRESS
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | LOCAL_VERIFIED：[T32获权异常查询](execution/t32.md)与[T33专用权限／受控重试和结果核对](execution/t33.md)原七均已父核、非实现者集成并原生CLOSED/completed；A11本地完成，默认关闭／无现场或Gate授权 | A11 |
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | LOCAL_VERIFIED：[T34明确关注](execution/t34.md)、[T35个人已读](execution/t35.md)、[T36确切补充处置及原可靠回复](execution/t36.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；A12本地完成，分对象证据／原FAIL／预算FALSE／采集及清理范围限制保留；默认关闭，无生产或Gate授权 | A12 |
-| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39／T40候选源码已封存、未构建或运行，原七未验收 | A13 |
+| WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38／[T39获权短租期活动](execution/t39.md)原七已父核、独立集成且原生CLOSED/completed；T40持续隔离验证，A13整组仍待 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | IN_PROGRESS；T41合同和候选源码已封存、未构建或运行，A14未验收 | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
 | WBINT-16 | 人工工作台整体隔离验收 | 00–15 | NOT_STARTED | A16 |

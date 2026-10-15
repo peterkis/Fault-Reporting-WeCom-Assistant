@@ -9,6 +9,10 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 # 人工工作台实施记录
 
+2026-10-15 T39 原七项已父验收，55714977由非实现者唯一精确快进native0，[#94 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94#issuecomment-6186714331)。[获权短租期活动](execution/t39.md)已交付：真实查看／字段编辑、TTL／断线／退出／失权消失，不领取、锁单、推进已读或替代责任；单App有界内存复用原SSE和5秒节奏，无心跳业务写库。本票20、相关69、bounded-parse工具1按真实head／MF分窗通过；最终f4cb／MFf1c736，纯四MD后继不重绑。完整双轴及有限复审、9815项raw／真Git归档、324份loaded原件、1715输入／2248输出与自有释放已父核。旧FAIL／NOT_REACHED／NOT_RUN、032额外冻结计划工具FAIL与受控visibility限制保留。当前 **39／43 CLOSED、4 OPEN**；WBINT-13／A13已完成T38／T39，仍待T40。T40为唯一运行窗口，原strict／startup准备失败未当产品RED；T41／T42候选有限双轴均无新增问题、未运行，T43待#95／#96／#97。默认关闭，全43最终分支审查及工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
+
+2026-10-15 T19 原七项已父验收，fda417d5 由非实现者唯一精确快进 native0，[#74 CLOSED/completed 已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74#issuecomment-6185093476)。[代录后本人原子开始](execution/t19.md)已交付；受理、唯一最小 Ticket、当前合法组承接与开始同事务，报修人／代录人／处理人及电话／现场来源独立。真实被测589b／MF73ab保留本票17 PASS、相关61 PASS、工具3 PASS的独立窗口，纯四MD后继不重绑；两轴及有限复审、9798项raw／真Git归档、原件与精确自有清理已核。旧RED／FAIL／NOT_REACHED与观察器限制保留。当前 **38／43 CLOSED、5 OPEN**，WBINT-05／A05本地完成；T39为唯一运行窗口，T40九因源码有限双轴无新增问题、尚未运行，T41／T42继续有限修补，T43待#94／#95／#96／#97。默认关闭，全43最终分支审查和工作树清理继续待；以下旧段保留各自时点，不授予发布、现场或Gate。
+
 用户于 2026-10-07 授权通过 implement-spec 实施全部 43 票。本次授权覆盖按依赖交付本地实现与隔离验证，以及任务所需本地提交／集成；上一轮“只发布任务、实施未开始、未授权 commit”的记载保留为规划／to-tickets 阶段历史。它不再作为本轮本地实施停止条件。push、部署、真实库迁移、真实 Provider／OAuth／WeCom、full／certify 和业务 Gate 仍按原边界另行授权；子任务不自行对外评论或关闭 Issue。
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。

@@ -56,7 +56,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
   }
   const cycle=context.data?.handling_cycle,allowed=Boolean(context.data?.allowed_actions.includes('complete')&&cycle?.first_responsibility_event_id&&cycle.staff_completion_event_id===null);
   const canSubmit=allowed&&!blocked&&!context.isFetching&&draft.canSubmit&&value.process.trim()&&value.summary.trim()&&value.confirmed&&value.process.length<=2000&&value.summary.length<=500;
-  return <section className="ticket-notes ticket-completion" aria-label="工作人员完工">
+  return <section data-activity-field="ticket-completion" className="ticket-notes ticket-completion" aria-label="工作人员完工">
     <h3>记录结果并完工</h3>{context.isPending?<p role="status">正在读取完工权限与轮次…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p className="ticket-completion-version">工单版本 {context.data.version}</p>}
     {cycle?<p>处理轮次 {cycle.cycle_no}</p>:null}
     {allowed||pending||draft.operationId?<form onSubmit={event=>{event.preventDefault();if(!canSubmit||!cycle||!context.data)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:cycle.id,internal_process:value.process.trim(),external_summary:value.summary.trim(),external_summary_confirmed:true}));}}>
