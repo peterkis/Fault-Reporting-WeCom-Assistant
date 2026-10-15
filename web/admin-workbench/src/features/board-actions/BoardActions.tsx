@@ -69,7 +69,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
   const disabled=blocked||checking||!enabled;
   // Keep original business controllers at the same React tree position. Only
   // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
-  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);}}>
+  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);}}}>
     <DragDropProvider {...(!enabled?{sensors:[],plugins:[],modifiers:[]}:{})} onBeforeDragStart={event=>{if(disabled)event.preventDefault();}}
       onDragStart={({operation})=>{
         const data:unknown=operation.source?.data;
