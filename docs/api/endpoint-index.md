@@ -25,6 +25,8 @@
 
 ## 工作台REST
 
+T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当前授权提醒窗口；无写入口或服务器偏好保存接口。请求／基线／分页／失效、原事件与个人设置合同见 [当前站内提醒](workbench/reminders.md)，本地运行与停止线见 [T40执行记录](../../plans/admin-workbench-integration/execution/t40.md)。不由本地实现推导部署或真实发送批准。
+
 来源群名称增量默认关闭，启用条件和原始来源语义见 [来源群名称](workbench/source-groups-design.md)。
 
 | ID | 方法 | 完整路径 | 宿主 | 状态 / 用途 | 契约文档 |
