@@ -23,3 +23,14 @@ test('T40 cross-tab messages contain only a current opaque scope and a reminder 
   assert.equal(decodeReminderCoordination({...seen,body:'untrusted'},scope),null);
   assert.equal(decodeReminderCoordination({...seen,reminder_id:'raw-ticket-id'},scope),null);
 });
+
+
+test('T40 public reminder decoder rejects JSON arrays or coercible values in closed string enums',()=>{
+  const row={reminder_id:'a'.repeat(64),event_id:'1',reason:'RELATED_NEW_MATERIAL',canonical_item:{kind:'ticket',id:'2b1f2c30-a051-4a44-8a2a-dc4b6467d7b1'},source_key:'b'.repeat(64),source_revision:'1',occurred_at:'2026-10-15 10:00:00'};
+  const page={schema_version:1,items:[row],as_of_event_id:'1',baseline_token:'opaque_token',next_cursor:null,reset_required:false};
+  assert.deepEqual(decodeReminderPage(JSON.parse(JSON.stringify(page))).items[0]?.canonical_item,row.canonical_item);
+  for(const reason of [['RELATED_NEW_MATERIAL'],['RELATED_FOLLOW_UP_DUE'],{},null,1,true])
+    assert.throws(()=>decodeReminderPage(JSON.parse(JSON.stringify({...page,items:[{...row,reason}]}))),TypeError);
+  for(const kind of [['ticket'],['review'],{},null,1,true])
+    assert.throws(()=>decodeReminderPage(JSON.parse(JSON.stringify({...page,items:[{...row,canonical_item:{...row.canonical_item,kind}}]}))),TypeError);
+});

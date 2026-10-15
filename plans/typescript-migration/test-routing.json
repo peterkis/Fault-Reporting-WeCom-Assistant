@@ -6019,6 +6019,33 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t40-reminder-later-leg.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t40-reminder-current-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t40-reminder-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7773,6 +7800,12 @@
     ],
     "wbint-t40-locate": [
       "tests/wbint-t40-reminder-locate.browser.test.mts"
+    ],
+    "wbint-t40-reviewed-risks": [
+      "tests/wbint-t40-reminder-contracts.test.mts",
+      "tests/wbint-t40-reminder-later-leg.integration.test.mts",
+      "tests/wbint-t40-reminder-current-authority.integration.test.mts",
+      "tests/wbint-t40-reminder-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7845,7 +7878,8 @@
       "tests/helpers/t33-incident-delivery-control-fixture.mts",
       "tests/helpers/t33-whole-fixture.mts",
       "tests/helpers/t40-reminder-first-fixture.mts",
-      "tests/helpers/t40-reminder-locate-fixture.mts"
+      "tests/helpers/t40-reminder-locate-fixture.mts",
+      "tests/helpers/t40-reminder-risk-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",

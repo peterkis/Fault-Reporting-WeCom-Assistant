@@ -129,7 +129,7 @@ export async function withT40LocateFixture(run:(fixture:T40LocateFixture)=>Promi
       const currentFacts=async()=>{
         const facts:Record<string,unknown>={};
         for(const endpoint of [path,path+'/events?limit=200',path+'/responsibility',path+'/follow-up-schedule',
-          '/api/workbench/items/ticket/'+ticketId+'/follow',
+          '/api/workbench/items/ticket/'+ticketId,
           '/api/workbench/items/ticket/'+ticketId+'/read-position']) {
           const response=await http.get(endpoint);assert.equal(response.status,200,endpoint);
           facts[endpoint]=response.value;
