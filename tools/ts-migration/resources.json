@@ -375,6 +375,9 @@
     "contracts/workbench_supplement_follow_up_summary.schema.json",
     "contracts/workbench_supplement_follow_up_summary.d.ts",
     "contracts/workbench_supplement_follow_up_material_contracts.d.ts",
-    "contracts/workbench_supplement_follow_up_material.schema.json"
+    "contracts/workbench_supplement_follow_up_material.schema.json",
+    "contracts/workbench_search_contracts.d.ts",
+    "contracts/workbench_search_criteria.schema.json",
+    "contracts/workbench_search_page.schema.json"
   ]
 }

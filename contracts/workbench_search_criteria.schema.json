@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_search_criteria.schema.json",
+  "title": "WBINT-T41 canonical search criteria (SOURCE_ONLY, not mounted)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "q",
+    "column",
+    "range",
+    "scope",
+    "responsibility",
+    "resolver_team_id",
+    "assignee_id",
+    "sources",
+    "source_group_ref",
+    "statuses",
+    "supplement",
+    "schedule"
+  ],
+  "properties": {
+    "q": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+    },
+    "column": {
+      "enum": [
+        "all",
+        "pending",
+        "active",
+        "closed"
+      ]
+    },
+    "range": {
+      "enum": [
+        "recent",
+        "all",
+        "cancelled"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "team",
+        "related"
+      ]
+    },
+    "responsibility": {
+      "enum": [
+        "any",
+        "handling",
+        "communication",
+        "following",
+        "unassigned"
+      ]
+    },
+    "resolver_team_id": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+        }
+      ]
+    },
+    "assignee_id": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "WECOM_DIRECT",
+          "WECOM_GROUP",
+          "WEB_REQUEST",
+          "MANUAL_PHONE",
+          "MANUAL_ON_SITE"
+        ]
+      }
+    },
+    "source_group_ref": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      ]
+    },
+    "statuses": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "NEW",
+          "QUEUED",
+          "ACCEPTED",
+          "REOPENED",
+          "IN_PROGRESS",
+          "WAITING_REQUESTER",
+          "WAITING_VENDOR",
+          "RESOLVED",
+          "CLOSED",
+          "CANCELLED",
+          "DUPLICATE_LINKED",
+          "PENDING",
+          "RECEIVED",
+          "WAITING_DESCRIPTION",
+          "WAITING_TRIAGE",
+          "FAILED",
+          "COMPLETED",
+          "IGNORED"
+        ]
+      }
+    },
+    "supplement": {
+      "enum": [
+        "any",
+        "pending",
+        "followed",
+        "none"
+      ]
+    },
+    "schedule": {
+      "enum": [
+        "any",
+        "active",
+        "due",
+        "none"
+      ]
+    }
+  }
+}

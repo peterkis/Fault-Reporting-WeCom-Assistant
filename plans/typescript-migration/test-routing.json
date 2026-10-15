@@ -5884,6 +5884,15 @@
       "requires_database": true,
       "mode": "STAGED_RUNTIME",
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t41-search-http-first.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7586,6 +7595,9 @@
     ],
     "wbint-t36-team-and-recovery": [
       "tests/t36-team-and-recovery.browser.test.mts"
+    ],
+    "wbint-t41-search-http-first": [
+      "tests/wbint-t41-search-http-first.integration.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7656,7 +7668,8 @@
       "tests/helpers/p2-003-sse-harness.mjs",
       "tests/helpers/p2-g2-runtime-harness.mjs",
       "tests/helpers/t33-incident-delivery-control-fixture.mts",
-      "tests/helpers/t33-whole-fixture.mts"
+      "tests/helpers/t33-whole-fixture.mts",
+      "tests/helpers/t41-search-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
