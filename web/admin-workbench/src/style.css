@@ -300,3 +300,6 @@ strong { font-weight: var(--fw-medium); }
 .workbench-reminders dialog{max-width:min(28rem,calc(100vw - 2rem));border:1px solid var(--border,#dedee3);border-radius:.75rem;padding:1.25rem}
 .workbench-reminders dialog label{display:block;margin:.75rem 0}.workbench-reminders p{margin:.25rem 0;width:100%;font-size:.875rem}
 .ticket-card[data-reminder-located=true]{outline:2px solid #6366f1;outline-offset:3px}
+
+.reminder-location{margin-block:1rem;padding:1rem;border:1px solid var(--border,#dedee3);border-radius:.75rem}
+.reminder-location .ticket-card{max-width:32rem;margin-top:.75rem}

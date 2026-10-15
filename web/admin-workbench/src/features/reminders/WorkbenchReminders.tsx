@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {useLocation,useNavigate} from 'react-router';
 import {api,ApiError,readWorkbench} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {RealtimeView} from '../../realtime/useRealtime';
@@ -15,6 +16,7 @@ const blankAutomatic=():Automatic=>({scope:'',leader:false,seen:new Map(),satura
 
 /** The existing realtime adapter owns invalidation, its EventSource and its recovery timer. */
 export function WorkbenchReminders({principal,realtime,navigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean}){
+  const navigate=useNavigate(),location=useLocation(),blockedNavigation=useRef(navigationBlocked);blockedNavigation.current=navigationBlocked;
   const client=useQueryClient(),[preferences,setPreferences]=useState(readPreferences),[open,setOpen]=useState(false),[message,setMessage]=useState(''),[items,setItems]=useState<WorkbenchReminderItem[]>([]);
   const [armed,setArmed]=useState(false),[desktopArmed,setDesktopArmed]=useState(false);
   const locateRequest=useRef<AbortController|null>(null),cluster=useRef<number|null>(null);
@@ -59,6 +61,11 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked}:{princ
       if(page.error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');
     }
   },[page.error]);
+  useEffect(()=>client.getQueryCache().subscribe(event=>{
+    const key=event.query.queryKey,error=event.query.state.error;
+    if(event.type!=='updated'||key[0]!=='reminder-locate'||key[1]!==principal.principal_id||!(error instanceof ApiError)||![403,404].includes(error.status))return;
+    setItems(previous=>previous.filter(item=>item.canonical_item.kind!==key[2]||item.canonical_item.id!==key[3]));closeNotifications();
+  }),[client,principal.principal_id]);
   useEffect(()=>{
     if(!enabled||!armed&&!desktopArmed||!navigator.locks||typeof BroadcastChannel!=='function')return;
     let alive=true;const abort=new AbortController();
@@ -103,17 +110,18 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked}:{princ
   useEffect(()=>{if(open){settings.current?.showModal();}else{settings.current?.close();}},[open]);
   const locate=async(item:WorkbenchReminderItem)=>{
     if(navigationBlocked)return;locateRequest.current?.abort();const epoch=generation.current,abort=new AbortController();locateRequest.current=abort;
-    try{const detail=await api.detail(item.canonical_item.kind,item.canonical_item.id,null,abort.signal);if(epoch!==generation.current||abort.signal.aborted)return;
+    try{const detail=await api.detail(item.canonical_item.kind,item.canonical_item.id,null,abort.signal);if(epoch!==generation.current||abort.signal.aborted||blockedNavigation.current)return;
       const target=document.querySelector<HTMLElement>('article.ticket-card[data-kind="'+detail.item.kind+'"][data-item-id="'+detail.item.id+'"]');
       if(target){target.dataset.reminderLocated='true';target.scrollIntoView({block:'nearest',behavior:'auto'});setMessage('已定位当前事项。');}
-      else setMessage('事项当前可读取；请在团队工作中定位编号 '+detail.item.number+'。');
+      else {const parameters=new URLSearchParams(location.search);parameters.delete('detail');parameters.set('locate','1');
+        void navigate('/items/'+detail.item.kind+'/'+detail.item.id+'?'+parameters);setMessage('正在定位当前事项。');}
     }catch(error){if(epoch!==generation.current||abort.signal.aborted)return;if(error instanceof ApiError&&[403,404].includes(error.status)){setItems(previous=>previous.filter(row=>row.reminder_id!==item.reminder_id));closeNotifications();setMessage('该事项当前不可读取，提醒已移除。');}
       else if(error instanceof ApiError&&error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else setMessage('本次定位未完成，请重试。');}
     finally{if(locateRequest.current===abort)locateRequest.current=null;}
   };
   if(!enabled)return null;
   const closeSettings=()=>{setOpen(false);settingsButton.current?.focus();};
-  return <section className="workbench-reminders" aria-label="站内提醒"><button ref={settingsButton} type="button" aria-label="提醒偏好" onClick={()=>setOpen(true)}>提醒偏好</button>
+  return <section className="workbench-reminders" aria-label="站内提醒" data-reminders-ready={Boolean(baseline.current&&page.isSuccess)}><button ref={settingsButton} type="button" aria-label="提醒偏好" onClick={()=>setOpen(true)}>提醒偏好</button>
     {items.length?<ul aria-label="当前提醒">{items.map(item=><li key={item.reminder_id} data-reminder-id={item.reminder_id}><span>{labels[item.reason]}</span><button type="button" aria-label="定位事项" disabled={navigationBlocked} onClick={()=>{void locate(item);}}>定位事项</button><button type="button" aria-label="移除此提醒" onClick={()=>setItems(previous=>previous.filter(row=>row.reminder_id!==item.reminder_id))}>移除</button></li>)}</ul>:null}
     {message?<p role="status">{message}</p>:null}{page.isError?<p role="status">提醒暂未更新，现有事项仍可操作。</p>:null}
     <dialog ref={settings} aria-label="本浏览器提醒偏好" onCancel={event=>{event.preventDefault();closeSettings();}}><h2>本浏览器提醒偏好</h2><p>声音初始静音。新页面须主动开启，设置仅保存在本浏览器。</p>

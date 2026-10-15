@@ -70,7 +70,10 @@ function relativeTime(value:string,now:number){
 function Message({text,retry}:{text:string;retry?:()=>void}){
   return <div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p>{retry?<Button variant="secondary" onPress={retry}>重新读取</Button>:null}</div>;
 }
-function itemLink(item:WorkbenchCard,search:string){return '/items/'+item.kind+'/'+item.id+search;}
+function itemLink(item:WorkbenchCard,search:string){
+  const parameters=new URLSearchParams(search);if(parameters.has('locate')){parameters.delete('locate');search=parameters.size?'?'+parameters:'';}
+  return '/items/'+item.kind+'/'+item.id+search;
+}
 function Status({item}:{item:WorkbenchCard}){
   return <><span className={'status-chip '+(statusColors[item.status]??'gray')}>{statusLabels[item.status]??item.status}</span>{item.kind==='ticket'&&item.review_reason?<span className="status-chip yellow">待复核</span>:null}</>;
 }
@@ -96,8 +99,8 @@ function SharedFollowUpSummary({value}:{value:WorkbenchCard['follow_up_schedule'
     <time dateTime={value.due_at.replace(' ','T')+'+08:00'}>{value.due_at}（北京时间）</time>
   </p>;
 }
-function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selected:boolean;now:number}){
-  return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id}>
+function Card({item,search,selected,now,located=false}:{item:WorkbenchCard;search:string;selected:boolean;now:number;located?:boolean}){
+  return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id} data-reminder-located={located?'true':undefined}>
     <Link className="card-open" to={itemLink(item,search)} state={{fromBoard:true}}>
       <div className="card-top"><span>{item.number}</span></div>
       <h3>{item.title}</h3>
@@ -249,12 +252,28 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const order=useRef<{scope:string;keys:string[]}>({scope:'',keys:[]});
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock();
-  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':'recent',fullPage=Boolean(selected.id&&params.get('detail')==='page');
+  const locationMode=Boolean(selected.id&&params.get('locate')==='1');
+  const validLocation=Boolean(principal.workbench_reminders_enabled&&locationMode&&['ticket','review','intake'].includes(selected.kind??'')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(selected.id??''));
+  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':'recent',fullPage=Boolean(!locationMode&&selected.id&&params.get('detail')==='page');
+  const client=useQueryClient();
+  const located=useQuery({queryKey:['reminder-locate',principal.principal_id,selected.kind,selected.id,principal.authorization_revision,principal.expires_epoch_ms],enabled:validLocation,retry:false,gcTime:0,
+    queryFn:({signal})=>api.detail(selected.kind??'',selected.id??'',null,signal)});
+  useEffect(()=>{const error=located.error;if(!(error instanceof ApiError)||![401,403,404].includes(error.status))return;
+    if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');
+    else void clearItemView(client,principal.principal_id,selected.kind,selected.id,error);
+  },[located.error,client,principal.principal_id,selected.kind,selected.id]);
+  const locatedItem=validLocation&&located.isSuccess&&!located.isFetching?located.data.item:null;
+  const locatedSection=useRef<HTMLElement|null>(null),scrolledLocation=useRef('');
+  useEffect(()=>{
+    if(!locationMode){scrolledLocation.current='';return;}
+    if(!locatedItem)return;const key=locatedItem.kind+':'+locatedItem.id;
+    if(scrolledLocation.current!==key){scrolledLocation.current=key;locatedSection.current?.scrollIntoView({block:'nearest',behavior:'auto'});}
+  },[locationMode,locatedItem?.kind,locatedItem?.id]);
   const scope: 'team'|'related'|undefined=principal.workbench_follow_enabled?(params.get('scope')==='related'?'related':'team'):undefined;
   const pending=useColumn(principal,'pending',range,scope),active=useColumn(principal,'active',range,scope),closed=useColumn(principal,'closed',range,scope);
   const queries=[pending,active,closed],items=queries.flatMap(query=>query.data?.pages.flatMap(page=>page.items)??[]),fresh=[...new Map(items.map(item=>[item.kind+':'+item.id,item])).values()];
   let unique=fresh;
-  const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage;
+  const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage&&!locationMode;
   if(holdOrder){
     const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,range,view,scope,selected.kind,selected.id]),keys=fresh.map(item=>item.kind+':'+item.id),present=new Set(keys);
     if(order.current.scope!==orderingScope)order.current={scope:orderingScope,keys};
@@ -268,15 +287,21 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const completionWindow=closed.data?.pages[0]?.range;
   const until=completionWindow?new Date(Date.parse(completionWindow.until.replace(' ','T')+'Z')-86_400_000).toISOString().slice(5,10):'';
   const label=(column:BoardColumn)=>column==='closed'&&range==='cancelled'?'已取消':names[column];
+  const visibleItems=(loaded:WorkbenchCard[])=>locatedItem?loaded.filter(item=>item.kind!==locatedItem.kind||item.id!==locatedItem.id):loaded;
+  const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
+  const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}>{!fullPage?<div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={30} strokeWidth={1.6}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">{principal.internal_notes_enabled||principal.ticket_self_handling_enabled||principal.manual_review_enabled||principal.ticket_staff_completion_enabled?'人工协作':'只读'}</span></div>
     <div className="toolbar"><div className="scope-tabs">{principal.workbench_follow_enabled?<><button type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} disabled={navigationBlocked} onClick={()=>update('scope','team')}>团队工作</button><button type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} disabled={navigationBlocked} onClick={()=>update('scope','related')}>与我有关</button></>:<><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未开放">与我有关<small>后续</small></button></>}</div>
       <div className="tools"><ManualReportEntry principal={principal} blocked={navigationBlocked}/><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">全部完结记录</option><option value="cancelled">已取消（全部时间）</option></select></label>
       {completionWindow?<span className="range-caption">{range==='recent'?'已关闭：'+completionWindow.from.slice(5,10)+' – '+until+'（北京时间） · 已解决待确认保留':range==='cancelled'?'第三列仅查看已取消事项':'完结记录不限日期；取消事项另行查看'}</span>:null}</div>
-    {view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range+':'+scope} query={query} loaded={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
-      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range+':'+scope}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
+    {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
+      {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isFetching||located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} search={location.search} selected={true} now={now} located={true}/>:null}
+    </section>:null}
+    {view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range+':'+scope} query={query} loaded={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
+      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range+':'+scope}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <p className="workspace-footnote">展示当前身份获权的服务记录。打开详情不会接管工单。</p></div>:null}
-    {selected.id?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </Shell>;
 }
 function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),reset=useUiStore(s=>s.reset),location=useLocation();

@@ -84,3 +84,15 @@ Root630／160／364与原单entry、wbint-t40-first selection、helper支持及7
 尚需 whole 实际核验：四类真实来源（含 Bot／Web／代录和复核转工单）与当前范围、延迟投影与保留期、分页和身份变化、生产 bundle／SSE、两标签锁及拒播／权限拒绝、离线重连不补响、无自动 POST／导航和实际自有清理。当前显式定位只对已加载卡片直接标记并滚入视野；未加载项仅提供已核验编号提示，完整跨页定位尚待 whole 补齐。此 Source 限制不满足原七收口。Windows 实体扬声器与通知中心送达 NOT_RUN／NOT_PROVEN。
 
 未实现基线的 helper 登记在一次有限静态核对中发现遗漏；已用只含原 helper 登记的普通后继提交 e3fe3e67a0631908548800174477c7dba9d6f1d4 修正，未夹带产品源码。此前 f775 及观察器错误原件保留，后续 whole 原first以该修正基线开始准备，不能把修正称为业务 RED／GREEN。
+
+## 2026-10-15 Rootbfd：完整定位的 SOURCE 前移
+
+当前候选普通合入已验收 T15 的固定 bfd0331ea060f0830d2d85df9868e60ae73e856c，合并提交 ddd9b5591902c66f7aa97a51b2f483181b13ed25。此前 206fdc74 的“仅已加载卡片定位”限制属于该历史 Source；本轮新增源码已补齐该具体缺口，仍未构建或运行。原未实现 e3fe3e67 基线、原 first/helper、六闭合Schema/DTS和46 SQL原件均不改。
+
+用户显式定位先通过既有 GET /api/workbench/items/:kind/:id 核验当前 READ。已在DOM的卡片直接定位；其余使用既有 /workbench/app/items/:kind/:id?locate=1 URL，按原 GET 返回的规范事项显示同一 Card，不扫描或无界拉取列表页，不把列表缺项当作失权。该模式不挂载 Detail／阅读推进／命令表单，只有用户另点原详情链接才进入普通详情。当前 filter 参数保留，规范卡片在当前列表中去重，首次显式定位可滚入视野；SSE 后台刷新不反复滚动。
+
+直接URL中的ID不是读取凭证，目标仍逐次通过原HTTP鉴权。T38原 Query 失效复用 reminder-locate family，无新SSE／poll／Worker；401沿原会话清理，403/404清定位敏感缓存及该提醒，技术失败保留原URL目标并提供对同一GET的明确重试。关闭开关时该定位模式不读取目标、不回退为自动打开详情。
+
+新增真实 public seam/browser 测试Source为 wbint-t40-reminder-locate.browser.test.mts，另有独立 helper，原first/helper未改。夹具通过原Core生成目标和51项较新工单，正式server首50条确实缺目标，再用实际到期通知、正式bundle和当前Item GET验证；授权撤销使用真实转派与团队退出。仅技术失败分支明确注入一次浏览器客户端transport rejection，不伪造HTTP成功/拒绝，之后重试和失权结果均来自真正GET。全部用例NOT_RUN，Windows声音/通知现场仍NOT_PROVEN。
+
+本次明确交接的“未加载卡片／跨页定位”Source缺口已补齐；当前没有其他已识别、未实现的定位Source缺口。此表述不是类型检查、运行验证、两轴独立审查或原七验收结论，原七仍全部PENDING／NOT_BUILT_NOT_RUN。
