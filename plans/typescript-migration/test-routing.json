@@ -5965,6 +5965,24 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t15-review-start-wide.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t15-review-start-team-window.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7690,6 +7708,12 @@
     ],
     "wbint-t15-atomic-boundaries": [
       "tests/wbint-t15-review-start-atomic-boundaries.integration.test.mts"
+    ],
+    "wbint-t15-wide": [
+      "tests/wbint-t15-review-start-wide.browser.test.mts"
+    ],
+    "wbint-t15-team-window": [
+      "tests/wbint-t15-review-start-team-window.browser.test.mts"
     ]
   },
   "subprocess_entries": {
