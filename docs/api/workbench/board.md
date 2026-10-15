@@ -54,3 +54,11 @@ WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:strin
 ## 当前 T34 完整关注实现（2026-10-14）
 
 上述d895责任查询片为历史阶段。当前related包含本人处理、实际ASSIGNED且非ENDED沟通及明确关注的当前READ并集，先规范去重再分页；列表／看板／详情共用caller-only `attention={following,follow_version,related_reasons}`，不显示他人的关注或隐藏计数。bootstrap独立Follow／恢复能力决定控件，空列表不能代替开关证明。显式POST、原UUID只读核对、044精确readiness与关闭／隐私见[当前合同](follow-current-contract.md)。默认关闭，旧SQL／事实源／关闭态查询语义保持；本地证据与父验收状态见[本票执行](../../../plans/admin-workbench-integration/execution/t34.md)。
+
+## T43 同候选综合隔离证明（2026-10-15）
+
+[T43 执行记录](../../../plans/admin-workbench-integration/execution/t43.md)保留真正首例 baseline GREEN、原失败与最终同 MF 综合6/6、相关22/22、strict／一次build／artifact及自有资源释放。本次正常群／单聊／H5／电话代录均通过原入口形成规范 Ticket，由正式 bundle 回读并贯穿明确承接、交接、等待／补充、完工和合法下一轮。Bot的非空沟通责任与不同人的 Ticket 处理责任独立。
+
+本票唯一生产修补为原 closure 的收件身份 nullable guard：没有 Bot 身份不建立 Bot 卡片能力，合法人工等待仍提交并追加原事件；H5／代录不假造企业微信身份。真实新材料使旧复核命令409且不改变当前 Ticket／事件／责任。没有新 API、DTO、SQL、权限或默认开关。原H5补充的 SYSTEM／WEB_SUPPLEMENT_RECEIVED resume 与工作人员明确恢复分别核对，不将两者混为本人重开。
+
+正式产物截图及本地双主体／同profile双Target断网、UNKNOWN原UUID核对与失权清理已记录。外部身份、目录和 Sender 均为合成适配；不代表真实登录、真实消息到达、物理设备或生产容量验收。原开关默认false，部署／现场／full／certify／Gate继续按独立授权。

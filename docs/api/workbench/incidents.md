@@ -133,3 +133,11 @@ Report、历史、订阅、通知、来源和所选 subscription 的 DIRECT 渠�
 ## 分路投递控制（T33，默认关闭）
 
 当前专用授权、四个 HTTP 路由、v2 尝试快照、原 UUID 回执/恢复与显式 060 迁移见 [Incident 投递控制](incident-delivery-control.md)。读取或发布权、负责人身份和一般会话权限不授予此独立用途；通知状态变化不代替权限撤回。
+
+## T43 人工 Incident 与独立投递的综合证明（2026-10-15）
+
+[T43 执行记录](../../../plans/admin-workbench-integration/execution/t43.md)使用同一最终候选／MF，通过三条正常群报修、原关联候选和正式人工确认建立 Incident；个人 Ticket 状态／事件／责任全程不变。负责人目标须当前已可读，独立权限仍先于控制动作；HANDLER或负责人身份不额外授予重试／核对权。
+
+正式表单从空公开摘要开始，由用户填写、预览、明确确认后发布；内部 canary 不外发。正常与暂停订阅并存时，新公开进展只产生当前有效个人路径，暂停者与共享群均无新广播；原群生命周期通知保持独立。通过原 Worker／记录 Sender 核验成功个人路、群路UNKNOWN后确定未发重新排队，以及进展确定失败后的独立授权重试，不重发成功兄弟路。
+
+这是061同 MF 综合6/6中的一个完整 case，相关22/22及strict／一次build／artifact、自有PG／browser清理另有真实原件；没有新 API、Schema、业务表或授权规则。记录 Sender 不证明真实 WeCom 投递或用户已读；全部持久开关默认false，现场／部署／Gate未启动。
