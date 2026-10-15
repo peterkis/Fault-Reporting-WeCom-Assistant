@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHmac} from 'node:crypto';
 import {request as httpRequest} from 'node:http';
 import type {IncomingHttpHeaders} from 'node:http';
 import {withP2016IsolatedDatabase,assertNoP2016Residual} from './p2-016-postgres-harness.mjs';
@@ -45,6 +45,8 @@ import {createP2G1HumanOnlyAssembly} from '../../src/p2-g1-human-only-assembly.m
 import {createIncidentCorrelationWorker} from '../../src/p2-015-incident-correlation.mjs';
 import {createP2012CandidateReviewStore} from '../../src/p2-012-candidate-source-adapter.mjs';
 import {createYxxDelegatedIdentityMapping} from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import type {TicketAppNotificationOptions} from '../../contracts/workbench_app_notification_contracts.js';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -98,12 +100,19 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>,{syntheti
   // FULL_SERVICE_LOOP requires the original delegated mapping contract, unlike the read-only entry fixture.
   const memberConfig={...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:['synthetic-A','synthetic-B']};
   const identityMapping=await createYxxDelegatedIdentityMapping({config:memberConfig,accessTokenProvider:async()=> 't43-synthetic-mapping-only',fetchImpl:async input=>{const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(url.pathname,'/cgi-bin/batch/userid_to_openuserid');return new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'synthetic-A',open_userid:'t43-open-A'},{userid:'synthetic-B',open_userid:'t43-open-B'}]}));}});
+  const appTargets=new Map(memberConfig.reporterUserIds.map(userid=>[createHmac('sha256',entryKey).update(JSON.stringify(['member',memberConfig.corpId,memberConfig.agentId,userid])).digest('hex'),userid]));
+  const appNotifications:TicketAppNotificationOptions={enabled:syntheticDelivery,authority:{sourceCorpScope:memberConfig.corpId,sourceAppScope:memberConfig.agentId,channelAccountId:'T43_SYNTHETIC_APP_ACCOUNT',mappingConfigHash:identityMapping.configHash,mappingProofRef:memberConfig.proofRef,proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'},targetResolver:{localOnly:true,async resolveCurrentTarget(input){
+   input.signal.throwIfAborted();const checked=assertEpochMsString(String(Date.now())),base={schema_version:1,source_kind:input.source_kind,scope:input.scope,checked_at:formatEpochMsToShanghaiLocal(checked),checked_at_epoch_ms:checked};
+   const target=input.source_kind==='WEB_REQUEST'&&input.scope.sourceCorpScope===memberConfig.corpId&&input.scope.sourceAppScope===memberConfig.agentId&&input.scope.proofRef===memberConfig.proofRef?appTargets.get(input.scope.scopeHash):undefined;
+   if(!target)return {...base,state:'NOT_ELIGIBLE',reason:'NO_MAPPING'};
+   return {...base,state:'ELIGIBLE',target:{provider:'WECOM_APP',channel_account_id:'T43_SYNTHETIC_APP_ACCOUNT',target_type:'PERSON',target_id:target},verification:{mapping_config_hash:identityMapping.configHash,mapping_proof_ref:memberConfig.proofRef,binding_proof_ref:input.scope.proofRef,proof_kind:'SYNTHETIC',account_status:'ACTIVE',binding_state:'VERIFIED',message_reachability:'REACHABLE'}};
+  }}};
   let runtime:P2016EnabledRuntime|undefined,worker:ReturnType<typeof createP2016OrchestrationWorker>|undefined,tls:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,backendOrigin='';
   let failure:unknown;
   try{
    tls=await createYxxBrowserFixture({pool,createApp:({origin}:{origin:string})=>{
     const created=createYxxProfile({profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',pool,publicOrigin:origin,reporterOrigin:origin,listenPort:0,principalIds:principals,
-     reporterMemberEntry:memberConfig,identityMapping,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'t43-open-B':'t43-open-A'})},
+     reporterMemberEntry:memberConfig,identityMapping,appNotifications,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'t43-open-B':'t43-open-A'})},
      flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
      yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true},
      gatewayEnabled:false,senderEnabled:false,externalSendEnabled:syntheticDelivery,incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentPublicProgressEnabled:true,incidentOwnerTransferEnabled:true,incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,

@@ -30,6 +30,7 @@ test('T43 same original full service App admits group, direct, H5 and manual rep
    const cookie=f.browserCookies[0];assert.ok(cookie);
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:900,height:900,cookies:[cookie],certificateSpki:f.certificateSpki});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector(".page-title h1"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   await browser.waitFor('document.querySelectorAll(".board-column .column-cards").length===3');
    await browser.evaluate('document.querySelectorAll("button[aria-controls^=cards-][aria-expanded=false]").forEach(button=>button.click())');
    for(const target of canonical)await browser.waitFor(`Boolean(document.querySelector('article.ticket-card[data-kind="${target.kind}"][data-item-id="${target.id}"]'))`);
    assert.equal(await browser.evaluate('document.querySelectorAll("article.ticket-card").length'),4,'one canonical card per admitted source, no Ticket/review duplicate');
@@ -40,7 +41,7 @@ test('T43 same original full service App admits group, direct, H5 and manual rep
    assert.equal(await browser.evaluate('document.querySelector(".detail-heading")?.textContent.includes('+JSON.stringify(target.number)+')'),true);
    const visible=await admin.get('/api/workbench/items/'+target.kind+'/'+target.id);assert.equal(visible.status,200);assert.deepEqual(object(visible.body.item).id,target.id);
    console.log('T43_FOUR_SOURCES '+JSON.stringify({surface:'REAL_FULL_SERVICE_APP_PG_HTTP_PRODUCTION_REACT',normal_ingress:true,sources:all.map(x=>x.source),intake_ids:all.map(x=>x.intakeId),canonical,external_directory_calls:f.directoryCalls(),ai_enabled:false}));
-  }catch(error){failure=error;if(browser)console.log('T43_FIRST_DIAGNOSTIC '+JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}
+  }catch(error){failure=error;if(browser){try{console.log('T43_FIRST_DIAGNOSTIC '+JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}catch(diagnosticFailure){console.log('T43_SECONDARY_DIAGNOSTIC_FAILURE '+JSON.stringify({message:diagnosticFailure instanceof Error?diagnosticFailure.message:String(diagnosticFailure)}));}}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',purpose:'t43-four-source-first',screenshots}));
  });
