@@ -6028,6 +6028,78 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-session.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-denial.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7783,6 +7855,16 @@
       "tests/wbint-t39-activity-transport.test.mts",
       "tests/wbint-t39-related-review-activity.integration.test.mts",
       "tests/wbint-t39-activity-boundaries.browser.test.mts"
+    ],
+    "wbint-t19-manual-self-handling": [
+      "tests/wbint-t19-manual-self-handling.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-session.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-denial.browser.test.mts"
     ]
   },
   "subprocess_entries": {
