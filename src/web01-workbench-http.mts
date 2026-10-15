@@ -1,3 +1,4 @@
+import type {createWorkbenchReminders} from './workbench-reminders.mjs';
 import type {createWorkbenchFollow} from './workbench-follow.mjs';
 import {followCommand} from './workbench-follow.mjs';
 import type { WorkbenchHttpOptions } from './p2-006-workbench-http.mjs';
@@ -6,8 +7,13 @@ import { failP2016 } from './p2-016-domain-contracts.mjs';
 import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import {sourceGroupNameCommand} from './workbench-source-groups.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
-export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01WorkbenchQuery>,sourceGroups:ReturnType<typeof createWorkbenchSourceGroups>|null=null,workbenchFollowEnabled=false,follow:ReturnType<typeof createWorkbenchFollow>|null=null) {
+export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01WorkbenchQuery>,sourceGroups:ReturnType<typeof createWorkbenchSourceGroups>|null=null,workbenchFollowEnabled=false,follow:ReturnType<typeof createWorkbenchFollow>|null=null,reminders:ReturnType<typeof createWorkbenchReminders>|null=null) {
   return async({request,response,url,authContext,json,readJson,validateWriteRequest}: Context)=>{
+    if(url.pathname==='/api/workbench/reminders'){
+      if(!reminders)failP2016('DISABLED',503);
+      if(request.method!=='GET')failP2016('NOT_FOUND',404);
+      json(response,200,await reminders.page({authContext,parameters:url.searchParams}));return true;
+    }
     if(url.pathname==='/api/workbench/source-groups'||url.pathname.startsWith('/api/workbench/source-groups/')){
       if(!sourceGroups)failP2016('DISABLED',503);
       if(request.method==='GET'&&url.pathname==='/api/workbench/source-groups'){
