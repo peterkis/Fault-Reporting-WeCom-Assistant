@@ -97,7 +97,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
       return publicP2016({can_create:true,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});});
   }
   async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
-    guardP2016(selfHandlingEnabled);
+    guardP2016(enabled&&selfHandlingEnabled);
     if(!await selfHandlingSchemaReady(transaction))failP2016('SELF_HANDLING_UNAVAILABLE',503);
     const {principal}=await authorize(authContext,transaction);
     const teams=await transaction.query<{id:string;name:string}>(`SELECT rt.team_id AS id,rt.display_name AS name
@@ -111,9 +111,9 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
     if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
     return {principal:current.principal,teams:[...new Map(teams.rows.map(team=>[team.id,team])).values()]};
   }
-  async function selfHandlingContext(authContext:unknown):Promise<ManualReportSelfHandlingContext>{
+  async function selfHandlingContext(authContext:unknown,teamId?:string):Promise<ManualReportSelfHandlingContext>{
     return transactionP2016(pool,async tx=>{
-      await tx.query('SET TRANSACTION READ ONLY');const {teams}=await authorizeSelfHandling(authContext,tx);
+      await tx.query('SET TRANSACTION READ ONLY');const {teams}=await authorizeSelfHandling(authContext,tx,teamId);
       if(teams.length>100)failP2016('LIMIT_INVALID',503);
       return publicP2016({can_take_and_start:teams.length>0,resolver_teams:teams,manual_contact_required:true,external_notification:false,draft_recovery_enabled:draftRecoveryEnabled});
     });
@@ -225,8 +225,10 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
   return Object.freeze({
     async handler({request,response,url,authContext,readJson,validateWriteRequest,json}:HttpContext){
       if(url.pathname==='/api/workbench/reports/self-handling-context'){
-        if(request.method!=='GET')failP2016('NOT_FOUND',404);if(url.searchParams.size)failP2016();
-        json(response,200,await selfHandlingContext(authContext));return true;
+        if(request.method!=='GET')failP2016('NOT_FOUND',404);
+        const params=[...url.searchParams.keys()];if(params.length>1||params.some(key=>key!=='resolver_team_id'))failP2016();
+        const team=url.searchParams.get('resolver_team_id');if(team!==null&&!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))failP2016();
+        json(response,200,await selfHandlingContext(authContext,team??undefined));return true;
       }
       if(url.pathname==='/api/workbench/reports/take-and-start'){
         guardP2016(enabled&&selfHandlingEnabled);if(request.method!=='POST')failP2016('NOT_FOUND',404);if(url.searchParams.size)failP2016();
