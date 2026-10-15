@@ -15,7 +15,7 @@ test('T43 four normal origins traverse the same current Core, explicit human res
    const source=reports[index];assert.ok(source);const active=await start(f,source),id=text(active.id),number=text(active.ticket_no),path='/api/tickets/'+id,canary='T43_PRIVATE_ONLY_'+index+'_'+randomUUID();
    await observe(browser,f,id,number,'处理中');
    // Assignment and communication choices remain explicit and independent.
-   const beforeCommunication=(await get(admin,path+'/responsibility')).conversations;
+   const beforeCommunication:unknown=(await get(admin,path+'/responsibility')).conversations;
    await post(admin,path+'/transfer-assignment',{client_command_id:randomUUID(),expected_version:version(active.version),reason_code:'WORKBENCH_ASSIGN',target_principal_id:text(f.principals[1]),resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]});
    let current=await get(handler,path);assert.equal(current.assignee_id,f.principals[1]);assert.deepEqual((await get(admin,path+'/responsibility')).conversations,beforeCommunication);
    await post(handler,path+'/request-information',{client_command_id:randomUUID(),expected_version:version(current.version),reason_code:'WORKBENCH_REQUEST_INFORMATION',note:canary,external_visible:false});

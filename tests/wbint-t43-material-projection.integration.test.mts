@@ -24,7 +24,7 @@ test('T43 an actual unprojected normal Inbox receipt remains durable and only th
   JOIN conversation.realtime_event e ON e.source_id=ci.id::text AND e.aggregate_id=ci.id::text
   WHERE i.id=$1::uuid AND e.publisher_name='CONVERSATION_TIMELINE_PROJECTOR' AND e.source_type='CONVERSATION_ITEM'
    AND e.event_type='conversation.item.created' AND e.aggregate_type='CONVERSATION_ITEM' AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id`,[report.intakeId]);
- assert.equal((await count()).rowCount,0);assert.ok((await f.runtime.coordinator.backlog()).channel_messages>0);
+ assert.equal((await count()).rowCount,0);const backlog=await f.runtime.coordinator.backlog();if(backlog.disabled)throw Error('T43_COORDINATOR_DISABLED');assert.ok(backlog.channel_messages>0);
  await f.pump();const published=await count();assert.equal(published.rowCount,1);const event=published.rows[0];assert.ok(event);assert.ok(BigInt(event.event_id)>BigInt(text(baseline.as_of_event_id)));
  const current=await f.intake(report.intakeId),kind=current.ticketId?'ticket':'review',id=current.ticketId??current.reviewId;assert.ok(id);const item=await get(admin,'/api/workbench/items/'+kind+'/'+id);assert.equal(object(item.item).id,id);assert.equal((await f.runtime.coordinator.backlog()).total,0);
  const notifications=await f.pool.query<{count:number}>('SELECT count(*)::int AS count FROM conversation.realtime_event WHERE event_id=$1::bigint',[event.event_id]);assert.equal(notifications.rows[0]?.count,1);assert.equal(rows(baseline.items).length,0);

@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withT43Fixture,object,text,rows,version} from './helpers/t43-full-service-fixture.mjs';
+import type {Intake} from './helpers/t43-full-service-fixture.mjs';
 import {get,post,launch,screenshot,close} from './helpers/t43-service-actions.mjs';
 import type {Browser,Screenshot} from './helpers/t43-service-actions.mjs';
 
 test('T43 normal shared-group reports form a human-confirmed Incident, publish a separate safe personal summary and recover individual synthetic deliveries without mutating their Tickets',{timeout:240000},()=>withT43Fixture(async f=>{
  const admin=f.staff[0],handler=f.staff[1],dispatcher=f.staff[2],outsider=f.staff[3];assert.ok(admin&&handler&&dispatcher&&outsider);
- const reports=[];
+ const reports:Intake[]=[];
  for(const reporter of ['synthetic-A','synthetic-B','synthetic-C'])reports.push(await f.inbound('group','测试诊室断网。',reporter));
  for(let index=0;index<2;index++){const report=reports[index];assert.ok(report?.ticketId);const reference=(await f.pool.query<{public_ref:string}>('SELECT public_ref FROM pilot_ticket.reporter_public_ref WHERE ticket_id=$1::uuid',[report.ticketId])).rows[0];assert.ok(reference);const continued=await f.inbound('single','续接工单 '+reference.public_ref+'：测试诊室仍然断网。',index===0?'synthetic-A':'synthetic-B');assert.equal(continued.ticketId,report.ticketId,'the real source continuation must retain the original Core Ticket');}
  const candidate=await f.correlate(),candidatePath='/api/incident-candidates/'+candidate;
