@@ -92,7 +92,7 @@ export function BoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
 }
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null);
-  const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,plugins:[Feedback.configure({feedback:'none',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
+  const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
   return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')}>
     {children}
     {context.enabled?<div className="board-action-tools">
