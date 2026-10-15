@@ -151,6 +151,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       if(message.error)request.reject(new Error(typeof message.error.message==='string'&&message.error.message.trim()
         ?message.error.message.trim():'P2_006_BROWSER_COMMAND_FAILED'));else request.resolve(message.result);
     });
+    await command('Page.enable');
     await command('Runtime.enable');
     if(cookies.length){
       assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
