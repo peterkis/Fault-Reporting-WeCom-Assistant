@@ -16,7 +16,7 @@ async function people(origin:string,cookie:string,id:string){const response=awai
 async function waitPeople(origin:string,cookie:string,id:string,present:boolean){const until=Date.now()+20000;do{if((await people(origin,cookie,id)).some(person=>person.display_name==='林舟')===present)return;await delay(100);}while(Date.now()<until);assert.fail('current colleague presence did not reach '+present);}
 const network={latency:0,downloadThroughput:-1,uploadThroughput:-1};
 
-test('production list preloads do not view; real detail shows safe peers and offline/unmount stop presence',async()=>{
+test('production list preloads do not view; safe detail peers and controlled visibility/offline/unmount stop presence',async()=>{
   await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,runtime}:Fixture)=>{
     const ticket=tickets[5]?.ticket,actor=browserCookies[0],peer=cookies[2];assert.ok(ticket&&actor&&peer);let browser:Browser|undefined,error:unknown;
     try{
@@ -38,6 +38,14 @@ test('production list preloads do not view; real detail shows safe peers and off
       }
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',activity_safe_peer:true,screenshots}));
       assert.equal((await runtime.observability.metrics()).sse_clients,1);
+      // Only the platform visibility input is controlled; the rendered DOM,
+      // authorized HTTP leases, SSE closure and expiration remain actual.
+      await browser.evaluate('(()=>{globalThis.__t39Visible=false;Object.defineProperty(document,"visibilityState",{configurable:true,get:()=>globalThis.__t39Visible?"visible":"hidden"});document.dispatchEvent(new Event("visibilitychange"));})()');
+      await browser.waitFor('document.visibilityState==="hidden"&&!document.querySelector("[data-workbench-activity]")');
+      await waitPeople(origin,peer,ticket.id,false);
+      await browser.evaluate('globalThis.__t39Visible=true;document.dispatchEvent(new Event("visibilitychange"))');
+      await browser.waitFor('document.visibilityState==="visible"&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await waitPeople(origin,peer,ticket.id,true);
       await browser.command('Network.emulateNetworkConditions',{offline:true,...network});
       await browser.waitFor('navigator.onLine===false&&!document.querySelector("[data-workbench-activity]")');
       await waitPeople(origin,peer,ticket.id,false);
