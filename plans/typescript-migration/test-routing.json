@@ -6028,6 +6028,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-authority-navigation.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7784,6 +7793,9 @@
     ],
     "wbint-t42-capability-fallback": [
       "tests/wbint-t42-board-capability-fallback.browser.test.mts"
+    ],
+    "wbint-t42-authority-navigation": [
+      "tests/wbint-t42-board-authority-navigation.browser.test.mts"
     ]
   },
   "subprocess_entries": {

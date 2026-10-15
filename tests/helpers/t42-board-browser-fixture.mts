@@ -8,12 +8,12 @@ import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-ha
 import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
-export interface T42Fixture {pool:PostgresPool;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:P2016EnabledRuntime;restoreSelfHandlingResponses:()=>void}
+export interface T42Fixture {pool:PostgresPool;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string}[];runtime:P2016EnabledRuntime;restoreSelfHandlingResponses:()=>void}
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
-export async function withT42BoardBrowser(run:(f:T42Fixture,browser:Browser,card:string,get:(path:string)=>Promise<Record<string,unknown>>)=>Promise<void>,options:{width?:number;reduceMotion?:boolean;longTitle?:boolean;dropSelfHandlingResponses?:boolean;realtime?:boolean}={}){
-  const fixtureOptions={ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:true,workbenchBoardActionsEnabled:true,workbenchInternalNotesEnabled:true,workbenchRealtimeEnabled:options.realtime===true,dropSelfHandlingResponses:options.dropSelfHandlingResponses===true};
+export async function withT42BoardBrowser(run:(f:T42Fixture,browser:Browser,card:string,get:(path:string)=>Promise<Record<string,unknown>>)=>Promise<void>,options:{width?:number;reduceMotion?:boolean;longTitle?:boolean;dropSelfHandlingResponses?:boolean;realtime?:boolean;principalIndex?:number;assignment?:boolean}={}){
+  const fixtureOptions={ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:true,workbenchBoardActionsEnabled:true,workbenchInternalNotesEnabled:true,workbenchRealtimeEnabled:options.realtime===true,dropSelfHandlingResponses:options.dropSelfHandlingResponses===true,ticketAssignmentEnabled:options.assignment===true};
   await withWeb01Fixture(async(f:T42Fixture)=>{
-    const first=f.tickets[0],cookie=f.cookies[0],browserCookie=f.browserCookies[0];assert.ok(first&&cookie&&browserCookie);
+    const index=options.principalIndex??0,first=f.tickets[0],cookie=f.cookies[index],browserCookie=f.browserCookies[index];assert.ok(first&&cookie&&browserCookie);
     // Synthetic fixture-only material; no application transition, migration or new SQL file.
     if(options.longTitle)await f.pool.query('UPDATE pilot_ticket.ticket SET title=$2 WHERE id=$1::uuid',[first.ticket.id,'窄屏长内容：'+'当前获权的合成故障材料和位置说明。'.repeat(9)]);
     const initial=await f.runtime.coordinator.backlog(),bound=Math.ceil(initial.total/f.runtime.coordinator.batchSize)+3;let settled=false;
