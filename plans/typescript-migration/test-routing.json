@@ -5902,6 +5902,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t15-staff-reopen-current-authority-wait.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7606,6 +7615,9 @@
     ],
     "wbint-t36-team-and-recovery": [
       "tests/t36-team-and-recovery.browser.test.mts"
+    ],
+    "wbint-t15-staff-authority": [
+      "tests/wbint-t15-staff-reopen-current-authority-wait.integration.test.mts"
     ]
   },
   "subprocess_entries": {
