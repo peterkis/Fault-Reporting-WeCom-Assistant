@@ -1,0 +1,10 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_review_start_receipt.schema.json",
+  "title":"Read-only original MANUAL_REVIEW_START receipt without the command body",
+  "anyOf":[
+    {"type":"object","additionalProperties":false,"required":["client_command_id","review_id","state"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"review_id":{"type":"string","format":"uuid"},"state":{"const":"UNKNOWN"}}},
+    {"type":"object","additionalProperties":false,"required":["client_command_id","review_id","state","error"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"review_id":{"type":"string","format":"uuid"},"state":{"const":"FAILED"},"error":{"type":"object","additionalProperties":false,"required":["code","retryable"],"properties":{"code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"retryable":{"const":false}}}}},
+    {"type":"object","additionalProperties":false,"required":["client_command_id","review_id","state","ticket_id","ticket_version","ticket_event_id"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"review_id":{"type":"string","format":"uuid"},"state":{"const":"COMMITTED"},"ticket_id":{"type":"string","format":"uuid"},"ticket_version":{"type":"integer","minimum":1,"maximum":9007199254740991},"ticket_event_id":{"type":"string","format":"uuid"}}}
+  ]
+}
