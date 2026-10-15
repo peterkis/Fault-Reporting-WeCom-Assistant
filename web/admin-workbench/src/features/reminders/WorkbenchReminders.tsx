@@ -79,6 +79,10 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked}:{princ
   },[authority,enabled]);
   useEffect(()=>{if(realtime.status!=='live')invalidateEnvironment();},[realtime.status]);
   useEffect(()=>{
+    // The original successful business refresh clock also expires visuals while the auxiliary read is slow or unavailable.
+    const now=Date.now();setItems(previous=>{const kept=previous.filter(item=>now-Date.parse(item.occurred_at.replace(' ','T')+'+08:00')<600_000);return kept.length===previous.length?previous:kept;});
+  },[realtime.lastReadAt]);
+  useEffect(()=>{
     if(page.error){generation.current++;baseline.current=null;if(cluster.current!==null)window.clearTimeout(cluster.current);cluster.current=null;closeNotifications();}
     if(page.error instanceof ApiError&&[401,403,404].includes(page.error.status)){
       reset();try{localStorage.removeItem(REMINDER_PREFERENCES_KEY);}catch{/* Other storage is not touched. */}
