@@ -109,10 +109,10 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | WB-T06-A1 | POST | `/api/tickets/{ticketId}/assign` | W | 已挂载、默认关闭，验证进行中：明确内部处理人/组，不接单或开始 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
 | WB-T06-A2 | POST | `/api/tickets/{ticketId}/transfer-assignment` | W | 源码已挂载、默认关闭，待本候选验证：显式转派处理人/组，保留状态和轮次 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
 | WB-T06-Q1 | GET | `/api/tickets/{ticketId}/assignment-targets` | W | 已挂载、默认关闭，待本候选验证：当前工单权限下的有效处理组与明确所选组成员 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
-| WB-T07-A1 | POST | `/api/tickets/{ticketId}/takeover` | W（计划） | PLANNED／NOT_RUN：本人和实际有效组一起接管，保留状态及同轮首次责任依据；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
-| WB-T07-A2 | POST | `/api/tickets/{ticketId}/takeover-and-start` | W（计划） | PLANNED／NOT_RUN：本人接管与合法accept/start同事务；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
-| WB-T07-Q1 | GET | `/api/tickets/{ticketId}/takeover-targets` | W（计划） | PLANNED／NOT_RUN：当前Ticket原读权下本人实际有效组；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
-| WB-T07-Q2 | GET | `/api/tickets/{ticketId}/takeover/commands/{commandId}` | W（计划） | PLANNED／NOT_RUN：原UUID及专用用途的最小Ticket安全核对；尚未挂载 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-A1 | POST | `/api/tickets/{ticketId}/takeover` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，本人与实际有效组一起接管，保留状态及同轮首次责任依据 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-A2 | POST | `/api/tickets/{ticketId}/takeover-and-start` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，本人接管与合法accept/start同事务 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-Q1 | GET | `/api/tickets/{ticketId}/takeover-targets` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，当前Ticket原读权下本人实际有效组 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
+| WB-T07-Q2 | GET | `/api/tickets/{ticketId}/takeover/commands/{commandId}` | W | 已实现、本地验证、默认关闭：按接管和当前浏览器恢复能力条件挂载，原UUID及专用用途的最小Ticket安全核对 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
 | R03 | POST | `/api/manual-reviews/{reviewId}/resolve` | W | 已实现：人工结论 | [复核](workbench/manual-reviews.md) |
@@ -273,8 +273,8 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | POST | `/internal/v1/messages/{messageId}/media` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
 | POST | `/internal/v1/ai/triage` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
 | POST | `/internal/v1/wecom/card-actions` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
-| POST | `/api/yixiaoxiu/requests/{requestRef}/feedback` | WBINT-T20候选合同SOURCE_READY，未挂载／未验证 | [Web反馈候选](member/web-feedback-design.md) |
-| GET | `/api/yixiaoxiu/requests/{requestRef}/feedback/commands/{clientCommandId}` | WBINT-T20原命令只读恢复候选，未挂载／未验证 | [Web反馈候选](member/web-feedback-design.md) |
+| POST | `/api/yixiaoxiu/requests/{requestRef}/feedback` | M成员写扩展，T20已实现、本地验证、默认关闭：按本人反馈写能力条件挂载，原Reporter明确仍未解决 | [Web反馈合同与证据](member/web-feedback-design.md) |
+| GET | `/api/yixiaoxiu/requests/{requestRef}/feedback/commands/{clientCommandId}` | M成员扩展，T20已实现、本地验证、默认关闭：按本人反馈能力条件挂载，当前本人READ下原用途UUID只读核对，不要求新WRITE或敏感草稿恢复广告 | [Web反馈合同与证据](member/web-feedback-design.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/accept` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/start` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |
 | POST | `/api/v1/tickets/{ticketId}/actions/request-information` | 仅设计，未挂载 | [当前工单](workbench/tickets.md) |

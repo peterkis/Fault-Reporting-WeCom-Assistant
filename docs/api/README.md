@@ -17,7 +17,7 @@
 | 工单共享下次行动（T37，本地定向验证完成，默认关闭） | [共享跟进时间](workbench/follow-up-schedules.md) |
 | Bot单聊每轮首次责任／完工通知与真实隔离送达状态（默认关闭） | [轮次节点通知](workbench/tickets.md#bot-原报修人轮次通知读取wbint-t24)／[T24本地七项证据](../../plans/admin-workbench-integration/execution/t24.md) |
 | 本人同时承接工单与明确选择的真实沟通、保留原沟通人、24h恢复与安全核对（默认关闭） | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
-| 获权跨团队本人接管、人和实际有效组一起交接 | [T07 SOURCE合同](workbench/tickets.md#跨团队本人接管wbint-t07-source)：PLANNED／NOT_RUN，尚未挂载 |
+| 获权跨团队本人接管、人和实际有效组一起交接（默认关闭） | [T07 接管合同与本地验证](workbench/tickets.md#跨团队本人接管wbint-t07-source)：已实现，按独立接管能力条件挂载；[本地整票证据](../../plans/admin-workbench-integration/execution/t07.md)不代替现场授权 |
 | 24h当前浏览器备注恢复、原UNKNOWN操作的只读核对 | [草稿与只读核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | 精确补充修订的团队待跟进、明确内部处置与可靠绑定回复（T36，默认关闭；本地证据待父验收） | [当前精确跟进合同](workbench/supplement-follow-up-design.md)／[原七执行记录](../../plans/admin-workbench-integration/execution/t36.md) |
 | 本人实际看到材料后的独立阅读位置、原UUID安全核对与原 Session cursor（默认关闭） | [个人阅读位置](workbench/personal-read.md)／[T35执行记录](../../plans/admin-workbench-integration/execution/t35.md) |
