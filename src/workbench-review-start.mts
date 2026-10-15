@@ -7,7 +7,7 @@ import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {selfHandlingSchemaReady,selfHandlingResponsibilityEligibility,performFirstTicketResponsibilityInTransaction} from './workbench-ticket-self-handling.mjs';
-import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
+import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 
 export function normalizeReviewStartCommand(input:unknown):ReviewResolveAndStartCommand{
   const v=exactP2016(input,['client_command_id','expected_row_version','expected_material_basis','resolution_code','resolution_reason_code','expected_ticket','resolver_team_id','communication_choice','sessions']);
@@ -45,7 +45,25 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
     }
     return {principal:current,review};
   }
-  return Object.freeze({async perform({authContext,reviewId:inputReview,body}:{authContext:unknown;reviewId:unknown;body:unknown}){
+  return Object.freeze({
+    async context({authContext,reviewId:inputReview}:{authContext:unknown;reviewId:unknown}){
+      guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      const reviewId=uuidP2016(inputReview);
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');
+        const review=await reviews.getManualReviewDetail({authContext,reviewId,transaction}),principal=await query.principal(authContext,transaction);
+        if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+        const teams=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
+          JOIN pilot_ticket.pilot_team_member m ON m.team_id=rt.team_id WHERE m.principal_id=$1::uuid AND rt.is_active ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
+        const canonical=await reviews.canonicalItem({authContext,reviewId,transaction});
+        const ticket=canonical.kind==='ticket'?(await query.authorizedTicket({authContext,ticketId:canonical.id,transaction})).ticket:null;
+        const eligible=ticket?await selfHandlingResponsibilityEligibility(transaction,principal,ticket):null;
+        return publicP2016({review_id:reviewId,expected_ticket:ticket?{ticket_id:ticket.id,expected_version:ticket.version}:null,
+          resolver_team_id:ticket?.resolver_team_id??null,resolver_teams:teams.rows,
+          allowed:review.status==='PENDING'&&review.allowed_resolutions.includes('CONFIRM_TICKET_ELIGIBLE')&&(!eligible||eligible.actions.includes('take-and-start'))});
+      });
+    },
+    async perform({authContext,reviewId:inputReview,body}:{authContext:unknown;reviewId:unknown;body:unknown}){
     guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
     const reviewId=uuidP2016(inputReview),input=normalizeReviewStartCommand(body),command={...input,review_id:reviewId,action:'MANUAL_REVIEW_START'};
     return ledger.execute({command,authorize:tx=>authorize(authContext,reviewId,input,tx),afterReceiptLock:async tx=>{await authorize(authContext,reviewId,input,tx);},run:async tx=>{

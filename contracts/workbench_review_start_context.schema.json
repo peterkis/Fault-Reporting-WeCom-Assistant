@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Current explicit review-and-start choices",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["review_id","expected_ticket","resolver_team_id","resolver_teams","allowed"],
+  "properties":{
+    "review_id":{"type":"string","format":"uuid"},
+    "expected_ticket":{"oneOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["ticket_id","expected_version"],"properties":{"ticket_id":{"type":"string","format":"uuid"},"expected_version":{"type":"integer","minimum":1,"maximum":2147483647}}}]},
+    "resolver_team_id":{"oneOf":[{"type":"null"},{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"}]},
+    "resolver_teams":{"type":"array","maxItems":100,"items":{"type":"object","additionalProperties":false,"required":["team_id","display_name"],"properties":{"team_id":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"display_name":{"type":"string","minLength":1,"maxLength":200}}}},
+    "allowed":{"type":"boolean"}
+  }
+}
