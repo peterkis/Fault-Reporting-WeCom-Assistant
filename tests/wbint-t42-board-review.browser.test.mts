@@ -127,6 +127,7 @@ test('T42 board action requires an explicit current review conclusion before the
       const alias=await get('/api/workbench/items/review/'+reviewId);assert.equal(object(alias.item).id,known.ticket.id);
       const active=list((await get('/api/workbench/board?column=active')).items),pending=list((await get('/api/workbench/board?column=pending')).items);
       assert.equal(active.filter(value=>value.id===known.ticket.id).length,1);assert.ok(![...active,...pending].some(value=>value.kind==='review'&&value.id===reviewId));
+      await browser.waitFor(`Boolean(document.querySelector('.board-column.active [data-kind="ticket"][data-item-id="${known.ticket.id}"]'))&&!document.querySelector('.board-column.pending [data-kind="ticket"][data-item-id="${known.ticket.id}"]')`);
       assert.deepEqual(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'),contextBefore,'the same authorized Item workspace must stay open without navigation or reload');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog[open] #detail-title'))"),true);
       assert.equal(await browser.evaluate(`document.querySelectorAll('[data-kind="ticket"][data-item-id="${known.ticket.id}"]').length`),1);
