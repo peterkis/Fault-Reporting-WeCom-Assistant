@@ -50,8 +50,8 @@ test('T40 a retained Bot item and realtime event physically expire during a real
   assert.ok(Array.isArray(before.value.items)&&before.value.items.length>0);
   const id=source.sourceRef.slice('channel:'.length);
   const deadline=(await f.pool.query<{epoch:string}>(`SELECT (platform.physical_epoch_ms()+2000)::text AS epoch`)).rows[0]?.epoch;assert.ok(deadline);
-  await f.pool.query(`UPDATE conversation.item SET retention_until=platform.local_from_epoch_ms($2::bigint) WHERE source_type='CHANNEL_MESSAGE' AND source_id=$1`,[id,deadline]);
-  await f.pool.query(`UPDATE conversation.realtime_event SET expires_at=platform.local_from_epoch_ms($2::bigint)
+  await f.pool.query(`UPDATE conversation.item SET retention_until=platform.local_from_epoch_ms($2::bigint),retention_until_epoch_ms=$2::bigint WHERE source_type='CHANNEL_MESSAGE' AND source_id=$1`,[id,deadline]);
+  await f.pool.query(`UPDATE conversation.realtime_event SET expires_at=platform.local_from_epoch_ms($2::bigint),expires_epoch_ms=$2::bigint
     WHERE source_type='CONVERSATION_ITEM' AND source_id IN (SELECT id::text FROM conversation.item WHERE source_type='CHANNEL_MESSAGE' AND source_id=$1)`,[id,deadline]);
   const response=await atRealTicketTableWait(f,path,async()=>{
     while(BigInt(text((await f.pool.query<{epoch:string}>(`SELECT platform.physical_epoch_ms()::text AS epoch`)).rows[0]?.epoch))<=BigInt(deadline))await delay(20);

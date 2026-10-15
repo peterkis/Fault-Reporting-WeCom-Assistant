@@ -185,7 +185,9 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
           '/api/workbench/items/ticket/'+ticketId,
           '/api/workbench/items/ticket/'+ticketId+'/read-position']) {
           const response=await http.get(endpoint);assert.equal(response.status,200,endpoint);
-          facts[endpoint]=response.value;
+          if(endpoint==='/api/workbench/items/ticket/'+ticketId){
+            const attention=object(object(response.value.item).attention);assert.equal(typeof attention.following,'boolean');assert.match(text(attention.follow_version),/^[a-f0-9]{64}$/u);facts[endpoint]=attention;
+          }else facts[endpoint]=response.value;
         }
         return facts;
       };
