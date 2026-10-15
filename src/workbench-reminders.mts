@@ -81,7 +81,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         const sql=CARD_SQL+`, eligible AS (
           SELECT cards.*,(${RELATED_CARD_SQL}${followEnabled?` OR ${FOLLOW_CARD_SQL}`:''}) AS related FROM cards
         ), anchors AS (
-          SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id
+          SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id,i.source_provider,i.primary_web_submission_id
           FROM eligible c JOIN intake.service_intake i ON i.id=c.intake_id::uuid AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
           WHERE i.source_provider<>'YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM intake.web_request_binding binding
             WHERE binding.intake_id=i.id AND binding.revoked_at IS NULL AND binding.retention_until_epoch_ms>platform.physical_epoch_ms())
@@ -99,7 +99,15 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
             (e.aggregate_type='TICKET' AND a.kind='ticket' AND e.aggregate_id=a.id
              OR e.aggregate_type='MANUAL_REVIEW' AND a.kind='review' AND e.aggregate_id=a.id
              OR e.aggregate_type='CONVERSATION_SESSION' AND EXISTS(SELECT 1 FROM conversation.session s WHERE s.id::text=e.aggregate_id AND s.service_intake_id=a.original_id))
-          WHERE a.initial_at>$4::timestamp AND (
+          WHERE (a.initial_at>$4::timestamp OR (a.initial_at=date_trunc('second',$4::timestamp) AND (
+            -- These two original admission paths omit id and use the server's native uuidv7 default.
+            a.source_provider IN ('WECOM_AIBOT','STAFF_MANUAL_REPORT') AND uuid_extract_version(a.original_id)=7
+              AND uuid_extract_timestamp(a.original_id)>($4::timestamp AT TIME ZONE 'Asia/Shanghai')
+            OR a.source_provider='YIXIAOXIU_WEB' AND EXISTS(SELECT 1 FROM intake.web_submission original
+              WHERE original.id=a.primary_web_submission_id AND original.intake_id=a.original_id AND original.kind='SUBMIT'
+                AND original.retention_until_epoch_ms>platform.physical_epoch_ms()
+                AND original.received_epoch_ms::numeric>extract(epoch FROM ($4::timestamp AT TIME ZONE 'Asia/Shanghai'))*1000)
+          ))) AND (
             e.source_type='TICKET_EVENT' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_event first_event WHERE first_event.event_id::text=e.source_id AND first_event.event_type='ticket.created')
             OR e.source_type='MANUAL_REVIEW' AND e.event_type='manual_review.created'
             OR e.source_type='CONVERSATION_SESSION' AND e.event_type='conversation.session.created')
@@ -108,7 +116,9 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
             'ticket-event:'||te.event_id::text,te.aggregate_version::text,te.created_at,e.event_id
           FROM anchors a JOIN pilot_ticket.ticket_event te ON a.kind='ticket' AND te.ticket_id::text=a.id
           JOIN conversation.realtime_event e ON e.source_type='TICKET_EVENT' AND e.source_id=te.event_id::text AND e.aggregate_id=a.id
-          WHERE a.related AND te.event_type='ticket.reopened' AND te.created_at>$4::timestamp
+          WHERE a.related AND te.event_type='ticket.reopened' AND (te.created_at>$4::timestamp
+            OR (te.created_at=date_trunc('second',$4::timestamp) AND uuid_extract_version(te.event_id)=7
+              AND uuid_extract_timestamp(te.event_id)>($4::timestamp AT TIME ZONE 'Asia/Shanghai')))
           UNION ALL
           SELECT a.kind,a.id,'RELATED_NEW_MATERIAL','web:'||submission.id::text,submission.input_revision::text,submission.received_at,e.event_id
           FROM readable_material a JOIN intake.web_submission submission ON submission.intake_id=a.material_id AND submission.kind='SUPPLEMENT'
@@ -116,7 +126,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           JOIN pilot_ticket.ticket_event te ON a.kind='ticket' AND te.ticket_id::text=a.id
             AND te.event_type IN ('ticket.information_added','ticket.resumed') AND te.reason_code IN ('WEB_SUPPLEMENT_RECEIVED','WEB_SUPPLEMENT_RESUME')
           JOIN conversation.realtime_event e ON e.source_type='TICKET_EVENT' AND e.source_id=te.event_id::text AND e.aggregate_id=a.id
-          WHERE a.related AND submission.received_at>$4::timestamp AND submission.received_at<=te.created_at
+          WHERE a.related AND submission.received_epoch_ms::numeric>extract(epoch FROM ($4::timestamp AT TIME ZONE 'Asia/Shanghai'))*1000 AND submission.received_at<=te.created_at
             AND submission.input_revision<=binding.processed_revision AND binding.retention_until_epoch_ms>platform.physical_epoch_ms()
             AND submission.retention_until_epoch_ms>platform.physical_epoch_ms()
           UNION ALL
@@ -125,7 +135,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           JOIN channel.message_inbox m ON m.id=rel.channel_message_id AND m.retention_until_epoch_ms>platform.physical_epoch_ms()
           JOIN conversation.item ci ON ci.source_type='CHANNEL_MESSAGE' AND ci.source_id=m.id::text AND ci.item_type='USER_MESSAGE'
           JOIN conversation.realtime_event e ON e.source_type='CONVERSATION_ITEM' AND e.source_id=ci.id::text
-          WHERE a.related AND m.received_at>$4::timestamp AND ci.retention_until_epoch_ms>platform.physical_epoch_ms()
+          WHERE a.related AND m.received_epoch_ms::numeric>extract(epoch FROM ($4::timestamp AT TIME ZONE 'Asia/Shanghai'))*1000 AND ci.retention_until_epoch_ms>platform.physical_epoch_ms()
             AND (rel.relation_type='SUPPLEMENT' OR (a.kind='ticket' AND rel.relation_type='PRIMARY' AND EXISTS(
               SELECT 1 FROM intake.channel_leg later JOIN intake.channel_leg basis ON basis.journey_id=later.journey_id
               JOIN intake.contact_journey journey ON journey.id=later.journey_id
@@ -139,7 +149,8 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           JOIN pilot_ticket.ticket t ON t.id=signal.ticket_id
           JOIN conversation.realtime_event e ON e.publisher_name='P2_016_FOLLOW_UP' AND e.event_variant='FOLLOW_UP_DUE'
             AND e.source_id=schedule.scheduled_event_id::text AND e.aggregate_id=a.id
-          WHERE a.related AND signal.published_at>$4::timestamp AND schedule.scheduled_event_id IS NOT NULL
+          -- The original due publisher commits its marker and this realtime event together; its event window is exact.
+          WHERE a.related AND schedule.scheduled_event_id IS NOT NULL
             AND schedule.due_epoch_ms<=platform.physical_epoch_ms() AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
             AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_event ended JOIN pilot_ticket.ticket_event scheduled ON scheduled.event_id=schedule.scheduled_event_id
               WHERE ended.ticket_id=t.id AND ended.event_ordinal>scheduled.event_ordinal AND (ended.new_status IN ('CLOSED','CANCELLED') OR ended.event_type='ticket.reopened'))
