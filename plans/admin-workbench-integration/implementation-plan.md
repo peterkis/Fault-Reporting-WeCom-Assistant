@@ -28,7 +28,7 @@ execution_status: IN_PROGRESS
 | WBINT-09 | 现有公共故障工作区 | 01 | LOCAL_VERIFIED：[T27公共故障候选](execution/t27.md)与[T28现有跟进动作](execution/t28.md)原七项均已核对、集成并关票；A09本地完成，T28原诊断FAIL保留；不代表全部43票、正式现场或Gate批准 | A09 |
 | WBINT-10 | 公共故障责任／记录／发布 | 09 | LOCAL_VERIFIED：[T29已有读取权的负责人交接](execution/t29.md)、[T30内部处置](execution/t30.md)、[T31显式安全发布](execution/t31.md)原七项均已父核、独立集成并原生CLOSED/completed；A10本地完成，历史失败与原被测身份保留，默认关闭、未发布／启用 | A10 |
 | WBINT-11 | 通知异常队列与恢复 | 08、10 | LOCAL_VERIFIED：[T32获权异常查询](execution/t32.md)与[T33专用权限／受控重试和结果核对](execution/t33.md)原七均已父核、非实现者集成并原生CLOSED/completed；A11本地完成，默认关闭／无现场或Gate授权 | A11 |
-| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | IN_PROGRESS；[T34明确关注与当前获权责任并集](execution/t34.md)、[T35个人已读](execution/t35.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；T36依赖已完成但实施未完，A12整组仍待T36；默认关闭／无生产或Gate授权 | A12 |
+| WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | LOCAL_VERIFIED：[T34明确关注](execution/t34.md)、[T35个人已读](execution/t35.md)、[T36确切补充处置及原可靠回复](execution/t36.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；A12本地完成，分对象证据／原FAIL／预算FALSE／采集及清理范围限制保留；默认关闭，无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | IN_PROGRESS；T38 CLOSED，T39／T40已领取，仅Source准备未验收 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
 | WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |

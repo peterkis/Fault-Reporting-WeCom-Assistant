@@ -87,3 +87,7 @@ backlog_state: IN_PROGRESS
 真实OAuth／成员枚举、群消息推送真正强@指定Reporter、Bot私聊与应用通知实际送达、真实源群改名／权限／人员离组，以及部署后运行行为，均不能从本地合成结果推导。计划不创建本次现场授权。既有场景若有定向批准，先核对对象、范围与停止线，不沿用为新全链批准。
 
 阶段状态继续按架构基线／当前计划核验：最后完成Gate为P2-G1，P2-G2-LIVE／P2-008及后续阶段停止线保留。最终交接必须并列列出本地通过项、未运行项和仍需外部环境证明的能力。
+
+## A12 本地贡献：T36（PENDING_PARENT）
+
+T36原七逐字及对应本地风险/HTTP/正式制品证据列于[执行记录](execution/t36.md)。明确处置或非空全部必要原Delivery可核验成功只解除原exact修订；新修订继续pending，获权同事不附owner前提。当前GET、UUID/当前授权/留存、independent encrypted purpose、defaultfalse/062及cold旧宿主兼容均有分对象证据，原FAIL和工具窗口预算FALSE仍保留。最终自有清理与独立Source/Doc/保护引用由Dhandoff绑定；A12整组和原七父验收仍待定，原验收行和其它票不改。
