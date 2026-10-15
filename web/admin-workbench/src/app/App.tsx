@@ -40,6 +40,7 @@ import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMateri
 import {SupplementFollowUp,SupplementFollowUpSummary} from '../features/supplement-follow-up/SupplementFollowUp';
 import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
 import {useManualReportAuthority} from '../features/manual-report/use-manual-report-draft';
+import {ActivityPeople} from '../features/activity/ActivityPeople';
 import {useWorkbenchRealtime,realtimeLabels} from '../realtime/useRealtime';
 import type {RealtimeView} from '../realtime/useRealtime';
 
@@ -183,6 +184,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
     dialog.current?.showModal();
     return()=>{dialog.current?.close();if(previousFocus.current?.isConnected)previousFocus.current.focus();};
   },[fullPage]);
+  const activityRoot=useRef<HTMLDivElement>(null);
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
   // Re-reading an open item must not take focus from an editor or move its target.
   const detailPresent=Boolean(detail);
@@ -194,9 +196,10 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
     <div className="detail-navigation"><button className="icon-button" aria-label="关闭详情" title="返回工作台" disabled={commandsBlocked} onClick={close}>{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</button>
       {!fullPage?<><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace><ArrowUpRight size={18}/></Link><button className="icon-button" aria-label="上一项" title="上一项（已加载范围）" disabled={!previous||commandsBlocked} onClick={()=>move(previous)}><ChevronUp size={18}/></button><button className="icon-button" aria-label="下一项" title="下一项（已加载范围）" disabled={!next||commandsBlocked} onClick={()=>move(next)}><ChevronDown size={18}/></button></>:null}
       <span>事项详情</span>{!fullPage?<Link className="full-page-link" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace>展开完整页面<ArrowUpRight size={14}/></Link>:null}</div>
-    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body">
+    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body" ref={activityRoot}>
       {result.isError?<p role="status" className="confirmed-facts">读取中断，以下为最近已确认资料；连接恢复后重新核验。</p>:null}
       <header className="detail-heading"><div className="context-line">{detail.item.number}<span>· {detail.item.kind==='ticket'?'工单':detail.item.kind==='review'?'未建单复核事项':'未建单受理事项'}</span></div><h2 id="detail-title" ref={pageHeading} tabIndex={fullPage?-1:undefined}>{detail.item.title}</h2></header>
+      <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError}/>
       <section className="properties" aria-label="事项信息"><dl>
         <dt>状态</dt><dd><Status item={detail.item}/></dd>
         <dt>处理责任</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd>

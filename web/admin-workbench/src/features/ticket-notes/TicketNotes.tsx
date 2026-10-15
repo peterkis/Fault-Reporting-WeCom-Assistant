@@ -47,10 +47,10 @@ export function TicketNotes({ticketId,principal,onBlockedChange}:{ticketId:strin
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const checkReceipt=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({commandId:draft.operationId,signal:controller.signal});};
   if(context.isPending)return <p role="status">正在读取工单动作与版本…</p>;
-  if(context.isError&&!context.data)return <section className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><button type="button" onClick={()=>{void context.refetch();}}>重新读取工单动作</button></section>;
+  if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><button type="button" onClick={()=>{void context.refetch();}}>重新读取工单动作</button></section>;
   if(!context.data)return <p role="status">正在重新核验工单动作…</p>;
   const allowed=context.data.allowed_actions.includes('add-note');
-  return <section className="ticket-notes" aria-label="工单操作">
+  return <section data-activity-field="internal-note" className="ticket-notes" aria-label="工单操作">
     {context.isError?<p role="status">动作读取失败；最近确认资料和输入已保留，请重新读取后提交新的操作。</p>:null}
     <p className="ticket-command-version">工单版本 {context.data.version}</p>
     <p className="ticket-allowed-actions">当前获权动作：{context.data.allowed_actions.map(action=>actionNames[action]??action).join('、')||'无'}</p>

@@ -38,6 +38,7 @@ export interface RealtimeClientOptions {
   capability:WorkbenchRealtimeCapability;
   connect:(endpoint:string)=>RealtimeTransport;
   refresh:(signal:AbortSignal)=>Promise<{available:boolean}>;
+  activityTick?:(signal:AbortSignal,isLive:boolean)=>Promise<void>;
   authorizationDenied:(error:unknown)=>boolean;
   report:(state:{status:WorkbenchRealtimeStatus;lastReadAt:number|null})=>void;
   now:()=>number;
@@ -62,7 +63,7 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     const current=options.connect(options.capability.sse_endpoint as string),epoch=++sourceEpoch;source=current;
     const valid=()=>alive()&&source===current&&epoch===sourceEpoch;
     unlisten=[current.listen('open',()=>{if(valid()){report('live');refresh();}}),current.listen('error',()=>{if(valid()){report(current.state()===2?'polling':'reconnecting');refresh();}}),
-      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){decodeWorkbenchRealtimeHint(event.data,name);refresh();}})),current.listen('message',()=>{if(valid())refresh();})];
+      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){decodeWorkbenchRealtimeHint(event.data,name);refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}')refresh();})]:[]),current.listen('message',()=>{if(valid())refresh();})];
     report('connecting');
   }
   function refresh(){
@@ -71,7 +72,8 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     const cycle=new AbortController();request=cycle;
     let expired=false;
     const deadline=new Promise<never>((_resolve,reject)=>{timer=options.schedule(()=>{timer=null;expired=true;cycle.abort();if(alive())report('offline');reject(new Error('WORKBENCH_REFRESH_TIMED_OUT'));},interval);});
-    void Promise.race([options.refresh(cycle.signal),deadline]).then(result=>{
+    const refreshed=options.refresh(cycle.signal),withActivity=options.activityTick?refreshed.then(async result=>{if(alive()&&!cycle.signal.aborted)await options.activityTick?.(cycle.signal,source?.state()===1);return result;}):refreshed;
+    void Promise.race([withActivity,deadline]).then(result=>{
       if(!alive()||cycle.signal.aborted)return;
       available=result.available;lastReadAt=options.now();
       if(!available){closeSource();report('polling');}

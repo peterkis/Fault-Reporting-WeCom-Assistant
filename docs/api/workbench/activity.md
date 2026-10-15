@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [实时事件](../platform/realtime.md)
 
-2026-10-09 合同已冻结，当前为 `SOURCE_READY_FOR_ORIGINAL_RED / NOT_IMPLEMENTED`。以下路径是本票待挂载合同，不能按现有可用接口调用。本票全部七项条件仍待实现及验证；首条真实 HTTP RED 只是第一个行为切片。
+2026-10-15 合同保持冻结，当前为 SOURCE_CANDIDATE_NOT_BUILT_NOT_RUN。以下路径已有默认关闭的源码接线，尚未构建、运行或验收。本票全部七项条件仍 PENDING；原未实施基线及首条真实 HTTP RED 的后续顺序见文末。
 
 ## 输入、输出与限值
 
@@ -62,3 +62,18 @@
 本票准备树普通合入固定 `f941e24e74e65a0181024f38bf1ac38bc947ea4e`；该输入已包含父任务完成的 T33 和当前实际 registry 630 entries／160 selections／364 resources。本轮仅继承这些来源与当前授权／流／草稿／目录边界，不把 T33 或 T36 用途扩为 presence 权限。Root 完整 tuple、scalar、原成员次序与本票原一 HTTP entry／三合同 resource 并集为 631／160／367。原 3118B HTTP 首例、三份 closed Schema／DTS、上述 TTL15秒／心跳5秒及全部字段、数量、授权、隐私边界保持冻结。
 
 生产仍没有本票活动挂载；原 helper 只保留 workbenchActivityEnabled=false 和两处 bare runtime 参数透传，没有包装或重复开关。本轮无新 case、模块、数据库／DDL或永久事实，真实 SSE／可控时钟／浏览器及业务验证全部 NOT_RUN。原七项全部 PENDING，当前只完成有限 Source 同步，不构成验收或清理PASS。精确普通两parent、真实Git blob／物理raw、旧SQL／Evidence／用户六原件和实际native见 D:/wecom-workbench-evidence/t39/prepared/source-sync-rootf941-20261014/handoff.json。未来独占 WHOLE 仍须再合最新 Root 后运行未改原first取得真实RED，才最小实现与收口。
+
+
+## 2026-10-15 当前源码候选与运行停止线
+
+用户已授权全部43票与多子代理并行。T15仍独占heavy；本票只准备源码，七项全部PENDING，types/build/artifact/tests/PG/HTTP/SSE/browser/cleanup全部NOT_BUILT_NOT_RUN。没有实际RED/GREEN/PASS。
+
+普通合入固定Root940cf3167733de403c2b67b01c39904f0056ad69后的未实施基线为54b0b64163cf0708626e00b0373a6ba6a7941571，tree5ee23a14d69d77fb64dc83ebfb3c4ecbe24a62eb，两parent为原9b6863与上述Root。资源追加冲突仅保留并集。D中保存完整raw/trueGit及该基线真Git ZIP；原3118B first SHAab32056e7c3fb7e71b4d14f568298a4b5a2648ee17b3beb05efae5a3e2ec9f91、三份冻结合同、继承46SQL不改。未来WHOLE须先在这个未实施固定基线上构建并运行原first取得实际结果，再切换当前候选，不把预期失败记为RED。
+
+当前源码候选包括单App有界ephemeral service、Cookie/CSRF/32KiB HTTP、原规范事项READ和真实字段权限查询、原SSE writer中无id的workbench.activity.changed帧、T38原5秒refresh可选tick、详情IntersectionObserver及受信input/change/pointer/key/scroll活动。默认workbenchActivityEnabled=false；默认关闭不创建service/lease、不订阅新帧、不发activity POST。没有新EventSource/timer/池/迁移/心跳业务写表/已读推进/责任变更或事实源。应用stop清空临时状态，原成功登出移除当前认证绑定；后台、断线、卸载清空本地提示并尽力释放，释放未知结果由最后15秒租期失效。恢复须重验当前详情并有新的实际活动。
+
+原TTL15秒、heartbeat5秒、view idle60秒、edit idle10秒、browser2对象/principal4标签/App64标签128租约/对象16租约保持。当前双方对象和字段权限在续租/read/hint重查，view只给安全姓名、模式、期限且排除自己/去重；hint不含身份、字段或正文。4个公开service可控时钟/授权边界case仅准备源码，新增STAGED_RUNTIME、node_flags=[]、PG=false/browser=false登记；旧entry tuple/scalar、selection原成员顺序和72legacy aliases保持。
+
+后续WHOLE仍须原first实际RED、当前strict/build/artifact、公开service case、真实HTTP字段权限/隐藏对象/失权/容量/CSRF/OFF、真实唯一SSE的TTL/隐私/backpressure/durable cursor不变、正式bundle可见性/受信编辑/预取/后台/断线/重连/退出/多标签上限、业务事实零副作用、双轴独立审查、当前源制品绑定与自有清理、父验收和独立集成。WBINT-13/A13中T39贡献仍PENDING。fixture max4、应用总池建议8、SSE32及单App/Worker/Gateway单活保持；无真实外部服务/发送、用户库、部署、push/PR、full/certify/Gate。
+
+精确候选commit/tree/真实路径、冻结字节、静态并集、观察器错误和纠正、全NOT_RUN及STOP见D:/wecom-workbench-evidence/t39/prepared/source-forward-root940cf-20261015/handoff.json。本次SOURCE后STOP，后续heavy另授，不写父coordinator或GitHub。

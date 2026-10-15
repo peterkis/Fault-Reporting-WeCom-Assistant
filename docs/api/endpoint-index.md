@@ -53,8 +53,8 @@
 | MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
 | MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |
 | MR04 | GET | `/api/workbench/reporter-candidates` | W | 已挂载、默认关闭；当前应用／对象获权候选，q/limit/cursor 有界；仅明确选择后才可提交 | [候选查询](workbench/manual-reports.md#2-候选查询-get) |
-| A01 | POST | `/api/workbench/activity` | W | T39候选合同，尚未挂载：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
-| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | T39候选合同，尚未挂载：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
+| A01 | POST | `/api/workbench/activity` | W | T39源码候选，未构建／未运行：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
+| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | T39源码候选，未构建／未运行：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |
