@@ -5985,6 +5985,150 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/wbint-t39-activity.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-service.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-transport.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-related-review-activity.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-boundaries.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-session.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-denial.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-http-boundaries.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-capacity.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-lifecycle.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/wbint-t40-reminder-first.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7154,7 +7298,9 @@
       "tests/wbint-t34-explicit-follow.integration.test.mts",
       "tests/wbint-t34-follow.integration.test.mts",
       "tests/wbint-t15-review-start.integration.test.mts",
-      "tests/wbint-t15-review-start.browser.test.mts"
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/wbint-t39-activity.integration.test.mts",
+      "tests/wbint-t39-activity-service.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -7790,6 +7936,30 @@
       "tests/t20-staff-reopen-read-only.integration.test.mts",
       "tests/p2-016-contracts.test.mjs",
       "tests/p2-016-workbench-http.integration.test.mjs"
+    ],
+    "wbint-t39-activity": [
+      "tests/wbint-t39-activity.integration.test.mts",
+      "tests/wbint-t39-activity-service.test.mts"
+    ],
+    "wbint-t39-review-fixes": [
+      "tests/wbint-t39-activity-transport.test.mts",
+      "tests/wbint-t39-related-review-activity.integration.test.mts",
+      "tests/wbint-t39-activity-boundaries.browser.test.mts"
+    ],
+    "wbint-t19-manual-self-handling": [
+      "tests/wbint-t19-manual-self-handling.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-session.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-denial.browser.test.mts"
+    ],
+    "wbint-t39-whole-boundaries": [
+      "tests/wbint-t39-activity-http-boundaries.integration.test.mts",
+      "tests/wbint-t39-activity-capacity.test.mts",
+      "tests/wbint-t39-activity-lifecycle.browser.test.mts"
     ],
     "wbint-t40-first": [
       "tests/wbint-t40-reminder-first.browser.test.mts"

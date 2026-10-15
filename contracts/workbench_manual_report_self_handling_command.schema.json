@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_manual_report_self_handling_command.schema.json",
+  "title":"Proposed WBINT-T19 authenticated staff report and immediate self handling",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","client_command_id","source","description","location","reporter","resolver_team_id"],
+  "properties":{
+    "schema_version":{"const":1},"client_command_id":{"type":"string","format":"uuid"},
+    "source":{"enum":["PHONE","ON_SITE"]},"description":{"type":"string","minLength":1,"maxLength":4000},
+    "location":{"$ref":"workbench_manual_report_command.schema.json#/properties/location"},
+    "reporter":{"$ref":"workbench_manual_report_command.schema.json#/properties/reporter"},
+    "resolver_team_id":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"}
+  }
+}

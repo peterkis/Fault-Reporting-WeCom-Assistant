@@ -1,3 +1,4 @@
+import {activityTransport,flushActivity} from '../features/activity/client';
 import {useEffect,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,advanceWorkbenchAuthorizationEpoch,setWorkbenchTransportWritable} from '../api/client';
@@ -14,7 +15,7 @@ class IdentityChanged extends Error{}
 export interface RealtimeView {status:WorkbenchRealtimeStatus;lastReadAt:number|null}
 export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView{
   const client=useQueryClient(),[view,setView]=useState<RealtimeView>({status:'disabled',lastReadAt:null});
-  const key=principal?identity(principal):'',enabled=principal?.realtime_sse_enabled??false,interval=principal?.polling_interval_ms??5000;
+  const key=principal?identity(principal):'',enabled=principal?.realtime_sse_enabled??false,activityEnabled=principal?.activity_enabled??false,interval=principal?.polling_interval_ms??5000;
   useEffect(()=>{
     if(!principal)return;
     if(!enabled){setWorkbenchTransportWritable(true);setView({status:'disabled',lastReadAt:null});return;}
@@ -24,7 +25,8 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
         const source=new EventSource(endpoint);
         return {state:()=>source.readyState,close:()=>source.close(),listen:(name,listener)=>{const fn=(event:Event)=>listener(event instanceof MessageEvent?{data:event.data,lastEventId:event.lastEventId}:{});source.addEventListener(name,fn);return()=>source.removeEventListener(name,fn);}};
       },
-      report:state=>{if(mounted){if(['offline','auth-blocked'].includes(state.status))setWorkbenchTransportWritable(false);setView(state);}},authorizationDenied:error=>error instanceof IdentityChanged||error instanceof ApiError&&[401,403].includes(error.status),
+      ...(principal.activity_enabled?{activityTick:(signal:AbortSignal,isLive:boolean)=>flushActivity(principal,signal,isLive)}:{}),
+      report:state=>{if(mounted){activityTransport(principal,state.status==='live');if(['offline','auth-blocked'].includes(state.status))setWorkbenchTransportWritable(false);setView(state);}},authorizationDenied:error=>error instanceof IdentityChanged||error instanceof ApiError&&[401,403].includes(error.status),
       refresh:async signal=>{
         try{
           const fresh=await api.bootstrap(signal);signal.throwIfAborted();
@@ -61,8 +63,8 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
     const unsubscribe=client.getQueryCache().subscribe(event=>{
       if(event.type==='updated'&&event.action.type==='success'&&isBusinessQuery(event.query.queryKey,principal.principal_id)&&event.query.isActive()&&mounted)setView(current=>({...current,lastReadAt:event.query.state.dataUpdatedAt}));
     });
-    return()=>{mounted=false;owned.dispose();unsubscribe();window.removeEventListener('online',environment);window.removeEventListener('offline',environment);document.removeEventListener('visibilitychange',environment);};
-  },[client,key,enabled,interval]);
+    return()=>{mounted=false;activityTransport(null,false);owned.dispose();unsubscribe();window.removeEventListener('online',environment);window.removeEventListener('offline',environment);document.removeEventListener('visibilitychange',environment);};
+  },[client,key,enabled,activityEnabled,interval]);
   return view;
 }
 export const realtimeLabels:Record<WorkbenchRealtimeStatus,string>={disabled:'按需读取',connecting:'正在连接实时更新',live:'实时更新已连接',reconnecting:'实时连接中断，正在重连',polling:'实时暂不可用，定时重读',offline:'连接失败，显示最近已确认资料','auth-blocked':'会话需要重新核验'};

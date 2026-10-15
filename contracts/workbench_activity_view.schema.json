@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_activity_view.schema.json",
+  "title": "WBINT-T39 current authorized activity view",
+  "type": "object", "additionalProperties": false, "required": ["schema_version", "people"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "people": {
+      "type": "array", "maxItems": 16,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["display_name", "mode", "expires_epoch_ms"],
+        "properties": {
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 128},
+          "mode": {"enum": ["VIEWING", "EDITING"]},
+          "expires_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}
+        }
+      }
+    }
+  }
+}
