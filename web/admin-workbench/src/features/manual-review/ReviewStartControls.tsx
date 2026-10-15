@@ -42,6 +42,8 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
       setResult(committed);setPending(null);setState('succeeded');setMessage('已确认明确故障并开始处理；原工单与实际沟通责任已在一次操作中记录。');onStarted();
     }catch(error){
       if(!mounted.current||generation.current!==token)return;
+      if(controller.signal.aborted)return;
+      try{current();}catch{return;}
       if(error instanceof ApiError){if([401,403,404].includes(error.status)){if(bootstrap&&error.status===403)void clearSessionAuthorization(client,principal.principal_id,403,'revoked');else deny(error);return;}
         setPending(null);setState('failed');setMessage('此次操作未完成：'+errorMessage(error)+'。已保留明确选择；请读取当前事实后重新采用材料。');
       }else{setState('unknown');setMessage('结果未知：原UUID、材料、版本与选择保持不变。不会自动提交，请明确核对原操作。');}
