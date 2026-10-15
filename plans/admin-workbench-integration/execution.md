@@ -2,7 +2,7 @@
 document_id: WBINT-EXECUTION
 execution_status: IN_PROGRESS
 authorized_on: 2026-10-07
-snapshot_on: 2026-10-14
+snapshot_on: 2026-10-15
 timezone: Asia/Shanghai
 local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 ---
@@ -13,7 +13,21 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-14，T33收口）
+## 当前执行状态导航（2026-10-15，T36收口）
+
+GitHub实际为 **36／43 CLOSED、7 OPEN**，见[43票完整当前状态与原生阻塞](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/native-all43-after-t36-20261015/snapshot.json)。[#91原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91#issuecomment-6181051804)。全部43票仍ACTIVE，WBINT-12／A12本地完成；以下旧日期段落保留当时事实。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T36 / #91 | [确切补充修订处置和原可靠回复](execution/t36.md)原七已父核，433b0814由非实现者唯一FF/native0。明确处置或原Message全部必要Delivery成功才解除；读、接单、内部备注、202、FAILED、UNKNOWN不清，旧动作不清新修订，团队待办与个人未读／责任独立。 |
+| 实际被测对象 | 业务de99／MF297169、原工具44be／MF42f8与新工具059c／MF127e分别记账。174六前置native0，175相关三例3PASS；纯433b文档后继不重build或重绑旧tested_head。 |
+| 独立审查与保全 | 完整56及真实4／6／5／2／1增量覆盖当前64路径，两独立轴闭合0。完整1661Source／2171runtime／58tools、321Root记录／50冻结、46SQL和645／175／375登记并集已核；当前70checks／42新增refs无异常，runtime正文未变，六用户原件同SHA。 |
+| 历史与采集限度 | 原133／134／135／144／151／161／164墙钟预算FALSE、各原FAIL／NOT_REACHED及164 outerV8 NOT_CAPTURED保留，不把分对象PASS称同次full。159记录158日志49481B原前缀，后加2970B／13事件另有独立forward，旧字节不重写。 |
+| 精确资源清理 | 原140自有PG36384 pre0／stop0／post3、PIDfile无、单62775关闭、config2ab与keeperSTOPPED原证明保留。168六已知模式与135另存精确命令／13PID检查各限定自己的时点和范围，不声称全局后代0；新parse active0／fixture finally及174／175句柄终态已核。静态私树／依赖留待全43完成清理。 |
+| 当前frontier | 原生T15／T19／T39／T40／T41均可执行；下一连续整票T15／#70，其#60／#69已completed。其余Source准备未验收；T41不再被#91阻塞。T42仍待#70，T43仍待#74／#94／#95／#96／#97。 |
+| 边界 | A12所属四票本地完成；新flag默认false，单App／Worker、Gateway单活、SSE32与池预算8保持。工具parse-only最多2小child与业务communication/native单窗1分开记账。未push／PR、部署、真实外发、full／certify或Gate；全部43票及最终总审／工作树清理继续。 |
+
+## 历史执行状态导航（2026-10-14，T33收口）
 
 GitHub实际为 **35／43 CLOSED、8 OPEN**，见[完整当前快照](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/issues-current-after-t33-20261014.json)。[#88原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/88#issuecomment-6168544303)。全部43票仍ACTIVE，WBINT-11／A11本地完成，WBINT-12／A12仍待T36。
 

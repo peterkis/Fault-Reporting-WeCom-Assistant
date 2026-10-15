@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_supplement_follow_up_reply_command.schema.json",
+  "title": "PLANNED WBINT-T36 opt-in binding on existing T22 messages",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client_command_id", "expected_row_version", "text", "follow_up_target"],
+  "properties": {
+    "client_command_id": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/uuid"},
+    "expected_row_version": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "text": {"type": "string", "minLength": 1, "maxLength": 20480, "pattern": "\\S"},
+    "follow_up_target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticket_id", "source_ref", "revision"],
+      "properties": {
+        "ticket_id": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/uuid"},
+        "source_ref": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/source_ref"},
+        "revision": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/revision"}
+      }
+    }
+  }
+}

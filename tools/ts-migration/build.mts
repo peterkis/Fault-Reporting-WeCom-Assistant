@@ -2,7 +2,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { cleanGenerated, controlledBuildRoot, hash, identity, mappings, program, sourceRoot, runNode, type BuildManifest } from './common.mjs';
+import { cleanGenerated, controlledBuildRoot, hash, identity, mappings, sourceRoot, runNode, type BuildManifest } from './common.mjs';
 import {buildWeb} from './web.mjs';
 
 export function build(root: string): BuildManifest {
@@ -12,9 +12,9 @@ export function build(root: string): BuildManifest {
   const before = identity(root);
   // Preserve source collisions and resource guards before compiling or invoking Vite.
   mappings(root);
-  const compiler = program(root, 'tsconfig.migration.json');
-  const emitted = compiler.emit();
-  if (emitted.emitSkipped || emitted.diagnostics.length) throw new Error('MIGRATION_EMIT_FAILED');
+  // Wait for the full strict emit child to exit before Go/Vite starts. Its AST
+  // need not remain in the parent while the frontend allocates its build graph.
+  runNode(root,[fileURLToPath(new URL('./emit.mjs',import.meta.url)),'--root',root]);
   const output = path.join(controlledBuildRoot(root), 'runtime');
   try {
     buildWeb(root);
@@ -24,7 +24,7 @@ export function build(root: string): BuildManifest {
       const to = path.join(output, item.path);
       mkdirSync(path.dirname(to), { recursive: true }); copyFileSync(from, to);
     }
-    for (const item of map.filter(f => f.kind === 'COMPILED' && f.path.endsWith('.mjs'))) runNode(root, ['--check', path.join(output, item.path)]);
+    runNode(root,[fileURLToPath(new URL('./syntax-check.mjs',import.meta.url)),'--root',root]);
     const after = identity(root);
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('MIGRATION_SOURCE_CHANGED_DURING_BUILD');
     const manifest: BuildManifest = {

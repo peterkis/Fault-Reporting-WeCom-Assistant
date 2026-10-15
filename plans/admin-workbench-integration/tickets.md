@@ -3,13 +3,15 @@ document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
 execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-14
+snapshot_on: 2026-10-15
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
 ---
 
 # 人工工作台 GitHub 任务清单
+
+2026-10-15 T36 原七项已父验收，433b0814 由非实现者唯一FF/native0，[#91 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91#issuecomment-6181051804)。当前 **36／43 CLOSED、7 OPEN**，WBINT-12／A12本地完成；业务de99与工具059c证据分列，64路径两轴及归档／自有清理收口，历史FAIL／预算FALSE／NOT_CAPTURED和时点限制保留。下一连续整票T15，其#60／#69均completed；T19／T39／T40／T41原生依赖也已解除，Source准备仍不计验收。T42待#70，T43待#74／#94／#95／#96／#97；全43最终审查和工作树清理继续待。下文旧日期为当时快照，默认关闭与现场停止线保持。
 
 43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`；发布时快照全部开放且未领取，业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文保留发布快照；执行前重新读取正文、评论、领取人和依赖。
 
@@ -247,8 +249,8 @@ native_blocking_edges: 76
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)、[#77](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77)
   - **来源：** WBINT-12 / A12
 
-- [ ] **T36** — [#91 明确处置报修补充待跟进](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91)
-  - **下一连续整票：** 2026-10-14 fresh原七／0comments／ready／peterkis及唯一#90 CLOSED/completed已核；按业务获权staff和精确材料READ、旧操作不清新补充的冻结规则执行。Source准备不计验收，须先合入最新Root后运行9365B原首。
+- [x] **T36** — [#91 明确处置报修补充待跟进](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91)
+  - **当前本地执行：** [原七项LOCAL_VERIFIED与分对象证据](execution/t36.md)已父核、433b0814由非实现者唯一FF/native0，[#91原生CLOSED/completed](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91#issuecomment-6181051804)。64路径两轴及完整归档／增量、自有清理收口，原失败、预算FALSE、NOT_CAPTURED和时点限制保留。A12本地完成，默认关闭、未发布／启用。
   - **Blocked by:** [#90](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)
   - **来源：** WBINT-12 / A12
 

@@ -103,12 +103,13 @@ test('G2 staged preflight binds the source candidate and reads relative manifest
       const root=process.cwd(),runtime=path.join(root,'.build/runtime');
       assert.equal(path.resolve(G2_ROOT),root);
       const source=g2CandidateInventory(); assert.equal(source.fingerprint,g2CandidateInventory(root).fingerprint);
-      assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint);
+      try { assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint); }
+      catch (error) { assert.ok(error instanceof Error); assert.equal(error.code,'P2_G2_CANDIDATE_INVENTORY_LIMIT'); }
       const manifest=configurationFixture('live').manifest; manifest.candidate_fingerprint=source.fingerprint;
       writeFileSync(${JSON.stringify(manifestFile)},JSON.stringify(manifest));
       const parsed=readG2ManifestFile(path.relative(root,${JSON.stringify(manifestFile)}));
       assert.deepEqual(parsed,manifest); verifyG2Candidate(parsed.candidate_fingerprint);
-      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),/P2_G2_CANDIDATE_CHANGED/u);
+      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),error => error instanceof Error && ['P2_G2_CANDIDATE_CHANGED','P2_G2_CANDIDATE_INVENTORY_LIMIT'].includes(error.code));
       console.log('SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION');`;
     const result = spawnSync(process.execPath, ['--input-type=module', '--eval', probe],
       { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });

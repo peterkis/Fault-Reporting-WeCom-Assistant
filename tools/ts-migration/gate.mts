@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { diagnosticHost, hash, parsedConfig, program, slash, sourceRoot } from './common.mjs';
+import { diagnosticHost, hash, parsedConfig, program, slash, sourceRoot,runNode } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { runTests, runSelection } from './run-tests.mjs';
@@ -12,7 +12,8 @@ import { testEnvironment } from './routing.mjs';
 import {typecheckWeb} from './web.mjs';
 
 export function typeGate(root: string): void {
-  program(root, 'tsconfig.tools.json'); program(root, 'tsconfig.migration.json'); program(root, 'tsconfig.type-tests.json');
+  // Keep every original strict program; release all backend ASTs before Go.
+  runNode(root,[fileURLToPath(new URL('./emit.mjs',import.meta.url)),'--root',root,'--types']);
   typecheckWeb(root);
 }
 export function negativeTypes(root: string): void {
