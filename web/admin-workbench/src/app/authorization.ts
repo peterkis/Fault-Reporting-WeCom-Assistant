@@ -4,7 +4,7 @@ import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 
 export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
-  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position'||key[0]==='personal-read-command')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-takeover-targets','ticket-takeover-completion-targets','ticket-takeover-completion-selection','ticket-return-to-dispatch-targets','ticket-follow-up-schedule','ticket-follow-up-ack'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible'].includes(String(key[0]))&&key[2]===id));
+  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position'||key[0]==='personal-read-command')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-takeover-targets','ticket-takeover-completion-targets','ticket-takeover-completion-selection','ticket-return-to-dispatch-targets','ticket-follow-up-schedule','ticket-follow-up-ack','ticket-supplement-follow-up'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible'].includes(String(key[0]))&&key[2]===id));
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
     if(query.queryKey[0]==='personal-read-command')client.removeQueries({queryKey:query.queryKey,exact:true});
@@ -22,6 +22,15 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
     for(const query of client.getQueryCache().findAll({predicate:q=>aggregate(q.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error:null,status:'pending',fetchStatus:'idle'});
     void client.invalidateQueries({predicate:q=>aggregate(q.queryKey)&&q.isActive(),refetchType:'active'});
   }
+}
+export async function clearSupplementView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){
+  const matches=(key:readonly unknown[])=>(key[0]==='ticket-supplement-follow-up'||key[0]==='supplement-reply-sessions')&&key[1]===principal&&key[2]===ticketId;
+  await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
+  for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
+}
+export async function clearSupplementAuthorization(client:QueryClient,principal:string,ticketId:string,error:ApiError){
+  await clearSupplementView(client,principal,ticketId,error);
+  await Promise.all(['supplement-disposition','supplement-reply'].map(purpose=>purgeDrafts({principal,kind:'ticket',id:ticketId,purpose,reason:'revoked'},{preserveOperations:true}).catch(()=>{})));
 }
 export function clearTicketView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemView(client,principal,'ticket',ticketId,error);}
 export async function clearTicketTakeoverView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){

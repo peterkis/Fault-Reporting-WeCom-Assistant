@@ -1,0 +1,8 @@
+.supplement-pending-summary{margin:8px 0;color:#8d5b12;font-size:12px}
+.supplement-pending-summary strong{display:inline-block;padding:3px 8px;border-radius:4px;background:#fff0d3}
+.supplement-follow-up-list{padding:0;list-style:none}
+.supplement-follow-up-list>li{padding:16px 0;border-top:1px solid var(--line,#e5e7eb)}
+.supplement-follow-up-list>li>header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
+.supplement-follow-up-list>li[data-follow-up-state="PENDING"]>header>span{color:#8d5b12}
+.supplement-follow-up-list textarea{display:block;width:100%;min-height:88px;margin:8px 0;resize:vertical}
+.supplement-follow-up-list p{color:var(--muted,#64748b);font-size:12px;line-height:1.7}

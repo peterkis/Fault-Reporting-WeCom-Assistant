@@ -3,12 +3,15 @@ import type { CommunicationSenderKind, CommunicationPurpose, CommunicationMessag
 import type { ConversationChatType, ConversationSessionStatus, ConversationControlMode } from '../contracts/conversation_contracts.js';
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 export type CommunicationJson = null | boolean | number | string | readonly CommunicationJson[] | { readonly [key: string]: CommunicationJson };
+export interface SupplementReplyTarget { readonly ticket_id:string; readonly source_ref:string; readonly revision:string }
 export interface CommunicationCommand {
   client_command_id: string; privacy_class: 'PUBLIC' | 'INTERNAL' | 'SENSITIVE_INTERNAL' | 'PERSONAL' | 'PATIENT_SENSITIVE' | 'SECRET'; retention_until: string;
   session_id?: string | null; expected_row_version?: number; sender_kind?: CommunicationSenderKind; purpose?: CommunicationPurpose; message_type?: CommunicationMessageType;
+  follow_up_target?: SupplementReplyTarget;
   visibility?: CommunicationVisibility; text?: string; content?: unknown; reply_to_item_id?: string | null; attachment_ids?: readonly string[]; destination_policy?: string; sender_system_code?: string; retention_until_epoch_ms?: string;
 }
 export interface NormalizedCommunicationCommand {
+  readonly follow_up_target?: SupplementReplyTarget;
   session_id: string | null; expected_row_version: number | null; sender_kind: CommunicationSenderKind; sender_system_code: string | null; purpose: CommunicationPurpose;
   message_type: CommunicationMessageType; visibility: CommunicationVisibility; idempotency_scope: CommunicationSenderKind; client_command_id: string;
   content: Readonly<Record<string, CommunicationJson>>; reply_to_item_id: string | null; attachment_ids: readonly CommunicationJson[]; destination_policy: string; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string;
@@ -23,7 +26,13 @@ interface IdRow { id: string }
 interface SessionThreadRow { session_id: string; session_status: ConversationSessionStatus; row_version: string | number; thread_id: string; provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; thread_status: string }
 interface SessionContext { ok?: never; session: { id: string; status: ConversationSessionStatus; row_version: number; thread_id: string; control_mode?: ConversationControlMode }; thread: { provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; status: string } }
 export interface CommunicationAuthorizationContext extends SessionContext { transaction: PostgresTransaction; command: NormalizedCommunicationCommand; actor: CommunicationActor | null }
+export interface SupplementReplyBindingPort {
+  prepare(context:Pick<CommunicationAuthorizationContext,'transaction'|'command'|'actor'>):Promise<void>;
+  authorize(context:CommunicationAuthorizationContext):Promise<boolean>;
+  record(context:CommunicationAuthorizationContext,result:CommunicationSuccess):Promise<void>;
+}
 export interface CommunicationServiceOptions {
+  supplementReplyBinding?:SupplementReplyBindingPort|null;
   pool?: PostgresPool; enabled?: boolean; authorizeCommand?: (context: CommunicationAuthorizationContext) => boolean | Promise<boolean>;
   destinationResolver?: (context: SessionContext & { command: NormalizedCommunicationCommand }) => readonly CommunicationDestination[] | Promise<readonly CommunicationDestination[]>;
   reporterPrivateReplies?:boolean;nowEpochMs?: (() => unknown) | null; now?: () => Date;
@@ -59,7 +68,7 @@ const COMMAND_KEYS = new Set([
   'session_id', 'expected_row_version', 'client_command_id', 'sender_kind', 'purpose',
   'message_type', 'visibility', 'text', 'content', 'reply_to_item_id', 'attachment_ids',
   'sender_display_name', 'privacy_class', 'retention_until', 'retention_until_epoch_ms', 'destination_policy',
-  'sender_system_code',
+  'sender_system_code', 'follow_up_target',
 ]);
 const NORMALIZED_COMMANDS = new WeakSet();
 
@@ -242,6 +251,14 @@ function validateTopLevel(input: unknown): asserts input is Record<string, unkno
   }
 }
 
+export function normalizeSupplementReplyTarget(input:unknown):SupplementReplyTarget {
+  const keys=ownDataRecord(input,{maximumKeys:3});
+  if(keys.length!==3||keys.some(k=>!['ticket_id','source_ref','revision'].includes(k)))fail();
+  const v=input as Record<string,unknown>,ref=v.source_ref,revision=v.revision;
+  if(typeof ref!=='string'||!/^(?:channel:[1-9][0-9]{0,18}|web:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u.test(ref)||typeof revision!=='string'||!/^[1-9][0-9]{0,18}$/u.test(revision)||BigInt(revision)>9223372036854775807n)fail();
+  if(ref.startsWith('channel:')&&BigInt(ref.slice(8))>9223372036854775807n)fail();
+  return Object.freeze({ticket_id:requiredUuid(v.ticket_id),source_ref:ref,revision});
+}
 export function normalizeCommunicationCommand(input: unknown): NormalizedCommunicationCommand {
   validateTopLevel(input);
   const senderKind = input.sender_kind as CommunicationSenderKind ?? 'AGENT';
@@ -279,7 +296,10 @@ export function normalizeCommunicationCommand(input: unknown): NormalizedCommuni
   const senderSystemCode = senderKind === 'AGENT'
     ? null
     : requiredString(input.sender_system_code ?? (senderKind === 'AI' ? 'AI_ORCHESTRATOR' : 'SYSTEM'), 64, SYSTEM_CODE_PATTERN);
+  if(input.follow_up_target!==undefined&&(senderKind!=='AGENT'||purpose!=='HUMAN_REPLY'||visibility!=='EXTERNAL'))fail();
+  const target=input.follow_up_target===undefined?null:normalizeSupplementReplyTarget(input.follow_up_target);
   const normalized = Object.freeze({
+    ...(target?{follow_up_target:target}:{}),
     session_id: sessionId,
     expected_row_version: input.expected_row_version as number | null | undefined ?? null,
     sender_kind: senderKind,
@@ -322,6 +342,7 @@ export function computeCommunicationCommandHash(command: CommunicationCommand | 
     attachment_ids: normalized.attachment_ids,
     destination_policy: normalized.destination_policy,
     privacy_class: normalized.privacy_class,
+    ...(normalized.follow_up_target?{follow_up_target:{ticket_id:normalized.follow_up_target.ticket_id,source_ref:normalized.follow_up_target.source_ref,revision:normalized.follow_up_target.revision}}:{}),
   }));
 }
 
@@ -507,6 +528,7 @@ export function createCommunicationService({
   enabled = false,
   authorizeCommand = async () => false,
   destinationResolver = resolveCommunicationDestination,
+  supplementReplyBinding=null,
   reporterPrivateReplies=false,
   nowEpochMs = null,
   now = () => new Date(),
@@ -545,11 +567,18 @@ export function createCommunicationService({
       if (!['HUMAN_REPLY', 'AI_REPLY'].includes(normalized.purpose) || normalized.visibility !== 'EXTERNAL') fail();
       if (MEDIA_TYPES.has(normalized.message_type) || normalized.attachment_ids.length > 0) return publicError(COMMUNICATION_ERROR_CODES.mediaNotAuthorized);
       return withTransaction(pool, async (transaction) => {
+        if(normalized.follow_up_target){
+          if(!supplementReplyBinding||!reporterPrivateReplies)return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+          await supplementReplyBinding.prepare({transaction,command:normalized,actor});
+        }
         const context = await loadSessionAndThread(transaction, normalized,{checkVersion:!reporterPrivateReplies});
         if (context.ok === false) return context;
         if (await authorizeCommand({ transaction, command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+        const bindingContext={transaction,command:normalized,actor,...context};
+        if(normalized.follow_up_target&&await supplementReplyBinding?.authorize(bindingContext)!==true)return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
         if(reporterPrivateReplies){
-          const existing=await readExistingCommand(transaction,normalized,requiredUuid(actor.principal_id));if(existing!==null)return existing;
+          const existing=await readExistingCommand(transaction,normalized,requiredUuid(actor.principal_id));
+          if(existing!==null){if(normalized.follow_up_target&&'message_id' in existing)await supplementReplyBinding?.record(bindingContext,existing);return existing;}
           if(context.session.row_version!==normalized.expected_row_version)return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
           if(normalized.reply_to_item_id!==null){
             const quote=await transaction.query(`SELECT id FROM conversation.item WHERE id=$1::uuid AND session_id=$2::uuid
@@ -558,7 +587,9 @@ export function createCommunicationService({
           }
         }
         const resolved = reporterPrivateReplies&&normalized.purpose==='HUMAN_REPLY'?await persistedReporterDestination(transaction,context,normalized):await destinationResolver({ command: normalized, ...context });
-        return appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: resolved });
+        const result=await appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: resolved });
+        if(normalized.follow_up_target&&result&&'message_id' in result)await supplementReplyBinding?.record(bindingContext,result);
+        return result;
       });
     });
   }
