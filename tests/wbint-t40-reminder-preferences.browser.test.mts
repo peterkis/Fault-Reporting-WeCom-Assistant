@@ -72,7 +72,7 @@ test('T40 native user audition, audio refusal, chosen notification permissions, 
     assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked'),false);
     assert.equal(await p.evaluate('__t40Preferences.notifications'),0);
     await p.command('Browser.setPermission',{permission:{name:'notifications'},setting:'granted',origin:f.origin});
-    await p.click('input[aria-label="开启桌面通知"]');await p.wait('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked&&__t40Preferences.permissionRequests===2');
+    await p.click('input[aria-label="开启桌面通知"]');await p.wait('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked&&__t40Preferences.permissionRequests===2&&__t40Preferences.acquired>=2');
     await p.click('button[aria-label="关闭提醒偏好"]');await p.baselineAfterLeader();await f.nextDue();
     await p.wait('__t40Preferences.notifications===1&&document.querySelectorAll("[data-reminder-id]").length>=2');
     const preferences=text(await p.evaluate('localStorage.getItem('+JSON.stringify(key)+')'));assert.ok(Buffer.byteLength(preferences)<=128);

@@ -228,7 +228,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       };
       const otherCookie=cookies[2];assert.ok(otherCookie);
       await run({origin:base.origin,pool:base.pool,runtime,ticketId,handler:base.handler,otherHandler:base.otherHandler,
-        browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},otherBrowserCookie:{name:otherCookie.name,value:otherCookie.value,url:otherCookie.url},http,
+        browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},otherBrowserCookie:{name:otherCookie.name,value:otherCookie.value,url:text(otherCookie.url)},http,
         setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,publishPendingReports,prepareClosedRelatedTicket,logout});
     } finally {
       await runtime.stop();await official?.close();
