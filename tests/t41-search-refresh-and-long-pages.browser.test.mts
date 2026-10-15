@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture,seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
 import {object} from './helpers/t41-search-risk-fixture.mjs';
+import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
 import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
@@ -28,7 +29,7 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
   const q=scenario==='unicode128'?'😀'.repeat(128):'T41_TWO_PAGE_SYNTHETIC',core=createPilotTicketCore({pool:f.pool});
   for(let index=0;index<51;index++){
    const intake=await seedWeb01NoConversationIntake({pool:f.pool,text:q,location:'T41 synthetic two-page location'});
-   await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t41-two-pages-'+index});
+   await core.createForIntake({intakeId:intake.intakeId,occurredAt:assertLocalDateTime(intake.receivedAt),traceId:'t41-two-pages-'+index});
   }await settle(f.runtime);
   const seen:{method:string;bytes:number;status:number}[]=[];
   const observe=(request:IncomingMessage,response:ServerResponse)=>{

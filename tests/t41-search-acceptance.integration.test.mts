@@ -104,7 +104,7 @@ test('T41 all five real source types and retained at-report fields are searchabl
    only(await search(f,{q,sources:'WECOM_GROUP',limit:'1'},'admin'),'ticket',group.ticket.id);
   for(const q of ['T41PHONELocation','T41PHONEName','T41PHONEContact','T41PHONEDepartment'])only(await search(f,{q,sources:'MANUAL_PHONE'},'admin'),'ticket',text(manual.get('PHONE')));
   for(const q of ['T41WebLocation','T41WebDepartment'])only(await search(f,{q,sources:'WEB_REQUEST'},'admin'),'ticket',web.ticketId);
-  await f.pool.query(`UPDATE intake.contact_journey SET retention_until_epoch_ms=platform.physical_epoch_ms()-1,retention_until=platform.local_from_epoch_ms(platform.physical_epoch_ms()-1) WHERE id=$1::uuid`,[journey.id]);
+  await f.pool.query(`WITH expired AS (SELECT platform.physical_epoch_ms()-1 AS epoch) UPDATE intake.contact_journey SET retention_until_epoch_ms=expired.epoch,retention_until=platform.local_from_epoch_ms(expired.epoch) FROM expired WHERE id=$1::uuid`,[journey.id]);
   assert.deepEqual(await search(f,{q:'T41SnapshotName'},'admin'),[]);
   assert.equal((await f.get('/api/workbench/items/ticket/'+group.ticket.id,'admin')).status,200,'Ticket READ must remain while its report-time profile expires');
  });
