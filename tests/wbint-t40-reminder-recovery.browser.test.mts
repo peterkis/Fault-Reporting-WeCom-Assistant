@@ -83,14 +83,16 @@ test('T40 hidden leader cancels its pending cluster, a real queued document take
     await f.nextDue();const reads=Number(await browser.evaluate('globalThis.__t40Risk.reads.length'));
     await browser.evaluate('globalThis.__t40Visibility("visible")');
     await browser.waitFor(`globalThis.__t40Risk.reads.length>${reads}`);assert.equal(await browser.evaluate(`globalThis.__t40Risk.reads[${reads}].baseline`),true,'visible recovery starts at a new baseline before any backlog eligibility');
+    await browser.waitFor('(async()=>{const state=await navigator.locks.query();return state.held.filter(x=>x.name.startsWith("wbint-reminders-")).length===1&&state.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length===1;})()');
+    const beforePeerClose=Number(await browser.evaluate('__t40Risk.acquired'));
     await browser.command('Target.closeTarget',{targetId:peerId});peerId=undefined;
-    await browser.waitFor('globalThis.__t40Risk.acquired===2&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[1]).some(x=>x.baseline&&x.completed)');
+    await browser.waitFor('__t40Risk.acquired>'+beforePeerClose+'&&__t40Risk.reads.slice(__t40Risk.acquireReads.at(-1)).some(x=>x.baseline&&x.completed)');
     await f.nextDue();await browser.waitFor('Boolean(document.querySelector("[data-reminder-id]"))');
     const before=await f.currentFacts();await browser.evaluate('globalThis.__t40Risk.offset=601000');
     await browser.waitFor('document.querySelectorAll("[data-reminder-id]").length===0');assert.equal(await browser.evaluate('document.querySelector("[data-realtime-status]").dataset.realtimeStatus'),'live');assert.deepEqual(await f.currentFacts(),before,'expiry only prunes visual hints');
     assert.equal(await browser.evaluate('globalThis.__t40Risk.posts'),0);
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',screenshots:[],coordination:'NATIVE_WEB_LOCKS_TWO_ACTUAL_TABS_SAME_PROFILE',visibility_and_browser_clock:'CONTROLLED_TEST_SENSORS',audio_and_os_delivery:'NOT_PROVEN'}));
-  }catch(error){primary=error;}finally{await closeBrowserTestResources([async()=>{if(browser&&peerId)await browser.command('Target.closeTarget',{targetId:peerId});},async()=>close(browser,undefined)],primary);}
+  }catch(error){primary=error;if(browser)console.log('T40_HANDOVER_FAILURE_OBSERVER '+JSON.stringify(await browser.evaluate('globalThis.__t40Risk').catch(()=>null)));}finally{await closeBrowserTestResources([async()=>{if(browser&&peerId)await browser.command('Target.closeTarget',{targetId:peerId});},async()=>close(browser,undefined)],primary);}
 }));
 test('T40 empty current increment removes an unopened reminder after real READ loss with unchanged principal scope',{timeout:240_000},()=>withT40ReminderRiskFixture(async f=>{
   let browser:Browser|undefined,primary:unknown;
