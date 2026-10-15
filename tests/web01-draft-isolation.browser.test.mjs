@@ -33,7 +33,7 @@ test('late original decryption and confirmed receipt preserve newer unsent input
       await tab.waitFor("Boolean(document.querySelector('textarea'))&&typeof globalThis.__releaseDecrypt==='function'");await type(tab,'T03 newer unsent input must survive');await tab.evaluate('globalThis.__releaseDecrypt()');await tab.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");assert.equal(await tab.evaluate("document.querySelector('textarea').value"),'T03 newer unsent input must survive');assert.equal(await tab.evaluate('globalThis.__notePosts'),0);
       await tab.evaluate("document.querySelector('[data-action=check-expired-note]').click()");await tab.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已核对原操作结果')");assert.equal(await tab.evaluate("document.querySelector('textarea').value"),'T03 newer unsent input must survive');assert.equal(await tab.evaluate('globalThis.__notePosts'),0);
       await tab.close();tab=null;
-    }catch(failure){error=failure;console.log('T03_LATE_DIAGNOSTIC '+JSON.stringify(tab?await tab.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T03_LATE_DIAGNOSTIC '+JSON.stringify(tab?await tab.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,dropInternalNoteResponses:true});
 });
