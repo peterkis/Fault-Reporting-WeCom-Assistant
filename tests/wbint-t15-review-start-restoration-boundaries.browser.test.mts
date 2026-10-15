@@ -36,7 +36,7 @@ async function projectFixtureMaterial(runtime:P2016EnabledRuntime){
   assert.fail('the finite synthetic source material did not finish projection');
 }
 
-type Boundary='ended'|'purpose-denied'|'restore-denied'|'opaque-failed';
+type Boundary='ended'|'purpose-denied'|'restore-denied'|'opaque-failed'|'purpose-regrant';
 const snapshot=(reviewId:string)=>`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('wecom-workbench-drafts-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const load=name=>new Promise((resolve,reject)=>{const tx=db.transaction(name,'readonly'),r=tx.objectStore(name).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const drafts=await load('drafts'),operations=await load('operations');db.close();return {sensitive:drafts.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='review-resolve-start').length,ordinary:drafts.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='manual-review').length,operations:operations.filter(r=>r.id===${JSON.stringify(reviewId)}&&r.purpose==='review-resolve-start').map(r=>r.commandId)};})()`;
 function installTrace(mode:Boundary,reviewId:string){return `(()=>{
   const original=globalThis.fetch;globalThis.__t15Writes=[];globalThis.__t15Responses=[];globalThis.__t15Revokes=0;
@@ -51,6 +51,7 @@ function installTrace(mode:Boundary,reviewId:string){return `(()=>{
   };
 })()`;}
 async function runBoundary(mode:Boundary){
+  const denying=mode==='purpose-denied'||mode==='purpose-regrant';
   await withWeb01Fixture(async(fixture:Fixture)=>{
     await projectFixtureMaterial(fixture.runtime);
     const actor=fixture.principals[0],known=fixture.tickets[0],browserCookie=fixture.browserCookies[0],cookie=fixture.cookies[0];
@@ -85,7 +86,7 @@ async function runBoundary(mode:Boundary){
       browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:fixture.origin+'/'}]});assert.ok(browser);
       await browser.waitFor(`Boolean(document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a'))`);
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true,'the caller must use the formal production bundle');
-      await browser.evaluate(installTrace(mode,reviewId));
+      await browser.evaluate(installTrace(mode==='purpose-regrant'?'purpose-denied':mode,reviewId));
       await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);
       await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"] [data-review-materials]'))`);
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
@@ -110,7 +111,7 @@ async function runBoundary(mode:Boundary){
 
       const close=async()=>{assert.ok(browser);await browser.waitFor("document.querySelector('[aria-label=\"关闭详情\"]')?.disabled===false");await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog[open]')");};
       const reopen=async()=>{assert.ok(browser);await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] [data-review-workspace]'))");await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="选择复核项"]');if(input){Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(reviewId)});input.dispatchEvent(new Event('change',{bubbles:true}));}})()`);await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"]'))`);};
-      if(mode==='purpose-denied')await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:[]});
+      if(denying)await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]').click()");
       if(mode==='opaque-failed'){
         await browser.waitFor('globalThis.__t15Held===true');
@@ -121,13 +122,32 @@ async function runBoundary(mode:Boundary){
       await browser.waitFor('globalThis.__t15Responses.length===1');
       const response=object(list(await browser.evaluate('globalThis.__t15Responses'))[0]),first=object(list(await browser.evaluate('globalThis.__t15Writes'))[0]),original=object(first.body),commandId=text(original.client_command_id);
       console.log('T15_RESTORATION_BOUNDARY '+JSON.stringify({mode,phase:'ACTUAL_POST',status:response.status,body:response.body,command_id:commandId}));
-      assert.equal(response.status,mode==='purpose-denied'?403:mode==='opaque-failed'?409:200);
-      if(mode==='purpose-denied'){
+      assert.equal(response.status,denying?403:mode==='opaque-failed'?409:200);
+      if(denying){
         await browser.waitFor('globalThis.__t15Revokes>0');await delay(250);
         const revokes=await browser.evaluate('globalThis.__t15Revokes');console.log('T15_RESTORATION_BOUNDARY '+JSON.stringify({mode,phase:'BOUNDED_REVOCATION',revokes}));
         assert.ok(typeof revokes==='number'&&revokes<=2,'one real purpose denial must stop broadcasting after its scoped cleanup');
         const copies=object(await browser.evaluate(snapshot(reviewId)));assert.equal(copies.sensitive,0);assert.deepEqual(copies.operations,[]);assert.ok(Number(copies.ordinary)>0);
         assert.equal((await get('/api/lifecycle/bootstrap')).principal_id,actor.id);await get('/api/manual-reviews/'+reviewId);await get('/api/tickets/'+known.ticket.id);
+        if(mode==='purpose-regrant'){
+          await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+          await browser.evaluate("Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='重新核对确认并开始权限').click()");
+          await browser.waitFor("Boolean(document.querySelector('[data-review-start-controls] [data-session-choice]'))");
+          await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
+          await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]')?.disabled===false`);
+          await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);
+          await browser.waitFor("document.querySelector('[data-review-start-draft-status]')?.textContent.includes('已保存恢复副本')");
+          assert.equal(object(await browser.evaluate(snapshot(reviewId))).sensitive,1);
+          await browser.waitFor("document.querySelector('[data-action=resolve-and-start-review]')?.disabled===false");
+          await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:[]});
+          await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]').click()");
+          await browser.waitFor('globalThis.__t15Responses.length===2');await delay(250);
+          const second=object(list(await browser.evaluate('globalThis.__t15Responses'))[1]);assert.equal(second.status,403);
+          assert.notEqual(object(object(list(await browser.evaluate('globalThis.__t15Writes'))[1]).body).client_command_id,commandId);
+          const secondCopies=object(await browser.evaluate(snapshot(reviewId)));console.log('T15_RESTORATION_BOUNDARY '+JSON.stringify({mode,phase:'SECOND_CURRENT_PURPOSE_DENIAL',copies:secondCopies}));
+          assert.equal(secondCopies.sensitive,0,'a fresh explicit intent must be cleared by its own current-purpose rejection after regrant');assert.deepEqual(secondCopies.operations,[]);assert.ok(Number(secondCopies.ordinary)>0);
+          await get('/api/manual-reviews/'+reviewId);await get('/api/tickets/'+known.ticket.id);
+        }
       }else{
         await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('结果未知')");
         const receipt=await get('/api/manual-reviews/'+reviewId+'/resolve-and-start/commands/'+commandId);assert.equal(receipt.state,mode==='opaque-failed'?'FAILED':'COMMITTED');
@@ -185,7 +205,7 @@ async function runBoundary(mode:Boundary){
           assert.deepEqual(object(await browser.evaluate(snapshot(reviewId))).operations,[]);
         }
       }
-      assert.equal(list(await browser.evaluate('globalThis.__t15Writes')).length,1,'restoration and explicit receipt checks must never autoPOST');
+      assert.equal(list(await browser.evaluate('globalThis.__t15Writes')).length,mode==='purpose-regrant'?2:1,'restoration and explicit receipt checks must never autoPOST');
       await capture('new-detail-900.png');
     }catch(failure){error=failure;if(browser)await capture('new-detail-900.png').catch(captureError=>{error=new AggregateError([failure,captureError],'T15_BROWSER_AND_CAPTURE_FAILED');});}
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',review_resolve_and_start_boundary:mode,screenshots}));
@@ -196,3 +216,4 @@ test('T15 restores original UNKNOWN intent when its exact still-readable selecte
 test('T15 real current-purpose rejection clears once without a self-sustaining draft invalidation broadcast',()=>runBoundary('purpose-denied'));
 test('T15 selected Session current READ denial during restore clears only this purpose sensitive copy',()=>runBoundary('restore-denied'));
 test('T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure',()=>runBoundary('opaque-failed'));
+test('T15 a regranted same-mount explicit intent is cleared on its second real purpose rejection',()=>runBoundary('purpose-regrant'));
