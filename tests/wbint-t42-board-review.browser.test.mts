@@ -87,6 +87,7 @@ test('T42 board action requires an explicit current review conclusion before the
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),basis.current_hash);
       const contextBefore=object(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-board-intent-panel]'))"),true);
+      await browser.waitFor("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]'))");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]')?.disabled"),true,'opening the board action must not guess a conclusion');
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal((await get('/api/tickets/'+known.ticket.id)).status,'QUEUED');
