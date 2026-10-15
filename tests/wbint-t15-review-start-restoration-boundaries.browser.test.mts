@@ -151,7 +151,7 @@ async function runBoundary(mode:Boundary){
           await get('/api/conversations/'+sessionId);
           // Hold this precise restore read after its current context/team check.
           // Official membership loss then removes Session VIEW while the assigned Ticket and Review remain readable.
-          await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.fetch=async(path,options)=>{if(String(options?.method??'GET').toUpperCase()==='GET'&&String(path)===${JSON.stringify('/api/conversations/'+sessionId)}&&!globalThis.__t15SessionHeld){globalThis.__t15SessionHeld=true;await new Promise(resolve=>{globalThis.__t15SessionRelease=resolve;});}return original(path,options);};})()`);
+          await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.fetch=async(path,options)=>{const selected=String(options?.method??'GET').toUpperCase()==='GET'&&String(path)===${JSON.stringify('/api/conversations/'+sessionId)};if(selected&&!globalThis.__t15SessionHeld){globalThis.__t15SessionHeld=true;await new Promise(resolve=>{globalThis.__t15SessionRelease=resolve;});}const response=await original(path,options);if(selected)globalThis.__t15RestoredSessionStatus=response.status;return response;};})()`);
         }
         if(mode==='opaque-failed')await browser.evaluate(`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('wecom-workbench-drafts-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),r=store.getAll();r.onsuccess=()=>{for(const row of r.result)if(row.id===${JSON.stringify(reviewId)}&&row.purpose==='review-resolve-start'){row.firstSavedAt=Date.now()-86401000;row.expiresAt=row.firstSavedAt+86400000;store.put(row);}};tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});db.close();})()`);
         await reopen();
@@ -167,8 +167,10 @@ async function runBoundary(mode:Boundary){
           assert.equal(object(await browser.evaluate(snapshot(reviewId))).sensitive,1);
           assert.equal((await get('/api/manual-reviews/'+reviewId+'/resolve-and-start/commands/'+commandId)).state,'COMMITTED');
         }else if(mode==='restore-denied'){
-          await browser.waitFor("document.querySelector('[data-review-start-draft-status]')?.textContent.includes('恢复核验暂未完成')");
-          const copies=object(await browser.evaluate(snapshot(reviewId)));console.log('T15_RESTORATION_BOUNDARY '+JSON.stringify({mode,phase:'CURRENT_SESSION_DENIED',copies}));
+          await browser.waitFor('globalThis.__t15RestoredSessionStatus===404');
+          let copies=object(await browser.evaluate(snapshot(reviewId)));const until=performance.now()+2000;
+          while(copies.sensitive!==0&&performance.now()<until){await delay(20);copies=object(await browser.evaluate(snapshot(reviewId)));}
+          console.log('T15_RESTORATION_BOUNDARY '+JSON.stringify({mode,phase:'CURRENT_SESSION_DENIED',copies}));
           assert.equal(copies.sensitive,0,'a real selected Session 404 must clear this purpose sensitive ciphertext and key');assert.ok(Number(copies.ordinary)>0);
         }else{
           await browser.waitFor("Boolean(document.querySelector('[data-action=check-review-start-receipt]'))&&!document.querySelector('[data-action=replay-review-start]')");

@@ -33,8 +33,21 @@ type StartSuccess=Omit<ReviewResolveAndStartResult,'replayed'>;
 export function createWorkbenchReviewStart({pool,query,reviews,controlService,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;reviews:Reviews;
   controlService:Pick<ReturnType<typeof createConversationControlService>,'takeResponsibilityInTransaction'>;enabled?:boolean}&SelfHandlingHooks){
   const ledger=createP2016CommandLedger({pool});
-  async function authorize(authContext:unknown,reviewId:string,command:ReviewResolveAndStartCommand,transaction:PostgresTransaction,lock=false){
+  async function currentReview(authContext:unknown,reviewId:string,transaction:PostgresTransaction){
     const review=await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+    if('material_basis' in review&&review.material_basis.source_kind==='WEB'){
+      // local_now is the transaction start time. This purpose may wait on a Ticket
+      // after reading material, so current WEB retention must use the physical clock.
+      const retained=await transaction.query(`SELECT b.intake_id FROM intake.web_request_binding b
+        JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.intake_id=$1::uuid AND b.revoked_at IS NULL
+          AND b.retention_until_epoch_ms>platform.physical_epoch_ms() AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+          AND NOT EXISTS(SELECT 1 FROM intake.web_submission s WHERE s.intake_id=b.intake_id AND s.retention_until_epoch_ms<=platform.physical_epoch_ms())`,[review.service_intake_id]);
+      if(retained.rowCount!==1)failP2016('NOT_FOUND',404);
+    }
+    return review;
+  }
+  async function authorize(authContext:unknown,reviewId:string,command:ReviewResolveAndStartCommand,transaction:PostgresTransaction,lock=false){
+    const review=await currentReview(authContext,reviewId,transaction);
     const principal=await query.principal(authContext,transaction);
     if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
     const member=await transaction.query(`SELECT p.id FROM pilot_ticket.pilot_principal p
@@ -44,7 +57,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
     if(!member.rowCount)failP2016('FORBIDDEN',403);
     // Re-read scope after the authority rows were acquired; waiting is not authorization.
     const current=lock?await query.principal(authContext,transaction):principal;
-    if(lock)await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+    if(lock)await currentReview(authContext,reviewId,transaction);
     if(command.expected_ticket){
       await query.authorizedTicket({authContext,ticketId:command.expected_ticket.ticket_id,transaction});
       for(const s of command.sessions)await query.authorizedRelatedConversation({authContext,ticketId:command.expected_ticket.ticket_id,sessionId:s.session_id,transaction});
@@ -57,7 +70,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
       const reviewId=uuidP2016(inputReview),sessionId=uuidP2016(inputSession);
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');
-        await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+        await currentReview(authContext,reviewId,transaction);
         const principal=await query.principal(authContext,transaction);
         if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
         const canonical=await reviews.canonicalItem({authContext,reviewId,transaction});
@@ -71,7 +84,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
       const reviewId=uuidP2016(inputReview),commandId=uuidP2016(inputCommand);
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');
-        await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+        await currentReview(authContext,reviewId,transaction);
         const principal=await query.principal(authContext,transaction);
         if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
         const selected=await transaction.query<{state:string;snapshot:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS snapshot,error_code AS error,retryable
@@ -96,7 +109,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
       const reviewId=uuidP2016(inputReview);
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');
-        const review=await reviews.getManualReviewDetail({authContext,reviewId,transaction}),principal=await query.principal(authContext,transaction);
+        const review=await currentReview(authContext,reviewId,transaction),principal=await query.principal(authContext,transaction);
         if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
         const teams=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
           JOIN pilot_ticket.pilot_team_member m ON m.team_id=rt.team_id WHERE m.principal_id=$1::uuid AND rt.is_active ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
@@ -149,6 +162,7 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
             throw error;
           }
         }
+        await currentReview(authContext,reviewId,tx);
         const linked=await tx.query('UPDATE intake.manual_review_item SET linked_ticket_id=$2::uuid WHERE id=$1::uuid AND status=\'RESOLVED\' AND (linked_ticket_id IS NULL OR linked_ticket_id=$2::uuid)',[reviewId,ticket.id]);
         if(linked.rowCount!==1||resolution.status!=='RESOLVED')failP2016('ACTION_FAILED',503);
         result={ok:true,review_id:reviewId,status:'RESOLVED',resolution_decision_id:resolution.resolution_decision_id,action_count:resolution.action_count,ticket_id:ticket.id,
