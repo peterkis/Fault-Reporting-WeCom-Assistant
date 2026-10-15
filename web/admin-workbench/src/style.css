@@ -292,3 +292,11 @@ strong { font-weight: var(--fw-medium); }
 .ticket-takeover>button{margin:8px 8px 0 0}
 
 .ticket-assignment-history li>span{min-width:0;overflow-wrap:anywhere}.ticket-assignment-history ul ul{margin-top:6px;padding-left:12px}
+
+/* T40: small notices remain separate from service forms and never overlay the editor. */
+.workbench-reminders{padding:0 1.25rem .75rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.workbench-reminders ul{display:flex;flex-wrap:wrap;gap:.5rem;margin:0;padding:0;list-style:none}
+.workbench-reminders li{display:flex;gap:.5rem;align-items:center;padding:.4rem .6rem;border:1px solid var(--border,#dedee3);border-radius:.5rem;font-size:.875rem}
+.workbench-reminders dialog{max-width:min(28rem,calc(100vw - 2rem));border:1px solid var(--border,#dedee3);border-radius:.75rem;padding:1.25rem}
+.workbench-reminders dialog label{display:block;margin:.75rem 0}.workbench-reminders p{margin:.25rem 0;width:100%;font-size:.875rem}
+.ticket-card[data-reminder-located=true]{outline:2px solid #6366f1;outline-offset:3px}

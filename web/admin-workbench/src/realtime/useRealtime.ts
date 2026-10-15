@@ -6,7 +6,7 @@ import type {WorkbenchRealtimeStatus} from '../../../../contracts/workbench_real
 import {createWorkbenchRealtimeClient} from '../../../../src/workbench-realtime-client.mjs';
 import {clearSessionAuthorization} from '../app/authorization';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
-const families=new Set(['board','detail','personal-read-position','ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result','incident-children','incident-report-assignee','incident-delivery-control']);
+const families=new Set(['reminders','board','detail','personal-read-position','ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result','incident-children','incident-report-assignee','incident-delivery-control']);
 export const isWorkbenchRealtimeQuery=(key:readonly unknown[],principal:string)=>key[1]===principal&&typeof key[0]==='string'&&families.has(key[0]);
 const identity=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 class IdentityChanged extends Error{}

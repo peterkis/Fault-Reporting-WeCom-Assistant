@@ -5893,6 +5893,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t40-reminder-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t40-reminder-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7598,6 +7616,10 @@
     ],
     "wbint-t40-first": [
       "tests/wbint-t40-reminder-first.browser.test.mts"
+    ],
+    "wbint-t40-source-prepared": [
+      "tests/wbint-t40-reminder-contracts.test.mts",
+      "tests/wbint-t40-reminder-read.integration.test.mts"
     ]
   },
   "subprocess_entries": {
