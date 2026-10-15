@@ -55,8 +55,8 @@ test('production list preloads do not view; safe detail peers and controlled vis
       await browser.command('Page.navigate',{url:origin+'/workbench/app/'});
       await browser.waitFor('Boolean(document.querySelector(".board"))&&!document.querySelector(".detail-body")');
       await waitPeople(origin,peer,ticket.id,false);
-    }catch(failure){error=failure;console.log('T39_LIFECYCLE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,visible:document.visibilityState,online:navigator.onLine})'):{}));}
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    }catch(failure){error=failure;try{console.log('T39_LIFECYCLE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,visible:document.visibilityState,online:navigator.onLine})'):{}));}catch(diagnostic){error=new AggregateError([failure,diagnostic],"T39_BROWSER_FAILURE_AND_DIAGNOSTIC_FAILED");}}finally{
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
 });
 
@@ -71,8 +71,8 @@ test('current READ revocation clears production activity and cannot restore the 
       await browser.waitFor('!document.querySelector(".detail-body")&&!document.querySelector("[data-workbench-activity]")');
       const denied=await browser.evaluate(`fetch('/api/workbench/items/ticket/${ticket.id}').then(response=>response.status)`);assert.equal(denied,404);
       assert.deepEqual(await people(origin,viewer,ticket.id),[]);
-    }catch(failure){error=failure;console.log('T39_REVOKE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    }catch(failure){error=failure;try{console.log('T39_REVOKE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnostic){error=new AggregateError([failure,diagnostic],"T39_BROWSER_FAILURE_AND_DIAGNOSTIC_FAILED");}}finally{
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
 });
 
@@ -86,7 +86,7 @@ test('successful real session logout removes the production activity view and ma
       await browser.evaluate('document.querySelector("[data-action=logout-workbench]").click()');
       await browser.waitFor('!document.querySelector(".detail-body")&&!document.querySelector("[data-workbench-activity]")&&document.body.innerText.includes("已退出")');
       const denied=await fetch(backendOrigin+'/api/lifecycle/bootstrap',{headers:{cookie:oldCookie}});assert.equal(denied.status,401);await denied.arrayBuffer();
-    }catch(failure){error=failure;console.log('T39_LOGOUT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    }catch(failure){error=failure;try{console.log('T39_LOGOUT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnostic){error=new AggregateError([failure,diagnostic],"T39_BROWSER_FAILURE_AND_DIAGNOSTIC_FAILED");}}finally{
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,realWorkbenchAuthentication:true});
 });

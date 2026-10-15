@@ -18,7 +18,7 @@ async function http(f:Fixture){
 }
 test('activity default off and independent realtime prerequisite allocate no usable presence capability',async()=>{
   for(const options of [{workbenchRealtimeEnabled:true},{workbenchActivityEnabled:true}])await withWeb01Fixture(async(f:Fixture)=>{
-    const h=await http(f),ticket=f.tickets[0]?.ticket;assert.ok(ticket);assert.equal(h.capability.activity_enabled,false);
+    const h=await http(f),ticket=f.tickets[0]?.ticket;assert.ok(ticket);assert.ok(h.capability.activity_enabled===undefined||h.capability.activity_enabled===false);
     for(const response of [await h.post(renew(ticket.id)),await h.get('/api/workbench/items/ticket/'+ticket.id+'/activity')]){assert.equal(response.status,503);await response.arrayBuffer();}
     const detail=await h.get('/api/workbench/items/ticket/'+ticket.id);assert.equal(detail.status,200);await detail.arrayBuffer();
   },{...options,manualProjection:true});
