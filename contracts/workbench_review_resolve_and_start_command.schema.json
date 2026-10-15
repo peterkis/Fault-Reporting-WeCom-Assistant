@@ -1,0 +1,30 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Explicit fault review confirmation and atomic start command",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["client_command_id","expected_row_version","expected_material_basis","resolution_code","resolution_reason_code","expected_ticket","resolver_team_id","communication_choice","sessions"],
+  "properties":{
+    "client_command_id":{"type":"string","format":"uuid"},
+    "expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},
+    "expected_material_basis":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "resolution_code":{"const":"CONFIRM_TICKET_ELIGIBLE"},
+    "resolution_reason_code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},
+    "expected_ticket":{"oneOf":[
+      {"type":"null"},
+      {"type":"object","additionalProperties":false,"required":["ticket_id","expected_version"],"properties":{
+        "ticket_id":{"type":"string","format":"uuid"},
+        "expected_version":{"type":"integer","minimum":1,"maximum":9007199254740991}
+      }}
+    ]},
+    "resolver_team_id":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},
+    "communication_choice":{"enum":["TAKE_SELECTED","RETAIN_CURRENT"]},
+    "sessions":{"type":"array","maxItems":8,"items":{"type":"object","additionalProperties":false,"required":["session_id","expected_row_version"],"properties":{
+      "session_id":{"type":"string","format":"uuid"},
+      "expected_row_version":{"type":"integer","minimum":1,"maximum":9007199254740991}
+    }}}
+  },
+  "allOf":[
+    {"if":{"properties":{"communication_choice":{"const":"TAKE_SELECTED"}}},"then":{"properties":{"sessions":{"minItems":1}}},"else":{"properties":{"sessions":{"maxItems":0}}}}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Current exact Review start related Session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["review_id", "ticket_id", "session_id"],
+  "properties": {
+    "review_id": {"type": "string", "format": "uuid"},
+    "ticket_id": {"type": "string", "format": "uuid"},
+    "session_id": {"type": "string", "format": "uuid"}
+  }
+}

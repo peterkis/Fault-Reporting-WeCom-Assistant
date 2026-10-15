@@ -1,4 +1,9 @@
+import {createWorkbenchReviewStart} from './workbench-review-start.mjs';
 import {createWorkbenchSupplementFollowUp,createWorkbenchSupplementFollowUpHttp} from './workbench-supplement-follow-up.mjs';
+import {createHash} from 'node:crypto';
+import {createWorkbenchActivity} from './workbench-activity.mjs';
+import {createWorkbenchActivityHttp} from './workbench-activity-http.mjs';
+import type {WorkbenchActivityField,WorkbenchActivityTarget} from '../contracts/workbench_activity_contracts.js';
 import {createWorkbenchFollow} from './workbench-follow.mjs';
 import {createTicketTakeoverCompletionService} from './workbench-ticket-takeover-completion.mjs';
 import {createTicketTakeoverService} from './workbench-ticket-takeover.mjs';
@@ -36,9 +41,12 @@ import {createWorkbenchManualReports,manualReportsSchemaReady} from './workbench
 import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
 import {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
 import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
+interface P2016RuntimeOptionsInput {workbenchActivityEnabled?:boolean}
 interface P2016RuntimeOptionsInput {notificationExceptionsEnabled?:boolean;workbenchAssignmentHistoryEnabled?:boolean;workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'pool'|'enabled'>|null}
 interface P2016RuntimeOptionsInput {appNotifications?:TicketAppNotificationOptions|null;appNotificationTransport?:Omit<WorkbenchAppNotificationSenderOptions,'pool'|'notifications'|'enabled'|'origin'|'allowedHosts'|'allowLocalHttp'>|null}
 interface P2016RuntimeOptionsInput { workbenchFollowEnabled?:boolean;ticketRoundNotificationsEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;ticketReturnToDispatchEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketTakeoverEnabled?:boolean;ticketTakeoverCompletionEnabled?:boolean;ticketWaitingActionsEnabled?:boolean;ticketStaffCompletionEnabled?:boolean;workbenchConversationsEnabled?:boolean;workbenchManualReportsEnabled?:boolean;workbenchReporterCandidatesEnabled?:boolean;manualReporterDirectory?:ManualReporterDirectoryOptions|null;workbenchRealtimeEnabled?:boolean;workbenchManualReviewEnabled?:boolean;ticketSelfHandlingEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchDraftRecoveryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
+
+interface P2016RuntimeOptionsInput {workbenchReviewResolveAndStartEnabled?:boolean}
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -96,7 +104,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,deliveryAttemptAdmission=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,botReporterFeedbackEnabled=false,botReporterFeedbackDraftRecoveryEnabled=false,
-  workbenchSupplementFollowUpEnabled=false,workbenchAuthentication=null,workbenchFollowEnabled=false,workbenchAssignmentHistoryEnabled=false,workbenchPersonalReadEnabled=false,workbenchFollowUpSchedulesEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=null,ticketStaffCompletionEnabled=false,workbenchManualReviewEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,notificationExceptionsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchSupplementFollowUpEnabled=false,workbenchActivityEnabled=false,workbenchAuthentication=null,workbenchFollowEnabled=false,workbenchAssignmentHistoryEnabled=false,workbenchPersonalReadEnabled=false,workbenchFollowUpSchedulesEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,workbenchRealtimeEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=null,ticketStaffCompletionEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,workbenchConversationsEnabled=false,notificationExceptionsEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
   if(typeof workbenchSupplementFollowUpEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof notificationExceptionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchPersonalReadEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -109,6 +117,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   if(typeof ticketRoundNotificationsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchManualReportsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchReporterCandidatesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof workbenchActivityEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchRealtimeEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketConversationSelfHandlingEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -121,7 +130,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchAttachmentsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchInternalNotesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
-  if(typeof workbenchManualReviewEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof workbenchManualReviewEnabled!=='boolean'||typeof workbenchReviewResolveAndStartEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchDraftRecoveryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const featureFlags=flagsP2016(flags) as Record<'TICKET_LIFECYCLE_WORKBENCH_ENABLED' | 'REPORTER_TIMELINE_ENABLED' | 'WECOM_TEMPLATE_CARD_ENABLED', boolean>,enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy) as 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED',memberConfig=validateYxxEntryConfig(reporterMemberEntry as Record<string, unknown>);
@@ -149,6 +158,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
   const operationalIntake=Object.freeze({accept:(input: unknown)=>scope&&!scope.accepts((input as { message?: unknown } | null)?.message)
     ?Promise.resolve({ok:false as const,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false as const}}):inbox.accept(input,intakeProcessor)});
+  let activity:ReturnType<typeof createWorkbenchActivity>|null=null;
   let attachments:ReturnType<typeof createWorkbenchAttachments>|null=null;
   let runFollowUpDueBatch:ReturnType<typeof createWorkbenchFollowUpSchedules>['runDueBatch']|undefined;
   let realtimeProjector: RealtimeProjector | undefined,tickets: TicketFacade | undefined,reviews: ReviewFacade | undefined,closure: P2016ClosurePort | undefined,incidentExtension: P2016IncidentExtension | null=null,memberExtension: P2016HttpExtension | null=null,selfService: P2016HttpExtension | null=null;
@@ -176,19 +186,20 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       }}});
       tickets=createP2016TicketCommandFacade({pool,enabled,ticketStaffCompletionEnabled,ticketTakeoverCompletionEnabled,ticketWaitingActionsEnabled,ticketReopenRoundsEnabled,query,controlService,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket});
       reviews=createP2016ManualReviewFacade({pool,enabled,workspaceEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
+      const reviewStart=workbenchManualReviewEnabled&&workbenchReviewResolveAndStartEnabled?createWorkbenchReviewStart({pool,query,reviews,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
       const selfHandling=ticketSelfHandlingEnabled?createTicketSelfHandlingService({pool,query,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const conversationHandling=ticketConversationSelfHandlingEnabled?createTicketConversationHandlingService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const staffCompletion=ticketStaffCompletionEnabled?createTicketStaffCompletionService({pool,query,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
-      const manualReports=createWorkbenchManualReports({pool,query,enabled:workbenchManualReportsEnabled,draftRecoveryEnabled:workbenchDraftRecoveryEnabled,reporterCandidatesEnabled:workbenchReporterCandidatesEnabled,reporterDirectory:manualReporterDirectory,realtimeProjector});
+      const manualReports=createWorkbenchManualReports({pool,query,enabled:workbenchManualReportsEnabled,selfHandlingEnabled:ticketSelfHandlingEnabled,selfHandlingHooks:{closure,notificationProjector:notifications},draftRecoveryEnabled:workbenchDraftRecoveryEnabled,reporterCandidatesEnabled:workbenchReporterCandidatesEnabled,reporterDirectory:manualReporterDirectory,realtimeProjector});
       const takeoverCompletion=ticketTakeoverCompletionEnabled?createTicketTakeoverCompletionService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const takeover=ticketTakeoverEnabled?createTicketTakeoverService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const assignment=ticketAssignmentEnabled?createTicketAssignmentService({pool,query,controlService,enabled:true,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket}):null;
       const unassign=ticketUnassignEnabled?createTicketUnassignService({pool,query,controlService,enabled:true,realtimeProjector:realtimeProjector.ticket}):null;
       const returnToDispatchService=createTicketReturnToDispatchService({pool,query,controlService,enabled:ticketReturnToDispatchEnabled,realtimeProjector:realtimeProjector.ticket});
       const returnToDispatch=ticketReturnToDispatchEnabled?returnToDispatchService:null;
-      const ticketHttp=createP2016WorkbenchHttp({workbenchSupplementFollowUpEnabled,workbenchFollowEnabled,notificationExceptionsEnabled,workbenchAssignmentHistoryEnabled,query,tickets,reviews,deliveryControl,enabled,ticketWaitingActionsEnabled,workbenchPersonalReadEnabled,workbenchFollowUpSchedulesEnabled,followUpSchedules,ticketRoundNotificationsEnabled,ticketReopenRoundsEnabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,takeover,takeoverCompletion,assignment,unassign,returnToDispatch,returnToDispatchAcknowledgement:returnToDispatchService.acknowledgement,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true,followUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled}),incidentDeliveryControlEnabled:incidentExtension?.deliveryControlEnabled===true,incidentDeliveryControlDraftRecoveryEnabled:incidentExtension?.deliveryControlEnabled===true&&workbenchDraftRecoveryEnabled,incidentOwnerTransferEnabled:incidentExtension?.ownerTransferEnabled===true,incidentOwnerTransferDraftRecoveryEnabled:incidentExtension?.ownerTransferEnabled===true&&workbenchDraftRecoveryEnabled,incidentPublicProgressEnabled:incidentExtension?.publicProgressEnabled===true,incidentPublicProgressDraftRecoveryEnabled:incidentExtension?.publicProgressEnabled===true&&workbenchDraftRecoveryEnabled,incidentInternalNotesEnabled:incidentExtension?.internalNotesEnabled===true,incidentInternalNoteDraftRecoveryEnabled:incidentExtension?.internalNotesEnabled===true&&workbenchDraftRecoveryEnabled,incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
+      const ticketHttp=createP2016WorkbenchHttp({workbenchActivityEnabled,workbenchSupplementFollowUpEnabled,workbenchFollowEnabled,notificationExceptionsEnabled,workbenchAssignmentHistoryEnabled,query,tickets,reviews,reviewStart,deliveryControl,enabled,ticketWaitingActionsEnabled,workbenchPersonalReadEnabled,workbenchFollowUpSchedulesEnabled,followUpSchedules,ticketRoundNotificationsEnabled,ticketReopenRoundsEnabled,workbenchManualReviewEnabled,workbenchManualReportsEnabled,workbenchReporterCandidatesEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,selfHandling,conversationHandling,takeover,takeoverCompletion,assignment,unassign,returnToDispatch,returnToDispatchAcknowledgement:returnToDispatchService.acknowledgement,staffCompletion,workbenchDraftRecoveryEnabled,workbenchConversationsEnabled,workbenchRealtimeEnabled,realtimeAuthorization:principal=>authorization.resolveRealtimeAuthorization(principal,{limit:256,availabilityFallback:true,followUpSchedulesEnabled:workbenchFollowUpSchedulesEnabled}),incidentDeliveryControlEnabled:incidentExtension?.deliveryControlEnabled===true,incidentDeliveryControlDraftRecoveryEnabled:incidentExtension?.deliveryControlEnabled===true&&workbenchDraftRecoveryEnabled,incidentOwnerTransferEnabled:incidentExtension?.ownerTransferEnabled===true,incidentOwnerTransferDraftRecoveryEnabled:incidentExtension?.ownerTransferEnabled===true&&workbenchDraftRecoveryEnabled,incidentPublicProgressEnabled:incidentExtension?.publicProgressEnabled===true,incidentPublicProgressDraftRecoveryEnabled:incidentExtension?.publicProgressEnabled===true&&workbenchDraftRecoveryEnabled,incidentInternalNotesEnabled:incidentExtension?.internalNotesEnabled===true,incidentInternalNoteDraftRecoveryEnabled:incidentExtension?.internalNotesEnabled===true&&workbenchDraftRecoveryEnabled,incidentCandidateWorkspaceEnabled:incidentExtension?.candidateWorkspaceEnabled===true,incidentCandidateDraftRecoveryEnabled:incidentExtension?.candidateWorkspaceEnabled===true&&workbenchDraftRecoveryEnabled,logoutReady:()=>workbenchAuthentication?.supportsLogout===true&&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest())});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const follow=createWorkbenchFollow({pool,query,reviews,enabled:workbenchFollowEnabled,manualReviewEnabled:workbenchManualReviewEnabled,manualReportsEnabled:workbenchManualReportsEnabled});
@@ -198,6 +209,48 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const notificationExceptions=createWorkbenchNotificationExceptions({pool,query,enabled:notificationExceptionsEnabled,externalSendEnabled,incidentScope:incidentExtension?.notificationExceptionScope??null});
       const supplementFollowUpHttp=createWorkbenchSupplementFollowUpHttp(supplementFollowUp,workbenchSupplementFollowUpEnabled);
       const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);
+      if(workbenchActivityEnabled&&workbenchRealtimeEnabled){
+        const authorizeActivity=async(authContext:unknown,target:WorkbenchActivityTarget,field:WorkbenchActivityField|null)=>{
+          if(!authContext||typeof authContext!=='object'||!('auth_method' in authContext)||authContext.auth_method!=='COOKIE'
+            ||!('expires_epoch_ms' in authContext)||typeof authContext.expires_epoch_ms!=='string'||!/^\d+$/u.test(authContext.expires_epoch_ms)||BigInt(authContext.expires_epoch_ms)<=BigInt(Date.now())
+            ||!('csrf_token' in authContext)||typeof authContext.csrf_token!=='string'||!authContext.csrf_token)failP2016('FORBIDDEN',403);
+          const principal=await query.principal(authContext),sessionId='session_id' in authContext?authContext.session_id:null;
+          if(typeof sessionId==='string'){
+            const session=await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()",[sessionId,principal.principal_id]);
+            if(session.rowCount!==1)failP2016('FORBIDDEN',403);
+          }
+          const item=await workbenchQuery.authorizedItem(authContext,target.kind,target.id);
+          if(item.kind!==target.kind||item.id!==target.id)failP2016('NOT_FOUND',404);
+          if(field!==null){
+            if(field==='manual-review'){
+              if(!workbenchManualReviewEnabled)failP2016('FORBIDDEN',403);
+              // Editing is a field of the currently displayed canonical Item.
+              // A readable Item alone grants no permission to edit a Review.
+              const detail=await workbenchQuery.detail({authContext,kind:target.kind,id:target.id,cursor:null,limit:'1'});
+              let allowed=false;
+              for(const ref of detail.review_refs??[]){
+                if(ref.status!=='PENDING')continue;
+                const review=await (reviews as ReviewFacade).getManualReviewDetail({authContext,reviewId:ref.id});
+                const canonical=await (reviews as ReviewFacade).canonicalItem({authContext,reviewId:ref.id});
+                if(review.status==='PENDING'&&review.allowed_resolutions.length>0&&canonical.kind===target.kind&&canonical.id===target.id){allowed=true;break;}
+              }
+              if(!allowed)failP2016('FORBIDDEN',403);
+            }else{
+              if(target.kind!=='ticket')failP2016('FORBIDDEN',403);
+              const ticket=await query.detail({authContext,ticketId:target.id}),actions=ticket.allowed_actions;
+              const allowed=field==='internal-note'?workbenchInternalNotesEnabled&&actions.includes('add-note')
+                :field==='ticket-completion'?ticketStaffCompletionEnabled&&actions.includes('complete')
+                :(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled)&&actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations'].includes(action));
+              if(!allowed)failP2016('FORBIDDEN',403);
+            }
+          }
+          const binding=createHash('sha256').update(JSON.stringify([principal.principal_id,sessionId,authContext.csrf_token])).digest('hex');
+          return {principal_id:principal.principal_id,display_name:principal.display_name.slice(0,128)||'工作人员',binding};
+        };
+        activity=createWorkbenchActivity({enabled:true,authorize:authorizeActivity,wakeup:realtime.wakeup});
+        realtime.setWorkbenchActivity?.(async authContext=>{try{return await activity?.signature(authContext)??null;}catch{activity?.releaseAuthentication(authContext);return null;}});
+      }
+      const activityHttp=createWorkbenchActivityHttp(activity);
       const web01Http=createWeb01WorkbenchHttp(workbenchQuery,sourceGroups,workbenchFollowEnabled,workbenchFollowEnabled?follow:null);
       const web01Static=createWeb01WorkbenchStatic({enabled,conversationsEnabled:workbenchConversationsEnabled,notificationExceptionsEnabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
@@ -227,7 +280,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           const directorySchema=!directoryStore||await staffDirectorySchemaReady(pool);
           let sourceGroupSchema=true;
           if(sourceGroupDirectoryEnabled){try{sourceGroupSchema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='037_workbench_source_group_names'")).rowCount===1;}catch{sourceGroupSchema=false;}}
-          const selfHandlingReady=!(workbenchAssignmentHistoryEnabled||ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled||ticketWaitingActionsEnabled)||await selfHandlingSchemaReady(pool);
+          const selfHandlingReady=!(workbenchReviewResolveAndStartEnabled||workbenchAssignmentHistoryEnabled||ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled||ticketWaitingActionsEnabled)||await selfHandlingSchemaReady(pool);
           const returnToDispatchReady=!ticketReturnToDispatchEnabled||await returnToDispatchSchemaReady(pool);
           const unassignReady=!ticketUnassignEnabled||await unassignSchemaReady(pool);
           const staffCompletionReady=!(ticketStaffCompletionEnabled||ticketTakeoverCompletionEnabled)||await staffCompletionSchemaReady(pool);
@@ -241,12 +294,17 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           const supplementReady=!workbenchSupplementFollowUpEnabled||await supplementFollowUp.ready();
           const ready=supplementReady&&followReady&&followUpReady&&roundNotificationsReady&&botFeedbackReady&&reopenReady&&returnToDispatchReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,...(workbenchSupplementFollowUpEnabled?{workbench_supplement_follow_up_schema:supplementReady}:{}),...(workbenchFollowEnabled?{workbench_follow_schema:followReady}:{}),...(workbenchAssignmentHistoryEnabled?{assignment_history_schema:selfHandlingReady}:{}),...(ticketRoundNotificationsEnabled?{ticket_round_notification_schema:roundNotificationsReady}:{}),...(workbenchFollowUpSchedulesEnabled?{workbench_follow_up_schedules_schema:followUpReady}:{}),...(botReporterFeedbackEnabled?{bot_reporter_feedback_schema:botFeedbackReady}:{}),...(ticketReturnToDispatchEnabled?{ticket_return_to_dispatch_schema:returnToDispatchReady}:{}),...(roundsRequested?{ticket_reopen_rounds_schema:reopenReady}:{}),...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketTakeoverCompletionEnabled?{ticket_takeover_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketTakeoverEnabled?{ticket_takeover_schema:selfHandlingReady}:{}),...(ticketWaitingActionsEnabled?{ticket_waiting_actions_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,...(workbenchReviewResolveAndStartEnabled?{workbench_review_resolve_and_start_schema:selfHandlingReady}:{}),...(workbenchSupplementFollowUpEnabled?{workbench_supplement_follow_up_schema:supplementReady}:{}),...(workbenchFollowEnabled?{workbench_follow_schema:followReady}:{}),...(workbenchAssignmentHistoryEnabled?{assignment_history_schema:selfHandlingReady}:{}),...(ticketRoundNotificationsEnabled?{ticket_round_notification_schema:roundNotificationsReady}:{}),...(workbenchFollowUpSchedulesEnabled?{workbench_follow_up_schedules_schema:followUpReady}:{}),...(botReporterFeedbackEnabled?{bot_reporter_feedback_schema:botFeedbackReady}:{}),...(ticketReturnToDispatchEnabled?{ticket_return_to_dispatch_schema:returnToDispatchReady}:{}),...(roundsRequested?{ticket_reopen_rounds_schema:reopenReady}:{}),...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketTakeoverCompletionEnabled?{ticket_takeover_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketTakeoverEnabled?{ticket_takeover_schema:selfHandlingReady}:{}),...(ticketWaitingActionsEnabled?{ticket_waiting_actions_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
-        authenticatedHandler:async context=>(await supplementFollowUpHttp.handler(context))||(await notificationExceptions.handler(context))||(await personalReadHttp(context))||(await conversations.handler(context))||(await manualReports.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
-        unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))
-          ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
-          ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
+        authenticatedHandler:async context=>(await activityHttp(context))||(await supplementFollowUpHttp.handler(context))||(await notificationExceptions.handler(context))||(await personalReadHttp(context))||(await conversations.handler(context))||(await manualReports.handler(context))||(await attachments?.handler(context))||(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
+        unauthenticatedHandler:async context=>{
+          const logout=activity&&context.request.method==='POST'&&context.url.pathname==='/workbench/logout';
+          const current=logout?await workbenchAuthentication?.authenticate(context.request):null;
+          const handled=await workbenchAuthentication?.unauthenticatedHandler?.(context);
+          if(handled){if(logout&&context.response.statusCode===200&&current)activity?.releaseAuthentication(current);return true;}
+          return (await limitedRequestGuard?.(context))||(await selfService?.handler(context))
+            ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context));
+        },
         staticHandler:async(pathname,response)=>(await web01Static(pathname,response))||(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{
           let dueFailed=false,dueError:unknown;
@@ -268,7 +326,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:(closure as P2016ClosurePort).afterTicketAction});
   return Object.freeze({...runtime,roundNotifications,query,tickets:tickets as TicketFacade,reviews:reviews as ReviewFacade,reporterAccess:access,notifications,realtimeProjector:realtimeProjector as RealtimeProjector,orchestrationWorker,incidentExtension,
     selfService,runFollowUpDueBatch:(input?:{limit?:unknown})=>{if(!runFollowUpDueBatch)failP2016('FOLLOW_UP_UNAVAILABLE',503);return runFollowUpDueBatch(input);},
-    stop:async()=>{await attachments?.close();await selfService?.close();memberExtension?.close();(webOAuth as {close?:()=>void}).close?.();return runtime.stop();},
+    stop:async()=>{activity?.close();await attachments?.close();await selfService?.close();memberExtension?.close();(webOAuth as {close?:()=>void}).close?.();return runtime.stop();},
     // Explicit system job, never exposed as an HTTP/User/Reporter action. Scheduling belongs to the approved worker role.
     runAutoClose:async()=>(closure as P2016ClosurePort).runAutoClose({actionService:systemActions,limit:20}),
     runAutoCloseReminders:async()=>(closure as P2016ClosurePort).runAutoCloseReminders({limit:20})});

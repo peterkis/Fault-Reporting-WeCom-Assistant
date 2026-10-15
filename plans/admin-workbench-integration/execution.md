@@ -9,11 +9,29 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 # 人工工作台实施记录
 
+2026-10-15 T39 原七项已父验收，55714977由非实现者唯一精确快进native0，[#94 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94#issuecomment-6186714331)。[获权短租期活动](execution/t39.md)已交付：真实查看／字段编辑、TTL／断线／退出／失权消失，不领取、锁单、推进已读或替代责任；单App有界内存复用原SSE和5秒节奏，无心跳业务写库。本票20、相关69、bounded-parse工具1按真实head／MF分窗通过；最终f4cb／MFf1c736，纯四MD后继不重绑。完整双轴及有限复审、9815项raw／真Git归档、324份loaded原件、1715输入／2248输出与自有释放已父核。旧FAIL／NOT_REACHED／NOT_RUN、032额外冻结计划工具FAIL与受控visibility限制保留。当前 **39／43 CLOSED、4 OPEN**；WBINT-13／A13已完成T38／T39，仍待T40。T40为唯一运行窗口，原strict／startup准备失败未当产品RED；T41／T42候选有限双轴均无新增问题、未运行，T43待#95／#96／#97。默认关闭，全43最终分支审查及工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
+
+2026-10-15 T19 原七项已父验收，fda417d5 由非实现者唯一精确快进 native0，[#74 CLOSED/completed 已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74#issuecomment-6185093476)。[代录后本人原子开始](execution/t19.md)已交付；受理、唯一最小 Ticket、当前合法组承接与开始同事务，报修人／代录人／处理人及电话／现场来源独立。真实被测589b／MF73ab保留本票17 PASS、相关61 PASS、工具3 PASS的独立窗口，纯四MD后继不重绑；两轴及有限复审、9798项raw／真Git归档、原件与精确自有清理已核。旧RED／FAIL／NOT_REACHED与观察器限制保留。当前 **38／43 CLOSED、5 OPEN**，WBINT-05／A05本地完成；T39为唯一运行窗口，T40九因源码有限双轴无新增问题、尚未运行，T41／T42继续有限修补，T43待#94／#95／#96／#97。默认关闭，全43最终分支审查和工作树清理继续待；以下旧段保留各自时点，不授予发布、现场或Gate。
+
 用户于 2026-10-07 授权通过 implement-spec 实施全部 43 票。本次授权覆盖按依赖交付本地实现与隔离验证，以及任务所需本地提交／集成；上一轮“只发布任务、实施未开始、未授权 commit”的记载保留为规划／to-tickets 阶段历史。它不再作为本轮本地实施停止条件。push、部署、真实库迁移、真实 Provider／OAuth／WeCom、full／certify 和业务 Gate 仍按原边界另行授权；子任务不自行对外评论或关闭 Issue。
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-15，T36收口）
+## 当前执行状态导航（2026-10-15，T15收口）
+
+GitHub实际为 **37／43 CLOSED、6 OPEN**，见[43票当前状态及原生阻塞](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/native-all43-after-t15-20261015/snapshot.json)。[#70原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70#issuecomment-6184037530)。全部43票仍ACTIVE，WBINT-04／A04本地完成；以下历史段落保留当时事实。
+
+| 项目 | 当前事实 |
+| --- | --- |
+| T15 / #70 | [明确故障确认并开始](execution/t15.md)原七已父验收，b7ac320b由非实现者唯一FF/native0。复核、唯一Ticket、本人合法处理和显式沟通同事务，失败回滚；澄清、两类责任独立及当前权限保持。 |
+| 实际被测与回归 | 功能d3b／MFc65f，055严格三程序／负向canary／build／artifact原生0；056本票11入口22PASS，057另一次相关11入口87PASS，均0SKIP。最终b7四MD不重build或重绑tested_head，不称一次全量。 |
+| 独立审查与保全 | 初始完整源码加真实增量覆盖35路径，最终四MD两轴覆盖真37路径、0未解决问题；9781个tar成员逐SHA及Git blob、8063项Root物理原件和六用户原件已核。1684输入／2203输出／58tools与656／185／383登记并集完整，46旧SQL无新增。 |
+| 工具与限制 | 定向syntax／direct API3PASS，截图归档host1PASS但272457ms超过240000目标、预算FALSE；原T02缺yaml setupFAIL保留，D-only固定6.0.2后仅同名058c1PASS。host153／154实物文件与T02的4／5及virtual eval分列，不重建或冒称全部捕获。 |
+| 精确自有清理 | 059仅原PG16204／62775：pre0／smartstop0／post3、PIDfile无、单端口LISTEN0、池与其他clients0、config2ab不变、keeperSTOPPED。业务／工具句柄均终态；静态私树和依赖留待全43最终清理。旧40948未知退出及035外层观察缺口不重分类。 |
+| 当前frontier | 下一连续整票T19／#74，#59／#72均completed；T39／T40／T41源码候选已封存、未构建或运行，原七仍PENDING。T42全部原生阻塞已completed，可开始源码准备；T43仍待#74／#94／#95／#96／#97。 |
+| 边界 | A04所属T14／T15／T16本地完成。新flag默认false，App／Worker各1、Gateway单活、SSE32、池预算8保持；未push／PR、部署、真实外发、full／certify或Gate。全43最终总审与工作树清理继续。 |
+
+## 历史执行状态导航（2026-10-15，T36收口）
 
 GitHub实际为 **36／43 CLOSED、7 OPEN**，见[43票完整当前状态与原生阻塞](D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/native-all43-after-t36-20261015/snapshot.json)。[#91原七完成读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91#issuecomment-6181051804)。全部43票仍ACTIVE，WBINT-12／A12本地完成；以下旧日期段落保留当时事实。
 
