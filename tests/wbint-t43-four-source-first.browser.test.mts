@@ -5,6 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT43Fixture,object,text} from './helpers/t43-full-service-fixture.mjs';
+import type {HttpResponse} from './helpers/t43-full-service-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('T43 same original full service App admits group, direct, H5 and manual reports before the production React board reads their authorized canonical facts',async()=>{
@@ -19,7 +20,7 @@ test('T43 same original full service App admits group, direct, H5 and manual rep
   const canonical=[];
   for(const report of all){
    const kind=report.ticketId?'ticket':'review',id=report.ticketId??report.reviewId;assert.ok(id,'normal accepted source must yield a real visible Ticket or pending Review');
-   const detail=await admin.get('/api/workbench/items/'+kind+'/'+id);assert.equal(detail.status,200,detail.raw);
+   const detail:HttpResponse=await admin.get('/api/workbench/items/'+kind+'/'+id);assert.equal(detail.status,200,detail.raw);
    const item=object(detail.body.item);assert.equal(item.id,id);assert.equal(item.kind,kind);canonical.push({kind,id,number:text(item.number)});
   }
   assert.equal(f.directoryCalls(),0,'normal unverified/manual and base service intake must not need a remote personnel directory');
