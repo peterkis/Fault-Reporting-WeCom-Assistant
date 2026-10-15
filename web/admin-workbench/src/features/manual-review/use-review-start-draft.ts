@@ -61,7 +61,7 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
       try{await reviewStartApi.context(reviewId,signal);}catch(error){if(error instanceof ApiError&&[403,404].includes(error.status))throw new DraftError('DRAFT_ACTION_REVOKED');throw error;}
       return fresh.manual_review_draft_recovery_enabled;
     },onAuthorityFailure:error=>{
-      if(error instanceof ApiError&&[401,403].includes(error.status))void clearSessionAuthorization(client,scope.principal,error.status,'revoked');
+      if(error instanceof ApiError&&(error.status===401||error.status===403))void clearSessionAuthorization(client,scope.principal,error.status,'revoked');
       else if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,scope.principal,401,'revoked');
       else if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED')void revoke(error).catch(()=>setUnavailable(true));
       else{setUnavailable(true);if(error instanceof DraftError&&error.message==='DRAFT_CORRUPT')void openDraft(scope,{restore:false}).then(copy=>removeSensitiveDraft(copy.handle,'revoked')).catch(()=>{});}
