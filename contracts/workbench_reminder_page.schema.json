@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_reminder_page.schema.json",
+  "title": "T40 authorized bounded reminder page or empty baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "items",
+    "as_of_event_id",
+    "next_cursor",
+    "reset_required",
+    "baseline_token"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "workbench_reminder_item.schema.json"
+      }
+    },
+    "as_of_event_id": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+      "minLength": 1,
+      "maxLength": 19,
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "reset_required": {
+      "type": "boolean"
+    },
+    "baseline_token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reset_required": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "maxItems": 0
+          },
+          "next_cursor": {
+            "const": null
+          }
+        }
+      }
+    }
+  ],
+  "x-runtime-constraints": [
+    "current READ is rechecked before returning each canonical object; no unauthorized rows or counts",
+    "cursor pages hold one as-of watermark and stable ascending (event_id, reminder_id) order",
+    "gap/expired watermark returns reset_required true and an empty new baseline, never historical audible catch-up",
+    "no source mutation, personal read advance, Explicit Follow, team disposition or Delivery is created by GET",
+    "baseline_token is a process-key-authenticated bounded projection fence, not an access token or a persisted fact; source facts older than the baseline cannot become new reminders merely because projection was delayed"
+  ]
+}
