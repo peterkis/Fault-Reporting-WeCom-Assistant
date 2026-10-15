@@ -246,7 +246,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
             if(!eligibility.actions.includes('take-and-start'))failP2016('SELF_HANDLING_STATE_CONFLICT',409);
             await performFirstTicketResponsibilityInTransaction({transaction:tx,ticket,principal:current.principal,
               command:{action:'take-and-start',ticket_id:ticket.id,client_command_id:command.client_command_id,expected_version:ticket.version,reason_code:'MANUAL_REPORT_SELF_HANDLING',resolver_team_id:command.resolver_team_id},
-              initialCycle:eligibility.cycle,tracePrefix:'t19:',realtimeProjector:realtimeProjector?.ticket,...selfHandlingHooks});
+              initialCycle:eligibility.cycle,tracePrefix:'t19:',realtimeProjector:realtimeProjector?.ticket??null,...selfHandlingHooks});
             await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
             return publicP2016({...admitted,ticket:{...admitted.ticket,status:'IN_PROGRESS' as const}});
           }});
