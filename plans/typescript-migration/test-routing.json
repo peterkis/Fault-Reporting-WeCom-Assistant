@@ -7714,6 +7714,19 @@
     ],
     "wbint-t15-team-window": [
       "tests/wbint-t15-review-start-team-window.browser.test.mts"
+    ],
+    "wbint-t15-related": [
+      "tests/wbint-t14-review.test.mts",
+      "tests/wbint-t14-review.integration.test.mts",
+      "tests/wbint-t14-review-boundaries.integration.test.mts",
+      "tests/wbint-t14-review.browser.test.mts",
+      "tests/t04-self-handling.integration.test.mjs",
+      "tests/t05-conversation-handling.integration.test.mts",
+      "tests/t20-staff-reopen.integration.test.mts",
+      "tests/t20-staff-reopen-ack.integration.test.mts",
+      "tests/t20-staff-reopen-read-only.integration.test.mts",
+      "tests/p2-016-contracts.test.mjs",
+      "tests/p2-016-workbench-http.integration.test.mjs"
     ]
   },
   "subprocess_entries": {

@@ -78,7 +78,7 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
     },onRestore:copy=>{
       const controller=new AbortController(),token=++revision.current,current=captureWorkbenchRead(controller.signal);restoreRequest.current?.abort();restoreRequest.current=controller;validating.current=true;setRestoring(true);
       void(async()=>{
-        const context=await reviewStartApi.context(reviewId,controller.signal);current();
+        const context=await reviewStartApi.context(reviewId,controller.signal,copy.value.capture?.team||undefined);current();
         if(copy.value.capture?.team&&!context.resolver_teams.some(team=>team.team_id===copy.value.capture?.team))throw new DraftError('DRAFT_ACTION_REVOKED');
         const selected=copy.value.sessions;
         const ticketId=copy.value.capture?.ticket?.ticket_id??context.expected_ticket?.ticket_id;

@@ -76,8 +76,9 @@ export const reviewStartApi={
     if(state==='COMMITTED')return {...base,state,ticket_id:id(v.ticket_id),ticket_version:integer(v.ticket_version),ticket_event_id:id(v.ticket_event_id)};
     invalid();
   },
-  async context(reviewId:string,signal:AbortSignal):Promise<ReviewStartContext>{
-    const current=captureWorkbenchRead(signal),response=await fetch('/api/manual-reviews/'+encodeURIComponent(reviewId)+'/resolve-and-start-context',{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});current();
+  async context(reviewId:string,signal:AbortSignal,resolverTeamId?:string):Promise<ReviewStartContext>{
+    const hint=resolverTeamId===undefined?'':'?resolver_team_id='+encodeURIComponent(resolverTeamId);
+    const current=captureWorkbenchRead(signal),response=await fetch('/api/manual-reviews/'+encodeURIComponent(reviewId)+'/resolve-and-start-context'+hint,{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json'}});current();
     return decodeContext(await body(response,current),reviewId);
   },
   async perform(reviewId:string,command:ReviewResolveAndStartCommand,csrfToken:string|null,signal:AbortSignal):Promise<ReviewResolveAndStartResult>{

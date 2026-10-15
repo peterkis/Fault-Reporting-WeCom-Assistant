@@ -105,20 +105,26 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
         failP2016('ACTION_FAILED',503);
       });
     },
-    async context({authContext,reviewId:inputReview}:{authContext:unknown;reviewId:unknown}){
+    async context({authContext,reviewId:inputReview,resolverTeamId:inputTeam}:{authContext:unknown;reviewId:unknown;resolverTeamId?:unknown}){
       guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
-      const reviewId=uuidP2016(inputReview);
+      const reviewId=uuidP2016(inputReview),requestedTeam=inputTeam===undefined?null:codeP2016(inputTeam);
       return transactionP2016(pool,async transaction=>{
         await transaction.query('SET TRANSACTION READ ONLY');
         const review=await currentReview(authContext,reviewId,transaction),principal=await query.principal(authContext,transaction);
         if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
-        const teams=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
-          JOIN pilot_ticket.pilot_team_member m ON m.team_id=rt.team_id WHERE m.principal_id=$1::uuid AND rt.is_active ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
         const canonical=await reviews.canonicalItem({authContext,reviewId,transaction});
         const ticket=canonical.kind==='ticket'?(await query.authorizedTicket({authContext,ticketId:canonical.id,transaction})).ticket:null;
+        const selectedTeam=requestedTeam??ticket?.resolver_team_id;
+        const exactTeam=selectedTeam?(await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
+          JOIN pilot_ticket.pilot_team_member m ON m.team_id=rt.team_id WHERE m.principal_id=$1::uuid AND rt.is_active AND rt.team_id=$2`,[principal.principal_id,selectedTeam])).rows[0]:undefined;
+        if(requestedTeam&&!exactTeam)failP2016('FORBIDDEN',403);
+        const teams=await transaction.query<{team_id:string;display_name:string}>(`SELECT rt.team_id,rt.display_name FROM pilot_ticket.resolver_team rt
+          JOIN pilot_ticket.pilot_team_member m ON m.team_id=rt.team_id WHERE m.principal_id=$1::uuid AND rt.is_active ORDER BY rt.team_id LIMIT 100`,[principal.principal_id]);
+        const choices=exactTeam&&!teams.rows.some(team=>team.team_id===exactTeam.team_id)
+          ?[...teams.rows.slice(0,99),exactTeam].sort((a,b)=>a.team_id<b.team_id?-1:a.team_id===b.team_id?0:1):teams.rows;
         const eligible=ticket?await selfHandlingResponsibilityEligibility(transaction,principal,ticket):null;
         return publicP2016({review_id:reviewId,expected_ticket:ticket?{ticket_id:ticket.id,expected_version:ticket.version}:null,
-          resolver_team_id:ticket?.resolver_team_id??null,resolver_teams:teams.rows,
+          resolver_team_id:ticket?.resolver_team_id??null,resolver_teams:choices,
           allowed:review.status==='PENDING'&&review.allowed_resolutions.includes('CONFIRM_TICKET_ELIGIBLE')&&(!eligible||eligible.actions.includes('take-and-start'))});
       });
     },
