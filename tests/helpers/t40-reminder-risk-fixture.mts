@@ -31,7 +31,9 @@ export interface T40ReminderRiskFixture {
   readonly runtime:P2016EnabledRuntime;
   readonly ticketId:string;
   readonly handler:string;
+  readonly otherHandler:string;
   readonly browserCookie:Readonly<{name:string;value:string;url:string}>;
+  readonly otherBrowserCookie:Readonly<{name:string;value:string;url:string}>;
   readonly http:T37Http;
   readonly setupCommandIds:readonly string[];
   currentFacts():Promise<Record<string,unknown>>;
@@ -117,7 +119,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         const csrf=text(bootstrap.value.csrf_token);
         const post=async(path:string,body:Readonly<Record<string,unknown>>)=>{
           const response=await fetch(base.origin+path,{method:'POST',headers:{
-            cookie:cookieAt(index),origin:official?authOrigin:base.origin,'content-type':'application/json',
+            cookie:cookieAt(index),origin:base.origin,'content-type':'application/json',
             'x-csrf-token':csrf,'idempotency-key':text(body.client_command_id),
             'if-match':'"'+String(body.expected_follow_version??body.expected_version)+'"',
           },body:JSON.stringify(body)});
@@ -224,8 +226,9 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         }
         return facts;
       };
-      await run({origin:base.origin,pool:base.pool,runtime,ticketId,handler:base.handler,
-        browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},http,
+      const otherCookie=cookies[2];assert.ok(otherCookie);
+      await run({origin:base.origin,pool:base.pool,runtime,ticketId,handler:base.handler,otherHandler:base.otherHandler,
+        browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},otherBrowserCookie:{name:otherCookie.name,value:otherCookie.value,url:otherCookie.url},http,
         setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,publishPendingReports,prepareClosedRelatedTicket,logout});
     } finally {
       await runtime.stop();await official?.close();

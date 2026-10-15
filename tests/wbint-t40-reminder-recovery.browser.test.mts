@@ -37,7 +37,7 @@ async function click(browser:Browser,selector:string,context='window'){
 async function launch(f:{origin:string;browserCookie:{name:string;value:string;url:string}},path='/workbench/app/'){
   const browser=await launchSystemBrowser({url:f.origin+'/api/lifecycle/bootstrap',width:1280,height:900,cookies:[f.browserCookie]});assert.ok(browser);
   try{await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observer});await browser.command('Page.navigate',{url:f.origin+path});
-    await browser.waitFor('document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\')');return browser;
+    await browser.waitFor('Boolean(document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\'))');return browser;
   }catch(error){await browser.close();throw error;}
 }
 async function close(browser:Browser|undefined,primary:unknown){await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
@@ -50,7 +50,7 @@ test('T40 hidden leader cancels its pending cluster, a real queued document take
     await click(browser,'input[aria-label="开启声音提醒"]');await click(browser,'button[aria-label="关闭提醒偏好"]');
     await browser.waitFor('globalThis.__t40Risk.acquired===1&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[0]).some(x=>x.baseline)');
     await browser.evaluate(`(()=>{const peer=document.createElement('iframe');peer.id='t40-peer';peer.style.cssText='position:fixed;left:0;top:0;width:600px;height:700px;z-index:9999;background:white';peer.src='/workbench/app/';document.body.append(peer);})()`);
-    await browser.waitFor(`${frame}?.document.querySelector('[data-reminders-ready="true"]')&&${frame}?.__t40Risk`);
+    await browser.waitFor(`Boolean(${frame}?.document.querySelector('[data-reminders-ready="true"]')&&${frame}?.__t40Risk)`);
     await click(browser,'button[aria-label="提醒偏好"]',frame);await click(browser,'input[aria-label="开启声音提醒"]',frame);await click(browser,'button[aria-label="关闭提醒偏好"]',frame);
     await browser.waitFor(`Boolean(${frame}.document.querySelector('input[aria-label="开启声音提醒"]').checked)`);
     const waiting=object(await browser.evaluate('(async()=>{const state=await navigator.locks.query();return {held:state.held.filter(x=>x.name.startsWith("wbint-reminders-")).length,pending:state.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length};})()'));

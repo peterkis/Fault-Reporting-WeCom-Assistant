@@ -42,7 +42,7 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       await browser.command('Page.enable');
       const installed=object(await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observe(fixture.ticketId)}));
       await browser.command('Page.navigate',{url:fixture.origin+'/workbench/app/?range=all'});
-      await browser.waitFor('document.querySelectorAll("article.ticket-card").length>0&&document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\')');
+      await browser.waitFor('Boolean(document.querySelectorAll("article.ticket-card").length>0&&document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\'))');
       assert.equal((await fixture.runtime.observability.metrics()).sse_clients,1);
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false,'genuine first server page and folded DOM omit the target');
       const facts=await fixture.currentFacts();assert.deepEqual(await fixture.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
