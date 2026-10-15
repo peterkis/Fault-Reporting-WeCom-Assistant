@@ -13,8 +13,8 @@ const observer=`(()=>{
   const fetch=globalThis.fetch;globalThis.fetch=async function(input,options){
     const url=new URL(input instanceof Request?input.url:String(input),location.href),method=(options?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(url.origin===location.origin&&url.pathname.startsWith('/api/')&&method==='POST')m.posts++;
-    if(url.origin===location.origin&&url.pathname==='/api/workbench/reminders')m.reads.push({baseline:!url.searchParams.has('after_event_id')});
-    return Reflect.apply(fetch,this,[input,options]);
+    let read=null;if(url.origin===location.origin&&url.pathname==='/api/workbench/reminders'){read={baseline:!url.searchParams.has('after_event_id'),completed:false};m.reads.push(read);}
+    const response=await Reflect.apply(fetch,this,[input,options]);if(read&&response.ok){await response.clone().json();read.completed=true;}return response;
   };
   if(navigator.locks){const request=navigator.locks.request.bind(navigator.locks);navigator.locks.request=function(name,options,callback){
     if(!String(name).startsWith('wbint-reminders-'))return request(name,options,callback);
@@ -55,7 +55,7 @@ test('T40 hidden leader cancels its pending cluster, a real queued document take
     browser=await launch(f);await click(browser,'button[aria-label="提醒偏好"]');
     await browser.waitFor('Boolean(document.querySelector(\'[role="dialog"][aria-label="本浏览器提醒偏好"][open]\'))');
     await click(browser,'input[aria-label="开启声音提醒"]');await click(browser,'button[aria-label="关闭提醒偏好"]');
-    await browser.waitFor('globalThis.__t40Risk.acquired===1&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[0]).some(x=>x.baseline)');
+    await browser.waitFor('globalThis.__t40Risk.acquired===1&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[0]).some(x=>x.baseline&&x.completed)');
     peerId=text(object(await browser.command('Target.createTarget',{url:'about:blank'})).targetId);
     const peerSession=text(object(await browser.command('Target.attachToTarget',{targetId:peerId,flatten:true})).sessionId);
     await browser.command('Page.enable',{},peerSession);await browser.command('Runtime.enable',{},peerSession);
@@ -69,19 +69,22 @@ test('T40 hidden leader cancels its pending cluster, a real queued document take
     const waiting=object(await browser.evaluate('(async()=>{const state=await navigator.locks.query();return {held:state.held.filter(x=>x.name.startsWith("wbint-reminders-")).length,pending:state.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length};})()'));
     assert.equal(waiting.held,1);assert.equal(waiting.pending,1,'one native queued request must survive an unavailable leader lock');
     assert.equal(await evaluate(browser,'__t40Risk.acquired',peerSession),0);
+    const prepared=Number(await browser.evaluate('__t40Risk.reads.length'));
+    await browser.evaluate('__t40Visibility("visible")');
+    await browser.waitFor('__t40Risk.reads.slice('+prepared+').some(x=>x.baseline&&x.completed)');
     await browser.evaluate('globalThis.__t40BeforeCluster=globalThis.__t40Risk.clusters');
     assert.deepEqual(await f.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
     await browser.waitFor('globalThis.__t40Risk.clusters>globalThis.__t40BeforeCluster');
     const starts=await browser.evaluate('globalThis.__t40Risk.starts');await browser.evaluate('globalThis.__t40Visibility("hidden")');
     await browser.waitFor('globalThis.__t40Risk.released===1');
-    await wait(browser,'__t40Risk.acquired===1&&__t40Risk.reads.slice(__t40Risk.acquireReads[0]).some(x=>x.baseline)',peerSession);
+    await wait(browser,'__t40Risk.acquired===1&&__t40Risk.reads.slice(__t40Risk.acquireReads[0]).some(x=>x.baseline&&x.completed)',peerSession);
     await delay(900);assert.equal(await browser.evaluate('globalThis.__t40Risk.starts'),starts,'hidden cluster cannot invoke a late oscillator start');
     assert.ok(Number(await browser.evaluate('globalThis.__t40Risk.closedAudio'))>0);assert.ok(Number(await browser.evaluate('globalThis.__t40Risk.cancelledClusters'))>0);
     await f.nextDue();const reads=Number(await browser.evaluate('globalThis.__t40Risk.reads.length'));
     await browser.evaluate('globalThis.__t40Visibility("visible")');
     await browser.waitFor(`globalThis.__t40Risk.reads.length>${reads}`);assert.equal(await browser.evaluate(`globalThis.__t40Risk.reads[${reads}].baseline`),true,'visible recovery starts at a new baseline before any backlog eligibility');
     await browser.command('Target.closeTarget',{targetId:peerId});peerId=undefined;
-    await browser.waitFor('globalThis.__t40Risk.acquired===2&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[1]).some(x=>x.baseline)');
+    await browser.waitFor('globalThis.__t40Risk.acquired===2&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[1]).some(x=>x.baseline&&x.completed)');
     await f.nextDue();await browser.waitFor('Boolean(document.querySelector("[data-reminder-id]"))');
     const before=await f.currentFacts();await browser.evaluate('globalThis.__t40Risk.offset=601000');
     await browser.waitFor('document.querySelectorAll("[data-reminder-id]").length===0');assert.equal(await browser.evaluate('document.querySelector("[data-realtime-status]").dataset.realtimeStatus'),'live');assert.deepEqual(await f.currentFacts(),before,'expiry only prunes visual hints');
