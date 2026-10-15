@@ -6,6 +6,7 @@ import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mj
 test('T42 narrow long-content reduced-motion board has keyboard-equivalent actions and cancel keeps the original form input',{timeout:240000},async()=>{
   await withT42BoardBrowser(async(f,browser,card,get)=>{
     const first=f.tickets[0];assert.ok(first);
+    const enter=async()=>{await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r',unmodifiedText:'\r'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});};
     assert.equal(await browser.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"),true);
     assert.ok(String(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' h3')}).textContent`)).length>120);
     const title=object(await browser.evaluate(`(()=>{const bounds=document.querySelector(${JSON.stringify(card+' h3')}).getBoundingClientRect();return {x:bounds.x+8,y:bounds.y+8};})()`));assert.equal(typeof title.x,'number');assert.equal(typeof title.y,'number');
@@ -16,22 +17,22 @@ test('T42 narrow long-content reduced-motion board has keyboard-equivalent actio
     await browser.command('Input.dispatchMouseEvent',{type:'mouseWheel',x:title.x,y:title.y,deltaX:0,deltaY:80});
     assert.equal(await browser.evaluate("Boolean(document.querySelector('.is-dragging'))"),false);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).focus()`);
-    for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await enter();
     await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}))`);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).focus()`);
     for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}))`),false);
     assert.equal(await browser.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')})`),true);
-    for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await enter();
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).focus()`);
-    for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await enter();
     await browser.waitFor("document.querySelector('[data-board-action-status]')?.textContent.includes('不能执行合法业务动作')");
     assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog[open]'))"),false);
     assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),[]);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).focus()`);
-    for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await enter();
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).focus()`);
-    for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await enter();
     await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] [data-board-intent-panel]'))");
     await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] textarea'))");
     await browser.evaluate("document.querySelector('.detail-dialog[open] textarea').focus()");await browser.command('Input.insertText',{text:'尚未提交的本页原输入；取消移动不能删除。'});
