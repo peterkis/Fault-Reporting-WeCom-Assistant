@@ -68,5 +68,5 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
   }catch(error){primary=error;}
   finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
  },{realWorkbenchAuthentication:true,workbenchSearchEnabled:true,workbenchRealtimeEnabled:true,
-  ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false});
+  ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,chronologicalTicketEvents:true});
 });
