@@ -10,7 +10,8 @@ interface Fixture {pool:PostgresPool;origin:string;backendOrigin?:string;cookies
  tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
 function text(value:unknown):string {assert.ok(typeof value==='string');return value;}
 function request(f:Fixture,path:string,init:RequestInit={}){
- return fetch((f.backendOrigin??f.origin)+path,{...init,headers:{cookie:f.cookies[0]??'',...init.headers},signal:AbortSignal.timeout(15000)});
+ const headers=new Headers(init.headers);headers.set('cookie',f.cookies[0]??'');
+ return fetch((f.backendOrigin??f.origin)+path,{...init,headers,signal:AbortSignal.timeout(15000)});
 }
 async function read(f:Fixture,path:string){const response=await request(f,path);assert.equal(response.status,200,await response.clone().text());return object(await response.json());}
 
@@ -64,11 +65,14 @@ test('T41 does not return an earlier safe reporter projection after its Journey 
  await withWeb01Fixture(async(f:Fixture)=>{
   const first=f.tickets[0];assert.ok(first);
   const journey=(await f.pool.query<{id:string}>('SELECT id::text FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[first.intake.intakeId])).rows[0];assert.ok(journey);
-  await f.pool.query(`UPDATE intake.contact_journey SET profile_resolution_status='RESOLVED',profile_snapshot=jsonb_build_object('source','WECOM_DIRECTORY','version','T41_TTL','contact',jsonb_build_object('name','T41即将到期姓名'),'memberships','[]'::jsonb) WHERE id=$1::uuid`,[journey.id]);
+  const deadline=(await f.pool.query<{deadline:string}>(`WITH deadline AS (SELECT (platform.physical_epoch_ms()/1000+5)*1000 AS epoch)
+   UPDATE intake.contact_journey SET profile_resolution_status='RESOLVED',profile_snapshot=jsonb_build_object('source','WECOM_DIRECTORY','version','T41_TTL','contact',jsonb_build_object('name','T41即将到期姓名'),'memberships','[]'::jsonb),
+    retention_until=platform.local_from_epoch_ms(deadline.epoch),retention_until_epoch_ms=deadline.epoch
+   FROM deadline WHERE id=$1::uuid RETURNING retention_until_epoch_ms::text AS deadline`,[journey.id])).rows[0]?.deadline;assert.ok(deadline);
   const before=await read(f,'/api/workbench/items/ticket/'+first.ticket.id);assert.equal(object(before.item).reporter_name,'T41即将到期姓名');
   let release:()=>void=()=>{},entered:()=>void=()=>{};
   const held=new Promise<void>(resolve=>{release=resolve;}),reached=new Promise<void>(resolve=>{entered=resolve;});
-  const original=f.pool.query;let projections=0;
+  const original=f.pool.query,execute=original.bind(f.pool);let projections=0;
   f.pool.query=new Proxy(original,{apply(target,thisArg,args:unknown[]){
    const sql=typeof args[0]==='string'?args[0]:'';
    if(sql.includes('SELECT * FROM cards WHERE kind=$4 AND id=$5')&&++projections===2){entered();return held.then(()=>Reflect.apply(target,thisArg,args));}
@@ -78,7 +82,11 @@ test('T41 does not return an earlier safe reporter projection after its Journey 
   try{
    pending=request(f,'/api/workbench/search?column=all&q='+encodeURIComponent('全新合成开发材料')+'&limit=2');void pending.catch(()=>undefined);
    await Promise.race([reached,delay(5000).then(()=>assert.fail('the second real card projection was not reached'))]);
-   await original.call(f.pool,`UPDATE intake.contact_journey SET retention_until=platform.local_from_epoch_ms(platform.physical_epoch_ms()-1000),retention_until_epoch_ms=platform.physical_epoch_ms()-1000 WHERE id=$1::uuid`,[journey.id]);
+   let expired=false;const expiryBound=performance.now()+6000;
+   while(performance.now()<expiryBound){
+    const value=(await execute<{expired:boolean}>('SELECT platform.physical_epoch_ms()>$1::bigint AS expired',[deadline])).rows[0];
+    if(value?.expired){expired=true;break;}await delay(20);
+   }assert.equal(expired,true,'the originally retained Journey must actually expire while the second projection waits');
    release();const response=await pending;assert.equal(response.status,400,await response.clone().text());
    assert.ok(!(await response.text()).includes('T41即将到期姓名'));
   }finally{release();await pending?.catch(()=>undefined);f.pool.query=original;}

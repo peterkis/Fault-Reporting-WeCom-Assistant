@@ -7838,6 +7838,14 @@
       "tests/t41-search-current-read.integration.test.mts",
       "tests/t41-search-long-read.integration.test.mts",
       "tests/t41-search-refresh-and-long-pages.browser.test.mts"
+    ],
+    "wbint-t41-related": [
+      "tests/wbint-t38-realtime.test.mts",
+      "tests/wbint-t38-realtime.integration.test.mts",
+      "tests/wbint-t38-authority.browser.test.mts",
+      "tests/wbint-t38-offline.browser.test.mts",
+      "tests/p2-016-workbench-wecom-auth.test.mjs",
+      "tests/p2-016-workbench-http.integration.test.mjs"
     ]
   },
   "subprocess_entries": {
