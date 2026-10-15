@@ -1,7 +1,8 @@
-import {shanghaiLocalToEpochMs} from '../../src/platform/time-contract.mjs';
+import {assertLocalDateTime,shanghaiLocalToEpochMs} from '../../src/platform/time-contract.mjs';
 import {createHash,createHmac,randomBytes} from 'node:crypto';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
 import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
 import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
 import {createContactJourneyStore} from '../../src/p2-015-contact-journey.mjs';
@@ -37,6 +38,7 @@ export interface T40ReminderRiskFixture {
   setTeams(teams:readonly string[]):Promise<void>;
   removeStaffRole():Promise<void>;
   createTeamReport(options?:{project?:boolean}):Promise<string>;
+  publishPendingReports():Promise<void>;
   prepareClosedRelatedTicket():Promise<()=>Promise<void>>;
   logout():Promise<void>;
 }
@@ -155,7 +157,18 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         const row=(await base.pool.query<{wecom_user_id:string}>('SELECT wecom_user_id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[base.handler])).rows[0];assert.ok(row);
         await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:row.wecom_user_id,displayName:'T40 revoked staff',roles:['REPORTER'],resolverTeamIds:[]});
       };
-      const createTeamReport=async({project=true}:{project?:boolean}={})=>{const id=await base.createTicket();if(project)await runtime.realtimeProjector.runOnce({limit:100});return id;};
+      const publishPendingReports=async()=>{
+        for(let attempt=0;attempt<20;attempt++){await runtime.coordinator.runOnce();if(object(await runtime.coordinator.backlog()).channel_messages===0)break;}
+        assert.equal(object(await runtime.coordinator.backlog()).channel_messages,0);
+      };
+      const createTeamReport=async({project=true}:{project?:boolean}={})=>{
+        const msgid='t40-new-'+randomUUID(),accepted=object(await runtime.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},body:{msgid,aibotid:'bot-test',chattype:'single',from:{userid:'t40-reporter-'+randomUUID()},msgtype:'text',text:{content:'报修：T40全新的隔离合成设备故障。'}}}));
+        assert.equal(accepted.ok,true);const intakeId=text(object(object(accepted.result).intake).id);
+        const intake=(await base.pool.query<{created_at:string}>("SELECT to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at FROM intake.service_intake WHERE id=$1::uuid",[intakeId])).rows[0];assert.ok(intake);
+        const created=await createPilotTicketCore({pool:base.pool}).createForIntake({intakeId,occurredAt:assertLocalDateTime(intake.created_at),traceId:msgid});assert.ok(created.ticket);
+        if(project)await publishPendingReports();else assert.ok(Number(object(await runtime.coordinator.backlog()).channel_messages)>0);
+        return created.ticket.id;
+      };
       const prepareClosedRelatedTicket=async()=>{
         await base.setHandlerTeams(['PILOT_IT']);
         const item=await http.get('/api/workbench/items/ticket/'+ticketId),attention=object(object(item.value.item).attention);
@@ -206,7 +219,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       };
       await run({origin:base.origin,pool:base.pool,runtime,ticketId,handler:base.handler,
         browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},http,
-        setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,prepareClosedRelatedTicket,logout});
+        setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,publishPendingReports,prepareClosedRelatedTicket,logout});
     } finally {
       await runtime.stop();await official?.close();
       assert.equal(runtime.server.listening,false);
