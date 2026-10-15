@@ -13,7 +13,7 @@ async function waitViewing(origin:string,cookie:string,ticketId:string){
 }
 // Delay delivery of an actual native open event until the real detail is visible.
 // The native EventSource, real server, authorized GETs and all event data remain unchanged.
-const holdOpen=`(()=>{globalThis.__t39HoldOpen=true;globalThis.__t39OpenQueue=[];globalThis.__t39Errors=0;const add=EventSource.prototype.addEventListener;EventSource.prototype.addEventListener=function(name,listener,options){if(name==='open'&&typeof listener==='function')return add.call(this,name,event=>{if(globalThis.__t39HoldOpen)globalThis.__t39OpenQueue.push(()=>listener.call(this,event));else listener.call(this,event);},options);if(name==='error')add.call(this,name,()=>globalThis.__t39Errors++);return add.call(this,name,listener,options);};globalThis.__t39ReleaseOpen=()=>{globalThis.__t39HoldOpen=false;const queue=globalThis.__t39OpenQueue.splice(0);for(const deliver of queue)deliver();};})()`;
+const holdOpen=`(()=>{globalThis.__t39HoldOpen=true;globalThis.__t39OpenQueue=[];globalThis.__t39Errors=0;globalThis.__t39AcceptedRenewals=0;const original=globalThis.fetch;globalThis.fetch=async function(input,options){const response=await original.call(this,input,options);if(String(input)==='/api/workbench/activity'&&options?.method==='POST'&&JSON.parse(options.body).action==='RENEW'&&response.status===200)globalThis.__t39AcceptedRenewals++;return response;};const add=EventSource.prototype.addEventListener;EventSource.prototype.addEventListener=function(name,listener,options){if(name==='open'&&typeof listener==='function')return add.call(this,name,event=>{if(globalThis.__t39HoldOpen)globalThis.__t39OpenQueue.push(()=>listener.call(this,event));else listener.call(this,event);},options);if(name==='error')add.call(this,name,()=>globalThis.__t39Errors++);return add.call(this,name,listener,options);};globalThis.__t39ReleaseOpen=()=>{globalThis.__t39HoldOpen=false;const queue=globalThis.__t39OpenQueue.splice(0);for(const deliver of queue)deliver();};})()`;
 
 test('production detail visible before live and after a real reconnect registers viewing without extra interaction',async()=>{
   await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,runtime}:Fixture)=>{
@@ -28,12 +28,31 @@ test('production detail visible before live and after a real reconnect registers
       assert.equal((await runtime.observability.metrics()).sse_clients,1,'activity reuses the one original real SSE stream');
       await browser.evaluate('globalThis.__t39HoldOpen=true');runtime.disconnectRealtimePrincipal(0);
       await browser.waitFor('globalThis.__t39Errors>0&&globalThis.__t39OpenQueue.length>0');
-      await browser.evaluate('globalThis.__t39ReleaseOpen()');
+      await browser.evaluate('globalThis.__t39AcceptedRenewals=0;globalThis.__t39ReleaseOpen()');
+      await browser.waitFor('globalThis.__t39AcceptedRenewals>0');
       await waitViewing(origin,viewer,ticket.id);
       assert.equal((await runtime.observability.metrics()).sse_clients,1);
     }catch(failure){error=failure;console.log('T39_VISIBLE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,errors:globalThis.__t39Errors,queued:globalThis.__t39OpenQueue?.length})'):{}));}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
+});
+
+test('trusted production Review input reports editing on the currently displayed canonical Ticket',async()=>{
+  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets}:Fixture)=>{
+    const ticket=tickets[0]?.ticket,cookie=browserCookies[0],viewer=cookies[2];assert.ok(ticket&&cookie&&viewer);let browser:Browser|undefined,error:unknown;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
+      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.disabled===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await browser.evaluate('(()=>{const input=document.querySelector("[aria-label=复核结论]");input.scrollIntoView({block:"center"});input.focus();})()');
+      for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40,nativeVirtualKeyCode:40});
+      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.value!==""');
+      const until=Date.now()+8000;let editing=false;
+      do{editing=(await currentPeople(origin,viewer,ticket.id)).some(person=>person.display_name==='林舟'&&person.mode==='EDITING');if(!editing)await new Promise(resolve=>setTimeout(resolve,100));}while(!editing&&Date.now()<until);
+      assert.equal(editing,true,'a current authorized linked Review field belongs to the canonical Ticket activity');
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-review-result]"))'),false,'editing presence must not submit the Review');
+    }catch(failure){error=failure;console.log('T39_REVIEW_EDIT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,value:document.querySelector("[aria-label=复核结论]")?.value})'):{}));}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchManualReviewEnabled:true,manualProjection:true});
 });
 
 test('slow activity alone leaves production realtime and an authorized human note usable',async()=>{
