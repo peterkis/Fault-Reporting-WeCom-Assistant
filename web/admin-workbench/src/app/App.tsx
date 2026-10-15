@@ -1,3 +1,6 @@
+import {SearchControls,criteriaFromUrl,useWorkbenchSearch,searchEmptyMessage} from '../features/search/WorkbenchSearch';
+import {SEARCH_KEYS,searchCriteriaKey,searchParameters} from '../../../../src/workbench-search-contracts.mjs';
+import type {WorkbenchSearchCriteria} from '../../../../contracts/workbench_search_contracts';
 import {ItemFollow} from '../features/item-follow/ItemFollow';
 import {NotificationExceptions} from '../features/notification-exceptions/NotificationExceptions';
 import {TicketWaitingActions} from '../features/ticket-waiting/TicketWaitingActions';
@@ -46,9 +49,9 @@ import type {RealtimeView} from '../realtime/useRealtime';
 const names:Record<BoardColumn,string>={pending:'待受理',active:'处理中',closed:'已关闭'};
 const columns:readonly BoardColumn[]=['pending','active','closed'];
 const statusColors:Record<string,string>={NEW:'yellow',QUEUED:'yellow',ACCEPTED:'yellow',PENDING:'yellow',RECEIVED:'yellow',WAITING_TRIAGE:'yellow',REOPENED:'orange',WAITING_DESCRIPTION:'orange',WAITING_REQUESTER:'orange',IN_PROGRESS:'blue',WAITING_VENDOR:'blue',CLOSED:'green',RESOLVED:'green',FAILED:'red'};
-function useColumn(principal:Principal,column:BoardColumn,range:CompletionRange,scope?:'team'|'related'){
+function useColumn(principal:Principal,column:BoardColumn,range:CompletionRange,scope?:'team'|'related',enabled=true){
   return useInfiniteQuery({queryKey:['board',principal.principal_id,column,range,...(scope?[scope,principal.authorization_revision,principal.expires_epoch_ms]:[])],initialPageParam:null as string|null,
-    queryFn:({pageParam,signal})=>api.board(column,range,pageParam,signal,scope),getNextPageParam:p=>p.next_cursor??undefined});
+    enabled,queryFn:({pageParam,signal})=>api.board(column,range,pageParam,signal,scope),getNextPageParam:p=>p.next_cursor??undefined});
 }
 function useClock(){
   const [now,setNow]=useState(Date.now);
@@ -162,7 +165,7 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   const transport=principal.realtime_sse_enabled?realtime.status:online?'disabled':'offline';
   useEffect(()=>{const changed=()=>setOnline(navigator.onLine);window.addEventListener('online',changed);window.addEventListener('offline',changed);return()=>{window.removeEventListener('online',changed);window.removeEventListener('offline',changed);};},[]);
   return <div className={'app '+(collapsed?'sidebar-collapsed':'')}><aside className="sidebar" aria-label="主导航"><div className="brand"><span className="brandmark"><LifeBuoy size={18}/></span><strong>医小修</strong><ChevronDown size={14}/></div>
-    <button className="sidebar-search" disabled title="全局搜索尚未开放"><Search size={16}/><span>搜索工作区</span><small>预留</small></button>
+    {principal.workbench_search_enabled?<Link className="sidebar-search" to="/?search=1" aria-disabled={navigationBlocked} onClick={guardNavigation}><Search size={16}/><span>搜索工作区</span></Link>:<button className="sidebar-search" disabled title="全局搜索尚未开放"><Search size={16}/><span>搜索工作区</span><small>预留</small></button>}
     <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings&&!conversationPage&&!exceptionPage?'current':'')} to="/" aria-current={!settings&&!conversationPage&&!exceptionPage?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
     <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:<div className="nav-item muted" title="会话 · 尚未开放"><MessageSquare/><span>会话</span><small>后续</small></div>}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:<div className="nav-item muted" title="公共故障候选尚未启用"><TriangleAlert/><span>公共故障</span><small>未启用</small></div>}<div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:<div className="nav-item muted" title="通知异常尚未启用"><Bell/><span>通知异常</span><small>未启用</small></div>}</>
     <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{canNameGroups?<Link className={'nav-item '+(settings?'current':'')} aria-current={settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} to="/settings/source-groups" data-action="open-source-groups"><Settings/><span>设置</span></Link>:<div className="nav-item muted" title="设置"><Settings/><span>设置</span></div>}<div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
@@ -236,7 +239,12 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
   if(fullPage)return <article className="detail-page" aria-labelledby="detail-title">{content}</article>;
   return <dialog className="detail-dialog" ref={dialog} aria-labelledby={detail?'detail-title':undefined} aria-label={detail?undefined:'事项详情'} onKeyDown={trapDialogFocus} onCancel={event=>{event.preventDefault();close();}} onClick={event=>{if(event.target===event.currentTarget){const bounds=event.currentTarget.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)close();}}}>{content}</dialog>;
 }
-function BoardSection({query,column,label,search,selected,now,loaded}:{query:ReturnType<typeof useColumn>;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[]}){
+interface ColumnQuery {
+ isPending:boolean;isError:boolean;error:unknown;isFetchingNextPage:boolean;hasNextPage:boolean;
+ data:{pages:{items:WorkbenchCard[];range:{mode:CompletionRange;from:string;until:string;timezone:'Asia/Shanghai'}}[]}|undefined;
+ refetch:()=>Promise<unknown>;fetchNextPage:()=>Promise<unknown>;
+}
+function BoardSection({query,column,label,search,selected,now,loaded}:{query:ColumnQuery;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[]}){
   const [expanded,setExpanded]=useState(false),visible=expanded?loaded:loaded.slice(0,3);
   return <section className={'board-column '+column} aria-label={label}><div className="column-heading"><h2 className={'stage-pill '+column}>{label}</h2><span>{query.isError?'—':loaded.length} 已加载</span></div>
     {query.isPending?<Message text="正在读取…"/>:query.isError&&!query.data?<Message text={errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">连接中断，显示最近已确认资料。</p>:null}<div className="column-cards" id={'cards-'+column}>{visible.map(item=><Card key={item.kind+item.id} item={item} search={search} selected={item.id===selected} now={now}/>)}{!loaded.length?<p className="empty">当前授权范围内暂无事项</p>:null}</div><More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)}/></>}
@@ -247,14 +255,21 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const order=useRef<{scope:string;keys:string[]}>({scope:'',keys:[]});
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock();
-  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':'recent',fullPage=Boolean(selected.id&&params.get('detail')==='page');
+  const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':principal.workbench_search_enabled&&params.get('search')==='1'&&!params.has('range')?'all':'recent',fullPage=Boolean(selected.id&&params.get('detail')==='page');
   const scope: 'team'|'related'|undefined=principal.workbench_follow_enabled?(params.get('scope')==='related'?'related':'team'):undefined;
-  const pending=useColumn(principal,'pending',range,scope),active=useColumn(principal,'active',range,scope),closed=useColumn(principal,'closed',range,scope);
+  const searchRequested=params.get('search')==='1',searchMode=principal.workbench_search_enabled===true&&searchRequested;
+  const parsed=criteriaFromUrl(params,params.has('range')?range:'all',scope??'team'),searchKey=parsed.criteria?searchCriteriaKey(parsed.criteria):'invalid';
+  const searched=useWorkbenchSearch(principal,parsed.criteria,searchMode);
+  const basePending=useColumn(principal,'pending',range,scope,!searchMode),baseActive=useColumn(principal,'active',range,scope,!searchMode),baseClosed=useColumn(principal,'closed',range,scope,!searchMode);
+  const searchedColumn=(column:BoardColumn):ColumnQuery=>({...searched,isFetchingNextPage:searched.isFetching,
+    data:searched.isError||parsed.error?undefined:searched.data?{pages:searched.data.pages.map(page=>({items:page.items.filter(item=>item.column===column),range:page.range}))}:undefined,
+    refetch:searched.restart,fetchNextPage:()=>searched.isFetching?Promise.resolve():searched.fetchNextPage()});
+  const pending:ColumnQuery=searchMode?searchedColumn('pending'):basePending,active:ColumnQuery=searchMode?searchedColumn('active'):baseActive,closed:ColumnQuery=searchMode?searchedColumn('closed'):baseClosed;
   const queries=[pending,active,closed],items=queries.flatMap(query=>query.data?.pages.flatMap(page=>page.items)??[]),fresh=[...new Map(items.map(item=>[item.kind+':'+item.id,item])).values()];
   let unique=fresh;
   const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage;
   if(holdOrder){
-    const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,range,view,scope,selected.kind,selected.id]),keys=fresh.map(item=>item.kind+':'+item.id),present=new Set(keys);
+    const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,range,view,scope,selected.kind,selected.id,searchMode?searchKey:null]),keys=fresh.map(item=>item.kind+':'+item.id),present=new Set(keys);
     if(order.current.scope!==orderingScope)order.current={scope:orderingScope,keys};
     else {const retained=order.current.keys.filter(key=>present.has(key)),known=new Set(retained);order.current.keys=[...retained,...keys.filter(key=>!known.has(key))];}
     // Keep only presentation IDs. Every displayed object still comes from the current authorized GET.
@@ -262,17 +277,25 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     unique=[...fresh].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
   }else order.current={scope:'',keys:[]};
   const update=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
-  const refresh=()=>{void pending.refetch();void active.refetch();void closed.refetch();};
+  const refresh=()=>{if(searchMode){if(!searched.isFetching)void searched.restart();}else{void pending.refetch();void active.refetch();void closed.refetch();}};
+  const applySearch=(criteria:WorkbenchSearchCriteria)=>{
+    const next=new URLSearchParams(params);for(const key of SEARCH_KEYS)next.delete(key);next.delete('cursor');next.delete('limit');
+    for(const [key,value]of searchParameters(criteria))next.set(key,value);next.set('search','1');setParams(next);
+  };
+  const leaveSearch=()=>{const next=new URLSearchParams(params);for(const key of SEARCH_KEYS)if(key!=='range'&&key!=='scope')next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');setParams(next);};
   const completionWindow=closed.data?.pages[0]?.range;
   const until=completionWindow?new Date(Date.parse(completionWindow.until.replace(' ','T')+'Z')-86_400_000).toISOString().slice(5,10):'';
   const label=(column:BoardColumn)=>column==='closed'&&range==='cancelled'?'已取消':names[column];
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}>{!fullPage?<div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={30} strokeWidth={1.6}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">{principal.internal_notes_enabled||principal.ticket_self_handling_enabled||principal.manual_review_enabled||principal.ticket_staff_completion_enabled?'人工协作':'只读'}</span></div>
+    {principal.workbench_search_enabled?<SearchControls principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} onApply={applySearch} onLeave={leaveSearch}/>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
+    {searchMode&&searched.isError?<p role="alert" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</p>:null}
+    {searchMode&&!parsed.error&&!searched.isPending&&!searched.isError&&searched.data&&unique.length===0?<p role="status" data-search-state="empty">{searchEmptyMessage(parsed.criteria)}</p>:null}
     <div className="toolbar"><div className="scope-tabs">{principal.workbench_follow_enabled?<><button type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} disabled={navigationBlocked} onClick={()=>update('scope','team')}>团队工作</button><button type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} disabled={navigationBlocked} onClick={()=>update('scope','related')}>与我有关</button></>:<><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未开放">与我有关<small>后续</small></button></>}</div>
       <div className="tools"><ManualReportEntry principal={principal} blocked={navigationBlocked}/><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
-    <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">全部完结记录</option><option value="cancelled">已取消（全部时间）</option></select></label>
-      {completionWindow?<span className="range-caption">{range==='recent'?'已关闭：'+completionWindow.from.slice(5,10)+' – '+until+'（北京时间） · 已解决待确认保留':range==='cancelled'?'第三列仅查看已取消事项':'完结记录不限日期；取消事项另行查看'}</span>:null}</div>
-    {view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range+':'+scope} query={query} loaded={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
-      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range+':'+scope}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
+    <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">{searchMode?'全部完结记录（含取消）':'全部完结记录'}</option><option value="cancelled">已取消（全部时间）</option></select></label>
+      {completionWindow?<span className="range-caption">{range==='recent'?'已关闭：'+completionWindow.from.slice(5,10)+' – '+until+'（北京时间） · 已解决待确认保留':range==='cancelled'?'第三列仅查看已取消事项':searchMode?'搜索不限完结日期，包含已取消事项':'完结记录不限日期；取消事项另行查看'}</span>:null}</div>
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range+':'+scope+':'+(searchMode?searchKey:'board')} query={query} loaded={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
+      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[]} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <p className="workspace-footnote">展示当前身份获权的服务记录。打开详情不会接管工单。</p></div>:null}
     {selected.id?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </Shell>;

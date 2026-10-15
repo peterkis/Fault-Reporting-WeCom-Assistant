@@ -290,3 +290,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     },
   });
 }
+
+// Internal SQL seams preserve the original authorized canonical relation and responsibility predicates.
+export {CARD_SQL as WEB01_AUTHORIZED_CARDS_SQL,HANDLING_CARD_SQL,COMMUNICATION_CARD_SQL,FOLLOW_CARD_SQL};
+export type {CardRow as Web01CardRow};

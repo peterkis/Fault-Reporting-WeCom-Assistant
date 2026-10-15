@@ -66,4 +66,4 @@
 
 ## T41 全量授权检索 SOURCE 准备
 
-[拟议合同](workbench/search-design.md)冻结闭合criteria、规范安全card、身份/条件绑定游标和公开HTTP first。当前没有挂载 /api/workbench/search，未实现PG搜索、运行flag/限流或React；类型、构建及测试均NOT_RUN。原board仍按既有授权分页，不能称当前页过滤是全量检索。无DDL；T41原七项和WBINT-14/A14仍PENDING。
+619d的[冻结合同和原first](workbench/search-design.md)原字节保留。[后继Source候选](workbench/search-source-forward.md)已写授权SQL搜索、组合筛选、签名游标、默认false宿主与React/URL接线；尚未types/build/tests/PG/browser，不得列为已验证接口。无DDL；T41原七项和WBINT-14/A14仍全部PENDING，whole窗口先在未实施基线上证明原first实际RED。

@@ -32,13 +32,14 @@ async function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow,c
   if(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id)return true;
   return currentCommunicator();
 }
+export const FOLLOW_UP_ACTIVE_SQL=`s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') AND NOT EXISTS(
+      SELECT 1 FROM pilot_ticket.ticket_event end_event WHERE end_event.ticket_id=t.id AND end_event.event_ordinal>start_event.event_ordinal
+        AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))`;
 async function readCurrents(transaction:PostgresTransaction,ticketIds:readonly string[],lock=false):Promise<CurrentRow[]>{
   if(ticketIds.length>100)failP2016();
   if(!ticketIds.length)return [];
   const result=await transaction.query<CurrentRow>(`SELECT s.ticket_id::text,s.schedule_version::text,s.due_at,s.due_epoch_ms::text,s.scheduled_event_id::text,
-    (s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') AND NOT EXISTS(
-      SELECT 1 FROM pilot_ticket.ticket_event end_event WHERE end_event.ticket_id=t.id AND end_event.event_ordinal>start_event.event_ordinal
-        AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))) AS active
+    (${FOLLOW_UP_ACTIVE_SQL}) AS active
     FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
     LEFT JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
     WHERE s.ticket_id=ANY($1::uuid[])${lock?' FOR UPDATE OF s':''}`,[ticketIds]);

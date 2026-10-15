@@ -5893,6 +5893,33 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-pagination-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-production.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7598,6 +7625,21 @@
     ],
     "wbint-t41-search-http-first": [
       "tests/wbint-t41-search-http-first.integration.test.mts"
+    ],
+    "wbint-t41-search-contract": [
+      "tests/t41-search-contract.test.mts"
+    ],
+    "wbint-t41-search-authority": [
+      "tests/t41-search-pagination-authority.integration.test.mts"
+    ],
+    "wbint-t41-search-production": [
+      "tests/t41-search-production.browser.test.mts"
+    ],
+    "wbint-t41-search": [
+      "tests/wbint-t41-search-http-first.integration.test.mts",
+      "tests/t41-search-contract.test.mts",
+      "tests/t41-search-pagination-authority.integration.test.mts",
+      "tests/t41-search-production.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7669,7 +7711,8 @@
       "tests/helpers/p2-g2-runtime-harness.mjs",
       "tests/helpers/t33-incident-delivery-control-fixture.mts",
       "tests/helpers/t33-whole-fixture.mts",
-      "tests/helpers/t41-search-fixture.mts"
+      "tests/helpers/t41-search-fixture.mts",
+      "tests/helpers/t41-search-risk-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
