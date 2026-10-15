@@ -151,15 +151,15 @@ test('T41 cursor cannot cross two real stored Cookie sessions or a current role 
   assert.equal(created.rowCount,1);assert.notEqual(created.rows[0]?.session_id,f.sessionId);
   const other='__Host-wecom_workbench_session='+token+'; __Host-wecom_workbench_csrf='+csrf;
   const principal=await json(await get(cookie,'/api/lifecycle/bootstrap')),second=await json(await get(other,'/api/lifecycle/bootstrap'));assert.equal(second.principal_id,principal.principal_id);assert.deepEqual(second.roles,principal.roles);
-  const mixed=await get(other,'/api/workbench/search?limit=1&cursor='+encodeURIComponent(cursor));assert.equal(mixed.status,400);assert.equal(object((await mixed.json()).error).code,'P2_016_CURSOR_INVALID');
+  const mixed=await get(other,'/api/workbench/search?limit=1&cursor='+encodeURIComponent(cursor));assert.equal(mixed.status,400);assert.equal(object(object(await mixed.json()).error).code,'P2_016_CURSOR_INVALID');
   const actor=f.principals[0];assert.ok(actor);await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
-  const changed=await get(cookie,'/api/workbench/search?limit=1&cursor='+encodeURIComponent(cursor));assert.equal(changed.status,400);assert.equal(Object.hasOwn(await changed.json(),'items'),false);
+  const changed=await get(cookie,'/api/workbench/search?limit=1&cursor='+encodeURIComponent(cursor));assert.equal(changed.status,400);assert.equal(Object.hasOwn(object(await changed.json()),'items'),false);
  },{realWorkbenchAuthentication:true,workbenchSearchEnabled:true});
 });
 
 test('T41 public search releases its query connection in a one-connection pool and records the actual PG18 bounded plan over 500 source Intakes',{timeout:240000},async()=>{
  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t41plan',max:1,run:async(f:{pool:PostgresPool;databaseUrl:string})=>{
-  await applyThrough030(f);await migrateP2016({databaseUrl:f.databaseUrl});
+  await applyThrough030(f);const migrationOptions={databaseUrl:f.databaseUrl,mode:'apply'};await migrateP2016(migrationOptions);
   const actor=await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'t41-pool-one',displayName:'T41 one-connection actor',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
   const capacity=await seedCapacityDataset({pool:f.pool,tag:'t41plan'});assert.equal(capacity.journeys,500);
   const origin='http://127.0.0.1:0',runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,principalIds:[actor.id],externalSendEnabled:false,workbenchSearchEnabled:true,workbenchManualReviewEnabled:true});
