@@ -116,6 +116,20 @@ function card(row: CardRow): WorkbenchCard {
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
+const CLOSED_INTAKE_CARD_SQL=`SELECT 'intake'::text AS kind,i.id::text,i.id::text AS intake_id,i.intake_no AS number,
+        COALESCE(NULLIF(i.summary,''),'未提供报修描述') AS title,i.status,NULL::text AS priority,i.reported_location_text AS location,
+        NULL::text AS reporter_name,i.source_channel AS source,NULL::text AS assignee_name,NULL::text AS review_reason,
+        to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+        NULL::text AS completed_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at
+        FROM intake.service_intake i WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
+          AND i.status IN ('COMPLETED','IGNORED')
+          AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id OR t.id=i.pilot_ticket_id)
+          AND NOT EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
+            JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)`;
+export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
+  if(!includeClosedIntakes)return CARD_SQL;
+  return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
+}
 export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'>|null}) {
   async function decorate(items:WorkbenchCard[],authContext?:unknown):Promise<WorkbenchCard[]>{
     let sourced=sourceGroups?await sourceGroups.decorate(items):items;
@@ -159,16 +173,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       if(canonical.kind!==kind||canonical.id!==id)return item(authContext,canonical.kind,canonical.id);
     }
     if(!row&&manualReviewEnabled&&kind==='intake'&&authorized.values[0]===true){
-      const retained=await pool.query<CardRow>(`SELECT 'intake'::text AS kind,i.id::text,i.id::text AS intake_id,i.intake_no AS number,
-        COALESCE(NULLIF(i.summary,''),'未提供报修描述') AS title,i.status,NULL::text AS priority,i.reported_location_text AS location,
-        NULL::text AS reporter_name,i.source_channel AS source,NULL::text AS assignee_name,NULL::text AS review_reason,
-        to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
-        NULL::text AS completed_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at
-        FROM intake.service_intake i WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
-          AND i.status IN ('COMPLETED','IGNORED')
-          AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id OR t.id=i.pilot_ticket_id)
-          AND NOT EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
-            JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)`,[uuidP2016(id)]);
+      const retained=await pool.query<CardRow>(CLOSED_INTAKE_CARD_SQL,[uuidP2016(id)]);
       row=retained.rows[0];
     }
     if(!row)failP2016('NOT_FOUND',404);
@@ -290,3 +295,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     },
   });
 }
+
+// Internal SQL seams preserve the original authorized canonical relation and responsibility predicates.
+export {CARD_SQL as WEB01_AUTHORIZED_CARDS_SQL,HANDLING_CARD_SQL,COMMUNICATION_CARD_SQL};
+export type {CardRow as Web01CardRow};

@@ -39,6 +39,7 @@ export interface RealtimeClientOptions {
   connect:(endpoint:string)=>RealtimeTransport;
   refresh:(signal:AbortSignal)=>Promise<{available:boolean}>;
   activityTick?:(signal:AbortSignal,isLive:boolean)=>Promise<void>;
+  onHint?:()=>void;
   authorizationDenied:(error:unknown)=>boolean;
   report:(state:{status:WorkbenchRealtimeStatus;lastReadAt:number|null})=>void;
   now:()=>number;
@@ -64,7 +65,7 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     const current=options.connect(options.capability.sse_endpoint as string),epoch=++sourceEpoch;source=current;
     const valid=()=>alive()&&source===current&&epoch===sourceEpoch;
     unlisten=[current.listen('open',()=>{if(valid()){report('live');refresh();}}),current.listen('error',()=>{if(valid()){report(current.state()===2?'polling':'reconnecting');refresh();}}),
-      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){decodeWorkbenchRealtimeHint(event.data,name);refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}')refresh();})]:[]),current.listen('message',()=>{if(valid())refresh();})];
+      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){if(decodeWorkbenchRealtimeHint(event.data,name))options.onHint?.();refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}')refresh();})]:[]),current.listen('message',()=>{if(valid()){options.onHint?.();refresh();}})];
     report('connecting');
   }
   function refresh(){

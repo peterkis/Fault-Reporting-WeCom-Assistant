@@ -18,11 +18,7 @@ export function supplementDispositionCommand(value:unknown):SupplementFollowUpCo
 export function supplementDispositionAllowed(principal:{is_active:boolean;roles:readonly string[]}){return principal.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));}
 function dispositionResult(value:unknown):SupplementFollowUpResult{const v=exactP2016(value,['ok','client_command_id','ticket_id','source_ref','revision','follow_up_state','resolution_id','basis','replayed']);if(v.ok!==true||v.follow_up_state!=='FOLLOWED_UP'||v.basis!=='RECORDED_DISPOSITION'||typeof v.replayed!=='boolean')failP2016('ACTION_FAILED',503);return {ok:true,client_command_id:uuidP2016(v.client_command_id),ticket_id:uuidP2016(v.ticket_id),...supplementTarget({source_ref:v.source_ref,revision:v.revision}),follow_up_state:'FOLLOWED_UP',resolution_id:uuidP2016(v.resolution_id),basis:'RECORDED_DISPOSITION',replayed:v.replayed};}
 interface Input {authContext:unknown;ticketId:unknown}
-export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}){
- if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);const ledger=createP2016CommandLedger({pool});
- async function authorize(tx:PostgresTransaction,input:Input,existingMessageReceipt=false){if(!enabled&&!existingMessageReceipt)failP2016('NOT_FOUND',404);const c=await query.authorizedTicket({authContext:input.authContext,ticketId:input.ticketId,transaction:tx});if(!await supplementFollowUpSchemaReady(tx))failP2016('DISABLED',503);return {...c,scope:hashP2016([PURPOSE,c.principal.principal_id,[...c.principal.roles].sort(),[...c.principal.team_ids].sort(),c.ticket.id,c.ticket.resolver_team_id,c.ticket.assignee_id])};}
- type Context=Awaited<ReturnType<typeof authorize>>;
- function materials(c:Context){return {sql:`WITH readable AS (
+export const SUPPLEMENT_MATERIALS_SQL=`WITH readable AS (
   SELECT i.id FROM intake.service_intake i WHERE i.retention_until_epoch_ms>platform.physical_epoch_ms() AND (i.id=$1::uuid OR EXISTS(
    SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=$2::uuid
     AND j.retention_until_epoch_ms>platform.physical_epoch_ms()))
@@ -36,21 +32,8 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until_epoch_ms>platform.physical_epoch_ms() AND (rel.relation_type='SUPPLEMENT' OR (rel.relation_type='PRIMARY' AND EXISTS(
     SELECT 1 FROM intake.channel_leg later JOIN intake.channel_leg basis ON basis.journey_id=later.journey_id JOIN intake.contact_journey j ON j.id=later.journey_id
      WHERE later.source_intake_id=i.id AND basis.source_intake_id=$1::uuid AND later.leg_ordinal>basis.leg_ordinal AND j.linked_ticket_id=$2::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())))
- )`,values:[c.ticket.intake_id,c.ticket.id]};}
- async function material(tx:PostgresTransaction,c:Context,target:{source_ref:string;revision:string}):Promise<Material>{const m=materials(c);const row=(await tx.query<Material>(m.sql+` SELECT source_intake_id::text,source_kind,source_ref,revision::text,to_char(at,'YYYY-MM-DD HH24:MI:SS') AS at,ordinal::text,source_id
-  FROM materials WHERE source_ref=$3 AND revision=$4::bigint`,[...m.values,target.source_ref,target.revision])).rows[0];if(!row)failP2016('NOT_FOUND',404);return row;}
- async function lockAuthority(tx:PostgresTransaction,c:Context,target:{source_ref:string;revision:string},actor=true){
-  const found=await material(tx,c,target);await tx.query('SELECT id FROM intake.service_intake WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE',[[c.ticket.intake_id,found.source_intake_id]]);
-  await tx.query(`SELECT j.id,l.id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id WHERE l.source_intake_id=ANY($1::uuid[]) ORDER BY j.id,l.id FOR SHARE OF j,l`,[[c.ticket.intake_id,found.source_intake_id]]);
-  await tx.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR SHARE',[c.ticket.id]);
-  if(actor){await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[c.principal.principal_id]);
-  await tx.query('SELECT principal_id,role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid ORDER BY role FOR SHARE',[c.principal.principal_id]);
-  await tx.query('SELECT m.principal_id,m.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team t ON t.team_id=m.team_id WHERE m.principal_id=$1::uuid ORDER BY m.team_id FOR SHARE OF m,t',[c.principal.principal_id]);}
-  if(found.source_kind==='WEB')await tx.query(`SELECT s.id,b.intake_id FROM intake.web_submission s JOIN intake.web_request_binding b ON b.intake_id=s.intake_id WHERE s.id=$1::uuid FOR SHARE OF s,b`,[target.source_ref.slice(4)]);
-  else await tx.query(`SELECT m.id,rel.channel_message_id FROM channel.message_inbox m JOIN intake.service_intake_message rel ON rel.channel_message_id=m.id WHERE m.id=$1::bigint AND rel.intake_id=$2::uuid FOR SHARE OF m,rel`,[target.source_ref.slice(8),found.source_intake_id]);
- }
- async function writable(tx:PostgresTransaction,input:Input,target:{source_ref:string;revision:string},lock=false){let c=await authorize(tx,input);await material(tx,c,target);if(lock){await lockAuthority(tx,c,target);c=await authorize(tx,input);await material(tx,c,target);}if(!supplementDispositionAllowed(c.principal))failP2016('FORBIDDEN',403);return c;}
- const evidence=`SELECT proof.id,proof.occurred_at,proof.basis FROM (
+ )`;
+export const SUPPLEMENT_RESOLUTION_SQL=`SELECT proof.id,proof.occurred_at,proof.basis FROM (
   SELECT d.id,d.occurred_at,'RECORDED_DISPOSITION'::text AS basis FROM pilot_ticket.workbench_supplement_disposition d JOIN pilot_ticket.ticket_command_receipt l ON l.id=d.command_receipt_id
    WHERE d.ticket_id=$2::uuid AND d.source_intake_id=m.source_intake_id AND d.source_kind=m.source_kind AND d.source_ref=m.source_ref AND d.revision=m.revision
     AND l.ticket_id=d.ticket_id AND l.actor_principal_id=d.actor_principal_id AND l.command_type='WORKBENCH_SUPPLEMENT_FOLLOW_UP' AND l.state='COMMITTED'
@@ -66,6 +49,25 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
      d.status='SENT' AND d.side_effect_state='ACKNOWLEDGED' AND d.sent_epoch_ms IS NOT NULL AND d.sent_epoch_ms>0 AND d.attempt_count>0
      AND EXISTS(SELECT 1 FROM communication.delivery_attempt a WHERE a.delivery_id=d.id AND a.attempt_no=d.attempt_count AND a.outcome='SENT' AND a.side_effect_state='ACKNOWLEDGED' AND a.completed_epoch_ms IS NOT NULL)))
  ) proof ORDER BY proof.occurred_at,proof.id LIMIT 1`;
+export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean}){
+ if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);const ledger=createP2016CommandLedger({pool});
+ async function authorize(tx:PostgresTransaction,input:Input,existingMessageReceipt=false){if(!enabled&&!existingMessageReceipt)failP2016('NOT_FOUND',404);const c=await query.authorizedTicket({authContext:input.authContext,ticketId:input.ticketId,transaction:tx});if(!await supplementFollowUpSchemaReady(tx))failP2016('DISABLED',503);return {...c,scope:hashP2016([PURPOSE,c.principal.principal_id,[...c.principal.roles].sort(),[...c.principal.team_ids].sort(),c.ticket.id,c.ticket.resolver_team_id,c.ticket.assignee_id])};}
+ type Context=Awaited<ReturnType<typeof authorize>>;
+ function materials(c:Context){return {sql:SUPPLEMENT_MATERIALS_SQL,values:[c.ticket.intake_id,c.ticket.id]};}
+ async function material(tx:PostgresTransaction,c:Context,target:{source_ref:string;revision:string}):Promise<Material>{const m=materials(c);const row=(await tx.query<Material>(m.sql+` SELECT source_intake_id::text,source_kind,source_ref,revision::text,to_char(at,'YYYY-MM-DD HH24:MI:SS') AS at,ordinal::text,source_id
+  FROM materials WHERE source_ref=$3 AND revision=$4::bigint`,[...m.values,target.source_ref,target.revision])).rows[0];if(!row)failP2016('NOT_FOUND',404);return row;}
+ async function lockAuthority(tx:PostgresTransaction,c:Context,target:{source_ref:string;revision:string},actor=true){
+  const found=await material(tx,c,target);await tx.query('SELECT id FROM intake.service_intake WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE',[[c.ticket.intake_id,found.source_intake_id]]);
+  await tx.query(`SELECT j.id,l.id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id WHERE l.source_intake_id=ANY($1::uuid[]) ORDER BY j.id,l.id FOR SHARE OF j,l`,[[c.ticket.intake_id,found.source_intake_id]]);
+  await tx.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR SHARE',[c.ticket.id]);
+  if(actor){await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[c.principal.principal_id]);
+  await tx.query('SELECT principal_id,role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid ORDER BY role FOR SHARE',[c.principal.principal_id]);
+  await tx.query('SELECT m.principal_id,m.team_id FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team t ON t.team_id=m.team_id WHERE m.principal_id=$1::uuid ORDER BY m.team_id FOR SHARE OF m,t',[c.principal.principal_id]);}
+  if(found.source_kind==='WEB')await tx.query(`SELECT s.id,b.intake_id FROM intake.web_submission s JOIN intake.web_request_binding b ON b.intake_id=s.intake_id WHERE s.id=$1::uuid FOR SHARE OF s,b`,[target.source_ref.slice(4)]);
+  else await tx.query(`SELECT m.id,rel.channel_message_id FROM channel.message_inbox m JOIN intake.service_intake_message rel ON rel.channel_message_id=m.id WHERE m.id=$1::bigint AND rel.intake_id=$2::uuid FOR SHARE OF m,rel`,[target.source_ref.slice(8),found.source_intake_id]);
+ }
+ async function writable(tx:PostgresTransaction,input:Input,target:{source_ref:string;revision:string},lock=false){let c=await authorize(tx,input);await material(tx,c,target);if(lock){await lockAuthority(tx,c,target);c=await authorize(tx,input);await material(tx,c,target);}if(!supplementDispositionAllowed(c.principal))failP2016('FORBIDDEN',403);return c;}
+
  function replyBinding(authorization:WorkbenchAuthorizationAdapter):SupplementReplyBindingPort{
   function inputFor(context:Pick<CommunicationAuthorizationContext,'command'|'actor'>){const target=context.command.follow_up_target;if(!target||!context.actor?.principal_id)throw new CommunicationError(COMMUNICATION_ERROR_CODES.senderUnauthorized);return {input:{authContext:{principal_id:context.actor.principal_id},ticketId:target.ticket_id},target};}
   async function guarded<T>(run:()=>Promise<T>):Promise<T>{try{return await run();}catch(error){if(error instanceof CommunicationError)throw error;if(error instanceof WorkbenchError&&error.status<500)throw new CommunicationError(COMMUNICATION_ERROR_CODES.senderUnauthorized);throw new CommunicationError(COMMUNICATION_ERROR_CODES.disabled);}}
@@ -105,14 +107,14 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
   async exactMaterial(input:Input&{target:unknown}):Promise<SupplementFollowUpMaterial>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),target=supplementTarget(input.target),m=materials(c);
    const result=await tx.query<Material&{resolution_id:string|null;occurred_at:string|null;basis:'RECORDED_DISPOSITION'|'VERIFIED_REPLY'}>(m.sql+` SELECT m.source_kind,m.source_ref,m.revision::text,
-    e.id::text AS resolution_id,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.basis FROM materials m LEFT JOIN LATERAL (${evidence}) e ON TRUE
+    e.id::text AS resolution_id,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.basis FROM materials m LEFT JOIN LATERAL (${SUPPLEMENT_RESOLUTION_SQL}) e ON TRUE
     WHERE m.source_ref=$3 AND m.revision=$4::bigint LIMIT 2`,[...m.values,target.source_ref,target.revision]);
    const row=result.rows[0];if(!row)failP2016('NOT_FOUND',404);if(result.rows.length!==1)failP2016('ACTION_FAILED',503);
    return {ticket_id:c.ticket.id,item:{source_ref:row.source_ref,source_kind:row.source_kind,revision:row.revision,...(row.resolution_id&&row.occurred_at?{follow_up_state:'FOLLOWED_UP' as const,resolution:{resolution_id:row.resolution_id,basis:row.basis,occurred_at:localP2016(row.occurred_at)}}:{follow_up_state:'PENDING' as const,resolution:null})}};
   });},
   async summary(input:Input):Promise<{has_pending_supplements:boolean}>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c);
-   return {has_pending_supplements:(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${evidence})) AS pending`,m.values)).rows[0]?.pending===true};
+   return {has_pending_supplements:(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${SUPPLEMENT_RESOLUTION_SQL})) AS pending`,m.values)).rows[0]?.pending===true};
   });},
   ready:async()=>enabled&&await supplementFollowUpSchemaReady(pool),
   async page(input:Input&{limit?:unknown;cursor?:unknown}):Promise<SupplementFollowUpPage>{return transactionP2016(pool,async tx=>{
@@ -120,10 +122,10 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    const after=input.cursor?decodeCursorP2016(input.cursor,['scope','at','kind','intake','ordinal','source']):null;
    if(after&&(after.scope!==c.scope||(after.kind!=='WEB'&&after.kind!=='BOT')))failP2016('CURSOR_INVALID');
    const rows=(await tx.query<Material&{resolution_id:string|null;occurred_at:string|null;basis:'RECORDED_DISPOSITION'|'VERIFIED_REPLY'}>(m.sql+` SELECT m.source_intake_id::text,m.source_kind,m.source_ref,m.revision::text,to_char(m.at,'YYYY-MM-DD HH24:MI:SS') AS at,m.ordinal::text,m.source_id,
-    e.id::text AS resolution_id,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.basis FROM materials m LEFT JOIN LATERAL (${evidence}) e ON TRUE
+    e.id::text AS resolution_id,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.basis FROM materials m LEFT JOIN LATERAL (${SUPPLEMENT_RESOLUTION_SQL}) e ON TRUE
     WHERE ($3::timestamp IS NULL OR (m.at,m.source_kind,m.source_intake_id,m.ordinal,m.source_id)>($3::timestamp,$4::text,$5::uuid,$6::bigint,$7::text))
     ORDER BY m.at,m.source_kind,m.source_intake_id,m.ordinal,m.source_id LIMIT $8`,[...m.values,after?localP2016(after.at):null,after?.kind??null,after?uuidP2016(after.intake):null,after?supplementRevision(after.ordinal):null,after?.source??null,n+1])).rows;
-   const pending=(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${evidence})) AS pending`,m.values)).rows[0]?.pending===true;
+   const pending=(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${SUPPLEMENT_RESOLUTION_SQL})) AS pending`,m.values)).rows[0]?.pending===true;
    const page=rows.slice(0,n),last=page.at(-1);return {ticket_id:c.ticket.id,items:page.map(row=>({source_ref:row.source_ref,source_kind:row.source_kind,revision:row.revision,...(row.resolution_id&&row.occurred_at?{follow_up_state:'FOLLOWED_UP' as const,resolution:{resolution_id:row.resolution_id,basis:row.basis,occurred_at:localP2016(row.occurred_at)}}:{follow_up_state:'PENDING' as const,resolution:null})})),has_pending_supplements:pending,next_cursor:rows.length>n&&last?cursorP2016({scope:c.scope,at:last.at,kind:last.source_kind,intake:last.source_intake_id,ordinal:last.ordinal,source:last.source_id}):null};
   });},
   async perform(input:Input&{command:unknown}):Promise<SupplementFollowUpResult>{const body=supplementDispositionCommand(input.command),ticketId=uuidP2016(input.ticketId),command={...body,action:PURPOSE,ticket_id:ticketId};

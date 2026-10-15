@@ -7,6 +7,13 @@ const GROUP_REF_SQL=`encode(sha256(convert_to(jsonb_build_array(i.source_provide
 const VALID_GROUP_SQL=`i.retention_until>platform.local_now() AND i.source_channel='WECOM_GROUP'
   AND i.source_chat_type='group' AND NULLIF(i.source_provider,'') IS NOT NULL
   AND NULLIF(i.source_bot_id,'') IS NOT NULL AND NULLIF(i.source_chat_id,'') IS NOT NULL`;
+export const SOURCE_GROUP_ORIGIN_BINDING_SQL=`          SELECT count(DISTINCT j.origin_intake_id)::integer AS count,min(j.origin_intake_id::text) AS origin,
+            bool_and(j.retention_until_epoch_ms>platform.physical_epoch_ms()) AS retained
+          FROM intake.contact_journey j
+          WHERE j.origin_intake_id=r.intake_id::uuid
+            OR EXISTS (SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=r.intake_id::uuid)
+            OR (r.kind='review' AND EXISTS (SELECT 1 FROM intake.manual_review_item rev WHERE rev.id=r.id::uuid AND rev.journey_id=j.id))`;
+export {GROUP_REF_SQL,VALID_GROUP_SQL};
 const OBSERVED_SQL=`WITH observed AS (SELECT DISTINCT ${GROUP_REF_SQL} AS ref FROM intake.service_intake i WHERE ${VALID_GROUP_SQL})`;
 const LABELS:Readonly<Record<string,string>>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'Bot 私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修'};
 export function sourceGroupRef(value:unknown):string {
@@ -49,12 +56,7 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
         SELECT r.*,CASE WHEN binding.count=0 THEN r.intake_id::uuid
           WHEN binding.count=1 AND binding.retained THEN binding.origin::uuid ELSE NULL END AS origin_intake_id
         FROM requested r LEFT JOIN LATERAL (
-          SELECT count(DISTINCT j.origin_intake_id)::integer AS count,min(j.origin_intake_id::text) AS origin,
-            bool_and(j.retention_until_epoch_ms>platform.physical_epoch_ms()) AS retained
-          FROM intake.contact_journey j
-          WHERE j.origin_intake_id=r.intake_id::uuid
-            OR EXISTS (SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=r.intake_id::uuid)
-            OR (r.kind='review' AND EXISTS (SELECT 1 FROM intake.manual_review_item rev WHERE rev.id=r.id::uuid AND rev.journey_id=j.id))
+          ${SOURCE_GROUP_ORIGIN_BINDING_SQL}
         ) binding ON TRUE
       ) SELECT r.id,r.kind,i.source_channel AS source,
         CASE WHEN ${VALID_GROUP_SQL} THEN ${GROUP_REF_SQL} ELSE NULL END AS ref,

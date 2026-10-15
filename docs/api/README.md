@@ -29,6 +29,7 @@
 | Incident 内部处置（T30，默认关闭） | [内部处置合同](workbench/incident-internal-notes.md)；本地合成验证，当前授权内部输入/有界历史/原用途回执 |
 | Incident 独立安全摘要、有效个人定向意图和按路结果（T31，默认关闭） | [显式公开进展](workbench/incident-public-progress.md)；本地合成实现，旧现场批准不覆盖新目的 |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
+| 全量获权搜索与组合筛选（T41，默认关闭；本地隔离验证，待父验收） | [当前 GET／只读 POST 合同与资源上限](workbench/search-source-forward.md)／[原七与分段证据](../../plans/admin-workbench-integration/execution/t41.md)／[619d冻结合同](workbench/search-design.md) |
 | 看板合法拖动的本地表单路由合同 | [T42 SOURCE 候选](workbench/board-legal-actions-design.md)：NOT_BUILT_NOT_RUN；保留未实施基线，不新增 HTTP 命令 |
 | 本人显式关注／取消及当前获权“与我有关”（T34，默认关闭；本地定向验证，父验收待定） | [当前关注合同](workbench/follow-current-contract.md)／[历史提案](workbench/follow-design.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |

@@ -62,3 +62,8 @@
 [撤销当前未开始派工](workbench/tickets.md#wbint-t08-撤销未开始派工)的闭合 POST、安全原 UUID GET ACK、有界沟通目标 GET 及正式前端消费现已实现，独立 consumer 默认 false。ACK 不要求 raw recovery；敏感恢复另以当前账号/Ticket/purpose 加密保留最长 24h，UNKNOWN 只 GET 原终态、不自动重发。实际数据库变更仅前向 `046_ticket_unassign.sql`，扩既有事件和严格 null 释放 CHECK，不新增表或第二事实源；历史 SQL 保持。原 20 本票文件 32PASS、15 相关文件 106PASS、既有 hosts 原生 27PASS；准确固定制品、原始失败与工具采集分类更正分别记录，不将内部故障注入 TAP 当主运行失败。
 
 未知/被截断的同人责任链 fail-closed；已证明的当前不同个人未开始责任段不因较早 200 条历史被误拒绝。进行中和两 waiting 不能使用本入口，独立 T09 范围保持，T08 不提前实现停止退回。真实再承接及旧/新 accept 混用保留同轮原首次责任通知，各 Delivery 承诺独立；不外发撤派通知或新建轮次。[原七项执行](../../plans/admin-workbench-integration/execution/t08.md)为 LOCAL_VERIFIED_WHOLE，GitHub/工作包收口由父独立验收后更新；真实依赖、发送、部署、full/certify/Gate 未运行。
+
+
+## T41 全量授权检索 SOURCE 准备
+
+619d的[冻结合同和原first](workbench/search-design.md)原字节保留。[后继Source候选](workbench/search-source-forward.md)已写授权SQL搜索、组合筛选、签名游标、默认false宿主与React/URL接线；GET保留，超过原URL上限的完整合法条件补充同路径有界只读POST，使用原闭合DTO和当前认证。尚未types/build/tests/PG/browser，不得列为已验证接口。无DDL；T41原七项和WBINT-14/A14仍全部PENDING，whole窗口先在未实施基线上证明原first实际RED。

@@ -1,5 +1,7 @@
 ---
 
+2026-10-15 T41 原七项已父验收，82836586由非实现者唯一精确快进native0，[#96 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/96#issuecomment-6190639003)。[全部当前获权检索与组合筛选](execution/t41.md)已交付：五来源、真实责任／状态／补充／预约、先授权再稳定分页、同Ticket复核去重、URL／看板列表、失权与留存变化及有界长查询；11文件23个本票、8文件21个相关用例按真实head／MF分段通过，495个生产src／WEB tuple连续。实际最终运行7139／MFd6fe，纯文档后继不重绑；原first008真实RED→020GREEN、全部旧失败与057观察器限制保留。9866项当前Source映射、1760输入／2320输出及自有精确释放已父核，Source与最终Doc双轴问题已闭合。当前 **41／43 CLOSED、2 OPEN**，WBINT-14／A14本地完成；T42为唯一运行窗口，冻结首例在真实未实施bf566上已RED，正合入本次accepted Root；T43仍待#97。默认关闭，全部43最终分支独立审查及自有工作树清理继续；以下旧段保留各自时点，不授予发布、现场或Gate。
+
 2026-10-15 T40 原七项已父验收，35b4caee由非实现者唯一精确快进native0，[#95 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/95#issuecomment-6189172898)。[获权站内提醒、声音与本浏览器偏好](execution/t40.md)已交付：四类原事实、当前READ、显式跨页定位、主动声音／桌面选择、跨标签去重和恢复不补响；不自动打开、处置或推进已读。九文件20个本票用例按真实head／MF分段通过，相关六文件19项通过；最终运行88f／MFeabc61f，纯四MD后继不重绑。原first028 RED→065 GREEN、所有旧FAIL／前提未证／未捕获与受控音频／OS边界保留；9841项raw／真Git归档、1738输入／2283输出、305份最终loaded及精确自有释放已父核，两轴收口。当前 **40／43 CLOSED、3 OPEN**；WBINT-13／A13的T38／T39／T40本地完成，A15已有T23／T40贡献、仍待T42。T41为唯一运行窗口，原未实施first已真实RED并保留被测祖先，正正常合入最新Root；T42两条同步源码有限双轴无新增问题、运行仍待，T43待#96／#97。默认关闭，全部43最终分支审查与自有工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
 document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
@@ -282,7 +284,7 @@ native_blocking_edges: 76
   - **Blocked by:** [#89](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)、[#90](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90)、[#92](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92)、[#93](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93)
   - **来源：** WBINT-13 / A13；WBINT-15 / A15
 
-- [ ] **T41** — [#96 检索全部获权事项与组合筛选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/96)
+- [x] **T41** — [#96 检索全部获权事项与组合筛选](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/96)
   - **Blocked by:** [#69](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69)、[#73](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73)、[#89](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89)、[#91](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91)、[#92](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92)
   - **来源：** WBINT-14 / A14
 

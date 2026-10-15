@@ -61,10 +61,10 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:text(installed.identifier)});
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observe(fixture.ticketId,true)});
       await browser.command('Page.reload');
-      await browser.waitFor('document.body.innerText.includes("本次定位未完成，原定位目标已保留。")');
-      assert.equal(await browser.evaluate('location.href'),locatedUrl);assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false);
-      assert.equal(await browser.evaluate('globalThis.__t40Locate.transportFailures'),1);
-      await browser.evaluate('document.querySelector(\'[aria-label="已定位事项"] .state-message button\').click()');
+      await browser.waitFor('(()=>{const button=document.querySelector(\'[aria-label="已定位事项"] .state-message button\');if(!document.body.innerText.includes("本次定位未完成，原定位目标已保留。")||!(button instanceof HTMLButtonElement)||button.disabled)return false;globalThis.__t40Locate.failureBeforeRetry={href:location.href,targetVisible:Boolean(document.querySelector('+JSON.stringify(card)+')),transportFailures:globalThis.__t40Locate.transportFailures};button.click();return true;})()');
+      const failureBeforeRetry=object(await browser.evaluate('globalThis.__t40Locate.failureBeforeRetry'));
+      assert.equal(failureBeforeRetry.href,locatedUrl);assert.equal(failureBeforeRetry.targetVisible,false);
+      assert.equal(failureBeforeRetry.transportFailures,1);
       await browser.waitFor('document.querySelector('+JSON.stringify(card)+')?.dataset.reminderLocated==="true"');
       assert.equal(await browser.evaluate('location.href'),locatedUrl);assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);
 

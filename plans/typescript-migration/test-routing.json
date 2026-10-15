@@ -6129,6 +6129,96 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/wbint-t41-search-http-first.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-pagination-authority.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-production.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-review-start.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-current-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-long-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-final-scope.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-pending-hint.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/wbint-t40-reminder-first.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -6206,6 +6296,15 @@
       "node_flags": [],
       "requires_database": true,
       "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-acceptance.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -8051,6 +8150,66 @@
       "tests/wbint-t39-activity-capacity.test.mts",
       "tests/wbint-t39-activity-lifecycle.browser.test.mts"
     ],
+    "wbint-t41-search-http-first": [
+      "tests/wbint-t41-search-http-first.integration.test.mts"
+    ],
+    "wbint-t41-search-contract": [
+      "tests/t41-search-contract.test.mts"
+    ],
+    "wbint-t41-search-authority": [
+      "tests/t41-search-pagination-authority.integration.test.mts"
+    ],
+    "wbint-t41-search-production": [
+      "tests/t41-search-production.browser.test.mts"
+    ],
+    "wbint-t41-search": [
+      "tests/wbint-t41-search-http-first.integration.test.mts",
+      "tests/t41-search-contract.test.mts",
+      "tests/t41-search-pagination-authority.integration.test.mts",
+      "tests/t41-search-production.browser.test.mts",
+      "tests/t41-search-review-start.integration.test.mts",
+      "tests/t41-search-current-read.integration.test.mts",
+      "tests/t41-search-long-read.integration.test.mts",
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "tests/t41-search-final-scope.integration.test.mts",
+      "tests/t41-search-pending-hint.browser.test.mts",
+      "tests/t41-search-acceptance.integration.test.mts"
+    ],
+    "wbint-t41-review-start": [
+      "tests/t41-search-review-start.integration.test.mts"
+    ],
+    "wbint-t41-current-read": [
+      "tests/t41-search-current-read.integration.test.mts"
+    ],
+    "wbint-t41-long-read": [
+      "tests/t41-search-long-read.integration.test.mts"
+    ],
+    "wbint-t41-refresh-long-browser": [
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
+    ],
+    "wbint-t41-five-causes": [
+      "tests/t41-search-current-read.integration.test.mts",
+      "tests/t41-search-long-read.integration.test.mts",
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
+    ],
+    "wbint-t41-related": [
+      "tests/wbint-t38-realtime.test.mts",
+      "tests/wbint-t38-realtime.integration.test.mts",
+      "tests/wbint-t38-authority.browser.test.mts",
+      "tests/wbint-t38-offline.browser.test.mts",
+      "tests/p2-016-workbench-wecom-auth.test.mjs",
+      "tests/p2-016-workbench-http.integration.test.mjs"
+    ],
+    "wbint-t41-final-scope": [
+      "tests/t41-search-final-scope.integration.test.mts"
+    ],
+    "wbint-t41-pending-hint": [
+      "tests/t41-search-pending-hint.browser.test.mts"
+    ],
+    "wbint-t41-dcf6-residuals": [
+      "tests/t41-search-final-scope.integration.test.mts",
+      "tests/t41-search-pending-hint.browser.test.mts"
+    ],
     "wbint-t40-first": [
       "tests/wbint-t40-reminder-first.browser.test.mts"
     ],
@@ -8072,6 +8231,9 @@
     ],
     "wbint-t40-preferences": [
       "tests/wbint-t40-reminder-preferences.browser.test.mts"
+    ],
+    "wbint-t41-search-acceptance": [
+      "tests/t41-search-acceptance.integration.test.mts"
     ],
     "wbint-t42-board-first": [
       "tests/wbint-t42-board-legal-action.browser.test.mts"
@@ -8164,6 +8326,8 @@
       "tests/helpers/p2-g2-runtime-harness.mjs",
       "tests/helpers/t33-incident-delivery-control-fixture.mts",
       "tests/helpers/t33-whole-fixture.mts",
+      "tests/helpers/t41-search-fixture.mts",
+      "tests/helpers/t41-search-risk-fixture.mts",
       "tests/helpers/t40-reminder-first-fixture.mts",
       "tests/helpers/t40-reminder-locate-fixture.mts",
       "tests/helpers/t40-reminder-risk-fixture.mts"
