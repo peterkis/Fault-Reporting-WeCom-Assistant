@@ -38,7 +38,7 @@
 | Bot原报修人明确仍未解决、同Ticket新轮待承接、原UUID恢复核对（默认关闭） | [Bot反馈与当前恢复合同](member/bot-feedback-design.md)／[T21本地七项证据](../../plans/admin-workbench-integration/execution/t21.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
 | SSE 重放、正式管理端授权重读与轮询降级 | [实时事件](platform/realtime.md) |
-| 获权查看／编辑短租期活动（T39合同冻结，源码候选未构建／未运行） | [活动合同](workbench/activity.md) |
+| 获权查看／编辑短租期活动（T39已实现，默认关闭；本地验证完成，待父验收） | [活动合同](workbench/activity.md) |
 | 后端调用的企业微信、人员目录和通道 SDK | [外部服务](integrations/external-services.md) |
 | 群内 @Bot 回调的群ID/群名称、来源识别与本次现场验证 | [企业微信消息回调](integrations/wecom-message-callback.md) |
 | 没有 REST 入口的进程内 Port、事件、Worker | [内部接口](integrations/internal-ports.md) |

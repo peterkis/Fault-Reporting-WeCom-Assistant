@@ -2,6 +2,10 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [实时事件](../platform/realtime.md)
 
+2026-10-15 当前状态：活动 HTTP 与正式前端已实现，默认 `workbenchActivityEnabled=false`。本地完整七项验证完成，待父任务验收／独立集成。实际运行 source `f4cbf647f018d2efffb28b7e7a0758190da863bf`／tree `19701963f5d9f4c839f38630651552d5c239f426`／manifest `f1c736f316d5c7dd808d557ee038442817eb3af0d828d4002a313703649a4fd6`；严格类型、一次构建、最终制品核验、本票20项分段 case 与相关消费者证据见 [当前执行记录](../../../plans/admin-workbench-integration/execution/t39.md)。后台验证使用受控 visibility 输入配合真实 DOM／HTTP／SSE；原生 OS 后台未另行声称。原 first、三份合同及46 SQL保持；无数据库变更。本文档后继不重绑运行对象，也不宣称部署或 Gate。
+
+## 历史 Source 说明（以下三段保留当时状态）
+
 2026-10-15 合同保持冻结，当前为 SOURCE_CANDIDATE_NOT_BUILT_NOT_RUN。以下路径已有默认关闭的源码接线，尚未构建、运行或验收。本票全部七项条件仍 PENDING；原未实施基线及首条真实 HTTP RED 的后续顺序见文末。
 
 2026-10-15 当前 Source 已普通合入 Root `bfd0331ea060f0830d2d85df9868e60ae73e856c`，T19 独占运行窗口。首次双轴 Source 审查指出的三项风险已有最小源码修复及公开回归测试源码，尚无 runtime RED/GREEN。详情先可见后 live、以及当前详情重验后的原生重连，会重新登记实际可见的 VIEWING，不复用旧 EDITING。规范 Ticket／Intake 下的 `manual-review` 仍归属当前规范事项；服务器从现有有界 `review_refs` 复核真实 PENDING、允许结论及当前 canonicalItem，READ 本身不授予编辑权。冻结命令不包含选中 Review ID，活动仅表达规范事项内当前有权复核的字段活动，不指认某个 Review。
@@ -12,7 +16,7 @@
 
 活动对象使用当前 WEB01 的规范事项 `{kind:ticket|review|intake,id:UUID}`，与详情实际返回的规范事项一致；关联沟通处理、复核或完工编辑提示归属其正在显示的该事项。来源群设置、列表预取、隐藏抽屉及未打开详情不产生对象活动。目标或字段不受权时不能发出活动。
 
-宿主配置 `workbenchActivityEnabled:boolean=false`。`GET /api/lifecycle/bootstrap` 待增加 `activity_enabled:boolean` 与固定 `activity_limits`。仅当前有效 Cookie 身份、该开关和 `workbenchRealtimeEnabled` 同时启用时可用；不能以 body/browser_id/能力快照授予权限。Bearer、开关关闭和未组装路径不建立活动状态。
+宿主配置 `workbenchActivityEnabled:boolean=false`。`GET /api/lifecycle/bootstrap` 在活动能力启用时返回 `activity_enabled:true` 与固定 `activity_limits`；关闭时保持既有响应，能力字段可缺省或为 false，均不授权活动。仅当前有效 Cookie 身份、该开关和 `workbenchRealtimeEnabled` 同时启用时可用；不能以 body/browser_id/能力快照授予权限。Bearer、开关关闭和未组装路径不建立活动状态。
 
 | 限值 | 数值及含义 |
 | --- | --- |
@@ -27,7 +31,7 @@
 
 同一主体在多个标签中的活动去重为一人。只有当前主体和同事均仍获权查看该对象，才返回其当前安全 display_name、VIEWING/EDITING 与十进制 string `expires_epoch_ms`；排除请求人自己。不得输出 principal_id、browser_id、外部身份、角色、隐藏对象、全局人数、字段正文或字段名称。UI 文案为“正在查看／正在编辑”，不声称永久在线、领取或排他锁。
 
-## 待挂载 HTTP／Schema
+## HTTP／Schema
 
 `POST /api/workbench/activity` 只接受 JSON、同源 Origin、当前 Cookie CSRF，禁止 query 参数。复用 W 现有认证／32KiB 正文上限／安全错误和 no-store；活动服务进一步拒绝非法字段、UUID、模式与上限。无 If-Match、业务 command ID 或 durable receipt；相同主体／浏览器／对象续租更新一个短租期，释放幂等。
 
@@ -45,7 +49,7 @@
 
 活动状态只在单 App 内存中有界保存；服务端公开 service 的 `now()` 端口使用可控时钟验证。读、写以及现有 SSE recovery 节奏执行有界清理，不增加常驻 timer。App 停止时 state 清零；不新增数据库表／迁移／池／Broker／进程，不往 Ticket、Conversation、Event、Read Cursor、Delivery 或其他业务事实表写心跳。普通认证会话的既有触达机制保持原语义。
 
-唯一流仍为 `GET /api/realtime/events?scope=workbench`。待扩展命名帧 `event: workbench.activity.changed`，单行 `data: {"schema_version":1}`，无 id；不分配或替换 durable event_id，不进入 Event Log/replay/retention，也不改变 Last-Event-ID。只在当前主体仍获权的自有可见活动对象投影变化时发提示，不为隐藏对象变化广播信号。前端仅失效／重读该主体当前挂载的活动 GET，payload 不能成为姓名或业务事实源。与现有 durable writer 的有界 backpressure／断连清理一致。
+唯一流仍为 `GET /api/realtime/events?scope=workbench`。新增命名帧 `event: workbench.activity.changed`，单行 `data: {"schema_version":1}`，无 id；不分配或替换 durable event_id，不进入 Event Log/replay/retention，也不改变 Last-Event-ID。只在当前主体仍获权的自有可见活动对象投影变化时发提示，不为隐藏对象变化广播信号。前端仅失效／重读该主体当前挂载的活动 GET，payload 不能成为姓名或业务事实源。与现有 durable writer 的有界 backpressure／断连清理一致。
 
 真实详情 GET 成功、对应 DOM 已进入可视区域、document 可见且未离线，才可以建立查看。字段真正可见且可编辑，受信 input/change 才标 EDITING；预取、脚本设置值、单纯 focus、缓存或不可见内容都不算编辑。离开、后台、失活、原生流断开、退出或已确认失权立即清除本地提示并停止续租，能发送时尽力释放；发送失败仍在最后服务端租期后最多 15 秒消失。原生流断开本身不当作权限撤销，仍需当前授权和租期检查；SSE 单独失败不妨碍健康 REST 与人工业务命令。恢复后先完整当前授权／详情重验，再等实际可见活动重建，不恢复旧在线承诺。
 

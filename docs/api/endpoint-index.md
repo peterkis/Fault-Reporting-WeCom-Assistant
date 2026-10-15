@@ -55,8 +55,8 @@
 | MR04 | GET | `/api/workbench/reporter-candidates` | W | 已挂载、默认关闭；当前应用／对象获权候选，q/limit/cursor 有界；仅明确选择后才可提交 | [候选查询](workbench/manual-reports.md#2-候选查询-get) |
 | MR05 | GET | `/api/workbench/reports/self-handling-context` | W | 已挂载、默认关闭；当前创建／真实活动组成员许可，有界候选或精确原组恢复核验 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
 | MR06 | POST | `/api/workbench/reports/take-and-start` | W | 已挂载、默认关闭；原 MANUAL 账本同事务受理／唯一 Core／本人合法组承接开始，仅原 UNVERIFIED 合同 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
-| A01 | POST | `/api/workbench/activity` | W | T39源码候选，未构建／未运行：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
-| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | T39源码候选，未构建／未运行：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
+| A01 | POST | `/api/workbench/activity` | W | 已实现、默认关闭；本地验证完成待父验收：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
+| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | 已实现、默认关闭；本地验证完成待父验收：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |
