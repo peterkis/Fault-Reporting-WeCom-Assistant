@@ -1,3 +1,4 @@
+import type {SupplementReplyBindingPort} from './p2-004-communication-core.mjs';
 import type { PostgresPool } from './platform/postgres-pool.mjs';
 import type { OperationalIntake } from './p2-g1-human-only-assembly.mjs';
 import type { G1RealtimeAppender } from './p2-g1-inbound-projection-coordinator.mjs';
@@ -24,6 +25,7 @@ interface G1RuntimeOptionsInput {
   gatewayStatusProvider?: G1GatewayStatusPort | null; communicationStatusProvider?: { isReady(): boolean } | null;
   requireGateway?: boolean; testAuthTtlMs?: number; authentication?: G1AuthenticationPort | null;
   externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
+  supplementReplyBindingFactory?:((authorization:ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>)=>SupplementReplyBindingPort)|null;
   reporterPrivateReplies?:boolean;projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
 }
 export type G1RuntimeOptions = { [K in keyof G1RuntimeOptionsInput]: G1RuntimeOptionsInput[K] | undefined };
@@ -72,6 +74,7 @@ export function createP2G1Runtime({
   testAuthTtlMs = 15 * 60_000,
   authentication = null,
   externalSendEnabled = true,
+  supplementReplyBindingFactory=null,
   reporterPrivateReplies=false,
   clientFactory,
   projectionIntervalMs = 250,
@@ -112,6 +115,7 @@ export function createP2G1Runtime({
     pool,
     enabled: true,
     reporterPrivateReplies,
+    supplementReplyBinding:supplementReplyBindingFactory?.(authorization)??null,
     authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }),
   });
   const deliveryControl = createWorkbenchDeliveryControl({

@@ -7,7 +7,7 @@ import type { WorkbenchAuthorizationAdapter, WorkbenchAction } from './p2-006-wo
 import type { createWorkbenchDeliveryControl, WorkbenchDeliveryRetry, WorkbenchDeliveryReconcile } from './p2-006-workbench-delivery-control.mjs';
 export interface WorkbenchCommandBody {
   client_command_id?: unknown; expected_row_version?: unknown; expected_cursor_row_version?: unknown; last_read_sequence?: unknown; reason_code?: unknown; force?: unknown;
-  target_principal_id?: unknown; handoff_id?: unknown; message_type?: unknown; text?: unknown; reply_to_item_id?: unknown;
+  follow_up_target?:unknown; target_principal_id?: unknown; handoff_id?: unknown; message_type?: unknown; text?: unknown; reply_to_item_id?: unknown;
 }
 export interface WorkbenchCommandInput { authContext: unknown; sessionId: string; body: WorkbenchCommandBody }
 type ControlType = 'REQUEST_HANDOFF' | 'TAKEOVER' | 'TRANSFER' | 'RELEASE' | 'CANCEL_HANDOFF' | 'ADVANCE_READ_CURSOR';
@@ -18,6 +18,7 @@ type Authorizer = Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal' | 'auth
 export interface WorkbenchFacadeOptions { controlService?: ControlPort; communicationService?: CommunicationPort; deliveryControl?: DeliveryPort; authorize?: Authorizer; enabled?: boolean; now?: () => Date }
 type FailureObservation = { ok?: unknown; error?: { code?: string } } | null | undefined;
 
+import {normalizeSupplementReplyTarget} from './p2-004-communication-core.mjs';
 import { WORKBENCH_ERROR_CODES, WorkbenchError } from './p2-006-workbench-query.mjs';
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 
@@ -117,6 +118,7 @@ export function createConversationWorkbenchCommandFacade({ controlService, commu
       actor: Object.freeze({ principal_id: actor.principal_id, admin_override: (authorize as Authorizer).isAdmin(actor) }),
       command: {
         session_id: id, expected_row_version: version(body.expected_row_version), sender_kind: 'AGENT',
+        ...(body.follow_up_target===undefined?{}:{follow_up_target:normalizeSupplementReplyTarget(body.follow_up_target)}),
         purpose: 'HUMAN_REPLY', message_type: body.message_type as CommunicationMessageType | undefined ?? 'text', visibility: 'EXTERNAL',
         client_command_id: uuid(body.client_command_id), text: text(body.text), reply_to_item_id: body.reply_to_item_id as string | null | undefined ?? null,
         attachment_ids: [], destination_policy: 'SESSION_THREAD', privacy_class: 'INTERNAL',

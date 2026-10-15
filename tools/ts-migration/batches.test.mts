@@ -106,6 +106,9 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
   }
   symlinkSync(path.join(original, 'node_modules'), path.join(root, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   execFileSync(process.execPath, ['--experimental-strip-types', 'tools/ts-migration/bootstrap.mts'], { cwd: root, windowsHide: true, stdio: 'pipe' });
+  // Finish the copied clone's index refresh before timing each real gate.
+  // Every gate still rechecks the complete current source identity.
+  execFileSync('git', ['status', '--porcelain'], { cwd: root, windowsHide: true, stdio: 'pipe' });
   const file = 'tests/platform-time-contract.test.mjs';
   const registry = path.join(root, 'plans/typescript-migration/batches.json');
   const doc = record(JSON.parse(readFileSync(registry, 'utf8')) as unknown);

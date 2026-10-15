@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_supplement_follow_up_material.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket_id",
+    "item"
+  ],
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "item": {
+      "$ref": "workbench_supplement_follow_up_page.schema.json#/properties/items/items"
+    }
+  }
+}
