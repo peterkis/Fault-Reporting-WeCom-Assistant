@@ -32,7 +32,7 @@ function loadedFiles(coverage: string): string[] {
   }
   return [...urls].sort();
 }
-function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
+export function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
   const archived:Record<string,unknown>[]=[],sources:string[]=[],folders=new Set<string>();
   for(const channel of ['SS009_RECEIPT','SS010_BROWSER','WEB01_BROWSER']){
     for(const match of tap.matchAll(new RegExp('^# '+channel+' (.+)\\r?$','gmu'))){
