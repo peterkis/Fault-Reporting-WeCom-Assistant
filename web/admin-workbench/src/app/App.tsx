@@ -180,7 +180,9 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
   const routeState:unknown=location.state;
   const route=routeState&&typeof routeState==='object'?routeState as Record<string,unknown>:null;
   const parsedBoardIntent=readBoardIntent(route?.boardActionIntent);
-  const boardIntent=principal.board_actions_enabled&&parsedBoardIntent?.kind===kind&&parsedBoardIntent.id===id?parsedBoardIntent:null;
+  // This is the existing presentation intent, not current authority to submit.
+  // Closing T42 cannot discard an already-open original command's protection.
+  const boardIntent=parsedBoardIntent?.kind===kind&&parsedBoardIntent.id===id?parsedBoardIntent:null;
   const selectors=['.ticket-self-handling','.ticket-conversation-handling','.ticket-takeover','.ticket-completion','.ticket-takeover-completion','.ticket-reopen','[data-review-workspace]'];
   const boardSelector=typeof route?.boardActionSelector==='string'&&selectors.includes(route.boardActionSelector)?route.boardActionSelector:'';
   const boardMode=Boolean(boardIntent&&boardSelector),[cancelledBoardIntent,setCancelledBoardIntent]=useState<string|null>(null),boardIntentKey=boardIntent?JSON.stringify(boardIntent):'';
@@ -202,8 +204,8 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
   const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
   const content=<>
     <div className="detail-navigation"><button className="icon-button" aria-label="关闭详情" title="返回工作台" disabled={commandsBlocked} onClick={close}>{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</button>
-      {!fullPage?<><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace><ArrowUpRight size={18}/></Link><button className="icon-button" aria-label="上一项" title="上一项（已加载范围）" disabled={!previous||commandsBlocked} onClick={()=>move(previous)}><ChevronUp size={18}/></button><button className="icon-button" aria-label="下一项" title="下一项（已加载范围）" disabled={!next||commandsBlocked} onClick={()=>move(next)}><ChevronDown size={18}/></button></>:null}
-      <span>事项详情</span>{!fullPage?<Link className="full-page-link" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace>展开完整页面<ArrowUpRight size={14}/></Link>:null}</div>
+      {!fullPage?<><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link><button className="icon-button" aria-label="上一项" title="上一项（已加载范围）" disabled={!previous||commandsBlocked} onClick={()=>move(previous)}><ChevronUp size={18}/></button><button className="icon-button" aria-label="下一项" title="下一项（已加载范围）" disabled={!next||commandsBlocked} onClick={()=>move(next)}><ChevronDown size={18}/></button></>:null}
+      <span>事项详情</span>{!fullPage?<Link className="full-page-link" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace>展开完整页面<ArrowUpRight size={14}/></Link>:null}</div>
     {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body">
       {result.isError?<p role="status" className="confirmed-facts">读取中断，以下为最近已确认资料；连接恢复后重新核验。</p>:null}
       <header className="detail-heading"><div className="context-line">{detail.item.number}<span>· {detail.item.kind==='ticket'?'工单':detail.item.kind==='review'?'未建单复核事项':'未建单受理事项'}</span></div><h2 id="detail-title" ref={pageHeading} tabIndex={fullPage?-1:undefined}>{detail.item.title}</h2></header>

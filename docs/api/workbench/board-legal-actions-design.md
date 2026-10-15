@@ -27,7 +27,7 @@
 
 ## 默认关闭、资源与回退
 
-候选源码中的宿主 `workbenchBoardActionsEnabled:boolean=false` 经原 `/api/lifecycle/bootstrap` 序列化 [能力片段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled`，仅当存在原已启用动作能力才广告 true；缺字段按 false。源码未构建、未运行，不能宣称已在实际服务启用；URL、localStorage 和生产环境变量不能旁路开启。实际动作仍各自要求原 feature flag／Schema／当前权限；T42 开启不替代这些条件。关闭时不建立拖动 manager，保留原详情按钮和业务事实，不回滚已提交处理。无数据库变更，无新 SSE／Worker／连接池；沿单 App／Worker、Gateway 单活、SSE32、池预算≤8及通信并发1；禁止真实外部发送。
+候选源码中的宿主 `workbenchBoardActionsEnabled:boolean=false` 经原 `/api/lifecycle/bootstrap` 序列化 [能力片段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled`，仅当存在原已启用动作能力才广告 true；缺字段按 false。源码未构建、未运行，不能宣称已在实际服务启用；URL、localStorage 和生产环境变量不能旁路开启。实际动作仍各自要求原 feature flag／Schema／当前权限；T42 开启不替代这些条件。关闭拖动能力时保留稳定的 Provider 和原业务子树；单个 manager 包装实例仍在，但 sensors／plugins／modifiers 为空，不显示拖动入口、不接受新拖动。这样不会因关闭 T42 而卸载原 UNKNOWN 控制器或未保存表单；原详情按钮、原 UUID／完整命令及业务事实保留，不回滚已提交处理。无数据库变更，无新 SSE／Worker／连接池；沿单 App／Worker、Gateway 单活、SSE32、池预算≤8及通信并发1；禁止真实外部发送。
 
 ## 冻结首例和未来验证
 
@@ -36,3 +36,13 @@
 候选还登记闭合意图 Contract／Unit、真实 bootstrap opt-in Integration 和三条生产浏览器风险源码（长文／600窄屏／减少动态、键盘／Esc／正文选择／滚动／取消保输入、丢ACK原body显式核对、实际并发409与当前SSE兼容目标保留）。它们均未运行。409 时原表单在 T42 模式保留完整原命令和原 purpose，不先结算本地 marker；明确采用当前事实时才清该 marker，保留填写内容并允许新意图。新的本地清理回调沿账号 epoch／组件代次 fence，不建立新存储。普通 T04 没有专用 GET ACK 时，显式核对仍是旧用途原 UUID／原 body 的 POST 重放；不把它称只读请求。
 
 后续 WHOLE 先在记录的未实现 baseline 运行同字节原首得到真实 RED，才实施最小竖切并获取同例 GREEN。随后按原七补合法 Review／完工／重开、取消／UNKNOWN／409／真实失权和迟到对象、按钮／键盘／Esc、控件／选择／滚动／SSE、长文／窄屏／减少动态所需证据；这些目前均 NOT_RUN，不预写模拟通过或整票验收结论。
+
+## 2026-10-15 能力关闭时的组件身份修补（SOURCE_ONLY）
+
+初审候选 fe3928977f86e417f6b27bd3286bdb2400d447c4 在关闭能力时由 Provider 子树切成 Fragment，会卸载原详情与控制器，可能丢失未确认命令／输入；这是具体源码因果，尚无 runtime RED。普通 test-only 后继 4224030d6c3f5d3789ea4a136a6769f397e4cffa 固化两个新公开浏览器回归源码：实际原 T04 POST 丢 ACK 后，能力回落仍保原 UNKNOWN 和显式原 body／UUID 重放；未提交普通备注保持原 DOM 与正文。测试只在真实成功 bootstrap 响应上前向关闭可选 T42 字段，属于 SYNTHETIC_CAPABILITY_FALLBACK；实际身份、业务开关、HTTP／Core／原回执不模拟成功，不冒充服务端动态开关实测。
+
+后继最小修补仅保留相同 Provider／children 位置并关闭拖动传感器／插件／modifier；不改原业务控制器、台账或合同。原未实施 bf8f、原9441B first、四合同及46旧SQL保留；本次新baseline／源码／raw／canonical见 D:/wecom-workbench-evidence/t42/prepared/source-capability-off-forward-20261015/。所有类型／构建／制品／测试仍 NOT_BUILT_NOT_RUN，七项 PENDING。未来 WHOLE 应在4224030d固定修前对象实际运行同字节新case，再核后继；静态修补不是RED／GREEN或验收。
+
+同轮初审另外两项具体因果随后以独立test-only后继 `17adbccd415fc30421acd37d57806458dc0132d7` 固化：展开完整页不得丢当前 board intent，完工409继续由原控制器保留原 UUID／完整 body；预检可信401或bootstrap403／404沿现有session清理，对象GET403／404沿现有item清理与官方看板重读，不能仅报错仍留旧卡片。展开的两处Link保留原route state；已打开的展示意图不因当前T42开关回落而取消，但它从不授予读取或提交权。关闭某业务能力只提示无当前动作，不伪造成对象失权。
+
+新增真实公开反例源码覆盖：实际T11一步处理→拖动完工→展开→独立摘要→真实竞争内部备注版本→原完工409／原body保留；原HANDLER经官方assign转至组外后仍同角色／团队bootstrap200但detail404，T38关闭时旧缓存应清；删除本浏览器Cookie后真实bootstrap401应清会话。T11 helper只增加默认false参数透传，本票helper只增加显式人员索引／分派fixture选项，普通调用保持原默认；没有新生产端点、SQL、身份或草稿机制。以上均NOT_RUN，修前test-only精确pin及有限后继以D交接为准。

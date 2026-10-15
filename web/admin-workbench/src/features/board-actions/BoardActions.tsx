@@ -6,6 +6,7 @@ import {Feedback} from '@dnd-kit/dom';
 import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {Principal,WorkbenchCard,BoardColumn} from '../../api/client';
 import {reviewApi} from '../manual-review/client';
+import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import type {WorkbenchBoardActionIntent} from '../../../../../contracts/workbench_board_action_intent_contracts';
 import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './intent';
 import './board-actions.css';
@@ -23,16 +24,19 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
     if(plan.state==='UNAVAILABLE'){setMessage('此落点不能执行合法业务动作，当前位置未作本地变更。');return;}
     const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setChecking(true);setMessage('正在核验原事项及当前合法动作…');
     const current=()=>{if(controller.signal.aborted||generation.current!==token)return false;try{currentRead();return true;}catch{return false;}};
+    let sessionRead=true;
     try{
       const fresh=await api.bootstrap(controller.signal);if(!current())return;
+      sessionRead=false;
       client.setQueryData(['session'],fresh);
-      if(fresh.principal_id!==principal.principal_id||!fresh.board_actions_enabled)throw new ApiError(403,'AUTHORIZATION_REJECTED');
+      if(fresh.principal_id!==principal.principal_id)throw new ApiError(401,'AUTHORIZATION_REJECTED');
+      if(!fresh.board_actions_enabled){setMessage('拖动入口已关闭；原表单、输入及未确认操作继续保留。');return;}
       const detail=await api.detail(intent.kind,intent.id,null,controller.signal);if(!current())return;
       if(detail.item.column!==intent.source_column){setMessage('事项的当前状态已变化，请按官方查询重新选择操作。');return;}
       let selector='';
       const needsReview=plan.action==='REVIEW_RESOLVE_AND_START'||plan.action==='SELF_HANDLE'&&detail.review_refs?.some(ref=>ref.status==='PENDING');
       if(needsReview){
-        if(!fresh.manual_review_enabled||!fresh.manual_review_resolve_and_start_enabled)throw new ApiError(403,'AUTHORIZATION_REJECTED');
+        if(!fresh.manual_review_enabled||!fresh.manual_review_resolve_and_start_enabled)throw new ApiError(409,'NO_CURRENT_ACTION');
         if(intent.kind==='review'){
           const review=await reviewApi.detail(intent.id,controller.signal);if(!current())return;
           if(!review.allowed_resolutions.includes('CONFIRM_TICKET_ELIGIBLE'))throw new ApiError(409,'NO_CURRENT_ACTION');
@@ -52,13 +56,21 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
         if(!selector)throw new ApiError(409,'NO_CURRENT_ACTION');
       }
       if(current()){setMessage('已打开原合法表单；明确提交并读取官方结果前，不移动事项。');onOpen({intent,selector});}
-    }catch(error){if(current())setMessage(error instanceof ApiError&&error.status===409?'当前没有适用此落点的合法动作，请读取当前事实后重新选择。':errorMessage(error));}
+    }catch(error){
+      if(!current())return;
+      if(error instanceof ApiError){
+        if(error.status===401||sessionRead&&[403,404].includes(error.status))await clearSessionAuthorization(client,principal.principal_id,error.status===401?401:error.status===403?403:undefined,'revoked');
+        else if(!sessionRead&&[403,404].includes(error.status))await clearItemAuthorization(client,principal.principal_id,intent.kind,intent.id,error);
+      }
+      if(current())setMessage(error instanceof ApiError&&error.status===409?'当前没有适用此落点的合法动作，请读取当前事实后重新选择。':errorMessage(error));
+    }
     finally{if(request.current===controller){request.current=null;setChecking(false);}}
   };
   const disabled=blocked||checking||!enabled;
-  if(!enabled)return <>{children}</>;
+  // Keep original business controllers at the same React tree position. Only
+  // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
   return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);}}>
-    <DragDropProvider onBeforeDragStart={event=>{if(disabled)event.preventDefault();}}
+    <DragDropProvider {...(!enabled?{sensors:[],plugins:[],modifiers:[]}:{})} onBeforeDragStart={event=>{if(disabled)event.preventDefault();}}
       onDragStart={({operation})=>{
         const data:unknown=operation.source?.data;
         const value=readBoardIntent(data);captured.current=value?{kind:value.kind,id:value.id,column:value.source_column}:null;
