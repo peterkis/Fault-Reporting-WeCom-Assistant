@@ -72,8 +72,8 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<
   await migrateCurrentBaselineWithYxx({databaseUrl});
   for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateWorkbenchVerifiedManualReports,migrateTicketUnassign,migrateTicketReturnToDispatch,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateIncidentInternalNotes,migrateIncidentPublicProgress,migrateIncidentOwnerTransfer,migrateIncidentDeliveryControl,migrateConversationDeliveryCommands,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchFollowUpSchedules,migrateWorkbenchFollowUpDueSignals,migrateWorkbenchSourceGroups])await migrate({databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool}),principals:string[]=[];
-  for(const [index,roles] of [['ADMIN'],['HANDLER'],['HANDLER'],['HANDLER']].entries()){
-   const p=await access.upsertPrincipal({wecomUserId:'t43-staff-'+index,displayName:'T43合成人员'+index,roles,resolverTeamIds:index===3?[]:['PILOT_IT']});principals.push(p.id);
+  for(let index=0;index<4;index++){
+   const p=await access.upsertPrincipal({wecomUserId:'t43-staff-'+index,displayName:'T43合成人员'+index,roles:index===0?['ADMIN']:['HANDLER'],resolverTeamIds:index===3?[]:['PILOT_IT']});principals.push(p.id);
   }
   const directory=createT18Directory();directory.setPrincipal(text(principals[0]));let directoryCalls=0;
   const offlineDirectory={...directory.directory,port:{async searchAuthorizedCandidates(){directoryCalls++;throw Error('T43_EXTERNAL_DIRECTORY_OFFLINE');},async verifyAuthorizedCandidate(){directoryCalls++;throw Error('T43_EXTERNAL_DIRECTORY_OFFLINE');}}};
@@ -81,7 +81,7 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<
   let failure:unknown;
   try{
    tls=await createYxxBrowserFixture({pool,createApp:({origin}:{origin:string})=>{
-    runtime=createYxxProfile({profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',pool,publicOrigin:origin,reporterOrigin:origin,listenPort:0,principalIds:principals,
+    const created=createYxxProfile({profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',pool,publicOrigin:origin,reporterOrigin:origin,listenPort:0,principalIds:principals,
      reporterMemberEntry:entryConfig,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'synthetic-B':'synthetic-A'})},
      flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
      yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true},
@@ -89,9 +89,10 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<
      workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:offlineDirectory,workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,workbenchConversationsEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,
      ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketTakeoverEnabled:true,ticketTakeoverCompletionEnabled:true,ticketAssignmentEnabled:true,ticketWaitingActionsEnabled:true,ticketUnassignEnabled:true,ticketReturnToDispatchEnabled:true,ticketReopenRoundsEnabled:true,botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:true,ticketRoundNotificationsEnabled:true,
      workbenchFollowEnabled:true,workbenchPersonalReadEnabled:true,workbenchFollowUpSchedulesEnabled:true,workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchRemindersEnabled:true,workbenchSearchEnabled:true,workbenchBoardActionsEnabled:true,workbenchAssignmentHistoryEnabled:true,notificationExceptionsEnabled:true,sourceGroupDirectoryEnabled:true});
-    return runtime.server;
+    if('disabled' in created)throw Error('T43_ENABLED_FULL_SERVICE_RUNTIME_REQUIRED');runtime=created;
+    return created.server;
    },startApp:async()=>{assert.ok(runtime);const address=await listenConversationWorkbenchServer(runtime.server,{port:0});backendOrigin='http://127.0.0.1:'+address.port;return backendOrigin;},stopApp:async()=>{await runtime?.stop();}});
-   assert.ok(runtime);const active=runtime,origin=tls.origin;
+   assert.ok(runtime&&tls);const active=runtime,origin=tls.origin;
    assert.equal(active.orchestrationWorker,null);assert.ok(active.selfService);assert.ok(active.incidentExtension);
    worker=createP2016OrchestrationWorker({pool,identityHmacKey:'t43-synthetic-identity-key',notifications:active.notifications,realtime:active.realtimeProjector,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}});
    const operational=worker;
