@@ -21,7 +21,7 @@
 
 ### 输入与组合含义
 
-GET 缺省值见下表；POST 的 criteria 必须包含全部 13 个字段，外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
+GET 缺省值见下表；POST 的 criteria 必须包含全部 12 个字段，外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
 
 | criteria 字段 | 类型／约束／GET 缺省 |
 | --- | --- |
