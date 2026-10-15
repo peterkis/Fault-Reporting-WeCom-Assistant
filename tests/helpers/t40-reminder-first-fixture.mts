@@ -109,10 +109,12 @@ export async function withT40ReminderFirstFixture(run:(fixture:T40ReminderFirstF
       const currentFacts=async()=>{
         const facts:Record<string,unknown>={};
         for(const endpoint of [path,path+'/events?limit=200',path+'/responsibility',path+'/follow-up-schedule',
-          '/api/workbench/items/ticket/'+ticketId+'/follow',
+          '/api/workbench/items/ticket/'+ticketId,
           '/api/workbench/items/ticket/'+ticketId+'/read-position']) {
           const response=await http.get(endpoint);assert.equal(response.status,200,endpoint);
-          facts[endpoint]=response.value;
+          if(endpoint==='/api/workbench/items/ticket/'+ticketId){
+            const attention=object(object(response.value.item).attention);assert.equal(typeof attention.following,'boolean');assert.match(text(attention.follow_version),/^[a-f0-9]{64}$/u);facts[endpoint]=attention;
+          }else facts[endpoint]=response.value;
         }
         return facts;
       };
