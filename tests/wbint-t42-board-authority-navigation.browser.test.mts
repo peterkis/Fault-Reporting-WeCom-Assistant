@@ -35,9 +35,11 @@ test('T42 full-page expansion preserves the original completion intent through a
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'合成设备已恢复。');assert.equal(await browser.evaluate('globalThis.__t42CompletionPosts'),1);
       assert.equal((await http.detail(ticket.ticket.id)).version,current.version,'conflict has no completion fact or automatic new command');
     }catch(failure){error=failure;}
-    if(browser){const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,pixels);screenshots.push({file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')});}
-    console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',t42_full_page_intent:true,screenshots}));
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    try{
+      if(browser){const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,pixels);screenshots.push({file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')});}
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',t42_full_page_intent:true,screenshots}));
+    }catch(captureError){error=error===undefined?captureError:new AggregateError([error,captureError],'T42_ASSERTION_AND_CAPTURE_FAILED');}
+    finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
   },{boardActionsEnabled:true,recoveryEnabled:false});
 });
 
