@@ -36,7 +36,8 @@ export interface T40ReminderRiskFixture {
   nextDue():Promise<void>;
   setTeams(teams:readonly string[]):Promise<void>;
   removeStaffRole():Promise<void>;
-  createTeamReport():Promise<string>;
+  createTeamReport(options?:{project?:boolean}):Promise<string>;
+  prepareClosedRelatedTicket():Promise<()=>Promise<void>>;
   logout():Promise<void>;
 }
 /** Separate six-risk fixture: original public Core/Assignment/Journey/ingress/HTTP ports; original T40 first/helper stay immutable. */
@@ -87,7 +88,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       workbenchManualReviewEnabled:true,workbenchConversationsEnabled:true,
       workbenchFollowEnabled:true,workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:true,
       workbenchFollowUpSchedulesEnabled:true,workbenchRealtimeEnabled:true,
-      ticketAssignmentEnabled:true,workbenchRemindersEnabled:true,...(official?{workbenchAuthentication:official}:{}),
+      ticketAssignmentEnabled:true,workbenchRemindersEnabled:true,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true,...(official?{workbenchAuthentication:official}:{}),
     };
     const runtime=createP2016Runtime(options);
     try {
@@ -113,7 +114,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
           const response=await fetch(base.origin+path,{method:'POST',headers:{
             cookie:cookieAt(index),origin:official?authOrigin:base.origin,'content-type':'application/json',
             'x-csrf-token':csrf,'idempotency-key':text(body.client_command_id),
-            'if-match':'"'+String(body.expected_version)+'"',
+            'if-match':'"'+String(body.expected_follow_version??body.expected_version)+'"',
           },body:JSON.stringify(body)});
           return {status:response.status,value:object(await response.json())};
         };
@@ -154,7 +155,19 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         const row=(await base.pool.query<{wecom_user_id:string}>('SELECT wecom_user_id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[base.handler])).rows[0];assert.ok(row);
         await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:row.wecom_user_id,displayName:'T40 revoked staff',roles:['REPORTER'],resolverTeamIds:[]});
       };
-      const createTeamReport=async()=>{const id=await base.createTicket();await runtime.realtimeProjector.runOnce({limit:100});return id;};
+      const createTeamReport=async({project=true}:{project?:boolean}={})=>{const id=await base.createTicket();if(project)await runtime.realtimeProjector.runOnce({limit:100});return id;};
+      const prepareClosedRelatedTicket=async()=>{
+        await base.setHandlerTeams(['PILOT_IT']);
+        const item=await http.get('/api/workbench/items/ticket/'+ticketId),attention=object(object(item.value.item).attention);
+        assert.equal(item.status,200);
+        const followed=await http.post('/api/workbench/items/ticket/'+ticketId+'/follow',{client_command_id:randomUUID(),canonical_item:{kind:'ticket',id:ticketId},expected_follow_version:text(attention.follow_version),following:true});assert.equal(followed.status,200,JSON.stringify(followed.value));
+        const before=await http.get(path);assert.equal(before.status,200);
+        const started=await http.post(path+'/take-and-start',{client_command_id:randomUUID(),expected_version:version(before.value.version),reason_code:'T40_PRECISION_REAL_START',resolver_team_id:'PILOT_IT'});assert.equal(started.status,200,JSON.stringify(started.value));
+        const active=await http.get(path);assert.equal(active.status,200);
+        const completed=await http.post(path+'/complete',{client_command_id:randomUUID(),expected_version:version(active.value.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(object(active.value.handling_cycle).id),internal_process:'T40 isolated precision regression',external_summary:'合成设备已恢复。',external_summary_confirmed:true});assert.equal(completed.status,200,JSON.stringify(completed.value));
+        const closed=await http.get(path);assert.equal(closed.status,200);assert.equal(closed.value.status,'CLOSED');
+        return async()=>{const reopened=await http.post(path+'/reopen',{client_command_id:randomUUID(),expected_version:version(closed.value.version),reason_code:'STAFF_REOPEN',note:'合成故障核实后需要继续处置。'});assert.equal(reopened.status,200,JSON.stringify(reopened.value));};
+      };
       const logout=async()=>{assert.ok(official);const response=await fetch(base.origin+'/workbench/logout',{method:'POST',headers:{cookie:cookieAt(1),origin:authOrigin,'x-csrf-token':text(realCsrf[1])}});assert.equal(response.status,200);assert.deepEqual(await response.json(),{logged_out:true});};
       const nextDue=async()=>{
         const ticket=await dispatcher.get(path),schedule=await dispatcher.get(path+'/follow-up-schedule');assert.equal(ticket.status,200);assert.equal(schedule.status,200);
@@ -193,7 +206,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       };
       await run({origin:base.origin,pool:base.pool,runtime,ticketId,handler:base.handler,
         browserCookie:{name:firstCookie.name,value:firstCookie.value,url:firstCookie.url},http,
-        setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,logout});
+        setupCommandIds:[assignmentId,scheduleId],currentFacts,appendLaterPrimary,revokeReadWithoutScopeChange,nextDue,setTeams:base.setHandlerTeams,removeStaffRole,createTeamReport,prepareClosedRelatedTicket,logout});
     } finally {
       await runtime.stop();await official?.close();
       assert.equal(runtime.server.listening,false);
