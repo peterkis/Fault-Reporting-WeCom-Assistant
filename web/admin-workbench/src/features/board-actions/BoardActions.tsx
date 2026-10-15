@@ -117,7 +117,7 @@ function EnabledBoardDropColumn({column,children}:{column:BoardColumn;children:R
   return <div ref={ref} data-board-drop-column={column} className={'board-drop-column'+(isDropTarget?' is-drop-target':'')}>{children}</div>;
 }
 /** Cancel closes only this presentation intent; the existing form/controller stays mounted. */
-export function BoardActionNotice({intent,selector,currentColumn,onCancel}:{intent:WorkbenchBoardActionIntent;selector:string;currentColumn?:BoardColumn;onCancel:()=>void}){
+export function BoardActionNotice({intent,selector,currentColumn,onCancel}:{intent:WorkbenchBoardActionIntent;selector:string;currentColumn:BoardColumn|undefined;onCancel:()=>void}){
   const container=useRef<HTMLElement|null>(null);
   const currentTarget=currentColumn===intent.target_column;
   return <section ref={container} className="board-action-notice" data-board-intent-panel>
