@@ -3,6 +3,7 @@ import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import type {ReviewResolveAndStartCommand,ReviewResolveAndStartResult} from '../contracts/workbench_review_start_contracts.js';
+import type {ReviewStartReceipt} from '../contracts/workbench_review_start_receipt_contracts.js';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
@@ -51,6 +52,31 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
     return {principal:current,review};
   }
   return Object.freeze({
+    async receipt({authContext,reviewId:inputReview,commandId:inputCommand}:{authContext:unknown;reviewId:unknown;commandId:unknown}):Promise<ReviewStartReceipt>{
+      guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+      const reviewId=uuidP2016(inputReview),commandId=uuidP2016(inputCommand);
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');
+        await reviews.getManualReviewDetail({authContext,reviewId,transaction});
+        const principal=await query.principal(authContext,transaction);
+        if(!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+        const selected=await transaction.query<{state:string;snapshot:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS snapshot,error_code AS error,retryable
+          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND review_id=$3::uuid
+          AND actor_principal_id=$4::uuid AND command_type='MANUAL_REVIEW_START' LIMIT 1`,['P2_016:'+principal.principal_id,commandId,reviewId,principal.principal_id]);
+        const row=selected.rows[0],base={client_command_id:commandId,review_id:reviewId};
+        if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
+        if(row.state==='FAILED'&&row.retryable===false)return publicP2016({...base,state:'FAILED',error:{code:codeP2016(row.error),retryable:false}});
+        if(row.state==='COMMITTED'){
+          const result=exactP2016(row.snapshot,['ok','review_id','status','resolution_decision_id','action_count','ticket_id','ticket_version','ticket_event_id','handling_cycle','communication_choice','conversations','canonical_item']);
+          if(result.ok!==true||result.review_id!==reviewId||result.status!=='RESOLVED'||!Array.isArray(result.conversations)||result.conversations.length>8)failP2016('ACTION_FAILED',503);
+          const ticketId=uuidP2016(result.ticket_id);
+          await query.authorizedTicket({authContext,ticketId,transaction});
+          for(const value of result.conversations){const session=exactP2016(value,['session_id','session_row_version','control_event_id','changed']);await query.authorizedRelatedConversation({authContext,ticketId,sessionId:uuidP2016(session.session_id),transaction});}
+          return publicP2016({...base,state:'COMMITTED',ticket_id:ticketId,ticket_version:capturedVersion(result.ticket_version),ticket_event_id:uuidP2016(result.ticket_event_id)});
+        }
+        failP2016('ACTION_FAILED',503);
+      });
+    },
     async context({authContext,reviewId:inputReview}:{authContext:unknown;reviewId:unknown}){
       guardP2016(enabled);if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       const reviewId=uuidP2016(inputReview);

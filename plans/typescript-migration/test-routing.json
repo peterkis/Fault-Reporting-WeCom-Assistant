@@ -5929,6 +5929,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t15-review-start-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7642,6 +7651,9 @@
     ],
     "wbint-t15-receipt": [
       "tests/wbint-t15-review-start-receipt.integration.test.mts"
+    ],
+    "wbint-t15-recovery": [
+      "tests/wbint-t15-review-start-recovery.browser.test.mts"
     ]
   },
   "subprocess_entries": {
