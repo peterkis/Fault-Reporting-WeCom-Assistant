@@ -116,6 +116,10 @@
 | R05 | GET | `/api/contact-journeys/{journeyId}/legs` | W | 已实现：渠道链 | [复核](workbench/manual-reviews.md) |
 | R06 | GET | `/api/contact-journeys/{journeyId}/decisions` | W | 已实现：确定性判定 | [复核](workbench/manual-reviews.md) |
 | R07 | GET | `/api/manual-reviews/{reviewId}/commands/{commandId}` | W | 已实现、默认关闭：当前Review授权/原UUID只读核对 | [同事项复核](workbench/manual-reviews.md#同事项复核与恢复wbint-t14) |
+| WB-T15-Q1 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start-context` | W | 已实现、默认关闭：当前获权原子处理选项，精确原组 hint＋有界100并集 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-Q2 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start/related-sessions/{sessionId}` | W | 已实现、默认关闭：当前精确关联／独立读权，历史 ENDED 不授新接管 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-A1 | POST | `/api/manual-reviews/{reviewId}/resolve-and-start` | W | 已实现、默认关闭：确认／唯一 Ticket／本人处理与显式沟通同事务 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
+| WB-T15-Q3 | GET | `/api/manual-reviews/{reviewId}/resolve-and-start/commands/{commandId}` | W | 已实现、默认关闭：当前授权／原 UUID 专用安全只读终态 | [T15](workbench/manual-reviews.md#确认明确故障并开始处理wbint-t15默认关闭) |
 | I01 | GET | `/api/incident-candidates` | W | 已实现：候选列表 | [公共故障](workbench/incidents.md) |
 | I02 | GET | `/api/incident-candidates/{candidateId}` | W | 已实现：候选详情 | [公共故障](workbench/incidents.md) |
 | I03 | POST | `/api/incident-candidates/{candidateId}/start-review` | W | 已实现：开始复核 | [公共故障](workbench/incidents.md) |
