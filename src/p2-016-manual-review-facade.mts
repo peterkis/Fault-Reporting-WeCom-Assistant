@@ -113,69 +113,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       ORDER BY r.created_at,r.id LIMIT 1`,[review.service_intake_id,...predicate.values]);
     return pending.rows[0]?{kind:'review',id:pending.rows[0].id}:{kind:'intake',id:review.service_intake_id};
   }
-  return Object.freeze({
-    async listManualReviews({authContext,priority=null,cursor=null,limit,status='PENDING'}: { authContext: unknown; priority?: string | null; cursor?: string | null; limit?: unknown; status?: string }) {
-      guardP2016(enabled);if(status!=='PENDING')failP2016();
-      if(priority!==null&&!['LOW','NORMAL','HIGH','URGENT'].includes(priority))failP2016();
-      const principal=await query.principal(authContext),store=storeFor(principal);
-      const decoded=cursor?decodeCursorP2016(cursor,['priority','page']) as { priority: unknown; page: { priority_rank: number; created_at: string; id: string } }:null;
-      if(decoded&&decoded.priority!==priority)failP2016('CURSOR_INVALID');
-      if(decoded){
-        const page=exactP2016(decoded.page,['priority_rank','created_at','id']) as { priority_rank: number; created_at: unknown; id: unknown };
-        if(!Number.isInteger(page.priority_rank)||page.priority_rank<1||page.priority_rank>4)failP2016('CURSOR_INVALID');
-        uuidP2016(page.id);localP2016(page.created_at);
-      }
-      const result=await store.list({transaction:pool,principal,priority:priority as ReviewPriority | null,cursor:decoded?.page??null,limit:limitP2016(limit)});
-      return publicP2016({items:result.items,next_cursor:result.next_cursor?cursorP2016({priority,page:result.next_cursor}):null});
-    },
-    canonicalItem,
-    async manualReviewReceipt({authContext,reviewId:inputReview,commandId:inputCommand}:{authContext:unknown;reviewId:unknown;commandId:unknown}):Promise<ReviewReceipt>{
-      guardP2016(enabled);guardP2016(workspaceEnabled&&draftRecoveryEnabled);
-      const reviewId=uuidP2016(inputReview),commandId=uuidP2016(inputCommand);
-      return transactionP2016(pool,async transaction=>{
-        await transaction.query('SET TRANSACTION READ ONLY');
-        const context=await detail({authContext,reviewId,transaction});
-        await materialFor(context,transaction);
-        const selected=await transaction.query<{state:unknown;snapshot:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS snapshot,error_code AS error,retryable
-          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid
-          AND review_id=$3::uuid AND actor_principal_id=$4::uuid AND command_type='MANUAL_REVIEW' LIMIT 1`,
-        ['P2_016:'+context.principal.principal_id,commandId,reviewId,context.principal.principal_id]);
-        const row=selected.rows[0],base={client_command_id:commandId,review_id:reviewId};
-        if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
-        try{
-          if(row.state==='FAILED'&&row.retryable===false)return publicP2016({...base,state:'FAILED',error:{code:codeP2016(row.error),retryable:false}});
-          if(row.state==='COMMITTED'){
-            const result=exactP2016(row.snapshot,['ok','review_id','status','resolution_decision_id','action_count']);
-            if(result.ok!==true||uuidP2016(result.review_id)!==reviewId||(result.status!=='RESOLVED'&&result.status!=='CANCELLED')
-              ||typeof result.action_count!=='number'||!Number.isInteger(result.action_count)||result.action_count<0||result.action_count>20)failP2016();
-            return publicP2016({...base,state:'COMMITTED',result:{ok:true,review_id:reviewId,status:result.status,
-              resolution_decision_id:uuidP2016(result.resolution_decision_id),action_count:result.action_count,replayed:true}});
-          }
-        }catch{failP2016('ACTION_FAILED',503);}
-        failP2016('ACTION_FAILED',503);
-      });
-    },
-    async getManualReviewDetail(input: DetailInput) {
-      guardP2016(enabled);const {review,principal,store}=await detail(input),transaction=input.transaction??pool;
-      const report=await webReportForIntake(transaction,review.service_intake_id);
-      if(!workspaceEnabled)return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
-      const material=await materialFor({review,principal,store},transaction);
-      const manual=manualSourceEnabled&&material.material_basis.source_kind==='MANUAL'?await readManualReportSource(transaction,review.service_intake_id):null;
-      const allowed=review.status!=='PENDING'?[]:material.material_basis.stale?['CANCEL_REVIEW']:Object.keys(ACTIONS);
-      return publicP2016({...review,...(report?{web_report:report}:{}),...(manual?{manual_report:manual.report}:{}),...material,canonical_item:await canonicalItem(input),allowed_resolutions:allowed,unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
-    },
-    async journey({authContext,journeyId,part=null}: { authContext: unknown; journeyId: unknown; part?: string | null }) {
-      const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
-      const q=await pool.query<JourneyProjectionRow>(`SELECT j.* FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
-        WHERE j.id=$1::uuid AND ${predicate.sql}`,[uuidP2016(journeyId),...predicate.values]);
-      if(q.rowCount!==1)failP2016('NOT_FOUND',404);
-      if(part===null)return projectContactJourney(q.rows[0] as JourneyProjectionRow);
-      if(part==='legs')return publicP2016((await pool.query(`SELECT id::text,journey_id::text,leg_ordinal,leg_type,source_intake_id::text,
-        conversation_session_id::text,status,row_version::text,opened_at,closed_at FROM intake.channel_leg WHERE journey_id=$1::uuid ORDER BY leg_ordinal LIMIT 100`,[journeyId])).rows);
-      if(part==='decisions')return publicP2016((await pool.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE journey_id=$1::uuid ORDER BY decision_ordinal LIMIT 100',[journeyId])).rows.map(projectDecision));
-      failP2016();
-    },
-    async resolveManualReview({authContext,reviewId,body}: { authContext: unknown; reviewId: unknown; body: unknown }): Promise<ManualReviewLedgerResult> {
+  function normalizeResolution(reviewId:unknown,body:unknown){
       guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis'],
         ['client_command_id','expected_row_version','resolution_code','resolution_reason_code']) as ReviewBody;
       if(!Object.hasOwn(ACTIONS,v.resolution_code)||v.target_journey_id!==undefined)failP2016('RESOLUTION_NOT_PERMITTED',403);
@@ -186,9 +124,12 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       if(materialBasis!==undefined){guardP2016(workspaceEnabled);if(typeof materialBasis!=='string'||!/^[a-f0-9]{64}$/u.test(materialBasis))failP2016();}
       const command={...fields,...(typeof materialBasis==='string'?{expected_material_basis:materialBasis}:{}),expected_row_version:expected,client_command_id:uuidP2016(v.client_command_id),review_id:uuidP2016(reviewId),action:'MANUAL_REVIEW',
         resolution_reason_code:codeP2016(v.resolution_reason_code)};
-      return ledger.execute({command,authorize:async transaction=>{
+      return {command,v};
+  }
+  async function authorizeResolution(authContext:unknown,reviewId:unknown,transaction:PostgresTransaction){
         const c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);return {...c,ticket:null};
-      },run:async(transaction,{principal,review,store}): Promise<ManualReviewCurrentResult>=>{
+  }
+  async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>):Promise<ManualReviewCurrentResult>{
         await realtimeProjector?.lock?.(transaction);
         await transaction.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[review.service_intake_id]);
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
@@ -251,9 +192,81 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
             WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id,resolvedAt]);
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
         }
+        const result:ManualReviewCurrentResult={ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
+        await afterResolution?.(result);
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId:reviewId as string});
-        return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
-      }});
+        return result;
+  }
+  return Object.freeze({
+    async listManualReviews({authContext,priority=null,cursor=null,limit,status='PENDING'}: { authContext: unknown; priority?: string | null; cursor?: string | null; limit?: unknown; status?: string }) {
+      guardP2016(enabled);if(status!=='PENDING')failP2016();
+      if(priority!==null&&!['LOW','NORMAL','HIGH','URGENT'].includes(priority))failP2016();
+      const principal=await query.principal(authContext),store=storeFor(principal);
+      const decoded=cursor?decodeCursorP2016(cursor,['priority','page']) as { priority: unknown; page: { priority_rank: number; created_at: string; id: string } }:null;
+      if(decoded&&decoded.priority!==priority)failP2016('CURSOR_INVALID');
+      if(decoded){
+        const page=exactP2016(decoded.page,['priority_rank','created_at','id']) as { priority_rank: number; created_at: unknown; id: unknown };
+        if(!Number.isInteger(page.priority_rank)||page.priority_rank<1||page.priority_rank>4)failP2016('CURSOR_INVALID');
+        uuidP2016(page.id);localP2016(page.created_at);
+      }
+      const result=await store.list({transaction:pool,principal,priority:priority as ReviewPriority | null,cursor:decoded?.page??null,limit:limitP2016(limit)});
+      return publicP2016({items:result.items,next_cursor:result.next_cursor?cursorP2016({priority,page:result.next_cursor}):null});
+    },
+    canonicalItem,
+    async manualReviewReceipt({authContext,reviewId:inputReview,commandId:inputCommand}:{authContext:unknown;reviewId:unknown;commandId:unknown}):Promise<ReviewReceipt>{
+      guardP2016(enabled);guardP2016(workspaceEnabled&&draftRecoveryEnabled);
+      const reviewId=uuidP2016(inputReview),commandId=uuidP2016(inputCommand);
+      return transactionP2016(pool,async transaction=>{
+        await transaction.query('SET TRANSACTION READ ONLY');
+        const context=await detail({authContext,reviewId,transaction});
+        await materialFor(context,transaction);
+        const selected=await transaction.query<{state:unknown;snapshot:unknown;error:unknown;retryable:unknown}>(`SELECT state,result_snapshot AS snapshot,error_code AS error,retryable
+          FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid
+          AND review_id=$3::uuid AND actor_principal_id=$4::uuid AND command_type='MANUAL_REVIEW' LIMIT 1`,
+        ['P2_016:'+context.principal.principal_id,commandId,reviewId,context.principal.principal_id]);
+        const row=selected.rows[0],base={client_command_id:commandId,review_id:reviewId};
+        if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
+        try{
+          if(row.state==='FAILED'&&row.retryable===false)return publicP2016({...base,state:'FAILED',error:{code:codeP2016(row.error),retryable:false}});
+          if(row.state==='COMMITTED'){
+            const result=exactP2016(row.snapshot,['ok','review_id','status','resolution_decision_id','action_count']);
+            if(result.ok!==true||uuidP2016(result.review_id)!==reviewId||(result.status!=='RESOLVED'&&result.status!=='CANCELLED')
+              ||typeof result.action_count!=='number'||!Number.isInteger(result.action_count)||result.action_count<0||result.action_count>20)failP2016();
+            return publicP2016({...base,state:'COMMITTED',result:{ok:true,review_id:reviewId,status:result.status,
+              resolution_decision_id:uuidP2016(result.resolution_decision_id),action_count:result.action_count,replayed:true}});
+          }
+        }catch{failP2016('ACTION_FAILED',503);}
+        failP2016('ACTION_FAILED',503);
+      });
+    },
+    async getManualReviewDetail(input: DetailInput) {
+      guardP2016(enabled);const {review,principal,store}=await detail(input),transaction=input.transaction??pool;
+      const report=await webReportForIntake(transaction,review.service_intake_id);
+      if(!workspaceEnabled)return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
+      const material=await materialFor({review,principal,store},transaction);
+      const manual=manualSourceEnabled&&material.material_basis.source_kind==='MANUAL'?await readManualReportSource(transaction,review.service_intake_id):null;
+      const allowed=review.status!=='PENDING'?[]:material.material_basis.stale?['CANCEL_REVIEW']:Object.keys(ACTIONS);
+      return publicP2016({...review,...(report?{web_report:report}:{}),...(manual?{manual_report:manual.report}:{}),...material,canonical_item:await canonicalItem(input),allowed_resolutions:allowed,unsupported_resolutions:['LINK_EXISTING_JOURNEY']});
+    },
+    async journey({authContext,journeyId,part=null}: { authContext: unknown; journeyId: unknown; part?: string | null }) {
+      const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
+      const q=await pool.query<JourneyProjectionRow>(`SELECT j.* FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
+        WHERE j.id=$1::uuid AND ${predicate.sql}`,[uuidP2016(journeyId),...predicate.values]);
+      if(q.rowCount!==1)failP2016('NOT_FOUND',404);
+      if(part===null)return projectContactJourney(q.rows[0] as JourneyProjectionRow);
+      if(part==='legs')return publicP2016((await pool.query(`SELECT id::text,journey_id::text,leg_ordinal,leg_type,source_intake_id::text,
+        conversation_session_id::text,status,row_version::text,opened_at,closed_at FROM intake.channel_leg WHERE journey_id=$1::uuid ORDER BY leg_ordinal LIMIT 100`,[journeyId])).rows);
+      if(part==='decisions')return publicP2016((await pool.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE journey_id=$1::uuid ORDER BY decision_ordinal LIMIT 100',[journeyId])).rows.map(projectDecision));
+      failP2016();
+    },
+    async resolveManualReviewInTransaction({authContext,reviewId,body,transaction,afterResolution}:{authContext:unknown;reviewId:unknown;body:unknown;transaction:PostgresTransaction;afterResolution?:(result:ManualReviewCurrentResult)=>Promise<void>}):Promise<ManualReviewCurrentResult>{
+      const normalized=normalizeResolution(reviewId,body),context=await authorizeResolution(authContext,reviewId,transaction);
+      return runResolution(transaction,context,reviewId,normalized,afterResolution);
+    },
+    async resolveManualReview({authContext,reviewId,body}: { authContext: unknown; reviewId: unknown; body: unknown }): Promise<ManualReviewLedgerResult> {
+      const normalized=normalizeResolution(reviewId,body);
+      return ledger.execute({command:normalized.command,authorize:transaction=>authorizeResolution(authContext,reviewId,transaction),
+        run:(transaction,context)=>runResolution(transaction,context,reviewId,normalized)});
     },
   });
 }
