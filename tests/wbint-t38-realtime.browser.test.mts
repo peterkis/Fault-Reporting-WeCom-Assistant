@@ -38,7 +38,7 @@ test('production bundle uses a real authorized stream to GET committed Ticket fa
       for(let i=0;i<100&&!requests.some(request=>request.path.startsWith('/api/realtime/events')&&request.cursor);i++)await new Promise(resolve=>setTimeout(resolve,50));
       assert.ok(requests.some(request=>request.path.startsWith('/api/realtime/events')&&request.cursor),'native reconnect must carry its real Last-Event-ID');
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',realtime_fact_get:true,native_resume:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
     assert.equal((await runtime.observability.metrics()).sse_clients,0);

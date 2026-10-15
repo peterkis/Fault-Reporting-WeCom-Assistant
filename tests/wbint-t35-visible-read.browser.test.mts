@@ -198,7 +198,7 @@ test('T35 actual foreground material advances only its own source and reader, ne
       console.log('WBINT_T35_VISIBLE_READ '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',single_app:true,member_submit:true,member_supplement:true,
         read_posts:posts.length,own_position:a1.last_read_position,other_position:b1.last_read_position,session_cursor:object(afterSession.read_cursor).last_read_sequence,
         screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));
-    }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href,posts:globalThis.__t35ReadPosts??[]})')));}}
+    }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href,posts:globalThis.__t35ReadPosts??[]})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([
       async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
       async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);},

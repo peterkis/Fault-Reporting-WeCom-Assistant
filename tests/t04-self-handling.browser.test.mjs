@@ -17,7 +17,7 @@ async function handlingBrowser(context,run,{width=1920,page=true}={}){
     const capture=async name=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
     await run(browser,capture);
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_self_handling:true,screenshots}));
-  }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,commands:globalThis.__t04Posts})")));}}
+  }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,commands:globalThis.__t04Posts})")));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
 }
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t04Posts=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t04Posts.push({path:String(path),body:JSON.parse(options.body)});return original(path,options);};})()";
@@ -51,7 +51,7 @@ test('production Ticket-only controls use one POST, GET refresh, and reuse the a
       assert.deepEqual(started.handling_cycle,accepted.handling_cycle);assert.equal(started.version,5);
       await capture('new-detail-page-1920.png');
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_self_handling:true,screenshots}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate(`(async()=>({text:document.body.innerText,commands:globalThis.__t04Posts,context:await fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()),responsibility:await fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())}))()`)));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate(`(async()=>({text:document.body.innerText,commands:globalThis.__t04Posts,context:await fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()),responsibility:await fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())}))()`)));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{ticketSelfHandlingEnabled:true});
 });

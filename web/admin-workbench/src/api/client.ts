@@ -242,13 +242,14 @@ function decodeReopen(value:unknown,ticketId:string):P2016ReopenResult {
   return {...decodeTicketReceipt(v,ticketId),handling_cycle:{id:id(c.id),cycle_no:version(c.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}};
 }
 export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016TakeoverCommand|P2016UnassignCommand|P2016ReopenCommand|P2016ReturnToDispatchCommand|P2016TakeoverCompletionCommand|SharedFollowUpCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+    const current=captureWorkbenchRead(signal);current();
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
         headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
-      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      current();if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
-      const v=object(await response.json());
+      const v=object(await response.json());current();
       if(!response.ok){
         const code=text(object(v.error).code);
         if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
@@ -258,7 +259,7 @@ export async function postTicketCommand<T>(ticketId:string,action:string,command
       }
       if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
       return decode(v);
-    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
+    }catch(error){current();if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
 
 }
 async function postFollow(requested:FollowItem,command:WorkbenchFollowCommand,csrfToken:string|null,signal:AbortSignal):Promise<WorkbenchFollowResult>{

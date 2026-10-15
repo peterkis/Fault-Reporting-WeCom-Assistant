@@ -41,7 +41,7 @@ test('effective scope changes revoke facts and draft authority without relying o
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'','lost authorization must not restore revoked plaintext after a new grant');
       assert.equal(posts,0);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',effective_scope_revoke:true,malformed_credible_denial:true,new_grant_reauth:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
@@ -62,7 +62,7 @@ test('a genuinely expired current Cookie session stops its production stream, fa
       assert.equal(await browser.evaluate('document.body.innerText.includes("T38 current Cookie expiry draft")'),false);assert.equal(posts,0);
       assert.equal((await runtime.observability.metrics()).sse_clients,0);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_TLS_HTTP_PG',real_session_expiry:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
   },{realWorkbenchAuthentication:true,workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
@@ -90,7 +90,7 @@ test('a real Cookie principal change fences an old in-flight GET and does not ca
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'');release();
       await new Promise(resolve=>setTimeout(resolve,50));assert.equal(await browser.evaluate('document.querySelector(".account strong")?.textContent'),nextPrincipal.display_name);assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'');assert.equal(posts,0);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',real_cookie_principal_change:true,old_get_fenced:true,former_draft_not_inherited:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     release?.();await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
@@ -109,7 +109,7 @@ test('a valid current Cookie without the independent CSRF cookie can still read 
       const command={client_command_id:randomUUID(),expected_version:context.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T38 CSRF denial must not commit',external_visible:false};
       const denied=await fetch(backendOrigin+'/api/tickets/'+ticket.ticket.id+'/internal-notes',{method:'POST',headers:{cookie:cookie.name+'='+cookie.value,origin,'content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+context.version+'"'},body:JSON.stringify(command)});assert.equal(denied.status,403);await denied.json();assert.equal(posts,1);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_TLS_HTTP_PG',valid_cookie_nullable_csrf_reads:true,missing_csrf_write403:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{realWorkbenchAuthentication:true,workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true});

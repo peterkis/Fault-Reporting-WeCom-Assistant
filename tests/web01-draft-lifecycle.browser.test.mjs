@@ -27,7 +27,7 @@ test('discard clears the same-profile copy and fences a second tab delayed nativ
       assert.deepEqual(await browser.evaluate(counts),{drafts:0,operations:0});
       await reload(browser);await browser.waitFor("Boolean(document.querySelector('textarea'))");assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'');
       await tab.close();tab=null;
-    }catch(failure){error=failure;console.log('T03_DISCARD_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T03_DISCARD_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

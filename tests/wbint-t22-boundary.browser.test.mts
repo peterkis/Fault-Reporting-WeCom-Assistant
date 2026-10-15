@@ -19,7 +19,7 @@ test('raw recovery false creates no recovery storage and a real Web Store Port T
    await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page'});await browser.waitFor("document.querySelector('[aria-label=关联服务会话]')?.textContent.includes('没有可读取的服务会话')");assert.equal(await browser.evaluate("document.querySelectorAll('[data-conversation-ready],textarea[data-purpose]').length"),0);assert.equal(await browser.evaluate("indexedDB.databases().then(rows=>rows.some(v=>v.name==='wecom-workbench-drafts-v1'))"),false);
    assert.equal(Number((await pool.query<{count:string}>('SELECT count(*)::text AS count FROM conversation.session WHERE service_intake_id=$1::uuid',[intake.intakeId])).rows[0]?.count),0);
    assert.deepEqual(await browser.evaluate(`fetch('/api/workbench/items/ticket/${ticket.id}/conversations').then(r=>r.json())`),{items:[]});
-  }catch(error){failure=error;console.log('T22_WEB_RECOVERY_DISABLED '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+  }catch(error){failure=error;try{console.log('T22_WEB_RECOVERY_DISABLED '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  },{recovery:false});
 });

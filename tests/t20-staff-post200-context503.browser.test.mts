@@ -52,7 +52,7 @@ test('production HANDLER retains original reopen UUID when a delivered POST200 i
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),1,'explicit acknowledgement is GET-only; never a resend or fresh POST');
    const final=await http.detail(ticketId);assert.equal(final.handling_cycle?.id,reopened.handling_cycle?.id);assert.equal(final.version,reopened.version);assert.equal(final.assignee_id,null);
    await writeFile(join(directory,'terminal.png'),Buffer.from(await tab.screenshot(),'base64'));
-  }catch(failure){error=failure;if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,posts:globalThis.__t20Posts,reads:globalThis.__t20Reads,faults:globalThis.__t20Faults})')));}}
+  }catch(failure){error=failure;try{if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,posts:globalThis.__t20Posts,reads:globalThis.__t20Reads,faults:globalThis.__t20Faults})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
  });
 });

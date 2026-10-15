@@ -5,14 +5,24 @@ import type {StoredAttachment,AttachmentStore,AttachmentPage,AttachmentMetadata,
 import {AttachmentError,attachmentReason,ATTACHMENT_DEADLINE_MS} from './workbench-attachment-store.mjs';
 import {failP2016} from './p2-016-domain-contracts.mjs';
 import {once} from 'node:events';
+import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
 const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[],truncated:false};
 const LIMIT=20;
 function sameRegistration(first:StoredAttachment,current:Readonly<StoredAttachment>):void {if(JSON.stringify(first)!==JSON.stringify(current))throw new AttachmentError('ATTACHMENT_INTEGRITY_FAILED');}
 function visible(asset:StoredAttachment,reason:AttachmentReason|null):AttachmentMetadata {return {ref:asset.ref,display_name:asset.mime_type==='image/png'?'报修附件.png':asset.mime_type==='image/jpeg'?'报修附件.jpg':'报修附件',mime_type:asset.mime_type,byte_size:asset.byte_size,available:reason===null,reason};}
-export function createWorkbenchAttachments({pool,query,enabled=false,store=null}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null}) {
+export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean}) {
   const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
+  async function requireSession(authContext:Context['authContext']){
+    if(!currentSessionPredicate){
+      if(localTestProfile&&!('session_id' in authContext))return;
+      throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
+    }
+    const predicate=currentSessionPredicate(authContext,authContext.principal_id);
+    const current=await pool.query<{current:boolean}>('SELECT '+predicate.sql+' AS current',predicate.values);
+    if(current.rows[0]?.current!==true)throw new AttachmentError('ATTACHMENT_AUTH_REVOKED',401);
+  }
   async function sources(item:Item,assets:readonly StoredAttachment[]) {
     if(!assets.length)return new Map<string,{fresh:boolean;trusted:boolean}>();
     const rows=await pool.query<{ref:string;fresh:boolean;trusted:boolean}>(`SELECT a.ref,
@@ -42,6 +52,8 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null}
     if(!source.fresh)throw new AttachmentError('ATTACHMENT_EXPIRED',410);
     if(!source.trusted)throw new AttachmentError('ATTACHMENT_UNTRUSTED');
     const reason=attachmentReason(asset);if(reason)throw new AttachmentError('ATTACHMENT_'+reason,reason==='EXPIRED'?410:422);
+    // The final check follows every source/READ wait, including each subsequent chunk.
+    await requireSession(authContext);
     return asset;
   }
   async function list(authContext:Context['authContext'],kind:string,id:string,signal:AbortSignal):Promise<AttachmentPage> {

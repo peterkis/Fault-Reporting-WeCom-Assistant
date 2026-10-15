@@ -43,7 +43,7 @@ test('the actual production staff form restores an encrypted manual draft and ex
       await browser.waitFor(`(async()=>{const value=await (${copies});return value.drafts.length===0&&value.operations.length===0;})()`);
       await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${row.id}"]'))`);
       const cardText=string(await browser.evaluate(`document.querySelector('[data-item-id="${row.id}"]').textContent`));assert.ok(cardText.includes('电话代录'));assert.ok(cardText.includes('合成电话报修人'));assert.ok(cardText.includes('未核实'));
-    }catch(failure){error=failure;console.log('T17_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Requests})'):{}));}
+    }catch(failure){error=failure;try{console.log('T17_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Requests})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchManualReviewEnabled:true,workbenchRealtimeEnabled:true,realWorkbenchAuthentication:true});
 });

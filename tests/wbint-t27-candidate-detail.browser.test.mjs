@@ -58,7 +58,7 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
       for(const table of ['communication.message','communication.outbox','communication.delivery'])assert.equal((await pool.query('SELECT count(*)::integer AS count FROM '+table)).rows[0].count,0);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
       await capture();console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',candidate_detail_and_decisions:true,screenshots}));
-    }catch(failure){error=failure;if(browser){await capture();await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));console.log('T27_FAILURE_DIRECTORY '+directory);}}
+    }catch(failure){error=failure;try{if(browser){await capture();await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));console.log('T27_FAILURE_DIRECTORY '+directory);}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
   }});await assertNoP2012Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
 });

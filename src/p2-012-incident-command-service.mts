@@ -238,13 +238,13 @@ export function createP2012IncidentCommandService({pool,enabled=false,allowDispa
         VALUES($1,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8::uuid,$9) ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
         [scope,c.client_command_id,digest,c.action,c.candidate_review_id??null,c.incident_id??null,c.incident_report_id??null,ctx.principal?.principal_id??null,c.expected_row_version]);
       const receipt=((await tx.query<P2012CommandReceipt>('SELECT * FROM incident.command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE',[scope,c.client_command_id])).rows[0] as P2012CommandReceipt);
-      if(c.action==='TRANSFER_OWNER'){
+      if(['TRANSFER_OWNER','ADD_INTERNAL_NOTE','PUBLISH_PUBLIC_PROGRESS'].includes(c.action)){
         // The INSERT's Incident FK and receipt lock can wait after initial auth.
         // Stabilize caller active/roles before exposing an outcome or doing work.
         const actor=ctx.principal?.principal_id;if(!actor)fail('FORBIDDEN',403);
         await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[actor]);
         await tx.query('SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid FOR SHARE',[actor]);
-        ctx.principal=(await query.ownerTransferResource({authContext:{principal_id:actor},id:ctx.row.id,tx})).principal;
+        ctx.principal=(await authorize(tx,authContext,c,system)).principal;
       }
       if(receipt.command_hash!==digest)fail('COMMAND_CONFLICT',409);
       const receiptResult=(r: Extract<P2012CommandReceipt, { state: 'COMMITTED' }>): Omit<IncidentCommandSuccess, 'replayed'>=>({ok:true,result_ref_type:r.result_ref_type,result_ref_id:r.result_ref_id,result_row_version:String(r.result_row_version),result_event_id:r.result_event_id});

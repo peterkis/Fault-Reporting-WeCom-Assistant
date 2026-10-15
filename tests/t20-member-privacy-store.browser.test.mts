@@ -35,7 +35,7 @@ async function withMemberStoreBrowser(run:(value:{f:FeedbackFixture;tab:Browser;
    assert.match(authority.principal,/^[a-f0-9]{64}$/u);assert.match(authority.requestRef,/^[A-Za-z0-9_-]{32}$/u);assert.equal(authority.requestRef,f.requestRef);assert.equal(authority.ticketVersion,f.completed.version);
    await writeFile(join(directory,'current-member-read-authority.json'),JSON.stringify(authority,null,2));
    await run({f,tab,authority,directory});
-  }catch(failure){error=failure;if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,attempts:globalThis.__privacyAttempts,reads:globalThis.__privacyReads,logout:globalThis.__privacyLogout})')));}}
+  }catch(failure){error=failure;try{if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,attempts:globalThis.__privacyAttempts,reads:globalThis.__privacyReads,logout:globalThis.__privacyLogout})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await fixture?.close();if(fixture)assert.deepEqual(fixture.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await app?.stop();}],error);
  });
 }

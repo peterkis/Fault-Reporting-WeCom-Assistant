@@ -217,7 +217,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
         features:{follow:workbenchFollowEnabled,supplements:workbenchSupplementFollowUpEnabled,schedules:workbenchFollowUpSchedulesEnabled,
           manual:workbenchManualReportsEnabled,manualReview:workbenchManualReviewEnabled,sourceGroups:sourceGroupDirectoryEnabled}}),workbenchSearchEnabled);
       const conversations=createWorkbenchConversations({pool,query:queryService,itemQuery:workbenchQuery,commands:commandFacade,enabled:workbenchConversationsEnabled,supplementFollowUpEnabled:workbenchSupplementFollowUpEnabled,replyReceiptAuthorization:supplementFollowUp.authorizeReplyReceipt});
-      attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore});
+      attachments=createWorkbenchAttachments({pool,query:workbenchQuery,enabled:workbenchAttachmentsEnabled,store:attachmentStore,currentSessionPredicate:workbenchAuthentication?.currentSessionPredicate,localTestProfile:workbenchAuthentication===null&&(principalIds!==null||typeof principalId==='string')});
       const notificationExceptions=createWorkbenchNotificationExceptions({pool,query,enabled:notificationExceptionsEnabled,externalSendEnabled,incidentScope:incidentExtension?.notificationExceptionScope??null});
       const supplementFollowUpHttp=createWorkbenchSupplementFollowUpHttp(supplementFollowUp,workbenchSupplementFollowUpEnabled);
       const personalReadHttp=createWorkbenchPersonalReadHttp(createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnabled:workbenchManualReviewEnabled,manualSourceEnabled:workbenchManualReportsEnabled,enabled:workbenchPersonalReadEnabled}),workbenchPersonalReadEnabled);

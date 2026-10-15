@@ -73,7 +73,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),0,'new text alone is not a business command');
    const finalResponse=await native.request(ticketPath);assert.equal(finalResponse.status,200);const final=finalResponse.json() as P2016TicketDetail;assert.equal(final.status,'CLOSED');assert.equal(final.version,changed.version);assert.equal(final.handling_cycle?.id,changed.handling_cycle?.id);
    await writeFile(join(directory,'terminal.png'),Buffer.from(await tab.screenshot(),'base64'));
-  }catch(failure){error=failure;if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,posts:globalThis.__t20Posts,reads:globalThis.__t20Reads})')));}}
+  }catch(failure){error=failure;try{if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,posts:globalThis.__t20Posts,reads:globalThis.__t20Reads})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
  });
 });

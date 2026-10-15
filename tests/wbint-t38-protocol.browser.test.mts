@@ -34,7 +34,7 @@ test('native 32 admission preserves the budget; the 33rd production client polls
       await peers.pop()?.close();
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');assert.equal((await runtime.observability.metrics()).sse_clients,32);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',native_admitted:32,native_33rd503:true,bounded_capacity_recovery:true,manual_rest_allowed:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await Promise.all(peers.map(peer=>peer.close()));}],error);
     if(!error)await rmdir(directory);
     for(let i=0;i<100&&(await runtime.observability.metrics()).sse_clients;i++)await new Promise(resolve=>setTimeout(resolve,20));assert.equal((await runtime.observability.metrics()).sse_clients,0);
@@ -68,7 +68,7 @@ test('an actual colleague update does not reorder the card being operated on whi
       await browser.evaluate('document.querySelector("button[aria-label=关闭详情]").click()');await browser.waitFor('!document.querySelector(".detail-dialog")');
       assert.equal(await browser.evaluate(positionExpression),0,'closing the operated detail applies the actual fresh server order');
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',current_target_position:true,fresh_order_after_close:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,ticketSelfHandlingEnabled:true,workbenchInternalNotesEnabled:true});

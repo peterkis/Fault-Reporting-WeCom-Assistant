@@ -35,6 +35,6 @@ test('T35 a normal Ticket without Review advances a long actual Bot body only af
     assert.equal((await position())?.last_read_position,'2');assert.equal((await position(1))?.last_read_position,'0');
     const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'normal-long-body-1280.png');await writeFile(file,bytes);
     console.log('T35_NORMAL_LONG '+JSON.stringify({actual_body_height:height,source:'BOT',normal_ticket_without_review:true,screenshots:[{file,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
-  }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t35Posts})')));}}
+  }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t35Posts})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }));

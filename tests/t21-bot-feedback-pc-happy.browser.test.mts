@@ -132,9 +132,9 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       await writeFile(join(directory,'public-wire.json'),JSON.stringify({beforeReload:wire,ack,afterReload:after}));
       console.log('T21_BOT_PC_HAPPY '+JSON.stringify({directory,staged_runtime:true,production_asset_sha256:createHash('sha256').update(stagedAsset).digest('hex'),real_http_pg:true,simulated_oauth:true,provider_stub_calls:fixture.providerCalls,external_calls:0,screenshots}));
     }catch(failure){
-      error=failure;await writeFile(join(directory,'primary-error.json'),JSON.stringify(errorFacts(failure)));
+      error=failure;try{await writeFile(join(directory,'primary-error.json'),JSON.stringify(errorFacts(failure)));
       if(tab)try{await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure-dom-and-wire.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,path:location.pathname,wire:globalThis.__t21Wire??[]})')));}catch(observation){await writeFile(join(directory,'observer-error.json'),JSON.stringify(errorFacts(observation)));error=new AggregateError([failure,observation],'T21_PC_FAILURE_OBSERVATION_FAILED');}
-    }
+    }catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     try{
       await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await fixture?.close();if(fixture)assert.deepEqual(fixture.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await app?.stop();}],error);
       await writeFile(join(directory,'terminal-resources.json'),JSON.stringify({browser:tab?.ownedResourceState()??null,fixture:fixture?.ownedResourceState()??null,member_listening:app?.server.listening??false,staff_listening:context.runtime.server.listening}));

@@ -25,7 +25,7 @@ test('real mounted workbench logout revokes the persisted session and clears sam
       const state=(await pool.query("SELECT state,revoked_epoch_ms IS NOT NULL AS revoked FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid",[sessionId])).rows[0];assert.deepEqual(state,{state:'REVOKED',revoked:true});
       assert.equal((await pool.query("SELECT count(*)::int AS n FROM pilot_ticket.workbench_auth_event WHERE session_id=$1::uuid AND event_type='LOGOUT' AND reason_code='USER_LOGOUT'",[sessionId])).rows[0].n,1);
       await tab.close();tab=null;
-    }catch(failure){error=failure;console.log('T03_LOGOUT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T03_LOGOUT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });
@@ -43,7 +43,7 @@ test('trusted object rejection clears that encrypted copy and leaves a different
       await browser.waitFor(`(async()=>!(await (${readKeys})).includes(${JSON.stringify(tickets[5].ticket.id)}))()`);
       const keys=await browser.evaluate(readKeys);
       assert.deepEqual(keys,[tickets[4].ticket.id]);assert.equal(await browser.evaluate("document.body.innerText.includes('T03 revoked item draft')"),false);
-    }catch(failure){error=failure;console.log('T03_REVOKED_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T03_REVOKED_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

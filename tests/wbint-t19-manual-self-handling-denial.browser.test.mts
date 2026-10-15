@@ -29,7 +29,7 @@ test('T19 a real receipt 403 clears sensitive restored input and ciphertext whil
       for(let n=0;n<100&&!statuses.length;n++)await new Promise(resolve=>setTimeout(resolve,10));assert.deepEqual(statuses,[403]);
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
       assert.deepEqual(await browser.evaluate(copies),{drafts:0,operations});assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]')?.value??''"),'');assert.equal(posts,1);
-    }catch(failure){error=failure;console.log('T19_RECEIPT_DENIAL '+JSON.stringify({posts,statuses,view:browser?await browser.evaluate('document.body.innerText'):null,copies:browser?await browser.evaluate(copies):null}));}
+    }catch(failure){error=failure;try{console.log('T19_RECEIPT_DENIAL '+JSON.stringify({posts,statuses,view:browser?await browser.evaluate('document.body.innerText'):null,copies:browser?await browser.evaluate(copies):null}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });
@@ -43,7 +43,7 @@ test('T19 a completed native IDB settlement whose notification is delayed cannot
       tab=await yxxTab(browser,f.origin+'/workbench/app/reports/new?handling=self');await browser.waitFor('globalThis.__t19Revoked===true');
       await browser.evaluate('globalThis.__t19ReleaseCleanup()');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,0))');
       assert.equal(await browser.evaluate("document.querySelector('[data-manual-report-result]')?.textContent.includes('已由本人开始处理')??false"),false,'a late original cleanup result cannot restore the old success after current-authority clearing');
-    }catch(failure){error=failure;console.log('T19_LATE_SETTLEMENT '+JSON.stringify(browser?await browser.evaluate('({view:document.body.innerText,revoked:globalThis.__t19Revoked,held:typeof globalThis.__t19ReleaseCleanup})'):{}));}
+    }catch(failure){error=failure;try{console.log('T19_LATE_SETTLEMENT '+JSON.stringify(browser?await browser.evaluate('({view:document.body.innerText,revoked:globalThis.__t19Revoked,held:typeof globalThis.__t19ReleaseCleanup})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });

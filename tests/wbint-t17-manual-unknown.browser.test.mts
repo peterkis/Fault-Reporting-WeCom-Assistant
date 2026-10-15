@@ -53,7 +53,7 @@ test('a truly committed manual report with an unreadable HTTP acknowledgement re
       await browser.evaluate("document.querySelector('[data-action=check-manual-report-receipt]').click()");await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已核对原操作结果')");
       assert.equal(posts,1);assert.deepEqual(receipts,['/api/workbench/reports/commands/'+id]);assert.equal(await browser.evaluate("globalThis.__t17Requests.filter(row=>row.method==='POST').length"),0);assert.deepEqual(await facts(),{intakes:1,tickets:1,receipts:1,state:'COMMITTED',actor:principal.id});
       await browser.waitFor(`(async()=>{const value=await (${copies});return value.drafts.length===0&&value.operations.length===0;})()`);assert.deepEqual(await browser.evaluate(copies),{drafts:[],operations:[]});
-    }catch(failure){error=failure;console.log('T17_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?{view:await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Requests})'),copies:await browser.evaluate(copies),posts,receipts}:{}));}
+    }catch(failure){error=failure;try{console.log('T17_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?{view:await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Requests})'),copies:await browser.evaluate(copies),posts,receipts}:{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });

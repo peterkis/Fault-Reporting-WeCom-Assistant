@@ -32,7 +32,7 @@ test('production detail visible before live and after a real reconnect registers
       await browser.waitFor('globalThis.__t39AcceptedRenewals>0');
       await waitViewing(origin,viewer,ticket.id);
       assert.equal((await runtime.observability.metrics()).sse_clients,1);
-    }catch(failure){error=failure;console.log('T39_VISIBLE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,errors:globalThis.__t39Errors,queued:globalThis.__t39OpenQueue?.length})'):{}));}
+    }catch(failure){error=failure;try{console.log('T39_VISIBLE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,errors:globalThis.__t39Errors,queued:globalThis.__t39OpenQueue?.length})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
 });
@@ -50,7 +50,7 @@ test('trusted production Review input reports editing on the currently displayed
       do{editing=(await currentPeople(origin,viewer,ticket.id)).some(person=>person.display_name==='林舟'&&person.mode==='EDITING');if(!editing)await new Promise(resolve=>setTimeout(resolve,100));}while(!editing&&Date.now()<until);
       assert.equal(editing,true,'a current authorized linked Review field belongs to the canonical Ticket activity');
       assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-review-result]"))'),false,'editing presence must not submit the Review');
-    }catch(failure){error=failure;console.log('T39_REVIEW_EDIT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,value:document.querySelector("[aria-label=复核结论]")?.value})'):{}));}
+    }catch(failure){error=failure;try{console.log('T39_REVIEW_EDIT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,value:document.querySelector("[aria-label=复核结论]")?.value})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchManualReviewEnabled:true,manualProjection:true});
 });
@@ -70,7 +70,7 @@ test('slow activity alone leaves production realtime and an authorized human not
       await browser.evaluate('document.querySelector("[data-action=save-internal-note]").click()');
       await browser.waitFor('document.querySelector(".activity-list")?.textContent.includes("T39 healthy human note while activity is delayed")');
       assert.equal((await runtime.observability.metrics()).sse_clients,1);
-    }catch(failure){error=failure;console.log('T39_DELAY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,held:globalThis.__t39Held})'):{}));}
+    }catch(failure){error=failure;try{console.log('T39_DELAY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,held:globalThis.__t39Held})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchInternalNotesEnabled:true,manualProjection:true});
 });

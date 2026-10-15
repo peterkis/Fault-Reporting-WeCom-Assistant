@@ -100,7 +100,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.evaluate('document.querySelector("[data-action=check-source-group-name]").click()');await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已保存")');
       const detailCommands=await browser.evaluate('globalThis.__t23DetailCommands');assert.equal(detailCommands.length,2);assert.deepEqual(detailCommands[1],detailCommands[0]);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_command_basis:true,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t23Commands,statuses:globalThis.__t23Statuses})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t23Commands,statuses:globalThis.__t23Statuses})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await import('node:fs/promises').then(fs=>fs.rmdir(directory));
   },{sourceGroupDirectoryEnabled:true});
@@ -177,7 +177,7 @@ test('administrator source group settings searches the real directory across pag
       await browser.waitFor(`document.querySelector('.properties')?.innerText.includes(${JSON.stringify(literal)})`);
       assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_directory:true,screenshots}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{sourceGroupDirectoryEnabled:true});
 });
@@ -195,7 +195,7 @@ test('a real object denial clears cached note actions even when the rejection bo
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
-    }catch(failure){error=failure;console.log('T02_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}
+    }catch(failure){error=failure;try{console.log('T02_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,malformedInternalNoteDenial:true});
 });
@@ -231,7 +231,7 @@ for(const fault of ['disconnect','invalid-success'])test('Ticket internal note p
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"内部备注\"]').value"),'');
       assert.equal(await browser.evaluate(`fetch('/api/tickets/${ticketId}/events').then(r=>r.json()).then(v=>v.items.filter(e=>e.event_type==='ticket.note_added').length)`),1);
       await capture('new-detail-page-1920.png');console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_internal_notes:true,fault,screenshots}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,commands:globalThis.__t02Commands})")));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,commands:globalThis.__t02Commands})")));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,dropInternalNoteResponses:fault==='disconnect',malformedInternalNoteSuccess:fault==='invalid-success'});
 });
@@ -258,7 +258,7 @@ test('Ticket note conflict retains input without resending and a later identity 
       const statuses=await browser.evaluate('globalThis.__t02PostStatuses');assert.equal(statuses.length,3);assert.deepEqual(statuses.slice(0,2),[409,200]);assert.ok([401,403].includes(statuses[2]));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions')||document.querySelector('#detail-title'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
-    }catch(failure){error=failure;console.log('T02_EXPIRY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,statuses:globalThis.__t02PostStatuses,inFlight:globalThis.__t02InFlight})"):{}));}
+    }catch(failure){error=failure;try{console.log('T02_EXPIRY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,statuses:globalThis.__t02PostStatuses,inFlight:globalThis.__t02InFlight})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true});
 });
@@ -443,7 +443,7 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       assert.equal(await browser.evaluate("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"]'))"),false);
       assert.ok(await browser.evaluate(`document.querySelector('.detail-page .properties').innerText.includes(${JSON.stringify(literal)})`));
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_names:true,screenshots}));
-    }catch(failure){error=failure;if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}
+    }catch(failure){error=failure;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{sourceGroupDirectoryEnabled:true});
 });

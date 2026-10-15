@@ -18,7 +18,7 @@ test('same-profile internal note draft is restored after refresh using current s
       await browser.waitFor("document.querySelector('textarea')?.value==='T03 refresh synthetic private note'");
       assert.equal(await browser.evaluate("document.querySelector('.ticket-command-version').textContent"),'工单版本 2');
       assert.equal(await browser.evaluate("document.querySelector('[data-action=save-internal-note]').disabled"),false);
-    }catch(failure){error=failure;console.log('T03_REFRESH_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}
+    }catch(failure){error=failure;try{console.log('T03_REFRESH_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
@@ -47,7 +47,7 @@ test('expired unknown payload and key are purged while the original opaque opera
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已核对原操作结果')");
       assert.equal(await browser.evaluate('globalThis.__t03Commands.length'),0);
       assert.equal(await browser.evaluate(`fetch('/api/tickets/${ticketId}/events').then(r=>r.json()).then(v=>v.items.filter(e=>e.event_type==='ticket.note_added').length)`),1);
-    }catch(failure){error=failure;console.log('T03_EXPIRY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,commandCount:globalThis.__t03Commands?.length})"):{}));}
+    }catch(failure){error=failure;try{console.log('T03_EXPIRY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,commandCount:globalThis.__t03Commands?.length})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,dropInternalNoteResponses:true});
 });
@@ -77,7 +77,7 @@ test('unknown internal note submission survives refresh with the immutable origi
       assert.deepEqual(await browser.evaluate('globalThis.__t03Commands'),[original]);
       assert.equal(await browser.evaluate(`fetch('/api/tickets/${ticketId}/events').then(r=>r.json()).then(v=>v.items.filter(e=>e.event_type==='ticket.note_added').length)`),1);
       assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'');
-    }catch(failure){error=failure;console.log('T03_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,commandCount:globalThis.__t03Commands?.length})"):{}));}
+    }catch(failure){error=failure;try{console.log('T03_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,commandCount:globalThis.__t03Commands?.length})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,dropInternalNoteResponses:true});
 });

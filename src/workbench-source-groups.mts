@@ -90,6 +90,12 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
         const principal=await admin(authContext,tx);
         // Both locks are transaction-local; serialization covers a first insert and replay races.
         await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['SOURCE_GROUP_COMMAND:'+principal.principal_id+':'+command.client_command_id]);
+        await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['SOURCE_GROUP_NAME:'+groupRef]);
+        // A metadata/receipt wait cannot retain an obsolete ADMIN grant.
+        // Hold the current actor/role rows through replay or commit, after the contended locks.
+        await tx.query('SELECT id FROM pilot_ticket.pilot_principal WHERE id=$1::uuid FOR SHARE',[principal.principal_id]);
+        await tx.query('SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid FOR SHARE',[principal.principal_id]);
+        await admin(authContext,tx);
         const hash=hashP2016({ref:groupRef,...command});
         const receipt=await tx.query<{command_hash:string;result_snapshot:{ok:true;group:SourceGroupDisplay}}>(
           'SELECT command_hash,result_snapshot FROM workbench.source_group_name_receipt WHERE actor_principal_id=$1::uuid AND client_command_id=$2::uuid',
@@ -101,7 +107,6 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
           if(receipt.rows[0].command_hash!==hash)failP2016('COMMAND_CONFLICT',409);
           return publicP2016({...receipt.rows[0].result_snapshot,replayed:true});
         }
-        await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['SOURCE_GROUP_NAME:'+groupRef]);
         const old=(await tx.query<{display_name:string;row_version:string}>('SELECT display_name,row_version::text FROM workbench.source_group_name WHERE ref=$1 FOR UPDATE',[groupRef])).rows[0];
         if((old?.row_version??'0')!==command.expected_row_version)failP2016('VERSION_CONFLICT',409);
         const version=String(BigInt(command.expected_row_version)+1n);

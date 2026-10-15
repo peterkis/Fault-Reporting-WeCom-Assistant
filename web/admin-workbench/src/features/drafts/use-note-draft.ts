@@ -189,7 +189,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage('已提交；恢复副本已清理。');
       return handle.current?.operation===null;
     },
-    async knownFailure(commandId:string){if(enabled&&writeEnabled&&handle.current){latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');}},
+    async knownFailure(commandId:string){if(!enabled)return true;if(!writeEnabled||!handle.current)return false;latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return false;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');return handle.current.operation===null;},
   };
 }
 

@@ -36,7 +36,7 @@ test('production Bot feedback keeps the original UUID after a committed response
    const png=Buffer.from(await tab.screenshot(),'base64');await writeFile(join(directory,'recovered.png'),png);
    const receiptDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());await mkdir(receiptDirectory);const file=join(receiptDirectory,randomUUID()+'.png');await writeFile(file,png);
    console.log('SS010_BROWSER '+JSON.stringify({screenshots:[{file,width:png.readUInt32BE(16),height:png.readUInt32BE(20),sha256:createHash('sha256').update(png).digest('hex')}]}));
-  }catch(failure){error=failure;await writeFile(join(directory,'error.json'),JSON.stringify({message:failure instanceof Error?failure.message:String(failure)}));if(tab)await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));}
+  }catch(failure){error=failure;try{await writeFile(join(directory,'error.json'),JSON.stringify({message:failure instanceof Error?failure.message:String(failure)}));if(tab)await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await fixture?.close();if(fixture)assert.deepEqual(fixture.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await app?.stop();}],error);
  });
 });

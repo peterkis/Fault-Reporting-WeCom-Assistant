@@ -46,7 +46,7 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
       const result=object(object(await receiptResponse.json()).result),ticket=object(result.ticket);assert.equal(ticket.status,'IN_PROGRESS');assert.equal(result.review,null);
       const detail=await fetch(backendOrigin+'/api/tickets/'+text(ticket.id),{headers:{cookie}});assert.equal(detail.status,200);const actual=object(await detail.json());assert.equal(actual.assignee_id,principals[0]?.id);assert.equal(actual.version,3);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',manual_report_self_handling:true,screenshots}));
-    }catch(failure){error=failure;console.log('T19_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t19Posts,fields:[...document.querySelectorAll("input,textarea,select")].map(e=>({label:e.getAttribute("aria-label"),value:e.value,disabled:e.matches(":disabled")}))})'):{}));}
+    }catch(failure){error=failure;try{console.log('T19_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,posts:globalThis.__t19Posts,fields:[...document.querySelectorAll("input,textarea,select")].map(e=>({label:e.getAttribute("aria-label"),value:e.value,disabled:e.matches(":disabled")}))})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });

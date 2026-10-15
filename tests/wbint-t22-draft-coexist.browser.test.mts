@@ -35,7 +35,7 @@ test('settling one real reply preserves another mounted purpose and permits its 
       assert.notEqual(after.revision,before.revision);
       assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('已保存恢复副本')"),true);
       assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 sibling note after reply');
-    }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
+    }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   });
 });
@@ -59,7 +59,7 @@ test('a previously empty note purpose can save its first input after another pur
       const after=await browser.evaluate(snapshot) as {revision:string|null;epoch:string},status=await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent");
       console.log('T22_EMPTY_PURPOSE '+JSON.stringify({before,settled,after,status}));
       assert.ok(after.revision);assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('已保存恢复副本')"),true);
-    }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
+    }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   });
 });

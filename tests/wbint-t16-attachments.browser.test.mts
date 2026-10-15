@@ -43,7 +43,7 @@ test('production bundle displays a real authorized attachment and downloads actu
       }finally{await locker.query('ROLLBACK');locker.release();runtime.server.off('request',observe);}
       assert.deepEqual((await readdir(downloads)).sort(),['report-attachment.jpg','report-attachment.png']);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE',screenshots:[pngShot,{file:narrowFile,width:narrowPixels.readUInt32BE(16),height:narrowPixels.readUInt32BE(20),sha256:createHash('sha256').update(narrowPixels).digest('hex')}],downloads:[{mime_type:'image/png',byte_size:bytes.length,sha256:asset.sha256},{mime_type:'image/jpeg',byte_size:jpeg.length,sha256:jpegAsset.sha256}],unmount_aborted:disconnected,blob_urls:0}));
-    }catch(failure){error=failure;if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}
+    }catch(failure){error=failure;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await rm(downloads,{recursive:true,force:true});}],error);
   });
 });
@@ -52,7 +52,7 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function withAttachmentBrowser(f:T16Fixture,run:(browser:Browser,directory:string)=>Promise<void>){
   const ticket=f.tickets[0];assert.ok(ticket);const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,error:unknown;
   try{const cookie=f.browserCookie;assert.equal(typeof cookie.url,'string');browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(browser);await browser.waitFor("Boolean(document.querySelector('.attachment-section'))");await run(browser,directory);}
-  catch(failure){error=failure;if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}
+  catch(failure){error=failure;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
 }
 async function shot(browser:Browser,directory:string){const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,pixels);console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE',screenshots:[{file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')}]}));}

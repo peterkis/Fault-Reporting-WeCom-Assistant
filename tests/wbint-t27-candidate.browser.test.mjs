@@ -30,7 +30,7 @@ test('T27 explicitly enabled formal workspace reads an authorized candidate from
       assert.match(await browser.evaluate('document.querySelector(".workspace").innerText'),/当前加载|已加载/u);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
       await capture();console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',incident_candidate_workspace:true,screenshots}));
-    }catch(failure){error=failure;if(browser){await capture();await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));console.log('T27_FAILURE_DIRECTORY '+directory);}}
+    }catch(failure){error=failure;try{if(browser){await capture();await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));console.log('T27_FAILURE_DIRECTORY '+directory);}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
   }});await assertNoP2012Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
 });

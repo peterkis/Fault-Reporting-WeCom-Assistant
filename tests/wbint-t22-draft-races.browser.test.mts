@@ -33,7 +33,7 @@ test('a newer tab real saved revision defeats a delayed stale writer and its fre
    assert.ok(bootstrapReads>readsBefore,'STALE_WRITE_FRESH_AUTHORITY_BRANCH');assert.deepEqual(await tab.evaluate(snapshot(principal.id,session.id)),newer);assert.equal(await tab.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 newer tab owns this saved row');
    assert.equal(Number((await pool.query<{count:string}>("SELECT count(*)::text AS count FROM communication.message WHERE session_id=$1::uuid AND purpose='INTERNAL_NOTE'",[session.id])).rows[0]?.count),0);
    await reload(browser);await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 newer tab owns this saved row'");
-  }catch(error){failure=error;if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+  }catch(error){failure=error;try{if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });
@@ -46,7 +46,7 @@ test('a real newer-tab row defeats a delayed notification-time blank refresh and
    await browser.evaluate(input('internal-notes','T22 delayed blank must not overwrite'));await browser.evaluate('globalThis.__releaseAuthority()');await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('恢复不可用')");
    assert.deepEqual(await tab.evaluate(snapshot(principal.id,session.id)),newer);assert.equal(await tab.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 newer tab first note');
    await reload(browser);await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 newer tab first note'");
-  }catch(error){failure=error;if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+  }catch(error){failure=error;try{if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });
@@ -60,7 +60,7 @@ test('current role removal through the real Access Port defeats delayed blank au
    assert.deepEqual(await browser.evaluate(snapshot(principal.id,session.id)),{revision:null,operation:null});
    await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});await reload(browser);await browser.waitFor(ready);assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'');
    assert.deepEqual(await browser.evaluate(snapshot(principal.id,session.id)),{revision:null,operation:null});
-  }catch(error){failure=error;if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+  }catch(error){failure=error;try{if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });
@@ -73,7 +73,7 @@ test('expiry during fresh authority defeats stored-row rebase and never writes t
    await browser.evaluate('(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()');await browser.evaluate('globalThis.__releaseAuthority()');await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('草稿已过期')&&document.querySelector('textarea[data-purpose=internal-notes]').value===''");
    assert.ok((before as {revision:string|null}).revision);assert.deepEqual(await browser.evaluate(snapshot(principal.id,session.id)),{revision:null,operation:null});
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()'});await reload(browser);await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value===''");assert.deepEqual(await browser.evaluate(snapshot(principal.id,session.id)),{revision:null,operation:null});
-  }catch(error){failure=error;if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+  }catch(error){failure=error;try{if(browser){await mkdir(directory);await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });

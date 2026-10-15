@@ -48,7 +48,7 @@ test('T19 a committed lost ACK retains the full original command, restores its e
       assert.equal(await browser.evaluate("document.querySelector('[data-manual-report-result]').textContent.includes('历史结果')"),true);
       await browser.waitFor(`(async()=>{const c=await (${copies});return c.drafts.length===0&&c.operations.length===0;})()`);
       const row=(await f.pool.query<{state:string;intakes:number;tickets:number;status:string}>(`SELECT r.state,count(DISTINCT i.id)::integer AS intakes,count(DISTINCT t.id)::integer AS tickets,min(t.status) AS status FROM pilot_ticket.ticket_command_receipt r JOIN intake.service_intake i ON i.manual_command_receipt_id=r.id JOIN pilot_ticket.ticket t ON t.source_intake_id=i.id WHERE r.command_scope=$1 AND r.client_command_id=$2::uuid GROUP BY r.state`,['P2_016:'+actor.id,id])).rows[0];assert.deepEqual(row,{state:'COMMITTED',intakes:1,tickets:1,status:'CLOSED'});
-    }catch(failure){error=failure;console.log('T19_UNKNOWN_DIAGNOSTIC '+JSON.stringify({posts,receiptReads,view:browser?await browser.evaluate('document.body.innerText'):null}));}
+    }catch(failure){error=failure;try{console.log('T19_UNKNOWN_DIAGNOSTIC '+JSON.stringify({posts,receiptReads,view:browser?await browser.evaluate('document.body.innerText'):null}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true});
 });

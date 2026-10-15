@@ -35,7 +35,7 @@ test('a real retained replay gap falls back to current GET facts and creates a f
       assert.ok(requests.slice(gapIndex+1).some(request=>request.cursor===null&&request.status===200),'fresh native recovery must clear Last-Event-ID after real GET revalidation');
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'T38 gap leaves this draft mine');assert.equal(await browser.evaluate('document.activeElement===document.querySelector("textarea")'),true);assert.equal(posts,2);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',real_retention_gap:true,fresh_native_cursor:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,ticketSelfHandlingEnabled:true,workbenchInternalNotesEnabled:true});

@@ -37,7 +37,7 @@ test('production PC HANDLER explicitly reopens a completed Ticket through its in
    assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
    const after=Buffer.from(await tab.screenshot(),'base64');await writeFile(join(directory,'staff-new-round-1920.png'),after);
    console.log('T20_PC_FIRST '+JSON.stringify({directory,role:'HANDLER',production_asset:true,real_http_pg:true,external_calls:0,png:[{file:join(directory,'staff-explicit-reopen-1920.png'),sha256:createHash('sha256').update(before).digest('hex')},{file:join(directory,'staff-new-round-1920.png'),sha256:createHash('sha256').update(after).digest('hex')}]}));
-  }catch(failure){error=failure;if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,path:location.pathname})')));}}
+  }catch(failure){error=failure;try{if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,path:location.pathname})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);
  });
 });

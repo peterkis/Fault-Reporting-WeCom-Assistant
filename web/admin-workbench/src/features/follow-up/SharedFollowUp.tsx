@@ -52,6 +52,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   client.setQueryData(key,fresh);return fresh;
  }
  async function settle(id:string){settling.current=true;try{return await draft.success(id);}finally{settling.current=false;}}
+ async function refuse(id:string){settling.current=true;try{return await draft.knownFailure(id);}catch{return false;}finally{settling.current=false;}}
  async function send(command:SharedFollowUpCommand){
   if(request.current||commandId||!workbenchTransportWritable()||!draft.canSubmit)return;
   const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setPending(command);setState('submitting');setMessage('正在保存共享时间…');let dispatched=false,accepted=false;
@@ -74,7 +75,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
      try{const context=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],context);}
      catch(readError){if(!current())return;if(readError instanceof ApiError&&[401,403,404].includes(readError.status))await deny(readError);else{setOpaque(command.client_command_id);setState('unknown');setMessage('本次维护已被拒绝，当前读取权限尚未确认；请保留原操作只读核对。');}return;}
     }
-    const cleaned=await settle(command.client_command_id);if(!current())return;setPending(null);setInput('');setOpaque(cleaned?null:command.client_command_id);
+    const cleaned=await refuse(command.client_command_id);if(!current())return;setPending(null);setOpaque(cleaned?null:command.client_command_id);
     if(!cleaned){setState('unknown');setMessage('本次操作已被拒绝，但仍有恢复记录待核对；请先只读核对当前操作。');return;}
     setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'安排或工单已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));refresh();
    }
@@ -99,7 +100,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
    if(confirmedResult&&confirmedCommandId===id&&(receipt.state!=='COMMITTED'||receipt.result.ticket_event_id!==confirmedResult.ticket_event_id||receipt.result.ticket_version!==confirmedResult.ticket_version||receipt.result.schedule_version!==confirmedResult.schedule_version))throw Error('FOLLOW_UP_ORIGINAL_RESULT_UNCONFIRMED');
    if(receipt.state==='COMMITTED'&&command?.client_command_id===id&&!matchesFollowUpResult(command,receipt.result))throw Error('FOLLOW_UP_ORIGINAL_RESULT_UNCONFIRMED');
    if(receipt.state==='COMMITTED'){setConfirmedResult(receipt.result);setConfirmedCommandId(id);}
-   const cleaned=await settle(id);if(!current())return;setPending(null);setInput('');setOpaque(cleaned?null:id);
+   const cleaned=receipt.state==='FAILED'?await refuse(id):await settle(id);if(!current())return;setPending(null);if(receipt.state!=='FAILED')setInput('');setOpaque(cleaned?null:id);
    if(!cleaned){setState('unknown');setMessage('已读到本次操作终态，仍有恢复记录待核对；请只读核对当前操作。');return;}
    if(receipt.state==='FAILED'){setState('denied');setMessage('已核对原操作被拒绝，请读取当前安排后确认新的操作。');refresh();return;}
    setConfirmedResult(receipt.result);setState('succeeded');setMessage('已核对原操作提交成功。');

@@ -83,7 +83,7 @@ async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:R
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport(mode)});await browser.command('Page.navigate',{url:page});await browser.waitFor(enabled);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true,'execute the staged production Bot bundle');
    await run({f,fixture,browser,peers,serverWire,directory,page});
-  }catch(error){primary=error;await writeFile(join(directory,'primary-error.json'),JSON.stringify(failure(error)));}
+  }catch(error){primary=error;try{await writeFile(join(directory,'primary-error.json'),JSON.stringify(failure(error)));}catch(diagnosticFailure){primary=new AggregateError([primary,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([
    async()=>{if(browser){await writeFile(join(directory,'public-server-wire.json'),JSON.stringify(serverWire));const png=Buffer.from(await browser.screenshot(),'base64');await writeFile(join(directory,'final-or-failure.png'),png);const receiptDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());await mkdir(receiptDirectory);const file=join(receiptDirectory,randomUUID()+'.png');await writeFile(file,png);console.log('SS010_BROWSER '+JSON.stringify({screenshots:[{file,width:png.readUInt32BE(16),height:png.readUInt32BE(20),sha256:createHash('sha256').update(png).digest('hex')}]}));}},
    async()=>{for(const peer of peers)await peer.evaluate('globalThis.__t21ReleaseEncryption?.();globalThis.__t21ReleasePost?.()');if(browser)await browser.evaluate('globalThis.__t21ReleaseEncryption?.();globalThis.__t21ReleasePost?.()');},

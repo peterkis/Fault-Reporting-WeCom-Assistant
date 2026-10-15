@@ -55,7 +55,7 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       assert.equal(current.status,'RESOLVED');assert.deepEqual(current.safe_result,original.safe_result);
       assert.equal((await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count,13);
       const board=await (await get('/api/workbench/board?column=pending')).json() as {items:{id:string}[]};assert.equal(board.items.filter(item=>item.id===first.ticket.id).length,1);
-    }catch(failure){error=failure;console.log('T14_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T14_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
@@ -76,7 +76,7 @@ test('T14 expired UNKNOWN keeps only its original opaque operation and checks a 
       const copies=await browser.evaluate(draftCounts) as {drafts:unknown[];operations:{commandId:string}[]};assert.equal(copies.drafts.length,0);assert.equal(copies.operations.length,1);assert.equal(copies.operations[0]?.commandId,original.client_command_id);
       await browser.evaluate("document.querySelector('[data-action=check-review-receipt]').click()");await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已核对原操作结果')");
       assert.equal(await browser.evaluate('globalThis.__t14Commands.length'),0);assert.deepEqual(await browser.evaluate(draftCounts),{drafts:[],operations:[]});
-    }catch(failure){error=failure;console.log('T14_OPAQUE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t14Commands})'):{}));}
+    }catch(failure){error=failure;try{console.log('T14_OPAQUE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t14Commands})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,malformedReviewSuccess:true});
 });
@@ -101,7 +101,7 @@ test('T14 trusted independent Review denial with unreadable body clears its view
       await browser.waitFor(`(async()=>!(await (${draftCounts})).drafts.some(row=>row.id===${JSON.stringify(selected.id)}))()`);
       assert.deepEqual(await browser.evaluate(draftCounts),{drafts:[{id:other.ticket.id,purpose:'internal-note'}],operations:[]});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+other.ticket.id+'?detail=page'});await browser.waitFor("document.querySelector('[aria-label=\"内部备注\"]')?.value==='T14 other authorized purpose private text'");
-    }catch(failure){error=failure;console.log('T14_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T14_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchInternalNotesEnabled:true,malformedReviewDenial:true});
 });
@@ -126,7 +126,7 @@ test('T14 real source revision preserves edited input and explicitly selects a n
       await browser.waitFor(`Boolean(document.querySelector('[data-review-id="${next.id}"] [data-review-draft-status]'))`);await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-review]').disabled"),false);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已记录人工结论')");
       assert.equal((await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count,13);
-    }catch(failure){error=failure;console.log('T14_STALE_SELECTOR_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
+    }catch(failure){error=failure;try{console.log('T14_STALE_SELECTOR_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
@@ -158,7 +158,7 @@ test('T14 linked Review UNKNOWN survives refresh without replacing its captured 
       await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已记录人工结论')");
       assert.deepEqual(await browser.evaluate('globalThis.__t14Commands'),[original]);
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核结论\"]').value"),'');
-    }catch(failure){error=failure;console.log('T14_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t14Commands})'):{}));}
+    }catch(failure){error=failure;try{console.log('T14_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t14Commands})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,malformedReviewSuccess:true});
 });

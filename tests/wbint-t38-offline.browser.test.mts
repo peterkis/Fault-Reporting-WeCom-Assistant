@@ -50,7 +50,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
       await browser.waitFor('document.querySelector(".ticket-note-state")?.textContent.includes("已保存内部备注")');assert.equal(posts,1);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ordinary_failure_cached_draft:true,new_write_waits_for_rest:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
   },{workbenchRealtimeEnabled:true,ticketSelfHandlingEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
@@ -95,7 +95,7 @@ test('the integrated conversation handling new operation waits for the same fres
       await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
       await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');assert.equal(posts,1);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_conversation_handling:true,new_write_waits_for_rest:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,retain:document.querySelector("[data-action=retain-current-communicator]")?.checked})')));}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,retain:document.querySelector("[data-action=retain-current-communicator]")?.checked})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
   },{workbenchRealtimeEnabled:true,ticketConversationSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true});

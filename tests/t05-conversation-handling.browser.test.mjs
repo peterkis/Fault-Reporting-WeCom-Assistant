@@ -18,7 +18,7 @@ async function browserScenario(run,options={}){
       await browser.waitFor('Boolean(document.querySelector("#detail-title"))');
       await run({...fixture,browser,capture});
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_conversation_self_handling:true,screenshots}));
-    }catch(failure){error=failure;if(browser){await mkdir(directory,{recursive:true});const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,bytes);console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));}}
+    }catch(failure){error=failure;try{if(browser){await mkdir(directory,{recursive:true});const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,bytes);console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,...options});
 }

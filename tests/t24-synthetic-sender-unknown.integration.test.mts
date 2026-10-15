@@ -25,6 +25,7 @@ async function bindings(pool:PostgresPool){return (await pool.query(`SELECT to_j
  ORDER BY b.id`)).rows;}
 type Http=Awaited<ReturnType<typeof t11Http>>;
 async function deliveryFacts(http:Http,id:string){const response=await http.get('/api/tickets/'+id+'/deliveries');assert.equal(response.status,200);return rows(object(await response.json()).items);}
+function assertStaffRequest(request:{delivery_id:string;target_type:string},deliveryId:unknown){assert.equal(request.delivery_id,deliveryId);assert.equal(request.target_type,'PERSON');}
 
 test('synthetic UNKNOWN freezes automatic re-send of the same staff intent and requires an explicit authorized reconciliation Port',{timeout:240000},async()=>{
  await withT24Fixture(async context=>{
@@ -32,12 +33,15 @@ test('synthetic UNKNOWN freezes automatic re-send of the same staff intent and r
   const current=await http.detail(id);assert.equal((await http.post(id,'complete',http.command(current))).status,200);await context.runtime.roundNotifications.runOnce();
   const closed=await http.detail(id);assert.equal(closed.status,'CLOSED');const before=await deliveryFacts(http,id);assert.equal(before.length,2);
   const staff=before.find(row=>row.node==='STAFF_COMPLETED');assert.ok(staff);assert.equal(typeof staff.delivery_id,'string');
-  const beforeIds=await physical(context.pool),beforeBindings=await bindings(context.pool);let calls=0;
+  const beforeIds=await physical(context.pool),beforeBindings=await bindings(context.pool);let calls=0;const sentRequests:{delivery_id:string;target_type:string}[]=[];
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:{send:async request=>{
-   calls++;assert.equal(request.delivery_id,staff.delivery_id);assert.equal(request.target_type,'PERSON');
+   calls++;sentRequests.push({delivery_id:request.delivery_id,target_type:request.target_type});
    return {outcome:'UNKNOWN',provider_message_id:null,error_code:'T24_SYNTHETIC_UNKNOWN',retryable:false};
   }}});
   const result=await worker.deliver({deliveryId:String(staff.delivery_id)});assert.ok(result&&'status' in result);assert.equal(result.status,'RECONCILIATION_REQUIRED');assert.equal(calls,1);
+  const sentRequest=sentRequests[0];assert.ok(sentRequest);assertStaffRequest(sentRequest,staff.delivery_id);
+  // Controlled bad observation proves this assertion executes outside Worker UNKNOWN normalization.
+  assert.throws(()=>assertStaffRequest({...sentRequest,target_type:'GROUP'},staff.delivery_id),assert.AssertionError);
   const unresolved=await deliveryFacts(http,id),unknown=unresolved.find(row=>row.delivery_id===staff.delivery_id);assert.ok(unknown);
   assert.equal(unknown.status,'RECONCILIATION_REQUIRED');assert.equal(unknown.attempt_count,1);assert.equal(unknown.side_effect_state,'UNKNOWN');assert.equal(unknown.sent_at,null);
   const attempts=(await context.pool.query('SELECT attempt_no,outcome,side_effect_state FROM communication.delivery_attempt WHERE delivery_id=$1::uuid ORDER BY attempt_no',[staff.delivery_id])).rows;

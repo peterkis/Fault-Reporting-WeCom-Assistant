@@ -37,7 +37,7 @@ test('leaving the manual form does not leave its private draft behind after curr
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]').value"),'');assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"报修人姓名\"]').value"),'');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+other.ticket.id+'?detail=page'});await browser.waitFor("document.querySelector('[aria-label=\"内部备注\"]')?.value==='T17 separate authorized note'");
       assert.equal(await browser.evaluate("globalThis.__t17Authority.filter(row=>row.method==='POST').length"),0);
-    }catch(failure){error=failure;console.log('T17_AUTHORITY_DIAGNOSTIC '+JSON.stringify(browser?{view:await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Authority})'),copies:await browser.evaluate(copies)}:{}));}
+    }catch(failure){error=failure;try{console.log('T17_AUTHORITY_DIAGNOSTIC '+JSON.stringify(browser?{view:await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Authority})'),copies:await browser.evaluate(copies)}:{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchInternalNotesEnabled:true,workbenchRealtimeEnabled:true,realWorkbenchAuthentication:true});
 });
