@@ -57,7 +57,7 @@ export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange}:
 }
 function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Principal;item:CanonicalItem;reviewId:string;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),mounted=useRef(true),generation=useRef(0);
-  const [value,setValue]=useState<ReviewInput>(()=>emptyReviewInput(reviewId)),[pending,setPending]=useState<ReviewCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[startBlocked,setStartBlocked]=useState(false);
+  const [value,setValue]=useState<ReviewInput>(()=>emptyReviewInput(reviewId)),[pending,setPending]=useState<ReviewCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[startBlocked,setStartBlocked]=useState(false),[startNavigationBlocked,setStartNavigationBlocked]=useState(false);
   const latest=useRef(value);latest.current=value;
   const key=['manual-review',principal.principal_id,item.kind,item.id,reviewId] as const;
   const context=useQuery({queryKey:key,queryFn:({signal})=>reviewApi.detail(reviewId,signal)});
@@ -66,7 +66,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Princip
     onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容不可用，只能只读核对原操作。');},
     onSensitiveClear:()=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyReviewInput(reviewId));setPending(null);setState('idle');setMessage('');}});
   const busy=state==='submitting'||state==='checking'||startBlocked,unresolved=state==='unknown'||Boolean(pending)||Boolean(draft.operationId);
-  const navigationBlocked=(busy||unresolved||draft.enabled&&hasReviewInput(value))&&!draft.safeToLeave;
+  const navigationBlocked=startNavigationBlocked||(state==='submitting'||state==='checking'||unresolved||draft.enabled&&hasReviewInput(value))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;generation.current++;request.current?.abort();};},[]);
   useEffect(()=>{if(!navigationBlocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocked]);
@@ -74,7 +74,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Princip
     if(!context.data||value.capture||state!=='idle'||pending||draft.operationId)return;
     const current=context.data;setValue(value=>({...value,capture:{row_version:current.row_version,material_basis:current.material_basis.current_hash,canonical_item:current.canonical_item}}));
   },[context.data,value.capture,state,pending,draft.operationId]);
-  const refresh=()=>{void client.invalidateQueries({queryKey:key});void client.invalidateQueries({queryKey:['detail',principal.principal_id]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
+  const refresh=()=>{void client.invalidateQueries({queryKey:key});void client.invalidateQueries({queryKey:['detail',principal.principal_id]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});void client.invalidateQueries({queryKey:['ticket-command-context',principal.principal_id]});void client.invalidateQueries({queryKey:['ticket-related-conversations',principal.principal_id]});};
   const deny=(error:ApiError)=>{generation.current++;request.current?.abort();setValue(emptyReviewInput(reviewId));setPending(null);
     if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearReviewAuthorization(client,principal.principal_id,reviewId,item,error);};
   const preserveNewer=(command:ReviewCommand)=>latest.current.choice!==command.resolution_code||latest.current.reason!==command.resolution_reason_code
@@ -126,8 +126,9 @@ function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Princip
       <p>捕获版本：<span data-captured-review-version>{capture?.row_version??'尚未捕获'}</span><span data-captured-material-basis={capture?.material_basis??''}/></p>
       {changed?<p role="alert">当前材料或版本已变化；原选择和捕获内容保持不变。请明确采用当前材料后再操作。</p>:null}
       {draft.enabled?<p data-review-draft-status role="status">{draft.message}</p>:null}
-      {principal.manual_review_resolve_and_start_enabled?<ReviewStartControls principal={principal} reviewId={reviewId} value={value} available={allowed&&!changed} request={request} onBlockedChange={setStartBlocked}
-        onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认明确故障并开始处理。');refresh();}}/>:null}
+      <ReviewStartControls principal={principal} reviewId={reviewId} value={value} available={allowed&&!changed} request={request} onBlockedChange={setStartNavigationBlocked} onBusyChange={setStartBlocked}
+        onRestoreReview={restored=>{setValue(restored);setState('idle');}} readCurrentReview={async signal=>{const current=await reviewApi.detail(reviewId,signal);client.setQueryData(key,current);return {...latest.current,capture:{row_version:current.row_version,material_basis:current.material_basis.current_hash,canonical_item:current.canonical_item}};}}
+        onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认明确故障并开始处理。');void draft.discard();refresh();}}/>
       <div className="review-controls"><button type="submit" data-action="submit-review" disabled={!canSubmit}>记录复核结论</button>
         <button type="button" data-action="refresh-review" disabled={busy} onClick={()=>{void context.refetch();}}>重新读取复核</button>
         <button type="button" data-action="capture-review" disabled={busy||unresolved||view.status!=='PENDING'||state==='succeeded'} onClick={()=>{setValue(value=>({...value,capture:{row_version:view.row_version,material_basis:view.material_basis.current_hash,canonical_item:view.canonical_item}}));setState('idle');setMessage('已明确采用当前材料与版本；原选择和原因保留。');}}>采用当前材料与版本</button>
