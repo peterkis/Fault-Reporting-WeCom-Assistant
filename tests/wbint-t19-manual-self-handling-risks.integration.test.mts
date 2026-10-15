@@ -51,7 +51,7 @@ test('T19 both original feature dependencies and schema 039 must be ready before
   for(const mode of ['self-default-off','manual-off','missing-039'] as const){
     await withWeb01Fixture(async(f:Fixture)=>{
       const c=await client(f),command=input();
-      if(mode==='missing-039')await f.pool.query("DELETE FROM platform.schema_migration WHERE migration_id='039_ticket_self_handling'");
+      if(mode==='missing-039')await f.pool.query("DELETE FROM platform.schema_migration WHERE migration_id='039_ticket_self_handling_cycles'");
       assert.equal((await c.get('/api/workbench/reports/self-handling-context')).status,503,mode);
       assert.equal((await c.post(command)).status,503,mode);
       assert.equal((await f.pool.query('SELECT id FROM pilot_ticket.ticket_command_receipt WHERE client_command_id=$1::uuid',[command.client_command_id])).rowCount,0,'unavailable compound entry must not create a receipt or admission');
