@@ -6379,6 +6379,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t43-four-source-first.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -8265,6 +8274,9 @@
       "tests/wbint-t42-board-authority-navigation.browser.test.mts",
       "tests/wbint-t42-board-review.browser.test.mts",
       "tests/wbint-t42-board-complete-reopen.browser.test.mts"
+    ],
+    "wbint-t43-first": [
+      "tests/wbint-t43-four-source-first.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -8340,7 +8352,8 @@
       "tests/helpers/t41-search-risk-fixture.mts",
       "tests/helpers/t40-reminder-first-fixture.mts",
       "tests/helpers/t40-reminder-locate-fixture.mts",
-      "tests/helpers/t40-reminder-risk-fixture.mts"
+      "tests/helpers/t40-reminder-risk-fixture.mts",
+      "tests/helpers/t43-full-service-fixture.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",
