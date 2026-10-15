@@ -245,6 +245,8 @@
 
 ## 明确拒绝与设计路径
 
+T42 [看板合法拖动设计](workbench/board-legal-actions-design.md)是 PROPOSED／NOT_MOUNTED 的本地表单路由合同，不新增 HTTP 路径；真实业务继续使用本索引已有的处理、复核、完工及 STAFF_REOPEN 入口，不能把拖动目标列包装成状态写入接口。
+
 WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，旧ACK独立核当前Ticket READ。历史RED及各被测对象见[共享跟进时间](workbench/follow-up-schedules.md)与本票执行记录。
 
 | METHOD | PATH | 状态 | 合同 |

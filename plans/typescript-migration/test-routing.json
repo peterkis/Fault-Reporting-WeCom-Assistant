@@ -5983,6 +5983,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-legal-action.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7727,6 +7736,9 @@
       "tests/t20-staff-reopen-read-only.integration.test.mts",
       "tests/p2-016-contracts.test.mjs",
       "tests/p2-016-workbench-http.integration.test.mjs"
+    ],
+    "wbint-t42-board-first": [
+      "tests/wbint-t42-board-legal-action.browser.test.mts"
     ]
   },
   "subprocess_entries": {

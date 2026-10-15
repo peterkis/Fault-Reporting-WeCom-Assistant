@@ -29,6 +29,7 @@
 | Incident 内部处置（T30，默认关闭） | [内部处置合同](workbench/incident-internal-notes.md)；本地合成验证，当前授权内部输入/有界历史/原用途回执 |
 | Incident 独立安全摘要、有效个人定向意图和按路结果（T31，默认关闭） | [显式公开进展](workbench/incident-public-progress.md)；本地合成实现，旧现场批准不覆盖新目的 |
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
+| 看板合法拖动的本地表单路由合同 | [T42 SOURCE 设计](workbench/board-legal-actions-design.md)：PROPOSED／NOT_MOUNTED／NOT_BUILT_NOT_RUN；不新增 HTTP 命令 |
 | 本人显式关注／取消及当前获权“与我有关”（T34，默认关闭；本地定向验证，父验收待定） | [当前关注合同](workbench/follow-current-contract.md)／[历史提案](workbench/follow-design.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
 | 完整人工工作台怎样分批接入、有哪些后端缺口 | [实施计划](../../plans/admin-workbench-integration/README.md)／[能力映射](../../plans/admin-workbench-integration/capability-map.md)；其中候选路径尚未挂载 |

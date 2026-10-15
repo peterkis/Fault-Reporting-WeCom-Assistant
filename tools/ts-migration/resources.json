@@ -383,6 +383,10 @@
     "contracts/workbench_review_start_receipt_contracts.d.ts",
     "contracts/workbench_review_start_receipt.schema.json",
     "contracts/workbench_review_start_related_session_contracts.d.ts",
-    "contracts/workbench_review_start_related_session.schema.json"
+    "contracts/workbench_review_start_related_session.schema.json",
+    "contracts/workbench_board_action_intent_contracts.d.ts",
+    "contracts/workbench_board_action_intent.schema.json",
+    "contracts/workbench_board_action_resolution.schema.json",
+    "contracts/workbench_board_action_capability.schema.json"
   ]
 }

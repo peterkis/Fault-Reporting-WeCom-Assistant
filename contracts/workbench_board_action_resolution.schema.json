@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_board_action_resolution.schema.json",
+  "title": "T42 local form-routing result; not a committed business result",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "intent", "action"],
+      "properties": {
+        "state": {"const": "OPEN_EXISTING_FORM"},
+        "intent": {"$ref": "workbench_board_action_intent.schema.json"},
+        "action": {"enum": ["SELF_HANDLE", "REVIEW_RESOLVE_AND_START", "STAFF_COMPLETE", "STAFF_REOPEN"]}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "intent"],
+      "properties": {"state": {"const": "NO_CHANGE"}, "intent": {"$ref": "workbench_board_action_intent.schema.json"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "intent", "reason"],
+      "properties": {
+        "state": {"const": "UNAVAILABLE"},
+        "intent": {"$ref": "workbench_board_action_intent.schema.json"},
+        "reason": {"enum": ["INVALID_TRANSITION", "NO_CURRENT_ACTION"]}
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_board_action_capability.schema.json",
+  "title": "Proposed T42 bootstrap capability fragment; absent is false",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["board_actions_enabled"],
+  "properties": {"board_actions_enabled": {"type": "boolean", "default": false}}
+}

@@ -2,6 +2,8 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
+T42 [合法拖动 SOURCE 设计](board-legal-actions-design.md)仅冻结本地表单路由合同和未运行首例，尚未实施／挂载；本页已实现的查询及原详情按钮不变，不提供任意状态 PATCH。
+
 宿主 W；正式页面 `/workbench/app/`。业务使用真实API，新增处理能力按默认关闭的独立开关启用，与 `web/admin-workbench-prototype` 的合成原型区分。前端：[client](../../../web/admin-workbench/src/api/client.ts)；后端：[HTTP](../../../src/web01-workbench-http.mts)、[query](../../../src/web01-workbench-query.mts)。沿用内部身份、工单/复核范围、生命周期启用条件；默认关闭的管理员[来源群名称维护](source-groups-design.md)独立授权。
 
 | METHOD + PATH | 请求 | 200 响应 |
