@@ -1,3 +1,4 @@
+import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -5,11 +6,11 @@ import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction} from '../../
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketSelfHandling({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
+export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
   const [state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[pending,setPending]=useState<Pending|null>(null);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
-  const blocked=['submitting','checking','unknown'].includes(state);
+  const blocked=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);
   useEffect(()=>{if(!blocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
@@ -22,7 +23,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange}:{ticketI
     mutationFn:({intent,signal}:{intent:Pending;signal:AbortSignal})=>api.selfHandle(ticketId,intent.action,intent.command,principal.csrf_token,signal),
     onSuccess:(result,variables)=>{setPending(null);setState('succeeded');setMessage(variables.intent.action==='accept-for-later'?'已接单，可稍后开始处理。':'已开始处理。');if(result.replayed)setMessage(variables.intent.action==='accept-for-later'?'已核对：原操作已接单。':'已核对：原操作已开始处理。');refresh();},
     onError:(error,variables)=>{
-      if(error instanceof ApiError){setPending(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：请重新读取工单后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
+      if(error instanceof ApiError){setPending(boardMode&&error.status===409?variables.intent:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：请重新读取工单后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
       else{setPending(variables.intent);setState('unknown');setMessage('结果未知：请求可能已提交。请核对原操作结果，原动作、版本和处理组保持不变。');}
     },onSettled:()=>{request.current=null;},
   });
@@ -48,5 +49,6 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange}:{ticketI
     </div>
       {!context.isPending&&!context.isError&&!allowed.some(action=>['take-and-start','accept-for-later'].includes(action))&&!pending?<p>当前没有可用的本人承接动作。</p>:null}
     {state!=='idle'?<p className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={()=>{setPending(null);setState('idle');setMessage('已保留填写内容，请按当前事实明确新的操作。');refresh();}}/>:null}
   </section>;
 }

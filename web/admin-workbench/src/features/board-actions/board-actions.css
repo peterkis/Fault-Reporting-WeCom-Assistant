@@ -1,0 +1,19 @@
+.board-drop-column { min-width: 0; border-radius: var(--r-xl); }
+.board-drop-column.is-drop-target { outline: 2px solid var(--accent,#2563eb); outline-offset: 3px; }
+.board-action-card { min-width: 0; }
+.board-action-card.is-dragging { outline: 2px dashed var(--accent,#2563eb); border-radius: var(--r-lg); }
+.board-action-tools { position: relative; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 var(--s-7) var(--s-5); }
+.board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border,#d5dce5); border-radius: 7px; background: var(--bg,#fff); color: var(--text-1,#243044); }
+.board-action-tools [data-action=board-drag-handle] { touch-action: none; user-select: none; cursor: grab; }
+.board-action-tools [data-action=board-drag-handle]:active { cursor: grabbing; }
+.board-action-tools button:focus-visible,.board-action-notice button:focus-visible,.board-conflict-intent button:focus-visible { outline: 2px solid var(--accent,#2563eb); outline-offset: 2px; }
+.board-action-tools button:disabled { cursor: default; opacity: .55; }
+.board-action-options { display: grid; gap: 6px; position: absolute; top: 100%; left: 0; max-width: min(320px,80vw); width: max-content; padding: 10px; border: 1px solid var(--border,#d5dce5); border-radius: 9px; background: var(--bg,#fff); box-shadow: var(--sh-card); z-index: 8; }
+.board-action-options button { white-space: normal; text-align: start; }
+.board-action-status { margin: 12px 24px; color: var(--text-2,#526074); }
+.board-action-notice,.board-conflict-intent { margin: 16px 0; padding: 14px; border: 1px solid #bed1ed; border-radius: 9px; background: #f5f8fd; }
+.board-action-notice p,.board-conflict-intent p { margin: 8px 0; }
+.board-action-notice button { margin: 4px 8px 4px 0; }
+.board-conflict-intent pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
+@media (pointer:coarse) { .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 44px; } }
+@media (prefers-reduced-motion:reduce) { .board-drop-column,.board-action-card,.board-action-tools { animation: none!important; transition: none!important; scroll-behavior: auto!important; } }

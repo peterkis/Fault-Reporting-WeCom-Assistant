@@ -1,3 +1,4 @@
+import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -8,7 +9,7 @@ import type {ConversationHandlingIntent} from './use-conversation-handling-draft
 type Selection=P2016ConversationHandlingCommand['sessions'];
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 const actions=['take-and-start-with-conversations','accept-for-later-with-conversations'] as const;
-export function TicketConversationHandling({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
+export function TicketConversationHandling({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
   const [state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[pending,setPending]=useState<ConversationHandlingIntent|null>(null);
   const [choice,setChoice]=useState<P2016ConversationHandlingCommand['communication_choice']>('TAKE_SELECTED'),[selected,setSelected]=useState<Selection>([]),[cursor,setCursor]=useState<string|null>(null);
@@ -16,8 +17,8 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange}:
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   // Each page is bounded to 20. Only explicitly selected identities and original versions cross pages.
   const related=useQuery({queryKey:['ticket-related-conversations',principal.principal_id,ticketId,cursor],queryFn:({signal})=>api.relatedConversations(ticketId,cursor,signal),gcTime:0});
-  const blocked=['submitting','checking','unknown'].includes(state);
-  const navigationBlocked=(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
+  const blocked=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
+  const navigationBlocked=Boolean(boardMode&&pending)||(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);
   useEffect(()=>{if(!navigationBlocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocked]);
@@ -25,7 +26,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange}:
   const mutation=useMutation({mutationKey:['ticket-self-handling',principal.principal_id,ticketId],
     mutationFn:({intent,signal}:{intent:ConversationHandlingIntent;signal:AbortSignal})=>api.handleConversations(ticketId,intent.action,intent.command,principal.csrf_token,signal),
     onSuccess:async(_result,variables)=>{const cleaned=await draft.settle(variables.intent.command.client_command_id);setPending(null);setSelected([]);setState('succeeded');setMessage((variables.intent.action==='accept-for-later-with-conversations'?'已接单，沟通责任已按选择处理。':'已开始处理，沟通责任已按选择处理。')+(cleaned?'':' 本地副本清理尚未确认，禁止新操作。'));refresh();},
-    onError:async(error,variables)=>{if(error instanceof ApiError){setPending(null);await draft.knownFailure(variables.intent.command.client_command_id).catch(()=>{});setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：原会话选择保留，请重新读取并确认版本。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}else{setPending(variables.intent);setState('unknown');setMessage('结果未知：请核对原操作；原动作、工单版本、会话选择及版本保持不变。');}},
+    onError:async(error,variables)=>{if(error instanceof ApiError){setPending(boardMode&&error.status===409?variables.intent:null);if(!(boardMode&&error.status===409))await draft.knownFailure(variables.intent.command.client_command_id).catch(()=>{});setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：原会话选择保留，请重新读取并确认版本。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}else{setPending(variables.intent);setState('unknown');setMessage('结果未知：请核对原操作；原动作、工单版本、会话选择及版本保持不变。');}},
     onSettled:()=>{request.current=null;},
   });
   const send=async(intent:ConversationHandlingIntent,checking:boolean)=>{
@@ -66,5 +67,6 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange}:
     </div>
     {!context.isPending&&!context.isError&&!actions.some(action=>allowed.includes(action))&&!pending?<p>当前没有可用的本人承接动作。</p>:null}
     {state!=='idle'?<p className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.command.client_command_id).then(()=>{if(!current())return;setPending(null);setState('idle');setMessage('已保留填写内容，请按当前事实明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');});}}/>:null}
   </section>;
 }

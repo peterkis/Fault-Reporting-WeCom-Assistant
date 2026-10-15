@@ -1,6 +1,6 @@
-# T42 合法拖动：SOURCE 合同，尚未实施
+# T42 合法拖动：未构建、未运行的 SOURCE 候选
 
-本页为 Issue97／WBINT-15 A15 的未运行基线。`PROPOSED / NOT_MOUNTED / NOT_BUILT_NOT_RUN`；现有 [看板](board.md)、[Ticket](tickets.md)、[复核](manual-reviews.md) HTTP 路径的已实现状态不变。本票不增加业务 HTTP 命令、权限、Ticket 状态、数据库表、迁移或台账；所有原 Schema／SQL 保持原字节。
+本页为 Issue97／WBINT-15 A15 的 SOURCE 候选。合同基线为 `PROPOSED / NOT_MOUNTED`，后继已准备适配源码，全部 `NOT_BUILT_NOT_RUN`，不宣称运行中挂载或业务通过。现有 [看板](board.md)、[Ticket](tickets.md)、[复核](manual-reviews.md) HTTP 路径状态不变。本票不增加业务 HTTP 命令、权限、Ticket 状态、数据库表、迁移或台账；所有原 Schema／SQL 保持原字节。
 
 ## 输入、输出和当前动作
 
@@ -27,10 +27,12 @@
 
 ## 默认关闭、资源与回退
 
-拟议宿主 `workbenchBoardActionsEnabled:boolean=false` 与 [bootstrap 能力片段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled` 尚未挂载；缺字段按 false，不能通过 URL、localStorage 或生产环境变量旁路开启。实际动作仍各自要求原 feature flag／Schema／当前权限；T42 开启不替代这些条件。关闭时保留原详情按钮和业务事实，不回滚已提交处理。无数据库变更，无新 SSE／Worker／连接池；沿单 App／Worker、Gateway 单活、SSE32、池预算≤8及通信并发1；禁止真实外部发送。
+候选源码中的宿主 `workbenchBoardActionsEnabled:boolean=false` 经原 `/api/lifecycle/bootstrap` 序列化 [能力片段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled`，仅当存在原已启用动作能力才广告 true；缺字段按 false。源码未构建、未运行，不能宣称已在实际服务启用；URL、localStorage 和生产环境变量不能旁路开启。实际动作仍各自要求原 feature flag／Schema／当前权限；T42 开启不替代这些条件。关闭时不建立拖动 manager，保留原详情按钮和业务事实，不回滚已提交处理。无数据库变更，无新 SSE／Worker／连接池；沿单 App／Worker、Gateway 单活、SSE32、池预算≤8及通信并发1；禁止真实外部发送。
 
 ## 冻结首例和未来验证
 
-已登记 `tests/wbint-t42-board-legal-action.browser.test.mts`：原 PG fixture／真实 Cookie HTTP／正式 `/workbench/app/assets/` bundle，显式指针手柄拖到处理中→无中间 POST／原位置仍在→原表单明确点击→唯一原 UUID／If-Match／完整命令→当前 HTTP 与看板查询一致。提出的 fixture 选项现被旧 helper 忽略，基线没有拖动入口；这是待 WHOLE 实跑的缺口，不是已观察 RED。首例不模拟业务成功，不关闭旧 guard，不跳过断言；标准 PNG 路径及自有浏览器清理沿原协议。
+已登记 `tests/wbint-t42-board-legal-action.browser.test.mts`：原 PG fixture／真实 Cookie HTTP／正式 `/workbench/app/assets/` bundle，1920 指针手柄拖到处理中→无中间 POST／原位置仍在→原表单明确点击→唯一原 UUID／If-Match／完整命令→当前 HTTP 与看板查询一致；标准900 PNG和清理沿原协议。未实施基线 `bf8f763325a767d84f3331c3cb63f4cf9a5f09db` 中 fixture 尚不接该选项、没有拖动入口；后继只增加默认 false 的必要 pass-through，原 helper 两份字节已外置保留。原首9441B／SHA256 `bb9a7abfe6fbb9c670e7d24bcaeb622858fa00f540ef2bb195511ae01da9e339`及四份合同保持冻结。基线注释是该时点记录，不改写为当前候选观察；目前没有真实 RED／GREEN。
+
+候选还登记闭合意图 Contract／Unit、真实 bootstrap opt-in Integration 和三条生产浏览器风险源码（长文／600窄屏／减少动态、键盘／Esc／正文选择／滚动／取消保输入、丢ACK原body显式核对、实际并发409与当前SSE兼容目标保留）。它们均未运行。409 时原表单在 T42 模式保留完整原命令和原 purpose，不先结算本地 marker；明确采用当前事实时才清该 marker，保留填写内容并允许新意图。新的本地清理回调沿账号 epoch／组件代次 fence，不建立新存储。普通 T04 没有专用 GET ACK 时，显式核对仍是旧用途原 UUID／原 body 的 POST 重放；不把它称只读请求。
 
 后续 WHOLE 先在记录的未实现 baseline 运行同字节原首得到真实 RED，才实施最小竖切并获取同例 GREEN。随后按原七补合法 Review／完工／重开、取消／UNKNOWN／409／真实失权和迟到对象、按钮／键盘／Esc、控件／选择／滚动／SSE、长文／窄屏／减少动态所需证据；这些目前均 NOT_RUN，不预写模拟通过或整票验收结论。

@@ -5992,6 +5992,33 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-intent.contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-capability.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-boundaries.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7739,6 +7766,12 @@
     ],
     "wbint-t42-board-first": [
       "tests/wbint-t42-board-legal-action.browser.test.mts"
+    ],
+    "wbint-t42-source-candidate": [
+      "tests/wbint-t42-board-legal-action.browser.test.mts",
+      "tests/wbint-t42-board-intent.contract.test.mts",
+      "tests/wbint-t42-board-capability.integration.test.mts",
+      "tests/wbint-t42-board-boundaries.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -7831,7 +7864,8 @@
       "tests/helpers/t32-notification-exception-browser-fixture.mts",
       "tests/helpers/t29-owner-transfer-browser-fixture.mts",
       "tests/helpers/t33-incident-delivery-browser-fixture.mts",
-      "tests/helpers/t36-browser-risk-journey.mts"
+      "tests/helpers/t36-browser-risk-journey.mts",
+      "tests/helpers/t42-board-browser-fixture.mts"
     ],
     "MIGRATION_TEST_ROOTS": [
       "tests/helpers/migration-roots.mjs",

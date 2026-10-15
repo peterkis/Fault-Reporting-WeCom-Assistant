@@ -1,3 +1,4 @@
+import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
@@ -8,7 +9,7 @@ import type {CompletionInput} from './use-completion-draft';
 import {subscribeDrafts} from '../drafts/encrypted-drafts';
 
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketCompletion({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(value:boolean)=>void}){
+export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(value:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
   const [value,setValue]=useState<CompletionInput>(EMPTY_COMPLETION),[pending,setPending]=useState<P2016CompletionCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
   const latest=useRef(value);latest.current=value;
@@ -18,7 +19,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange}:{ticketId:
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const completion=useMutation({mutationKey:['ticket-completion',principal.principal_id,ticketId],mutationFn:({command,signal}:{command:P2016CompletionCommand;signal:AbortSignal})=>api.completeTicket(ticketId,command,principal.csrf_token,signal)});
   const receipt=useMutation({mutationKey:['ticket-completion',principal.principal_id,ticketId],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>api.completionReceipt(ticketId,commandId,signal)});
-  const blocked=['submitting','checking','unknown'].includes(state),hasInput=Boolean(value.process||value.summary),navigationBlocked=(blocked||hasInput)&&!draft.safeToLeave;
+  const blocked=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending),hasInput=Boolean(value.process||value.summary),navigationBlocked=Boolean(boardMode&&pending)||(blocked||hasInput)&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
   useEffect(()=>{
@@ -39,7 +40,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange}:{ticketId:
     }catch(error){
       if(!current())return;
       if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorization(error);return;}
-      if(error instanceof ApiError){await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'完工冲突：独立输入已保留，请读取当前版本和轮次后明确新的操作。':'完工被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
+      if(error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'完工冲突：独立输入已保留，请读取当前版本和轮次后明确新的操作。':'完工被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
       else{setPending(command);setState('unknown');setMessage('结果未知：完工可能已提交。请核对原操作；原 UUID、版本、轮次和正文保持不变。');}
     }finally{if(request.current===controller)request.current=null;}
   }
@@ -73,5 +74,6 @@ export function TicketCompletion({ticketId,principal,onBlockedChange}:{ticketId:
     </form>:<p>当前没有本轮完工权限。</p>}
     {!blocked?<button type="button" data-action="refresh-completion" onClick={()=>{void context.refetch();}}>重新读取完工权限</button>:null}
     {state!=='idle'?<p className="ticket-completion-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setState('idle');setMessage('已保留填写内容，请按当前事实明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');});}}/>:null}
   </section>;
 }

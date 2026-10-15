@@ -1,3 +1,4 @@
+import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,captureWorkbenchRead,workbenchTransportWritable} from '../../api/client';
@@ -7,7 +8,7 @@ import {DraftError,subscribeDrafts} from '../drafts/encrypted-drafts';
 import {useReopenDraft} from './use-reopen-draft';
 
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
+export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
  const [reason,setReason]=useState(''),[pending,setPending]=useState<P2016ReopenCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;setReason('');setPending(null);setOpaque(null);setState('idle');setMessage('');};
@@ -45,7 +46,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
   }catch(error){
    if(!current())return;
    if(dispatched&&error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);
-   else if(dispatched&&!postAccepted&&error instanceof ApiError){await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
+   else if(dispatched&&!postAccepted&&error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
    else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'尚未发送：恢复副本未确认，不能发起新操作，请保留原 UUID 只读核对。');}
   }finally{if(generation.current===token)request.current=null;}
  }
@@ -80,5 +81,6 @@ export function TicketReopen({ticketId,principal,onBlockedChange}:{ticketId:stri
   {reason&&!commandId&&draft.enabled?<button type="button" disabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()}>清空恢复草稿</button>:null}
   {!blocked?<button type="button" onClick={()=>{void context.refetch();}}>重新读取重开权限</button>:null}
   {state!=='idle'?<p data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按当前事实明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');});}}/>:null}
  </section>;
 }
