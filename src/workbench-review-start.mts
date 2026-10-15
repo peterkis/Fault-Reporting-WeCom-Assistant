@@ -35,7 +35,8 @@ export function createWorkbenchReviewStart({pool,query,reviews,controlService,en
   const ledger=createP2016CommandLedger({pool});
   async function currentReview(authContext:unknown,reviewId:string,transaction:PostgresTransaction){
     const review=await reviews.getManualReviewDetail({authContext,reviewId,transaction});
-    if('material_basis' in review&&review.material_basis.source_kind==='WEB'){
+    const basis='material_basis' in review?review.material_basis:null;
+    if(basis&&typeof basis==='object'&&!Array.isArray(basis)&&'source_kind' in basis&&basis.source_kind==='WEB'){
       // local_now is the transaction start time. This purpose may wait on a Ticket
       // after reading material, so current WEB retention must use the physical clock.
       const retained=await transaction.query(`SELECT b.intake_id FROM intake.web_request_binding b
