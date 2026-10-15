@@ -34,6 +34,16 @@ import {createYxxBrowserFixture} from './p2-g2-yixiaoxiu-browser.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {createT18Directory} from './t18-verified-fixture.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../../src/p2-004-communication-sender-port.mjs';
+import type {ValidatedSenderRequest} from '../../src/p2-004-communication-sender-port.mjs';
+import type {IncidentDeliveryControlPermissionPort} from '../../contracts/workbench_incident_delivery_control_contracts.js';
+import {createIncidentPublicProgressAdmission} from '../../src/p2-012-public-progress-admission.mjs';
+import {createChannelMessageInbox} from '../../src/p1-003-channel-message-inbox.mjs';
+import {createP2016DirectIntakeProcessor} from '../../src/p2-016-direct-intake.mjs';
+import {createP2G1HumanOnlyAssembly} from '../../src/p2-g1-human-only-assembly.mjs';
+import {createIncidentCorrelationWorker} from '../../src/p2-015-incident-correlation.mjs';
+import {createP2012CandidateReviewStore} from '../../src/p2-012-candidate-source-adapter.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -44,7 +54,7 @@ export interface HttpClient {cookies:Map<string,string>;request:(path:string,bod
 function httpClient(base:string,origin:string,initial:{name:string;value:string}[]=[]):HttpClient{
  const cookies=new Map(initial.map(c=>[c.name,c.value]));let csrf='';
  const request=async(path:string,body?:Readonly<Record<string,unknown>>):Promise<HttpResponse>=>{
-  const expected=body?.expected_candidate_version??body?.expected_row_version??body?.expected_version;
+  const expected=body?.expected_candidate_version??body?.expected_row_version??body?.expected_version??body?.expected_ticket_version??body?.expected_input_revision;
   const response=await new Promise<HttpResponse>((resolve,reject)=>{
    const req=httpRequest(base+path,{method:body?'POST':'GET',headers:{host:new URL(origin).host,cookie:[...cookies].map(([k,v])=>k+'='+v).join('; '),connection:'close',...(body?{origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':text(body.client_command_id),...(expected!==undefined?{'if-match':'"'+String(expected)+'"'}:{})}:{})}},incoming=>{
     const chunks:Buffer[]=[];incoming.on('data',(chunk:Buffer)=>chunks.push(chunk));incoming.on('error',reject);incoming.on('end',()=>{const raw=Buffer.concat(chunks).toString();resolve({status:incoming.statusCode??0,headers:incoming.headers,raw,body:raw&&incoming.headers['content-type']?.includes('application/json')?object(JSON.parse(raw)): {}});});
@@ -56,27 +66,34 @@ function httpClient(base:string,origin:string,initial:{name:string;value:string}
  };
  return {cookies,request,get:path=>request(path),post:(path,body)=>request(path,body)};
 }
-export interface Intake {intakeId:string;ticketId:string|null;reviewId:string|null;source:string}
+export interface Intake {intakeId:string;ticketId:string|null;reviewId:string|null;source:string;requestRef:string|null}
+type SenderOutcome='UNKNOWN'|'REJECTED_NOT_APPLIED'|'ACKNOWLEDGED';
 export interface T43Fixture {
  pool:PostgresPool;databaseUrl:string;runtime:P2016EnabledRuntime;origin:string;backendOrigin:string;certificateSpki:string;
- staff:HttpClient[];member:HttpClient;principals:string[];browserCookies:{name:string;value:string;url:string}[];
+ staff:HttpClient[];member:HttpClient;members:HttpClient[];principals:string[];browserCookies:{name:string;value:string;url:string}[];
  directoryCalls:()=>number;inbound:(chatType:'group'|'single',description:string,reporter?:string)=>Promise<Intake>;
  pump:()=>Promise<void>;project:()=>Promise<void>;intake:(id:string)=>Promise<Intake>;
  webReport:(description:string)=>Promise<Intake>;manualReport:(description:string)=>Promise<Intake>;
+ deferredInbound:()=>Promise<Intake>;correlate:()=>Promise<string>;
+ grants:Set<string>;senderCalls:ValidatedSenderRequest[];setSenderOutcome:(outcome:SenderOutcome)=>void;deliver:(deliveryId:string)=>Promise<unknown>;
 }
 
 /** One original FULL_SERVICE_LOOP business App and supplied pool. Only external identity/directory are synthetic. */
-export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<void>{
+export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>,{syntheticDelivery=false}:{syntheticDelivery?:boolean}={}):Promise<void>{
  let outer:unknown;
  try{await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t43full',max:4,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
   await migrateCurrentBaselineWithYxx({databaseUrl});
-  for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateWorkbenchVerifiedManualReports,migrateTicketUnassign,migrateTicketReturnToDispatch,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateIncidentInternalNotes,migrateIncidentPublicProgress,migrateIncidentOwnerTransfer,migrateIncidentDeliveryControl,migrateConversationDeliveryCommands,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchFollowUpSchedules,migrateWorkbenchFollowUpDueSignals,migrateWorkbenchSourceGroups])await migrate({databaseUrl,mode:'apply'});
+  for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateWorkbenchVerifiedManualReports,migrateTicketUnassign,migrateTicketReopenRounds,migrateWorkbenchPersonalRead,migrateBotReporterFeedback,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchFollowUpSchedules,migrateTicketReturnToDispatch,migrateWorkbenchFollowUpDueSignals,migrateWorkbenchSourceGroups,migrateIncidentInternalNotes,migrateIncidentPublicProgress,migrateIncidentOwnerTransfer,migrateIncidentDeliveryControl,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool}),principals:string[]=[];
   for(let index=0;index<4;index++){
-   const p=await access.upsertPrincipal({wecomUserId:'t43-staff-'+index,displayName:'T43合成人员'+index,roles:index===0?['ADMIN']:['HANDLER'],resolverTeamIds:index===3?[]:['PILOT_IT']});principals.push(p.id);
+   const p=await access.upsertPrincipal({wecomUserId:'t43-staff-'+index,displayName:'T43合成人员'+index,roles:index===0?['ADMIN']:index===2?['DISPATCHER']:['HANDLER'],resolverTeamIds:index===3?[]:['PILOT_IT']});principals.push(p.id);
   }
   const directory=createT18Directory();directory.setPrincipal(text(principals[0]));let directoryCalls=0;
   const offlineDirectory={...directory.directory,port:{async searchAuthorizedCandidates(){directoryCalls++;throw Error('T43_EXTERNAL_DIRECTORY_OFFLINE');},async verifyAuthorizedCandidate(){directoryCalls++;throw Error('T43_EXTERNAL_DIRECTORY_OFFLINE');}}};
+  const grants=new Set<string>(),permissions:IncidentDeliveryControlPermissionPort={hasPermission:async({principal_id,incident_id,permission})=>grants.has(principal_id+'|'+incident_id+'|'+permission)};
+  const senderCalls:ValidatedSenderRequest[]=[];let outcome:SenderOutcome='UNKNOWN';
+  const sender=createCommunicationSenderPort(async request=>{assert.equal(syntheticDelivery,true,'only the explicit isolated recording Sender may run');senderCalls.push(request);return {outcome,provider_message_id:null,error_code:outcome==='ACKNOWLEDGED'?null:'SYNTHETIC_T43_'+outcome,retryable:false};});
+  const delivery=createCommunicationDeliveryWorker({pool,sender,enabled:syntheticDelivery,batchSize:1,attemptAdmission:createIncidentPublicProgressAdmission({enabled:true})});
   let runtime:P2016EnabledRuntime|undefined,worker:ReturnType<typeof createP2016OrchestrationWorker>|undefined,tls:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,backendOrigin='';
   let failure:unknown;
   try{
@@ -85,9 +102,9 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<
      reporterMemberEntry:entryConfig,reporterHmacSecret:entryKey,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async code=>({userid:code==='synthetic-B-code'?'synthetic-B':'synthetic-A'})},
      flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
      yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true},
-     gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentPublicProgressEnabled:true,incidentOwnerTransferEnabled:true,incidentDeliveryControlEnabled:true,
+     gatewayEnabled:false,senderEnabled:false,externalSendEnabled:syntheticDelivery,incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentPublicProgressEnabled:true,incidentOwnerTransferEnabled:true,incidentDeliveryControlEnabled:true,incidentDeliveryControlPermissions:permissions,
      workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:offlineDirectory,workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,workbenchConversationsEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,
-     ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketTakeoverEnabled:true,ticketTakeoverCompletionEnabled:true,ticketAssignmentEnabled:true,ticketWaitingActionsEnabled:true,ticketUnassignEnabled:true,ticketReturnToDispatchEnabled:true,ticketReopenRoundsEnabled:true,botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:true,ticketRoundNotificationsEnabled:true,
+     ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketTakeoverEnabled:true,ticketTakeoverCompletionEnabled:true,ticketAssignmentEnabled:true,ticketAssignmentDraftRecoveryEnabled:true,ticketWaitingActionsEnabled:true,ticketUnassignEnabled:true,ticketReturnToDispatchEnabled:true,ticketReopenRoundsEnabled:true,botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:true,ticketRoundNotificationsEnabled:true,
      workbenchFollowEnabled:true,workbenchPersonalReadEnabled:true,workbenchFollowUpSchedulesEnabled:true,workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchRemindersEnabled:true,workbenchSearchEnabled:true,workbenchBoardActionsEnabled:true,workbenchAssignmentHistoryEnabled:true,notificationExceptionsEnabled:true,sourceGroupDirectoryEnabled:true});
     if('disabled' in created)throw Error('T43_ENABLED_FULL_SERVICE_RUNTIME_REQUIRED');runtime=created;
     return created.server;
@@ -98,16 +115,19 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>):Promise<
    const operational=worker;
    const cookies=active.authenticate.browserCookies?.();assert.ok(cookies&&cookies.length===4);
    const staff=await Promise.all(cookies.map(async cookie=>{const http=httpClient(backendOrigin,origin,[cookie]);const bootstrap=await http.get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200,bootstrap.raw);assert.equal(bootstrap.body.ai_enabled,false);return http;}));
-   const member=httpClient(backendOrigin,origin),begin=await member.get('/wecom/yixiaoxiu/login');assert.equal(begin.status,302);
-   const callback=await member.get('/wecom/yixiaoxiu/callback?code=synthetic-A-code&state='+new URL(text(begin.headers.location)).searchParams.get('state'));assert.equal(callback.status,303,callback.raw);
-   const bootstrap=await member.get('/api/yixiaoxiu/bootstrap');assert.equal(bootstrap.status,200,bootstrap.raw);
-   const intake=async(id:string):Promise<Intake>=>{const item=(await pool.query<{id:string;pilot_ticket_id:string|null;source_channel:string}>('SELECT id::text,pilot_ticket_id::text,source_channel FROM intake.service_intake WHERE id=$1::uuid',[id])).rows[0];assert.ok(item);const review=(await pool.query<{id:string}>("SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING' ORDER BY id LIMIT 1",[id])).rows[0];return {intakeId:id,ticketId:item.pilot_ticket_id,reviewId:review?.id??null,source:item.source_channel};};
+   const members:HttpClient[]=[];
+   for(const code of ['synthetic-A-code','synthetic-B-code']){const client=httpClient(backendOrigin,origin),begin=await client.get('/wecom/yixiaoxiu/login');assert.equal(begin.status,302);const callback=await client.get('/wecom/yixiaoxiu/callback?code='+code+'&state='+new URL(text(begin.headers.location)).searchParams.get('state'));assert.equal(callback.status,303,callback.raw);assert.equal((await client.get('/api/yixiaoxiu/bootstrap')).status,200);members.push(client);}
+   const member=members[0];assert.ok(member);
+   const intake=async(id:string):Promise<Intake>=>{const item=(await pool.query<{id:string;pilot_ticket_id:string|null;source_channel:string;request_ref:string|null}>('SELECT i.id::text,i.pilot_ticket_id::text,i.source_channel,b.request_ref FROM intake.service_intake i LEFT JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE i.id=$1::uuid',[id])).rows[0];assert.ok(item);const review=(await pool.query<{id:string}>("SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING' ORDER BY id LIMIT 1",[id])).rows[0];return {intakeId:id,ticketId:item.pilot_ticket_id,reviewId:review?.id??null,source:item.source_channel,requestRef:item.request_ref};};
    const project=async()=>{for(let i=0;i<20;i++){const step=await active.coordinator.runOnce();assert.ok(step.streams.every(s=>s.failures.length===0));await active.realtimeProjector.runOnce({limit:100});if((await active.coordinator.backlog()).total===0)return;}assert.fail('T43_ACTUAL_PROJECTOR_BACKLOG_NOT_DRAINED');};
    const pump=async()=>{for(let i=0;i<3;i++){const result=await operational.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20,now_epoch_ms:String(Date.now()+15000)});assert.equal(result.model_provider_calls,0);assert.equal(result.disabled,false);}await project();};
    const inbound=async(chatType:'group'|'single',description:string,reporter='synthetic-A')=>{const id=randomUUID(),accepted=object(await active.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:'t43-'+id},body:{msgid:id,aibotid:'bot-test',chattype:chatType,...(chatType==='group'?{chatid:'t43-synthetic-origin-group'}:{}),from:{userid:reporter},msgtype:'text',text:{content:description}}}));assert.equal(accepted.ok,true);const id2=text(object(object(accepted.result).intake).id);await pump();return intake(id2);};
    const webReport=async(description:string)=>{const response=await member.post('/api/yixiaoxiu/requests',{schema_version:1,client_command_id:randomUUID(),description,location:{text:'T43合成网页位置',unknown:false},service_code:null,impact_scope:'SINGLE_WORKSTATION',reported_department_text:null,extension:null});assert.equal(response.status,202,response.raw);const ref=text(object(response.body.receipt).request_ref);await pump();const row=(await pool.query<{intake_id:string}>('SELECT intake_id::text FROM intake.web_request_binding WHERE request_ref=$1',[ref])).rows[0];assert.ok(row);return intake(row.intake_id);};
    const manualReport=async(description:string)=>{const admin=staff[0];assert.ok(admin);const response=await admin.post('/api/workbench/reports',{schema_version:1,client_command_id:randomUUID(),source:'PHONE',description,location:{text:'T43合成电话位置',unknown:false},reporter:{verification:'UNVERIFIED',name:'T43合成电话报修人',contact:'合成内线9943',department:null}});assert.equal(response.status,202,response.raw);assert.equal(response.body.external_notification,false);await project();return intake(text(response.body.intake_id));};
-   await run({pool,databaseUrl,runtime:active,origin,backendOrigin,certificateSpki:tls.certificateSpki,staff,member,principals,browserCookies:cookies.map(c=>({name:c.name,value:c.value,url:origin+'/'})),directoryCalls:()=>directoryCalls,inbound,pump,project,intake,webReport,manualReport});
+   const deferredInbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor(),deferredAssembly=createP2G1HumanOnlyAssembly({projectAfterCommit:false,operationalIntake:{accept:input=>deferredInbox.accept(input,processor)}});
+   const deferredInbound=async()=>{const msgid=randomUUID(),accepted=object(await deferredAssembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},body:{msgid,aibotid:'bot-test',chattype:'single',from:{userid:'t43-delayed-'+randomUUID()},msgtype:'text',text:{content:'合成打印机打印不了。'}}}));assert.equal(accepted.ok,true);assert.equal(object(accepted.projection).deferred,true);assert.ok((await active.coordinator.backlog()).channel_messages>0);return intake(text(object(object(accepted.result).intake).id));};
+   const correlate=async()=>{const correlated=await createIncidentCorrelationWorker({pool,enabled:true}).runOnce();assert.ok(correlated.correlated>0,'actual normal reports must produce a real correlation candidate');const importer=createP2012CandidateReviewStore({pool,enabled:true});const pending=await pool.query<{id:string}>("SELECT d.id::text FROM intake.deterministic_decision d WHERE d.result_code='INCIDENT_REVIEW_CANDIDATE' AND NOT EXISTS(SELECT 1 FROM incident.candidate_review c WHERE c.source_decision_id=d.id AND c.source_result_hash=d.result_hash) ORDER BY d.created_at,d.id LIMIT 20");for(const d of pending.rows)await importer.importDecision({decisionId:d.id});const candidates=await pool.query<{id:string}>('SELECT id::text FROM incident.candidate_review ORDER BY created_at,id');assert.equal(candidates.rowCount,1);const selected=candidates.rows[0];assert.ok(selected);return selected.id;};
+   await run({pool,databaseUrl,runtime:active,origin,backendOrigin,certificateSpki:tls.certificateSpki,staff,member,members,principals,browserCookies:cookies.map(c=>({name:c.name,value:c.value,url:origin+'/'})),directoryCalls:()=>directoryCalls,inbound,pump,project,intake,webReport,manualReport,deferredInbound,correlate,grants,senderCalls,setSenderOutcome:value=>{outcome=value;},deliver:deliveryId=>delivery.deliver({deliveryId})});
   }catch(error){failure=error;}
   await closeBrowserTestResources([()=>worker?.stop(),()=>tls?.close(),()=>runtime?.stop(),()=>{if(runtime)assert.equal(runtime.server.listening,false);if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});}],failure);
  }});}catch(error){outer=error;}

@@ -6388,6 +6388,42 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t43-four-source-service-loop.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t43-incident-delivery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t43-material-projection.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t43-competition-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -8277,6 +8313,31 @@
     ],
     "wbint-t43-first": [
       "tests/wbint-t43-four-source-first.browser.test.mts"
+    ],
+    "wbint-t43-journeys": [
+      "tests/wbint-t43-four-source-service-loop.browser.test.mts",
+      "tests/wbint-t43-incident-delivery.browser.test.mts"
+    ],
+    "wbint-t43-risks": [
+      "tests/wbint-t43-material-projection.integration.test.mts",
+      "tests/wbint-t43-competition-recovery.browser.test.mts"
+    ],
+    "wbint-t43-whole": [
+      "tests/wbint-t43-four-source-first.browser.test.mts",
+      "tests/wbint-t43-four-source-service-loop.browser.test.mts",
+      "tests/wbint-t43-incident-delivery.browser.test.mts",
+      "tests/wbint-t43-material-projection.integration.test.mts",
+      "tests/wbint-t43-competition-recovery.browser.test.mts"
+    ],
+    "wbint-t43-related": [
+      "tests/t20-feedback-contracts.test.mts",
+      "tests/t11-completion.test.mts",
+      "tests/yxx-ss-002-contract.test.mjs",
+      "tests/t10-waiting-contract.test.mts",
+      "tests/wbint-t31-contracts.test.mts",
+      "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "tests/wbint-t15-review-start.contract.test.mts",
+      "tests/wbint-t42-board-intent.contract.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -8353,7 +8414,8 @@
       "tests/helpers/t40-reminder-first-fixture.mts",
       "tests/helpers/t40-reminder-locate-fixture.mts",
       "tests/helpers/t40-reminder-risk-fixture.mts",
-      "tests/helpers/t43-full-service-fixture.mts"
+      "tests/helpers/t43-full-service-fixture.mts",
+      "tests/helpers/t43-service-actions.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
       "tests/helpers/p2-003-realtime-fixtures.mjs",

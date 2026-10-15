@@ -30,6 +30,7 @@ test('T43 same original full service App admits group, direct, H5 and manual rep
    const cookie=f.browserCookies[0];assert.ok(cookie);
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:900,height:900,cookies:[cookie],certificateSpki:f.certificateSpki});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector(".page-title h1"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   await browser.evaluate('document.querySelectorAll("button[aria-controls^=cards-][aria-expanded=false]").forEach(button=>button.click())');
    for(const target of canonical)await browser.waitFor(`Boolean(document.querySelector('article.ticket-card[data-kind="${target.kind}"][data-item-id="${target.id}"]'))`);
    assert.equal(await browser.evaluate('document.querySelectorAll("article.ticket-card").length'),4,'one canonical card per admitted source, no Ticket/review duplicate');
    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
