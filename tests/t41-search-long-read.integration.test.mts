@@ -18,7 +18,7 @@ test('T41 bounded read POST preserves GET criteria/results and rejects altered, 
   assert.equal(get.status,200);const original=object(await get.json());
   const response=await post(input);assert.equal(response.status,200,await response.clone().text());const same=object(await response.json());
   assert.deepEqual(rows(same.items),rows(original.items));assert.deepEqual(same.criteria,original.criteria);
-  assert.equal(typeof original.next_cursor,'string');
+  assert.ok(typeof original.next_cursor==='string');
   const cursor=original.next_cursor,continued:WorkbenchSearchRequest={...input,cursor};
   const nextGet=await fetch(f.origin+'/api/workbench/search?'+searchParameters(input.criteria)+'&limit=1&cursor='+encodeURIComponent(cursor),{headers:{cookie}});
   const nextPost=await post(continued);assert.equal(nextGet.status,200);assert.equal(nextPost.status,200);

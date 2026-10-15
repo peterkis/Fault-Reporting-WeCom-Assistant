@@ -70,7 +70,7 @@ for(const scenario of ['initial','reset'] as const)test('T41 real hint fences a 
    assert.equal((await commands.perform({authContext:{principal_id:admin.id},command:{action:'add-note',ticket_id:other.ticket.id,client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T41 real pending-search hint',external_visible:false}})).ok,true);
    await waitFor(()=>hints>priorHints,'the production stream must actually write the committed authorized hint');
    await browser.waitFor('Boolean(document.querySelector("[data-search-state=error]"))');
-   release();release=undefined;
+   assert.ok(release);release();release=undefined;
    await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
    assert.equal(await browser.evaluate('Boolean(document.querySelector("article[data-item-id=\\"'+ticket.ticket.id+'\\"]"))'),false);
    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-search-state=error]"))'),true);

@@ -25,8 +25,8 @@ export function withT41RiskFixture(run:(fixture:T41RiskFixture)=>Promise<void>,{
    workbenchSearchEnabled:enabled,sourceGroupDirectoryEnabled:groups});
   try{
    const started=await runtime.start(),cookies=started.cookies;assert.ok(cookies);
-   const a=cookies[0],s=cookies[1],outsider=cookies[2];assert.ok(a&&s&&outsider);const select={admin:a,staff:s,outsider};
-   await run({pool:base.pool,origin:base.origin,browserCookie:s,staffId:staff.id,tickets:base.tickets,
+   const a=cookies[0],s=cookies[1],outsider=cookies[2];assert.ok(a&&s&&outsider);assert.ok(typeof s.url==='string');const select={admin:a,staff:s,outsider};
+   await run({pool:base.pool,origin:base.origin,browserCookie:{...s,url:s.url},staffId:staff.id,tickets:base.tickets,
     get:(path,reader='staff')=>{const cookie=select[reader];return ownedGet(base.origin+path,cookie.name+'='+cookie.value);}});
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);
    assert.equal(await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),0);}
