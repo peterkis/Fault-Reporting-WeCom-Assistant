@@ -6055,6 +6055,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-final-scope.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/t41-search-pending-hint.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7820,7 +7838,9 @@
       "tests/t41-search-review-start.integration.test.mts",
       "tests/t41-search-current-read.integration.test.mts",
       "tests/t41-search-long-read.integration.test.mts",
-      "tests/t41-search-refresh-and-long-pages.browser.test.mts"
+      "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "tests/t41-search-final-scope.integration.test.mts",
+      "tests/t41-search-pending-hint.browser.test.mts"
     ],
     "wbint-t41-review-start": [
       "tests/t41-search-review-start.integration.test.mts"
@@ -7846,6 +7866,16 @@
       "tests/wbint-t38-offline.browser.test.mts",
       "tests/p2-016-workbench-wecom-auth.test.mjs",
       "tests/p2-016-workbench-http.integration.test.mjs"
+    ],
+    "wbint-t41-final-scope": [
+      "tests/t41-search-final-scope.integration.test.mts"
+    ],
+    "wbint-t41-pending-hint": [
+      "tests/t41-search-pending-hint.browser.test.mts"
+    ],
+    "wbint-t41-dcf6-residuals": [
+      "tests/t41-search-final-scope.integration.test.mts",
+      "tests/t41-search-pending-hint.browser.test.mts"
     ]
   },
   "subprocess_entries": {
