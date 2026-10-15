@@ -69,7 +69,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         if(after===null&&token===null&&cursor===null){await confirmCurrent();return empty(false);}
         await confirmCurrent();
         const baseline=open(token),next=open(cursor);
-        if(!baseline||Object.keys(baseline).sort().join(',')!=='b,e,f,s'||baseline.s!==identity||typeof baseline.f!=='string'
+        if(token===null||!baseline||Object.keys(baseline).sort().join(',')!=='b,e,f,s'||baseline.s!==identity||typeof baseline.f!=='string'
           ||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/u.test(baseline.f)||typeof baseline.e!=='number'||baseline.e<=Date.now()
           ||!decimal(baseline.b)||after===null||BigInt(after)<BigInt(baseline.b)||BigInt(after)<BigInt(current.floor)||BigInt(after)>BigInt(current.high))return empty(true);
         if(cursor!==null&&(!next||Object.keys(next).sort().join(',')!=='a,h,i,l,r,s,t'||next.s!==identity||next.t!==digest(token)
@@ -165,7 +165,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         const rows=result.rows.slice(0,limit),last=rows.at(-1);
         const items:WorkbenchReminderItem[]=rows.map(row=>({reminder_id:row.reminder_id,event_id:row.event_id,reason:row.reason,
           canonical_item:{kind:row.kind,id:uuidP2016(row.id)},source_key:row.source_key,source_revision:row.source_revision,occurred_at:assertLocalDateTime(row.occurred_at)}));
-        return {schema_version:1,items,as_of_event_id:high,baseline_token:token!,next_cursor:result.rows.length>limit&&last?
+        return {schema_version:1,items,as_of_event_id:high,baseline_token:token,next_cursor:result.rows.length>limit&&last?
           seal({s:identity,t:digest(token),a:after,h:high,l:limit,i:last.event_id,r:last.reminder_id}):null,reset_required:false};
       });
     },

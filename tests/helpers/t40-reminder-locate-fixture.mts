@@ -38,7 +38,7 @@ export async function withT40LocateFixture(run:(fixture:T40LocateFixture)=>Promi
     assert.equal(typeof ownerUrl,'string');
     if(typeof ownerUrl!=='string')throw Error('T40_OWNED_DATABASE_REQUIRED');
     const databaseUrl=new URL(ownerUrl);databaseUrl.pathname='/'+databaseName;
-    const migration={databaseUrl:String(databaseUrl),mode:'apply'};
+    const migration={databaseUrl:String(databaseUrl),mode:'apply' as const};
     await migrateWorkbenchManualReports(migration);
     await migrateWorkbenchPersonalRead(migration);
     await migrateWorkbenchFollow(migration);
