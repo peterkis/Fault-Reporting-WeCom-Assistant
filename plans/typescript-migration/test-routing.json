@@ -6262,6 +6262,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-review.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t42-board-complete-reopen.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -8069,6 +8087,12 @@
     ],
     "wbint-t42-authority-navigation": [
       "tests/wbint-t42-board-authority-navigation.browser.test.mts"
+    ],
+    "wbint-t42-board-review": [
+      "tests/wbint-t42-board-review.browser.test.mts"
+    ],
+    "wbint-t42-board-complete-reopen": [
+      "tests/wbint-t42-board-complete-reopen.browser.test.mts"
     ]
   },
   "subprocess_entries": {
