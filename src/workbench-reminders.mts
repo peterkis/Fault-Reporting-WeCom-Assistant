@@ -48,12 +48,26 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
       if(!/^(?:[1-9]|[1-4][0-9]|50)$/u.test(rawLimit)||after!==null&&!decimal(after))failP2016();
       const limit=Number(rawLimit);
       return transactionP2016(pool,async tx=>{
-        await tx.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
-        const principal=await query.principal(authContext,tx),scope=ticketPredicateP2016(principal);
-        const identity=digest([principal.principal_id,principal.roles,principal.team_ids,authContext]),current=await clock(tx);
+        await tx.query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY');
+        let principal=await query.principal(authContext,tx),scope=ticketPredicateP2016(principal);
+        let identity=digest([principal.principal_id,principal.roles,principal.team_ids,authContext]),current=await clock(tx);
+        const confirmCurrent=async()=>{
+          if(!authContext||typeof authContext!=='object')failP2016('UNAUTHENTICATED',401);
+          const expiry:unknown=Reflect.get(authContext,'expires_epoch_ms'),session:unknown=Reflect.get(authContext,'session_id');
+          if(!decimal(expiry)||BigInt(expiry)<=BigInt(Date.now()))failP2016('UNAUTHENTICATED',401);
+          // The original HTTP authenticator supplied this session. Re-read that same authority fact without nesting a pool checkout.
+          if(session!==undefined){
+            const active=await tx.query(`SELECT session_id FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid
+              AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()`,[uuidP2016(session),principal.principal_id]);
+            if(active.rowCount!==1)failP2016('UNAUTHENTICATED',401);
+          }
+          const latest=await query.principal(authContext,tx),latestIdentity=digest([latest.principal_id,latest.roles,latest.team_ids,authContext]);
+          const changed=latestIdentity!==identity;principal=latest;scope=ticketPredicateP2016(principal);identity=latestIdentity;current=await clock(tx);return changed;
+        };
         const empty=(reset:boolean):WorkbenchReminderPage=>({schema_version:1,items:[],as_of_event_id:current.high,
           baseline_token:seal({s:identity,f:current.now,e:Date.now()+600_000,b:current.high}),next_cursor:null,reset_required:reset});
-        if(after===null&&token===null&&cursor===null)return empty(false);
+        if(after===null&&token===null&&cursor===null){await confirmCurrent();return empty(false);}
+        await confirmCurrent();
         const baseline=open(token),next=open(cursor);
         if(!baseline||Object.keys(baseline).sort().join(',')!=='b,e,f,s'||baseline.s!==identity||typeof baseline.f!=='string'
           ||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/u.test(baseline.f)||typeof baseline.e!=='number'||baseline.e<=Date.now()
@@ -64,13 +78,20 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         const high=next?String(next.h):current.high;
         // READ and the related union are evaluated in SQL before canonical deduplication, ordering and LIMIT.
         // No payload text, directory identity or communication target is projected.
-        const result=await tx.query<Fact>(CARD_SQL+`, eligible AS (
+        const sql=CARD_SQL+`, eligible AS (
           SELECT cards.*,(${RELATED_CARD_SQL}${followEnabled?` OR ${FOLLOW_CARD_SQL}`:''}) AS related FROM cards
         ), anchors AS (
           SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id
-          FROM eligible c JOIN intake.service_intake i ON i.id=c.intake_id::uuid AND i.retention_until>platform.local_now()
+          FROM eligible c JOIN intake.service_intake i ON i.id=c.intake_id::uuid AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
           WHERE i.source_provider<>'YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM intake.web_request_binding binding
             WHERE binding.intake_id=i.id AND binding.revoked_at IS NULL AND binding.retention_until_epoch_ms>platform.physical_epoch_ms())
+        ), readable_material AS (
+          SELECT a.*,material.id AS material_id FROM anchors a JOIN intake.service_intake material
+            ON material.id=a.original_id OR (a.kind='ticket' AND EXISTS(
+              SELECT 1 FROM intake.channel_leg leg JOIN intake.contact_journey journey ON journey.id=leg.journey_id
+              WHERE leg.source_intake_id=material.id AND journey.linked_ticket_id::text=a.id
+                AND journey.retention_until_epoch_ms>platform.physical_epoch_ms()))
+          WHERE material.retention_until_epoch_ms>platform.physical_epoch_ms()
         ), facts AS (
           SELECT a.kind,a.id,'AUTHORIZED_TEAM_NEW_REPORT'::text AS reason,'intake:'||a.original_id::text AS source_identity,
             '1'::text AS source_revision,a.initial_at AS fact_at,e.event_id
@@ -90,8 +111,8 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           WHERE a.related AND te.event_type='ticket.reopened' AND te.created_at>$4::timestamp
           UNION ALL
           SELECT a.kind,a.id,'RELATED_NEW_MATERIAL','web:'||submission.id::text,submission.input_revision::text,submission.received_at,e.event_id
-          FROM anchors a JOIN intake.web_submission submission ON submission.intake_id=a.original_id AND submission.kind='SUPPLEMENT'
-          JOIN intake.web_request_binding binding ON binding.intake_id=a.original_id AND binding.revoked_at IS NULL
+          FROM readable_material a JOIN intake.web_submission submission ON submission.intake_id=a.material_id AND submission.kind='SUPPLEMENT'
+          JOIN intake.web_request_binding binding ON binding.intake_id=a.material_id AND binding.revoked_at IS NULL
           JOIN pilot_ticket.ticket_event te ON a.kind='ticket' AND te.ticket_id::text=a.id
             AND te.event_type IN ('ticket.information_added','ticket.resumed') AND te.reason_code IN ('WEB_SUPPLEMENT_RECEIVED','WEB_SUPPLEMENT_RESUME')
           JOIN conversation.realtime_event e ON e.source_type='TICKET_EVENT' AND e.source_id=te.event_id::text AND e.aggregate_id=a.id
@@ -100,11 +121,17 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
             AND submission.retention_until_epoch_ms>platform.physical_epoch_ms()
           UNION ALL
           SELECT a.kind,a.id,'RELATED_NEW_MATERIAL','channel:'||m.id::text,rel.sequence_no::text,m.received_at,e.event_id
-          FROM anchors a JOIN intake.service_intake_message rel ON rel.intake_id=a.original_id
-          JOIN channel.message_inbox m ON m.id=rel.channel_message_id AND m.retention_until>platform.local_now()
+          FROM readable_material a JOIN intake.service_intake_message rel ON rel.intake_id=a.material_id
+          JOIN channel.message_inbox m ON m.id=rel.channel_message_id AND m.retention_until_epoch_ms>platform.physical_epoch_ms()
           JOIN conversation.item ci ON ci.source_type='CHANNEL_MESSAGE' AND ci.source_id=m.id::text AND ci.item_type='USER_MESSAGE'
           JOIN conversation.realtime_event e ON e.source_type='CONVERSATION_ITEM' AND e.source_id=ci.id::text
-          WHERE a.related AND rel.sequence_no>1 AND m.received_at>$4::timestamp AND ci.retention_until>platform.local_now()
+          WHERE a.related AND m.received_at>$4::timestamp AND ci.retention_until_epoch_ms>platform.physical_epoch_ms()
+            AND (rel.relation_type='SUPPLEMENT' OR (a.kind='ticket' AND rel.relation_type='PRIMARY' AND EXISTS(
+              SELECT 1 FROM intake.channel_leg later JOIN intake.channel_leg basis ON basis.journey_id=later.journey_id
+              JOIN intake.contact_journey journey ON journey.id=later.journey_id
+              WHERE later.source_intake_id=a.material_id AND basis.source_intake_id=a.original_id
+                AND later.leg_ordinal>basis.leg_ordinal AND journey.linked_ticket_id::text=a.id
+                AND journey.retention_until_epoch_ms>platform.physical_epoch_ms())))
           UNION ALL
           SELECT a.kind,a.id,'RELATED_FOLLOW_UP_DUE','follow-up:'||a.id,signal.schedule_version::text,signal.published_at,e.event_id
           FROM anchors a JOIN pilot_ticket.follow_up_due_signal signal ON a.kind='ticket' AND signal.ticket_id::text=a.id
@@ -118,7 +145,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
               WHERE ended.ticket_id=t.id AND ended.event_ordinal>scheduled.event_ordinal AND (ended.new_status IN ('CLOSED','CANCELLED') OR ended.event_type='ticket.reopened'))
         ), retained AS (
           SELECT facts.* FROM facts JOIN conversation.realtime_event e ON e.event_id=facts.event_id
-          WHERE e.stream_name=$5 AND e.visibility_scope='WORKBENCH' AND e.expires_at>platform.local_now()
+          WHERE e.stream_name=$5 AND e.visibility_scope='WORKBENCH' AND e.expires_epoch_ms>platform.physical_epoch_ms()
             AND e.event_id>$6::bigint AND e.event_id<=$7::bigint
         ), canonical AS (
           SELECT kind,id,reason,encode(sha256(convert_to(source_identity,'UTF8')),'hex') AS source_key,source_revision,
@@ -128,7 +155,13 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           SELECT *,encode(sha256(convert_to(jsonb_build_array(reason,source_key,source_revision)::text,'UTF8')),'hex') AS reminder_id FROM canonical
         ) SELECT kind,id,reason,source_key,source_revision,event_id::text,reminder_id,to_char(fact_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at
           FROM identified WHERE ($8::bigint IS NULL OR (event_id,reminder_id)>($8::bigint,$9::text))
-          ORDER BY event_id,reminder_id LIMIT $10`,[...scope.values,baseline.f,REALTIME_STREAM_NAME,after,high,next?.i??null,next?.r??null,limit+1]);
+          ORDER BY event_id,reminder_id LIMIT $10`;
+        const read=()=>tx.query<Fact>(sql,[...scope.values,baseline.f,REALTIME_STREAM_NAME,after,high,next?.i??null,next?.r??null,limit+1]);
+        // A table-lock wait may outlive a Cookie, membership or retention deadline.
+        // Discard that statement snapshot, recheck the original session and principal, then reuse the same bounded projection in a fresh snapshot.
+        await read();
+        if(await confirmCurrent()||baseline.e<=Date.now()||BigInt(after)<BigInt(current.floor))return empty(true);
+        const result=await read();
         const rows=result.rows.slice(0,limit),last=rows.at(-1);
         const items:WorkbenchReminderItem[]=rows.map(row=>({reminder_id:row.reminder_id,event_id:row.event_id,reason:row.reason,
           canonical_item:{kind:row.kind,id:uuidP2016(row.id)},source_key:row.source_key,source_revision:row.source_revision,occurred_at:assertLocalDateTime(row.occurred_at)}));
