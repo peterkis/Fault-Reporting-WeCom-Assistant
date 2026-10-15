@@ -1,14 +1,14 @@
-# 电话／现场代录接口（T17 手填与 T18 核实选择）
+# 电话／现场代录接口（T17 手填、T18 核实选择与 T19 本人处理）
 
-返回[API 导航](../README.md) · [入口索引](../endpoint-index.md) · [T17 执行记录](../../../plans/admin-workbench-integration/execution/t17.md) · [T18 执行记录](../../../plans/admin-workbench-integration/execution/t18.md)
+返回[API 导航](../README.md) · [入口索引](../endpoint-index.md) · [T17 执行记录](../../../plans/admin-workbench-integration/execution/t17.md) · [T18 执行记录](../../../plans/admin-workbench-integration/execution/t18.md) · [T19 执行记录](../../../plans/admin-workbench-integration/execution/t19.md)
 
-本页描述当前实现的 HTTP 合同：工作人员手填报修、受控成员候选与明确选择、原命令回执、MANUAL 复核材料及正式管理端展示。相关功能默认关闭。具体被测提交、通过/失败/未运行项目及整票状态以执行记录为准；实现存在不代表生产启用、真实外部目录验证或 Gate 批准。
+本页描述当前实现的 HTTP 合同：工作人员手填报修、受控成员候选与明确选择、原命令回执、MANUAL 复核材料及正式管理端展示、明确代录后本人承接开始。相关功能默认关闭。具体被测提交、通过/失败/未运行项目及整票状态以执行记录为准；实现存在不代表生产启用、真实外部目录验证或 Gate 批准。
 
 ## 1. 入口、认证与开关
 
 宿主 **W**，内部工作人员会话；页面为 `/workbench/app/reports/new`。POST 使用 JSON、同源 `Origin`、现有 CSRF 校验，`Idempotency-Key` 必须等于 body 的 `client_command_id`。浏览器不能指定 actor、状态、处理人、应用范围、人员绑定或 WeCom 收件人。
 
-当前 active ADMIN／DISPATCHER，或实际属于至少一个 active 处理组的 HANDLER 可以代录。查询、提交、重放和回执读取均重新验权；目录等待结束后再核验当前创建权。受理回执不会扩大对 Ticket／Journey／Review 的既有读取范围，也不会自动接单或建立沟通责任。代录后立即处理属于 T19。
+当前 active ADMIN／DISPATCHER，或实际属于至少一个 active 处理组的 HANDLER 可以代录。查询、提交、重放和回执读取均重新验权；目录等待结束后再核验当前创建权。受理回执不会扩大对 Ticket／Journey／Review 的既有读取范围，也不会自动接单或建立沟通责任。代录后立即处理使用第 10 节 T19 的独立显式命令。
 
 | 方法与路径 | 用途与返回 |
 | --- | --- |
@@ -234,31 +234,37 @@ migrateWorkbenchVerifiedManualReports({databaseUrl, mode?:'check'|'apply'})
 | Proof/预算、重放/撤权/回滚、迁移 | [proof/resources](../../../tests/t18-candidate-proof-resources.test.mts)、[admission boundaries](../../../tests/t18-verified-admission-boundaries.integration.test.mts)、[迁移入口](../../../tests/t18-required-migrations.integration.test.mts) |
 | 拒绝与恢复 | [明确回退](../../../tests/t18-candidate-refusal.browser.test.mts)、[选择与 UNKNOWN 恢复](../../../tests/t18-selection-recovery.browser.test.mts)、[拒绝 codec](../../../tests/t18-rejection-contract.test.mts)、[拒绝账本](../../../tests/t18-rejection-ledger.integration.test.mts)、[提交后拒绝](../../../tests/t18-postcommit-refusal.browser.test.mts) |
 
-## 代录后由本人立即处理（WBINT-T19，SOURCE合同，尚未挂载）
+## 10. 代录后由本人立即处理（WBINT-T19）
 
-本节是#74的冻结输入／输出与首个HTTP tracer准备，不是已经提供的接口。当前生产源码未改，build、strict、tracer、PG、browser均`NOT_RUN`；[本票记录](../../../plans/admin-workbench-integration/execution/t19.md)列出全部七项remaining。T17普通受理的字段、canonical payload/hash、既有命令结果及恢复语义保持原合同。T18核实成员未纳入本片。
+当前已挂载以下入口，相关开关默认关闭。原四份冻结合同和首个 HTTP 用例保持原字节；本节及[本票执行记录](../../../plans/admin-workbench-integration/execution/t19.md)记录实际实现和隔离验证。T19 仅接受 UNVERIFIED 手填报修人。已有 VERIFIED_SELECTION 意图必须沿 T18 明确操作，不能静默改人、降级或转成复合命令。
 
-| 候选方法与路径 | 冻结合同 |
+| 方法与路径 | 合同 |
 | --- | --- |
-| `GET /api/workbench/reports/self-handling-context` | W／READ ONLY；当前创建权限及真实活动组成员资格；闭合`{can_take_and_start,resolver_teams:[{id,name}],manual_contact_required:true,external_notification:false,draft_recovery_enabled}`。仅返回当前操作者合法活动组，稳定按id排序，最多100；超限明确503，不截断成完整候选。仍有普通代录创建权但无合法处理组时false＋空数组；已失去当前创建权继续403，不授予新的读取权限 |
-| `POST /api/workbench/reports/take-and-start` | W／同源Origin／CSRF／16KiB／UUID Idempotency-Key与body一致；T17原闭合body只增加必填`resolver_team_id`；首次完成202、相同原意图重放200。姓名、联系方式仍UNVERIFIED；目标处理人固定当前authenticated principal |
-| `GET /api/workbench/reports/commands/{commandId}` | 复用原MANUAL_REPORT用途READ ONLY核对；UNKNOWN／FAILED／COMMITTED语义不变；原principal＋当前创建权限及原恢复开关重新核验，不写账本，不发送新命令 |
+| `GET /api/workbench/reports/self-handling-context` | W、READ ONLY；当前创建权限和真实活动组成员资格。闭合 `{can_take_and_start,resolver_teams:[{id,name}],manual_contact_required:true,external_notification:false,draft_recovery_enabled}`。稳定按 id 排序、最多 100 组；超过上限明确 503。仍有创建权但无合法组时返回 false 和空数组，真实失权返回 403 |
+| 同一 GET 的 `?resolver_team_id={原组}` | 只允许这一单值参数。恢复时精确核验已捕获组的当前有效成员资格，不以有界候选列表缺项认定失权；未获权组 403。返回同一闭合 context，仅含该组，不扩大候选页或权限 |
+| `POST /api/workbench/reports/take-and-start` | W、同源 Origin、CSRF、16 KiB、UUID Idempotency-Key 与 body 一致。T17 原闭合 body 增加必填 `resolver_team_id`；首次完成 202、同原意图重放 200。处理人固定为当前认证人员 |
+| `GET /api/workbench/reports/commands/{commandId}` | 原 MANUAL 用途只读 UNKNOWN／FAILED／COMMITTED 核对。按原主体、当前创建权、当前真实会话有效期及原恢复开关重新核验，不写账本或发送命令 |
 
-输入[Schema](../../../contracts/workbench_manual_report_self_handling_command.schema.json)、[当前组上下文](../../../contracts/workbench_manual_report_self_handling_context.schema.json)、[成功结果](../../../contracts/workbench_manual_report_self_handling_result.schema.json)及[类型](../../../contracts/workbench_manual_report_self_handling_contracts.d.ts)为候选合同。结果沿原闭合`ManualReportResult`，成功必须`ticket.status=IN_PROGRESS`、`review=null`、`result_code=TICKET_ELIGIBLE|SERVICE_REQUEST`，无额外联系方式、actor声明或未知字段。受理后当前版本、责任与轮次由原获权Ticket查询读取。
+输入 [Schema](../../../contracts/workbench_manual_report_self_handling_command.schema.json)、[context](../../../contracts/workbench_manual_report_self_handling_context.schema.json)、[结果](../../../contracts/workbench_manual_report_self_handling_result.schema.json)和[类型](../../../contracts/workbench_manual_report_self_handling_contracts.d.ts)保持原合同。成功仍为闭合 ManualReportResult，必须有 `ticket.status=IN_PROGRESS`、`review=null` 和 `result_code=TICKET_ELIGIBLE|SERVICE_REQUEST`。无现存 Ticket 的新报修只接收 `schema_version:1`，不接收虚构 expected_version 或浏览器 actor／状态／身份绑定。
 
-新报修尚无Ticket／Review／Intake对象版本，body使用`schema_version:1`，不接收虚构`expected_version`或If-Match。服务器在唯一新Core上以真实版本执行accept→start，成功首轮cycle1有真实accepted事件、操作者、选定活动组及原命令依据。新入口同时要求既有`workbenchManualReportsEnabled=false`与`ticketSelfHandlingEnabled=false`的显式启用以及033／039／042 readiness；一个开关关闭即拒绝新操作。恢复还要求原`workbenchDraftRecoveryEnabled=false`，既有普通受理及已存恢复不因此改变。
+两个入口同时要求显式启用 `workbenchManualReportsEnabled` 和 `ticketSelfHandlingEnabled`，以及原 033／039／042 readiness。ADMIN、DISPATCHER、HANDLER 均须具有当前创建权，并实际属于所选活动处理组；ADMIN 身份不替代成员资格。选组可不同于 Core 默认组，多组必须明确选择。receipt、人员／角色／成员／组、Ticket 和业务锁等待后重新核验；最终真实 session 行锁结束后，在事务提交前用新语句重验物理有效期，退出或到期不能只改变响应而留下已提交业务。
 
-原当前角色与创建权限仍必需；ADMIN／DISPATCHER也必须实际属于所选活动处理组。新组不要求等于Core默认组，而是该次建单时传入合法选定组；多组明确选择，不默认挑首个。锁后重新核验实际principal／角色／成员／组有效性，重放前也执行当前授权。浏览器不得声明actor、处理人、Person／WeCom身份、Conversation或业务状态。实际Reporter由T17原快照保存，Recorder为服务器认证主体，Handler为本次实际承接者；Recorder与Handler本次可同人，仍是两项独立事实。
+沿原 `WORKBENCH_MANUAL_REPORT` 用途和 `P2_016:<actor>` scope，在同一账本事务及业务 savepoint 内持久化 Intake、来源快照、Journey／MANUAL Leg、Decision、唯一 Unified Ticket Core、显式 accept→start、首轮 cycle1 和 created→accepted→started 追加事件。新 canonical action 为 `manual-report-take-and-start`；普通 `manual-report` canonical、hash、receipt 结果保持。相同 UUID 跨 action、改组或改正文返回 409；同原 UUID 的并发或重放只有一个受理和 Ticket。
 
-一次原MANUAL_REPORT账本事务包含T17原持久Intake／来源快照／Journey／MANUAL Leg／Decision／规则动作、唯一Core Ticket、原显式accept／start及039轮次／事件关联。新action `manual-report-take-and-start`只用于新分支原command hash，原普通`manual-report`canonical对象及hash完全不变；同UUID跨action或改组／描述返回409，不建第二单。复用原purpose和receipt，不新建owner、receipt、Ticket表或Conversation；当前计划无新增SQL，若后续真实RED证明结构不足，先向父任务申请编号。历史001–042与旧Evidence不改。
+规则要求 Review、没有合法最小 Ticket、不能承接或开始失败时，业务全部回滚并保存原稳定 FAILED 回执；失败重放不重新执行。原始报修人、代录人和本次处理人分别来自手填快照、真实认证人员和实际责任事件。PHONE／ON_SITE 来源独立保存。没有新增 Person、长期 Ticket／owner／receipt 表、SQL／DDL 或虚构 Conversation；也不生成外部通知、Communication／Outbox／Delivery 或 Reporter Grant。工作人员仍须人工联系报修人。
 
-原规则要求Review、没有合法最小Ticket或不能承接时，复合操作明确失败，业务事实全部回滚；不能成功返回仅Review或声称部分受理／责任已成功。既有`POST /api/manual-reviews/{reviewId}/resolve`的显式`CONFIRM_TICKET_ELIGIBLE`／`CLASSIFY_SERVICE_REQUEST`只适用于已持久Review、当前授权和原版本，可产生QUEUED／未分配Core。新表单没有可直接代用的已有Review对象，也不把“由我处理”当作该人工确认；复核到处理沿所属T15合同。工作人员可明确选择普通T17受理，按规则持久Review；前端不得失败后自动补普通POST或串行调用旧接单／开始伪装原子成功。
+正式页面为 `/workbench/app/reports/new?handling=self`，从原新报修表单明确选择“由我处理”，再明确选择本人处理组。已核实选择和未定操作不能被模式切换覆盖。成功文字只描述该次命令的历史结果；后续合法转派或完结不会改写原回执，当前状态、责任、版本与轮次仍须在原获权 Ticket 查询中读取。
 
-FAILED保留原失败账本，业务savepoint全部回滚；同UUID失败重放不重新执行。事务失败HTTP503沿原稳定错误；认证401、权限403、闭合输入400、变意图409、关闭／缺readiness503。UNKNOWN保留原UUID及完整body，显式GET核对；找不到终态不等于未提交。不自动换UUID、改group／版本、降为普通受理或重复POST。已提交结果只取原回执，不从Core当前状态猜旧命令结果。
+草稿复用 T03 当前浏览器 AES-GCM、不可导出 key、每份 16 KiB／最多 20 份及首次保存固定 24 小时；使用独立 `manual-report-self-handling` 用途和原固定槽位，保留完整输入、原组与一次性原 UUID。恢复先核验当前人员、创建权和精确原组；目录不参与 UNVERIFIED 分支。UNKNOWN 只能显式 GET 核对，不能自动 POST、换 UUID／组、降级普通受理或串行补旧接单。401／403／404、可信撤权或过期清理敏感明文／密文，仅保留规定 opaque 未定操作标识；网络／5xx 保留真实未定原意图。异步保存或清理的迟到结果受原 generation／当前 capture 围栏约束，不能覆盖后来的撤权或新意图。清理未确认时禁止新提交。
 
-正式T17新表单将保留“提交报修”，在当前context获准时增加“由我处理”与明确组选择。新action草稿使用T03同一当前浏览器AES-GCM／不可导出key／首次保存固定24h，独立`manual-report-self-handling`用途与T17固定槽位，保存原body、mode和UNKNOWN UUID，不改普通`manual-report`草稿。恢复前重新验当前principal、创建权与所选真实组；成功／丢弃／退出／失权／过期沿原清理，UNKNOWN只留规定opaque核对元数据。连接与epoch围栏复用T38，不从动画或点击推导提交成功。此段前端尚未实现或验证。
+实现：[原代录服务](../../../src/workbench-manual-reports.mts)、[表单](../../../web/admin-workbench/src/features/manual-report/ManualSelfHandlingForm.tsx)、[独立用途草稿](../../../web/admin-workbench/src/features/manual-report/use-manual-self-handling-draft.ts)、[闭合 codec](../../../src/workbench-manual-self-handling-browser-contracts.mts)。资源沿单 App／Worker、Gateway 单活、SSE32、共享 pool4／总预算8、单表单 in-flight1，无新常驻 worker。关闭任一入口依赖停止新复合命令，已存受理、责任、轮次、事件和原回执保留；原 GET 核对按自身代录／恢复开关及现权工作。关闭 `workbenchDraftRecoveryEnabled` 停止本用途恢复，不改变已存事实。
 
-本票无目录网络依赖，现有UNVERIFIED电话／现场路径在目录不可用时可使用；保留人工联系提示，零新增Message／Communication／Outbox／Delivery／Reporter Grant或外发。资源沿单App／Worker、Gateway单活、SSE32、共享pool4／总预算8，单表单in-flight1，无新worker／timer。关闭任一新入口依赖隐藏按钮、拒绝新复合命令；已提交受理、责任、轮次、事件及原回执保留。尚未运行的验证覆盖授权／合法组、默认关闭／缺readiness、规则Review拒绝、完整回滚、并发／原UUID冲突、原T17恢复兼容、UNKNOWN、撤权、固定24h和真实production bundle；不能据本合同推导已验收。
+原 first 4280B 的真实 404→202、正式 bundle 控件 RED→GREEN、后续真实权限／会话／恢复风险和当前必要消费者结果见执行记录及 D 盘原件。历史失败、observer 错误与未到达断言均保留。本地隔离验证不等于真实目录、外发、部署、full／certify、阶段 Gate 或生产批准。
+
+### SOURCE 准备历史（保留原记录）
+
+以下各次有限 SOURCE 同步记录描述其当时尚未实施、NOT_RUN 的事实；当前状态以上文和最新执行记录为准。
+
 
 ### 2026-10-14 SOURCE 同步与后续验证边界
 
