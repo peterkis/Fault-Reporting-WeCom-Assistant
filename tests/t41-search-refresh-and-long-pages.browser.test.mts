@@ -18,7 +18,7 @@ async function settle(runtime:P2016EnabledRuntime){
  const initial=await runtime.coordinator.backlog(),bound=Math.ceil(initial.total/runtime.coordinator.batchSize)+3;
  for(let step=0;step<bound;step++){
   const inbound=await runtime.coordinator.runOnce(),material=await runtime.realtimeProjector.runOnce({limit:100});
-  assert.ok(inbound.streams.every(stream=>stream.failures.length===0));
+  assert.ok(inbound.streams.every(stream=>stream.failures.length===0),'SETUP_INCOMPLETE_PUBLICATION '+JSON.stringify(inbound.streams.filter(stream=>stream.failures.length!==0)));
   if(!inbound.processed&&!material.processed&&(await runtime.coordinator.backlog()).total===0)return;
  }assert.fail('bounded synthetic search fixture projection did not settle');
 }
