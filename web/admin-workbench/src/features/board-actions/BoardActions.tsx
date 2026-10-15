@@ -93,7 +93,10 @@ export function BoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null);
   const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
-  return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')}>
+  return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')} onClickCapture={event=>{
+    const link=event.target instanceof Element?event.target.closest('.card-open'):null,selection=window.getSelection();
+    if(event.detail>0&&link&&selection&&!selection.isCollapsed&&link.contains(selection.anchorNode)&&link.contains(selection.focusNode))event.preventDefault();
+  }}>
     {children}
     {context.enabled?<div className="board-action-tools">
       <button ref={handleRef} type="button" data-action="board-drag-handle" disabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用右侧业务动作按钮">移动</button>

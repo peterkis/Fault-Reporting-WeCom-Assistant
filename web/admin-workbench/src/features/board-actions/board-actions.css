@@ -1,6 +1,7 @@
 .board-drop-column { min-width: 0; border-radius: var(--r-xl); }
 .board-drop-column.is-drop-target { outline: 2px solid var(--accent,#2563eb); outline-offset: 3px; }
 .board-action-card { min-width: 0; }
+.board-action-card .card-open,.board-action-card .card-open h3 { user-select: text; -webkit-user-select: text; }
 .board-action-card.is-dragging { outline: 2px dashed var(--accent,#2563eb); border-radius: var(--r-lg); }
 .board-action-tools { position: relative; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 var(--s-7) var(--s-5); }
 .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border,#d5dce5); border-radius: 7px; background: var(--bg,#fff); color: var(--text-1,#243044); }
