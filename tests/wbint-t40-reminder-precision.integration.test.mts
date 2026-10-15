@@ -12,10 +12,14 @@ async function increment(f:T40ReminderRiskFixture,b:Record<string,unknown>){
   const r=await f.http.get('/api/workbench/reminders?'+new URLSearchParams({after_event_id:text(b.as_of_event_id),baseline_token:text(b.baseline_token)}));assert.equal(r.status,200);assert.equal(r.value.reset_required,false);assert.ok(Array.isArray(r.value.items));return r.value.items.map(object);
 }
 async function assertOriginalInitialEventPublished(f:T40ReminderRiskFixture,id:string,b:Record<string,unknown>){
-  const events=await f.pool.query<{event_id:string}>(`SELECT e.event_id::text FROM conversation.realtime_event e JOIN conversation.session s ON s.id::text=e.aggregate_id
-    JOIN pilot_ticket.ticket t ON t.source_intake_id=s.service_intake_id WHERE t.id=$1::uuid AND e.event_type='conversation.session.created'
-      AND e.aggregate_type='CONVERSATION_SESSION' AND e.event_id>$2::bigint`,[id,text(b.as_of_event_id)]);
-  assert.ok(events.rows.length>0,'the original coordinator must actually publish this Intake initial session after the baseline watermark');
+  const events=await f.pool.query<{event_id:string}>(`SELECT e.event_id::text FROM pilot_ticket.ticket t
+    JOIN intake.service_intake i ON i.id=t.source_intake_id JOIN conversation.session s ON s.service_intake_id=i.id
+    JOIN conversation.item ci ON ci.session_id=s.id AND ci.source_type='CHANNEL_MESSAGE' AND ci.source_id=i.primary_message_id::text AND ci.item_type='USER_MESSAGE'
+    JOIN conversation.realtime_event e ON e.source_id=ci.id::text AND e.aggregate_id=ci.id::text
+    WHERE t.id=$1::uuid AND e.publisher_name='CONVERSATION_TIMELINE_PROJECTOR' AND e.source_type='CONVERSATION_ITEM'
+      AND e.event_type='conversation.item.created' AND e.aggregate_type='CONVERSATION_ITEM'
+      AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id::text AND e.event_id>$2::bigint`,[id,text(b.as_of_event_id)]);
+  assert.ok(events.rows.length>0,'the original coordinator must actually publish this Intake original primary item after the baseline watermark');
 }
 test('T40 genuinely new team report in the same business second is a new authorized reminder',async()=>withT40ReminderRiskFixture(async f=>{
   await f.setTeams(['PILOT_IT']);const second=await align(f),b=await baseline(f),id=await f.createTeamReport();

@@ -3,6 +3,9 @@ import {createHash,createHmac,randomBytes} from 'node:crypto';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
 import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
+import {createChannelMessageInbox} from '../../src/p1-003-channel-message-inbox.mjs';
+import {createP2016DirectIntakeProcessor} from '../../src/p2-016-direct-intake.mjs';
+import {createP2G1HumanOnlyAssembly} from '../../src/p2-g1-human-only-assembly.mjs';
 import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
 import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
 import {createContactJourneyStore} from '../../src/p2-015-contact-journey.mjs';
@@ -161,12 +164,16 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         for(let attempt=0;attempt<20;attempt++){await runtime.coordinator.runOnce();if(object(await runtime.coordinator.backlog()).channel_messages===0)break;}
         assert.equal(object(await runtime.coordinator.backlog()).channel_messages,0);
       };
+      const deferredInbox=createChannelMessageInbox({pool:base.pool}),deferredProcessor=createP2016DirectIntakeProcessor();
+      const deferredAssembly=createP2G1HumanOnlyAssembly({projectAfterCommit:false,operationalIntake:{accept:(input:unknown)=>deferredInbox.accept(input,deferredProcessor)}});
       const createTeamReport=async({project=true}:{project?:boolean}={})=>{
-        const msgid='t40-new-'+randomUUID(),accepted=object(await runtime.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},body:{msgid,aibotid:'bot-test',chattype:'single',from:{userid:'t40-reporter-'+randomUUID()},msgtype:'text',text:{content:'报修：T40全新的隔离合成设备故障。'}}}));
+        const msgid='t40-new-'+randomUUID(),assembly=project?runtime.assembly:deferredAssembly;
+        const accepted=object(await assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},body:{msgid,aibotid:'bot-test',chattype:'single',from:{userid:'t40-reporter-'+randomUUID()},msgtype:'text',text:{content:'新报修：T40合成打印机打印不了。'}}}));
         assert.equal(accepted.ok,true);const intakeId=text(object(object(accepted.result).intake).id);
-        const intake=(await base.pool.query<{created_at:string}>("SELECT to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at FROM intake.service_intake WHERE id=$1::uuid",[intakeId])).rows[0];assert.ok(intake);
+        const intake=(await base.pool.query<{created_at:string;request_type:string;status:string}>("SELECT to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,request_type,status FROM intake.service_intake WHERE id=$1::uuid",[intakeId])).rows[0];assert.ok(intake);
+        assert.equal(intake.request_type,'INCIDENT');assert.equal(intake.status,'RECEIVED');
         const created=await createPilotTicketCore({pool:base.pool}).createForIntake({intakeId,occurredAt:assertLocalDateTime(intake.created_at),traceId:msgid});assert.ok(created.ticket);
-        if(project)await publishPendingReports();else assert.ok(Number(object(await runtime.coordinator.backlog()).channel_messages)>0);
+        if(project)await publishPendingReports();else {assert.equal(object(accepted.projection).deferred,true);assert.ok(Number(object(await runtime.coordinator.backlog()).channel_messages)>0);}
         return created.ticket.id;
       };
       const prepareClosedRelatedTicket=async()=>{

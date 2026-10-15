@@ -81,7 +81,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         const sql=CARD_SQL+`, eligible AS (
           SELECT cards.*,(${RELATED_CARD_SQL}${followEnabled?` OR ${FOLLOW_CARD_SQL}`:''}) AS related FROM cards
         ), anchors AS (
-          SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id,i.source_provider,i.primary_web_submission_id
+          SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id,i.source_provider,i.primary_web_submission_id,i.primary_message_id
           FROM eligible c JOIN intake.service_intake i ON i.id=c.intake_id::uuid AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
           WHERE i.source_provider<>'YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM intake.web_request_binding binding
             WHERE binding.intake_id=i.id AND binding.revoked_at IS NULL AND binding.retention_until_epoch_ms>platform.physical_epoch_ms())
@@ -98,7 +98,12 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           FROM anchors a JOIN conversation.realtime_event e ON
             (e.aggregate_type='TICKET' AND a.kind='ticket' AND e.aggregate_id=a.id
              OR e.aggregate_type='MANUAL_REVIEW' AND a.kind='review' AND e.aggregate_id=a.id
-             OR e.aggregate_type='CONVERSATION_SESSION' AND EXISTS(SELECT 1 FROM conversation.session s WHERE s.id::text=e.aggregate_id AND s.service_intake_id=a.original_id))
+             OR e.aggregate_type='CONVERSATION_ITEM' AND e.source_type='CONVERSATION_ITEM' AND EXISTS(
+               SELECT 1 FROM conversation.item ci JOIN conversation.session s ON s.id=ci.session_id AND s.service_intake_id=a.original_id
+               JOIN channel.message_inbox m ON m.id=a.primary_message_id AND ci.source_id=m.id::text
+               WHERE ci.id::text=e.aggregate_id AND ci.id::text=e.source_id AND ci.source_type='CHANNEL_MESSAGE' AND ci.item_type='USER_MESSAGE'
+                 AND e.authorization_scope_type='SESSION' AND e.authorization_scope_id=s.id::text
+                 AND ci.retention_until_epoch_ms>platform.physical_epoch_ms() AND m.retention_until_epoch_ms>platform.physical_epoch_ms()))
           WHERE (a.initial_at>$4::timestamp OR (a.initial_at=date_trunc('second',$4::timestamp) AND (
             -- These two original admission paths omit id and use the server's native uuidv7 default.
             a.source_provider IN ('WECOM_AIBOT','STAFF_MANUAL_REPORT') AND uuid_extract_version(a.original_id)=7
@@ -110,7 +115,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           ))) AND (
             e.source_type='TICKET_EVENT' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_event first_event WHERE first_event.event_id::text=e.source_id AND first_event.event_type='ticket.created')
             OR e.source_type='MANUAL_REVIEW' AND e.event_type='manual_review.created'
-            OR e.source_type='CONVERSATION_SESSION' AND e.event_type='conversation.session.created')
+            OR e.source_type='CONVERSATION_ITEM' AND e.event_type='conversation.item.created')
           UNION ALL
           SELECT a.kind,a.id,'RELATED_REOPEN',
             'ticket-event:'||te.event_id::text,te.aggregate_version::text,te.created_at,e.event_id
