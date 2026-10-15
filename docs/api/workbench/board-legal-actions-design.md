@@ -1,48 +1,41 @@
-# T42 合法拖动：未构建、未运行的 SOURCE 候选
+# T42 看板合法动作与本地表单路由
 
-本页为 Issue97／WBINT-15 A15 的 SOURCE 候选。合同基线为 `PROPOSED / NOT_MOUNTED`，后继已准备适配源码，全部 `NOT_BUILT_NOT_RUN`，不宣称运行中挂载或业务通过。现有 [看板](board.md)、[Ticket](tickets.md)、[复核](manual-reviews.md) HTTP 路径状态不变。本票不增加业务 HTTP 命令、权限、Ticket 状态、数据库表、迁移或台账；所有原 Schema／SQL 保持原字节。
+本页对应 Issue97／WBINT-15 A15。本地隔离实现和定向验证已完成，父原七验收、独立合并及 GitHub 关闭另行执行。功能被测提交 `86190fc4d8fd96a6300d3f4b7c6c19e0638fa662`，MF `4a4d4826870894067e156d313043cc6bd52d72482d54cfb0a65f6c8e9bee9aa3`；文档普通后继不重绑该对象。运行范围和历史失败见 [本票执行记录](../../../plans/admin-workbench-integration/execution/t42.md)。所有持久开关仍默认 false，无真实外部发送或部署。
 
-## 输入、输出和当前动作
+## 输入、输出与现有业务入口
 
-本地 [intent Schema](../../../contracts/workbench_board_action_intent.schema.json) 只含 `kind,id,source_column,target_column`；[resolution Schema](../../../contracts/workbench_board_action_resolution.schema.json) 为打开原表单、同列无变化、不可用三种闭合结果。[独立类型](../../../contracts/workbench_board_action_intent_contracts.d.ts) 不接受 actor、身份、凭据、正文、版本、UUID、目标状态或任意额外字段。来源列只是手势开始时的显示信息，不是提交授权，也不是命令版本。
+[intent Schema](../../../contracts/workbench_board_action_intent.schema.json) 只含 `kind,id,source_column,target_column`；[resolution Schema](../../../contracts/workbench_board_action_resolution.schema.json) 只产生打开原表单、同列无变化或不可用三类闭合结果。[类型](../../../contracts/workbench_board_action_intent_contracts.d.ts) 不接收 actor、凭据、正文、版本、UUID 或任意目标状态。来源列仅是手势开始时的显示信息，不能授权或代替命令版本。四份原合同和原首例保持冻结字节。
 
-| 显示意图 | 重新读取当前对象后打开的原表单 | 仍由原表单明确捕获与提交 |
+| 本地显示意图 | 当前获权查询后打开的既有表单 | 明确提交的原用途 |
 | --- | --- | --- |
-| Ticket 待受理 → 处理中 | 本人合法一步处理；需要接管时沿当前获权接管表单 | 原 self-handling／takeover 命令；相关沟通必须明确选择或保留，不串联责任命令 |
-| Review／Intake 待受理 → 处理中 | 当前规范事项的复核表单；无可读待复核项时提示不可用 | T15 的当前材料、明确合法结论／原因、原组和可选沟通；未作结论不得提交 |
-| Ticket 处理中 → 已关闭 | T11 当前工作人员完工；如需合法接管完工只用 T12 原表单 | 独立内部过程与安全对外摘要、确认、版本和轮次；不自动复制正文 |
-| Ticket 已关闭 → 待受理 | T20 已挂载的工作人员重开表单 | 当前 `reopen` 动作、`STAFF_REOPEN`、明确原因和版本；不用 Reporter feedback |
-| 同列 | 无操作，不保存排序 | 无命令 |
-| 其他落点／对象／当前无动作 | 明确不可用提示 | 无命令 |
+| Ticket 待受理→处理中 | 原合法一步处理／必要的获权接管 | 原 self-handling／takeover；相关沟通明确选择或保留，禁止串联责任写入 |
+| Review／Intake 待受理→处理中 | 当前规范事项的原复核表单 | T15 当前材料捕获、明确结论／原因、组与真实沟通选择；无结论不得提交 |
+| Ticket 处理中→已关闭 | T11／T12 原工作人员完工表单 | 原版本／轮次、内部处理记录、独立安全对外摘要与明确确认 |
+| Ticket 已关闭→待受理 | T20 当前获权工作人员重开 | 原 `STAFF_REOPEN` 和明确原因；不借 Reporter feedback |
+| 同列或非法落点 | 同列不写；其他明确提示不可用 | 不保存列内手工排序，不增加状态 PATCH |
 
-这里只列路由意图，不能把 `ACCEPTED`、`RESOLVED`、`CANCELLED` 等显示归列推成任意状态转换。打开后使用原 `GET /api/workbench/items/{kind}/{id}`、Ticket／Review 当前 GET 和目标 GET；规范 alias、当前角色／READ／范围／材料／版本仍由原路径核验，提交事务锁后再次核验。没有当前获权动作就保留原位置并说明，不增隐式接管、确认、成员反馈或 grant。
+正式页面 `/workbench/app/` 继续读取原 `GET /api/workbench/items/{kind}/{id}`、Ticket／Review 与所选目标 GET；提交仍通过本索引已有处理、复核、完工和重开 HTTP。当前身份、READ／范围、角色、材料、版本、责任和锁等待后的权限由各原业务服务核验。T42 无新业务 URL、数据库表／迁移、台账或第二 Ticket Core；46 份原 SQL 未改。
 
-## 原命令和交互边界
+## 位置、原命令与当前授权
 
-拖动、按钮及键盘只进入同一目标表单，不自动 POST。业务 UUID、purpose、完整不可变 body、UNKNOWN 核对及显式原 body 重放继续由原功能控制器持有；T42 不另建 receipt、草稿平台或第二套 Ticket Core。取消表单入口不调用丢弃正文；原输入、原目标、版本与未知命令须继续保留，原控制器未确认可以离开时不得卸载它。401 和真实对象／用途拒绝仍沿原当前授权清理，不以列表缺席推导失权。
+拖动、按钮与键盘只打开同一合法表单，确认前零 POST。原控制器继续持有 purpose、原 UUID、完整 body、版本、UNKNOWN／冲突和原 24h scoped recovery；T42 不另建命令或草稿事实源。明确确认后仅调用原合法命令，正式列位置来自当前获权官方查询。取消、UNKNOWN 或409后读取真实位置并保留完整原意图，不能乐观搬列、生成新 UUID、猜测成功或 autoPOST。原 T04 无专用只读 ACK 时，显式核对仍是原 UUID／原 body 的 POST 重放，不把它称 GET。
 
-卡片始终来自获权官方查询，不能通过拖动先改列。取消、冲突或未知后重新读取真实位置；UNKNOWN 可能已提交，不能将它当成未提交或强放回旧列。读取到 COMMITTED 及其后续当前事实时，显示官方现状；新版本、新 UUID 或重试都必须是明确的人类意图。SSE 只刷新获权事实，不能替换当前选中的对象、手势目标或原 body。
+意图提示只使用与当前 route item、当前 READ 代次相符的官方 detail.column：已到目标时显示“官方已显示”，不再声称尚未提交。列匹配不能证明本 UUID 已提交，不能清除 UNKNOWN、冲突、输入或原控制器。两处完整页 Link 保留 route state；原控制器未确认可离开时不得卸载。可信401清会话，原对象／用途403或404沿既有 item 清理和当前看板重读；列表缺席不成为授权结论。SSE只刷新当前获权事实，不重定向当前操作对象或替换原 body。
 
-实施沿现有锁定的 `@dnd-kit/react`；仅显式手柄启动，按键与替代按钮走相同入口。正文选择、链接、菜单、输入及滚动不启动拖动；Esc 取消并恢复焦点，不清输入。保持原有分页／折叠和服务端排序，不增加持久列内顺序、全量预载或常驻计时器。减少动态不作移动动画，窄屏和长文以真实生产 bundle 验证，不靠原型截图证明。
+## 手势与资源边界
 
-## 默认关闭、资源与回退
+锁定 `@dnd-kit/react` 0.5：仅显式手柄启动；替代按钮和完整 native Enter 走同一入口。正文选择、链接、菜单、输入、滚动不误拖；非折叠的当前链接内选区阻止该次指针跳转，普通点击及键盘 click 不被拦截。Esc取消、恢复焦点并保留原输入。600／900／1920宽度、长文、减少动态、滚动、键盘、菜单及SSE目标保留已有真实生产 bundle 证据，不能外推未执行的触屏／辅助技术设备矩阵。
 
-候选源码中的宿主 `workbenchBoardActionsEnabled:boolean=false` 经原 `/api/lifecycle/bootstrap` 序列化 [能力片段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled`，仅当存在原已启用动作能力才广告 true；缺字段按 false。源码未构建、未运行，不能宣称已在实际服务启用；URL、localStorage 和生产环境变量不能旁路开启。实际动作仍各自要求原 feature flag／Schema／当前权限；T42 开启不替代这些条件。关闭拖动能力时保留稳定的 Provider 和原业务子树；单个 manager 包装实例仍在，但 sensors／plugins／modifiers 为空，不显示拖动入口、不接受新拖动。这样不会因关闭 T42 而卸载原 UNKNOWN 控制器或未保存表单；原详情按钮、原 UUID／完整命令及业务事实保留，不回滚已提交处理。无数据库变更，无新 SSE／Worker／连接池；沿单 App／Worker、Gateway 单活、SSE32、池预算≤8及通信并发1；禁止真实外部发送。
+反馈使用 clone、dropAnimation=null：副本留原槽，原 DOM 在手势中可暂随指针移动；这不是业务列或事实移动。初始化不再挂阻塞库 rendering 的冗余 beforeDragStart 回调；原 disabled／blocked、当前 READ、intent与原命令前提保持。没有新 timer、SSE、Worker、发送器或连接池；沿单 App／Worker、Gateway单活、SSE32、池≤8、通信并发1，业务验证 native concurrency=1、flags=[]、每文件请求预算240000ms。
 
-## 冻结首例和未来验证
+## 默认关闭与回退
 
-已登记 `tests/wbint-t42-board-legal-action.browser.test.mts`：原 PG fixture／真实 Cookie HTTP／正式 `/workbench/app/assets/` bundle，1920 指针手柄拖到处理中→无中间 POST／原位置仍在→原表单明确点击→唯一原 UUID／If-Match／完整命令→当前 HTTP 与看板查询一致；标准900 PNG和清理沿原协议。未实施基线 `bf8f763325a767d84f3331c3cb63f4cf9a5f09db` 中 fixture 尚不接该选项、没有拖动入口；后继只增加默认 false 的必要 pass-through，原 helper 两份字节已外置保留。原首9441B／SHA256 `bb9a7abfe6fbb9c670e7d24bcaeb622858fa00f540ef2bb195511ae01da9e339`及四份合同保持冻结。基线注释是该时点记录，不改写为当前候选观察；目前没有真实 RED／GREEN。
+宿主 `workbenchBoardActionsEnabled:boolean=false`，原 bootstrap 的[可选能力字段](../../../contracts/workbench_board_action_capability.schema.json) `board_actions_enabled` 缺失按false，且只有既有动作能力启用才广告true。URL、localStorage或生产环境变量不能旁路开启；本地 fixture 的显式 opt-in 不授生产批准。关闭时隐藏拖动／移动入口，稳定 Provider 与业务子树继续挂载，单个 inert manager 的 sensors／plugins／modifiers为空；不声称零对象分配。已打开原表单、UNKNOWN／原 body／未保存输入与已提交事实保持，回到既有按钮操作，不需数据库回滚。
 
-候选还登记闭合意图 Contract／Unit、真实 bootstrap opt-in Integration 和三条生产浏览器风险源码（长文／600窄屏／减少动态、键盘／Esc／正文选择／滚动／取消保输入、丢ACK原body显式核对、实际并发409与当前SSE兼容目标保留）。它们均未运行。409 时原表单在 T42 模式保留完整原命令和原 purpose，不先结算本地 marker；明确采用当前事实时才清该 marker，保留填写内容并允许新意图。新的本地清理回调沿账号 epoch／组件代次 fence，不建立新存储。普通 T04 没有专用 GET ACK 时，显式核对仍是旧用途原 UUID／原 body 的 POST 重放；不把它称只读请求。
+## 证据与历史边界
 
-后续 WHOLE 先在记录的未实现 baseline 运行同字节原首得到真实 RED，才实施最小竖切并获取同例 GREEN。随后按原七补合法 Review／完工／重开、取消／UNKNOWN／409／真实失权和迟到对象、按钮／键盘／Esc、控件／选择／滚动／SSE、长文／窄屏／减少动态所需证据；这些目前均 NOT_RUN，不预写模拟通过或整票验收结论。
+真正未实施 baseline `bf5665b4ef89c7b149951c0e647ec3f70e6e9e42` 原9441B首例在008真实缺手柄 RED，随后普通合并进入产品并保留 accepted T41 `f146aeb7` 祖先。同字节首例在029及045 GREEN。045是12项11PASS1FAIL，046完工／重开1PASS，最后055仅新Review观察等待校准后1PASS；按未变生产 source/runtime 精确tuple复用，共覆盖8个唯一文件13项，不能称一次whole全部通过。047相关8文件24PASS；048三个具名工具与049具名retired-T02分别3PASS／1PASS。
 
-## 2026-10-15 能力关闭时的组件身份修补（SOURCE_ONLY）
+048外层耗时630136.65ms超过原240000ms，budget=false；三个工具内部 synthetic clone builds 与产品每候选一次构建分列，未跑full hosts／batches／full／certify。048实际156 loaded中153字节可读、3个Vite临时配置已删除；049实际5 loaded中4可读、1个virtual eval无文件，均未重建或补签。构建原大chunk警告保留。
 
-初审候选 fe3928977f86e417f6b27bd3286bdb2400d447c4 在关闭能力时由 Provider 子树切成 Fragment，会卸载原详情与控制器，可能丢失未确认命令／输入；这是具体源码因果，尚无 runtime RED。普通 test-only 后继 4224030d6c3f5d3789ea4a136a6769f397e4cffa 固化两个新公开浏览器回归源码：实际原 T04 POST 丢 ACK 后，能力回落仍保原 UNKNOWN 和显式原 body／UUID 重放；未提交普通备注保持原 DOM 与正文。测试只在真实成功 bootstrap 响应上前向关闭可选 T42 字段，属于 SYNTHETIC_CAPABILITY_FALLBACK；实际身份、业务开关、HTTP／Core／原回执不模拟成功，不冒充服务端动态开关实测。
-
-后继最小修补仅保留相同 Provider／children 位置并关闭拖动传感器／插件／modifier；不改原业务控制器、台账或合同。原未实施 bf8f、原9441B first、四合同及46旧SQL保留；本次新baseline／源码／raw／canonical见 D:/wecom-workbench-evidence/t42/prepared/source-capability-off-forward-20261015/。所有类型／构建／制品／测试仍 NOT_BUILT_NOT_RUN，七项 PENDING。未来 WHOLE 应在4224030d固定修前对象实际运行同字节新case，再核后继；静态修补不是RED／GREEN或验收。
-
-同轮初审另外两项具体因果随后以独立test-only后继 `17adbccd415fc30421acd37d57806458dc0132d7` 固化：展开完整页不得丢当前 board intent，完工409继续由原控制器保留原 UUID／完整 body；预检可信401或bootstrap403／404沿现有session清理，对象GET403／404沿现有item清理与官方看板重读，不能仅报错仍留旧卡片。展开的两处Link保留原route state；已打开的展示意图不因当前T42开关回落而取消，但它从不授予读取或提交权。关闭某业务能力只提示无当前动作，不伪造成对象失权。
-
-新增真实公开反例源码覆盖：实际T11一步处理→拖动完工→展开→独立摘要→真实竞争内部备注版本→原完工409／原body保留；原HANDLER经官方assign转至组外后仍同角色／团队bootstrap200但detail404，T38关闭时旧缓存应清；删除本浏览器Cookie后真实bootstrap401应清会话。T11 helper只增加默认false参数透传，本票helper只增加显式人员索引／分派fixture选项，普通调用保持原默认；没有新生产端点、SQL、身份或草稿机制。以上均NOT_RUN，修前test-only精确pin及有限后继以D交接为准。
+原017／023指针、029文本选择、039键盘观察、041类型准备、045Review存在时序、056清理读取器失败及所有早期 Source-only pin 保留各自身份；旧NOT_RUN、FAIL不重写。055后已精确释放原PG18／62775及本票临时图片资源；静态源码、build／deps／cache与证据保留供最终43清理。能力回落回归明确是 `SYNTHETIC_CAPABILITY_FALLBACK` 前端边界，不冒服务端动态配置实测。正式部署、真实服务／发送、父验收与Gate未获本票本地验证替代。

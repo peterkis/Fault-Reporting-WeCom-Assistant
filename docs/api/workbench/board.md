@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-T42 [合法拖动 SOURCE 候选](board-legal-actions-design.md)已冻结本地表单路由合同和未实施首例基线，并准备未构建、未运行的适配源码；不宣称实际启用。本页查询及原详情按钮不变，不提供任意状态 PATCH。
+T42 [合法动作与原表单路由](board-legal-actions-design.md)已完成本地隔离定向验证，默认关闭、待父原七验收。拖动／按钮／键盘只打开既有合法表单，明确确认后由官方查询显示真实列；本页查询与原详情按钮保留，不提供任意状态 PATCH。UNKNOWN／409保原控制器、UUID和完整命令，成功位置提示不冒充本UUID回执。
 
 宿主 W；正式页面 `/workbench/app/`。业务使用真实API，新增处理能力按默认关闭的独立开关启用，与 `web/admin-workbench-prototype` 的合成原型区分。前端：[client](../../../web/admin-workbench/src/api/client.ts)；后端：[HTTP](../../../src/web01-workbench-http.mts)、[query](../../../src/web01-workbench-query.mts)。沿用内部身份、工单/复核范围、生命周期启用条件；默认关闭的管理员[来源群名称维护](source-groups-design.md)独立授权。
 

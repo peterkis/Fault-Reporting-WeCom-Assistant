@@ -253,7 +253,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 
 ## 明确拒绝与设计路径
 
-T42 [看板合法拖动 SOURCE 候选](workbench/board-legal-actions-design.md)已冻结本地表单路由合同并准备未构建／未运行的适配，保留未实施基线，不新增 HTTP 路径；真实业务继续使用本索引已有的处理、复核、完工及 STAFF_REOPEN 入口，不能把拖动目标列包装成状态写入接口。
+T42 [看板合法动作](workbench/board-legal-actions-design.md)已完成本地隔离定向验证，默认关闭、待父原七验收；四份冻结合同仅描述本地表单路由，不新增 HTTP 路径。真实业务仍用本索引已有处理、复核、完工及 STAFF_REOPEN 入口，不能把拖动目标列包装成状态写入接口；被测对象、分段用例、工具预算限制与清理见[本票记录](../../plans/admin-workbench-integration/execution/t42.md)。
 
 WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，旧ACK独立核当前Ticket READ。历史RED及各被测对象见[共享跟进时间](workbench/follow-up-schedules.md)与本票执行记录。
 
