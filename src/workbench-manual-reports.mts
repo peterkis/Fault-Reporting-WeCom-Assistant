@@ -108,6 +108,9 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
           AND expires_epoch_ms>platform.physical_epoch_ms() AND $3::bigint>platform.physical_epoch_ms()${lock?' FOR SHARE':''}`,
       [uuidP2016(context.session_id),principal,expiry]);
     if(current.rowCount!==1)failP2016('FORBIDDEN',403);
+    // PostgreSQL may evaluate the physical-time predicate before a row-lock
+    // wait. Recheck in a new statement while holding the unchanged session row.
+    if(lock)await currentAuthentication(authContext,tx);
   }
   async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
     guardP2016(enabled&&selfHandlingEnabled);
