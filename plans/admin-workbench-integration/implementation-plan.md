@@ -1,5 +1,7 @@
 ---
 
+2026-10-15 T42 原七项已父验收，25fbbeb9由非实现者唯一精确快进native0，[#97 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/97#issuecomment-6192364676)。[看板合法动作与交互收口](execution/t42.md)已交付：拖动／按钮／键盘打开原获权表单，复核明确结论、完工确认与STAFF_REOPEN原因沿原命令；正式列位置由官方查询确认，取消／UNKNOWN／409保留原UUID及完整输入。当前8文件13个本票、8文件24个相关用例及4个具名工具用例按真实head／MF分段通过，不称一次whole全通过；048实际630136.65ms超过240000ms的budgetfalse、loaded捕获缺口及全部旧FAIL保留。最终运行8619／MF4a4d，纯5MD后继不重绑；9886项Source、1778输入／2344输出、51冻结／46旧SQL及自有精确056b释放已父核，两轴剩余问题0。当前 **42／43 CLOSED、1 OPEN**，WBINT-15／A15本地完成，T43按14条原生依赖重新核验后开始同候选综合链路。默认关闭，全部43最终分支独立审查及自有工作树清理继续；以下旧段保留各自时点，不授予发布、现场或Gate。
+
 2026-10-15 T41 原七项已父验收，82836586由非实现者唯一精确快进native0，[#96 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/96#issuecomment-6190639003)。[全部当前获权检索与组合筛选](execution/t41.md)已交付：五来源、真实责任／状态／补充／预约、先授权再稳定分页、同Ticket复核去重、URL／看板列表、失权与留存变化及有界长查询；11文件23个本票、8文件21个相关用例按真实head／MF分段通过，495个生产src／WEB tuple连续。实际最终运行7139／MFd6fe，纯文档后继不重绑；原first008真实RED→020GREEN、全部旧失败与057观察器限制保留。9866项当前Source映射、1760输入／2320输出及自有精确释放已父核，Source与最终Doc双轴问题已闭合。当前 **41／43 CLOSED、2 OPEN**，WBINT-14／A14本地完成；T42为唯一运行窗口，冻结首例在真实未实施bf566上已RED，正合入本次accepted Root；T43仍待#97。默认关闭，全部43最终分支独立审查及自有工作树清理继续；以下旧段保留各自时点，不授予发布、现场或Gate。
 
 2026-10-15 T40 原七项已父验收，35b4caee由非实现者唯一精确快进native0，[#95 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/95#issuecomment-6189172898)。[获权站内提醒、声音与本浏览器偏好](execution/t40.md)已交付：四类原事实、当前READ、显式跨页定位、主动声音／桌面选择、跨标签去重和恢复不补响；不自动打开、处置或推进已读。九文件20个本票用例按真实head／MF分段通过，相关六文件19项通过；最终运行88f／MFeabc61f，纯四MD后继不重绑。原first028 RED→065 GREEN、所有旧FAIL／前提未证／未捕获与受控音频／OS边界保留；9841项raw／真Git归档、1738输入／2283输出、305份最终loaded及精确自有释放已父核，两轴收口。当前 **40／43 CLOSED、3 OPEN**；WBINT-13／A13的T38／T39／T40本地完成，A15已有T23／T40贡献、仍待T42。T41为唯一运行窗口，原未实施first已真实RED并保留被测祖先，正正常合入最新Root；T42两条同步源码有限双轴无新增问题、运行仍待，T43待#96／#97。默认关闭，全部43最终分支审查与自有工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
@@ -39,7 +41,7 @@ execution_status: IN_PROGRESS
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | LOCAL_VERIFIED：[T34明确关注](execution/t34.md)、[T35个人已读](execution/t35.md)、[T36确切补充处置及原可靠回复](execution/t36.md)、[T37共享时间](execution/t37.md)原七均已父核、独立集成并原生CLOSED/completed；A12本地完成，分对象证据／原FAIL／预算FALSE／采集及清理范围限制保留；默认关闭，无生产或Gate授权 | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | LOCAL_VERIFIED；T38／[T39获权短租期活动](execution/t39.md)／[T40提醒与声音](execution/t40.md)原七已父核、独立集成且原生CLOSED/completed；A13本地验收完成 | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | [T41全量获权检索与组合筛选LOCAL_VERIFIED](execution/t41.md)，原七已父验收并原生关闭；保持默认false与本地边界 | A14 |
-| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)／[T40本浏览器偏好LOCAL_VERIFIED](execution/t40.md)；仍待T42 | A15 |
+| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | [T23来源群设置](execution/t23.md)／[T40本浏览器偏好](execution/t40.md)／[T42合法动作LOCAL_VERIFIED](execution/t42.md)，A15原票均父验收并原生关闭；保持默认false与本地边界 | A15 |
 | WBINT-16 | 人工工作台整体隔离验收 | 00–15 | NOT_STARTED | A16 |
 
 依赖是合同与实际能力，不能由任务名称或页面存在代替。独立子任务可提前推进，例如 04 的受控资料读取、07 的已有会话读取、09 的已有 Incident 读取；面向用户启用动作时必须满足完整依赖。
