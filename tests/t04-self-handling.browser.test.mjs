@@ -113,3 +113,24 @@ test('malformed object denial is authoritative and the original 600px shell stay
     },{page:false});
   },{ticketSelfHandlingEnabled:true,malformedSelfHandlingDenial:true});
 });
+
+// Final-review failure-path regression: real owned CDP disconnection, no fake Browser.
+test('ALL43 disconnected diagnostics retain the primary failure and close the owned browser',async()=>{
+  await withWeb01Fixture(async context=>{
+    let owned,caught;
+    try{
+      try{await handlingBrowser(context,async browser=>{
+        owned=browser;
+        const info=await browser.command('Target.getTargetInfo');
+        try{await browser.command('Target.closeTarget',{targetId:info.targetInfo.targetId});}catch{/* the owned target really disconnects */}
+        throw Error('ALL43_ORIGINAL_BUSINESS_FAILURE');
+      });}catch(error){caught=error;}
+      const messages=error=>error instanceof AggregateError?error.errors.flatMap(messages):[error instanceof Error?error.message:String(error)];
+      const observed={messages:messages(caught),owned:owned?.ownedResourceState()};
+      console.log('ALL43_BROWSER_DIAGNOSTIC_CLEANUP '+JSON.stringify(observed));
+      assert.deepEqual(observed.owned,{processes:0,profiles:0,commandTimers:0,sockets:0});
+      assert.ok(observed.messages.includes('ALL43_ORIGINAL_BUSINESS_FAILURE'));
+      assert.ok(observed.messages.some(message=>message!=='ALL43_ORIGINAL_BUSINESS_FAILURE'));
+    }finally{await owned?.close();}
+  },{ticketSelfHandlingEnabled:true});
+});
