@@ -223,9 +223,18 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           if(item.kind!==target.kind||item.id!==target.id)failP2016('NOT_FOUND',404);
           if(field!==null){
             if(field==='manual-review'){
-              if(!workbenchManualReviewEnabled||target.kind!=='review')failP2016('FORBIDDEN',403);
-              const review=await (reviews as ReviewFacade).getManualReviewDetail({authContext,reviewId:target.id});
-              if(review.status!=='PENDING'||review.allowed_resolutions.length===0)failP2016('FORBIDDEN',403);
+              if(!workbenchManualReviewEnabled)failP2016('FORBIDDEN',403);
+              // Editing is a field of the currently displayed canonical Item.
+              // A readable Item alone grants no permission to edit a Review.
+              const detail=await workbenchQuery.detail({authContext,kind:target.kind,id:target.id,cursor:null,limit:'1'});
+              let allowed=false;
+              for(const ref of detail.review_refs??[]){
+                if(ref.status!=='PENDING')continue;
+                const review=await (reviews as ReviewFacade).getManualReviewDetail({authContext,reviewId:ref.id});
+                const canonical=await (reviews as ReviewFacade).canonicalItem({authContext,reviewId:ref.id});
+                if(review.status==='PENDING'&&review.allowed_resolutions.length>0&&canonical.kind===target.kind&&canonical.id===target.id){allowed=true;break;}
+              }
+              if(!allowed)failP2016('FORBIDDEN',403);
             }else{
               if(target.kind!=='ticket')failP2016('FORBIDDEN',403);
               const ticket=await query.detail({authContext,ticketId:target.id}),actions=ticket.allowed_actions;
