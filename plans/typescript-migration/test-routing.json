@@ -6001,6 +6001,33 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-transport.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-related-review-activity.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/wbint-t39-activity-boundaries.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7751,6 +7778,11 @@
     "wbint-t39-activity": [
       "tests/wbint-t39-activity.integration.test.mts",
       "tests/wbint-t39-activity-service.test.mts"
+    ],
+    "wbint-t39-review-fixes": [
+      "tests/wbint-t39-activity-transport.test.mts",
+      "tests/wbint-t39-related-review-activity.integration.test.mts",
+      "tests/wbint-t39-activity-boundaries.browser.test.mts"
     ]
   },
   "subprocess_entries": {
