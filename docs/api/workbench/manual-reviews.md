@@ -60,26 +60,32 @@ Bot原分类依据仍是生产者按 sequence ASC 取得的最多51条前缀、�
 
 专用收据查询复用既有MANUAL_REVIEW ledger的principal/Review/purpose范围，先重新授权当前Review/Journey和保留材料；READ ONLY，无新receipt写入或第二事实源。`UNKNOWN`表示无终态凭据，不能推断未提交；`FAILED`只含code/retryable:false；`COMMITTED`只含原结论结果且replayed:true，精确形状见 [receipt schema](../../../contracts/workbench_review_receipt.schema.json)。到期或丢弃敏感内容后只保留不透明操作标识，显式GET核对；可信失权清相关缓存与该scope副本。无数据库变更；关闭本票option停止新增投影/UI，既有追加事实保留。验证与停止线见 [本票执行记录](../../../plans/admin-workbench-integration/execution/t14.md)。
 
-## 确认明确故障并开始处理（WBINT-T15，计划／NOT_RUN）
+## 确认明确故障并开始处理（WBINT-T15，默认关闭）
 
-以下为[#70](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70)已有合同的检索入口。T15专树已合入指定root `4fececa695f8adea54ce599baa6b5f8cf50665d2`；现生产没有本接口、能力或按钮，runtime忽略原fixture透传的计划option。T14原resolve、材料／canonical／恢复合同及T22已实现会话入口继续有效，不把它们的验证记为T15 PASS。源码身份、旧冲突FAIL和七项remaining见[T15执行记录](../../../plans/admin-workbench-integration/execution/t15.md)。
+本地合成实现与证据见 [T15 原七执行记录](../../../plans/admin-workbench-integration/execution/t15.md)。本节描述当前挂载的 W 接口；下方 SOURCE 历史仍只表示当时准备状态。实现复用 [T15 Port](../../../src/workbench-review-start.mts)、原 Review facade、Unified Ticket Core、既有责任与 Control 事务，无第二 Ticket 或 receipt 事实源。
 
-| METHOD + PATH（W，计划） | 请求／结果 |
+| METHOD + PATH | 闭合请求／结果 |
 | --- | --- |
-| `POST /api/manual-reviews/{reviewId}/resolve-and-start` | UUID Review，禁止query；[闭合命令Schema](../../../contracts/workbench_review_resolve_and_start_command.schema.json)及[输入／结果类型](../../../contracts/workbench_review_start_contracts.d.ts)，同一事务完成明确故障确认、唯一最小Ticket创建或合法原单复用、合法处理责任／开始及显式所选沟通变化 |
+| `GET /api/manual-reviews/{reviewId}/resolve-and-start-context` | 唯一可选 query `resolver_team_id`：大写 code，最长64；其他 query 拒绝。返回 [context Schema](../../../contracts/workbench_review_start_context.schema.json) 的 `review_id,expected_ticket,resolver_team_id,resolver_teams,allowed` |
+| `GET /api/manual-reviews/{reviewId}/resolve-and-start/related-sessions/{sessionId}` | UUID，无 query；当前 Review、canonical Ticket、真实关联及 Session VIEW 独立重验；返回 [三个 UUID 的闭合关系证明](../../../contracts/workbench_review_start_related_session.schema.json)。合法 ENDED Session 可保持原关系读取，不因此允许新接管 |
+| `POST /api/manual-reviews/{reviewId}/resolve-and-start` | UUID Review，无 query；[原九字段命令](../../../contracts/workbench_review_resolve_and_start_command.schema.json)、[原输入／结果类型](../../../contracts/workbench_review_start_contracts.d.ts)；同事务确认、唯一 Ticket 创建或合法复用、本人处理责任／开始及显式沟通变化 |
+| `GET /api/manual-reviews/{reviewId}/resolve-and-start/commands/{commandId}` | UUID，无 query；[专用安全收据](../../../contracts/workbench_review_start_receipt.schema.json)：UNKNOWN／FAILED／COMMITTED，READ ONLY，不重执命令 |
 
-Cookie、Origin／CSRF及宿主body上限32KiB沿原认证入口；`Idempotency-Key`匹配原`client_command_id`，`If-Match: "<expected_row_version>"`匹配捕获Review字符串版本。九字段body为`client_command_id,expected_row_version,expected_material_basis,resolution_code,resolution_reason_code,expected_ticket,resolver_team_id,communication_choice,sessions`，不接受前端actor／角色／owner或自由状态。`resolution_code`只为`CONFIRM_TICKET_ELIGIBLE`；不明确材料仍走原澄清／其他合法resolve，不通过复合动作强制建故障工单。
+Cookie 的 Origin／CSRF、宿主32KiB body 和公共错误包沿原认证入口。POST 的 `Idempotency-Key` 等于 `client_command_id`，`If-Match: "<expected_row_version>"` 等于捕获 Review 版本。九字段为 `client_command_id,expected_row_version,expected_material_basis,resolution_code,resolution_reason_code,expected_ticket,resolver_team_id,communication_choice,sessions`，额外字段拒绝；不接受客户端 actor、角色、owner 或自由状态。Review 版本为精确正十进制 BIGINT string，材料摘要为64位小写hex；所捕获 Ticket／Session 版本为正 safe integer，保持原合同上限。`resolution_code` 只接受 `CONFIRM_TICKET_ELIGIBLE`；原因和组 code 最长64。不明确材料继续原澄清／其他合法 resolve，不强制建故障单。
 
-`expected_material_basis`为实际已采用的T14当前摘要，不能把Session sequence、Ticket版本或当前展示时间当作材料依据。已有Ticket时`expected_ticket`含该UUID与捕获number版本；尚无时为null，服务端同Intake重核并保证唯一，不通过另建工单绕过不合法的既有状态。处理组与actor须依当前操作许可和有效成员关系核验。`TAKE_SELECTED`提交1–8个真实关联Session UUID与各自number版本；`RETAIN_CURRENT`提交零Session。多个会话由用户明确选取，不猜最近会话；逐Session重核当前关系、保留期、沟通与Control许可，结束主题不能因T22可读就获得接管能力。读取事项、会话或按钮展示本身不修改责任。
+处理操作要求当前内部 ADMIN／DISPATCHER／HANDLER、当前 Review／Journey／材料和 Ticket 原读权、本人当前有效处理组及合法 take-and-start 条件；读取或展示按钮不授予动作。context 先核当前对象与权限，再取最多100个当前有效组；原 Ticket 组或显式原组 hint 经精确当前官方成员核验后并入这100个选择，必要时替换末项。hint 不授成员资格或读权，无效显式组403；列表截断缺项不表示原组已失权。写端在同一事务内重新核验当前角色、成员／组与对象权限，并在 receipt／Ticket／Session 等待后再核当前状态。
 
-复用原Review/Journey与材料来源锁、MANUAL_REVIEW相关ledger的独立命令用途、Core和T04／T05事务内边界；全部成功或失败，失败不留下部分复核结论、Ticket或责任变化。原Decision／safe_result／hash／provenance保持；新材料、Review／Ticket／Session版本变化拒绝旧确认。相同UUID原意图重放先重验当前逐对象权限，再返回原结果；改意图拒绝。成功仅返回类型定义中的安全结论／Ticket事件／处理轮次／实际沟通变化与canonical/replayed，最终状态从当前获权GET读取，不由前端改Ticket事实。非法输入400、认证401、权限403、版本／材料／命令冲突409、关闭或事务失败503沿P2_016公共错误包；实际guards、状态和失败回滚均待本票真实RED验证。
+`expected_ticket` 是原已读 Ticket UUID／number 版本，或明确 null。服务器按原 Intake 唯一建单；新建采用已获权的显式处理组，原普通 Review 的默认建单行为不变。已有 Ticket 不通过新建绕过不合法状态或组。`TAKE_SELECTED` 只提交1–8个明确选择的真实关联 Session UUID／版本；`RETAIN_CURRENT` 提交空集合。沟通责任与 Ticket 处理责任独立，逐 Session 重核关系／VIEW／Control／行版本；结束 Session 的可读历史不产生接管权。失败回滚全部结论、Ticket、事件、责任与 Control，不留下部分成功。
 
-正式界面后续在原Item/Review workspace内捕获材料、显式确认与选Session，最后一次复合POST；不能串联旧resolve／take／start模拟原子成功。Review转Ticket后继续同URL／document／面板，重新读取有权canonical，保留一张卡片并停用旧版本操作。冲突或UNKNOWN保留原捕获版本、选择、UUID与完整命令；不自动重试、不根据新资料重写原意图。恢复沿T03账号／用途／当前浏览器24h及T38 epoch／abort／组件generation，晚返回不能恢复失权事实。
+原 Decision／safe_result／hash／provenance 保持。新材料或 Review／Ticket／Session 版本冲突拒绝旧确认；WEB 来源在实际行锁等待后按物理 epoch 保留期复查，不能用事务开始时钟越过真实到期。相同 UUID／原完整 body 重放先当前授权再返回原结果；改 body 拒绝，不自动换版本／UUID。成功返回原类型的安全 Ticket／轮次／沟通变化及 canonical／replayed，当前展示再从获权 GET 读取，内部材料／原因不进入外部 Delivery。
 
-`workbenchReviewResolveAndStartEnabled=false`为计划默认值，需原lifecycle／T14材料能力和相应合法业务操作。关闭停止新复合动作／能力／UI，原resolve及追加事实保留。本票计划无数据库变更，复用039轮次与既有事实／账本；不新增Ticket／owner／receipt、SSE、轮询或后台服务。单表单in-flight1、最多8 Session，原材料50条／20k字符、引用100、App／Worker各1、Gateway单活、SSE32、共享pool max4／总预算8保持。先原HTTP1实际RED→最小GREEN，后原production browser1独立RED→GREEN；两者240s和原roles／flags／assertions不变，本次全部运行NOT_RUN。
+收据仅按原 actor＋Review＋`MANUAL_REVIEW_START` 用途读取既有 ledger。UNKNOWN 表示无终态凭据，不能推断未提交；FAILED 只返回 code／retryable:false；COMMITTED 只含原 command／Review UUID、Ticket UUID／版本／事件 UUID，当前 Review／来源与返回 Ticket、原相关 Session 的独立读权仍须成立。receipt 不返回原 body、内部材料、原因或所选 Session 集合，也不授予新意图权限。非法输入400、认证401、当前动作拒绝403、对象不可读404、材料／版本／UUID意图冲突409、关闭／缺039／事务或制品不可用503；技术失败不能伪装成已提交或失权。
 
+正式 `/workbench/app/` 在原 Review workspace 中捕获材料、选择组与真实 Session，最后一次复合 POST。成功沿同 URL／document／面板转入唯一 canonical Ticket，停用旧版本操作。冲突／UNKNOWN 保留原捕获版本、完整 body／UUID，只能明确只读核对或原意图重放；不自动 POST。恢复复用 T03 当前浏览器 AES-GCM／不可导出密钥、首次保存后固定24h，独立 scope 为 principal＋review＋ReviewId＋`review-resolve-start`；普通 T14 已保存副本不能证明复合命令可安全离开。技术故障、终态清理失败保留原 UUID 并允许只读重试；可信401清会话，403／404只清对应敏感 scope，其他用途保留。Abort／账号与对象 epoch／组件 generation 拒绝迟到旧结果；同挂载新显式意图有独立清理周期。
 
-### 2026-10-14 有限 Source 同步补充
+`workbenchReviewResolveAndStartEnabled=false` 默认关闭，装配还要求原 lifecycle／T14，恢复另需 `workbenchDraftRecoveryEnabled`。无环境变量、旧现场批准或前端状态可隐式开启。039 不完整时新能力 fail closed，不使原获权 Ticket／Review GET 失效。**无数据库变更**，46份旧 SQL 不改，复用现有轮次／命令账本／Core／Control。关闭新 option 停止新入口与 UI，既有追加事实保留；无自动通知、真实发送、额外轮询或后台服务。单表单 in-flight1、Session≤8、选择组≤100、原材料50条／20k字符／100引用、24h恢复、App／Worker各1、Gateway单活、SSE32、fixture pool≤4／总池≤8不变。本地隔离结果不构成生产或现场批准。
+
+### 历史：2026-10-14 有限 Source 同步补充（当时 NOT_RUN）
 
 T15 准备树本次普通合入固定 Root b5808ee88ee749df61a6a82708d1d5bd26971743，保留当前 T14 实际 resolve、材料、canonical 与恢复接口，以及当前 Ticket / Conversation 各自权威。上述 T15 九字段命令和复合结果仍为计划合同，原两份首例与两份专属合同保持原字节；本轮未实现或运行 resolve-and-start，没有将它登记为已存在产品 API。
 
