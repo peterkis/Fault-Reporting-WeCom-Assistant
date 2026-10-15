@@ -212,21 +212,30 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     const p=await query.principal(authContext,tx);if(binding(authContext,p)!==prepared.bound)failP2016('CURSOR_INVALID');await ready(tx,c);
     const values:unknown[]=[...prepared.values],session=sessionPredicate(authContext,p,values.length+1);values.push(...session.values);
     const parameter=(value:unknown)=>{values.push(value);return '$'+values.length;};
+    const principalId=parameter(p.principal_id),roles=parameter([...p.roles]),teams=parameter([...p.team_ids]);
+    const scope=`EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal scope_principal
+      CROSS JOIN LATERAL (SELECT
+        ARRAY(SELECT DISTINCT r.role::text FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=scope_principal.id) AS roles,
+        ARRAY(SELECT DISTINCT m.team_id::text FROM pilot_ticket.pilot_team_member m WHERE m.principal_id=scope_principal.id) AS teams) scope_current
+      WHERE scope_principal.id=${principalId}::uuid AND scope_principal.is_active
+        AND scope_current.roles @> ${roles}::text[] AND scope_current.roles <@ ${roles}::text[]
+        AND scope_current.teams @> ${teams}::text[] AND scope_current.teams <@ ${teams}::text[])`;
     const selected=parameter(prepared.selected.map(row=>row.kind+':'+row.id));
     const anchor=cursor?`EXISTS(SELECT 1 FROM matched WHERE kind=${parameter(cursor.kind)}::text AND id=${parameter(cursor.id)}::text
       AND order_at=${parameter(cursor.at)}::text AND order_group=${parameter(cursor.order_group)}::integer)`:'TRUE';
     const last=prepared.selected.at(-1);
     const next=last?`EXISTS(SELECT 1 FROM matched WHERE (order_group,order_at,kind,id)<(${parameter(last.order_group)}::integer,
       ${parameter(last.order_at)}::text,${parameter(last.kind)}::text,${parameter(last.id)}::text))`:'FALSE';
-    // Recheck actual session state and the complete retained projection inputs in
-    // one final statement. Surviving identity/order cannot authorize old names,
-    // source decorations or other material captured before a later card waited.
-    const proof=(await tx.query<{session_valid:boolean;anchor_valid:boolean;more:boolean;
+    // The original principal role/member facts must still equal the bound scope
+    // in this final statement, after any readiness or projection wait. Session,
+    // retention inputs and scope therefore share the same final READ snapshot.
+    const proof=(await tx.query<{session_valid:boolean;scope_valid:boolean;anchor_valid:boolean;more:boolean;
       items:{kind:string;id:string;safety_signature:string}[]}>(prepared.relation+` SELECT (${session.sql}) AS session_valid,
-      (${anchor}) AS anchor_valid,(${next}) AS more,
+      (${scope}) AS scope_valid,(${anchor}) AS anchor_valid,(${next}) AS more,
       COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',m.kind,'id',m.id,'safety_signature',encode(sha256(convert_to(to_jsonb(m)::text,'UTF8')),'hex')))
         FROM matched m WHERE (m.kind||':'||m.id)=ANY(${selected}::text[])),'[]'::jsonb) AS items`,values)).rows[0];
     if(proof?.session_valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    if(proof.scope_valid!==true)failP2016('CURSOR_INVALID');
     if(!proof.anchor_valid)failP2016('CURSOR_INVALID');
     const current=new Map(proof.items.map(row=>[row.kind+':'+row.id,row.safety_signature]));
     if(proof.items.length!==prepared.selected.length||prepared.selected.some(row=>current.get(row.kind+':'+row.id)!==row.safety_signature))failP2016('CURSOR_INVALID');

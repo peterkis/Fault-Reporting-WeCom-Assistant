@@ -23,9 +23,8 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
     const owned=createWorkbenchRealtimeClient({capability:principal,now:Date.now,schedule:(callback,delay)=>window.setTimeout(callback,delay),cancel:handle=>window.clearTimeout(handle as number),
       onHint:()=>{
         const matches=(key:readonly unknown[])=>isSearchQuery(key,principal.principal_id);
-        void client.cancelQueries({predicate:query=>matches(query.queryKey)&&query.state.data!==undefined},{revert:false});
+        void client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
         for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
-          if(query.state.data===undefined)continue;
           query.setState({data:undefined,dataUpdatedAt:0,error:new ApiError(409,'SEARCH_REFRESH_REQUIRED'),status:'error',fetchStatus:'idle'});
         }
       },

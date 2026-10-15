@@ -18,7 +18,7 @@ T23来源origin关系、T36可读精确材料及已核验响应、T37当前活�
 
 游标由当前App临时HMAC秘密签名，绑定principal、原认证session_id（只有既有本地测试profile可由其当前csrf派生不可逆绑定）、角色/组、全部规范criteria和窗口、kind/id/order。不包含rawCookie/csrf。变化或当前anchor已失权/过期/移出匹配条件时400 CURSOR_INVALID；App重启后旧签名失效。
 
-SQL分页完成先释放连接，再复用原公开事项投影。随后新的只读事务在同一末次statement中核验实际认证会话、anchor、选中对象完整投影输入的SHA256摘要和当前continuation。认证owner提供原workbench_auth_session、ACTIVE、principal、绝对期限、配置的idle期限及physical clock谓词；入口authContext摘要不能代替当前认证。会话失效401。末次输入摘要覆盖当前安全姓名、来源/保留期、匹配条件及排序等，不只比较kind/id/order；等待期间发生变化则400拒绝整页，不返回旧安全字段。next_cursor根据最后当前授权匹配关系重新判断，不沿用早先第limit+1条。没有在持有搜索连接时再等待原投影取得另一条连接。以上均为代码意图；并发、pool=1和实际隐私行为未运行验证。
+SQL分页完成先释放连接，再复用原公开事项投影。随后新的只读事务在同一末次statement中核验实际认证会话、当前完整角色/团队集合、anchor、选中对象完整投影输入的SHA256摘要和当前continuation。角色和团队从原principal_role、team_member事实读取，集合必须与已绑定principal完全相等；不会在末次readiness等待后继续信任旧团队参数，也不增加授权事实源。认证owner提供原workbench_auth_session、ACTIVE、principal、绝对期限、配置的idle期限及physical clock谓词；入口authContext摘要不能代替当前认证。会话失效401，当前角色或团队变化400。末次输入摘要覆盖当前安全姓名、来源/保留期、匹配条件及排序等，不只比较kind/id/order；等待期间发生变化则400拒绝整页，不返回旧安全字段。next_cursor根据最后当前授权匹配关系重新判断，不沿用早先第limit+1条。没有在持有搜索连接时再等待原投影取得另一条连接。以上均为代码意图；并发、pool=1和实际隐私行为未运行验证。
 
 ## 前端与有界读
 
@@ -26,7 +26,7 @@ SQL分页完成先释放连接，再复用原公开事项投影。随后新的�
 
 输入与已提交条件分开；切换展示或外部范围不会覆盖尚未提交的q。提交/改条件传递原AbortSignal，关闭或权限开关回落会取消并清理本票查询；旧回包继续受原读取epoch围栏约束。缓存至多5页、每页50，显示已加载条数而非总数。空条件、无匹配、读取失败分别显示；失败不展示旧搜索卡片，不触碰备注/回复草稿。原事项失权保留board查询族的清理接线，搜索的实时刷新方式见下段。
 
-T38周期刷新不再自动重搜已加载的搜索页，也不把搜索429/技术失败当作全局连接失败。搜索仍保留在原board族，当前身份/角色变化和401/403继续原清理；实际实时hint清除已有搜索结果并提示人工重读，不在后台重搜、不清搜索输入或业务草稿。20次/分钟和其余资源上限不变。
+T38周期刷新不再自动重搜已加载的搜索页，也不把搜索429/技术失败当作全局连接失败。搜索仍保留在原board族，当前身份/角色变化和401/403继续原清理；实际实时hint取消当前principal的全部搜索读，包括data尚为undefined的首次或显式重置请求，并清除结果、提示人工重读。原Query取消和READ AbortSignal约束迟到回包；不在后台重搜、不清搜索输入或业务草稿。20次/分钟和其余资源上限不变。
 
 T15验收后的bfd0331ea060f0830d2d85df9868e60ae73e856c通过普通merge并入本票源码。确认复核并开始处理仍沿用原canonical Ticket查询；装配保留两项独立默认false开关和T15用途清理分支。新增tests/t41-search-review-start.integration.test.mts覆盖真实T15命令后的同Ticket搜索去重、待处理/处理中条件及无权人员隐藏结果，selection为wbint-t41-review-start，并追加到wbint-t41-search。此组合测试只有源码，尚未执行；619d与原HTTP first、helper及三份Contract保持不变。
 
@@ -38,6 +38,7 @@ T15验收后的bfd0331ea060f0830d2d85df9868e60ae73e856c通过普通merge并入�
 2. 在当前候选真实对象执行适用strict、一次构建、制品绑定和本票测试；当前所有此类结果都是NOT_RUN。
 3. 已新增纯合同、分页/当前READ/同名群/关闭/限流HTTP及生产bundle浏览器测试源码，均未运行；不能凭测试文件存在说通过。报修时各字段、所有来源与组合、T36/T37细分状态、同principal不同真实session、实际角色变化、retention、晚到读取和PG EXPLAIN/容量仍需逐项真实验证或补充必要测试。
    本轮另冻结真实Cookie会话logout/physical expiry等待、闭合Intake、跨卡片等待到期、GET/长POST等价/非法与超限拒绝，以及51匹配事项的生产浏览器长Unicode分页和两页T38/人工命令源码。风险测试-only祖先保留五个缺陷，尚无实际RED或PASS。
+   dcf6的有限Source审查又指出末次readiness等待中的团队失权、首次/重置pending搜索未被hint取消两项同根残余。82bc0154b4c319226ef3e4ccb8de097ed0febf9b是保留dcf6生产源码的test-only后继，冻结了真实Cookie HTTP等待撤销唯一团队资格，以及真实生产浏览器扣留成功响应、Ticket转派失READ、身份revision不变、真实持久SSE hint先到的两种pending场景。此基线及后来修补均未构建、未运行；应在授权whole窗口先观察真实失败，再验证当前候选，不能把本说明或测试文件当作结果。
 4. 根据真实查询计划决定必要索引，当前无DDL。原46SQL和原Contract保持不变，不能为通过测试缩窄范围、增加上限或绕过授权。
 5. 全七项/来源WBINT-14/A14执行记录、两轴非作者审查、自有运行资源清理、父验收与独立merger尚未完成。本SOURCE author不自验收，不关闭Issue。
 6. 未执行types/build/tests/install/PG/browser、真实外部服务/发送、部署、full/certify或Gate。关闭新flag回到原分页看板/列表；事实和业务草稿不变。
