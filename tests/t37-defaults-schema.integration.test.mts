@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import type {IncomingMessage} from 'node:http';
+import {createServer} from 'node:net';
 import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
 import {FOLLOW_UP_MIGRATION_ID,followUpSchemaReady} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
@@ -62,15 +63,22 @@ test('default off with no 049 or 053 keeps independent UNKNOWN receipts, and exp
     assert.deepEqual(await current(dispatcher,ackPath),{client_command_id:body.client_command_id,ticket_id:ticketId,state:'UNKNOWN'});
     assert.deepEqual(await facts(dispatcher,path),before);await schemaAbsence(fixture);
     assert.equal((await fixture.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE ticket_id=$1::uuid AND command_type='WORKBENCH_FOLLOW_UP_SCHEDULE'",[ticketId])).rowCount,0);
+    // Reserve a distinct origin while the old host still owns its port. The new
+    // fixture host must not inherit a client connection to the stopped host.
+    stage='REPLACEMENT_ORIGIN';assert.equal(fixture.runtime.server.listening,true);
+    const probe=createServer();await new Promise<void>((resolve,reject)=>{probe.once('error',reject);probe.listen(0,'127.0.0.1',resolve);});
+    const address=probe.address();await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
+    assert.equal(probe.listening,false);assert.ok(address&&typeof address!=='string');
+    const port=address.port,origin='http://127.0.0.1:'+port;assert.notEqual(origin,fixture.origin);
     stage='ORIGINAL_STOP';await fixture.runtime.stop();assert.equal(fixture.runtime.server.listening,false);
     stage='REPLACEMENT_CREATE';
-    const port=Number(new URL(fixture.origin).port),runtime=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:fixture.origin,listenPort:port,
+    const runtime=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:port,
       principalIds:[fixture.dispatcher,fixture.handler,fixture.otherHandler],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,workbenchFollowUpSchedulesEnabled:true});
     runtime.server.on('request',observeBootstrap);
     try{
       // Same isolated DB and actual native router. No worker timer or new migration is started here.
       stage='REPLACEMENT_LISTEN';await listenConversationWorkbenchServer(runtime.server,{port});
-      stage='REPLACEMENT_BOOTSTRAP';const enabled=await restartedHttp(runtime,fixture.origin);
+      stage='REPLACEMENT_BOOTSTRAP';const enabled=await restartedHttp(runtime,origin);
       stage='REPLACEMENT_ASSERTIONS';
       const enabledBootstrap=await current(enabled,'/api/lifecycle/bootstrap');assert.equal(enabledBootstrap.follow_up_schedules_enabled,true);assert.equal(enabledBootstrap.follow_up_schedule_receipt_enabled,true);
       const readiness=await enabled.get('/health/ready');assert.equal(readiness.status,503);assert.equal(readiness.value.base_service_ready,false);
