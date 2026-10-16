@@ -1,5 +1,7 @@
 # SS-011 限定写现场执行清单
 
+> 历史准备快照（2026-09-21），下文保留原记录。后继更正见[提交网络诊断](../../evidence/yxx-ss-011-submit-network-repair.md)：实际容器回环与UUID路由问题不能由零落库推定为“首次点击早于代理修复”。特定手机提交仍见[未解决跟进](../../evidence/yxx-ss-011-submit-followup.md)；[负责人确认](../../evidence/yxx-ss-011-ac102-owner-confirmation-20260922.md)仅为部分完成，独立恢复不替代原AC099。本文不构成当前启动或现场批准。复盘定位见[OTHER-05与OTHER-10](../retrospectives/2026-10-16-sources.md#other-05)。
+
 当前已按用户补充授权完成云端准备和成员入口部署，最新部署结果见 `evidence/yxx-ss-011-live-deployment-report.json`。A/B 的真实网页现场仍待点击，AC-095～102 尚未执行。本文件不签发超出用户授权的范围。此前离线和云端准备结果分别保留在 `evidence/yxx-ss-011-preparation-report.json` 与 `evidence/yxx-ss-011-cloud-preparation-report.json`，不改写 SS009/SS010 历史报告。
 
 2026-09-21 云端增量：已核验现有2核主机/PostgreSQL18.6；备份现有配置和旧测试库，并恢复到独立演练库，核对55张表数据、4个序列及1359个约束（18个文本差异经PostgreSQL重新解析等价验证）。演练库保留且禁止连接。新专用库完成现有迁移，A/B分别作为报修人和坐席，负责人A；与历史保护配置的8个身份字段完全一致。候选在干净发布checkout通过SS010严格检查；业务受理/Ticket为0，原OAuth/Nginx未切换。后续只执行尚未完成步骤，不重复建库/恢复，不复用历史未批准窗口。此数据库恢复不替代AC099网页提交恢复。

@@ -2,7 +2,9 @@
 
 前后端交互服务接口统一入口：[docs/api/README.md](docs/api/README.md)。可按 [HTTP方法与完整路径](docs/api/endpoint-index.md) 检索实际宿主、认证、请求/响应、版本与错误；外部服务、内部Port及设计接口另有索引。新增或变更接口时同步该目录，维护方法见 [接口文档维护规则](docs/api/maintenance.md)。
 
-PC 管理端完整人工业务接入：[实施计划与导航](plans/admin-workbench-integration/README.md)，包括现有接口／后端缺口、17个工作包和验收矩阵，已拆为[43票GitHub任务清单](plans/admin-workbench-integration/tickets.md)。2026-10-07 已确认并发布任务，业务接入尚未执行；实际服务入口仍以 docs/api 为准。
+PC 管理端完整人工业务接入：[实施计划与导航](plans/admin-workbench-integration/README.md)，包括现有接口／后端缺口、17个工作包和验收矩阵，已拆为[43票GitHub任务清单](plans/admin-workbench-integration/tickets.md)。2026-10-07 的计划快照为已确认并发布任务、业务接入尚未执行。后继于2026-10-16完成43票本地验收收口，并经[PR #99](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/99)合并；范围与逐票证据见[最终复核](plans/admin-workbench-integration/execution/all43-final-review.md)。实际服务入口仍以 docs/api 为准，此结果不推进现场或业务Gate。
+
+Agent按任务读取[指令导航](docs/agents/README.md)；会话经验与可检索来源见[复盘索引](docs/retrospectives/README.md)。历史段落中的“当前”及计数只绑定所记日期、候选与原始Evidence。
 
 2026-09-15 当前增量：ADR-0019 身份映射修补及 ADR-0020 定向建单模式本地验证完成，1056/1056、171测试文件及两轴独立审查通过。当前候选见 plans/current_phase.json 的 p2_g2_current_readiness（creation-v2 报告）。mapping-v1 的1053/1053与下文PR #8的1044/1044均为历史快照。A/B官方转换对应已证明；定向建单启动及工单结果以本次独立运行证据为准，A/B本人读取、他人拒绝及退出后新OAuth恢复已验证，云端已回退OAuth-only；多标签及旧Grant卡片现场未运行，结论见evidence/p2-g2-yxx-targeted-live-summary.json；完整P2-G2-LIVE/P2-008继续停止。
 

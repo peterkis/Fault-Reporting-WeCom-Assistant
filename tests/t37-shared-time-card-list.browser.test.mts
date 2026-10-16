@@ -1,6 +1,5 @@
-// STAGED_RUNTIME / first actual contract or shared card/list execution pending.
 // Existing card, row-link, drawer and controls are read from the production bundle.
-// The first intended RED follows an actual SET and confirmed detail: card omits the shared time.
+// A visible read-only schedule does not mean draft discovery has enabled its input.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -41,6 +40,11 @@ async function inactiveSurface(browser:Browser,node:string,label:string){
   assert.equal(text(shown.text).includes('已到期'),false,label+': cancelled arrangement has no active due hint');
 }
 function observe(){return `(()=>{const original=globalThis.fetch;globalThis.__t37CardHttp=[];
+  const nativeDatabases=indexedDB.databases.bind(indexedDB);let release;
+  const draftProbe=new Promise(resolve=>{release=resolve;});globalThis.__t37DraftProbePending=0;
+  globalThis.__t37ReleaseDraftProbe=()=>{indexedDB.databases=nativeDatabases;release();};
+  // Hold the real enumeration result, retaining native storage data and authorization.
+  indexedDB.databases=async()=>{const result=await nativeDatabases();globalThis.__t37DraftProbePending++;await draftProbe;return result;};
   globalThis.fetch=async(input,options)=>{const url=new URL(input instanceof Request?input.url:String(input),location.href),method=(options?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(!url.pathname.startsWith('/api/'))return original(input,options);
     if(globalThis.__t37CardHttp.length>=400)throw Error('T37_HTTP_OBSERVATION_BOUND');
@@ -121,6 +125,12 @@ test('actual card, list and detail share one Shanghai overdue time until explici
       await refreshWithoutFanout(browser,cardNode(ticketId));
       await openDetail(browser,cardNode(ticketId),'.card-open');
       await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('尚无活动的共享时间')`);
+      await browser.waitFor('globalThis.__t37DraftProbePending>0');
+      const held=object(await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(region+' input[name="due_at"]')});return {found:Boolean(input),disabled:input?.disabled,type:input?.type};})()`));
+      assert.deepEqual(held,{found:true,disabled:true,type:'text'},'native draft discovery must keep the visible input protected');
+      assert.equal(await browser.evaluate('globalThis.__t37CardHttp.some(fact=>fact.method!=="GET")'),false,'pending discovery must not dispatch a command');
+      await browser.evaluate('globalThis.__t37ReleaseDraftProbe()');
+      await browser.waitFor(`(()=>{const input=document.querySelector(${JSON.stringify(region+' input[name="due_at"]')});return Boolean(input&&input.type==='text'&&!input.disabled);})()`);
       await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(region+' input[name="due_at"]')});if(!input||input.disabled||input.type!=='text')throw Error('T37_NATIVE_SHARED_TIME_INPUT_REQUIRED');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;if(!setter)throw Error('T37_NATIVE_INPUT_SETTER_REQUIRED');setter.call(input,${JSON.stringify(dueAt)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       await browser.waitFor(`(()=>{const root=document.querySelector(${JSON.stringify(region)});return [...(root?.querySelectorAll('button')??[])].some(button=>button.textContent.trim()==='设置共享时间'&&!button.disabled);})()`);
       await clickSchedule(browser,'设置共享时间');const set=await writeFact(browser,schedulePath,'SET'),setCommand=object(set.request);
@@ -130,7 +140,7 @@ test('actual card, list and detail share one Shanghai overdue time until explici
       await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('已到期')`);await activeSurface(browser,`document.querySelector(${JSON.stringify(region)})`,'detail');
       assert.match(text(object(await browser.evaluate(surface(`document.querySelector(${JSON.stringify(region)})`))).text),/北京时间|Asia\/Shanghai/u);
       await closeDetail(browser);await refreshWithoutFanout(browser,cardNode(ticketId));
-      // Intentional first production RED: current Card has no shared-time field or display.
+      // Card/list surfaces must show the same confirmed arrangement as the detail.
       await activeSurface(browser,cardNode(ticketId),'card');await inactiveSurface(browser,cardNode(otherId),'unscheduled card');
       screenshots.push(await capture(browser,'set-overdue-card','new-board-1920.png'));
       await view(browser,'列表',rowNode(ticketId));await activeSurface(browser,rowNode(ticketId),'list');await inactiveSurface(browser,rowNode(otherId),'unscheduled list row');

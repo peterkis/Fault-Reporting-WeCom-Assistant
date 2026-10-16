@@ -174,7 +174,8 @@
     "migration:test": "node .build/tools/run-tests.mjs",
     "premigration:gate": "npm run migration:tools",
     "migration:gate": "node .build/tools/gate.mjs",
-    "migration:verify-artifact": "node .build/tools/verify-artifact.mjs"
+    "migration:verify-artifact": "node .build/tools/verify-artifact.mjs",
+    "docs:agents:check": "node .build/tools/check-agent-docs.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",
@@ -205,6 +206,9 @@
     "@vitejs/plugin-react": "6.1.1",
     "tailwindcss": "4.3.3",
     "typescript-web": "npm:typescript@7.0.2",
-    "vite": "8.3.0"
+    "vite": "8.3.0",
+    "github-slugger": "2.0.0",
+    "marked": "18.1.1",
+    "parse5": "8.0.1"
   }
 }
