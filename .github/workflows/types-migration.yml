@@ -69,6 +69,8 @@ jobs:
         set -euo pipefail
         npm run migration:build
         node .build/tools/gate.mjs types
+        node .build/tools/check-agent-docs.mjs
+        node --test --test-reporter=tap .build/tools/check-agent-docs.test.mjs
     - name: Run the selected compiled business and architecture entries
       env:
         MIGRATION_REPORT_DIR: ${{ runner.temp }}/types-merge/tests

@@ -1,0 +1,248 @@
+{
+  "kind": "RETROSPECTIVE_LOCAL_VALIDATION",
+  "recorded_at_utc": "2026-10-16T13:38:34.651271+00:00",
+  "status": "PASS",
+  "repo_head": "5f245d2e0f34b4c1c3bf27509454e8b0af7c2834",
+  "candidate": "Uncommitted working tree; file hashes below bind this task, not a newly published commit.",
+  "scope": "Documentation, bounded agent-doc checker and ordinary PR wiring; no production/business/SQL/flags/lockfile changes.",
+  "versions": {
+    "node": "v24.18.0"
+  },
+  "final_checks": [
+    {
+      "name": "build",
+      "exit_code": 0,
+      "elapsed_seconds": 97.295,
+      "bytes": 2390,
+      "sha256": "998be5e033142a7fd9043b910d67cf55f9a5546ceb84805b95f65ede8e02e55d"
+    },
+    {
+      "name": "strict-types",
+      "exit_code": 0,
+      "elapsed_seconds": 75.733,
+      "bytes": 465,
+      "sha256": "d78f44f0badb565e30f08f2fc2b5eceafc98cab372f0b787f975ad0566e6c92e"
+    },
+    {
+      "name": "agent-docs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.104,
+      "bytes": 51,
+      "sha256": "4e2e54f9626e5eaa66fabacbbb36a3e1e3e272867dac37da7268e144b0b61843"
+    },
+    {
+      "name": "agent-docs-unit",
+      "exit_code": 0,
+      "elapsed_seconds": 0.253,
+      "bytes": 1880,
+      "sha256": "93b9dc8db7704de5c50299180e48f795a1029772f81f61d7b17a0be3153caa10"
+    },
+    {
+      "name": "architecture",
+      "exit_code": 0,
+      "elapsed_seconds": 0.396,
+      "bytes": 168,
+      "sha256": "4601e18851ddb9463201700e54ea626fa09184e067a446d9343210035acdea89"
+    },
+    {
+      "name": "artifact",
+      "exit_code": 0,
+      "elapsed_seconds": 3.711,
+      "bytes": 130,
+      "sha256": "cebd4c959291e8af644f8507214d3f0b6049d489df5cb46f9b65fd809f70296a"
+    }
+  ],
+  "unit_counts": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skip": 0
+  },
+  "anchor_fix": {
+    "old_compiled_probe": {
+      "stage": "red",
+      "compiled_sha256": "dfe2684bd9b2e73b1a9c06f62fde1351efaf5a6e477e238818d3f269a781729b",
+      "expected": [
+        "LOCAL_ANCHOR_MISSING"
+      ],
+      "actual": [],
+      "status": "FAIL"
+    },
+    "new_compiled_probe": {
+      "stage": "green",
+      "compiled_sha256": "1cc34cc3a0633e5f41fab32eb34863a8b937a4afa981ebd24df49fd23320b9ec",
+      "expected": [
+        "LOCAL_ANCHOR_MISSING"
+      ],
+      "actual": [
+        "LOCAL_ANCHOR_MISSING"
+      ],
+      "status": "PASS"
+    },
+    "review_state": "P2 closed by read-only source review and actual compiled GREEN."
+  },
+  "prior_events_retained": [
+    "Initial preflight raw worktree-vs-Git byte assertion failed on CRLF/LF; normalized equality and separate hashes verified before build.",
+    "First candidate: six check commands exited 0, seven unit cases passed; wrapper exited 1 on Node automatic compile-cache residue. Exact owned D cache then verified and removed; independent cleanup receipt retained.",
+    "Source review corrected two EOF-overrunning locators forward to 10-16 and 7-11; original analysis artifacts unchanged.",
+    "Checker review found data-id false anchor; old compiled module reproduced FAIL, then source and eighth test changed; final candidate rebuilt once and checked independently."
+  ],
+  "review": {
+    "agent_document_rules": "No omissions found; 72 original list entries retained plus semantic phase/history review.",
+    "source_index": "Two locator corrections closed, 79 descriptors checked, no new issues.",
+    "checker": "One P2 fixed and closed; no remaining finding in two changed checker files."
+  },
+  "preservation": {
+    "protected_other_user_files_exact_bytes": 5,
+    "head_unchanged": true,
+    "branch_unchanged": true,
+    "refs_unchanged": 81,
+    "stashes_unchanged": 11,
+    "index_empty": true,
+    "production_evidence_contract_and_lock_tracked_files_unchanged": true,
+    "ss011_historical_body_unchanged_after_removing_added_banner": true,
+    "package_only_one_compiled_cli_alias_added_no_dependencies": true,
+    "user_https_instruction_preserved": true,
+    "original_bullet_literal_crosscheck": {
+      "total": 72,
+      "matched": 72,
+      "nonliteral_requiring_semantic_review": []
+    }
+  },
+  "resource_cleanup": {
+    "first_candidate_cache_cleanup": true,
+    "old_temp_empty": true,
+    "final_temp_empty": true,
+    "DB_or_browser_started": false
+  },
+  "workflow": {
+    "workflow_only_two_node_calls_added": true,
+    "manual_full_certify_and_jobs_unchanged": true,
+    "selection_representation": {
+      "working_sha256": "c4bf2a410d992c3513db2613a0d6dac9c73a4c2832d96715c7287c95e48bfc99",
+      "git_sha256": "b0b2d29233a5d7fa3bd557d0b0e71325cafd15d6e0df2b0aa300c82702b750bc",
+      "working_crlf": 170,
+      "git_crlf": 0,
+      "normalized_equal_and_no_git_diff": true
+    },
+    "selection_scope_routing_unchanged": true,
+    "source_index_json_counts": {
+      "sessions": 232,
+      "roots": 11,
+      "lessons": 27,
+      "pr99_rounds": 13
+    },
+    "root_size": {
+      "before_bytes": 16322,
+      "before_lines": 268,
+      "after_bytes": 3988,
+      "after_lines": 36,
+      "before_normalized_utf8_bytes": 16054,
+      "measurement_note": "Original wrapper counted read_text-normalized UTF8; this record separately labels it and uses raw backup size for before_bytes. Original wrapper receipt remains unchanged."
+    }
+  },
+  "remote_ci": "NOT_RUN for these uncommitted changes; only ordinary PR step wiring verified locally.",
+  "full_certify_live_deploy": "NOT_RUN; not required by this documentation/tool scope.",
+  "warnings": [
+    "Existing frontend chunk-size advisory remains in build output."
+  ],
+  "owned_files_excluding_this_receipt": [
+    {
+      "path": ".github/workflows/types-migration.yml",
+      "bytes": 21193,
+      "sha256": "7c211603ece2e646ac7aed67b22eaac9ddfe9cd628bd851401a236e1b0ef100a"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 3988,
+      "sha256": "8bed3becb6951c145b55e2dbf75054b84315fb41e78d7b6dea58046ea55b3679"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10969,
+      "sha256": "f7aaf918c29319b2de35b00e100696f617cef22de1030da2e1c0c57dc881f5b3"
+    },
+    {
+      "path": "package.json",
+      "bytes": 19198,
+      "sha256": "58659361339f4950f6c394f95665e7172340ad1af68b9745a37e1b35bb171617"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-ss011-execution.md",
+      "bytes": 12849,
+      "sha256": "7eea4cb1c510a1005639402bf59dc4fccb9496757ee0579668662166ccf1290e"
+    },
+    {
+      "path": "docs/agents/README.md",
+      "bytes": 1705,
+      "sha256": "3726c1e1428f3e3e9c8a82e18fd60bebd7c2c8b548e2d5d3fecdc3dd8dbb40d0"
+    },
+    {
+      "path": "docs/agents/baseline-history.md",
+      "bytes": 6696,
+      "sha256": "c2edf2084c659011a77bb2650651aa3859611ed5eb04b79489f81598b21fbbd0"
+    },
+    {
+      "path": "docs/agents/development.md",
+      "bytes": 7190,
+      "sha256": "8afaf33f7c03d8fb7d02fc74e5a5801c27eec6cdf2e5eb3365377d8d421f4df1"
+    },
+    {
+      "path": "docs/agents/session-operations.md",
+      "bytes": 7493,
+      "sha256": "21130925943cbb10904b00f0684c38bfd1f4d7b2b585f1abaaf0c5253a7e8514"
+    },
+    {
+      "path": "docs/agents/validation.md",
+      "bytes": 4690,
+      "sha256": "0780e4398364dd611457c2ee902f3fd50cecede12d8ed0aa9e6cd81c6fa01bd1"
+    },
+    {
+      "path": "docs/agents/refactor-20261016.md",
+      "bytes": 6820,
+      "sha256": "6489a57aba2b44fc084ce7ce0f878e1fa4d266ebc8260de2181889bb6bdb6c0d"
+    },
+    {
+      "path": "docs/retrospectives/README.md",
+      "bytes": 1781,
+      "sha256": "f929d12393d36fc59a523734583d6c0b1d617bf5920203f93d1ce1856f0f827a"
+    },
+    {
+      "path": "docs/retrospectives/2026-10-16.md",
+      "bytes": 39055,
+      "sha256": "918fdfb493fa29089471080c65d0c1e9e256c8288d0adfe5c2f1aa965dc9a14f"
+    },
+    {
+      "path": "docs/retrospectives/2026-10-16-sources.md",
+      "bytes": 36213,
+      "sha256": "e2a8d0e456bedf84307fd839d7321158df1347593aede4e5287c81176e55c1d0"
+    },
+    {
+      "path": "docs/retrospectives/2026-10-16-sources.json",
+      "bytes": 309130,
+      "sha256": "702d260e5d057690521da163b827ab3aa7324be3fd3dbe189121c8030c1b28e5"
+    },
+    {
+      "path": "tools/ts-migration/check-agent-docs.mts",
+      "bytes": 6527,
+      "sha256": "a251b7dfc5001e3a704188f82ee04be8a6165a0861fbc84ec01318adde9556ec"
+    },
+    {
+      "path": "tools/ts-migration/check-agent-docs.test.mts",
+      "bytes": 4398,
+      "sha256": "0745b3e0bf630b95bd5beb366927561f7c2c473a804870fbd8d7a85f0361a098"
+    }
+  ],
+  "private_evidence_root": "D:\\wecom-workbench-evidence\\retro-20261016",
+  "final_document_link_check": {
+    "exit_code": 0,
+    "bytes": 51,
+    "sha256": "4e2e54f9626e5eaa66fabacbbb36a3e1e3e272867dac37da7268e144b0b61843"
+  },
+  "final_diff_check": {
+    "exit_code": 0,
+    "bytes": 237,
+    "sha256": "176fc3ccd21f2a645948360736be55209ac3f286ca1246f9e3dc1dadd1b42f47"
+  },
+  "owned_changed_file_count": 18
+}
