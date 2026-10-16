@@ -36,3 +36,31 @@
 停止前 fixture DB 和其他 client 均 0；自有 PG PID 20096 已退出，62775 监听为 0，`pg_ctl status` 为 3；keeper 为 STOPPED、pid 为 null、cleanup_passed 为 true。自有 browser/profile 均 0，PG 配置字节不变。清理原件 `r4/050-owned-cleanup.json` SHA-256 为 `49cc79232278c9b7b4e55515998ee96a2bd7e3dc4989ca20b182206a5637e9b9`。
 
 沿原单 App/Worker、有限 PG 池、附件单操作/lease、SSE 32 及既有 deadline。全部持久开关仍默认 false；关闭方式沿各票原独立开关和宿主停止流程。没有真实 Provider/OAuth/WeCom 发送、业务库迁移、部署、现场或 Gate 推进。工作树和分支的合并后清理由本次发布回执另行记录；本记录不预称其已完成。
+
+## 第二轮审查修补（追加）
+
+已发布 `56e47ba1a2eeedad48788c01ddf27a10abc9438e` 的第二轮审查指出[最终 Session 漏空闲期限](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/99#discussion_r4290356398)及[核实重放的后续目录等待](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/99#discussion_r4290356404)。同提交的 Linux merge-check 在启动浏览器前，被三条仅适用于 Windows 的 D 盘断言拒绝。
+
+代录现由正式 runtime 透传同一官方 `currentSessionPredicate`，在认证及最后创建权 SQL 中核对配置的 idle TTL、原绝对截止、活动 Session 和主体；最后语句同时核验原创建角色或有效处理组。末端 Session share-lock 后仍用新语句复验物理时间，不提前跨受理等待持有锁。无持久 Session 路径仍不引用可缺的 Session 表；真实 Session 缺官方谓词时失败关闭，没有硬编码生产 TTL。
+
+核实命令先取得 ADMISSION、随后输给同主体/用途/UUID/正文的原提交时，仍按原保留目标执行 READ_COMMITTED。在第二次目录读取、原目标查询及 hash 核验之后，再检查当前创建权和官方 Session；证明围栏位于最后等待之后。退出后的拒绝不改写原 COMMITTED、目标、证明或 UUID。同一现权 helper 也覆盖候选目录返回和核实新提交后的读取。
+
+活动 selection 中七个浏览器文件的九条 D 盘断言仅增加 Windows 条件；Windows 继续拒 C、允 D，其他宿主使用原临时目录。编译树身份、业务断言、超时、截图和清理保持。没有迁移/DDL、REST 字段、默认开关或外发路径变更。
+
+| 项目 | 本轮实际结果 |
+| --- | --- |
+| 被测提交 | `16588ca82b9fc6ea879224830a3639763e0402bf` |
+| Tree | `3ea756401d309ed6a5b7b8150e3961e80445b443` |
+| Source input hash | `5a82603cc652706c181ca8cad13f3e59a94e7c685b088f1ddfd18b03fe8258df` |
+| Build manifest SHA-256 | `7de0fe209175ff34b01934ff5d40920106f5b23b943f9ec63239c35bfee03846` |
+| strict / 一次 build / 测试后 artifact | native 0；802 个编译模块、2368 个产物；未激活 |
+| stock 相关回归 | 13 入口、40/40 PASS；FAIL/CANCEL/SKIP/TODO/NOT_RUN 均 0 |
+| 独立 Standards / Spec | 各 0；固定差异为 56e47 至 16588 的 11 文件 |
+
+同一 manifest 的正式运行覆盖七个实际浏览器文件、T17 风险及最小回执、T18 核实边界/候选/受理和 T19 本人承接。沿 Node 24、隔离 PostgreSQL 18.4、真实本地 HTTP 和正式制品；未重复源码未变的附件/Incident 回归，不称 full/certify。完整 Linux 浏览器留待对应发布提交的实际 CI，不把平台谓词诊断称为 Linux 业务通过。
+
+本机原件在 `D:/wecom-workbench-evidence/all43-publication-20261016/ci-r2-fix/`。`final/026-validation-manifest.json` SHA-256 为 `e0e1e835c5eb5051f0399b31d6f6aad660ceb3e995ad5c841ee501444209cca7`，`final/027-handoff.json` 为 `00172dc96d44aa3a665e55c15d55614caa65d5057db9d0340afefb04120bc705`。空闲超时两例使用真实 PG 回执表锁；并发核实两例使用两条真实 HTTP 命令及受控 Directory/查询结果等待，另有候选查询退出一例，均先 RED 后 GREEN。012/013 因首次等待占用目录单并发名额、原提交返回 503，明确属于 setup 反证，不计产品 RED；未放宽产品并发上限或降低原提交 202 断言。
+
+按用户要求，本轮另用 Open Code Review 委派模式，由当前 Codex 主代理承担模型复核。OCR v1.12.12 的预览将全部 `.mts` 列为 `unsupported_ext`，即工具过滤的 reviewable 为 0，不能作为通过依据；本次独立 D 盘规则可为全部 11 路径解析 TypeScript/仓库规则，仍不能覆盖其扩展名过滤。主代理按原固定 Git 差异补审全部 11 文件，跳过 0、覆盖 100%、无新增发现；未配置外部模型端点、密钥或修改全局配置。原预览、规则及逐文件清单保留在 `ocr-r2/`：`report.md` SHA-256 `0fac495428cb44cc89796c1a393fc07ba7eb8747b12880eaa2cde25dab5a2ec7`，`result.json` SHA-256 `5ec3b871682e6f5d9f347ef051e7dc3f0c9e56d0e5ab98a7d0a9b602bfa422a8`。两轴原报告 `fix-review/standards/closure-r2.md` 为 `6e00983a83a212697969ad1956da98278d7941e70129952149e096c234c26491`，`fix-review/spec/closure-r2.md` 为 `f5ae4b72e84cf9ca2c076186089a728a91058d7ca4bd035f33fb7301d2b99df9`。
+
+本轮 PG PID 25420 已退出，62775 监听、fixture DB、其他 client、自有 browser/profile 均 0；keeper 为 STOPPED、pid 为 null、cleanup_passed 为 true，PG 配置字节不变。`final/025-owned-cleanup.json` SHA-256 为 `58b81851f9dc6c7b2dc3118aa61473bb5d7a53449bf3cced21e3210ca8810270`。本节只追加本轮结果，保留上一轮 fcd0 及原43票的被测祖先、manifest、失败原件和停止线；远端复审、CI、合并及最终分支清理仍以对应发布回执为准。
