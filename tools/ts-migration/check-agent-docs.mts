@@ -23,8 +23,13 @@ function withoutFences(text: string): string {
   }).join('\n');
 }
 
+function withoutComments(text: string): string {
+  return text.replace(/(`+)[\s\S]*?\1(?!`)|<!--[\s\S]*?(?:-->|$)/gu,
+    match => match.startsWith('<!--') ? match.replace(/[^\r\n]/gu, '') : match);
+}
+
 function anchors(text: string): Set<string> {
-  const source = withoutFences(text), ids = new Set<string>(), used = new Set<string>();
+  const source = withoutComments(withoutFences(text)), ids = new Set<string>(), used = new Set<string>();
   const prose = source.replace(/(`+)[\s\S]*?\1(?!`)/gu, '');
   for (const tag of prose.matchAll(/<[a-z][a-z0-9:-]*(?:\s+[^\s"'<>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*\s*\/?>/giu)) {
     const attributes = tag[0].replace(/^<[a-z][a-z0-9:-]*/iu, '');
@@ -53,11 +58,43 @@ function anchors(text: string): Set<string> {
 }
 
 function linkTargets(text: string): string[] {
-  const prose = withoutFences(text).replace(/(`+)[\s\S]*?\1(?!`)/gu, '');
+  const prose = withoutComments(withoutFences(text)).replace(/(`+)[\s\S]*?\1(?!`)/gu, '');
   const targets: string[] = [];
-  for (const match of prose.matchAll(/!?\[[^\]\n]*\]\(\s*(<[^>\n]*>|(?:\\.|[^\s)])+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)|^ {0,3}\[[^\]\n]+\]:\s*(<[^>\n]*>|\S+)/gmu)) {
-    const value = match[1] ?? match[2];
-    if (value) targets.push(value.startsWith('<') ? value.slice(1, -1) : value);
+  const destination = (start: number): {value: string; end: number} | undefined => {
+    let end = start, depth = 0;
+    if (prose[start] === '<') {
+      end++;
+      while (end < prose.length) {
+        if (prose[end] === '\\' && end + 1 < prose.length) { end += 2; continue; }
+        if (prose[end] === '>') return {value: prose.slice(start + 1, end), end: end + 1};
+        if (prose[end] === '\n' || prose[end] === '\r') return undefined;
+        end++;
+      }
+      return undefined;
+    }
+    while (end < prose.length) {
+      const char = prose[end] ?? '';
+      if (char === '\\' && end + 1 < prose.length) { end += 2; continue; }
+      if (/\s/u.test(char)) break;
+      if (char === '(') depth++;
+      if (char === ')') { if (depth === 0) break; depth--; }
+      end++;
+    }
+    return depth === 0 ? {value: prose.slice(start, end), end} : undefined;
+  };
+  const inline = /!?\[[^\]\n]*\]\(\s*/gu;
+  let match: RegExpExecArray | null;
+  while ((match = inline.exec(prose)) !== null) {
+    const target = destination(inline.lastIndex);
+    if (!target) continue;
+    const close = prose.slice(target.end).match(/^(?:\s+(?:"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|\((?:\\.|[^)\\\n])*\)))?\s*\)/u);
+    if (!close) continue;
+    targets.push(target.value);
+    inline.lastIndex = target.end + close[0].length;
+  }
+  for (const reference of prose.matchAll(/^ {0,3}\[[^\]\n]+\]:\s*/gmu)) {
+    const start = reference.index + reference[0].length, target = destination(start);
+    if (target && target.end > start) targets.push(target.value);
   }
   return targets;
 }

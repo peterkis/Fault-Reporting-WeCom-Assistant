@@ -42,6 +42,22 @@ test('only actual HTML id attributes create explicit anchors', () => fixture((ro
   assert.deepEqual(checkAgentDocs(root).map(issue => issue.target), ['docs/agents/rules.md#data-only', 'docs/agents/rules.md#quoted-only']);
 }));
 
+test('HTML comments hide links, explicit anchors and headings while inline code remains literal', () => fixture((root, write) => {
+  write('AGENTS.md', '`<!--`\n[visible](docs/agents/rules.md#visible)\n[hidden](docs/agents/rules.md#hidden)\n[heading](docs/agents/rules.md#hidden-heading)\n[unclosed](docs/agents/rules.md#unclosed)\n<!-- [retired](gone.md#write) -->\n');
+  write('docs/agents/rules.md', '<!--\n<a id="hidden"></a>\n# Hidden heading\n-->\n<a id="visible"></a>\n<!-- <a id="unclosed"></a>\n');
+  assert.deepEqual(checkAgentDocs(root).map(issue => [issue.code, issue.target]), [
+    ['LOCAL_ANCHOR_MISSING', 'docs/agents/rules.md#hidden'],
+    ['LOCAL_ANCHOR_MISSING', 'docs/agents/rules.md#hidden-heading'],
+    ['LOCAL_ANCHOR_MISSING', 'docs/agents/rules.md#unclosed'],
+  ]);
+}));
+
+test('balanced, escaped and angle-wrapped destinations retain complete paths and fragments', () => fixture((root, write) => {
+  write('AGENTS.md', '[nested](docs/agents/a(b(c)).md#part "title")\n[escaped](docs/agents/a\\(b\\).md#part)\n[angle](<docs/agents/a b(c).md#part> \'title\')\n[reference][guide]\n[guide]: docs/agents/a(b(c)).md#part\n[missing](docs/agents/missing(a).md)\n');
+  for (const name of ['a(b(c)).md', 'a(b).md', 'a b(c).md']) write('docs/agents/' + name, '# Part\n');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'AGENTS.md', code: 'LOCAL_LINK_MISSING', target: 'docs/agents/missing(a).md'}]);
+}));
+
 test('the root budget counts UTF-8 bytes rather than visible characters', () => fixture((root, write) => {
   write('AGENTS.md', '规'.repeat(2731));
   assert.deepEqual(checkAgentDocs(root).map(issue => issue.code), ['AGENTS_BYTE_BUDGET_EXCEEDED']);
