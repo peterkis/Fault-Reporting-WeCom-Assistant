@@ -74,6 +74,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
     if(error.status===403){
      try{const context=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],context);}
      catch(readError){if(!current())return;if(readError instanceof ApiError&&[401,403,404].includes(readError.status))await deny(readError);else{setOpaque(command.client_command_id);setState('unknown');setMessage('本次维护已被拒绝，当前读取权限尚未确认；请保留原操作只读核对。');}return;}
+     if(error.code!=='P2_016_FORBIDDEN'){setOpaque(command.client_command_id);setState('unknown');setMessage('请求校验被拒绝；原操作仍保留，请只读核对，不会再次发送。');return;}
     }
     const cleaned=error.status===403?await settle(command.client_command_id):await refuse(command.client_command_id);if(!current())return;setPending(null);if(error.status===403)setInput('');setOpaque(cleaned?null:command.client_command_id);
     if(!cleaned){setState('unknown');setMessage('本次操作已被拒绝，但仍有恢复记录待核对；请先只读核对当前操作。');return;}

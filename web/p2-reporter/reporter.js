@@ -1,6 +1,6 @@
 const el=id=>document.getElementById(id);
 const member=document.documentElement.dataset.identityMode==='MEMBER_REQUIRED';
-let ref=null,cursor=null,etag=null,timer=null,stopped=false,busy=false,generation=0,controller=null,channel=null;
+let ref=null,cursor=null,etag=null,timer=null,stopped=false,busy=false,generation=0,controller=null,channel=null,logoutRequested=false;
 const valid=g=>g===generation&&!stopped;
 function line(tag,text){const node=document.createElement(tag);node.textContent=text;return node;}
 function clearView(){
@@ -60,20 +60,21 @@ el('more').addEventListener('click',async()=>{
   try{const result=await request('/api/reporter/tickets/'+ref+'/timeline?cursor='+encodeURIComponent(cursor));if(valid(g))renderTimeline(result.body,true);}
   catch(error){failed(error,g);}finally{busy=false;el('more').disabled=false;schedule();}
 });
-el('refresh').addEventListener('click',()=>{if(!ref||busy)return;stopped=false;void refresh();});
+el('refresh').addEventListener('click',()=>{if(!ref||busy)return;logoutRequested=false;stopped=false;void refresh();});
 el('logout').addEventListener('click',async()=>{
-  cancel();channel?.postMessage('revalidate');el('status').textContent='正在退出…';
+  logoutRequested=true;cancel();channel?.postMessage('revalidate');el('status').textContent='正在退出…';
   try{await request('/api/reporter/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},null);el('status').textContent='已退出访问。';}
   catch{el('status').textContent='退出尚未确认，请恢复网络后重试。';}
   el('reauth').hidden=!member;
 });
 function connectChannel(){
   if(member&&typeof BroadcastChannel==='function'&&!channel){channel=new BroadcastChannel('yixiaoxiu-auth');channel.onmessage=()=>{
+    if(logoutRequested)return;
     cancel(false);el('status').textContent='正在重新验证访问…';schedule();
   };}
 }
 async function initialize({fragment=true}={}){
-  cancel(false);controller=new AbortController();const g=generation;connectChannel();
+  logoutRequested=false;cancel(false);controller=new AbortController();const g=generation;connectChannel();
   try{
     let grant=fragment?new URLSearchParams(location.hash.slice(1)).get('grant'):null;
     history.replaceState(null,'',member?location.pathname:'/reporter/');
