@@ -2,7 +2,9 @@
 // protocol: unsubmitted selection intent and one genuinely committed unknown POST.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {createHash,randomUUID} from 'node:crypto';
+import type {IncomingMessage,ServerResponse} from 'node:http';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -42,6 +44,12 @@ const copies=`new Promise((resolve,reject)=>{
       operations:operations.result.filter(row=>row.kind==='intake'&&row.purpose==='manual-report').map(row=>({principal:row.principal,id:row.id,commandId:row.commandId}))});};};
 })`;
 async function image(browser:Browser,evidence:string,name:string){await writeFile(join(evidence,name),Buffer.from(await browser.screenshot(),'base64'));}
+async function archiveFailureImage(browser:Browser,stage:string){
+  const bytes=Buffer.from(await browser.screenshot(),'base64'),width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20);
+  const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const file=join(directory,'new-detail-900.png');await writeFile(file,bytes);
+  console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scenario:'T18_SELECTION_FLAG_OFF_RESTART_FAILURE',stage,
+    screenshots:[{file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
+}
 async function fill(browser:Browser,label:string,value:string){
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify('[aria-label="'+label+'"]')});if(!input)throw Error('T18_RECOVERY_FIELD_MISSING');
     const kind=input instanceof HTMLTextAreaElement?HTMLTextAreaElement:input instanceof HTMLSelectElement?HTMLSelectElement:HTMLInputElement;
@@ -81,7 +89,8 @@ test('a restored explicit reporter selection cannot silently become hand entry a
   if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);const evidence=await mkdtemp(join(tmpdir(),'t18-selection-intent-recovery-')),authority=createT18Directory();
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const {origin,pool,principals}=fixture,principal=principals[0],other=principals[1];assert.ok(principal&&other);authority.setPrincipal(principal.id);await applyT18ForwardCheck(pool);
-    let runtime=fixture.runtime,browser:Browser|undefined,error:unknown,stage='FIXTURE_READY';
+    let runtime=fixture.runtime,browser:Browser|undefined,error:unknown,stage='FIXTURE_READY',removeRestartObserver:(()=>void)|undefined;
+    const replacementBootstrapStatuses:number[]=[];
     try{
       const cookie=fixture.browserCookies[0];assert.ok(cookie);
       browser=await launchSystemBrowser({url:origin+'/workbench/app/reports/new',width:900,height:900,cookies:[cookie]});assert.ok(browser);
@@ -95,13 +104,21 @@ test('a restored explicit reporter selection cannot silently become hand entry a
       assert.equal(await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.method==='POST').length"),0);stage='SELECTION_INTENT_RESTORED';
       // Choose the same authorized candidate explicitly before exercising the separate
       // flag-off boundary; both allowed restoration policies above remain valid.
-      await select(browser);await saved(browser,principal.id);await runtime.stop();assert.equal(runtime.server.listening,false);
+      await select(browser);await saved(browser,principal.id);
+      await browser.waitFor(`document.querySelector('[aria-label="故障描述"]')?.value===${JSON.stringify(description)}&&document.querySelector('[data-action=return-workbench]')?.getAttribute('aria-disabled')==='false'`);
+      // Leave the document before replacing its fixture session: background reads
+      // with the old cookie correctly revoke authorization and purge drafts.
+      await browser.command('Page.navigate',{url:'about:blank'});await browser.waitFor("location.href==='about:blank'&&document.readyState==='complete'");
+      await runtime.stop();assert.equal(runtime.server.listening,false);
       const restarted=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:Number(new URL(origin).port),
         principalIds:[principal.id,fixture.outsider.id,other.id],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,
         ...options,workbenchReporterCandidatesEnabled:false,manualReporterDirectory:authority.directory});
       if('disabled' in restarted)throw Error('T18_RESTARTED_RUNTIME_DISABLED');runtime=restarted;
+      const onRestartRequest=(request:IncomingMessage,response:ServerResponse)=>{if(request.url==='/api/lifecycle/bootstrap')response.once('finish',()=>replacementBootstrapStatuses.push(response.statusCode));};
+      restarted.server.on('request',onRestartRequest);removeRestartObserver=()=>{restarted.server.off('request',onRestartRequest);};
       const started=await runtime.start();assert.ok(started.cookies);const nextCookie=started.cookies[0];assert.ok(nextCookie&&typeof nextCookie.url==='string');
-      await browser.command('Network.setCookies',{cookies:[{...nextCookie,url:nextCookie.url}]});await reload(browser);
+      await browser.command('Network.setCookies',{cookies:[{...nextCookie,url:nextCookie.url}]});await browser.command('Page.navigate',{url:origin+'/workbench/app/reports/new'});
+      await browser.waitFor("Boolean(document.querySelector('[data-manual-report-form]'))");
       await browser.waitFor(`globalThis.__t18RecoveryRows.some(row=>row.path==='/api/lifecycle/bootstrap'&&row.status===200&&row.result?.reporter_candidates_enabled===false)
         &&document.querySelector('[aria-label="故障描述"]')?.value===${JSON.stringify(description)}`);
       stage='REAL_CANDIDATE_FLAG_OFF';
@@ -117,7 +134,18 @@ test('a restored explicit reporter selection cannot silently become hand entry a
       const posts:unknown=await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.method==='POST')");assert.ok(Array.isArray(posts)&&posts.length===1);
       const body=object(object(posts[0]).body);assert.equal(object(body.reporter).verification,'UNVERIFIED');assert.equal(body.description,description);assert.deepEqual(body.location,{text:location,unknown:false});assert.equal(authority.calls.verify,0);
       stage='EXPLICIT_HAND_ENTRY_ADMITTED';await image(browser,evidence,'03-explicit-hand-entry-result.png');console.log('T18_SELECTION_RECOVERY_EVIDENCE '+JSON.stringify({case:'SELECTION_FLAG_OFF',evidence,stage}));
-    }catch(failure){error=failure;if(browser)try{await image(browser,evidence,'failure-actual-ui.png');}catch{}console.log('T18_SELECTION_RECOVERY_DIAGNOSTIC '+JSON.stringify({case:'SELECTION_FLAG_OFF',evidence,stage}));}
+    }catch(failure){
+      error=failure;
+      if(browser){
+        try{await archiveFailureImage(browser,stage);}catch{}
+        try{await image(browser,evidence,'failure-actual-ui.png');}catch{}
+        try{
+          const view:unknown=await browser.evaluate(`(()=>({path:location.pathname,form:Boolean(document.querySelector('[data-manual-report-form]')),description_matches:document.querySelector('[aria-label="故障描述"]')?.value===${JSON.stringify(description)},description_length:document.querySelector('[aria-label="故障描述"]')?.value?.length??null,selected:Boolean(document.querySelector('[data-selected-reporter]')),fallback:Boolean(document.querySelector('[data-action=manual-reporter-fallback]')),draft_status:document.querySelector('[data-manual-report-draft-status]')?.textContent?.slice(0,300)??null,bootstrap:(globalThis.__t18RecoveryRows??[]).filter(row=>row.path==='/api/lifecycle/bootstrap').slice(-16).map(row=>({status:row.status,flag:row.result?.reporter_candidates_enabled??null})),post_count:(globalThis.__t18RecoveryRows??[]).filter(row=>row.method==='POST').length}))()`);
+          const stored:unknown=await browser.evaluate(copies);console.log('T18_SELECTION_RECOVERY_STATE '+JSON.stringify({stage,view,stored,replacement_bootstrap_statuses:replacementBootstrapStatuses}));
+        }catch{}
+      }
+      console.log('T18_SELECTION_RECOVERY_DIAGNOSTIC '+JSON.stringify({case:'SELECTION_FLAG_OFF',evidence,stage}));
+    }finally{removeRestartObserver?.();}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},()=>closeRuntime(runtime)],error);
   },{...options,manualReporterDirectory:authority.directory});
 });
