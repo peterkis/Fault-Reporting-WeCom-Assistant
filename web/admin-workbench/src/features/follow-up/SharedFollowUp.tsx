@@ -104,8 +104,13 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
    // still requires current maintenance authority; temporary reads preserve it.
    let preserveFailedInput=false;
    if(receipt.state==='FAILED'&&principal.follow_up_schedules_enabled&&principal.follow_up_schedule_draft_recovery_enabled===true){
-    const latest=await followUpApi.view(ticketId,controller.signal);if(!current())return;client.setQueryData(key,latest);
-    preserveFailedInput=latest.allowed_actions.some(action=>action==='SET'||action==='CANCEL');
+    try{
+     const latest=await followUpApi.view(ticketId,controller.signal);if(!current())return;client.setQueryData(key,latest);
+     preserveFailedInput=latest.allowed_actions.some(action=>action==='SET'||action==='CANCEL');
+    }catch(error){
+     if(!current())return;
+     if(!(error instanceof ApiError&&error.status===503&&error.code==='P2_016_DISABLED'))throw error;
+    }
    }
    const cleaned=receipt.state==='FAILED'&&preserveFailedInput?await refuse(id):await settle(id);if(!current())return;setPending(null);if(receipt.state!=='FAILED'||!preserveFailedInput)setInput('');setOpaque(cleaned?null:id);
    if(!cleaned){setState('unknown');setMessage('已读到本次操作终态，仍有恢复记录待核对；请只读核对当前操作。');return;}
