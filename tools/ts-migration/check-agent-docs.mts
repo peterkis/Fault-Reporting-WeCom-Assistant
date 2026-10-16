@@ -1,4 +1,4 @@
-import {existsSync, readFileSync, readdirSync, realpathSync} from 'node:fs';
+import {existsSync, readFileSync, readdirSync, realpathSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import GithubSlugger from 'github-slugger';
@@ -46,13 +46,17 @@ export function checkAgentDocs(root: string): AgentDocIssue[] {
   const add = (file: string, code: string, target?: string): void => {
     issues.push(target === undefined ? {file: relative(base, file), code} : {file: relative(base, file), code, target});
   };
-  const collect = (directory: string): void => {
+  const collect = (directory: string, ancestors: ReadonlySet<string> = new Set<string>()): void => {
     if (!existsSync(directory)) return;
     try {
-      if (!inside(base, realpathSync(directory))) { add(directory, 'DOC_OUTSIDE_REPOSITORY'); return; }
+      const resolved = realpathSync(directory);
+      if (!inside(base, resolved)) { add(directory, 'DOC_OUTSIDE_REPOSITORY'); return; }
+      const identity = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+      if (ancestors.has(identity)) return;
+      const next = new Set(ancestors); next.add(identity);
       for (const entry of readdirSync(directory, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)) {
         const file = path.join(directory, entry.name);
-        if (entry.isDirectory()) collect(file);
+        if (entry.isDirectory() || entry.isSymbolicLink() && statSync(file).isDirectory()) collect(file, next);
         else if ((entry.isFile() || entry.isSymbolicLink()) && /\.md$/iu.test(entry.name)) files.push(file);
       }
     } catch { add(directory, 'DOC_UNREADABLE'); }

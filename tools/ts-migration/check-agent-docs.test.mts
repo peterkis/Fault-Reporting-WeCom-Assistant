@@ -113,6 +113,42 @@ test('local links cannot leave the repository through traversal, encoding or a d
   assert.deepEqual(checkAgentDocs(root).map(issue => issue.code), Array<string>(3).fill('LOCAL_LINK_OUTSIDE_REPOSITORY'));
 }));
 
+test('an in-repository linked documentation directory is scanned', () => fixture((root, write) => {
+  write('AGENTS.md', '[rules](docs/agents/linked/rules.md#rules)\n');
+  write('docs/agents/README.md', '# Navigation\n');
+  write('docs/shared/rules.md', '# Rules\n[missing](missing.md)\n');
+  symlinkSync(path.join(root, 'docs/shared'), path.join(root, 'docs/agents/linked'), 'junction');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'docs/agents/linked/rules.md', code: 'LOCAL_LINK_MISSING', target: 'missing.md'}]);
+}));
+
+test('an external linked documentation directory is rejected without an incoming link', () => fixture((root, write, owned) => {
+  const outside = path.join(owned, 'outside'); mkdirSync(outside); writeFileSync(path.join(outside, 'rules.md'), '# Rules\n');
+  write('docs/retrospectives/README.md', '# Retrospectives\n');
+  symlinkSync(outside, path.join(root, 'docs/retrospectives/external'), 'junction');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'docs/retrospectives/external', code: 'DOC_OUTSIDE_REPOSITORY'}]);
+}));
+
+test('directory aliases validate links relative to each logical parent', () => fixture((root, write) => {
+  write('AGENTS.md', '[first](docs/agents/a/guide.md)\n[second](docs/retrospectives/b/guide.md)\n');
+  write('docs/agents/present.md', '# Present\n');
+  write('docs/retrospectives/README.md', '# Retrospectives\n');
+  write('docs/shared/guide.md', '[up](../present.md)\n');
+  symlinkSync(path.join(root, 'docs/shared'), path.join(root, 'docs/agents/a'), 'junction');
+  symlinkSync(path.join(root, 'docs/shared'), path.join(root, 'docs/retrospectives/b'), 'junction');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'docs/retrospectives/b/guide.md', code: 'LOCAL_LINK_MISSING', target: '../present.md'}]);
+}));
+
+test('cyclic directory links terminate while distinct aliases are scanned', () => fixture((root, write) => {
+  write('docs/agents/rules.md', '[missing](missing.md)\n');
+  symlinkSync(path.join(root, 'docs/agents'), path.join(root, 'docs/agents/cycle'), 'junction');
+  write('docs/retrospectives/README.md', '# Retrospectives\n');
+  symlinkSync(path.join(root, 'docs/agents'), path.join(root, 'docs/retrospectives/duplicate'), 'junction');
+  assert.deepEqual(checkAgentDocs(root), [
+    {file: 'docs/agents/rules.md', code: 'LOCAL_LINK_MISSING', target: 'missing.md'},
+    {file: 'docs/retrospectives/duplicate/rules.md', code: 'LOCAL_LINK_MISSING', target: 'missing.md'},
+  ]);
+}));
+
 test('unrelated Markdown and source-index JSON contents are outside the link scan', () => fixture((root, write) => {
   write('docs/other.md', '[unrelated](missing.md)\n');
   write('docs/retrospectives/source-index.json', '{"source":"D:/external/session.jsonl"}\n');
