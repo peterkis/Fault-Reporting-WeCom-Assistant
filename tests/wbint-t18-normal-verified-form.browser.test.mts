@@ -6,8 +6,8 @@
 // Later reader/decoder/snapshot assertions remain NOT_REACHED at the first failure.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash,createHmac} from 'node:crypto';
-import {mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {createHash,createHmac,randomUUID} from 'node:crypto';
+import {mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -173,8 +173,9 @@ test('the actual production form explicitly selects an authorized reporter and a
       await image(browser,evidence,'03-real-retained-verified-review.png');stage='RETAINED_PROFILE_VISIBLE';
       // Refresh only the current object's actual reader. No new admission or Directory snapshot write.
       profile={display_name:'目录后来更名',departments:['目录后来调岗']};directoryVersion='T18_SYNTHETIC_DIRECTORY_V2';
+      const previousDocument=await browser.evaluate('performance.timeOrigin');assert.equal(typeof previousDocument,'number');
       await browser.command('Page.reload');
-      await browser.waitFor("document.querySelector('[data-review-manual-report]')?.textContent.includes('合成成员甲')&&document.querySelector('[data-review-manual-report]')?.textContent.includes('合成门诊')");
+      await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(previousDocument)}&&globalThis.__t18NormalRequests?.some(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200&&row.result!==null)&&document.querySelector('[data-review-manual-report]')?.textContent.includes('合成成员甲')&&document.querySelector('[data-review-manual-report]')?.textContent.includes('合成门诊')`);
       const refreshedReads:unknown=await browser.evaluate(`globalThis.__t18NormalRequests.filter(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status===200&&row.result!==null)`);
       assert.ok(Array.isArray(refreshedReads)&&refreshedReads.length>0,'reload must read the same real Review through current HTTP');
       assert.deepEqual(object(object(refreshedReads[refreshedReads.length-1]).result).manual_report,expected);stage='DIRECTORY_CHANGED_CURRENT_READ';
@@ -185,7 +186,10 @@ test('the actual production form explicitly selects an authorized reporter and a
       console.log('T18_NORMAL_UI_EVIDENCE '+JSON.stringify({evidence,stage,source:'ON_SITE',reporter_verification:'VERIFIED',external_notification:false}));
     }catch(failure){
       error=failure;
-      if(browser){try{await image(browser,evidence,'failure-actual-ui.png');console.log('T18_NORMAL_UI_DIAGNOSTIC '+JSON.stringify({evidence,stage,state:await browser.evaluate("({path:location.pathname,form:Boolean(document.querySelector('[data-manual-report-form]')),selector:Boolean(document.querySelector('[aria-label=\"报修人姓名\"][role=combobox]')),requests:(globalThis.__t18NormalRequests??[]).map(row=>({path:row.path,method:row.method,status:row.status}))})")}));}catch{console.log('T18_NORMAL_UI_DIAGNOSTIC_UNAVAILABLE '+JSON.stringify({evidence,stage}));}}
+      if(browser){try{await image(browser,evidence,'failure-actual-ui.png');
+        const pixels=await readFile(join(evidence,'failure-actual-ui.png')),receiptDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());await mkdir(receiptDirectory);const file=join(receiptDirectory,randomUUID()+'.png');await writeFile(file,pixels);
+        console.log('SS010_BROWSER '+JSON.stringify({screenshots:[{file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')}]}));
+        console.log('T18_NORMAL_UI_DIAGNOSTIC '+JSON.stringify({evidence,stage,state:await browser.evaluate("({path:location.pathname,form:Boolean(document.querySelector('[data-manual-report-form]')),selector:Boolean(document.querySelector('[aria-label=\"报修人姓名\"][role=combobox]')),requests:(globalThis.__t18NormalRequests??[]).map(row=>({path:row.path,method:row.method,status:row.status}))})")}));}catch{console.log('T18_NORMAL_UI_DIAGNOSTIC_UNAVAILABLE '+JSON.stringify({evidence,stage}));}}
     }
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,workbenchDraftRecoveryEnabled:true,
