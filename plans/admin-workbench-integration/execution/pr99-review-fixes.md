@@ -64,3 +64,29 @@
 按用户要求，本轮另用 Open Code Review 委派模式，由当前 Codex 主代理承担模型复核。OCR v1.12.12 的预览将全部 `.mts` 列为 `unsupported_ext`，即工具过滤的 reviewable 为 0，不能作为通过依据；本次独立 D 盘规则可为全部 11 路径解析 TypeScript/仓库规则，仍不能覆盖其扩展名过滤。主代理按原固定 Git 差异补审全部 11 文件，跳过 0、覆盖 100%、无新增发现；未配置外部模型端点、密钥或修改全局配置。原预览、规则及逐文件清单保留在 `ocr-r2/`：`report.md` SHA-256 `0fac495428cb44cc89796c1a393fc07ba7eb8747b12880eaa2cde25dab5a2ec7`，`result.json` SHA-256 `5ec3b871682e6f5d9f347ef051e7dc3f0c9e56d0e5ab98a7d0a9b602bfa422a8`。两轴原报告 `fix-review/standards/closure-r2.md` 为 `6e00983a83a212697969ad1956da98278d7941e70129952149e096c234c26491`，`fix-review/spec/closure-r2.md` 为 `f5ae4b72e84cf9ca2c076186089a728a91058d7ca4bd035f33fb7301d2b99df9`。
 
 本轮 PG PID 25420 已退出，62775 监听、fixture DB、其他 client、自有 browser/profile 均 0；keeper 为 STOPPED、pid 为 null、cleanup_passed 为 true，PG 配置字节不变。`final/025-owned-cleanup.json` SHA-256 为 `58b81851f9dc6c7b2dc3118aa61473bb5d7a53449bf3cced21e3210ca8810270`。本节只追加本轮结果，保留上一轮 fcd0 及原43票的被测祖先、manifest、失败原件和停止线；远端复审、CI、合并及最终分支清理仍以对应发布回执为准。
+
+## 第三轮审查修补（追加）
+
+已发布 `0900842a0646f1789d635a2144204b3bb6b6e5bb` 的第三轮新增[候选回执查询等待后的 Session 检查](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/99#discussion_r4290607679)。该轮 Linux CI 执行 55/215 入口，95 PASS、1 FAIL、160 NOT_RUN；相关 T18/T21 浏览器入口已实际通过，失败入口为 `t37-communicator-boundaries.integration.test.mts`。原 CI 只记录 stream-failures 断言为 false，不将后续本地错误码冒称为其原始日志。
+
+候选命令回执现在在 UNKNOWN、FAILED、候选 COMMITTED 返回前复验当前候选 READ、ADMIN/DISPATCHER 用途和官方 Session。确认结果的 Incident 资源查询完成后，再在同一最终 SQL 核对候选用途、结果 Incident 的一般 READ、活动主体、角色/团队及 Session（含配置 idle TTL）。候选分支使用可信 kind 的固定 SQL，不引用候选表不存在的 scope 列；原 Incident scope/本人 report-assignee 条件和参数位置保持。原 principal scope、actor、UUID、三种 command_type、返回形状及账本不变，旧确认回执不重新套用新确认的状态、版本或写入范围条件。无 Session 路径继续不引用可缺会话表。
+
+T37 的本地原源诊断记录到 Control 流的 `P2_G1_SESSION_REBUILD_REQUIRED`；受控跨秒时间线显示，未投影的 ASSIGNMENT_ASSIGNED 早于同 Session 已投影的 TICKET_EVENT。测试仅在两组 takeover 后调用现有有界 drain，先完成 Control 投影，再执行后续业务；同一受控跨秒诊断转为 GREEN。原 canonical/foreign 关系、原生 DIFFERENT_INTAKE/ENDED、SET/CANCEL 拒绝及原 ACK 断言均保持，生产投影器、时钟、超时和重试未改。
+
+新增六个回执风险场景覆盖实际 HTTP/PG 的查询结果等待、官方退出、idle 过期，以及失去候选 broad 用途但仍可读关联 Incident 的情况。准确保留诊断分类：005 为 **5 条实际 HTTP200 权限 RED＋1 条 UNKNOWN 用例 fetch 失败**，不是6条权限 RED；007 为5 PASS＋idle 用例 fetch失败；008临时增加 cause/阶段观测后6 PASS，原 transport 未复现、原因未确认。原编译探针字节恢复，原失败不重标。最后补齐测试失败路径：使用既有清理 aggregator 保存主错误和不同 pending 错误，逐项尝试 replacement runtime、认证器关闭及监听归零检查。
+
+| 项目 | 本轮最终实际结果 |
+| --- | --- |
+| 被测提交 | `48678f51042f995b123f2e5fa553b6e06830ee82` |
+| Tree | `f45bd45ae89b4193a2e0d5aa0203040d5888e531` |
+| Source input hash | `4b37fbd6c01ebeafca0c03a975b56294605d913247c733f3f8fbadbe39e51956` |
+| Build manifest SHA-256 | `db9212109c61cafe9c168f80dfebd810e3078720ab69fffd232424ffcfa8e7f9` |
+| strict / 一次 build / 测试后 artifact | native 0；802 个编译模块、2368 个产物；未激活 |
+| stock 相关回归 | 8 入口、26/26 PASS；FAIL/CANCEL/SKIP/TODO/NOT_RUN 均 0 |
+| 原 Code Review 的 Standards / Spec | 各 0；3 文件主体修补及后续单 hunk 清理分别复核 |
+
+最终同一 manifest 覆盖 T30 原风险和新增候选回执六例、T27 原命令恢复、P2-012/T30 原合同，以及 T37 语义、资源、权限和合同入口。沿 Node24、隔离 PG18.4 和真实本地 HTTP；未重跑源码未变的第二轮13入口，不称 full/certify。先前 `a688769101ea1ec1290e4f339099c06c163037f9` 的8入口26/26及制品原件保留在 `ci-r3-fix/final/`，不重绑为最终提交；最终原件独立保存在 `ci-r3-fix/final-cleanup/`。
+
+仍沿本机原件根 `D:/wecom-workbench-evidence/all43-publication-20261016/`。最终 `ci-r3-fix/final-cleanup/026-validation-manifest.json` SHA-256 为 `310662deff317b37cdc027d68620a860cb1ecca000defe672ee1c042904e47aa`，`027-handoff.json` 为 `4f6ffcedfaf6164314f81c77486ef4e40b3be3b4764b9f00bd9618972bad8df8`。本轮按用户后续选择采用原 Code Review 双轴，不再运行 OCR；上一节 OCR 过滤限制及历史补审记录保持原状。最新有限报告 `fix-review/standards/closure-4867.md` SHA-256 为 `251a5932680a7d850ea7bccfe8c02e5f9894646d61c89320dafaaa6738b2d9a7`，`fix-review/spec/closure-4867.md` 为 `ade54de71d25b1b2391ecfaf78667468ff03d8448e5991765e3a9e1056ebdb32`；两者沿用已独立完成的主体三路径复核。
+
+PG PID 5132 已退出，62775 监听、fixture DB、其他 client、自有 browser/profile 均0；keeper STOPPED、pid null、cleanup_passed true，配置字节不变。最终 `025-owned-cleanup.json` SHA-256 为 `742a1c9d20200f1f0b92c8029748a7550f7eccebca8fcff520d4be5d6bc74255`。无新增迁移/DDL、默认开关、外发、真实依赖、部署或 Gate 推进；本节不预称后续远端审查、CI、合并及最终清理已经完成。
