@@ -7,6 +7,7 @@ import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
 import {createWeComWorkbenchAuthentication} from '../src/p2-016-workbench-wecom-auth.mjs';
 import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
 import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
 const input=(version:string,note='合成内部检查')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:note});
 
@@ -43,7 +44,7 @@ for(const scenario of [
     }};
     await runtime.stop();const observed=new Proxy(pool,{get(target,key){if(key==='query')return gated.query;const member:unknown=Reflect.get(target,key);return typeof member==='function'?member.bind(target):member;}});
     const official=createP2012Runtime({pool:observed,publicOrigin:'https://pr99-auth.invalid',listenPort:Number(new URL(origin).port),workbenchAuthentication:auth,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentCandidateWorkspaceEnabled:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});
-    let pending:Promise<{status:number;body:Record<string,unknown>}>|undefined;
+    let pending:Promise<{status:number;body:Record<string,unknown>}>|undefined,primaryError:unknown;
     const read=async()=>{const response=await fetch(origin+root+'/commands/'+commandId,{headers:{cookie}});return {status:response.status,body:record(await response.json())};};
     try{
       await official.start();const initial=await read();assert.equal(initial.status,200,JSON.stringify(initial.body));assert.equal(initial.body.state,['CANDIDATE','CONFIRMATION'].includes(scenario.state)?'COMMITTED':scenario.state);
@@ -58,7 +59,11 @@ for(const scenario of [
         await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);
       }
       resume();const result=await pending;assert.equal(result.status,403,JSON.stringify(result.body));assert.equal(Object.hasOwn(result.body,'result'),false);assert.equal(Object.hasOwn(result.body,'state'),false);assert.deepEqual(await facts(),before,'a refused read cannot mutate the original command or business facts');
-    }finally{resume();await pending;await official.stop();await auth.close();}
+    }catch(error){primaryError=error;}
+    await closeBrowserTestResources([
+      async()=>{resume();try{await pending;}catch(error){if(error!==primaryError)throw error;}},
+      ()=>official.stop(),()=>auth.close(),()=>{assert.equal(official.server.listening,false);},
+    ],primaryError);
   });
 });
 
