@@ -7,11 +7,11 @@ import {WorkbenchError} from '../src/p2-006-workbench-query.mjs';
 import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../src/platform/postgres-pool.mjs';
 import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,WorkbenchReporterCandidate} from '../contracts/workbench_reporter_candidates_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
-interface Fixture {origin:string;cookies:string[];principals:PilotPrincipal[];pool:PostgresPool}
+interface Fixture {origin:string;backendOrigin?:string;sessionId?:string;cookies:string[];principals:PilotPrincipal[];pool:PostgresPool}
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function text(value:unknown):string{assert.equal(typeof value,'string');assert.ok(value);return value as string;}
 type Reachability=WorkbenchReporterCandidate['message_reachability'];
@@ -47,13 +47,13 @@ function directoryAuthority(){
           verified_at:local,verified_at_epoch_ms:epoch,actor_principal_id:principalId}};
       },
     }};
-  return {directory,target,calls,setPrincipal(id:string){principalId=id;},setReachability(value:Reachability){reachability=value;},setReadMode(value:ReadMode){readMode=value;},
+  return {directory,target,calls,candidate,setPrincipal(id:string){principalId=id;},setReachability(value:Reachability){reachability=value;},setReadMode(value:ReadMode){readMode=value;},
     command():VerifiedManualReportCommand{const selected=candidate();return {schema_version:1,client_command_id:randomUUID(),source:'PHONE',description:'合成核实代录：打印机无法打印',location:{text:null,unknown:true},reporter:{verification:'VERIFIED_SELECTION',candidate_ref:selected.candidate_ref,candidate_version:selected.candidate_version}};}};
 }
 async function client(fixture:Fixture){
-  const cookie=fixture.cookies[0];assert.ok(cookie);const get=(path:string)=>fetch(fixture.origin+path,{headers:{cookie}});
+  const cookie=fixture.cookies[0];assert.ok(cookie);const transport=fixture.backendOrigin??fixture.origin,get=(path:string)=>fetch(transport+path,{headers:{cookie}});
   const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);const csrf=text(object(await bootstrap.json()).csrf_token);
-  return {get,post:(body:VerifiedManualReportCommand)=>fetch(fixture.origin+'/api/workbench/reports',{method:'POST',headers:{cookie,origin:fixture.origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':body.client_command_id},body:JSON.stringify(body)})};
+  return {get,csrf,post:(body:VerifiedManualReportCommand)=>fetch(transport+'/api/workbench/reports',{method:'POST',headers:{cookie,origin:fixture.origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':body.client_command_id},body:JSON.stringify(body)})};
 }
 async function facts(pool:PostgresPool){const row=(await pool.query(`SELECT
   (SELECT count(*)::integer FROM intake.service_intake WHERE source_channel='MANUAL') AS intakes,
@@ -72,6 +72,63 @@ async function externalFacts(pool:PostgresPool){const row=(await pool.query(`SEL
   (SELECT count(*)::integer FROM communication.delivery) AS deliveries,(SELECT count(*)::integer FROM notification.outbox) AS notifications,
   (SELECT count(*)::integer FROM notification.delivery) AS notification_deliveries`)).rows[0];assert.ok(row);return row;}
 const enabled={workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,workbenchDraftRecoveryEnabled:true};
+
+test('candidate search refuses official logout during the Directory wait without exposing the returned candidate page',async()=>{
+  const source=directoryAuthority();let hold=false,reached=false,resume=()=>{};const gate=new Promise<void>(resolve=>{resume=resolve;});
+  const directory:ManualReporterDirectoryOptions={...source.directory,port:{...source.directory.port,async searchAuthorizedCandidates(input){
+    input.signal.throwIfAborted();if(hold){reached=true;await gate;}
+    return {schema_version:1,candidates:[source.candidate()],next_cursor:null,manual_fallback_available:true};
+  }}};
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const actor=fixture.principals[0];assert.ok(actor);source.setPrincipal(actor.id);const http=await client(fixture),path='/api/workbench/reporter-candidates?q='+encodeURIComponent('合成')+'&limit=2';
+    assert.equal((await http.get(path)).status,200);const graph=await facts(fixture.pool),external=await externalFacts(fixture.pool);let pending:Promise<Response>|undefined;
+    try{
+      hold=true;pending=http.get(path);for(let attempt=0;!reached&&attempt<200;attempt++)await new Promise(resolve=>setTimeout(resolve,10));assert.ok(reached);
+      const logout=await fetch((fixture.backendOrigin??fixture.origin)+'/workbench/logout',{method:'POST',headers:{cookie:text(fixture.cookies[0]),origin:fixture.origin,'x-csrf-token':http.csrf}});assert.equal(logout.status,200);
+      assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[text(fixture.sessionId)])).rows[0]?.state,'REVOKED');
+      resume();const response=await pending;assert.equal(response.status,403);const denied=object(await response.json());assert.equal(object(denied.error).code,'P2_016_FORBIDDEN');assert.equal(Object.hasOwn(denied,'candidates'),false);
+      assert.deepEqual(await facts(fixture.pool),graph);assert.deepEqual(await externalFacts(fixture.pool),external);
+    }finally{resume();await pending?.catch(()=>{});}
+  },{...enabled,manualReporterDirectory:directory,realWorkbenchAuthentication:true});
+});
+
+for(const seam of ['DIRECTORY_READ','RETAINED_TARGET'] as const)test(`verified lost-race replay refuses official logout during ${seam} without changing the original committed receipt`,async()=>{
+  const source=directoryAuthority(),verify=source.directory.port.verifyAuthorizedCandidate;assert.ok(verify);
+  let resumeAdmission=()=>{},resumeRead=()=>{},admissionHeld=false,readHeld=false,readReturned=false;
+  const admissionGate=new Promise<void>(resolve=>{resumeAdmission=resolve;}),readGate=new Promise<void>(resolve=>{resumeRead=resolve;});
+  const directory:ManualReporterDirectoryOptions={...source.directory,port:{...source.directory.port,async verifyAuthorizedCandidate(input){
+    const envelope=await verify(input);
+    if(input.purpose==='READ_COMMITTED'){if(seam==='DIRECTORY_READ'){readHeld=true;await readGate;}readReturned=true;}
+    return envelope;
+  }}};
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const actor=fixture.principals[0];assert.ok(actor);source.setPrincipal(actor.id);await applyT18ForwardCheck(fixture.pool);const http=await client(fixture),input=source.command();
+    const originals=new Map<PostgresPoolClient,PostgresQuery>();let pending:Promise<Response>|undefined;
+    const observe=(client:PostgresPoolClient)=>{
+      if(originals.has(client))return;const original=client.query;originals.set(client,original);
+      client.query=new Proxy(original,{apply(target,thisArg,args:unknown[]){
+        const sql=args[0];if(typeof sql==='string'&&!admissionHeld&&sql.includes('INSERT INTO pilot_ticket.ticket_command_receipt')){admissionHeld=true;return admissionGate.then(()=>Reflect.apply(target,thisArg,args));}
+        const result:unknown=Reflect.apply(target,thisArg,args);if(!(result instanceof Promise)||typeof sql!=='string')return result;
+        return result.then(async rows=>{if(seam==='RETAINED_TARGET'&&readReturned&&!readHeld&&sql.includes('i.manual_reporter_verification AS proof')){readHeld=true;await readGate;}return rows;});
+      }});
+    };
+    fixture.pool.on('acquire',observe);
+    try{
+      pending=http.post(input);for(let attempt=0;!admissionHeld&&attempt<200;attempt++)await new Promise(resolve=>setTimeout(resolve,10));assert.ok(admissionHeld);
+      const winner=await http.post(input),committed=object(await winner.json());
+      assert.equal(winner.status,202,JSON.stringify(committed.error));
+      const graph=await facts(fixture.pool),external=await externalFacts(fixture.pool),retained=async()=>(await fixture.pool.query(`SELECT r.state,r.result_snapshot,i.manual_report_snapshot,i.manual_reporter_verification
+        FROM pilot_ticket.ticket_command_receipt r JOIN intake.service_intake i ON i.manual_command_receipt_id=r.id WHERE r.client_command_id=$1::uuid`,[input.client_command_id])).rows;
+      const original=await retained();assert.equal(original.length,1);assert.equal(original[0]?.state,'COMMITTED');resumeAdmission();
+      for(let attempt=0;!readHeld&&attempt<200;attempt++)await new Promise(resolve=>setTimeout(resolve,10));assert.ok(readHeld,'the losing ADMISSION must reach a new READ_COMMITTED await after the real competing commit');
+      const logout=await fetch((fixture.backendOrigin??fixture.origin)+'/workbench/logout',{method:'POST',headers:{cookie:text(fixture.cookies[0]),origin:fixture.origin,'x-csrf-token':http.csrf}});assert.equal(logout.status,200);
+      assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[text(fixture.sessionId)])).rows[0]?.state,'REVOKED');
+      resumeRead();const response=await pending;assert.equal(response.status,403);const denied=object(await response.json());assert.equal(object(denied.error).code,'P2_016_FORBIDDEN');
+      for(const key of ['intake_id','result','receipt'])assert.equal(Object.hasOwn(denied,key),false);assert.deepEqual(await facts(fixture.pool),graph);assert.deepEqual(await retained(),original);assert.deepEqual(await externalFacts(fixture.pool),external);
+      assert.deepEqual(source.calls.map(call=>call.purpose),['ADMISSION','ADMISSION','READ_COMMITTED']);assert.equal(committed.replayed,false);
+    }finally{resumeAdmission();resumeRead();await pending?.catch(()=>{});fixture.pool.removeListener('acquire',observe);for(const [client,original]of originals)client.query=original;}
+  },{...enabled,manualReporterDirectory:directory,realWorkbenchAuthentication:true});
+});
 
 test('verified POST replay reauthorizes the retained target; changed intent, object loss, substituted target and staff creation loss never expose or replace the committed result',async()=>{
   const source=directoryAuthority();await withWeb01Fixture(async(fixture:Fixture)=>{

@@ -30,6 +30,23 @@ async function conservation(pool:PostgresPool){const row=(await pool.query(`SELE
   (SELECT count(*)::integer FROM notification.delivery) AS notification_deliveries`)).rows[0];assert.ok(row);return row;}
 const enabled={workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true};
 
+for(const replay of [false,true])test(`manual ${replay?'original UUID replay':'admission'} refuses an idle-expired ACTIVE Session after the receipt wait`,async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command();if(replay)assert.equal((await post(fixture,token,body)).status,202);
+    const before=await facts(fixture.pool),blocker=await fixture.pool.connect();let pending:Promise<Response>|undefined;
+    try{
+      await blocker.query('BEGIN');await blocker.query('LOCK TABLE pilot_ticket.ticket_command_receipt IN SHARE MODE');pending=post(fixture,token,body);
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.ticket_command_receipt'::regclass AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting);
+      await fixture.pool.query(`WITH clock AS (SELECT platform.physical_epoch_ms() AS now) UPDATE pilot_ticket.workbench_auth_session
+        SET created_epoch_ms=clock.now-3600000,created_at=platform.local_from_epoch_ms(clock.now-3600000),
+          last_seen_epoch_ms=clock.now-1800001,last_seen_at=platform.local_from_epoch_ms(clock.now-1800001)
+        FROM clock WHERE session_id=$1::uuid`,[fixture.sessionId]);
+      await blocker.query('ROLLBACK');const response=await pending;assert.equal(response.status,403);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');assert.deepEqual(await facts(fixture.pool),before);
+      assert.deepEqual((await fixture.pool.query("SELECT state,expires_epoch_ms>platform.physical_epoch_ms() AS absolute_valid,last_seen_epoch_ms+1800000<platform.physical_epoch_ms() AS idle_expired FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid",[fixture.sessionId])).rows[0],{state:'ACTIVE',absolute_valid:true,idle_expired:true});
+    }finally{await blocker.query('ROLLBACK');blocker.release();await pending?.catch(()=>{});}
+  },enabled);
+});
+
 for(const replay of [false,true])for(const loss of ['session','creation'] as const)test(`manual admission rechecks ${loss} authority after a receipt lock for ${replay?'the original UUID replay':'a new command'}`,async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const token=await csrf(fixture),body=command();
