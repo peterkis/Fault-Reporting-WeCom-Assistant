@@ -1,5 +1,9 @@
 ---
 
+2026-10-16 全部43票本地交付收口：**43／43 CLOSED/completed、0 OPEN**，[298条原验收要求](<D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/all43-native-298criteria-parent-acceptance-map-20261016.json>)已对应原关票验收与逐票记录。[完整集成分支审查与修补](execution/all43-final-review.md)已完成；[Standards与Spec独立结论](<D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/all43-finalfixes-closure-20261016/final-two-axis.md>)剩余问题均为0。最终修补由非作者精确快进至`5e5f023cd557adf42b725f40f5a1fca507b0418f`。实际风险验证在40a0／MF7e9d的19项与4235／MF9356的后继2项、相关42项、综合6项分段通过；严格类型、一次候选构建及制品检查通过，纯文档后继不重绑被测对象，不称一次full通过。
+
+[30个自有工作树清理](<D:/wecom-workbench-evidence/notes/resume-20261012-after-pause/all43-final-worktree-cleanup-20261016/report.md>)已完成：13个托管归档、17个原生移除；原提交、分支、历史证据与6份用户原件保留，自有PG和浏览器已停止。A00文档基线完成，A01–A16本地隔离验证完成；默认开关仍为false，真实外部、现场、部署、full／certify及Gate未运行。全部旧失败与未运行项保留；一份早期Standards审查工作文件的旧原始字节缺失已如实记录，未重建或冒充原件。以下旧日期段及带PENDING_PARENT的贡献记录保留原时点，不代表当前状态。
+
 2026-10-15 T43原七项已父验收，7fb11344由非实施者唯一精确快进native0，[#98 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/98#issuecomment-6195080854)。[同候选完整人工工作台隔离验收](execution/t43.md)已交付：正常群／单聊／H5／代录完整人工链、人工Incident与独立投递恢复，以及竞争／离线／UNKNOWN／材料fence／投影延迟／内外隔离。同一实际b724／MF20f2的5文件6个综合场景、8文件22个相关测试全通过，严格类型／一次构建／制品检查均0；056真实代录空Bot收件人503已最小修补，旧RED及全部失败保留。9894项完整真Git canonical/raw、1785输入／2358输出／344实际loaded和原自有精确释放已父核；三Doc后继不重绑，Source与Doc双轴剩余0。当前 **43／43 CLOSED/completed、0 OPEN**，WBINT-16／A16本地完成，全部票已原生收口。完整集成分支最终两轴与12Fowler审查、实际问题修补及自有工作树清理继续；默认false、真实外部／现场／full／certify／部署／Gate停止线保持，以下旧段保留各自时点。
 
 2026-10-15 T42 原七项已父验收，25fbbeb9由非实现者唯一精确快进native0，[#97 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/97#issuecomment-6192364676)。[看板合法动作与交互收口](execution/t42.md)已交付：拖动／按钮／键盘打开原获权表单，复核明确结论、完工确认与STAFF_REOPEN原因沿原命令；正式列位置由官方查询确认，取消／UNKNOWN／409保留原UUID及完整输入。当前8文件13个本票、8文件24个相关用例及4个具名工具用例按真实head／MF分段通过，不称一次whole全通过；048实际630136.65ms超过240000ms的budgetfalse、loaded捕获缺口及全部旧FAIL保留。最终运行8619／MF4a4d，纯5MD后继不重绑；9886项Source、1778输入／2344输出、51冻结／46旧SQL及自有精确056b释放已父核，两轴剩余问题0。当前 **42／43 CLOSED、1 OPEN**，WBINT-15／A15本地完成，T43按14条原生依赖重新核验后开始同候选综合链路。默认关闭，全部43最终分支独立审查及自有工作树清理继续；以下旧段保留各自时点，不授予发布、现场或Gate。
@@ -9,9 +13,9 @@
 2026-10-15 T40 原七项已父验收，35b4caee由非实现者唯一精确快进native0，[#95 CLOSED/completed已读回](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/95#issuecomment-6189172898)。[获权站内提醒、声音与本浏览器偏好](execution/t40.md)已交付：四类原事实、当前READ、显式跨页定位、主动声音／桌面选择、跨标签去重和恢复不补响；不自动打开、处置或推进已读。九文件20个本票用例按真实head／MF分段通过，相关六文件19项通过；最终运行88f／MFeabc61f，纯四MD后继不重绑。原first028 RED→065 GREEN、所有旧FAIL／前提未证／未捕获与受控音频／OS边界保留；9841项raw／真Git归档、1738输入／2283输出、305份最终loaded及精确自有释放已父核，两轴收口。当前 **40／43 CLOSED、3 OPEN**；WBINT-13／A13的T38／T39／T40本地完成，A15已有T23／T40贡献、仍待T42。T41为唯一运行窗口，原未实施first已真实RED并保留被测祖先，正正常合入最新Root；T42两条同步源码有限双轴无新增问题、运行仍待，T43待#96／#97。默认关闭，全部43最终分支审查与自有工作树清理继续；以下各段保留各自时点，不授予发布、现场或Gate。
 document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
-execution_status: IN_PROGRESS
+execution_status: COMPLETE
 tracker: GITHUB_ISSUES
-snapshot_on: 2026-10-15
+snapshot_on: 2026-10-16
 timezone: Asia/Shanghai
 issue_count: 43
 native_blocking_edges: 76
