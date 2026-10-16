@@ -3,7 +3,28 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {ownerTransferHttp,record,text} from './helpers/t29-owner-transfer-http-fixture.mjs';
 import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
+import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
+import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
 const input=(version:string,target:string,team:string|null='PILOT_IT')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'OPERATOR_REVIEWED',owner_principal_id:target,owner_team_id:team});
+for(const seam of ['owner-teams','public-progress','progress-deliveries'] as const)test(`T29 current Incident purpose is rechecked after the ${seam} data await`,async()=>{
+  await ownerTransferHttp(async({pool,f,confirm,post})=>{
+    const incident=await confirm(),principalId=text(record(f.admin).id),authContext={principal_id:principalId};
+    const published=await post('/api/incidents/'+incident+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'PR99 synthetic explicit public progress',preview_confirmed:true});assert.equal(published.status,200);
+    const publication=text(published.body.result_event_id);let entered:()=>void=()=>{},resume:()=>void=()=>{},armed=false;
+    const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+    const gated:PostgresTransaction={query:async<R extends PostgresQueryRow=Record<string,unknown>>(sql:string,values?:unknown[])=>{
+      const result=await pool.query<R>(sql,values);
+      if(armed&&(seam==='owner-teams'?sql.includes('SELECT team.team_id,left(team.display_name'):seam==='public-progress'?sql.includes('e.public_progress_summary AS summary'):sql.includes('SELECT d.id::text'))){entered();await release;}
+      return result;
+    }};
+    const query=createP2012IncidentQuery({pool:gated,enabled:true,ownerTransferEnabled:true,publicProgressEnabled:true});
+    const read=()=>seam==='owner-teams'?query.ownerTransferTargets({authContext,id:incident}):seam==='public-progress'?query.publicProgress({authContext,incidentId:incident}):query.publicProgressDeliveries({authContext,incidentId:incident,publicationId:publication});
+    await read();armed=true;const pending=read().then(value=>({ok:true,value}),error=>({ok:false,error}));
+    try{await reached;await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principalId]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);
+      resume();assert.equal((await pending).ok,false,'a stale purpose must not expose the previously authorized page');
+    }finally{resume();await pending;}
+  },{publication:true});
+});
 test('T29 real HTTP preserves the single ledger under duplicate/racing transfers, target loss, current caller loss and private projections',{timeout:90000},async()=>{
   await ownerTransferHttp(async({pool,f,confirm,get,post})=>{
     const incident=await confirm(),path='/api/incidents/'+incident,target=text(record(f.dispatcher).id),handler=text(record(f.handler).id),outsider=text(record(f.outsider).id),actor=text(record(f.admin).id),ticket=text(record(f.reports[0]).ticketId);

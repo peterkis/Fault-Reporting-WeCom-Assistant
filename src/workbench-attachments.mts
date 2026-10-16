@@ -6,6 +6,9 @@ import {AttachmentError,attachmentReason,ATTACHMENT_DEADLINE_MS} from './workben
 import {failP2016} from './p2-016-domain-contracts.mjs';
 import {once} from 'node:events';
 import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
+import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
+import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
+import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
 const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[],truncated:false};
@@ -14,14 +17,25 @@ function sameRegistration(first:StoredAttachment,current:Readonly<StoredAttachme
 function visible(asset:StoredAttachment,reason:AttachmentReason|null):AttachmentMetadata {return {ref:asset.ref,display_name:asset.mime_type==='image/png'?'报修附件.png':asset.mime_type==='image/jpeg'?'报修附件.jpg':'报修附件',mime_type:asset.mime_type,byte_size:asset.byte_size,available:reason===null,reason};}
 export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean}) {
   const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
-  async function requireSession(authContext:Context['authContext']){
+  const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
+  async function requireSession(authContext:Context['authContext'],kind:string,id:string){
+    const item=await query.authorizedItem(authContext,kind,id),principal=await authorization.resolvePrincipal(authContext);
+    if(!principal)failP2016('NOT_FOUND',404);
+    const scope=ticketPredicateP2016(principal);let predicate:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
     if(!currentSessionPredicate){
-      if(localTestProfile&&!('session_id' in authContext))return;
-      throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
-    }
-    const predicate=currentSessionPredicate(authContext,authContext.principal_id);
-    const current=await pool.query<{current:boolean}>('SELECT '+predicate.sql+' AS current',predicate.values);
+      if(!localTestProfile||'session_id' in authContext)throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
+    }else predicate=currentSessionPredicate(authContext,authContext.principal_id,9);
+    // Reuse the exact card READ predicate; its current role/team basis and the
+    // official Session are consumed in the same last statement after all waits.
+    const current=await pool.query<{readable:boolean;current:boolean}>(workbenchSearchCardsSql(true)+` SELECT
+      EXISTS(SELECT 1 FROM cards WHERE kind=$4 AND id=$5) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
+        WHERE actor.id=$2::uuid AND actor.is_active
+        AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=$6::text[]
+        AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
+      ($8::bigint>platform.physical_epoch_ms() AND ${predicate.sql}) AS current`,
+    [...scope.values,item.kind,item.id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,...predicate.values]);
     if(current.rows[0]?.current!==true)throw new AttachmentError('ATTACHMENT_AUTH_REVOKED',401);
+    if(current.rows[0]?.readable!==true)failP2016('NOT_FOUND',404);
   }
   async function sources(item:Item,assets:readonly StoredAttachment[]) {
     if(!assets.length)return new Map<string,{fresh:boolean;trusted:boolean}>();
@@ -53,7 +67,7 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null,
     if(!source.trusted)throw new AttachmentError('ATTACHMENT_UNTRUSTED');
     const reason=attachmentReason(asset);if(reason)throw new AttachmentError('ATTACHMENT_'+reason,reason==='EXPIRED'?410:422);
     // The final check follows every source/READ wait, including each subsequent chunk.
-    await requireSession(authContext);
+    await requireSession(authContext,kind,id);
     return asset;
   }
   async function list(authContext:Context['authContext'],kind:string,id:string,signal:AbortSignal):Promise<AttachmentPage> {
@@ -66,6 +80,7 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null,
       if(!reason){try{const lease=await store.open(asset.ref,signal);try{sameRegistration(asset,lease.asset);}finally{await lease.close();}}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
       items.push(visible(asset,reason));
     }
+    await requireSession(authContext,kind,id);
     return {available:true,reason:null,items,truncated:selected.length>LIMIT};
   }
   return Object.freeze({

@@ -27,7 +27,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const root="document.querySelector('.ticket-return-to-dispatch')",action="document.querySelector('[data-action=return-to-dispatch]')";
 const textarea=(label:string)=>`Array.from((${root})?.querySelectorAll('textarea')??[]).find(row=>Array.from(row.labels??[]).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;
 const reasonInput=textarea('停止原因'),unfinishedInput=textarea('未完成工作'),targetInput=`(${root})?.querySelector('select')`;
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
+const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='状态'?'?.querySelector(".status-chip")':''}?.textContent?.trim()`;
 const queued=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理责任')})==='等待领取'`;
 const edit=(selector:string,value:string)=>`(()=>{const row=${selector};if(!(row instanceof HTMLTextAreaElement))throw Error('T09_SELECTED_INPUT_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(row,${JSON.stringify(value)});row.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 const checkbox=(id:string)=>`(${root})?.querySelector('[data-session-choice="${id}"]')`;

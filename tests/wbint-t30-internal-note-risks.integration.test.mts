@@ -1,9 +1,57 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {t30Http,record,text} from './helpers/t30-internal-note-fixture.mjs';
 import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
+import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
+import {createWeComWorkbenchAuthentication} from '../src/p2-016-workbench-wecom-auth.mjs';
+import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
+import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
 const input=(version:string,note='合成内部检查')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:note});
+
+for(const loss of ['role','scope','session','receipt-role','late-purpose-role'] as const)test(`T30 private query refuses ${loss} authority lost while the actual final data query awaits`,async()=>{
+  await t30Http({purpose:'t30fence'},async({pool,databaseUrl,f,confirm,post,runtime,origin})=>{
+    const incident=await confirm(),command=input('1','PR99 synthetic private note must not escape a revoked read');assert.equal((await post('/api/incidents/'+incident+'/internal-notes',command)).status,200);
+    const principalId=text(record(loss==='scope'?f.dispatcher:f.admin).id);let auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined;
+    let authContext:Record<string,unknown>={principal_id:principalId},sessionCookie='',sessionCsrf='';let officialRuntime:ReturnType<typeof createP2012Runtime>|undefined;
+    if(loss==='session'){
+      const migrationOptions={databaseUrl,mode:'apply'};await migrateWorkbenchAuth(migrationOptions);
+      auth=createWeComWorkbenchAuthentication({pool,publicOrigin:'https://pr99-auth.invalid',corpId:'pr99-synthetic',agentId:'1',identityHashKey:'pr99-only-synthetic-identity-hash-key',accessTokenProvider:async()=> 'pr99-synthetic-token',fetchImpl:async(_url,init)=>{
+        const request=record(JSON.parse(typeof init?.body==='string'?init.body:'{}'));assert.ok(Array.isArray(request.userid_list));
+        return new Response(JSON.stringify({errcode:0,open_userid_list:request.userid_list.map(user=>({userid:user,open_userid:'pr99-'+String(user)}))}),{headers:{'content-type':'application/json'}});
+      }});await auth.initialize();
+      const epoch=Date.now(),expiry=epoch+3600000,token=randomUUID();sessionCsrf=randomUUID();sessionCookie='__Host-wecom_workbench_session='+token+'; __Host-wecom_workbench_csrf='+sessionCsrf;
+      const hash=(value:string)=>createHash('sha256').update(value).digest('hex');
+      const session=(await pool.query<{session_id:string}>(`INSERT INTO pilot_ticket.workbench_auth_session(session_token_hash,csrf_token_hash,principal_id,identity_hash,created_at,created_epoch_ms,last_seen_at,last_seen_epoch_ms,expires_epoch_ms,expires_at)
+        VALUES($1,$5,$2::uuid,$1,platform.local_from_epoch_ms($3),$3,platform.local_from_epoch_ms($3),$3,$4,platform.local_from_epoch_ms($4)) RETURNING session_id::text`,[hash(token),principalId,epoch,expiry,hash(sessionCsrf)])).rows[0];assert.ok(session);
+      authContext={principal_id:principalId,auth_method:'COOKIE',session_id:session.session_id,expires_epoch_ms:String(expiry)};
+    }
+    let entered:()=>void=()=>{},resume:()=>void=()=>{},armed=false,purposeChecks=0;const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+    const gated:PostgresTransaction={query:async<R extends PostgresQueryRow=Record<string,unknown>>(sql:string,values?:unknown[])=>{
+      const result=await pool.query<R>(sql,values);
+      if(armed&&(loss==='late-purpose-role'?sql.includes('FROM pg_index')&&++purposeChecks===2:loss==='receipt-role'?sql.includes('SELECT state,result_ref_type'):sql.includes('e.internal_note_text AS text'))){entered();await release;}
+      return result;
+    }};
+    const options={pool:gated,enabled:true,internalNotesEnabled:true,currentSessionPredicate:auth?.currentSessionPredicate},query=createP2012IncidentQuery(options);
+    let pending:Promise<unknown>|undefined;
+    try{
+      if(auth){
+        await runtime.stop();const observed=new Proxy(pool,{get(target,key){if(key==='query')return gated.query;const member:unknown=Reflect.get(target,key);return typeof member==='function'?member.bind(target):member;}});
+        officialRuntime=createP2012Runtime({pool:observed,publicOrigin:'https://pr99-auth.invalid',listenPort:Number(new URL(origin).port),workbenchAuthentication:auth,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});await officialRuntime.start();
+        const read=()=>fetch(origin+'/api/incidents/'+incident+'/internal-notes',{headers:{cookie:sessionCookie}});
+        const before=await read();assert.equal(before.status,200);const page=record(await before.json());assert.ok(Array.isArray(page.items));assert.equal(record(page.items[0]).text,command.text);armed=true;
+        pending=read().then(async response=>({ok:response.status===200,value:await response.json()}));
+      }else{const before=await query.internalNotes({authContext,incidentId:incident});assert.equal(before.items[0]?.text,command.text);armed=true;
+        pending=(loss==='receipt-role'?query.incidentCommandReceipt({authContext,id:incident,commandId:command.client_command_id}):query.internalNotes({authContext,incidentId:incident})).then(value=>({ok:true,value}),error=>({ok:false,error}));}
+      await reached;
+      if(loss==='scope')assert.equal((await post('/api/incidents/'+incident+'/correct-scope',{client_command_id:randomUUID(),expected_row_version:'2',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'})).status,200);
+      else if(loss==='session'){const logout=await fetch(origin+'/workbench/logout',{method:'POST',headers:{cookie:sessionCookie,origin:'https://pr99-auth.invalid','x-csrf-token':sessionCsrf}});assert.equal(logout.status,200);assert.equal((await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND state='REVOKED'",[authContext.session_id])).rowCount,1);}
+      else{await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principalId]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);}
+      resume();const outcome=record(await pending);assert.equal(outcome.ok,false,'the final read must reject instead of returning a prior authorized snapshot');assert.equal(JSON.stringify(outcome).includes(command.text),false);
+    }finally{resume();await pending;await officialRuntime?.stop();await auth?.close();}
+  });
+});
 test('T30 real HTTP enforces exact input, current purpose, stable private pages, concurrency and original-ledger recovery without outward effects',async()=>{
   await t30Http({purpose:'t30risk',notifications:true},async({pool,f,confirm,get,post})=>{
     const incident=await confirm(),path='/api/incidents/'+incident,notes=path+'/internal-notes';
@@ -30,6 +78,25 @@ test('T30 real HTTP enforces exact input, current purpose, stable private pages,
     // no internal-note event or body is projected into that stream.
     assert.deepEqual({bindings:after.rows[0]?.bindings,outbox:after.rows[0]?.outbox,deliveries:after.rows[0]?.deliveries},{bindings:outward.rows[0]?.bindings,outbox:outward.rows[0]?.outbox,deliveries:outward.rows[0]?.deliveries});
     assert.equal((await pool.query('SELECT 1 FROM conversation.realtime_event WHERE payload::text LIKE $1',['%私有并发正文%'])).rowCount,0);assert.equal((await pool.query("SELECT 1 FROM incident.incident_event WHERE event_type='incident.internal_note_added' AND safe_payload<>'{}'::jsonb")).rowCount,0);
+  });
+});
+test('Incident original recovery receipt retains its exact HANDLER assignee purpose through the last read wait',async()=>{
+  await t30Http({purpose:'t30target'},async({pool,f,confirm,post})=>{
+    const incident=await confirm(),handler=text(record(f.handler).id),ticket=text(record(f.reports[0]).ticketId);
+    await pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$2::uuid WHERE id=$1::uuid',[ticket,handler]);
+    const report=(await pool.query<{id:string;row_version:string}>('SELECT id::text,row_version::text FROM incident.incident_report WHERE incident_id=$1::uuid AND ticket_id=$2::uuid',[incident,ticket])).rows[0];assert.ok(report);
+    const command={client_command_id:randomUUID(),expected_row_version:'1',expected_report_version:report.row_version,reason_code:'RECOVERY_CONFIRMED'};
+    assert.equal((await post('/api/incidents/'+incident+'/reports/'+report.id+'/mark-recovered',command,2)).status,200);
+    let armed=false,checks=0,entered:()=>void=()=>{},resume:()=>void=()=>{};const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+    const gated:PostgresTransaction={query:async<R extends PostgresQueryRow=Record<string,unknown>>(sql:string,values?:unknown[])=>{
+      if(armed&&sql.includes('SELECT EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor')&&++checks===4){entered();await release;}
+      return pool.query<R>(sql,values);
+    }};
+    const query=createP2012IncidentQuery({pool:gated,enabled:true}),authContext={principal_id:handler},read=()=>query.incidentCommandReceipt({authContext,id:incident,commandId:command.client_command_id});
+    assert.equal((await read()).state,'COMMITTED');armed=true;const pending=read().then(value=>({ok:true,value}),error=>({ok:false,error}));
+    try{await reached;await pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$2::uuid WHERE id=$1::uuid',[ticket,text(record(f.admin).id)]);await query.resource({authContext,id:incident,kind:'incident'});
+      resume();assert.equal((await pending).ok,false,'team READ does not retain the original recovery assignee purpose');
+    }finally{resume();await pending;}
   });
 });
 test('T30 disabled host mounts no private purpose on the unchanged 032 schema',async()=>{

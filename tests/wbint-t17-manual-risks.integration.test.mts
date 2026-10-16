@@ -6,7 +6,7 @@ import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs
 import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
 import type {ManualReportCommand} from '../contracts/workbench_manual_report_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;principals:PilotPrincipal[];cookies:string[]}
+interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;principals:PilotPrincipal[];cookies:string[];sessionId:string}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');assert.ok(value);return value as string;}
 function command(description='合成电话报修：打印机无法打印'):ManualReportCommand{return {schema_version:1,client_command_id:randomUUID(),source:'PHONE',description,location:{text:null,unknown:true},reporter:{verification:'UNVERIFIED',name:'合成实际报修人',contact:'人工联系4455',department:null}};}
@@ -29,6 +29,57 @@ async function conservation(pool:PostgresPool){const row=(await pool.query(`SELE
   (SELECT count(*)::integer FROM communication.delivery) AS deliveries,(SELECT count(*)::integer FROM notification.outbox) AS notifications,
   (SELECT count(*)::integer FROM notification.delivery) AS notification_deliveries`)).rows[0];assert.ok(row);return row;}
 const enabled={workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,realWorkbenchAuthentication:true};
+
+for(const replay of [false,true])for(const loss of ['session','creation'] as const)test(`manual admission rechecks ${loss} authority after a receipt lock for ${replay?'the original UUID replay':'a new command'}`,async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command();
+    if(replay)assert.equal((await post(fixture,token,body)).status,202);
+    const before=await facts(fixture.pool),blocker=await fixture.pool.connect();let pending:Promise<Response>|undefined;
+    try{
+      await blocker.query('BEGIN');await blocker.query('LOCK TABLE pilot_ticket.ticket_command_receipt IN SHARE MODE');
+      pending=post(fixture,token,body);
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){
+        waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.ticket_command_receipt'::regclass AND NOT granted")).rowCount!==0;
+        if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));
+      }assert.ok(waiting,'the actual receipt INSERT is waiting after the initial authorization');
+      if(loss==='session')await fixture.pool.query("UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=platform.physical_epoch_ms(),revoked_at=platform.local_now() WHERE session_id=$1::uuid",[fixture.sessionId]);
+      else{const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});}
+      await blocker.query('ROLLBACK');const response=await pending;assert.equal(response.status,403,'authority lost while waiting must reject both admission and replay');
+      assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');assert.deepEqual(await facts(fixture.pool),before);
+    }finally{await blocker.query('ROLLBACK');blocker.release();await pending?.catch(()=>{});}
+  },enabled);
+});
+
+test('manual admission rolls back every business fact when logout finishes during the intake write wait',async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command(),before=await facts(fixture.pool),blocker=await fixture.pool.connect();assert.ok(typeof before.receipts==='number');let pending:Promise<Response>|undefined;
+    try{
+      await blocker.query('BEGIN');await blocker.query('LOCK TABLE intake.service_intake IN SHARE MODE');pending=post(fixture,token,body);
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){
+        waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='intake.service_intake'::regclass AND NOT granted")).rowCount!==0;
+        if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));
+      }assert.ok(waiting,'the real intake INSERT is waiting inside the business savepoint');
+      await fixture.pool.query("UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=platform.physical_epoch_ms(),revoked_at=platform.local_now() WHERE session_id=$1::uuid",[fixture.sessionId]);
+      await blocker.query('ROLLBACK');const response=await pending;assert.equal(response.status,503);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');
+      const after=await facts(fixture.pool);assert.deepEqual({...after,receipts:before.receipts},before);assert.equal(after.receipts,before.receipts+1,'only the existing failed ledger receipt remains');
+    }finally{await blocker.query('ROLLBACK');blocker.release();await pending?.catch(()=>{});}
+  },enabled);
+});
+
+test('manual admission rechecks creation authority after the final Session share-lock wait',async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command(),before=await facts(fixture.pool),intakeLock=await fixture.pool.connect(),sessionLock=await fixture.pool.connect();let pending:Promise<Response>|undefined;
+    try{
+      await intakeLock.query('BEGIN');await intakeLock.query('LOCK TABLE intake.service_intake IN SHARE MODE');pending=post(fixture,token,body);
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='intake.service_intake'::regclass AND NOT granted")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting);
+      await sessionLock.query('BEGIN');await sessionLock.query('SELECT session_id FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid FOR UPDATE',[fixture.sessionId]);await intakeLock.query('ROLLBACK');
+      waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%FROM pilot_ticket.workbench_auth_session%' AND query LIKE '%FOR SHARE%'")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the actual final Session FOR SHARE is waiting');
+      const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});
+      await sessionLock.query('ROLLBACK');const response=await pending;assert.equal(response.status,503);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');
+      const after=await facts(fixture.pool);assert.deepEqual({...after,receipts:before.receipts},before);assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[fixture.sessionId])).rows[0]?.state,'ACTIVE');
+    }finally{await intakeLock.query('ROLLBACK');await sessionLock.query('ROLLBACK');intakeLock.release();sessionLock.release();await pending?.catch(()=>{});}
+  },enabled);
+});
 
 test('default-off manual entry rejects its purpose without 033/042 storage and preserves ordinary authorized workbench reads',async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{

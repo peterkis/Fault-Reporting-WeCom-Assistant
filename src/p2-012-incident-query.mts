@@ -1,5 +1,6 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type {NotificationExceptionIncidentScope} from './workbench-notification-exceptions.mjs';
+import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import type { WorkbenchPrincipal, WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import type { CandidateReview, Incident, IncidentPublicView, CandidateCommandReceipt } from '../contracts/p2_012_contracts.js';
 import type {IncidentFollowupReceipt} from '../contracts/workbench_incident_followup_contracts.js';
@@ -32,7 +33,7 @@ function publicCandidate(row:CandidateQueryRow,p:WorkbenchPrincipal):CandidateQu
   if(broad(p))return safe;
   return {...safe,cluster_key_hash:null,distinct_reporters:null,distinct_departments:null,distinct_locations:null,correlation_window_ms:null,first_seen_at:null,last_seen_at:null,evidence_fact_ids:[],opened_by_principal_id:null,confirmed_incident_id:null};
 }
-export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,allowDispatcherCampus=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool})}: { pool: PostgresTransaction; enabled?: boolean; internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean;allowDispatcherCampus?:boolean;authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'> }){
+export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnabled=false,publicProgressEnabled=false,ownerTransferEnabled=false,allowDispatcherCampus=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),currentSessionPredicate}: { pool: PostgresTransaction; enabled?: boolean; internalNotesEnabled?:boolean;publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean;allowDispatcherCampus?:boolean;authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined }){
   async function principal(authContext: unknown,tx: PostgresTransaction=pool){guard(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable:tx});if(!p)fail('FORBIDDEN',403);return p;}
   function access(p: WorkbenchPrincipal,kind: Kind,start=2){const pred=ticketPredicateP2016(p,start);return {values:pred.values,sql:kind==='candidate'?
     `EXISTS(SELECT 1 FROM intake.deterministic_decision d LEFT JOIN pilot_ticket.ticket t ON t.id=d.linked_ticket_id WHERE d.id=c.source_decision_id AND ${pred.sql})`:
@@ -69,6 +70,31 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     if(!await ownerTransferSchemaReady(input.tx??pool))fail('DISABLED',503);
     return ctx;
   }
+  async function currentRead(authContext:unknown,id:string,purpose:'INCIDENT'|'INTERNAL_NOTE'|'PUBLIC_PROGRESS'|'TRANSFER_OWNER',assignedReport:string|null=null){
+    const input={authContext,id},ctx=purpose==='INTERNAL_NOTE'?await internalNoteResource(input):purpose==='PUBLIC_PROGRESS'?await publicProgressResource(input):purpose==='TRANSFER_OWNER'?await ownerTransferResource(input):await resource({...input,kind:'incident'});
+    if(!authContext||typeof authContext!=='object'||Array.isArray(authContext))fail('FORBIDDEN',403);
+    const auth=authContext as Record<string,unknown>;
+    if(auth.expires_epoch_ms!==undefined&&(typeof auth.expires_epoch_ms!=='string'||!/^[1-9][0-9]{0,18}$/u.test(auth.expires_epoch_ms)||BigInt(auth.expires_epoch_ms)<=BigInt(Date.now())))fail('FORBIDDEN',403);
+    // Check the same purpose/READ basis and the host Session in one final snapshot.
+    // A schema or pool wait must not retain an earlier role, scope or team grant.
+    const currentAccess=access(ctx.principal,'incident',7);
+    let session:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
+    if(auth.session_id!==undefined){
+      if(!currentSessionPredicate)fail('FORBIDDEN',403);
+      session=currentSessionPredicate(authContext,ctx.principal.principal_id,8+currentAccess.values.length);
+    }
+    const current=await pool.query<{current:boolean}>(`SELECT EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
+      WHERE actor.id=$1::uuid AND actor.is_active
+      AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=$2::text[]
+      AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=$3::text[]
+      AND EXISTS(SELECT 1 FROM incident.incident c WHERE c.id=$4::uuid AND c.confirmed_scope=$5 AND ${currentAccess.sql})
+      AND ($10::uuid IS NULL OR EXISTS(SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
+        WHERE r.id=$10::uuid AND r.incident_id=$4::uuid AND t.assignee_id=actor.id))
+      AND ($6::bigint IS NULL OR $6::bigint>platform.physical_epoch_ms()) AND ${session.sql}) AS current`,
+    [ctx.principal.principal_id,[...ctx.principal.roles],[...ctx.principal.team_ids],id,(ctx.row as Incident).confirmed_scope,auth.expires_epoch_ms??null,...currentAccess.values,assignedReport,...session.values]);
+    if(current.rows[0]?.current!==true)fail('FORBIDDEN',403);
+    return ctx;
+  }
   const publicationScope=(p:WorkbenchPrincipal,row:ResourceRow)=>hash({principal:p.principal_id,roles:[...p.roles].sort(),scope:(row as Incident).confirmed_scope,allowed:allowedIncidentScopes(p.roles,allowDispatcherCampus)});
   async function notificationExceptionScope({authContext,tx=pool}:{authContext:unknown;tx?:PostgresTransaction}):Promise<NotificationExceptionIncidentScope|null>{
     if(!enabled)return null;
@@ -90,6 +116,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
         AND ($2::uuid IS NULL OR p.id>$2::uuid) ORDER BY p.id LIMIT $3`,[row.id,c?.id??null,n+1]);
       const items:CandidateOwner[]=[];
       for(const owner of q.rows.slice(0,n)){const teams=(await pool.query<{team_id:string;display_name:string}>(`SELECT team.team_id,left(team.display_name,200) AS display_name FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team team ON team.team_id=m.team_id WHERE m.principal_id=$1::uuid AND team.is_active ORDER BY team.team_id LIMIT 21`,[owner.id])).rows;items.push({...owner,teams:teams.slice(0,20),teams_truncated:teams.length>20});}
+      await currentRead(authContext,row.id,'TRANSFER_OWNER');
       const last=items.at(-1);return frozen({items,next_cursor:q.rows.length>n&&last?cursor({incident:row.id,scope,id:last.id}):null});
     },
     async publicProgress({authContext,incidentId,cursor:after=null,limit:pageLimit}:{authContext:unknown;incidentId:string;cursor?:string|null;limit?:unknown}):Promise<IncidentPublicProgressPage>{
@@ -98,6 +125,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       if(c&&(c.incident!==row.id||c.scope!==scope))fail('CURSOR_INVALID');if(c){version(c.ordinal);uuid(c.id);}
       const q=await pool.query<IncidentPublicProgressRecord>(`SELECT e.id::text,e.incident_id::text,e.event_ordinal::text,e.public_progress_incident_version::text AS incident_row_version,e.actor_principal_id::text,left(p.display_name,200) AS actor_display_name,e.occurred_at,e.public_progress_summary AS summary
         FROM incident.incident_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id=e.actor_principal_id WHERE e.incident_id=$1::uuid AND e.event_type='incident.public_progress_published' AND ($2::bigint IS NULL OR (e.event_ordinal,e.id)>($2::bigint,$3::uuid)) ORDER BY e.event_ordinal,e.id LIMIT $4`,[row.id,c?.ordinal??null,c?.id??null,n+1]);
+      await currentRead(authContext,row.id,'PUBLIC_PROGRESS');
       const items=q.rows.slice(0,n),last=items.at(-1);return frozen({incident_id:row.id,items,next_cursor:q.rows.length>n&&last?cursor({incident:row.id,scope,ordinal:last.event_ordinal,id:last.id}):null});
     },
     async publicProgressDeliveries({authContext,incidentId,publicationId,cursor:after=null,limit:pageLimit}:{authContext:unknown;incidentId:string;publicationId:string;cursor?:string|null;limit?:unknown}):Promise<IncidentPublicProgressDeliveryPage>{
@@ -106,6 +134,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       const c=after?decodeCursor(after,['incident','publication','scope','at','id']):null;if(c&&(c.incident!==row.id||c.publication!==publication||c.scope!==scope))fail('CURSOR_INVALID');if(c){assertLocalDateTime(c.at);uuid(c.id);}
       const q=await pool.query<IncidentPublicProgressDelivery & {cursor_at:string}>(`SELECT d.id::text,'BOT_DIRECT' AS route,'REPORTER_DIRECT' AS audience,d.status,d.attempt_count,d.side_effect_state,CASE WHEN d.last_error_code ~ '^[A-Z0-9_]{1,128}$' THEN d.last_error_code ELSE NULL END AS last_error_code,d.sent_at,d.created_at AS cursor_at
         FROM communication.incident_notification_binding b JOIN communication.outbox o ON o.message_id=b.communication_message_id JOIN communication.delivery d ON d.outbox_id=o.id WHERE b.incident_id=$1::uuid AND b.incident_event_id=$2::uuid AND b.template_code='INCIDENT_PUBLIC_PROGRESS_DIRECT' AND ($3::timestamp without time zone IS NULL OR (d.created_at,d.id)>($3::timestamp without time zone,$4::uuid)) ORDER BY d.created_at,d.id LIMIT $5`,[row.id,publication,c?.at??null,c?.id??null,n+1]);
+      await currentRead(authContext,row.id,'PUBLIC_PROGRESS');
       const selected=q.rows.slice(0,n),last=selected.at(-1),items=selected.map(({cursor_at:_,...safe})=>safe);return frozen({incident_id:row.id,publication_id:publication,items,next_cursor:q.rows.length>n&&last?cursor({incident:row.id,publication,scope,at:last.cursor_at,id:last.id}):null});
     },
 
@@ -119,6 +148,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
         FROM incident.incident_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id=e.actor_principal_id
         WHERE e.incident_id=$1::uuid AND e.event_type='incident.internal_note_added'
         AND ($2::bigint IS NULL OR (e.event_ordinal,e.id)>($2::bigint,$3::uuid)) ORDER BY e.event_ordinal,e.id LIMIT $4`,[row.id,c?.ordinal??null,c?.id??null,n+1]);
+      await currentRead(authContext,row.id,'INTERNAL_NOTE');
       const items=q.rows.slice(0,n),last=items.at(-1);
       return frozen({incident_id:row.id,items,next_cursor:q.rows.length>n&&last?cursor({incident:row.id,scope,ordinal:last.event_ordinal,id:last.id}):null});
     },
@@ -132,18 +162,21 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
         AND (command_type IN ('START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT') OR ($5::boolean AND command_type='ADD_INTERNAL_NOTE') OR ($6::boolean AND command_type='PUBLISH_PUBLIC_PROGRESS') OR ($7::boolean AND command_type='TRANSFER_OWNER'))`,['P2_012:'+p.principal_id,clientId,p.principal_id,row.id,internalNotesEnabled,publicProgressEnabled,ownerTransferEnabled])).rows[0];
       // An absent command has no recorded purpose or outcome. UNKNOWN grants
       // no right to replay: a POST always rechecks its actual action and target.
-      if(!identity)return frozen({...base,state:'UNKNOWN'});
-      if(identity.command_type==='TRANSFER_OWNER')await ownerTransferResource({authContext,id:row.id});
-      if(identity.command_type==='PUBLISH_PUBLIC_PROGRESS')await publicProgressResource({authContext,id:row.id});
-      if(identity.command_type==='ADD_INTERNAL_NOTE')await internalNoteResource({authContext,id:row.id});
-      if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(identity.command_type)&&!p.roles.includes('ADMIN'))fail('FORBIDDEN',403);
-      if(!broad(p)){
-        if(identity.command_type!=='MARK_REPORTER_RECOVERED'||!identity.incident_report_id)fail('FORBIDDEN',403);
-        const target=await pool.query('SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.id=$1::uuid AND r.incident_id=$2::uuid AND t.assignee_id=$3::uuid',[identity.incident_report_id,row.id,p.principal_id]);
-        if(target.rowCount!==1)fail('FORBIDDEN',403);
-      }
+      if(!identity){await currentRead(authContext,row.id,'INCIDENT');return frozen({...base,state:'UNKNOWN'});}
+      const purpose=identity.command_type==='TRANSFER_OWNER'?'TRANSFER_OWNER':identity.command_type==='PUBLISH_PUBLIC_PROGRESS'?'PUBLIC_PROGRESS':identity.command_type==='ADD_INTERNAL_NOTE'?'INTERNAL_NOTE':'INCIDENT';
+      const authorizeReceipt=async()=>{
+        const {principal:actor}=await currentRead(authContext,row.id,purpose);
+        if(['CORRECT_SCOPE','CLOSE_INCIDENT','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION'].includes(identity.command_type)&&!actor.roles.includes('ADMIN'))fail('FORBIDDEN',403);
+        if(!broad(actor)){
+          if(identity.command_type!=='MARK_REPORTER_RECOVERED'||!identity.incident_report_id)fail('FORBIDDEN',403);
+          const target=await pool.query('SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.id=$1::uuid AND r.incident_id=$2::uuid AND t.assignee_id=$3::uuid',[identity.incident_report_id,row.id,actor.principal_id]);
+          if(target.rowCount!==1)fail('FORBIDDEN',403);await currentRead(authContext,row.id,purpose,identity.incident_report_id);
+        }
+      };
+      await authorizeReceipt();
       const receipt=(await pool.query<{state:string;result_ref_type:string|null;result_ref_id:string|null;result_row_version:string|null;result_event_id:string|null;error_code:string|null;retryable:boolean|null}>(`SELECT state,result_ref_type,result_ref_id::text,result_row_version::text,result_event_id::text,error_code,retryable
         FROM incident.command_receipt WHERE id=$1::uuid AND command_scope=$2 AND client_command_id=$3::uuid AND incident_id=$4::uuid AND actor_principal_id=$5::uuid`,[identity.id,'P2_012:'+p.principal_id,clientId,row.id,p.principal_id])).rows[0];
+      await authorizeReceipt();
       if(!receipt||receipt.state==='STARTED')return frozen({...base,state:'UNKNOWN'});
       if(receipt.state==='FAILED'){if(!receipt.error_code||!ERROR_CODES.includes(receipt.error_code)||receipt.retryable!==false)fail('COMMAND_FAILED',503);return frozen({...base,state:'FAILED',error:{code:receipt.error_code,retryable:false}});}
       if(receipt.state!=='COMMITTED'||receipt.result_ref_type!=='INCIDENT'||receipt.result_ref_id!==row.id||!receipt.result_row_version||!receipt.result_event_id)fail('COMMAND_FAILED',503);

@@ -1,10 +1,53 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash,randomUUID} from 'node:crypto';
-import {writeFile,readFile,unlink} from 'node:fs/promises';
+import {createHash,randomUUID,randomBytes,createCipheriv} from 'node:crypto';
+import {writeFile,readFile,unlink,mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {createWorkbenchAttachmentStore} from '../src/workbench-attachment-store.mjs';
+import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import {withT16Fixture,T16_PNG} from './helpers/wbint-t16-fixture.mjs';
-import type {AttachmentPage} from '../contracts/workbench_attachment_contracts.js';
+import type {AttachmentPage,AttachmentStore,StoredAttachment} from '../contracts/workbench_attachment_contracts.js';
+test('attachment metadata rechecks parent READ in the final official Session statement after its database wait',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'pr99-final-attachment-')),key=randomBytes(32);let saved:AttachmentStore|undefined,armed=false,entered:()=>void=()=>{},resume:()=>void=()=>{};
+  const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+  const store:AttachmentStore={entries:async()=>{assert.ok(saved);const result=await saved.entries();if(armed){entered();await release;}return result;},open:async(ref,signal)=>{assert.ok(saved);return saved.open(ref,signal);},close:async()=>{await saved?.close();},ownedResourceState:()=>saved?.ownedResourceState()??{active:0,handles:0,plaintext_bytes:0}};
+  try{await withWeb01Fixture(async(f:{pool:PostgresPool;origin:string;backendOrigin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[]})=>{
+    const selected=f.tickets[0],principal=f.principals[0],cookie=f.cookies[0];assert.ok(selected&&principal&&cookie);
+    const asset:StoredAttachment={ref:randomUUID(),source_intake_id:selected.intake.intakeId,source_message_id:selected.intake.messageId,media_ref:'wmr_'+'c'.repeat(32),mime_type:'image/png',byte_size:T16_PNG.length,sha256:createHash('sha256').update(T16_PNG).digest('hex'),retention_until_epoch_ms:String(Date.now()+300000),scan_status:'PASSED',classification:'INTERNAL'};
+    const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key,iv);cipher.setAAD(Buffer.from(JSON.stringify(asset)));
+    const encrypted=Buffer.concat([cipher.update(T16_PNG),cipher.final()]);await writeFile(join(directory,asset.ref+'.asset'),Buffer.concat([iv,cipher.getAuthTag(),encrypted]));await writeFile(join(directory,'manifest.json'),JSON.stringify({version:1,assets:[asset]}));saved=createWorkbenchAttachmentStore({root:directory,key});
+    await f.pool.query("UPDATE channel.message_inbox SET msg_type='image',normalized_message=jsonb_build_object('content',jsonb_build_array(jsonb_build_object('kind','media','media',jsonb_build_object('type','image','source_index',0,'download_ref',$2::text)))) WHERE id=$1::bigint",[asset.source_message_id,asset.media_ref]);
+    const read=()=>fetch(f.backendOrigin+'/api/workbench/items/ticket/'+selected.ticket.id+'/attachments',{headers:{cookie}});assert.equal((await read()).status,200);armed=true;
+    const pending=read(),blocker=await f.pool.connect();try{await reached;await blocker.query('BEGIN');await blocker.query('LOCK TABLE pilot_ticket.workbench_auth_session IN ACCESS EXCLUSIVE MODE');resume();
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await f.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.workbench_auth_session'::regclass AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the real final official Session SQL is blocked');
+      await f.pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principal.id]);await f.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principal.id]);await f.pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principal.id]);await blocker.query('ROLLBACK');
+      const response=await pending;assert.equal(response.status,404);assert.equal((await response.text()).includes(asset.ref),false);
+    }finally{resume();await blocker.query('ROLLBACK');blocker.release();await pending.catch(()=>{});}
+  },{realWorkbenchAuthentication:true,workbenchAttachmentsEnabled:true,attachmentStore:store});}
+  finally{resume();await saved?.close();assert.deepEqual(store.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});key.fill(0);await rm(directory,{recursive:true,force:true});}
+});
+for(const seam of ['metadata-entries','metadata-open','content-final-source'] as const)test(`attachment ${seam} refuses disclosure when parent READ is removed during its asynchronous read`,async()=>{
+  let entered:()=>void=()=>{},resume:()=>void=()=>{},entries=0;
+  const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+  const gate=async()=>{entered();await release;};
+  await withT16Fixture(async({origin,cookie,tickets,asset,pool,principals,store})=>{
+    const ticket=tickets[0],principal=principals[0];assert.ok(ticket&&principal);
+    const path=seam==='content-final-source'?'/api/attachments/'+asset.ref+'?'+new URLSearchParams({kind:'ticket',id:ticket.ticket.id}):'/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments';
+    const pending=fetch(origin+path,{headers:{cookie}}).then(async response=>({status:response.status,body:Buffer.from(await response.arrayBuffer())})).catch((error:unknown)=>{if(seam==='content-final-source')return null;throw error;});
+    try{
+      await reached;
+      await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principal.id]);
+      await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principal.id]);
+      await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principal.id]);
+      resume();const response=await pending;
+      if(seam==='content-final-source')assert.equal(response,null,'a revoked final chunk must disconnect before protected bytes are released');
+      else{assert.ok(response);assert.equal(response.status,404);const body=response.body.toString('utf8');assert.equal(body.includes(asset.ref),false);assert.equal(body.includes('image/png'),false);}
+      assert.deepEqual(store.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});
+    }finally{resume();await pending.catch(()=>{});}
+  },{decorateStore:store=>({...store,entries:async()=>{const result=await store.entries();entries++;if(seam==='metadata-entries'&&entries===1||seam==='content-final-source'&&entries===3)await gate();return result;},open:async(ref,signal)=>{const lease=await store.open(ref,signal);if(seam==='metadata-open')await gate();return lease;}})});
+});
 test('authorized staff read an existing source-bound attachment through real HTTP and saved encrypted bytes',async()=>{
   await withT16Fixture(async({origin,cookie,tickets,asset})=>{
     const ticket=tickets[0];assert.ok(ticket);

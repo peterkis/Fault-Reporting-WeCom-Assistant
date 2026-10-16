@@ -188,7 +188,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
       failP2016('ACTION_FAILED',503);
     });
   }
-  async function admit(tx:PostgresTransaction,principal:WorkbenchPrincipal,command:AdmissionCommand,verification:ManualReporterAdmissionEnvelope|null=null,resolverTeamId?:string):Promise<Omit<ManualReportResult,'replayed'>|Omit<VerifiedManualReportResult,'replayed'>>{
+  async function admit(tx:PostgresTransaction,authContext:unknown,principal:WorkbenchPrincipal,command:AdmissionCommand,verification:ManualReporterAdmissionEnvelope|null=null,resolverTeamId?:string):Promise<Omit<ManualReportResult,'replayed'>|Omit<VerifiedManualReportResult,'replayed'>>{
     if((command.reporter.verification==='VERIFIED_SELECTION')!==(verification!==null))failP2016('ACTION_FAILED',503);
     if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(principal.principal_id,command.reporter,verification,null);
     await realtimeProjector?.lock(tx);
@@ -235,7 +235,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
     const ticket=(await tx.query<{id:string;number:string;status:TicketStatus}>(`SELECT id::text,ticket_no AS number,status FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid`,[intake.id])).rows[0]??null;
     const review=(await tx.query<{id:string;status:'PENDING'}>(`SELECT id::text,status FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING' ORDER BY created_at,id LIMIT 1`,[intake.id])).rows[0]??null;
     if(review)await realtimeProjector?.review({transaction:tx,reviewId:review.id});
-    const current=await authorize({principal_id:principal.principal_id},tx);
+    const current=await authorize(authContext,tx);await currentAuthentication(authContext,tx);
     if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(current.principal.principal_id,command.reporter,verification,null);
     const base={ok:true as const,client_command_id:command.client_command_id,intake_id:intake.id,intake_no:intake.intake_no,source:command.source,external_notification:false as const,result_code:route.result_code,ticket,review};
     return verification?publicP2016({...base,reporter_verification:'VERIFIED',manual_contact_required:eligibility!=='ELIGIBLE',notification_eligibility:eligibility})
@@ -258,7 +258,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
           afterReceiptLock:async tx=>{await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);},
           run:async tx=>{
             const {principal}=await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
-            const admitted=await admit(tx,principal,command,null,command.resolver_team_id);
+            const admitted=await admit(tx,authContext,principal,command,null,command.resolver_team_id);
             if(!admitted.ticket||admitted.review!==null||admitted.result_code!=='TICKET_ELIGIBLE'&&admitted.result_code!=='SERVICE_REQUEST')failP2016('SELF_HANDLING_STATE_CONFLICT',409);
             const {ticket}=await query.authorizedTicket({authContext,ticketId:admitted.ticket.id,transaction:tx,lock:true});
             const current=await authorizeSelfHandling(authContext,tx,command.resolver_team_id,true);
@@ -308,10 +308,13 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
           if(checked.target&&(!target||hashP2016(target)!==hashP2016(checked.target)))failP2016('ACTION_FAILED',503);
           reporterCandidates.fence(context.principal.principal_id,verifiedCommand.reporter,checked.verification,checked.target);}
         return context;
-      },run:(tx,{principal})=>{
+      },afterReceiptLock:async tx=>{await authorize(authContext,tx);await currentAuthentication(authContext,tx);},run:async(tx,{principal})=>{
         const verification=checked?.verification??null;
         if(verification&&verification.purpose!=='ADMISSION')throw failP2016('ACTION_FAILED',503);
-        return admit(tx,principal,command,verification);
+        const admitted=await admit(tx,authContext,principal,command,verification);
+        await currentAuthentication(authContext,tx,true);await authorize(authContext,tx);
+        if(verification&&command.reporter.verification==='VERIFIED_SELECTION')reporterCandidates.fence(principal.principal_id,command.reporter,verification,null);
+        return admitted;
       }});
       if(verifiedCommand&&result.ok===true&&result.replayed){
         // A concurrent original commit can win after preflight. Recheck current
