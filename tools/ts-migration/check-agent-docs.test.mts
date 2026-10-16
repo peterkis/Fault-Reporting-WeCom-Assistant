@@ -58,6 +58,42 @@ test('balanced, escaped and angle-wrapped destinations retain complete paths and
   assert.deepEqual(checkAgentDocs(root), [{file: 'AGENTS.md', code: 'LOCAL_LINK_MISSING', target: 'docs/agents/missing(a).md'}]);
 }));
 
+test('nested and escaped link labels still validate their destinations', () => fixture((root, write) => {
+  write('AGENTS.md', '[ADR [Accepted]](missing.md)\n[literal \\]](gone.md)\n[valid [guide]](docs/agents/rules.md#rules)\n');
+  write('docs/agents/rules.md', '# Rules\n');
+  assert.deepEqual(checkAgentDocs(root), [
+    {file: 'AGENTS.md', code: 'LOCAL_LINK_MISSING', target: 'missing.md'},
+    {file: 'AGENTS.md', code: 'LOCAL_LINK_MISSING', target: 'gone.md'},
+  ]);
+}));
+
+test('Markdown punctuation escapes are decoded before checking local paths', () => fixture((root, write) => {
+  write('AGENTS.md', '[escaped](docs/agents/a\\!.md#part)\n[encoded](docs/agents/a%21.md#part)\n[missing](docs/agents/gone\\!.md)\n');
+  write('docs/agents/a!.md', '# Part\n');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'AGENTS.md', code: 'LOCAL_LINK_MISSING', target: 'docs/agents/gone!.md'}]);
+}));
+
+test('rendered references, images and HTML links decode entities and ignore unused definitions', () => fixture((root, write) => {
+  write('AGENTS.md', '[rule][guide]\n![asset](docs/agents/icon.svg)\n<a href="docs/agents/a&amp;b.md#part">HTML</a>\n\n[guide]: docs/agents/a&amp;b.md#part\n[unused]: absent.md\n');
+  write('docs/agents/a&b.md', '# Part\n');
+  write('docs/agents/icon.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>\n');
+  assert.deepEqual(checkAgentDocs(root), []);
+  write('AGENTS.md', '[missing][guide]\n![missing](gone.svg)\n<a href="gone.html">HTML</a>\n\n[guide]: gone.md\n');
+  assert.deepEqual(checkAgentDocs(root).map(issue => issue.target), ['gone.md', 'gone.svg', 'gone.html']);
+}));
+
+test('heading slugs use rendered text, decoded entities and duplicate numbering', () => fixture((root, write) => {
+  write('AGENTS.md', '[first](docs/agents/rules.md#rules-v2--links)\n[duplicate](docs/agents/rules.md#rules-v2--links-1)\n[absent](docs/agents/rules.md#rules-v2--links-2)\n');
+  write('docs/agents/rules.md', '# **Rules** `v2` &amp; links\n\n# **Rules** `v2` &amp; links\n');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'AGENTS.md', code: 'LOCAL_ANCHOR_MISSING', target: 'docs/agents/rules.md#rules-v2--links-2'}]);
+}));
+
+test('indented code cannot create links or explicit anchors', () => fixture((root, write) => {
+  write('AGENTS.md', '[example](docs/agents/rules.md#example)\n');
+  write('docs/agents/rules.md', '    <a id="example"></a>\n\n    [sample](missing.md)\n');
+  assert.deepEqual(checkAgentDocs(root), [{file: 'AGENTS.md', code: 'LOCAL_ANCHOR_MISSING', target: 'docs/agents/rules.md#example'}]);
+}));
+
 test('the root budget counts UTF-8 bytes rather than visible characters', () => fixture((root, write) => {
   write('AGENTS.md', '规'.repeat(2731));
   assert.deepEqual(checkAgentDocs(root).map(issue => issue.code), ['AGENTS_BYTE_BUDGET_EXCEEDED']);
