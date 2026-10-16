@@ -96,7 +96,7 @@ async function removeRevocation(pool:PostgresPool){
 }
 
 test('a real post-commit 403 preserves the original verified command for explicit GET reconciliation without duplicate admission',{timeout:240000},async()=>{
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'browser profile and evidence must stay on D');
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'browser profile and evidence must stay on D');
   const evidence=await mkdtemp(join(tmpdir(),'t18-postcommit-refusal-')),authority=createT18Directory();
   await withWeb01Fixture(async({origin,pool,principals,certificateSpki,browserCookies}:Fixture)=>{
     const principal=principals[0];assert.ok(principal);authority.setPrincipal(principal.id);await applyT18ForwardCheck(pool);

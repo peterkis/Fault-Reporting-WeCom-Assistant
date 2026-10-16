@@ -58,7 +58,7 @@ const view="({path:location.pathname,hidden:document.hidden,ticketHidden:documen
 
 interface Tracer {f:T21DraftFixture;original:Ticket;second:Ticket|null;fixture:NonNullable<Awaited<ReturnType<typeof createYxxBrowserFixture>>>;browser:Browser;peers:Peer[];directory:string;serverWire:ServerWire[];setMyReports(value:boolean):void;page(ticket:Ticket):string}
 async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
- assert.match(fileURLToPath(import.meta.url).replaceAll('\\','/'),/\/\.build\/runtime\/tests\/t21-bot-feedback-actor-authority\.browser\.test\.mjs$/u);assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
+ assert.match(fileURLToPath(import.meta.url).replaceAll('\\','/'),/\/\.build\/runtime\/tests\/t21-bot-feedback-actor-authority\.browser\.test\.mjs$/u);if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
  await withT21DraftFixture(async f=>{
   const original:Ticket={id:f.ticketId,ref:f.publicRef,path:f.path,version:f.completed.version};let second:Ticket|null=null;
   if(twoTickets){
@@ -172,7 +172,7 @@ const t21HoldFirstRecoveryResponse=`(()=>{const send=fetch;let first=true,timer=
 })()`;
 
 test('logout before a newly opened other Bot Ticket first recovery response arrives clears the hidden actor copy and preserves its original opaque UUID',async()=>{
- assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
+ if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
  const setupDirectory=join(tmpdir(),'t21-slow-scope-setup-'+randomUUID());await mkdir(setupDirectory);
  try{
   await withTracer(true,async({original,second,fixture,browser,peers,directory,serverWire,page})=>{

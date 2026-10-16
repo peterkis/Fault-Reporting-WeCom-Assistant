@@ -57,7 +57,7 @@ const candidate={candidate_ref:'t18_synthetic_allowed_candidate_01',candidate_ve
   display_name:'合成成员甲',departments:['合成门诊'],profile_source:'THIRD_PARTY_STAFF_DIRECTORY',binding_verified:true,message_reachability:'REACHABLE'};
 test('the actual production form explicitly selects an authorized reporter and admits one verified Review whose safe original profile remains visible after Directory changes',{timeout:240000},async()=>{
   // The grants/runner supply D-only TEMP/TMP/cache. Refuse evidence creation elsewhere.
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'browser profile and evidence must stay on D');
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'browser profile and evidence must stay on D');
   const evidence=await mkdtemp(join(tmpdir(),'wbint-t18-normal-production-ui-'));
   let authorizedPrincipalId:string|null=null,verifyCalls=0,searchCalls=0;
   let profile={display_name:'合成成员甲',departments:['合成门诊']};

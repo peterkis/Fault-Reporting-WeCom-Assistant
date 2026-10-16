@@ -46,7 +46,7 @@ async function externalCounts(pool:PostgresPool){
 }
 
 for(const refusal of ['SEARCH','VERIFY'] as const)test(`a real ${refusal} object refusal preserves authorized input for an explicit hand-entered report without external delivery`,{timeout:240000},async()=>{
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'all browser profiles and evidence must stay on D');
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu,'all browser profiles and evidence must stay on D');
   const evidence=await mkdtemp(join(tmpdir(),'t18-candidate-refusal-'+refusal.toLowerCase()+'-')),authority=createT18Directory(refusal);
   const description='合成现场代录：打印机情况不明',location='合成门诊二楼';
   await withWeb01Fixture(async({origin,pool,principals,certificateSpki,browserCookies}:Fixture)=>{

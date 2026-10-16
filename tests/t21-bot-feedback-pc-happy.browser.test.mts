@@ -51,7 +51,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
   // Future registration must use the existing STAGED_RUNTIME route and an owned
   // D tmp/profile/evidence root. No source-module or source-asset fallback.
   assert.match(fileURLToPath(import.meta.url).replaceAll('\\','/'),/\/\.build\/runtime\/tests\/t21-bot-feedback-pc-happy\.browser\.test\.mjs$/u);
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
   await withT11Fixture(async context=>{
     const source=await seedPersistedIntake({pool:context.pool,text:'合成门诊打印机无法打印处方。',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:source.intakeId,occurredAt:source.receivedAt,traceId:'t21-pc-bot-source'});

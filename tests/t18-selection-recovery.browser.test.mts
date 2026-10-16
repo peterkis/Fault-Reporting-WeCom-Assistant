@@ -78,7 +78,7 @@ async function closeRuntime(runtime:P2016EnabledRuntime){await runtime.stop();as
 
 const options={workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchManualReviewEnabled:true,workbenchRealtimeEnabled:true};
 test('a restored explicit reporter selection cannot silently become hand entry after a real candidate-flag restart',{timeout:240000},async()=>{
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu);const evidence=await mkdtemp(join(tmpdir(),'t18-selection-intent-recovery-')),authority=createT18Directory();
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);const evidence=await mkdtemp(join(tmpdir(),'t18-selection-intent-recovery-')),authority=createT18Directory();
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const {origin,pool,principals}=fixture,principal=principals[0],other=principals[1];assert.ok(principal&&other);authority.setPrincipal(principal.id);await applyT18ForwardCheck(pool);
     let runtime=fixture.runtime,browser:Browser|undefined,error:unknown,stage='FIXTURE_READY';
@@ -123,7 +123,7 @@ test('a restored explicit reporter selection cannot silently become hand entry a
 });
 
 test('a committed verified admission with a lost response reloads and settles its original UUID by GET without a second POST',{timeout:240000},async()=>{
-  assert.match(resolve(tmpdir()),/^D:[\\/]/iu);const evidence=await mkdtemp(join(tmpdir(),'t18-verified-unknown-recovery-')),authority=createT18Directory();
+  if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);const evidence=await mkdtemp(join(tmpdir(),'t18-verified-unknown-recovery-')),authority=createT18Directory();
   await withWeb01Fixture(async(raw:Fixture)=>{
     const {origin,pool,principals,certificateSpki,browserCookies}=raw,principal=principals[0];assert.ok(principal);authority.setPrincipal(principal.id);await applyT18ForwardCheck(pool);
     let browser:Browser|undefined,error:unknown,stage='FIXTURE_READY';

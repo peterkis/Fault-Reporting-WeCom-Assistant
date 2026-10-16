@@ -66,7 +66,7 @@ const holdEncryption=`(()=>{const encrypt=crypto.subtle.encrypt.bind(crypto.subt
 interface Run {f:T21DraftFixture;fixture:NonNullable<Awaited<ReturnType<typeof createYxxBrowserFixture>>>;browser:Browser;peers:Peer[];serverWire:{method:string;path:string;status:number|null}[];directory:string;page:string}
 async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:Run)=>Promise<void>){
  assert.match(fileURLToPath(import.meta.url).replaceAll('\\','/'),/\/\.build\/runtime\/tests\/t21-bot-feedback-current-risks\.browser\.test\.mjs$/u);
- assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
+ if(process.platform==='win32')assert.match(resolve(tmpdir()),/^D:[\\/]/iu);
  await withT21DraftFixture(async f=>{
   const mapping=await t21Mapping(),directory=join(tmpdir(),'t21-browser-current-risks-'+randomUUID());await mkdir(directory);
   let fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,browser:Browser|undefined,app:{server:Server;stop():Promise<void>}|undefined,primary:unknown;
