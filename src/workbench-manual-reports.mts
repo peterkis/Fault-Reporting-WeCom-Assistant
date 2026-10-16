@@ -114,17 +114,17 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
   }
   async function currentCreationAuthority(authContext:unknown,tx:PostgresTransaction){
     await authorize(authContext,tx);await currentAuthentication(authContext,tx);
-    const context=authContext as Record<string,unknown>;
+    const context=authContext as Record<string,unknown>,session=context.session_id===undefined?null:uuidP2016(context.session_id);
     const current=await tx.query(`SELECT 1 FROM pilot_ticket.pilot_principal p
       WHERE p.id=$1::uuid AND p.is_active AND $3::bigint>platform.physical_epoch_ms()
         AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id
           AND (r.role IN ('ADMIN','DISPATCHER') OR r.role='HANDLER' AND EXISTS(
             SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team t ON t.team_id=m.team_id
             WHERE m.principal_id=p.id AND t.is_active)))
-        AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM pilot_ticket.workbench_auth_session s
+        AND ${session===null?'$2::uuid IS NULL':`EXISTS(SELECT 1 FROM pilot_ticket.workbench_auth_session s
           WHERE s.session_id=$2::uuid AND s.principal_id=p.id AND s.state='ACTIVE'
-            AND s.expires_epoch_ms>platform.physical_epoch_ms()))`,
-    [uuidP2016(context.principal_id),context.session_id===undefined?null:uuidP2016(context.session_id),context.expires_epoch_ms]);
+            AND s.expires_epoch_ms>platform.physical_epoch_ms())`}`,
+    [uuidP2016(context.principal_id),session,context.expires_epoch_ms]);
     if(current.rowCount!==1)failP2016('FORBIDDEN',403);
   }
   async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
