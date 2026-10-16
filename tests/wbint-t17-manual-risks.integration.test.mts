@@ -81,6 +81,22 @@ test('manual admission rechecks creation authority after the final Session share
   },enabled);
 });
 
+test('original unverified replay rechecks creation authority across its final Session read wait',async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command();assert.equal((await post(fixture,token,body)).status,202);
+    const before=await facts(fixture.pool),receiptLock=await fixture.pool.connect(),sessionLock=await fixture.pool.connect();let pending:Promise<Response>|undefined;
+    try{
+      await receiptLock.query('BEGIN');await receiptLock.query('LOCK TABLE pilot_ticket.ticket_command_receipt IN SHARE MODE');pending=post(fixture,token,body);
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.ticket_command_receipt'::regclass AND NOT granted")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting);
+      await sessionLock.query('BEGIN');await sessionLock.query('LOCK TABLE pilot_ticket.workbench_auth_session IN ACCESS EXCLUSIVE MODE');await receiptLock.query('ROLLBACK');
+      waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.workbench_auth_session'::regclass AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the replay is waiting in its last Session read after the creation check');
+      const actor=fixture.principals[0];assert.ok(actor);await fixture.pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[actor.id]);await fixture.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[actor.id]);await fixture.pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[actor.id]);
+      await sessionLock.query('ROLLBACK');const response=await pending;assert.equal(response.status,403);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');assert.deepEqual(await facts(fixture.pool),before);
+      assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[fixture.sessionId])).rows[0]?.state,'ACTIVE');
+    }finally{await receiptLock.query('ROLLBACK');await sessionLock.query('ROLLBACK');receiptLock.release();sessionLock.release();await pending?.catch(()=>{});}
+  },enabled);
+});
+
 test('default-off manual entry rejects its purpose without 033/042 storage and preserves ordinary authorized workbench reads',async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const token=await csrf(fixture),authority=object(await(await get(fixture,'/api/lifecycle/bootstrap')).json());assert.equal(authority.manual_reports_enabled,false);assert.equal(authority.manual_report_draft_recovery_enabled,false);

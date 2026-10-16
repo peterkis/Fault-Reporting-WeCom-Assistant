@@ -112,6 +112,21 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
     // wait. Recheck in a new statement while holding the unchanged session row.
     if(lock)await currentAuthentication(authContext,tx);
   }
+  async function currentCreationAuthority(authContext:unknown,tx:PostgresTransaction){
+    await authorize(authContext,tx);await currentAuthentication(authContext,tx);
+    const context=authContext as Record<string,unknown>;
+    const current=await tx.query(`SELECT 1 FROM pilot_ticket.pilot_principal p
+      WHERE p.id=$1::uuid AND p.is_active AND $3::bigint>platform.physical_epoch_ms()
+        AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id
+          AND (r.role IN ('ADMIN','DISPATCHER') OR r.role='HANDLER' AND EXISTS(
+            SELECT 1 FROM pilot_ticket.pilot_team_member m JOIN pilot_ticket.resolver_team t ON t.team_id=m.team_id
+            WHERE m.principal_id=p.id AND t.is_active)))
+        AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM pilot_ticket.workbench_auth_session s
+          WHERE s.session_id=$2::uuid AND s.principal_id=p.id AND s.state='ACTIVE'
+            AND s.expires_epoch_ms>platform.physical_epoch_ms()))`,
+    [uuidP2016(context.principal_id),context.session_id===undefined?null:uuidP2016(context.session_id),context.expires_epoch_ms]);
+    if(current.rowCount!==1)failP2016('FORBIDDEN',403);
+  }
   async function authorizeSelfHandling(authContext:unknown,transaction:PostgresTransaction,teamId?:string,lock=false){
     guardP2016(enabled&&selfHandlingEnabled);
     await currentAuthentication(authContext,transaction);
@@ -308,7 +323,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
           if(checked.target&&(!target||hashP2016(target)!==hashP2016(checked.target)))failP2016('ACTION_FAILED',503);
           reporterCandidates.fence(context.principal.principal_id,verifiedCommand.reporter,checked.verification,checked.target);}
         return context;
-      },afterReceiptLock:async tx=>{await authorize(authContext,tx);await currentAuthentication(authContext,tx);},run:async(tx,{principal})=>{
+      },afterReceiptLock:tx=>currentCreationAuthority(authContext,tx),run:async(tx,{principal})=>{
         const verification=checked?.verification??null;
         if(verification&&verification.purpose!=='ADMISSION')throw failP2016('ACTION_FAILED',503);
         const admitted=await admit(tx,authContext,principal,command,verification);
