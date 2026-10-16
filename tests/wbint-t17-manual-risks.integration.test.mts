@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
 import type {ManualReportCommand} from '../contracts/workbench_manual_report_contracts.js';
@@ -94,6 +94,33 @@ test('original unverified replay rechecks creation authority across its final Se
       await sessionLock.query('ROLLBACK');const response=await pending;assert.equal(response.status,403);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');assert.deepEqual(await facts(fixture.pool),before);
       assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[fixture.sessionId])).rows[0]?.state,'ACTIVE');
     }finally{await receiptLock.query('ROLLBACK');await sessionLock.query('ROLLBACK');receiptLock.release();sessionLock.release();await pending?.catch(()=>{});}
+  },enabled);
+});
+
+test('manual receipt rechecks creation authority across its final Session query result wait',async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const token=await csrf(fixture),body=command();assert.equal((await post(fixture,token,body)).status,202);
+    const path='/api/workbench/reports/commands/'+body.client_command_id;assert.equal((await get(fixture,path)).status,200);
+    const before=await facts(fixture.pool),originals=new Map<PostgresPoolClient,PostgresQuery>();let resume=()=>{},reached=false,pending:Promise<Response>|undefined;
+    const gate=new Promise<void>(resolve=>{resume=resolve;});
+    const observe=(client:PostgresPoolClient)=>{
+      if(originals.has(client))return;const original=client.query;originals.set(client,original);let receiptRead=false;
+      client.query=new Proxy(original,{apply(target,thisArg,args:unknown[]){
+        const result:unknown=Reflect.apply(target,thisArg,args),sql=args[0];if(!(result instanceof Promise)||typeof sql!=='string')return result;
+        return result.then(async rows=>{
+          if(sql.includes('result_snapshot AS result')&&sql.includes("command_type='WORKBENCH_MANUAL_REPORT'"))receiptRead=true;
+          else if(receiptRead&&!reached&&sql.includes('FROM pilot_ticket.workbench_auth_session')){reached=true;await gate;}
+          return rows;
+        });
+      }});
+    };
+    fixture.pool.on('acquire',observe);
+    try{
+      pending=get(fixture,path);for(let attempt=0;!reached&&attempt<200;attempt++)await new Promise(resolve=>setTimeout(resolve,10));assert.ok(reached,'the actual receipt read completed before its last Session result wait');
+      const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});
+      resume();const response=await pending;assert.equal(response.status,403);const denied=object(await response.json());assert.equal(object(denied.error).code,'P2_016_FORBIDDEN');assert.equal(denied.result,undefined);assert.deepEqual(await facts(fixture.pool),before);
+      assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[fixture.sessionId])).rows[0]?.state,'ACTIVE');
+    }finally{resume();await pending?.catch(()=>{});fixture.pool.removeListener('acquire',observe);for(const [client,original]of originals)client.query=original;}
   },enabled);
 });
 

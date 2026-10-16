@@ -196,7 +196,7 @@ export function createWorkbenchManualReports({pool,query,enabled=false,selfHandl
       ['P2_016:'+principal.principal_id,commandId])).rows[0];
       const base={client_command_id:commandId};
       const current=await authorize(authContext,tx);if(current.principal.principal_id!==principal.principal_id)failP2016('FORBIDDEN',403);
-      await currentAuthentication(authContext,tx);
+      await currentCreationAuthority(authContext,tx);
       if(!row||row.state==='STARTED')return publicP2016({...base,state:'UNKNOWN'});
       if(row.state==='FAILED'&&row.retryable===false&&typeof row.error==='string'&&P2016_ERROR_CODES.includes(row.error))return publicP2016({...base,state:'FAILED',error:{code:row.error,retryable:false}});
       if(row.state==='COMMITTED')return publicP2016({...base,state:'COMMITTED',result:storedResult(row.result,commandId)});
