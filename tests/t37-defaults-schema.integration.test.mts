@@ -4,6 +4,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import type {IncomingMessage} from 'node:http';
 import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
 import {FOLLOW_UP_MIGRATION_ID,followUpSchemaReady} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
@@ -45,8 +46,11 @@ async function originalConstraint(fixture:T37Fixture,table:string,name:string){
   assert.equal(result.rowCount,1);return text(result.rows[0]?.definition);
 }
 
-test('default off with no 049 or 053 keeps independent UNKNOWN receipts, and explicit enable without schema fails closed',{timeout:240000},async()=>{
+test('default off with no 049 or 053 keeps independent UNKNOWN receipts, and explicit enable without schema fails closed',{timeout:240000},async t=>{
+  let stage='FIXTURE_SETUP',replacementBootstraps=0;
+  const observeBootstrap=(request:IncomingMessage)=>{if(request.url==='/api/lifecycle/bootstrap')replacementBootstraps++;};
   await withT37Fixture(async fixture=>{
+    stage='ORIGINAL_HTTP';
     const dispatcher=await fixture.http(0),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId,before=await facts(dispatcher,path);
     const bootstrap=await current(dispatcher,'/api/lifecycle/bootstrap');assert.equal(bootstrap.follow_up_schedules_enabled,false);assert.equal(bootstrap.follow_up_schedule_receipt_enabled,true);
     await schemaAbsence(fixture);const body=command(version(before.ticket.version)),ackPath=path+'/follow-up-schedule/commands/'+body.client_command_id;
@@ -58,12 +62,16 @@ test('default off with no 049 or 053 keeps independent UNKNOWN receipts, and exp
     assert.deepEqual(await current(dispatcher,ackPath),{client_command_id:body.client_command_id,ticket_id:ticketId,state:'UNKNOWN'});
     assert.deepEqual(await facts(dispatcher,path),before);await schemaAbsence(fixture);
     assert.equal((await fixture.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE ticket_id=$1::uuid AND command_type='WORKBENCH_FOLLOW_UP_SCHEDULE'",[ticketId])).rowCount,0);
-    await fixture.runtime.stop();assert.equal(fixture.runtime.server.listening,false);
+    stage='ORIGINAL_STOP';await fixture.runtime.stop();assert.equal(fixture.runtime.server.listening,false);
+    stage='REPLACEMENT_CREATE';
     const port=Number(new URL(fixture.origin).port),runtime=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:fixture.origin,listenPort:port,
       principalIds:[fixture.dispatcher,fixture.handler,fixture.otherHandler],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,workbenchFollowUpSchedulesEnabled:true});
+    runtime.server.on('request',observeBootstrap);
     try{
       // Same isolated DB and actual native router. No worker timer or new migration is started here.
-      await listenConversationWorkbenchServer(runtime.server,{port});const enabled=await restartedHttp(runtime,fixture.origin);
+      stage='REPLACEMENT_LISTEN';await listenConversationWorkbenchServer(runtime.server,{port});
+      stage='REPLACEMENT_BOOTSTRAP';const enabled=await restartedHttp(runtime,fixture.origin);
+      stage='REPLACEMENT_ASSERTIONS';
       const enabledBootstrap=await current(enabled,'/api/lifecycle/bootstrap');assert.equal(enabledBootstrap.follow_up_schedules_enabled,true);assert.equal(enabledBootstrap.follow_up_schedule_receipt_enabled,true);
       const readiness=await enabled.get('/health/ready');assert.equal(readiness.status,503);assert.equal(readiness.value.base_service_ready,false);
       assert.equal(object(readiness.value.checks).workbench_follow_up_schedules_schema,false);
@@ -74,10 +82,19 @@ test('default off with no 049 or 053 keeps independent UNKNOWN receipts, and exp
       assert.deepEqual(await facts(enabled,path),before);await schemaAbsence(fixture);
       assert.equal((await fixture.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE ticket_id=$1::uuid AND command_type='WORKBENCH_FOLLOW_UP_SCHEDULE'",[ticketId])).rowCount,0);
     }finally{
+      runtime.server.off('request',observeBootstrap);
       await runtime.stop();assert.equal(runtime.server.listening,false);
       assert.equal(await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),0);
       assert.equal((await runtime.observability.metrics()).sse_clients,0);
     }
+  }).catch((error:unknown)=>{
+    const details=(value:unknown)=>{
+      if(!(value instanceof Error))return null;
+      const code:unknown=Reflect.get(value,'code');
+      return {name:value.name,code:typeof code==='string'?code:null,stack:value.stack?.replace(/\b(?:https?|postgres(?:ql)?):\/\/[^\s)]+/giu,'<URL_REDACTED>')};
+    };
+    t.diagnostic('T37_RESTART_FAILURE '+JSON.stringify({stage,replacement_bootstrap_requests:replacementBootstraps,error:details(error),cause:details(error instanceof Error?error.cause:undefined)}));
+    throw error;
   }); // Intentionally omit the option: the original fixture installs neither 049 nor 053.
 });
 
