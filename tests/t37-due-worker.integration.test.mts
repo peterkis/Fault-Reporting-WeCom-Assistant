@@ -1,6 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import type {IncomingMessage} from 'node:http';
+import {createServer} from 'node:net';
 import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
 import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
@@ -34,8 +36,11 @@ async function set(http:T37Http,path:string,due:string){
 }
 async function facts(http:T37Http,path:string){return {ticket:await current(http,path),schedule:await current(http,path+'/follow-up-schedule'),events:await current(http,path+'/events?limit=200'),responsibility:await current(http,path+'/responsibility'),deliveries:await current(http,path+'/deliveries')};}
 
-test('real due batches persist one safe signal per schedule revision and process at most twenty in stable order across native runtime restart',{timeout:240000},async()=>{
+test('real due batches persist one safe signal per schedule revision and process at most twenty in stable order across native runtime restart',{timeout:240000},async t=>{
+ let stage='FIXTURE_SETUP',replacementBootstraps=0;
+ const observeBootstrap=(request:IncomingMessage)=>{if(request.url==='/api/lifecycle/bootstrap')replacementBootstraps++;};
  await withT37Fixture(async fixture=>{
+  stage='ORIGINAL_HTTP';
   let runtime=fixture.runtime,dispatch=await http(runtime,fixture.origin);
   try{
    const ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;await set(dispatch,path,'2020-01-02 09:30:00');
@@ -48,9 +53,18 @@ test('real due batches persist one safe signal per schedule revision and process
    assert.ok(first.occurred_at>'2020-01-02 09:30:00','publication time is actual current time, not the expired due time');
    assert.deepEqual(await facts(dispatch,path),before,'a reminder is not a Ticket action, version change, assignment or Delivery');
    assert.deepEqual(await run(),{scanned:0,emitted:0,skipped:0});assert.equal((await signals(fixture)).length,1);
-   await runtime.stop();assert.equal(runtime.server.listening,false);
-   const port=Number(new URL(fixture.origin).port);runtime=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:fixture.origin,listenPort:port,principalIds:[fixture.dispatcher,fixture.handler,fixture.otherHandler],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,workbenchFollowUpSchedulesEnabled:true});
-   await listenConversationWorkbenchServer(runtime.server,{port});dispatch=await http(runtime,fixture.origin);run=duePort(runtime);
+   // Keep the restart on the same DB without reusing the stopped host's client connections.
+   stage='REPLACEMENT_ORIGIN';assert.equal(runtime.server.listening,true);
+   const probe=createServer();await new Promise<void>((resolve,reject)=>{probe.once('error',reject);probe.listen(0,'127.0.0.1',resolve);});
+   const address=probe.address();await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
+   assert.equal(probe.listening,false);assert.ok(address&&typeof address!=='string');
+   const port=address.port,origin='http://127.0.0.1:'+port;assert.notEqual(origin,fixture.origin);
+   stage='ORIGINAL_STOP';await runtime.stop();assert.equal(runtime.server.listening,false);
+   stage='REPLACEMENT_CREATE';runtime=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:port,principalIds:[fixture.dispatcher,fixture.handler,fixture.otherHandler],gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,workbenchFollowUpSchedulesEnabled:true});
+   runtime.server.on('request',observeBootstrap);
+   stage='REPLACEMENT_LISTEN';await listenConversationWorkbenchServer(runtime.server,{port});
+   stage='REPLACEMENT_BOOTSTRAP';dispatch=await http(runtime,origin);run=duePort(runtime);
+   stage='REPLACEMENT_FACTS_AND_DUE_BATCHES';
    assert.deepEqual(await run(),{scanned:0,emitted:0,skipped:0});assert.equal((await signals(fixture)).length,1);assert.equal(object((await current(dispatch,path+'/follow-up-schedule')).active).is_due,true);
    await set(dispatch,path,'2020-01-02 09:30:00');const revised=await facts(dispatch,path);assert.equal(revised.schedule.schedule_version,'2');
    assert.deepEqual(await run(),{scanned:1,emitted:1,skipped:0});assert.deepEqual(await run(),{scanned:0,emitted:0,skipped:0});
@@ -62,6 +76,14 @@ test('real due batches persist one safe signal per schedule revision and process
    assert.deepEqual(await run(),{scanned:1,emitted:1,skipped:0});assert.deepEqual((await signals(fixture)).slice(2).map(event=>event.aggregate_id),ordered);
    for(const invalid of [0,21,1.5,'20',Number.MAX_SAFE_INTEGER])await assert.rejects(()=>run(invalid));
    assert.deepEqual(await run(),{scanned:0,emitted:0,skipped:0});assert.equal((await signals(fixture)).length,23);
-  }finally{await runtime.stop();assert.equal(runtime.server.listening,false);assert.equal((await runtime.observability.metrics()).sse_clients,0);}
- },{workbenchFollowUpSchedulesEnabled:true});
+  }finally{runtime.server.off('request',observeBootstrap);await runtime.stop();assert.equal(runtime.server.listening,false);assert.equal((await runtime.observability.metrics()).sse_clients,0);}
+ },{workbenchFollowUpSchedulesEnabled:true}).catch((error:unknown)=>{
+  const details=(value:unknown)=>{
+   if(!(value instanceof Error))return null;
+   const code:unknown=Reflect.get(value,'code');
+   return {name:value.name,code:typeof code==='string'?code:null,stack:value.stack?.replace(/\b(?:https?|postgres(?:ql)?):\/\/[^\s)]+/giu,'<URL_REDACTED>')};
+  };
+  t.diagnostic('T37_DUE_RESTART_FAILURE '+JSON.stringify({stage,replacement_bootstrap_requests:replacementBootstraps,error:details(error),cause:details(error instanceof Error?error.cause:undefined)}));
+  throw error;
+ });
 });
