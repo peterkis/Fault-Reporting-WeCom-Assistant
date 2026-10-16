@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_personal_read_page.schema.json",
+  "title": "PLANNED WBINT-T35 authorized personal non-Session source page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["canonical_item", "sources", "next_cursor"],
+  "properties": {
+    "canonical_item": {"$ref": "workbench_canonical_item.schema.json"},
+    "sources": {
+      "type": "array", "maxItems": 100,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["source_key", "source_kind", "last_read_position", "latest_position", "row_version", "has_unread_material"],
+        "properties": {
+          "source_key": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "source_kind": {"enum": ["BOT", "WEB", "MANUAL"]},
+          "last_read_position": {"type": "string", "pattern": "^(?:0|[1-9][0-9]{0,18})$"},
+          "latest_position": {"type": "string", "pattern": "^[1-9][0-9]{0,18}$"},
+          "row_version": {"type": "string", "pattern": "^(?:0|[1-9][0-9]{0,18})$"},
+          "has_unread_material": {"type": "boolean"}
+        }
+      }
+    },
+    "next_cursor": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}
+  }
+}

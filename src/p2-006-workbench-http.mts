@@ -80,6 +80,18 @@ function exactKeys(body: Record<string, unknown>, allowed: readonly string[], re
   }
 }
 
+export function validateWorkbenchReadRequest(request:IncomingMessage,authContext:WorkbenchHttpAuthContext) {
+  if (authContext.auth_method === 'COOKIE') {
+    if (request.headers.origin !== authContext.public_origin) throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
+    if (request.headers['sec-fetch-site'] === 'cross-site') throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
+    if (!secureEqual(request.headers['x-csrf-token'], authContext.csrf_token)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.csrfInvalid, 403);
+  } else if (authContext.auth_method === 'BEARER') {
+    if (typeof request.headers.authorization !== 'string' || !request.headers.authorization.startsWith('Bearer ')) {
+      throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+    }
+  } else throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+}
+
 function validateWriteRequest(request: IncomingMessage, authContext: WorkbenchHttpAuthContext, body: Record<string, unknown>, { sessionMutation = true } = {}) {
   const commandId = request.headers['idempotency-key'];
   if (typeof commandId !== 'string' || !UUID_PATTERN.test(commandId) || commandId.toLowerCase() !== (body.client_command_id as string | null | undefined)?.toLowerCase()) {
@@ -92,15 +104,7 @@ function validateWriteRequest(request: IncomingMessage, authContext: WorkbenchHt
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.versionConflict, 409);
     }
   }
-  if (authContext.auth_method === 'COOKIE') {
-    if (request.headers.origin !== authContext.public_origin) throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
-    if (request.headers['sec-fetch-site'] === 'cross-site') throw new WorkbenchError(WORKBENCH_ERROR_CODES.originInvalid, 403);
-    if (!secureEqual(request.headers['x-csrf-token'], authContext.csrf_token)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.csrfInvalid, 403);
-  } else if (authContext.auth_method === 'BEARER') {
-    if (typeof request.headers.authorization !== 'string' || !request.headers.authorization.startsWith('Bearer ')) {
-      throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
-    }
-  } else throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+  validateWorkbenchReadRequest(request,authContext);
 }
 
 function authExpired(authContext: WorkbenchHttpAuthContext | null | undefined) {
@@ -220,12 +224,12 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
       const deliveryMatch = url.pathname.match(/^\/api\/deliveries\/([0-9a-f-]+)\/(retry|reconcile)$/iu);
       if (request.method === 'POST' && deliveryMatch) {
         const body = await readJson(request);
-        if ((deliveryMatch[2] as string).toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code'], ['client_command_id']);
-        else exactKeys(body, ['client_command_id', 'resolution', 'reason_code'], ['client_command_id', 'resolution', 'reason_code']);
+        if ((deliveryMatch[2] as string).toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code', 'expected_delivery_attempt_count'], ['client_command_id']);
+        else exactKeys(body, ['client_command_id', 'resolution', 'reason_code', 'expected_delivery_attempt_count'], ['client_command_id', 'resolution', 'reason_code']);
         validateWriteRequest(request, authContext, body, { sessionMutation: false });
         const result = (deliveryMatch[2] as string).toLowerCase() === 'retry'
-          ? await (commandFacade as CommandFacade).retryDelivery({ authContext, deliveryId: deliveryMatch[1] as string, reason_code: body.reason_code as string })
-          : await (commandFacade as CommandFacade).reconcileDelivery({ authContext, deliveryId: deliveryMatch[1] as string, resolution: body.resolution as DeliveryResolution, reason_code: body.reason_code as string });
+          ? await (commandFacade as CommandFacade).retryDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, expected_delivery_attempt_count:body.expected_delivery_attempt_count as number|undefined, reason_code: body.reason_code as string })
+          : await (commandFacade as CommandFacade).reconcileDelivery({ authContext, deliveryId: deliveryMatch[1] as string, client_command_id:body.client_command_id as string, expected_delivery_attempt_count:body.expected_delivery_attempt_count as number|undefined, resolution: body.resolution as DeliveryResolution, reason_code: body.reason_code as string });
         json(response, 200, result); return;
       }
       if (request.method === 'GET' && /^\/api\/attachments\//u.test(url.pathname)) {

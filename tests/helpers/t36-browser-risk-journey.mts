@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {randomUUID,createHash} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import type {T36BoundReplyFixture} from './t36-bound-reply-fixture.mjs';
+import type {SupplementFollowUpTarget} from '../../contracts/workbench_supplement_follow_up_contracts.js';
+export type T36Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+export const supplementRow=(target:SupplementFollowUpTarget)=>`[data-supplement-source-ref="${target.source_ref}"][data-supplement-revision="${target.revision}"]`;
+export async function input(browser:T36Browser,selector:string,text:string){await browser.evaluate(`(()=>{const field=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(field,${JSON.stringify(text)});field.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+export async function withT36Browser(f:T36BoundReplyFixture,run:(browser:T36Browser,capture:(name?:'new-board-1920.png'|'new-list-1920.png'|'new-detail-1920.png'|'new-detail-page-1920.png')=>Promise<void>)=>Promise<void>){
+ const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:T36Browser|undefined,primaryError:unknown;
+ try{browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[f.browserCookie]});assert.ok(browser);await browser.command('Page.enable');
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__t36Risk=[];const original=fetch;globalThis.fetch=(input,options)=>{const url=new URL(input instanceof Request?input.url:String(input),location.href),method=options?.method??(input instanceof Request?input.method:'GET');return (async()=>{if(url.pathname.endsWith('/messages')&&method==='POST'&&globalThis.__t36PausePosts){globalThis.__t36PostedBody=JSON.parse(options.body);await new Promise(resolve=>{globalThis.__t36Resume=resolve;});}return original(input,options);})().then(response=>{if(url.origin===location.origin&&(url.pathname.endsWith('/messages')||url.pathname.endsWith('/supplement-follow-up')||url.pathname.endsWith('/bootstrap')))globalThis.__t36Risk.push({path:url.pathname,method,status:response.status});return response;});};})()`});
+  await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+f.ticketId+'?detail=page'});await browser.waitFor('Boolean(document.querySelector("[data-supplement-follow-up-state] li"))');
+  const active=browser;await run(active,async(name='new-detail-page-1920.png')=>{const file=join(directory,name),bytes=Buffer.from(await active.screenshot(),'base64');await writeFile(file,bytes);console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));});
+ }catch(error){primaryError=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primaryError);}
+}
+export async function openReply(browser:T36Browser,target:SupplementFollowUpTarget){await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(supplementRow(target))})?.querySelector('[data-action="reply-supplement"]'))`);await browser.evaluate(`document.querySelector(${JSON.stringify(supplementRow(target))}).querySelector('[data-action="reply-supplement"]').click()`);await browser.waitFor('Boolean(document.querySelector("[data-supplement-bound-reply] textarea"))');}
+export async function closeReply(browser:T36Browser){await browser.waitFor(`Array.from(document.querySelectorAll('[data-supplement-bound-reply] button')).some(b=>b.textContent==='关闭补充回复'&&!b.disabled)`);await browser.evaluate(`Array.from(document.querySelectorAll('[data-supplement-bound-reply] button')).find(b=>b.textContent==='关闭补充回复').click()`);await browser.waitFor('!document.querySelector("[data-supplement-bound-reply]")');}

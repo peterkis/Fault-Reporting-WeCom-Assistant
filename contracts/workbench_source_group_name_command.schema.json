@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wecom-assistant:workbench-source-group-name-command",
+  "title": "Administrator source group name command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client_command_id", "expected_row_version", "display_name"],
+  "properties": {
+    "client_command_id": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
+    "expected_row_version": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,18})$", "description": "Canonical decimal integer, 0 for first registration; must be less than 9223372036854775807."},
+    "display_name": {"type": "string", "pattern": "^[^\\u0000-\\u001f\\u007f]*$", "description": "Trim before validation; 1 to 128 Unicode code points after trimming, no ASCII control characters. Plain text only."}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_supplement_follow_up_result.schema.json",
+  "title": "PLANNED WBINT-T36 disposition result",
+  "type": "object", "additionalProperties": false,
+  "required": ["ok", "client_command_id", "ticket_id", "source_ref", "revision", "follow_up_state", "resolution_id", "basis", "replayed"],
+  "properties": {
+    "ok": {"const": true},
+    "client_command_id": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/uuid"},
+    "ticket_id": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/uuid"},
+    "source_ref": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/source_ref"},
+    "revision": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/revision"},
+    "follow_up_state": {"const": "FOLLOWED_UP"},
+    "resolution_id": {"$ref": "workbench_supplement_follow_up_command.schema.json#/$defs/uuid"},
+    "basis": {"const": "RECORDED_DISPOSITION"},
+    "replayed": {"type": "boolean"}
+  }
+}

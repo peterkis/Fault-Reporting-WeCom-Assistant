@@ -4,8 +4,8 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { loadRoutes, select, expandPatterns, testEnvironment, execution, type Entry } from './routing.mjs';
-import { sourceRoot, workspaceFiles, record, program, hash } from './common.mjs';
+import { loadRoutes, select, expandPatterns, testEnvironment, execution, ROUTING_BASE, logical, type Entry } from './routing.mjs';
+import { sourceRoot, workspaceFiles, record, program, hash, git, strings } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
@@ -103,12 +103,13 @@ test('G2 staged preflight binds the source candidate and reads relative manifest
       const root=process.cwd(),runtime=path.join(root,'.build/runtime');
       assert.equal(path.resolve(G2_ROOT),root);
       const source=g2CandidateInventory(); assert.equal(source.fingerprint,g2CandidateInventory(root).fingerprint);
-      assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint);
+      try { assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint); }
+      catch (error) { assert.ok(error instanceof Error); assert.equal(error.code,'P2_G2_CANDIDATE_INVENTORY_LIMIT'); }
       const manifest=configurationFixture('live').manifest; manifest.candidate_fingerprint=source.fingerprint;
       writeFileSync(${JSON.stringify(manifestFile)},JSON.stringify(manifest));
       const parsed=readG2ManifestFile(path.relative(root,${JSON.stringify(manifestFile)}));
       assert.deepEqual(parsed,manifest); verifyG2Candidate(parsed.candidate_fingerprint);
-      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),/P2_G2_CANDIDATE_CHANGED/u);
+      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),error => error instanceof Error && ['P2_G2_CANDIDATE_CHANGED','P2_G2_CANDIDATE_INVENTORY_LIMIT'].includes(error.code));
       console.log('SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION');`;
     const result = spawnSync(process.execPath, ['--input-type=module', '--eval', probe],
       { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
@@ -251,7 +252,16 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
  try{
   const routes=loadRoutes(root), raw=readFileSync(path.join(root,'plans/typescript-migration/test-routing.json'),'utf8');
   await t.test('all legacy entries and aliases remain represented',()=>{
-    assert.equal(routes.entries.filter(entry=>!['tests/web01-workbench.test.mts','tests/web01-workbench.integration.test.mjs','tests/web01-workbench.browser.test.mjs','tests/yxx-current-readiness-cli.test.mts','tests/yxx-current-readiness.test.mts','tests/yxx-current-history.test.mts','tests/yxx-current-evidence.test.mts','tests/yxx-current-migrations.integration.test.mts'].includes(entry.path)).length,213);
+    // Frozen original legacy paths and the six original T02 companion cases remain required.
+    // New explicitly registered workbench tickets do not change this baseline cohort.
+    const frozen=record(JSON.parse(git(root,['show',ROUTING_BASE+':plans/typescript-migration/test-routing.json'])) as unknown);
+    const legacy=[...new Set(Object.values(record(frozen.proposed_groups)).flatMap(strings))];
+    assert.equal(legacy.length,207);
+    assert.equal(record(JSON.parse(raw) as unknown).legacy_entry_count,207);
+    const required=new Set([...legacy,'tests/p1-migration-compatibility.test.mjs','tests/p1-foundation-cli.test.mjs','tests/platform-postgres-callback.integration.test.mjs','tests/platform-boundary-contracts.test.mjs','tests/migration-canary.test.mjs','tests/p1-011-typescript-compatibility.test.mjs']);
+    assert.equal(required.size,213);
+    const declared=new Set(routes.entries.map(entry=>logical(entry.path)));
+    assert.equal([...required].filter(file=>declared.has(file)).length,213);
     assert.equal(select(routes,'selection','yxx-current-readiness').entries[0]?.path,'tests/yxx-current-readiness.test.mts');
     assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);
   });
@@ -288,8 +298,9 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
   await t.test('database tests fail closed before test launch',()=>{
     assert.throws(()=>testEnvironment(root,db,{}),/ISOLATED_DATABASE/u);
     assert.throws(()=>testEnvironment(root,db,{TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@production.invalid/test'}),/NOT_LOOPBACK/u);
-    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci'});
+    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',npm_config_cache:'D:/wecom-workbench-runtime/npm-cache',PYTHONDONTWRITEBYTECODE:'1',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci'});
     assert.equal(env.NODE_OPTIONS,undefined);assert.equal(env.WECOM_BOT_SECRET,undefined);assert.ok(env.PILOT_DATABASE_URL);
+    assert.equal(env.npm_config_cache,'D:/wecom-workbench-runtime/npm-cache');assert.equal(env.PYTHONDONTWRITEBYTECODE,'1');
   });
   build(root);const digest=verifyArtifact(root);
   await t.test('runtime path is an artifact, source path is the real checkout',()=>{

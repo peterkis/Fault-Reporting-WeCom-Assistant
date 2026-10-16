@@ -15,6 +15,7 @@
     "created_at"
   ],
   "properties": {
+    "route_kind": {"const": "YIXIAOXIU_APP"},
     "notification_type": {
       "enum": [
         "TICKET_CREATED",
@@ -74,8 +75,84 @@
     },
     "created_at": {
       "$ref": "local_datetime.schema.json"
+    },
+    "node": {
+      "enum": [
+        "FIRST_RESPONSIBILITY",
+        "STAFF_COMPLETED",
+        null
+      ]
+    },
+    "cycle_no": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "x-business-timezone": "Asia/Shanghai",
-  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys",
+  "dependentRequired": {
+    "node": [
+      "cycle_no"
+    ],
+    "cycle_no": [
+      "node"
+    ]
+  },
+  "allOf": [
+    {
+      "if": {"required": ["route_kind"]},
+      "then": {"properties": {"destination_type": {"const": "PERSON"}}}
+    },
+    {
+      "if": {
+        "required": [
+          "node"
+        ],
+        "properties": {
+          "node": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cycle_no": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "node"
+        ],
+        "properties": {
+          "node": {
+            "enum": [
+              "FIRST_RESPONSIBILITY",
+              "STAFF_COMPLETED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cycle_no": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        }
+      }
+    }
+  ]
 }

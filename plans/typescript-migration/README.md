@@ -2,6 +2,10 @@
 
 ACTIVE_SELECTION: v3-p09
 
+## WBINT-T16 已保存附件读取（2026-10-08）
+
+活动v3-p09保留原14项，追加本票4个已登记的文件Port／真实HTTP-PG／资源／正式bundle浏览器入口，原host、flags和历史清单不变。附件默认关闭、无Store明确不可用；不新增上传／Provider获取／OCR／模型。普通本票最终相关检查覆盖被修改的runtime认证与默认关闭、WEB01查询／正式界面及本票4入口；完整活动并集由整体集成汇总验证，不把直接子集宣称为全18或full/certify。合同和精确证据见[本票执行记录](../admin-workbench-integration/execution/t16.md)。
+
 ## WEB01 正式管理端接入（2026-10-07）
 
 从包含 PR54 merge `1948f76a676f9bfd7ebcbecd3af7951da4034e7e` 的最新 main 接续 WEB01。原 TypeScript 清单 181/181、D01/R01 为已交付记录，本轮不重做迁移、R00 或 R01；下文 SS011 的“新源码未认证/提交 PR 后停止”属于当时记录，不代表 PR54 合并后状态，也不重绑旧认证。

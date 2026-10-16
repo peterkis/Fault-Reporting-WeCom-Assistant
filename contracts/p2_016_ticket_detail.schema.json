@@ -117,12 +117,101 @@
           "reopen",
           "cancel",
           "add-note",
-          "transfer-assignment"
+          "unassign",
+          "assign",
+          "transfer-assignment",
+          "takeover",
+          "takeover-and-start",
+          "take-and-start",
+          "accept-for-later",
+          "take-and-start-with-conversations",
+          "accept-for-later-with-conversations",
+          "complete",
+          "return-to-dispatch"
         ]
       }
     },
     "web_report": {
       "$ref": "p2_016_web_report.schema.json"
+    },
+    "handling_cycle": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "cycle_no",
+            "first_responsibility_event_id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 36,
+              "maxLength": 36,
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "cycle_no": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "first_responsibility_event_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 36,
+                  "maxLength": 36,
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "staff_completion_event_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 36,
+                  "maxLength": 36,
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "reopen_follow_up": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "is_previous_handler",
+        "awaiting_acceptance"
+      ],
+      "properties": {
+        "origin": {
+          "enum": [
+            "WEB_REPORTER",
+            "BOT_REPORTER",
+            "STAFF"
+          ]
+        },
+        "is_previous_handler": {
+          "type": "boolean"
+        },
+        "awaiting_acceptance": {
+          "const": true
+        }
+      }
     }
   },
   "x-business-timezone": "Asia/Shanghai",

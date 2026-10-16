@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {test} from 'node:test';
+import {ownerTransferHttp,record,text} from './helpers/t29-owner-transfer-http-fixture.mjs';
+import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
+import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
+import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
+const input=(version:string,target:string,team:string|null='PILOT_IT')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'OPERATOR_REVIEWED',owner_principal_id:target,owner_team_id:team});
+for(const seam of ['owner-teams','public-progress','progress-deliveries'] as const)test(`T29 current Incident purpose is rechecked after the ${seam} data await`,async()=>{
+  await ownerTransferHttp(async({pool,f,confirm,post})=>{
+    const incident=await confirm(),principalId=text(record(f.admin).id),authContext={principal_id:principalId};
+    const published=await post('/api/incidents/'+incident+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'PR99 synthetic explicit public progress',preview_confirmed:true});assert.equal(published.status,200);
+    const publication=text(published.body.result_event_id);let entered:()=>void=()=>{},resume:()=>void=()=>{},armed=false;
+    const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+    const gated:PostgresTransaction={query:async<R extends PostgresQueryRow=Record<string,unknown>>(sql:string,values?:unknown[])=>{
+      const result=await pool.query<R>(sql,values);
+      if(armed&&(seam==='owner-teams'?sql.includes('SELECT team.team_id,left(team.display_name'):seam==='public-progress'?sql.includes('e.public_progress_summary AS summary'):sql.includes('SELECT d.id::text'))){entered();await release;}
+      return result;
+    }};
+    const query=createP2012IncidentQuery({pool:gated,enabled:true,ownerTransferEnabled:true,publicProgressEnabled:true});
+    const read=()=>seam==='owner-teams'?query.ownerTransferTargets({authContext,id:incident}):seam==='public-progress'?query.publicProgress({authContext,incidentId:incident}):query.publicProgressDeliveries({authContext,incidentId:incident,publicationId:publication});
+    await read();armed=true;const pending=read().then(value=>({ok:true,value}),error=>({ok:false,error}));
+    try{await reached;await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principalId]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);
+      resume();assert.equal((await pending).ok,false,'a stale purpose must not expose the previously authorized page');
+    }finally{resume();await pending;}
+  },{publication:true});
+});
+test('T29 real HTTP preserves the single ledger under duplicate/racing transfers, target loss, current caller loss and private projections',{timeout:90000},async()=>{
+  await ownerTransferHttp(async({pool,f,confirm,get,post})=>{
+    const incident=await confirm(),path='/api/incidents/'+incident,target=text(record(f.dispatcher).id),handler=text(record(f.handler).id),outsider=text(record(f.outsider).id),actor=text(record(f.admin).id),ticket=text(record(f.reports[0]).ticketId);
+    const reporter=createP2012ReporterTimelineAdapter({pool,enabled:true}),milestones=await reporter.milestones({ticketId:ticket}),personal=(await get('/api/tickets/'+ticket)).body;
+    const outward=await pool.query("SELECT (SELECT count(*) FROM communication.outbox)::text AS outbox,(SELECT count(*) FROM communication.delivery)::text AS delivery,(SELECT count(*) FROM conversation.realtime_event)::text AS sse");
+    const firstPage=(await get(path+'/owner-transfer-targets?limit=1')).body;assert.ok(Array.isArray(firstPage.items));assert.equal(firstPage.items.length,1);const cursor=text(firstPage.next_cursor);assert.equal((await get(path+'/owner-transfer-targets?cursor='+encodeURIComponent(cursor),1)).status,400);
+    const command=input('1',target),duplicates=await Promise.all([post(path+'/transfer-owner',command),post(path+'/transfer-owner',command),post(path+'/transfer-owner',command)]);assert.ok(duplicates.every(result=>result.status===200));assert.equal(duplicates.filter(result=>result.body.replayed===false).length,1);assert.ok(duplicates.every(result=>result.body.result_event_id===duplicates[0]?.body.result_event_id));
+    assert.equal((await post(path+'/transfer-owner',{...command,owner_team_id:null})).status,409);assert.equal((await get(path+'/owner-transfer-targets?cursor='+encodeURIComponent(cursor))).status,400);
+    await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[target]);assert.equal((await post(path+'/transfer-owner',command)).body.replayed,true);assert.equal((await get(path+'/commands/'+command.client_command_id)).body.state,'COMMITTED');assert.equal((await post(path+'/transfer-owner',input('2',target))).status,409);
+    await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[target]);await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid AND team_id=$2',[target,'PILOT_IT']);assert.equal((await post(path+'/transfer-owner',input('2',target))).status,409);assert.equal((await post(path+'/transfer-owner',input('2',outsider,null))).status,409,'owner identity must not manufacture READ');
+    assert.equal((await get(path)).body.row_version,'2');const race=await Promise.all([post(path+'/transfer-owner',input('2',target,null)),post(path+'/transfer-owner',input('2',handler,null))]);assert.deepEqual(race.map(result=>result.status).sort(),[200,409]);assert.equal((await get(path)).body.row_version,'3');
+    const history=(await get(path+'/events?limit=200')).body;assert.ok(Array.isArray(history.items));const transfers=history.items.map(record).filter(event=>event.event_type==='incident.owner.transferred');assert.equal(transfers.length,2);assert.equal(record(record(transfers[1]?.owner_transfer).previous).owner_principal_id,target);assert.equal((await pool.query("SELECT 1 FROM incident.command_receipt WHERE incident_id=$1::uuid AND command_type='TRANSFER_OWNER' AND state='COMMITTED'",[incident])).rowCount,2);
+    assert.deepEqual((await get('/api/tickets/'+ticket)).body,personal);assert.deepEqual(await reporter.milestones({ticketId:ticket}),milestones);assert.deepEqual((await pool.query("SELECT (SELECT count(*) FROM communication.outbox)::text AS outbox,(SELECT count(*) FROM communication.delivery)::text AS delivery,(SELECT count(*) FROM conversation.realtime_event)::text AS sse")).rows,outward.rows);
+    await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[actor]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[actor]);assert.equal((await get(path)).status,200);assert.equal((await get(path+'/commands/'+command.client_command_id)).status,403);assert.equal((await post(path+'/transfer-owner',command)).status,403);const narrow=(await get(path+'/events')).body;assert.ok(Array.isArray(narrow.items));assert.equal(narrow.items.map(record).some(event=>event.event_type==='incident.owner.transferred'),false);
+  });
+});
+test('T29 exact real HTTP fences reject privilege fields, foreign cursors and expired purpose; 054 keeps approved055/058 writes usable',async()=>{
+  await ownerTransferHttp(async({f,confirm,get,post})=>{
+    const incident=await confirm(),path='/api/incidents/'+incident,target=text(record(f.dispatcher).id);
+    for(const change of [{actor_principal_id:target},{owner_team_id:undefined},{owner_team_id:'invalid-team'},{expected_row_version:'9223372036854775808'},{reason_code:'WORKBENCH_INTERNAL_DISPOSITION'}])assert.equal((await post(path+'/transfer-owner',{...input('1',target),...change})).status,400);
+    assert.equal((await post(path+'/transfer-owner',input('1',target),0,{'origin':'http://outside.invalid'})).status,403);assert.equal((await post(path+'/transfer-owner',input('1',target),0,{'x-csrf-token':'invalid'})).status,403);assert.equal((await post(path+'/transfer-owner',input('1',target),0,{'idempotency-key':randomUUID()})).status,400);assert.equal((await post(path+'/transfer-owner',input('1',target),0,{'if-match':'W/"1"'})).status,409);
+    for(const suffix of ['?limit=101','?limit=1&limit=2','?state=ACTIVE'])assert.equal((await get(path+'/owner-transfer-targets'+suffix)).status,400);assert.equal((await get(path+'/owner-transfer-targets',2)).status,403);assert.equal((await get(path+'/owner-transfer-targets',3)).status,404);
+    assert.equal((await post(path+'/transfer-owner',input('1',target))).status,200);
+    assert.equal((await post(path+'/internal-notes',{client_command_id:randomUUID(),expected_row_version:'2',reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:'054之后的真实内部记录'})).status,200);
+    assert.equal((await post(path+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'3',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'054之后的真实公开摘要',preview_confirmed:true})).status,200);
+    assert.equal((await get(path)).body.row_version,'4');assert.equal((await get(path+'/internal-notes')).status,200);assert.equal((await get(path+'/public-progress')).status,200);
+    assert.equal((await post(path+'/correct-scope',{client_command_id:randomUUID(),expected_row_version:'4',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'})).status,200);assert.equal((await post(path+'/transfer-owner',input('5',target),1)).status,403);
+  },{notes:true,publication:true});
+});

@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_search_page.schema.json",
+  "title": "WBINT-T41 authorized canonical search page (SOURCE_ONLY, not mounted)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "next_cursor",
+    "column",
+    "range",
+    "criteria"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "id",
+          "intake_id",
+          "number",
+          "title",
+          "status",
+          "column",
+          "priority",
+          "source",
+          "source_label",
+          "source_group",
+          "location",
+          "reporter_name",
+          "assignee_name",
+          "review_reason",
+          "created_at",
+          "updated_at",
+          "completed_at"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "ticket",
+              "review",
+              "intake"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intake_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "NEW",
+              "QUEUED",
+              "ACCEPTED",
+              "REOPENED",
+              "IN_PROGRESS",
+              "WAITING_REQUESTER",
+              "WAITING_VENDOR",
+              "RESOLVED",
+              "CLOSED",
+              "CANCELLED",
+              "DUPLICATE_LINKED",
+              "PENDING",
+              "RECEIVED",
+              "WAITING_DESCRIPTION",
+              "WAITING_TRIAGE",
+              "FAILED",
+              "COMPLETED",
+              "IGNORED"
+            ]
+          },
+          "column": {
+            "enum": [
+              "pending",
+              "active",
+              "closed"
+            ]
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "source_label": {
+            "type": "string"
+          },
+          "source_group": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "ref",
+                  "display_name",
+                  "name_source",
+                  "row_version"
+                ],
+                "properties": {
+                  "ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "display_name": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 128
+                      }
+                    ]
+                  },
+                  "name_source": {
+                    "enum": [
+                      "ADMIN_CONFIRMED",
+                      "UNREGISTERED"
+                    ]
+                  },
+                  "row_version": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$"
+                  }
+                }
+              }
+            ]
+          },
+          "location": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reporter_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "assignee_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "review_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "created_at": {
+            "$ref": "local_datetime.schema.json"
+          },
+          "updated_at": {
+            "$ref": "local_datetime.schema.json"
+          },
+          "completed_at": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "local_datetime.schema.json"
+              }
+            ]
+          },
+          "attention": {
+            "$ref": "workbench_item_follow_attention.schema.json"
+          },
+          "supplement_follow_up": {
+            "$ref": "workbench_supplement_follow_up_summary.schema.json"
+          },
+          "follow_up_schedule": {
+            "$ref": "workbench_follow_up_schedule_view.schema.json#/properties/active"
+          }
+        }
+      }
+    },
+    "next_cursor": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      ]
+    },
+    "column": {
+      "enum": [
+        "all",
+        "pending",
+        "active",
+        "closed"
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "from",
+        "until",
+        "timezone"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "recent",
+            "all",
+            "cancelled"
+          ]
+        },
+        "from": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "until": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "timezone": {
+          "const": "Asia/Shanghai"
+        }
+      }
+    },
+    "criteria": {
+      "$ref": "workbench_search_criteria.schema.json"
+    }
+  }
+}

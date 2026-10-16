@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_takeover_receipt.schema.json",
+  "title": "PLANNED current principal Ticket takeover acknowledgement - WBINT-T07, runtime NOT_RUN",
+  "anyOf": [
+    {"type": "object", "additionalProperties": false, "required": ["state"], "properties": {"state": {"const": "UNKNOWN"}}},
+    {"type": "object", "additionalProperties": false, "required": ["state", "ticket_id", "ticket_version", "ticket_event_id"], "properties": {
+      "state": {"const": "COMMITTED"}, "ticket_id": {"$ref": "#/$defs/uuid"},
+      "ticket_version": {"type": "integer", "minimum": 1, "maximum": 2147483647}, "ticket_event_id": {"$ref": "#/$defs/uuid"}
+    }},
+    {"type": "object", "additionalProperties": false, "required": ["state", "error"], "properties": {
+      "state": {"const": "FAILED"}, "error": {"type": "object", "additionalProperties": false, "required": ["code", "retryable"], "properties": {
+        "code": {"type": "string", "pattern": "^P2_016_[A-Z][A-Z0-9_]{0,55}$"}, "retryable": {"const": false}
+      }}
+    }}
+  ],
+  "$defs": {"uuid": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},
+  "description": "PLANNED only. READ ONLY acknowledgement is restricted to the current authorized principal, Ticket, original UUID and WORKBENCH_TICKET_TAKEOVER purpose in the existing ledger. It never returns selected Session identities, group choices or result_snapshot. UNKNOWN is not proof of non-commit."
+}

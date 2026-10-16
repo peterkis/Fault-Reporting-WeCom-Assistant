@@ -251,3 +251,17 @@ phase3/unified-operations
 - strict 不得被 any、ts-ignore、ts-nocheck、as unknown as 或空检查范围替代；负向类型测试的 ts-expect-error 须有原因。运行时输入守卫、事务、身份、时间和哈希语义保持不变。
 - 源码、编译运行树、固定历史 checkout 分别验证；不得保留同名源码双实现、用源码跳板或回退源码掩盖缺失制品。旧 MJS 复制保持原字节，迁移模块只运行本次编译产物。
 - T00 缺必要基线时标 BASELINE_INCOMPLETE，types/build 标 NOT_APPLICABLE_T00；不得将历史结果或 Node 22 试跑当作当前 Node 24/PG18 基线。所有批次待真实验收与合并，不自动推进或部署。
+
+## Agent skills
+
+### Issue tracker
+
+任务与规格使用本仓库的 GitHub Issues；发布前核对已批准拆分，按真实阻塞关系领取。操作规则见 [任务跟踪器](docs/agents/issue-tracker.md)。
+
+### Triage labels
+
+使用五个默认 triage 标签；ready-for-agent 表示任务描述可执行，阻塞未完成时仍不得开始。映射见 [标签词汇](docs/agents/triage-labels.md)。
+
+### Domain docs
+
+沿用单一仓库词汇入口 CONTEXT.md、根目录 adr/ 及现有领域变更前置文档，不新建平行词汇表。读取规则见 [领域文档](docs/agents/domain.md)。

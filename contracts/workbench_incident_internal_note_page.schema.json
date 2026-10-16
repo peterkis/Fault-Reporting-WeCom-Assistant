@@ -1,0 +1,32 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_incident_internal_note_page.schema.json",
+  "title":"WBINT-T30 authorized internal disposition page (PROPOSED_NOT_MOUNTED)",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["incident_id","items","next_cursor"],
+  "properties":{
+    "incident_id":{"type":"string","format":"uuid"},
+    "items":{"type":"array","maxItems":100,"items":{"$ref":"#/$defs/record"}},
+    "next_cursor":{"type":["string","null"],"maxLength":2048}
+  },
+  "$defs":{
+    "version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$","x-postgresql-bigint-maximum":"9223372036854775807"},
+    "record":{
+      "type":"object","additionalProperties":false,
+      "required":["id","incident_id","event_ordinal","incident_row_version","actor_principal_id","actor_display_name","occurred_at","audience","text"],
+      "properties":{
+        "id":{"type":"string","format":"uuid"},
+        "incident_id":{"type":"string","format":"uuid"},
+        "event_ordinal":{"$ref":"#/$defs/version"},
+        "incident_row_version":{"$ref":"#/$defs/version"},
+        "actor_principal_id":{"type":"string","format":"uuid"},
+        "actor_display_name":{"type":["string","null"],"maxLength":200},
+        "occurred_at":{"$ref":"local_datetime.schema.json"},
+        "audience":{"const":"INTERNAL"},
+        "text":{"type":"string","minLength":1,"maxLength":2000,"pattern":"^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]*$"}
+      }
+    }
+  },
+  "x-runtime-validation":["Authorize current principal/Incident/internal purpose before SQL LIMIT","Opaque cursor binds Incident, current principal/scope, event ordinal and event UUID","Current name is a nullable display hint; actor_principal_id is the stable internal actor reference"]
+}

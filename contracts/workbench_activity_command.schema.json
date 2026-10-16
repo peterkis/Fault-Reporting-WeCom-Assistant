@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_activity_command.schema.json",
+  "title": "WBINT-T39 bounded activity command",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "browser_id", "action", "target", "visible", "active", "mode", "field"],
+      "properties": {
+        "schema_version": {"const": 1}, "browser_id": {"type": "string", "format": "uuid"},
+        "action": {"const": "RENEW"}, "target": {"$ref": "#/$defs/target"}, "visible": {"const": true}, "active": {"type": "boolean"},
+        "mode": {"enum": ["VIEWING", "EDITING"]},
+        "field": {"enum": [null, "internal-note", "ticket-handling", "ticket-completion", "manual-review"]}
+      },
+      "allOf": [{"if": {"properties": {"mode": {"const": "VIEWING"}}}, "then": {"properties": {"field": {"type": "null"}}}, "else": {"properties": {"field": {"type": "string"}}}}]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "browser_id", "action", "target"],
+      "properties": {"schema_version": {"const": 1}, "browser_id": {"type": "string", "format": "uuid"}, "action": {"const": "RELEASE"}, "target": {"$ref": "#/$defs/target"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "browser_id", "action"],
+      "properties": {"schema_version": {"const": 1}, "browser_id": {"type": "string", "format": "uuid"}, "action": {"const": "RELEASE_BROWSER"}}
+    }
+  ],
+  "$defs": {
+    "target": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "id"],
+      "properties": {"kind": {"enum": ["ticket", "review", "intake"]}, "id": {"type": "string", "format": "uuid"}}
+    }
+  }
+}

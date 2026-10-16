@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_waiting_event_page.schema.json",
+  "title":"Authorized Ticket event page with persisted cycle references in the T10 profile",
+  "type":"object","additionalProperties":false,"required":["items","next_cursor"],
+  "properties":{
+    "next_cursor":{"type":["string","null"]},
+    "items":{"type":"array","maxItems":200,"items":{
+      "type":"object","additionalProperties":false,
+      "required":["event_id","event_type","old_status","new_status","aggregate_version","event_ordinal","created_at","has_internal_note","has_external_note","handling_cycle_id"],
+      "properties":{
+        "event_id":{"type":"string","format":"uuid"},
+        "event_type":{"type":"string"},
+        "old_status":{"type":["string","null"]},
+        "new_status":{"type":["string","null"]},
+        "aggregate_version":{"type":"integer","minimum":1},
+        "event_ordinal":{"type":"integer","minimum":1},
+        "created_at":{"type":"string"},
+        "has_internal_note":{"type":"boolean"},
+        "has_external_note":{"type":"boolean"},
+        "handling_cycle_id":{"type":["string","null"],"format":"uuid"}
+      }
+    }}
+  }
+}

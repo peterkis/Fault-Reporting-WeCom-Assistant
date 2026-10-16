@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_incident_owner_transfer_capability.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["incident_owner_transfer_enabled", "incident_owner_transfer_draft_recovery_enabled"],
+  "properties": {
+    "incident_owner_transfer_enabled": {"type": "boolean", "default": false},
+    "incident_owner_transfer_draft_recovery_enabled": {"type": "boolean", "default": false}
+  },
+  "allOf": [{"if": {"properties": {"incident_owner_transfer_enabled": {"const": false}}}, "then": {"properties": {"incident_owner_transfer_draft_recovery_enabled": {"const": false}}}}]
+}

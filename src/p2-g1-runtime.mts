@@ -1,3 +1,4 @@
+import type {SupplementReplyBindingPort} from './p2-004-communication-core.mjs';
 import type { PostgresPool } from './platform/postgres-pool.mjs';
 import type { OperationalIntake } from './p2-g1-human-only-assembly.mjs';
 import type { G1RealtimeAppender } from './p2-g1-inbound-projection-coordinator.mjs';
@@ -17,13 +18,15 @@ interface G1RuntimeOptionsInput {
   publicOrigin?: string; listenPort?: number; botId?: string; secret?: string; wsUrl?: string;
   allowedTargetHashes?: readonly string[] | ReadonlySet<string>; gatewayEnabled?: boolean; senderEnabled?: boolean;
   senderAdapter?: G1SenderPort | null;
+  deliveryAttemptAdmission?:CommunicationWorkerOptions['attemptAdmission'];
   senderFactory?: ((input: { gateway: ReturnType<typeof createP2G1WeComGateway> }) => G1SenderPort) | null;
   extensionFactory?: ((input: { controlService: ReturnType<typeof createConversationControlService>; authorization: ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>; realtime: ReturnType<typeof createRealtimeSseHandler>; coordinator: ReturnType<typeof createP2G1InboundProjectionCoordinator>; queryService: ReturnType<typeof createConversationWorkbenchQueryService>; commandFacade: ReturnType<typeof createConversationWorkbenchCommandFacade> }) => G1RuntimeExtension) | null;
-  realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;
+  realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;realtimeAvailabilityFallback?:boolean;realtimeFollowUpSchedulesEnabled?:boolean;
   gatewayStatusProvider?: G1GatewayStatusPort | null; communicationStatusProvider?: { isReady(): boolean } | null;
   requireGateway?: boolean; testAuthTtlMs?: number; authentication?: G1AuthenticationPort | null;
   externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
-  projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
+  supplementReplyBindingFactory?:((authorization:ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>)=>SupplementReplyBindingPort)|null;
+  reporterPrivateReplies?:boolean;projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
 }
 export type G1RuntimeOptions = { [K in keyof G1RuntimeOptionsInput]: G1RuntimeOptionsInput[K] | undefined };
 import { createCommunicationService } from './p2-004-communication-core.mjs';
@@ -33,6 +36,7 @@ import { createRealtimeSseHandler } from './p2-003-realtime-sse.mjs';
 import { createAssignedCommunicationAuthorizer, createConversationControlService, createPilotConversationControlAuthorization } from './p2-005-conversation-control.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { createConversationWorkbenchCommandFacade } from './p2-006-workbench-command-facade.mjs';
+import {createConversationDeliveryCommandPort} from './p2-006-delivery-command-port.mjs';
 import { createWorkbenchDeliveryControl } from './p2-006-workbench-delivery-control.mjs';
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer, listenConversationWorkbenchServer } from './p2-006-workbench-http.mjs';
 import { createConversationWorkbenchQueryService } from './p2-006-workbench-query.mjs';
@@ -58,16 +62,20 @@ export function createP2G1Runtime({
   senderEnabled = false,
   senderAdapter = null,
   senderFactory = null,
+  deliveryAttemptAdmission=null,
   extensionFactory = null,
   realtimeAppender = appendRealtimeEvent,
   projectionTransactionStart = null,
   realtimeScopeLimit = 5000,
+  realtimeAvailabilityFallback=false,realtimeFollowUpSchedulesEnabled=false,
   gatewayStatusProvider = null,
   communicationStatusProvider = null,
   requireGateway = gatewayEnabled,
   testAuthTtlMs = 15 * 60_000,
   authentication = null,
   externalSendEnabled = true,
+  supplementReplyBindingFactory=null,
+  reporterPrivateReplies=false,
   clientFactory,
   projectionIntervalMs = 250,
   communicationIntervalMs = 250,
@@ -84,12 +92,13 @@ export function createP2G1Runtime({
     || typeof realtimeAppender !== 'function'
     || (projectionTransactionStart !== null && typeof projectionTransactionStart !== 'function')
     || !Number.isInteger(realtimeScopeLimit) || realtimeScopeLimit<1 || realtimeScopeLimit>5000
+    ||typeof realtimeAvailabilityFallback!=='boolean'||typeof realtimeFollowUpSchedulesEnabled!=='boolean'
     || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
     || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
     || typeof requireGateway !== 'boolean'
     || !Number.isInteger(testAuthTtlMs) || testAuthTtlMs < 10_000 || testAuthTtlMs > P2_G1_TEST_AUTH_MAX_TTL_MS
     || (authentication !== null && typeof authentication?.authenticate !== 'function')
-    || typeof externalSendEnabled !== 'boolean') {
+    || typeof reporterPrivateReplies!=='boolean'||typeof externalSendEnabled !== 'boolean') {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
   const authPort: G1AuthenticationPort = authentication ?? createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
@@ -100,13 +109,17 @@ export function createP2G1Runtime({
     enabled: true,
     authorize: controlAuthorization,
     realtimeAppender,
+    transactionStartHook:projectionTransactionStart,
   });
   const communicationService = createCommunicationService({
     pool,
     enabled: true,
+    reporterPrivateReplies,
+    supplementReplyBinding:supplementReplyBindingFactory?.(authorization)??null,
     authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }),
   });
   const deliveryControl = createWorkbenchDeliveryControl({
+    receiptPort:createConversationDeliveryCommandPort({pool,authorize:authorization,enabled:true}),
     pool,
     authorize: authorization,
     enabled: true,
@@ -122,7 +135,7 @@ export function createP2G1Runtime({
     authenticate: authPort.authenticate,
     authorize: async (authContext) => {
       const principal = await authorization.resolvePrincipal(authContext);
-      return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit});
+      return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit,availabilityFallback:realtimeAvailabilityFallback,followUpSchedulesEnabled:realtimeFollowUpSchedulesEnabled});
     },
   });
   let assembly: ReturnType<typeof createP2G1HumanOnlyAssembly>;
@@ -136,7 +149,7 @@ export function createP2G1Runtime({
   });
   const sender = senderAdapter ?? (senderFactory ? senderFactory({gateway}) : createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled }));
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
-  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20 });
+  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20,attemptAdmission:deliveryAttemptAdmission });
   const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup,
     projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,transactionStartHook:projectionTransactionStart,wakeup:realtime.wakeup}) });
   const observedGateway = gatewayStatusProvider ?? gateway;
@@ -146,6 +159,7 @@ export function createP2G1Runtime({
     pool,
     enabled: true,
     authorize: authorization,
+    safeTimeline:reporterPrivateReplies,
     featureStatus: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false },
   });
   const commandFacade = createConversationWorkbenchCommandFacade({

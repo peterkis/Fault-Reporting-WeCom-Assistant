@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_reminder_capability.schema.json",
+  "title": "T40 planned additive bootstrap capability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workbench_reminders_enabled",
+    "reminders_endpoint"
+  ],
+  "properties": {
+    "workbench_reminders_enabled": {
+      "type": "boolean"
+    },
+    "reminders_endpoint": {
+      "enum": [
+        "/api/workbench/reminders",
+        null
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "workbench_reminders_enabled": {
+          "const": false
+        },
+        "reminders_endpoint": {
+          "const": null
+        }
+      }
+    },
+    {
+      "properties": {
+        "workbench_reminders_enabled": {
+          "const": true
+        },
+        "reminders_endpoint": {
+          "const": "/api/workbench/reminders"
+        }
+      }
+    }
+  ],
+  "x-source-status": "SOURCE_ONLY_NOT_MOUNTED",
+  "x-feature-default": false
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_board_action_intent.schema.json",
+  "title": "T42 local presentation intent; not an HTTP business command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "source_column", "target_column"],
+  "properties": {
+    "kind": {"enum": ["ticket", "review", "intake"]},
+    "id": {"type": "string", "format": "uuid"},
+    "source_column": {"enum": ["pending", "active", "closed"]},
+    "target_column": {"enum": ["pending", "active", "closed"]}
+  }
+}

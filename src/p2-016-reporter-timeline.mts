@@ -1,10 +1,12 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { ReporterAccess, ReporterScope } from './p2-016-reporter-access.mjs';
-type ReadScope = Pick<ReporterScope, 'ticket_id' | 'session_id' | 'public_ref'>;
+import type {BotReporterFeedbackContext} from '../contracts/bot_reporter_feedback_contracts.js';
+export type ReporterReadScope = Pick<ReporterScope, 'ticket_id' | 'session_id' | 'public_ref'> & {original_source?:'VERIFIED_MANUAL_REPORT'};
+type ReadScope = ReporterReadScope;
 interface ReadInput { sessionToken: unknown; publicRef?: unknown }
 type Reader<T> = (transaction: PostgresTransaction, scope: ReadScope) => Promise<T>;
-interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null }
+interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null; feedbackContext?:((transaction:PostgresTransaction,input:ReadInput)=>Promise<BotReporterFeedbackContext>)|null }
 export type ReporterTimeline = ReturnType<typeof createP2016ReporterTimeline>;
 
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
@@ -13,7 +15,7 @@ const MILESTONES=Object.freeze({'ticket.created':'工单已受理','ticket.queue
   'ticket.started':'正在处理','ticket.resumed':'已恢复处理','ticket.waiting_requester':'等待您补充信息',
   'ticket.waiting_vendor':'已联系厂商协助','ticket.resolved':'已处理，等待确认','ticket.closed':'工单已关闭',
   'ticket.reopened':'已重新受理','ticket.cancelled':'工单已撤销'});
-export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null,authorizeRead=null}: TimelineOptions) {
+export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null,authorizeRead=null,feedbackContext=null}: TimelineOptions) {
   async function scope(sessionToken: unknown,publicRef: unknown) {guardP2016(enabled);return (access as NonNullable<typeof access>).authenticate(sessionToken,{publicRef});}
   // Both facades execute this one safe projection. authorizeRead is an internal composition port,
   // never an HTTP scope payload; member mode supplies its transaction after ownership validation.
@@ -31,7 +33,8 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       return publicP2016({public_ref:publicRef,ticket_no:t.ticket_no,suffix:t.ticket_no.slice(-4),
         title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:EXTERNAL_TICKET_STATUS[t.status],
         created_at:localP2016(t.created_at),updated_at:localP2016(t.updated_at),version:t.version,
-        guidance:'如未解决，请在企业微信机器人单聊中回复。',
+        guidance:s.original_source==='VERIFIED_MANUAL_REPORT'?'如未解决，请联系工作人员补充情况。':'如未解决，请在企业微信机器人单聊中回复。',
+        ...(feedbackContext&&s.original_source!=='VERIFIED_MANUAL_REPORT'?{feedback_context:await feedbackContext(tx,{sessionToken,publicRef})}:{}),
         ...(incidentAdapter?{incident_milestones:await incidentAdapter.milestones({ticketId:s.ticket_id,transaction:tx,memberRead:s.session_id===null})}:{})});
       });
     },
@@ -40,7 +43,10 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       const n=limitP2016(limit,100);
       const c=cursor?decodeCursorP2016(cursor,['ref','at','ordinal']):null;
       if(c&&(c.ref!==publicRef||!Number.isInteger(c.ordinal)||(c.ordinal as number)<1))failP2016('CURSOR_INVALID');
-      const q=await tx.query<{ event_id: string; event_type: keyof typeof MILESTONES; event_ordinal: number; created_at: string }>(`SELECT event_id::text,event_type,event_ordinal,created_at FROM pilot_ticket.ticket_event
+      const q=await tx.query<{ event_id: string; event_type: keyof typeof MILESTONES; event_ordinal: number; created_at: string;staff_summary:string|null }>(`SELECT event_id::text,event_type,event_ordinal,created_at,
+        CASE WHEN event_type='ticket.closed' AND old_status='IN_PROGRESS' AND new_status='CLOSED'
+          AND reason_code='STAFF_COMPLETED' AND operator_type='PILOT_USER' AND internal_note IS NOT NULL
+          AND char_length(btrim(external_note)) BETWEEN 1 AND 500 THEN external_note ELSE NULL END AS staff_summary FROM pilot_ticket.ticket_event
         WHERE ticket_id=$1::uuid AND event_type=ANY($2::text[]) AND ($3::timestamp without time zone IS NULL
           OR (created_at,event_ordinal)>($3::timestamp without time zone,$4::integer))
         ORDER BY created_at,event_ordinal,event_id LIMIT $5`,[s.ticket_id,Object.keys(MILESTONES),c?localP2016(c.at):null,c?.ordinal??0,n+1]);
@@ -50,7 +56,7 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
       if(s.session_id!==null)await tx.query(`WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch)
         UPDATE pilot_ticket.reporter_access_session SET last_seen_epoch_ms=stamp.epoch,
         last_seen_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE session_id=$1::uuid`,[s.session_id]);
-      return publicP2016({items:rows.map(r=>({ref:textHashP2016(r.event_id).slice(0,32),text:MILESTONES[r.event_type],
+      return publicP2016({items:rows.map(r=>({ref:textHashP2016(r.event_id).slice(0,32),text:typeof r.staff_summary==='string'&&r.staff_summary.length<=500&&r.staff_summary.trim()?'工作人员已完成本轮处理：'+r.staff_summary:MILESTONES[r.event_type],
         occurred_at:localP2016(r.created_at),source_rank:0,source_ordinal:r.event_ordinal})),
         next_cursor:q.rows.length>n?cursorP2016({ref:publicRef,at:(last as NonNullable<typeof last>).created_at,ordinal:(last as NonNullable<typeof last>).event_ordinal}):null});
       });

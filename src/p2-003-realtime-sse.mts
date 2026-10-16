@@ -33,6 +33,7 @@ interface StreamState {
   request: IncomingMessage; response: ServerResponse; principal: unknown; authorization: NormalizedAuthorization;
   configuration: Configuration; metrics: Metrics; lease: unknown; resolveClosed: () => void;
   responseOff: Listener | null; requestOff: Listener | null; abortController: AbortController;
+  activitySignature: string | null;
   scanCursor: string | null; closed: boolean; streaming: boolean; running: boolean; scheduled: boolean; eventsDue: boolean; heartbeatDue: boolean;
   heartbeatTimer: ReturnType<typeof setInterval> | null; recoveryTimer: ReturnType<typeof setInterval> | null;
   heartbeatTimerActive: boolean; recoveryTimerActive: boolean; onResponseClose: (() => void) | null; onRequestAborted: (() => void) | null; cancelDrain: (() => void) | null;
@@ -40,12 +41,14 @@ interface StreamState {
 export interface RealtimeSseHandler {
   (request: IncomingMessage, response: ServerResponse): Promise<void>;
   handle: RealtimeSseHandler; close(): Promise<Readonly<Metrics>>; getMetrics(): Readonly<Metrics>; metrics(): Readonly<Metrics>;
+  setWorkbenchActivity?(hook: ((authContext: unknown) => Promise<string | null>) | null): void;
   wakeup(): unknown; notify(): unknown; disconnectPrincipal(principalId: string): Readonly<{ disconnected_count: number }>;
   wakeupHub: unknown; hubSnapshot(): unknown;
 }
 import { types as utilTypes } from 'node:util';
 
 import * as realtimeEventLog from './p2-003-realtime-event-log.mjs';
+import {RealtimeScopeUnavailable} from './p2-006-workbench-authorization.mjs';
 
 const MAX_POSTGRES_BIGINT = '9223372036854775807';
 const REALTIME_PATH = '/api/realtime/events';
@@ -916,6 +919,7 @@ function configureSseHeaders(response: ServerResponse) {
 }
 
 export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOptions<P> = {}): RealtimeSseHandler {
+  let activityHook: ((authContext: unknown) => Promise<string | null>) | null = null;
   const configuration = normalizeHandlerConfiguration(options);
   const pool = ownData(options, 'pool');
   const eventStore = ownData(options, 'eventStore');
@@ -1066,6 +1070,13 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
         if (state.eventsDue) {
           state.eventsDue = false;
           await replayAvailable(state);
+          if (!state.closed && activityHook) {
+            const signature = await activityHook(state.principal);
+            if (!state.closed && signature !== state.activitySignature && signature !== null) {
+              if (!await writeSseFrame(state, 'event: workbench.activity.changed\ndata: {"schema_version":1}\n\n')) { cleanupStream(state); return; }
+            }
+            state.activitySignature = signature;
+          }
         }
         if (!state.closed && state.heartbeatDue) {
           state.heartbeatDue = false;
@@ -1190,12 +1201,16 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
         request,
         scope: REALTIME_SCOPE,
       }));
-    } catch {
+    } catch (error) {
       if (authorizationConnectionClosed()) {
         stopEarlyDisconnectWatch();
         return;
       }
       stopEarlyDisconnectWatch();
+      if(error instanceof RealtimeScopeUnavailable){
+        writeFallbackResponse(response,{status:503,code:REALTIME_SSE_ERROR_CODES.storageFailed,reason:'TEMPORARY_UNAVAILABLE',strategy:'POLL_UNTIL_SSE_AVAILABLE',pollAfterMs:Math.max(1000,configuration.recoveryPollMs)});
+        return;
+      }
       writeErrorResponse(response, 403, REALTIME_SSE_ERROR_CODES.forbidden);
       return;
     }
@@ -1266,6 +1281,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
       responseOff,
       requestOff,
       abortController: new AbortController(),
+      activitySignature: null,
       scanCursor: requestedCursor,
       closed: false,
       streaming: false,
@@ -1390,6 +1406,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
 
   async function close() {
     handlerClosed = true;
+    activityHook = null;
     for (const state of [...streams]) {
       cleanupStream(state, { destroy: true });
     }
@@ -1429,6 +1446,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     wakeup: { value: wakeup, enumerable: true },
     notify: { value: wakeup, enumerable: true },
     disconnectPrincipal: { value: disconnectPrincipal, enumerable: true },
+    setWorkbenchActivity: { value: (hook: ((authContext: unknown) => Promise<string | null>) | null) => { activityHook = hook; }, enumerable: true },
     wakeupHub: { value: wakeupHub, enumerable: true },
     hubSnapshot: {
       value: () => (hubSnapshot ? hubSnapshot.call(wakeupHub) : null),

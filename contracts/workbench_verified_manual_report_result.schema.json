@@ -1,0 +1,27 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_verified_manual_report_result.schema.json",
+  "title":"Planned T18 durable admission with separately observed notification eligibility",
+  "type":"object","additionalProperties":false,
+  "required":["ok","client_command_id","intake_id","intake_no","source","reporter_verification","manual_contact_required","notification_eligibility","external_notification","result_code","ticket","review","replayed"],
+  "properties":{
+    "ok":{"const":true},
+    "client_command_id":{"$ref":"workbench_manual_report_result.schema.json#/properties/client_command_id"},
+    "intake_id":{"$ref":"workbench_manual_report_result.schema.json#/properties/intake_id"},
+    "intake_no":{"$ref":"workbench_manual_report_result.schema.json#/properties/intake_no"},
+    "source":{"$ref":"workbench_manual_report_result.schema.json#/properties/source"},
+    "reporter_verification":{"const":"VERIFIED"},
+    "manual_contact_required":{"type":"boolean"},
+    "notification_eligibility":{"enum":["ELIGIBLE","NOT_REACHABLE"]},
+    "external_notification":{"const":false},
+    "result_code":{"$ref":"workbench_manual_report_result.schema.json#/properties/result_code"},
+    "ticket":{"$ref":"workbench_manual_report_result.schema.json#/properties/ticket"},
+    "review":{"$ref":"workbench_manual_report_result.schema.json#/properties/review"},
+    "replayed":{"type":"boolean"}
+  },
+  "allOf":[{
+    "if":{"properties":{"notification_eligibility":{"const":"ELIGIBLE"}}},
+    "then":{"properties":{"manual_contact_required":{"const":false}}},
+    "else":{"properties":{"manual_contact_required":{"const":true}}}
+  }]
+}

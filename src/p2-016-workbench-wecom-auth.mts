@@ -7,6 +7,7 @@ interface AuthOptions { pool: PostgresTransaction; publicOrigin: string; corpId:
 interface AuthSessionRow { session_id: string; principal_id: string; csrf_token_hash: string; last_seen_epoch_ms: string; expires_epoch_ms: string; expires_at: string; is_active: boolean; can_work: boolean }
 interface MappingResponse { errcode?: unknown; open_userid_list?: { userid?: unknown; open_userid?: unknown }[]; invalid_userid_list?: unknown }
 interface AuditInput { sessionId?: string | null; principalId?: string | null; identityHash?: string | null; eventType: string; reasonCode: string; providerErrcode?: number | null }
+export interface WorkbenchSessionPredicate {sql:string;values:unknown[]}
 
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createWeComAppTokenProvider } from './p2-g2-wecom-app-token.mjs';
@@ -322,6 +323,26 @@ export function createWeComWorkbenchAuthentication({
       public_origin: publicOrigin, session_id: row.session_id });
   }
 
+  function currentSessionPredicate(authContext:unknown,principalId:string,start=1):WorkbenchSessionPredicate {
+    ensureReady();
+    if(!authContext||typeof authContext!=='object'||Array.isArray(authContext)||!Number.isInteger(start)||start<1||start>100)fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    const auth=authContext as Record<string,unknown>;
+    if(auth.auth_method!=='COOKIE'||typeof auth.session_id!=='string'||!UUID.test(auth.session_id)
+      ||auth.principal_id!==principalId||typeof auth.expires_epoch_ms!=='string'||!/^[1-9][0-9]{0,15}$/u.test(auth.expires_epoch_ms))fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    // The same stored session and configured idle lifetime remain authoritative.
+    // A caller can include this read predicate in its final data statement, so a
+    // pool or projection wait cannot turn the entry authContext into authority.
+    return {sql:`EXISTS(SELECT 1 FROM pilot_ticket.workbench_auth_session session_guard
+      JOIN pilot_ticket.pilot_principal session_principal ON session_principal.id=session_guard.principal_id
+      WHERE session_guard.session_id=$${start}::uuid AND session_guard.principal_id=$${start+1}::uuid
+        AND session_guard.state='ACTIVE' AND session_guard.expires_epoch_ms=$${start+2}::bigint
+        AND session_guard.expires_epoch_ms>platform.physical_epoch_ms()
+        AND session_guard.last_seen_epoch_ms+$${start+3}::bigint>=platform.physical_epoch_ms()
+        AND session_principal.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role session_role
+          WHERE session_role.principal_id=session_principal.id AND session_role.role=ANY($${start+4}::text[])))`,
+      values:[auth.session_id,principalId,auth.expires_epoch_ms,idleTtlMs,STAFF_ROLES]};
+  }
+
   async function logout({ request, response }: Omit<AuthHttpInput, 'url'> = {} as AuthHttpInput) {
     if (request.headers.origin !== publicOrigin || request.headers['sec-fetch-site'] === 'cross-site') {
       fail(WORKBENCH_ERROR_CODES.originInvalid, 403);
@@ -370,9 +391,11 @@ export function createWeComWorkbenchAuthentication({
   }
 
   return Object.freeze({
+    supportsLogout:true,
     initialize: refreshIdentityMapping,
     mappingDigest: () => mappingDigest,
     authenticate,
+    currentSessionPredicate,
     runMaintenance,
     unauthenticatedHandler: handler,
     close: async () => { closed = true; clearInterval(maintenanceTimer as ReturnType<typeof setInterval>); principalByUserId.clear(); await maintenanceTask?.catch(()=>{}); },

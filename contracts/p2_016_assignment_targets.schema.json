@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_assignment_targets.schema.json",
+  "title": "Currently authorized effective internal Ticket assignment targets",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resolver_teams", "resolver_team_id", "items"],
+  "properties": {
+    "resolver_teams": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["team_id", "display_name"],
+        "properties": {
+          "team_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    },
+    "resolver_team_id": {
+      "anyOf": [
+        {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+        {"type": "null"}
+      ]
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["principal_id", "display_name"],
+        "properties": {
+          "principal_id": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    }
+  },
+  "description": "Read-only, current Ticket/worker authority; active groups containing effective internal business members, and only the explicitly selected group's effective members. The query is not a grant for a later command. Login identities, contact data and external identities are excluded."
+}

@@ -1,0 +1,9 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://hospital.local/contracts/p2_016_return_to_dispatch_targets.schema.json",
+  "title":"Planned bounded independent internal communication targets for T09",
+  "type":"object","additionalProperties":false,"required":["items"],
+  "properties":{"items":{"type":"array","maxItems":100,"items":{"type":"object","additionalProperties":false,"required":["principal_id","display_name"],"properties":{"principal_id":{"$ref":"p2_016_unassign_command.schema.json#/$defs/uuid"},"display_name":{"type":"string","minLength":1,"maxLength":128}}}}},
+  "x-runtime-invariant":"Current lawful return/read permission, active internal target; unique IDs. Does not grant later per-Session VIEW/TRANSFER/Control writes or require Ticket handling-team membership of communicator.",
+  "x-status":"PLANNED_NOT_IMPLEMENTED_NOT_RUN"
+}

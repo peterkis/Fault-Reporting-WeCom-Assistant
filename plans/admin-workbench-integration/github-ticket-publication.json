@@ -1,0 +1,1242 @@
+{
+  "repo": "peterkis/Fault-Reporting-WeCom-Assistant",
+  "approved_on": "2026-10-07",
+  "status": "COMPLETE",
+  "items": [
+    {
+      "ticket_number": 1,
+      "ticket_id": "WBINT-T01",
+      "number": 56,
+      "id": 5745321490,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56",
+      "title": "[WBINT-T01] 确认接入基线与共同合同",
+      "source": [
+        "00"
+      ],
+      "blocked_by_ticket_numbers": [],
+      "blocked_by_issue_numbers": [],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 2,
+      "ticket_id": "WBINT-T02",
+      "number": 57,
+      "id": 5745323045,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57",
+      "title": "[WBINT-T02] 从事项详情执行可靠的内部备注",
+      "source": [
+        "01",
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        1
+      ],
+      "blocked_by_issue_numbers": [
+        56
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        56
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 3,
+      "ticket_id": "WBINT-T03",
+      "number": 58,
+      "id": 5745325697,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58",
+      "title": "[WBINT-T03] 恢复当前浏览器中的24小时草稿",
+      "source": [
+        "01"
+      ],
+      "blocked_by_ticket_numbers": [
+        2
+      ],
+      "blocked_by_issue_numbers": [
+        57
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        57
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 4,
+      "ticket_id": "WBINT-T04",
+      "number": 59,
+      "id": 5745328861,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59",
+      "title": "[WBINT-T04] 一键承接并开始处理无会话工单",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        2
+      ],
+      "blocked_by_issue_numbers": [
+        57
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        57
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 5,
+      "ticket_id": "WBINT-T05",
+      "number": 60,
+      "id": 5745331896,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/60",
+      "title": "[WBINT-T05] 一键同时承接工单与关联沟通",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        4
+      ],
+      "blocked_by_issue_numbers": [
+        59
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        59
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 6,
+      "ticket_id": "WBINT-T06",
+      "number": 61,
+      "id": 5745334805,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/61",
+      "title": "[WBINT-T06] 将工单派给同事或显式转派",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        5
+      ],
+      "blocked_by_issue_numbers": [
+        60
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        60
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 7,
+      "ticket_id": "WBINT-T07",
+      "number": 62,
+      "id": 5745338133,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/62",
+      "title": "[WBINT-T07] 接管获权可见的跨团队工单",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        6
+      ],
+      "blocked_by_issue_numbers": [
+        61
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        61
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 8,
+      "ticket_id": "WBINT-T08",
+      "number": 63,
+      "id": 5745342055,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/63",
+      "title": "[WBINT-T08] 撤销尚未开始的派工",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        6
+      ],
+      "blocked_by_issue_numbers": [
+        61
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        61
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 9,
+      "ticket_id": "WBINT-T09",
+      "number": 64,
+      "id": 5745344833,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/64",
+      "title": "[WBINT-T09] 停止处理并退回待安排",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        3,
+        8
+      ],
+      "blocked_by_issue_numbers": [
+        58,
+        63
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58,
+        63
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 10,
+      "ticket_id": "WBINT-T10",
+      "number": 65,
+      "id": 5745348702,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/65",
+      "title": "[WBINT-T10] 执行等待、恢复和合法取消",
+      "source": [
+        "02"
+      ],
+      "blocked_by_ticket_numbers": [
+        3,
+        4
+      ],
+      "blocked_by_issue_numbers": [
+        58,
+        59
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58,
+        59
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 11,
+      "ticket_id": "WBINT-T11",
+      "number": 66,
+      "id": 5745352431,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66",
+      "title": "[WBINT-T11] 工作人员记录内外结果并完工关闭",
+      "source": [
+        "03"
+      ],
+      "blocked_by_ticket_numbers": [
+        3,
+        4
+      ],
+      "blocked_by_issue_numbers": [
+        58,
+        59
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58,
+        59
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 12,
+      "ticket_id": "WBINT-T12",
+      "number": 67,
+      "id": 5745356301,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/67",
+      "title": "[WBINT-T12] 同事接管并完工关闭",
+      "source": [
+        "03"
+      ],
+      "blocked_by_ticket_numbers": [
+        7,
+        11
+      ],
+      "blocked_by_issue_numbers": [
+        62,
+        66
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        62,
+        66
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 13,
+      "ticket_id": "WBINT-T13",
+      "number": 68,
+      "id": 5745360289,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/68",
+      "title": "[WBINT-T13] 查看完整接单与交接链",
+      "source": [
+        "03"
+      ],
+      "blocked_by_ticket_numbers": [
+        7
+      ],
+      "blocked_by_issue_numbers": [
+        62
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        62
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 14,
+      "ticket_id": "WBINT-T14",
+      "number": 69,
+      "id": 5745363459,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/69",
+      "title": "[WBINT-T14] 在同一事项中阅读并处置人工复核",
+      "source": [
+        "04"
+      ],
+      "blocked_by_ticket_numbers": [
+        3
+      ],
+      "blocked_by_issue_numbers": [
+        58
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 15,
+      "ticket_id": "WBINT-T15",
+      "number": 70,
+      "id": 5745367040,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/70",
+      "title": "[WBINT-T15] 确认明确故障并立即开始处理",
+      "source": [
+        "04"
+      ],
+      "blocked_by_ticket_numbers": [
+        5,
+        14
+      ],
+      "blocked_by_issue_numbers": [
+        60,
+        69
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        60,
+        69
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 16,
+      "ticket_id": "WBINT-T16",
+      "number": 71,
+      "id": 5745370623,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71",
+      "title": "[WBINT-T16] 安全查看已有报修附件",
+      "source": [
+        "04"
+      ],
+      "blocked_by_ticket_numbers": [
+        1
+      ],
+      "blocked_by_issue_numbers": [
+        56
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        56
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 17,
+      "ticket_id": "WBINT-T17",
+      "number": 72,
+      "id": 5745373509,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/72",
+      "title": "[WBINT-T17] 手工代录电话或现场报修",
+      "source": [
+        "05"
+      ],
+      "blocked_by_ticket_numbers": [
+        14
+      ],
+      "blocked_by_issue_numbers": [
+        69
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        69
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 18,
+      "ticket_id": "WBINT-T18",
+      "number": 73,
+      "id": 5745376899,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/73",
+      "title": "[WBINT-T18] 选择经核实成员并代录",
+      "source": [
+        "05"
+      ],
+      "blocked_by_ticket_numbers": [
+        17
+      ],
+      "blocked_by_issue_numbers": [
+        72
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        72
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 19,
+      "ticket_id": "WBINT-T19",
+      "number": 74,
+      "id": 5745379862,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/74",
+      "title": "[WBINT-T19] 代录后由本人立即处理",
+      "source": [
+        "05"
+      ],
+      "blocked_by_ticket_numbers": [
+        4,
+        17
+      ],
+      "blocked_by_issue_numbers": [
+        59,
+        72
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        59,
+        72
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 20,
+      "ticket_id": "WBINT-T20",
+      "number": 75,
+      "id": 5745383256,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/75",
+      "title": "[WBINT-T20] Web原报修人反馈仍未解决",
+      "source": [
+        "06"
+      ],
+      "blocked_by_ticket_numbers": [
+        11
+      ],
+      "blocked_by_issue_numbers": [
+        66
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        66
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 21,
+      "ticket_id": "WBINT-T21",
+      "number": 76,
+      "id": 5745386118,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/76",
+      "title": "[WBINT-T21] Bot原报修人反馈仍未解决",
+      "source": [
+        "06"
+      ],
+      "blocked_by_ticket_numbers": [
+        20
+      ],
+      "blocked_by_issue_numbers": [
+        75
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        75
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 22,
+      "ticket_id": "WBINT-T22",
+      "number": 77,
+      "id": 5745388869,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/77",
+      "title": "[WBINT-T22] 集中查看会话并人工回复",
+      "source": [
+        "07"
+      ],
+      "blocked_by_ticket_numbers": [
+        3
+      ],
+      "blocked_by_issue_numbers": [
+        58
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 23,
+      "ticket_id": "WBINT-T23",
+      "number": 78,
+      "id": 5745391585,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/78",
+      "title": "[WBINT-T23] 检索并维护来源群显示名称",
+      "source": [
+        "00",
+        "15"
+      ],
+      "blocked_by_ticket_numbers": [
+        2
+      ],
+      "blocked_by_issue_numbers": [
+        57
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        57
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 24,
+      "ticket_id": "WBINT-T24",
+      "number": 79,
+      "id": 5745394638,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79",
+      "title": "[WBINT-T24] 按Bot来源可靠通知原报修人",
+      "source": [
+        "08"
+      ],
+      "blocked_by_ticket_numbers": [
+        11
+      ],
+      "blocked_by_issue_numbers": [
+        66
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        66
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 25,
+      "ticket_id": "WBINT-T25",
+      "number": 80,
+      "id": 5745397257,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/80",
+      "title": "[WBINT-T25] 通知H5与已核实代录报修人",
+      "source": [
+        "08"
+      ],
+      "blocked_by_ticket_numbers": [
+        11,
+        18
+      ],
+      "blocked_by_issue_numbers": [
+        66,
+        73
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        66,
+        73
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 26,
+      "ticket_id": "WBINT-T26",
+      "number": 81,
+      "id": 5745400946,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81",
+      "title": "[WBINT-T26] 群来源强@与Bot私聊独立投递",
+      "source": [
+        "08"
+      ],
+      "blocked_by_ticket_numbers": [
+        24
+      ],
+      "blocked_by_issue_numbers": [
+        79
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        79
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 27,
+      "ticket_id": "WBINT-T27",
+      "number": 82,
+      "id": 5745403723,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/82",
+      "title": "[WBINT-T27] 人工复核并确认公共故障候选",
+      "source": [
+        "09"
+      ],
+      "blocked_by_ticket_numbers": [
+        3
+      ],
+      "blocked_by_issue_numbers": [
+        58
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 28,
+      "ticket_id": "WBINT-T28",
+      "number": 83,
+      "id": 5745407059,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/83",
+      "title": "[WBINT-T28] 跟进公共故障及关联个人报修",
+      "source": [
+        "09"
+      ],
+      "blocked_by_ticket_numbers": [
+        27
+      ],
+      "blocked_by_issue_numbers": [
+        82
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        82
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 29,
+      "ticket_id": "WBINT-T29",
+      "number": 84,
+      "id": 5745410265,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/84",
+      "title": "[WBINT-T29] 交接公共故障负责人",
+      "source": [
+        "10"
+      ],
+      "blocked_by_ticket_numbers": [
+        28
+      ],
+      "blocked_by_issue_numbers": [
+        83
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        83
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 30,
+      "ticket_id": "WBINT-T30",
+      "number": 85,
+      "id": 5745414148,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/85",
+      "title": "[WBINT-T30] 记录公共故障内部处置",
+      "source": [
+        "10"
+      ],
+      "blocked_by_ticket_numbers": [
+        28
+      ],
+      "blocked_by_issue_numbers": [
+        83
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        83
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 31,
+      "ticket_id": "WBINT-T31",
+      "number": 86,
+      "id": 5745417287,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/86",
+      "title": "[WBINT-T31] 显式发布公共故障安全进展",
+      "source": [
+        "10"
+      ],
+      "blocked_by_ticket_numbers": [
+        30
+      ],
+      "blocked_by_issue_numbers": [
+        85
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        85
+      ],
+      "label_applied": true,
+      "body_verified": true,
+      "assignees": []
+    },
+    {
+      "ticket_number": 32,
+      "ticket_id": "WBINT-T32",
+      "number": 87,
+      "id": 5745420208,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/87",
+      "title": "[WBINT-T32] 查看获权通知异常队列",
+      "source": [
+        "11"
+      ],
+      "blocked_by_ticket_numbers": [
+        25,
+        26,
+        31
+      ],
+      "blocked_by_issue_numbers": [
+        80,
+        81,
+        86
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        80,
+        81,
+        86
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 33,
+      "ticket_id": "WBINT-T33",
+      "number": 88,
+      "id": 5745427424,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/88",
+      "title": "[WBINT-T33] 受控重试或核对通知结果",
+      "source": [
+        "11"
+      ],
+      "blocked_by_ticket_numbers": [
+        32
+      ],
+      "blocked_by_issue_numbers": [
+        87
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        87
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 34,
+      "ticket_id": "WBINT-T34",
+      "number": 89,
+      "id": 5745432005,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/89",
+      "title": "[WBINT-T34] 明确关注并查看与我有关",
+      "source": [
+        "12"
+      ],
+      "blocked_by_ticket_numbers": [
+        5
+      ],
+      "blocked_by_issue_numbers": [
+        60
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        60
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 35,
+      "ticket_id": "WBINT-T35",
+      "number": 90,
+      "id": 5745436441,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/90",
+      "title": "[WBINT-T35] 实际阅读后推进个人已读",
+      "source": [
+        "12"
+      ],
+      "blocked_by_ticket_numbers": [
+        14,
+        22
+      ],
+      "blocked_by_issue_numbers": [
+        69,
+        77
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        69,
+        77
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 36,
+      "ticket_id": "WBINT-T36",
+      "number": 91,
+      "id": 5745441724,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/91",
+      "title": "[WBINT-T36] 明确处置报修补充待跟进",
+      "source": [
+        "12"
+      ],
+      "blocked_by_ticket_numbers": [
+        35
+      ],
+      "blocked_by_issue_numbers": [
+        90
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        90
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 37,
+      "ticket_id": "WBINT-T37",
+      "number": 92,
+      "id": 5745445108,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/92",
+      "title": "[WBINT-T37] 维护工单共享跟进时间",
+      "source": [
+        "12"
+      ],
+      "blocked_by_ticket_numbers": [
+        6,
+        20
+      ],
+      "blocked_by_issue_numbers": [
+        61,
+        75
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        61,
+        75
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 38,
+      "ticket_id": "WBINT-T38",
+      "number": 93,
+      "id": 5745450450,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/93",
+      "title": "[WBINT-T38] 通过SSE更新真实工作台事实",
+      "source": [
+        "13"
+      ],
+      "blocked_by_ticket_numbers": [
+        3
+      ],
+      "blocked_by_issue_numbers": [
+        58
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        58
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 39,
+      "ticket_id": "WBINT-T39",
+      "number": 94,
+      "id": 5745455035,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/94",
+      "title": "[WBINT-T39] 提示当前查看与编辑活动",
+      "source": [
+        "13"
+      ],
+      "blocked_by_ticket_numbers": [
+        38
+      ],
+      "blocked_by_issue_numbers": [
+        93
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        93
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 40,
+      "ticket_id": "WBINT-T40",
+      "number": 95,
+      "id": 5745459706,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/95",
+      "title": "[WBINT-T40] 提供站内提醒、声音与个人偏好",
+      "source": [
+        "13",
+        "15"
+      ],
+      "blocked_by_ticket_numbers": [
+        34,
+        35,
+        37,
+        38
+      ],
+      "blocked_by_issue_numbers": [
+        89,
+        90,
+        92,
+        93
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        89,
+        90,
+        92,
+        93
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 41,
+      "ticket_id": "WBINT-T41",
+      "number": 96,
+      "id": 5745467991,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/96",
+      "title": "[WBINT-T41] 检索全部获权事项与组合筛选",
+      "source": [
+        "14"
+      ],
+      "blocked_by_ticket_numbers": [
+        14,
+        18,
+        34,
+        36,
+        37
+      ],
+      "blocked_by_issue_numbers": [
+        69,
+        73,
+        89,
+        91,
+        92
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        69,
+        73,
+        89,
+        91,
+        92
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 42,
+      "ticket_id": "WBINT-T42",
+      "number": 97,
+      "id": 5745477642,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/97",
+      "title": "[WBINT-T42] 用合法拖动执行真实业务动作",
+      "source": [
+        "15"
+      ],
+      "blocked_by_ticket_numbers": [
+        7,
+        15,
+        20,
+        38
+      ],
+      "blocked_by_issue_numbers": [
+        62,
+        70,
+        75,
+        93
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        62,
+        70,
+        75,
+        93
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    },
+    {
+      "ticket_number": 43,
+      "ticket_id": "WBINT-T43",
+      "number": 98,
+      "id": 5745485423,
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/98",
+      "title": "[WBINT-T43] 完成完整人工工作台隔离验收与交接",
+      "source": [
+        "16"
+      ],
+      "blocked_by_ticket_numbers": [
+        9,
+        10,
+        12,
+        13,
+        16,
+        19,
+        21,
+        23,
+        29,
+        33,
+        39,
+        40,
+        41,
+        42
+      ],
+      "blocked_by_issue_numbers": [
+        64,
+        65,
+        67,
+        68,
+        71,
+        74,
+        76,
+        78,
+        84,
+        88,
+        94,
+        95,
+        96,
+        97
+      ],
+      "dependency_mode": "NATIVE",
+      "label_verified": true,
+      "state": "open",
+      "native_blockers_verified": [
+        64,
+        65,
+        67,
+        68,
+        71,
+        74,
+        76,
+        78,
+        84,
+        88,
+        94,
+        95,
+        96,
+        97
+      ],
+      "label_applied": true,
+      "assignees": [],
+      "body_verified": true
+    }
+  ],
+  "errors": [
+    {
+      "step": "publish_or_verify",
+      "error": "Get \"https://api.github.com/repos/peterkis/Fault-Reporting-WeCom-Assistant/issues/87\": EOF\n"
+    }
+  ],
+  "ready_label": "ready-for-agent",
+  "verified_issue_count": 43,
+  "native_edges_verified": 76,
+  "body_fallback_count": 0,
+  "recovered_after_transient_read": true,
+  "frontier": [
+    56
+  ],
+  "execution_status": "NOT_STARTED",
+  "source_head": "3cf707945afac7392806f7d8dca3dfb6be94caad",
+  "snapshot_on": "2026-10-07",
+  "timezone": "Asia/Shanghai"
+}

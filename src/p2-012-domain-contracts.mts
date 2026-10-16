@@ -1,11 +1,14 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { IncidentCommand as ContractCommand, CandidateReview, Incident, IncidentPublicView, ReporterMilestone } from '../contracts/p2_012_contracts.js';
+import type {IncidentInternalNoteCommand} from '../contracts/workbench_incident_internal_notes_contracts.js';
+import type {IncidentOwnerTransferCommand} from '../contracts/workbench_incident_owner_transfer_contracts.js';
 export type { CandidateReview, Incident, IncidentPublicView, ReporterMilestone };
 type UnionKeys<T> = T extends T ? keyof T : never;
 type Exclusive<T, All = T> = T extends T ? T & Partial<Record<Exclude<UnionKeys<All>, keyof T>, never>> : never;
-export type IncidentCommand = Exclusive<ContractCommand>;
+import type {IncidentPublicProgressCommand} from '../contracts/workbench_incident_public_progress_contracts.js';
+export type IncidentCommand = Exclusive<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand | IncidentOwnerTransferCommand>;
 type Normalize<T> = T extends T ? Omit<T, 'expected_row_version'> & { readonly expected_row_version: string } : never;
-export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand>>;
+export type NormalizedIncidentCommand = Exclusive<Normalize<ContractCommand | IncidentInternalNoteCommand | IncidentPublicProgressCommand | IncidentOwnerTransferCommand>>;
 export type IncidentCommandSuccess = { readonly ok: true; readonly result_ref_type: 'INCIDENT' | 'CANDIDATE'; readonly result_ref_id: string; readonly result_row_version: string; readonly result_event_id: string; readonly replayed: boolean };
 export type IncidentCommandFailure = { readonly ok: false; readonly error: { readonly code: string; readonly retryable: false }; readonly replayed: boolean };
 export type IncidentCommandResult = IncidentCommandSuccess | IncidentCommandFailure;
@@ -20,11 +23,21 @@ import { WorkbenchError } from './p2-006-workbench-query.mjs';
 import { assertLocalDateTime,assertEpochMsString } from './platform/time-contract.mjs';
 
 export const SCOPES=Object.freeze(['LOCAL','BUILDING','CAMPUS','HOSPITAL_WIDE']);
+export function allowedIncidentScopes(roles:readonly string[],allowDispatcherCampus=false):Incident['confirmed_scope'][] {
+  if(roles.includes('ADMIN'))return ['LOCAL','BUILDING','CAMPUS','HOSPITAL_WIDE'];
+  if(roles.includes('DISPATCHER'))return allowDispatcherCampus?['LOCAL','BUILDING','CAMPUS']:['LOCAL','BUILDING'];
+  return [];
+}
 export const INCIDENT_STATES=Object.freeze([...SCOPES.map(s=>'CONFIRMED_'+s),'INVESTIGATING','RESOLVED','CLOSED']);
 export const CANDIDATE_STATES=Object.freeze(['CANDIDATE','UNDER_REVIEW','CONFIRMED','REJECTED','EXPIRED']);
 export const REASONS=Object.freeze(['OPERATOR_REVIEWED','CONFIRMED_SHARED_FAULT','INCORRECT_ASSOCIATION','RECOVERY_CONFIRMED','SUBSCRIPTION_REQUEST','SCOPE_CORRECTION','MAINTENANCE_EXPIRED','WORKBENCH_CONFIRMED']);
 export const ACTIONS=Object.freeze(['START_REVIEW','REJECT_CANDIDATE','EXPIRE_CANDIDATE','CONFIRM_INCIDENT','START_INVESTIGATING','CORRECT_SCOPE','SET_PRIMARY_TICKET','LINK_REPORT','UNLINK_REPORT','MARK_REPORTER_RECOVERED','PAUSE_SUBSCRIPTION','RESUME_SUBSCRIPTION','RESOLVE_INCIDENT','CLOSE_INCIDENT']);
 export const LIMITS=Object.freeze({pool:4,list:30,maximumList:100,events:200,sse:32});
+// Preserve supplied safe hints only; never reconstruct references from source content.
+export function safeCandidateSourceRefs(value:unknown):string[] {
+  if(!Array.isArray(value))return [];
+  return [...new Set(value.slice(0,100).filter((ref):ref is string=>typeof ref==='string'&&/^(?:channel:[1-9][0-9]{0,18}|(?:web|intake):[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/iu.test(ref)))];
+}
 export const ERROR_CODES=Object.freeze(["P2_012_COMMAND_CONFLICT","P2_012_COMMAND_FAILED","P2_012_CURSOR_INVALID","P2_012_DIRECT_DESTINATION_REQUIRED","P2_012_DISABLED","P2_012_EXPIRY_CONFLICT","P2_012_FLAG_INVALID","P2_012_FORBIDDEN","P2_012_INPUT_INVALID","P2_012_LIMIT_INVALID","P2_012_LIVE_APPROVAL_REQUIRED","P2_012_NOTIFICATION_EVENT_INVALID","P2_012_NOTIFICATION_FAILED","P2_012_NOT_FOUND","P2_012_OWNER_INVALID","P2_012_PRIMARY_NOT_LINKED","P2_012_PRIMARY_STILL_LINKED","P2_012_REPORT_ALREADY_LINKED","P2_012_SOURCE_CONFLICT","P2_012_SOURCE_EVIDENCE_INCOMPLETE","P2_012_SOURCE_NOT_FOUND","P2_012_STATE_CONFLICT","P2_012_TICKET_ALREADY_LINKED","P2_012_VERSION_CONFLICT"]);
 export function fail(code: string='INPUT_INVALID',status=400): never{const value='P2_012_'+code;throw new WorkbenchError(ERROR_CODES.includes(value)?value:'P2_012_INPUT_INVALID',status);}
 const HTTP_ERROR_STATUS=Object.freeze(Object.fromEntries(Object.entries({
@@ -67,11 +80,27 @@ export function decodeCursor(v: unknown,keys: readonly string[]){try{if(typeof v
 export async function transaction<T>(pool: PostgresPool,run: (tx: PostgresTransaction) => Promise<T>): Promise<T>{const tx=await pool.connect();let destroy=false;try{await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");const r=await run(tx);await tx.query('COMMIT');return r;}catch(e){try{await tx.query('ROLLBACK');}catch{destroy=true;}throw e;}finally{tx.release(destroy);}}
 export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   const base=['action','client_command_id','reason_code'];
-  const v=snapshot(input) as JsonObservation;if(!ACTIONS.includes(v?.action as string))fail();
+  const v=snapshot(input) as JsonObservation;
+  if(v?.action==='TRANSFER_OWNER'){
+    exact(v,[...base,'incident_id','expected_row_version','owner_principal_id','owner_team_id']);
+    if(!REASONS.includes(v.reason_code as string))fail();
+    return frozen({action:'TRANSFER_OWNER',incident_id:uuid(v.incident_id),client_command_id:uuid(v.client_command_id),reason_code:v.reason_code as IncidentOwnerTransferCommand['reason_code'],expected_row_version:version(v.expected_row_version),owner_principal_id:uuid(v.owner_principal_id),owner_team_id:v.owner_team_id===null?null:code(v.owner_team_id)});
+  }
+  if(v?.action==='PUBLISH_PUBLIC_PROGRESS'){
+    exact(v,[...base,'incident_id','expected_row_version','summary','preview_confirmed']);
+    if(v.reason_code!=='WORKBENCH_PUBLIC_PROGRESS'||v.preview_confirmed!==true||typeof v.summary!=='string'||!v.summary.trim()||[...v.summary].length>1000||Buffer.byteLength(v.summary,'utf8')>4096||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ud800-\udfff]/u.test(v.summary))fail();
+    return frozen({action:'PUBLISH_PUBLIC_PROGRESS',incident_id:uuid(v.incident_id),client_command_id:uuid(v.client_command_id),expected_row_version:version(v.expected_row_version),reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:v.summary,preview_confirmed:true});
+  }
+  if(v?.action==='ADD_INTERNAL_NOTE'){
+    exact(v,[...base,'incident_id','expected_row_version','audience','text']);
+    if(v.reason_code!=='WORKBENCH_INTERNAL_DISPOSITION'||v.audience!=='INTERNAL'||typeof v.text!=='string'||!v.text.trim()||[...v.text].length>2000||Buffer.byteLength(v.text,'utf8')>8192||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ud800-\udfff]/u.test(v.text))fail();
+    return frozen({action:'ADD_INTERNAL_NOTE',incident_id:uuid(v.incident_id),client_command_id:uuid(v.client_command_id),expected_row_version:version(v.expected_row_version),reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:v.text});
+  }
+  if(!ACTIONS.includes(v?.action as string))fail();
   const candidate=['START_REVIEW','REJECT_CANDIDATE','EXPIRE_CANDIDATE','CONFIRM_INCIDENT'].includes(v.action as string);
   const identity=candidate?'candidate_review_id':'incident_id',versionKey=v.action==='CONFIRM_INCIDENT'?'expected_candidate_version':'expected_row_version';
-  const extras=({CONFIRM_INCIDENT:['confirmed_scope','owner_principal_id','owner_team_id','primary_ticket_id','selected_report_refs'],CORRECT_SCOPE:['confirmed_scope'],SET_PRIMARY_TICKET:['primary_ticket_id'],LINK_REPORT:['source_decision_id'],UNLINK_REPORT:['incident_report_id','expected_report_version'],MARK_REPORTER_RECOVERED:['incident_report_id','expected_report_version'],PAUSE_SUBSCRIPTION:['subscription_id','expected_subscription_version'],RESUME_SUBSCRIPTION:['subscription_id','expected_subscription_version','direct_channel_leg_id']} as Record<string, string[]>)[v.action as string]??[];
-  const required=extras.filter(k=>!['owner_team_id','primary_ticket_id','direct_channel_leg_id'].includes(k));
+  const extras=({CONFIRM_INCIDENT:['confirmed_scope','owner_principal_id','owner_team_id','primary_ticket_id','selected_report_refs','expected_material_basis'],CORRECT_SCOPE:['confirmed_scope'],SET_PRIMARY_TICKET:['primary_ticket_id'],LINK_REPORT:['source_decision_id'],UNLINK_REPORT:['incident_report_id','expected_report_version'],MARK_REPORTER_RECOVERED:['incident_report_id','expected_report_version'],PAUSE_SUBSCRIPTION:['subscription_id','expected_subscription_version'],RESUME_SUBSCRIPTION:['subscription_id','expected_subscription_version','direct_channel_leg_id']} as Record<string, string[]>)[v.action as string]??[];
+  const required=extras.filter(k=>!['owner_team_id','primary_ticket_id','direct_channel_leg_id','expected_material_basis'].includes(k));
   exact(v,[...base,identity,versionKey,...extras],[...base,identity,versionKey,...required]);
   if(!REASONS.includes(v.reason_code as string))fail();
   const out: JsonObservation={...v,client_command_id:uuid(v.client_command_id),[identity]:uuid(v[identity]),expected_row_version:version(v[versionKey])};
@@ -79,6 +108,7 @@ export function normalizeCommand(input: unknown): NormalizedIncidentCommand{
   for(const k of ['expected_report_version','expected_subscription_version'])if(v[k]!==undefined)out[k]=version(v[k]);
   if(v.confirmed_scope!==undefined&&!SCOPES.includes(v.confirmed_scope as string))fail();
   if(v.owner_team_id!=null)out.owner_team_id=code(v.owner_team_id);
+  if(Object.hasOwn(v,'expected_material_basis')&&(typeof v.expected_material_basis!=='string'||!/^[a-f0-9]{64}$/u.test(v.expected_material_basis)))fail();
   if(v.action==='SET_PRIMARY_TICKET'&&!Object.hasOwn(v,'primary_ticket_id'))fail();
   if(v.selected_report_refs!==undefined){if(!Array.isArray(v.selected_report_refs)||!v.selected_report_refs.length||v.selected_report_refs.length>100)fail();out.selected_report_refs=v.selected_report_refs.map(uuid).sort();if(new Set(out.selected_report_refs as string[]).size!==(out.selected_report_refs as string[]).length)fail();}
   return frozen(out) as NormalizedIncidentCommand;

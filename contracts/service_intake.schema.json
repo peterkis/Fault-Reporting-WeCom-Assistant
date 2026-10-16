@@ -40,7 +40,7 @@
       ]
     },
     "reporter_wecom_userid": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1,
       "maxLength": 256
     },
@@ -132,5 +132,6 @@
       "type": "integer",
       "minimum": 1
     }
-  }
+  },
+  "allOf": [{"if":{"properties":{"source_channel":{"enum":["MANUAL","PORTAL"]}}},"then":{"properties":{"reporter_wecom_userid":{"type":"null"}}},"else":{"properties":{"reporter_wecom_userid":{"type":"string","minLength":1}}}}]
 }

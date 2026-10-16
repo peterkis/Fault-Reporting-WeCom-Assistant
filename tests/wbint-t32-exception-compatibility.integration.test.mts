@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
+import {t11Http} from './helpers/t11-completion-fixture.mjs';
+import {withT32Fixture,seedT32SessionExceptions,t32Record,t32Text} from './helpers/t32-notification-exception-fixture.mjs';
+import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../src/p2-004-communication-sender-port.mjs';
+import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
+import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
+import {t26Group,t26Deliveries} from './helpers/t26-group-notification-fixture.mjs';
+import {randomUUID} from 'node:crypto';
+import {createServer} from 'node:net';
+import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {createIncidentPublicProgressAdmission} from '../src/p2-012-public-progress-admission.mjs';
+
+test('T32 omission defaults OFF in the existing T24 host without blocking its old Ticket reads',{timeout:240000},async()=>{
+ await withT24Fixture(async f=>{const http=await t11Http(f);assert.equal(t32Record(await(await http.get('/api/lifecycle/bootstrap')).json()).notification_exceptions_enabled,false);assert.equal((await http.get('/api/notification-exceptions')).status,404);assert.equal((await http.get('/api/tickets/'+f.ticketId)).status,200);assert.equal((await fetch(f.origin+'/workbench/app/notification-exceptions',{headers:{cookie:f.cookies[0]??''}})).status,404);},{manualRoundConsumption:true});
+});
+test('T32 032-only host reads actual lifecycle and Session failures without parsing absent055/058',{timeout:240000},async()=>{
+ await withT32Fixture(async f=>{assert.equal((await f.pool.query("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='incident' AND table_name='incident_event' AND column_name='public_progress_summary') AS present")).rows[0]?.present,false);const seed=await seedT32SessionExceptions(f,1),incident=await f.confirm();
+ const rows=(await f.pool.query<{id:string}>("SELECT d.id::text FROM communication.incident_notification_binding b JOIN communication.outbox o ON o.message_id=b.communication_message_id JOIN communication.delivery d ON d.outbox_id=o.id WHERE b.incident_id=$1::uuid",[incident])).rows;
+ const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:createCommunicationSenderPort(()=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'T32_PRIVATE_ERROR',retryable:false}))});for(const row of rows)assert.ok(await worker.deliver({deliveryId:row.id}));
+ const response=await f.get('/api/notification-exceptions');assert.equal(response.status,200);assert.ok(Array.isArray(response.body.items));assert.equal(response.body.items.length,rows.length+1);assert.ok(response.body.items.map(t32Record).some(r=>r.delivery_id===seed.deliveryIds[0]));assert.ok(response.body.items.map(t32Record).filter(r=>r.domain==='INCIDENT').every(r=>r.source_kind==='INCIDENT_LIFECYCLE'));
+ assert.equal((await f.get('/api/incidents/'+incident+'/public-progress')).status,404);assert.equal((await f.get('/api/incidents/'+incident+'/notifications')).status,200);
+ },{ddl:false,publication:false});
+});
+test('T32 purpose OFF excludes existing public-progress failures before pagination and exact item while lifecycle remains readable',{timeout:240000},async t=>{
+ let stage='FIXTURE_SETUP',replacementRequests=0;
+ const observeRequest=()=>{replacementRequests++;};
+ await withT32Fixture(async f=>{stage='ORIGINAL_CONFIRM_PUBLISH_AND_DELIVERY';const incident=await f.confirm(),published=await f.post('/api/incidents/'+incident+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'已确认的独立公开摘要',preview_confirmed:true});assert.equal(published.status,200);
+ const facts=(await f.pool.query<{id:string;template:string}>("SELECT d.id::text,b.template_code AS template FROM communication.incident_notification_binding b JOIN communication.outbox o ON o.message_id=b.communication_message_id JOIN communication.delivery d ON d.outbox_id=o.id WHERE b.incident_id=$1::uuid",[incident])).rows;
+ const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,attemptAdmission:createIncidentPublicProgressAdmission({enabled:true}),sender:createCommunicationSenderPort(()=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'SYNTHETIC',retryable:false}))});for(const row of facts)assert.ok(await worker.deliver({deliveryId:row.id}));
+ // Reserve a different endpoint while the original host still owns its port.
+ stage='REPLACEMENT_ORIGIN';assert.equal(f.runtime.server.listening,true);
+ const probe=createServer();await new Promise<void>((resolve,reject)=>{probe.once('error',reject);probe.listen(0,'127.0.0.1',resolve);});
+ const address=probe.address();await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
+ assert.equal(probe.listening,false);assert.ok(address&&typeof address!=='string');const port=address.port,origin='http://127.0.0.1:'+port;assert.notEqual(origin,f.origin);
+ stage='ORIGINAL_STOP';await f.runtime.stop();assert.equal(f.runtime.server.listening,false);
+ stage='REPLACEMENT_CREATE';const off=createP2012Runtime({pool:f.pool,publicOrigin:origin,listenPort:port,principalIds:[f.principals[0]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},notificationExceptionsEnabled:true,incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PUBLIC_NOTICE_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true},incidentTestLabel:true,incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentPublicProgressEnabled:false});let primaryError:unknown;
+ off.server.on('request',observeRequest);
+ try{stage='REPLACEMENT_LISTEN';await listenConversationWorkbenchServer(off.server,{port});stage='REPLACEMENT_READS';const cookies=off.authenticate.browserCookies?.();assert.ok(cookies?.[0]);const cookie=cookies[0].name+'='+cookies[0].value,get=(path:string)=>fetch(origin+path,{headers:{cookie}}),r=await get('/api/notification-exceptions?domain=INCIDENT&limit=50');assert.equal(r.status,200);const data=t32Record(await r.json());assert.ok(Array.isArray(data.items));assert.equal(data.items.length,facts.filter(row=>row.template!=='INCIDENT_PUBLIC_PROGRESS_DIRECT').length);assert.equal(data.has_more,false);assert.equal(data.next_cursor,null);assert.ok(data.items.map(t32Record).every(row=>row.source_kind==='INCIDENT_LIFECYCLE'));for(const row of facts.filter(row=>row.template==='INCIDENT_PUBLIC_PROGRESS_DIRECT'))assert.equal((await get('/api/notification-exceptions/incident/'+incident+'/'+row.id)).status,404);assert.equal((await get('/api/incidents/'+incident+'/public-progress')).status,404);assert.equal((await get('/api/incidents/'+incident+'/notifications')).status,200);
+ }catch(error){primaryError=error;}await closeBrowserTestResources([()=>off.server.off('request',observeRequest),()=>off.stop(),()=>assert.equal(off.server.listening,false)],primaryError);
+ }).catch((error:unknown)=>{
+  const details=(value:unknown)=>{if(!(value instanceof Error))return null;const code:unknown=Reflect.get(value,'code');return {name:value.name,code:typeof code==='string'?code:null,stack:value.stack?.replace(/\b(?:https?|postgres(?:ql)?):\/\/[^\s)]+/giu,'<URL_REDACTED>')};};
+  t.diagnostic('T32_OFF_RESTART_FAILURE '+JSON.stringify({stage,replacement_requests:replacementRequests,error:details(error),cause:details(error instanceof Error?error.cause:undefined)}));throw error;
+ });
+});
+test('T32 real GROUP and APP outcomes remain independent, safe and controlled by current Ticket rules',{timeout:240000},async()=>{
+ await withT24Fixture(async original=>{await original.runtime.stop();const options={pool:original.pool,publicOrigin:original.origin,listenPort:Number(new URL(original.origin).port),principalIds:[original.principals[0]?.id??'',original.outsider.id,original.principals[1]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},notificationExceptionsEnabled:true,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,externalSendEnabled:true,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:entryConfig,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}}} satisfies Parameters<typeof createP2016Runtime>[0];const runtime=createP2016Runtime(options);let primaryError:unknown;
+ try{await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(original.origin).port)});const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);const f={...original,runtime,browserCookies:cookies,cookies:cookies.map(c=>c.name+'='+c.value)},group=await t26Group(f,'t32-group'),app=await t25WebOrigin(f);await app.round.runOnce();
+ const groupRows=await t26Deliveries(group.http,group.id),appRows=await t25Deliveries(app.http,app.ticketId);assert.equal(groupRows.length,2);assert.deepEqual(groupRows.map(r=>r.destination_type).sort(),['GROUP','PERSON']);assert.equal(appRows.length,1);let calls=0;const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:createCommunicationSenderPort(()=>({outcome:++calls===1?'REJECTED_NOT_APPLIED':'UNKNOWN',provider_message_id:null,error_code:'T32_RAW_SECRET',retryable:false}))});for(const row of [...groupRows,...appRows])assert.ok(await worker.deliver({deliveryId:t32Text(row.delivery_id)}));
+ const read=async(path:string,actor=0)=>{const http=await t11Http(f,actor),r=await http.get(path);return {status:r.status,body:t32Record(await r.json())};};
+ const result=await read('/api/notification-exceptions?domain=TICKET');assert.equal(result.status,200);assert.ok(Array.isArray(result.body.items));const items=result.body.items.map(t32Record);assert.equal(items.length,3);assert.ok(items.some(r=>r.parent_id===group.id&&r.route_kind==='GROUP'));assert.ok(items.some(r=>r.parent_id===group.id&&r.route_kind==='BOT_DIRECT'));const a=items.find(r=>r.parent_id===app.ticketId);assert.ok(a);assert.equal(a.route_kind,'YIXIAOXIU_APP');assert.equal(a.side_effect_state,'UNKNOWN');assert.deepEqual(a.allowed_actions,['RECONCILE']);
+ const grouped=await read('/api/notification-exceptions?domain=TICKET&route=GROUP');assert.ok(Array.isArray(grouped.body.items));assert.equal(grouped.body.items.length,1);const filtered=await read('/api/notification-exceptions?domain=TICKET&route=YIXIAOXIU_APP');assert.ok(Array.isArray(filtered.body.items));assert.equal(filtered.body.items.length,1);
+ const handler=await read('/api/notification-exceptions?domain=TICKET',2);assert.ok(Array.isArray(handler.body.items));assert.ok(handler.body.items.map(t32Record).every(r=>!t32Record(r).allowed_actions||!JSON.stringify(r.allowed_actions).includes('RECONCILE')));assert.equal(JSON.stringify(result.body).includes(app.memberId),false);assert.equal(/T25_PRIVATE_REPORT|T26_PRIVATE|T32_RAW_SECRET|target_id|target_hash|provider_message/.test(JSON.stringify(result.body)),false);assert.equal(calls,3);
+ }catch(error){primaryError=error;}await closeBrowserTestResources([()=>runtime.stop(),()=>assert.equal(runtime.server.listening,false)],primaryError);
+ },{manualRoundConsumption:true,externalSendEnabled:true});
+});

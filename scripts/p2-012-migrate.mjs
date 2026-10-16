@@ -39,9 +39,10 @@ export async function p2012CatalogInventory(tx){
 export const p2012CatalogHash=inventory=>sha(JSON.stringify(inventory));
 export async function validateP2012Catalog(tx){
   const inventory=await p2012CatalogInventory(tx);
-  if(p2012CatalogHash(inventory)!==EXPECTED_CATALOG_SHA256)fail('P2_012_SCHEMA_DRIFT');
+  if(p2012CatalogHash(inventory)!==EXPECTED_CATALOG_SHA256&&!await (await import('../src/p2-006-delivery-command-schema.mjs')).conversationDeliveryBaseCatalogReady(tx,inventory,'032'))fail('P2_012_SCHEMA_DRIFT');
   return inventory;
 }
+/** @param {{databaseUrl?: string, mode?: string, PoolFactory?: typeof createPostgresPool}} [options] */
 export async function migrateP2012({databaseUrl,mode='apply',PoolFactory=createPostgresPool}={}){
   if(typeof databaseUrl!=='string'||!databaseUrl||!['apply','check','status'].includes(mode))fail('P2_012_MIGRATION_INPUT_INVALID');
   const sql=await readFile(FILE,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];

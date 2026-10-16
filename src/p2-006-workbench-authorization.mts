@@ -12,6 +12,8 @@ interface PrincipalRow { id: string; display_name: string; is_active: boolean; r
 interface SessionAccessRow { session_id: string; thread_id: string; assignment_status: string | null; assigned_principal_id: string | null; resolver_team_id: string | null }
 interface EligiblePrincipalRow { principal_id: string; display_name: string; is_admin: boolean; is_dispatcher: boolean; is_handler: boolean }
 export type WorkbenchAuthorizationAdapter = ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>;
+/** A valid worker scope that cannot be completely represented by the SSE budget. */
+export class RealtimeScopeUnavailable extends Error {constructor(){super('WORKBENCH_REALTIME_SCOPE_UNAVAILABLE');}}
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const INTERNAL_ROLES = Object.freeze(['ADMIN', 'DISPATCHER', 'HANDLER']);
@@ -178,9 +180,9 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     })));
   }
 
-  async function resolveRealtimeAuthorization(principal: WorkbenchPrincipal | null | undefined, { limit = 5000 }: { limit?: number } = {}) {
+  async function resolveRealtimeAuthorization(principal: WorkbenchPrincipal | null | undefined, { limit = 5000,availabilityFallback=false,followUpSchedulesEnabled=false }: { limit?: number;availabilityFallback?:boolean;followUpSchedulesEnabled?:boolean } = {}) {
     if (!isWorker(principal)) return null;
-    if(!Number.isInteger(limit)||limit<1||limit>5000)throw new TypeError('Invalid realtime scope limit.');
+    if(!Number.isInteger(limit)||limit<1||limit>5000||typeof followUpSchedulesEnabled!=='boolean')throw new TypeError('Invalid realtime scope limit.');
     const predicate = sessionAccessPredicate(principal, { start: 1 });
     const result = await (pool as PostgresTransaction).query<{ session_id: string; thread_id: string }>(
       `SELECT s.id::text AS session_id, s.thread_id::text
@@ -190,16 +192,18 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
         WHERE ${predicate.sql}
         ORDER BY s.id
         LIMIT $${predicate.values.length+1}`,
-      [...predicate.values,limit],
+      [...predicate.values,availabilityFallback?Math.min(limit,256)+1:limit],
     );
     const sessions=freezeArray(result.rows.map(row=>row.session_id)),threads=freezeArray(result.rows.map(row=>row.thread_id));
+    if(availabilityFallback&&(result.rows.length>limit||sessions.length+threads.length>256))throw new RealtimeScopeUnavailable();
     const remaining=Math.max(0,256-sessions.length-threads.length);
     const broad=hasRole(principal,'ADMIN')||hasRole(principal,'DISPATCHER');
-    const tickets=!broad&&remaining>0?await (pool as PostgresTransaction).query<{ id: string }>(`SELECT t.id::text FROM pilot_ticket.ticket t
+    const tickets=!broad&&(remaining>0||availabilityFallback)?await (pool as PostgresTransaction).query<{ id: string }>(`SELECT t.id::text FROM pilot_ticket.ticket t
       JOIN intake.service_intake i ON i.id=t.source_intake_id
-      WHERE i.source_provider='YIXIAOXIU_WEB'
+      WHERE ${followUpSchedulesEnabled?"(i.source_provider='YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM pilot_ticket.follow_up_schedule fs WHERE fs.ticket_id=t.id))":"i.source_provider='YIXIAOXIU_WEB'"}
         AND (t.assignee_id=$1::uuid OR t.resolver_team_id=ANY($2::text[]))
-      ORDER BY t.id LIMIT $3`,[principal.principal_id,hasRole(principal,'HANDLER')?principal.team_ids:[],remaining]):{rows:[]};
+      ORDER BY t.id LIMIT $3`,[principal.principal_id,hasRole(principal,'HANDLER')?principal.team_ids:[],remaining+(availabilityFallback?1:0)]):{rows:[]};
+    if(availabilityFallback&&tickets.rows.length>remaining)throw new RealtimeScopeUnavailable();
     return Object.freeze({
       allowed_session_ids: sessions,
       allowed_thread_ids: threads,

@@ -6,7 +6,7 @@ import {g2CandidateInventory} from '../../src/p2-g2-candidate.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 export const closeSS009Resources=closeBrowserTestResources;
 
-export async function withSS009Database({testContext,databaseUrl,run,...options}){
+export async function withSS009Database({testContext,databaseUrl,run,candidateRoot,...options}){
   assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
   const observers=[];let name,ownedPool;
   const result=await withP2016IsolatedDatabase({databaseUrl,...options,run:async context=>{
@@ -20,6 +20,6 @@ export async function withSS009Database({testContext,databaseUrl,run,...options}
   }finally{await control.end();}
   const resources=[{resource:'owned_database',remaining:databaseCount},{resource:'owned_database_backends',remaining:backendCount},{resource:'fixture_pool',remaining:ownedPool.totalCount},{resource:'cleanup_observer_pool',remaining:control.totalCount},...observers.map(({resource,observe})=>({resource,remaining:observe()}))];
   for(const r of resources)assert.equal(r.remaining,0,r.resource);
-  testContext.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'cleanup',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,resources,scope:'OWNED_RUN_RESOURCES_ONLY',preexisting_resources_touched:false}));
+  testContext.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'cleanup',status:'PASS',candidate_fingerprint:g2CandidateInventory(candidateRoot).fingerprint,resources,scope:'OWNED_RUN_RESOURCES_ONLY',preexisting_resources_touched:false}));
   return result;
 }

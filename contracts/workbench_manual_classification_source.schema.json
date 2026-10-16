@@ -1,0 +1,11 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"workbench_manual_classification_source.schema.json",
+  "type":"object","additionalProperties":false,
+  "required":["alias_set_id","alias_set_version","alias_set_hash","base_alias_set_id","base_alias_set_version","base_alias_set_hash","new_alias_applied","affirmation_gate_version"],
+  "properties":{
+    "alias_set_id":{"type":"string","minLength":1,"maxLength":128},"alias_set_version":{"type":"string","minLength":1,"maxLength":64},"alias_set_hash":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "base_alias_set_id":{"type":"string","minLength":1,"maxLength":128},"base_alias_set_version":{"type":"string","minLength":1,"maxLength":64},"base_alias_set_hash":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "new_alias_applied":{"type":"boolean"},"affirmation_gate_version":{"const":"workbench-manual-print-affirmation/1.0.0"}
+  }
+}

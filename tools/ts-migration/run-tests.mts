@@ -32,7 +32,7 @@ function loadedFiles(coverage: string): string[] {
   }
   return [...urls].sort();
 }
-function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
+export function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
   const archived:Record<string,unknown>[]=[],sources:string[]=[],folders=new Set<string>();
   for(const channel of ['SS009_RECEIPT','SS010_BROWSER','WEB01_BROWSER']){
     for(const match of tap.matchAll(new RegExp('^# '+channel+' (.+)\\r?$','gmu'))){
@@ -44,7 +44,7 @@ function archiveScreenshots(tap:string,directory:string,prefix:string):Record<st
         if(typeof image.file!=='string'||!path.isAbsolute(image.file)||typeof image.width!=='number'||typeof image.height!=='number')throw Error('MIGRATION_SCREENSHOT_INVALID');
         const source=path.resolve(image.file),folder=path.dirname(source),name=path.basename(source);
         const marker=channel==='WEB01_BROWSER'?'web01-ui-':channel==='SS010_BROWSER'?'ss010-ui-':'ss009-ui-';
-        const validName=channel==='WEB01_BROWSER'?/^new-((board|list|detail|offline)-(1920|900)|board-1280|detail-page-1920)\.png$/u.test(name):/^[a-f0-9-]{36}\.png$/u.test(name);
+        const validName=channel==='WEB01_BROWSER'?(/^(reminder-muted-1280|reminder-located-1280|failure-1280)\.png$/u.test(name)||/^new-((board|list|detail|offline)-(1920|900)|board-1280|detail-page-1920|detail-1280|detail-page-1280|detail-600)\.png$/u.test(name)):/^[a-f0-9-]{36}\.png$/u.test(name);
         if(path.dirname(folder)!==path.resolve(tmpdir())||!new RegExp('^'+marker+'[a-f0-9-]{36}$','u').test(path.basename(folder))||!validName)throw Error('MIGRATION_SCREENSHOT_OUTSIDE_OWNED_TEMP');
         safeFile(tmpdir(),slash(path.relative(tmpdir(),source)));
         if(lstatSync(source).size>64*1024*1024)throw Error('MIGRATION_SCREENSHOT_INVALID');
@@ -61,7 +61,7 @@ function archiveScreenshots(tap:string,directory:string,prefix:string):Record<st
   }
   // Only the original files just verified and archived belong to this run.
   for(const source of sources)unlinkSync(source);
-  for(const folder of folders)rmdirSync(folder);
+  for(const folder of folders)if(readdirSync(folder).length===0)rmdirSync(folder);
   return archived;
 }
 export function runSelection(root: string, selection: Selection, options: { reference?: boolean; reportDir?: string } = {}): Counts {
@@ -100,6 +100,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
       '--test-reporter-destination=' + path.resolve(log, casePath), target.file];
     const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path),
       executed_path: slash(path.relative(root, target.file)), execution_cwd: slash(path.relative(root, target.cwd)) || '.',
+      executable: process.execPath, argv: args,
       source_sha256: hash(readFileSync(path.join(root, entry.path))), executed_sha256: hash(readFileSync(target.file)),
       case_line_basis: 'EXECUTED_FILE', mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
     files.push(fileResult);
@@ -122,6 +123,11 @@ export function runSelection(root: string, selection: Selection, options: { refe
       writeFileSync(path.join(log, casePath), trace);
       Object.assign(fileResult, { case_trace_path: casePath, case_trace_sha256: hash(trace), case_trace_bytes: Buffer.byteLength(trace) });
       const c = counts(text), loaded = loadedFiles(coverage);
+      // Preserve the already observed V8 load provenance before its owned scratch is removed.
+      fileResult.loaded_files = loaded.map(file => {
+        try {const bytes=readFileSync(file);return {path:file,bytes:bytes.length,sha256:hash(bytes)};}
+        catch {return {path:file,hash_status:'NOT_READABLE_AFTER_RUN'};}
+      });
       fileResult.counts = c;
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
       if (!loaded.some(p => path.relative(p, target.file) === '')) throw new Error('MIGRATION_TEST_NOT_EXECUTED: ' + entry.path);

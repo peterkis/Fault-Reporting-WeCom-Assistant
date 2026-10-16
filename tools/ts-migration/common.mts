@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 export { sourceRoot, noLinks, cleanGenerated, controlledBuildRoot } from './bootstrap.mjs';
 
@@ -181,7 +182,15 @@ export function program(root: string, name: string): ts.Program {
   return result;
 }
 export function runNode(root: string, args: string[]): void {
-  const r = spawnSync(process.execPath, args, { cwd: root, stdio: 'inherit', windowsHide: true });
+  const compilerChild = args[1]==='--root' && args[2]===root && (
+    args[0]===fileURLToPath(new URL('./emit.mjs',import.meta.url)) && (args.length===3 || args.length===4 && args[3]==='--types')
+    || args[0]===fileURLToPath(new URL('./syntax-check.mjs',import.meta.url)) && args.length===3);
+  const parseOnly = args[0]==='--check' && args.length===2;
+  // Outer coverage observes execution. Compiling or parsing the full program
+  // must not inherit that extra observer; actual tests retain their own coverage.
+  const env = {...process.env};
+  if (compilerChild || parseOnly) env.NODE_V8_COVERAGE='';
+  const r = spawnSync(process.execPath, args, { cwd: root, env, stdio: 'inherit', windowsHide: true });
   if (r.error) throw r.error;
   if (r.status !== 0) throw new Error('MIGRATION_COMMAND_FAILED: ' + String(r.status));
 }

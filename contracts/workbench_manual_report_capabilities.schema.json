@@ -1,0 +1,5 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"workbench_manual_report_capabilities.schema.json",
+  "type":"object","additionalProperties":false,"required":["can_create","manual_contact_required","external_notification","draft_recovery_enabled"],
+  "properties":{"can_create":{"const":true},"manual_contact_required":{"const":true},"external_notification":{"const":false},"draft_recovery_enabled":{"type":"boolean"}}
+}

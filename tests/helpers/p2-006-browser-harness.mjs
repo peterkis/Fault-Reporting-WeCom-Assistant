@@ -55,6 +55,7 @@ export function selectBrowserTarget(values,{url,redirectPaths=[]}){
 
 // Execute every owned cleanup step and retain the original failure alongside
 // cleanup failures. This helper does not treat a cleanup exception as success.
+/** @param {Array<()=>unknown|Promise<unknown>>} closers @param {unknown} [primaryError] */
 export async function closeBrowserTestResources(closers,primaryError=null){
   const errors=primaryError?[primaryError]:[];
   for(const close of closers){try{await close();}catch(error){errors.push(error);}}
@@ -62,6 +63,7 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
+/** @param {{url:string,width:number,height:number,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
 export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
   signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
@@ -71,7 +73,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-gpu','--disable-background-networking',
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
-    `--window-size=${width},${height}`,url,
+    `--window-size=${width},${height}`,'about:blank',
   ],{stdio:'ignore',windowsHide:true});
   let socket=null,sequence=0,closePromise=null,launchError=null;
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
@@ -81,6 +83,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
   const rejectPending=()=>{for(const request of pending.values()){
     clearTimeout(request.timer);request.reject(new Error('P2_006_BROWSER_DISCONNECTED'));
   }pending.clear();};
+  /** @param {string|null} sessionId */
   function command(method,params={},sessionId=null){
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
@@ -133,7 +136,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     },{signal:startupSignal});
     const target=await waitFor(async()=>{
       const response=await fetch(`http://127.0.0.1:${active}/json/list`,{signal:startupSignal});
-      return selectBrowserTarget(await response.json(),{url,redirectPaths});
+      return selectBrowserTarget(await response.json(),{url:'about:blank'});
     },{signal:startupSignal});
     socket=socketFactory(target.webSocketDebuggerUrl);
     socket.addEventListener('close',rejectPending);socket.addEventListener('error',rejectPending);
@@ -149,12 +152,16 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       if(message.error)request.reject(new Error(typeof message.error.message==='string'&&message.error.message.trim()
         ?message.error.message.trim():'P2_006_BROWSER_COMMAND_FAILED'));else request.resolve(message.result);
     });
+    await command('Page.enable');
     await command('Runtime.enable');
     if(cookies.length){
       assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
-      await command('Network.enable');await command('Network.setCookies',{cookies});await command('Page.reload');
+      await command('Network.enable');await command('Network.setCookies',{cookies});
     }
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
+    // Navigate only after the owned blank target is connected and cookies are set.
+    const navigation=await command('Page.navigate',{url});
+    if(typeof navigation?.errorText==='string'&&navigation.errorText)throw new Error('P2_006_BROWSER_NAVIGATION_FAILED');
     async function evaluate(expression,{awaitPromise=true}={}){
       const result=await command('Runtime.evaluate',{expression,awaitPromise,returnByValue:true});
       if(result.exceptionDetails){

@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../src/p2-004-communication-sender-port.mjs';
+import {enabledIncidentBrowser} from './helpers/t28-enabled-browser-fixture.mjs';
+import {prepareFollowup,navigateFollowup,personalSnapshots,rows} from './helpers/t28-followup-source-fixture.mjs';
+import {text} from './helpers/wbint-t27-browser-fixture.mjs';
+function assertNoticeContent(content:string){assert.equal(/reporter_identity|synthetic-reporter|source_decision|owner_|patient/u.test(content),false);}
+
+test('T28 real independent fixed-notice deliveries show each safe result and reading does not resend UNKNOWN',{timeout:240000},async()=>{
+  await enabledIncidentBrowser({purpose:'t28notices',notifications:true,reporters:3},async context=>{
+    const {http,id,path}=await prepareFollowup(context),before=await personalSnapshots(http,context.f.reports),initial=rows((await http.get(path+'/notifications?limit=30')).items);assert.equal(initial.length,2);assert.ok(initial.every(row=>row.status==='PENDING'));let calls=0;const sentContents:string[]=[];
+    const sender=createCommunicationSenderPort(request=>{calls++;sentContents.push(JSON.stringify(request.message.content));return calls===1?{outcome:'UNKNOWN',provider_message_id:null,error_code:'SYNTHETIC_ACK_LOST',retryable:false}:{outcome:'ACKNOWLEDGED',provider_message_id:'synthetic-ack',error_code:null,retryable:false};});
+    const worker=createCommunicationDeliveryWorker({pool:context.pool,sender,enabled:true}),one=initial[0],two=initial[1];assert.ok(one&&two);const firstDelivery=await worker.deliver({deliveryId:text(one.delivery_id)});assert.ok(firstDelivery&&'status' in firstDelivery);assert.equal(firstDelivery.status,'RECONCILIATION_REQUIRED');const secondDelivery=await worker.deliver({deliveryId:text(two.delivery_id)});assert.ok(secondDelivery&&'status' in secondDelivery);assert.equal(secondDelivery.status,'SENT');assert.equal(await worker.deliver({deliveryId:text(one.delivery_id)}),null);assert.equal(calls,2);
+    assert.equal(sentContents.length,2);for(const content of sentContents)assertNoticeContent(content);
+    assert.throws(()=>assertNoticeContent('patient'),assert.AssertionError);
+    const actual=rows((await http.get(path+'/notifications?limit=30')).items);assert.equal(actual.find(row=>row.id===one.id)?.side_effect_state,'UNKNOWN');assert.equal(actual.find(row=>row.id===two.id)?.side_effect_state,'ACKNOWLEDGED');assert.equal(/binding_hash|target_id|source_chat|provider_message|last_error|userid|payload/u.test(JSON.stringify(actual)),false);
+    await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("section[aria-label=各路通知投递]")?.querySelectorAll("li").length===2');const content=await context.browser.evaluate('document.querySelector("section[aria-label=各路通知投递]").innerText');assert.equal(typeof content,'string');assert.ok(String(content).includes('发送结果待核对')&&String(content).includes('已发送'));assert.ok(String(content).includes('当前页 2 项')&&String(content).includes('已加载窗口 2 项'));assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=retry-incident-delivery]"))'),false);
+    await context.browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');await context.browser.waitFor('document.querySelector("section[aria-label=各路通知投递]")?.querySelectorAll("li").length===2');assert.equal(calls,2);assert.deepEqual(await personalSnapshots(http,context.f.reports),before);assert.equal((await http.get(path)).row_version,'1');
+    await context.browser.evaluate('document.querySelector("section[aria-label=各路通知投递]").scrollIntoView({block:"start"})');assert.equal(await context.browser.evaluate('Array.from(document.querySelectorAll(".detail-body,form")).some(element=>element.scrollWidth>element.clientWidth)'),false);await context.captureWindow('list');await context.browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await context.browser.evaluate('document.querySelector("section[aria-label=各路通知投递]").scrollIntoView({block:"start"})');assert.equal(await context.browser.evaluate('Array.from(document.querySelectorAll(".detail-body,form")).some(element=>element.scrollWidth>element.clientWidth)'),false);
+  });
+});
