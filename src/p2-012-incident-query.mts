@@ -70,14 +70,17 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
     if(!await ownerTransferSchemaReady(input.tx??pool))fail('DISABLED',503);
     return ctx;
   }
-  async function currentRead(authContext:unknown,id:string,purpose:'INCIDENT'|'INTERNAL_NOTE'|'PUBLIC_PROGRESS'|'TRANSFER_OWNER',assignedReport:string|null=null){
-    const input={authContext,id},ctx=purpose==='INTERNAL_NOTE'?await internalNoteResource(input):purpose==='PUBLIC_PROGRESS'?await publicProgressResource(input):purpose==='TRANSFER_OWNER'?await ownerTransferResource(input):await resource({...input,kind:'incident'});
+  async function currentRead(authContext:unknown,id:string,purpose:'INCIDENT'|'INTERNAL_NOTE'|'PUBLIC_PROGRESS'|'TRANSFER_OWNER'|'CANDIDATE',relatedId:string|null=null){
+    const kind:Kind=purpose==='CANDIDATE'?'candidate':'incident',input={authContext,id},ctx=purpose==='INTERNAL_NOTE'?await internalNoteResource(input):purpose==='PUBLIC_PROGRESS'?await publicProgressResource(input):purpose==='TRANSFER_OWNER'?await ownerTransferResource(input):await resource({...input,kind});
+    if(kind==='candidate'&&!broad(ctx.principal))fail('FORBIDDEN',403);
     if(!authContext||typeof authContext!=='object'||Array.isArray(authContext))fail('FORBIDDEN',403);
     const auth=authContext as Record<string,unknown>;
     if(auth.expires_epoch_ms!==undefined&&(typeof auth.expires_epoch_ms!=='string'||!/^[1-9][0-9]{0,18}$/u.test(auth.expires_epoch_ms)||BigInt(auth.expires_epoch_ms)<=BigInt(Date.now())))fail('FORBIDDEN',403);
     // Check the same purpose/READ basis and the host Session in one final snapshot.
     // A schema or pool wait must not retain an earlier role, scope or team grant.
-    const currentAccess=access(ctx.principal,'incident',7);
+    const currentAccess=access(ctx.principal,kind,7),objectScope=kind==='candidate'?'$5::text IS NULL':'c.confirmed_scope=$5';
+    const relatedRead=kind==='candidate'?`EXISTS(SELECT 1 FROM incident.incident c WHERE c.id=$10::uuid AND ${access(ctx.principal,'incident',7).sql})`:
+      'EXISTS(SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id WHERE r.id=$10::uuid AND r.incident_id=$4::uuid AND t.assignee_id=actor.id)';
     let session:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
     if(auth.session_id!==undefined){
       if(!currentSessionPredicate)fail('FORBIDDEN',403);
@@ -87,11 +90,10 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       WHERE actor.id=$1::uuid AND actor.is_active
       AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=$2::text[]
       AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=$3::text[]
-      AND EXISTS(SELECT 1 FROM incident.incident c WHERE c.id=$4::uuid AND c.confirmed_scope=$5 AND ${currentAccess.sql})
-      AND ($10::uuid IS NULL OR EXISTS(SELECT 1 FROM incident.incident_report r JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
-        WHERE r.id=$10::uuid AND r.incident_id=$4::uuid AND t.assignee_id=actor.id))
+      AND EXISTS(SELECT 1 FROM incident.${kind==='candidate'?'candidate_review':'incident'} c WHERE c.id=$4::uuid AND ${objectScope} AND ${currentAccess.sql})
+      AND ($10::uuid IS NULL OR ${relatedRead})
       AND ($6::bigint IS NULL OR $6::bigint>platform.physical_epoch_ms()) AND ${session.sql}) AS current`,
-    [ctx.principal.principal_id,[...ctx.principal.roles],[...ctx.principal.team_ids],id,(ctx.row as Incident).confirmed_scope,auth.expires_epoch_ms??null,...currentAccess.values,assignedReport,...session.values]);
+    [ctx.principal.principal_id,[...ctx.principal.roles],[...ctx.principal.team_ids],id,kind==='candidate'?null:(ctx.row as Incident).confirmed_scope,auth.expires_epoch_ms??null,...currentAccess.values,relatedId,...session.values]);
     if(current.rows[0]?.current!==true)fail('FORBIDDEN',403);
     return ctx;
   }
@@ -191,6 +193,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
         FROM incident.command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid AND candidate_review_id=$3::uuid
         AND actor_principal_id=$4::uuid AND command_type IN ('START_REVIEW','REJECT_CANDIDATE','CONFIRM_INCIDENT')`,['P2_012:'+p.principal_id,clientId,row.id,p.principal_id]);
       const receipt=q.rows[0];
+      await currentRead(authContext,row.id,'CANDIDATE');
       if(!receipt||receipt.state==='STARTED')return frozen({...base,state:'UNKNOWN'});
       if(receipt.state==='FAILED'){
         if(!receipt.error_code||!ERROR_CODES.includes(receipt.error_code)||receipt.retryable!==false)fail('COMMAND_FAILED',503);
@@ -199,7 +202,7 @@ export function createP2012IncidentQuery({pool,enabled=false,internalNotesEnable
       const confirmation=receipt.command_type==='CONFIRM_INCIDENT';
       if(receipt.state!=='COMMITTED'||receipt.result_ref_type!==(confirmation?'INCIDENT':'CANDIDATE')||!receipt.result_ref_id||!receipt.result_row_version||!receipt.result_event_id)fail('COMMAND_FAILED',503);
       const ref=uuid(receipt.result_ref_id);
-      if(confirmation)await resource({authContext,id:ref,kind:'incident'});
+      if(confirmation){await resource({authContext,id:ref,kind:'incident'});await currentRead(authContext,row.id,'CANDIDATE',ref);}
       else if(ref!==row.id)fail('COMMAND_FAILED',503);
       return frozen({...base,state:'COMMITTED',result:{ok:true,result_ref_type:confirmation?'INCIDENT':'CANDIDATE',result_ref_id:ref,result_row_version:version(receipt.result_row_version),result_event_id:uuid(receipt.result_event_id),replayed:true}});
     },

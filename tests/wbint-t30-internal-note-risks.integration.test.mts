@@ -10,6 +10,58 @@ import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
 import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
 const input=(version:string,note='合成内部检查')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:note});
 
+for(const scenario of [
+  {state:'UNKNOWN',loss:'logout'}, {state:'FAILED',loss:'logout'}, {state:'CANDIDATE',loss:'logout'},
+  {state:'CONFIRMATION',loss:'logout'}, {state:'CANDIDATE',loss:'idle'}, {state:'CONFIRMATION',loss:'broad'},
+] as const)test(`T27 candidate ${scenario.state} receipt refuses ${scenario.loss} lost during its actual HTTP data wait`,async()=>{
+  await t30Http({purpose:'t27rcpt'},async({pool,databaseUrl,f,post,get,runtime,origin})=>{
+    const candidate=text(record(await f.newCandidate()).id),root='/api/incident-candidates/'+candidate,commandId=randomUUID(),principalId=text(record(f.admin).id);
+    const start={client_command_id:scenario.state==='CANDIDATE'?commandId:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'};
+    assert.equal((await post(root+'/start-review',start)).status,200);
+    if(scenario.state==='FAILED'||scenario.state==='CONFIRMATION'){
+      const detail=(await get(root)).body,result=await post(root+'/confirm',{client_command_id:commandId,expected_candidate_version:text(detail.row_version),expected_material_basis:scenario.state==='FAILED'?'0'.repeat(64):text(detail.material_basis),reason_code:'CONFIRMED_SHARED_FAULT',confirmed_scope:'LOCAL',owner_principal_id:text(record(f.handler).id),owner_team_id:null,selected_report_refs:f.reports.map(report=>text(record(report).decisionId)),primary_ticket_id:null});
+      assert.equal(result.status,scenario.state==='FAILED'?409:200,JSON.stringify(result.body));
+    }
+    const facts=async()=>(await pool.query(`SELECT (SELECT jsonb_agg(to_jsonb(r) ORDER BY r.id) FROM incident.command_receipt r) AS receipts,
+      (SELECT jsonb_agg(to_jsonb(i) ORDER BY i.id) FROM incident.incident i) AS incidents,
+      (SELECT jsonb_agg(to_jsonb(c) ORDER BY c.id) FROM incident.candidate_review c) AS candidates,
+      (SELECT count(*)::text FROM pilot_ticket.ticket_event) AS ticket_events,
+      (SELECT count(*)::text FROM communication.delivery) AS deliveries`)).rows;
+    const before=await facts(),migrationOptions={databaseUrl,mode:'apply'};await migrateWorkbenchAuth(migrationOptions);
+    const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:'https://pr99-auth.invalid',corpId:'pr99-synthetic',agentId:'1',identityHashKey:'pr99-only-synthetic-identity-hash-key',accessTokenProvider:async()=> 'pr99-synthetic-token',fetchImpl:async(_url,init)=>{
+      const request=record(JSON.parse(typeof init?.body==='string'?init.body:'{}'));assert.ok(Array.isArray(request.userid_list));
+      return new Response(JSON.stringify({errcode:0,open_userid_list:request.userid_list.map(user=>({userid:user,open_userid:'pr99-'+String(user)}))}),{headers:{'content-type':'application/json'}});
+    }});await auth.initialize();
+    const epoch=Date.now(),expiry=epoch+3600000,token=randomUUID(),csrf=randomUUID(),hash=(value:string)=>createHash('sha256').update(value).digest('hex'),cookie='__Host-wecom_workbench_session='+token+'; __Host-wecom_workbench_csrf='+csrf;
+    const session=(await pool.query<{session_id:string}>(`INSERT INTO pilot_ticket.workbench_auth_session(session_token_hash,csrf_token_hash,principal_id,identity_hash,created_at,created_epoch_ms,last_seen_at,last_seen_epoch_ms,expires_epoch_ms,expires_at)
+      VALUES($1,$5,$2::uuid,$1,platform.local_from_epoch_ms($3),$3,platform.local_from_epoch_ms($3),$3,$4,platform.local_from_epoch_ms($4)) RETURNING session_id::text`,[hash(token),principalId,epoch,expiry,hash(csrf)])).rows[0];assert.ok(session);
+    let armed=false,entered:()=>void=()=>{},resume:()=>void=()=>{};const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
+    const gated:PostgresTransaction={query:async<R extends PostgresQueryRow=Record<string,unknown>>(sql:string,values?:unknown[])=>{
+      const result=await pool.query<R>(sql,values);
+      if(armed&&(scenario.state==='CONFIRMATION'?sql.includes('SELECT c.* FROM incident.incident c'):sql.includes('SELECT state,command_type,result_ref_type'))){entered();await release;}
+      return result;
+    }};
+    await runtime.stop();const observed=new Proxy(pool,{get(target,key){if(key==='query')return gated.query;const member:unknown=Reflect.get(target,key);return typeof member==='function'?member.bind(target):member;}});
+    const official=createP2012Runtime({pool:observed,publicOrigin:'https://pr99-auth.invalid',listenPort:Number(new URL(origin).port),workbenchAuthentication:auth,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentCandidateWorkspaceEnabled:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});
+    let pending:Promise<{status:number;body:Record<string,unknown>}>|undefined;
+    const read=async()=>{const response=await fetch(origin+root+'/commands/'+commandId,{headers:{cookie}});return {status:response.status,body:record(await response.json())};};
+    try{
+      await official.start();const initial=await read();assert.equal(initial.status,200,JSON.stringify(initial.body));assert.equal(initial.body.state,['CANDIDATE','CONFIRMATION'].includes(scenario.state)?'COMMITTED':scenario.state);
+      armed=true;pending=read();await reached;
+      if(scenario.loss==='logout'){
+        const logout=await fetch(origin+'/workbench/logout',{method:'POST',headers:{cookie,origin:'https://pr99-auth.invalid','x-csrf-token':csrf}});assert.equal(logout.status,200);
+        assert.equal((await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND state='REVOKED'",[session.session_id])).rowCount,1);
+      }else if(scenario.loss==='idle'){
+        await pool.query(`UPDATE pilot_ticket.workbench_auth_session SET created_epoch_ms=$2,created_at=platform.local_from_epoch_ms($2),last_seen_epoch_ms=$3,last_seen_at=platform.local_from_epoch_ms($3) WHERE session_id=$1::uuid`,[session.session_id,Date.now()-3600000,Date.now()-1800001]);
+      }else{
+        await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principalId]);
+        await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);
+      }
+      resume();const result=await pending;assert.equal(result.status,403,JSON.stringify(result.body));assert.equal(Object.hasOwn(result.body,'result'),false);assert.equal(Object.hasOwn(result.body,'state'),false);assert.deepEqual(await facts(),before,'a refused read cannot mutate the original command or business facts');
+    }finally{resume();await pending;await official.stop();await auth.close();}
+  });
+});
+
 for(const loss of ['role','scope','session','receipt-role','late-purpose-role'] as const)test(`T30 private query refuses ${loss} authority lost while the actual final data query awaits`,async()=>{
   await t30Http({purpose:'t30fence'},async({pool,databaseUrl,f,confirm,post,runtime,origin})=>{
     const incident=await confirm(),command=input('1','PR99 synthetic private note must not escape a revoked read');assert.equal((await post('/api/incidents/'+incident+'/internal-notes',command)).status,200);

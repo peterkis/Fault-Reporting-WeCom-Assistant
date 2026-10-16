@@ -74,6 +74,7 @@ test('only an active ASSIGNED Session in this Ticket canonical relation authoriz
     const group=await continuation(fixture,journey,'group'),direct=await continuation(fixture,journey,'single');
     const foreignTicket=await current(dispatcher,'/api/tickets/'+foreignTicketId),foreign=await sessionForIntake(fixture,text(foreignTicket.intake_id));
     await takeover(dispatcher,originSession.id,fixture.otherHandler);await takeover(dispatcher,group.id,fixture.otherHandler);await takeover(dispatcher,foreign.id,fixture.handler);
+    await drain(fixture);
     const foreignRead=await current(communicator,'/api/conversations/'+foreign.id);assert.equal(object(foreignRead.assignment).status,'ASSIGNED');assert.equal(object(foreignRead.assignment).assigned_to_me,true);
     const related=await current(dispatcher,path+'/related-conversations?limit=20'),canonical=rows(related.items).map(row=>text(row.session_id)).sort();
     assert.deepEqual(canonical,[originSession.id,group.id,direct.id].sort());assert.equal(related.next_cursor,null);assert.equal(canonical.includes(foreign.id),false);
@@ -85,6 +86,7 @@ test('only an active ASSIGNED Session in this Ticket canonical relation authoriz
 
     // One of three canonical Sessions now belongs to the communicator. Others stay independently owned.
     await takeover(dispatcher,direct.id,fixture.handler);
+    await drain(fixture);
     const controlled=await current(communicator,'/api/conversations/'+direct.id);assert.equal(object(controlled.session).status,'OPEN');assert.equal(object(controlled.assignment).status,'ASSIGNED');assert.equal(object(controlled.assignment).assigned_to_me,true);
     const ownedCanonical=rows((await current(dispatcher,path+'/related-conversations?limit=20')).items).filter(row=>row.assignment_status==='ASSIGNED'&&row.conversation_principal_id===fixture.handler);
     assert.deepEqual(ownedCanonical.map(row=>row.session_id),[direct.id]);
