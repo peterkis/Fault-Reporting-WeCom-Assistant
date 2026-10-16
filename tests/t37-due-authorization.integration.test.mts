@@ -12,7 +12,7 @@ async function drain(fixture:T37Fixture){
   const initial=await fixture.runtime.coordinator.backlog(),bound=Math.ceil(initial.total/fixture.runtime.coordinator.batchSize)+3;
   for(let step=0;step<bound;step++){
     const inbound=await fixture.runtime.coordinator.runOnce(),realtime=await fixture.runtime.realtimeProjector.runOnce({limit:100});
-    assert.ok(inbound.streams.every(stream=>stream.failures.length===0));
+    assert.ok(inbound.streams.every(stream=>stream.failures.length===0),JSON.stringify(inbound.streams));
     if(inbound.processed===0&&realtime.processed===0&&(await fixture.runtime.coordinator.backlog()).total===0)return;
   }
   assert.fail('actual canonical Session/timeline projection did not settle within the fixture bound');
@@ -92,6 +92,7 @@ test('native HANDLER due SSE and authorized replay require current Ticket READ e
     const sessionId=text(source.session_id),sessionPath='/api/conversations/'+sessionId,session=await current(handler,sessionPath);
     const takeover=await handler.post(sessionPath+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(object(session.session).row_version),reason_code:'T37_DUE_REAL_COMMUNICATOR'});
     assert.equal(takeover.status,200,JSON.stringify(takeover.value));assert.equal(object((await current(handler,sessionPath)).assignment).assigned_to_me,true);
+    await drain(fixture);
     assert.equal((await current(handler,path)).assignee_id,fixture.otherHandler);
     assert.equal((await setDue(dispatcher,path)).schedule_version,'1');
     const initialScope=await scope(fixture,fixture.handler);
