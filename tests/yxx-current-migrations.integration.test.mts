@@ -24,7 +24,7 @@ test('current authorized 22 migrations coexist and replay through existing entry
   const digest=(bytes:Buffer|string):string=>createHash('sha256').update(bytes).digest('hex');
   const files=scope.migration_files.map(file=>({path:file,sha256_utf8_lf:digest(readFileSync(path.join(runtimeRoot,file),'utf8').replaceAll('\r\n','\n'))}));
   assert.equal(files.length,22);
-  await withSS009Database({testContext,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'yxxcurrent',max:1,
+  await withSS009Database({testContext,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'yxxcurrent',max:1,candidateRoot:runtimeRoot,
     run:async({pool,databaseUrl}:{pool:Pool;databaseUrl:string})=>{
       const version=Number((await pool.query<{version:string}>("SELECT current_setting('server_version_num') AS version")).rows[0]?.version);
       assert.ok(version>=180000&&version<190000);

@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {migrateCurrentBaseline} from '../scripts/migrate-current-baseline.mjs';
 import {migrateYxxSelfService,yxxCatalogInventory,validateYxxCatalog} from '../scripts/yxx-self-service-migrate.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
+import {g2CandidateInventory,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES} from '../src/p2-g2-candidate.mjs';
 import {randomUUID} from 'node:crypto';
 import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
 import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
@@ -60,4 +63,25 @@ test('SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred
     }finally{client.release();}
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM intake.web_request_binding WHERE request_ref=$1',[accepted.receipt.request_ref])).rows[0].n,1);
   }});
+});
+
+test('SS-009 cleanup receipt binds an explicit controlled candidate root after real isolated database cleanup',async t=>{
+  const root=mkdtempSync(path.join(tmpdir(),'ss009-candidate-root-'));
+  assert.equal(path.dirname(root),path.resolve(tmpdir()));
+  try{
+    for(const dir of G2_CANDIDATE_ROOTS)mkdirSync(path.join(root,dir),{recursive:true});
+    for(const file of G2_CANDIDATE_FILES)writeFileSync(path.join(root,file),'{}');
+    const candidate=g2CandidateInventory(root),source=g2CandidateInventory(),receipts=[];
+    assert.notEqual(candidate.fingerprint,source.fingerprint,'controlled fixture must differ from the current source candidate');
+    await withSS009Database({testContext:{diagnostic(message){
+      assert.ok(message.startsWith('SS009_RECEIPT '));receipts.push(JSON.parse(message.slice('SS009_RECEIPT '.length)));
+    }},databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009root',candidateRoot:root,run:async({pool,databaseName})=>{
+      assert.deepEqual((await pool.query('SELECT current_database() AS name')).rows,[{name:databaseName}]);
+    }});
+    assert.equal(receipts.length,1);assert.equal(receipts[0].kind,'cleanup');
+    assert.equal(receipts[0].candidate_fingerprint,candidate.fingerprint,'explicit controlled root must bind the cleanup receipt');
+    assert.ok(receipts[0].resources.every(resource=>resource.remaining===0));
+    assert.equal(receipts[0].preexisting_resources_touched,false);
+    t.diagnostic('controlled synthetic candidate root matched after actual database and pool cleanup');
+  }finally{rmSync(root,{recursive:true,force:true});}
 });
