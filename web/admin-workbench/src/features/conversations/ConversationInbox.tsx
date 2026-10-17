@@ -61,7 +61,7 @@ function ChatConversation({principal,id,onBlockedChange,onContactChange}:{princi
     const ids=[...new Set(items.flatMap(item=>item.communication_message_id?[item.communication_message_id]:[]))],deliveries:ConversationWorkspaceDelivery[]=[];let deliveryLimited=false;
     for(let offset=0;offset<ids.length;offset+=50){let cursor:string|null=null;for(let page=0;page<4;page++){const delivery=await conversationInbox.deliveries(id,ids.slice(offset,offset+50),cursor,signal);deliveries.push(...delivery.items);cursor=delivery.next_cursor;if(!cursor)break;if(page===3)deliveryLimited=true;}}
     return {entry,items,hasMore,deliveries,deliveryLimited};
-  },placeholderData:previous=>previous});
+  },gcTime:0,placeholderData:previous=>previous});
   useEffect(()=>{onContactChange(result.data?.entry.contact_ref??null);return()=>onContactChange(null);},[onContactChange,result.data?.entry.contact_ref]);
   useEffect(()=>{if(result.error instanceof ApiError&&[403,404].includes(result.error.status))void clearItemAuthorization(client,principal.principal_id,'conversation',id,result.error);},[client,id,principal.principal_id,result.error]);
   const signature=result.data?.items.map(item=>item.item_id+':'+item.text).join('|')??'';
@@ -73,7 +73,7 @@ function ChatConversation({principal,id,onBlockedChange,onContactChange}:{princi
     latestSequence.current=result.data?.items.at(-1)?.sequence_no??null;
   },[signature]);
   function rememberScroll(){const node=scroller.current;if(!node)return;atBottom.current=node.scrollHeight-node.scrollTop-node.clientHeight<48;if(atBottom.current){anchor.current=null;setNewMessages(false);return;}const top=node.getBoundingClientRect().top,first=[...node.querySelectorAll<HTMLElement>('[data-conversation-item]')].find(item=>item.getBoundingClientRect().bottom>top);if(first)anchor.current={id:first.dataset.conversationItem??'',offset:first.getBoundingClientRect().top-top};}
-  if(!result.data)return <section className="inbox-empty" role={result.isError?'alert':'status'}><MessageSquare size={28}/><p>{result.isError?errorMessage(result.error):'正在读取当前获权沟通…'}</p><button onClick={()=>void result.refetch()}>重新读取</button></section>;
+  if(!result.data||result.error instanceof ApiError&&[403,404].includes(result.error.status))return <section className="inbox-empty" role={result.isError?'alert':'status'}><MessageSquare size={28}/><p>{result.isError?errorMessage(result.error):'正在读取当前获权沟通…'}</p><button onClick={()=>void result.refetch()}>重新读取</button></section>;
   const {entry,items,deliveries,hasMore}=result.data;
   const committed=(r:ConversationMessageResult)=>{setReceipts(rows=>[r,...rows.filter(row=>row.message_id!==r.message_id)].slice(0,100));void result.refetch();void client.invalidateQueries({queryKey:['conversation-inbox',principal.principal_id]});};
   const visibleIds=new Set(items.map(item=>item.communication_message_id));

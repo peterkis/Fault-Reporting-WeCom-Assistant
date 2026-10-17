@@ -75,6 +75,32 @@ test('server grouping precedes pagination even when one reporter has over 200 Se
     }finally{releaseMaterial();request.socket.destroy();}
   },{inbox:true});
 });
+test('assignment-derived scope changes invalidate inbox and related cursors while their anchors remain readable',async()=>{
+  await withT22Fixture(async({origin,handlerCookie,pool,principals})=>{
+    const handler=principals[1];assert.ok(handler);
+    const anchor=await addInboxSession(pool,{reporter:'scope-person-a',group:'scope-group',text:'AUTH_SCOPE anchor'});
+    const older=await addInboxSession(pool,{reporter:anchor.reporter,group:'scope-older',text:'AUTH_SCOPE older'});
+    const other=await addInboxSession(pool,{reporter:'scope-person-b',group:'scope-group',text:'AUTH_SCOPE other'});
+    const newlyReadable=await addInboxSession(pool,{reporter:'scope-new-person',group:'scope-group',text:'AUTH_SCOPE newly readable'});
+    const newRelated=await addInboxSession(pool,{reporter:anchor.reporter,group:'scope-new-related',text:'AUTH_SCOPE new related'});
+    for(const [index,session] of [other,older,anchor,newRelated,newlyReadable].entries())await pool.query("UPDATE conversation.session SET last_activity_at=timestamp '2026-10-16 10:00:00'+($2::integer*interval '1 second') WHERE id=$1::uuid",[session.id,index]);
+    const grant=async(id:string)=>{await pool.query("INSERT INTO conversation.assignment(session_id,assignment_status,assigned_principal_id,assigned_by_principal_id,assigned_at) VALUES($1::uuid,'ASSIGNED',$2::uuid,$2::uuid,platform.local_now())",[id,handler.id]);};
+    for(const session of [anchor,older,other])await grant(session.id);
+    const inbox='/api/workbench/conversation-inbox?q=AUTH_SCOPE&limit=1',related='/api/workbench/conversations/'+anchor.id+'/related-sessions?limit=1';
+    const get=(path:string,cursor?:string)=>fetch(origin+path+(cursor?'&cursor='+encodeURIComponent(cursor):''),{headers:{cookie:handlerCookie}});
+    const first=await (await get(inbox)).json() as ConversationInboxPage;assert.equal(first.items[0]?.anchor_session_id,anchor.id);assert.ok(first.next_cursor);
+    await grant(newlyReadable.id);
+    const gained=await get(inbox,first.next_cursor);assert.equal(gained.status,400,'a newly authorized contact before an unchanged boundary must reset pagination');assert.equal((await gained.json() as {error:{code:string}}).error.code,'WORKBENCH_CURSOR_INVALID');
+    const reset=await (await get(inbox)).json() as ConversationInboxPage;assert.equal(reset.items[0]?.anchor_session_id,newlyReadable.id);assert.ok(reset.next_cursor);
+    await pool.query('DELETE FROM conversation.assignment WHERE session_id=$1::uuid',[other.id]);
+    assert.equal((await get(inbox,reset.next_cursor)).status,400,'revoking a non-anchor Session must reset pagination');
+    const beforeRelated=await (await get(related)).json() as ConversationRelatedPage;assert.equal(beforeRelated.items[0]?.session.session_id,anchor.id);assert.ok(beforeRelated.next_cursor);
+    await grant(newRelated.id);assert.equal((await get(related,beforeRelated.next_cursor)).status,400,'a newly readable related window must reset pagination');
+    const afterRelated=await (await get(related)).json() as ConversationRelatedPage;assert.equal(afterRelated.items[0]?.session.session_id,newRelated.id);assert.ok(afterRelated.next_cursor);
+    await pool.query('DELETE FROM conversation.assignment WHERE session_id=$1::uuid',[older.id]);assert.equal((await get(related,afterRelated.next_cursor)).status,400);
+    assert.equal((await fetch(origin+'/api/workbench/conversations/'+anchor.id+'?view=chat',{headers:{cookie:handlerCookie}})).status,200,'the route anchor remains readable throughout');
+  },{inbox:true});
+});
 test('explicit control conflict, exact historical delivery, same-UUID replay and internal notes keep separate facts',async()=>{
   await withT22Fixture(async({origin,cookie,handlerCookie,pool,sessions})=>{
     const session=sessions[0];assert.ok(session);const path='/api/workbench/conversations/'+session.id;

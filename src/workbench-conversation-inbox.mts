@@ -16,9 +16,9 @@ interface Options {pool:PostgresPool;authorization:WorkbenchAuthorizationAdapter
 interface Identity {provider:string;channel_account_id:string;participant_key:string}
 interface SessionRow extends Identity {session_id:string;status:string;control_mode:string;generation_version:number;row_version:number;last_activity_at:string;journey_id:string|null;participant_label:string;department_label:string|null;topic:string;canonical_item:ConversationChatEntry['canonical_item'];source:ConversationSourceBadge;chat_type:'group'|'single';reply_binding:boolean;assignment_status:string;assigned_principal_id:string|null;assigned_display_name:string|null;handoff:ConversationChatEntry['handoff']}
 interface InboxRow extends Identity {anchor_session_id:string;participant_label:string;department_label:string|null;latest_activity_at:string;matching_topic_count:number;unread_count:number;last_item:ConversationInboxEntry['last_item_preview'];sources:ConversationSourceBadge[];source_count:number;owner_count:number;mine_count:number;assigned_count:number;session_count:number;owner_name:string|null;has_delivery_exception:boolean}
-interface Cursor {v:1;binding:string;criteria:string;at:string;anchor:string}
+interface Cursor {v:2;binding:string;criteria:string;scope:string;at:string;anchor:string}
 type Params={sourceGroups:boolean;values:unknown[];add(value:unknown,cast?:string):string};
-interface ReadQuery {prefix:string;sql:string;anchor?:string;cursor?:string}
+interface ReadQuery {prefix:string;sql:string;anchor?:string;cursor?:string;scope?:boolean;cursorScope?:string}
 function invalid(code:string=WORKBENCH_ERROR_CODES.requestInvalid,status=400):never{throw new WorkbenchError(code,status);}
 function integer(v:string|null,fallback:number,max:number):number{if(v===null)return fallback;if(!/^[1-9][0-9]*$/u.test(v)||!Number.isSafeInteger(Number(v))||Number(v)>max)invalid();return Number(v);}
 function keys(url:URL,allowed:readonly string[]){const names=[...url.searchParams.keys()];if(names.some(k=>!allowed.includes(k))||new Set(names).size!==names.length)invalid();}
@@ -43,11 +43,11 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
     const actual=Buffer.from(mac,'base64url'),expected=createHmac('sha256',key).update('CONVERSATION_CURSOR_V1\0'+data).digest();
     if(actual.length!==expected.length||!timingSafeEqual(actual,expected))invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
     try{const c=object(JSON.parse(Buffer.from(data,'base64url').toString('utf8')) as unknown);
-      if(Object.keys(c).sort().join(',')!=='anchor,at,binding,criteria,v'||c.v!==1||typeof c.binding!=='string'||typeof c.criteria!=='string')invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
-      return {v:1,binding:c.binding,criteria:c.criteria,at:assertLocalDateTime(c.at),anchor:uuidP2016(c.anchor)};
+      if(Object.keys(c).sort().join(',')!=='anchor,at,binding,criteria,scope,v'||c.v!==2||typeof c.binding!=='string'||typeof c.criteria!=='string'||typeof c.scope!=='string'||!/^[a-f0-9]{64}$/u.test(c.scope))invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
+      return {v:2,binding:c.binding,criteria:c.criteria,scope:c.scope,at:assertLocalDateTime(c.at),anchor:uuidP2016(c.anchor)};
     }catch{invalid(WORKBENCH_ERROR_CODES.cursorInvalid);}
   }
-  async function read<T>(auth:WorkbenchAuthContext,body:(p:WorkbenchPrincipal,params:Params)=>ReadQuery):Promise<{rows:T[];principal:WorkbenchPrincipal}>{
+  async function read<T>(auth:WorkbenchAuthContext,body:(p:WorkbenchPrincipal,params:Params)=>ReadQuery):Promise<{rows:T[];principal:WorkbenchPrincipal;scope:string}>{
     guard();return transactionP2016(pool,async tx=>{
       await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
       const p=await authorization.resolvePrincipal(auth,{queryable:tx});if(!p)invalid(WORKBENCH_ERROR_CODES.forbidden,403);
@@ -58,16 +58,18 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       let sessionSql=params.add(expiry,'::bigint')+'>platform.physical_epoch_ms()';
       if(currentSessionPredicate){const s=currentSessionPredicate(auth,p.principal_id,params.values.length+1);params.values.push(...s.values);sessionSql=s.sql;}
       const spec=body(p,params);
+      const scopeSql=spec.scope?"(SELECT encode(sha256(convert_to(COALESCE(string_agg(session_id,',' ORDER BY session_id),''),'UTF8')),'hex') FROM eligible)":"''::text";
+      const cursorSql=spec.cursorScope===undefined?(spec.cursor??'TRUE'):`(${spec.cursor??'TRUE'}) AND ${scopeSql}=${params.add(spec.cursorScope)}`;
       // Current auth/role/team facts and the returned material share this final READ snapshot.
-      const proof=(await tx.query<{authenticated:boolean;scope_valid:boolean;anchor_valid:boolean;cursor_valid:boolean;items:T[]}>(`${spec.prefix} SELECT (${sessionSql}) AS authenticated,
+      const proof=(await tx.query<{authenticated:boolean;scope_valid:boolean;anchor_valid:boolean;cursor_valid:boolean;readable_scope:string;items:T[]}>(`${spec.prefix} SELECT (${sessionSql}) AS authenticated,
         EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal cp WHERE cp.id=$1::uuid AND cp.is_active
           AND ARRAY(SELECT DISTINCT role::text FROM pilot_ticket.pilot_principal_role WHERE principal_id=cp.id ORDER BY role::text)=$3::text[]
           AND ARRAY(SELECT DISTINCT team_id::text FROM pilot_ticket.pilot_team_member WHERE principal_id=cp.id ORDER BY team_id::text)=$4::text[]) AS scope_valid,
-        (${spec.anchor??'TRUE'}) AS anchor_valid,(${spec.cursor??'TRUE'}) AS cursor_valid,
+        (${spec.anchor??'TRUE'}) AS anchor_valid,(${cursorSql}) AS cursor_valid,${scopeSql} AS readable_scope,
         COALESCE((SELECT jsonb_agg(to_jsonb(result)) FROM (${spec.sql}) result),'[]'::jsonb) AS items`,params.values)).rows[0];
       if(!proof?.authenticated)invalid(WORKBENCH_ERROR_CODES.unauthenticated,401);if(!proof.scope_valid)invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
       if(!proof.anchor_valid)invalid(WORKBENCH_ERROR_CODES.notFound,404);if(!proof.cursor_valid)invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
-      return {rows:proof.items,principal:p};
+      return {rows:proof.items,principal:p,scope:proof.readable_scope};
     });
   }
   function relation(p:WorkbenchPrincipal,params:Params,filterDeliveryException=false){
@@ -165,13 +167,13 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         (SELECT count(*)::integer FROM origins o WHERE (o.provider,o.channel_account_id,o.participant_key)=(g.provider,g.channel_account_id,g.participant_key)) AS source_count,
         ARRAY(SELECT source FROM origins o WHERE (o.provider,o.channel_account_id,o.participant_key)=(g.provider,g.channel_account_id,g.participant_key) ORDER BY source::text LIMIT 8) AS sources
         FROM page g LEFT JOIN material m USING(provider,channel_account_id,participant_key) LEFT JOIN exceptions ex USING(provider,channel_account_id,participant_key)${order}`;
-      return {prefix,sql,cursor:valid};
+      return {prefix,sql,cursor:valid,scope:true,...(cursor?{cursorScope:cursor.scope}:{})};
     });
     const rows=result.rows.slice(0,c.limit),last=rows.at(-1);
     const items=rows.map((r):ConversationInboxEntry=>({contact_ref:conversationReference(key,'contact',r),participant_label:r.participant_label,department_label:r.department_label,anchor_session_id:r.anchor_session_id,
       matching_topic_count:r.matching_topic_count,latest_activity_at:assertLocalDateTime(r.latest_activity_at),last_item_preview:r.last_item,unread_count:r.unread_count,source_badges:r.sources,additional_source_count:Math.max(0,r.source_count-r.sources.length),
       assignment_summary:r.owner_count===0?{kind:'UNASSIGNED',label:c.state==='ended'?'历史主题':'待接待'}:r.mine_count===r.session_count?{kind:'MINE',label:'我接待的'}:r.owner_count===1&&r.assigned_count===r.session_count?{kind:'SINGLE',label:r.owner_name??'工作人员'}:{kind:'MIXED',label:'多个主题由不同同事接待'},has_delivery_exception:r.has_delivery_exception}));
-    return {items,next_cursor:result.rows.length>c.limit&&last?encode({v:1,binding:binding(auth,result.principal),criteria,at:last.latest_activity_at,anchor:last.anchor_session_id}):null};
+    return {items,next_cursor:result.rows.length>c.limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.latest_activity_at,anchor:last.anchor_session_id}):null};
   }
   async function related(auth:WorkbenchAuthContext,id:string,url:URL):Promise<ConversationRelatedPage>{
     guard();keys(url,['cursor','limit']);const limit=integer(url.searchParams.get('limit'),50,100),cursor=decode(url.searchParams.get('cursor')),criteria=digest(['related',id,limit],'RELATED_FILTER_V1');
@@ -182,12 +184,12 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       const valid=cursor?`EXISTS(SELECT 1 FROM eligible c JOIN eligible a ON a.session_id=${anchorId}
         AND (c.provider,c.channel_account_id,c.participant_key)=(a.provider,a.channel_account_id,a.participant_key)
         WHERE c.session_id=${v.add(cursor.anchor)} AND c.last_activity_at=${v.add(cursor.at)})`:'TRUE';
-      return {prefix:base,anchor,cursor:valid,sql:`SELECT r.* FROM eligible r JOIN eligible anchor ON anchor.session_id=${anchorId}
+      return {prefix:base,anchor,cursor:valid,scope:true,...(cursor?{cursorScope:cursor.scope}:{}),sql:`SELECT r.* FROM eligible r JOIN eligible anchor ON anchor.session_id=${anchorId}
         AND (r.provider,r.channel_account_id,r.participant_key)=(anchor.provider,anchor.channel_account_id,anchor.participant_key)
         WHERE TRUE ${boundary} ORDER BY r.last_activity_at DESC,r.session_id DESC LIMIT ${v.add(limit+1)}`};
     });
     const rows=result.rows.slice(0,limit),last=rows.at(-1);
-    return {items:rows.map(r=>entry(r,result.principal)),next_cursor:result.rows.length>limit&&last?encode({v:1,binding:binding(auth,result.principal),criteria,at:last.last_activity_at,anchor:last.session_id}):null};
+    return {items:rows.map(r=>entry(r,result.principal)),next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.last_activity_at,anchor:last.session_id}):null};
   }
   async function chatItems(auth:WorkbenchAuthContext,id:string,url:URL):Promise<ConversationChatItemPage>{
     guard();keys(url,['view','before_sequence','after_sequence','limit']);
@@ -254,7 +256,7 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       const eligible=`FROM eligible e JOIN communication.message m ON m.session_id=e.session_id::uuid
         JOIN communication.outbox o ON o.message_id=m.id JOIN communication.delivery d ON d.outbox_id=o.id
         WHERE e.session_id=${session} AND m.visibility='EXTERNAL' AND m.retention_until_epoch_ms>platform.physical_epoch_ms()${messages}`;
-      return {prefix,anchor:`EXISTS(SELECT 1 FROM eligible WHERE session_id=${session})`,
+      return {prefix,anchor:`EXISTS(SELECT 1 FROM eligible WHERE session_id=${session})`,scope:true,...(cursor?{cursorScope:cursor.scope}:{}),
         cursor:cursor?`EXISTS(SELECT 1 ${eligible} AND d.id=${v.add(cursor.anchor,'::uuid')})`:'TRUE',
         sql:`SELECT m.id::text AS message_id,m.purpose,d.id::text AS delivery_id,d.status,d.side_effect_state,d.provider AS channel,d.attempt_count,d.last_error_code,
         CASE WHEN d.sent_at IS NOT NULL THEN to_char(d.sent_at,'YYYY-MM-DD HH24:MI:SS') END AS sent_at,to_char(m.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at
@@ -262,7 +264,7 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         ORDER BY d.id DESC LIMIT ${v.add(limit+1)}`};
     });
     const rows=result.rows.slice(0,limit),last=rows.at(-1);
-    return {items:rows,next_cursor:result.rows.length>limit&&last?encode({v:1,binding:binding(auth,result.principal),criteria,at:last.created_at,anchor:last.delivery_id}):null};
+    return {items:rows,next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.created_at,anchor:last.delivery_id}):null};
   }
   return {enabled,detail,inbox,related,chatItems,chatDeliveries};
 }

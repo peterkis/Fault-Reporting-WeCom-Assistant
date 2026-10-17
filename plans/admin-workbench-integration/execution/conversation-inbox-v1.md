@@ -77,3 +77,13 @@
 ## 后续 Git 交付授权
 
 本地交付后，用户明确授权提交、推送、创建 PR、请求 `@codex review`，修复 P1/P2 后继续审查，全部问题解决且适用检查通过后使用保留历史的 merge commit 合并，再快进本地 main 并清理本任务分支与工作树。该授权不扩大真实发送、现场业务写库、部署或 Gate 范围。每轮远端完整 SHA、审查结果、CI 与合并/清理事实追加记录在 PR 和仓库外发布证据中；上文各本地候选与历史失败保持原身份。
+
+## PR #101 首轮修补
+
+[PR #101](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/101) 首次发布完整 SHA 为 `9b9e058e45b4266c3e30032f56fabc8ce6418b7b`。Codex 对该对象提出两项 P2：游标未绑定完整可读 Session 集合；离开后的聊天缓存可能在失权后返回时短暂重现。
+
+- 分页在同一最终 SQL 快照计算可读 Session 集合的 SHA-256 摘要，并绑定签名游标；Inbox、Related Sessions 与聊天 Delivery 分页均使用该校验。新增/撤销非边界 Session 的读取权时返回 `WORKBENCH_CURSOR_INVALID`，不输出原始渠道身份。数据库用例取得修复前200与修复后400的 RED→GREEN。
+- 聊天使用 `gcTime:0`，403/404立即停止展示材料。正式 bundle 浏览器新增真实管理员转交、被测主体角色/团队不变、延迟REST拒绝及DOM变更观察用例。准备阶段的非空约束、导航等待和非法转交请求失败均保留，不冒称缓存修复前RED；最终用例验证未重现失权材料。
+- 首轮 TypeScript CI 的219个活动入口实际执行137个，298项中297 PASS / 1 FAIL，82入口NOT_RUN；原失败为旧G2发送防护测试未装配新增规则准入。该测试补齐真实准入，原 Sender 绑定、群标签、ACK重放和投递状态断言保留；公共无准入Worker继续拒绝普通规则文字。本地该老入口另被当前工作区的候选库存上限拒绝，未提高上限或删除非自有缓存，后续干净远端checkout另行验证。人员目录CI的17入口98项及407项架构检查、历史保护检查在首发SHA通过。
+
+首轮修补本地最终候选基于上述SHA的dirty input hash=`0d6c9e8a1468d0afd56f3fc4d8192329b141419f4f781df9eb96c03cdf16ec6c`，manifest SHA-256=`7558e958ca0b47ca928906ed48638073902307abc9decd81fd575608e2e63a7f`。一次候选构建、严格类型、制品验证及新增4入口16项全部通过，0 fail/cancel/SKIP/todo/NOT_RUN；原件位于证据根的`publication/review-green-new-04`。新增两项回归分别补充A19/A21/A22，不更改上文候选07的14项或既有111项身份。后续发布对象的审查与CI仍须按完整SHA独立核验。

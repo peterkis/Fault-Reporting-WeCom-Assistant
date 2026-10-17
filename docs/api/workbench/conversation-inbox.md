@@ -18,7 +18,7 @@
 | source | all（默认）/group/direct；按原始来源筛选，可靠群转私聊仍为 group |
 | q | trim 后最多128 Unicode字符；只搜索姓名、主题和当前获权工单号；SQL 参数化，`%`/`_` 按字面匹配 |
 | source_group_ref | 现有64位小写十六进制安全群引用；从获权来源标签取得，不接受原始群ID |
-| cursor | 已签名 opaque keyset cursor；不能自行构造或跨认证会话复用 |
+| cursor | 已签名 opaque keyset cursor；绑定当前主体、认证会话、角色/团队及完整可读 Session 集合摘要，不能自行构造或跨会话复用；集合变化时重置分页 |
 | limit | 默认30，1–100 |
 
 响应 `{items,next_cursor}`。每项包含 `contact_ref`、姓名、核实部门或 null、定位 Session、当前筛选内的主题数/本人未读、最新安全文字摘要、活动时间、原始来源标签、责任摘要与投递异常。来源标签最多8个，额外数量单列。只有未过保留期且当前获权的真实 Session 进入筛选和聚合。可靠 Journey 的群/私聊窗口只计一个主题；不能证明关联的 Session 各自计数。
