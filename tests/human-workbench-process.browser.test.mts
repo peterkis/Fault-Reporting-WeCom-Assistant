@@ -21,14 +21,12 @@ import {migrateWorkbenchFollow} from '../scripts/workbench-follow-migrate.mjs';
 import {migrateWorkbenchSourceGroups} from '../scripts/workbench-source-groups-migrate.mjs';
 import {migrateConversationDeliveryCommands} from '../scripts/conversation-delivery-commands-migrate.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
 import {main as workbenchMain} from '../scripts/human-workbench.mjs';
 import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs';
 import {addInboxSession,attachInboxJourney,INBOX_IDENTITY_KEY} from './helpers/conversation-inbox-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import type {IncomingHttpHeaders} from 'node:http';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
 import {transactionP2016} from '../src/p2-016-domain-contracts.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
@@ -49,15 +47,42 @@ function client(base:string,origin:string){
  return {cookies,get:(p:string)=>request(p),post:(p:string,b:Record<string,unknown>)=>request(p,b)};
 }
 async function until(check:()=>Promise<boolean>){for(let i=0;i<160;i++){if(await check())return;await delay(50);}throw Error('WORKBENCH_TEST_CONVERGENCE_TIMEOUT');}
+async function migrateWorkbenchDatabase(databaseUrl:string){
+ await migrateCurrentBaselineWithYxx({databaseUrl});
+ for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
+}
+async function unusedPort(){const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');await new Promise<void>(r=>probe.close(()=>r()));return address.port;}
+
+test('compiled parent rejects missing personal-read schema or migration before reporting ready and stops all roles',{timeout:120000},async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'human-workbench-schema-'));let workerTraceFile:string|undefined;
+ try{
+  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'humanmissing',max:1,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
+   await migrateWorkbenchDatabase(databaseUrl);
+   await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'runtime-staff',displayName:'运行接线合成坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+   // Keep later feature schemas intact while removing the isolated database's 047 dependency.
+   await pool.query('DROP TABLE pilot_ticket.personal_material_read_position');
+   assert.equal((await pool.query("SELECT to_regclass('pilot_ticket.personal_material_read_position') AS name")).rows[0]?.name,null);
+   workerTraceFile=join(tmpdir(),new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');
+   for(const removeMarker of [false,true]){
+    if(removeMarker)await pool.query("DELETE FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read'");
+    const f=workbenchTestSettings(directory,await unusedPort());f.env.PILOT_DATABASE_URL=databaseUrl;
+    await assert.rejects(workbenchMain(['--start'],{env:f.env,roleScriptUrl:new URL('./helpers/human-workbench-boundaries-role.mjs',import.meta.url)}),/HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema(?:,|$)/u);
+   }
+   const trace=(await readFile(join(directory,'boundaries.jsonl'),'utf8')).trim().split('\n').map(v=>object(JSON.parse(v)));
+   assert.equal(trace.filter(v=>v.role==='APP'&&v.event==='failed'&&String(v.code).startsWith('HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema')).length,2);
+   assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
+  }});
+  await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
+ }finally{if(workerTraceFile)await rm(workerTraceFile,{force:true});await rm(directory,{recursive:true,force:true});}
+});
 
 test('compiled parent and three compiled roles wire real OAuth sessions, bootstrap, React inbox/SSE, reporter feedback and three Sender adapters',{timeout:240000},async()=>{
  const directory=await mkdtemp(join(tmpdir(),'human-workbench-process-'));let proof:unknown,workerTraceFile:string|undefined;
  try{await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'humanwire',max:1,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
-  await migrateCurrentBaselineWithYxx({databaseUrl});
+  await migrateWorkbenchDatabase(databaseUrl);
   const workerTracePath=join(tmpdir(),new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');workerTraceFile=workerTracePath;
-  for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool});await access.upsertPrincipal({wecomUserId:'runtime-staff',displayName:'运行接线合成坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
-  const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;await new Promise<void>(r=>probe.close(()=>r()));
+  const port=await unusedPort();
   const f=workbenchTestSettings(directory,port);f.env.PILOT_DATABASE_URL=databaseUrl;f.env.PILOT_LOG_IDENTITY_HASH_KEY=INBOX_IDENTITY_KEY;f.settings.transportEnabled=true;
   let controller:Awaited<ReturnType<typeof workbenchMain>>;
   const tls=await createYxxBrowserFixture({pool,createApp:({origin}:{origin:string})=>{f.settings.publicOrigin=origin;f.settings.reporterOrigin=origin;f.save();return createServer();},startApp:async()=>{
@@ -70,17 +95,25 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    const base='http://127.0.0.1:'+port,staff=client(base,tls.origin),member=client(base,tls.origin);
    for(const [http,path,code] of [[staff,'/workbench','staff'],[member,'/wecom/yixiaoxiu','member']] as const){const login=await http.get(path+'/login');assert.equal(login.status,302,login.raw);assert.ok(login.headers.location);const state=new URL(login.headers.location).searchParams.get('state');const callback=await http.get(path+'/callback?code='+code+'&state='+state);assert.equal(callback.status,303,callback.raw);}
    const boot=await staff.get('/api/lifecycle/bootstrap');assert.equal(boot.status,200,boot.raw);
+   assert.equal(object(object(controller?.readiness).checks).workbench_personal_read_schema,true);
    for(const key of ['ticket_self_handling_enabled','ticket_assignment_enabled','ticket_waiting_actions_enabled','ticket_staff_completion_enabled','ticket_reopen_rounds_enabled','ticket_round_notifications_enabled','manual_reports_enabled','manual_review_enabled','conversation_workspace_enabled','conversation_inbox_enabled','personal_read_enabled','realtime_sse_enabled','source_group_directory_enabled','internal_notes_enabled','draft_recovery_enabled','notification_exceptions_enabled'])assert.equal(boot.body[key],true,key);
    assert.equal(boot.body.ai_enabled,false);assert.equal(boot.body.incident_candidate_workspace_enabled,false);assert.equal(boot.body.reporter_candidates_enabled,false);
    assert.equal((await member.get('/api/yixiaoxiu/bootstrap')).status,200);
    const session=await addInboxSession(pool,{reporter:'synthetic-A',bot:'bot-test',group:null,text:'运行接线合成私聊'});await attachInboxJourney(pool,session,{name:'运行接线报修人'});
-   // Seed only the external input fixture atomically, then use the original Core command.
-   const groupTicketId=await transactionP2016(pool,async transaction=>{
-    const group=await seedPersistedIntake({pool:transaction,text:'运行接线合成打印机无法打印',chatType:'group',requestType:'INCIDENT',status:'RECEIVED',tag:'runtime-group'});
+   // Seed only the external input atomically; the real Worker creates the Core Ticket and group receipt.
+   const groupIntakeId=await transactionP2016(pool,async transaction=>{
+    const group=await seedPersistedIntake({pool:transaction,text:'处方提交不了',chatType:'group',tag:'runtime-group'});
     await transaction.query("UPDATE intake.service_intake SET source_bot_id='bot-test',source_chat_id='runtime-group',reporter_wecom_userid='synthetic-A' WHERE id=$1::uuid",[group.intakeId]);
     await transaction.query("UPDATE channel.message_inbox SET bot_id='bot-test',chat_id='runtime-group',sender_user_id='synthetic-A' WHERE id=$1::bigint",[group.messageId]);
-    const created=await createPilotTicketCore({pool}).createForIntakeInTransaction({transaction,intakeId:group.intakeId,occurredAt:assertLocalDateTime(group.receivedAt),traceId:'runtime-group'});assert.ok(created.ticket);return created.ticket.id;
+    return group.intakeId;
    });
+   let groupTicketId='',groupReceipt='';
+   await until(async()=>{const row=(await pool.query<{id:string;text:string}>(`SELECT t.id::text,m.content->>'text' AS text FROM pilot_ticket.ticket t
+    JOIN communication.ticket_notification_binding b ON b.ticket_id=t.id AND b.notification_type='TICKET_CREATED' AND b.destination_type='GROUP'
+    JOIN communication.message m ON m.id=b.message_id WHERE t.source_intake_id=$1::uuid`,[groupIntakeId])).rows[0];groupTicketId=row?.id??'';groupReceipt=row?.text??'';return !!groupReceipt;});
+   const continuationRef=groupReceipt.match(/续接工单 ([A-Za-z0-9_-]{32})：/u)?.[1];assert.ok(continuationRef,'Worker group receipt must carry the source-bound public reference');
+   assert.equal((await pool.query<{public_ref:string}>("SELECT public_ref FROM pilot_ticket.reporter_public_ref WHERE ticket_id=$1::uuid AND status='ACTIVE'",[groupTicketId])).rows[0]?.public_ref,continuationRef);
+   await until(async()=>{const trace=await readFile(join(directory,'boundaries.jsonl'),'utf8');return trace.split('\n').filter(Boolean).map(v=>object(JSON.parse(v))).some(v=>v.event==='bot-send'&&JSON.stringify(v.body).includes(continuationRef));});
    const inbox=await staff.get('/api/workbench/conversation-inbox');assert.equal(inbox.status,200,inbox.raw);assert.ok(Array.isArray(inbox.body.items));assert.ok(inbox.body.items.length>0);
    const detail=await staff.get('/api/workbench/conversations/'+session.id+'?view=chat');assert.equal(detail.status,200,detail.raw);assert.ok(detail.body.contact_ref);
    browser=await tls.launch();assert.ok(browser);await browser.command('Network.setCookies',{cookies:[...staff.cookies].map(([name,value])=>({name,value,url:tls.origin,secure:true}))});
@@ -123,7 +156,7 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    assert.equal(environment.find(v=>v.role==='WORKER')?.has_app_secret,false);assert.equal(environment.find(v=>v.role==='APP')?.has_bot_secret,false);
    assert.ok(lines.filter(v=>['app-send','group-send','bot-send'].includes(String(v.event))).every(v=>v.role==='GATEWAY'));
    assert.equal(JSON.stringify(lines.filter(v=>v.event==='app-send'||v.event==='group-send'||v.event==='bot-send')).includes('接线内部备注'),false);
-   proof={bootstrap:true,real_oauth_sessions:true,compiled_roles:3,react_inbox:true,sse_live:true,web_reporter_feedback:true,bot_reporter_feedback:true,sender_routes:['WECOM_APP','WECOM_MESSAGE_PUSH','WECOM_AIBOT'],credentials_isolated:true};
+   proof={bootstrap:true,personal_read_schema:true,worker_group_continuation:true,real_oauth_sessions:true,compiled_roles:3,react_inbox:true,sse_live:true,web_reporter_feedback:true,bot_reporter_feedback:true,sender_routes:['WECOM_APP','WECOM_MESSAGE_PUSH','WECOM_AIBOT'],credentials_isolated:true};
   }finally{await browser?.close();await tls.close();}
   assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
  }});await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});console.log('HUMAN_WORKBENCH_WIRING '+JSON.stringify(proof));}

@@ -105,3 +105,19 @@ node --env-file=secrets/human-workbench.env .build/runtime/scripts/human-workben
 本轮 PG／认证 Session／浏览器均关闭；测试库、自有 PG 数据和临时目录已删。旧制品、全部失败和历史证据保留。下一项继续完整人工运行旅程及组合／失败恢复矩阵；真实身份、当前目标／群提及对应、Provider 客户端效果和现场配置仍需实际证据与授权。本轮无遗留已知接线阻塞。
 
 真实企微发送、真实外部身份／目录、现场库迁移／写入、部署、手动 full／certify、业务 Gate、push／PR／merge：**NOT_RUN**。关闭方式沿运行手册，不删除业务事实、UNKNOWN、回执或历史证据。本地交付后停止。
+
+## PR #102 后继审查修补（2026-10-18）
+
+上文是首次本地交付的固定快照，其 HEAD、dirty 状态、构建与测试结果保持原身份。用户后继明确授权提交、推送、创建 PR、循环 Codex 审查、合并及自有资源清理；发布与合并状态以 [PR #102](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/102) 的实际记录为准，现场与 Gate 停止线保持。
+
+首次发布 HEAD `44f129c39727b361f3598f3d06f90fe7c0124750` 的 Codex 审查返回两条 P2，后继修补如下：
+
+- `src/p2-016-runtime.mts` 在个人已读显式开启时调用既有 `personalReadSchemaReady`，纳入 `ok/base_service_ready` 和 `checks.workbench_personal_read_schema`。缺少 047 表、约束或迁移记录时，正式角色启动包装器报告可定位的 Schema 错误并关闭角色；默认关闭路径不增加该查询。
+- `scripts/human-workbench-role.mts` 的 Worker 通知投影器设置 `explicitReferenceEnabled:true`，与本运行组合已启用的报修时间线保持一致。实际规则 Worker 生成的群建单回执携带来源绑定的 `public_ref`，沿原 Communication/IPC/Gateway 发出。
+- 原注册进程用例增加完整隔离库中移除个人已读表、再移除迁移记录的两次启动拒绝；成功用例改由真实 Worker 从原始输入夹具建单，并核对实际群 Outbox、有效 public_ref 与 Gateway Bot 发送体。不直接调用 Core 建单替代 Worker，也不更换 Runtime/HTTP/数据库。
+
+修补后正式候选：基于上述 HEAD 的未提交快照，source input hash `538e32526e9c211139946314f854dd23cf68df33903b55aea1d4f7eb547a4dec`，manifest SHA-256 `e78826112fa486fd44e954ce3a2a8eec276894100bf74f2f478f0e0f81e666b4`；1820 输入、818 typed、351 legacy、2406 输出、Node 24 / TS 5.9.3，仍为 `STAGED_NOT_ACTIVATED`。该最终候选构建一次并供所有后继本地测试复用；发布后的完整 SHA 由 PR 的审查／CI 分别绑定，不改写 manifest 身份。
+
+正式验证：`human-workbench-wiring` 两文件 **6 PASS**，相关14文件 **54 PASS**，两者 fail/cancelled/skipped/todo 均为0、NOT_RUN 列表为空；strict、编译语法与制品校验 PASS。相关集合在原11文件上增加 `tests/t35-migration-order.integration.test.mts`、`tests/t35-http-contracts.integration.test.mts`、`tests/p2-g2-explicit-continuation.integration.test.mjs`。
+
+后继原件位于 `D:/wecom-workbench-evidence/runtime-wiring-20261017/publication/`：`review-fix-final/` 保存上述构建、类型、两个注册报告及制品摘要；`review-fix-1/` 保留新夹具迁移顺序不正确导致的两次失败；`review-fix-2/` 保留缺少合成坐席白名单的前置拒绝和成功路径通过。临时编译诊断仅用于定位，原字节恢复有独立回执，其通过不计入正式结果。原构建及两次修补中间候选的2406输出均已校验后归档，历史失败未覆盖。

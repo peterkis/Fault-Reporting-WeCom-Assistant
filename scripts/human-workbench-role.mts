@@ -91,7 +91,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
 function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,reporterHmacSecret:string){
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  return runWorker({reportCycleHealth:true,extensionFactory:({pool})=>{
-  const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool),roundNotificationBotId:s.botId});
+  const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
   const orchestration=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey,yxxSelfService:HUMAN_WORKBENCH_OPTIONS.yxxSelfService});
   const closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async(input:ClosureNotificationInput)=>{
