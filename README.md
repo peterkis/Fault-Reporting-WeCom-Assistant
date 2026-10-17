@@ -1,5 +1,7 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+新版人工工作台运行接线：[显式 human-v1 配置、能力依赖、编译入口与停止方法](docs/runbooks/human-workbench-runtime.md)。默认关闭，本地验证不授予真实发送、部署或 Gate 批准。
+
 前后端交互服务接口统一入口：[docs/api/README.md](docs/api/README.md)。可按 [HTTP方法与完整路径](docs/api/endpoint-index.md) 检索实际宿主、认证、请求/响应、版本与错误；外部服务、内部Port及设计接口另有索引。新增或变更接口时同步该目录，维护方法见 [接口文档维护规则](docs/api/maintenance.md)。
 
 PC 管理端完整人工业务接入：[实施计划与导航](plans/admin-workbench-integration/README.md)，包括现有接口／后端缺口、17个工作包和验收矩阵，已拆为[43票GitHub任务清单](plans/admin-workbench-integration/tickets.md)。2026-10-07 的计划快照为已确认并发布任务、业务接入尚未执行。后继于2026-10-16完成43票本地验收收口，并经[PR #99](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/99)合并；范围与逐票证据见[最终复核](plans/admin-workbench-integration/execution/all43-final-review.md)。实际服务入口仍以 docs/api 为准，此结果不推进现场或业务Gate。

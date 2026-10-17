@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "publicOrigin": "https://workbench.example.invalid",
+  "reporterOrigin": "https://reporter.example.invalid",
+  "listenPort": 43166,
+  "transportEnabled": false,
+  "memberEntry": {
+    "enabled": true,
+    "identityMode": "VERIFIED_DELEGATED_MAPPING",
+    "reporterUserIds": ["replace-with-existing-approved-reporter-internal-member-id"],
+    "memberIdsConfirmed": true,
+    "proofRef": "replace-with-existing-verified-identity-proof",
+    "proofKind": "LIVE",
+    "validationProfile": "DEPLOYMENT",
+    "corpId": "replace-with-existing-corp-id",
+    "agentId": "1000001",
+    "botId": "replace-with-existing-bot-id"
+  },
+  "bot": {
+    "id": "replace-with-existing-bot-id",
+    "wsUrl": "wss://replace-with-approved-wecom-endpoint.invalid",
+    "personTargetHashes": ["replace-with-sha256-of-approved-original-bot-person-id"],
+    "groupTargetHashes": ["replace-with-sha256-of-approved-original-group-id"]
+  },
+  "appChannelAccountId": "replace-with-existing-application-channel-account",
+  "notificationBindingsFile": "D:/Projects/Fault-Reporting-WeCom-Assistant/secrets/human-workbench-notification-bindings.json",
+  "groupRoutes": [
+    {
+      "botId": "replace-with-existing-bot-id",
+      "groupId": "replace-with-original-group-id",
+      "url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=replace-with-approved-webhook-key"
+    }
+  ]
+}

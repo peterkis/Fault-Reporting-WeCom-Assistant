@@ -6505,6 +6505,24 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/human-workbench-configuration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/human-workbench-process.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7619,7 +7637,9 @@
       "tests/conversation-inbox-contract.test.mts",
       "tests/conversation-inbox.integration.test.mts",
       "tests/conversation-rule-admission.integration.test.mts",
-      "tests/conversation-inbox.browser.test.mts"
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/human-workbench-configuration.test.mts",
+      "tests/human-workbench-process.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -8429,6 +8449,10 @@
       "tests/conversation-inbox.integration.test.mts",
       "tests/conversation-rule-admission.integration.test.mts",
       "tests/conversation-inbox.browser.test.mts"
+    ],
+    "human-workbench-wiring": [
+      "tests/human-workbench-configuration.test.mts",
+      "tests/human-workbench-process.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -8447,6 +8471,11 @@
     ],
     "tests/conversation-rule-admission.integration.test.mts": [
       "scripts/p2-g1-process-role.mts"
+    ],
+    "tests/human-workbench-process.browser.test.mts": [
+      "scripts/human-workbench.mts",
+      "scripts/human-workbench-role.mts",
+      "tests/helpers/human-workbench-boundaries-role.mts"
     ]
   },
   "frozen_checks": {

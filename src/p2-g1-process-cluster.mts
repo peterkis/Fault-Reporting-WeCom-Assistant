@@ -8,6 +8,7 @@ export interface G1ClusterConfiguration {
   testAuthTtlMs?: number; botId?: string; secret?: string; wsUrl?: string;
   roleEnvironment?: (role: 'APP'|'WORKER'|'GATEWAY') => NodeJS.ProcessEnv; baseEnvironment?: Record<string, string>;
   controlledMessageTypes?: readonly string[]; roleScriptUrl?: URL; allowRoleRestart?: boolean; workerHealthEvents?: boolean;
+  externalAuthentication?: boolean;
 }
 type ReadyMessage = { type: 'role-ready'; role: string; cookies?: BrowserCookie[]; worker_ready?: boolean; authenticated?: boolean };
 type ClusterMessage = G1ProviderResponse
@@ -39,7 +40,8 @@ function validConfiguration(value: Partial<G1ClusterConfiguration>): value is G1
   return value && typeof value === 'object'
     && typeof value.databaseUrl === 'string' && value.databaseUrl.length > 0
     && typeof value.identityHashKey === 'string' && value.identityHashKey.length >= 16
-    && Array.isArray(value.principalIds) && value.principalIds.length >= 2 && value.principalIds.length <= 4
+    && (value.externalAuthentication === undefined || typeof value.externalAuthentication === 'boolean')
+    && Array.isArray(value.principalIds) && (value.externalAuthentication === true ? value.principalIds.length === 0 : value.principalIds.length >= 2 && value.principalIds.length <= 4)
     && new Set(value.principalIds).size === value.principalIds.length && value.principalIds.every((entry) => UUID.test(entry))
     && Number.isInteger(value.listenPort) && (value.listenPort as number) >= 1024 && (value.listenPort as number) <= 65535
     && Number.isInteger(value.testAuthTtlMs ?? 15 * 60_000) && (value.testAuthTtlMs ?? 15 * 60_000) >= 10_000
@@ -235,7 +237,9 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
       relayPeerStatus();
       const readiness = await waitForCombinedReady();
       const distinctProcesses = new Set(ROLES.map((currentRole) => children.get(currentRole)?.pid)).size;
-      if (distinctProcesses !== 3 || !Array.isArray(appCookies) || appCookies.length !== (configuration.principalIds as readonly string[]).length) {
+      if (distinctProcesses !== 3 || (configuration.externalAuthentication === true
+        ? appCookies !== undefined
+        : !Array.isArray(appCookies) || appCookies.length !== (configuration.principalIds as readonly string[]).length)) {
         throw new Error('P2_G1_PROCESS_CLUSTER_TOPOLOGY_INVALID');
       }
       return Object.freeze({ origin, cookies: Object.freeze(appCookies), process_count: distinctProcesses, readiness });
