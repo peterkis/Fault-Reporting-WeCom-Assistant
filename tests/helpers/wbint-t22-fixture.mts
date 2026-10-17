@@ -7,6 +7,10 @@ import {computeTimelineCanonicalOrderKey} from '../../src/p2-002-timeline-projec
 import type {G1AuthenticationPort} from '../../src/p2-g1-runtime.mjs';
 import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../../scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../../scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
 interface Base {databaseUrl:string;pool:PostgresPool;tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string}
 export interface T22Session {id:string;intakeId:string;ticketId:string;reporter:string;rowVersion:number}
 export interface T22Fixture extends Base {sessions:T22Session[];cookie:string;outsiderCookie:string;handlerCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};restoreResponses:()=>void;bootstrapAuthenticationBoundary?:{armNext:(callback:()=>Promise<void>)=>void;readonly calls:number;readonly authenticatedPrincipalId:string|null}}
@@ -27,9 +31,10 @@ export async function appendT22LiveItem(pool:PostgresPool,sessionId:string,text:
   }catch(error){try{await transaction.query('ROLLBACK');}catch{/* preserve the arrangement failure */}throw error;}
   finally{transaction.release();}
 }
-export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,recovery=true,dropResponses=false,bootstrapRoleRace=false}:{enabled?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
+export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false}:{enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
   await withWeb01Fixture(async(f:Base)=>{
     await f.runtime.stop();const sessions:T22Session[]=[];
+    if(personalRead){const input={databaseUrl:f.databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
     const identity=buildConversationThreadIdentity({provider:'WECOM_AIBOT',botId:'t22-synthetic-bot',chatType:'group',chatId:'t22-private-group-id',senderUserId:'t22-reporter-a'});
     const thread=(await f.pool.query<{id:string}>(`INSERT INTO conversation.thread(provider,channel_account_id,chat_type,external_thread_key,thread_key,last_activity_at)
       VALUES($1,$2,$3,$4,$5,platform.local_now()) RETURNING id::text`,[identity.provider,identity.channel_account_id,identity.chat_type,identity.external_thread_key,identity.thread_key])).rows[0];if(!thread)throw Error('T22_THREAD_REQUIRED');
@@ -54,7 +59,7 @@ export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{en
       }
       return originalContext;
     }}:null;
-    const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds,workbenchAuthentication,externalSendEnabled:false,...{workbenchConversationsEnabled:enabled},workbenchDraftRecoveryEnabled:recovery});
+    const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds,workbenchAuthentication,externalSendEnabled:false,...{workbenchConversationsEnabled:enabled,workbenchConversationInboxEnabled:inbox,workbenchRealtimeEnabled:realtime,workbenchPersonalReadEnabled:personalRead,identityHmacKey:inbox?'conversation-inbox-synthetic-key-v1':undefined},workbenchDraftRecoveryEnabled:recovery});
     let dropping=dropResponses;
     if(dropResponses)runtime.server.on('request',(request,response)=>{if(!/\/messages$/u.test(request.url??''))return;const end=response.end.bind(response);response.end=((...args:Parameters<typeof response.end>)=>{if(response.statusCode===202&&dropping){request.socket.destroy();return response;}return end(...args);}) as typeof response.end;});
     try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');

@@ -30,6 +30,7 @@ interface G1RuntimeOptionsInput {
 }
 export type G1RuntimeOptions = { [K in keyof G1RuntimeOptionsInput]: G1RuntimeOptionsInput[K] | undefined };
 import { createCommunicationService } from './p2-004-communication-core.mjs';
+import {composeConversationRuleAdmission} from './conversation-rule-admission.mjs';
 import { createCommunicationDeliveryWorker, createCommunicationDeliveryOperatorPort, createCommunicationReconciliationPort } from './p2-004-communication-delivery-worker.mjs';
 import { appendRealtimeEvent } from './p2-003-realtime-event-log.mjs';
 import { createRealtimeSseHandler } from './p2-003-realtime-sse.mjs';
@@ -149,7 +150,7 @@ export function createP2G1Runtime({
   });
   const sender = senderAdapter ?? (senderFactory ? senderFactory({gateway}) : createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled }));
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
-  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20,attemptAdmission:deliveryAttemptAdmission });
+  const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20,attemptAdmission:composeConversationRuleAdmission(deliveryAttemptAdmission) });
   const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup,
     projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,transactionStartHook:projectionTransactionStart,wakeup:realtime.wakeup}) });
   const observedGateway = gatewayStatusProvider ?? gateway;
