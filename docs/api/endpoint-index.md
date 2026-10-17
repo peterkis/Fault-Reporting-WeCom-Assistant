@@ -37,10 +37,10 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | G01 | GET | `/api/workbench/source-groups` | W | 本地实现：ADMIN观察群目录、q检索、绑定搜索的分页；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | G02 | POST | `/api/workbench/source-groups/{groupRef}/name` | W | 已实现：ADMIN登记/改名；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | CW01 | GET | `/api/workbench/conversations` | W | 已实现、默认关闭：获权参与者/服务主题分页 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| CW02 | GET | `/api/workbench/conversations/{sessionId}` | W | 已实现、默认关闭：集中详情/ETag | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| CW03 | GET | `/api/workbench/conversations/{sessionId}/items` | W | 已实现、默认关闭：按sequence保留材料 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW02 | GET | `/api/workbench/conversations/{sessionId}` | W | 已实现、默认关闭：集中详情/ETag；独立开关支持view=chat | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭)／[聊天投影](workbench/conversation-inbox.md) |
+| CW03 | GET | `/api/workbench/conversations/{sessionId}/items` | W | 已实现、默认关闭：按sequence保留材料；独立开关支持view=chat | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭)／[聊天投影](workbench/conversation-inbox.md) |
 | CW04 | GET | `/api/workbench/conversations/{sessionId}/eligible-principals` | W | 已实现、默认关闭：当前合法沟通转派候选 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
-| CW05 | GET | `/api/workbench/conversations/{sessionId}/deliveries` | W | 已实现、默认关闭：精确Message/Delivery状态 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW05 | GET | `/api/workbench/conversations/{sessionId}/deliveries` | W | 已实现、默认关闭：精确Message/Delivery状态；view=chat支持message_ids和签名分页 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭)／[聊天投影](workbench/conversation-inbox.md) |
 | CW06 | GET | `/api/workbench/items/{kind}/{itemId}/conversations` | W | 已实现、默认关闭：真实canonical事项关联，kind=ticket/review/intake | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW07 | POST | `/api/workbench/conversations/{sessionId}/takeover` | W | 已实现、默认关闭：人工接管 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW08 | POST | `/api/workbench/conversations/{sessionId}/transfer` | W | 已实现、默认关闭：合法沟通转派 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
@@ -51,6 +51,8 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | CW13 | POST | `/api/workbench/conversations/{sessionId}/internal-notes` | W | 已实现、默认关闭：内部备注201不外发 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW14 | GET | `/api/workbench/conversations/{sessionId}/messages/commands/{commandId}` | W | 已实现、默认关闭：固定回复purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
+| CW16 | GET | `/api/workbench/conversation-inbox` | W | 已实现、独立默认关闭：当前获权联系人keyset分页，按筛选聚合主题与本人未读 | [收件箱](workbench/conversation-inbox.md) |
+| CW17 | GET | `/api/workbench/conversations/{anchorSessionId}/related-sessions` | W | 已实现、独立默认关闭：同报修人的真实获权Session、历史及稳定topic_ref | [相关主题](workbench/conversation-inbox.md) |
 | MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；本人立即处理使用 MR06 独立原子命令 | [代录报修](workbench/manual-reports.md) |
 | MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
 | MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |

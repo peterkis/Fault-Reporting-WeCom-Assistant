@@ -6469,6 +6469,42 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/conversation-inbox-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/conversation-inbox.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/conversation-rule-admission.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/conversation-inbox.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7579,7 +7615,11 @@
       "tests/wbint-t15-review-start.integration.test.mts",
       "tests/wbint-t15-review-start.browser.test.mts",
       "tests/wbint-t39-activity.integration.test.mts",
-      "tests/wbint-t39-activity-service.test.mts"
+      "tests/wbint-t39-activity-service.test.mts",
+      "tests/conversation-inbox-contract.test.mts",
+      "tests/conversation-inbox.integration.test.mts",
+      "tests/conversation-rule-admission.integration.test.mts",
+      "tests/conversation-inbox.browser.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -8383,6 +8423,12 @@
       "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
       "tests/wbint-t15-review-start.contract.test.mts",
       "tests/wbint-t42-board-intent.contract.test.mts"
+    ],
+    "conversation-inbox-v1": [
+      "tests/conversation-inbox-contract.test.mts",
+      "tests/conversation-inbox.integration.test.mts",
+      "tests/conversation-rule-admission.integration.test.mts",
+      "tests/conversation-inbox.browser.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -8398,6 +8444,9 @@
       "scripts/p2-003-migrate.mjs",
       "scripts/p2-003-retention.mjs",
       "tests/helpers/p2-003-server-child.mjs"
+    ],
+    "tests/conversation-rule-admission.integration.test.mts": [
+      "scripts/p2-g1-process-role.mts"
     ]
   },
   "frozen_checks": {

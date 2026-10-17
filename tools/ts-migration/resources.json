@@ -404,6 +404,12 @@
     "contracts/workbench_board_action_intent_contracts.d.ts",
     "contracts/workbench_board_action_intent.schema.json",
     "contracts/workbench_board_action_resolution.schema.json",
-    "contracts/workbench_board_action_capability.schema.json"
+    "contracts/workbench_board_action_capability.schema.json",
+    "contracts/workbench_conversation_inbox_contracts.d.ts",
+    "contracts/workbench_conversation_inbox_page.schema.json",
+    "contracts/workbench_conversation_related_page.schema.json",
+    "contracts/workbench_conversation_chat.schema.json",
+    "contracts/workbench_conversation_chat_item_page.schema.json",
+    "contracts/workbench_conversation_chat_delivery_page.schema.json"
   ]
 }

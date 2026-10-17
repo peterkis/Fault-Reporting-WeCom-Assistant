@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_conversation_chat_item_page.schema.json",
+  "title": "workbench_conversation_chat_item_page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "items",
+    "before_sequence",
+    "after_sequence",
+    "has_more"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "sequence_no",
+          "item_type",
+          "sender_kind",
+          "visibility",
+          "text",
+          "occurred_at",
+          "sender_label",
+          "sender_category",
+          "communication_message_id",
+          "source_label",
+          "media_availability"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "sequence_no": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "item_type": {
+            "type": "string"
+          },
+          "sender_kind": {
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "EXTERNAL",
+              "INTERNAL",
+              "RESTRICTED"
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occurred_at": {
+            "$ref": "local_datetime.schema.json"
+          },
+          "sender_label": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "sender_category": {
+            "enum": [
+              "USER",
+              "HUMAN",
+              "AUTOMATED_RULE",
+              "SYSTEM",
+              "INTERNAL_NOTE"
+            ]
+          },
+          "communication_message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_label": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "media_availability": {
+            "enum": [
+              "NOT_MEDIA",
+              "DOWNLOAD_AVAILABLE",
+              "UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    "before_sequence": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "after_sequence": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "has_more": {
+      "type": "boolean"
+    }
+  }
+}

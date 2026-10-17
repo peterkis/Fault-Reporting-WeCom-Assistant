@@ -8,6 +8,7 @@ import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs'
 import { createG2SendGuard } from '../src/p2-g2-send-guard.mjs';
 import { initializeG2SendBudget, openG2SendBudget } from '../src/p2-g2-send-budget.mjs';
 import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
+import { createConversationRuleAdmission } from '../src/conversation-rule-admission.mjs';
 import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
 import { g2DatabaseIdentity, g2Hash } from '../src/p2-g2-validation-config.mjs';
 
@@ -31,7 +32,7 @@ test('Gate guard checks actual PostgreSQL Delivery binding and preserves existin
     const checked = [];
     // This callback runs several real candidate inventories before checking ACK replay.
     // Keep a bounded fixture deadline inside the default lease; core integration owns timeout tests.
-    const delivery = createCommunicationDeliveryWorker({ pool: f.pool, enabled: true, sendTimeoutMs: 20_000, sender: { send: async request => {
+    const delivery = createCommunicationDeliveryWorker({ pool: f.pool, enabled: true, attemptAdmission: createConversationRuleAdmission(), sendTimeoutMs: 20_000, sender: { send: async request => {
       if (request.target_type === 'GROUP') {
         const r = await guard.send(request); assert.equal(r.error_code, 'P2_G2_SEND_GROUP_LABEL_REQUIRED');
         checked.push('UNLABELLED_GROUP'); return r;

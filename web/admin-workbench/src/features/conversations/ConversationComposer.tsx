@@ -51,7 +51,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   const session=entry.session.session_id,action=purpose==='messages'?'REPLY':'INTERNAL_NOTE',client=useQueryClient();
   const [boundOperationId,setBoundOperationId]=useState<string|null>(null);
   const [value,setValue]=useState(''),[pending,setPending]=useState<SavedCommand|null>(null),[outcome,setOutcome]=useState(''),[busy,setBusy]=useState(false);
-  const request=useRef<AbortController|null>(null),epoch=useRef(0),latest=useRef(value),alive=useRef(true);latest.current=value;
+  const composing=useRef(false),request=useRef<AbortController|null>(null),epoch=useRef(0),latest=useRef(value),alive=useRef(true);latest.current=value;
   const draftAuthority=useRef<AuthorityAttempt|null>(null);
   const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome('');};
   const isCurrent=(attempt:AuthorityAttempt)=>!attempt.signal.aborted&&epoch.current===attempt.token&&client.getQueryData<Principal>(['session'])?.principal_id===principal.principal_id;
@@ -119,7 +119,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   return <section className={'conversation-composer '+(purpose==='internal-notes'?'internal-composer':'')} aria-label={label}>
     <form onSubmit={e=>{e.preventDefault();if(allowed&&!busy&&!unknown&&draft.canSubmit&&value.trim())void send();}}>
       <label htmlFor={'conversation-'+purpose}>{label}</label><p id={'audience-'+purpose}>{purpose==='messages'?'发给本服务主题的原报修人；群来源通过 Bot 私聊回复。':'仅供获权工作人员协作，不向报修人发送。'}</p>
-      <textarea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} maxLength={2000} value={value} disabled={!allowed||busy||unknown} onChange={e=>setValue(e.target.value)}/>
+      <textarea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} maxLength={2000} value={value} disabled={!allowed||busy||unknown} onChange={e=>setValue(e.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={e=>{if(e.key!=='Enter'||e.shiftKey||composing.current||e.nativeEvent.isComposing||e.keyCode===229)return;e.preventDefault();e.currentTarget.form?.requestSubmit();}}/>
       {draft.enabled?<p role="status" data-conversation-draft={purpose}>{draft.message}</p>:null}
       <div className="note-controls"><button type="submit" data-action={purpose==='messages'?'send-conversation-reply':'save-conversation-note'} disabled={!allowed||busy||unknown||!draft.canSubmit||!value.trim()}>{busy?'正在核对…':label}</button>
         {unknown?<button type="button" data-action={'check-'+purpose} disabled={busy} onClick={()=>void check()}>只读核对原操作</button>:null}

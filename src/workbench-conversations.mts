@@ -8,13 +8,14 @@ import type {ConversationCommandReceipt,ConversationWorkspaceDelivery} from '../
 import {WORKBENCH_ERROR_CODES,WorkbenchError} from './p2-006-workbench-query.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
 import {exactP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
+import type {createConversationInbox} from './workbench-conversation-inbox.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Query=ReturnType<typeof createConversationWorkbenchQueryService>;
 type Summary=Pick<Awaited<ReturnType<Query['listConversations']>>['items'][number],'session'|'assignment'|'handoff'|'capabilities'>;
 interface LabelRow {session_id:string;participant_label:string|null;topic:string|null;ticket_id:string|null;review_id:string|null;intake_id:string|null;chat_type:string;reply_binding:boolean}
 function invalid(status=400):never{throw new WorkbenchError(status===404?WORKBENCH_ERROR_CODES.notFound:WORKBENCH_ERROR_CODES.requestInvalid,status);}
 function keys(url:URL,allowed:readonly string[]){const names=[...url.searchParams.keys()];if(names.some(key=>!allowed.includes(key))||new Set(names).size!==names.length)invalid();}
-export function createWorkbenchConversations({pool,query,itemQuery,commands,enabled=false,supplementFollowUpEnabled=false,replyReceiptAuthorization=null}:{pool:PostgresTransaction;query:Query;itemQuery:ReturnType<typeof createWeb01WorkbenchQuery>;commands:ReturnType<typeof createConversationWorkbenchCommandFacade>;enabled?:boolean;supplementFollowUpEnabled?:boolean;replyReceiptAuthorization?:((input:{authContext:unknown;messageId:string})=>Promise<void>)|null}){
+export function createWorkbenchConversations({pool,query,itemQuery,commands,enabled=false,inbox=null,supplementFollowUpEnabled=false,replyReceiptAuthorization=null}:{pool:PostgresTransaction;query:Query;itemQuery:ReturnType<typeof createWeb01WorkbenchQuery>;commands:ReturnType<typeof createConversationWorkbenchCommandFacade>;enabled?:boolean;inbox?:ReturnType<typeof createConversationInbox>|null;supplementFollowUpEnabled?:boolean;replyReceiptAuthorization?:((input:{authContext:unknown;messageId:string})=>Promise<void>)|null}){
   async function enrich(authContext:WorkbenchAuthContext,items:readonly Summary[]):Promise<ConversationWorkspaceEntry[]>{
     if(!items.length)return [];
     const labels=await pool.query<LabelRow>(`SELECT s.id::text AS session_id,i.id::text AS intake_id,i.summary AS topic,th.chat_type,
@@ -93,6 +94,12 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
     return {items:rows.rows.map(row=>({...row,sent_at:row.sent_at===null?null:assertLocalDateTime(row.sent_at),created_at:assertLocalDateTime(row.created_at)}))};
   }
   return {async handler({request,response,url,authContext,json,readJson,validateWriteRequest}:Context){
+    const related=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/related-sessions$/iu.exec(url.pathname);
+    if(url.pathname==='/api/workbench/conversation-inbox'||related){
+      if(!enabled||!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
+      if(request.method!=='GET')invalid(404);
+      json(response,200,related?await inbox.related(authContext,uuidP2016(related[1]),url):await inbox.inbox(authContext,url));return true;
+    }
     const command=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/(messages|internal-notes)\/commands\/([a-f0-9-]{36})$/iu.exec(url.pathname);
     const delivery=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/deliveries$/iu.exec(url.pathname);
     const session=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})(?:\/(items|eligible-principals|takeover|transfer|release|handoff\/request|handoff\/cancel|messages|internal-notes))?$/iu.exec(url.pathname);
@@ -109,14 +116,27 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
       else if(action==='release'||action==='handoff/request')exactP2016(body,common,['client_command_id','expected_row_version']);else invalid(404);
       validateWriteRequest(request,authContext,body,{sessionMutation:true});
       const input={authContext,sessionId:uuidP2016(session[1]),body};
-      const result=action==='messages'?await commands.reply(input):action==='internal-notes'?await commands.internalNote(input):action==='handoff/request'?await commands.requestHandoff(input):action==='handoff/cancel'?await commands.cancelHandoff(input):action==='takeover'?await commands.takeover(input):action==='transfer'?await commands.transfer(input):await commands.release(input);
+      let result:unknown;
+      try{result=action==='messages'?await commands.reply(input):action==='internal-notes'?await commands.internalNote(input):action==='handoff/request'?await commands.requestHandoff(input):action==='handoff/cancel'?await commands.cancelHandoff(input):action==='takeover'?await commands.takeover(input):action==='transfer'?await commands.transfer(input):await commands.release(input);}
+      catch(error){
+        // A competing claim can lose TAKEOVER while retaining READ. In the new
+        // inbox report that conflict without clearing the lawful current view.
+        if(action==='takeover'&&inbox?.enabled&&error instanceof WorkbenchError&&error.status===404){await query.getConversationDetail({authContext,sessionId:input.sessionId});throw new WorkbenchError(WORKBENCH_ERROR_CODES.versionConflict,409);}
+        throw error;
+      }
       json(response,action==='messages'?202:action==='internal-notes'?201:200,result);return true;
     }
     if(request.method!=='GET')invalid(404);
     if(command){keys(url,[]);json(response,200,await receipt(authContext,uuidP2016(command[1]),uuidP2016(command[3]),command[2]?.toLowerCase()??''));return true;}
-    if(delivery){keys(url,[]);json(response,200,await deliveries(authContext,delivery[1]??''));return true;}
+    if(delivery){if(url.searchParams.has('view')){if(url.searchParams.get('view')!=='chat')invalid();if(!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);json(response,200,await inbox.chatDeliveries(authContext,uuidP2016(delivery[1]),url));return true;}keys(url,[]);json(response,200,await deliveries(authContext,delivery[1]??''));return true;}
     if(links){keys(url,[]);json(response,200,await itemLinks(authContext,links[1]?.toLowerCase()??'',uuidP2016(links[2])));return true;}
     if(session){const sessionId=uuidP2016(session[1]),part=session[2]?.toLowerCase();
+      if(url.searchParams.has('view')){
+        if(url.searchParams.get('view')!=='chat'||part!==undefined&&part!=='items')invalid();
+        if(!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
+        if(part==='items')json(response,200,await inbox.chatItems(authContext,sessionId,url));
+        else{keys(url,['view']);const value=await inbox.detail(authContext,sessionId);json(response,200,value,{etag:'"'+value.session.row_version+'"'});}return true;
+      }
       if(!part){keys(url,[]);const result=await detail(authContext,sessionId);json(response,200,result,{etag:'"'+result.session.row_version+'"'});return true;}
       if(part==='eligible-principals'){keys(url,[]);json(response,200,await query.listEligiblePrincipals({authContext,sessionId}));return true;}
       if(part==='items'){keys(url,['before_sequence','after_sequence','limit']);const before=url.searchParams.get('before_sequence'),after=url.searchParams.get('after_sequence');const page=await query.listConversationItems({authContext,sessionId,...(before===null?{}:{before_sequence:before}),...(after===null?{}:{after_sequence:after}),limit:url.searchParams.get('limit')});

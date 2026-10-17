@@ -13,12 +13,14 @@ export type G1RoleCommand =
   | { type: 'stop' };
 interface AppOptions { runtimeFactory?: (input: G1RuntimeOptions & { pool: PostgresPool; publicOrigin: string; allowedTargetHashes: readonly string[] }) => Pick<ReturnType<typeof createP2G1Runtime>, 'start' | 'stop' | 'disconnectRealtimePrincipal'>; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null | undefined; externalSendEnabled?: boolean }
 interface GatewayOptions { intakeFactory?: (input: { pool: PostgresPool; identityHashKey?: string }) => Pick<ReturnType<typeof createP2G1PilotOperationalIntake>, 'accept'>; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool; allowedTargetHashes: readonly string[]; gateway: ReturnType<typeof createP2G1WeComGateway> }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
-interface WorkerOptions { extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
+interface WorkerOptions { deliveryAttemptAdmissionFactory?:((input:{pool:PostgresPool})=>DeliveryAttemptAdmission)|null; extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 
 import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
+import type {DeliveryAttemptAdmission} from '../src/conversation-rule-admission.mjs';
 import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../src/p2-g1-human-only-assembly.mjs';
 import { createP2G1ProcessMetrics, P2_G1_PROCESS_ROLES } from '../src/p2-g1-process-metrics.mjs';
 import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
@@ -231,7 +233,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
   send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
 }
 
-export async function runWorker({extensionFactory=null,reportCycleHealth=false,beforeReady=null}: WorkerOptions = {}) {
+export async function runWorker({deliveryAttemptAdmissionFactory=null,extensionFactory=null,reportCycleHealth=false,beforeReady=null}: WorkerOptions = {}) {
   const enabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
@@ -261,7 +263,7 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
       });
     },
   });
-  const worker = createCommunicationDeliveryWorker({ pool, sender, enabled, batchSize: 20 });
+  const worker = createCommunicationDeliveryWorker({ pool, sender, enabled, batchSize: 20,attemptAdmission:composeConversationRuleAdmission(deliveryAttemptAdmissionFactory?.({pool})??null) });
   const extension = extensionFactory?.({pool});
   let stopping = false;
   let running = false;
