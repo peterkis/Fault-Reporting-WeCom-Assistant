@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "mappingConfigHash": "replace-with-normalized-existing-member-config-sha256",
+  "mappingProofRef": "replace-with-existing-verified-identity-proof",
+  "proofKind": "LIVE",
+  "validUntilEpochMs": "replace-with-approved-expiry-in-physical-epoch-ms",
+  "members": [
+    {
+      "memberUserId": "replace-with-current-verified-reachable-internal-member-id",
+      "bindingProofRef": "replace-with-existing-verified-identity-proof",
+      "accountStatus": "replace-with-current-ACTIVE-DISABLED-or-UNKNOWN",
+      "bindingState": "replace-with-current-VERIFIED-REVOKED-or-UNKNOWN",
+      "messageReachability": "replace-with-current-REACHABLE-UNREACHABLE-or-UNKNOWN"
+    }
+  ],
+  "mentions": [
+    {
+      "botId": "replace-with-existing-bot-id",
+      "groupId": "replace-with-original-group-id",
+      "reporterUserId": "replace-with-original-bot-reporter-id",
+      "mentionUserId": "replace-with-independently-qualified-webhook-member-id",
+      "namespaceProofRef": "replace-with-independent-current-webhook-namespace-proof"
+    }
+  ]
+}

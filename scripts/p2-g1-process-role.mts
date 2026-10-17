@@ -95,7 +95,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
     runtime = runtimeFactory({
       pool,
       operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
-      principalIds: configuredPrincipals(),
+      principalIds: authentication ? null : configuredPrincipals(),
       publicOrigin: resolvedOrigin,
       listenPort: Number(process.env.P2_G1_LISTEN_PORT),
       allowedTargetHashes: [],

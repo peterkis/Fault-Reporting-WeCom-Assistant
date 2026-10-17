@@ -56,7 +56,9 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       const expiry=object(auth).expires_epoch_ms;
       if(typeof expiry!=='string'||!/^[0-9]{1,16}$/u.test(expiry))invalid(WORKBENCH_ERROR_CODES.unauthenticated,401);
       let sessionSql=params.add(expiry,'::bigint')+'>platform.physical_epoch_ms()';
-      if(currentSessionPredicate){const s=currentSessionPredicate(auth,p.principal_id,params.values.length+1);params.values.push(...s.values);sessionSql=s.sql;}
+      // Keep the expiry bind in the query when adding the real Session fence.
+      // Replacing it leaves an untyped parameter hole under PostgreSQL Parse.
+      if(currentSessionPredicate){const s=currentSessionPredicate(auth,p.principal_id,params.values.length+1);params.values.push(...s.values);sessionSql='('+sessionSql+') AND ('+s.sql+')';}
       const spec=body(p,params);
       const scopeSql=spec.scope?"(SELECT encode(sha256(convert_to(COALESCE(string_agg(session_id,',' ORDER BY session_id),''),'UTF8')),'hex') FROM eligible)":"''::text";
       const cursorSql=spec.cursorScope===undefined?(spec.cursor??'TRUE'):`(${spec.cursor??'TRUE'}) AND ${scopeSql}=${params.add(spec.cursorScope)}`;
