@@ -48,14 +48,14 @@ export async function main(argv=process.argv.slice(2)){
     reporterOrigin:process.env.P2_012_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_012_REPORTER_HMAC_SECRET,
     allowedHosts:(process.env.P2_012_REPORTER_ALLOWED_HOSTS as string).split(',')})});
   if(argv[0]==='--role=gateway')return runGateway({
-    intakeFactory:({pool})=>{
+    intakeFactory:({pool,identityHashKey})=>{
       if(process.env.P2_012_REPORTER_SCOPE_MODE!==P2012_REPORTER_SCOPE_MODE)throw new Error('P2_012_LIVE_CONFIGURATION_INVALID');
       const groupHashes=(process.env.P2_012_TEST_GROUP_TARGET_HASHES as string).split(',').filter(Boolean);
       const registry=createP2012ApprovedGroupReporterRegistry({pool,botId:process.env.WECOM_BOT_ID,groupHashes});
       const scope=createP2012LiveReporterScope({bot_id:process.env.WECOM_BOT_ID,
         person_hashes:(process.env.P2_012_TEST_USER_TARGET_HASHES??'').split(',').filter(Boolean),group_hashes:groupHashes,
         isApprovedGroupReporter:registry.isApprovedGroupReporter,hasMatchingDirectLeg:registry.hasMatchingDirectLeg,require_test_label:true});
-      const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
+      const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey:identityHashKey});
       return {accept:async input=>await scope.accepts((input as { message?: unknown }).message)?inbox.accept(input,processor):{ok:false,error:{code:'P2_012_INBOUND_SCOPE_REJECTED',retryable:false}}};
     },
     senderFactory:({pool,...options})=>createP2012DynamicWeComSender({pool,...options,approvedGroupHashes:(process.env.P2_012_TEST_GROUP_TARGET_HASHES as string).split(',').filter(Boolean),

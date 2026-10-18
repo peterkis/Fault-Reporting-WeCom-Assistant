@@ -39,9 +39,9 @@ export async function main(argv=process.argv.slice(2)){
     });
   }
   if(argv[0]==='--role=gateway')return runGateway({
-    intakeFactory:({pool})=>{
+    intakeFactory:({pool,identityHashKey})=>{
       const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:(process.env.P2_016_TEST_USER_TARGET_HASHES as string).split(','),group_hashes:(process.env.P2_016_TEST_GROUP_TARGET_HASHES as string).split(',')});
-      const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
+      const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey:identityHashKey});
       return {accept:input=>scope.accepts((input as { message?: unknown }).message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false}})};
     },
     senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,reporterAccess:access(pool),

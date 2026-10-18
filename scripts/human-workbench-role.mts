@@ -79,7 +79,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(role==='GATEWAY')return runGateway({
   intakeFactory:({pool})=>{
    const scope=createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
-   const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor();
+   const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
    return {accept:input=>scope.accepts((input as {message?:unknown}).message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'HUMAN_WORKBENCH_INBOUND_SCOPE_REJECTED',retryable:false}})};
   },
   ...(boundaries.clientFactory?{gatewayFactory:options=>createP2G1WeComGateway({...options,clientFactory:boundaries.clientFactory})}:{}),

@@ -132,7 +132,7 @@ export function createG2OperationalIntake({ pool, configuration }: {pool:Postgre
     groupHashes: manifest.scope.group_hashes, testLabel: G2_TEST_PREFIX, labelSource: 'raw' });
   const scope = createP2012LiveReporterScope({ bot_id: configuration.botId, person_hashes: manifest.scope.person_hashes,
     group_hashes: manifest.scope.group_hashes, ...registry, testLabel: G2_TEST_PREFIX, labelSource: 'raw' });
-  const inbox = createChannelMessageInbox({ pool }), processor = createP2016DirectIntakeProcessor({ idleTimeoutMs: G2_LIMITS.direct_session_idle_timeout_ms });
+  const inbox = createChannelMessageInbox({ pool }), processor = createP2016DirectIntakeProcessor({ idleTimeoutMs: G2_LIMITS.direct_session_idle_timeout_ms,identityHmacKey:configuration.identityHashKey });
   const approved = new Set(manifest.scope.approved_inputs.map(normalizeHospitalText));
   const approvedInput=(text:string)=>{
     const normalized=normalizeHospitalText(text);if(approved.has(normalized))return true;
