@@ -413,8 +413,10 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await browser.waitFor("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"] input'))");
       assert.ok(await browser.evaluate("document.querySelector('dialog').innerText.includes('群名称未登记')"));
       const change=async name=>{
+        // Refreshed names can render while the previous save still awaits its refresh.
+        await browser.waitFor("(()=>{const input=document.querySelector('input[name=\"source-group-name\"]');return input instanceof HTMLInputElement&&!input.disabled&&!input.matches(':disabled');})()");
         await browser.evaluate(`(()=>{const input=document.querySelector('input[name="source-group-name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(name)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-        await browser.evaluate("document.querySelector('form[aria-label=\"维护来源群名称\"]').requestSubmit()");
+        await browser.waitFor(`(()=>{const input=document.querySelector('input[name="source-group-name"]'),button=document.querySelector('[data-action="save-source-group-name"]');if(!(input instanceof HTMLInputElement)||input.disabled||input.value!==${JSON.stringify(name)}||!(button instanceof HTMLButtonElement)||button.disabled||button.matches(':disabled'))return false;button.click();return true;})()`);
         await browser.waitFor(`document.querySelector('dialog .properties')?.innerText.includes(${JSON.stringify('群聊报修 · '+name)})`);
         await browser.waitFor(`document.querySelector('[data-item-id="${id}"]')?.innerText.includes(${JSON.stringify(name)})`);
       };
