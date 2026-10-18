@@ -164,7 +164,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const roundNotifications=createTicketRoundNotifications({pool,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend,appNotifications:app});
   const query=createP2016TicketQuery({pool,enabled,workbenchAssignmentHistoryEnabled,ticketReopenRoundsEnabled,directoryStore,directorySourceScope,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,ticketStaffCompletionEnabled,ticketAssignmentEnabled,ticketTakeoverEnabled,ticketTakeoverCompletionEnabled,ticketWaitingActionsEnabled,ticketUnassignEnabled,ticketReturnToDispatchEnabled,ticketRoundNotificationsEnabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
-  const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
+  const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey});
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
   const operationalIntake=Object.freeze({accept:(input: unknown)=>scope&&!scope.accepts((input as { message?: unknown } | null)?.message)
     ?Promise.resolve({ok:false as const,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false as const}}):inbox.accept(input,intakeProcessor)});

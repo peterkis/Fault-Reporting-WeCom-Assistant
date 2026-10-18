@@ -1,11 +1,12 @@
 import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
 import type { LocalDateTime } from '../contracts/time_contracts.js';
 import type { ConversationSessionStatus } from '../contracts/conversation_contracts.js';
-interface DirectSessionRow { id: string; status: ConversationSessionStatus; last_activity_at: LocalDateTime; last_activity_epoch_ms: string; service_intake_id: string; primary_message_id: string; eligible: boolean }
+interface DirectSessionRow { id: string; status: ConversationSessionStatus; last_activity_at: LocalDateTime; last_activity_epoch_ms: string; service_intake_id: string; primary_message_id: string; eligible: boolean; needs_binding: boolean; reporter_identity_hash: string|null; channel_identity_hash: string|null }
 import { createServiceIntakeProcessor } from './p1-004-service-intake.mjs';
 import { buildConversationThreadIdentity, decideConversationSessionBoundary } from './p2-001-conversation-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
+import { matchesP2016ConversationBindingIdentity } from './p2-016-conversation-binding.mjs';
 
 export const P2016_DIRECT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 // An additive, asserted fault is a new issue. Supplemental or negated statements
@@ -20,8 +21,9 @@ function additionalFault(text: string) {
   return Boolean(asserted && !/(?:不是|并非|并不|不代表|如果|假如|要是|是否|会不会|可能|说过|之前|昨天)/u.test(asserted));
 }
 
-export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_IDLE_TIMEOUT_MS } = {}) {
+export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey }: {idleTimeoutMs?:number|undefined;identityHmacKey?:string|undefined} = {}) {
   if (!Number.isSafeInteger(idleTimeoutMs) || idleTimeoutMs < 1) throw new TypeError('P2_016_DIRECT_IDLE_TIMEOUT_INVALID');
+  if(identityHmacKey!==undefined&&(typeof identityHmacKey!=='string'||identityHmacKey.length<16))throw new TypeError('P2_016_DIRECT_IDENTITY_KEY_INVALID');
   return createServiceIntakeProcessor({ existingIntakeSelector: async ({ transaction, message, cleanText }) => {
     if (!['single','group'].includes(message.chat_type)) return null;
     if (message.chat_type==='single'&&parseExplicitContinuation(cleanText)) return { id: null, explicitBoundary: true, boundaryReason: 'EXPLICIT_USER_NEW_TOPIC' };
@@ -34,9 +36,12 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
       message.chat_id??null,identity.external_thread_key,message.chat_type];
     const legTypes=message.chat_type==='group'?['GROUP_ORIGIN','GROUP_CONTINUATION']:['DIRECT_ORGANIC','DIRECT_GUIDED'];
     // A projected Session may precede the Worker's late binding pass. Unfilled
-    // references require the exact unique source Session on the latest Leg.
+    // references require the exact unique source Session on the latest Leg and
+    // the same current-key identity proof used by the late binding reconciler.
     // Conflicting non-null references remain a hard boundary.
     const sessions = await transaction.query<DirectSessionRow>(`SELECT s.id::text,s.status,s.last_activity_at,s.last_activity_epoch_ms::text,s.service_intake_id::text,i.primary_message_id::text,
+        l.reporter_identity_hash,l.channel_identity_hash,
+        (l.id IS NOT NULL AND (l.conversation_session_id IS NULL OR l.conversation_thread_id IS NULL OR j.current_session_id IS NULL)) AS needs_binding,
         (t.status='OPEN' AND i.source_provider=$1 AND i.source_bot_id=$2 AND i.source_chat_type=$8
           AND i.source_chat_id IS NOT DISTINCT FROM $6::text AND i.reporter_wecom_userid=$3
           AND i.retention_until_epoch_ms>GREATEST($4::bigint,platform.physical_epoch_ms())
@@ -45,6 +50,7 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
             AND (l.conversation_session_id IS NULL OR l.conversation_session_id=s.id)
             AND (l.conversation_thread_id IS NULL OR l.conversation_thread_id=t.id)
             AND (j.current_session_id IS NULL OR j.current_session_id=s.id) AND j.status<>'ENDED'
+            AND (j.origin_intake_id<>i.id OR j.origin_session_id IS NULL OR j.origin_session_id=s.id)
             AND ((l.conversation_session_id IS NOT NULL AND l.conversation_thread_id IS NOT NULL AND j.current_session_id IS NOT NULL)
               OR (s.creation_idempotency_key='P2-G1:CHANNEL_MESSAGE:'||i.primary_message_id::text
                 AND l.origin_channel_message_id=i.primary_message_id
@@ -88,6 +94,10 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
     }
     if (sessions.rowCount === 1 && (sessions.rows[0] as DirectSessionRow).eligible === true) {
       const current = sessions.rows[0] as DirectSessionRow;
+      if(current.needs_binding&&(identityHmacKey===undefined||current.reporter_identity_hash===null||current.channel_identity_hash===null
+        ||!matchesP2016ConversationBindingIdentity({source_provider:message.provider,source_bot_id:message.bot_id,source_chat_type:message.chat_type,
+          source_chat_id:message.chat_id??null,reporter_wecom_userid:message.sender_user_id,
+          reporter_identity_hash:current.reporter_identity_hash,channel_identity_hash:current.channel_identity_hash},identityHmacKey)))return {id:null};
       const boundary = decideConversationSessionBoundary({ currentSession: current, receivedAt: message.received_at,
         receivedEpochMs, idleTimeoutMs, nextServiceIntakeId: current.service_intake_id });
       if (boundary.action === 'CONTINUE_SESSION') return { id: current.service_intake_id };

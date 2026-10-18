@@ -13,7 +13,7 @@ export async function withLateBindingFixture(run){
     await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
     const admin=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'synthetic-bind-admin',displayName:'模拟坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const identityHmacKey='synthetic-binding-audit-key',runtime=createP2012Runtime({pool,principalId:admin.id,publicOrigin:'http://127.0.0.1:43129',flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}});
-    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor();
+    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
     const assembly=createP2G1HumanOnlyAssembly({operationalIntake:{accept:input=>inbox.accept(input,processor)},projectAfterCommit:false});
     const worker=createP2016OrchestrationWorker({pool,identityHmacKey,notifications:runtime.notifications,realtime:runtime.realtimeProjector});
     const flags={RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true};

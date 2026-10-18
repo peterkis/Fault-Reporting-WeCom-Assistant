@@ -1,7 +1,14 @@
 import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
-interface BindingRow { id: string; journey_id: string; source_intake_id: string; leg_ordinal: number; reporter_identity_hash: string; channel_identity_hash: string; source_provider: string; source_bot_id: string; source_chat_type: string; source_chat_id: string | null; reporter_wecom_userid: string; session_id: string; thread_id: string }
+interface BindingIdentity { reporter_identity_hash: string; channel_identity_hash: string; source_provider: string; source_bot_id: string; source_chat_type: string; source_chat_id: string | null; reporter_wecom_userid: string }
+interface BindingRow extends BindingIdentity { id: string; journey_id: string; source_intake_id: string; leg_ordinal: number; session_id: string; thread_id: string }
 import { reporterIdentityHash } from './p2-015-contact-journey.mjs';
 import { hmacIdentity } from './p2-015-domain-contracts.mjs';
+
+export function matchesP2016ConversationBindingIdentity(row:BindingIdentity,identityHmacKey:string){
+  const reporterHash=reporterIdentityHash({provider:row.source_provider,bot_id:row.source_bot_id,reporter_external_id:row.reporter_wecom_userid,hmac_key:identityHmacKey});
+  const channelHash=hmacIdentity(row.source_bot_id+'\u0000'+row.source_chat_type+'\u0000'+(row.source_chat_id??reporterHash),identityHmacKey);
+  return reporterHash===row.reporter_identity_hash&&channelHash===row.channel_identity_hash;
+}
 
 // Conversation projection and rule evaluation have independent owners. A late
 // projection may fill a previously unavailable reference, never rebind a Leg.
@@ -27,9 +34,7 @@ export async function reconcileP2016ConversationBindings({pool,identityHmacKey,b
         AND NOT EXISTS(SELECT 1 FROM conversation.session other WHERE other.service_intake_id=i.id AND other.id<>s.id)
       ORDER BY leg.id LIMIT 20 FOR UPDATE OF leg,journey SKIP LOCKED`,[afterLegId])).rows;
     for(const r of rows){
-      const reporterHash=reporterIdentityHash({provider:r.source_provider,bot_id:r.source_bot_id,reporter_external_id:r.reporter_wecom_userid,hmac_key:identityHmacKey});
-      const channelHash=hmacIdentity(r.source_bot_id+'\u0000'+r.source_chat_type+'\u0000'+(r.source_chat_id??reporterHash),identityHmacKey);
-      if(reporterHash!==r.reporter_identity_hash||channelHash!==r.channel_identity_hash)continue;
+      if(!matchesP2016ConversationBindingIdentity(r,identityHmacKey))continue;
       await tx.query(`UPDATE intake.channel_leg SET conversation_session_id=COALESCE(conversation_session_id,$2::uuid),
         conversation_thread_id=COALESCE(conversation_thread_id,$3::uuid),row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid`,[r.id,r.session_id,r.thread_id]);
       await tx.query(`UPDATE intake.contact_journey SET
