@@ -3,6 +3,61 @@ import assert from 'node:assert/strict';
 import {withLateBindingFixture} from './helpers/p2-g2-late-binding-harness.mjs';
 import {reconcileP2016ConversationBindings} from '../src/p2-016-conversation-binding.mjs';
 
+test('same-topic Direct input keeps its Intake while the actual Session exists before delayed Leg and Journey binding',async t=>{
+  await withLateBindingFixture(async f=>{
+    assert.equal((await f.submit(0,'single','系统不行')).p1_committed,true);
+    assert.equal((await f.pump()).processed,1);
+    const original=(await f.pool.query(`SELECT l.id,l.journey_id,l.source_intake_id,l.conversation_session_id,l.conversation_thread_id,
+      j.origin_session_id,j.current_session_id FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id`)).rows[0];
+    assert.ok(original);
+    assert.deepEqual([original.conversation_session_id,original.conversation_thread_id,original.origin_session_id,original.current_session_id],[null,null,null,null]);
+    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM conversation.session')).rows[0].n,0);
+    assert.equal((await f.runtime.coordinator.runOnce()).failures,0);
+    const session=(await f.pool.query('SELECT id,thread_id,creation_idempotency_key FROM conversation.session WHERE service_intake_id=$1',[original.source_intake_id])).rows[0];assert.ok(session);
+    const primary=(await f.pool.query('SELECT primary_message_id::text FROM intake.service_intake WHERE id=$1',[original.source_intake_id])).rows[0];
+    assert.equal(session.creation_idempotency_key,'P2-G1:CHANNEL_MESSAGE:'+primary.primary_message_id);
+    // Do not pump between Session projection and the second inbound message:
+    // this is the real scheduling window in which reconciliation has not run.
+    assert.deepEqual((await f.pool.query(`SELECT l.id,l.journey_id,l.source_intake_id,l.conversation_session_id,l.conversation_thread_id,
+      j.origin_session_id,j.current_session_id FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.id=$1`,[original.id])).rows[0],original);
+    assert.equal((await f.submit(0,'single','系统不行')).p1_committed,true);
+    assert.deepEqual((await f.pool.query('SELECT id,message_count FROM intake.service_intake')).rows,[{id:original.source_intake_id,message_count:2}]);
+    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM conversation.session')).rows[0].n,1);
+    assert.equal((await f.pump()).processed,1);assert.equal((await f.runtime.coordinator.runOnce()).failures,0);
+    const bound=(await f.pool.query(`SELECT l.id,l.journey_id,l.source_intake_id,l.conversation_session_id,l.conversation_thread_id,
+      j.origin_session_id,j.current_session_id FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id`)).rows;
+    assert.deepEqual(bound,[{...original,conversation_session_id:session.id,conversation_thread_id:session.thread_id,origin_session_id:session.id,current_session_id:session.id}]);
+    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM conversation.session')).rows[0].n,1);
+    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM intake.contact_journey')).rows[0].n,1);
+    assert.deepEqual((await f.pool.query('SELECT DISTINCT service_intake_id,journey_id FROM intake.deterministic_decision')).rows,[{service_intake_id:original.source_intake_id,journey_id:original.journey_id}]);
+    assert.equal((await f.pool.query('SELECT max(source_window_end_sequence)::integer AS sequence FROM intake.deterministic_decision')).rows[0].sequence,2);
+    t.diagnostic(JSON.stringify({projected_session_before_binding:true,intakes:1,messages:2,sessions:1,journeys:1,original_binding_preserved:true}));
+  });
+});
+
+for(const fault of ['creation-key-mismatch','conflicting-existing-reference'])test('an unfilled Direct binding never authorizes reuse with '+fault,async()=>{
+  await withLateBindingFixture(async f=>{
+    await f.submit(0,'single','系统不行');await f.pump();await f.runtime.coordinator.runOnce();
+    const original=(await f.pool.query('SELECT id,source_intake_id,conversation_session_id,conversation_thread_id FROM intake.channel_leg')).rows[0];
+    assert.deepEqual([original.conversation_session_id,original.conversation_thread_id],[null,null]);
+    const session=(await f.pool.query('SELECT id FROM conversation.session WHERE service_intake_id=$1',[original.source_intake_id])).rows[0];assert.ok(session);
+    let expectedIntakes=2;
+    if(fault==='creation-key-mismatch'){
+      // Explicit corruption belongs only to this fixture, never the production path.
+      await f.pool.query('UPDATE conversation.session SET creation_idempotency_key=$2 WHERE id=$1',[session.id,'SYNTHETIC_FOREIGN_CREATION_KEY']);
+    }else{
+      await f.submit(1,'single','系统不行');await f.runtime.coordinator.runOnce();
+      const foreign=(await f.pool.query('SELECT id FROM conversation.session WHERE service_intake_id<>$1',[original.source_intake_id])).rows[0];assert.ok(foreign);
+      await f.pool.query('UPDATE intake.channel_leg SET conversation_session_id=$2 WHERE id=$1',[original.id,foreign.id]);
+      original.conversation_session_id=foreign.id;expectedIntakes=3;
+    }
+    assert.equal((await f.submit(0,'single','系统不行')).p1_committed,true);
+    assert.equal((await f.pool.query('SELECT message_count FROM intake.service_intake WHERE id=$1',[original.source_intake_id])).rows[0].message_count,1);
+    assert.equal((await f.pool.query('SELECT count(*)::integer AS n FROM intake.service_intake')).rows[0].n,expectedIntakes);
+    assert.deepEqual((await f.pool.query('SELECT id,source_intake_id,conversation_session_id,conversation_thread_id FROM intake.channel_leg WHERE id=$1',[original.id])).rows[0],original);
+  });
+});
+
 test('bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts',async t=>{
   await withLateBindingFixture(async f=>{
     for(let i=0;i<21;i++)assert.equal((await f.submit(i)).p1_committed,true);

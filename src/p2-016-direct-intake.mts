@@ -33,14 +33,23 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
     const scope=[identity.provider,identity.channel_account_id,identity.participant_key,receivedEpochMs,message.received_at,
       message.chat_id??null,identity.external_thread_key,message.chat_type];
     const legTypes=message.chat_type==='group'?['GROUP_ORIGIN','GROUP_CONTINUATION']:['DIRECT_ORGANIC','DIRECT_GUIDED'];
+    // A projected Session may precede the Worker's late binding pass. Unfilled
+    // references require the exact unique source Session on the latest Leg.
+    // Conflicting non-null references remain a hard boundary.
     const sessions = await transaction.query<DirectSessionRow>(`SELECT s.id::text,s.status,s.last_activity_at,s.last_activity_epoch_ms::text,s.service_intake_id::text,i.primary_message_id::text,
         (t.status='OPEN' AND i.source_provider=$1 AND i.source_bot_id=$2 AND i.source_chat_type=$8
           AND i.source_chat_id IS NOT DISTINCT FROM $6::text AND i.reporter_wecom_userid=$3
           AND i.retention_until_epoch_ms>GREATEST($4::bigint,platform.physical_epoch_ms())
           AND s.started_at<=$5::timestamp without time zone
           AND (l.id IS NULL OR (l.status='OPEN' AND l.leg_type=ANY($9::text[])
-            AND l.conversation_session_id=s.id AND l.conversation_thread_id=t.id
-            AND j.current_session_id=s.id AND j.status<>'ENDED'
+            AND (l.conversation_session_id IS NULL OR l.conversation_session_id=s.id)
+            AND (l.conversation_thread_id IS NULL OR l.conversation_thread_id=t.id)
+            AND (j.current_session_id IS NULL OR j.current_session_id=s.id) AND j.status<>'ENDED'
+            AND ((l.conversation_session_id IS NOT NULL AND l.conversation_thread_id IS NOT NULL AND j.current_session_id IS NOT NULL)
+              OR (s.creation_idempotency_key='P2-G1:CHANNEL_MESSAGE:'||i.primary_message_id::text
+                AND l.origin_channel_message_id=i.primary_message_id
+                AND NOT EXISTS(SELECT 1 FROM conversation.session other WHERE other.service_intake_id=i.id AND other.id<>s.id)
+                AND NOT EXISTS(SELECT 1 FROM intake.channel_leg newer WHERE newer.journey_id=j.id AND newer.leg_ordinal>l.leg_ordinal)))
             AND j.reporter_identity_hash=l.reporter_identity_hash
             AND j.retention_until_epoch_ms>GREATEST($4::bigint,platform.physical_epoch_ms())
             AND origin.source_provider=$1 AND origin.source_bot_id=$2 AND origin.reporter_wecom_userid=$3))) AS eligible
