@@ -51,7 +51,7 @@ function validConfiguration(value: Partial<G1ClusterConfiguration>): value is G1
     && (!value.gatewayEnabled || (typeof value.botId === 'string' && value.botId.length > 0
       && typeof value.secret === 'string' && value.secret.length > 0
       && typeof value.wsUrl === 'string' && /^wss:\/\//u.test(value.wsUrl)
-      && value.allowedTargetHashes.length > 0));
+      && (!value.senderEnabled || value.allowedTargetHashes.length > 0)));
 }
 
 function stableRoleMetrics(role: string, value: Readonly<Record<string, unknown>> | null | undefined) {

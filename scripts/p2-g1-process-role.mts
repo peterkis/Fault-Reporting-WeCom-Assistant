@@ -173,7 +173,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
   } else {
     gateway = gatewayFactory({ enabled: false });
   }
-  const allowedTargetHashes = enabled
+  const allowedTargetHashes = enabled && senderEnabled
     ? required('P2_G1_ALLOWED_TARGET_HASHES', /^[a-f0-9]{64}(?:,[a-f0-9]{64})*$/u).split(',')
     : [];
   const sender = senderFactory({ pool, gateway, allowedTargetHashes, enabled: senderEnabled });

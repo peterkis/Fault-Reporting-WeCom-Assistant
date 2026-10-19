@@ -6,7 +6,7 @@ import {createHumanWorkbenchCluster} from '../src/human-workbench-cluster.mjs';
 export async function main(argv=process.argv.slice(2),{env=process.env,roleScriptUrl}:{env?:NodeJS.ProcessEnv;roleScriptUrl?:URL}={}){
  if(argv.length!==1||!['--check','--start'].includes(argv[0]??''))configurationError('arguments');
  const c=readHumanWorkbenchConfiguration(env,{isolatedBoundaries:roleScriptUrl!==undefined});
- if(argv[0]==='--check'){console.log(JSON.stringify({profile:c.enabled?'human-v1':null,enabled:c.enabled,configuration_valid:true,network_started:false,...(c.enabled?{transport_enabled:c.settings.transportEnabled,roles:['APP','WORKER','GATEWAY']}:{})}));return;}
+ if(argv[0]==='--check'){console.log(JSON.stringify({profile:c.enabled?'human-v1':null,enabled:c.enabled,configuration_valid:true,network_started:false,...(c.enabled?{transport_enabled:c.settings.transportEnabled,bot_inbound_enabled:c.settings.botInboundEnabled??false,roles:['APP','WORKER','GATEWAY']}:{})}));return;}
  if(!c.enabled)configurationError('WORKBENCH_RUNTIME_PROFILE');
  if(roleScriptUrl&&c.settings.memberEntry.validationProfile!=='ISOLATED_TEST')configurationError('isolatedBoundaries');
  const cluster=createHumanWorkbenchCluster(c,roleScriptUrl?{roleScriptUrl}:{});let stopped:Promise<Awaited<ReturnType<typeof cluster.stop>>>|undefined;
