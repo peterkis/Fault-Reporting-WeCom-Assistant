@@ -60,7 +60,7 @@ test('Bot intake can be enabled with its own approval while all outbound roles r
  assert.equal(readWorkbenchRoleSettings('GATEWAY',gateway).botInboundEnabled,true);assert.equal(readWorkbenchWorkerSettings(worker).transportEnabled,false);
  assert.equal(worker.APP_SECRET,undefined);assert.equal(worker.WECOM_BOT_SECRET,undefined);assert.equal(app.WECOM_BOT_SECRET,undefined);
  assert.throws(()=>readWorkbenchRoleSettings('GATEWAY',{...gateway,WORKBENCH_INBOUND_IO_APPROVED:undefined}),/WORKBENCH_INBOUND_IO_APPROVED/u);
- f.settings.memberEntry.identityMode='UNVERIFIED';f.settings.memberEntry.memberIdsConfirmed=false;f.settings.memberEntry.proofRef=null;f.settings.memberEntry.proofKind=null;delete f.settings.memberEntry.reporterUserIds;
+ f.settings.memberEntry={...f.settings.memberEntry,identityMode:'UNVERIFIED',memberIdsConfirmed:false,proofRef:null,proofKind:null};delete f.settings.memberEntry.reporterUserIds;
  f.save();rmSync(f.settings.notificationBindingsFile);
  const withoutH5=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(withoutH5.enabled);assert.equal(withoutH5.settings.memberEntry.reporterUserIds,undefined);
  assert.equal(readWorkbenchRoleSettings('GATEWAY',workbenchRoleEnvironment(withoutH5,'GATEWAY')).botInboundEnabled,true);
