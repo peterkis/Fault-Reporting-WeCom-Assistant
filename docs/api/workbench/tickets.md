@@ -119,6 +119,8 @@ POST 前先将不可变原 UUID／版本／payload 成功持久化为密文；�
 
 ## 明确选择关联沟通的本人承接（WBINT-T05）
 
+MVP 接单简化：草稿恢复关闭且非看板快捷操作时，首批完整结果若只有一个可承接的会话，并且无人接待或接待人为本人，显示“我来处理并回复”。点击该按钮才明确选取此会话及当前版本，并提交原子命令；仅打开页面不选择或提交。多人、分页、他人接待、冲突或未知结果沿原选择与核对流程。可点“更多接单选项”保留当前沟通人或稍后处理。无新接口、权限、数据库或默认开关变更。
+
 W 宿主 `ticketConversationSelfHandlingEnabled:boolean=false` 独立于 T04，启用须已安装039首次责任轮次结构。关闭时新入口503且不新增关联/039读取；开启但缺039时503 `P2_016_SELF_HANDLING_UNAVAILABLE`。本票无数据库变更，复用单一 Ticket、039轮次、原 command ledger 和 Conversation Control。实际被测对象和关闭方式见 [T05执行记录](../../../plans/admin-workbench-integration/execution/t05.md)。
 
 `GET /api/tickets/{ticketId}/related-conversations?cursor=&limit=` 只列当前可读、非ENDED、源Intake或同一真实Journey/Channel Leg关联且身份匹配的服务会话。权限裁剪在LIMIT前，Session UUID keyset，每页默认/最多20；cursor绑定Ticket。返回 `{items:[{session_id,session_row_version:string,conversation_principal_id,conversation_principal_name,assignment_status,take_allowed}],next_cursor}`。没有一页结果不能证明不存在其他会话，不能从最后消息推断关联。读取BIGINT保留原十进制字符串；新写桥沿既有 `versionP2016` 和 [command Schema](../../../contracts/p2_016_conversation_self_handling_command.schema.json) 的1..2147483647。2147483647可实际写至2147483648，此后 `take_allowed=false`；更大的值也精确展示且不可写。既有Control的SafeInteger语义不改。

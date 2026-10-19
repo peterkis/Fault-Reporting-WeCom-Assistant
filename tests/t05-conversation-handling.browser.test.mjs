@@ -23,9 +23,12 @@ async function browserScenario(run,options={}){
   },{ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,...options});
 }
 
-test('the production detail presents explicit real Session selection and retains the 600px shell',async()=>{
+test('the production detail names the sole conversation action without an extra selection and retains the 600px shell',async()=>{
   await browserScenario(async({browser,capture})=>{
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".ticket-conversation-handling"))'),true);
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"');
+    assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);
+    await browser.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent==="更多接单选项").click()');
     await browser.waitFor('document.querySelectorAll("[data-session-choice]").length===1');
     assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),600);
     await capture('new-detail-1920.png');
@@ -52,7 +55,9 @@ async function choose(browser){await browser.waitFor('document.querySelector("[d
 
 test('the real production selection submits one POST and refreshes both authoritative responsibilities at narrow width',async()=>{
   await browserScenario(async({browser,tickets,principals,capture})=>{
-    await browser.evaluate(instrument);await choose(browser);await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+    await browser.evaluate(instrument);await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
+    assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);
+    await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")&&document.querySelector(".properties")?.innerText.includes("处理中")');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions.length,1);assert.equal(posts[0].body.communication_choice,'TAKE_SELECTED');
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json())`);assert.equal(current.assignee_id,principals[0].id);assert.equal(current.handling_cycle.cycle_no,1);
@@ -76,6 +81,32 @@ test('a true Web Ticket explicitly retains communication without inventing a Ses
     assert.equal(await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()).then(value=>value.status)`),'ACCEPTED');
     assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);
   },{ticketSelfHandlingWebSource:true});
+});
+
+test('the sole-session shortcut preserves its exact selection and UUID when the response is unknown',async()=>{
+  await browserScenario(async({browser,runtime})=>{
+    let malformed=true;runtime.server.on('request',(request,response)=>{if(!request.url?.endsWith('/take-and-start-with-conversations'))return;const end=response.end.bind(response);response.end=(...args)=>response.statusCode===200&&malformed?end('{"ok":true}'):end(...args);});
+    await browser.evaluate(instrument);
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
+    await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")&&document.querySelector("[data-session-choice]")?.checked===true');
+    const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions.length,1);
+    malformed=false;await browser.evaluate('document.querySelector("[data-action=check-conversation-handling]").click()');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');
+    assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[posts[0],posts[0]],'only the explicit check may replay the identical original operation');
+  });
+});
+
+test('a conversation assigned to another colleague still requires explicit selection',async()=>{
+  await browserScenario(async({browser,pool,tickets,principals})=>{
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"');
+    const sessions=await pool.query('SELECT id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[tickets[0].intake.intakeId]);assert.equal(sessions.rows.length,1);
+    await pool.query("INSERT INTO conversation.assignment(session_id,assignment_status,assigned_principal_id,assigned_by_principal_id,assigned_at) VALUES($1::uuid,'ASSIGNED',$2::uuid,$3::uuid,platform.local_now()) ON CONFLICT(session_id) DO UPDATE SET assignment_status='ASSIGNED',assigned_principal_id=EXCLUDED.assigned_principal_id",[sessions.rows[0].id,principals[1].id,principals[0].id]);
+    await reload(browser);await browser.waitFor('document.querySelectorAll("[data-session-choice]").length===1');
+    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice]").checked'),false);
+    assert.equal(await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").disabled'),true);
+    assert.equal(await browser.evaluate('document.body.innerText.includes("我来处理并回复")'),false);
+  });
 });
 
 for(const expires of [false,true])test('an UNKNOWN composite keeps its original identified selection through reload and '+(expires?'expires into safe read-only Ack':'replays only on explicit checking'),async()=>{
