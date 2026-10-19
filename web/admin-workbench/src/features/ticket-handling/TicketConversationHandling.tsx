@@ -53,7 +53,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const allowed=context.data?.allowed_actions??[];
   const noSessions=related.isSuccess&&!related.isError&&!cursor&&related.data.items.length===0&&!related.data.next_cursor&&selected.length===0;
   const onlySession=related.isSuccess&&!related.isError&&!cursor&&!related.data.next_cursor&&related.data.items.length===1?related.data.items[0]:undefined;
-  const simpleSession=!draft.enabled&&!boardMode&&!manualSelection&&state==='idle'&&choice==='TAKE_SELECTED'&&selected.length===0&&allowed.includes('take-and-start-with-conversations')&&onlySession?.take_allowed&&(onlySession.assignment_status==='UNASSIGNED'||onlySession.conversation_principal_id===principal.principal_id)?onlySession:undefined;
+  const simpleSession=!draft.enabled&&!boardMode&&!manualSelection&&state==='idle'&&choice==='TAKE_SELECTED'&&selected.length===0&&allowed.includes('take-and-start-with-conversations')&&onlySession?.take_allowed&&((onlySession.conversation_principal_id===null&&onlySession.assignment_status!=='ASSIGNED')||onlySession.conversation_principal_id===principal.principal_id)?onlySession:undefined;
   // The purpose hook must also mount on refresh when only an old pending/opaque operation remains.
   if(!actions.some(action=>allowed.includes(action))&&!pending&&!draft.operationId&&state==='idle'&&selected.length===0&&choice!=='RETAIN_CURRENT'&&context.isSuccess&&!context.isError)return null;
   if(!actions.some(action=>allowed.includes(action))&&!pending&&!draft.operationId&&state==='succeeded'&&context.data?.handling_cycle?.staff_completion_event_id)return null;
