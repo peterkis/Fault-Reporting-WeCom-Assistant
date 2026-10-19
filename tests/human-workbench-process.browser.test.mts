@@ -60,6 +60,7 @@ async function unusedPort(){const probe=createServer();await new Promise<void>(r
 
 test('compiled receive-only Bot admits a new visible sender and group, deduplicates, denies outsiders and never sends',{timeout:120000},async()=>{
  const directory=await mkdtemp(join(tmpdir(),'human-workbench-inbound-'));let workerTraceFile:string|undefined;
+ const outerFailures:unknown[]=[];
  try{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'humaninbound',max:1,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
    await migrateWorkbenchDatabase(databaseUrl);
@@ -101,7 +102,13 @@ test('compiled receive-only Bot admits a new visible sender and group, deduplica
    assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
   }});
   await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
- }finally{if(workerTraceFile)await rm(workerTraceFile,{force:true});await rm(directory,{recursive:true,force:true});}
+ }catch(error){outerFailures.push(error);}
+ finally{
+  for(const cleanup of [async()=>{if(workerTraceFile)await rm(workerTraceFile,{force:true});},async()=>rm(directory,{recursive:true,force:true})]){
+   try{await cleanup();}catch(cleanupError){outerFailures.push(cleanupError);}
+  }
+ }
+ if(outerFailures.length)throw outerFailures.length===1?outerFailures[0]:new AggregateError(outerFailures,'HUMAN_WORKBENCH_RECEIVE_ONLY_OUTER_FAILURE');
 });
 
 test('compiled parent rejects missing personal-read schema or migration before reporting ready and stops all roles',{timeout:120000},async()=>{
