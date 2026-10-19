@@ -103,7 +103,8 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    for(const [http,path,code] of [[staff,'/workbench','staff'],[member,'/wecom/yixiaoxiu','member']] as const){const login=await http.get(path+'/login');assert.equal(login.status,302,login.raw);assert.ok(login.headers.location);const state=new URL(login.headers.location).searchParams.get('state');const callback=await http.get(path+'/callback?code='+code+'&state='+state);assert.equal(callback.status,303,callback.raw);}
    const boot=await staff.get('/api/lifecycle/bootstrap');assert.equal(boot.status,200,boot.raw);
    assert.equal(object(object(controller?.readiness).checks).workbench_personal_read_schema,true);
-   for(const key of ['ticket_self_handling_enabled','ticket_assignment_enabled','ticket_waiting_actions_enabled','ticket_staff_completion_enabled','ticket_reopen_rounds_enabled','ticket_round_notifications_enabled','manual_reports_enabled','manual_review_enabled','conversation_workspace_enabled','conversation_inbox_enabled','personal_read_enabled','realtime_sse_enabled','source_group_directory_enabled','internal_notes_enabled','draft_recovery_enabled','notification_exceptions_enabled'])assert.equal(boot.body[key],true,key);
+   for(const key of ['ticket_self_handling_enabled','ticket_assignment_enabled','ticket_waiting_actions_enabled','ticket_staff_completion_enabled','ticket_reopen_rounds_enabled','ticket_round_notifications_enabled','manual_reports_enabled','manual_review_enabled','conversation_workspace_enabled','conversation_inbox_enabled','personal_read_enabled','realtime_sse_enabled','source_group_directory_enabled','internal_notes_enabled','notification_exceptions_enabled'])assert.equal(boot.body[key],true,key);
+   for(const key of ['draft_recovery_enabled','manual_review_draft_recovery_enabled','ticket_conversation_draft_recovery_enabled','staff_completion_draft_recovery_enabled','conversation_draft_recovery_enabled','manual_report_draft_recovery_enabled','supplement_follow_up_draft_recovery_enabled'])assert.equal(boot.body[key],false,key);
    assert.equal(boot.body.ai_enabled,false);assert.equal(boot.body.incident_candidate_workspace_enabled,false);assert.equal(boot.body.reporter_candidates_enabled,false);
    assert.equal((await member.get('/api/yixiaoxiu/bootstrap')).status,200);
    // Seed only the external input atomically; the real Worker creates the Core Ticket and group receipt.
@@ -211,7 +212,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
      await read(http,path==='/workbench'?'/api/lifecycle/bootstrap':'/api/yixiaoxiu/bootstrap');
     }
     const bootstrap=await read(staff,'/api/lifecycle/bootstrap');
-    for(const flag of ['conversation_workspace_enabled','conversation_inbox_enabled','ticket_waiting_actions_enabled','ticket_staff_completion_enabled','ticket_reopen_rounds_enabled','personal_read_enabled','realtime_sse_enabled','manual_reports_enabled','draft_recovery_enabled'])assert.equal(bootstrap[flag],true,flag);
+    for(const flag of ['conversation_workspace_enabled','conversation_inbox_enabled','ticket_waiting_actions_enabled','ticket_staff_completion_enabled','ticket_reopen_rounds_enabled','personal_read_enabled','realtime_sse_enabled','manual_reports_enabled'])assert.equal(bootstrap[flag],true,flag);
     assert.equal(bootstrap.ai_enabled,false);assert.equal(bootstrap.incident_candidate_workspace_enabled,false);
     const trace=async()=>list((await readFile(join(directory,'boundaries.jsonl'),'utf8')).split('\n').filter(Boolean).map(line=>JSON.parse(line) as unknown));
     await until(async()=>{const event=(await trace()).find(row=>row.event==='gateway-input-boundary');gatewayPort=Number(event?.port??0);return gatewayPort>0;});

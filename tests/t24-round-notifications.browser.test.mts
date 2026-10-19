@@ -43,6 +43,8 @@ test('production Ticket detail reads actual personal round Delivery facts and ex
       await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'&&Boolean(document.querySelector('#detail-title'))`);
       const selector='[role="region"][aria-label="报修人通知送达"]';
       assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`),true,'the formal production detail must expose its actual round Delivery facts');
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).querySelector('details').open`),false,'delivery diagnostics are folded until requested');
+      await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).querySelector('summary').click()`);
       await browser.waitFor(`(()=>{const region=document.querySelector(${JSON.stringify(selector)});return region?.innerText.includes('首次责任')&&region.innerText.includes('工作人员完工')&&(region.innerText.match(/待发送/g)??[]).length===2;})()`);
       const visible=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).innerText`) as string;
       assert.equal(visible.includes('处理轮次 1'),true);assert.equal(visible.includes('原报修人单聊'),true);assert.equal(visible.includes('尝试次数 0'),true);

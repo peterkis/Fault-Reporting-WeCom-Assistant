@@ -12,7 +12,7 @@ import type {KeyboardEvent,MouseEvent,ReactNode} from 'react';
 import {Link,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
-import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,BookOpen,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,LifeBuoy,Search} from 'lucide-react';
+import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,LifeBuoy,Search} from 'lucide-react';
 import {MorphIcon} from 'morphicons/react';
 import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
@@ -81,7 +81,7 @@ function itemLink(item:Pick<WorkbenchCard,'kind'|'id'>,search:string){
   return '/items/'+item.kind+'/'+item.id+search;
 }
 function Status({item}:{item:WorkbenchCard}){
-  return <><span className={'status-chip '+(statusColors[item.status]??'gray')}>{statusLabels[item.status]??item.status}</span>{item.kind==='ticket'&&item.review_reason?<span className="status-chip yellow">待复核</span>:null}</>;
+  return <><span className={'status-chip '+(statusColors[item.status]??'gray')}>{statusLabels[item.status]??'状态待确认'}</span>{item.kind==='ticket'&&item.review_reason?<span className="status-chip yellow">待复核</span>:null}</>;
 }
 function TeamAvatar({name}:{name:string}){
   let color=0;for(const character of name)color=(color*31+(character.codePointAt(0)??0))>>>0;
@@ -92,7 +92,7 @@ function Owner({name,compact=false}:{name:string|null;compact?:boolean}){
 }
 function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){
   if(event.key!=='Tab')return;
-  const controls=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')).filter(element=>element.getClientRects().length>0);
+  const controls=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),summary,[tabindex]:not([tabindex="-1"])')).filter(element=>element.tabIndex>=0&&!element.matches(':disabled')&&!element.closest('[hidden],[inert]')&&element.checkVisibility({checkVisibilityCSS:true}));
   const first=controls[0],last=controls.at(-1);
   if(!first||!last)return;
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
@@ -148,7 +148,7 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   const client=useQueryClient();
   const logout=useMutation({mutationKey:['session-logout',principal.principal_id],mutationFn:()=>api.logout(principal.csrf_token),
     onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出，当前浏览器的恢复副本已清理。'),
-    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看当前工单事实。')});
+    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看工单信息。')});
   useEffect(()=>{
     if(!principal.draft_recovery_enabled&&!principal.manual_review_draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.staff_completion_draft_recovery_enabled&&!principal.conversation_draft_recovery_enabled&&!principal.manual_report_draft_recovery_enabled&&!principal.ticket_unassign_draft_recovery_enabled&&!principal.ticket_takeover_draft_recovery_enabled&&!principal.ticket_return_to_dispatch_enabled&&!principal.supplement_follow_up_draft_recovery_enabled&&!principal.logout_enabled)return;
     try{return subscribeDrafts(value=>{
@@ -173,11 +173,31 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   const transport=principal.realtime_sse_enabled?realtime.status:online?'disabled':'offline';
   useEffect(()=>{const changed=()=>setOnline(navigator.onLine);window.addEventListener('online',changed);window.addEventListener('offline',changed);return()=>{window.removeEventListener('online',changed);window.removeEventListener('offline',changed);};},[]);
   return <div className={'app '+(collapsed?'sidebar-collapsed':'')}><aside className="sidebar" aria-label="主导航"><div className="brand"><span className="brandmark"><LifeBuoy size={18}/></span><strong>医小修</strong><ChevronDown size={14}/></div>
-    {principal.workbench_search_enabled?<Link className="sidebar-search" to="/?search=1" aria-disabled={navigationBlocked} onClick={guardNavigation}><Search size={16}/><span>搜索工作区</span></Link>:<button className="sidebar-search" disabled title="全局搜索尚未开放"><Search size={16}/><span>搜索工作区</span><small>预留</small></button>}
+    {principal.workbench_search_enabled?<Link className="sidebar-search" to="/?search=1" aria-disabled={navigationBlocked} onClick={guardNavigation}><Search size={16}/><span>搜索工作区</span></Link>:null}
     <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings&&!conversationPage&&!exceptionPage?'current':'')} to="/" aria-current={!settings&&!conversationPage&&!exceptionPage?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
-    <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:<div className="nav-item muted" title="会话 · 尚未开放"><MessageSquare/><span>会话</span><small>后续</small></div>}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:<div className="nav-item muted" title="公共故障候选尚未启用"><TriangleAlert/><span>公共故障</span><small>未启用</small></div>}<div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:<div className="nav-item muted" title="通知异常尚未启用"><Bell/><span>通知异常</span><small>未启用</small></div>}</>
+    <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:null}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:null}<>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:null}</>
     <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{canNameGroups?<Link className={'nav-item '+(settings?'current':'')} aria-current={settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} to="/settings/source-groups" data-action="open-source-groups"><Settings/><span>设置</span></Link>:<div className="nav-item muted" title="设置"><Settings/><span>设置</span></div>}<div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
     <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':conversationPage?'服务会话':exceptionPage?'通知异常':'工作台'}</strong></span><span data-realtime-status={transport} className={'connection '+(transport==='offline'?'offline':'')} title={realtime.lastReadAt?'最近成功读取：'+new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(realtime.lastReadAt):'等待授权事实读取'}>{principal.realtime_sse_enabled?realtimeLabels[transport]:online?'按需读取':'网络已断开'}</span>{canNameGroups?<Link to="/settings/source-groups" className="compact-settings" aria-disabled={navigationBlocked} onClick={guardNavigation}>来源群</Link>:null}<a href="/workbench" aria-disabled={navigationBlocked} onClick={guardNavigation}>旧管理端<ArrowUpRight size={14}/></a>{principal.logout_enabled?<button type="button" data-action="logout-workbench" disabled={logout.isPending} onClick={()=>logout.mutate()}>{logout.isPending?'正在退出…':'退出工作台'}</button>:null}</header><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}/>{children}</main></div>;
+}
+function TicketNextStep({status}:{status:string}){
+  const steps:Record<string,[string,string]>={
+    NEW:['接单后开始处理','点击“我来处理”，领取工单并开始排查。'],
+    QUEUED:['接单后开始处理','点击“我来处理”，领取工单并开始排查。'],
+    ACCEPTED:['工单已接单','准备就绪后，点击“我来处理”开始排查。'],
+    REOPENED:['仍未解决，请重新接单','保留原工单号。请重新接单，再继续处理。'],
+    IN_PROGRESS:['继续处理报修','信息不足时，点击“等待补充”。故障排除后，填写处理结果并完工。'],
+    WAITING_REQUESTER:['等待报修人补充','网页补充收到后会自动恢复处理。电话或会话补充请先核对，再点击“恢复处理”。'],
+    WAITING_VENDOR:['等待厂商处理','请跟进厂商进度。可以继续排查时，点击“恢复处理”。'],
+    RESOLVED:['等待报修人确认','请回访报修人，确认故障是否解决。'],
+    CLOSED:['已完工，请回访','请确认故障是否解决。同一故障仍未解决时，点击“重开此工单”。'],
+    CANCELLED:['工单已取消','请查看取消原因。如需处理新的故障，请新建报修。'],
+  };
+  const step=steps[status];
+  return step?<section className="workflow-next" aria-label="当前处理步骤"><h3>{step[0]}</h3><p>{step[1]}</p></section>:null;
+}
+function activityActor(actor:string|null,audience:string){
+  const names:Record<string,string>={SYSTEM:'系统',PILOT_USER:'工作人员',REPORTER:'报修人',WORKER:'系统',RULE_ENGINE:'系统',SERVICE:'系统'};
+  return actor?names[actor]??actor:audience==='REPORT'?'报修材料':'系统';
 }
 function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[takeoverBlocked,setTakeoverBlocked]=useState(false),[takeoverCompletionBlocked,setTakeoverCompletionBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false),[waitingBlocked,setWaitingBlocked]=useState(false);
@@ -218,23 +238,28 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
     {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body" ref={activityRoot}>
       {result.isError?<p role="status" className="confirmed-facts">读取中断，以下为最近已确认资料；连接恢复后重新核验。</p>:null}
       <header className="detail-heading"><div className="context-line">{detail.item.number}<span>· {detail.item.kind==='ticket'?'工单':detail.item.kind==='review'?'未建单复核事项':'未建单受理事项'}</span></div><h2 id="detail-title" ref={pageHeading} tabIndex={fullPage?-1:undefined}>{detail.item.title}</h2></header>
+      <p className="detail-report-description">{detail.description&&detail.description!==detail.item.title?detail.description:null}</p>
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
       <section className="properties" aria-label="事项信息"><dl>
         <dt>状态</dt><dd><Status item={detail.item}/></dd>
-        <dt>处理责任</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd>
+        <dt>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd>
         <dt>报修人</dt><dd>{detail.item.reporter_name??'未提供'}</dd>
         <dt>位置</dt><dd>{detail.item.location??'未提供'}</dd>
         <dt>来源</dt><dd><span className="neutral-chip">{detail.item.source_label}</span></dd>
-        <dt>沟通责任</dt><dd>{detail.responsibility.conversation_assignees.join('、')||'暂无明确沟通人'}</dd>
+      </dl><details className="workflow-history"><summary>查看沟通人与时间</summary><dl>
+        <dt>沟通人</dt><dd>{detail.responsibility.conversation_assignees.join('、')||'暂未安排'}</dd>
         <dt>创建时间</dt><dd>{detail.item.created_at}</dd>
         <dt>最新活动</dt><dd>{detail.item.updated_at}</dd>
-        <dt>实际完结</dt><dd>{detail.item.completed_at??'尚无完结事件'}</dd>
-      </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
+        <dt>完工时间</dt><dd>{detail.item.completed_at??'尚未完工'}</dd>
+      </dl><p>以上时间均为北京时间。</p></details></section>
       <ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isFetching&&!result.isError} onBlockedChange={setItemFollowBlocked}/>
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
+      {detail.item.kind==='ticket'?<TicketNextStep status={detail.item.status}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_takeover_completion_enabled?<TicketTakeoverCompletion boardMode={boardMode} key={principal.principal_id+':takeover-completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverCompletionBlocked}/>:null}
+      {detail.item.kind==='ticket'?<TicketWaitingActions key={principal.principal_id+':waiting:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setWaitingBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.supplement_follow_up_enabled?<SupplementFollowUp key={principal.principal_id+':supplement:'+detail.item.id} ticketId={detail.item.id} principal={principal} readReady={result.isSuccess&&!result.isFetching&&!result.isError} onBlockedChange={setSupplementBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled?<TicketCompletion boardMode={boardMode} key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
       {detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.assignment_history_enabled?<TicketAssignmentHistory key={principal.principal_id+':history:'+detail.item.id} ticketId={detail.item.id} principal={principal}/>:null}
@@ -244,15 +269,12 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       {detail.item.kind==='ticket'&&principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setAssignmentBlocked}/>:null}
       {detail.item.kind==='ticket'?<TicketReturnToDispatch key={principal.principal_id+':return-to-dispatch:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReturnBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_unassign_enabled?<TicketUnassign key={principal.principal_id+':unassign:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setUnassignBlocked}/>:null}
-      {detail.item.kind==='ticket'?<TicketWaitingActions key={principal.principal_id+':waiting:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setWaitingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
-      {detail.item.kind==='ticket'&&principal.supplement_follow_up_enabled?<SupplementFollowUp key={principal.principal_id+':supplement:'+detail.item.id} ticketId={detail.item.id} principal={principal} readReady={result.isSuccess&&!result.isFetching&&!result.isError} onBlockedChange={setSupplementBlocked}/>:null}
-      <ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id}/>
+      <details className="workflow-support"><summary>关联会话与报修附件</summary><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id}/>
+      <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/></details>
       {principal.manual_review_enabled?<ReviewWorkspace key={'manual-review:'+principal.principal_id+':'+kind+':'+id} principal={principal} item={detail.item} requested={{kind:kind as WorkbenchCard['kind'],id}} refs={detail.review_refs??[]} onBlockedChange={setReviewBlocked}/>:null}
-      <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
-      <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>
-      <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
-        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header>{record.read_material?<PersonalReadMaterial principal={principal} item={{kind:detail.item.kind,id:detail.item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={record.text}/>:<p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p>}</div></li>)}</ol>
+      <section className="detail-main"><h3 className="activity-title">处理记录 <span>{records.length} 条已加载</span></h3>
+        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{activityActor(record.actor,record.audience)}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'报修人可见':'原始报修'}</span></header>{record.read_material?<PersonalReadMaterial principal={principal} item={{kind:detail.item.kind,id:detail.item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={record.text}/>:<p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??'新建')+' → '+(statusLabels[record.new_status]??'状态已更新'):'已记录处理操作。')}</p>}</div></li>)}</ol>
         {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button variant="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}</section>
     </div>:null}
   </>;
@@ -329,7 +351,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     {principal.workbench_search_enabled?<SearchControls principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} onApply={applySearch} onLeave={leaveSearch}/>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
     {searchMode&&searched.isError?<p role="alert" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</p>:null}
     {searchMode&&!parsed.error&&!searched.isPending&&!searched.isError&&searched.data&&unique.length===0?<p role="status" data-search-state="empty">{searchEmptyMessage(parsed.criteria)}</p>:null}
-    <div className="toolbar"><div className="scope-tabs">{principal.workbench_follow_enabled?<><button type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} disabled={navigationBlocked} onClick={()=>update('scope','team')}>团队工作</button><button type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} disabled={navigationBlocked} onClick={()=>update('scope','related')}>与我有关</button></>:<><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未开放">与我有关<small>后续</small></button></>}</div>
+    <div className="toolbar"><div className="scope-tabs">{principal.workbench_follow_enabled?<><button type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} disabled={navigationBlocked} onClick={()=>update('scope','team')}>团队工作</button><button type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} disabled={navigationBlocked} onClick={()=>update('scope','related')}>与我有关</button></>:<span className="selected">团队工作</span>}</div>
       <div className="tools"><ManualReportEntry principal={principal} blocked={navigationBlocked}/><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">{searchMode?'全部完结记录（含取消）':'全部完结记录'}</option><option value="cancelled">已取消（全部时间）</option></select></label>
       {completionWindow?<span className="range-caption">{range==='recent'?'已关闭：'+completionWindow.from.slice(5,10)+' – '+until+'（北京时间） · 已解决待确认保留':range==='cancelled'?'第三列仅查看已取消事项':searchMode?'搜索不限完结日期，包含已取消事项':'完结记录不限日期；取消事项另行查看'}</span>:null}</div>
@@ -338,7 +360,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     </section>:null}
     {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range+':'+scope+':'+(searchMode?searchKey:'board')} query={query} loaded={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
       {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
-    <p className="workspace-footnote">展示当前身份获权的服务记录。打开详情不会接管工单。</p></div>:null}
+    <p className="workspace-footnote">展示当前身份获权的服务记录。打开详情后，请点击“我来处理”接单。</p></div>:null}
     {selected.id&&!locationMode?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></Shell>;
 }

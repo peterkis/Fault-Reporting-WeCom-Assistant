@@ -7,6 +7,7 @@ import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {evaluateConversationSessionStatusTransition} from '../src/p2-001-conversation-contracts.mjs';
@@ -217,3 +218,53 @@ test('T15 real current-purpose rejection clears once without a self-sustaining d
 test('T15 selected Session current READ denial during restore clears only this purpose sensitive copy',()=>runBoundary('restore-denied'));
 test('T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure',()=>runBoundary('opaque-failed'));
 test('T15 a regranted same-mount explicit intent is cleared on its second real purpose rejection',()=>runBoundary('purpose-regrant'));
+
+test('MVP keeps the original committed review-start opaque receipt reachable on a terminal review after raw recovery is switched off',async()=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  await projectFixtureMaterial(f.runtime);
+  const known=f.tickets[0],actor=f.principals[0],initialCookie=f.browserCookies[0];assert.ok(known&&actor&&initialCookie);
+  let cookie=text(f.cookies[0]),replacement:P2016EnabledRuntime|undefined,browser:Browser|undefined,primary:unknown;
+  const get=async(path:string)=>{const response=await fetch(f.origin+path,{headers:{cookie,connection:'close'}});assert.equal(response.status,200,path);return object(await response.json());};
+  const item=await get('/api/workbench/items/ticket/'+known.ticket.id),ref=list(item.review_refs)[0];assert.ok(ref);
+  const reviewId=text(ref.id),startPath='/api/manual-reviews/'+reviewId+'/resolve-and-start';
+  const observe='(()=>{const original=fetch;globalThis.__reviewFixPosts=[];globalThis.__reviewFixReads=[];globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(options?.method==="POST"){globalThis.__reviewFixPosts.push({path:String(path),body:JSON.parse(options.body),status:response.status});if(String(path)==='+JSON.stringify(startPath)+'&&response.status===200){await response.clone().json();throw new TypeError("SYNTHETIC_REVIEW_START_LOST_ACK");}}else{const row={path:String(path),status:response.status};if(String(path).startsWith('+JSON.stringify(startPath+'/commands/')+'))row.state=(await response.clone().json()).state;globalThis.__reviewFixReads.push(row);}return response;};})()';
+  const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+known.ticket.id+'?detail=page',width:1280,height:1000,cookies:[initialCookie]});assert.ok(browser);
+   await browser.command('Page.enable');await browser.evaluate(observe);
+   await browser.waitFor("document.querySelector('[aria-label=\"复核结论\"]')?.disabled===false&&Boolean(document.querySelector('[data-captured-review-version]'))");
+   await browser.evaluate('(()=>{const input=document.querySelector("[aria-label=复核结论]");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(input,"CONFIRM_TICKET_ELIGIBLE");input.dispatchEvent(new Event("change",{bubbles:true}));})()');
+   await browser.waitFor("document.querySelector('[data-review-start-controls] [data-session-choice]')?.disabled===false");
+   await browser.evaluate("document.querySelector('[data-review-start-controls] [data-session-choice]').click()");
+   await browser.waitFor("document.querySelector('[data-action=resolve-and-start-review]')?.disabled===false");
+   await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]').click()");
+   await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('结果未知')");
+   const posts=await browser.evaluate('globalThis.__reviewFixPosts') as {path:string;body:ReviewResolveAndStartCommand;status:number}[];
+   assert.equal(posts.length,1);const original=posts[0];assert.ok(original);assert.equal(original.status,200);const commandId=original.body.client_command_id;
+   assert.equal((await get('/api/manual-reviews/'+reviewId)).status,'RESOLVED');
+   const before=await get('/api/tickets/'+known.ticket.id);assert.equal(before.status,'IN_PROGRESS');
+   assert.deepEqual(object(await browser.evaluate(snapshot(reviewId))).operations,[commandId]);
+   await f.runtime.stop();assert.equal(f.runtime.server.listening,false);
+   const next=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[actor.id],externalSendEnabled:false,
+    workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:false});
+   if('disabled' in next)throw Error('REVIEW_RAW_OFF_RUNTIME_DISABLED');replacement=next;
+   const fresh=(await next.start()).cookies?.[0];assert.ok(fresh);cookie=fresh.name+'='+fresh.value;
+   assert.equal((await get('/api/lifecycle/bootstrap')).manual_review_draft_recovery_enabled,false);
+   await browser.command('Network.setCookies',{cookies:[{...fresh,url:f.origin+'/'}]});
+   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observe});
+   const timeOrigin=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor('performance.timeOrigin!=='+timeOrigin+"&&document.readyState==='complete'");
+   await browser.waitFor("document.querySelector('[data-action=check-review-start-receipt]')?.checkVisibility()===true");
+   assert.deepEqual(await browser.evaluate('globalThis.__reviewFixPosts'),[],'restoration on the terminal review never resubmits');
+   assert.equal(await browser.evaluate('globalThis.__reviewFixReads.some(row=>row.path.startsWith('+JSON.stringify(startPath+'/commands/')+'))'),false,'the original receipt is only checked explicitly');
+   const opaque=object(await browser.evaluate(snapshot(reviewId)));assert.equal(opaque.sensitive,0);assert.deepEqual(opaque.operations,[commandId]);
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=replay-review-start]'))"),false);
+   await browser.evaluate("document.querySelector('[data-action=check-review-start-receipt]').click()");
+   await browser.waitFor('globalThis.__reviewFixReads.some(row=>row.path==='+JSON.stringify(startPath+'/commands/'+commandId)+'&&row.status===200&&row.state==="COMMITTED")');
+   await browser.waitFor('(async()=>{const value=await ('+snapshot(reviewId)+');return value.operations.length===0;})()');
+   assert.deepEqual(await browser.evaluate('globalThis.__reviewFixPosts'),[]);assert.deepEqual(await get('/api/tickets/'+known.ticket.id),before);
+   const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-page-1280.png');await writeFile(file,bytes);
+   console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',raw_off_terminal_original_receipt:true,screenshots:[{file,width:1280,height:1000,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
+  }catch(error){primary=error;try{if(browser){const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'failure-1280.png');await writeFile(file,bytes);await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__reviewFixPosts,reads:globalThis.__reviewFixReads})')));console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:1280,height:1000,sha256:createHash('sha256').update(bytes).digest('hex')}]}));}}catch(diagnostic){primary=new AggregateError([error,diagnostic],'T15_BROWSER_FAILURE_DIAGNOSTICS');}}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await replacement?.stop();if(replacement)assert.equal(replacement.server.listening,false);}],primary);
+ },{workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,workbenchDraftRecoveryEnabled:true});
+});

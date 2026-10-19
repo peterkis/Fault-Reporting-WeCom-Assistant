@@ -28,9 +28,9 @@ test('the actual production Review workspace reads an on-site unverified reporte
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/review/'+reviewId+'?detail=page',width:900,height:900,cookies:browserCookies,certificateSpki});assert.ok(browser);
       await browser.waitFor("Boolean(document.querySelector('[data-review-original]'))&&Boolean(document.querySelector('[data-review-materials]'))");
-      const material=string(await browser.evaluate("document.querySelector('[data-review-materials]').textContent"));assert.ok(material.includes('MANUAL'));assert.ok(material.includes('manual:'+intakeId));assert.ok(material.includes(command.description));
+      const material=string(await browser.evaluate("document.querySelector('[data-review-materials]').textContent"));assert.ok(material.includes('原始报修'));assert.equal(material.includes('manual:'+intakeId),false);assert.ok(material.includes(command.description));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-manual-report]'))"),true);
-      const source=string(await browser.evaluate("document.querySelector('[data-review-manual-report]').textContent"));for(const text of ['现场代录','身份未核实','需人工联系','不会自动通知',command.reporter.name,command.reporter.contact,command.reporter.department,'代录人：'+principal.display_name])assert.ok(source.includes(text),text);
+      const source=string(await browser.evaluate("document.querySelector('[data-review-manual-report]').textContent"));for(const text of ['现场代录','资料由人工填写','按联系方式核实','不会自动通知',command.reporter.name,command.reporter.contact,command.reporter.department,'代录人：'+principal.display_name])assert.ok(source.includes(text),text);
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
       const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const image=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-900.png');await writeFile(file,image);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',manual_report_review:true,screenshots:[{file,width:image.readUInt32BE(16),height:image.readUInt32BE(20),sha256:createHash('sha256').update(image).digest('hex')}]}));

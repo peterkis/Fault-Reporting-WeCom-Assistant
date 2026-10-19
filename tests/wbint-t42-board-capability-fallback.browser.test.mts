@@ -40,7 +40,10 @@ test('T42 capability fallback preserves an ordinary unsaved input and its origin
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
     await browser.waitFor("document.querySelector('textarea[aria-label=内部备注]')?.disabled===false");
+    await browser.evaluate("document.querySelector('textarea[aria-label=内部备注]').closest('details').querySelector('summary').click()");
+    await browser.waitFor("document.querySelector('textarea[aria-label=内部备注]')?.checkVisibility()===true");
     await browser.evaluate("document.querySelector('textarea[aria-label=内部备注]').focus()");
+    assert.equal(await browser.evaluate("document.activeElement===document.querySelector('textarea[aria-label=内部备注]')"),true);
     const note='T42仅关闭拖动能力，原未保存备注和业务控制器保持挂载。';await browser.command('Input.insertText',{text:note});
     await browser.evaluate("globalThis.__t42OriginalDetail=document.querySelector('.detail-dialog');globalThis.__t42OriginalInput=document.querySelector('textarea[aria-label=内部备注]');globalThis.__t42CapabilityOff=true");
     await browser.waitFor("globalThis.__t42OffBootstraps>0&&!document.querySelector('[data-action=board-action-menu]')");

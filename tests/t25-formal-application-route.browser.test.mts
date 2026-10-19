@@ -28,7 +28,12 @@ test('the formal compiled PC presents actual original App round deliveries and c
   try{
    browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+source.ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'&&Boolean(document.querySelector('#detail-title'))`);
-   await browser.waitFor("globalThis.__t25Reads.some(x=>x.status===200)");console.log('T25_FORMAL_TRACE AUTHORIZED_REAL_DELIVERIES_200');await browser.waitFor(rendered);
+   await browser.waitFor("globalThis.__t25Reads.some(x=>x.status===200)");console.log('T25_FORMAL_TRACE AUTHORIZED_REAL_DELIVERIES_200');
+        await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)})?.querySelector('li'))`);
+        assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('details').open`),false,'notification diagnostics start folded');
+        await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('summary').click()`);
+        await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('li')?.checkVisibility()===true`);
+        await browser.waitFor(rendered);
    const visible=await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).innerText`) as string;assert.equal(visible.includes('原报修人单聊'),false);assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelectorAll('li').length`),2);
    for(const privateValue of [source.memberId,source.scope.scopeHash,source.authority.channelAccountId,source.authority.mappingProofRef,'INTERNAL_T11_CANARY'])assert.equal(visible.includes(privateValue),false);
    const reads=await browser.evaluate('globalThis.__t25Reads') as {path:string;status:number;body:{items:Record<string,unknown>[]}}[];assert.deepEqual(reads.at(-1)?.body.items,actual);await browser.evaluate(requery);await browser.waitFor(`globalThis.__t25Reads.length>${reads.length}`);await browser.waitFor(rendered);await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).scrollIntoView({block:'center'})`);const positive=await receiptScreenshot(browser);

@@ -133,7 +133,7 @@ test('T15 a bounded team-choice window cannot revoke a still-current captured te
       await browser.evaluate("document.querySelector('[data-action=replay-review-start]').click()");
       await browser.waitFor("Boolean(globalThis.__t15RestoredWrite)");
       assert.deepEqual(object(await browser.evaluate('globalThis.__t15RestoredWrite')).body,original);
-      await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('已确认明确故障并开始处理')");
+      await browser.waitFor("globalThis.__t15Responses.filter(row=>row.path.endsWith('/resolve-and-start')&&row.status===200).length===2&&!document.querySelector('[data-action=replay-review-start]')");
       assert.equal(requests.filter(request=>request.method==='POST').length,2);
       const currentTicket=await get('/api/tickets/'+known.ticket.id);assert.equal(currentTicket.version,object(await browser.evaluate('globalThis.__t15ActualACK')).ticket_version);
       assert.equal(object(original.expected_ticket).ticket_id,known.ticket.id);assert.equal(list(original.sessions)[0]?.session_id,sessionId);

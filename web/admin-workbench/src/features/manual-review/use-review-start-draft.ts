@@ -60,7 +60,7 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
     }catch(failure){revoked.current=false;throw failure;}
   };
   const draft=useAuthorizedDraft<ReviewStartInput,ReviewResolveAndStartCommand>({scope,enabled:capability&&(writeEnabled||existing),writeEnabled,value,pending,emptyValue:emptyReviewStartInput(reviewId),hasInput:value=>value.touched,
-    serialise:copy=>JSON.stringify({schema:1,value:{...copy.value,original:copy.pending??copy.value.original},pending:copy.pending}),decode:text=>decode(text,reviewId),commandId:command=>command.client_command_id,
+    serialise:copy=>JSON.stringify({schema:1,value:{...copy.value,...(copy.pending?{choice:copy.pending.communication_choice,sessions:copy.pending.sessions}:{}),original:copy.pending??copy.value.original},pending:copy.pending}),decode:text=>decode(text,reviewId),commandId:command=>command.client_command_id,
     authorize:async signal=>{
       const token=revision.current;
       const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);

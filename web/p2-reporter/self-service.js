@@ -507,6 +507,7 @@ async function bootstrap(){
   if(path===refs.new){
    setView('new-view','新建报修');$('protected-views').hidden=false;
    await loadServiceCatalog(operation);if(!ownsOperation(operation))return;
+   setStatus('已验证成员会话，请填写故障现象后提交。','success');
    if(sameMemberScope)$('service-code').value=draft.serviceCode;
   }
   else if(path===refs.list){setView('reports-view','我的报修');await loadReports();}

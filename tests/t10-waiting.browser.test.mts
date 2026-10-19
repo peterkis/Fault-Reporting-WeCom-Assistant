@@ -12,7 +12,7 @@ import {closeBrowserTestResources,launchSystemBrowser} from './helpers/p2-006-br
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Post={path:string;body:P2016WaitingActionCommand;ifMatch:string|null;idempotencyKey:string|null;status:number|null;result:unknown};
-const form='form[aria-label="等待报修人"]';
+const form='form[aria-label="等待补充"]';
 const input=form+' textarea[aria-label="等待原因"]';
 const submit=form+' button[type="submit"]';
 const reason='INTERNAL_T10_FORM_CANARY：请报修人补充故障发生时间与现象。';
@@ -84,7 +84,7 @@ test('production waiting Reporter form preserves its reason on a real version co
       await browser.waitFor(`document.querySelector('.ticket-command-version')?.textContent===${JSON.stringify('工单版本 '+current.version)}`);
       assert.equal(await browser.evaluate("Array.from(document.scripts).some(script=>script.type==='module'&&new URL(script.src,location.href).pathname.startsWith('/workbench/app/assets/'))"),true,'the page must load the actual production bundle');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('button[data-action=request-information]'))"),true,'current authorized handling must expose the waiting Reporter menu action');
-      assert.equal(await browser.evaluate("document.querySelector('button[data-action=request-information]').textContent.includes('等待报修人')"),true);
+      assert.equal(await browser.evaluate("document.querySelector('button[data-action=request-information]').textContent.includes('等待补充')"),true);
       await browser.evaluate("document.querySelector('button[data-action=request-information]').click()");
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(input)}))`);
       await browser.evaluate(`(()=>{const area=document.querySelector(${JSON.stringify(input)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(area,${JSON.stringify('  '+reason+'  ')});area.dispatchEvent(new Event('input',{bubbles:true}));})()`);

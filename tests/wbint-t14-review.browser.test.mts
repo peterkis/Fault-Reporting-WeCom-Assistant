@@ -33,7 +33,9 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the actual production Item must expose its Review workspace');
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
       await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('门诊二楼打印机')");
-      for(const label of ['原判断','缺失字段','冲突','规则版本'])assert.equal(await browser.evaluate(`document.querySelector('[data-review-workspace]').textContent.includes(${JSON.stringify(label)})`),true);
+      const reviewText=String(await browser.evaluate("document.querySelector('[data-review-workspace]').innerText"));
+      for(const label of ['本次报修内容','复核结论'])assert.ok(reviewText.includes(label));
+      assert.doesNotMatch(reviewText,/原 Decision|规则版本|[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}/iu,'operator copy must show business material without database identifiers');
       await browser.evaluate("document.querySelector('.full-page-link').click()");
       await browser.waitFor("Boolean(document.querySelector('.detail-page [data-review-materials]'))");
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=document.documentElement.clientWidth'),true);

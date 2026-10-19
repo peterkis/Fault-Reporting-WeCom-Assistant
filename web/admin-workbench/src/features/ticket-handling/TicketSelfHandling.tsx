@@ -39,7 +39,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
   // Keep the original request/result controller mounted; only its idle presentation is optional.
   if(principal.ticket_takeover_enabled&&!allowed.some(action=>action==='take-and-start'||action==='accept-for-later')&&!pending&&state==='idle')return null;
   return <section data-activity-field="ticket-handling" className="ticket-notes ticket-self-handling" aria-label="本人承接工单">
-    {context.isPending?<p role="status">正在读取工单处理权限与版本…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p className="ticket-handling-version">工单版本 {context.data.version}</p>}
+    {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
       {allowed.includes('take-and-start')?<button type="button" className="take-and-start" data-action="take-and-start" disabled={blocked||context.isFetching||context.isError} onClick={()=>submit('take-and-start')}>我来处理</button>:null}
@@ -49,6 +49,6 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     </div>
       {!context.isPending&&!context.isError&&!allowed.some(action=>['take-and-start','accept-for-later'].includes(action))&&!pending?<p>当前没有可用的本人承接动作。</p>:null}
     {state!=='idle'?<p className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={()=>{setPending(null);setState('idle');setMessage('已保留填写内容，请按当前事实明确新的操作。');refresh();}}/>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={()=>{setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}}/>:null}
   </section>;
 }

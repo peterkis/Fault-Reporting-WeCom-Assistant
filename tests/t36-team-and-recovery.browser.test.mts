@@ -42,3 +42,35 @@ test('T36 a real bound Message committed before lost ACK recovers the same encry
   assert.equal((await f.page()).items.find(item=>item.source_ref===f.r2.source_ref)?.follow_up_state,'PENDING','only ACK recovered; no required Delivery is SENT');await capture();
  });
 },{recovery:true}));
+
+test('MVP keeps an unknown bound reply mounted when retention makes the supplement page empty, then retains its opaque check after current material denial',{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
+ assert.equal((await f.read<{conversation_draft_recovery_enabled:boolean}>('/api/lifecycle/bootstrap')).conversation_draft_recovery_enabled,false);
+ await withT36Browser(f,async(browser,capture)=>{
+  const messagePath='/api/workbench/conversations/'+f.sessionId+'/messages';
+  await browser.evaluate('(()=>{const original=fetch;globalThis.__emptyReplyPosts=[];globalThis.__emptyReplyAcks=[];globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(options?.method==="POST"&&String(path)==='+JSON.stringify(messagePath)+'){globalThis.__emptyReplyPosts.push({body:JSON.parse(options.body),status:response.status});if(response.status===202){await response.clone().json();throw new TypeError("SYNTHETIC_BOUND_REPLY_LOST_ACK");}}if(String(path).startsWith('+JSON.stringify(messagePath+'/commands/')+'))globalThis.__emptyReplyAcks.push({path:String(path),status:response.status});return response;};})()');
+  await openReply(browser,f.r2);const body='合成未确认回复：请补充原设备的错误提示。';await input(browser,'[data-supplement-bound-reply] textarea',body);
+  await browser.waitFor("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]')?.disabled===false");
+  await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]').click()");
+  await browser.waitFor("document.querySelector('[data-supplement-bound-reply] [data-reply-outcome]')?.textContent.includes('结果未知')");
+  const posts=await browser.evaluate('globalThis.__emptyReplyPosts') as {body:{client_command_id:string;follow_up_target:unknown;text:string};status:number}[];
+  assert.equal(posts.length,1);const original=posts[0];assert.ok(original);assert.equal(original.status,202);assert.deepEqual(original.body.follow_up_target,{ticket_id:f.ticketId,...f.r2});
+  const materials=(await f.page()).items;assert.ok(materials.length);
+  for(const material of materials)await f.expire(material);
+  assert.deepEqual((await f.page()).items,[],'the original service really returns an empty successful retention-filtered page');
+  await browser.evaluate("document.querySelector('[data-action=refresh-supplement-follow-up]').click()");
+  await browser.waitFor("document.querySelector('.supplement-follow-up')?.innerText.includes('没有补充材料')");
+  assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] textarea')?.value"),body,'the empty list cannot unmount the independent unknown reply');
+  assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=check-messages]')?.checkVisibility()"),true);
+  assert.deepEqual(await browser.evaluate('globalThis.__emptyReplyPosts'),posts,'no automatic resend or new command replaces the original target');
+  await capture('new-detail-1920.png');
+  await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=check-messages]').click()");
+  await browser.waitFor('globalThis.__emptyReplyAcks.some(row=>row.path==='+JSON.stringify(messagePath+'/commands/'+original.body.client_command_id)+'&&row.status===404)');
+  await browser.waitFor("document.querySelector('[data-supplement-bound-reply] textarea')?.value===''");
+  assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-supplement-bound-reply] [data-action=check-messages]'))"),true,'current material denial clears sensitive text but preserves the original opaque check');
+  assert.deepEqual(await browser.evaluate('globalThis.__emptyReplyPosts'),posts);
+  const stored=await f.pool.query<{n:number;id:string}>('SELECT count(*)::int AS n,min(m.client_command_id::text) AS id FROM pilot_ticket.workbench_supplement_reply_binding b JOIN communication.message m ON m.id=b.message_id WHERE b.ticket_id=$1::uuid',[f.ticketId]);
+  assert.equal(stored.rows[0]?.n,1);assert.equal(stored.rows[0]?.id,original.body.client_command_id);
+  assert.equal((await f.pool.query<{n:number}>('SELECT count(*)::int AS n FROM communication.delivery_attempt')).rows[0]?.n,0);
+  await capture();
+ });
+}));

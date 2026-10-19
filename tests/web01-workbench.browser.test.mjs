@@ -307,7 +307,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
-      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)&&document.activeElement.getAttribute('aria-label')!=='关闭详情'"),true);
+      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)&&document.activeElement.getAttribute('aria-label')!=='关闭详情'&&document.activeElement.checkVisibility({checkVisibilityCSS:true})"),true);
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
       assert.equal(await browser.evaluate("document.activeElement.getAttribute('aria-label')==='关闭详情'"),true);

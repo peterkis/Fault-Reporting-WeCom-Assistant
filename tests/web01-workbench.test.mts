@@ -23,5 +23,5 @@ test('source group naming validates bounded text and decimal versions without lo
   assert.throws(()=>sourceGroupNameCommand({...command,chatid:'client-injected'}),{code:'P2_016_INPUT_INVALID'});
   assert.equal(sourceLabel('WECOM_GROUP'),'群聊报修 · 群名称未登记');
   assert.equal(sourceLabel('WECOM_GROUP','信息科支持群'),'群聊报修 · 信息科支持群');
-  assert.equal(sourceLabel('WECOM_DIRECT'),'Bot 私聊');
+  assert.equal(sourceLabel('WECOM_DIRECT'),'企业微信私聊');
 });

@@ -45,12 +45,12 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   return fresh.supplement_follow_up_enabled===true&&fresh.supplement_follow_up_draft_recovery_enabled===true&&isStaff(fresh);
  }
  const draft=useSupplementDraft({ticketId,principal,readReady:currentRead,value,pending,authorize,onAuthorityFailure:error=>{void authorityFailure(error);},onSensitiveClear:sensitiveClear,
-  onOperation:id=>{setOperationId(id);if(!settling.current){setState('unknown');setMessage('原补充处置结果尚未确认，请只读核对原操作。');}},
+  onOperation:id=>{setOperationId(id);if(!settling.current){setState('unknown');setMessage('原补充处置结果尚未确认，请核对上次操作。');}},
   onRestore:async(copy,signal)=>{
    stage.current='purpose';const target=copy.pending??copy.value.target;
    if(!target){resetInput();return;}
    const current=await api.supplementFollowUpMaterial(ticketId,target,signal);signal.throwIfAborted();
-   setRestoredMaterial(current.item);setValue(copy.value);setPending(copy.pending);setOperationId(copy.pending?.client_command_id??null);setState(copy.pending?'unknown':'idle');setMessage(copy.pending?'原补充处置结果尚未确认，原 UUID、正文和修订保持不变。':'已恢复原补充修订的内部处置输入。');
+   setRestoredMaterial(current.item);setValue(copy.value);setPending(copy.pending);setOperationId(copy.pending?.client_command_id??null);setState(copy.pending?'unknown':'idle');setMessage(copy.pending?'原补充处置结果尚未确认，原操作、正文和修订保持不变。':'已恢复原补充修订的内部处置输入。');
   }
  });
  const originalId=pending?.client_command_id??operationId??draft.operationId,busy=state==='submitting'||state==='checking',locked=busy||Boolean(originalId),hasInput=Boolean(value.note);
@@ -98,9 +98,9 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
     }
     if(error instanceof ApiError){
      let cleaned=true;try{await draft.knownFailure(command.client_command_id);}catch{cleaned=false;}
-     if(!current())return;setPending(cleaned?null:command);setOperationId(cleaned?null:command.client_command_id);setState('failed');setMessage('处置未成功：'+errorMessage(error)+' 内部输入和原修订已保留。'+(cleaned?'':' 恢复副本清理失败，请只读核对原操作。'));return;
+     if(!current())return;setPending(cleaned?null:command);setOperationId(cleaned?null:command.client_command_id);setState('failed');setMessage('处置未成功：'+errorMessage(error)+' 内部输入和原修订已保留。'+(cleaned?'':' 恢复副本清理失败，请核对上次操作。'));return;
     }
-    setState('unknown');setMessage('处置结果未知；原 UUID、正文和修订保持不变，请只读核对原操作。');return;
+    setState('unknown');setMessage('处置结果未知；原操作、正文和修订保持不变，请核对上次操作。');return;
    }
    if(!current())return;
    settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(command.client_command_id);}catch{cleaned=false;}finally{settling.current=false;}
@@ -123,20 +123,21 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   finally{if(request.current===controller)request.current=null;}
  }
  if(!enabled)return null;
+ if(currentRead&&!unique.length&&!pending&&!operationId&&!value.target&&!bound&&!replyBlocked&&state==='idle')return null;
  const canEdit=currentRead&&staff&&!locked&&!draft.probing&&!draft.restoring&&(!draft.rawEnabled||draft.canSubmit);
  return <section className="ticket-notes supplement-follow-up" aria-label="补充材料跟进" data-supplement-follow-up-state={state}>
-  <h3>补充跟进</h3><p>阅读与承接不会解除待办；请记录本条补充的处置并明确标记已跟进。</p>
+  <details open={Boolean(!currentRead||unique.some(item=>item.follow_up_state==='PENDING')||pending||operationId||value.target||bound||locked)||undefined}><summary>补充跟进</summary><p>请核对补充内容，再记录处理情况。提交后将标记为已跟进。</p>
   {page.isPending?<p role="status">正在读取当前可访问的补充材料…</p>:page.isError?<p role="alert">{errorMessage(page.error)}</p>:null}
   <SupplementFollowUpSummary pending={page.data?.pages[0]?.has_pending_supplements}/>
   <ol className="supplement-follow-up-list">{unique.map(item=>{
    const selected=value.target!==null&&sameSupplementTarget(value.target,item),fieldId='supplement-note-'+item.source_ref.replace(':','-')+'-'+item.revision;
    const note=selected?value.note:'',editable=canEdit&&(!hasInput||selected),canSubmit=editable&&selected&&Boolean(note.trim())&&Array.from(note).length<=2000;
    return <li key={JSON.stringify([item.source_ref,item.revision])} data-supplement-source-ref={item.source_ref} data-supplement-revision={item.revision} data-follow-up-state={item.follow_up_state}>
-    <header><strong>{item.source_kind==='WEB'?'医小修补充':'Bot 补充'} · 修订 {item.revision}</strong><span>{item.follow_up_state==='PENDING'?'待跟进':'已跟进'}</span></header>
+    <header><strong>{item.source_kind==='WEB'?'网页补充':'企业微信补充'}</strong><span>{item.follow_up_state==='PENDING'?'待跟进':'已跟进'}</span></header>
     {item.resolution?<p>跟进依据：{item.resolution.basis==='RECORDED_DISPOSITION'?'明确记录处置':'回复成功已核验'} · {item.resolution.occurred_at}（北京时间）</p>:<form onSubmit={event=>{event.preventDefault();if(canSubmit)void submit(item);}}>
-     <label htmlFor={fieldId}>内部处置</label><p id={fieldId+'-audience'}>仅供获权工作人员协作；提交后明确标记本条补充已跟进。</p>
+     <label htmlFor={fieldId}>处理情况（内部）</label><p id={fieldId+'-audience'}>仅信息科可见；提交后明确标记本条补充已跟进。</p>
      <textarea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/>
-     <button type="submit" data-action="record-supplement-disposition" disabled={!canSubmit}>记录处置并标记已跟进</button>
+     <button type="submit" data-action="record-supplement-disposition" disabled={!canSubmit}>保存并标记已跟进</button>
      {replySessions.length&&!bound&&!locked?<button type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}}>通过已有会话回复本条补充</button>:null}
     </form>}
    </li>;
@@ -144,7 +145,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   {page.isSuccess&&!unique.length?<p>当前授权范围内没有补充材料。</p>:null}
   {page.hasNextPage?<button type="button" disabled={page.isFetchingNextPage||busy} onClick={()=>{void page.fetchNextPage();}}>加载更多补充</button>:null}
   {bound?<section data-supplement-bound-reply="" aria-label="精确补充回复">
-   <p>独立人工回复修订 {bound.target.revision}；内部处置不会复制到外发正文。202 仅表示已受理，待全部必要投递可靠成功后才解除本条待办。</p>
+   <p>请单独填写回复。内部处理情况不会自动填入回复。回复送达后，才会标记本条补充已跟进。</p>
    {replySessions.length>1?<label>已有获权会话<select value={bound.entry.session.session_id} disabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event.target.value);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><option key={entry.session.session_id} value={entry.session.session_id}>{entry.topic} · {entry.channel_label}</option>)}</select></label>:null}
    <ConversationComposer key={JSON.stringify([bound.target,bound.entry.session.session_id])} entry={bound.entry} principal={principal} purpose="messages" followUpTarget={{ticket_id:ticketId,...bound.target}} onBlockedChange={setReplyBlocked} onCommitted={()=>{void refresh();}}/>
    <button type="button" disabled={replyBlocked} onClick={()=>setBound(null)}>关闭补充回复</button>
@@ -156,5 +157,6 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   </div>
   {draft.rawEnabled?<p role="status" data-supplement-draft-status>{draft.message}</p>:<p>输入仅保留在当前页面；离开前请完成提交或清空输入。</p>}
   {state!=='idle'?<p role={['failed','unknown','denied'].includes(state)?'alert':'status'}>{message}</p>:null}
+ </details>
  </section>;
 }

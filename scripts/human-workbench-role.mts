@@ -27,10 +27,10 @@ export const HUMAN_WORKBENCH_OPTIONS={
  ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true,ticketRoundNotificationsEnabled:true,
  workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,workbenchManualReportsEnabled:true,
  workbenchConversationsEnabled:true,workbenchConversationInboxEnabled:true,workbenchRealtimeEnabled:true,
- workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchSupplementFollowUpEnabled:true,
+ workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:false,workbenchSupplementFollowUpEnabled:true,
  workbenchPersonalReadEnabled:true,sourceGroupDirectoryEnabled:true,notificationExceptionsEnabled:true,
- botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:true,
- yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true},
+ botReporterFeedbackEnabled:true,botReporterFeedbackDraftRecoveryEnabled:false,
+ yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:false},
 } satisfies Partial<P2016RuntimeOptions>;
 
 /** Tests may replace external HTTP/SDK leaves only; parsing, auth, business, DB and all three roles remain real. */
