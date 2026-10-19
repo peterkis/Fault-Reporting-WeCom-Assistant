@@ -316,7 +316,7 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
   async function stopRole(role: string) {
     const child = children.get(role);
     if (!child || child.exitCode !== null || child.signalCode !== null) return;
-    try { if (child.connected) child.send({ type: 'stop' }); } catch { /* bounded forced cleanup remains below */ }
+    try { if (child.connected) child.send({ type: 'stop' }, () => {}); } catch { /* bounded forced cleanup remains below */ }
     const exited = await Promise.race([(exits.get(role) as Promise<ExitRecord>).then(() => true), delay(10_000).then(() => false)]);
     if (!exited && child.exitCode === null && child.signalCode === null) child.kill();
     await Promise.race([exits.get(role), delay(5_000)]);
