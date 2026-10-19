@@ -21,7 +21,7 @@ export function deliveryLabel(d:ConversationWorkspaceDelivery){
 }
 function AssociatedItem({entry,principal,blocked}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean}){
   const item=entry.canonical_item;
-  const detail=useQuery({queryKey:['detail',principal.principal_id,item?.kind,item?.id],queryFn:({signal})=>{if(!item)throw Error('NO_CANONICAL_ITEM');return api.detail(item.kind,item.id,null,signal);},enabled:Boolean(item)});
+  const detail=useQuery({queryKey:['detail',principal.principal_id,item?.kind,item?.id,'summary'],queryFn:({signal})=>{if(!item)throw Error('NO_CANONICAL_ITEM');return api.detail(item.kind,item.id,null,signal);},enabled:Boolean(item)});
   return <section className="inbox-associated" aria-label="关联事项"><h3>关联事项</h3>{item?<><span className="inbox-meta">{item.number}</span><h4>{item.title}</h4>
     {detail.data?<dl><dt>当前状态</dt><dd>{statusLabels[detail.data.item.status]??detail.data.item.status}</dd><dt>处理人</dt><dd>{detail.data.item.assignee_name??'待安排'}</dd><dt>沟通人</dt><dd>{entry.assignment.assigned_display_name??'待接待'}</dd></dl>:<p>{detail.isError?'事项摘要暂不可用':'正在读取事项摘要…'}</p>}
     <Link to={'/items/'+item.kind+'/'+item.id+'?detail=page'} onClick={e=>{if(blocked)e.preventDefault();}}>打开事项详情 <ChevronRight size={14}/></Link></>:<p>暂无可展示的关联事项</p>}

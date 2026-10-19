@@ -15,6 +15,27 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const input=(purpose:string,text:string)=>`(()=>{const input=document.querySelector('textarea[data-purpose="${purpose}"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();})()`;
 const ready="Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-conversation-draft=messages]')?.textContent.includes('草稿')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'";
 
+test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{
+  await withT22Fixture(async f=>{
+    const session=f.sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+session.ticketId+'?detail=page',width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      for(let round=0;round<2;round++){
+        await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
+        await browser.evaluate("[...document.querySelectorAll('summary')].find(e=>e.textContent==='关联会话与报修附件').click()");
+        await browser.waitFor(`Boolean(document.querySelector('a[href="/workbench/app/conversations/${session.id}"]'))`);
+        await browser.evaluate(`document.querySelector('a[href="/workbench/app/conversations/${session.id}"]').click()`);
+        await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')");
+        await browser.evaluate("document.querySelector('.inbox-associated a').click()");
+      }
+      await browser.waitFor("Boolean(document.querySelector('#detail-title'))&&Boolean(document.querySelector('.properties'))");
+      assert.equal(await browser.evaluate('location.pathname.endsWith('+JSON.stringify(session.ticketId)+')'),true);
+      console.log('CONVERSATION_DETAIL_NAVIGATION '+JSON.stringify({bundle:'PRODUCTION',api:'REAL_LOOPBACK_HTTP_PG',directions:2,rounds:2,reloaded:false}));
+    }catch(error){failure=error;}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+  },{inbox:true,realtime:true,recovery:false});
+});
+
 test('production inbox keeps one real SSE stream, exact delivery and draft scopes, IME, scrolling, responsive layouts and current authority',async()=>{
   await withT22Fixture(async f=>{
     const a=f.sessions[0],b=f.sessions[1];assert.ok(a&&b);
