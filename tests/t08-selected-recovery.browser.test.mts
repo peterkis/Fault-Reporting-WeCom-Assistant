@@ -17,7 +17,7 @@ type Screenshot={file:string;width:number;height:number;sha256:string};
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const reasonInput="document.querySelector('.ticket-unassign textarea')",targetInput="document.querySelector('.ticket-unassign select')",draftStatus="document.querySelector('[data-unassign-draft-status]')";
 const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
-const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理责任')})==='等待领取'`;
+const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 const edit=(selector:string,value:string)=>`(()=>{const input=${selector};if(!input)throw Error('T08_PUBLIC_INPUT_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 function header(request:IncomingMessage,name:string){const value=request.headers[name];return typeof value==='string'?value:null;}
 function failure(value:unknown):unknown{return value instanceof AggregateError?{name:value.name,message:value.message,errors:value.errors.map(failure)}:value instanceof Error?{name:value.name,message:value.message,stack:value.stack}:String(value);}
@@ -113,7 +113,7 @@ for(const temporary of [false,true])test(temporary
     // A fresh document after the authorized scoped cleanup uses the new storage epoch; no second business action.
     await reload(browser);await browser.waitFor(`document.querySelector('#internal-note')?.value===${JSON.stringify(otherNote)}&&Boolean(${reasonInput})&&(${reasonInput}).value===''&&(${reasonInput}).disabled===false`);
     assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy);
-    assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()==='处理责任')?.nextElementSibling?.querySelector('.owner-name')?.textContent?.trim()"),text(beforeResponsibility.ticket_assignee_name));
+    assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()==='处理人')?.nextElementSibling?.querySelector('.owner-name')?.textContent?.trim()"),text(beforeResponsibility.ticket_assignee_name));
     assert.deepEqual((await admin.get(path)).value,before);assert.deepEqual((await admin.get(path+'/responsibility')).value,beforeResponsibility);
     assert.deepEqual((await admin.get(path+'/events?limit=200')).value.items,history);assert.deepEqual((await admin.get(path+'/deliveries')).value,delivery);
     assert.equal(requests.filter(row=>row.method==='POST').length,0);

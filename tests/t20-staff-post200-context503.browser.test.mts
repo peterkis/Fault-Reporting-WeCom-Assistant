@@ -30,7 +30,7 @@ test('production HANDLER retains original reopen UUID when a delivered POST200 i
    // Existing native-CDP/fetch tracer: real POST is never mocked/lost; one later read fault is controlled.
    await tab.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.__t20Faults=[];let afterPost=false,injected=false;
     globalThis.fetch=async(path,options)=>{const target=String(path);if(options?.method==='POST'){const response=await original(path,options);const body=await response.clone().json();globalThis.__t20Posts.push({path:target,input:JSON.parse(options.body),status:response.status,response:body});if(target===${JSON.stringify(ticketPath+'/reopen')}&&response.status===200)afterPost=true;return response;}
-     const response=await original(path,options);globalThis.__t20Reads.push({path:target,status:response.status});
+     const response=await original(path,options);globalThis.__t20Reads.push({path:target,status:response.status,...(target.includes('/reopen/commands/')?{state:(await response.clone().json()).state}:{})});
      if(afterPost&&!injected&&target===${JSON.stringify(ticketPath)}){injected=true;const body={error:{code:'P2_016_ACTION_FAILED',retryable:true}};globalThis.__t20Faults.push({path:target,actual_http_status:response.status,injected_client_status:503,body});return new Response(JSON.stringify(body),{status:503,headers:{'content-type':'application/json'}});}return response;};})()`);
    await tab.evaluate("(()=>{const input=document.querySelector('#reopen-reason');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'已核实同一故障仍需要工作人员处理');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
    await tab.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
@@ -47,7 +47,7 @@ test('production HANDLER retains original reopen UUID when a delivered POST200 i
    assert.equal(await tab.evaluate("(()=>{const button=document.querySelector('[data-action=reopen-ticket]');return !button||button.disabled;})()"),true,'a read failure cannot allow a fresh command');
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),1);
    await tab.evaluate("document.querySelector('[data-action=check-reopen-command]').click()");
-   await tab.waitFor("document.querySelector('[data-reopen-state]')?.textContent.includes('已核对')");
+   await tab.waitFor(`globalThis.__t20Reads.some(row=>row.path===${JSON.stringify(ticketPath+'/reopen/commands/'+original.input.client_command_id)}&&row.status===200&&row.state==='COMMITTED')&&document.querySelector('[data-reopen-follow-up]')?.checkVisibility()===true&&document.querySelector('.ticket-handling-cycle')?.textContent.includes('处理轮次 2')&&!document.querySelector('[data-action=check-reopen-command]')`);
    assert.equal(await tab.evaluate(`globalThis.__t20Reads.some(value=>value.path===${JSON.stringify(ticketPath+'/reopen/commands/'+original.input.client_command_id)})`),true);
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),1,'explicit acknowledgement is GET-only; never a resend or fresh POST');
    const final=await http.detail(ticketId);assert.equal(final.handling_cycle?.id,reopened.handling_cycle?.id);assert.equal(final.version,reopened.version);assert.equal(final.assignee_id,null);

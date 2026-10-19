@@ -22,7 +22,7 @@ const input=(label:string)=>`Array.from((${root})?.querySelectorAll('textarea')?
 const reasonInput=input('停止原因'),unfinishedInput=input('未完成工作');
 const action="document.querySelector('[data-action=return-to-dispatch]')",check="document.querySelector('[data-action=check-return-to-dispatch-command]')";
 const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
-const queued=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理责任')})==='等待领取'`;
+const queued=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 const fill=(selector:string,value:string)=>`(()=>{const row=${selector};if(!(row instanceof HTMLTextAreaElement))throw Error('T09_REQUIRED_TEXTAREA_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(row,${JSON.stringify(value)});row.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 function copies(principal:string,ticket:string){
   const filter=`row.principal===${JSON.stringify(principal)}&&row.kind==='ticket'&&row.id===${JSON.stringify(ticket)}&&row.purpose==='ticket-return-to-dispatch'`;
@@ -82,7 +82,7 @@ test('production PC current handler restores two required inputs and returns a r
     fixture.runtime.server.on('request',observe);
     try{
       browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);
-      await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='等待厂商'&&(${property('处理责任')})?.includes(${JSON.stringify(ownerName)})`);
+      await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='等待厂商'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);assert.equal(await browser.evaluate('innerWidth'),1280);assert.equal(await browser.evaluate('innerHeight'),900);completed.push(activeStage);
       // First T09 boundary: missing actual production form is a future RED, not a preflight capability assumption.
       activeStage='FORM_PRESENT';await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false`);await captureReadiness('BEFORE_INPUT');completed.push(activeStage);

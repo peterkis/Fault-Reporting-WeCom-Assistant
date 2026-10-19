@@ -24,7 +24,7 @@ function header(request:IncomingMessage,name:string){const value=request.headers
 const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
 const section="document.querySelector('[data-action=unassign]')?.closest('section')";
 const reasonInput=`Array.from((${section})?.querySelectorAll('textarea')??[]).find(input=>Array.from(input.labels??[]).some(label=>label.textContent?.includes('原因')))`;
-const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理责任')})==='等待领取'`;
+const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 
 // Keep the existing routed-host 240s budget and launch/wait defaults; no timeout override.
 test('production ADMIN withdraws one legacy accepted unstarted Ticket with an internal reason and default retained communication',async()=>{
@@ -86,7 +86,7 @@ test('production ADMIN withdraws one legacy accepted unstarted Ticket with an in
     try{
       browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:600,height:1080,cookies:[browserCookie]});
       assert.ok(browser);
-      await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='已领取'&&(${property('处理责任')})?.includes(${JSON.stringify(ownerName)})`);
+      await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='已领取'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);
       assert.equal(await browser.evaluate('innerWidth'),600);
       await browser.waitFor(`Boolean(document.querySelector('[data-action=unassign]'))&&Boolean(${reasonInput})`);
@@ -127,7 +127,7 @@ test('production ADMIN withdraws one legacy accepted unstarted Ticket with an in
       await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(timeOrigin)}&&(${queuedDom})`);
       assert.ok(requests.some(row=>row.order>=reloadOrder&&row.method==='GET'&&row.status===200&&[path,webPath].includes(row.path)));
-      assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('.activity-list li')).some(row=>row.querySelector('.record-type')?.textContent==='对外摘要'&&row.querySelector('p')?.textContent?.includes(${JSON.stringify(reason)}))`),false);
+      assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('.activity-list li')).some(row=>row.querySelector('.record-type')?.textContent==='报修人可见'&&row.querySelector('p')?.textContent?.includes(${JSON.stringify(reason)}))`),false);
       assert.equal(requests.filter(row=>row.method==='POST').length,1,'refresh reads current facts and never submits another command');
       assert.deepEqual((await publicGet(admin,path+'/events?limit=200')).items,afterEvents);
       assert.deepEqual(await publicGet(admin,path+'/deliveries'),beforeDeliveries);

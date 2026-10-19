@@ -14,7 +14,7 @@ test('production current handler explicitly waits for a vendor and resumes with 
         const button='button[data-action="'+action+'"]',form='form[aria-label="'+label+'"]';
         await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(button)}))&&!document.querySelector(${JSON.stringify(button)}).disabled`);
         await browser.evaluate(`document.querySelector(${JSON.stringify(button)}).click()`);await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(form)}))`);
-        await browser.evaluate(fillWaiting(form+' textarea[aria-label="等待原因"]','INTERNAL_T10_BROWSER_VENDOR：'+label+'合成原因。'));
+        await browser.evaluate(fillWaiting(form+' textarea[aria-label="'+(action==='resume'?'恢复原因':'等待原因')+'"]','INTERNAL_T10_BROWSER_VENDOR：'+label+'合成原因。'));
         await browser.waitFor(`!document.querySelector(${JSON.stringify(form+' button[type="submit"]')}).disabled`);await browser.evaluate(`document.querySelector(${JSON.stringify(form+' button[type="submit"]')}).click()`);
         await browser.waitFor(`globalThis.__t10Posts.some(row=>row.path.endsWith('/'+${JSON.stringify(action)})&&row.status===200)`);
         const after=await http.detail(target.ticket.id);assert.equal(after.status,state);assert.equal(after.assignee_id,before.assignee_id);assert.equal(after.resolver_team_id,before.resolver_team_id);assert.deepEqual(after.handling_cycle,before.handling_cycle);

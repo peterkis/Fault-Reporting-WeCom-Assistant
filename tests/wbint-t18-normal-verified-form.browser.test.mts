@@ -151,7 +151,8 @@ test('the actual production form explicitly selects an authorized reporter and a
       assert.deepEqual(Object.keys(admission).sort(),['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','notification_eligibility','external_notification','result_code','ticket','review','replayed'].sort());
       const review=object(admission.review),reviewId=string(review.id);assert.equal(review.status,'PENDING');assert.equal(verifyCalls,1);
       await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')");
-      assert.equal(await browser.evaluate("document.querySelector('[data-manual-report-result]').textContent.includes('进入人工复核')"),true,'visible success must name the real admitted object');
+      assert.equal(await browser.evaluate("document.querySelector('[data-manual-report-result]').textContent.includes('请继续人工复核')"),true,'visible success must name the real admitted object');
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=open-admitted-report]')?.getAttribute('href')"),'/workbench/app/items/review/'+reviewId,'the direct next-step link names the actual admitted Review');
       assert.equal(await browser.evaluate("/已通知|已送达/.test(document.querySelector('[data-manual-report-result]').textContent)"),false,'qualification cannot promise message delivery');
       await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${reviewId}"] .card-open'))`);
