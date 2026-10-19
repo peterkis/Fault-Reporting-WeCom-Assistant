@@ -41,7 +41,7 @@ export function GroupNameEditor({group,principal,onSaved,onDenied,onBlockedChang
   const value=name.trim(),valid=value.length>0&&[...value].length<=128&&!/[\u0000-\u001f\u007f]/u.test(value),versionAvailable=BigInt(basis.row_version)<9223372036854775807n;
   return <section className="source-group-editor">
     {!denied?<form className="source-group-form" aria-label="维护来源群名称" onSubmit={event=>{event.preventDefault();if(blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name)return;send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:basis.row_version,display_name:value}),false);}}>
-      <p className="source-group-version">编辑依据版本 {basis.row_version}</p>
+      <p hidden className="source-group-version">编辑依据版本 {basis.row_version}</p>
       <label>来源群名称<input name="source-group-name" value={name} required maxLength={256} disabled={blocked} onChange={event=>setName(event.target.value)}/><span>{[...value].length} / 128</span></label>
       <Button type="submit" data-action="save-source-group-name" variant="secondary" isDisabled={blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name}>{state==='submitting'?'正在保存…':'保存群名称'}</Button>
       {state==='unknown'&&pending?<button type="button" data-action="check-source-group-name" disabled={mutation.isPending} onClick={()=>send(pending,true)}>核对保存结果</button>:null}

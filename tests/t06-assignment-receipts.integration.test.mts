@@ -6,6 +6,19 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 type Fixture={pool:PostgresPool;origin:string;cookies:string[];tickets:{ticket:{id:string}}[];principals:{id:string}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
+
+test('MVP assignment acknowledgement remains read only with draft storage disabled',async()=>{
+ await withWeb01Fixture(async(context:Fixture)=>{
+  const ticket=context.tickets[0],target=context.principals[1],cookie=context.cookies[0],other=context.cookies[2];assert.ok(ticket&&target&&cookie&&other);
+  const path='/api/tickets/'+ticket.ticket.id,bootResponse=await fetch(context.origin+'/api/lifecycle/bootstrap',{headers:{cookie}}),boot=object(await bootResponse.json());
+  assert.equal(boot.ticket_assignment_enabled,true);assert.equal(boot.ticket_assignment_draft_recovery_enabled,false);
+  const command={client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target.id,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]};
+  const committed=await fetch(context.origin+path+'/assign',{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','x-csrf-token':String(boot.csrf_token),'idempotency-key':command.client_command_id,'if-match':'"2"'},body:JSON.stringify(command)});assert.equal(committed.status,200);const result=object(await committed.json());
+  const before=await context.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket_command_receipt');
+  for(const [identity,expected]of [[cookie,'COMMITTED'],[other,'UNKNOWN']] as const){const response=await fetch(context.origin+path+'/assignment/commands/'+command.client_command_id,{headers:{cookie:identity}});assert.equal(response.status,200);const receipt=object(await response.json());assert.equal(receipt.state,expected);await assertP2016Schema('p2_016_assignment_receipt',receipt);if(expected==='COMMITTED')assert.deepEqual(receipt,{state:'COMMITTED',ticket_id:ticket.ticket.id,ticket_version:3,ticket_event_id:result.ticket_event_id});}
+  assert.deepEqual((await context.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket_command_receipt')).rows,before.rows);
+ },{ticketAssignmentEnabled:true,workbenchDraftRecoveryEnabled:false});
+});
 test('current principal Ticket and assignment purpose give a read-only safe acknowledgement without lending communication authority',async()=>{
  await withWeb01Fixture(async(context:Fixture)=>{
   const first=context.tickets[0],other=context.tickets[1],target=context.principals[1],next=context.principals[2],actor=context.principals[0],cookie=context.cookies[0],worker=context.cookies[2],outsider=context.cookies[1];assert.ok(first&&other&&target&&next&&actor&&cookie&&worker&&outsider);const path='/api/tickets/'+first.ticket.id;

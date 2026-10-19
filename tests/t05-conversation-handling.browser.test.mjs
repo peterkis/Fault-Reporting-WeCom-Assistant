@@ -65,14 +65,15 @@ test('the real production selection submits one POST and refreshes both authorit
 
 test('a true Web Ticket explicitly retains communication without inventing a Session and disabled recovery does not open storage',async()=>{
   await browserScenario(async({browser,tickets})=>{
-    await browser.waitFor('document.querySelector("[data-action=retain-current-communicator]")?.disabled===false');await browser.evaluate(instrument);
+    await browser.waitFor('document.querySelector("[data-action=accept-for-later-with-conversations]")?.disabled===false');await browser.evaluate(instrument);
     assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-conversation-draft-status]"))'),false);
     assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);
-    await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]").click()');await browser.waitFor('document.querySelector("[data-action=accept-for-later-with-conversations]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=accept-for-later-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已接单")');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=retain-current-communicator]"))'),false);await browser.evaluate('document.querySelector("[data-action=accept-for-later-with-conversations]").click()');
+    await browser.waitFor('document.querySelector(".properties")?.innerText.includes("已领取")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.communication_choice,'RETAIN_CURRENT');assert.deepEqual(posts[0].body.sessions,[]);
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())`);assert.deepEqual(current.conversations,[]);
+    assert.equal(await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()).then(value=>value.status)`),'ACCEPTED');
     assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);
   },{ticketSelfHandlingWebSource:true});
 });
@@ -108,10 +109,10 @@ test('a real version conflict preserves the identified selection and its old ver
     const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query('UPDATE conversation.session SET row_version=row_version+1 WHERE id=$1::uuid',[id]);
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("操作冲突")&&document.querySelector(".conversation-choices")?.innerText.includes("已变更")');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("操作冲突")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
     assert.equal(await browser.evaluate('document.querySelector("[data-session-choice]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
     await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice]")?.checked===true');
-    assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("已变更")'));
+    assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("内容已变化")'));
     await browser.evaluate('document.querySelector("[data-action=discard-conversation-handling-draft]").click()');await browser.waitFor('document.querySelector("[data-session-choice]")?.checked===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
   },{workbenchDraftRecoveryEnabled:true});
 });
@@ -120,11 +121,11 @@ test('restore rejects an ended canonical choice and a fresh Ticket rejection cle
   await browserScenario(async({browser,pool,principals,tickets})=>{
     await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query("UPDATE conversation.session SET status='ENDED',ended_at=platform.local_now(),close_reason='T05_SYNTHETIC_ENDED' WHERE id=$1::uuid",[id]);await reload(browser);
-    await browser.waitFor('document.querySelector(".ticket-conversation-handling")?.innerText.includes("已选择 0 个会话")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
+    await browser.waitFor('document.querySelector(".ticket-conversation-handling")?.innerText.includes("当前没有需要接管的在线会话")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
     assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);assert.equal(await browser.evaluate(`document.querySelector('.ticket-conversation-handling').innerText.includes(${JSON.stringify(id)})`),false);
-    await browser.waitFor('document.querySelector("[data-action=retain-current-communicator]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]").click()');await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=retain-current-communicator]"))'),false);
     await pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[principals[0].id]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[principals[0].id]);await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principals[0].id]);
-    await browser.evaluate('Array.from(document.querySelectorAll("button")).find(button=>button.textContent==="重新读取工单与会话").click()');await browser.waitFor('!document.querySelector(".ticket-conversation-handling")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
+    await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');await browser.waitFor('!document.querySelector(".ticket-conversation-handling")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
     assert.equal(await browser.evaluate(`document.body.innerText.includes(${JSON.stringify(tickets[0].ticket.id)})`),false);
   },{workbenchDraftRecoveryEnabled:true});
 });

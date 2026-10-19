@@ -39,6 +39,53 @@ function droppedCompletion(context:T11Fixture){
 }
 async function completionCount(context:T11Fixture,id:string){return (await context.pool.query<{n:number}>("SELECT count(*)::int AS n FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.closed' AND reason_code='STAFF_COMPLETED'",[id])).rows[0]?.n;}
 
+test('MVP without drafts completes take, wait, resume, completion, reopen and retake in the same document',async()=>{
+  await withT11Fixture(async context=>{
+    const id=await t11NewTicket(context),http=await t11Http(context);
+    const boot=await (await http.get('/api/lifecycle/bootstrap')).json() as Record<string,unknown>;
+    for(const key of ['draft_recovery_enabled','staff_completion_draft_recovery_enabled','ticket_conversation_draft_recovery_enabled','ticket_waiting_action_draft_recovery_enabled'])assert.equal(boot[key],false,key);
+    await completionBrowser({...context,tickets:[{ticket:{id},intake:{intakeId:context.tickets[0]?.intake.intakeId??''}}]},async(browser,capture)=>{
+      const documentStart=await browser.evaluate('performance.timeOrigin');await browser.evaluate(instrument);
+      const take="[data-action='take-and-start-with-conversations']";
+      await browser.waitFor("document.querySelector('[data-action=accept-for-later-with-conversations]')?.disabled===false");
+      await browser.evaluate("document.querySelector('[data-action=accept-for-later-with-conversations]').click()");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已领取')&&document.querySelector('[data-action=take-and-start-with-conversations]')?.disabled===false");
+      assert.equal(await browser.evaluate("document.querySelector('.workflow-next')?.textContent.includes('“'+document.querySelector('[data-action=take-and-start-with-conversations]').textContent+'”')"),true,'the next-step instruction names the actual start button after accepting for later');
+      await browser.waitFor(`document.querySelector(${JSON.stringify(take)})?.disabled===false`);
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-conversation-handling fieldset'))"),false,'no empty communication choice before taking an unlinked ticket');
+      await browser.evaluate(`document.querySelector(${JSON.stringify(take)}).click()`);
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('#completion-process'))");
+      await browser.evaluate("document.querySelector('[data-action=request-information]').click()");
+      await type(browser,'[data-waiting-purpose=request-information] textarea','请电话补充合成设备的错误提示。');
+      await browser.evaluate("document.querySelector('[data-waiting-purpose=request-information] button[type=submit]').click()");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('等待补充')&&Boolean(document.querySelector('[data-action=resume]'))");
+      await browser.evaluate("document.querySelector('[data-action=resume]').click()");
+      await type(browser,'[data-waiting-purpose=resume] textarea','已电话收到合成错误提示，继续排查。');
+      await browser.evaluate("document.querySelector('[data-waiting-purpose=resume] button[type=submit]').click()");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('#completion-process'))");
+      await input(browser,'内部合成排查过程，不能给报修人查看。','已恢复合成设备，请重试。');
+      await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已关闭')&&Boolean(document.querySelector('#reopen-reason'))");
+      const completed=await http.detail(id);assert.equal(completed.status,'CLOSED');assert.equal(completed.handling_cycle?.cycle_no,1);
+      await type(browser,'#reopen-reason','电话回访确认同一故障仍未解决，请继续处理。');
+      await browser.waitFor("document.querySelector('[data-action=reopen-ticket]')?.disabled===false");
+      await browser.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
+      await browser.waitFor(`document.querySelector('.properties')?.innerText.includes('重新报障')&&document.querySelector(${JSON.stringify(take)})?.disabled===false`);
+      const reopened=await http.detail(id);assert.equal(reopened.status,'REOPENED');assert.equal(reopened.handling_cycle?.cycle_no,2);assert.notEqual(reopened.handling_cycle?.id,completed.handling_cycle?.id);assert.equal(reopened.handling_cycle?.first_responsibility_event_id,null);
+      await browser.evaluate(`document.querySelector(${JSON.stringify(take)}).click()`);
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')");
+      assert.equal(await browser.evaluate('performance.timeOrigin'),documentStart,'no reload required when the next action becomes available');
+      const commands=await browser.evaluate('globalThis.__t11Commands') as {path:string;body:{client_command_id:string}}[];
+      assert.equal(commands.length,7);assert.equal(new Set(commands.map(row=>row.body.client_command_id)).size,7);
+      assert.equal(commands.filter(row=>row.path.endsWith('/complete')).length,1);assert.equal(commands.filter(row=>row.path.endsWith('/reopen')).length,1);
+      const visible=String(await browser.evaluate("document.querySelector('.detail-body').innerText"));
+      assert.doesNotMatch(visible,/[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}|\bSYSTEM\b|\bUUID\b|工单版本|ticket\.[a-z_]+/iu);
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-completion-draft-status],[data-conversation-draft-status],[data-reopen-draft-status]'))"),false);
+      assert.equal(await completionCount(context,id),1);await capture('new-detail-1920.png');
+    },{page:true});
+  },{recoveryEnabled:false,conversationHandlingEnabled:true,reopenEnabled:true,waitingEnabled:true});
+});
+
 test('production 600px completion form requires independent confirmed summaries and closes with one POST and current GET facts',async()=>{
   await withT11Fixture(async context=>{
     const ticket=context.tickets[0];assert.ok(ticket);const http=await t11Http(context);await http.start(ticket.ticket.id);
@@ -160,7 +207,9 @@ test('raw recovery false keeps completion available without IndexedDB or receipt
       await input(browser,'INTERNAL_T11_MEMORY_UNKNOWN：原正文','内存模式安全结果。');await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('结果未知')");
       const original=await browser.evaluate('globalThis.__t11Commands[0]');assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),1);assert.equal(await browser.evaluate("document.querySelector('[data-action=complete-ticket]').disabled&&document.querySelector('#completion-summary').disabled"),true);assert.equal(await browser.evaluate('globalThis.__t11IDBOpens'),0);await capture('new-detail-1920.png');
       fault.restore();await browser.evaluate("document.querySelector('[data-action=check-completion]').click()");await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('已核对原操作结果')");assert.deepEqual(await browser.evaluate('globalThis.__t11Commands'),[original,original]);assert.equal(await completionCount(context,id),1);assert.equal(await browser.evaluate('globalThis.__t11IDBOpens'),0);
-      await reload(browser);await browser.waitFor("document.querySelector('.ticket-completion-version')?.textContent==='工单版本 5'");assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),0);assert.equal(await browser.evaluate("globalThis.__t11Reads.some(path=>path.includes('/completion/commands/'))"),false);assert.equal(await browser.evaluate('globalThis.__t11IDBOpens'),0);assert.deepEqual(await browser.evaluate("indexedDB.databases().then(rows=>rows.map(row=>row.name))"),[]);await capture('new-detail-page-1920.png');
+      await reload(browser);await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已关闭')");assert.equal((await http.detail(id)).version,5);assert.equal(await browser.evaluate("Boolean(document.querySelector('#completion-process'))"),false,'a completed round has no inactive completion editor');assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),0);assert.equal(await browser.evaluate("globalThis.__t11Reads.some(path=>path.includes('/completion/commands/'))"),false);assert.equal(await browser.evaluate('globalThis.__t11IDBOpens'),0);assert.deepEqual(await browser.evaluate("indexedDB.databases().then(rows=>rows.map(row=>row.name))"),[]);await capture('new-detail-page-1920.png');
+      assert.equal(await browser.evaluate("globalThis.__t11Reads.some(path=>path.includes('/assignment-targets'))"),false,'a closed readable Ticket must not request unavailable assignment targets');
+      assert.equal((await http.get('/api/tickets/'+id+'/assignment-targets')).status,403,'closed Ticket read does not grant assignment authority');
     });}finally{fault.close();}
-  },{notesEnabled:false,recoveryEnabled:false});
+  },{notesEnabled:false,recoveryEnabled:false,assignmentEnabled:true});
 });

@@ -31,7 +31,7 @@ export function TicketRoundNotifications({ticketId,principalId}:{ticketId:string
   useEffect(()=>{void read();return()=>{generation.current++;request.current?.abort();request.current=null;};},[read]);
   const nodes=items?.filter(item=>item.node==='FIRST_RESPONSIBILITY'||item.node==='STAFF_COMPLETED')??[];
   return <section className="attachment-section ticket-round-notifications" role="region" aria-label="报修人通知送达">
-    <h3>报修人通知送达</h3>
+    <details><summary>查看报修人通知送达{nodes.length?'（'+nodes.length+'）':''}</summary>
     {loading?<p role="status">正在读取通知送达状态…</p>:message?<p role="status">{message}</p>:!nodes.length?<p>当前没有可读取的轮次节点通知。</p>:<ul>{nodes.map(item=><li key={item.delivery_id}><span>
       <strong>{item.node?nodeLabels[item.node]:''}</strong>
       <small>处理轮次 {item.cycle_no} · {item.route_kind==='YIXIAOXIU_APP'?'医小修应用':item.destination_type==='PERSON'?'原报修人单聊':'群聊'} · {deliveryLabels[item.status]}</small>
@@ -39,5 +39,5 @@ export function TicketRoundNotifications({ticketId,principalId}:{ticketId:string
       {item.sent_at?<small>发送时间 {item.sent_at}（北京时间）</small>:null}
     </span></li>)}</ul>}
     <button type="button" disabled={loading} onClick={()=>{void read();}}>重新读取通知</button>
-  </section>;
+  </details></section>;
 }

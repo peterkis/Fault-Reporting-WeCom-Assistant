@@ -168,7 +168,7 @@ test('source group HTTP: ADMIN metadata, scoped group identity, replay, conflict
     assert.deepEqual((await pool.query('SELECT source_bot_id,source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[first.intake_id])).rows[0],raw);
     const json=JSON.stringify(await read('/api/workbench/source-groups'));assert.ok(!json.includes(raw.source_chat_id));assert.ok(!json.includes(raw.source_bot_id));
     const direct=await seedPersistedIntake({pool,text:'合成单聊报修',chatType:'single',status:'WAITING_DESCRIPTION'});
-    const directItem=(await read('/api/workbench/items/intake/'+direct.intakeId)).item;assert.equal(directItem.source_group,null);assert.equal(directItem.source_label,'Bot 私聊');
+    const directItem=(await read('/api/workbench/items/intake/'+direct.intakeId)).item;assert.equal(directItem.source_group,null);assert.equal(directItem.source_label,'企业微信私聊');
     // A contradictory retained origin/leg fixture must degrade, never pick whichever group is newest.
     const originalJourney=(await pool.query('SELECT id FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[first.intake_id])).rows[0].id;
     const conflictingJourney=(await pool.query(`INSERT INTO intake.contact_journey(

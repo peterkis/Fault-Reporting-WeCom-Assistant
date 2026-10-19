@@ -125,8 +125,12 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
 
   function relayPeerStatus() {
     const app = children.get('APP');
-    if (!app || app.connected !== true || app.exitCode !== null) return;
-    app.send({ type: 'peer-status', gateway_authenticated: gatewayStatus.authenticated, worker_ready: workerReady });
+    if (stopping || !app || app.connected !== true || app.exitCode !== null || app.signalCode !== null) return;
+    // IPC can close after the connected check. Handle that asynchronous failure
+    // through the role waiter, without replacing an already reported shutdown.
+    app.send({ type: 'peer-status', gateway_authenticated: gatewayStatus.authenticated, worker_ready: workerReady }, error => {
+      if (error && !stopping) ready.get('APP')?.reject(new Error('P2_G1_APP_PROCESS_UNAVAILABLE'));
+    });
   }
 
   function resolvePending(role: string, message: Extract<ClusterMessage, { type: "metrics-response" | "control-response" }>) {

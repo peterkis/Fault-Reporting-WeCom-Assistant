@@ -10,11 +10,15 @@
 | 人工复核、明确结论并开始、人工代录 | workbenchManualReviewEnabled、workbenchReviewResolveAndStartEnabled、workbenchManualReportsEnabled | App；原复核／代录合同；手填联系人不自动获得应用发送资格 |
 | 接管、转交、释放、私聊文字、内部备注 | workbenchConversationsEnabled、workbenchInternalNotesEnabled | App；真实 Session、原 Control／Communication／CSRF／个人授权 |
 | 联系人收件箱、来源标签、个人已读、实时更新 | workbenchConversationInboxEnabled、sourceGroupDirectoryEnabled、workbenchPersonalReadEnabled、workbenchRealtimeEnabled | App；两个 conversation 选项同时为 true；identityHmacKey 映射现有身份密钥；唯一实时控制器 |
-| 提交核对、草稿恢复、补充跟进 | workbenchDraftRecoveryEnabled、workbenchSupplementFollowUpEnabled | App；沿各原命令回执与恢复 scope，不另建账本 |
+| 提交核对、补充跟进 | workbenchSupplementFollowUpEnabled | App；沿各原命令回执，不另建账本；当前页面保留未确认操作，核对后才允许下一次提交 |
 | 节点通知、投递异常、受控恢复 | ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
-| 报修人查询、仍未解决 | MEMBER_REQUIRED、成员入口、OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled／reporterFeedbackDraftRecoveryEnabled；botReporterFeedbackEnabled／botReporterFeedbackDraftRecoveryEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证，不通过管理员 reopen 代替 |
+| 报修人查询、仍未解决 | MEMBER_REQUIRED、成员入口、OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证，不通过管理员 reopen 代替 |
 
 只启用上述组合。附件、核实目录候选、Incident、AI、提醒、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。原动作仍按当前授权和状态决定是否可用。
+
+首期 MVP 只面向信息科操作人员。2026-10-19 按用户决定，本入口的 `workbenchDraftRecoveryEnabled`、`botReporterFeedbackDraftRecoveryEnabled` 与 `yxxSelfService.reporterFeedbackDraftRecoveryEnabled` 均显式为 `false`。暂不提供跨刷新、离开页面后的草稿恢复。填写内容保留在当前页面。重复提交保护、授权校验、版本校验与提交结果核对继续生效。已有加密草稿、历史证据及其他测试配置保持，不执行批量清理；原未确认操作仍按既有保护只核对一次原操作。未来恢复此功能须单独验证动作变为可用时的初始化与跨刷新流程。
+
+工单详情使用工单号、人员名称和中文业务状态。数据库标识、内部事件名、规则代码与版本信息不作为操作说明。文案采用短句、一句一事、同一动作使用同一名称的原则，参考 [ASD-STE100](https://www.asd-ste100.org/assets/files/ASD-STE100_ISSUE9.pdf)。这是中文界面的表达约定，不声明英文受控词典认证。接口、授权和审计原件继续保留原始标识与版本。
 
 ```mermaid
 flowchart LR

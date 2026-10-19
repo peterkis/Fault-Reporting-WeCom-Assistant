@@ -377,3 +377,25 @@ strong { font-weight: var(--fw-medium); }
 @container(min-width:1160px){.inbox-layout{grid-template-columns:300px minmax(0,1fr) 320px}.inbox-business{display:block}.inbox-business-compact{display:none}}
 @container(max-width:900px){.inbox-layout{grid-template-columns:260px minmax(0,1fr)}.inbox-chat-header,.inbox-composer{padding-left:14px;padding-right:14px}.inbox-timeline{padding:16px 14px}.inbox-message{max-width:94%}}
 @container(max-width:720px){.inbox-layout{display:flex;flex-direction:column;height:auto;min-height:0}.inbox-contacts{border:0;padding-right:0;min-height:500px}.inbox-layout>.inbox-empty{display:none}.inbox-has-selection>.inbox-contacts{display:none}.inbox-chat{min-height:calc(100dvh - 210px)}.inbox-has-selection .inbox-back{display:flex;align-items:center;gap:6px;padding:10px 0}.inbox-timeline{max-height:60dvh;min-height:200px}.inbox-chat-header{padding-left:0;padding-right:0}.inbox-composer{padding-left:0;padding-right:0}}
+.detail-report-description {margin:0 0 16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;}
+.workflow-next {margin:16px 0;padding:14px 16px;background:var(--bg-neutral);border-radius:var(--r-md);}
+.workflow-next h3 {font-size:16px;font-weight:600;margin-bottom:6px;}
+.workflow-next p {font-size:13px;line-height:1.7;color:var(--text-2);}
+.workflow-support {padding:14px 0;border-bottom:1px solid var(--line-hair);}
+.workflow-support>summary,.workflow-history>summary,.ticket-notes summary,.manual-review summary {min-height:32px;cursor:pointer;padding:6px 0;font-weight:600;}
+.ticket-notes h3 {font-size:16px;font-weight:600;margin-bottom:12px;}
+.ticket-notes p {line-height:1.65;}
+.ticket-notes textarea {font:inherit;line-height:1.65;}
+.ticket-notes select {display:block;width:100%;min-height:34px;margin:6px 0;padding:6px 8px;border:1px solid var(--ring-2);border-radius:var(--r-md);background:var(--bg);}
+.ticket-notes fieldset {border:0;padding:0;min-width:0;}
+.ticket-notes button {min-height:32px;}
+.ticket-conversation-handling [data-action="take-and-start-with-conversations"],.ticket-completion [data-action="complete-ticket"],.manual-review [data-action="resolve-and-start-review"] {background:var(--text-1);border-color:var(--text-1);color:var(--bg);font-weight:600;}
+.workflow-refresh {margin-top:8px;color:var(--text-2);font-size:12px;}
+.workflow-result {padding:10px 16px;color:var(--tag-green-fg);}
+.workflow-history {margin-top:10px;color:var(--text-2);font-size:13px;}
+.manual-review [data-review-start-controls] {padding:14px 0;border-top:1px solid var(--line-hair);}
+.manual-review [data-review-materials] {margin:12px 0;}
+.manual-review [data-review-materials] ol {list-style:none;padding:0;margin:10px 0;}
+.manual-review [data-review-materials] li {padding:8px 0;}
+.manual-review [data-review-original] details>summary {color:var(--text-2);font-size:12px;}
+.manual-review .review-instruction {margin:8px 0;font-size:14px;}

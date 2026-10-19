@@ -42,45 +42,49 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
    if(fresh.version<result.ticket_version||fresh.handling_cycle?.id!==result.handling_cycle.id)throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
    client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
    const cleaned=await settle(command.client_command_id);if(!current())return;
-   setReason('');setPending(null);setOpaque(cleaned?null:command.client_command_id);setState(cleaned?'succeeded':'unknown');setMessage((fresh.handling_cycle.first_responsibility_event_id===null?'已重开，本轮等待重新承接。':'已重开，当前新轮次已有后续处理。')+(cleaned?'':' 恢复清理尚未确认，请只读核对原操作。'));refresh();
+   setReason('');setPending(null);setOpaque(cleaned?null:command.client_command_id);setState(cleaned?'succeeded':'unknown');setMessage((fresh.handling_cycle.first_responsibility_event_id===null?'已重开，本轮等待重新接单。':'已重开，当前新轮次已有后续处理。')+(cleaned?'':' 恢复清理尚未确认，请核对上次操作。'));refresh();
   }catch(error){
    if(!current())return;
    if(dispatched&&error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);
    else if(dispatched&&!postAccepted&&error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
-   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'尚未发送：恢复副本未确认，不能发起新操作，请保留原 UUID 只读核对。');}
+   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'尚未发送：恢复副本未确认，不能发起新操作，请保留原操作 只读核对。');}
   }finally{if(generation.current===token)request.current=null;}
  }
  async function checkOriginal(){
-  if(request.current||!commandId)return;const id=commandId,command=pending,controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setState('checking');setMessage('正在只读核对原重开操作…');
+  if(request.current||!commandId)return;const id=commandId,command=pending,controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setState('checking');setMessage('正在核对上次重开…');
   const current=()=>{if(generation.current!==token||controller.signal.aborted)return false;try{currentRead();return true;}catch{return false;}};
   try{
    const receipt=await api.reopenReceipt(ticketId,id,controller.signal);if(!current())return;
-   if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果未知：保留原操作，尚无可确认的终态，不会再次发送。');return;}
+   if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果未知：保留原操作，提交结果尚未确认，不会再次发送。');return;}
    const fresh=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
    if(receipt.state==='COMMITTED'&&(command&&receipt.result.ticket_version!==command.expected_version+1||fresh.version<receipt.result.ticket_version||fresh.handling_cycle?.id!==receipt.result.handling_cycle.id))throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
    const cleaned=await settle(id);if(!current())return;setReason('');setPending(null);setOpaque(cleaned?null:id);
-   if(!cleaned){setState('unknown');setMessage('已读到原操作终态，但恢复清理尚未确认；只读核对同一 UUID，不发起新操作。');return;}
-   setState(receipt.state==='FAILED'?'denied':'succeeded');setMessage(receipt.state==='FAILED'?'已核对原操作被拒绝；已读取当前权限与版本，请明确发起新的操作。':fresh.handling_cycle?.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新承接。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
+   if(!cleaned){setState('unknown');setMessage('已读到原操作终态，但恢复清理尚未确认；只读核对同一操作，不发起新操作。');return;}
+   setState(receipt.state==='FAILED'?'denied':'succeeded');setMessage(receipt.state==='FAILED'?'已核对原操作被拒绝；已读取当前权限与版本，请明确发起新的操作。':fresh.handling_cycle?.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新接单。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);else{setState('unknown');setMessage('结果未知：只读核对尚未完成，保留原操作，不会再次发送。');}}
   finally{if(generation.current===token)request.current=null;}
  }
  const allowed=principal.ticket_reopen_rounds_enabled&&context.data?.allowed_actions.includes('reopen')===true,loading=context.isPending||draft.status==='loading'||draft.probing;
  if(!principal.ticket_reopen_rounds_enabled&&!commandId&&!draft.enabled)return null;
+ if(!draft.enabled&&!allowed&&!commandId&&!reason&&!loading&&context.isSuccess&&!context.isError&&context.data.reopen_follow_up)return <section className="ticket-notes workflow-result"><p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理。':''}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单。':'报修人反馈仍未解决。'}等待重新接单。</p><button type="button" data-action="refresh-reopen" className="workflow-refresh" disabled={context.isFetching} onClick={()=>{void context.refetch();}}>刷新</button></section>;
+ if(!draft.enabled&&!allowed&&!commandId&&!reason&&state==='succeeded'&&context.isSuccess&&!context.isError)return null;
+ if(!allowed&&!commandId&&!reason&&!context.data?.reopen_follow_up&&state==='idle'&&context.isSuccess&&!context.isError)return null;
  return <section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
   <h3>重开同一工单</h3>
-  {loading?<p role="status">正在读取重开权限与版本…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:context.data?<p>工单版本 {context.data.version}</p>:null}
-  {principal.ticket_reopen_rounds_enabled&&!context.isFetching&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'工作人员已重开同一工单；':'报修人反馈仍未解决；'}等待重新承接。</p>:null}
+  {loading?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
+  {context.data?<p hidden>工单版本 {context.data.version}</p>:null}
+  {principal.ticket_reopen_rounds_enabled&&!context.isFetching&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>:null}
   {allowed?<form onSubmit={event=>{event.preventDefault();if(blocked||loading||context.isFetching||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}>
-   <label htmlFor="reopen-reason">重开原因</label><p>请核实同一故障仍需处理。原因仅供获权工作人员协作。</p>
+   <label htmlFor="reopen-reason">重开原因</label><p>请先确认是同一故障。原因仅信息科可见。</p>
    <textarea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/>
-   <p>重开后保留原处理组，清除当前处理人，等待重新承接。</p>
+   <p>保留原工单号和处理组。重开后需要重新接单。</p>
    <button type="submit" data-action="reopen-ticket" disabled={blocked||loading||context.isFetching||!draft.canSubmit||!reason.trim()}>重开此工单</button>
   </form>:<p>当前没有重开此工单的权限。</p>}
-  {commandId?<button type="button" data-action="check-reopen-command" disabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()}>只读核对原重开操作</button>:null}
+  {commandId?<button type="button" data-action="check-reopen-command" disabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()}>核对上次重开</button>:null}
   {draft.enabled?<p data-reopen-draft-status role="status">{draft.message}</p>:null}
   {reason&&!commandId&&draft.enabled?<button type="button" disabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()}>清空恢复草稿</button>:null}
-  {!blocked?<button type="button" onClick={()=>{void context.refetch();}}>重新读取重开权限</button>:null}
+  {!blocked?<button type="button" data-action="refresh-reopen" className="workflow-refresh" disabled={context.isFetching} onClick={()=>{void context.refetch();}}>刷新</button>:null}
   {state!=='idle'?<p data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按当前事实明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');});}}/>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
  </section>;
 }

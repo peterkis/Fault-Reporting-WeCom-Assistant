@@ -15,7 +15,7 @@ export const SOURCE_GROUP_ORIGIN_BINDING_SQL=`          SELECT count(DISTINCT j.
             OR (r.kind='review' AND EXISTS (SELECT 1 FROM intake.manual_review_item rev WHERE rev.id=r.id::uuid AND rev.journey_id=j.id))`;
 export {GROUP_REF_SQL,VALID_GROUP_SQL};
 const OBSERVED_SQL=`WITH observed AS (SELECT DISTINCT ${GROUP_REF_SQL} AS ref FROM intake.service_intake i WHERE ${VALID_GROUP_SQL})`;
-const LABELS:Readonly<Record<string,string>>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'Bot 私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修'};
+const LABELS:Readonly<Record<string,string>>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'企业微信私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修',PORTAL:'网页报修'};
 export function sourceGroupRef(value:unknown):string {
   if(typeof value!=='string'||!/^[a-f0-9]{64}$/u.test(value))failP2016();return value;
 }

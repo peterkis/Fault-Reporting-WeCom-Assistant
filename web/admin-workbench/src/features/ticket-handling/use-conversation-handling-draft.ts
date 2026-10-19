@@ -36,7 +36,7 @@ function decode(text:string):Copy{
 export function useConversationHandlingDraft({ticketId,principal,value,pending,onRestore,onSensitiveClear,onOperation}:{ticketId:string;principal:Principal;value:CommunicationChoice;pending:ConversationHandlingIntent|null;onRestore:(value:Copy)=>void;onSensitiveClear:()=>void;onOperation:()=>void}){
   const scope:DraftScope={principal:principal.principal_id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'},enabled=principal.ticket_conversation_draft_recovery_enabled,client=useQueryClient();
   const [restoring,setRestoring]=useState(enabled),generation=useRef(0),validating=useRef(false),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),actions=useRef<readonly string[]>([]);
-  const serialise=({value,pending}:{value:CommunicationChoice;pending:ConversationHandlingIntent|null})=>JSON.stringify({schema:1,...value,pending});
+  const serialise=({value,pending}:{value:CommunicationChoice;pending:ConversationHandlingIntent|null})=>JSON.stringify({schema:1,...value,...(pending?{choice:pending.command.communication_choice,sessions:pending.command.sessions}:{}),pending});
   const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;setRestoring(false);onSensitiveClear();};
   const draft=useAuthorizedDraft<CommunicationChoice,ConversationHandlingIntent>({scope,enabled,value,pending,emptyValue:{choice:'TAKE_SELECTED',sessions:[]},hasInput:value=>value.sessions.length>0||value.choice==='RETAIN_CURRENT',serialise,
     decode:text=>{const copy=decode(text);return {value:{choice:copy.choice,sessions:copy.sessions},pending:copy.pending};},commandId:intent=>intent.command.client_command_id,

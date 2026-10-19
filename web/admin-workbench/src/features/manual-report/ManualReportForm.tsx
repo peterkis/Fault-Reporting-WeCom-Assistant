@@ -114,8 +114,10 @@ function OrdinaryManualReportForm({principal,initialValue,onSelf,onBlockedChange
     const timer=window.setTimeout(()=>{void searchCandidates(null);},250);
     return()=>{window.clearTimeout(timer);candidateRequest.current?.abort();};
   },[candidatesEnabled,selected,value.name,controlsDisabled,principal.principal_id]);
-  return <section className="workspace manual-report-page"><header className="page-title"><div><h1>新报修</h1><p>电话或现场代录，先保存清楚的原始情况。</p></div><Link to="/" data-action="return-workbench" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回工作台</Link></header>
-    {!principal.manual_reports_enabled?<p role="status">电话与现场代录尚未开放。</p>:context.isPending?<p role="status">正在核验当前代录权限…</p>:context.isError&&!context.data?<p role="alert">{errorMessage(context.error)} <button onClick={()=>{void context.refetch();}}>重新读取代录权限</button></p>:<form data-manual-report-form onSubmit={event=>{event.preventDefault();void submit();}}>
+  return <section className="workspace manual-report-page"><header className="page-title"><div><h1>新报修</h1><p>登记电话或现场报修，保存后继续复核或接单。</p></div><Link to="/" data-action="return-workbench" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回工作台</Link></header>
+    {message?<div data-manual-report-result className="manual-report-receipt" role={state==='denied'||state==='unknown'?'alert':'status'}><h2>{message}</h2>{result?<><p>{result.ticket?'工单 '+result.ticket.number+' 已进入待接单队列。':result.review?'报修 '+result.intake_no+' 已保存，请继续人工复核。':'报修 '+result.intake_no+' 已保存原始情况。'}</p><p>{result.reporter_verification==='VERIFIED'?(result.manual_contact_required?'本次成员已核实，消息暂不可达，请人工联系。':'本次成员已核实，通知结果请在工单中查看。'):'报修人联系方式已记录，请通过电话或现场联系；不会自动发送消息。'}</p>
+      <div className="manual-report-controls"><Link data-action="open-admitted-report" className="receipt-next" to={'/items/'+(result.ticket?'ticket/'+result.ticket.id:result.review?'review/'+result.review.id:'intake/'+result.intake_id)} aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>{result.ticket?'打开工单并接单':result.review?'打开报修并复核':'查看已保存的报修'}</Link><button type="button" disabled={blocked} data-action="next-manual-report" onClick={()=>{setResult(null);setMessage('');setState('idle');}}>继续代录下一条</button></div></>:null}</div>:null}
+    {!principal.manual_reports_enabled?<p role="status">电话与现场代录尚未开放。</p>:context.isPending?<p role="status">正在核验当前代录权限…</p>:context.isError&&!context.data?<p role="alert">{errorMessage(context.error)} <button onClick={()=>{void context.refetch();}}>重新读取代录权限</button></p>:<form data-manual-report-form hidden={Boolean(result&&!unresolved)} onSubmit={event=>{event.preventDefault();void submit();}}>
       <p className="manual-report-operator">代录人：{principal.display_name} <span>工作人员身份由当前会话记录。</span></p>
       <p className="manual-report-audience">{selected?'已明确选择报修人，提交时将重新核验身份及通知资格；本次受理不表示通知已送达。':'报修人身份未核实，需人工联系；本次不会自动通知。'}</p>
       {principal.ticket_self_handling_enabled?<label className="manual-report-check"><input type="checkbox" data-action="choose-manual-self-handling" checked={false} disabled={controlsDisabled||selectionIntent||Boolean(selected)} onChange={()=>{const captured=value;void(async()=>{await draft.discard();if(await hasExistingDraft({principal:principal.principal_id,kind:'intake',id:MANUAL_REPORT_DRAFT_ID,purpose:'manual-report'})){setMessage('原草稿清理尚未确认，请保留当前输入。');return;}onSelf(captured);})();}}/>由我处理{selectionIntent||selected?'（先明确改为手填报修人）':''}</label>:null}
@@ -133,12 +135,11 @@ function OrdinaryManualReportForm({principal,initialValue,onSelf,onBlockedChange
         <label>位置<input aria-label="故障位置" required={!value.unknown} disabled={value.unknown||controlsDisabled} value={value.location} onChange={event=>change({...value,location:event.target.value})}/></label>
       </fieldset>:<p>原操作仍未知，敏感内容已清理；只能只读核对。</p>}
       <div className="manual-report-controls"><button type="submit" data-action="submit-manual-report" disabled={controlsDisabled||selectionRequired||!draft.canSubmit}>保存并受理</button>
-        {unresolved?<button type="button" data-action="check-manual-report-receipt" disabled={busy} onClick={()=>{void check();}}>只读核对原操作</button>:null}
+        {unresolved?<button type="button" data-action="check-manual-report-receipt" disabled={busy} onClick={()=>{void check();}}>核对上次操作</button>:null}
         {draft.enabled&&hasManualReportInput(value)&&!unresolved?<button type="button" disabled={busy} data-action="discard-manual-report-draft" onClick={()=>{void draft.discard();}}>丢弃草稿内容</button>:null}
         <button type="button" disabled={busy} data-action="refresh-manual-report-authority" onClick={()=>{void context.refetch();}}>重新读取代录权限</button>
       </div>
     </form>}
     {draft.enabled?<p data-manual-report-draft-status role="status">{draft.message}</p>:null}
-    {message?<div data-manual-report-result role={state==='denied'||state==='unknown'?'alert':'status'}><p>{message}</p>{result?<><p>{result.ticket?'工单 '+result.ticket.number+'，已进入待接单队列。':result.review?'已保存原始报修，进入人工复核。':'已保存原始报修及规则处理结果。'}</p><p>{result.reporter_verification==='VERIFIED'?(result.manual_contact_required?'本次成员已核实，消息暂不可达，需人工联系。':'本次成员已核实并具备通知资格；受理结果不表示消息已经送达。'):'需人工联系；不会自动通知报修人。'}</p></>:null}</div>:null}
   </section>;
 }
