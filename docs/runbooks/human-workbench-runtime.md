@@ -98,6 +98,10 @@ node --env-file=secrets/human-workbench.env .build/runtime/scripts/human-workben
 
 HTTPS 反向代理须转发到本机指定端口，保留原 Host/Origin、Cookie 和 SSE 长连接。本任务不部署代理。正式认证不返回测试 Cookie；原集群仅在显式 externalAuthentication 模式接受此拓扑，旧测试认证检查保持。
 
+报修人页面即使位于 `/wecom/yixiaoxiu/tickets/`，仍使用 `/reporter/` 的绝对资源路径。部署代理时须同时转发 `/reporter/reporter.js`、`/reporter/reporter.css`、`/reporter/bot-feedback.js` 及 `/reporter/feedback-assets/`，不能只转发页面和 API。缺少脚本时，页面会停在“正在验证访问会话”。`/api/reporter/`、`/api/yixiaoxiu/` 和 `/wecom/yixiaoxiu/` 继续经过同一 App 的原成员认证，避免被更宽的代理规则截获。
+
+部署验收须检查脚本、样式及其引用资源的真实 HTTP 200、正确内容类型和制品字节，再验证登录、进度读取及本人“仍未解决”反馈。页面文字出现不代表访问验证已完成。未认证的成员 API 仍须拒绝访问，健康检查和本地测试登录不得公开。代理日志不记录 OAuth 查询或卡片访问凭据。此处说明必要路由，不授予新的成员、发送或部署权限。
+
 ## 验证与交接
 
 活动 selection 为 `v3-p09`；本任务相关集合 `human-workbench-wiring` 注册两个新入口。进程用例经过编译后的配置解析／父进程／三个角色入口，外部 HTTP/SDK 在专用测试子入口替换；无 runtimeFactory 替代，真实业务、数据库、OAuth Session、HTTP、React 和 Sender 保留。SYNTHETIC／ISOLATED_TEST 配置只能配显式外部测试边界和隔离 loopback 库，正式角色默认拒绝。
