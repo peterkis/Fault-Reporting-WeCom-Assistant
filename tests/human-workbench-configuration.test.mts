@@ -60,15 +60,21 @@ test('Bot intake can be enabled with its own approval while all outbound roles r
  assert.equal(readWorkbenchRoleSettings('GATEWAY',gateway).botInboundEnabled,true);assert.equal(readWorkbenchWorkerSettings(worker).transportEnabled,false);
  assert.equal(worker.APP_SECRET,undefined);assert.equal(worker.WECOM_BOT_SECRET,undefined);assert.equal(app.WECOM_BOT_SECRET,undefined);
  assert.throws(()=>readWorkbenchRoleSettings('GATEWAY',{...gateway,WORKBENCH_INBOUND_IO_APPROVED:undefined}),/WORKBENCH_INBOUND_IO_APPROVED/u);
+ f.settings.memberEntry.identityMode='UNVERIFIED';f.settings.memberEntry.memberIdsConfirmed=false;f.settings.memberEntry.proofRef=null;f.settings.memberEntry.proofKind=null;delete f.settings.memberEntry.reporterUserIds;
+ f.save();rmSync(f.settings.notificationBindingsFile);
+ const withoutH5=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(withoutH5.enabled);assert.equal(withoutH5.settings.memberEntry.reporterUserIds,undefined);
+ assert.equal(readWorkbenchRoleSettings('GATEWAY',workbenchRoleEnvironment(withoutH5,'GATEWAY')).botInboundEnabled,true);
+ assert.throws(()=>createWorkbenchNotificationOptions(withoutH5.settings,withoutH5.reporterHmacSecret),/notificationBindings.authority/u);
  writeFileSync(f.file,JSON.stringify({...f.settings,botInboundEnabled:'true'}));assert.throws(()=>readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true}),/botInboundEnabled/u);
 }));
 
 test('Bot sender is checked against current application visibility without a configured member or group roster',async()=>{
  const message={provider:'WECOM_AIBOT',bot_id:'bot-test',sender_user_id:'new-visible-member',chat_type:'single',chat_id:null};
  let active=true,conversionMode='valid',accountStatus=1,returnedIdentity='open-new-visible-member',tokenInvalidated=0,conversionErrcode=0;
- const calls:string[]=[];
+ const calls:string[]=[];let concurrent=0,maxConcurrent=0;
  const token=Object.assign(async()=> 'synthetic-token',{invalidate:()=>{tokenInvalidated++;}});
  const fetchImpl:typeof fetch=async(input,init)=>{
+  concurrent++;maxConcurrent=Math.max(maxConcurrent,concurrent);await new Promise<void>(resolve=>setImmediate(resolve));concurrent--;
   const url=new URL(input instanceof Request?input.url:String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(init?.redirect,'error');assert.ok(init?.signal);
   calls.push(url.pathname);let response:unknown;
   if(url.pathname==='/cgi-bin/batch/userid_to_openuserid'){
@@ -84,6 +90,7 @@ test('Bot sender is checked against current application visibility without a con
  assert.equal(await admission.accepts(message),true);
  assert.equal(await admission.accepts({...message,chat_type:'group',chat_id:'new-group-without-webhook-route'}),true);
  assert.deepEqual(calls,['/cgi-bin/batch/userid_to_openuserid','/cgi-bin/user/get','/cgi-bin/batch/userid_to_openuserid','/cgi-bin/user/get']);
+ assert.deepEqual(await Promise.all(Array.from({length:4},()=>admission.accepts(message))),[true,true,true,true]);assert.equal(maxConcurrent,1);
  active=false;assert.equal(await admission.accepts(message),false,'visibility removal is checked on the next message');active=true;
  accountStatus=2;assert.equal(await admission.accepts(message),false);accountStatus=1;
  returnedIdentity='open-someone-else';assert.equal(await admission.accepts(message),false);returnedIdentity='open-new-visible-member';
@@ -94,11 +101,15 @@ test('Bot sender is checked against current application visibility without a con
  assert.equal(calls.length,before,'invalid sources never open a Provider');
 });
 
-test('Bot member lookup deadline rejects a late Provider without admitting or starting a second lookup',{timeout:8000},async()=>{
- let settle:((value:Response)=>void)|undefined,calls=0,signal:AbortSignal|null|undefined;
- const fetchImpl:typeof fetch=async(_input,init)=>{calls++;signal=init?.signal;return new Promise<Response>(resolve=>{settle=resolve;});};
+test('Bot member queue is bounded and retains its serial fence until a late Provider settles',{timeout:8000},async()=>{
+ let settle:((value:Response)=>void)|undefined,calls=0,signal:AbortSignal|null|undefined,blocked=true;
+ const fetchImpl:typeof fetch=async(input,init)=>{calls++;signal=init?.signal;if(blocked)return new Promise<Response>(resolve=>{settle=resolve;});const url=new URL(input instanceof Request?input.url:String(input));return new Response(JSON.stringify(url.pathname.endsWith('/user/get')?{errcode:0,userid:'open-new-visible-member',status:1}:{errcode:0,open_userid_list:[{userid:'new-visible-member',open_userid:'open-new-visible-member'}]}));};
  const admission=createWorkbenchBotMemberAdmission({botId:'bot-test',accessTokenProvider:async()=> 'synthetic-token',fetchImpl});
- assert.equal(await admission.accepts({provider:'WECOM_AIBOT',bot_id:'bot-test',sender_user_id:'new-visible-member',chat_type:'single'}),false);
- assert.equal(signal?.aborted,true);assert.ok(settle);settle(new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'new-visible-member',open_userid:'open-new-visible-member'}]})));
+ const message={provider:'WECOM_AIBOT',bot_id:'bot-test',sender_user_id:'new-visible-member',chat_type:'single'};
+ const waiting=Array.from({length:32},()=>admission.accepts(message));assert.equal(await admission.accepts(message),false,'overflow opens no Provider');
+ assert.deepEqual(await Promise.all(waiting),Array.from({length:32},()=>false));assert.equal(calls,1);
+ assert.equal(await admission.accepts(message),false,'deadline does not release a non-cooperative Provider');assert.equal(calls,1);
+ assert.equal(signal?.aborted,true);assert.ok(settle);blocked=false;settle(new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'new-visible-member',open_userid:'open-new-visible-member'}]})));
  await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls,1);
+ assert.equal(await admission.accepts(message),true,'new lookups recover after the original operation settles');assert.equal(calls,3);
 });

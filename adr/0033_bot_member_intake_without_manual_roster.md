@@ -16,6 +16,8 @@ Status: Accepted for the user's formal-environment test request and scope clarif
 - 接收入站不等于发送资格。通知目标、应用通知、群 Webhook、人工回复及真实发送批准沿原合同。发送关闭时所有投递 Worker/Sender 保持关闭，投递尝试为 0。
 - PC 管理端授权继续由原员工认证和角色事实单独决定。Bot 报修不自动创建工作人员或角色。
 - ADR-0019 的 H5 OAuth 映射和历史只读证明不变。本增量不声称已开放所有报修人的 H5，也不以缺少 H5 静态映射阻止 Bot 报修。
+- 单独接收且不使用 H5 时，允许 `memberEntry` 保留已核对企业／应用／Bot 作用域而使用 `UNVERIFIED`、无 `reporterUserIds`。App 不执行 H5 名单转换、不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续失败关闭，不回退旧 Grant。发送模式保留原映射要求。
+- 成员查询实际并发为 1，最多 32 项，5 秒截止包含排队。超时后未结束的底层操作继续持有串行占用。查询失败、截止或溢出拒绝该次入站；本增量不提供失败消息的持久化重放，恢复后需重新报修。
 
 ## Deployment and verification
 

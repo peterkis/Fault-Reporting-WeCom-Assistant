@@ -48,7 +48,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  }
  const fetchImpl=boundaries.fetchImpl??fetch;
  const reporterHmacSecret=process.env.P2_016_REPORTER_HMAC_SECRET as string,identityHmacKey=process.env.PILOT_LOG_IDENTITY_HASH_KEY as string;
- const allowedHosts=[new URL(s.reporterOrigin).host],appNotifications=createWorkbenchNotificationOptions(s,reporterHmacSecret);
+ const allowedHosts=[new URL(s.reporterOrigin).host],appNotifications=s.memberEntry.identityMode==='VERIFIED_DELEGATED_MAPPING'?createWorkbenchNotificationOptions(s,reporterHmacSecret):null;
  const tokenProvider=createWeComAppTokenProvider({corpId:s.memberEntry.corpId,appSecret:process.env.APP_SECRET??'disabled',fetchImpl});
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  if(role==='APP'){
@@ -60,7 +60,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
     try{await auth.initialize();return auth;}catch(error){await auth.close();throw error;}
    },
    runtimeFactory:options=>{
-    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,identityHmacKey,workbenchAuthentication:options.authentication,
+    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
     reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
@@ -92,7 +92,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
   ...(boundaries.clientFactory?{gatewayFactory:options=>createP2G1WeComGateway({...options,clientFactory:boundaries.clientFactory})}:{}),
   senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
    groupRoundNotifications:{pool,routes:s.groupRoutes??[],resolveMentionUserId:input=>resolveWorkbenchMention(s,input),fetchImpl},
-   appRoundNotifications:{pool,notifications:appNotifications,agentId:Number(s.memberEntry.agentId),accessTokenProvider:tokenProvider,fetchImpl}}),
+   ...(appNotifications?{appRoundNotifications:{pool,notifications:appNotifications,agentId:Number(s.memberEntry.agentId),accessTokenProvider:tokenProvider,fetchImpl}}:{})}),
  });
  }
 }

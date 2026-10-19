@@ -12,15 +12,19 @@ function record(value:unknown):Record<string,unknown>|null{return value!==null&&
  * outbound permission is inferred from a successful read. */
 export function createWorkbenchBotMemberAdmission({botId,accessTokenProvider,fetchImpl=fetch}:AdmissionOptions){
  if(typeof botId!=='string'||!botId||botId.length>128||/[\r\n\x00]/u.test(botId)||typeof accessTokenProvider!=='function')throw Error('WORKBENCH_BOT_ADMISSION_CONFIG_INVALID');
+ let pending=0,tail:Promise<void>=Promise.resolve();
  return {async accepts(input:unknown):Promise<boolean>{
   const message=record(input);
   if(message?.provider!=='WECOM_AIBOT'||message.bot_id!==botId||!validYxxUserId(message.sender_user_id)
    ||!['single','group'].includes(String(message.chat_type))||message.chat_type==='group'&&(typeof message.chat_id!=='string'||!message.chat_id||message.chat_id.length>256))return false;
+  if(pending>=32)return false;
+  pending++;
   const sender=message.sender_user_id,controller=new AbortController(),signal=controller.signal;
   let timer:ReturnType<typeof setTimeout>|undefined;
   const deadline=new Promise<false>(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(false);},5000);});
-  const operation=(async()=>{
+  const operation=tail.then(async()=>{
    try{
+    signal.throwIfAborted();
     const token=await accessTokenProvider({signal});signal.throwIfAborted();
     if(typeof token!=='string'||!token||token.length>4096)return false;
     const conversionUrl=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');conversionUrl.searchParams.set('access_token',token);
@@ -37,7 +41,10 @@ export function createWorkbenchBotMemberAdmission({botId,accessTokenProvider,fet
     if(member?.errcode!==0){if([40014,42001].includes(Number(member?.errcode)))accessTokenProvider.invalidate?.(token);return false;}
     return member.userid===pair.open_userid&&member.status===1&&(member.enable===undefined||member.enable===1);
    }catch{return false;}
-  })();
+  });
+  // Keep the queue fenced until the underlying operation actually settles,
+  // including a Provider that ignores cancellation after its caller timed out.
+  tail=operation.then(()=>{},()=>{}).finally(()=>{pending--;});
   try{return await Promise.race([operation,deadline]);}finally{controller.abort();clearTimeout(timer);}
  }};
 }

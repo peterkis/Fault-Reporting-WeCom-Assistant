@@ -28,10 +28,10 @@ function text(value:unknown,field:string,max=512):string{if(typeof value!=='stri
 function origin(value:unknown,field:string){const s=text(value,field);let url:URL;try{url=new URL(s);}catch{configurationError(field);}if(url.origin!==s||url.protocol!=='https:'||url.username||url.password)configurationError(field);return s;}
 function hashes(value:unknown,field:string):string[]{if(!Array.isArray(value)||value.length>64||value.some(v=>typeof v!=='string'||!/^[a-f0-9]{64}$/u.test(v))||new Set(value).size!==value.length)configurationError(field);return value as string[];}
 export function readWorkbenchJson(file:string,field='file'):unknown{try{if(!isAbsolute(file)||statSync(file).size>131072)configurationError(field);return JSON.parse(readFileSync(file,'utf8')) as unknown;}catch{configurationError(field);}}
-function member(value:unknown):MemberEntry{
+function member(value:unknown,receiveOnly=false):MemberEntry{
  let c:YxxEntryConfig;try{c=validateYxxEntryConfig(value);}catch{configurationError('memberEntry');}
  // This recipe includes the existing H5 self-service/feedback extension, whose contract requires delegated mapping.
- if(!c.enabled||c.identityMode!=='VERIFIED_DELEGATED_MAPPING')configurationError('memberEntry.identityMode');
+ if(!c.enabled||(c.identityMode!=='VERIFIED_DELEGATED_MAPPING'&&!(receiveOnly&&c.identityMode==='UNVERIFIED')))configurationError('memberEntry.identityMode');
  if(!Number.isSafeInteger(Number(c.agentId))||Number(c.agentId)<1)configurationError('memberEntry.agentId');
  return c;
 }
@@ -42,7 +42,7 @@ export function parseWorkbenchSettings(value:unknown):WorkbenchSettings{
  if(typeof r.transportEnabled!=='boolean')configurationError('transportEnabled');
  if(typeof r.botInboundEnabled!=='boolean')configurationError('botInboundEnabled');
  if(typeof r.listenPort!=='number'||!Number.isInteger(r.listenPort)||r.listenPort<1024||r.listenPort>65535)configurationError('listenPort');
- const m=member(r.memberEntry),b=exact(r.bot,['id','wsUrl','personTargetHashes','groupTargetHashes'],'bot');
+ const m=member(r.memberEntry,r.botInboundEnabled&&!r.transportEnabled),b=exact(r.bot,['id','wsUrl','personTargetHashes','groupTargetHashes'],'bot');
  const id=text(b.id,'bot.id',128),wsUrl=text(b.wsUrl,'bot.wsUrl');if(id!==m.botId||!/^wss:\/\//u.test(wsUrl))configurationError('bot');
  const people=hashes(b.personTargetHashes,'bot.personTargetHashes'),groups=hashes(b.groupTargetHashes,'bot.groupTargetHashes');
  if(!r.botInboundEnabled)try{createP2016InboundScope({bot_id:id,person_hashes:people,group_hashes:groups});}catch{configurationError('bot.scope');}
@@ -67,9 +67,9 @@ export function readHumanWorkbenchConfiguration(env:NodeJS.ProcessEnv=process.en
  const ioApprovalRef=settings.transportEnabled?text(env.WORKBENCH_EXTERNAL_IO_APPROVAL_REF,'WORKBENCH_EXTERNAL_IO_APPROVAL_REF'):'';
  const inboundApprovalRef=settings.botInboundEnabled?text(env.WORKBENCH_INBOUND_IO_APPROVAL_REF,'WORKBENCH_INBOUND_IO_APPROVAL_REF'):'';
  if(settings.transportEnabled&&!isolatedBoundaries&&(env.WORKBENCH_EXTERNAL_IO_APPROVED!=='true'||settings.memberEntry.proofKind!=='LIVE'||settings.memberEntry.validationProfile!=='DEPLOYMENT'))configurationError('WORKBENCH_EXTERNAL_IO_APPROVED');
- if(settings.botInboundEnabled&&!isolatedBoundaries&&(env.WORKBENCH_INBOUND_IO_APPROVED!=='true'||settings.memberEntry.proofKind!=='LIVE'||settings.memberEntry.validationProfile!=='DEPLOYMENT'))configurationError('WORKBENCH_INBOUND_IO_APPROVED');
+ if(settings.botInboundEnabled&&!isolatedBoundaries&&(env.WORKBENCH_INBOUND_IO_APPROVED!=='true'||settings.memberEntry.validationProfile!=='DEPLOYMENT'))configurationError('WORKBENCH_INBOUND_IO_APPROVED');
  if(!isolatedBoundaries&&settings.memberEntry.validationProfile!=='DEPLOYMENT')configurationError('memberEntry.validationProfile');
- validateNotificationBindings(settings.notificationBindingsFile,settings.memberEntry);
+ if(settings.memberEntry.identityMode==='VERIFIED_DELEGATED_MAPPING')validateNotificationBindings(settings.notificationBindingsFile,settings.memberEntry);
  return {enabled:true,settings,databaseUrl,identityHashKey,reporterHmacSecret,appSecret,botSecret,ioApprovalRef,inboundApprovalRef};
 }
 interface NotificationBindings {validUntilEpochMs:string;members:{memberUserId:string;bindingProofRef:string;accountStatus:string;bindingState:string;messageReachability:string}[];mentions:{botId:string;groupId:string;reporterUserId:string;mentionUserId:string;namespaceProofRef:string}[]}
@@ -88,6 +88,7 @@ function validateNotificationBindings(file:string,m:MemberEntry):NotificationBin
 /** Operator-supplied current verified authority, re-read at each qualification. No inferred directory/OAuth send rights. */
 export function createWorkbenchNotificationOptions(settings:Pick<RoleSettings,'memberEntry'|'appChannelAccountId'|'notificationBindingsFile'>,reporterHmacSecret:string):TicketAppNotificationOptions{
  const m=settings.memberEntry;
+ if(m.identityMode!=='VERIFIED_DELEGATED_MAPPING')configurationError('notificationBindings.authority');
  return {enabled:true,authority:{sourceCorpScope:m.corpId,sourceAppScope:m.agentId,channelAccountId:settings.appChannelAccountId,mappingConfigHash:yxxIdentityConfigHash(m),mappingProofRef:m.proofRef as string,proofKind:m.proofKind as 'LIVE'|'SYNTHETIC',validationProfile:m.validationProfile},
   targetResolver:{localOnly:true,async resolveCurrentTarget(input){
    input.signal.throwIfAborted();const bindings=validateNotificationBindings(settings.notificationBindingsFile,m),epoch=assertEpochMsString(String(Date.now()));
@@ -117,9 +118,9 @@ export function readWorkbenchRoleSettings(role:WorkbenchRole,env:NodeJS.ProcessE
  let r:Record<string,unknown>;try{r=record(JSON.parse(env.WORKBENCH_ROLE_SETTINGS??''),'WORKBENCH_ROLE_SETTINGS');}catch{configurationError('WORKBENCH_ROLE_SETTINGS');}
  if(r.role!==role||typeof r.transportEnabled!=='boolean')configurationError('role');
  if(r.botInboundEnabled!==undefined&&typeof r.botInboundEnabled!=='boolean')configurationError('botInboundEnabled');
- const m=member(r.memberEntry);origin(r.reporterOrigin,'reporterOrigin');text(r.botId,'botId');text(r.appChannelAccountId,'appChannelAccountId');
+ const m=member(r.memberEntry,r.botInboundEnabled===true&&!r.transportEnabled);origin(r.reporterOrigin,'reporterOrigin');text(r.botId,'botId');text(r.appChannelAccountId,'appChannelAccountId');
  if(m.botId!==r.botId)configurationError('botId');
- const file=text(r.notificationBindingsFile,'notificationBindingsFile');validateNotificationBindings(file,m);
+ const file=text(r.notificationBindingsFile,'notificationBindingsFile');if(m.identityMode==='VERIFIED_DELEGATED_MAPPING')validateNotificationBindings(file,m);
  if(text(env.PILOT_LOG_IDENTITY_HASH_KEY,'PILOT_LOG_IDENTITY_HASH_KEY').length<16)configurationError('PILOT_LOG_IDENTITY_HASH_KEY');
  if(Buffer.byteLength(text(env.P2_016_REPORTER_HMAC_SECRET,'P2_016_REPORTER_HMAC_SECRET'))<32||env.P2_016_REPORTER_HMAC_SECRET===env.PILOT_LOG_IDENTITY_HASH_KEY)configurationError('P2_016_REPORTER_HMAC_SECRET');
  if(role==='APP'){origin(r.publicOrigin,'publicOrigin');if(!Number.isInteger(r.listenPort))configurationError('listenPort');text(env.APP_SECRET,'APP_SECRET');}
