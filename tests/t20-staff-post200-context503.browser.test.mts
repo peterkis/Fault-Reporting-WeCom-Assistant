@@ -25,7 +25,7 @@ test('production HANDLER retains original reopen UUID when a delivered POST200 i
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);
    const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'CLOSED');assert.equal(typeof cookie.url,'string');
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
-   await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&!document.querySelector('.ticket-reopen')?.textContent.includes('正在读取重开权限')");
+   await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&document.querySelector('#reopen-reason')?.matches(':disabled')===false");
    const ticketPath='/api/tickets/'+ticketId;
    // Existing native-CDP/fetch tracer: real POST is never mocked/lost; one later read fault is controlled.
    await tab.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.__t20Faults=[];let afterPost=false,injected=false;

@@ -7,7 +7,7 @@ import type {Server} from 'node:http';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
-interface Fixture {origin:string;browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
+interface Fixture {origin:string;browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:Server;coordinator:{runOnce:()=>Promise<unknown>};observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 test('ordinary failed authoritative reads retain the visible draft and confirmed facts; a new write waits for fresh REST while the stream is healthy',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,runtime}:Fixture)=>{
     const ticket=tickets[5],cookie=browserCookies[0];assert.ok(ticket&&cookie);
@@ -59,6 +59,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
 test('the integrated conversation handling new operation waits for the same fresh REST cycle after an unrelated attachment read succeeds',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,runtime}:Fixture)=>{
     const ticket=tickets[0],cookie=browserCookies[0];assert.ok(ticket&&cookie);
+    await runtime.coordinator.runOnce();
     let unreadable=false,posts=0,reads=0,attachmentReads=0;
     runtime.server.on('request',(request,response)=>{
       if(request.method==='POST')posts++;
@@ -71,11 +72,11 @@ test('the integrated conversation handling new operation waits for the same fres
     const directory=await mkdtemp(join(tmpdir(),'web01-ui-'));let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
-      await browser.waitFor('document.querySelector("[data-action=retain-current-communicator]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await browser.waitFor('Boolean(document.querySelector("[data-session-choice]"))&&document.querySelector("[data-action=retain-current-communicator]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]").click()');
       await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
       const priorReads=reads;unreadable=true;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取工单与会话").click()');
+      await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
       assert.ok(reads>priorReads);assert.equal((await runtime.observability.metrics()).sse_clients,1);
       assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]")?.checked'),true);
@@ -90,7 +91,7 @@ test('the integrated conversation handling new operation waits for the same fres
       assert.ok(await browser.evaluate('document.querySelector(".conversation-handling-state")?.textContent.includes("尚未准备或发送")'));
       assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]")?.checked'),true);
       unreadable=false;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取工单与会话").click()');
+      await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
       await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
       await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');assert.equal(posts,1);
@@ -98,5 +99,5 @@ test('the integrated conversation handling new operation waits for the same fres
     }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,retain:document.querySelector("[data-action=retain-current-communicator]")?.checked})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
-  },{workbenchRealtimeEnabled:true,ticketConversationSelfHandlingEnabled:true,workbenchDraftRecoveryEnabled:true});
+  },{workbenchRealtimeEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,workbenchDraftRecoveryEnabled:true});
 });

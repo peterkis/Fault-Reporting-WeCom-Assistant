@@ -32,7 +32,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'CLOSED');assert.equal(typeof cookie.url,'string');
    const ticketPath='/api/tickets/'+ticketId,scope=JSON.stringify([bootstrap.principal_id,'ticket',ticketId,'staff-reopen']);
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
-   await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&!document.querySelector('.ticket-reopen')?.textContent.includes('正在读取重开权限')");
+   await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&document.querySelector('#reopen-reason')?.matches(':disabled')===false");
    const observe=String.raw`(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.fetch=async(path,options)=>{const target=String(path);if(options?.method==='POST'){const response=await original(path,options);const body=await response.clone().json();globalThis.__t20Posts.push({path:target,input:JSON.parse(options.body),status:response.status,response:body});if(target.endsWith('/reopen'))throw new TypeError('SIMULATED_KNOWN_REFUSAL_RESPONSE_LOSS');return response;}globalThis.__t20Reads.push(target);return original(path,options);};})()`;
    await tab.evaluate(observe);
    // Real public concurrent note increments version while keeping CLOSED; no receipt/SQL seeding.
@@ -56,7 +56,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    await tab.command('Network.setCookies',{cookies:[{...offCookie,url:offCookie.url as string}]});
    await tab.command('Page.enable');await tab.command('Page.addScriptToEvaluateOnNewDocument',{source:observe});
    const previous=await tab.evaluate('performance.timeOrigin');await tab.command('Page.reload');await tab.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
-   await tab.waitFor("Boolean(document.querySelector('[data-action=check-reopen-command]'))&&!document.querySelector('.ticket-reopen')?.textContent.includes('正在读取重开权限')");
+   await tab.waitFor("Boolean(document.querySelector('[data-action=check-reopen-command]'))&&document.querySelector('[data-action=check-reopen-command]')?.disabled===false");
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),0,'raw-OFF restoration cannot POST');
    assert.equal(await tab.evaluate(`globalThis.__t20Reads.some(path=>path.startsWith(${JSON.stringify(ticketPath+'/reopen/commands/')}))`),false,'restoration does not automatically acknowledge the original UUID');
    const countsExpression=`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onupgradeneeded=()=>request.transaction.abort();request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations'],'readonly'),draft=tx.objectStore('drafts').getKey(${JSON.stringify(scope)}),operation=tx.objectStore('operations').getKey(${JSON.stringify(scope)});tx.oncomplete=()=>{db.close();resolve({sensitive:draft.result===undefined?0:1,opaque:operation.result===undefined?0:1});};tx.onabort=()=>{db.close();reject(tx.error);};};})`;
