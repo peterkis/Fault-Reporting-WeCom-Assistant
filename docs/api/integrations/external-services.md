@@ -21,6 +21,8 @@ API origin=`https://qyapi.weixin.qq.com`。只有经过现有部署/现场授权
 
 WeCom目录还需enabled、memberIdsConfirmed、bot范围和token provider；未满足返回DEFERRED。bot成员ID与delegated app ID不能直接互换；user/get失败不是自动判定账号无效的依据。
 
+human-v1 的可选 Bot 接收按 [ADR-0033](../../../adr/0033_bot_member_intake_without_manual_roster.md) 使用可信 SDK 回调中的单人成员 ID，自动调用上述官方转换，再以返回的应用身份调用 `user/get`。此路径不消费逐人报修名单，不授予 PC 或发送权限；5 秒截止内失败即拒绝本次入站，原回调身份不被改写。实现见 [Bot 成员准入](../../../src/human-workbench-bot-member-admission.mts)，接收开关与发送开关见[运行入口](../../runbooks/human-workbench-runtime.md#bot-接收与真实发送分开)。
+
 合成映射请求形状（不得填真实成员ID/token到文档）：
 
 ```json

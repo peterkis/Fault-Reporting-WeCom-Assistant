@@ -12,7 +12,7 @@
 | 联系人收件箱、来源标签、个人已读、实时更新 | workbenchConversationInboxEnabled、sourceGroupDirectoryEnabled、workbenchPersonalReadEnabled、workbenchRealtimeEnabled | App；两个 conversation 选项同时为 true；identityHmacKey 映射现有身份密钥；唯一实时控制器 |
 | 提交核对、补充跟进 | workbenchSupplementFollowUpEnabled | App；沿各原命令回执，不另建账本；当前页面保留未确认操作，核对后才允许下一次提交 |
 | 节点通知、投递异常、受控恢复 | ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
-| 报修人查询、仍未解决 | MEMBER_REQUIRED、成员入口、OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证，不通过管理员 reopen 代替 |
+| 报修人查询、仍未解决 | MEMBER_REQUIRED、已证明的成员映射与 OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证；无 H5 映射的单独接收模式不装配自助／反馈 |
 
 只启用上述组合。附件、核实目录候选、Incident、AI、提醒、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。原动作仍按当前授权和状态决定是否可用。
 
@@ -49,22 +49,40 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 | PILOT_DATABASE_URL | 必需；沿现有数据库权限 | 三角色 |
 | PILOT_LOG_IDENTITY_HASH_KEY | 现有值，至少16字符；不轮换，不替换成 Reporter secret | App Runtime.identityHmacKey／认证、Worker 编排、Gateway 受理 |
 | P2_016_REPORTER_HMAC_SECRET | 现有 Reporter 专用值，至少32字节，与身份密钥不同 | 三角色原 Reporter／通知／绑定用途 |
-| APP_SECRET | 现有成员应用凭据；memberEntry 中复用已有企业／应用／Bot／namespace 证明 | App OAuth；启用发送时 Gateway 应用 Sender；Worker 不接收 |
-| WECOM_BOT_SECRET | transportEnabled=true 时必需 | 仅 Gateway |
+| APP_SECRET | 现有成员应用凭据；memberEntry 中复用已核对企业／应用／Bot 作用域 | App OAuth；Gateway 在发送或单独接收时使用；Worker 不接收 |
+| WECOM_BOT_SECRET | transportEnabled=true 或 botInboundEnabled=true 时必需 | 仅 Gateway |
 | WORKBENCH_EXTERNAL_IO_APPROVED／WORKBENCH_EXTERNAL_IO_APPROVAL_REF | 默认无；发送时需 true 和本次具名授权引用；配置本身不授予批准 | 父进程检查，Gateway 接收；不推进任何 Gate |
+| WORKBENCH_INBOUND_IO_APPROVED／WORKBENCH_INBOUND_IO_APPROVAL_REF | 默认无；单独接收需 true 和本次接收授权引用，不代替发送批准 | 父进程检查，Gateway 成员核验 |
 | settings.transportEnabled | false；true 同时启用 Gateway 与实际 Sender | 父进程、三角色；App 仍无进程内 Sender |
+| settings.botInboundEnabled | false；true 可单独启用当前应用可见成员 Bot 接收，须本次接收授权引用 | 父进程、Gateway；不启用 Sender |
 | settings.publicOrigin／reporterOrigin／listenPort | 必需；精确 HTTPS origin；后端 loopback 端口 1024–65535 | App；Reporter origin 供原卡片 Sender |
-| settings.memberEntry | 复用已有 VERIFIED_DELEGATED_MAPPING 及原 reporterUserIds；现有 H5 自助／反馈合同要求委托映射，不能用 SAME_NAMESPACE 代替；OAuth/MEMBER_REQUIRED 同时装配；正式发送只接受 LIVE／DEPLOYMENT | App 认证、各通知目标校验 |
-| settings.bot | 原 Bot ID、WSS、原个人／群目标 SHA256；沿既有 scope 每类1–20 | Gateway；原目标白名单 |
+| settings.memberEntry | H5 使用 VERIFIED_DELEGATED_MAPPING 及原 reporterUserIds；单独 Bot 接收可用 UNVERIFIED、无 reporterUserIds，H5／反馈／App通知保持拒绝；不伪造 namespace 证明 | App 认证作用域、可选 H5／通知装配 |
+| settings.bot | 原 Bot ID、WSS；历史 scope 每类1–20，单独成员接收时两类目标可为空 | Gateway；新接收不使用逐人／逐群名单 |
 | settings.groupRoutes | 原 Bot／原群／官方 HTTPS Webhook，最多20，与群 scope 精确对应 | 仅 Gateway 收到 URL |
 | settings.appChannelAccountId | 原应用渠道账号，不能用 Bot 账号替代 | App／Gateway 通知用途 |
-| settings.notificationBindingsFile | 有界绝对文件；归属相同 member 配置的当前验证证明与有效期 | App／Gateway 当前资格核对；Worker 不接收 |
+| settings.notificationBindingsFile | 绝对路径；H5／应用通知模式读取有界文件中的当前资格及有效期，无 H5 的单独接收模式不读取 | App／Gateway 当前资格核对；Worker 不接收 |
 
 通知目标文件是本入口消费的受控配置，不是业务表或身份系统。维护方必须提供当前 ACTIVE／VERIFIED／REACHABLE 的 InternalMemberId 资格及独立 Webhook 提及对应证明；OAuth 转换、旧报修快照、姓名或第三方目录标签不构成该资格。每次资格解析重读文件，删除目标／修改映射／到期立即拒绝新资格；不改投、不盲重发 UNKNOWN。文件整体映射摘要由已有 `yxxIdentityConfigHash(memberEntry)` 计算；既有成员配置原值和 proofRef 必须一致。更换已有身份密钥会改变既有身份，不能作为修复办法。
 
 配置检查不连接数据库或 Provider；实际启动沿 Runtime schema readiness 拒绝缺少迁移。先用仓库已有 `migrate-current-baseline`／各工作包 migrate 的 check/status 核对，再在获得数据库授权时使用其 apply。所需扩展包括 workbench-auth、ticket-self-handling、staff-completion、round-notifications（包含052）、manual-reports、reopen-rounds、bot-feedback、personal-read、follow（既有回执依赖，关注功能仍关闭）、supplement-follow-up、source-groups、conversation-delivery-commands。启动命令不会补写迁移账本。
 
 ## 检查、启动、停止
+
+### Bot 接收与真实发送分开
+
+[ADR-0033](../../adr/0033_bot_member_intake_without_manual_roster.md) 规定正式 Bot 报修使用企业微信当前应用可见成员准入，不逐人维护报修名单。显式设置 `botInboundEnabled=true` 并提供 `WORKBENCH_INBOUND_IO_APPROVED=true`、本次接收授权引用 `WORKBENCH_INBOUND_IO_APPROVAL_REF` 和既有 `WECOM_BOT_SECRET` 后，可单独接收私聊 Bot／群内 @Bot 消息。
+
+收到消息后，服务使用回调中的发送者 userid 自动进行官方身份转换，并以该应用身份调用 `user/get` 核验当前权限和账号状态。查询在入库事务前完成；失败或无权限时拒绝。不会同步全院人员，不根据姓名或群成员列表授予权限，不自动授予 PC 角色。
+
+仅接收时保持 `transportEnabled=false`；`bot.personTargetHashes`、`bot.groupTargetHashes` 和 `groupRoutes` 可为空数组。它们不作为新接收模式的人员、群白名单。通知与 Webhook 资格文件沿原发送合同，不因报修准入自动建立。`memberEntry.reporterUserIds` 仍只属于原 H5 OAuth 映射，不是 Bot 报修人名单。
+
+不使用 H5 时，保留 `memberEntry.enabled=true` 和已核对企业／应用／Bot 作用域，设置 `identityMode=UNVERIFIED`、`memberIdsConfirmed=false`、`proofRef=null`、`proofKind=null` 并省略 `reporterUserIds`。此时不转换 H5 名单、不读取通知资格文件，不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续拒绝未证明的跨身份访问，不回退旧 Grant。真实发送模式仍要求原已证明映射。
+
+成员查询按 1 个实际在途操作串行处理，最多保留 32 项。5 秒截止包含排队等待；超时且 Provider 未结束时仍保留占用，不能累积后台请求。无法核验、超时或队列满的本条消息不会进入业务库，也没有声称已自动重放；需在故障恢复后重新报修，不能把这一限制写成完整投递保障。
+
+启动前确认目标 Bot 没有其他活动连接，保持一个 Gateway。`--check` 只报告配置，不启动连接或发消息。真实接收后按原 Inbox、Intake、规则、工单核心和工作台查看结果。Sender、投递 Worker 及 App 对外发送仍由 `transportEnabled` 控制。单独接收不代表消息回执、通知或报修人 H5 已验收。
+
+### 执行编译入口
 
 仓库根目录 PowerShell，先完成候选构建；以下入口均执行编译产物：
 

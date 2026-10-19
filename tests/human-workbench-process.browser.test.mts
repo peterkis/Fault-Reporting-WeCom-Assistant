@@ -58,6 +58,59 @@ async function migrateWorkbenchDatabase(databaseUrl:string){
 }
 async function unusedPort(){const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');await new Promise<void>(r=>probe.close(()=>r()));return address.port;}
 
+test('compiled receive-only Bot admits a new visible sender and group, deduplicates, denies outsiders and never sends',{timeout:120000},async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'human-workbench-inbound-'));let workerTraceFile:string|undefined;
+ const outerFailures:unknown[]=[];
+ try{
+  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'humaninbound',max:1,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
+   await migrateWorkbenchDatabase(databaseUrl);
+   await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'runtime-staff',displayName:'运行接线合成坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+   const f=workbenchTestSettings(directory,await unusedPort());f.env.PILOT_DATABASE_URL=databaseUrl;f.env.WORKBENCH_INBOUND_IO_APPROVAL_REF='tests/isolated-inbound';
+   f.settings.botInboundEnabled=true;f.settings.bot.personTargetHashes=[];f.settings.bot.groupTargetHashes=[];f.settings.groupRoutes=[];
+   f.settings.memberEntry={...f.settings.memberEntry,identityMode:'UNVERIFIED',memberIdsConfirmed:false,proofRef:null,proofKind:null};delete f.settings.memberEntry.reporterUserIds;
+   f.save();await rm(f.settings.notificationBindingsFile);assert.equal(f.settings.transportEnabled,false);assert.equal(f.settings.memberEntry.reporterUserIds,undefined);
+   workerTraceFile=join(tmpdir(),new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');
+   const controller=await workbenchMain(['--start'],{env:f.env,roleScriptUrl:new URL('./helpers/human-workbench-boundaries-role.mjs',import.meta.url)});assert.ok(controller);
+   const failures:unknown[]=[];
+   try{
+    assert.equal(controller.process_count,3);
+    const trace=async()=> (await readFile(join(directory,'boundaries.jsonl'),'utf8')).trim().split('\n').filter(Boolean).map(v=>object(JSON.parse(v)));
+    const gateway=(await trace()).find(v=>v.event==='gateway-input-boundary');assert.ok(gateway);assert.equal(typeof gateway.port,'number');
+    const post=async(frame:unknown)=>{const response=await fetch('http://127.0.0.1:'+String(gateway.port)+'/message',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(frame),signal:AbortSignal.timeout(5000)});assert.equal(response.status,202);await response.arrayBuffer();};
+    const frame=(id:string,type:'single'|'group',sender='new-visible-member',bot='bot-test')=>({cmd:'aibot_msg_callback',headers:{req_id:'inbound-'+id},body:{aibotid:bot,msgid:'inbound-'+id,chattype:type,...(type==='group'?{chatid:'new-group-without-webhook-route'}:{}),from:{userid:sender},msgtype:'text',text:{content:(type==='group'?'@医小修 合成门诊群':'合成门诊单聊')+'打印机打印不了。'}}});
+    await post(frame('single','single'));await post(frame('single','single'));
+    await post(frame('group','group','new-visible-group-member'));await post(frame('outside','single','not-visible-member'));await post(frame('wrong-bot','single','new-visible-member','another-bot'));
+    await until(async()=> (await trace()).filter(v=>v.event==='member-read').length===4);
+    await until(async()=> (await pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0]?.n===2);
+    const inputs=await pool.query<{chat_type:string;sender_user_id:string;chat_id:string|null}>('SELECT chat_type,sender_user_id,chat_id FROM channel.message_inbox ORDER BY id');
+    assert.equal(inputs.rowCount,2);assert.deepEqual(inputs.rows.map(v=>v.sender_user_id).sort(),['new-visible-group-member','new-visible-member']);
+    assert.deepEqual(inputs.rows.map(v=>v.chat_type).sort(),['group','single']);assert.equal(inputs.rows.find(v=>v.chat_type==='group')?.chat_id,'new-group-without-webhook-route');
+    assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM intake.service_intake')).rows[0]?.n,2);
+    assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.pilot_principal')).rows[0]?.n,1,'reporting does not create staff access');
+    for(const table of ['communication.delivery_attempt','notification.delivery_attempt'])assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM '+table)).rows[0]?.n,0);
+    assert.equal((await trace()).filter(v=>['app-send','group-send','bot-send'].includes(String(v.event))).length,0);
+    const h5=await fetch('http://127.0.0.1:'+f.settings.listenPort+'/api/yixiaoxiu/bootstrap',{headers:{host:new URL(f.settings.publicOrigin).host},signal:AbortSignal.timeout(5000)});assert.notEqual(h5.status,200);await h5.arrayBuffer();
+    console.log('HUMAN_WORKBENCH_RECEIVE_ONLY_PROOF '+JSON.stringify({compiled_roles:3,configured_h5_members:0,h5_mapping_loaded:false,new_sender_in_roster:false,new_group_in_routes:false,admitted_messages:2,tickets:2,duplicates_collapsed:true,outsider_denied:true,wrong_bot_denied:true,staff_count:1,provider_send_attempts:0}));
+   }catch(error){
+    failures.push(error);
+    try{
+     const counts=(await pool.query("SELECT json_build_object('messages',(select count(*) from channel.message_inbox),'intakes',(select count(*) from intake.service_intake),'tickets',(select count(*) from pilot_ticket.ticket),'decisions',(select count(*) from intake.deterministic_decision)) AS counts")).rows[0]?.counts;
+     console.log('HUMAN_WORKBENCH_RECEIVE_ONLY_DIAGNOSTIC '+JSON.stringify({counts}));
+    }catch(diagnosticError){failures.push(diagnosticError);}
+   }finally{try{assert.equal((await controller.stop()).process_count,0);}catch(cleanupError){failures.push(cleanupError);}}
+   if(failures.length)throw failures.length===1?failures[0]:new AggregateError(failures,'HUMAN_WORKBENCH_RECEIVE_ONLY_FAILURE');
+   assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
+  }});
+  await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
+ }catch(error){outerFailures.push(error);}
+ finally{
+  for(const cleanup of [async()=>{if(workerTraceFile)await rm(workerTraceFile,{force:true});},async()=>rm(directory,{recursive:true,force:true})]){
+   try{await cleanup();}catch(cleanupError){outerFailures.push(cleanupError);}
+  }
+ }
+ if(outerFailures.length)throw outerFailures.length===1?outerFailures[0]:new AggregateError(outerFailures,'HUMAN_WORKBENCH_RECEIVE_ONLY_OUTER_FAILURE');
+});
+
 test('compiled parent rejects missing personal-read schema or migration before reporting ready and stops all roles',{timeout:120000},async()=>{
  const directory=await mkdtemp(join(tmpdir(),'human-workbench-schema-'));let workerTraceFile:string|undefined;
  try{

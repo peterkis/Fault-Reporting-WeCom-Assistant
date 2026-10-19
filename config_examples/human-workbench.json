@@ -4,6 +4,7 @@
   "reporterOrigin": "https://reporter.example.invalid",
   "listenPort": 43166,
   "transportEnabled": false,
+  "botInboundEnabled": false,
   "memberEntry": {
     "enabled": true,
     "identityMode": "VERIFIED_DELEGATED_MAPPING",

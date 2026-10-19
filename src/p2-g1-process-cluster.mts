@@ -51,7 +51,7 @@ function validConfiguration(value: Partial<G1ClusterConfiguration>): value is G1
     && (!value.gatewayEnabled || (typeof value.botId === 'string' && value.botId.length > 0
       && typeof value.secret === 'string' && value.secret.length > 0
       && typeof value.wsUrl === 'string' && /^wss:\/\//u.test(value.wsUrl)
-      && value.allowedTargetHashes.length > 0));
+      && (!value.senderEnabled || value.allowedTargetHashes.length > 0)));
 }
 
 function stableRoleMetrics(role: string, value: Readonly<Record<string, unknown>> | null | undefined) {
@@ -316,7 +316,7 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
   async function stopRole(role: string) {
     const child = children.get(role);
     if (!child || child.exitCode !== null || child.signalCode !== null) return;
-    try { if (child.connected) child.send({ type: 'stop' }); } catch { /* bounded forced cleanup remains below */ }
+    try { if (child.connected) child.send({ type: 'stop' }, () => {}); } catch { /* bounded forced cleanup remains below */ }
     const exited = await Promise.race([(exits.get(role) as Promise<ExitRecord>).then(() => true), delay(10_000).then(() => false)]);
     if (!exited && child.exitCode === null && child.signalCode === null) child.kill();
     await Promise.race([exits.get(role), delay(5_000)]);

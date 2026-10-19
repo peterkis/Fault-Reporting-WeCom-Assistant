@@ -20,6 +20,7 @@ import {createWeComOAuthCodeResolver} from '../src/p2-g2-wecom-oauth-provider.mj
 import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createP2G1WeComGateway} from '../src/p2-g1-wecom-gateway.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -47,7 +48,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  }
  const fetchImpl=boundaries.fetchImpl??fetch;
  const reporterHmacSecret=process.env.P2_016_REPORTER_HMAC_SECRET as string,identityHmacKey=process.env.PILOT_LOG_IDENTITY_HASH_KEY as string;
- const allowedHosts=[new URL(s.reporterOrigin).host],appNotifications=createWorkbenchNotificationOptions(s,reporterHmacSecret);
+ const allowedHosts=[new URL(s.reporterOrigin).host],appNotifications=s.memberEntry.identityMode==='VERIFIED_DELEGATED_MAPPING'?createWorkbenchNotificationOptions(s,reporterHmacSecret):null;
  const tokenProvider=createWeComAppTokenProvider({corpId:s.memberEntry.corpId,appSecret:process.env.APP_SECRET??'disabled',fetchImpl});
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  if(role==='APP'){
@@ -59,7 +60,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
     try{await auth.initialize();return auth;}catch(error){await auth.close();throw error;}
    },
    runtimeFactory:options=>{
-    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,identityHmacKey,workbenchAuthentication:options.authentication,
+    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
     reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
@@ -76,17 +77,24 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
    },
   });
  }
- if(role==='GATEWAY')return runGateway({
+ if(role==='GATEWAY'){
+ const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
+ return runGateway({
   intakeFactory:({pool})=>{
-   const scope=createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
+   const scope=memberAdmission?null:createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
-   return {accept:input=>scope.accepts((input as {message?:unknown}).message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'HUMAN_WORKBENCH_INBOUND_SCOPE_REJECTED',retryable:false}})};
+   return {accept:async input=>{
+    const message=(input as {message?:unknown}).message;
+    const allowed=memberAdmission?await memberAdmission.accepts(message):scope?.accepts(message)===true;
+    return allowed?inbox.accept(input,processor):{ok:false,error:{code:'HUMAN_WORKBENCH_INBOUND_SCOPE_REJECTED',retryable:false}};
+   }};
   },
   ...(boundaries.clientFactory?{gatewayFactory:options=>createP2G1WeComGateway({...options,clientFactory:boundaries.clientFactory})}:{}),
   senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
    groupRoundNotifications:{pool,routes:s.groupRoutes??[],resolveMentionUserId:input=>resolveWorkbenchMention(s,input),fetchImpl},
-   appRoundNotifications:{pool,notifications:appNotifications,agentId:Number(s.memberEntry.agentId),accessTokenProvider:tokenProvider,fetchImpl}}),
+   ...(appNotifications?{appRoundNotifications:{pool,notifications:appNotifications,agentId:Number(s.memberEntry.agentId),accessTokenProvider:tokenProvider,fetchImpl}}:{})}),
  });
+ }
 }
 function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,reporterHmacSecret:string){
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});

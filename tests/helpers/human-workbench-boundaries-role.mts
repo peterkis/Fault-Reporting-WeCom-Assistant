@@ -16,6 +16,12 @@ const fetchImpl:typeof fetch=async(input,init)=>{
  let body:unknown;
  if(url.pathname==='/cgi-bin/gettoken')body={errcode:0,access_token:'isolated-token',expires_in:7200};
  else if(url.pathname==='/cgi-bin/batch/userid_to_openuserid'){const payload=JSON.parse(String(init?.body)) as {userid_list:string[]};body={errcode:0,open_userid_list:payload.userid_list.map(userid=>({userid,open_userid:'open-'+userid}))};}
+ else if(url.pathname==='/cgi-bin/user/get'){
+  const id=url.searchParams.get('userid');
+  const allowed=['open-new-visible-member','open-new-visible-group-member'].includes(id??'');
+  record({role:settings.role,event:'member-read',allowed});
+  body=allowed?{errcode:0,userid:id,status:1,enable:1}:{errcode:60011};
+ }
  else if(url.pathname==='/cgi-bin/auth/getuserinfo'){
   const identities:Record<string,string>={staff:'runtime-staff',handler:'runtime-handler',member:'synthetic-A','member-b':'synthetic-B'};
   const identity=identities[url.searchParams.get('code')??''];assert.ok(identity,'ISOLATED_OAUTH_CODE_REQUIRED');
