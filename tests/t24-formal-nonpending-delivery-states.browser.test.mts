@@ -116,7 +116,12 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
       let browser:Browser|undefined,error:unknown;
       try{
         browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+id,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
-        await load(browser);await browser.waitFor(rendered());
+        await load(browser);
+        await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)})?.querySelector('li'))`);
+        assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('details').open`),false,'notification diagnostics start folded');
+        await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('summary').click()`);
+        await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('li')?.checkVisibility()===true`);
+        await browser.waitFor(rendered());
         assert.deepEqual(await browser.evaluate(domRows()),expected);
         assert.equal(await browser.evaluate('globalThis.__t24PCBootstrap.at(-1).body.ticket_round_notifications_enabled'),true);
         const reads=await browser.evaluate('globalThis.__t24PCReads') as Read[];assert.ok(reads.length);
