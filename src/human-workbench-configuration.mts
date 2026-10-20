@@ -9,6 +9,7 @@ import {createP2016InboundScope} from './p2-016-inbound-scope.mjs';
 import {applicationRecipientProof,boundApplicationRecipient} from './yxx-application-member-auth.mjs';
 import {assertEpochMsString,formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
+import type {YxxH5RuntimeOptions} from './yxx-h5-runtime.mjs';
 
 export const HUMAN_WORKBENCH_PROFILE='human-v1';
 export type WorkbenchRole='APP'|'WORKER'|'GATEWAY';
@@ -19,7 +20,7 @@ export interface WorkbenchSettings {
  appChannelAccountId:string;notificationBindingsFile:string;
  groupRoutes:{botId:string;groupId:string;url:string}[];
 }
-export interface WorkbenchConfiguration {enabled:true;settings:WorkbenchSettings;databaseUrl:string;identityHashKey:string;reporterHmacSecret:string;appSecret:string;botSecret:string;ioApprovalRef:string;inboundApprovalRef:string}
+export interface WorkbenchConfiguration {enabled:true;settings:WorkbenchSettings;databaseUrl:string;identityHashKey:string;reporterHmacSecret:string;appSecret:string;botSecret:string;ioApprovalRef:string;inboundApprovalRef:string;h5Environment?:NodeJS.ProcessEnv}
 export interface RoleSettings {groupNotificationTargets?:{botId:string;groupId:string}[];role:WorkbenchRole;reporterOrigin:string;transportEnabled:boolean;botInboundEnabled?:boolean;botId:string;appChannelAccountId:string;notificationBindingsFile:string;memberEntry:MemberEntry;publicOrigin?:string;listenPort?:number;groupRoutes?:WorkbenchSettings['groupRoutes'];personTargetHashes?:string[];groupTargetHashes?:string[]}
 export interface WorkerRoleSettings {role:'WORKER';transportEnabled:boolean;botId:string}
 export function configurationError(field:string):never{throw new Error('HUMAN_WORKBENCH_CONFIG_INVALID:'+field);}
@@ -27,6 +28,20 @@ function record(value:unknown,field:string):Record<string,unknown>{if(!value||ty
 function exact(value:unknown,keys:readonly string[],field:string){const r=record(value,field);if(Object.keys(r).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(r,k)))configurationError(field);return r;}
 function text(value:unknown,field:string,max=512):string{if(typeof value!=='string'||!value||value.length>max||/[\r\n\x00]/u.test(value))configurationError(field);return value;}
 function origin(value:unknown,field:string){const s=text(value,field);let url:URL;try{url=new URL(s);}catch{configurationError(field);}if(url.origin!==s||url.protocol!=='https:'||url.username||url.password)configurationError(field);return s;}
+const h5EnvironmentKeys=['YIXIAOXIU_H5_ENABLED','YIXIAOXIU_H5_PRIVATE_ROOT','YIXIAOXIU_H5_MEDIA_KEY_HEX','YIXIAOXIU_H5_FFMPEG_PATH','YIXIAOXIU_H5_FFPROBE_PATH','YIXIAOXIU_H5_PROGRESS_ENABLED'] as const;
+/** No environment default enables H5, a Provider, or an external delivery. */
+export function readWorkbenchH5RuntimeOptions(env:NodeJS.ProcessEnv=process.env,{worker=false}:{worker?:boolean}={}):YxxH5RuntimeOptions {
+ const enabled=env.YIXIAOXIU_H5_ENABLED,progress=env.YIXIAOXIU_H5_PROGRESS_ENABLED;
+ if(enabled!==undefined&&!['true','false'].includes(enabled))configurationError('YIXIAOXIU_H5_ENABLED');
+ if(progress!==undefined&&!['true','false'].includes(progress))configurationError('YIXIAOXIU_H5_PROGRESS_ENABLED');
+ if(enabled!=='true'){if(progress==='true')configurationError('YIXIAOXIU_H5_PROGRESS_ENABLED');return {enabled:false};}
+ const path=(key:typeof h5EnvironmentKeys[number])=>{const value=text(env[key],key,2048);if(!isAbsolute(value))configurationError(key);return value;};
+ const privateRoot=path('YIXIAOXIU_H5_PRIVATE_ROOT'),keyHex=text(env.YIXIAOXIU_H5_MEDIA_KEY_HEX,'YIXIAOXIU_H5_MEDIA_KEY_HEX',64);
+ if(!/^[a-fA-F0-9]{64}$/u.test(keyHex))configurationError('YIXIAOXIU_H5_MEDIA_KEY_HEX');
+ const result:YxxH5RuntimeOptions={enabled:true,privateRoot,key:Buffer.from(keyHex,'hex'),workbenchProgressEnabled:progress==='true'};
+ if(worker){result.ffmpegPath=path('YIXIAOXIU_H5_FFMPEG_PATH');result.ffprobePath=path('YIXIAOXIU_H5_FFPROBE_PATH');}
+ return result;
+}
 function hashes(value:unknown,field:string):string[]{if(!Array.isArray(value)||value.length>64||value.some(v=>typeof v!=='string'||!/^[a-f0-9]{64}$/u.test(v))||new Set(value).size!==value.length)configurationError(field);return value as string[];}
 export function readWorkbenchJson(file:string,field='file'):unknown{try{if(!isAbsolute(file)||statSync(file).size>131072)configurationError(field);return JSON.parse(readFileSync(file,'utf8')) as unknown;}catch{configurationError(field);}}
 function member(value:unknown,receiveOnly=false):MemberEntry{
@@ -71,7 +86,11 @@ export function readHumanWorkbenchConfiguration(env:NodeJS.ProcessEnv=process.en
  if(settings.botInboundEnabled&&!isolatedBoundaries&&(env.WORKBENCH_INBOUND_IO_APPROVED!=='true'||settings.memberEntry.validationProfile!=='DEPLOYMENT'))configurationError('WORKBENCH_INBOUND_IO_APPROVED');
  if(!isolatedBoundaries&&settings.memberEntry.validationProfile!=='DEPLOYMENT')configurationError('memberEntry.validationProfile');
  if(settings.memberEntry.identityMode==='VERIFIED_DELEGATED_MAPPING')validateNotificationBindings(settings.notificationBindingsFile,settings.memberEntry);
- return {enabled:true,settings,databaseUrl,identityHashKey,reporterHmacSecret,appSecret,botSecret,ioApprovalRef,inboundApprovalRef};
+ const h5=readWorkbenchH5RuntimeOptions(env,{worker:true});
+ if(h5.enabled&&!['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(settings.memberEntry.identityMode))configurationError('memberEntry.identityMode');
+ const h5Environment:NodeJS.ProcessEnv={};if(h5.enabled)for(const key of h5EnvironmentKeys)if(env[key]!==undefined)h5Environment[key]=env[key];
+ h5.key?.fill(0);
+ return {enabled:true,settings,databaseUrl,identityHashKey,reporterHmacSecret,appSecret,botSecret,ioApprovalRef,inboundApprovalRef,...(h5.enabled?{h5Environment}:{})};
 }
 interface NotificationBindings {validUntilEpochMs:string;members:{memberUserId:string;bindingProofRef:string;accountStatus:string;bindingState:string;messageReachability:string}[];mentions:{botId:string;groupId:string;reporterUserId:string;mentionUserId:string;namespaceProofRef:string}[]}
 function validateNotificationBindings(file:string,m:MemberEntry):NotificationBindings{
@@ -116,10 +135,11 @@ export function resolveWorkbenchMention(settings:RoleSettings,input:{botId:strin
 }
 export function workbenchRoleEnvironment(c:WorkbenchConfiguration,role:WorkbenchRole):NodeJS.ProcessEnv{
  const s=c.settings;
- if(role==='WORKER')return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify({role,transportEnabled:s.transportEnabled,botId:s.bot.id}),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret};
+ if(role==='WORKER')return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify({role,transportEnabled:s.transportEnabled,botId:s.bot.id}),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,...c.h5Environment};
  const settings:RoleSettings={role,reporterOrigin:s.reporterOrigin,transportEnabled:s.transportEnabled,botInboundEnabled:s.botInboundEnabled??false,botId:s.bot.id,memberEntry:s.memberEntry,appChannelAccountId:s.appChannelAccountId,notificationBindingsFile:s.notificationBindingsFile,
   ...(role==='APP'?{publicOrigin:s.publicOrigin,listenPort:s.listenPort,groupNotificationTargets:s.groupRoutes.map(({botId,groupId})=>({botId,groupId}))}:{}),...(role==='GATEWAY'?{groupRoutes:s.groupRoutes,personTargetHashes:s.bot.personTargetHashes,groupTargetHashes:s.bot.groupTargetHashes}:{})};
  return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify(settings),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,
+  ...(role==='APP'&&c.h5Environment?Object.fromEntries(Object.entries(c.h5Environment).filter(([key])=>!['YIXIAOXIU_H5_FFMPEG_PATH','YIXIAOXIU_H5_FFPROBE_PATH'].includes(key))):{}),
   ...(role==='APP'||role==='GATEWAY'&&(s.transportEnabled||s.botInboundEnabled)?{APP_SECRET:c.appSecret}:{}),...(role==='GATEWAY'&&s.transportEnabled?{WORKBENCH_EXTERNAL_IO_APPROVED:'true',WORKBENCH_EXTERNAL_IO_APPROVAL_REF:c.ioApprovalRef}:{}),
   ...(role==='GATEWAY'&&s.botInboundEnabled?{WORKBENCH_INBOUND_IO_APPROVED:'true',WORKBENCH_INBOUND_IO_APPROVAL_REF:c.inboundApprovalRef}:{})};
 }
