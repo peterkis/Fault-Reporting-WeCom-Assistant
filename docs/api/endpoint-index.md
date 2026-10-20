@@ -4,6 +4,8 @@
 
 按 `METHOD + PATH` 搜索。参数 `{...}` 是占位标识，不是字面URL。W/M/O/P定义见公共约定。`已实现`表示源码有handler并依赖相应装配/默认关闭开关，**不表示当前部署已启用**；`条件兼容`仅特定访问策略，`拒绝`不是可用服务。各行链接包含请求/响应/认证/失败规则及源码/测试。
 
+H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用成员认证合同，不是新增宿主进程；实际装配见 [H5 V2](member/h5-v2.md#宿主认证和协商)。W 的工作人员权限与 M／F 的成员权限分别核验。
+
 ## T31 显式安全公开进展（独立默认关闭）
 
 | 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
@@ -156,20 +158,34 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
 | WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |
 | WB-T41-Q2 | POST | `/api/workbench/search` | W | 已实现、默认关闭；同一授权读取的长条件传输，32KiB／Origin-CSRF／同预算，无命令写 | [只读 POST](workbench/search-source-forward.md#get-与有界只读-post) |
+| H5-W01 | GET | `/api/workbench/items/{kind}/{id}/web-report` | W | 已挂载、H5 默认关闭：当前 READ 下的 Web 来源材料／催单／评价／公开进度，kind=ticket/review/intake | [网页报修资料](workbench/web-reports.md) |
+| H5-W02 | GET | `/api/workbench/items/{kind}/{id}/web-report/media/{mediaRef}` | W | 已挂载、H5 默认关闭：当前获权 Intake 原件／播放副本，逐块终检 | [材料读取](workbench/web-reports.md#get-apiworkbenchitemskindidweb-reportmediamediaref) |
+| H5-W03 | POST | `/api/tickets/{ticketId}/member-progress` | W | 已挂载、公开进度独立默认关闭：当前处理人明确公开摘要与预计时间，原 UUID／Ticket 版本 | [公开进度](workbench/web-reports.md#post-apiticketsticketidmember-progress) |
+| H5-W04 | GET | `/api/tickets/{ticketId}/member-progress/commands/{clientCommandId}` | W | 当前 READ 下原工作人员／Ticket／UUID／公开进度用途的 UNKNOWN／COMMITTED 核对，不要求新写 | [进度回执](workbench/web-reports.md#get-apiticketsticketidmember-progresscommandsclientcommandid) |
 
 ## 成员与Reporter REST
 
 | ID | 方法 | 完整路径 | 宿主 | 状态 / 用途 | 契约文档 |
 | --- | --- | --- | --- | --- | --- |
-| M01 | GET | `/api/yixiaoxiu/bootstrap` | M / W扩展 | 已实现：成员自助能力 | [自助](member/self-service.md) |
+| M01 | GET | `/api/yixiaoxiu/bootstrap` | M / F | 已实现：原成员能力；H5 默认关闭，显式 Accept V2 增加资料／SDK／材料上限 | [自助](member/self-service.md)／[H5 V2](member/h5-v2.md) |
 | M02 | GET | `/api/yixiaoxiu/service-catalog` | M / W扩展 | 已实现：授权读写成员目录选择 | [自助](member/self-service.md) |
-| M03 | GET | `/api/yixiaoxiu/my-reports` | M / W扩展 | 已实现：本人Web/Bot报修 | [自助](member/self-service.md) |
-| M04 | GET | `/api/yixiaoxiu/requests/{requestRef}` | M / W扩展 | 已实现：Web详情/304 | [自助](member/self-service.md) |
+| M03 | GET | `/api/yixiaoxiu/my-reports` | M / F | 已实现：本人Web/Bot报修；H5 V2 增加先获权后 search／status 筛选分页 | [自助](member/self-service.md)／[H5 V2](member/h5-v2.md) |
+| M04 | GET | `/api/yixiaoxiu/requests/{requestRef}` | M / F | 已实现：Web详情／304；H5 V2 增加媒体、当前处理人、公开进度及催单／评价上下文 | [自助](member/self-service.md)／[H5 V2](member/h5-v2.md) |
 | M05 | GET | `/api/yixiaoxiu/requests/{requestRef}/timeline` | M / W扩展 | 已实现：时间线 | [自助](member/self-service.md) |
-| M06 | POST | `/api/yixiaoxiu/requests` | M / W扩展 | 已实现：先受理/202 | [自助](member/self-service.md) |
+| M06 | POST | `/api/yixiaoxiu/requests` | M / F | 已实现：先受理／202；显式 Accept V2／schema_version:2，支持纯媒体或无需材料的联系请求 | [自助](member/self-service.md)／[H5 V2](member/h5-v2.md) |
 | M07 | POST | `/api/yixiaoxiu/requests/{requestRef}/supplements` | M / W扩展 | 已实现：补充/202 | [自助](member/self-service.md) |
 | M08 | GET | `/api/yixiaoxiu/commands/{clientCommandId}` | M / W扩展 | 已实现：本人命令回执 | [自助](member/self-service.md) |
 | M09 | POST | `/wecom/yixiaoxiu/logout` | M/O/W按profile | 已实现：JSON或OAuth-only HTML | [自助](member/self-service.md)、[认证差异](platform/auth-health.md) |
+| H5-M01 | GET | `/api/yixiaoxiu/department-reports` | M / F | H5 默认关闭：当前已核验科室的有限汇总／公开进度，不共享正文／联系方式／媒体 | [H5 V2](member/h5-v2.md#科室催单和评价) |
+| H5-M02 | POST | `/api/yixiaoxiu/requests/{requestRef}/urge` | M / F | H5 默认关闭：本轮催单追加事实、10 分钟冷却、原 UUID／Ticket 版本，不改状态／责任 | [H5 V2](member/h5-v2.md#科室催单和评价) |
+| H5-M03 | POST | `/api/yixiaoxiu/requests/{requestRef}/evaluation` | M / F | H5 默认关闭：本人实际完工轮次一次评价、原 UUID／Ticket 版本 | [H5 V2](member/h5-v2.md#科室催单和评价) |
+| H5-M04 | GET | `/api/yixiaoxiu/requests/{requestRef}/member-commands/{clientCommandId}` | M / F | H5 默认关闭：当前本人 READ 下原 URGE／EVALUATION 用途的 UNKNOWN／COMMITTED 核对 | [H5 V2](member/h5-v2.md#科室催单和评价) |
+| H5-M05 | POST | `/api/yixiaoxiu/js-sdk/signature` | M / F | H5 默认关闭：当前成员写能力／CSRF，受控同源 URL 的 CORP／AGENT 签名，无凭据下发 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M06 | POST | `/api/yixiaoxiu/media/uploads` | M / F | H5 默认关闭：本人／企业／应用范围的持久预留，原 UUID；首次 201／重放 200 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M07 | PUT | `/api/yixiaoxiu/media/uploads/{mediaRef}/content` | M / F | H5 默认关闭：原始材料受控上传，当前写权／CSRF／UUID及等待后终检 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M08 | POST | `/api/yixiaoxiu/media/uploads/{mediaRef}/wecom` | M / F | H5 默认关闭：服务端获取并私有保存临时素材，当前范围／CSRF／UUID，不伪造 Bot 来源 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M09 | DELETE | `/api/yixiaoxiu/media/uploads/{mediaRef}` | M / F | H5 默认关闭：取消本人未绑定材料，当前写权／CSRF／UUID；BOUND／WRITING 拒绝 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M10 | GET | `/api/yixiaoxiu/requests/{requestRef}/media/{mediaRef}` | M / F | H5 默认关闭：本人当前 READ／原 Request 绑定／留存，ORIGINAL／PLAYABLE 逐块终检 | [签名与媒体](member/h5-v2.md#签名和媒体) |
 | E01 | GET | `/api/reporter/member/session` | M/O/W成员扩展 | 已实现：成员认证状态 | [Reporter](member/reporter-access.md) |
 | E02 | GET | `/api/reporter/bootstrap` | 成员或W legacy | 已实现：依策略返回不同DTO | [Reporter](member/reporter-access.md) |
 | E03 | POST | `/api/reporter/member-entry/prepare` | 成员扩展 | 已实现：旧卡片浏览器继续入口 | [Reporter](member/reporter-access.md) |
@@ -243,6 +259,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | U18 | GET | `/`、`/static/pilot-workbench.js`、`/static/pilot-workbench.css` | P | 历史页面/资源 | [平台](platform/auth-health.md) |
 | U19 | GET | `/reporter/bot-feedback.js` | M成员写扩展 | T21默认关闭：302到当前Vite第三entry的编译资源 | [Bot反馈](member/bot-feedback-design.md) |
 | U20 | GET | `/reporter/feedback-assets/{buildAsset}.js` | M成员写扩展 | T21闭合manifest JS graph；未知404，无源码回退 | [Bot反馈](member/bot-feedback-design.md) |
+| U21 | GET | `/wecom/yixiaoxiu/assets/{buildAsset}` | M / F | H5 默认关闭：当前 Vite manifest 可达 JS／CSS／WOFF2／图片；不公开设计稿／preview／inventory，无源码回退 | [H5 静态边界](member/h5-v2.md#错误恢复和公开资源) |
 
 ## 已保存附件（WBINT-T16，默认关闭）
 

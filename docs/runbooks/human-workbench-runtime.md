@@ -2,6 +2,8 @@
 
 本入口显式选择 `WORKBENCH_RUNTIME_PROFILE=human-v1`，沿用 App、Worker、Gateway、PostgreSQL 和 P2-016 Runtime。未选择时 `--check` 返回 `enabled:false`，`--start` 拒绝启动。旧 P2-016/G1/G2/SS011 演练及 `_ENABLED` 限制保持。前向变更依照 [ADR-0034](../../adr/0034_mvp_notifications_and_application_members.md)，需显式执行 063 增量迁移；启动不自动迁移，不授予现场发送、部署或 Gate 批准。
 
+2026-10-20 的 [ADR-0035](../../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md) 增加独立默认关闭的 H5 V2／多媒体选项。仅显式启用时要求 064／065；`human-v1` 本身不会自动打开新版 H5 或公开进度写入。
+
 ## 能力与实际装配
 
 | 业务能力 | 本入口显式 Runtime 选项 | 必要依赖／角色 |
@@ -13,8 +15,9 @@
 | 提交核对、补充跟进 | workbenchSupplementFollowUpEnabled | App；沿各原命令回执，不另建账本；当前页面保留未确认操作，核对后才允许下一次提交 |
 | 节点通知、投递异常、受控恢复 | mvpNotificationsEnabled、ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
 | 报修人查询、仍未解决 | MEMBER_REQUIRED、已证明的成员映射与 OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证；无 H5 映射的单独接收模式不装配自助／反馈 |
+| 新版 H5、多媒体、催单／评价、管理端 Web 材料与催单提醒 | yxxH5.enabled；原成员 flags 保持；公开进度另需 workbenchProgressEnabled | 显式 H5 环境；App 的同源成员／工作人员双权限；Worker 的单并发转码与到期清理，064／065 |
 
-只启用上述组合。附件、核实目录候选、Incident、AI、提醒、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。原动作仍按当前授权和状态决定是否可用。
+只启用上述组合。H5 显式开启时挂载 Web 材料读取，并复用站内提醒消费本轮催单；不是原通道附件开关的放宽。原附件、核实目录候选、Incident、AI、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。H5 关闭时原提醒默认值保持。原动作仍按当前授权和状态决定是否可用。
 
 首期 MVP 只面向信息科操作人员。2026-10-19 按用户决定，本入口的 `workbenchDraftRecoveryEnabled`、`botReporterFeedbackDraftRecoveryEnabled` 与 `yxxSelfService.reporterFeedbackDraftRecoveryEnabled` 均显式为 `false`。暂不提供跨刷新、离开页面后的草稿恢复。填写内容保留在当前页面。重复提交保护、授权校验、版本校验与提交结果核对继续生效。已有加密草稿、历史证据及其他测试配置保持，不执行批量清理；原未确认操作仍按既有保护只核对一次原操作。未来恢复此功能须单独验证动作变为可用时的初始化与跨刷新流程。
 
@@ -78,6 +81,35 @@ human-v1 显式启用 `mvpNotificationsEnabled=true`；通用 Runtime 默认 fal
 
 ## 检查、启动、停止
 
+### H5 V2 与多媒体显式启用
+
+实际接口及 UNKNOWN 恢复见 [成员 H5 V2](../api/member/h5-v2.md)，工作人员四项读取／公开进度接口见 [Web 报修资料](../api/workbench/web-reports.md)。配置解析使用以下独立环境字段，不给 `WORKBENCH_RUNTIME_CONFIG` 的闭合 JSON 增加未知键；所有示例只列名称，不输出实际密钥或目录原值。
+
+| 字段 | 默认／要求 | 角色边界 |
+| --- | --- | --- |
+| `YIXIAOXIU_H5_ENABLED` | 缺省 `false`；只接受字面量 `true`／`false` | 显式传入 App／Worker，Gateway 不接收 |
+| `YIXIAOXIU_H5_PROGRESS_ENABLED` | 独立默认 `false`；H5 关闭时不能单独为 `true` | App 的当前处理人公开进度写入；READ、原用途回执与新 WRITE 分开 |
+| `YIXIAOXIU_H5_PRIVATE_ROOT` | H5 开启时必需，绝对路径；预先准备的独立私有目录，不放在公开静态目录下 | App／Worker；构造器不自动创建根目录 |
+| `YIXIAOXIU_H5_MEDIA_KEY_HEX` | H5 开启时必需，64 位十六进制，即 32 字节 AES 密钥；不复用身份／Reporter 密钥 | App／Worker，日志与浏览器不接收 |
+| `YIXIAOXIU_H5_FFMPEG_PATH` | H5 开启时必需，显式绝对程序路径 | 仅 Worker，App／Gateway 不接收 |
+| `YIXIAOXIU_H5_FFPROBE_PATH` | 与 FFmpeg 成对，显式绝对程序路径 | 仅 Worker；既有供应链／程序来源证据单独保留 |
+
+父进程只按角色白名单转交字段。Worker 继续不持有 `APP_SECRET`、`memberEntry`、应用 token Provider 或新增外部发送资格；Gateway 不接收 H5 存储、加密密钥、转码程序或这些新开关。App 复用已有应用 token Provider 生成受控页面签名／下载临时素材，不向浏览器下发凭据，也不运行转码子进程。
+
+M 的 `MEMBER_SELF_SERVICE` 扩展通过显式 `h5` 选项装配。F 即 `FULL_SERVICE_LOOP` 的 W 成员支路，human-v1 的 P2-016 App 将显式 `yxxH5` 构造成共享运行对象，再分别注入成员 handler 和工作人员 Web 材料／公开进度接口；沿原池和唯一 App 监听。只有 H5 开启才挂载相应支路，原 OAuth-only、成员只读与原成员写开关不被提升。
+
+App 保存私有原件；Worker 在既有有限 `runOnce` 周期内串行处理，每轮最多一个播放副本任务，最多每 60 秒执行一次到期清理、每次最多 16 项。没有新增独立调度器、常驻媒体服务或数据库连接池。播放转换失败保留原件和已受理工单，返回明确的 `PENDING`／`UNAVAILABLE`；不能把未装配 FFmpeg 的 App 当作已经生成播放副本。
+
+人员补全只复用已注入的 Directory Port 与 `localOnly` 当前成员资格；human-v1 没有因此新增人员 Provider 凭据、全员同步或外联默认值。缺少可靠映射、Provider 或当前资格时保持待补／`DEFERRED`，资料缺失不阻断受理。科室共享另外核验当前有效组织关系，不从相似 ID 或人员姓名推导。
+
+启用前核对 [064 成员服务迁移](../../database/migrations/064_yixiaoxiu_h5_member_service.sql) 与 [065 Web 媒体迁移](../../database/migrations/065_yixiaoxiu_h5_web_media.sql) 的当前编译候选、checksum 和适用库。只有在具名数据库授权范围内才显式 apply；配置 `--check` 和 App／Worker 启动不会自动执行迁移 SQL，不得为通过 readiness 自动写迁移账本。H5 开启但迁移缺失时按 `yxx_h5_schema` 失败关闭。064／065 的本地合成应用不能改写旧迁移或视为现场批准。
+
+材料未绑定保留最多 24 小时；绑定后不得超过原 Web Request／Submission／Intake 的最早截止。转码失败、停止或关闭新写不提前删除原件。到期 Worker 删除原件／副本的密文并记录清理状态，保留历史事实。停止时沿原父进程关闭顺序取消并等待 H5 流、私有存储和转码任务；不清空工单、UUID 回执或未到期材料。
+
+只停公开进度写入时设置 `YIXIAOXIU_H5_PROGRESS_ENABLED=false`；只停成员新写沿原 `write_flag`／成员写开关，保留 H5 当前获权历史 READ 和原用途核对。`YIXIAOXIU_H5_ENABLED=false` 则退出新版页面／新路由，保留原 V1 读取、数据库和私有文件；它不是删除、回滚迁移或轮换密钥的命令。
+
+反向代理除原成员路径外，还须保留 `/wecom/yixiaoxiu/assets/` 的编译资源请求。服务只读取本次 Vite manifest 可达的同源 JS／CSS／字体／图片，拒绝设计稿、preview、manifest／inventory 和符号链接；原 Reporter 卡片仍走下文 `/reporter/` 资源路径。不得用公开私有存储目录或放宽 CSP 来修复缺失资源。
+
 ### Bot 接收与真实发送分开
 
 [ADR-0033](../../adr/0033_bot_member_intake_without_manual_roster.md) 规定正式 Bot 报修使用企业微信当前应用可见成员准入，不逐人维护报修名单。显式设置 `botInboundEnabled=true` 并提供 `WORKBENCH_INBOUND_IO_APPROVED=true`、本次接收授权引用 `WORKBENCH_INBOUND_IO_APPROVAL_REF` 和既有 `WECOM_BOT_SECRET` 后，可单独接收私聊 Bot／群内 @Bot 消息。
@@ -117,3 +149,7 @@ HTTPS 反向代理须转发到本机指定端口，保留原 Host/Origin、Cooki
 活动 selection 为 `v3-p09`；本任务相关集合 `human-workbench-wiring` 注册两个新入口。进程用例经过编译后的配置解析／父进程／三个角色入口，外部 HTTP/SDK 在专用测试子入口替换；无 runtimeFactory 替代，真实业务、数据库、OAuth Session、HTTP、React 和 Sender 保留。SYNTHETIC／ISOLATED_TEST 配置只能配显式外部测试边界和隔离 loopback 库，正式角色默认拒绝。
 
 接线阶段的历史候选与原件见[接线交付记录](../../plans/admin-workbench-integration/execution/runtime-wiring.md)。当前候选已通过实际三进程的 A–F 隔离闭环，完整身份、定向测试原件、已修补的延迟会话绑定窗口、资源清理和真实试单清单见[隔离闭环验收](../../plans/admin-workbench-integration/execution/runtime-closure.md)。真实企业微信闭环仍为 NOT_RUN，本地合成验收不代表部署或正式启用。
+
+H5 V2 的本地验证单独绑定本次源码／制品和原始输出，不把前述 A–F 的旧结果重记为新版验收。媒体、生命周期、HTTP、静态／制品、管理端消费及角色装配按本次注册选择执行；隔离数据库使用任务自有 loopback 合成库，Provider 和 SDK 明确使用模拟边界，记录失败、SKIP、NOT_RUN 与资源关闭结果，不调用真实企业 API 来补足自动化。
+
+标记 `requires_ffmpeg:true` 的测试还要求显式环境 `H5_MEDIA_FFMPEG`、`H5_MEDIA_FFPROBE`，两者均为受控 FFmpeg／FFprobe 的绝对程序路径。测试路由仅在选中此类入口时前递这两个字段，缺少字段直接拒绝；不根据 PATH 猜测，也不沿用生产密钥或输出数据库连接值。这是测试宿主合同，与运行时 `YIXIAOXIU_H5_FFMPEG_PATH`／`YIXIAOXIU_H5_FFPROBE_PATH` 分开。CI 准备系统程序不证明本地测试已执行。企业微信 iOS／Android 的录音、相机、语言／主题和实际收件须独立现场授权与实机记录，未执行项保持 `NOT_RUN`。

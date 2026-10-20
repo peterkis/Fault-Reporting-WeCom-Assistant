@@ -24,7 +24,7 @@ ADR-0035 的工作人员消费支路，使用原 human-v1／P2-016 App HTTP 宿�
 {"client_command_id":"1b1f2c30-a051-4a44-8a2a-dc4b6467d7b1","expected_version":6,"summary":"正在更换网线","estimated_at":"2026-10-20 14:00:00"}
 ```
 
-`summary` 为独立公开摘要，1–1000 字符；`estimated_at` 为北京时间 `YYYY-MM-DD HH:mm:ss` 或 `null`。当前有效处理人明确确认公开内容后提交，不能复制内部备注。只对当前开放工单允许新写；Core 版本 CAS 与真实 `ticket.information_added` 事件在同事务追加，工单状态及处理责任不改变。预计时间为工作人员明确记录，不自动推导固定 SLA，不新增企业微信主动消息。
+`summary` 为独立公开摘要，1–500 字符；`estimated_at` 为北京时间 `YYYY-MM-DD HH:mm:ss` 或 `null`。当前有效处理人明确确认公开内容后提交，不能复制内部备注。只对当前开放工单允许新写；Core 版本 CAS 与真实 `ticket.information_added` 事件在同事务追加，工单状态及处理责任不改变。预计时间为工作人员明确记录，不自动推导固定 SLA，不新增企业微信主动消息。
 
 成功 200 返回 `WorkbenchMemberProgressResult`，包含原 UUID、实际 Ticket 版本与已保存进度。重复 UUID 和同正文重放不新增事实；更换正文或目标冲突。输入非法 400，当前权限拒绝 403／404，版本冲突 409，依赖暂不可用 503。超时或不可验证响应保持 UNKNOWN，不自动重试或换 UUID。
 
