@@ -13,6 +13,9 @@ ALTER TABLE intake.web_command_receipt ADD CONSTRAINT web_h5_result_purpose CHEC
  (command_kind IN ('URGE','EVALUATION') AND h5_result IS NOT NULL AND jsonb_typeof(h5_result)='object') OR
  (command_kind NOT IN ('URGE','EVALUATION') AND h5_result IS NULL));
 
+ALTER TABLE intake.web_request_binding ADD COLUMN h5_profile_attempts INTEGER NOT NULL DEFAULT 0 CHECK(h5_profile_attempts BETWEEN 0 AND 1000);
+ALTER TABLE intake.web_request_binding ADD COLUMN h5_profile_next_attempt_epoch_ms BIGINT CHECK(h5_profile_next_attempt_epoch_ms IS NULL OR h5_profile_next_attempt_epoch_ms>=0);
+
 CREATE TABLE intake.web_report_urge (
  id UUID PRIMARY KEY DEFAULT uuidv7(),
  sequence_no BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
