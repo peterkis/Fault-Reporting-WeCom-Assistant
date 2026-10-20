@@ -7,7 +7,7 @@ import {H5_MEDIA_LIMITS,H5MediaError,inspectMedia,mediaFail} from './yxx-h5-medi
 /** Official docs: /document/path/90506, /90254, /90255 (read 2026-10-20). */
 export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,agentId,fetchImpl=fetch,now=Date.now}:{accessTokenProvider:WeComAccessTokenProvider;publicOrigin:string;corpId:string;agentId:string;fetchImpl?:typeof fetch;now?:()=>number}):H5MediaWeCom {
  const origin=new URL(publicOrigin);if(origin.origin!==publicOrigin||!corpId||corpId.length>128||!agentId||agentId.length>128||/[\r\n\x00]/u.test(corpId+agentId)||typeof accessTokenProvider!=='function')mediaFail('YXX_MEDIA_PROVIDER_CONFIG_INVALID',503);
- const tickets=new Map<string,{value:string;expires:number}>();let active=false,stopped=false,current:AbortController|null=null;
+ const tickets=new Map<string,{value:string;expires:number}>(),nextAttempt=new Map<string,number>();let active=false,stopped=false,current:AbortController|null=null;
  let settled:Promise<void>=Promise.resolve(),finish=()=>{};
  async function operation<T>(signal:AbortSignal,timeout:number,run:(combined:AbortSignal)=>Promise<T>):Promise<T>{
   if(stopped)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);if(active)mediaFail('YXX_MEDIA_BUSY',429);active=true;settled=new Promise<void>(r=>{finish=r;});const controller=new AbortController();current=controller;
@@ -25,11 +25,12 @@ export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,a
    const signingUrl=url.split('#',1)[0];if(!signingUrl)mediaFail('YXX_MEDIA_INPUT_INVALID');
    return operation(signal,5000,async combined=>{
     let ticket=tickets.get(type);if(!ticket||ticket.expires<=now()){
+     if((nextAttempt.get(type)??0)>now())mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);nextAttempt.set(type,now()+30_000);
      const token=await credential(combined),endpoint=new URL(type==='AGENT'?'https://qyapi.weixin.qq.com/cgi-bin/ticket/get':'https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket');endpoint.searchParams.set('access_token',token);if(type==='AGENT')endpoint.searchParams.set('type','agent_config');
      const started=now(),value=await readWeComResponse(await fetchImpl(endpoint,{method:'GET',redirect:'error',signal:combined}),combined);combined.throwIfAborted();
      if(!value||typeof value!=='object')mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);const body=value as {errcode?:unknown;ticket?:unknown;expires_in?:unknown};invalidate(token,body);
      if(body.errcode!==0||typeof body.ticket!=='string'||!body.ticket||Buffer.byteLength(body.ticket)>512||!Number.isSafeInteger(body.expires_in)||Number(body.expires_in)<1||Number(body.expires_in)>86400)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);
-     const lifetime=Number(body.expires_in)*1000;ticket={value:body.ticket,expires:started+lifetime-Math.min(60_000,lifetime/10)};tickets.set(type,ticket);
+     const lifetime=Number(body.expires_in)*1000;ticket={value:body.ticket,expires:started+lifetime-Math.min(60_000,lifetime/10)};tickets.set(type,ticket);nextAttempt.delete(type);
     }
     const timestamp=Math.floor(now()/1000),nonceStr=randomBytes(18).toString('base64url');const signature=createHash('sha1').update('jsapi_ticket='+ticket.value+'&noncestr='+nonceStr+'&timestamp='+timestamp+'&url='+signingUrl).digest('hex');combined.throwIfAborted();return {corpId,agentId,timestamp,nonceStr,signature};
    });
@@ -49,6 +50,6 @@ export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,a
     }finally{bytes?.fill(0);for(const c of chunks)c.fill(0);await reader.cancel().catch(()=>{});reader.releaseLock();}
    });
   },
-  async close(){stopped=true;current?.abort();await settled;tickets.clear();},
+  async close(){stopped=true;current?.abort();await settled;tickets.clear();nextAttempt.clear();},
  });
 }
