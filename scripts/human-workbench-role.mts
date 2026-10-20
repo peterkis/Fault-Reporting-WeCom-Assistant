@@ -95,10 +95,10 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
    }};
   },
   ...(boundaries.clientFactory?{gatewayFactory:options=>createP2G1WeComGateway({...options,clientFactory:boundaries.clientFactory})}:{}),
-  senderFactory:({pool,...options})=>createP2016WeComSender({...options,mvpPolicy:true,groupReplies:{pool,authorize:async basis=>memberAdmission?memberAdmission.accepts({provider:'WECOM_AIBOT',bot_id:basis.bot_id,sender_user_id:basis.reporter,chat_type:'group',chat_id:basis.group_id}):(s.groupTargetHashes??[]).includes(textHashP2016(basis.group_id))},cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
-   ...(memberAdmission?{qualifyBotNotificationRecipient:async(source:{botId:string;reporterUserId:string})=>memberAdmission.accepts({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'})}:{}),
+  senderFactory:({pool,...options})=>createP2016WeComSender({...options,mvpPolicy:true,groupReplies:{pool,authorize:async basis=>memberAdmission?memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:basis.bot_id,sender_user_id:basis.reporter,chat_type:'group',chat_id:basis.group_id}):(s.groupTargetHashes??[]).includes(textHashP2016(basis.group_id))},cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
+   ...(memberAdmission?{qualifyBotNotificationRecipient:async(source:{botId:string;reporterUserId:string})=>memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'})}:{}),
    groupRoundNotifications:{pool,mvpPolicy:true,routes:s.groupRoutes??[],resolveMentionUserId:async input=>{
-    if(s.memberEntry.identityMode==='VERIFIED_APP_OPENID'&&memberAdmission)return await memberAdmission.accepts({provider:'WECOM_AIBOT',bot_id:input.botId,sender_user_id:input.reporterUserId,chat_type:'group',chat_id:input.groupId})?input.reporterUserId:null;
+    if(s.memberEntry.identityMode==='VERIFIED_APP_OPENID'&&memberAdmission)return await memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:input.botId,sender_user_id:input.reporterUserId,chat_type:'group',chat_id:input.groupId})?input.reporterUserId:null;
     return resolveWorkbenchMention(s,input);
    },fetchImpl},
    ...(appNotifications?{appRoundNotifications:{pool,applicationMemberVerifier,notifications:appNotifications,agentId:Number(s.memberEntry.agentId),accessTokenProvider:tokenProvider,fetchImpl}}:{})}),

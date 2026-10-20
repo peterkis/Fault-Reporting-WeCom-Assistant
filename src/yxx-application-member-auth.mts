@@ -34,7 +34,7 @@ export function createYxxApplicationMemberAuthentication({oauth,config,identityM
  return {async authenticate(request:IncomingMessage,profile:Context['profile']='FULL_SERVICE_LOOP'){
   if(prepared.has(request))return local(request);
   const token=readWeComCookie(request,sessionName);if(!token)failYxx('AUTH_REQUIRED');
-  const member=oauth.authenticate(token),verified=await verifyMember(member.userid);
+  const member=oauth.authenticate(token),verified=await verifyMember(member.userid).catch(()=>failYxx('UNAVAILABLE'));
   if(!verified||verified.openUserId!==member.userid||member.corpId!==config.corpId)failYxx('MEMBER_REQUIRED');
   const current=oauth.authenticate(token);if(current.userid!==member.userid||current.corpId!==member.corpId)failYxx('AUTH_REQUIRED');
   // Known legacy correspondence keeps its original owner hash. New members use a distinct namespace.

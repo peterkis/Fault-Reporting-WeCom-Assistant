@@ -8,6 +8,7 @@ import {failP2016,transactionP2016,textHashP2016,localP2016,versionP2016,uuidP20
 import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
 import {normalizeAppNotificationOptions,resolveOriginalAppTarget} from './workbench-app-notification-target.mjs';
+import {cancelUnattemptedDeliveryInTransaction} from './p2-004-communication-delivery-worker.mjs';
 
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';
@@ -89,11 +90,19 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id
                     AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=c.staff_completion_event_id))) FOR UPDATE`,[candidate.cycle_id,candidate.ticket_id,candidate.event_id,candidate.node]);
             if(locked.rowCount!==1)return false;
-            // An old acknowledged/unknown first notice remains its own immutable promise.
-            // The Worker cancels obsolete unattempted first notices before a new handling notice can be created.
-            if(mvpPolicy&&candidate.node==='FIRST_HANDLING'&&(await tx.query(`SELECT 1 FROM communication.ticket_round_notification_binding r
+            if(mvpPolicy&&candidate.node==='FIRST_HANDLING'){
+              // Terminal NOT_ATTEMPTED intents cannot be claimed by the Worker. Retire them through its cancellation audit.
+              const obsolete=await tx.query<{id:string}>(`SELECT d.id::text FROM communication.ticket_round_notification_binding r
+                JOIN communication.ticket_notification_binding b ON b.id=r.notification_binding_id JOIN communication.delivery d ON d.id=b.delivery_id
+                WHERE r.cycle_id=$1::uuid AND r.node='FIRST_RESPONSIBILITY' AND r.destination_type='PERSON'
+                  AND d.status='DEAD_LETTER' AND d.side_effect_state='NOT_ATTEMPTED' ORDER BY d.id LIMIT 20 FOR UPDATE OF d`,[candidate.cycle_id]);
+              for(const row of obsolete.rows)await cancelUnattemptedDeliveryInTransaction({transaction:tx,deliveryId:row.id,expected:{status:'DEAD_LETTER'},reasonCode:'MVP_LEGACY_FIRST_NOTICE_RETIRED',occurredEpochMs:String(Date.now())});
+              // SENT and unknown side effects remain promises, including an operator-cancelled UNKNOWN.
+              if((await tx.query(`SELECT 1 FROM communication.ticket_round_notification_binding r
               JOIN communication.ticket_notification_binding b ON b.id=r.notification_binding_id JOIN communication.delivery d ON d.id=b.delivery_id
-              WHERE r.cycle_id=$1::uuid AND r.node='FIRST_RESPONSIBILITY' AND r.destination_type='PERSON' AND d.status<>'CANCELLED'`,[candidate.cycle_id])).rowCount)return false;
+              WHERE r.cycle_id=$1::uuid AND r.node='FIRST_RESPONSIBILITY' AND r.destination_type='PERSON'
+                AND NOT(d.status='CANCELLED' AND d.side_effect_state='NOT_ATTEMPTED')`,[candidate.cycle_id])).rowCount)return false;
+            }
             const source=await readOriginalBotSource(tx,candidate.source_intake_id,botId);
             if(!source){
               if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type='PERSON'",[candidate.cycle_id,candidate.node])).rowCount)return false;

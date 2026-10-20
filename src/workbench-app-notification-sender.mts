@@ -15,6 +15,7 @@ export interface WorkbenchAppNotificationSenderOptions {
 }
 interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'CLOSED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
 const reject=(code:string):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable:false});
+const qualificationUnavailable=():CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'APP_NOTIFICATION_QUALIFICATION_UNAVAILABLE',retryable:true});
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'APP_NOTIFICATION_RECONCILIATION_REQUIRED',retryable:false});
 // Neither the generic Sender Port nor a PERSON label rules out bulk syntax.
 function singleMember(value:unknown):value is string{return typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}$/u.test(value)&&value!=='@all';}
@@ -72,10 +73,12 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    if(!isDeepStrictEqual(row.content,expected)||!isDeepStrictEqual(request.message.content,expected))return reject('APP_NOTIFICATION_BINDING_INVALID');
   }catch{return reject('APP_NOTIFICATION_BINDING_UNAVAILABLE');}
   const signal=AbortSignal.any([request.signal,AbortSignal.timeout(5000)]);let token:string,recipient:string;
+  // Native qualification must settle before the Worker's existing five-second send deadline.
+  const qualificationSignal=original.source.recipient?AbortSignal.any([signal,AbortSignal.timeout(2000)]):signal;
   try{
-   const credential=await sdkDeadline(accessTokenProvider({signal}),signal);signal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
+   const credential=await sdkDeadline(accessTokenProvider({signal:qualificationSignal}),qualificationSignal);qualificationSignal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return original.source.recipient?qualificationUnavailable():reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
    if(original.source.recipient){
-    const verified=applicationMemberVerifier?await sdkDeadline(applicationMemberVerifier(request.target_id,signal),signal):null;
+    const verified=applicationMemberVerifier?await sdkDeadline(applicationMemberVerifier(request.target_id,qualificationSignal),qualificationSignal):null;
     if(!verified||verified.openUserId!==request.target_id)return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');recipient=verified.openUserId;
    }else{
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');endpoint.searchParams.set('access_token',token);
@@ -83,7 +86,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    if(converted.errcode!==0||!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');
    const pair=exactP2016(converted.open_userid_list[0],['userid','open_userid']);if(pair.userid!==request.target_id||!singleMember(pair.open_userid))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');recipient=pair.open_userid;
    }
-  }catch{return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');}
+  }catch{return original.source.recipient?qualificationUnavailable():reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');}
   let body:unknown;
   try{
    // Qualification/token/namespace conversion may wait. Never retarget the stored intent.

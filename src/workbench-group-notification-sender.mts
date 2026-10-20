@@ -4,6 +4,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {createCommunicationSenderPort} from './p2-004-communication-sender-port.mjs';
 import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 import {localP2016,textHashP2016} from './p2-016-domain-contracts.mjs';
+import {ApplicationMemberUnavailableError} from './wecom-application-member.mjs';
 export interface WorkbenchGroupNotificationOptions {
   pool:PostgresTransaction;enabled?:boolean;mvpPolicy?:boolean;routes?:readonly {botId:string;groupId:string;url:string}[];fetchImpl?:typeof fetch;
   /** Trusted namespace qualification; absence never guesses a Webhook userid. */
@@ -11,7 +12,7 @@ export interface WorkbenchGroupNotificationOptions {
   beforeSend?:()=>unknown|Promise<unknown>;
 }
 interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';ticket_no:string;new_status:string;created_at:string;content:unknown;recipient_binding_hash:string}
-const reject=(code:string):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable:false});
+const reject=(code:string,retryable=false):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable});
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'GROUP_PUSH_RECONCILIATION_REQUIRED',retryable:false});
 export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPolicy=false,routes=[],fetchImpl=fetch,resolveMentionUserId=null,beforeSend=()=>{}}:WorkbenchGroupNotificationOptions){
   if(typeof enabled!=='boolean'||!Array.isArray(routes)||routes.length>32||typeof fetchImpl!=='function'||typeof beforeSend!=='function'
@@ -58,7 +59,7 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPo
     if(!/^[0-9]{4}$/u.test(model.suffix)||!isDeepStrictEqual(row.content,model)||!isDeepStrictEqual(row.content,request.message.content))return reject('GROUP_PUSH_BINDING_INVALID');
     let mention:unknown;
     try{mention=await resolveMentionUserId({botId:source.bot_id,groupId:source.group_id,reporterUserId:source.reporter_user_id});await beforeSend();}
-    catch{return reject('GROUP_PUSH_NOT_AUTHORIZED');}
+    catch(error){return error instanceof ApplicationMemberUnavailableError?reject('GROUP_PUSH_QUALIFICATION_UNAVAILABLE',true):reject('GROUP_PUSH_NOT_AUTHORIZED');}
     if(typeof mention!=='string'||!mention||mention==='@all'||mention.length>256)return reject('GROUP_PUSH_MENTION_UNQUALIFIED');
     // Authorization may await external qualification or a caller fence. Re-read
     // the current sending commitment and retained original source afterwards.

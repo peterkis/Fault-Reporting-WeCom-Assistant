@@ -7,9 +7,10 @@ import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
 import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
 import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker,createCommunicationReconciliationPort} from '../src/p2-004-communication-delivery-worker.mjs';
 import {createMvpNotificationAdmission} from '../src/mvp-group-replies.mjs';
 import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
+import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
 
 test('MVP actual handling and completion use independent private notices and only the exact configured group completion Webhooks',{timeout:240000},async()=>{
  const targets=[{botId:'bot-test',groupId:'group-mvp-a'},{botId:'bot-test',groupId:'group-mvp-b'}];
@@ -45,6 +46,54 @@ test('MVP actual handling and completion use independent private notices and onl
   const json=JSON.stringify(cards);assert.equal(json.includes('主动单聊'),false);assert.equal(json.includes('群聊报修'),false);assert.equal(json.includes('工程师正在处理你的工单'),true);
   assert.equal(JSON.stringify([...cards,...payloads]).includes('MVP_PRIVATE_MATERIAL'),false);assert.equal(JSON.stringify([...cards,...payloads]).includes('INTERNAL_T11_CANARY'),false);
  },{mvpNotificationsEnabled:true,groupNotificationTargets:targets,manualRoundConsumption:true});
+});
+
+test('MVP original Bot private and group completion notices recover from temporary member lookup outages without duplicate sends',{timeout:240000},async()=>{
+ const groupId='group-mvp-bot-recovery';
+ await withT24Fixture(async context=>{
+  const intake=await seedPersistedIntake({pool:context.pool,text:'合成打印机打印不了',chatType:'group',requestType:'INCIDENT',status:'RECEIVED',tag:'mvp-bot-recovery'});
+  const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'mvp-bot-recovery'});assert.ok(created.ticket);
+  const http=await t11Http(context),started=await http.start(created.ticket.id);await context.runtime.roundNotifications.runOnce();assert.equal((await http.post(created.ticket.id,'complete',http.command(started))).status,200);await context.runtime.roundNotifications.runOnce();
+  let unavailable=true,privateSends=0,groupSends=0;
+  const admission=createWorkbenchBotMemberAdmission({botId:'bot-test',accessTokenProvider:async()=> 'SYNTHETIC_TOKEN',fetchImpl:async input=>{
+   if(unavailable)return new Response('synthetic outage',{status:503});const url=new URL(input instanceof Request?input.url:String(input));
+   return new Response(JSON.stringify(url.pathname.endsWith('/user/get')?{errcode:0,userid:'open-original-reporter',status:1}:{errcode:0,open_userid_list:[{userid:'user-test',open_userid:'open-original-reporter'}]}));
+  }});
+  const sender=createP2016WeComSender({mvpPolicy:true,enabled:true,cardEnabled:true,allowedTargetHashes:[],linkMode:'MEMBER_REQUIRED',reporterAccess:context.runtime.reporterAccess,origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],
+   qualifyBotNotificationRecipient:source=>admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'}),gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{privateSends++;return {errcode:0};}})},
+   groupRoundNotifications:{pool:context.pool,mvpPolicy:true,routes:[{botId:'bot-test',groupId,url:'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=synthetic-recovery'}],resolveMentionUserId:async source=>await admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'group',chat_id:source.groupId})?source.reporterUserId:null,
+    fetchImpl:async(_input,init)=>{groupSends++;assert.deepEqual(JSON.parse(String(init?.body)).text.mentioned_list,['user-test']);return new Response('{"errcode":0}');}}});
+  const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
+  const notices=(await context.pool.query<{id:string}>('SELECT delivery_id::text AS id FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid ORDER BY id',[created.ticket.id])).rows;assert.equal(notices.length,3);
+  for(const row of notices){const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'PENDING');assert.equal(result.side_effect_state,'NOT_ATTEMPTED');}
+  assert.equal(privateSends,0);assert.equal(groupSends,0);unavailable=false;
+  await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=ANY($1::uuid[])',[notices.map(row=>row.id)]);
+  for(const row of notices){const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await worker.deliver({deliveryId:row.id}),null);}
+  assert.equal(privateSends,2);assert.equal(groupSends,1);
+ },{mvpNotificationsEnabled:true,groupNotificationTargets:[{botId:'bot-test',groupId}],manualRoundConsumption:true});
+});
+
+for(const priorState of ['DEAD_LETTER','SENT','RECONCILIATION_REQUIRED','CANCELLED_UNKNOWN'] as const)test('MVP upgrade respects the original side-effect evidence of '+priorState,{timeout:240000},async()=>{
+ await withT24Fixture(async context=>{
+  const http=await t11Http(context),initial=await http.detail(context.ticketId),person=context.principals[0];assert.ok(person);
+  assert.equal((await http.post(context.ticketId,'assign',{client_command_id:randomUUID(),expected_version:initial.version,reason_code:'MVP_LEGACY_ASSIGN',target_principal_id:person.id,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})).status,200);
+  const legacy=createTicketRoundNotifications({pool:context.pool,enabled:true,botId:'bot-test',reporterAccess:context.runtime.reporterAccess});await legacy.runOnce();
+  const old=(await context.pool.query<{id:string;content_hash:string}>(`SELECT d.id::text,m.content_hash FROM communication.ticket_notification_binding b JOIN communication.delivery d ON d.id=b.delivery_id JOIN communication.message m ON m.id=b.message_id WHERE b.ticket_id=$1::uuid`,[context.ticketId])).rows[0];assert.ok(old);
+  const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:{send:async()=>priorState==='DEAD_LETTER'?{outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'SYNTHETIC_PRE_SEND_REJECTION',retryable:false}:priorState==='SENT'?{outcome:'ACKNOWLEDGED',provider_message_id:'synthetic-old-ack',error_code:null,retryable:false}:{outcome:'UNKNOWN',provider_message_id:null,error_code:'SYNTHETIC_OLD_UNKNOWN',retryable:false}}});
+  await worker.deliver({deliveryId:old.id});
+  if(priorState==='CANCELLED_UNKNOWN'){
+   const cancelled=await createCommunicationReconciliationPort({pool:context.pool}).reconcileUnknownDelivery({deliveryId:old.id,expectedStatus:'RECONCILIATION_REQUIRED',resolution:'CANCEL',reasonCode:'SYNTHETIC_OPERATOR_CANCEL',authorized:true});assert.ok(cancelled&&'status'in cancelled);assert.equal(cancelled.status,'CANCELLED');
+  }
+  await http.start(context.ticketId);await context.runtime.roundNotifications.runOnce();await context.runtime.roundNotifications.runOnce();
+  const replacement=await context.pool.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE ticket_id=$1::uuid AND node='FIRST_HANDLING'",[context.ticketId]);
+  assert.equal(replacement.rows.length,priorState==='DEAD_LETTER'?1:0,'only a proven unattempted legacy notice can be retired');
+  const saved=(await context.pool.query<{status:string;side_effect_state:string}>('SELECT status,side_effect_state FROM communication.delivery WHERE id=$1::uuid',[old.id])).rows[0];assert.ok(saved);
+  if(priorState==='DEAD_LETTER'){
+   assert.deepEqual(saved,{status:'CANCELLED',side_effect_state:'NOT_ATTEMPTED'});
+   assert.equal((await context.pool.query("SELECT 1 FROM communication.delivery_attempt WHERE delivery_id=$1::uuid AND outcome='CANCELLED' AND side_effect_state='NOT_ATTEMPTED'",[old.id])).rows.length,1);
+  }else assert.equal(saved.side_effect_state,priorState==='SENT'?'ACKNOWLEDGED':'UNKNOWN');
+  assert.equal((await context.pool.query<{content_hash:string}>('SELECT m.content_hash FROM communication.message m JOIN communication.outbox o ON o.message_id=m.id JOIN communication.delivery d ON d.outbox_id=o.id WHERE d.id=$1::uuid',[old.id])).rows[0]?.content_hash,old.content_hash);
+ },{mvpNotificationsEnabled:true,ticketAssignmentEnabled:true,manualRoundConsumption:true});
 });
 
 test('MVP Bot member qualification rechecks the retained original inbox after its last await before sending a private card',{timeout:240000},async()=>{

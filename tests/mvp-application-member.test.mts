@@ -28,7 +28,8 @@ test('MVP application qualification checks the exact open identity, visibility a
   return new Response(JSON.stringify(response));
  }});
  assert.equal((await verify('open-A'))?.displayName,'合成人员');
- for(const value of [{errcode:60011},{errcode:0,userid:'open-B',status:1},{errcode:0,userid:'open-A',status:2},{errcode:0,userid:'open-A',status:1,enable:0},[]]){response=value;assert.equal(await verify('open-A'),null);}
+ for(const value of [{errcode:60011},{errcode:0,userid:'open-B',status:1},{errcode:0,userid:'open-A',status:2},{errcode:0,userid:'open-A',status:1,enable:0}]){response=value;assert.equal(await verify('open-A'),null);}
+ response=[];await assert.rejects(verify('open-A'),{name:'ApplicationMemberUnavailableError'});
  const before=calls;assert.equal(await verify('@all'),null);assert.equal(await verify('open-A|open-B'),null);assert.equal(calls,before);
 });
 
@@ -37,10 +38,19 @@ test('MVP application qualification keeps a bounded serial fence when a provider
  const verify=createApplicationMemberVerifier({accessTokenProvider:async()=> 'synthetic',fetchImpl:async()=>{
   calls++;if(blocked)return new Promise<Response>(resolve=>{release=resolve;});return new Response('{"errcode":0,"userid":"open-A","status":1}');
  }});
- const pending=Array.from({length:32},()=>verify('open-A'));assert.equal(await verify('open-A'),null);
- const results=await Promise.all(pending);assert.ok(results.every(v=>v===null));assert.equal(calls,1);assert.ok(release);
+ const pending=Promise.allSettled(Array.from({length:32},()=>verify('open-A')));await assert.rejects(verify('open-A'),{name:'ApplicationMemberUnavailableError'});
+ const results=await pending;assert.ok(results.every(v=>v.status==='rejected'&&v.reason instanceof Error&&v.reason.name==='ApplicationMemberUnavailableError'));assert.equal(calls,1);assert.ok(release);
  blocked=false;release(new Response('{"errcode":0,"userid":"open-A","status":1}'));await delay(0);
  assert.equal((await verify('open-A'))?.openUserId,'open-A');assert.equal(calls,2);
+});
+
+test('MVP application lookup unavailability remains distinct from confirmed non-membership',async()=>{
+ for(const response of [new Response('busy',{status:503}),new Response('{"errcode":-1}'),new Response('{"errcode":40014}'),new Response('{"errcode":42001}')]){
+  const verify=createApplicationMemberVerifier({accessTokenProvider:async()=> 'synthetic',fetchImpl:async()=>response});
+  await assert.rejects(verify('open-A'),{name:'ApplicationMemberUnavailableError'});
+ }
+ const failed=createApplicationMemberVerifier({accessTokenProvider:async()=>{throw Error('SYNTHETIC_TOKEN_UNAVAILABLE');}});
+ await assert.rejects(failed('open-A'),{name:'ApplicationMemberUnavailableError'});
 });
 
 test('MVP courtesy recognizes only a pure current thanks and never consumes a mixed fault or ordinary acknowledgement',()=>{

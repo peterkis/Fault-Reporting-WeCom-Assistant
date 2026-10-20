@@ -43,10 +43,10 @@ test('MVP H5 admits unlisted visible members through real OAuth and HTTP; durabl
  await withT24Fixture(async context=>{
   await migrateBotReporterFeedback({databaseUrl:context.databaseUrl,mode:'apply'});
   const config=validateYxxEntryConfig({...entryConfig,identityMode:'VERIFIED_APP_OPENID'});assert.ok(config.enabled);assert.equal(config.reporterUserIds,undefined);
-  const visible=new Set(['open-new-a','open-new-b']),appBodies:Record<string,unknown>[]=[],paths:string[]=[],origin='https://entry.test';
+  const visible=new Set(['open-new-a','open-new-b']),appBodies:Record<string,unknown>[]=[],paths:string[]=[],origin='https://entry.test';let memberUnavailable=false,stallMemberLookup=false,releaseMemberLookup:(()=>void)|undefined;
   const fetchImpl:typeof fetch=async(input,init)=>{
    const url=new URL(input instanceof Request?input.url:String(input));paths.push(url.pathname);assert.equal(url.origin,'https://qyapi.weixin.qq.com');
-   if(url.pathname==='/cgi-bin/user/get'){const id=url.searchParams.get('userid');return new Response(JSON.stringify(id&&visible.has(id)?{errcode:0,userid:id,name:'合成报修人',status:1,enable:1}:{errcode:60011}));}
+   if(url.pathname==='/cgi-bin/user/get'){if(memberUnavailable)return new Response('synthetic temporary outage',{status:503});const id=url.searchParams.get('userid'),response=()=>new Response(JSON.stringify(id&&visible.has(id)?{errcode:0,userid:id,name:'合成报修人',status:1,enable:1}:{errcode:60011}));if(stallMemberLookup)return new Promise<Response>(resolve=>{releaseMemberLookup=()=>resolve(response());});return response();}
    assert.equal(url.pathname,'/cgi-bin/message/send','new app identities must not be converted as plaintext Bot ids');
    const body=object(JSON.parse(String(init?.body)));appBodies.push(body);return new Response(JSON.stringify({errcode:0,msgid:'synthetic-app-'+appBodies.length}));
   };
@@ -92,11 +92,18 @@ test('MVP H5 admits unlisted visible members through real OAuth and HTTP; durabl
     reporterAccess:context.runtime.reporterAccess,origin,allowedHosts:['entry.test'],linkMode:'MEMBER_REQUIRED',
     appRoundNotifications:{pool:context.pool,notifications:freshOptions,agentId:Number(config.agentId),accessTokenProvider:token,applicationMemberVerifier:verify,fetchImpl}});
    const delivery=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
-   for(const n of notice.rows){const result=await delivery.deliver({deliveryId:n.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await delivery.deliver({deliveryId:n.id}),null);}
+   for(const [index,n] of notice.rows.entries()){
+    memberUnavailable=index===0;stallMemberLookup=index===1;
+    const unavailable=await delivery.deliver({deliveryId:n.id});assert.ok(unavailable&&'status'in unavailable);assert.equal(unavailable.status,'PENDING');assert.equal(unavailable.side_effect_state,'NOT_ATTEMPTED');assert.equal(appBodies.length,index,'a failed or timed-out member lookup cannot call message/send');
+    memberUnavailable=false;stallMemberLookup=false;if(index===1)assert.ok(releaseMemberLookup);releaseMemberLookup?.();
+    await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[n.id]);
+    const result=await delivery.deliver({deliveryId:n.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await delivery.deliver({deliveryId:n.id}),null);
+   }
    assert.equal(appBodies.length,2);for(const body of appBodies){assert.equal(body.touser,'open-new-a');assert.equal(object(body.template_card).source,undefined);assert.match(String(object(object(body.template_card).card_action).url),new RegExp('/reports/'+ref+'$','u'));}
    assert.equal(object(object(appBodies[0]).template_card).main_title&&object(object(object(appBodies[0]).template_card).main_title).title,'工程师正在处理你的工单');
    assert.equal(paths.includes('/cgi-bin/batch/userid_to_openuserid'),false);
    const after=nativeClient(base,origin);await after.login('A');assert.equal((await after.get('/api/yixiaoxiu/requests/'+ref)).status,200);
+   memberUnavailable=true;assert.equal((await after.get('/api/yixiaoxiu/bootstrap')).status,503);memberUnavailable=false;assert.equal((await after.get('/api/yixiaoxiu/bootstrap')).status,200);
    const completed=await after.get('/api/yixiaoxiu/requests/'+ref),feedback=object(completed.body.feedback_context);
    assert.equal(feedback.can_feedback,true);
    const reopen={schema_version:1,client_command_id:randomUUID(),completed_round_ref:feedback.completed_round_ref,expected_ticket_version:feedback.ticket_version,feedback:'STILL_UNRESOLVED'};
