@@ -5,7 +5,7 @@ import {createCommunicationSenderPort} from './p2-004-communication-sender-port.
 import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 import {localP2016,textHashP2016} from './p2-016-domain-contracts.mjs';
 export interface WorkbenchGroupNotificationOptions {
-  pool:PostgresTransaction;enabled?:boolean;routes?:readonly {botId:string;groupId:string;url:string}[];fetchImpl?:typeof fetch;
+  pool:PostgresTransaction;enabled?:boolean;mvpPolicy?:boolean;routes?:readonly {botId:string;groupId:string;url:string}[];fetchImpl?:typeof fetch;
   /** Trusted namespace qualification; absence never guesses a Webhook userid. */
   resolveMentionUserId?:((source:{botId:string;groupId:string;reporterUserId:string})=>string|null|Promise<string|null>)|null;
   beforeSend?:()=>unknown|Promise<unknown>;
@@ -13,7 +13,7 @@ export interface WorkbenchGroupNotificationOptions {
 interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';ticket_no:string;new_status:string;created_at:string;content:unknown;recipient_binding_hash:string}
 const reject=(code:string):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable:false});
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'GROUP_PUSH_RECONCILIATION_REQUIRED',retryable:false});
-export function createWorkbenchGroupNotificationSender({pool,enabled=false,routes=[],fetchImpl=fetch,resolveMentionUserId=null,beforeSend=()=>{}}:WorkbenchGroupNotificationOptions){
+export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPolicy=false,routes=[],fetchImpl=fetch,resolveMentionUserId=null,beforeSend=()=>{}}:WorkbenchGroupNotificationOptions){
   if(typeof enabled!=='boolean'||!Array.isArray(routes)||routes.length>32||typeof fetchImpl!=='function'||typeof beforeSend!=='function'
     ||resolveMentionUserId!==null&&typeof resolveMentionUserId!=='function')throw new TypeError('GROUP_PUSH_CONFIGURATION_INVALID');
   const endpoints=new Map<string,string>();
@@ -51,6 +51,7 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,route
               SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`,
       [request.delivery_id,request.provider,request.channel_account_id,request.target_id,request.idempotency_key]);
     const q=await readBasis(),row=q.rows[0];if(q.rowCount!==1||!row)return reject('GROUP_PUSH_BINDING_INVALID');
+    if(mvpPolicy&&row.node!=='STAFF_COMPLETED')return reject('GROUP_PUSH_NODE_SUPPRESSED');
     const source=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
     if(!source||source.group_id!==request.target_id||row.recipient_binding_hash!==textHashP2016(JSON.stringify(['WECOM_AIBOT',source.bot_id,source.group_id,source.reporter_user_id])))return reject('GROUP_PUSH_BINDING_INVALID');
     const model={transport:'WECOM_MESSAGE_PUSH',node:row.node,suffix:row.ticket_no.slice(-4),status:row.new_status,occurred_at:localP2016(row.created_at)};
@@ -65,8 +66,8 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,route
     if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return reject('GROUP_PUSH_BINDING_INVALID');
     const currentSource=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
     if(!currentSource||!isDeepStrictEqual(currentSource,source))return reject('GROUP_PUSH_BINDING_INVALID');
-    if(request.signal.aborted)return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
-    const text='工单尾号 '+model.suffix+(row.node==='FIRST_RESPONSIBILITY'?' 已有人员处理。':' 处理完成。');
+    if(request.signal.aborted||BigInt(currentSource.retention_epoch)<=BigInt(Date.now()))return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
+    const text=mvpPolicy?'工单#'+row.ticket_no+'小修已完成，麻烦您验收一下，有问题随时@医小修～':'工单尾号 '+model.suffix+(row.node==='FIRST_RESPONSIBILITY'?' 已有人员处理。':' 处理完成。');
     try{
       const response=await fetchImpl(endpoint,{method:'POST',redirect:'error',headers:{'content-type':'application/json'},signal:AbortSignal.any([request.signal,AbortSignal.timeout(5000)]),body:JSON.stringify({msgtype:'text',text:{content:text,mentioned_list:[mention]}})});
       const reader=response.body?.getReader();if(!reader)return unknown();const chunks:Uint8Array[]=[];let bytes=0;

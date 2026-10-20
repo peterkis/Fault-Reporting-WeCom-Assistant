@@ -7,14 +7,14 @@ import type { DecisionRecord, ActionRow, DecisionStore } from './p2-015-decision
 import type { ManualReviewStore } from './p2-015-manual-review.mjs';
 export interface FixedAppendInput { transaction: PostgresTransaction; command: CommunicationCommand; actor: null; resolvedDestinations: CommunicationDestination[] }
 export type FixedCommunicationAppend = (input: FixedAppendInput) => Promise<CommunicationResult>;
-export interface SafeActionContext { trace_id: string; session_id?: string | null; fixed_text?: string; message_type?: CommunicationCommand['message_type']; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; destination?: CommunicationDestination | null }
+export interface SafeActionContext {suppress_group_fixed?:boolean; trace_id: string; session_id?: string | null; fixed_text?: string; message_type?: CommunicationCommand['message_type']; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; destination?: CommunicationDestination | null }
 export interface ActionPortResult { replayed?: boolean; error?: unknown; ticket?: { id: string } | null; ticket_id?: string; id?: string; message_id?: string; appended?: boolean }
 export interface IntakeDecisionPort { apply(input: { transaction: PostgresTransaction; input: IntakeDecisionInput }): Promise<ActionPortResult> }
 export interface TicketCommandPort { createMinimalTicket(input: { transaction: PostgresTransaction; intake_id: string; occurred_at: LocalDateTime; trace_id: string }): Promise<ActionPortResult> }
 export interface CommunicationPort { appendFixed(input: { transaction: PostgresTransaction; action: ActionRow; context: SafeActionContext }): Promise<ActionPortResult | null> }
 export interface SafeActionOptions { intakeDecisionPort: IntakeDecisionPort; ticketCommandPort: TicketCommandPort; communicationPort?: CommunicationPort | null; manualReviewStore: Pick<ManualReviewStore, 'enqueue'>; decisionStore: Pick<DecisionStore, 'markAction'> }
 // Existing discriminants: failed_safe means only fixed communication failed; other errors throw.
-export type ActionExecutionResult = { action_id: string; replayed: true; failed_safe?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never } | { action_id: string; action_type: ActionRow['action_type']; result_ref_type: string; result_ref_id: string; replayed: boolean; failed_safe?: never } | { action_id: string; failed_safe: true; review_id: string; replayed?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never };
+export type ActionExecutionResult = {action_id:string;cancelled:true;replayed?:never;failed_safe?:never} | { action_id: string; replayed: true; failed_safe?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never } | { action_id: string; action_type: ActionRow['action_type']; result_ref_type: string; result_ref_id: string; replayed: boolean; failed_safe?: never } | { action_id: string; failed_safe: true; review_id: string; replayed?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never };
 export type SafeActionExecutor = ReturnType<typeof createSafeActionExecutor>;
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import {
@@ -82,6 +82,12 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
       for (const action of safeDecision.actions) {
         if (action.state !== 'PROPOSED') { results.push({ action_id: action.id, replayed: true }); continue; }
         const commandHash = safeHash({ action_key: action.action_key, payload_hash: action.payload_hash });
+        if(safeContext.suppress_group_fixed===true&&safeContext.destination?.target_type==='GROUP'
+          &&['REQUEST_ONE_DESCRIPTION','SEND_FIXED_ACKNOWLEDGEMENT','SEND_FIXED_SCOPE_NOTICE'].includes(action.action_type)){
+          await decisionStore.markAction({transaction,action_id:action.id,state:'CANCELLED',command_id:action.id,command_hash:commandHash,error_code:'MVP_GROUP_FIXED_SUPPRESSED',retryable:false,executed_at:safeDecision.observed_at});
+          if(action.action_type==='REQUEST_ONE_DESCRIPTION')await transaction.query("UPDATE intake.contact_journey SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid",[safeDecision.journey_id]);
+          results.push({action_id:action.id,cancelled:true});continue;
+        }
         let result: ActionPortResult | null;
         let refType: string;
         let refId: string | undefined;

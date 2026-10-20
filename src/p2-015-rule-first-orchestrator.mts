@@ -14,9 +14,10 @@ interface WindowRow { sequence_no: number; message_id: string; clean_text: strin
 interface Window { rows: WindowRow[]; bounded: boolean; text: string; total: number }
 export interface OrchestrationRuleEngine { evaluate(input: RuleEvaluationInput): unknown; catalog_version?: string; rule_set_version?: string; getServiceCatalog?:()=>ServiceCatalog }
 export interface OrchestrationJourneyStore { ensureJourney(input: { transaction: PostgresTransaction; input: ContactJourneyInput }): Promise<OrchestrationJourney>; ensureLeg(input: { transaction: PostgresTransaction; input: ChannelLegInput }): Promise<ChannelLegRow & { replayed: boolean }> }
-export interface OrchestrationOptions { pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
+export interface OrchestrationOptions {mvpGroupReplies?:boolean;afterDecision?:((input:{transaction:PostgresTransaction;intakeId:string;decisionId:string})=>Promise<void>)|null; pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
 export interface ProcessInTransactionInput { transaction: PostgresTransaction; intakeId: string; profile: ReporterDirectoryResult; reporterHash: string; flags: ReturnType<typeof normalizeP2015FeatureFlags>; traceId: string }
 export type RuleFirstOrchestrator = ReturnType<typeof createRuleFirstOrchestrator>;
+import {isPureGroupThanks,groupMessageDescription} from './mvp-group-replies.mjs';
 import { freezeReporterProfileEnvelope } from './p2-015-reporter-profile.mjs';
 import { createRuleEngine } from './p2-007-rule-engine.mjs';
 import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
@@ -140,9 +141,11 @@ function orchestrationContext({ intake, journey, window, traceId }: { intake: Pe
 
 export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(), directorySource = 'WECOM_DIRECTORY',
   ruleEngine = null, journeyStore = createContactJourneyStore(), continuationService = createContinuationRefService(),
-  decisionStore = createDecisionStore(), safeActionExecutor, decisionOverride = null }: OrchestrationOptions = {} as OrchestrationOptions) {
+  decisionStore = createDecisionStore(), safeActionExecutor, decisionOverride = null,mvpGroupReplies=false,afterDecision=null }: OrchestrationOptions = {} as OrchestrationOptions) {
   if (!pool?.connect || typeof identityHmacKey !== 'string' || identityHmacKey.length < 16
     || !safeActionExecutor || (decisionOverride !== null && typeof decisionOverride !== 'function')) failP2015(P2_015_ERROR_CODES.inputInvalid);
+  if(typeof mvpGroupReplies!=='boolean'||afterDecision!==null&&typeof afterDecision!=='function')failP2015(P2_015_ERROR_CODES.inputInvalid);
+  const decisionPolicy=mvpGroupReplies?'mvp-safe-route/1':P2_015_DECISION_POLICY_VERSION;
   const engine: OrchestrationRuleEngine = ruleEngine ?? createRuleEngine();
 
   async function processInTransaction({ transaction, intakeId, profile, reporterHash, flags, traceId }: ProcessInTransactionInput) {
@@ -221,29 +224,32 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       routed = freezePublic({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED', result_hash: safeHash({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED' }) });
     } else {
       try {
-        let output = engine.evaluate({ text: window.text, source_ref: `intake:${intake.id}`, observed_at: observedAt,
+        const evaluationText=mvpGroupReplies&&intake.source_chat_type==='group'&&isPureGroupThanks(window.rows.at(-1)?.clean_text??'')?groupMessageDescription(window.rows.at(-1)?.clean_text??''):window.text;
+        let output = engine.evaluate({ text: evaluationText, source_ref: `intake:${intake.id}`, observed_at: observedAt,
           context: { existing_ticket: intake.pilot_ticket_id !== null } });
         const prior=await transaction.query<{ safe_result: BoundarySafeRoute; input_hash: string; result_hash: string; source_hash: string }>(`SELECT safe_result,input_hash,result_hash,source_hash FROM intake.deterministic_decision
           WHERE service_intake_id=$1::uuid AND source_window_start_sequence=$2 AND source_window_end_sequence=$3
             AND catalog_version=$4 AND rule_set_version=$5 AND engine_version=$6 AND decision_policy_version=$7
           ORDER BY decision_ordinal DESC LIMIT 1`,[intake.id,(window.rows[0] as WindowRow).sequence_no,(window.rows.at(-1) as WindowRow).sequence_no,
-            (output as { catalog_version?: unknown }).catalog_version,(output as { rule_set_version?: unknown }).rule_set_version,P2_015_ENGINE_VERSION,P2_015_DECISION_POLICY_VERSION]);
+            (output as { catalog_version?: unknown }).catalog_version,(output as { rule_set_version?: unknown }).rule_set_version,P2_015_ENGINE_VERSION,decisionPolicy]);
         if(prior.rowCount){
           const p=prior.rows[0] as (typeof prior.rows)[number];if(p.source_hash!==sourceHash)failP2015(P2_015_ERROR_CODES.decisionConflict);
           routed=freezePublic({...p.safe_result,input_hash:p.input_hash,result_hash:p.result_hash});
         }else{
-          const anchor=await readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion:(output as { catalog_version?: unknown }).catalog_version,ruleVersion:(output as { rule_set_version?: unknown }).rule_set_version});
+          const anchor=evaluationText===window.text?await readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion:(output as { catalog_version?: unknown }).catalog_version,ruleVersion:(output as { rule_set_version?: unknown }).rule_set_version}):null;
           if(anchor)output=engine.evaluate({text:window.text,source_ref:`intake:${intake.id}`,observed_at:observedAt,
             context:{existing_ticket:intake.pilot_ticket_id!==null,anchor_compatible:true,
               anchor_age_ms:Number(BigInt(anchor.reply_received_epoch_ms)-BigInt(anchor.root_received_epoch_ms)),corroboration_anchor:anchor}});
           routeContext.group_corroboration_safety=assessGroupCorroborationSafety({intake,window,output});
-          routed = routeP2007Decision({ rule_output: output, context: routeContext });
+          routed = routeP2007Decision({ rule_output: output, context: {...routeContext,safe_normalized_text:evaluationText} });
         }
       } catch (error) {
         if((error as { code?: unknown } | null)?.code===P2_015_ERROR_CODES.decisionConflict)throw error;
         routed = routeRuleFailure({ ...routeContext, catalog_version: engine.catalog_version ?? 'UNAVAILABLE', rule_set_version: engine.rule_set_version ?? 'UNAVAILABLE' });
       }
     }
+    if(routed.decision_policy_version!==decisionPolicy){const {result_hash:previousHash,...basis}=routed;
+      routed=freezePublic({...basis,decision_policy_version:decisionPolicy,result_hash:safeHash({...basis,decision_policy_version:decisionPolicy})});}
     const decision = await decisionStore.record({ transaction, input: {
       journey_id: journey.id, channel_leg_id: leg.id, service_intake_id: intake.id,
       conversation_session_id: intake.session_id, linked_ticket_id: intake.pilot_ticket_id,
@@ -260,7 +266,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       observed_at: observedAt, safe_action_suggestions: routed.safe_action_suggestions,
     } });
     const actionResults = await safeActionExecutor.execute({ transaction, decision,
-      context: orchestrationContext({ intake, journey, window, traceId }) });
+      context: {...orchestrationContext({ intake, journey, window, traceId }),...(mvpGroupReplies?{suppress_group_fixed:true}:{})} });
+    if(afterDecision)await afterDecision({transaction,intakeId:intake.id,decisionId:decision.id});
     return freezePublic({ ok: true, flags, journey, leg, continuation, decision, action_results: actionResults,
       model_provider_calls: 0, sender_calls: 0, incident_writes: 0 });
   }

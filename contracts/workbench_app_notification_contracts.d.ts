@@ -1,4 +1,5 @@
 import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
+import type {BoundApplicationRecipient} from '../src/yxx-application-member-auth.mjs';
 import type {LocalDateTime,PhysicalEpochMs} from './time_contracts.js';
 
 /** T25 original-source App notification options implemented by the existing round consumer/runtime. */
@@ -16,6 +17,7 @@ export interface TicketAppNotificationAuthority {
 }
 
 export interface TicketAppNotificationTargetInput {
+  readonly recipient?:BoundApplicationRecipient;
   readonly source_kind:TicketAppNotificationSource;
   readonly scope:YxxMemberScope;
   readonly signal:AbortSignal;
@@ -60,6 +62,7 @@ export interface TicketAppNotificationTargetResolver {
 }
 
 export interface TicketAppNotificationOptions {
+  readonly identityMode?:'VERIFIED_APP_OPENID';
   readonly enabled:boolean;
   readonly authority:TicketAppNotificationAuthority;
   readonly targetResolver:TicketAppNotificationTargetResolver;

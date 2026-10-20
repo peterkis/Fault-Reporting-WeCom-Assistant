@@ -2,6 +2,8 @@
 
 本文件记录业务架构与 Gate 事实；带日期的测试数字与候选是其历史快照。TypeScript 迁移进度只在 [迁移执行入口](../plans/typescript-migration/README.md) 维护。PR #38 的认证仅属于其被测对象，P01 合并或新迁移候选检查通过均不等于新候选 READY 或生产批准。
 
+2026-10-20 前向业务修订：[ADR-0034](../adr/0034_mvp_notifications_and_application_members.md)规定 human-v1 群固定回应、每轮实际接单／开始与工作人员完工通知、按原群 Webhook 完工原生提及，以及 H5 应用可见成员自动身份和持久通知绑定。使用 063 增量迁移；兼容模式与持久 flags 默认值保持。实施和本地证据见[本轮记录](../plans/mvp-notifications-h5/README.md)，不改变下文历史 tested head、Gate 或现场批准。
+
 2026-09-15 历史增量：ADR-0019 身份映射修补及 ADR-0020 定向建单模式本地验证完成，1056/1056、171测试文件及两轴独立审查通过。当前候选见 plans/current_phase.json 的 p2_g2_current_readiness（creation-v2 报告）。mapping-v1 的1053/1053与下文PR #8的1044/1044均为历史快照。A/B官方转换对应已证明；定向建单启动及工单结果以本次独立运行证据为准，A/B本人读取、他人拒绝及退出后新OAuth恢复已验证，云端已回退OAuth-only；多标签及旧Grant卡片现场未运行，结论见evidence/p2-g2-yxx-targeted-live-summary.json；完整P2-G2-LIVE/P2-008继续停止。
 
 
@@ -21,7 +23,7 @@
 - 当前活动任务与 Lane：P2-G2 / ASSEMBLY
 - 当前 Gate：P2-G2 / IN_PROGRESS；最后完成 Gate 为 P2-G1 / PASSED
 - 最近完成任务：P2-012（`DONE`）；当前 P2-G2 仅准备授权
-- P2-G2 当前业务修订：三种入口均有效；群内最终闭环 @ 原报修人，单聊默认仅接单及最终关闭两次模板推送，其余节点可配置且默认关闭。故障受理不依赖资料补充成功。目标契约见 `evidence/p2-g2-three-entry-business-profile.md`，原976项为PR #7历史结果；当前成员入口及1044项完整回归已验证，证据已绑定；真实现场未运行。
+- P2-G2 历史业务修订（前向调整见 ADR-0034）：三种入口均有效；群内最终闭环 @ 原报修人，单聊默认仅接单及最终关闭两次模板推送，其余节点可配置且默认关闭。故障受理不依赖资料补充成功。目标契约见 `evidence/p2-g2-three-entry-business-profile.md`，原976项为PR #7历史结果；当前成员入口及1044项完整回归已验证，证据已绑定；真实现场未运行。
 - P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动

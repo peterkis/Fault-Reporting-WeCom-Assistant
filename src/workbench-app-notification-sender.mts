@@ -3,6 +3,7 @@ import type {TicketAppNotificationOptions} from '../contracts/workbench_app_noti
 import type {WeComAccessTokenProvider} from './p2-g2-wecom-oauth-provider.mjs';
 import type {CommunicationSenderResult} from './p2-004-communication-sender-port.mjs';
 import {isDeepStrictEqual} from 'node:util';
+import {FIRST_HANDLING_EVENT_SQL} from './mvp-notification-policy.mjs';
 import {createCommunicationSenderPort} from './p2-004-communication-sender-port.mjs';
 import {normalizeAppNotificationOptions,resolveOriginalAppTarget,readOriginalAppNotificationSource,qualifyOriginalAppTarget} from './workbench-app-notification-target.mjs';
 import {buildP2016TemplateCard} from './p2-016-template-card-builder.mjs';
@@ -10,9 +11,9 @@ import {exactP2016,localP2016,textHashP2016,versionP2016,transactionP2016} from 
 
 export interface WorkbenchAppNotificationSenderOptions {
  pool:PostgresPool;notifications:TicketAppNotificationOptions;agentId:number;accessTokenProvider:WeComAccessTokenProvider;
- enabled?:boolean;fetchImpl?:typeof fetch;origin:string;allowedHosts:readonly string[];allowLocalHttp?:boolean;
+ applicationMemberVerifier?:import('./wecom-application-member.mjs').ApplicationMemberVerifier|null;enabled?:boolean;fetchImpl?:typeof fetch;origin:string;allowedHosts:readonly string[];allowLocalHttp?:boolean;
 }
-interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'CLOSED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
+interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'CLOSED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
 const reject=(code:string):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable:false});
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'APP_NOTIFICATION_RECONCILIATION_REQUIRED',retryable:false});
 // Neither the generic Sender Port nor a PERSON label rules out bulk syntax.
@@ -30,7 +31,7 @@ async function sdkReply(response:Response,signal:AbortSignal):Promise<unknown>{
  signal.throwIfAborted();return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 /** Existing App HTTP SDK leaf; no Bot SDK, browser call, credential persistence or second Outbox. */
-export function createWorkbenchAppNotificationSender({pool,notifications,agentId,accessTokenProvider,enabled=false,fetchImpl=fetch,origin,allowedHosts,allowLocalHttp=false}:WorkbenchAppNotificationSenderOptions){
+export function createWorkbenchAppNotificationSender({pool,notifications,agentId,accessTokenProvider,applicationMemberVerifier=null,enabled=false,fetchImpl=fetch,origin,allowedHosts,allowLocalHttp=false}:WorkbenchAppNotificationSenderOptions){
  const app=normalizeAppNotificationOptions(notifications);
  if(typeof enabled!=='boolean'||!app||!Number.isSafeInteger(agentId)||agentId<1||String(agentId)!==app.authority.sourceAppScope||typeof accessTokenProvider!=='function'||typeof fetchImpl!=='function')throw TypeError('APP_NOTIFICATION_CONFIGURATION_INVALID');
  return createCommunicationSenderPort(async request=>{
@@ -54,6 +55,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
       AND ((r.node='FIRST_RESPONSIBILITY' AND e.event_id=c.first_responsibility_event_id AND b.notification_type='TICKET_ACCEPTED'
         AND ((e.event_type='ticket.accepted' AND e.new_status='ACCEPTED') OR (e.event_type='ticket.assignment_transferred' AND e.old_status='QUEUED' AND e.new_status='QUEUED'
           AND e.assignment_metadata->>'old_assignee_id' IS NULL AND lower(e.assignment_metadata->>'new_assignee_id')=c.first_responsibility_principal_id::text AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
+        OR (r.node='FIRST_HANDLING' AND e.event_id=${FIRST_HANDLING_EVENT_SQL} AND b.notification_type='TICKET_ACCEPTED')
         OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_CLOSED' AND e.event_type='ticket.closed'
           AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND e.internal_note IS NOT NULL
           AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500 AND EXISTS(SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p
@@ -65,17 +67,22 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    const target=await resolveOriginalAppTarget(pool,row.source_intake_id,app);if(!target||target.target.target_id!==request.target_id)return reject('APP_NOTIFICATION_NOT_AUTHORIZED');original=target;
    const binding=textHashP2016(JSON.stringify(['WECOM_APP',request.channel_account_id,target.source.scope.sourceCorpScope,target.source.scope.sourceAppScope,target.source.scope.scopeHash,request.target_id]));
    if(binding!==row.recipient_binding_hash)return reject('APP_NOTIFICATION_BINDING_INVALID');
-   const expected={transport:'WECOM_APP',public_ref:row.public_ref,request_ref:target.source.request_ref,source_kind:target.source.source_kind,node:row.node,suffix:row.ticket_no.slice(-4),status:row.status,
-    occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED'};
+   const expected={...(target.source.recipient?{recipient_namespace:target.source.recipient.namespace}:{}),transport:'WECOM_APP',public_ref:row.public_ref,request_ref:target.source.request_ref,source_kind:target.source.source_kind,node:row.node,suffix:row.ticket_no.slice(-4),status:row.status,
+    occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED'};
    if(!isDeepStrictEqual(row.content,expected)||!isDeepStrictEqual(request.message.content,expected))return reject('APP_NOTIFICATION_BINDING_INVALID');
   }catch{return reject('APP_NOTIFICATION_BINDING_UNAVAILABLE');}
   const signal=AbortSignal.any([request.signal,AbortSignal.timeout(5000)]);let token:string,recipient:string;
   try{
    const credential=await sdkDeadline(accessTokenProvider({signal}),signal);signal.throwIfAborted();if(typeof credential!=='string'||!credential||credential.length>4096||/[\r\n]/u.test(credential))return reject('APP_NOTIFICATION_CREDENTIAL_UNAVAILABLE');token=credential;
+   if(original.source.recipient){
+    const verified=applicationMemberVerifier?await sdkDeadline(applicationMemberVerifier(request.target_id,signal),signal):null;
+    if(!verified||verified.openUserId!==request.target_id)return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');recipient=verified.openUserId;
+   }else{
    const endpoint=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');endpoint.searchParams.set('access_token',token);
    const converted=exactP2016(await sdkReply(await sdkDeadline(fetchImpl(endpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[request.target_id]})}),signal),signal),['errcode','errmsg','open_userid_list','invalid_userid_list'],['errcode','open_userid_list']);
    if(converted.errcode!==0||!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');
    const pair=exactP2016(converted.open_userid_list[0],['userid','open_userid']);if(pair.userid!==request.target_id||!singleMember(pair.open_userid))return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');recipient=pair.open_userid;
+   }
   }catch{return reject('APP_NOTIFICATION_RECIPIENT_UNQUALIFIED');}
   let body:unknown;
   try{
@@ -90,11 +97,11 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
     return isDeepStrictEqual(await qualifyOriginalAppTarget(currentSource,app),original)?null:'APP_NOTIFICATION_NOT_AUTHORIZED';
    });
    if(denied)return reject(denied);
-   const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node==='FIRST_RESPONSIBILITY'?'TICKET_ACCEPTED':'TICKET_CLOSED',source:'DIRECT'};
+   const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED',source:'DIRECT'};
    const card=buildP2016TemplateCard({model,origin,allowedHosts,allowLocalHttp,linkMode:'MEMBER_REQUIRED'});
    const url=original.source.source_kind==='WEB_REQUEST'?new URL('/wecom/yixiaoxiu/reports/'+original.source.request_ref,origin).href:new URL('/wecom/yixiaoxiu/tickets/'+row.public_ref,origin).href;
    if(original.source.source_kind==='WEB_REQUEST'&&!/^[A-Za-z0-9_-]{32}$/u.test(original.source.request_ref??''))return reject('APP_NOTIFICATION_CARD_INVALID');
-   body={touser:recipient,msgtype:'template_card',agentid:agentId,template_card:{...card.template_card,source:{desc:original.source.source_kind==='WEB_REQUEST'?'医小修网页报修':'工作人员代录',desc_color:0},
+   body={touser:recipient,msgtype:'template_card',agentid:agentId,template_card:{...card.template_card,
     sub_title_text:row.external_summary===null?'处理进度请通过下方本人入口查看。':'本轮处理结果：'+row.external_summary,
     jump_list:[{type:1,title:'查看处理进度',url}],card_action:{type:1,url},task_id:'delivery_'+request.delivery_id.replaceAll('-','')}};
    signal.throwIfAborted();

@@ -1,6 +1,6 @@
 # 新版人工工作台运行入口
 
-本入口显式选择 `WORKBENCH_RUNTIME_PROFILE=human-v1`，沿用 App、Worker、Gateway、PostgreSQL 和 P2-016 Runtime。未选择时 `--check` 返回 `enabled:false`，`--start` 拒绝启动。旧 P2-016/G1/G2/SS011 演练及 `_ENABLED` 限制保持。没有数据库／业务合同变更，没有自动迁移、现场发送、部署或 Gate 批准。
+本入口显式选择 `WORKBENCH_RUNTIME_PROFILE=human-v1`，沿用 App、Worker、Gateway、PostgreSQL 和 P2-016 Runtime。未选择时 `--check` 返回 `enabled:false`，`--start` 拒绝启动。旧 P2-016/G1/G2/SS011 演练及 `_ENABLED` 限制保持。前向变更依照 [ADR-0034](../../adr/0034_mvp_notifications_and_application_members.md)，需显式执行 063 增量迁移；启动不自动迁移，不授予现场发送、部署或 Gate 批准。
 
 ## 能力与实际装配
 
@@ -11,7 +11,7 @@
 | 接管、转交、释放、私聊文字、内部备注 | workbenchConversationsEnabled、workbenchInternalNotesEnabled | App；真实 Session、原 Control／Communication／CSRF／个人授权 |
 | 联系人收件箱、来源标签、个人已读、实时更新 | workbenchConversationInboxEnabled、sourceGroupDirectoryEnabled、workbenchPersonalReadEnabled、workbenchRealtimeEnabled | App；两个 conversation 选项同时为 true；identityHmacKey 映射现有身份密钥；唯一实时控制器 |
 | 提交核对、补充跟进 | workbenchSupplementFollowUpEnabled | App；沿各原命令回执，不另建账本；当前页面保留未确认操作，核对后才允许下一次提交 |
-| 节点通知、投递异常、受控恢复 | ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
+| 节点通知、投递异常、受控恢复 | mvpNotificationsEnabled、ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
 | 报修人查询、仍未解决 | MEMBER_REQUIRED、已证明的成员映射与 OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证；无 H5 映射的单独接收模式不装配自助／反馈 |
 
 只启用上述组合。附件、核实目录候选、Incident、AI、提醒、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。原动作仍按当前授权和状态决定是否可用。
@@ -56,15 +56,25 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 | settings.transportEnabled | false；true 同时启用 Gateway 与实际 Sender | 父进程、三角色；App 仍无进程内 Sender |
 | settings.botInboundEnabled | false；true 可单独启用当前应用可见成员 Bot 接收，须本次接收授权引用 | 父进程、Gateway；不启用 Sender |
 | settings.publicOrigin／reporterOrigin／listenPort | 必需；精确 HTTPS origin；后端 loopback 端口 1024–65535 | App；Reporter origin 供原卡片 Sender |
-| settings.memberEntry | H5 使用 VERIFIED_DELEGATED_MAPPING 及原 reporterUserIds；单独 Bot 接收可用 UNVERIFIED、无 reporterUserIds，H5／反馈／App通知保持拒绝；不伪造 namespace 证明 | App 认证作用域、可选 H5／通知装配 |
+| settings.memberEntry | 新 H5 显式用 VERIFIED_APP_OPENID，无新成员名单；可选 reporterUserIds 只兼容原映射；旧 H5 可继续 VERIFIED_DELEGATED_MAPPING；单独 Bot 接收可用 UNVERIFIED、无 reporterUserIds，H5／反馈／App通知保持拒绝；不伪造 namespace 证明 | App 认证作用域、可选 H5／通知装配 |
 | settings.bot | 原 Bot ID、WSS；历史 scope 每类1–20，单独成员接收时两类目标可为空 | Gateway；新接收不使用逐人／逐群名单 |
-| settings.groupRoutes | 原 Bot／原群／官方 HTTPS Webhook，最多20，与群 scope 精确对应 | 仅 Gateway 收到 URL |
+| settings.groupRoutes | 原 Bot／原群／官方 HTTPS Webhook，最多20，只需覆盖部分群；以 botId + groupId 精确对应，不能按群名路由 | 仅 Gateway 收到 URL；App 只收到 ID 对 |
 | settings.appChannelAccountId | 原应用渠道账号，不能用 Bot 账号替代 | App／Gateway 通知用途 |
-| settings.notificationBindingsFile | 绝对路径；H5／应用通知模式读取有界文件中的当前资格及有效期，无 H5 的单独接收模式不读取 | App／Gateway 当前资格核对；Worker 不接收 |
+| settings.notificationBindingsFile | 绝对路径；既有映射／旧记录读取有界资格文件；新 H5 原生通知身份不依赖该文件，无 H5 的单独接收模式不读取 | App／Gateway 当前资格核对；Worker 不接收 |
 
 通知目标文件是本入口消费的受控配置，不是业务表或身份系统。维护方必须提供当前 ACTIVE／VERIFIED／REACHABLE 的 InternalMemberId 资格及独立 Webhook 提及对应证明；OAuth 转换、旧报修快照、姓名或第三方目录标签不构成该资格。每次资格解析重读文件，删除目标／修改映射／到期立即拒绝新资格；不改投、不盲重发 UNKNOWN。文件整体映射摘要由已有 `yxxIdentityConfigHash(memberEntry)` 计算；既有成员配置原值和 proofRef 必须一致。更换已有身份密钥会改变既有身份，不能作为修复办法。
 
-配置检查不连接数据库或 Provider；实际启动沿 Runtime schema readiness 拒绝缺少迁移。先用仓库已有 `migrate-current-baseline`／各工作包 migrate 的 check/status 核对，再在获得数据库授权时使用其 apply。所需扩展包括 workbench-auth、ticket-self-handling、staff-completion、round-notifications（包含052）、manual-reports、reopen-rounds、bot-feedback、personal-read、follow（既有回执依赖，关注功能仍关闭）、supplement-follow-up、source-groups、conversation-delivery-commands。启动命令不会补写迁移账本。
+配置检查不连接数据库或 Provider；实际启动沿 Runtime schema readiness 拒绝缺少迁移。先用仓库已有 `migrate-current-baseline`／各工作包 migrate 的 check/status 核对，再在获得数据库授权时使用其 apply。所需扩展包括 063_mvp_notifications_app_members、workbench-auth、ticket-self-handling、staff-completion、round-notifications（包含052）、manual-reports、reopen-rounds、bot-feedback、personal-read、follow（既有回执依赖，关注功能仍关闭）、supplement-follow-up、source-groups、conversation-delivery-commands。启动命令不会补写迁移账本。
+
+## MVP 通知切换
+
+human-v1 显式启用 `mvpNotificationsEnabled=true`；通用 Runtime 默认 false。063 仅扩展原表，不删除字段、不改写 Message／Outbox、历史绑定或首责事件。执行当前编译候选的 `mvp:notifications:migrate:check`；数据库授权范围内再用 `mvp:notifications:migrate:apply`，重复应用校验 checksum 与结构。所有命令沿受控 PILOT_DATABASE_URL，不自动加载现场环境。
+
+每轮 `FIRST_HANDLING` 取首次实际接单／开始事件，`STAFF_COMPLETED` 取工作人员完工事件。派单／转派／等待不发个人模板；群只在完工且存在原群 Webhook 时增加投递。Bot 群固定回应按[行为表](../../plans/mvp-notifications-h5/README.md)执行，取消旧群追问／范围／首报回执旁路。关闭新发送仍用原 transportEnabled 与 Worker 开关，保留历史和只读。
+
+切换前暂停原 Sender 并读取在途状态：旧 FIRST_RESPONSIBILITY 与旧群规则消息的未尝试投递由现有 Worker 准入取消，保留审计；已发送和 UNKNOWN 保留原样。FIRST_HANDLING 遇到本轮旧个人通知未取消时不会重复创建。SENDING 先按原恢复合同核对，不能以升级为理由自动重发。降级先关写和发送；原默认 Worker 拒绝新增群回应，原字段和证据保留。
+
+新模式的 proofRef、企业／应用范围、原通知账号和 Reporter HMAC 保持原值；保留可选旧映射和原资格文件，避免破坏旧记录身份。纯原生 H5 不执行启动名单转换，不同步目录。应用发送前用当前 OAuth namespace 再核验成员。Webhook 原生提及沿原 Bot 报修人身份；新模式启用成员准入时先核验原报修人的当前应用资格。
 
 ## 检查、启动、停止
 
@@ -74,9 +84,9 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 
 收到消息后，服务使用回调中的发送者 userid 自动进行官方身份转换，并以该应用身份调用 `user/get` 核验当前权限和账号状态。查询在入库事务前完成；失败或无权限时拒绝。不会同步全院人员，不根据姓名或群成员列表授予权限，不自动授予 PC 角色。
 
-仅接收时保持 `transportEnabled=false`；`bot.personTargetHashes`、`bot.groupTargetHashes` 和 `groupRoutes` 可为空数组。它们不作为新接收模式的人员、群白名单。通知与 Webhook 资格文件沿原发送合同，不因报修准入自动建立。`memberEntry.reporterUserIds` 仍只属于原 H5 OAuth 映射，不是 Bot 报修人名单。
+仅接收时保持 `transportEnabled=false`；`bot.personTargetHashes`、`bot.groupTargetHashes` 和 `groupRoutes` 可为空数组。它们不作为新接收模式的人员、群白名单。通知与 Webhook 资格文件沿原发送合同，不因报修准入自动建立。`memberEntry.reporterUserIds` 只作为既有身份映射兼容；新 H5 成员准入不使用它，也不是 Bot 报修人名单。
 
-不使用 H5 时，保留 `memberEntry.enabled=true` 和已核对企业／应用／Bot 作用域，设置 `identityMode=UNVERIFIED`、`memberIdsConfirmed=false`、`proofRef=null`、`proofKind=null` 并省略 `reporterUserIds`。此时不转换 H5 名单、不读取通知资格文件，不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续拒绝未证明的跨身份访问，不回退旧 Grant。真实发送模式仍要求原已证明映射。
+不使用 H5 时，保留 `memberEntry.enabled=true` 和已核对企业／应用／Bot 作用域，设置 `identityMode=UNVERIFIED`、`memberIdsConfirmed=false`、`proofRef=null`、`proofKind=null` 并省略 `reporterUserIds`。此时不转换 H5 名单、不读取通知资格文件，不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续拒绝未证明的跨身份访问，不回退旧 Grant。既有映射模式真实发送仍要求原已证明映射；新 H5 原生应用身份不借用 Bot userid。
 
 成员查询按 1 个实际在途操作串行处理，最多保留 32 项。5 秒截止包含排队等待；超时且 Provider 未结束时仍保留占用，不能累积后台请求。无法核验、超时或队列满的本条消息不会进入业务库，也没有声称已自动重放；需在故障恢复后重新报修，不能把这一限制写成完整投递保障。
 

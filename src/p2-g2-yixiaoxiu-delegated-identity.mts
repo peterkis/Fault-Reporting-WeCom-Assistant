@@ -11,7 +11,8 @@ export const yxxIdentityConfigHash=(config: unknown)=>createHash('sha256').updat
 // One bounded startup conversion; never called from an ownership transaction.
 export async function createYxxDelegatedIdentityMapping({config,accessTokenProvider,fetchImpl=fetch}: DelegatedIdentityOptions){
   const c=validateYxxEntryConfig(config);
-  if(!c.enabled||c.identityMode!=='VERIFIED_DELEGATED_MAPPING'||typeof accessTokenProvider!=='function')failYxx('CONFIG_INVALID');
+  if(!c.enabled||!['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(c.identityMode)||typeof accessTokenProvider!=='function')failYxx('CONFIG_INVALID');
+  if(c.identityMode==='VERIFIED_APP_OPENID'&&c.reporterUserIds===undefined)return Object.freeze({configHash:yxxIdentityConfigHash(c),resolve:(_userid:OAuthMemberId):InternalMemberId|null=>null});
   const controller=new AbortController(),signal=controller.signal;let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('deadline'));},5000);});
   const operation=(async()=>{

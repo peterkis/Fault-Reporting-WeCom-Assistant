@@ -20,7 +20,12 @@
       "minItems": 1,
       "maxItems": 32,
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[^\\\\/\\s\\u0000-\\u001f\\u007f]+$"}
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\\\/\\s\\u0000-\\u001f\\u007f]+$"
+      }
     },
     "enabled": {
       "type": "boolean"
@@ -29,7 +34,8 @@
       "enum": [
         "UNVERIFIED",
         "VERIFIED_SAME_NAMESPACE",
-        "VERIFIED_DELEGATED_MAPPING"
+        "VERIFIED_DELEGATED_MAPPING",
+        "VERIFIED_APP_OPENID"
       ]
     },
     "memberIdsConfirmed": {
@@ -81,9 +87,35 @@
   },
   "allOf": [
     {
-      "if": {"properties": {"identityMode": {"const": "VERIFIED_DELEGATED_MAPPING"}}},
-      "then": {"required": ["reporterUserIds"]},
-      "else": {"not": {"required": ["reporterUserIds"]}}
+      "if": {
+        "properties": {
+          "identityMode": {
+            "const": "VERIFIED_DELEGATED_MAPPING"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reporterUserIds"
+        ]
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "identityMode": {
+              "const": "VERIFIED_APP_OPENID"
+            }
+          }
+        },
+        "then": {},
+        "else": {
+          "not": {
+            "required": [
+              "reporterUserIds"
+            ]
+          }
+        }
+      }
     },
     {
       "if": {

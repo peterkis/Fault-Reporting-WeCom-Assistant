@@ -6,7 +6,9 @@ import type {YxxSelfServiceStore,YxxRequestInput,YxxSupplementInput} from './yxx
 import type {YxxFeedbackInput} from '../contracts/yxx_self_service_feedback_contracts.js';
 import type {YxxFeedbackStore} from './yxx-self-service-feedback.mjs';
 type RawAuth = Record<string,unknown>;
-export interface YxxCommandContext {readonly profile:YxxProfile;readonly flags:YxxMemberFlags;readonly write_flag:boolean;readonly csrf_token?:string;readonly session_generation:string|null;readonly scope:YxxMemberScope}
+import type {BoundApplicationRecipient} from './yxx-application-member-auth.mjs';
+import {boundApplicationRecipient} from './yxx-application-member-auth.mjs';
+export interface YxxCommandContext {readonly notification_recipient?:BoundApplicationRecipient;readonly profile:YxxProfile;readonly flags:YxxMemberFlags;readonly write_flag:boolean;readonly csrf_token?:string;readonly session_generation:string|null;readonly scope:YxxMemberScope}
 export type YxxVerifiedWriteContext=YxxCommandContext & {profile:'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP';write_flag:true;csrf_token:string};
 export interface YxxHttpCommandInput {request:IncomingMessage;input:unknown;kind?:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK';requestRef?:string|undefined;transaction?:PostgresTransaction}
 export interface YxxQuotaInput {profile:YxxProfile;scope:YxxMemberScope;kind:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK';client_command_id:string;transaction:PostgresTransaction}
@@ -88,7 +90,8 @@ function validatedAuth(auth:RawAuth|null,fallbackProfile:YxxProfile,fallbackFlag
     proofRef: text(auth.proof_ref, 'YXX_COMMAND_AUTH_INVALID', 256),
   };
   return Object.freeze({ profile: selectedProfile as 'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP', flags: selectedFlags, write_flag: true as const,
-    csrf_token: csrf, session_generation: sessionGeneration, scope: Object.freeze(trusted) });
+    csrf_token: csrf, session_generation: sessionGeneration, scope: Object.freeze(trusted),
+    ...(auth.notification_recipient===undefined?{}:{notification_recipient:boundApplicationRecipient(auth.notification_recipient)}) });
 }
 
 function validatedReadAuth(auth:RawAuth|null,fallbackProfile:YxxProfile,fallbackFlags:YxxMemberFlags):YxxCommandContext {
@@ -122,7 +125,8 @@ function sameReadAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
     && left.scope.scopeHash === right.scope.scopeHash
     && left.scope.sourceCorpScope === right.scope.sourceCorpScope
     && left.scope.sourceAppScope === right.scope.sourceAppScope
-    && left.scope.proofRef === right.scope.proofRef;
+    && left.scope.proofRef === right.scope.proofRef
+    && JSON.stringify(left.notification_recipient??null)===JSON.stringify(right.notification_recipient??null);
 }
 
 function sameAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
@@ -134,7 +138,8 @@ function sameAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
     && left.scope.scopeHash === right.scope.scopeHash
     && left.scope.sourceCorpScope === right.scope.sourceCorpScope
     && left.scope.sourceAppScope === right.scope.sourceAppScope
-    && left.scope.proofRef === right.scope.proofRef;
+    && left.scope.proofRef === right.scope.proofRef
+    && JSON.stringify(left.notification_recipient??null)===JSON.stringify(right.notification_recipient??null);
 }
 
 // This adapter is the only command boundary allowed to turn an authenticated
@@ -182,7 +187,7 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
   async function accept({ request, input, kind = 'SUBMIT', requestRef }:YxxHttpCommandInput={} as YxxHttpCommandInput) {
     if(kind==='FEEDBACK')fail('YXX_COMMAND_INPUT_INVALID');
     const context = await authorize({ request, input, kind });
-    return store.accept({ scope: context.scope, input, kind, requestRef,
+    return store.accept({ scope: context.scope, input, kind, requestRef,...(context.notification_recipient?{notificationRecipient:context.notification_recipient}:{}),
       onNewCommand: ({ value, kind: commandKind, transaction }) => checkQuota(context, value, commandKind, transaction),
       onBeforeCommit: ({ transaction }) => verifyBeforeCommit(context, request, transaction) });
   }
@@ -190,7 +195,7 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
   async function acceptInTransaction({ request, input, kind = 'SUBMIT', requestRef, transaction }:YxxHttpCommandInput & {transaction:PostgresTransaction}={} as YxxHttpCommandInput & {transaction:PostgresTransaction}) {
     if(kind==='FEEDBACK')fail('YXX_COMMAND_INPUT_INVALID');
     const context = await authorize({ request, input, kind });
-    return store.acceptInTransaction({ scope: context.scope, input, kind, requestRef, transaction,
+    return store.acceptInTransaction({ scope: context.scope, input, kind, requestRef,...(context.notification_recipient?{notificationRecipient:context.notification_recipient}:{}), transaction,
       onNewCommand: ({ value, kind: commandKind, transaction: current }) => checkQuota(context, value, commandKind, current),
       onBeforeCommit: ({ transaction: current }) => verifyBeforeCommit(context, request, current) });
   }

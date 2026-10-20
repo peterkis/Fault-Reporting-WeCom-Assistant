@@ -79,6 +79,7 @@
     "node": {
       "enum": [
         "FIRST_RESPONSIBILITY",
+        "FIRST_HANDLING",
         "STAFF_COMPLETED",
         null
       ]
@@ -139,6 +140,7 @@
           "node": {
             "enum": [
               "FIRST_RESPONSIBILITY",
+        "FIRST_HANDLING",
               "STAFF_COMPLETED"
             ]
           }

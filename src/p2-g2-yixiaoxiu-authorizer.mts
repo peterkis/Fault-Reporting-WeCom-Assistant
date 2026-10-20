@@ -20,7 +20,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
   const c=validateYxxEntryConfig(config);
   if(!c.enabled||!oauth?.enabled||typeof oauth.authenticate!=='function'
     ||(oauth as EnabledWeComOAuth).scope?.corpId!==c.corpId||(oauth as EnabledWeComOAuth).scope?.agentId!==c.agentId)failYxx('CONFIG_INVALID');
-  if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'
+  if((c.identityMode==='VERIFIED_DELEGATED_MAPPING'||c.identityMode==='VERIFIED_APP_OPENID')
     &&(typeof identityMapping?.resolve!=='function'||identityMapping.configHash!==yxxIdentityConfigHash(c)))failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
   const app=normalizeAppNotificationOptions(appNotifications);
   if(app&&(typeof reporterHmacSecret!=='string'||Buffer.byteLength(reporterHmacSecret)<32
@@ -34,7 +34,7 @@ export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=nul
     // Canonical namespace is established by the verified mode/mapping checks below.
     let member: {corpId:string;userid:string};try{member=(oauth as EnabledWeComOAuth).authenticate(sessionToken as SessionToken | null);}catch{failYxx('AUTH_REQUIRED');}
     if(member.corpId!==c.corpId)failYxx('MEMBER_REQUIRED');
-    if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'){
+    if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'||c.identityMode==='VERIFIED_APP_OPENID'){
       const userid=(identityMapping as YxxIdentityMapping).resolve(member.userid as OAuthMemberId);if(!userid)failYxx('MEMBER_REQUIRED');
       return {...member,userid};
     }

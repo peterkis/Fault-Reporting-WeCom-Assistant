@@ -2,6 +2,10 @@
 
 ACTIVE_SELECTION: v3-p09
 
+## MVP 通知与新 H5 后端（2026-10-20）
+
+沿原活动 v3-p09 追加本轮四个已注册的群回应、通知策略和应用成员入口，不改原 host、flags 或历史清单。使用 063 前向迁移、隔离 PG18 和模拟 Provider；普通本地只运行实际相关子集，不称 full／certify 或真实客户端验收。行为、兼容和证据见[实施记录](../mvp-notifications-h5/README.md)。
+
 ## WBINT-T16 已保存附件读取（2026-10-08）
 
 活动v3-p09保留原14项，追加本票4个已登记的文件Port／真实HTTP-PG／资源／正式bundle浏览器入口，原host、flags和历史清单不变。附件默认关闭、无Store明确不可用；不新增上传／Provider获取／OCR／模型。普通本票最终相关检查覆盖被修改的runtime认证与默认关闭、WEB01查询／正式界面及本票4入口；完整活动并集由整体集成汇总验证，不把直接子集宣称为全18或full/certify。合同和精确证据见[本票执行记录](../admin-workbench-integration/execution/t16.md)。

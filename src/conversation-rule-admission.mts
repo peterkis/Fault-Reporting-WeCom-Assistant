@@ -8,15 +8,16 @@ function derivedSql(prefix:string){const hash=`encode(sha256(convert_to('${prefi
 export const RULE_ACTION_MESSAGE_JOIN_SQL=`(a.id=m.client_command_id OR (a.result_ref_type='COMMUNICATION' AND a.result_ref_id=m.id::text)
   OR (a.action_type='REQUEST_ONE_DESCRIPTION' AND m.client_command_id::text IN ((${derivedSql('P2016_GUIDANCE:')}),(${derivedSql('P2016_PERSON_GUIDANCE:')}))))`;
 export interface RuleAdmissionInput {transaction:PostgresTransaction;deliveryId:string}
-export type DeliveryAttemptAdmission=(input:RuleAdmissionInput)=>Promise<boolean>;
+export type DeliveryAttemptAdmission=((input:RuleAdmissionInput)=>Promise<boolean>)&{readonly mvpRepliesEnabled?:boolean};
 /** Existing producers' primary/derived command identities, never text/time correlation. */
-export function createConversationRuleAdmission({existingAdmissionMounted=false}:{existingAdmissionMounted?:boolean}={}):DeliveryAttemptAdmission{
+export function createConversationRuleAdmission({existingAdmissionMounted=false,mvpRepliesEnabled=false}:{existingAdmissionMounted?:boolean;mvpRepliesEnabled?:boolean}={}):DeliveryAttemptAdmission{
   return async({transaction:tx,deliveryId})=>{
     const source=(await tx.query<{sender_system_code:string|null}>(`SELECT m.sender_system_code FROM communication.delivery d
       JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id WHERE d.id=$1::uuid`,[deliveryId])).rows[0];
     // Mounting this hook must not turn the worker's existing no-hook rejection
     // for Incident progress into a permissive rule-only admission.
     if(source?.sender_system_code==='INCIDENT_PUBLIC_PROGRESS'&&!existingAdmissionMounted)return false;
+    if(source?.sender_system_code==='MVP_GROUP_REPLY')return mvpRepliesEnabled;
     if(source?.sender_system_code!=='RULE_FIRST_ORCHESTRATOR')return true;
     await tx.query("SET LOCAL statement_timeout='2000ms'");
     // Control and binding writers already take this lock first. Hold it through
@@ -62,5 +63,5 @@ export function createConversationRuleAdmission({existingAdmissionMounted=false}
   };
 }
 export function composeConversationRuleAdmission(existing:DeliveryAttemptAdmission|null=null):DeliveryAttemptAdmission{
-  const rules=createConversationRuleAdmission({existingAdmissionMounted:existing!==null});return async input=>(existing===null||await existing(input))&&await rules(input);
+  const rules=createConversationRuleAdmission({existingAdmissionMounted:existing!==null,mvpRepliesEnabled:existing?.mvpRepliesEnabled===true});return async input=>(existing===null||await existing(input))&&await rules(input);
 }

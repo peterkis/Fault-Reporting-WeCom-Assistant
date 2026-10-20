@@ -9,6 +9,7 @@ import { createP2012Runtime } from '../../src/p2-012-workbench-assembly.mjs';
 import { createP2016OrchestrationWorker } from '../../src/p2-016-orchestration-adapters.mjs';
 import { createP2012PersonDestinationAuthorizer, createP2012DynamicWeComSender } from '../../src/p2-012-live-reporter-scope.mjs';
 import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../../src/conversation-rule-admission.mjs';
 import { createPilotAccessService } from '../../src/p1-009-pilot-access-workbench.mjs';
 import { textHashP2016 } from '../../src/p2-016-domain-contracts.mjs';
 
@@ -49,7 +50,7 @@ export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketN
         gateway: { getAuthenticatedClient: () => ({ sendMessage: async (...args) => {
           providerCalls.push(args); return { errcode: 0, headers: { req_id: 'synthetic-g2-ack' } };
         } }) } });
-      const delivery = createCommunicationDeliveryWorker({ pool, sender, enabled: true, batchSize: 20 });
+      const delivery = createCommunicationDeliveryWorker({ pool, sender, enabled: true, batchSize: 20,attemptAdmission:composeConversationRuleAdmission() });
       let primaryError=null;
       try {
         const started = await runtime.start(), cookies=(started.cookies??[started.cookie]).map(c=>c.name+'='+c.value),cookie=cookies[0];

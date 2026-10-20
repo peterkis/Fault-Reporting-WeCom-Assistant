@@ -1,5 +1,5 @@
 export type YxxProfile = 'OAUTH_ONLY' | 'MEMBER_TICKET_READONLY' | 'MEMBER_SELF_SERVICE' | 'FULL_SERVICE_LOOP';
-export interface YxxEntryConfigBase extends Record<string, unknown> { identityMode: 'UNVERIFIED' | 'VERIFIED_SAME_NAMESPACE' | 'VERIFIED_DELEGATED_MAPPING'; memberIdsConfirmed: boolean; proofRef: string | null; proofKind: 'LIVE' | 'SYNTHETIC' | null; validationProfile: 'DEPLOYMENT' | 'ISOLATED_TEST'; reporterUserIds?: string[] }
+export interface YxxEntryConfigBase extends Record<string, unknown> { identityMode: 'UNVERIFIED' | 'VERIFIED_SAME_NAMESPACE' | 'VERIFIED_DELEGATED_MAPPING' | 'VERIFIED_APP_OPENID'; memberIdsConfirmed: boolean; proofRef: string | null; proofKind: 'LIVE' | 'SYNTHETIC' | null; validationProfile: 'DEPLOYMENT' | 'ISOLATED_TEST'; reporterUserIds?: string[] }
 export type YxxEntryConfig = YxxEntryConfigBase & ({enabled:true;corpId:string;agentId:string;botId:string}|{enabled:false;corpId:unknown;agentId:unknown;botId:unknown});
 import {exactP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
@@ -24,7 +24,7 @@ export function validateYxxEntryConfig(value: unknown={}): YxxEntryConfig{
   c={enabled:false,identityMode:'UNVERIFIED',memberIdsConfirmed:false,proofRef:null,proofKind:null,
     corpId:null,agentId:null,botId:null,validationProfile:'DEPLOYMENT',...c};
   if(typeof c.enabled!=='boolean'||typeof c.memberIdsConfirmed!=='boolean'
-    ||!['UNVERIFIED','VERIFIED_SAME_NAMESPACE','VERIFIED_DELEGATED_MAPPING'].includes(c.identityMode as string)
+    ||!['UNVERIFIED','VERIFIED_SAME_NAMESPACE','VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(c.identityMode as string)
     ||!['DEPLOYMENT','ISOLATED_TEST'].includes(c.validationProfile as string))failYxx('CONFIG_INVALID');
   if(c.enabled&&(typeof c.corpId!=='string'||!c.corpId||c.corpId.length>128
     ||typeof c.agentId!=='string'||!/^\d{1,20}$/u.test(c.agentId)
@@ -33,7 +33,7 @@ export function validateYxxEntryConfig(value: unknown={}): YxxEntryConfig{
     if(!c.memberIdsConfirmed||typeof c.proofRef!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_./-]{0,255}$/u.test(c.proofRef)
       ||!['LIVE','SYNTHETIC'].includes(c.proofKind as string)||c.proofKind==='SYNTHETIC'&&c.validationProfile!=='ISOLATED_TEST')failYxx('CONFIG_INVALID');
   }else if(c.memberIdsConfirmed||c.proofRef!==null||c.proofKind!==null)failYxx('CONFIG_INVALID');
-  if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'){
+  if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'||c.identityMode==='VERIFIED_APP_OPENID'&&c.reporterUserIds!==undefined){
     if(!Array.isArray(c.reporterUserIds)||c.reporterUserIds.length<1||c.reporterUserIds.length>32
       ||c.reporterUserIds.some(id=>!validYxxUserId(id))
       ||new Set(c.reporterUserIds.map(id=>(id as string).toLowerCase())).size!==c.reporterUserIds.length)failYxx('CONFIG_INVALID');
