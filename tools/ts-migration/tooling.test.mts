@@ -35,7 +35,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
   try {
     const first = build(root), digest = verifyArtifact(root);
     await t.test('WEB01 source identity and hashed browser assets cannot fall back or drift',()=>{
-      const asset=first.outputs.find(f=>f.kind==='WEB'&&f.path.endsWith('.js'));
+      const asset=first.outputs.find(f=>f.kind==='WEB'&&f.path.startsWith('web/admin-workbench/')&&f.path.endsWith('.js'));
       assert.ok(asset,'real frontend output must be in the artifact');
       alter(root,asset.path.replace(/^web\//u,'.build/runtime/web/'),'tampered browser script',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_OUTPUT_TAMPERED/u));
       const target=path.join(root,'.build/runtime',asset.path),bytes=readFileSync(target);
