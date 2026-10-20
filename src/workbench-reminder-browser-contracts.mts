@@ -3,7 +3,7 @@ import type {LocalDateTime} from '../contracts/time_contracts.js';
 
 export const REMINDER_PREFERENCES_KEY='wbint-reminder-preferences-v1';
 export const mutedReminderPreferences:WorkbenchReminderPreferences=Object.freeze({schema_version:1,sound_enabled:false,desktop_enabled:false});
-const reason=(v:unknown):v is WorkbenchReminderItem['reason']=>typeof v==='string'&&(v==='AUTHORIZED_TEAM_NEW_REPORT'||v==='RELATED_NEW_MATERIAL'||v==='RELATED_REOPEN'||v==='RELATED_FOLLOW_UP_DUE');
+const reason=(v:unknown):v is WorkbenchReminderItem['reason']=>typeof v==='string'&&(v==='AUTHORIZED_TEAM_NEW_REPORT'||v==='RELATED_NEW_MATERIAL'||v==='RELATED_REOPEN'||v==='RELATED_FOLLOW_UP_DUE'||v==='RELATED_REPORT_URGE');
 const kind=(v:unknown):v is WorkbenchReminderItem['canonical_item']['kind']=>typeof v==='string'&&(v==='ticket'||v==='review'||v==='intake');
 const sha=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{64}$/u.test(v);
 const decimal=(v:unknown,zero=true):v is string=>typeof v==='string'&&/^(0|[1-9][0-9]{0,18})$/u.test(v)&&BigInt(v)<=9223372036854775807n&&(zero||v!=='0');
@@ -41,7 +41,7 @@ export function decodeReminderPage(raw:unknown):WorkbenchReminderPage{
     if(!sha(row.reminder_id)||!sha(row.source_key)||!decimal(row.event_id,false)||!decimal(row.source_revision,false)
       ||!reason(row.reason)
       ||!kind(item.kind)||typeof item.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(item.id)
-      ||(row.reason==='RELATED_REOPEN'||row.reason==='RELATED_FOLLOW_UP_DUE')&&item.kind!=='ticket')throw new TypeError('REMINDER_RESPONSE_INVALID');
+      ||(row.reason==='RELATED_REOPEN'||row.reason==='RELATED_FOLLOW_UP_DUE'||row.reason==='RELATED_REPORT_URGE')&&item.kind!=='ticket')throw new TypeError('REMINDER_RESPONSE_INVALID');
     return {reminder_id:row.reminder_id,event_id:row.event_id,reason:row.reason,canonical_item:{kind:item.kind,id:item.id},source_key:row.source_key,source_revision:row.source_revision,occurred_at:time(row.occurred_at)};
   });
   if(v.reset_required&&(items.length!==0||v.next_cursor!==null))throw new TypeError('REMINDER_RESPONSE_INVALID');

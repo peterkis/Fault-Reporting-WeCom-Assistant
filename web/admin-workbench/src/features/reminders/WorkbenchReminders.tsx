@@ -8,7 +8,7 @@ import {clearSessionAuthorization} from '../../app/authorization';
 import {decodeReminderPage,decodeReminderPreferences,decodeReminderCoordination,mutedReminderPreferences,REMINDER_PREFERENCES_KEY} from '../../../../../src/workbench-reminder-browser-contracts.mjs';
 import type {WorkbenchReminderItem,WorkbenchReminderPreferences} from '../../../../../contracts/workbench_reminder_contracts';
 
-const labels={AUTHORIZED_TEAM_NEW_REPORT:'团队收到新报修',RELATED_NEW_MATERIAL:'相关事项有新补充',RELATED_REOPEN:'相关工单已重开',RELATED_FOLLOW_UP_DUE:'相关工单跟进已到期'};
+const labels={AUTHORIZED_TEAM_NEW_REPORT:'团队收到新报修',RELATED_NEW_MATERIAL:'相关事项有新补充',RELATED_REOPEN:'相关工单已重开',RELATED_FOLLOW_UP_DUE:'相关工单跟进已到期',RELATED_REPORT_URGE:'报修人催促了相关工单'};
 const readPreferences=()=>{try{return decodeReminderPreferences(localStorage.getItem(REMINDER_PREFERENCES_KEY));}catch{return mutedReminderPreferences;}};
 interface Baseline {after:string;token:string}
 interface Rechecked {requested:WorkbenchReminderItem['canonical_item'];canonical:WorkbenchReminderItem['canonical_item']|null}

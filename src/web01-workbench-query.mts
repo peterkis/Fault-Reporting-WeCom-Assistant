@@ -10,6 +10,8 @@ import type {createWorkbenchFollowUpSchedules} from './workbench-follow-up-sched
 import type {ReviewReference} from '../contracts/workbench_review_contracts.js';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
 import {readManualReportSource} from './workbench-manual-report-source.mjs';
+import type {WorkbenchWebReportLifecyclePort} from './workbench-web-report.mjs';
+import {decodeWebUrge} from './workbench-web-report-browser-contracts.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
 const STATUS_COLUMNS = {
@@ -130,9 +132,15 @@ export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
   if(!includeClosedIntakes)return CARD_SQL;
   return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'>|null}) {
-  async function decorate(items:WorkbenchCard[],authContext?:unknown):Promise<WorkbenchCard[]>{
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null}) {
+  async function decorateWebReportUrgency(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
+    if(!webReports)return items;const ids=[...new Set(items.filter(item=>item.kind==='ticket').map(item=>item.id))];if(!ids.length)return items;
+    const active=await webReports.activeForAuthorizedTickets(ids);
+    return items.map(item=>{if(item.kind!=='ticket')return item;const value=active.get(item.id)??{active:false,count:0,last_urged_at:null};return {...item,web_report_urge:decodeWebUrge({active:value.active,count:value.count,last_urged_at:value.last_urged_at})};});
+  }
+  async function decorate(items:WorkbenchCard[],authContext?:unknown,includeWebReports=true):Promise<WorkbenchCard[]>{
     let sourced=sourceGroups?await sourceGroups.decorate(items):items;
+    if(includeWebReports)sourced=await decorateWebReportUrgency(sourced);
     if(followUpSchedules){
       const ticketIds=[...new Set(sourced.filter(item=>item.kind==='ticket').map(item=>item.id))];
       if(ticketIds.length){
@@ -163,24 +171,25 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`);
     const row=r.rows[0];if(!row)failP2016();return {...row,mode,timezone:'Asia/Shanghai'};
   }
-  async function item(authContext: unknown,kind: string,id: unknown): Promise<WorkbenchCard> {
+  async function item(authContext: unknown,kind: string,id: unknown,includeWebReports=true): Promise<WorkbenchCard> {
     if(!['ticket','review','intake'].includes(kind))failP2016('NOT_FOUND',404);
     const authorized=await scope(authContext);
     const r=await pool.query<CardRow>(CARD_SQL+' SELECT * FROM cards WHERE kind=$4 AND id=$5', [...authorized.values,kind,uuidP2016(id)]);
     let row=r.rows[0];
     if(!row&&manualReviewEnabled&&reviews&&kind==='review'){
       const canonical=await reviews.canonicalItem({authContext,reviewId:uuidP2016(id)});
-      if(canonical.kind!==kind||canonical.id!==id)return item(authContext,canonical.kind,canonical.id);
+      if(canonical.kind!==kind||canonical.id!==id)return item(authContext,canonical.kind,canonical.id,includeWebReports);
     }
     if(!row&&manualReviewEnabled&&kind==='intake'&&authorized.values[0]===true){
       const retained=await pool.query<CardRow>(CLOSED_INTAKE_CARD_SQL,[uuidP2016(id)]);
       row=retained.rows[0];
     }
     if(!row)failP2016('NOT_FOUND',404);
-    const selected=card(row);return (await decorate([selected],authContext))[0]??selected;
+    const selected=card(row);return (await decorate([selected],authContext,includeWebReports))[0]??selected;
   }
   return Object.freeze({
     authorizedItem:item,
+    decorateWebReportUrgency,
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';

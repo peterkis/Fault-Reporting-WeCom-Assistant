@@ -4,6 +4,8 @@ import type {WorkbenchSearchCriteria} from '../../../../contracts/workbench_sear
 import {BoardActions,BoardActionCard,BoardDropColumn,BoardActionNotice} from '../features/board-actions/BoardActions';
 import {readBoardIntent} from '../features/board-actions/intent';
 import {WorkbenchReminders} from '../features/reminders/WorkbenchReminders';
+import {WebReportSection} from '../features/web-report/WebReportSection';
+import {WebReportUrgency} from '../features/web-report/WebReportUrgency';
 import {ItemFollow} from '../features/item-follow/ItemFollow';
 import {NotificationExceptions} from '../features/notification-exceptions/NotificationExceptions';
 import {TicketWaitingActions} from '../features/ticket-waiting/TicketWaitingActions';
@@ -111,7 +113,7 @@ function Card({item,search,selected,now,located=false}:{item:WorkbenchCard;searc
       <div className="card-top"><span>{item.number}</span></div>
       <h3>{item.title}</h3>
       <p className="card-meta" title={(item.location??'位置未提供')+' · '+(item.reporter_name??'报修人资料未提供')}>{item.location??'位置未提供'} · {item.reporter_name??'报修人资料未提供'}</p>
-      <div className="card-tags"><Status item={item}/><span className="neutral-chip" title={item.source_label}>{item.source_label}</span></div>
+      <div className="card-tags"><Status item={item}/><span className="neutral-chip" title={item.source_label}>{item.source_label}</span><WebReportUrgency value={item.web_report_urge}/></div>
       <SharedFollowUpSummary value={item.follow_up_schedule}/><SupplementFollowUpSummary pending={item.supplement_follow_up?.has_pending_supplements}/>
       <footer className="card-footer"><Owner name={item.assignee_name}/><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>更新 {relativeTime(item.updated_at,now)}</time></footer>
       <span className="sr-only">查看详情</span>
@@ -128,7 +130,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
   const tableColumns=tableHelper.columns([
     tableHelper.accessor('number',{header:'编号'}),
     tableHelper.accessor('title',{header:'问题',cell:({row})=><><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link><SharedFollowUpSummary value={row.original.follow_up_schedule}/><SupplementFollowUpSummary pending={row.original.supplement_follow_up?.has_pending_supplements}/></>}),
-    tableHelper.accessor('status',{header:'状态',cell:({row})=><Status item={row.original}/>}),
+    tableHelper.accessor('status',{header:'状态',cell:({row})=><><Status item={row.original}/><WebReportUrgency value={row.original.web_report_urge}/></>}),
     tableHelper.accessor('source_label',{header:'来源',cell:({row})=><span className="neutral-chip">{row.original.source_label}</span>}),
     tableHelper.accessor('location',{header:'位置',cell:({getValue})=>getValue()??'未提供'}),
     tableHelper.accessor('reporter_name',{header:'报修人',cell:({getValue})=>getValue()??'未提供'}),
@@ -202,7 +204,9 @@ function activityActor(actor:string|null,audience:string){
 function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[takeoverBlocked,setTakeoverBlocked]=useState(false),[takeoverCompletionBlocked,setTakeoverCompletionBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false),[waitingBlocked,setWaitingBlocked]=useState(false);
   const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false),[itemFollowBlocked,setItemFollowBlocked]=useState(false),[supplementBlocked,setSupplementBlocked]=useState(false);
-  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||takeoverBlocked||takeoverCompletionBlocked||unassignBlocked||returnBlocked||waitingBlocked||reopenBlocked||followUpBlocked||itemFollowBlocked||supplementBlocked;
+  const [webReportBlocked,setWebReportBlocked]=useState(false);
+  const otherCommandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked||reviewBlocked||completionBlocked||assignmentBlocked||takeoverBlocked||takeoverCompletionBlocked||unassignBlocked||returnBlocked||waitingBlocked||reopenBlocked||followUpBlocked||itemFollowBlocked||supplementBlocked;
+  const commandsBlocked=otherCommandsBlocked||webReportBlocked;
   useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),dialog=useRef<HTMLDialogElement>(null),previousFocus=useRef<HTMLElement|null>(null),pageHeading=useRef<HTMLHeadingElement>(null);
   const routeState:unknown=location.state;
@@ -242,7 +246,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
       <section className="properties" aria-label="事项信息"><dl>
-        <dt>状态</dt><dd><Status item={detail.item}/></dd>
+        <dt>状态</dt><dd><Status item={detail.item}/><WebReportUrgency value={detail.item.web_report_urge}/></dd>
         <dt>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd>
         <dt>报修人</dt><dd>{detail.item.reporter_name??'未提供'}</dd>
         <dt>位置</dt><dd>{detail.item.location??'未提供'}</dd>
@@ -256,6 +260,7 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
       <ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isFetching&&!result.isError} onBlockedChange={setItemFollowBlocked}/>
       {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
       {detail.item.kind==='ticket'?<TicketNextStep status={detail.item.status}/>:null}
+      {principal.web_reports_enabled?<WebReportSection key={principal.principal_id+':web-report:'+detail.item.kind+':'+detail.item.id} principal={principal} kind={detail.item.kind} id={detail.item.id} readReady={result.isSuccess&&!result.isFetching&&!result.isError} otherBlocked={otherCommandsBlocked} onBlockedChange={setWebReportBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
       {detail.item.kind==='ticket'&&principal.ticket_takeover_completion_enabled?<TicketTakeoverCompletion boardMode={boardMode} key={principal.principal_id+':takeover-completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverCompletionBlocked}/>:null}
       {detail.item.kind==='ticket'?<TicketWaitingActions key={principal.principal_id+':waiting:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setWaitingBlocked}/>:null}

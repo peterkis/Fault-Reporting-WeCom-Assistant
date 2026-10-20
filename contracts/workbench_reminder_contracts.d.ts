@@ -7,6 +7,7 @@ export type WorkbenchReminderReason =
   | 'AUTHORIZED_TEAM_NEW_REPORT'
   | 'RELATED_NEW_MATERIAL'
   | 'RELATED_REOPEN'
+  | 'RELATED_REPORT_URGE'
   | 'RELATED_FOLLOW_UP_DUE';
 export interface WorkbenchReminderQuery {
   readonly after_event_id:string|null;

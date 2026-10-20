@@ -16,8 +16,8 @@ interface Fact {event_id:string;kind:'ticket'|'review'|'intake';id:string;reason
 interface Clock {high:string;floor:string;now:string}
 
 /** Read projection only. Original facts, current authorization and canonical cards remain authoritative. */
-export function createWorkbenchReminders({pool,query,enabled=false,followEnabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;followEnabled?:boolean}){
-  if(typeof enabled!=='boolean'||typeof followEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+export function createWorkbenchReminders({pool,query,enabled=false,followEnabled=false,webReportsEnabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;followEnabled?:boolean;webReportsEnabled?:boolean}){
+  if(typeof enabled!=='boolean'||typeof followEnabled!=='boolean'||typeof webReportsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const secret=randomBytes(32);
   function seal(value:Baseline|Cursor):string{
     const body=Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -159,6 +159,18 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
             AND schedule.due_epoch_ms<=platform.physical_epoch_ms() AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
             AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_event ended JOIN pilot_ticket.ticket_event scheduled ON scheduled.event_id=schedule.scheduled_event_id
               WHERE ended.ticket_id=t.id AND ended.event_ordinal>scheduled.event_ordinal AND (ended.new_status IN ('CLOSED','CANCELLED') OR ended.event_type='ticket.reopened'))
+          ${webReportsEnabled?`UNION ALL
+          SELECT a.kind,a.id,'RELATED_REPORT_URGE','web-urge:'||u.id::text,u.sequence_no::text,u.occurred_at,e.event_id
+          FROM anchors a JOIN intake.web_report_urge u ON a.kind='ticket' AND u.ticket_id::text=a.id AND u.source_intake_id=a.original_id
+          JOIN intake.web_request_binding b ON b.intake_id=u.source_intake_id AND b.canonical_reporter_binding=u.scope_hash
+          JOIN pilot_ticket.ticket t ON t.id=u.ticket_id
+          JOIN conversation.realtime_event e ON e.publisher_name='YXX_H5_URGE' AND e.source_type='WEB_REPORT_URGE'
+            AND e.source_id=u.id::text AND e.event_variant='URGED' AND e.event_type='ticket.updated'
+            AND e.aggregate_type='TICKET' AND e.aggregate_id=a.id
+          WHERE a.related AND u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
+            AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
+            AND u.retention_until_epoch_ms>platform.physical_epoch_ms()
+            AND u.occurred_epoch_ms::numeric>extract(epoch FROM ($4::timestamp AT TIME ZONE 'Asia/Shanghai'))*1000` : ''}
         ), retained AS (
           SELECT facts.* FROM facts JOIN conversation.realtime_event e ON e.event_id=facts.event_id
           WHERE e.stream_name=$5 AND e.visibility_scope='WORKBENCH' AND e.expires_epoch_ms>platform.physical_epoch_ms()
