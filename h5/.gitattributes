@@ -1,0 +1,4 @@
+design-baseline/*.html -text
+design-baseline/*.png binary
+src/assets/*.woff2 binary
+src/assets/*.jpg binary

@@ -1,0 +1,469 @@
+<!DOCTYPE html><html lang="zh-CN" style="width: 390px; height: 1361px; overflow: hidden; position: relative;"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#faf9f8;}body{overscroll-behavior:none;font-family:'Inter',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-secondary": "#ffffff",
+          "tertiary": "#823c00",
+          "surface-tint": "#3a53c9",
+          "on-error": "#ffffff",
+          "secondary-fixed": "#d5e3ff",
+          "on-error-container": "#93000a",
+          "on-primary": "#ffffff",
+          "surface-container-highest": "#e3e2e1",
+          "on-primary-fixed": "#001159",
+          "background": "#faf9f8",
+          "surface-bright": "#faf9f8",
+          "outline": "#757685",
+          "success": "#14832b",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f4f3f2",
+          "tertiary-container": "#a74f00",
+          "on-tertiary-fixed": "#321300",
+          "on-primary-fixed-variant": "#1c38b0",
+          "error-container": "#ffdad6",
+          "outline-variant": "#c5c5d6",
+          "warning": "#ff6d00",
+          "primary": "#455dd3",
+          "primary-interactive": "#0075de",
+          "border-base": "#e5e3df",
+          "primary-fixed-dim": "#bac3ff",
+          "secondary-fixed-dim": "#a8c8ff",
+          "secondary": "#005eb4",
+          "surface": "#faf9f8",
+          "error": "#f64932",
+          "on-secondary-container": "#002c5a",
+          "on-secondary-fixed": "#001b3c",
+          "on-background": "#1a1c1c",
+          "surface-container": "#efeeed",
+          "accent": "#213183",
+          "tertiary-fixed": "#ffdbc8",
+          "on-primary-container": "#e5e6ff",
+          "on-secondary-fixed-variant": "#00468a",
+          "surface-variant": "#e3e2e1",
+          "surface-base": "#ffffff",
+          "inverse-primary": "#bac3ff",
+          "on-surface": "#1a1c1c",
+          "on-tertiary-container": "#ffe2d3",
+          "text-main": "#191918",
+          "ink-muted": "#787671",
+          "surface-container-high": "#e9e8e7",
+          "primary-fixed": "#dee1ff",
+          "inverse-surface": "#2f3130",
+          "on-tertiary-fixed-variant": "#743500",
+          "on-surface-variant": "#444653",
+          "inverse-on-surface": "#f1f0ef",
+          "surface-dim": "#dadad9",
+          "primary-container": "#455dd3",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed-dim": "#ffb68a",
+          "secondary-container": "#4093fe"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "sm": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "space-md": "16px",
+          "space-sm": "8px",
+          "space-xl": "40px",
+          "space-xs": "4px",
+          "space-lg": "24px",
+          "gutter": "28px",
+          "margin": "20px"
+        },
+        "fontFamily": {
+          "caption": [
+            "\"Inter\", -apple-system, sans-serif"
+          ],
+          "headline-lg": [
+            "\"Inter\", -apple-system, sans-serif"
+          ],
+          "headline-md": [
+            "\"Inter\", -apple-system, sans-serif"
+          ],
+          "body-md": [
+            "\"Inter\", -apple-system, sans-serif"
+          ],
+          "headline-sm": [
+            "\"Inter\", -apple-system, sans-serif"
+          ]
+        }
+      }
+    }
+  };
+</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style></head><body class="bg-[#faf9f8] text-[#191918] min-h-screen flex flex-col antialiased selection:bg-[#455dd3]/10 selection:text-[#455dd3]"><header class="fixed top-0 w-full z-50 pt-safe bg-[#faf9f8]/90 backdrop-blur-md border-b border-[#e5e3df]"><div class="h-14 px-4 flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><button aria-label="返回" class="w-9 h-9 flex items-center justify-center rounded-lg text-[#191918] hover:bg-[#efeeed] transition-colors active:scale-95 flex-shrink-0" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back_ios_new</span></button><div class="flex items-center gap-2 min-w-0"><div class="w-7 h-7 rounded-lg bg-[#455dd3] text-white flex items-center justify-center font-bold text-[13px] flex-shrink-0 shadow-sm">修</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><h1 class="font-semibold text-[15px] text-[#191918] truncate tracking-tight">工单详情与追踪</h1><span class="px-1.5 py-0.2 rounded text-[10px] bg-[#eef2ff] border border-[#d5ddff] text-[#455dd3] font-medium flex-shrink-0">医小修</span></div></div></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-safe bg-[#faf9f8]"><div class="flex flex-col w-full pb-24">
+<!-- Status & Priority Banner -->
+<div class="px-4 pt-3.5">
+<div class="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] border border-[#e5e3df] flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="text-[12px] font-medium text-[#787671] tracking-wide">工单编号</span>
+<span class="text-[13px] font-semibold text-[#191918] font-mono">#IT-20250518-094</span>
+<button aria-label="复制工单号" class="w-6 h-6 flex items-center justify-center text-[#787671] hover:text-[#455dd3] transition-colors active:scale-90" id="copy-btn">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#eef2ff] border border-[#d5ddff] text-[#455dd3] text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#455dd3] animate-pulse"></span>
+
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<h2 class="text-[16px] font-semibold text-[#191918] leading-snug">
+          心内科护士站 3 号发药机标签打印机卡纸并提示代码 E-102
+        </h2>
+<div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#f4f3f2] border border-[#e5e3df] text-[#55534e] text-[11px]">
+<span class="material-symbols-outlined text-[13px] text-[#787671]">location_on</span>
+            新外科楼 7F 心内科护士站
+          </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Engineer Dispatch Card -->
+<div class="px-4 pt-3.5">
+<div class="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] border border-[#e5e3df] flex flex-col gap-3.5">
+<div class="flex items-center justify-between border-b border-[#f4f3f2] pb-2.5">
+<span class="text-[11px] font-semibold text-[#787671] uppercase tracking-wider">接单运维专家</span>
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-[#14832b] bg-[#eefbf0] border border-[#cbeed0] px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-[#14832b]"></span>正在处理</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#f4f3f2] border border-[#e5e3df]">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of an IT engineer wearing hospital badge and clean polo shirt, warm soft clinical indoor lighting, calm professional smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9DxQ9YiGfGMykpQtaty1Q8ykawdla5EWy8IjvT9SzweJEZ_kpHBIPTSa5-05PvejEN6TNLAcnad94iM5atNEFajn2DH9FD-BLfWgb6TfcE0YImko81bpWWk3R7pkLoN0QPXl3w5mjr5MjxpWkF_4HXISlVzjFd4SKjQuvkoNb2D2FlZz5DBgsZWN8y3WMKv-s340uDtvH3efOej1GGKSIzcJ14cA4ztVB6GBaf7Z9k9doAr5106R1">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-[15px] font-semibold text-[#191918] truncate">王浩</span>
+<span class="text-[11px] text-[#455dd3] bg-[#eef2ff] border border-[#d8e0ff] px-1.5 py-0.2 rounded font-medium">高级工程师</span>
+<div class="flex items-center text-[#ff6d00] text-[12px] ml-auto flex-shrink-0 font-medium">
+
+
+</div>
+</div>
+<p class="text-[12px] text-[#787671] truncate mt-0.5">计算机中心 · 运维组</p>
+</div>
+</div>
+<!-- Notion 风格二级操作按钮 -->
+<div class="grid grid-cols-2 gap-2.5 pt-0.5">
+<a class="h-10 rounded-lg bg-white border border-[#e5e3df] hover:bg-[#faf9f8] hover:border-[#c5c5d6] flex items-center justify-center gap-1.5 text-[#191918] text-[13px] font-medium active:scale-95 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)]" href="tel:13900001120">
+<span class="material-symbols-outlined text-[#455dd3] text-[18px]">call</span>
+<span class="">电话直连</span>
+</a>
+<button class="h-10 rounded-lg bg-[#f0f6ff] border border-[#cce1ff] hover:bg-[#e4efff] flex items-center justify-center gap-1.5 text-[#005eb4] text-[13px] font-medium active:scale-95 transition-all" id="wecom-chat-btn">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span class="">企微发消息</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Multimodal Assets Card -->
+<div class="px-4 pt-3.5">
+<div class="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] border border-[#e5e3df] flex flex-col gap-3.5">
+<div class="flex items-center justify-between border-b border-[#f4f3f2] pb-2.5">
+<span class="text-[11px] font-semibold text-[#787671] uppercase tracking-wider">故障现场记录</span>
+<span class="text-[11px] text-[#787671]">报修时上传</span>
+</div>
+<!-- Voice Note Player (Notion Style) -->
+<div class="flex items-center gap-3 p-3 rounded-lg bg-[#f9fafb] border border-[#e5e3df]">
+<button aria-label="播放语音记录" class="w-9 h-9 rounded-full bg-[#455dd3] hover:bg-[#0075de] text-white flex items-center justify-center flex-shrink-0 shadow-sm active:scale-90 transition-all" id="play-audio-btn">
+<span class="material-symbols-outlined text-[20px]" id="play-icon" style="font-variation-settings: &quot;FILL&quot; 1;">play_arrow</span>
+</button>
+<div class="flex-1 flex flex-col gap-1.5 min-w-0">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-medium text-[#191918]">语音报修备注 · 护士长张琴</span>
+<span class="text-[11px] text-[#787671] font-mono" id="audio-duration">12"</span>
+</div>
+<!-- Audio Waveform Visualization -->
+<div class="h-3 flex items-center gap-1 w-full overflow-hidden">
+<span class="w-1 h-2 bg-[#455dd3] rounded-full animate-pulse"></span>
+<span class="w-1 h-3 bg-[#455dd3] rounded-full"></span>
+<span class="w-1 h-1.5 bg-[#455dd3]/70 rounded-full"></span>
+<span class="w-1 h-3 bg-[#455dd3]/80 rounded-full"></span>
+<span class="w-1 h-2.5 bg-[#455dd3]/50 rounded-full"></span>
+<span class="w-1 h-3 bg-[#455dd3] rounded-full"></span>
+<span class="w-1 h-1 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-2 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-3 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-1 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-2 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-2.5 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-1 bg-[#d5ddff] rounded-full"></span>
+<span class="w-1 h-3 bg-[#d5ddff] rounded-full"></span>
+</div>
+</div>
+</div>
+<!-- Attached Photos Gallery -->
+<div class="flex flex-col gap-2">
+<span class="text-[11px] font-medium text-[#787671]">故障画面 &amp; 仪器状态码</span>
+<div class="grid grid-cols-3 gap-2.5">
+<div class="relative aspect-square rounded-lg overflow-hidden bg-[#f4f3f2] border border-[#e5e3df] cursor-pointer active:scale-95 transition-transform group" onclick="openPhotoModal(0)">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Medical label printer red LED flashing error light with error code E-102 displayed on digital LCD screen, close up macro medical equipment shot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKgEH9cLbqiQncBJQuiA3avHNdaguzOGHvMpYhOADrF3qUnqLsiZluC4Mfs6oxDJH4UGYxM_iO4QXjNR9YZZqLe2o2EUmfpcS4E_p3AErEZJO6M6ZKsCWJd3qWM-IChe_ZbYaz8C17PwgtphyxUbNNaqa3H1XeZFTFEQUv5xETfgZJ6R1NogtypbxsC9xFdGcv2XB4NU-LtRJjX0zS_1HSuvyHvC6AJFxZ_ZQLWcyYnGF2QGvHHl2b">
+<div class="absolute inset-0 bg-black/20 flex items-end p-1">
+<span class="text-[10px] text-white bg-black/60 px-1.5 py-0.5 rounded font-medium backdrop-blur-xs">指示灯红闪</span>
+</div>
+</div>
+<div class="relative aspect-square rounded-lg overflow-hidden bg-[#f4f3f2] border border-[#e5e3df] cursor-pointer active:scale-95 transition-transform group" onclick="openPhotoModal(1)">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Paper jam stuck inside thermal medical barcode printer roller tray at nurse station, hospital clinical lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmXqGaTYMBGweFtHtSYw5wucaytNXiBYKxROwl6hJXxv2PQhBF2zHsU-taEDRGUwqaOkhZZ_BnMquEXpu7eFdEFx6epF0ZZEE2V8-JDq30zddk8Sw2Sn1EosmenSVwqO2v7t9y7RY_kUSRt6e6UEhLGST2VXDVrpoNS1DnFe3u_3h0l3W8as4EqvRMzS3RV_gmfb3EvNYDiCT6hkVIN6QN1e4SUONc8rrbCwIT-5ZPc4NQKF0Mr-5P">
+<div class="absolute inset-0 bg-black/20 flex items-end p-1">
+<span class="text-[10px] text-white bg-black/60 px-1.5 py-0.5 rounded font-medium backdrop-blur-xs">卡纸进纸槽</span>
+</div>
+</div>
+<div class="relative aspect-square rounded-lg bg-[#faf9f8] flex flex-col items-center justify-center text-[#787671] gap-1 border border-dashed border-[#c5c5d6]">
+<span class="material-symbols-outlined text-[22px] text-[#455dd3]">qr_code_scanner</span>
+<span class="text-[10px] font-mono text-[#55534e]">SN: PR-9941</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Timeline Flow Section (Notion Workspace Style) -->
+<div class="px-4 pt-3.5">
+<div class="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] border border-[#e5e3df] flex flex-col gap-3.5">
+<div class="flex items-center justify-between border-b border-[#f4f3f2] pb-2.5">
+<h3 class="text-[15px] font-semibold text-[#191918]">服务进展时序</h3>
+<span class="text-[12px] font-medium text-[#0075de]">预计 15 分钟内解决</span>
+</div>
+<!-- Vertical Timeline List -->
+<div class="relative flex flex-col pl-2">
+<!-- Connecting Vertical Rail -->
+<div class="absolute left-[1.18rem] top-3 bottom-4 w-0.5 bg-[#e5e3df]"></div>
+<!-- Node 1: Current In-Progress -->
+<div class="relative flex items-start gap-3 pb-5">
+<div class="w-6 h-6 rounded-full bg-[#455dd3] text-white flex items-center justify-center flex-shrink-0 z-10 shadow-sm mt-0.5 ring-4 ring-[#faf9f8]">
+<span class="material-symbols-outlined text-[13px]">build</span>
+</div>
+<div class="flex-1 flex flex-col gap-2 min-w-0">
+<div class="flex items-baseline justify-between">
+<span class="text-[13px] font-semibold text-[#191918]">工程师到场检修中</span>
+<span class="text-[11px] text-[#455dd3] font-semibold font-mono">14:48 (进行中)</span>
+</div>
+<!-- Notion Light Blue Attribute Callout -->
+<div class="p-3 rounded-lg bg-[#f2f9ff] border border-[#62aef0] text-[#191918] text-[12px] flex flex-col gap-1.5 shadow-[0_1px_2px_rgba(0,117,222,0.05)]">
+<div class="flex items-center gap-1 font-semibold text-[#0075de] text-[12px]">
+<span class="material-symbols-outlined text-[15px]">sync</span>
+<span class="">现场作业备注：</span>
+</div>
+<p class="text-[#374151] leading-relaxed">王浩已完成进纸胶辊清洁并更换 3 号进纸传感器，正在重载药房标签条码驱动进行走纸测试打印。</p>
+</div>
+</div>
+</div>
+<!-- Node 2: Dispatched -->
+<div class="relative flex items-start gap-3 pb-4">
+<div class="w-6 h-6 rounded-full bg-[#eefbf0] border border-[#cbeed0] text-[#14832b] flex items-center justify-center flex-shrink-0 z-10 mt-0.5 ring-4 ring-[#faf9f8]">
+<span class="material-symbols-outlined text-[13px]">directions_walk</span>
+</div>
+<div class="flex-1 flex flex-col min-w-0">
+<div class="flex items-baseline justify-between">
+<span class="text-[13px] font-medium text-[#191918]">工程师接单前往</span>
+<span class="text-[11px] text-[#787671] font-mono">14:40</span>
+</div>
+<p class="text-[12px] text-[#787671] mt-0.5 leading-relaxed">
+              工程师 王浩 (139****1120) 响应派工，携带微型热敏清洁套件与激光对齐治具出发。
+            </p>
+</div>
+</div>
+<!-- Node 3: IT Center Accepted -->
+<div class="relative flex items-start gap-3 pb-4">
+<div class="w-6 h-6 rounded-full bg-[#f0f6ff] border border-[#cce1ff] text-[#005eb4] flex items-center justify-center flex-shrink-0 z-10 mt-0.5 ring-4 ring-[#faf9f8]">
+<span class="material-symbols-outlined text-[13px]">alt_route</span>
+</div>
+<div class="flex-1 flex flex-col min-w-0">
+<div class="flex items-baseline justify-between">
+<span class="text-[13px] font-medium text-[#191918]">信息科接单与智能派单</span>
+<span class="text-[11px] text-[#787671] font-mono">14:35</span>
+</div>
+<p class="text-[12px] text-[#787671] mt-0.5 leading-relaxed">
+              医院智能服务台识别标签卡纸故障，按病区所属网格自动指派给「住院部专班 - 王浩」。
+            </p>
+</div>
+</div>
+<!-- Node 4: Reported -->
+<div class="relative flex items-start gap-3 pb-4">
+<div class="w-6 h-6 rounded-full bg-[#f4f3f2] border border-[#e5e3df] text-[#55534e] flex items-center justify-center flex-shrink-0 z-10 mt-0.5 ring-4 ring-[#faf9f8]">
+<span class="material-symbols-outlined text-[13px]">check</span>
+</div>
+<div class="flex-1 flex flex-col min-w-0">
+<div class="flex items-baseline justify-between">
+<span class="text-[13px] font-medium text-[#191918]">用户提交临床报修</span>
+<span class="text-[11px] text-[#787671] font-mono">14:32</span>
+</div>
+<p class="text-[12px] text-[#787671] mt-0.5 leading-relaxed">
+              心内科护士站 (张琴护士长) 发起紧急求助，包含语音描述 1 段与 2 张现场设备图像。
+            </p>
+</div>
+</div>
+<!-- Node 5: Pending Next -->
+<div class="relative flex items-start gap-3 opacity-60">
+<div class="w-6 h-6 rounded-full bg-[#faf9f8] border border-[#e5e3df] text-[#787671] flex items-center justify-center flex-shrink-0 z-10 mt-0.5 ring-4 ring-[#faf9f8]">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+</div>
+<div class="flex-1 flex flex-col min-w-0">
+<div class="flex items-baseline justify-between">
+<span class="text-[13px] font-medium text-[#787671]">待完成：修复确认与医护评价</span>
+<span class="text-[11px] text-[#787671]">待进行</span>
+</div>
+<p class="text-[12px] text-[#787671] mt-0.5 leading-relaxed">
+              测试打印通过后，将由医护人员核对并对本次响应时效及服务质量评分。
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Escalation / Tip Callout (Notion Callout Box Style) -->
+<div class="px-4 pt-3.5">
+
+</div>
+<!-- Sticky Bottom Action Footer (Notion Workspace Foundation) -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e5e3df] px-4 py-2.5 pb-safe">
+<div class="max-w-md mx-auto flex items-center gap-2.5">
+<!-- Urge / Expedite Ghost Action (Secondary button: subtle border) -->
+<button class="h-11 px-4 rounded-lg bg-white border border-[#e5e3df] hover:bg-[#faf9f8] text-[#191918] font-medium text-[13px] flex items-center justify-center gap-1.5 active:scale-95 transition-all flex-shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.03)]" id="urge-ticket-btn">
+<span class="material-symbols-outlined text-[#ff6d00] text-[17px]">notifications_active</span>
+<span class="">加急催单</span>
+</button>
+<!-- Primary Action: Resolve & Rate (Notion 蓝 #455dd3, 8px 圆角) -->
+<button class="flex-1 h-11 rounded-lg bg-[#455dd3] hover:bg-[#0075de] text-white font-medium text-[14px] flex items-center justify-center gap-2 shadow-[0_1px_3px_rgba(69,93,211,0.3)] active:scale-98 transition-all" id="confirm-resolved-btn">
+<span class="material-symbols-outlined text-[19px]">task_alt</span>
+<span class="">确认解决并评价</span>
+</button>
+</div>
+</div>
+<!-- Lightbox Modal for Diagnostic Photo Previews -->
+<div class="fixed inset-0 z-50 bg-[#1a1c1c]/70 backdrop-blur-sm hidden flex-col items-center justify-center p-4" id="photo-modal">
+<div class="relative max-w-sm w-full bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col border border-[#e5e3df]">
+<div class="px-4 py-3 border-b border-[#e5e3df] flex items-center justify-between">
+<span class="text-[14px] font-semibold text-[#191918]" id="modal-title">故障照片详情</span>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#efeeed] text-[#191918]" onclick="closePhotoModal()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="w-full aspect-[4/3] bg-[#f4f3f2] overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Expanded inspection view of damaged printer sensor board and jammed medical sticker roll" id="modal-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaWBFbkwUV5KQU2mDLvp715Na7nP8StexNg21bWGj9wK_xs_lD09AOQbfb2aOcpMs34ggUze1LqUodkMfNKHFcSCmF6ulBGI7pdkC2DFQisK1eYpP5g0NeRNe-MQ2J6O1RcJvd-LRZsb2sd8aMMIG6darBTA6Uf8qZ7Ny1wNkxy6CES-wiM_DToCZEpk54dDCAEZhhTsDndVC1KedSlCHtIn6ZuU412_srfdzpuyz3n7FeX1pYoFmM">
+</div>
+<div class="px-4 py-3 bg-[#faf9f8] border-t border-[#e5e3df] flex justify-between items-center">
+<span class="text-[11px] text-[#787671]">拍摄时间：2025-05-18 14:31</span>
+<button class="px-3 py-1.5 rounded-lg bg-[#455dd3] text-white text-[12px] font-medium" onclick="closePhotoModal()">关闭查看</button>
+</div>
+</div>
+</div>
+<!-- Toast Feedback Floating Pill -->
+<div class="fixed top-18 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-[#1a1c1c] text-white text-[12px] font-medium shadow-xl flex items-center gap-1.5 transition-all duration-300 opacity-0 pointer-events-none" id="toast-pill">
+<span class="material-symbols-outlined text-[#14832b] text-[16px]">check_circle</span>
+<span id="toast-msg" class="">正在调起企业微信对话窗...</span>
+</div>
+</div>
+<script>
+  // Toast Helper
+  function showToast(message) {
+    const toast = document.getElementById('toast-pill');
+    const msgEl = document.getElementById('toast-msg');
+    if (!toast || !msgEl) return;
+    msgEl.textContent = message;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2200);
+  }
+
+  // Copy Ticket ID
+  const copyBtn = document.getElementById('copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard?.writeText('#TK-20250518-094');
+      showToast('工单编号已复制到剪贴板');
+    });
+  }
+
+  // Audio Playback Simulation
+  let isPlaying = false;
+  const playBtn = document.getElementById('play-audio-btn');
+  const playIcon = document.getElementById('play-icon');
+  const durationText = document.getElementById('audio-duration');
+  let audioTimer;
+
+  if (playBtn && playIcon) {
+    playBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        playIcon.textContent = 'pause';
+        playBtn.classList.replace('bg-[#455dd3]', 'bg-[#0075de]');
+        let count = 12;
+        audioTimer = setInterval(() => {
+          count--;
+          if (count <= 0) {
+            clearInterval(audioTimer);
+            isPlaying = false;
+            playIcon.textContent = 'play_arrow';
+            playBtn.classList.replace('bg-[#0075de]', 'bg-[#455dd3]');
+            durationText.textContent = '12"';
+          } else {
+            durationText.textContent = count + '"';
+          }
+        }, 1000);
+      } else {
+        clearInterval(audioTimer);
+        playIcon.textContent = 'play_arrow';
+        playBtn.classList.replace('bg-[#0075de]', 'bg-[#455dd3]');
+        durationText.textContent = '12"';
+      }
+    });
+  }
+
+  // Modal Lightbox Controller
+  function openPhotoModal(index) {
+    const modal = document.getElementById('photo-modal');
+    const modalTitle = document.getElementById('modal-title');
+    if (!modal) return;
+    if (modalTitle) {
+      modalTitle.textContent = index === 0 ? '故障指示灯状态 (E-102)' : '进纸滚轮卡纸实况';
+    }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closePhotoModal() {
+    const modal = document.getElementById('photo-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  // Buttons Handlers
+  const urgeBtn = document.getElementById('urge-ticket-btn');
+  if (urgeBtn) {
+    urgeBtn.addEventListener('click', () => {
+      showToast('催单提醒已即时推送至工程师微信工作台');
+    });
+  }
+
+  const wecomBtn = document.getElementById('wecom-chat-btn');
+  if (wecomBtn) {
+    wecomBtn.addEventListener('click', () => {
+      showToast('正在调起企业微信对话窗...');
+    });
+  }
+
+  const confirmBtn = document.getElementById('confirm-resolved-btn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      showToast('跳转至服务核销与星级评价...');
+    });
+  }
+</script></main>
+
+</body></html>

@@ -1,3 +1,49 @@
+## 2026-10-20：V2 H5 实现入口
+
+新版页面使用 Vite、strict TypeScript、React、React Router、TanStack Query、shadcn/ui（Radix）、Tailwind CSS 与 react-i18next，前向边界见 [ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)。本目录为实际产品源码，现有根构建管线负责正式制品和 HTTP 装配。
+
+- [固定设计基线](design-baseline/README.md)：Stitch 项目“医院IT工单报修系统”的八个移动端屏幕、HTML、PNG 与哈希。
+- `src/pages`：工作台、快捷报修、本人查询、工单详情和科室有限共享。
+- `src/components/ui`：由官方 @shadcn registry 源码适配的组件，使用原稿的 Inter、Material Symbols 与主题变量；[components.json](components.json) 保留 CLI 配置。
+- [Vite 配置](vite.config.ts)：同源 base `/wecom/yixiaoxiu/`，输出 `.build/emit/h5` 及 manifest。正式字体、CSS 与脚本均经 Vite hash 及依赖图登记。
+
+本地开发先使用根目录锁定的依赖，不单独生成第二份锁文件：
+
+~~~powershell
+npm --prefix h5 run typecheck
+npm --prefix h5 run dev
+~~~
+
+开发服务只监听 `127.0.0.1:5196`，`/api` 代理到显式本地宿主 `127.0.0.1:5197`。HashRouter 提供 `#/`、`#/report`、`#/reports`、`#/requests/{requestRef}` 和 `#/department`；本人 Bot 历史仍链接原 `/wecom/yixiaoxiu/tickets/{ref}`。
+
+### 显式合成预览
+
+仅 Vite DEV 且 URL 含 `preview=1` 时加载 `src/dev/preview.ts`。该模块拦截本地预览 API 和上传，无现场写库或外发。正式构建会消除模块、预览资料及照片。
+
+~~~text
+/wecom/yixiaoxiu/?preview=1&theme=light&lang=zh-CN#/
+/wecom/yixiaoxiu/?preview=1&theme=dark&lang=zh-CN#/
+/wecom/yixiaoxiu/?preview=1&theme=light&state=empty#/
+/wecom/yixiaoxiu/?preview=1&theme=dark#/report
+/wecom/yixiaoxiu/?preview=1&theme=light#/requests/11111111111111111111111111111111
+~~~
+
+`lang=en` 验证英文，`state=completed` 验证完工评价与未解决反馈，`submit=unknown` 模拟已提交后丢失响应，`submit=409` 验证版本冲突，`auth=403` 和 `error=503` 分别验证失权与暂不可用。预览结果不代替真实接口、实机和现场收件验收。
+
+### 身份、媒体与恢复
+
+所有业务读请求明确协商 `Accept: application/vnd.yixiaoxiu.v2+json`。写命令使用当前 Cookie、CSRF 与原 UUID；列表使用服务端 `search/status/source` 筛选、授权与游标分页，不在当前页过滤冒充全量查询。
+
+报修文字与位置选填，纯录音、图片、视频或文字均可受理；“直接联系我”可不带材料。所有现场材料须上传完成后再绑定报修。企业微信原生录音、选择图片及辅助转文字由官方 `@wecom/jssdk` 提供；关闭 SDK 或普通浏览器使用能力检测后的 MediaRecorder／文件退路。识别失败不丢原录音，不实现图片 OCR。
+
+草稿、Blob、Query 缓存和操作恢复仅在当前成员范围的内存中。Mutation 不自动重试。提交结果不明时保留原 UUID 和用途，页面导航后仍由同一成员范围的内存栅栏阻止第二次 POST，只能显式 GET 核对原操作。404 与暂时 503 均不能证明未提交。401／403 清除受保护内容；范围改变时卸载旧资料、媒体和命令状态。
+
+语言优先使用企业微信 UA 的 `Language/…`，全部中文归为简体中文，其余为 English。主题按 `ColorScheme/Dark`、显式 Light 和系统偏好自动选择，恢复可见时重查。生产入口使用 CSS 深色首屏变量与 render-blocking 的同源模块；iOS／Android 企业微信的实际首次绘制、录音权限、原生取消和上传须单独实机验证，未运行项记为 `NOT_RUN`。
+
+以下保留原后端交接要求；实际新增 API 与 DTO 以 [API 统一入口](../docs/api/README.md)及前向合同为准。
+
+---
+
 # 新医小修 H5 接入要求
 
 本目录预留给新版页面设计。本次只交付后端接入要求，不生成页面布局。业务规则见 [ADR-0034](../adr/0034_mvp_notifications_and_application_members.md)。

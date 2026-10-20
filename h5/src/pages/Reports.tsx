@@ -1,0 +1,14 @@
+import{useState,type FormEvent}from'react';
+import{useInfiniteQuery}from'@tanstack/react-query';
+import{useTranslation}from'react-i18next';
+import{api}from'../api/client';
+import{useSession}from'../session';
+import{Button,Input,Field,FieldGroup,FieldLabel}from'../components/ui/primitives';
+import{Icon}from'../components/Icon';
+import{ReportCard,EmptyReports,Loading,ErrorPanel}from'../components/Common';
+export default function Reports(){const{t}=useTranslation();const session=useSession();const[text,setText]=useState('');const[filter,setFilter]=useState({q:'',status:'',source:''});
+ const reports=useInfiniteQuery({queryKey:['reports',session.recovery_scope,filter],initialPageParam:null as string|null,queryFn:({pageParam,signal})=>api.reports(filter,pageParam,signal),getNextPageParam:page=>page.next_cursor??undefined});
+ const items=reports.data?.pages.flatMap(page=>page.items)??[];
+ const search=(event:FormEvent)=>{event.preventDefault();setFilter({...filter,q:text.trim()});};
+ return <div className="query-page"><div className="section-heading"><h1>{t('records')}</h1><Button variant="ghost" size="icon" onClick={()=>void reports.refetch()} aria-label={t('refresh')}><Icon name="refresh"/></Button></div><form onSubmit={search}><FieldGroup><Field><FieldLabel htmlFor="report-search" className="sr-only">{t('search')}</FieldLabel><div className="search-row"><Input id="report-search" value={text} onChange={event=>setText(event.target.value)} maxLength={200} placeholder={t('searchPlaceholder')} autoComplete="off"/><Button type="submit" aria-label={t('searchSubmit')}><Icon name="search"/></Button></div></Field><div className="filter-grid"><Field><FieldLabel htmlFor="status-filter">{t('statusLabel')}</FieldLabel><select id="status-filter" value={filter.status} onChange={event=>setFilter({...filter,status:event.target.value})}><option value="">{t('allStatuses')}</option><option value="OPEN">{t('queued')}</option><option value="ACTIVE">{t('activeStatuses')}</option><option value="COMPLETED">{t('completedStatuses')}</option></select></Field><Field><FieldLabel htmlFor="source-filter">{t('sourceLabel')}</FieldLabel><select id="source-filter" value={filter.source} onChange={event=>setFilter({...filter,source:event.target.value})}><option value="">{t('allSources')}</option><option value="WEB">{t('webSource')}</option><option value="BOT">{t('botSource')}</option></select></Field></div></FieldGroup></form>{reports.isPending?<Loading/>:reports.isError?<ErrorPanel error={reports.error} retry={()=>void reports.refetch()}/>:items.length?<div className="report-list">{items.map(item=><ReportCard key={item.kind+item.ref} item={item}/>)}</div>:<EmptyReports query/>}{reports.hasNextPage&&<Button variant="outline" className="w-full" disabled={reports.isFetchingNextPage} onClick={()=>void reports.fetchNextPage()}>{t(reports.isFetchingNextPage?'loadingMore':'more')}</Button>}</div>;
+}

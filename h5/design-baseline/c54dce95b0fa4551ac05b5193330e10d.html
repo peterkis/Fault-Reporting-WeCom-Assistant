@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#68fcbf", "surface-card": "#1e222d", "text-secondary": "#9ca3af", "surface-tint": "#bcc2ff", "on-secondary": "#00218d", "surface": "#111319", "status-success": "#34d399", "inverse-surface": "#e2e2ea", "on-background": "#e2e2ea", "surface-elevated": "#252a37", "on-primary-fixed": "#000c61", "primary-fixed": "#dfe0ff", "status-danger": "#f87171", "on-error-container": "#ffdad6", "on-error": "#690005", "secondary-fixed-dim": "#bac3ff", "surface-subground": "#191c24", "on-surface": "#e2e2ea", "on-secondary-fixed-variant": "#1c38b0", "surface-container-lowest": "#0c0e14", "outline": "#8f8fa0", "callout-warm-bg": "#382d1c", "on-secondary-container": "#a3b0ff", "error": "#ffb4ab", "secondary-container": "#1c38b0", "on-tertiary-fixed": "#002114", "on-primary": "#001999", "surface-variant": "#33343b", "surface-container-low": "#191b22", "inverse-primary": "#3d50d0", "on-primary-container": "#fffcff", "tertiary-fixed-dim": "#45dfa4", "primary-fixed-dim": "#bcc2ff", "primary": "#bcc2ff", "callout-warm-text": "#fcd34d", "secondary-fixed": "#dee1ff", "border-glass": "rgba(255, 255, 255, 0.08)", "outline-variant": "#454654", "on-tertiary-fixed-variant": "#005137", "on-secondary-fixed": "#001159", "primary-container": "#5668e8", "border-subtle": "#2d3343", "surface-bright": "#373940", "surface-container-high": "#282a30", "on-tertiary": "#003825", "error-container": "#93000a", "tertiary": "#45dfa4", "tertiary-container": "#00865d", "inverse-on-surface": "#2e3037", "secondary": "#bac3ff", "surface-dim": "#111319", "status-danger-bg": "rgba(248, 113, 113, 0.16)", "status-success-bg": "rgba(16, 185, 129, 0.16)", "status-warning-bg": "rgba(245, 158, 11, 0.16)", "on-primary-fixed-variant": "#2034b8", "surface-canvas": "#12141a", "status-warning": "#fbbf24", "background": "#111319", "on-surface-variant": "#c5c5d6", "callout-warm-border": "#78521a", "surface-container": "#1d1f26", "surface-container-highest": "#33343b", "text-muted": "#6b7280", "text-primary": "#f3f4f6", "on-tertiary-container": "#fbfff9" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1rem", "space-xl": "1.5rem", "margin": "1.5rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "margin-mobile": "1rem", "gutter": "1rem" }, fontFamily: { "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "headline-xl-mobile": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "label-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;background-color:#12141a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-canvas text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-subground/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-secondary-container flex items-center justify-center font-headline-sm text-headline-sm text-on-primary-container shadow-inner">修</div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">医小修</span><span class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-status-success-bg text-status-success font-label-sm text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>在线</span></div><div class="flex items-center gap-0.5 text-text-secondary font-label-md text-label-md"><span class="material-symbols-outlined text-[13px] text-text-muted">location_on</span><span>本部院区</span><span class="material-symbols-outlined text-[14px] text-text-muted">arrow_drop_down</span></div></div></div><div class="flex items-center gap-space-xs"><button aria-label="Search" class="w-11 h-11 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[22px]">search</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 pb-20 bg-surface-canvas min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-8 space-y-4">
+<div class="flex items-center justify-between pt-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<h1 class="font-headline-md text-headline-md text-text-primary">下午好，林主任医师</h1>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-status-success-bg text-status-success font-label-sm text-label-sm">
+          白班在岗
+        </span>
+</div>
+<div class="flex items-center gap-1 text-text-secondary font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-primary" style="font-variation-settings: 'FILL' 1;">stethoscope</span>
+<span>心内科一病区</span>
+<span class="text-text-muted text-[11px]">• 床位满载率 94%</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-xl bg-surface-card flex items-center justify-center shadow-sm relative">
+<span class="material-symbols-outlined text-text-secondary text-[22px]">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-surface-card"></span>
+</div>
+</div>
+<div class="w-full rounded-xl bg-surface-card p-4 relative overflow-hidden shadow-md">
+<div class="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-primary-container/10 blur-2xl pointer-events-none"></div>
+<div class="flex flex-col space-y-3 relative z-10">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-danger animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-status-danger font-semibold tracking-wider">一键报障</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/60 text-primary-fixed font-label-sm text-label-sm">
+          急诊/ICU/心内专线
+        </span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">临床快速报修</h2>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1 leading-relaxed">
+          如遇突发故障，支持长按录制语音、拍摄故障屏幕自动提取错误代码，急重症科室优先调度处理。
+        </p>
+</div>
+<div class="pt-1">
+<button class="w-full h-11 bg-primary-container hover:bg-primary-container/90 active:scale-[0.99] text-on-primary-container rounded-lg font-headline-sm text-headline-sm flex items-center justify-center gap-2 shadow-lg transition-all duration-150" id="repair-trigger-btn">
+<span class="material-symbols-outlined text-[20px] text-callout-warm-text" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span>立即上报 IT 故障</span>
+</button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2.5">
+<a class="flex flex-col p-3 rounded-xl bg-surface-card active:bg-surface-elevated transition-colors shadow-sm" href="tel:18117887318">
+<div class="w-7 h-7 rounded-lg bg-status-danger-bg text-status-danger flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-[17px]">e911_emergency</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">应急电话</span>
+<span class="font-label-sm text-label-sm text-text-muted mt-0.5 font-mono tracking-tight">18117887318</span>
+</a>
+<a class="flex flex-col p-3 rounded-xl bg-surface-card active:bg-surface-elevated transition-colors shadow-sm" href="tel:61318500">
+<div class="w-7 h-7 rounded-lg bg-secondary-container/50 text-secondary-fixed flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-[17px]">call</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">电话专线</span>
+<span class="font-label-sm text-label-sm text-text-muted mt-0.5 font-mono">6131 8500</span>
+</a>
+<div class="flex flex-col p-3 rounded-xl bg-surface-card active:bg-surface-elevated transition-colors shadow-sm cursor-pointer">
+<div class="w-7 h-7 rounded-lg bg-status-warning-bg text-status-warning flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-[17px]">build</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">问题自查</span>
+<span class="font-label-sm text-label-sm text-text-muted mt-0.5 truncate">打印机卡纸/脱机...</span>
+</div>
+</div>
+<div class="flex flex-col space-y-2.5 pt-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-text-primary">最近报修工单</span>
+<span class="w-5 h-5 rounded-full bg-surface-card text-text-secondary font-label-sm text-label-sm flex items-center justify-center font-mono">0</span>
+</div>
+<button class="flex items-center gap-0.5 text-text-secondary hover:text-text-primary transition-colors font-body-sm text-body-sm">
+<span>历史</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<div class="w-full rounded-xl bg-surface-card p-6 flex flex-col items-center text-center shadow-md relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-b from-status-success-bg/20 via-transparent to-transparent pointer-events-none"></div>
+<div class="relative my-2">
+<div class="w-16 h-16 rounded-full bg-status-success-bg flex items-center justify-center">
+<div class="w-11 h-11 rounded-full bg-status-success/20 flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-status-success text-[26px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-surface-card shadow-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success animate-ping"></span>
+<span class="font-label-sm text-[10px] text-status-success font-medium">巡检正常</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary font-bold mt-2">
+        当前无进行中或待处理工单
+      </h3>
+<p class="font-body-sm text-body-sm text-text-secondary max-w-[270px] mt-1.5 leading-relaxed">
+        心内科一病区设备运行平稳，信息科驻点运维团队全天候待命中。
+      </p>
+<div class="mt-4 pt-3 w-full flex items-center justify-around text-text-muted font-label-sm text-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-status-success">router</span>
+<span>病区网络 正常</span>
+</div>
+<span class="text-text-muted/40">•</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-status-success">print</span>
+<span>病历打印 连线中</span>
+</div>
+<span class="text-text-muted/40">•</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-status-success">monitor_heart</span>
+<span>心电终端 正常</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const btn = document.getElementById('repair-trigger-btn');
+    if (btn) {
+      btn.addEventListener('click', function() {
+        const ripple = document.createElement('span');
+        ripple.textContent = '已调起快速报修通道...';
+        ripple.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-surface-elevated text-text-primary text-xs shadow-xl z-50 transition-opacity duration-300 pointer-events-none opacity-0';
+        document.body.appendChild(ripple);
+        requestAnimationFrame(() => ripple.classList.remove('opacity-0'));
+        setTimeout(() => {
+          ripple.classList.add('opacity-0');
+          setTimeout(() => ripple.remove(), 300);
+        }, 1600);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-subground/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.4)]" data-active-classes="text-primary-container font-semibold"><div class="flex justify-around items-center h-16 px-space-sm"><a aria-current="page" class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 transition-colors text-primary-container font-semibold" data-path="workbench" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-md text-label-md">工作台</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 text-text-secondary transition-colors" data-path="quick-repair" href="#"><span class="material-symbols-outlined text-[22px]">bolt</span><span class="font-label-md text-label-md">快捷报修</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 text-text-secondary transition-colors" data-path="ticket-query" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-md text-label-md">工单查询</span></a></div></nav></body></html>

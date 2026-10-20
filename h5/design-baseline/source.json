@@ -1,0 +1,136 @@
+{
+  "project_id": "1016264531564507497",
+  "project_title": "医院IT工单报修系统",
+  "captured_at": "2026-10-20",
+  "source": "Stitch MCP list_screens + get_screen",
+  "screens": [
+    {
+      "deviceType": "MOBILE",
+      "height": "2518",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNlMjgxMTU5MmIwMzkyY2I0YjcyM2FkYjYxEgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/screens/b457804644914aaf9e2d20d08741b7c4/fileEntries/html"
+      },
+      "name": "projects/1016264531564507497/screens/b457804644914aaf9e2d20d08741b7c4",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WS6lBwhO2qxIMefK5WBlm2wsYpQWVuegdqmjYrb0EsgYjs_kehwD7MdrW70Ey_EkwbgRzw4cyn3NC3iLU4gtMMf5yN-PPX3G-qkgGFL2zUUcm_utfRdvMJomWmfWSDYOzwY8WqTIsStR6_V2Fk3EL6Ya7Dd8qAby4nrci-A7PsEv8ZiWEAy5eqh10Vl6Cg-1cdLuDHjesaaNOv6LYVjt3xa1Qd3aYYOSZVfOqhxetazKlbdG-8IikQVjk",
+        "name": "projects/1016264531564507497/screens/b457804644914aaf9e2d20d08741b7c4/fileEntries/screenshot"
+      },
+      "title": "工单详情与进度查询 (深色模式)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "2230",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNkMGUwNGU2ZjcwMzM4NWNlYzgxM2FmNWE4EgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/files/3704233990172848411"
+      },
+      "name": "projects/1016264531564507497/screens/59e5ef6e7b5744d897567031eebe0190",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WtdRKnorNks7dxX06de9FrcMMnK8Ket0EFrMHO2_EkXuudf9MQRNQIYES-5EClCroXOVgJSQTEEFJrPfEAp3XD9BuzRTYRerJnqy08a7qr8xRPvngZoVCGerABcyd0x-X6eOB-TX4KXkDimw4DZM_ehkoKpDsUdiuzfHVUcDsbHwTWdBSe0FtxAb_Shyza2-ptNhfL3g90s7w0HO8pos8qiIVBwn-WJPThjJbyv1q4FZ3QlrLDymaWhTc",
+        "name": "projects/1016264531564507497/files/15672439706743070779"
+      },
+      "title": "多模态快捷报修 (Notion全新规范版)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "2950",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNkMGNhNGU1ZGIwMWVlNDkwNThlMTM0YTg5EgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/files/11362537575778447661"
+      },
+      "name": "projects/1016264531564507497/screens/4440cbe4bf404fbb800553e33dbddf1e",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Vqzamb7yOkvCATSm2kBkMPA8sWEVGmMCYYICLBo8hTSuT597zjFIyk41sG9kRgRsvF1qmO0kF0kd029G5NlWXlnBvAtRkdX0OhkGXUx9FBHRuGyFBntTXvR3QnRpPRwEGBxUa1TBLw4rVYphsncrWBpbJSQEqzOw-uDfMbvbS56khxzeWQLX2uBUh8uArYbvl7QLiATbhz2yZ-RCMqUOTO50s2JNpTnnLQDuDFX2YkAH4fUBnKxdtqdw",
+        "name": "projects/1016264531564507497/files/1007119069867529954"
+      },
+      "title": "工单详情与进度查询 (Notion全新规范版)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "2790",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNjOTYyODcxMDAwNjM5Nzc3YzFiMDRhZjUyEgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/files/18142944746693130194"
+      },
+      "name": "projects/1016264531564507497/screens/7605d29f5a244ce99120a2b5ab740b60",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UeaROq_voQ7QpYqwhoXOIIKwniWi7sC4jp9CIz5PyL_xc4UTjdGgfBDO4nfKofuxfCL0IY4TjUvV6iswSo_n-iWaGeqW65SkUzKFJJeefZYIjN0gaDucNp3aTrH_4TQN0acX9EBzyp4lWZ-pTU57jgluVYI3au0stZBhWX3I75VEZb6Ik9dvlfBXrsBWOUEViq-cURdCAJRW7yx137s2hToZdhhD9ytx8hxGv9luNH6cgFxvt444cRcbM",
+        "name": "projects/1016264531564507497/files/18142944746693128257"
+      },
+      "title": "临床IT故障报修 - 首页工作台 (空状态·平稳运行)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "2568",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNlMjdhZGQ1OGUwOTI1YzUzNDQxMTJkZjhhEgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/screens/6e9f20f3aa11475486323316045ada48/fileEntries/html"
+      },
+      "name": "projects/1016264531564507497/screens/6e9f20f3aa11475486323316045ada48",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WStWVgJACzU17vNSey3NxLyaVtrUe8jwZuoQufKpw1YCkt9_6bZyq2EPQGwVzZcbzSmAAGLql6x1iE6BCiXhaXP3ejnLLTLTeqtWQ8IWlN6QOCqhoZKXtsT0jkEsuaiE_MS7EF3ANdA5OzjqJUJjKhUrkfyD-kNBAAaHezYO2Hmd4Y-DvFE9txyPenn5HhrSWtvg1eapV8H4XO3VPrLgpPStD9hFNquVNGpNe4KEa6NB2aro9NyuRLN6A",
+        "name": "projects/1016264531564507497/screens/6e9f20f3aa11475486323316045ada48/fileEntries/screenshot"
+      },
+      "title": "临床IT故障报修 - 首页工作台 (深色模式)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "1794",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNlMjcyZjI2NWMwNGVhYWE1OGJjMjY3OTdlEgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/screens/974446805940472c9404d41c0ec738f1/fileEntries/html"
+      },
+      "name": "projects/1016264531564507497/screens/974446805940472c9404d41c0ec738f1",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XZxdK3YKw-um5Kpe5pn5NbcYBjQK6b_ORV5mf256k35II5JGclrc2nFC_fFTnIiA1a8gKD6iRfQWve7U-fVG2BSux7xFdSf64rj1f2F79CWQNBW2oMkd0w2GFkV44nEHOYe5niQmLXrvAsjMpan58YOnMYrubpoSlJMfxgqv25ZOBtMxK9E4WwKRFdG17U-Syc4_D7gSeWqSug6WVJFSo15vx7vKv4JNqXMAWvzRsJKArANb-O6BAJz3U",
+        "name": "projects/1016264531564507497/screens/974446805940472c9404d41c0ec738f1/fileEntries/screenshot"
+      },
+      "title": "多模态快捷报修 (深色模式)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "2992",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNjOTNlNDczNmQwNTNiNzMwODRiMTRmOTE4EgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/files/16305697911974388557"
+      },
+      "name": "projects/1016264531564507497/screens/7e80b690821849eebe737192c3e5effe",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UN3mN5XNLVMLKaQAobGZdmKqM5BKje0yWAkfl_Jj-mSejby8Wv_vZhjW6UYwAGAXmtANW2Gob6acm49knOzQodDKbTMiNyNsCzyYmPv7HdgyHBJfq3jvaDjnfzXt_amcgvDm_7MNw1OOzX5EULep-wnjdB-Y8EgHMDWND0H584S40tms0b5Df7zIN32XahDK39e83oR-yiE22YB9C3iMH4W7t8lwa2xYi0Hb-4FFXwoZZ96QmbW3OeRPc",
+        "name": "projects/1016264531564507497/files/13847711793205750733"
+      },
+      "title": "临床IT故障报修 - 首页工作台 (Notion全新规范版)",
+      "width": "780"
+    },
+    {
+      "deviceType": "MOBILE",
+      "height": "1768",
+      "htmlCode": {
+        "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZTNlMjZjZjE4MDgwN2M0ZTM5MGFiMDRiMTdjEgsSBxCNzOqdlxwYAZIBIwoKcHJvamVjdF9pZBIVQhMxMDE2MjY0NTMxNTY0NTA3NDk3&filename=&opi=89354086",
+        "mimeType": "text/html",
+        "name": "projects/1016264531564507497/screens/c54dce95b0fa4551ac05b5193330e10d/fileEntries/html"
+      },
+      "name": "projects/1016264531564507497/screens/c54dce95b0fa4551ac05b5193330e10d",
+      "screenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Vnh__S-oyOvFY5JKOIGCxptAX0_wIvCI7Z0xcywfjd4wE45_YY5_pj-8cSUBHOb-qf7wMODQPptQLn38do6SSuIyTAp4WFpNg707VwLvq6WO3iZClHTr-hzNY1hQnyHTcShZAthSUYsPa5jCZdfWMTFgRuAwRG9CRGIgSA49B4BU08mo5JACKHCKu8oGbT6X4kz-jzc539Qwl7C08jQH_zD-YV6NMF5RThJ9hCRLxqftCBHlxk8YGpug",
+        "name": "projects/1016264531564507497/screens/c54dce95b0fa4551ac05b5193330e10d/fileEntries/screenshot"
+      },
+      "title": "临床IT故障报修 - 首页工作台 (空状态·深色模式)",
+      "width": "780"
+    }
+  ]
+}

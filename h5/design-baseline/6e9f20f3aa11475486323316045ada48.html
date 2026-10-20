@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#68fcbf", "surface-card": "#1e222d", "text-secondary": "#9ca3af", "surface-tint": "#bcc2ff", "on-secondary": "#00218d", "surface": "#111319", "status-success": "#34d399", "inverse-surface": "#e2e2ea", "on-background": "#e2e2ea", "surface-elevated": "#252a37", "on-primary-fixed": "#000c61", "primary-fixed": "#dfe0ff", "status-danger": "#f87171", "on-error-container": "#ffdad6", "on-error": "#690005", "secondary-fixed-dim": "#bac3ff", "surface-subground": "#191c24", "on-surface": "#e2e2ea", "on-secondary-fixed-variant": "#1c38b0", "surface-container-lowest": "#0c0e14", "outline": "#8f8fa0", "callout-warm-bg": "#382d1c", "on-secondary-container": "#a3b0ff", "error": "#ffb4ab", "secondary-container": "#1c38b0", "on-tertiary-fixed": "#002114", "on-primary": "#001999", "surface-variant": "#33343b", "surface-container-low": "#191b22", "inverse-primary": "#3d50d0", "on-primary-container": "#fffcff", "tertiary-fixed-dim": "#45dfa4", "primary-fixed-dim": "#bcc2ff", "primary": "#bcc2ff", "callout-warm-text": "#fcd34d", "secondary-fixed": "#dee1ff", "border-glass": "rgba(255, 255, 255, 0.08)", "outline-variant": "#454654", "on-tertiary-fixed-variant": "#005137", "on-secondary-fixed": "#001159", "primary-container": "#5668e8", "border-subtle": "#2d3343", "surface-bright": "#373940", "surface-container-high": "#282a30", "on-tertiary": "#003825", "error-container": "#93000a", "tertiary": "#45dfa4", "tertiary-container": "#00865d", "inverse-on-surface": "#2e3037", "secondary": "#bac3ff", "surface-dim": "#111319", "status-danger-bg": "rgba(248, 113, 113, 0.16)", "status-success-bg": "rgba(16, 185, 129, 0.16)", "status-warning-bg": "rgba(245, 158, 11, 0.16)", "on-primary-fixed-variant": "#2034b8", "surface-canvas": "#12141a", "status-warning": "#fbbf24", "background": "#111319", "on-surface-variant": "#c5c5d6", "callout-warm-border": "#78521a", "surface-container": "#1d1f26", "surface-container-highest": "#33343b", "text-muted": "#6b7280", "text-primary": "#f3f4f6", "on-tertiary-container": "#fbfff9" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1rem", "space-xl": "1.5rem", "margin": "1.5rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "margin-mobile": "1rem", "gutter": "1rem" }, fontFamily: { "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "headline-xl-mobile": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "label-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;background-color:#12141a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-canvas text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-subground/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-secondary-container flex items-center justify-center font-headline-sm text-headline-sm text-on-primary-container shadow-inner">修</div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">医小修</span><span class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-status-success-bg text-status-success font-label-sm text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>在线</span></div><div class="flex items-center gap-0.5 text-text-secondary font-label-md text-label-md"><span class="material-symbols-outlined text-[13px] text-text-muted">location_on</span><span>本部院区</span><span class="material-symbols-outlined text-[14px] text-text-muted">arrow_drop_down</span></div></div></div><div class="flex items-center gap-space-xs"><button aria-label="Search" class="w-11 h-11 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[22px]">search</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 pb-20 bg-surface-canvas min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-xl gap-space-lg">
+<!-- Top Greeting & Shift Telemetry -->
+<div class="flex items-center justify-between pt-space-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-surface-card flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">stethoscope</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h1 class="font-headline-md text-headline-md text-text-primary tracking-tight">下午好，林主任医师</h1>
+</div>
+<div class="flex items-center gap-1.5 text-text-secondary font-body-sm text-body-sm">
+<span class="inline-block w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
+<span>心内科一病区</span>
+<span class="text-text-muted">|</span>
+<span class="text-text-muted">当班中</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button aria-label="急重症优先标记" class="w-10 h-10 rounded-lg bg-surface-card flex items-center justify-center text-status-warning shadow-sm active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[22px]">medical_services</span>
+</button>
+</div>
+</div>
+<!-- Clinical Quick Repair Hero Card -->
+<div class="relative overflow-hidden rounded-xl bg-surface-card p-space-lg shadow-md">
+<!-- Ambient subtle glow behind button/badge -->
+<div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-space-md relative z-10">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-headline-sm text-headline-sm text-text-primary flex items-center gap-1.5 tracking-tight">
+            • 一键报障 临床快速报修
+          </span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-status-warning-bg text-status-warning font-label-sm text-label-sm font-semibold">
+          急重症直通
+        </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-relaxed">
+        如遇突发故障，支持长按录制语音、拍摄故障屏幕自动提取错误代码，急重症科室优先调度处理。
+      </p>
+<!-- Primary Action CTA with micro-interaction state -->
+<button class="w-full h-12 rounded-lg bg-primary-container hover:bg-inverse-primary active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-on-primary-container font-headline-sm text-headline-sm shadow-md shadow-primary-container/20" id="quick-report-btn" type="button">
+<span class="material-symbols-outlined text-[22px]">bolt</span>
+<span>⚡ 立即上报 IT 故障</span>
+</button>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-text-muted">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-tertiary">mic</span>
+          支持语音描述
+        </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">photo_camera</span>
+          OCR蓝屏代码
+        </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-status-success">speed</span>
+          3分钟极速响应
+        </span>
+</div>
+</div>
+</div>
+<!-- Common Emergency Support Grid (3 items) -->
+<div class="grid grid-cols-3 gap-gutter-mobile">
+<!-- Item 1: 应急电话 (Subtle Cyan/Blue container) -->
+<a class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-card hover:bg-surface-elevated active:scale-95 transition-all text-center gap-1.5 shadow-sm" href="tel:18117887318">
+<div class="w-10 h-10 rounded-lg bg-surface-subground flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">contact_phone</span>
+</div>
+<span class="font-headline-sm text-[13px] text-text-primary">应急电话</span>
+<span class="font-label-sm text-[11px] text-primary tracking-tighter truncate w-full">18117887318</span>
+</a>
+<!-- Item 2: 电话专线 (Soft red/coral accent) -->
+<a class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-card hover:bg-surface-elevated active:scale-95 transition-all text-center gap-1.5 shadow-sm" href="tel:61318500">
+<div class="w-10 h-10 rounded-lg bg-status-danger-bg flex items-center justify-center text-status-danger">
+<span class="material-symbols-outlined text-[22px]">headset_mic</span>
+</div>
+<span class="font-headline-sm text-[13px] text-text-primary">电话专线</span>
+<span class="font-label-sm text-[11px] text-status-danger font-semibold tracking-normal">6131 8500</span>
+</a>
+<!-- Item 3: 问题自查 (Lightbulb knowledge base) -->
+<div class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-card hover:bg-surface-elevated active:scale-95 transition-all text-center gap-1.5 shadow-sm cursor-pointer" role="button" tabindex="0">
+<div class="w-10 h-10 rounded-lg bg-callout-warm-bg flex items-center justify-center text-callout-warm-text">
+<span class="material-symbols-outlined text-[22px]">lightbulb</span>
+</div>
+<span class="font-headline-sm text-[13px] text-text-primary">问题自查</span>
+<span class="font-label-sm text-[11px] text-text-muted truncate w-full">打印机卡纸/脱机...</span>
+</div>
+</div>
+<!-- Department Notice Card -->
+<div class="rounded-xl bg-surface-subground p-space-md flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[18px]">domain_verification</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-body-sm text-text-primary truncate">心内科一病区 · 公共工单</span>
+<span class="font-body-sm text-label-md text-text-secondary">今日上报 4 件 · 3 件已修复</span>
+</div>
+</div>
+<a class="flex items-center gap-0.5 text-primary font-label-md text-label-md shrink-0 hover:underline" href="#">
+<span>详情</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- Recent Repair Tickets Section Header -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-text-primary">最近报修工单</h2>
+<span class="w-5 h-5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-[11px] flex items-center justify-center font-bold">3</span>
+</div>
+<a class="flex items-center gap-0.5 text-text-secondary hover:text-text-primary font-label-md text-label-md transition-colors" href="#">
+<span>全部历史</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- Ticket Cards List Stack -->
+<div class="flex flex-col gap-space-md">
+<!-- Ticket 1 (Processing) -->
+<div class="rounded-xl bg-surface-card p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-callout-warm-bg text-callout-warm-text font-label-sm text-label-sm font-medium">
+            硬件打印机
+          </span>
+<span class="font-label-sm text-label-sm text-text-muted">10分钟前</span>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-status-warning-bg text-status-warning font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-status-warning animate-ping"></span>
+          处理中 · 预计5分钟
+        </span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="font-headline-sm text-body-lg text-text-primary leading-snug">
+          护士站 3 号发药机标签打印机卡纸并提示代码 E-102
+        </h3>
+</div>
+<!-- Engineer Dispatch Telemetry Strip -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-subground">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-full bg-secondary-container text-on-primary-container font-label-sm text-label-sm font-bold flex items-center justify-center">
+            王
+          </div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-sm text-text-primary">工程师 王浩</span>
+<span class="font-label-sm text-[11px] text-text-muted">已领单 · 正在携带备件赶往病区</span>
+</div>
+</div>
+<a aria-label="呼叫工程师" class="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center text-primary hover:text-text-primary active:scale-95 transition-transform" href="tel:13800000000">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<div class="flex items-center justify-between pt-space-xs font-label-md text-label-md text-text-muted">
+<span>工单号: REP-20231024-082</span>
+<a class="text-primary font-headline-sm text-label-md hover:underline flex items-center gap-0.5" href="#">
+<span>跟踪进度</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Ticket 2 (Resolved) -->
+<div class="rounded-xl bg-surface-card p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-surface-subground text-secondary font-label-sm text-label-sm font-medium">
+            软件HIS
+          </span>
+<span class="font-label-sm text-label-sm text-text-muted">今天 09:30</span>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-status-success-bg text-status-success font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+          已解决 · 评价满意
+        </span>
+</div>
+<div class="flex flex-col gap-1.5">
+<h3 class="font-headline-sm text-body-lg text-text-primary leading-snug">
+          门诊 2 诊室 HIS 系统处方无法签名认证
+        </h3>
+<p class="font-body-sm text-body-sm text-text-secondary leading-relaxed bg-surface-subground/70 p-space-sm rounded-lg">
+          已远程重启医保签名 CA 驱动服务，并重新校验医护数字证书完成。
+        </p>
+</div>
+<div class="flex items-center justify-between pt-space-xs font-label-md text-label-md text-text-muted">
+<span>工单号: IT-20231024-019</span>
+<a class="text-text-secondary hover:text-text-primary font-label-md text-label-md flex items-center gap-0.5 transition-colors" href="#">
+<span>查看回执</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Ticket 3 (Queued) -->
+<div class="rounded-xl bg-surface-card p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary font-label-sm text-label-sm font-medium">
+            移动网络
+          </span>
+<span class="font-label-sm text-label-sm text-text-muted">昨天 16:45</span>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          排队等待派单
+        </span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="font-headline-sm text-body-lg text-text-primary leading-snug">
+          病区移动查房平板 WiFi 无法获取 IP 地址
+        </h3>
+</div>
+<div class="flex items-center justify-between pt-space-xs font-label-md text-label-md text-text-muted">
+<span>工单号: IT-20231023-145</span>
+<button class="px-2.5 py-1 rounded-lg bg-surface-subground text-primary hover:bg-surface-elevated font-label-md text-label-md flex items-center gap-1 transition-all active:scale-95" type="button">
+<span>加速催办</span>
+<span>⚡</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Warm Reassurance Banner for Night/Clinical Shifts -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-subground text-text-muted font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">verified_user</span>
+<span>IT 临床保障团队 7×24 小时护航医疗安全</span>
+</div>
+<span class="text-tertiary font-label-sm text-label-sm font-medium">保障中</span>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for quick repair press
+  document.getElementById('quick-report-btn')?.addEventListener('click', function() {
+    this.classList.add('scale-95');
+    setTimeout(() => {
+      this.classList.remove('scale-95');
+      // Gentle feedback vibration if supported
+      if (navigator.vibrate) {
+        navigator.vibrate([20]);
+      }
+    }, 120);
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-subground/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.4)]" data-active-classes="text-primary-container font-semibold"><div class="flex justify-around items-center h-16 px-space-sm"><a aria-current="page" class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 transition-colors text-primary-container font-semibold" data-path="workbench" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-md text-label-md">工作台</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 text-text-secondary transition-colors" data-path="quick-repair" href="#"><span class="material-symbols-outlined text-[22px]">bolt</span><span class="font-label-md text-label-md">快捷报修</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[72px] h-11 text-text-secondary transition-colors" data-path="ticket-query" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-md text-label-md">工单查询</span></a></div></nav></body></html>
