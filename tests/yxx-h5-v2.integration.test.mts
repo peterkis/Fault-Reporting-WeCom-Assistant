@@ -14,6 +14,7 @@ import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authori
 import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
 import {createYxxH5Lifecycle} from '../src/yxx-h5-v2-lifecycle.mjs';
 import {projectYxxH5Urge} from '../src/yxx-h5-realtime.mjs';
+import {createWorkbenchReminders} from '../src/workbench-reminders.mjs';
 import type {H5UrgeFact} from '../src/yxx-h5-v2-lifecycle.mjs';
 import {createYxxH5Profile} from '../src/yxx-h5-v2-profile.mjs';
 import {createYxxSelfServiceFeedback} from '../src/yxx-self-service-feedback.mjs';
@@ -26,6 +27,8 @@ import type {H5ProfileMemberIdentity} from '../src/yxx-h5-v2-profile-enricher.mj
 import {createThirdPartyReporterDirectory} from '../src/p2-007-third-party-reporter-directory.mjs';
 import {createThirdPartyStaffDirectoryAdapter} from '../src/p2-007-third-party-staff-directory-adapter.mjs';
 import {applicationRecipientProof} from '../src/yxx-application-member-auth.mjs';
+import {migrateWorkbenchFollowUpSchedules} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
+import {migrateWorkbenchFollowUpDueSignals} from '../scripts/workbench-follow-up-due-migrate.mjs';
 
 const secret='h5-v2-isolated-synthetic-secret-at-least-32-bytes';
 const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
@@ -37,6 +40,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
   assert.ok(process.env.PILOT_DATABASE_URL,'PILOT_DATABASE_URL is required; H5 integration is not a synthetic mock result');
   await withT24Fixture(async f=>{
     await f.pool.query(await readFile(sourceFile('database/migrations/064_yixiaoxiu_h5_member_service.sql'),'utf8'));
+    await migrateWorkbenchFollowUpSchedules({databaseUrl:f.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpDueSignals({databaseUrl:f.databaseUrl,mode:'apply'});
     await migrateWorkbenchAuth({...{databaseUrl:f.databaseUrl},mode:'apply'});await migrateThirdPartyStaffDirectory({...{databaseUrl:f.databaseUrl},mode:'apply'});
     const a=scope(),b=scope(),c=scope();let claimCount=0,claimFail=false;const urgeFacts:H5UrgeFact[]=[];
     const store=createYxxSelfServiceStore({pool:f.pool,scopeSecret:secret,h5Enabled:true,onBindMedia:async input=>{
@@ -62,6 +66,11 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     assert.equal((await f.pool.query('SELECT 1 FROM pilot_ticket.ticket t JOIN intake.web_request_binding b ON b.intake_id=t.source_intake_id WHERE b.request_ref=$1',[ref])).rowCount,1);
     assert.equal((await f.pool.query<{n:number}>('SELECT count(*)::integer AS n FROM conversation.session')).rows[0]?.n,baseSessions);
     const lifecycle=createYxxH5Lifecycle({pool:f.pool,scopeSecret:secret,enabled:true,onUrge:async fact=>{await projectYxxH5Urge(fact);urgeFacts.push(fact);}});
+    const reminders=createWorkbenchReminders({pool:f.pool,query:f.runtime.query,enabled:true,webReportsEnabled:true});
+    const reminderAuth={principal_id:f.principals[0]?.id,expires_epoch_ms:String(Date.now()+600000)};
+    const baseline=await reminders.page({authContext:reminderAuth,parameters:new URLSearchParams()});
+    const currentReminders=()=>reminders.page({authContext:reminderAuth,parameters:new URLSearchParams({after_event_id:baseline.as_of_event_id,baseline_token:baseline.baseline_token})});
+    const hasCurrentUrge=async()=>(await currentReminders()).items.some(item=>item.reason==='RELATED_REPORT_URGE'&&item.canonical_item.kind==='ticket'&&item.canonical_item.id===ticket.id);
     const urge={schema_version:1,client_command_id:randomUUID(),expected_ticket_version:ticket.version};
     const urged=await lifecycle.urge({scope:a,requestRef:ref,input:urge});assert.equal(urged.purpose,'URGE');assert.equal(urgeFacts.length,1);
     assert.equal((await lifecycle.urge({scope:a,requestRef:ref,input:urge})).replayed,true);assert.equal(urgeFacts.length,1);
@@ -76,6 +85,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     assert.equal((await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id)?.active,true);
     const http=await t11Http(f),started=await http.start(ticket.id),actor=f.principals[0]?.id;assert.ok(actor);
     const afterFirstStart=(await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id);assert.equal(afterFirstStart?.active,true);assert.equal(afterFirstStart?.count,1);
+    assert.equal(await hasCurrentUrge(),true);
     await assert.rejects(lifecycle.urge({scope:a,requestRef:ref,input:{...urge,client_command_id:randomUUID(),expected_ticket_version:started.version}}),{code:'YXX_URGE_RATE_LIMITED'});
     const onAuthorize=async(tx:import('../src/platform/postgres-pool.mjs').PostgresTransaction)=>{const current=await f.runtime.query.authorizedTicket({authContext:{principal_id:actor},ticketId:ticket.id,transaction:tx});return current.ticket.assignee_id===actor;};
     const p={client_command_id:randomUUID(),expected_version:started.version,summary:'合成公开进度：正在修复打印服务。',estimated_at:null};
@@ -84,6 +94,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     await assert.rejects(lifecycle.publishPublicProgress({ticketId:ticket.id,actorPrincipalId:actor,input:{...p,summary:'different'},onAuthorize}),{code:'YXX_COMMAND_CONFLICT'});
     await assert.rejects(lifecycle.publishPublicProgress({ticketId:ticket.id,actorPrincipalId:f.outsider.id,input:{...p,client_command_id:randomUUID()},onAuthorize:async()=>true}),{code:'YXX_FORBIDDEN'});
     const current=await http.detail(ticket.id);assert.equal((await http.post(ticket.id,'complete',http.command(current))).status,200);
+    assert.equal(await hasCurrentUrge(),false);
     const member={scope:a,write_flag:true,flags},detail=await transactionP2016(f.pool,tx=>lifecycle.context(tx,member,ref));
     assert.equal(detail.urge.active,false);assert.equal(detail.evaluation.can_evaluate,true);assert.equal(detail.public_progress?.summary,p.summary);assert.ok(detail.evaluation.completed_round_ref);assert.ok(detail.evaluation.ticket_version);
     const evaluation={schema_version:1,client_command_id:randomUUID(),expected_ticket_version:detail.evaluation.ticket_version,completed_round_ref:detail.evaluation.completed_round_ref,rating:5,comment:'合成评价'};
@@ -94,6 +105,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     const feedback=createYxxSelfServiceFeedback({pool:f.pool,scopeSecret:secret});
     await feedback.accept({scope:a,requestRef:ref,input:{schema_version:1,client_command_id:randomUUID(),expected_ticket_version:evaluation.expected_ticket_version,completed_round_ref:evaluation.completed_round_ref,feedback:'STILL_UNRESOLVED'}});
     assert.equal((await http.detail(ticket.id)).status,'REOPENED');const reopenedContext=await transactionP2016(f.pool,tx=>lifecycle.context(tx,member,ref));assert.equal(reopenedContext.evaluation.can_evaluate,false);assert.equal(reopenedContext.urge.active,false);assert.equal(reopenedContext.urge.count,0);
+    assert.equal(await hasCurrentUrge(),false);
     const directory=createThirdPartyStaffDirectoryStore({pool:f.pool}),version='d'.repeat(64);
     const members=[['provider-a','EMP-A','合成同事甲'],['provider-b','EMP-B','合成同事乙'],['provider-c','EMP-C','合成同事丙']].map(([id,employee,name])=>({provider_user_id:id as string,employee_id:employee as string,nickname:name as string,phone:null,provider_wecom_id:null}));
     await directory.publishSnapshot({source_scope:'FORMAL',root_ref:'synthetic-root',snapshot:{snapshot_version:version,departments:[{provider_department_id:'dept-a',parent_provider_department_id:null,name:'合成科室甲',provider_gid:null,provider_gid_type:null,depth:0},{provider_department_id:'dept-b',parent_provider_department_id:null,name:'合成科室乙',provider_gid:null,provider_gid_type:null,depth:0}],members,memberships:members.map((m,index)=>({provider_user_id:m.provider_user_id,provider_department_id:index===2?'dept-b':'dept-a'})),protocol_warnings:[],counts:{departments:2,members:3,memberships:3,max_depth:0}}});
@@ -123,8 +135,10 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     assert.equal((await lifecycle.urge({scope:b,requestRef:contact.receipt.request_ref,input:rejectedUrge})).replayed,false);
     const reopened=await http.detail(ticket.id);await lifecycle.urge({scope:a,requestRef:ref,input:{...urge,client_command_id:randomUUID(),expected_ticket_version:reopened.version}});
     assert.equal((await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id)?.active,true);
+    await http.start(ticket.id);assert.equal(await hasCurrentUrge(),true);
     await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1',[ref]);
     assert.equal((await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id)?.active,false);
+    assert.equal(await hasCurrentUrge(),false);
     assert.equal((await profile.department(a)).total,1);
     await assert.rejects(transactionP2016(f.pool,tx=>lifecycle.receipt(tx,a,ref,urge.client_command_id,'URGE')),{code:'YXX_NOT_FOUND'});
     await f.pool.query(`WITH stamp AS(SELECT platform.physical_epoch_ms()-1 AS epoch) UPDATE intake.web_request_binding SET retention_until=platform.local_from_epoch_ms(epoch),retention_until_epoch_ms=epoch FROM stamp WHERE request_ref=$1`,[contact.receipt.request_ref]);
