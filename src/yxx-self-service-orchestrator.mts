@@ -14,7 +14,7 @@ export interface YxxOrchestratorOptions {pool:PostgresPool;ruleEngine?:RuleEngin
 export interface YxxPendingInput {batchSize?:number;nowEpochMs?:string;signal?:AbortSignal|null|undefined}
 export type YxxSelfServiceOrchestrator=ReturnType<typeof createYxxSelfServiceOrchestrator>;
 interface WebRoot {intake_id:string;request_ref:string;source_app_scope:string;canonical_reporter_binding:string;input_revision:string;processed_revision:string;retry_count:number;retention_until:string;intake_no:string;status:string;summary:string|null;pilot_ticket_id:string|null;version:number;created_at:LocalDateTime;updated_at:LocalDateTime;intake_retention_until:LocalDateTime}
-interface WebSubmission {id:string;kind:'SUBMIT'|'SUPPLEMENT';input_revision:string;canonical_content_hash:string;safe_content:{description?:string;text?:string;service_code?:string|null;impact_scope?:string;location?:{unknown?:boolean};reported_department_text?:string|null};received_at:LocalDateTime}
+interface WebSubmission {id:string;kind:'SUBMIT'|'SUPPLEMENT';input_revision:string;canonical_content_hash:string;safe_content:{schema_version?:number;intent?:'FAULT'|'CONTACT_REQUEST';media_refs?:string[];description?:string|null;text?:string;service_code?:string|null;impact_scope?:string;location?:{unknown?:boolean};reported_department_text?:string|null};received_at:LocalDateTime}
 interface WebJourney {id:string;reporter_identity_hash:string;source_app_scope:string;status:string;row_version:string}
 interface WebLeg {id:string;journey_id:string;leg_ordinal:number;leg_type:string;web_submission_id:string;status:string;row_version:string}
 interface SupplementTicket {id:string;status:TicketStatus;version:number;intake_id:string}
@@ -36,6 +36,13 @@ const MAX_RULE_TEXT = 20_000;
 const WEB_REF = /^[A-Za-z0-9_-]{32}$/u;
 const COMMUNICATION_ACTIONS = new Set(['REQUEST_ONE_DESCRIPTION', 'SEND_FIXED_ACKNOWLEDGEMENT', 'SEND_FIXED_SCOPE_NOTICE']);
 const PROFILES = new Set(['OAUTH_ONLY', 'MEMBER_TICKET_READONLY', 'MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP']);
+
+/** A submitted fault/contact intention is a user assertion, independent of transcription. */
+export function routeH5DeclaredRequest(context:NonNullable<Parameters<typeof routeRuleFailure>[0]>,intent:'FAULT'|'CONTACT_REQUEST'){
+  return routeP2007Decision({rule_output:{catalog_version:'H5_DECLARED_V2',rule_set_version:'h5-explicit-intent/2',
+    result_hash:safeHash({schema_version:2,intent}),domain_intent:'INCIDENT_REPORT',clinical_impact:'UNKNOWN',
+    symptom_codes:[],facts:[],missing_fields:[],clarification_needed:false,requires_human_review:false},context});
+}
 
 function boundedTicketTitle(value:unknown) {
   if (typeof value !== 'string' || value.length === 0) return null;
@@ -363,10 +370,14 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         let routed:ReturnType<typeof routeP2007Decision>;
         await transaction.query('SAVEPOINT yxx_rule_evaluation');
         try {
-          if (text.length > MAX_RULE_TEXT) throw inputError('YXX_RULE_WINDOW_LIMIT_EXCEEDED');
-          const output = engine.evaluate({ text, source_ref: `web:${root.intake_id}:${revision}`, observed_at: latest.received_at,
-            source_kind: 'WEB', service_code:webFields.service_code, context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
-          routed = routeP2007Decision({ rule_output: output, context: routeContext });
+          if(initial.schema_version===2&&(initial.intent==='FAULT'||initial.intent==='CONTACT_REQUEST')){
+            routed=routeH5DeclaredRequest(routeContext,initial.intent);
+          }else{
+            if (text.length > MAX_RULE_TEXT) throw inputError('YXX_RULE_WINDOW_LIMIT_EXCEEDED');
+            const output = engine.evaluate({ text, source_ref: `web:${root.intake_id}:${revision}`, observed_at: latest.received_at,
+              source_kind: 'WEB', service_code:webFields.service_code, context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
+            routed = routeP2007Decision({ rule_output: output, context: routeContext });
+          }
           await transaction.query('RELEASE SAVEPOINT yxx_rule_evaluation');
         } catch (error) {
           await transaction.query('ROLLBACK TO SAVEPOINT yxx_rule_evaluation');

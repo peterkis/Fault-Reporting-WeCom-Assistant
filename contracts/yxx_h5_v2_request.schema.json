@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "client_command_id", "intent", "description", "location", "media_refs"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "intent": {"enum": ["FAULT", "CONTACT_REQUEST"]},
+    "description": {"type": ["string", "null"], "maxLength": 4000},
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["text", "unknown"],
+      "properties": {"text": {"type": ["string", "null"], "maxLength": 200}, "unknown": {"type": "boolean"}},
+      "allOf": [{"if": {"properties": {"unknown": {"const": false}}}, "then": {"properties": {"text": {"type": "string", "minLength": 1}}}}]
+    },
+    "media_refs": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}}
+  },
+  "allOf": [{
+    "if": {"properties": {"intent": {"const": "FAULT"}}},
+    "then": {"anyOf": [{"properties": {"description": {"type": "string", "minLength": 1}}}, {"properties": {"media_refs": {"minItems": 1}}}]}
+  }]
+}

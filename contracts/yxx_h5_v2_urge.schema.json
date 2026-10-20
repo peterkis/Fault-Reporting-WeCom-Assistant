@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "client_command_id", "expected_ticket_version"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "expected_ticket_version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+  }
+}

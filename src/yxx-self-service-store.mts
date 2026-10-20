@@ -1,18 +1,22 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { YxxMemberScope } from './yxx-self-service-authorization.mjs';
 import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
+import type {H5RequestInput} from '../contracts/yxx_h5_v2_contracts.js';
+import {parseH5RequestInput,h5Fail} from './yxx-h5-v2-contracts.mjs';
+export type YxxInitialRequestInput=YxxRequestInput|H5RequestInput;
+export interface YxxBindMediaInput {transaction:PostgresTransaction;scope:YxxMemberScope;refs:readonly string[];intakeId:string;submissionId:string;requestRef:string;retentionUntilEpochMs:string}
 export interface YxxRequestInput { readonly schema_version: 1; readonly client_command_id: string; readonly description: string; readonly location: {readonly text:string|null;readonly unknown:boolean}; readonly service_code:string|null; readonly impact_scope:'UNKNOWN'|'SELF'|'SINGLE_WORKSTATION'|'MULTIPLE_USERS'|'DEPARTMENT'; readonly reported_department_text:string|null; readonly extension:string|null }
 export interface YxxSupplementInput {readonly schema_version:1;readonly client_command_id:string;readonly expected_input_revision:string;readonly text:string}
 export type ParsedYxxCommand = {kind:'SUBMIT';input:YxxRequestInput} | {kind:'SUPPLEMENT';input:YxxSupplementInput;requestRef:string};
 export type YxxStoreScope<Member extends string=string> = YxxMemberScope<Member> & {canonical_reporter_binding?: string};
 export interface YxxCommandReceipt {client_command_id:string;status:'ACCEPTED';request_ref:string;intake_no:string|null;accepted_revision:string;accepted_at:string;accepted_epoch_ms:string}
 export type YxxAcceptResult = {replayed:true;receipt:YxxCommandReceipt} | {replayed:false;receipt:YxxCommandReceipt};
-export interface YxxCommandHookInput {scope:YxxStoreScope;value:YxxRequestInput|YxxSupplementInput;kind:'SUBMIT'|'SUPPLEMENT';transaction:PostgresTransaction;replayed?:boolean;receipt?:YxxCommandReceipt}
+export interface YxxCommandHookInput {scope:YxxStoreScope;value:YxxInitialRequestInput|YxxSupplementInput;kind:'SUBMIT'|'SUPPLEMENT';transaction:PostgresTransaction;replayed?:boolean;receipt?:YxxCommandReceipt}
 import type {BoundApplicationRecipient} from './yxx-application-member-auth.mjs';
 import {boundApplicationRecipient,applicationRecipientProof} from './yxx-application-member-auth.mjs';
 export interface YxxStoreCommand {notificationRecipient?:BoundApplicationRecipient;scope:YxxStoreScope;input:unknown;kind?:'SUBMIT'|'SUPPLEMENT';requestRef?:string|null|undefined;transaction?:PostgresTransaction;onNewCommand?:((input:YxxCommandHookInput)=>Promise<boolean>)|null;onBeforeCommit?:((input:YxxCommandHookInput)=>Promise<boolean>)|null}
 export interface YxxStoreRead<Member extends string=string> {scope:YxxStoreScope<Member>;requestRef?:string|undefined;limit?:number|undefined;cursor?:string|null;after?:string|null;before?:string|null}
-export interface YxxStoreOptions {pool:PostgresPool;scopeSecret?:string;now?:()=>string;retentionMs?:number}
+export interface YxxStoreOptions {pool:PostgresPool;scopeSecret?:string;now?:()=>string;retentionMs?:number;h5Enabled?:boolean;onBindMedia?:((input:YxxBindMediaInput)=>Promise<void>)|null}
 export type YxxSelfServiceStore = ReturnType<typeof createYxxSelfServiceStore>;
 type RawObject = Record<string,unknown>;
 interface TicketSummaryRow {ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;updated_at?:string;status?:string}
@@ -55,6 +59,14 @@ export function parseYxxRequestInput(value:unknown):YxxRequestInput{
   const department=optionalText(input.reported_department_text,YXX_WEB_LIMITS.department);
   const extension=input.extension===null?null:cleanText(input.extension,YXX_WEB_LIMITS.extension);if(extension!==null&&!/^[0-9][0-9 -]{0,19}$/u.test(extension))throw new TypeError('YXX_INPUT_INVALID');
   return Object.freeze({schema_version:1,client_command_id:(input.client_command_id as string).toLowerCase(),description,location:Object.freeze({text:locationText,unknown:(input.location as RawObject).unknown as boolean}),service_code:serviceCode,impact_scope:input.impact_scope as YxxRequestInput['impact_scope'],reported_department_text:department,extension});
+}
+
+export function parseYxxInitialRequestInput(value:unknown):YxxInitialRequestInput{
+  return value!==null&&typeof value==='object'&&'schema_version' in value&&value.schema_version===2?parseH5RequestInput(value):parseYxxRequestInput(value);
+}
+
+function initialDescription(input:YxxInitialRequestInput):string{
+  return input.description??(input.schema_version===2&&input.intent==='CONTACT_REQUEST'?'请主动联系我处理故障':'已提交现场材料，请协助处理故障');
 }
 
 export function parseYxxSupplementInput(value:unknown):YxxSupplementInput{
@@ -114,12 +126,12 @@ function ordinalState(base:number,ranges:[number,number][]|undefined,rows:number
 }
 function expandOrdinalRanges(ranges:[number,number][]|undefined){const values=[];for(const [start,end] of ranges??[])for(let ordinal=start;ordinal<=end;ordinal+=1)values.push(ordinal);return values;}
 
-export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cursor-secret',now=()=>String(Date.now()),retentionMs=30*24*60*60*1000}:YxxStoreOptions={} as YxxStoreOptions){
+export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cursor-secret',now=()=>String(Date.now()),retentionMs=30*24*60*60*1000,h5Enabled=false,onBindMedia=null}:YxxStoreOptions={} as YxxStoreOptions){
   if(!pool?.connect||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<16)throw new TypeError('YXX_STORE_CONFIG_INVALID');
   const commandScope=(scope:YxxStoreScope)=>ensureHash(scope.scopeHash??scope.canonical_reporter_binding);
   const stamp=()=>stampP2016(now);
   async function acceptInTransaction({notificationRecipient,scope,input,kind='SUBMIT',requestRef:nullRef=null,transaction:tx,onNewCommand=null,onBeforeCommit=null}:YxxStoreCommand & {transaction:PostgresTransaction}):Promise<YxxAcceptResult>{
-    if(!scope||kind!=='SUBMIT'&&kind!=='SUPPLEMENT')throw new TypeError('YXX_INPUT_INVALID');if(typeof scope.sourceCorpScope!=='string'||scope.sourceCorpScope.length<1||scope.sourceCorpScope.length>128||typeof scope.sourceAppScope!=='string'||scope.sourceAppScope.length<1||scope.sourceAppScope.length>128)throw new TypeError('YXX_SCOPE_INVALID');const value=kind==='SUBMIT'?parseYxxRequestInput(input):parseYxxSupplementInput(input);if(kind==='SUPPLEMENT')requestRef(nullRef);const scopeHash=commandScope(scope);const commandHash=hashP2016({kind,request_ref:kind==='SUPPLEMENT'?nullRef:null,schema_version:value.schema_version,...value as Omit<typeof value,'schema_version'>});
+    if(!scope||kind!=='SUBMIT'&&kind!=='SUPPLEMENT')throw new TypeError('YXX_INPUT_INVALID');if(typeof scope.sourceCorpScope!=='string'||scope.sourceCorpScope.length<1||scope.sourceCorpScope.length>128||typeof scope.sourceAppScope!=='string'||scope.sourceAppScope.length<1||scope.sourceAppScope.length>128)throw new TypeError('YXX_SCOPE_INVALID');const value=kind==='SUBMIT'?parseYxxInitialRequestInput(input):parseYxxSupplementInput(input);if(value.schema_version===2&&!h5Enabled)h5Fail('YXX_MEMBER_WRITE_DISABLED',403);if(kind==='SUPPLEMENT')requestRef(nullRef);const scopeHash=commandScope(scope);const commandHash=hashP2016({kind,request_ref:kind==='SUPPLEMENT'?nullRef:null,schema_version:value.schema_version,...value as Omit<typeof value,'schema_version'>});
       const beforeCommit=async(payload:YxxCommandHookInput)=>{if(onBeforeCommit===null)return;if(typeof onBeforeCommit!=='function'||await onBeforeCommit(payload)!==true){const error=new Error('YXX_AUTH_RECHECK_FAILED') as Error & {code:string;status?:number};error.code='YXX_AUTH_RECHECK_FAILED';throw error;}};
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))',[scopeHash+':'+value.client_command_id]);
       const existing=await tx.query<ReceiptRow>(`SELECT r.id::text,r.command_hash,r.result_intake_id::text,r.result_request_ref,r.accepted_revision,to_char(r.accepted_at,'YYYY-MM-DD HH24:MI:SS') AS accepted_at,r.accepted_epoch_ms::text,i.intake_no
@@ -133,10 +145,10 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       if(kind==='SUBMIT'){
         intakeId=randomUUID();requestRefValue=opaqueRef();
         await tx.query(`INSERT INTO intake.web_command_receipt(id,scope_hash,client_command_id,command_kind,command_hash,schema_version,accepted_revision,status,accepted_at,accepted_epoch_ms,created_at)
-          VALUES($1::uuid,$2,$3::uuid,$4,$5,1,1,'ACCEPTED',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone)`,[receiptId,scopeHash,value.client_command_id,kind,commandHash,current.local,current.epoch]);
+          VALUES($1::uuid,$2,$3::uuid,$4,$5,$8,1,'ACCEPTED',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone)`,[receiptId,scopeHash,value.client_command_id,kind,commandHash,current.local,current.epoch,value.schema_version]);
         await tx.query(`INSERT INTO intake.service_intake(id,intake_no,source_channel,source_provider,source_bot_id,source_chat_type,source_chat_id,reporter_wecom_userid,
           explicit_aggregation_boundary,privacy_class,retention_until,request_type,summary,reported_department_id,reported_location_text,status,primary_message_id,message_count,last_message_at,version,created_at,updated_at,primary_web_submission_id,source_app_scope,canonical_reporter_binding)
-          VALUES($1::uuid,'INT-'||to_char($2::timestamp without time zone,'YYYYMMDD')||'-'||lpad(nextval('intake.service_intake_number_seq')::text,4,'0'),'PORTAL','YIXIAOXIU_WEB',NULL,NULL,NULL,NULL,FALSE,'PERSONAL',$3::timestamp without time zone,'SERVICE_REQUEST',LEFT($8,500),NULL,$4,'RECEIVED',NULL,1,$2::timestamp without time zone,1,$2::timestamp without time zone,$2::timestamp without time zone,$5::uuid,$6,$7)`,[intakeId,current.local,retentionLocal,(value as YxxRequestInput).location.text,randomUUID(),scope.sourceAppScope,scopeHash,(value as YxxRequestInput).description]);
+          VALUES($1::uuid,'INT-'||to_char($2::timestamp without time zone,'YYYYMMDD')||'-'||lpad(nextval('intake.service_intake_number_seq')::text,4,'0'),'PORTAL','YIXIAOXIU_WEB',NULL,NULL,NULL,NULL,FALSE,'PERSONAL',$3::timestamp without time zone,'SERVICE_REQUEST',LEFT($8,500),NULL,$4,'RECEIVED',NULL,1,$2::timestamp without time zone,1,$2::timestamp without time zone,$2::timestamp without time zone,$5::uuid,$6,$7)`,[intakeId,current.local,retentionLocal,(value as YxxInitialRequestInput).location.text,randomUUID(),scope.sourceAppScope,scopeHash,initialDescription(value as YxxInitialRequestInput)]);
         const primary=((await tx.query<{primary_web_submission_id:string}>('SELECT primary_web_submission_id::text FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[intakeId])).rows[0] as { primary_web_submission_id: string; }).primary_web_submission_id;
         if(notificationRecipient){const recipient=boundApplicationRecipient(notificationRecipient);
           if(applicationRecipientProof(scopeSecret,scope,recipient.member_id)!==recipient.proof_ref||Math.abs(Date.now()-Number(recipient.verified_epoch_ms))>5000)throw Error('YXX_NOTIFICATION_RECIPIENT_INVALID');
@@ -147,6 +159,7 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
           VALUES($1::uuid,$2,$3,$4,$5,$6,1,0,$7::bigint,$8::timestamp without time zone,$9::bigint)`,[intakeId,requestRefValue,scope.sourceCorpScope,scope.sourceAppScope,scopeHash,scope.proofRef??null,current.epoch,retentionLocal,retentionEpoch]);
         await tx.query(`INSERT INTO intake.web_submission(id,intake_id,command_receipt_id,kind,input_revision,sequence_no,safe_content,canonical_content_hash,canonical_reporter_binding,received_at,received_epoch_ms,retention_until,retention_until_epoch_ms)
           VALUES($1::uuid,$2::uuid,$3::uuid,'SUBMIT',1,1,$4::jsonb,$5,$6,$7::timestamp without time zone,$8::bigint,$9::timestamp without time zone,$10::bigint)`,[primary,intakeId,receiptId,JSON.stringify(value),hashP2016(value),scopeHash,current.local,current.epoch,retentionLocal,retentionEpoch]);
+        if(value.schema_version===2&&value.media_refs.length){if(!onBindMedia)h5Fail('YXX_UNAVAILABLE',503);await onBindMedia({transaction:tx,scope,refs:value.media_refs,intakeId,submissionId:primary,requestRef:requestRefValue,retentionUntilEpochMs:retentionEpoch});}
         await tx.query(`INSERT INTO intake.contact_journey(id,creation_key,origin_intake_id,entry_mode,origin_channel,current_channel,source_app_scope,reporter_identity_hash,profile_resolution_status,profile_snapshot,profile_snapshot_hash,status,evaluation_due_at,evaluation_due_epoch_ms,reported_at,last_activity_at,privacy_class,retention_until,retention_until_epoch_ms)
           VALUES($1::uuid,$2,$3::uuid,'APP_WEB_SELF_SERVICE','PORTAL','PORTAL',$4,$5,'NOT_REQUIRED',$6::jsonb,$7,'OPEN',$8::timestamp without time zone,$9::bigint,$10::timestamp without time zone,$10,'PERSONAL',$11::timestamp without time zone,$12::bigint)`,[randomUUID(),'web:'+intakeId,intakeId,scope.sourceAppScope,scopeHash,JSON.stringify({source:'YIXIAOXIU_WEB'}),hashP2016({source:'YIXIAOXIU_WEB'}),current.local,current.epoch,current.local,retentionLocal,retentionEpoch]);
         const journey=((await tx.query<{id:string}>('SELECT id::text FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[intakeId])).rows[0] as { id: string; }).id;

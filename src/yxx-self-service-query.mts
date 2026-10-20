@@ -4,9 +4,13 @@ import type {YxxSelfServiceStore,YxxStoreRead} from './yxx-self-service-store.mj
 import type {YxxMemberContext,YxxMemberSource,YxxMemberScope,createYxxSelfServiceAuthorization} from './yxx-self-service-authorization.mjs';
 import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import type {YxxFeedbackStore} from './yxx-self-service-feedback.mjs';
+import type {YxxH5Lifecycle} from './yxx-h5-v2-lifecycle.mjs';
+import type {YxxH5Profile} from './yxx-h5-v2-profile.mjs';
+import type {H5Media,H5ReportFilters,H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
+import {parseH5ReportFilters} from './yxx-h5-v2-contracts.mjs';
 type ActiveContext=YxxMemberContext & {scope:YxxMemberScope};
-export interface YxxQueryOptions {pool:PostgresPool;authorization:ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>;store?:Pick<YxxSelfServiceStore,'timeline'|'command'>|null;scopeSecret?:string;now?:()=>string}
-export interface YxxQueryInput {request:IncomingMessage;source?:YxxMemberSource|null;limit?:unknown;cursor?:string|null;requestRef?:string|undefined;publicRef?:string|undefined;ref?:string|undefined;kind?:'WEB_REQUEST'|'BOT_TICKET';ifNoneMatch?:string|null;after?:string|null;before?:string|null;clientCommandId?:unknown}
+export interface YxxQueryOptions {pool:PostgresPool;authorization:ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>;store?:Pick<YxxSelfServiceStore,'timeline'|'command'>|null;scopeSecret?:string;now?:()=>string;h5Lifecycle?:YxxH5Lifecycle|null;h5Profile?:YxxH5Profile|null;h5Media?:((input:{transaction:PostgresTransaction;scope:YxxMemberScope;requestRef:string})=>Promise<H5Media[]>)|null}
+export interface YxxQueryInput {request:IncomingMessage;source?:YxxMemberSource|null;limit?:unknown;cursor?:string|null;requestRef?:string|undefined;publicRef?:string|undefined;ref?:string|undefined;kind?:'WEB_REQUEST'|'BOT_TICKET';ifNoneMatch?:string|null;after?:string|null;before?:string|null;clientCommandId?:unknown;v2?:boolean;search?:string|null;status?:H5ReportFilters['status']}
 declare const cursorMember:unique symbol;
 export type YxxReportCursor<Member extends string=string> = string & {readonly [cursorMember]:Member};
 export interface YxxReportCursorPayload<Member extends string=string> {v:1;scope_hash:YxxMemberScope<Member>['scopeHash'];source:YxxMemberSource|null;source_corp_scope:string;source_app_scope:string;snapshot_epoch:string;created_at:string;kind_rank:number;immutable_id:string}
@@ -191,14 +195,14 @@ function snapshotNow(now:(()=>string)|unknown) {
   return epoch(value === undefined ? Date.now() : value);
 }
 
-async function listRows(transaction:PostgresTransaction,context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursor:ReturnType<typeof decodeCursor>|null,snapshotEpoch:string) {
+async function listRows(transaction:PostgresTransaction,context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursor:ReturnType<typeof decodeCursor>|null,snapshotEpoch:string,filters:Required<H5ReportFilters>|null=null) {
   const owner = context.bot_owner;
   const botId = owner?.botId ?? null;
   const botUserId = owner?.userId ?? null;
   const binding = owner ? botBindingHash(botId, botUserId) : null;
   const args = [context.scope.scopeHash, n + 1, selectedSource, snapshotEpoch, cursor?.created_at ?? null,
     cursor?.kind_rank ?? null, cursor?.immutable_id ?? null, botId, botUserId, binding,
-    context.scope.sourceCorpScope, context.scope.sourceAppScope];
+    context.scope.sourceCorpScope, context.scope.sourceAppScope,filters?.search??null,filters?.status??null];
   const q = await transaction.query<ReportRow>(`
     WITH report_rows AS (
       SELECT 'WEB_REQUEST'::text AS kind, b.request_ref AS ref, b.created_at::timestamp without time zone AS created_at,
@@ -246,6 +250,10 @@ async function listRows(transaction:PostgresTransaction,context:ActiveContext,se
     )
     SELECT * FROM report_rows
      WHERE ($3::text IS NULL OR kind=CASE WHEN $3='WEB' THEN 'WEB_REQUEST' ELSE 'BOT_TICKET' END)
+       AND ($13::text IS NULL OR strpos(lower(COALESCE(ticket_no,'')||' '||COALESCE(safe_summary,'')||' '||COALESCE(safe_location,'')),lower($13))>0)
+       AND ($14::text IS NULL OR CASE WHEN $14='COMPLETED' THEN ticket_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED')
+         WHEN $14='ACTIVE' THEN ticket_status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR')
+         ELSE ticket_status IS NULL OR ticket_status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
        AND created_at<=platform.local_from_epoch_ms($4::bigint)
        AND ($5::timestamp without time zone IS NULL
          OR created_at<$5::timestamp without time zone
@@ -263,18 +271,20 @@ export function createYxxSelfServiceQuery({
   store = null,
   scopeSecret = 'yxx-self-service-query-secret-32-bytes',
   now = () => String(Date.now()),
+  h5Lifecycle=null,h5Profile=null,h5Media=null,
 }:YxxQueryOptions & {feedbackStore?:YxxFeedbackStore|null}={} as YxxQueryOptions) {
   if (!pool?.connect || !authorization?.read || typeof scopeSecret !== 'string' || Buffer.byteLength(scopeSecret) < 16) {
     fail('YXX_QUERY_CONFIG_INVALID', 503);
   }
 
-  async function listForContext(context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursorValue:string|null) {
+  async function listForContext(context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursorValue:string|null,filters:Required<H5ReportFilters>|null=null) {
+    const cursorSecret=filters===null?scopeSecret:createHmac('sha256',scopeSecret).update(JSON.stringify(['H5_FILTERS',filters])).digest('hex');
     const cursor = cursorValue === null || cursorValue === undefined
       ? null
-      : decodeCursor(cursorValue as YxxReportCursor, scopeSecret, context.scope.scopeHash, selectedSource,
+      : decodeCursor(cursorValue as YxxReportCursor, cursorSecret, context.scope.scopeHash, selectedSource,
         context.scope.sourceCorpScope, context.scope.sourceAppScope);
     const snapshotEpoch = cursor?.snapshot_epoch ?? snapshotNow(now);
-    const rows = await transactionP2016(pool, async (transaction) => listRows(transaction, context, selectedSource, n, cursor, snapshotEpoch));
+    const rows = await transactionP2016(pool, async (transaction) => listRows(transaction, context, selectedSource, n, cursor, snapshotEpoch,filters));
     const page = rows.slice(0, n).map(reportItem);
     for (const item of page) {
       localTime(item.created_at);
@@ -292,12 +302,12 @@ export function createYxxSelfServiceQuery({
         created_at: (page.at(-1) as Readonly<{ kind: "WEB_REQUEST" | "BOT_TICKET"; ref: string; display_status: string; created_at: string; created_epoch_ms: string; ticket: Readonly<{ ticket_no: string; status: TicketStatus | null; updated_at: string; }> | null; }>).created_at,
         kind_rank: (rows[n - 1] as ReportRow).kind_rank,
         immutable_id: (rows[n - 1] as ReportRow).immutable_id,
-      }, scopeSecret)
+      }, cursorSecret)
       : null;
     return publicP2016({ items: page, next_cursor: next });
   }
 
-  async function webDetailForContext(context:ActiveContext,ref:unknown) {
+  async function webDetailForContext(context:ActiveContext,ref:unknown,v2=false) {
     requestRef(ref);
     return transactionP2016(pool, async (transaction) => {
       const q = await transaction.query<WebDetailRow>(`
@@ -333,7 +343,8 @@ export function createYxxSelfServiceQuery({
       if (q.rowCount !== 1) fail('YXX_NOT_FOUND', 404);
       const detail=safeWebDetail({ ...(q.rows[0] as WebDetailRow), safe_clarification: null });
       return {...detail,can_supplement:detail.can_supplement&&context.write_flag===true&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED===true,
-        ...(feedbackStore?{feedback_context:await feedbackStore.context(transaction,context,ref as string)}:{})};
+        ...(feedbackStore?{feedback_context:await feedbackStore.context(transaction,context,ref as string)}:{}),
+        ...(v2&&h5Lifecycle?{h5:{...await h5Lifecycle.context(transaction,context,ref as string),media:h5Media?await h5Media({transaction,scope:context.scope,requestRef:ref as string}):[]}}:{})};
     });
   }
 
@@ -369,15 +380,16 @@ export function createYxxSelfServiceQuery({
     });
   }
 
-  async function list({ request, source: requestedSource = null, limit: requestedLimit, cursor = null }:YxxQueryInput={} as YxxQueryInput) {
+  async function list({ request, source: requestedSource = null, limit: requestedLimit, cursor = null,v2=false,search,status }:YxxQueryInput={} as YxxQueryInput) {
     const selectedSource = source(requestedSource);
     const operation = selectedSource === 'BOT' ? YXX_MEMBER_READ_OPERATIONS.BOT_LIST : YXX_MEMBER_READ_OPERATIONS.MY_REPORTS;
-    return authorization.read({ request, operation, source: selectedSource as YxxMemberSource|null, run: (context) => listForContext(context, selectedSource, limit(requestedLimit), cursor) });
+    const filters=v2?parseH5ReportFilters({...(search===undefined?{}:{search}),...(status===undefined?{}:{status})}):null;
+    return authorization.read({ request, operation, source: selectedSource as YxxMemberSource|null, run: (context) => listForContext(context, selectedSource, limit(requestedLimit), cursor,filters) });
   }
 
-  async function getWebRequest({ request, requestRef: ref }:YxxQueryInput={} as YxxQueryInput) {
+  async function getWebRequest({ request, requestRef: ref,v2=false }:YxxQueryInput={} as YxxQueryInput) {
     return authorization.read({ request, operation: YXX_MEMBER_READ_OPERATIONS.WEB_DETAIL,
-      source: 'WEB', run: (context) => webDetailForContext(context, ref) });
+      source: 'WEB', run: (context) => webDetailForContext(context, ref,v2) });
   }
 
   async function getBotTicket({ request, publicRef: ref, ref: alternateRef }:YxxQueryInput={} as YxxQueryInput) {
@@ -385,15 +397,15 @@ export function createYxxSelfServiceQuery({
       source: 'BOT', run: (context) => botTicketForContext(context, ref ?? alternateRef) });
   }
 
-  async function detail({ request, kind = 'WEB_REQUEST', ref, requestRef: requestRefValue, publicRef }:YxxQueryInput={} as YxxQueryInput) {
+  async function detail({ request, kind = 'WEB_REQUEST', ref, requestRef: requestRefValue, publicRef,v2=false }:YxxQueryInput={} as YxxQueryInput) {
     if (kind === 'BOT_TICKET') return getBotTicket({ request, publicRef: publicRef ?? ref });
     if (kind !== 'WEB_REQUEST') fail('YXX_MEMBER_SOURCE_INVALID');
-    return getWebRequest({ request, requestRef: requestRefValue ?? ref });
+    return getWebRequest({ request, requestRef: requestRefValue ?? ref,v2 });
   }
 
-  async function detailWithEtag({ request, requestRef: ref, ifNoneMatch = null }:YxxQueryInput={} as YxxQueryInput) {
+  async function detailWithEtag({ request, requestRef: ref, ifNoneMatch = null,v2=false }:YxxQueryInput={} as YxxQueryInput) {
     return authorization.read({ request, operation: YXX_MEMBER_READ_OPERATIONS.WEB_DETAIL, source: 'WEB', run: async (context) => {
-      const body = await webDetailForContext(context, ref);
+      const body = await webDetailForContext(context, ref,v2);
       const etag = `"${textHashP2016(JSON.stringify(body))}"`;
       return { status: ifNoneMatch === etag ? 304 : 200, etag, body: ifNoneMatch === etag ? null : body };
     }});
@@ -412,6 +424,18 @@ export function createYxxSelfServiceQuery({
   }
 
   return Object.freeze({
+    async h5Bootstrap({request,sdk}:{request:IncomingMessage;sdk?:H5BootstrapExtension['sdk']}){
+      if(!h5Profile)fail('YXX_UNAVAILABLE',503);
+      return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.MY_REPORTS,run:context=>h5Profile.bootstrap(context,sdk)});
+    },
+    async department({request,limit:requestedLimit,cursor=null,search,status}:YxxQueryInput){
+      if(!h5Profile)fail('YXX_UNAVAILABLE',503);const filters=parseH5ReportFilters({...(search===undefined?{}:{search}),...(status===undefined?{}:{status})});
+      return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.MY_REPORTS,source:'WEB',run:context=>h5Profile.department(context.scope,{limit:limit(requestedLimit),cursor,...filters})});
+    },
+    async lifecycleReceipt({request,requestRef:ref,clientCommandId,purpose}:YxxQueryInput&{purpose:'URGE'|'EVALUATION'}){
+      if(!h5Lifecycle)fail('YXX_UNAVAILABLE',503);requestRef(ref);
+      return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.WEB_COMMAND,source:'WEB',run:context=>transactionP2016(pool,tx=>h5Lifecycle.receipt(tx,context.scope,ref as string,clientCommandId,purpose))});
+    },
     async feedbackReceipt({request,requestRef:ref,clientCommandId}:YxxQueryInput){
       if(!feedbackStore)fail('YXX_UNAVAILABLE',503);requestRef(ref);
       return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.WEB_COMMAND,source:'WEB',run:context=>transactionP2016(pool,tx=>feedbackStore.receipt(tx,context.scope,ref as string,clientCommandId))});

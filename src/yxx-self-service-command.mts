@@ -2,7 +2,9 @@ import type {IncomingMessage} from 'node:http';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
 import type {YxxMemberScope,YxxMemberFlags,LocalOnly} from './yxx-self-service-authorization.mjs';
-import type {YxxSelfServiceStore,YxxRequestInput,YxxSupplementInput} from './yxx-self-service-store.mjs';
+import type {YxxSelfServiceStore,YxxInitialRequestInput,YxxSupplementInput} from './yxx-self-service-store.mjs';
+import type {H5UrgeInput,H5EvaluationInput} from '../contracts/yxx_h5_v2_contracts.js';
+import type {YxxH5Lifecycle} from './yxx-h5-v2-lifecycle.mjs';
 import type {YxxFeedbackInput} from '../contracts/yxx_self_service_feedback_contracts.js';
 import type {YxxFeedbackStore} from './yxx-self-service-feedback.mjs';
 type RawAuth = Record<string,unknown>;
@@ -10,10 +12,10 @@ import type {BoundApplicationRecipient} from './yxx-application-member-auth.mjs'
 import {boundApplicationRecipient} from './yxx-application-member-auth.mjs';
 export interface YxxCommandContext {readonly notification_recipient?:BoundApplicationRecipient;readonly profile:YxxProfile;readonly flags:YxxMemberFlags;readonly write_flag:boolean;readonly csrf_token?:string;readonly session_generation:string|null;readonly scope:YxxMemberScope}
 export type YxxVerifiedWriteContext=YxxCommandContext & {profile:'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP';write_flag:true;csrf_token:string};
-export interface YxxHttpCommandInput {request:IncomingMessage;input:unknown;kind?:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK';requestRef?:string|undefined;transaction?:PostgresTransaction}
-export interface YxxQuotaInput {profile:YxxProfile;scope:YxxMemberScope;kind:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK';client_command_id:string;transaction:PostgresTransaction}
+export interface YxxHttpCommandInput {request:IncomingMessage;input:unknown;kind?:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK'|'URGE'|'EVALUATION';requestRef?:string|undefined;transaction?:PostgresTransaction}
+export interface YxxQuotaInput {profile:YxxProfile;scope:YxxMemberScope;kind:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK'|'URGE'|'EVALUATION';client_command_id:string;transaction:PostgresTransaction}
 export type YxxQuota = LocalOnly<YxxQuotaInput,boolean>;
-export interface YxxCommandOptions {feedbackStore?:YxxFeedbackStore|null;store:Pick<YxxSelfServiceStore,'accept'|'acceptInTransaction'|'command'>;authenticate:(request:IncomingMessage)=>unknown|Promise<unknown>;recheck:LocalOnly<{request:IncomingMessage;context:YxxCommandContext;transaction?:PostgresTransaction}>;profile?:YxxProfile;flags?:unknown;quota:YxxQuota}
+export interface YxxCommandOptions {h5Lifecycle?:YxxH5Lifecycle|null;feedbackStore?:YxxFeedbackStore|null;store:Pick<YxxSelfServiceStore,'accept'|'acceptInTransaction'|'command'>;authenticate:(request:IncomingMessage)=>unknown|Promise<unknown>;recheck:LocalOnly<{request:IncomingMessage;context:YxxCommandContext;transaction?:PostgresTransaction}>;profile?:YxxProfile;flags?:unknown;quota:YxxQuota}
 export type YxxSelfServiceCommand=ReturnType<typeof createYxxMemberCommandContext>;
 import { timingSafeEqual } from 'node:crypto';
 import { snapshotP2015Json } from './p2-015-domain-contracts.mjs';
@@ -25,6 +27,10 @@ function fail(code:string):never {
   const error = new Error(code) as Error & {code:string};
   error.code = code;
   throw error;
+}
+
+function preserveUnavailable(error:unknown):void{
+  if(error&&typeof error==='object'&&('status' in error&&error.status===503||'code' in error&&['YXX_ENTRY_UNAVAILABLE','YXX_UNAVAILABLE','APPLICATION_MEMBER_UNAVAILABLE'].includes(String(error.code))))throw error;
 }
 
 function text(value:unknown, code:string, maximum = 128) {
@@ -147,7 +153,7 @@ function sameAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
 // come from protected server dependencies; none can be supplied by the form.
 // `quota.localOnly` is an explicit contract: its callback may use only the
 // supplied transaction/local state and must never call OAuth or a network API.
-export function createYxxMemberCommandContext({ store, feedbackStore = null, authenticate, recheck, profile = 'OAUTH_ONLY', flags = {}, quota }:YxxCommandOptions={} as YxxCommandOptions) {
+export function createYxxMemberCommandContext({ store, feedbackStore = null,h5Lifecycle=null, authenticate, recheck, profile = 'OAUTH_ONLY', flags = {}, quota }:YxxCommandOptions={} as YxxCommandOptions) {
   if (!store?.accept || typeof authenticate !== 'function' || !PROFILES.has(profile)
     || typeof recheck !== 'function' || recheck.localOnly !== true
     || typeof quota !== 'function' || quota.localOnly !== true) {
@@ -156,10 +162,10 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
   const configuredFlags = configFlags(flags);
 
   async function authorize({ request, input, kind = 'SUBMIT' }:YxxHttpCommandInput={} as YxxHttpCommandInput) {
-    if (!['SUBMIT', 'SUPPLEMENT','FEEDBACK'].includes(kind)) fail('YXX_COMMAND_INPUT_INVALID');
+    if (!['SUBMIT', 'SUPPLEMENT','FEEDBACK','URGE','EVALUATION'].includes(kind)) fail('YXX_COMMAND_INPUT_INVALID');
     const safeInput = snapshotP2015Json(input) as RawAuth | null;
     let auth:RawAuth|null;
-    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch { fail('YXX_AUTH_REQUIRED'); }
+    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch(error) { preserveUnavailable(error);fail('YXX_AUTH_REQUIRED'); }
     const context = validatedAuth(auth, profile, configuredFlags);
     if (!equalSecret(header(request, 'x-csrf-token'), context.csrf_token)) fail('YXX_CSRF_INVALID');
     const commandId = safeInput?.client_command_id;
@@ -167,14 +173,14 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
     return context;
   }
 
-  async function checkQuota(context:YxxCommandContext,value:YxxRequestInput|YxxSupplementInput|YxxFeedbackInput,kind:'SUBMIT'|'SUPPLEMENT'|'FEEDBACK',transaction:PostgresTransaction) {
+  async function checkQuota(context:YxxCommandContext,value:YxxInitialRequestInput|YxxSupplementInput|YxxFeedbackInput|H5UrgeInput|H5EvaluationInput,kind:YxxQuotaInput['kind'],transaction:PostgresTransaction) {
     try { return await quota({ profile: context.profile, scope: context.scope, kind, client_command_id: value.client_command_id, transaction }) === true; }
     catch { return false; }
   }
 
-  async function verifyBeforeCommit(context:YxxCommandContext,request:IncomingMessage,transaction:PostgresTransaction) {
+  async function verifyBeforeCommit(context:YxxCommandContext,request:IncomingMessage,transaction?:PostgresTransaction) {
     let latest:RawAuth|null;
-    try { latest = snapshotP2015Json(await recheck({ request, context, transaction })) as RawAuth|null; }
+    try { latest = snapshotP2015Json(await recheck({ request, context, ...(transaction?{transaction}:{}) })) as RawAuth|null; }
     catch (error) {
       if ((error as {code?:string}|null)?.code === 'YXX_MEMBER_WRITE_DISABLED' || (error as {code?:string}|null)?.code === 'YXX_COMMAND_AUTH_INVALID') throw error;
       fail('YXX_AUTH_RECHECK_FAILED');
@@ -185,7 +191,7 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
   }
 
   async function accept({ request, input, kind = 'SUBMIT', requestRef }:YxxHttpCommandInput={} as YxxHttpCommandInput) {
-    if(kind==='FEEDBACK')fail('YXX_COMMAND_INPUT_INVALID');
+    if(kind!=='SUBMIT'&&kind!=='SUPPLEMENT')fail('YXX_COMMAND_INPUT_INVALID');
     const context = await authorize({ request, input, kind });
     return store.accept({ scope: context.scope, input, kind, requestRef,...(context.notification_recipient?{notificationRecipient:context.notification_recipient}:{}),
       onNewCommand: ({ value, kind: commandKind, transaction }) => checkQuota(context, value, commandKind, transaction),
@@ -193,7 +199,7 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
   }
 
   async function acceptInTransaction({ request, input, kind = 'SUBMIT', requestRef, transaction }:YxxHttpCommandInput & {transaction:PostgresTransaction}={} as YxxHttpCommandInput & {transaction:PostgresTransaction}) {
-    if(kind==='FEEDBACK')fail('YXX_COMMAND_INPUT_INVALID');
+    if(kind!=='SUBMIT'&&kind!=='SUPPLEMENT')fail('YXX_COMMAND_INPUT_INVALID');
     const context = await authorize({ request, input, kind });
     return store.acceptInTransaction({ scope: context.scope, input, kind, requestRef,...(context.notification_recipient?{notificationRecipient:context.notification_recipient}:{}), transaction,
       onNewCommand: ({ value, kind: commandKind, transaction: current }) => checkQuota(context, value, commandKind, current),
@@ -202,7 +208,7 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
 
   async function commandStatus({ request, clientCommandId }:{request:IncomingMessage;clientCommandId:unknown}={} as {request:IncomingMessage;clientCommandId:unknown}) {
     let auth:RawAuth|null;
-    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch { fail('YXX_AUTH_REQUIRED'); }
+    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch(error) { preserveUnavailable(error);fail('YXX_AUTH_REQUIRED'); }
     const context = validatedReadAuth(auth, profile, configuredFlags);
     const result = await store.command({ scope: context.scope, clientCommandId });
     let latest:RawAuth|null;
@@ -222,7 +228,18 @@ export function createYxxMemberCommandContext({ store, feedbackStore = null, aut
       onBeforeCommit:({transaction:tx}:{transaction:PostgresTransaction})=>verifyBeforeCommit(context,request,tx)};
     return transaction?feedbackStore.acceptInTransaction({...options,transaction}):feedbackStore.accept(options);
   }
-  return Object.freeze({ authorize, accept, acceptInTransaction, commandStatus, feedback });
+  async function lifecycle({request,input,requestRef,transaction}:YxxHttpCommandInput,purpose:'URGE'|'EVALUATION'){
+    if(!h5Lifecycle)fail('YXX_MEMBER_WRITE_DISABLED');if(!requestRef)fail('YXX_COMMAND_INPUT_INVALID');
+    const context=await authorize({request,input,kind:purpose});
+    const options={scope:context.scope,input,requestRef,
+      onNewCommand:({value,transaction:tx}:{value:H5UrgeInput|H5EvaluationInput;transaction:PostgresTransaction})=>checkQuota(context,value,purpose,tx),
+      onBeforeCommit:({transaction:tx}:{transaction:PostgresTransaction})=>verifyBeforeCommit(context,request,tx)};
+    return purpose==='URGE'?(transaction?h5Lifecycle.urgeInTransaction({...options,transaction}):h5Lifecycle.urge(options))
+      :(transaction?h5Lifecycle.evaluateInTransaction({...options,transaction}):h5Lifecycle.evaluate(options));
+  }
+  return Object.freeze({ authorize, accept, acceptInTransaction, commandStatus, feedback,
+    async revalidateWrite({request,context,transaction}:{request:IncomingMessage;context:YxxVerifiedWriteContext;transaction?:PostgresTransaction}):Promise<void>{await verifyBeforeCommit(context,request,transaction);},
+    urge:(input:YxxHttpCommandInput)=>lifecycle(input,'URGE'),evaluate:(input:YxxHttpCommandInput)=>lifecycle(input,'EVALUATION') });
 }
 
 export const createYxxSelfServiceCommand = createYxxMemberCommandContext;
