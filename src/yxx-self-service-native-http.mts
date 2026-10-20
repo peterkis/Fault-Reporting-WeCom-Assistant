@@ -425,7 +425,8 @@ export function createYxxSelfServiceNativeHttp({
       if (requestPath && request.method === 'POST') {
         if (url.search) throw error('YXX_INPUT_INVALID');
         assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request, { requireWrite: true });
-        if(input.schema_version!==1)throw error('YXX_INPUT_INVALID');
+        // V2 requires explicit negotiation; legacy shape validation stays in the command Port.
+        if(input.schema_version===2)throw error('YXX_INPUT_INVALID');
         if (header(request, 'x-csrf-token') !== (context as RawAuth).csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await command.accept({ request, input });
         const latest = await currentMember(request, { requireWrite: true });
