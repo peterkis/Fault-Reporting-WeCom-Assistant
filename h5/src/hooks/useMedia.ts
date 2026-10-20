@@ -18,7 +18,7 @@ export function useMedia(bootstrap:Bootstrap,onTranscript:(text:string)=>void){
   const getSdk=async()=>{
     if(sdk.current)return sdk.current;
     if(!native||!bootstrap.h5.sdk.corp_id)throw new Error('voiceUnavailable');
-    const ww=await import('@wecom/jssdk');
+    const ww=await import('../lib/wecom');
     ww.register({corpId:bootstrap.h5.sdk.corp_id,...(bootstrap.h5.sdk.agent_id?{agentId:bootstrap.h5.sdk.agent_id}:{}),jsApiList:['startRecord','stopRecord','onVoiceRecordEnd','playVoice','stopVoice','uploadVoice','translateVoice','chooseImage','uploadImage','getLocalImgData'],getConfigSignature:url=>api.signature(url,'CORP',bootstrap.csrf_token),getAgentConfigSignature:url=>api.signature(url,'AGENT',bootstrap.csrf_token)});
     sdk.current=ww;return ww;
   };
