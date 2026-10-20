@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yixiaoxiu.local/contracts/h5-media-metadata",
+  "title": "Private H5 media metadata without storage location",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["media_ref", "kind", "mime_type", "byte_size", "duration_ms", "playback_status", "playback_mime_type"],
+  "properties": {
+    "media_ref": {"type": "string", "format": "uuid"},
+    "kind": {"enum": ["VOICE", "IMAGE", "VIDEO"]},
+    "mime_type": {"type": "string", "maxLength": 64},
+    "byte_size": {"type": "integer", "minimum": 1, "maximum": 20971520},
+    "duration_ms": {"type": ["integer", "null"], "minimum": 1, "maximum": 60000},
+    "playback_status": {"enum": ["READY", "PENDING", "UNAVAILABLE"]},
+    "playback_mime_type": {"type": ["string", "null"], "maxLength": 64}
+  }
+}
