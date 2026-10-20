@@ -87,7 +87,8 @@ export function isH5ProductionInput(file: string): boolean {
     || file.startsWith('h5/src/') && !file.startsWith('h5/src/dev/')
     || file.startsWith('h5/public/assets/');
 }
-const H5_ASSET = /^assets\/[A-Za-z0-9_-]+\.(?:js|css|woff2|png|jpe?g|webp|svg)$/u;
+// Vite retains module qualifiers (for example wecom.prod) in hashed chunk names.
+const H5_ASSET = /^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2|png|jpe?g|webp|svg)$/u;
 const H5_PUBLIC_ASSET = /^assets\/[A-Za-z0-9_-]+\.(?:woff2|png|jpe?g|webp|svg)$/u;
 const H5_NON_PRODUCTION = /(?:^|\/)(?:docs|design-baseline|dev|__fixtures__|fixtures|preview)(?:[/.]|$)|^assets\/(?:preview|fixture)(?:[-_.]|$)/u;
 export function h5OutputFiles(root: string, withInventories = true): string[] {

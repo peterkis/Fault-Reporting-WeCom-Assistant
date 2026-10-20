@@ -42,7 +42,8 @@ function fixture():string {
   put(root,'h5/tsconfig.json',JSON.stringify({compilerOptions:{target:'ES2022',lib:['ES2022','DOM','DOM.Iterable'],module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',strict:true,skipLibCheck:true,noUncheckedIndexedAccess:true,exactOptionalPropertyTypes:true,useUnknownInCatchVariables:true,noEmit:true,noEmitOnError:true,verbatimModuleSyntax:true,forceConsistentCasingInFileNames:true,types:['vite/client']},include:['src','vite.config.ts'],exclude:['src/dev']}));
   put(root,'h5/vite.config.ts',"import {defineConfig} from 'vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
   put(root,'h5/index.html','<!doctype html><html lang="zh-CN"><head><title>H5 artifact fixture</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
-  put(root,'h5/src/main.tsx',"import {createRoot} from 'react-dom/client'; import {Screen} from './screen'; import './style.css'; const root=document.getElementById('root'); if(root)createRoot(root).render(<Screen/>); if(import.meta.env.DEV)void import('./dev/preview');\n");
+  put(root,'h5/src/main.tsx',"import {createRoot} from 'react-dom/client'; import {Screen} from './screen'; import './style.css'; const root=document.getElementById('root'); if(root)createRoot(root).render(<Screen/>); document.body.addEventListener('fixture-native',()=>import('./bridge.native').then(module=>module.activate())); if(import.meta.env.DEV)void import('./dev/preview');\n");
+  put(root,'h5/src/bridge.native.ts',"export function activate(){document.documentElement.dataset.bridge='ready';}\n");
   put(root,'h5/src/screen.tsx',"import logo from './logo.svg'; export function Screen(){return <main><img src={logo} alt=\"synthetic\"/>H5 production</main>;}\n");
   put(root,'h5/src/style.css','main{display:block;color:#123456}');
   put(root,'h5/src/logo.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>');
@@ -80,6 +81,7 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
       buildH5(root);
       const files=h5OutputFiles(root);
       assert.ok(files.some(file=>/^assets\/.+\.js$/u.test(file)));
+      assert.ok(files.some(file=>/^assets\/bridge\.native-[A-Za-z0-9_-]+\.js$/u.test(file)));
       assert.ok(files.some(file=>/^assets\/.+\.css$/u.test(file)));
       assert.ok(files.includes('assets/icon.png'));
       assert.ok(files.includes('assets/support.svg'));
