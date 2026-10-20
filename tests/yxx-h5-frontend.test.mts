@@ -4,15 +4,16 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
+const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 
 async function moduleUrl(path:string):Promise<string>{
-  const source=await readFile(resolve(process.cwd(),'h5/src',path),'utf8');
+  const source=await readFile(resolve(sourceRoot,'h5/src',path),'utf8');
   let output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,verbatimModuleSyntax:true}}).outputText;
   if(path==='api/client.ts')output=output.replace("'../lib/command'",JSON.stringify(await moduleUrl('lib/command.ts')));
   return 'data:text/javascript;base64,'+Buffer.from(output).toString('base64');
 }
 test('H5 frozen Stitch HTML and PNG remain byte identical to their recorded source hashes',async()=>{
- const baseline=resolve(process.cwd(),'h5/design-baseline');
+ const baseline=resolve(sourceRoot,'h5/design-baseline');
  const manifest=JSON.parse(await readFile(resolve(baseline,'sha256.json'),'utf8'));
  assert.equal(manifest.project_id,'1016264531564507497');assert.equal(manifest.files.length,16);
  for(const entry of manifest.files){assert.match(entry.file,/^[a-z0-9]+\.(html|png)$/);assert.equal(createHash('sha256').update(await readFile(resolve(baseline,entry.file))).digest('hex'),entry.sha256,entry.file);}
