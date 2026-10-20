@@ -19,8 +19,8 @@ test('H5 runtime and CLI stay disabled by default and reject non-boolean enablem
   assert.deepEqual(readWorkbenchH5RuntimeOptions({}),{enabled:false});
   assert.deepEqual(readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_ENABLED:'false'}),{enabled:false});
   for(const value of ['TRUE','1','yes',''])assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_ENABLED:value}),/YIXIAOXIU_H5_ENABLED/u);
-  // @ts-expect-error Negative runtime boundary: string flags must be rejected rather than coerced.
-  assert.throws(()=>validateYxxH5RuntimeOptions({enabled:'true'}),/CONFIG_INVALID/u);
+  // Exercise malformed JavaScript input without weakening the TypeScript contract.
+  assert.throws(()=>Reflect.apply(validateYxxH5RuntimeOptions,undefined,[{enabled:'true'}]),/CONFIG_INVALID/u);
   assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_PROGRESS_ENABLED:'true'}),/YIXIAOXIU_H5_PROGRESS_ENABLED/u);
 });
 
