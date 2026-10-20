@@ -6523,6 +6523,42 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/mvp-application-member.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/mvp-group-replies.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/mvp-notification-policy.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/mvp-application-members.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -7639,7 +7675,11 @@
       "tests/conversation-rule-admission.integration.test.mts",
       "tests/conversation-inbox.browser.test.mts",
       "tests/human-workbench-configuration.test.mts",
-      "tests/human-workbench-process.browser.test.mts"
+      "tests/human-workbench-process.browser.test.mts",
+      "tests/mvp-application-member.test.mts",
+      "tests/mvp-group-replies.integration.test.mts",
+      "tests/mvp-notification-policy.integration.test.mts",
+      "tests/mvp-application-members.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",

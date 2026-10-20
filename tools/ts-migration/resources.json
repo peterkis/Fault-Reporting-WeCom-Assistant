@@ -366,6 +366,7 @@
     "contracts/workbench_conversation_delivery_retry_v2.schema.json",
     "contracts/workbench_conversation_delivery_reconcile_v2.schema.json",
     "database/migrations/062_workbench_supplement_follow_up.sql",
+    "database/migrations/063_mvp_notifications_app_members.sql",
     "contracts/workbench_supplement_follow_up_contracts.d.ts",
     "contracts/workbench_supplement_follow_up_command.schema.json",
     "contracts/workbench_supplement_follow_up_reply_command.schema.json",

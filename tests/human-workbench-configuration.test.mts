@@ -21,7 +21,7 @@ test('configuration rejects missing secrets, unverified member configuration, wr
  for(const key of ['PILOT_LOG_IDENTITY_HASH_KEY','P2_016_REPORTER_HMAC_SECRET','APP_SECRET'])assert.throws(()=>readHumanWorkbenchConfiguration({...f.env,[key]:undefined}),new RegExp(key,'u'));
  assert.throws(()=>readHumanWorkbenchConfiguration({...f.env,P2_016_REPORTER_HMAC_SECRET:f.env.PILOT_LOG_IDENTITY_HASH_KEY}),/P2_016_REPORTER_HMAC_SECRET/u);
  const check=()=>readHumanWorkbenchConfiguration(f.env);
- const invalids:unknown[]=[{...f.settings,transportEnabled:'true'},{...f.settings,memberEntry:{enabled:false}},{...f.settings,bot:{...f.settings.bot,id:'wrong'}},{...f.settings,groupRoutes:[]},{...f.settings,listenPort:'43166'}];
+ const invalids:unknown[]=[{...f.settings,transportEnabled:'true'},{...f.settings,memberEntry:{enabled:false}},{...f.settings,bot:{...f.settings.bot,id:'wrong'}},{...f.settings,listenPort:'43166'}];
  invalids.push({...f.settings,memberEntry:{...f.settings.memberEntry,identityMode:'VERIFIED_SAME_NAMESPACE',reporterUserIds:undefined}});
  for(const s of invalids){writeFileSync(f.file,JSON.stringify(s));assert.throws(check,/HUMAN_WORKBENCH_CONFIG_INVALID/u);}f.save();
  f.settings.transportEnabled=true;f.save();assert.throws(check,/WORKBENCH_EXTERNAL_IO_APPROVED/u);
@@ -38,6 +38,12 @@ test('role mapping preserves key purposes and excludes other roles credentials a
  assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'').publicOrigin,undefined);assert.equal(JSON.parse(app.WORKBENCH_ROLE_SETTINGS??'').groupRoutes,undefined);
  assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'').memberEntry,undefined);assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'').notificationBindingsFile,undefined);assert.equal(readWorkbenchWorkerSettings(worker).botId,f.settings.bot.id);
  assert.throws(()=>readP2016LiveConfiguration({WORKBENCH_CONVERSATIONS_ENABLED:'true'},{requireApproval:false}),/P2_016_BASE_FLAGS_MUST_REMAIN_FALSE/u);
+}));
+test('MVP group reception and response scopes do not require a Webhook for every group',async()=>fixture(f=>{
+ f.settings.groupRoutes=[];f.save();
+ const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);
+ const app=readWorkbenchRoleSettings('APP',workbenchRoleEnvironment(c,'APP'));assert.deepEqual(app.groupNotificationTargets,[]);
+ assert.equal(c.settings.bot.groupTargetHashes.length>0,true);
 }));
 test('notification authority rereads revocation and expiry without borrowing identity HMAC for reporter scope',async()=>fixture(async f=>{
  const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);

@@ -1,5 +1,7 @@
 # 医小修 App 原来源轮次通知（WBINT-T25）
 
+2026-10-20 前向调整见 [ADR-0034](../../../adr/0034_mvp_notifications_and_application_members.md)。human-v1 使用 `FIRST_HANDLING`（首次实际接单或开始）与 `STAFF_COMPLETED`，派单、转派、等待不通知。063 为原 Web Request 追加不可改投的应用收件绑定；新 `VERIFIED_APP_OPENID` 模式不依赖逐人名单或当前 OAuth 会话定位通知。发送前在事务外核验当前应用成员，随后保留原来源、绑定、物理留存和等待后终检。原生应用身份直接作为应用收件人，不能当作原始 userid 再转换。个人卡片没有顶部渠道来源，已受理标题为“工程师正在处理你的工单”。下文 T25 保留为原兼容模式合同和历史证据；新 H5 接口见[接入说明](../../../h5/README.md)。
+
 已实现、默认关闭；仅本地隔离合成验证。实际实现和各被测祖先见 [T25 执行记录](../../../plans/admin-workbench-integration/execution/t25.md)。没有真实送达或现场批准。
 
 ## 1. 配置、输入与关闭

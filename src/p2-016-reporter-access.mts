@@ -3,7 +3,7 @@ interface GrantFields { grant_id: string; nonce: string; ticket_id: string; publ
 interface GrantRow extends GrantFields { state: string; public_ref: string; ref_status: string; token_hash: string }
 export interface ReporterScope { session_id: string | null; ticket_id: string; public_ref_id: string; public_ref: string }
 interface PublicRefRow { id: string; public_ref: string; reporter_binding_hash: string; status: string }
-interface DeliveryBindingRow { public_ref: string; recipient_binding_hash: string; provider: string; channel_account_id: string; target_id: string; target_hash: string; idempotency_key: string; content_hash: string; content: { public_ref?: unknown } | null; source_provider: string; source_bot_id: string; reporter_wecom_userid: string; token?: never }
+interface DeliveryBindingRow { retention_epoch:string;public_ref: string; recipient_binding_hash: string; provider: string; channel_account_id: string; target_id: string; target_hash: string; idempotency_key: string; content_hash: string; content: { public_ref?: unknown } | null; source_provider: string; source_bot_id: string; reporter_wecom_userid: string; token?: never }
 interface AccessOptions { pool?: PostgresPool; enabled?: boolean; hmacSecret?: string; now?: () => string; grantTtlMs?: number; sessionTtlMs?: number }
 export type ReporterAccess = ReturnType<typeof createP2016ReporterAccess>;
 
@@ -92,7 +92,8 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
       const stamp=stampP2016(now);
       const q=await (pool as NonNullable<typeof pool>).query<DeliveryBindingRow>(`SELECT r.public_ref,b.recipient_binding_hash,d.provider,d.channel_account_id,
         d.target_id,d.target_hash,d.idempotency_key,m.content_hash,m.content,
-        i.source_provider,i.source_bot_id,i.reporter_wecom_userid
+        i.source_provider,i.source_bot_id,i.reporter_wecom_userid,
+        LEAST(m.retention_until_epoch_ms,i.retention_until_epoch_ms,cm.retention_until_epoch_ms,COALESCE(j.retention_until_epoch_ms,i.retention_until_epoch_ms))::text AS retention_epoch
         FROM communication.ticket_notification_binding b
         JOIN communication.delivery d ON d.id=b.delivery_id AND d.outbox_id=b.outbox_id
         JOIN communication.outbox o ON o.id=b.outbox_id AND o.message_id=b.message_id
@@ -100,6 +101,8 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
         JOIN pilot_ticket.ticket t ON t.id=b.ticket_id
         JOIN pilot_ticket.ticket_event e ON e.event_id=b.ticket_event_id AND e.ticket_id=t.id
         JOIN intake.service_intake i ON i.id=t.source_intake_id
+        JOIN channel.message_inbox cm ON cm.id=i.primary_message_id AND cm.provider=i.source_provider AND cm.bot_id=i.source_bot_id
+          AND cm.sender_user_id=i.reporter_wecom_userid AND cm.chat_type=i.source_chat_type AND cm.chat_id IS NOT DISTINCT FROM i.source_chat_id
         JOIN pilot_ticket.reporter_public_ref r ON r.ticket_id=t.id AND r.reporter_binding_hash=b.recipient_binding_hash
         LEFT JOIN intake.contact_journey j ON j.id=r.journey_id
         WHERE b.delivery_id=$1::uuid AND b.destination_type='PERSON' AND d.target_type='PERSON'
@@ -107,6 +110,7 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
           AND m.purpose='SYSTEM_NOTIFICATION' AND m.sender_system_code='TICKET_LIFECYCLE'
           AND o.route_policy='P2_016_REPORTER' AND m.retention_until_epoch_ms>$2::bigint
           AND i.retention_until_epoch_ms>$2::bigint
+          AND cm.retention_until_epoch_ms>platform.physical_epoch_ms()
           AND (r.journey_id IS NULL OR j.retention_until_epoch_ms>$2::bigint)`,[deliveryId,stamp.epoch]);
       const b=(q.rows[0] as (typeof q.rows)[number]);
       if(q.rowCount!==1||b.provider!=='WECOM_AIBOT'||b.source_provider!==b.provider||b.source_bot_id!==b.channel_account_id

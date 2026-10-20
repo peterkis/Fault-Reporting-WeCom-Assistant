@@ -175,7 +175,9 @@
     "premigration:gate": "npm run migration:tools",
     "migration:gate": "node .build/tools/gate.mjs",
     "migration:verify-artifact": "node .build/tools/verify-artifact.mjs",
-    "docs:agents:check": "node .build/tools/check-agent-docs.mjs"
+    "docs:agents:check": "node .build/tools/check-agent-docs.mjs",
+    "mvp:notifications:migrate:check": "node .build/tools/verify-artifact.mjs && node .build/runtime/scripts/mvp-notifications-migrate.mjs --check",
+    "mvp:notifications:migrate:apply": "node .build/tools/verify-artifact.mjs && node .build/runtime/scripts/mvp-notifications-migrate.mjs --apply"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

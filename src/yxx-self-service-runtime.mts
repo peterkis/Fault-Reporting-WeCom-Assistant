@@ -8,7 +8,7 @@ import type {YxxMemberFlags} from './yxx-self-service-authorization.mjs';
 import type {YxxQuota} from './yxx-self-service-command.mjs';
 import type {YxxOrchestratorOptions} from './yxx-self-service-orchestrator.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
-export interface YxxSelfServiceExtensionOptions {reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
+export interface YxxSelfServiceExtensionOptions {applicationMemberVerifier?:ApplicationMemberVerifier|null;reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
 import { createHmac } from 'node:crypto';
 import {createYxxSelfServiceFeedback} from './yxx-self-service-feedback.mjs';
 import { createYxxMemberAuthorizer } from './p2-g2-yixiaoxiu-authorizer.mjs';
@@ -23,6 +23,8 @@ import { createYxxSelfServiceNativeHttp } from './yxx-self-service-native-http.m
 import { createYxxSelfServiceOrchestrator, createYxxSelfServiceWorker } from './yxx-self-service-orchestrator.mjs';
 import {loadServiceCatalog} from './p2-007-service-catalog.mjs';
 import {createRuleEngine} from './p2-007-rule-engine.mjs';
+import {createYxxApplicationMemberAuthentication} from './yxx-application-member-auth.mjs';
+import type {ApplicationMemberVerifier} from './wecom-application-member.mjs';
 
 // Composition only: the existing command/store/Core retain all business authority.
 export function resolveYxxServiceCatalog(selected:ServiceCatalog|null|undefined,owner:{getServiceCatalog?:()=>ServiceCatalog}|null|undefined,customProcessor=false):ServiceCatalog|null {
@@ -35,18 +37,20 @@ export function resolveYxxServiceCatalog(selected:ServiceCatalog|null|undefined,
 }
 
 export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, reporterMemberEntry,
-  identityMapping, reporterHmacSecret, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
+  identityMapping, reporterHmacSecret, applicationMemberVerifier=null, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
   ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true as const}), serviceCatalog, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false }:YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled?:boolean}={} as YxxSelfServiceExtensionOptions) {
   if(typeof reporterFeedbackEnabled!=='boolean'||typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled)failYxx('CONFIG_INVALID');
   const config = validateYxxEntryConfig(reporterMemberEntry);
   if (!['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(profile)
-    || config.identityMode !== 'VERIFIED_DELEGATED_MAPPING'
+    || !['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(config.identityMode)
+    || config.identityMode==='VERIFIED_APP_OPENID'&&typeof applicationMemberVerifier!=='function'
     || typeof reporterHmacSecret !== 'string' || Buffer.byteLength(reporterHmacSecret) < 32
     || (pool?.options?.max as number) > 4) failYxx('CONFIG_INVALID');
   const member = createYxxMemberAuthorizer({ pool, oauth, config, identityMapping });
   const digest = (purpose:string,values:unknown[]) => createHmac('sha256', reporterHmacSecret)
     .update(JSON.stringify([purpose, ...values])).digest('hex');
-  function authenticate(request:IncomingMessage) {
+  const appMember=config.enabled&&config.identityMode==='VERIFIED_APP_OPENID'&&applicationMemberVerifier?createYxxApplicationMemberAuthentication({oauth:oauth as EnabledWeComOAuth,config,identityMapping:identityMapping??null,secret:reporterHmacSecret,flags:featureFlags,verifyMember:applicationMemberVerifier}):null;
+  function legacyAuthenticate(request:IncomingMessage) {
     const token = readWeComCookie(request, sessionName);
     const identity = member.authenticate(token);
     // Mapping is already verified and bounded at initialization, never fetched in a transaction.
@@ -57,13 +61,15 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
       source_corp_scope: config.corpId, source_app_scope: config.agentId, proof_ref: config.proofRef,
       bot_owner: { botId: config.botId, userId: identity.userid } };
   }
+  const authenticate=(request:IncomingMessage)=>appMember?appMember.authenticate(request,profile):legacyAuthenticate(request);
+  const recheck=(request:IncomingMessage)=>appMember?appMember.recheck(request):legacyAuthenticate(request);
   const store = createYxxSelfServiceStore({ pool, scopeSecret: reporterHmacSecret });
   const feedbackStore=reporterFeedbackEnabled?createYxxSelfServiceFeedback({pool,scopeSecret:reporterHmacSecret}):null;
   const command = createYxxMemberCommandContext({ store, feedbackStore, profile, flags: featureFlags, authenticate,
-    recheck: Object.assign(({ request }:{request:IncomingMessage}) => authenticate(request), { localOnly: true as const }),
+    recheck: Object.assign(({ request }:{request:IncomingMessage}) => recheck(request), { localOnly: true as const }),
     quota });
   const authorization = createYxxSelfServiceAuthorization({ profile, flags: featureFlags, authenticate,
-    recheck: Object.assign(authenticate, { localOnly: true as const }) });
+    recheck: Object.assign(recheck, { localOnly: true as const }) });
   const query = createYxxSelfServiceQuery({ pool, store, feedbackStore, authorization, scopeSecret: reporterHmacSecret });
   const catalog=resolveYxxServiceCatalog(serviceCatalog,ruleEngine);
   const native = createYxxSelfServiceNativeHttp({ publicOrigin, oauth:oauth as EnabledWeComOAuth,

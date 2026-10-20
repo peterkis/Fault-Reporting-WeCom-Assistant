@@ -291,10 +291,16 @@ _Avoid_: 任意选择可用通道、最后一次消息来自哪里就发到哪�
 **消息推送（WeCom Message Push）**：本项目用于向报修来源群发送消息并强 @ 原报修人的企业微信能力，与 Bot 接收报修和私聊回复分别建模。
 _Avoid_: Bot 群内回复、Bot 私聊、医小修应用模板通知
 
+**群内 Bot 回应（Bot Group Reply）**：Bot 对群内原消息发送的固定受理确认、私聊引导或单纯致谢回复。人工接管后仅原消息绑定的纯致谢允许自动回应。
+_Avoid_: Webhook 原生提及、群生命周期进展广播、恢复自动追问
+
+**应用通知收件绑定（Application Notification Recipient Binding）**：服务端在 H5 报修时核验并保存的本应用通知身份、命名空间和签名依据，独立于 OAuth 会话。
+_Avoid_: Bot 原始 userid、PC 权限、前端指定收件人、全院人员目录
+
 **Bot 私聊回复（Bot Direct Reply）**：Bot 向报修人单独回复的沟通行为，包括收到群内 @Bot 后向该用户发起的回复。
 _Avoid_: 在原群回复、消息推送强 @
 
-**来源群状态通知（Origin Group Status Notification）**：通过消息推送向报修原始群发送的简短进展通知，以强 @ 提醒原报修人，并配有该报修人的 Bot 私聊通知。
+**来源群状态通知（Origin Group Status Notification）**：工作人员完工后，通过原群 Webhook 强 @ 原报修人的简短通知；按原 botId 与 groupId 路由，无 Webhook 时跳过，个人通知独立。前向合同见 [ADR-0034](adr/0034_mvp_notifications_and_application_members.md)。
 _Avoid_: Bot 群内回复、任意群广播、完整报修内容公开、群消息成功即私聊成功
 
 **待发承诺（Communication Outbox）**：已经记录、等待可靠执行的对外发送意图。

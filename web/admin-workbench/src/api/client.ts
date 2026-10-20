@@ -197,7 +197,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
     if(hasNode){
       const node=row.node;
       if(node===null){if(row.cycle_no!==null)throw new ApiError(502,'INVALID_RESPONSE');round={node:null,cycle_no:null};}
-      else {if(node!=='FIRST_RESPONSIBILITY'&&node!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');round={node,cycle_no:version(row.cycle_no)};}
+      else {if(node!=='FIRST_RESPONSIBILITY'&&node!=='FIRST_HANDLING'&&node!=='STAFF_COMPLETED')throw new ApiError(502,'INVALID_RESPONSE');round={node,cycle_no:version(row.cycle_no)};}
     }
     return {...round,...(hasRoute?{route_kind:'YIXIAOXIU_APP' as const}:{}),notification_type:row.notification_type as P2016TicketNotification['notification_type'],
       destination_type:row.destination_type as P2016TicketNotification['destination_type'],delivery_id:id(row.delivery_id),

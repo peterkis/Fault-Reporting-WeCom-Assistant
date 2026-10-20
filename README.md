@@ -1,5 +1,7 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+MVP 群回应、实际接单／完工通知及新 H5 自动成员后端见 [实施记录](plans/mvp-notifications-h5/README.md)、[ADR-0034](adr/0034_mvp_notifications_and_application_members.md)与[新页面接入](h5/README.md)。本候选只做本地隔离验证，未切换部署或现场发送状态。
+
 新版人工工作台运行接线：[显式 human-v1 配置、能力依赖、编译入口与停止方法](docs/runbooks/human-workbench-runtime.md)。默认关闭，本地验证不授予真实发送、部署或 Gate 批准。
 
 前后端交互服务接口统一入口：[docs/api/README.md](docs/api/README.md)。可按 [HTTP方法与完整路径](docs/api/endpoint-index.md) 检索实际宿主、认证、请求/响应、版本与错误；外部服务、内部Port及设计接口另有索引。新增或变更接口时同步该目录，维护方法见 [接口文档维护规则](docs/api/maintenance.md)。

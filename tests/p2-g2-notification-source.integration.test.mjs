@@ -6,6 +6,7 @@ import { createP2012NotificationPolicy } from '../src/p2-012-notification-policy
 import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
 import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
 
 for(const chatType of ['group','single'])test('original Ticket notification source '+chatType,async t=>{
   await withG2Runtime(async f=>{
@@ -74,9 +75,9 @@ test('original UNKNOWN source requires reconciliation after a real Outbox attemp
     let calls=0;
     const sender=createP2016WeComSender({enabled:true,cardEnabled:false,allowedTargetHashes:f.reporters.map(textHashP2016),
       gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{calls++;return {};}})}});
-    let worker=createCommunicationDeliveryWorker({pool:f.pool,sender,enabled:true});
+    let worker=createCommunicationDeliveryWorker({pool:f.pool,sender,enabled:true,attemptAdmission:composeConversationRuleAdmission()});
     assert.equal((await worker.deliver({deliveryId:delivery.id})).status,'RECONCILIATION_REQUIRED');
-    worker=createCommunicationDeliveryWorker({pool:f.pool,sender,enabled:true});
+    worker=createCommunicationDeliveryWorker({pool:f.pool,sender,enabled:true,attemptAdmission:composeConversationRuleAdmission()});
     assert.equal(await worker.deliver({deliveryId:delivery.id}),null);assert.equal(calls,1);
     const row=(await f.pool.query('SELECT status,side_effect_state,attempt_count FROM communication.delivery WHERE id=$1',[delivery.id])).rows[0];
     assert.deepEqual(row,{status:'RECONCILIATION_REQUIRED',side_effect_state:'UNKNOWN',attempt_count:1});

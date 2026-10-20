@@ -1,6 +1,7 @@
 import type {WeComAccessTokenProvider} from './p2-g2-wecom-oauth-provider.mjs';
 import {readWeComResponse} from './p2-g2-wecom-oauth-provider.mjs';
 import {validYxxUserId} from './p2-g2-yixiaoxiu-contract.mjs';
+import {ApplicationMemberUnavailableError} from './wecom-application-member.mjs';
 
 interface MemberResponse {errcode?:unknown;userid?:unknown;status?:unknown;enable?:unknown}
 interface ConversionResponse {errcode?:unknown;open_userid_list?:unknown;invalid_userid_list?:unknown}
@@ -13,24 +14,24 @@ function record(value:unknown):Record<string,unknown>|null{return value!==null&&
 export function createWorkbenchBotMemberAdmission({botId,accessTokenProvider,fetchImpl=fetch}:AdmissionOptions){
  if(typeof botId!=='string'||!botId||botId.length>128||/[\r\n\x00]/u.test(botId)||typeof accessTokenProvider!=='function')throw Error('WORKBENCH_BOT_ADMISSION_CONFIG_INVALID');
  let pending=0,tail:Promise<void>=Promise.resolve();
- return {async accepts(input:unknown):Promise<boolean>{
+ async function qualify(input:unknown,deadlineMilliseconds:number):Promise<boolean>{
   const message=record(input);
   if(message?.provider!=='WECOM_AIBOT'||message.bot_id!==botId||!validYxxUserId(message.sender_user_id)
    ||!['single','group'].includes(String(message.chat_type))||message.chat_type==='group'&&(typeof message.chat_id!=='string'||!message.chat_id||message.chat_id.length>256))return false;
-  if(pending>=32)return false;
+  if(pending>=32)throw new ApplicationMemberUnavailableError();
   pending++;
   const sender=message.sender_user_id,controller=new AbortController(),signal=controller.signal;
   let timer:ReturnType<typeof setTimeout>|undefined;
-  const deadline=new Promise<false>(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(false);},5000);});
+  const deadline=new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new ApplicationMemberUnavailableError());},deadlineMilliseconds);});
   const operation=tail.then(async()=>{
    try{
     signal.throwIfAborted();
     const token=await accessTokenProvider({signal});signal.throwIfAborted();
-    if(typeof token!=='string'||!token||token.length>4096)return false;
+    if(typeof token!=='string'||!token||token.length>4096)throw new ApplicationMemberUnavailableError();
     const conversionUrl=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');conversionUrl.searchParams.set('access_token',token);
     const converted=record(await readWeComResponse(await fetchImpl(conversionUrl,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[sender]})}),signal)) as ConversionResponse|null;
     signal.throwIfAborted();
-    if(converted?.errcode!==0){if([40014,42001].includes(Number(converted?.errcode)))accessTokenProvider.invalidate?.(token);return false;}
+    if(converted?.errcode!==0){if([40014,42001].includes(Number(converted?.errcode)))accessTokenProvider.invalidate?.(token);if([60011,60111].includes(Number(converted?.errcode)))return false;throw new ApplicationMemberUnavailableError();}
     if(!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1
      ||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length!==0))return false;
     const pair=record(converted.open_userid_list[0]);
@@ -38,13 +39,19 @@ export function createWorkbenchBotMemberAdmission({botId,accessTokenProvider,fet
     const url=new URL('https://qyapi.weixin.qq.com/cgi-bin/user/get');url.searchParams.set('access_token',token);url.searchParams.set('userid',pair.open_userid);
     const member=record(await readWeComResponse(await fetchImpl(url,{method:'GET',redirect:'error',signal}),signal)) as MemberResponse|null;
     signal.throwIfAborted();
-    if(member?.errcode!==0){if([40014,42001].includes(Number(member?.errcode)))accessTokenProvider.invalidate?.(token);return false;}
+    if(member?.errcode!==0){if([40014,42001].includes(Number(member?.errcode)))accessTokenProvider.invalidate?.(token);if([60011,60111].includes(Number(member?.errcode)))return false;throw new ApplicationMemberUnavailableError();}
     return member.userid===pair.open_userid&&member.status===1&&(member.enable===undefined||member.enable===1);
-   }catch{return false;}
+   }catch{throw new ApplicationMemberUnavailableError();}
   });
   // Keep the queue fenced until the underlying operation actually settles,
   // including a Provider that ignores cancellation after its caller timed out.
   tail=operation.then(()=>{},()=>{}).finally(()=>{pending--;});
   try{return await Promise.race([operation,deadline]);}finally{controller.abort();clearTimeout(timer);}
- }};
+ }
+ return {
+  // Receive admission remains fail-closed with its existing five-second budget.
+  accepts:(input:unknown)=>qualify(input,5000).catch(()=>false),
+  // Delivery needs the unavailable/denied distinction before its existing Worker deadline.
+  qualifyDelivery:(input:unknown)=>qualify(input,2000),
+ };
 }

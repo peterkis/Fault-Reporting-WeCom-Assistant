@@ -6,7 +6,11 @@
 
 ## 身份、profile 与开关
 
-OAuth 成员 Cookie `__Host-wecom_session`，身份经官方 namespace 映射及 canonical binding 校验。只允许当前成员的请求和机器人 Ticket。不能由 body/header 提交 reporter ID 扩权。
+OAuth 成员 Cookie `__Host-wecom_session`。既有映射模式保持原 canonical binding；新增 `VERIFIED_APP_OPENID` 模式用当前应用 OAuth 开放身份和官方 `user/get` 核验可见成员，无需逐人名单。外部核验在业务事务前，等待后执行本地会话／作用域终检。新成员拥有独立的应用命名空间；可选旧映射只保持既有 Bot 身份和历史 owner hash。不能由 body/header 指定 reporter 或通知目标，也不授予 PC 权限。
+
+新模式明确无成员资格时返回 403；成员查询暂不可用时返回既有 `503 YXX_ENTRY_UNAVAILABLE`，不将网络／Provider 故障当作撤权。两种情况均不进入业务写事务。应用通知的资格查询暂不可用时，沿既有 Worker 有界重试；实际发送后的 UNKNOWN 仍须人工核对。
+
+063 迁移为原 Web Request 绑定追加应用通知身份、命名空间、签名和核验时间；仅在服务端新报修时写入，后续不可改投。个人通知在实际接单／开始和工作人员完工产生；发送前独立复核当前成员。退出、会话过期和重启不丢失原通知定位。新页面按 [H5 接入说明](../../../h5/README.md)复用下列 API；本轮不生成页面。
 
 读取依赖 `YIXIAOXIU_MY_REPORTS_ENABLED`。写入同时要求 profile 为 MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP、`YIXIAOXIU_SELF_SERVICE_ENABLED`、MY_REPORTS_ENABLED 和当前 `write_flag`。两开关默认 false。SS011 单一批准 Reporter 的 guard 还会限制写入范围；bootstrap 是最终能力提示，不得由 profile 名推定所有成员能写。OAUTH_ONLY/MEMBER_TICKET_READONLY 没有这些自助 API 的业务能力；替代 server 对其 `/api/yixiaoxiu/*` 返回 `403 YXX_MEMBER_WRITE_DISABLED`。
 

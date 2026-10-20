@@ -6,6 +6,18 @@ export type CommunicationSenderResult = Readonly<(
   | { outcome: 'REJECTED_NOT_APPLIED' | 'UNKNOWN'; provider_message_id: null; error_code: string | null }
 ) & { retryable: boolean }>;
 export type CommunicationSend = (request: ValidatedSenderRequest) => unknown | Promise<unknown>;
+
+/** Bounds local preparation only. The operation must never perform the actual send. */
+export async function communicationPreSendCheck<T>(operation:()=>Promise<T>,signal:AbortSignal):Promise<T>{
+  let abort:(()=>void)|undefined;
+  try{
+    signal.throwIfAborted();
+    return await Promise.race([Promise.resolve().then(()=>{signal.throwIfAborted();return operation();}),new Promise<never>((_resolve,reject)=>{
+      abort=()=>reject(Error('COMMUNICATION_PRE_SEND_CHECK_UNAVAILABLE'));
+      if(signal.aborted)abort();else signal.addEventListener('abort',abort,{once:true});
+    })]);
+  }finally{if(abort)signal.removeEventListener('abort',abort);}
+}
 type RawRequest = Partial<Omit<ValidatedSenderRequest, 'message' | 'target_type' | 'signal'>> & { message?: { message_type?: unknown; content?: unknown }; target_type?: string; signal?: unknown };
 type RawResult = { outcome?: string; provider_message_id?: unknown; error_code?: unknown; retryable?: unknown };
 

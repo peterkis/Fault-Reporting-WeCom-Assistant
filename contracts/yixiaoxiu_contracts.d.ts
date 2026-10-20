@@ -12,7 +12,8 @@ export type YixiaoxiuLegacyPrepared = Readonly<{entry_path:string}>;
 export type YixiaoxiuLogout = Readonly<Record<string,never>>;
 export type YixiaoxiuLoggedOut = Readonly<{logged_out:true}>;
 export type YixiaoxiuMemberEntryConfig = Readonly<{
-  enabled:boolean; identityMode:'UNVERIFIED'|'VERIFIED_SAME_NAMESPACE'; memberIdsConfirmed:boolean;
+  enabled:boolean; identityMode:'UNVERIFIED'|'VERIFIED_SAME_NAMESPACE'|'VERIFIED_DELEGATED_MAPPING'|'VERIFIED_APP_OPENID'; memberIdsConfirmed:boolean;
+  reporterUserIds?:readonly string[];
   proofRef:string|null; proofKind:'LIVE'|'SYNTHETIC'|null; corpId:string|null; agentId:string|null; botId:string|null;
   validationProfile:'DEPLOYMENT'|'ISOLATED_TEST';
 }>;

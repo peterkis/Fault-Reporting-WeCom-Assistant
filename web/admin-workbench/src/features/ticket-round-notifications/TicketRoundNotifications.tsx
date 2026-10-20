@@ -4,7 +4,7 @@ import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {P2016TicketNotification} from '../../api/client';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
-const nodeLabels={FIRST_RESPONSIBILITY:'首次责任',STAFF_COMPLETED:'工作人员完工'};
+const nodeLabels={FIRST_RESPONSIBILITY:'首次责任',FIRST_HANDLING:'工程师接单',STAFF_COMPLETED:'工作人员完工'};
 const deliveryLabels:Record<P2016TicketNotification['status'],string>={PENDING:'待发送',LEASED:'已领取待发送',SENDING:'发送中',SENT:'已发送',DEAD_LETTER:'发送失败',RECONCILIATION_REQUIRED:'待核对',CANCELLED:'已取消'};
 const effectLabels:Record<P2016TicketNotification['side_effect_state'],string>={NOT_ATTEMPTED:'尚未尝试',ACKNOWLEDGED:'已确认',UNKNOWN:'结果未知'};
 
@@ -29,7 +29,7 @@ export function TicketRoundNotifications({ticketId,principalId}:{ticketId:string
     }finally{if(current())setLoading(false);if(request.current===controller)request.current=null;}
   },[client,principalId,ticketId]);
   useEffect(()=>{void read();return()=>{generation.current++;request.current?.abort();request.current=null;};},[read]);
-  const nodes=items?.filter(item=>item.node==='FIRST_RESPONSIBILITY'||item.node==='STAFF_COMPLETED')??[];
+  const nodes=items?.filter(item=>item.node==='FIRST_RESPONSIBILITY'||item.node==='FIRST_HANDLING'||item.node==='STAFF_COMPLETED')??[];
   return <section className="attachment-section ticket-round-notifications" role="region" aria-label="报修人通知送达">
     <details><summary>查看报修人通知送达{nodes.length?'（'+nodes.length+'）':''}</summary>
     {loading?<p role="status">正在读取通知送达状态…</p>:message?<p role="status">{message}</p>:!nodes.length?<p>当前没有可读取的轮次节点通知。</p>:<ul>{nodes.map(item=><li key={item.delivery_id}><span>

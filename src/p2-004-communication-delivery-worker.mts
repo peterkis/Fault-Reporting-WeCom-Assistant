@@ -42,6 +42,19 @@ function safeCode(value: unknown, fallback: string) {
   return typeof value === 'string' && /^[A-Z0-9_]{1,128}$/u.test(value) ? value : fallback;
 }
 
+/** The existing cancellation transition and audit, also usable for proven unsent legacy dead letters. */
+export async function cancelUnattemptedDeliveryInTransaction({transaction,deliveryId,expected,reasonCode,occurredEpochMs}:{transaction:PostgresTransaction;deliveryId:string;expected:{status:'LEASED';leaseToken:string}|{status:'DEAD_LETTER'};reasonCode:string;occurredEpochMs:string}):Promise<boolean>{
+  const epoch=assertEpochMsString(occurredEpochMs),local=formatEpochMsToShanghaiLocal(epoch);
+  const cancelled=await transaction.query<AttemptRow>(`UPDATE communication.delivery SET status='CANCELLED',side_effect_state='NOT_ATTEMPTED',attempt_count=attempt_count+1,
+    lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,send_started_at=NULL,send_started_epoch_ms=NULL,last_error_code=$4,updated_at=$5::timestamp without time zone
+    WHERE id=$1::uuid AND status=$2 AND side_effect_state='NOT_ATTEMPTED' AND ($2='DEAD_LETTER' OR lease_token=$3::uuid) RETURNING attempt_count`,
+    [deliveryId,expected.status,expected.status==='LEASED'?expected.leaseToken:null,safeCode(reasonCode,'COMMUNICATION_CANCELLED'),local]);
+  const count=cancelled.rows[0]?.attempt_count;if(count===undefined)return false;
+  await transaction.query(`INSERT INTO communication.delivery_attempt(delivery_id,attempt_no,outcome,side_effect_state,error_code,started_at,started_epoch_ms,completed_at,completed_epoch_ms)
+    VALUES($1::uuid,$2,'CANCELLED','NOT_ATTEMPTED',$3,$4::timestamp without time zone,$5::bigint,$4::timestamp without time zone,$5::bigint)`,[deliveryId,count,safeCode(reasonCode,'COMMUNICATION_CANCELLED'),local,epoch]);
+  return true;
+}
+
 function validClock(nowEpochMs: (() => unknown) | null, legacyNow: () => Date) {
   let epochMs;
   if (typeof nowEpochMs === 'function') {
@@ -206,8 +219,7 @@ export function createCommunicationDeliveryWorker({
       // Old purposes keep their existing no-hook behavior and need no Incident DDL.
       if(['INCIDENT_PUBLIC_PROGRESS','RULE_FIRST_ORCHESTRATOR'].includes(claim.sender_system_code??'')&&!attemptAdmission||attemptAdmission&&!await attemptAdmission({transaction,deliveryId:claim.id})){
         const cancellationCode=claim.sender_system_code==='RULE_FIRST_ORCHESTRATOR'?'COMMUNICATION_RULE_REPLY_SUPPRESSED':'COMMUNICATION_DESTINATION_NO_LONGER_ELIGIBLE';
-        const cancelled=await transaction.query<AttemptRow>(`UPDATE communication.delivery SET status='CANCELLED',side_effect_state='NOT_ATTEMPTED',attempt_count=attempt_count+1,lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,send_started_at=NULL,send_started_epoch_ms=NULL,last_error_code=$4,updated_at=$3::timestamp without time zone WHERE id=$1::uuid AND status='LEASED' AND lease_token=$2::uuid RETURNING attempt_count`,[claim.id,claim.lease_token,startedAt.local_datetime,cancellationCode]);
-        const count=cancelled.rows[0]?.attempt_count;if(count!==undefined)await transaction.query(`INSERT INTO communication.delivery_attempt(delivery_id,attempt_no,outcome,side_effect_state,error_code,started_at,started_epoch_ms,completed_at,completed_epoch_ms) VALUES($1::uuid,$2,'CANCELLED','NOT_ATTEMPTED',$5,$3::timestamp without time zone,$4::bigint,$3::timestamp without time zone,$4::bigint)`,[claim.id,count,startedAt.local_datetime,startedAt.epoch_ms,cancellationCode]);return null;
+        await cancelUnattemptedDeliveryInTransaction({transaction,deliveryId:claim.id,expected:{status:'LEASED',leaseToken:claim.lease_token},reasonCode:cancellationCode,occurredEpochMs:startedAt.epoch_ms});return null;
       }
       const updated = await transaction.query<AttemptRow>(
         `UPDATE communication.delivery

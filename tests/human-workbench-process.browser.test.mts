@@ -11,6 +11,7 @@ import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline
 import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
 import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketStaffCompletion} from '../scripts/ticket-staff-completion-migrate.mjs';
+import {migrateMvpNotifications} from '../scripts/mvp-notifications-migrate.mjs';
 import {migrateTicketRoundNotifications} from '../scripts/ticket-round-notifications-migrate.mjs';
 import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
 import {migrateTicketReopenRounds} from '../scripts/ticket-reopen-rounds-migrate.mjs';
@@ -54,7 +55,7 @@ function client(base:string,origin:string){
 async function until(check:()=>Promise<boolean>){for(let i=0;i<160;i++){if(await check())return;await delay(50);}throw Error('WORKBENCH_TEST_CONVERGENCE_TIMEOUT');}
 async function migrateWorkbenchDatabase(databaseUrl:string){
  await migrateCurrentBaselineWithYxx({databaseUrl});
- for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
+ for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands,migrateMvpNotifications])await migrate({databaseUrl,mode:'apply'});
 }
 async function unusedPort(){const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');await new Promise<void>(r=>probe.close(()=>r()));return address.port;}
 
@@ -169,11 +170,12 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    });
    let groupTicketId='',groupReceipt='';
    await until(async()=>{const row=(await pool.query<{id:string;text:string}>(`SELECT t.id::text,m.content->>'text' AS text FROM pilot_ticket.ticket t
-    JOIN communication.ticket_notification_binding b ON b.ticket_id=t.id AND b.notification_type='TICKET_CREATED' AND b.destination_type='GROUP'
-    JOIN communication.message m ON m.id=b.message_id WHERE t.source_intake_id=$1::uuid`,[groupIntakeId])).rows[0];groupTicketId=row?.id??'';groupReceipt=row?.text??'';return !!groupReceipt;});
-   const continuationRef=groupReceipt.match(/续接工单 ([A-Za-z0-9_-]{32})：/u)?.[1];assert.ok(continuationRef,'Worker group receipt must carry the source-bound public reference');
-   assert.equal((await pool.query<{public_ref:string}>("SELECT public_ref FROM pilot_ticket.reporter_public_ref WHERE ticket_id=$1::uuid AND status='ACTIVE'",[groupTicketId])).rows[0]?.public_ref,continuationRef);
-   await until(async()=>{const trace=await readFile(join(directory,'boundaries.jsonl'),'utf8');return trace.split('\n').filter(Boolean).map(v=>object(JSON.parse(v))).some(v=>v.event==='bot-send'&&JSON.stringify(v.body).includes(continuationRef));});
+    JOIN intake.deterministic_decision dec ON dec.service_intake_id=t.source_intake_id
+    JOIN communication.message m ON m.content->'group_reply'->>'decision_id'=dec.id::text AND m.sender_system_code='MVP_GROUP_REPLY'
+    WHERE t.source_intake_id=$1::uuid AND m.content->'group_reply'->>'kind'='RECEIVED'`,[groupIntakeId])).rows[0];groupTicketId=row?.id??'';groupReceipt=row?.text??'';return !!groupReceipt;});
+   assert.equal(groupReceipt,'收到啦～小修记下了，工程师马上联系您，稍等哦 🛠️');
+   assert.equal((await pool.query("SELECT 1 FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid AND notification_type='TICKET_CREATED' AND destination_type='GROUP'",[groupTicketId])).rowCount,0);
+   await until(async()=>{const trace=await readFile(join(directory,'boundaries.jsonl'),'utf8');return trace.split('\n').filter(Boolean).map(v=>object(JSON.parse(v))).some(v=>v.event==='bot-send'&&v.target==='runtime-group'&&JSON.stringify(v.body).includes(groupReceipt));});
    const inbox=await staff.get('/api/workbench/conversation-inbox');assert.equal(inbox.status,200,inbox.raw);assert.ok(Array.isArray(inbox.body.items));assert.ok(inbox.body.items.length>0);
    const detail=await staff.get('/api/workbench/conversations/'+session.id+'?view=chat');assert.equal(detail.status,200,detail.raw);assert.ok(detail.body.contact_ref);
    browser=await tls.launch();assert.ok(browser);await browser.command('Network.setCookies',{cookies:[...staff.cookies].map(([name,value])=>({name,value,url:tls.origin,secure:true}))});
@@ -216,7 +218,7 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    assert.equal(environment.find(v=>v.role==='WORKER')?.has_app_secret,false);assert.equal(environment.find(v=>v.role==='APP')?.has_bot_secret,false);
    assert.ok(lines.filter(v=>['app-send','group-send','bot-send'].includes(String(v.event))).every(v=>v.role==='GATEWAY'));
    assert.equal(JSON.stringify(lines.filter(v=>v.event==='app-send'||v.event==='group-send'||v.event==='bot-send')).includes('接线内部备注'),false);
-   proof={bootstrap:true,personal_read_schema:true,worker_group_continuation:true,real_oauth_sessions:true,compiled_roles:3,react_inbox:true,sse_live:true,web_reporter_feedback:true,bot_reporter_feedback:true,sender_routes:['WECOM_APP','WECOM_MESSAGE_PUSH','WECOM_AIBOT'],credentials_isolated:true};
+   proof={bootstrap:true,personal_read_schema:true,worker_fixed_group_receipt:true,real_oauth_sessions:true,compiled_roles:3,react_inbox:true,sse_live:true,web_reporter_feedback:true,bot_reporter_feedback:true,sender_routes:['WECOM_APP','WECOM_MESSAGE_PUSH','WECOM_AIBOT'],credentials_isolated:true};
   }finally{await browser?.close();await tls.close();}
   assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
  }});await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});console.log('HUMAN_WORKBENCH_WIRING '+JSON.stringify(proof));}
@@ -318,9 +320,16 @@ test('compiled entry completes normal Gateway intake, human handling, original r
     const unclearPath='/api/workbench/conversations/'+unclear.session_id;
     await post(staff,unclearPath+'/takeover',{client_command_id:randomUUID(),expected_row_version:object((await read(staff,unclearPath+'?view=chat')).session).row_version});
     const beforePausedSends=(await trace()).filter(row=>row.event==='bot-send'&&row.target==='user-test').length;
+    const pausedJourney=async()=>(await pool.query<{status:string;row_version:string;linked_ticket_id:string|null;origin_session_id:string|null;current_session_id:string|null}>('SELECT status,row_version::text,linked_ticket_id::text,origin_session_id::text,current_session_id::text FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[unclear.intake_id])).rows[0];
+    await until(async()=>{const value=await pausedJourney();return value?.origin_session_id===unclear.session_id&&value.current_session_id===unclear.session_id;});
+    const beforePausedJourney=await pausedJourney();assert.ok(beforePausedJourney);
     const unclearAgain=await accept('single','系统不行','user-test');assert.equal(unclearAgain.intake_id,unclear.intake_id);
-    await until(async()=>(await ruleDeliveries(2)).some(row=>row.status==='CANCELLED'));
-    const pausedRules=await ruleDeliveries(2);assert.ok(pausedRules.length>0);assert.ok(pausedRules.every(row=>row.status==='CANCELLED'&&row.side_effect_state==='NOT_ATTEMPTED'&&row.last_error_code==='COMMUNICATION_RULE_REPLY_SUPPRESSED'&&Number(row.attempt_count)===1));
+    await processed(unclearAgain.message_id);
+    const pausedRules=(await pool.query<{state:string;error_code:string|null}>(`SELECT a.state,a.error_code FROM intake.deterministic_decision d JOIN intake.safe_action_suggestion a ON a.decision_id=d.id
+      WHERE d.service_intake_id=$1::uuid AND d.source_window_end_sequence=2`,[unclear.intake_id])).rows;
+    assert.ok(pausedRules.length>0);assert.ok(pausedRules.every(row=>row.state==='CANCELLED'&&row.error_code==='RULE_ACTIONS_PAUSED_AFTER_TAKEOVER'));
+    assert.equal((await ruleDeliveries(2)).length,0,'paused actions must not create outbound messages or delivery attempts');
+    assert.deepEqual(await pausedJourney(),beforePausedJourney);
     assert.equal((await trace()).filter(row=>row.event==='bot-send'&&row.target==='user-test').length,beforePausedSends);
 
     mark('E_WEB_AND_UNVERIFIED_MANUAL');
@@ -377,7 +386,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
      if(source.kind==='manual'){
       assert.deepEqual(list((await read(staff,path+'/deliveries')).items),[]);assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid',[source.id])).rows[0]?.n,0);
      }else{
-      for(const node of ['FIRST_RESPONSIBILITY','STAFF_COMPLETED'])await until(async()=>{const notices=list((await read(staff,path+'/deliveries')).items).filter(row=>row.node===node&&row.cycle_no===1);return notices.length===(source.kind==='group'?2:1)&&notices.every(row=>row.status==='SENT');});
+      for(const node of ['FIRST_HANDLING','STAFF_COMPLETED'])await until(async()=>{const notices=list((await read(staff,path+'/deliveries')).items).filter(row=>row.node===node&&row.cycle_no===1);return notices.length===(source.kind==='group'&&node==='STAFF_COMPLETED'?2:1)&&notices.every(row=>row.status==='SENT');});
       if(source.kind==='private'){
        const ordinary=await accept('single','补充：错误提示为403。','synthetic-A');await processed(ordinary.message_id);assert.equal(ordinary.intake_id,direct.intake_id);
        const newIssue=await accept('single','另外门诊系统也登录不了','synthetic-A');await processed(newIssue.message_id);assert.notEqual(newIssue.intake_id,direct.intake_id);assert.notEqual(newIssue.session_id,direct.session_id);assert.notEqual(await ticketFor(newIssue.intake_id),source.id);
@@ -417,7 +426,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
      assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM channel.message_inbox WHERE bot_id=$1 AND msg_id=$2',['bot-test',source.frame.body.msgid])).rows[0]?.n,1);
      assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid',[source.intake_id])).rows[0]?.n,1);
     }
-    evidence.B={explicit_communication_retained:true,web_system_resume:true,bot_explicit_resume:true,personal_read_independent:true,team_follow_up_explicit:true,paused_rules:pausedRules.length,paused_rule_sender_calls:0};
+    evidence.B={explicit_communication_retained:true,web_system_resume:true,bot_explicit_resume:true,personal_read_independent:true,team_follow_up_explicit:true,paused_rules:pausedRules.length,paused_rule_deliveries:0,paused_rule_sender_calls:0};
     evidence.C={closed_by_current_handler:true,channels:['WECOM_AIBOT','WECOM_MESSAGE_PUSH','WECOM_APP'],observed_delivery_state:'SENT',user_read_evidence:'NOT_ASSERTED',internal_material_not_sent:true};
     evidence.D={original_reporter_http_feedback:true,same_ticket_new_round:true,assignee_cleared:true,explicit_reaccept:true,ordinary_supplement_does_not_reopen:true};
     evidence.E={own_web_read:true,other_reporter_404:true,unverified_manual_no_notification:true};

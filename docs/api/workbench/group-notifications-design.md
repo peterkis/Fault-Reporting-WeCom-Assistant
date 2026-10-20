@@ -1,5 +1,7 @@
 # WBINT-T26：原群消息推送与 Bot 私聊合同
 
+2026-10-20 human-v1 前向调整见 [ADR-0034](../../../adr/0034_mvp_notifications_and_application_members.md)：个人通知改为本轮 `FIRST_HANDLING` 与 `STAFF_COMPLETED`，原群仅在工作人员完工且存在准确 botId + groupId Webhook 时创建投递；无 Webhook 正常跳过，个人路继续执行。群正文为 `工单#{完整业务编号}小修已完成，麻烦您验收一下，有问题随时@医小修～`，原生提及由原报修人的已核验 mentioned_list 提供。Bot 收件和固定群回应不要求 Webhook；不沿群名路由。新模式成员接收开启时，个人模板和原群提及复用当前应用成员核验，等待后再次检查原来源与留存。下文原双节点群消息保留为兼容模式和 T26 历史合同；不改写已发送、UNKNOWN 或不可变消息正文。
+
 状态：**LOCAL_IMPLEMENTED / SYNTHETIC_VALIDATION / REAL_DELIVERY_NOT_RUN**。这是 [#81](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/81) 的实施合同，群适配器已接入现有Sender factory；本票不增加REST。原生强 @ 与真实送达尚未验证。原 [T24](../../../plans/admin-workbench-integration/execution/t24.md) 只完成原始单聊 Bot 轮次通知。依据 [ADR-0023](../../../adr/0023_origin_based_notification_routing.md)、[ADR-0024](../../../adr/0024_staff_completion_and_takeover.md)、[ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md)；本票原七项与实际运行/失败保全见 [执行页](../../../plans/admin-workbench-integration/execution/t26.md)。
 
 ## Consumer 输入、输出与来源

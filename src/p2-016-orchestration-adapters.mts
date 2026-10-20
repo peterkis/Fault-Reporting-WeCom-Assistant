@@ -5,7 +5,8 @@ import type { DirectorySyncPort, WebWorkerPort } from './p2-015-worker.mjs';
 import type { createP2016TicketNotificationProjector } from './p2-016-ticket-notification-projector.mjs';
 import type { createP2016RealtimeProjector } from './p2-016-realtime-projector.mjs';
 export type PersonDestinationAuthorizer = (input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>;
-export interface OrchestrationWorkerOptions { pool: PostgresPool; identityHmacKey: string; notifications: Pick<ReturnType<typeof createP2016TicketNotificationProjector>, 'project'>; realtime: Pick<ReturnType<typeof createP2016RealtimeProjector>, 'lock' | 'review' | 'ticket'>; directoryPort?: OrchestrationOptions['directoryPort']; directorySource?: string; ruleEngine?: OrchestrationOptions['ruleEngine']; now?: (() => string) | undefined; directorySyncJob?: DirectorySyncPort | null; personDestinationAuthorizer?: PersonDestinationAuthorizer | null; communicationAppend?: typeof appendCommunication | undefined; yxxSelfService?: { featureFlags?: unknown } | null }
+export interface OrchestrationWorkerOptions {mvpPolicy?:boolean; pool: PostgresPool; identityHmacKey: string; notifications: Pick<ReturnType<typeof createP2016TicketNotificationProjector>, 'project'>; realtime: Pick<ReturnType<typeof createP2016RealtimeProjector>, 'lock' | 'review' | 'ticket'>; directoryPort?: OrchestrationOptions['directoryPort']; directorySource?: string; ruleEngine?: OrchestrationOptions['ruleEngine']; now?: (() => string) | undefined; directorySyncJob?: DirectorySyncPort | null; personDestinationAuthorizer?: PersonDestinationAuthorizer | null; communicationAppend?: typeof appendCommunication | undefined; yxxSelfService?: { featureFlags?: unknown } | null }
+import {appendMvpGroupReplies} from './mvp-group-replies.mjs';
 import { createRuleFirstOrchestrator } from './p2-015-rule-first-orchestrator.mjs';
 import { createP2015Worker } from './p2-015-worker.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
@@ -21,7 +22,7 @@ import { reconcileP2016ConversationBindings } from './p2-016-conversation-bindin
 import { createYxxSelfServiceOrchestrator } from './yxx-self-service-orchestrator.mjs';
 
 function guidanceId(id: string){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
-export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,directoryPort,directorySource='WECOM_DIRECTORY',ruleEngine,now,directorySyncJob=null,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}: OrchestrationWorkerOptions){
+export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,mvpPolicy=false,directoryPort,directorySource='WECOM_DIRECTORY',ruleEngine,now,directorySyncJob=null,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}: OrchestrationWorkerOptions){
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
   const core=createPilotTicketCore({pool}),decisions=createDecisionStore({sourceWindowScope:'CHANNEL_LEG'}),reviews=createManualReviewStore();
   const communicationPort: CommunicationPort={appendFixed:async({transaction,action,context}: Parameters<CommunicationPort['appendFixed']>[0])=>{
@@ -49,6 +50,7 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
     }},
   });
   const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey,safeActionExecutor:executor,decisionStore:decisions,directorySource,
+    mvpGroupReplies:mvpPolicy,afterDecision:mvpPolicy?input=>appendMvpGroupReplies({...input,thanksOnly:input.rulesPaused===true,append:communicationAppend}):null,
     journeyStore:createP2016GuidedJourneyStore({now}),decisionOverride:p2016AssociationDecision,
     ...(directoryPort?{directoryPort}:{}),...(ruleEngine?{ruleEngine}:{})});
   // Scheduling cursor only: restart may rescan, but never invents or owns facts.

@@ -6,6 +6,7 @@ import type {YxxEntryConfig} from './p2-g2-yixiaoxiu-contract.mjs';
 import {yxxIdentityConfigHash} from './p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createWorkbenchGroupNotificationSender} from './workbench-group-notification-sender.mjs';
 import {createP2016InboundScope} from './p2-016-inbound-scope.mjs';
+import {applicationRecipientProof,boundApplicationRecipient} from './yxx-application-member-auth.mjs';
 import {assertEpochMsString,formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
 
@@ -19,7 +20,7 @@ export interface WorkbenchSettings {
  groupRoutes:{botId:string;groupId:string;url:string}[];
 }
 export interface WorkbenchConfiguration {enabled:true;settings:WorkbenchSettings;databaseUrl:string;identityHashKey:string;reporterHmacSecret:string;appSecret:string;botSecret:string;ioApprovalRef:string;inboundApprovalRef:string}
-export interface RoleSettings {role:WorkbenchRole;reporterOrigin:string;transportEnabled:boolean;botInboundEnabled?:boolean;botId:string;appChannelAccountId:string;notificationBindingsFile:string;memberEntry:MemberEntry;publicOrigin?:string;listenPort?:number;groupRoutes?:WorkbenchSettings['groupRoutes'];personTargetHashes?:string[];groupTargetHashes?:string[]}
+export interface RoleSettings {groupNotificationTargets?:{botId:string;groupId:string}[];role:WorkbenchRole;reporterOrigin:string;transportEnabled:boolean;botInboundEnabled?:boolean;botId:string;appChannelAccountId:string;notificationBindingsFile:string;memberEntry:MemberEntry;publicOrigin?:string;listenPort?:number;groupRoutes?:WorkbenchSettings['groupRoutes'];personTargetHashes?:string[];groupTargetHashes?:string[]}
 export interface WorkerRoleSettings {role:'WORKER';transportEnabled:boolean;botId:string}
 export function configurationError(field:string):never{throw new Error('HUMAN_WORKBENCH_CONFIG_INVALID:'+field);}
 function record(value:unknown,field:string):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))configurationError(field);return value as Record<string,unknown>;}
@@ -31,7 +32,7 @@ export function readWorkbenchJson(file:string,field='file'):unknown{try{if(!isAb
 function member(value:unknown,receiveOnly=false):MemberEntry{
  let c:YxxEntryConfig;try{c=validateYxxEntryConfig(value);}catch{configurationError('memberEntry');}
  // This recipe includes the existing H5 self-service/feedback extension, whose contract requires delegated mapping.
- if(!c.enabled||(c.identityMode!=='VERIFIED_DELEGATED_MAPPING'&&!(receiveOnly&&c.identityMode==='UNVERIFIED')))configurationError('memberEntry.identityMode');
+ if(!c.enabled||(!['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(c.identityMode)&&!(receiveOnly&&c.identityMode==='UNVERIFIED')))configurationError('memberEntry.identityMode');
  if(!Number.isSafeInteger(Number(c.agentId))||Number(c.agentId)<1)configurationError('memberEntry.agentId');
  return c;
 }
@@ -51,7 +52,7 @@ export function parseWorkbenchSettings(value:unknown):WorkbenchSettings{
  const routes=r.groupRoutes.map(v=>{const route=exact(v,['botId','groupId','url'],'groupRoutes');return {botId:text(route.botId,'groupRoutes.botId',128),groupId:text(route.groupId,'groupRoutes.groupId'),url:text(route.url,'groupRoutes.url',2048)};});
  // Reuse the actual adapter's closed endpoint rules; no database or Provider call.
  try{createWorkbenchGroupNotificationSender({pool:{query:async()=>{throw Error('CONFIG_CHECK_DATABASE_FORBIDDEN');}},routes});}catch{configurationError('groupRoutes');}
- if(routes.some(route=>route.botId!==id)||routes.length!==groups.length)configurationError('groupRoutes');
+ if(routes.some(route=>route.botId!==id))configurationError('groupRoutes');
  if(routes.some(route=>!groups.includes(createHash('sha256').update(route.groupId).digest('hex'))))configurationError('groupRoutes.scope');
  return {schemaVersion:1,publicOrigin:origin(r.publicOrigin,'publicOrigin'),reporterOrigin:origin(r.reporterOrigin,'reporterOrigin'),listenPort:r.listenPort,transportEnabled:r.transportEnabled,botInboundEnabled:r.botInboundEnabled,memberEntry:m,
   bot:{id,wsUrl,personTargetHashes:people,groupTargetHashes:groups},appChannelAccountId:text(r.appChannelAccountId,'appChannelAccountId',128),notificationBindingsFile:file,groupRoutes:routes};
@@ -88,26 +89,36 @@ function validateNotificationBindings(file:string,m:MemberEntry):NotificationBin
 /** Operator-supplied current verified authority, re-read at each qualification. No inferred directory/OAuth send rights. */
 export function createWorkbenchNotificationOptions(settings:Pick<RoleSettings,'memberEntry'|'appChannelAccountId'|'notificationBindingsFile'>,reporterHmacSecret:string):TicketAppNotificationOptions{
  const m=settings.memberEntry;
- if(m.identityMode!=='VERIFIED_DELEGATED_MAPPING')configurationError('notificationBindings.authority');
- return {enabled:true,authority:{sourceCorpScope:m.corpId,sourceAppScope:m.agentId,channelAccountId:settings.appChannelAccountId,mappingConfigHash:yxxIdentityConfigHash(m),mappingProofRef:m.proofRef as string,proofKind:m.proofKind as 'LIVE'|'SYNTHETIC',validationProfile:m.validationProfile},
+ if(!['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(m.identityMode))configurationError('notificationBindings.authority');
+ const legacy=m.identityMode==='VERIFIED_APP_OPENID'&&m.reporterUserIds?{...m,identityMode:'VERIFIED_DELEGATED_MAPPING' as const}:m;
+ return {enabled:true,...(m.identityMode==='VERIFIED_APP_OPENID'?{identityMode:'VERIFIED_APP_OPENID' as const}:{}),authority:{sourceCorpScope:m.corpId,sourceAppScope:m.agentId,channelAccountId:settings.appChannelAccountId,mappingConfigHash:yxxIdentityConfigHash(m),mappingProofRef:m.proofRef as string,proofKind:m.proofKind as 'LIVE'|'SYNTHETIC',validationProfile:m.validationProfile},
   targetResolver:{localOnly:true,async resolveCurrentTarget(input){
-   input.signal.throwIfAborted();const bindings=validateNotificationBindings(settings.notificationBindingsFile,m),epoch=assertEpochMsString(String(Date.now()));
-   const found=bindings.members.find(v=>v.bindingProofRef===input.scope.proofRef&&createHmac('sha256',reporterHmacSecret).update(JSON.stringify(['member',m.corpId,m.agentId,v.memberUserId])).digest('hex')===input.scope.scopeHash);
+   input.signal.throwIfAborted();const epoch=assertEpochMsString(String(Date.now()));
    const base={schema_version:1,source_kind:input.source_kind,scope:input.scope,checked_at:formatEpochMsToShanghaiLocal(epoch),checked_at_epoch_ms:epoch};
+   if(m.identityMode==='VERIFIED_APP_OPENID'&&input.recipient){
+    let recipient;try{recipient=boundApplicationRecipient(input.recipient);}catch{return {...base,state:'NOT_ELIGIBLE',reason:'NO_MAPPING'};}
+    if(input.source_kind!=='WEB_REQUEST'||input.scope.sourceCorpScope!==m.corpId||input.scope.sourceAppScope!==m.agentId||input.scope.proofRef!==m.proofRef
+      ||applicationRecipientProof(reporterHmacSecret,input.scope,recipient.member_id)!==recipient.proof_ref)return {...base,state:'NOT_ELIGIBLE',reason:'SCOPE_MISMATCH'};
+    return {...base,state:'ELIGIBLE',target:{provider:'WECOM_APP',channel_account_id:settings.appChannelAccountId,target_type:'PERSON',target_id:recipient.member_id},verification:{mapping_config_hash:yxxIdentityConfigHash(m),mapping_proof_ref:m.proofRef,binding_proof_ref:m.proofRef,proof_kind:m.proofKind,account_status:'ACTIVE',binding_state:'VERIFIED',message_reachability:'REACHABLE'}};
+   }
+   if(m.identityMode==='VERIFIED_APP_OPENID'&&!m.reporterUserIds)return {...base,state:'NOT_ELIGIBLE',reason:'NO_MAPPING'};
+   const bindings=validateNotificationBindings(settings.notificationBindingsFile,legacy);
+   const found=bindings.members.find(v=>v.bindingProofRef===input.scope.proofRef&&createHmac('sha256',reporterHmacSecret).update(JSON.stringify(['member',m.corpId,m.agentId,v.memberUserId])).digest('hex')===input.scope.scopeHash);
    if(!found)return {...base,state:'NOT_ELIGIBLE',reason:'NO_MAPPING'};
    if(found.accountStatus!=='ACTIVE'||found.bindingState!=='VERIFIED'||found.messageReachability!=='REACHABLE')return {...base,state:'NOT_ELIGIBLE',reason:found.bindingState==='REVOKED'?'REVOKED':found.messageReachability==='UNREACHABLE'?'UNREACHABLE':'UNKNOWN'};
    return {...base,state:'ELIGIBLE',target:{provider:'WECOM_APP',channel_account_id:settings.appChannelAccountId,target_type:'PERSON',target_id:found.memberUserId},verification:{mapping_config_hash:yxxIdentityConfigHash(m),mapping_proof_ref:m.proofRef,binding_proof_ref:found.bindingProofRef,proof_kind:m.proofKind,account_status:'ACTIVE',binding_state:'VERIFIED',message_reachability:'REACHABLE'}};
   }}};
 }
 export function resolveWorkbenchMention(settings:RoleSettings,input:{botId:string;groupId:string;reporterUserId:string}):string|null{
- const bindings=validateNotificationBindings(settings.notificationBindingsFile,settings.memberEntry);
+ const member=settings.memberEntry.identityMode==='VERIFIED_APP_OPENID'?{...settings.memberEntry,identityMode:'VERIFIED_DELEGATED_MAPPING' as const}:settings.memberEntry;
+ const bindings=validateNotificationBindings(settings.notificationBindingsFile,member);
  return bindings.mentions.find(v=>v.botId===input.botId&&v.groupId===input.groupId&&v.reporterUserId===input.reporterUserId)?.mentionUserId??null;
 }
 export function workbenchRoleEnvironment(c:WorkbenchConfiguration,role:WorkbenchRole):NodeJS.ProcessEnv{
  const s=c.settings;
  if(role==='WORKER')return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify({role,transportEnabled:s.transportEnabled,botId:s.bot.id}),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret};
  const settings:RoleSettings={role,reporterOrigin:s.reporterOrigin,transportEnabled:s.transportEnabled,botInboundEnabled:s.botInboundEnabled??false,botId:s.bot.id,memberEntry:s.memberEntry,appChannelAccountId:s.appChannelAccountId,notificationBindingsFile:s.notificationBindingsFile,
-  ...(role==='APP'?{publicOrigin:s.publicOrigin,listenPort:s.listenPort}:{}),...(role==='GATEWAY'?{groupRoutes:s.groupRoutes,personTargetHashes:s.bot.personTargetHashes,groupTargetHashes:s.bot.groupTargetHashes}:{})};
+  ...(role==='APP'?{publicOrigin:s.publicOrigin,listenPort:s.listenPort,groupNotificationTargets:s.groupRoutes.map(({botId,groupId})=>({botId,groupId}))}:{}),...(role==='GATEWAY'?{groupRoutes:s.groupRoutes,personTargetHashes:s.bot.personTargetHashes,groupTargetHashes:s.bot.groupTargetHashes}:{})};
  return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify(settings),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,
   ...(role==='APP'||role==='GATEWAY'&&(s.transportEnabled||s.botInboundEnabled)?{APP_SECRET:c.appSecret}:{}),...(role==='GATEWAY'&&s.transportEnabled?{WORKBENCH_EXTERNAL_IO_APPROVED:'true',WORKBENCH_EXTERNAL_IO_APPROVAL_REF:c.ioApprovalRef}:{}),
   ...(role==='GATEWAY'&&s.botInboundEnabled?{WORKBENCH_INBOUND_IO_APPROVED:'true',WORKBENCH_INBOUND_IO_APPROVAL_REF:c.inboundApprovalRef}:{})};
@@ -127,7 +138,10 @@ export function readWorkbenchRoleSettings(role:WorkbenchRole,env:NodeJS.ProcessE
  if(role==='GATEWAY'&&r.transportEnabled&&env.WORKBENCH_EXTERNAL_IO_APPROVED!=='true')configurationError('WORKBENCH_EXTERNAL_IO_APPROVED');
  if(role==='GATEWAY'&&r.botInboundEnabled){if(env.WORKBENCH_INBOUND_IO_APPROVED!=='true')configurationError('WORKBENCH_INBOUND_IO_APPROVED');text(env.WORKBENCH_INBOUND_IO_APPROVAL_REF,'WORKBENCH_INBOUND_IO_APPROVAL_REF');text(env.APP_SECRET,'APP_SECRET');}
  const result:RoleSettings={role,reporterOrigin:origin(r.reporterOrigin,'reporterOrigin'),transportEnabled:r.transportEnabled,botInboundEnabled:r.botInboundEnabled===true,botId:text(r.botId,'botId'),appChannelAccountId:text(r.appChannelAccountId,'appChannelAccountId'),notificationBindingsFile:file,memberEntry:m};
- if(role==='APP'){result.publicOrigin=origin(r.publicOrigin,'publicOrigin');result.listenPort=Number(r.listenPort);}
+ if(role==='APP'){
+  if(!Array.isArray(r.groupNotificationTargets)||r.groupNotificationTargets.length>32)configurationError('groupNotificationTargets');
+  result.groupNotificationTargets=r.groupNotificationTargets.map(v=>{const a=exact(v,['botId','groupId'],'groupNotificationTargets');return {botId:text(a.botId,'botId'),groupId:text(a.groupId,'groupId')};});
+  result.publicOrigin=origin(r.publicOrigin,'publicOrigin');result.listenPort=Number(r.listenPort);}
  if(role==='GATEWAY'){
   if(!Array.isArray(r.groupRoutes))configurationError('groupRoutes');
   result.groupRoutes=r.groupRoutes.map(v=>{const a=exact(v,['botId','groupId','url'],'groupRoutes');return {botId:text(a.botId,'botId'),groupId:text(a.groupId,'groupId'),url:text(a.url,'url',2048)};});

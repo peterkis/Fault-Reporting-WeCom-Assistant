@@ -5,7 +5,7 @@ import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 interface NotificationEvent { event_id: string; event_type: string; new_status: TicketStatus; created_at: string; aggregate_version: number; ticket_id?: string; ticket_no?: string; intake_id?: string }
 interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string;trace_id:string;reason_code:string|null; handling_cycle_id:string|null }
 type AppendObservation = (CommunicationSuccess & { error?: never }) | { error: { code: string }; message_id?: never; outbox_id?: never; delivery_ids?: never };
-interface NotificationOptions { roundNotificationBotId?:string|null;enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
+interface NotificationOptions {mvpPolicy?:boolean; roundNotificationBotId?:string|null;enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
 
 import { randomUUID } from 'node:crypto';
 import { appendCommunication } from './p2-004-communication-core.mjs';
@@ -14,7 +14,7 @@ import { failP2016,guardP2016,textHashP2016,stampP2016 } from './p2-016-domain-c
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 
-export function createP2016TicketNotificationProjector({enabled=false,cardEnabled=false,reporterAccess,explicitReferenceEnabled=false,
+export function createP2016TicketNotificationProjector({enabled=false,cardEnabled=false,reporterAccess,mvpPolicy=false,explicitReferenceEnabled=false,
   personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication,roundNotificationBotId=null}: NotificationOptions) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('INPUT_INVALID');
   ticketNotificationP2016({event_type:'ticket.accepted',new_status:'ACCEPTED'},{additionalEventTypes});
@@ -84,6 +84,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       const personAllowed=personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction:tx,
         bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true;
       async function appendGroupReceipt(){
+        if(mvpPolicy)return false;
         if(!groupReceipt&&!groupClosure)return false;
         const continuation=groupReceipt&&explicitReferenceEnabled?await (reporterAccess as NonNullable<typeof reporterAccess>).ensurePublicRefInTransaction({transaction:tx,ticketId:ticket.id,reporterBindingHash:binding}):null;
         const group=await communicationAppend({transaction:tx,actor:null,command:{
