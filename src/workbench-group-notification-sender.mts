@@ -1,10 +1,9 @@
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {CommunicationSenderResult} from './p2-004-communication-sender-port.mjs';
 import {isDeepStrictEqual} from 'node:util';
-import {createCommunicationSenderPort} from './p2-004-communication-sender-port.mjs';
+import {createCommunicationSenderPort,communicationPreSendCheck} from './p2-004-communication-sender-port.mjs';
 import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 import {localP2016,textHashP2016} from './p2-016-domain-contracts.mjs';
-import {ApplicationMemberUnavailableError} from './wecom-application-member.mjs';
 export interface WorkbenchGroupNotificationOptions {
   pool:PostgresTransaction;enabled?:boolean;mvpPolicy?:boolean;routes?:readonly {botId:string;groupId:string;url:string}[];fetchImpl?:typeof fetch;
   /** Trusted namespace qualification; absence never guesses a Webhook userid. */
@@ -30,7 +29,10 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPo
     if(request.provider!=='WECOM_AIBOT'||request.target_type!=='GROUP'||request.message.message_type!=='template_card')return reject('GROUP_PUSH_BINDING_INVALID');
     const endpoint=endpoints.get(JSON.stringify([request.channel_account_id,request.target_id]));if(!endpoint)return reject('GROUP_PUSH_ROUTE_MISSING');
     if(!resolveMentionUserId)return reject('GROUP_PUSH_MENTION_UNQUALIFIED');
+    const resolveMention=resolveMentionUserId;
     if(request.signal.aborted)return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
+    const preparationSignal=AbortSignal.any([request.signal,AbortSignal.timeout(4000)]);
+    const check=<T,>(operation:()=>Promise<T>)=>communicationPreSendCheck(operation,preparationSignal);
     const readBasis=()=>pool.query<Basis>(`SELECT c.source_intake_id::text,r.node,t.ticket_no,e.new_status,e.created_at,m.content,b.recipient_binding_hash
       FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id
       JOIN communication.ticket_notification_binding b ON b.delivery_id=d.id AND b.message_id=m.id AND b.outbox_id=o.id
@@ -51,24 +53,27 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPo
             AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND EXISTS(
               SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`,
       [request.delivery_id,request.provider,request.channel_account_id,request.target_id,request.idempotency_key]);
-    const q=await readBasis(),row=q.rows[0];if(q.rowCount!==1||!row)return reject('GROUP_PUSH_BINDING_INVALID');
+    let text:string,mention:unknown;
+    try{
+    const q=await check(readBasis),row=q.rows[0];if(q.rowCount!==1||!row)return reject('GROUP_PUSH_BINDING_INVALID');
     if(mvpPolicy&&row.node!=='STAFF_COMPLETED')return reject('GROUP_PUSH_NODE_SUPPRESSED');
-    const source=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
+    const source=await check(()=>readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id));
     if(!source||source.group_id!==request.target_id||row.recipient_binding_hash!==textHashP2016(JSON.stringify(['WECOM_AIBOT',source.bot_id,source.group_id,source.reporter_user_id])))return reject('GROUP_PUSH_BINDING_INVALID');
     const model={transport:'WECOM_MESSAGE_PUSH',node:row.node,suffix:row.ticket_no.slice(-4),status:row.new_status,occurred_at:localP2016(row.created_at)};
     if(!/^[0-9]{4}$/u.test(model.suffix)||!isDeepStrictEqual(row.content,model)||!isDeepStrictEqual(row.content,request.message.content))return reject('GROUP_PUSH_BINDING_INVALID');
-    let mention:unknown;
-    try{mention=await resolveMentionUserId({botId:source.bot_id,groupId:source.group_id,reporterUserId:source.reporter_user_id});await beforeSend();}
-    catch(error){return error instanceof ApplicationMemberUnavailableError?reject('GROUP_PUSH_QUALIFICATION_UNAVAILABLE',true):reject('GROUP_PUSH_NOT_AUTHORIZED');}
+    try{mention=await check(async()=>resolveMention({botId:source.bot_id,groupId:request.target_id,reporterUserId:source.reporter_user_id}));await check(async()=>beforeSend());}
+    catch{return reject('GROUP_PUSH_QUALIFICATION_UNAVAILABLE',true);}
     if(typeof mention!=='string'||!mention||mention==='@all'||mention.length>256)return reject('GROUP_PUSH_MENTION_UNQUALIFIED');
     // Authorization may await external qualification or a caller fence. Re-read
     // the current sending commitment and retained original source afterwards.
-    const current=await readBasis();
+    const current=await check(readBasis);
     if(current.rowCount!==1||!isDeepStrictEqual(current.rows[0],row))return reject('GROUP_PUSH_BINDING_INVALID');
-    const currentSource=await readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id);
+    const currentSource=await check(()=>readOriginalBotSource(pool,row.source_intake_id,request.channel_account_id));
     if(!currentSource||!isDeepStrictEqual(currentSource,source))return reject('GROUP_PUSH_BINDING_INVALID');
-    if(request.signal.aborted||BigInt(currentSource.retention_epoch)<=BigInt(Date.now()))return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
-    const text=mvpPolicy?'工单#'+row.ticket_no+'小修已完成，麻烦您验收一下，有问题随时@医小修～':'工单尾号 '+model.suffix+(row.node==='FIRST_RESPONSIBILITY'?' 已有人员处理。':' 处理完成。');
+    if(preparationSignal.aborted)return reject('GROUP_PUSH_BINDING_UNAVAILABLE',true);
+    if(BigInt(currentSource.retention_epoch)<=BigInt(Date.now()))return reject('GROUP_PUSH_ABORTED_BEFORE_SEND');
+    text=mvpPolicy?'工单#'+row.ticket_no+'小修已完成，麻烦您验收一下，有问题随时@医小修～':'工单尾号 '+model.suffix+(row.node==='FIRST_RESPONSIBILITY'?' 已有人员处理。':' 处理完成。');
+    }catch{return reject('GROUP_PUSH_BINDING_UNAVAILABLE',true);}
     try{
       const response=await fetchImpl(endpoint,{method:'POST',redirect:'error',headers:{'content-type':'application/json'},signal:AbortSignal.any([request.signal,AbortSignal.timeout(5000)]),body:JSON.stringify({msgtype:'text',text:{content:text,mentioned_list:[mention]}})});
       const reader=response.body?.getReader();if(!reader)return unknown();const chunks:Uint8Array[]=[];let bytes=0;

@@ -25,8 +25,9 @@ test('MVP production rule worker classifies group faults, uncertainty, pure than
   for(const [i,vector] of vectors.entries())sources.push(await seedPersistedIntake({pool:context.pool,text:vector.text,chatType:'group',requestType:'UNKNOWN',status:'RECEIVED',tag:'mvp-reply-'+i}));
   const pump=()=>worker.processDueBatch({feature_flags:flags,batch_size:20,now_epoch_ms:String(Date.now()+15000)});
   try{
-   await pump();const calls:{target:string;text:string}[]=[];let qualificationUnavailable=false;
-   const sender=createP2016WeComSender({mvpPolicy:true,groupReplies:{pool:context.pool,authorize:async()=>{if(qualificationUnavailable)throw new ApplicationMemberUnavailableError();return true;}},gateway:{getAuthenticatedClient:()=>({sendMessage:async(target,body)=>{
+   await pump();const calls:{target:string;text:string}[]=[];let qualificationUnavailable=false,failAfterQualification=false,localLookupUnavailable=false;
+   const faultingPool=new Proxy(context.pool,{get:(target,key)=>key==='query'?new Proxy(target.query,{apply:(query,_receiver,args)=>{if(localLookupUnavailable){localLookupUnavailable=false;throw Error('SYNTHETIC_FINAL_LOOKUP_UNAVAILABLE');}return Reflect.apply(query,target,args);}}):Reflect.get(target,key)});
+   const sender=createP2016WeComSender({mvpPolicy:true,groupReplies:{pool:faultingPool,authorize:async()=>{if(qualificationUnavailable)throw new ApplicationMemberUnavailableError();if(failAfterQualification){failAfterQualification=false;localLookupUnavailable=true;}return true;}},gateway:{getAuthenticatedClient:()=>({sendMessage:async(target,body)=>{
     assert.equal(body.msgtype,'markdown');if(body.msgtype==='markdown')calls.push({target,text:body.markdown.content});return {errcode:0};}})},
     enabled:true,cardEnabled:true,allowedTargetHashes:[],reporterAccess:context.runtime.reporterAccess,origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],linkMode:'MEMBER_REQUIRED'});
    const delivery=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
@@ -38,8 +39,10 @@ test('MVP production rule worker classifies group faults, uncertainty, pure than
     assert.equal(replies.rowCount,vector.expected===null?0:1,vector.text);
     if(vector.expected!==null){assert.equal(replies.rows[0]?.text,vector.expected);const id=replies.rows[0]?.id??'';
      if(i===0){qualificationUnavailable=true;const pending=await delivery.deliver({deliveryId:id});assert.ok(pending&&'status'in pending);assert.equal(pending.status,'PENDING');assert.equal(pending.side_effect_state,'NOT_ATTEMPTED');assert.equal(calls.length,0);qualificationUnavailable=false;
-      await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[id]);}
-     const result=await delivery.deliver({deliveryId:id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');}
+      await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[id]);}
+     if(i===0){failAfterQualification=true;const pending=await delivery.deliver({deliveryId:id});assert.ok(pending&&'status'in pending);assert.equal(pending.status,'PENDING');assert.equal(pending.side_effect_state,'NOT_ATTEMPTED');assert.equal(calls.length,0);
+      await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[id]);}
+     const result=await delivery.deliver({deliveryId:id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await delivery.deliver({deliveryId:id}),null);}
    }
    assert.equal(calls.length,4);const before=(await context.pool.query<{n:number}>('SELECT count(*)::integer AS n FROM communication.delivery')).rows[0]?.n;
    await pump();assert.equal((await context.pool.query<{n:number}>('SELECT count(*)::integer AS n FROM communication.delivery')).rows[0]?.n,before);

@@ -13,11 +13,10 @@ interface SenderOptions {qualifyBotNotificationRecipient?:(source:{botId:string;
 import {isDeepStrictEqual} from 'node:util';
 import {readMvpGroupReplyBasis,createMvpNotificationAdmission} from './mvp-group-replies.mjs';
 import { createP2G1WeComCommunicationSender } from './p2-g1-wecom-sender.mjs';
-import { createCommunicationSenderPort } from './p2-004-communication-sender-port.mjs';
+import { createCommunicationSenderPort,communicationPreSendCheck } from './p2-004-communication-sender-port.mjs';
 import { buildP2016TemplateCard } from './p2-016-template-card-builder.mjs';
 import { textHashP2016,snapshotP2016 } from './p2-016-domain-contracts.mjs';
 import {computeCommunicationContentHash} from './p2-004-communication-core.mjs';
-import {ApplicationMemberUnavailableError} from './wecom-application-member.mjs';
 
 export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=false,cardEnabled=false,mvpPolicy=false,groupReplies,qualifyBotNotificationRecipient,
   reporterAccess,origin,allowedHosts=[],allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT',groupRoundNotifications,appRoundNotifications}: SenderOptions) {
@@ -34,6 +33,8 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
   const app=appRoundNotifications?createWorkbenchAppNotificationSender({...appRoundNotifications,enabled:enabled&&cardEnabled&&linkMode==='MEMBER_REQUIRED',origin,allowedHosts,allowLocalHttp}):null;
   return createCommunicationSenderPort(async request=>{
     if(!enabled)return rejected('P2_016_SENDER_DISABLED');
+    const preparationSignal=AbortSignal.any([request.signal,AbortSignal.timeout(4000)]);
+    const check=<T,>(operation:()=>Promise<T>)=>communicationPreSendCheck(operation,preparationSignal);
     if(request.provider==='WECOM_APP'){
       if(request.message.message_type!=='template_card'||!groupContent(request.message.content))return rejected('APP_NOTIFICATION_BINDING_INVALID');
       return app?app.send({...request,message:{message_type:'template_card',content:request.message.content}}):rejected('APP_NOTIFICATION_ROUTE_MISSING');
@@ -45,16 +46,19 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
     if((request.message.content as { transport?: unknown } | null)?.transport==='WECOM_GROUP_WEBHOOK')return rejected('P2_016_GROUP_WEBHOOK_TRANSPORT_REQUIRED');
     if(request.target_type==='GROUP'&&groupContent(request.message.content)&&request.message.content.group_reply){
       if(!mvpPolicy||!groupReplies||request.provider!=='WECOM_AIBOT'||request.message.message_type!=='text')return rejected('MVP_GROUP_REPLY_DISABLED');
-      const basis=await readMvpGroupReplyBasis(groupReplies.pool,request.delivery_id);
-      if(!basis||basis.bot_id!==request.channel_account_id||basis.group_id!==request.target_id||!isDeepStrictEqual(basis.content,request.message.content))return rejected('MVP_GROUP_REPLY_BINDING_INVALID');
-      let authorized:boolean;
-      try{authorized=groupReplies.authorize?await groupReplies.authorize(basis):allowlist.has(textHashP2016(request.target_id));}
-      catch(error){return error instanceof ApplicationMemberUnavailableError?rejected('MVP_GROUP_QUALIFICATION_UNAVAILABLE',true):rejected('MVP_GROUP_REPLY_NOT_AUTHORIZED');}
-      if(!authorized||request.signal.aborted)return rejected('MVP_GROUP_REPLY_NOT_AUTHORIZED');
-      const current=await readMvpGroupReplyBasis(groupReplies.pool,request.delivery_id);
-      if(!isDeepStrictEqual(current,basis)||!await createMvpNotificationAdmission()({transaction:groupReplies.pool,deliveryId:request.delivery_id}))return rejected('MVP_GROUP_REPLY_BINDING_INVALID');
-      if(request.signal.aborted||BigInt(basis.retention_epoch)<=BigInt(Date.now()))return rejected('MVP_GROUP_REPLY_ABORTED');
-      const client=gateway.getAuthenticatedClient();
+      let client:ReturnType<SenderOptions['gateway']['getAuthenticatedClient']>;
+      try{
+        const basis=await check(()=>readMvpGroupReplyBasis(groupReplies.pool,request.delivery_id));
+        if(!basis||basis.bot_id!==request.channel_account_id||basis.group_id!==request.target_id||!isDeepStrictEqual(basis.content,request.message.content))return rejected('MVP_GROUP_REPLY_BINDING_INVALID');
+        const authorize=groupReplies.authorize;
+        const authorized=authorize?await check(()=>authorize(basis)):allowlist.has(textHashP2016(request.target_id));
+        if(!authorized)return rejected('MVP_GROUP_REPLY_NOT_AUTHORIZED');
+        const current=await check(()=>readMvpGroupReplyBasis(groupReplies.pool,request.delivery_id));
+        if(!isDeepStrictEqual(current,basis)||!await check(()=>createMvpNotificationAdmission()({transaction:groupReplies.pool,deliveryId:request.delivery_id})))return rejected('MVP_GROUP_REPLY_BINDING_INVALID');
+        if(preparationSignal.aborted)return rejected('MVP_GROUP_REPLY_LOOKUP_UNAVAILABLE',true);
+        if(BigInt(basis.retention_epoch)<=BigInt(Date.now()))return rejected('MVP_GROUP_REPLY_ABORTED');
+        client=gateway.getAuthenticatedClient();
+      }catch{return rejected('MVP_GROUP_REPLY_LOOKUP_UNAVAILABLE',true);}
       try{
         const receipt=await client.sendMessage(request.target_id,{msgtype:'markdown',markdown:{content:String(request.message.content.text)}}) as ReceiptObservation;
         const code=receipt?.errcode??receipt?.body?.errcode;
@@ -71,7 +75,7 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
     try{model=snapshotP2016(request.message.content);if(linkMode==='MEMBER_REQUIRED')contentHash=computeCommunicationContentHash(model);}
     catch{return rejected('P2_016_CARD_INVALID');}
     if(linkMode==='MEMBER_REQUIRED'){
-      try{binding=await reporterAccess.deliveryBinding({deliveryId:request.delivery_id});}catch(error){
+      try{binding=await check(()=>reporterAccess.deliveryBinding({deliveryId:request.delivery_id}));}catch(error){
         return (error as { code?: unknown } | null)?.code==='P2_016_REPORTER_BINDING_INVALID'
           ?rejected('P2_016_CARD_BINDING_INVALID'):rejected('P2_016_CARD_BINDING_UNAVAILABLE',true);
       }
@@ -86,16 +90,17 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
     }catch{return rejected('P2_016_CARD_INVALID');}
     if(qualifyBotNotificationRecipient){
       try{
-        if(!await qualifyBotNotificationRecipient({botId:request.channel_account_id,reporterUserId:request.target_id}))return rejected('P2_016_SEND_SCOPE_FORBIDDEN');
-        // Current membership may wait. The original recipient, active public ref,
-        // immutable intent and source retention must still match after that wait.
-        if(!isDeepStrictEqual(await reporterAccess.deliveryBinding({deliveryId:request.delivery_id}),binding))return rejected('P2_016_CARD_BINDING_INVALID');
-      }catch(error){return error instanceof ApplicationMemberUnavailableError?rejected('P2_016_QUALIFICATION_UNAVAILABLE',true):rejected('P2_016_SEND_SCOPE_FORBIDDEN');}
+        if(!await check(()=>qualifyBotNotificationRecipient({botId:request.channel_account_id,reporterUserId:request.target_id})))return rejected('P2_016_SEND_SCOPE_FORBIDDEN');
+      }catch{return rejected('P2_016_QUALIFICATION_UNAVAILABLE',true);}
+      // Current membership may wait. Missing or changed facts deny sending;
+      // an unavailable local lookup is still proven to precede the SDK call.
+      try{if(!isDeepStrictEqual(await check(()=>reporterAccess.deliveryBinding({deliveryId:request.delivery_id})),binding))return rejected('P2_016_CARD_BINDING_INVALID');}
+      catch(error){return (error as {code?:unknown}|null)?.code==='P2_016_REPORTER_BINDING_INVALID'?rejected('P2_016_CARD_BINDING_INVALID'):rejected('P2_016_CARD_BINDING_UNAVAILABLE',true);}
     }
     let client;try{client=gateway.getAuthenticatedClient();}catch{
       const error=new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND') as Error & { code: string };error.code='GATEWAY_UNAVAILABLE_BEFORE_SEND';throw error;
     }
-    if(request.signal.aborted)return rejected('P2_016_ABORTED_BEFORE_SEND',true);
+    if(preparationSignal.aborted)return rejected('P2_016_ABORTED_BEFORE_SEND',true);
     if(mvpPolicy&&binding&&BigInt(binding.retention_epoch)<=BigInt(Date.now()))return rejected('P2_016_CARD_BINDING_INVALID');
     try{
       const receipt=await client.sendMessage(request.target_id,body) as ReceiptObservation;

@@ -38,3 +38,20 @@
 同类诊断在实际 Bot 私聊成员核验路径也复现了零 SDK 调用后进入死信。现将同一不可用／拒绝区分用于 Bot 私聊、固定群回应和 Webhook 提及核验；出站查询使用两秒预算，沿用原有单操作队列。入站仍使用原五秒 fail-closed 准入，不新增人员名单、队列或配置开关。诊断原件 `publication/diagnose-bot-qualification-red.log` 仅作诊断；已注册的群回应和通知策略回归分别核对同一 Delivery 从 PENDING 恢复为 SENT、零重复发送及正确原群提及。
 
 最终候选 17 的 16 个相关入口、66 项适用结果通过，逐入口源码／执行字节证明见 `publication/second-repair-validation-summary.json`。`review2-outbound-final-01/` 保留 65 项通过与一项三进程启动就绪超时；相同源码和构建在 `review2-browser-confirm-02/` 的四项浏览器复核全部通过。该次启动超时原因未确定，不称为已修复，也不删除失败或提高超时。候选 17 的严格类型、制品校验及 2427 项输出归档哈希核对通过，manifest 为 `fdda6d861ec9597d45bb8b99e050bd8c69dde14dc5d7e7c13030653b58f08694`。
+
+## 第三轮：发送前本地终检故障
+
+审查对象为 `848b841a6d2a1f212eeff0f7ecf4e6b9c446bc5b`。
+
+- [P2：Bot 个人通知终检异常被判为永久拒绝](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/108#discussion_r4323462319)。成员核验与原绑定终检分别处理；确认为原绑定缺失或变化时拒发，本地查询不可用时保留同一 Delivery 重试。
+- [P2：固定群回应终检异常被判为发送结果不明](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/108#discussion_r4323462333)。固定群回应、Webhook 和应用通知均在实际发送前捕获本地读取异常，返回可重试的未发送结果。实际 SDK／Webhook 调用后的 UNKNOWN 处理不变。
+
+复用 Sender Port 的小型等待工具，将本地准备和终检限制在四秒内，早于原 Worker 五秒发送期限；工具不能执行真实发送。超时后即使原查询迟到返回，也不能进入 SDK。新成员资格的两秒预算、原数据库池上限和旧应用资格查询期限保持原样。不新增队列、服务或持久开关。
+
+`review3-red-01/` 和 `review3-red-bot-01/` 分别在原实现上复现了错误进入待核对与死信；`review3-red-app-01/` 复现应用通知的同类死信。测试通过实际 Worker 注入成员核验后的数据库异常，并覆盖个人／原群终检超时、迟到查询与同一 Delivery 恢复。
+
+候选 19 的回归发现旧“来源过期”夹具可能命中 `message_inbox_retention_check`：秒级时间精度令测试更新失败，旧捕获把异常误当成拒发。现在按原消息接收时间等待合法过期边界，确认实际更新成功，再精确断言原绑定失效与零 SDK。`publication/diagnose-expired-final-check*.log` 仅作诊断，`review3-green-core-01/` 的失败保留，不算通过。
+
+候选 20 的重试夹具曾因数据库／JavaScript 时钟精度差导致领取为空。现只将合成投递的 `next_attempt` 置于明确过去，不改生产时钟、租约或终检。`review3-final-01/` 保留原失败，后续报告使用新目录。最终候选 21 的 manifest 为 `03c5877325bf96584c65a8f6e1b34e1866a9066ba37580e52ab38bd186aed913`；最终验证结果另记 `publication/third-repair-validation-summary.json`。
+
+最终候选 21 的 55 个相关入口、126 项全部通过，零失败、取消、跳过和 NOT_RUN。包含三个 MVP 集成入口、原 T24／T25／T26、三进程浏览器和共用投递回归。严格类型、构建、制品、文档检查与 2427 项输出归档哈希核验通过。构建编译错误保留于 `publication/build-review-11-third-green.log`，后续正常修复类型与测试夹具，不增加类型逃逸、放宽生产保护或原 SDK 超时。

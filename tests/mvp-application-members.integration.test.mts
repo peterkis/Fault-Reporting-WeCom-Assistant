@@ -87,16 +87,19 @@ test('MVP H5 admits unlisted visible members through real OAuth and HTTP; durabl
    const publicView=await a.get('/api/yixiaoxiu/requests/'+ref);assert.equal(publicView.status,200);assert.equal(publicView.raw.includes('open-new-a'),false);assert.equal(publicView.raw.includes('notify_recipient'),false);
    app.oauth.close();await stopYxx(app.server);app.extension.close();app=makeApp();base=await listenYxx(app.server);
    // A fresh sender/options instance has no original OAuth session or in-memory member correspondence.
-   const freshOptions=createWorkbenchNotificationOptions(options,entryKey);
+   const freshOptions=createWorkbenchNotificationOptions(options,entryKey);let failAfterQualification=false,localLookupUnavailable=false;
+   const faultingPool=new Proxy(context.pool,{get:(target,key)=>key==='query'?new Proxy(target.query,{apply:(query,_receiver,args)=>{if(localLookupUnavailable){localLookupUnavailable=false;throw Error('SYNTHETIC_FINAL_LOOKUP_UNAVAILABLE');}return Reflect.apply(query,target,args);}}):Reflect.get(target,key)});
    const sender=createP2016WeComSender({mvpPolicy:true,gateway:{getAuthenticatedClient:()=>{throw Error('H5_MUST_NOT_SEND_BOT');}},enabled:true,cardEnabled:true,
     reporterAccess:context.runtime.reporterAccess,origin,allowedHosts:['entry.test'],linkMode:'MEMBER_REQUIRED',
-    appRoundNotifications:{pool:context.pool,notifications:freshOptions,agentId:Number(config.agentId),accessTokenProvider:token,applicationMemberVerifier:verify,fetchImpl}});
+    appRoundNotifications:{pool:faultingPool,notifications:freshOptions,agentId:Number(config.agentId),accessTokenProvider:token,applicationMemberVerifier:async(id,signal)=>{const member=await verify(id,signal);if(member&&failAfterQualification){failAfterQualification=false;localLookupUnavailable=true;}return member;},fetchImpl}});
    const delivery=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
    for(const [index,n] of notice.rows.entries()){
     memberUnavailable=index===0;stallMemberLookup=index===1;
     const unavailable=await delivery.deliver({deliveryId:n.id});assert.ok(unavailable&&'status'in unavailable);assert.equal(unavailable.status,'PENDING');assert.equal(unavailable.side_effect_state,'NOT_ATTEMPTED');assert.equal(appBodies.length,index,'a failed or timed-out member lookup cannot call message/send');
     memberUnavailable=false;stallMemberLookup=false;if(index===1)assert.ok(releaseMemberLookup);releaseMemberLookup?.();
-    await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[n.id]);
+    await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[n.id]);
+    failAfterQualification=true;const pending=await delivery.deliver({deliveryId:n.id});assert.ok(pending&&'status'in pending);assert.equal(pending.status,'PENDING');assert.equal(pending.side_effect_state,'NOT_ATTEMPTED');assert.equal(appBodies.length,index);
+    await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[n.id]);
     const result=await delivery.deliver({deliveryId:n.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await delivery.deliver({deliveryId:n.id}),null);
    }
    assert.equal(appBodies.length,2);for(const body of appBodies){assert.equal(body.touser,'open-new-a');assert.equal(object(body.template_card).source,undefined);assert.match(String(object(object(body.template_card).card_action).url),new RegExp('/reports/'+ref+'$','u'));}

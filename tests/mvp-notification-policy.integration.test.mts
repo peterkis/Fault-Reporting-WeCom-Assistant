@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
+import {setTimeout as delay} from 'node:timers/promises';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
@@ -54,21 +55,29 @@ test('MVP original Bot private and group completion notices recover from tempora
   const intake=await seedPersistedIntake({pool:context.pool,text:'合成打印机打印不了',chatType:'group',requestType:'INCIDENT',status:'RECEIVED',tag:'mvp-bot-recovery'});
   const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'mvp-bot-recovery'});assert.ok(created.ticket);
   const http=await t11Http(context),started=await http.start(created.ticket.id);await context.runtime.roundNotifications.runOnce();assert.equal((await http.post(created.ticket.id,'complete',http.command(started))).status,200);await context.runtime.roundNotifications.runOnce();
-  let unavailable=true,privateSends=0,groupSends=0;
+  let unavailable=true,privateSends=0,groupSends=0,failAfterQualification=false,localLookupUnavailable=false,stallAfterQualification=false,stallLookup=false,releaseLookup:(()=>void)|undefined;
+  const armFinalLookup=()=>{if(failAfterQualification){failAfterQualification=false;localLookupUnavailable=true;}if(stallAfterQualification){stallAfterQualification=false;stallLookup=true;}};
+  const releaseFinalLookup=()=>{assert.ok(releaseLookup);releaseLookup();};
+  const faultingPool=new Proxy(context.pool,{get:(target,key)=>key==='query'?new Proxy(target.query,{apply:(query,_receiver,args)=>{if(localLookupUnavailable){localLookupUnavailable=false;throw Error('SYNTHETIC_FINAL_LOOKUP_UNAVAILABLE');}if(stallLookup){stallLookup=false;return new Promise<unknown>(resolve=>{releaseLookup=()=>resolve(Reflect.apply(query,target,args));});}return Reflect.apply(query,target,args);}}):Reflect.get(target,key)});
   const admission=createWorkbenchBotMemberAdmission({botId:'bot-test',accessTokenProvider:async()=> 'SYNTHETIC_TOKEN',fetchImpl:async input=>{
    if(unavailable)return new Response('synthetic outage',{status:503});const url=new URL(input instanceof Request?input.url:String(input));
    return new Response(JSON.stringify(url.pathname.endsWith('/user/get')?{errcode:0,userid:'open-original-reporter',status:1}:{errcode:0,open_userid_list:[{userid:'user-test',open_userid:'open-original-reporter'}]}));
   }});
-  const sender=createP2016WeComSender({mvpPolicy:true,enabled:true,cardEnabled:true,allowedTargetHashes:[],linkMode:'MEMBER_REQUIRED',reporterAccess:context.runtime.reporterAccess,origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],
-   qualifyBotNotificationRecipient:source=>admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'}),gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{privateSends++;return {errcode:0};}})},
-   groupRoundNotifications:{pool:context.pool,mvpPolicy:true,routes:[{botId:'bot-test',groupId,url:'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=synthetic-recovery'}],resolveMentionUserId:async source=>await admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'group',chat_id:source.groupId})?source.reporterUserId:null,
+  const reporterAccess={...context.runtime.reporterAccess,deliveryBinding:async(input:Parameters<typeof context.runtime.reporterAccess.deliveryBinding>[0])=>{if(localLookupUnavailable){localLookupUnavailable=false;throw Error('SYNTHETIC_FINAL_LOOKUP_UNAVAILABLE');}if(stallLookup){stallLookup=false;await new Promise<void>(resolve=>{releaseLookup=resolve;});}return context.runtime.reporterAccess.deliveryBinding(input);}};
+  const sender=createP2016WeComSender({mvpPolicy:true,enabled:true,cardEnabled:true,allowedTargetHashes:[],linkMode:'MEMBER_REQUIRED',reporterAccess,origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],
+   qualifyBotNotificationRecipient:async source=>{const allowed=await admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'});armFinalLookup();return allowed;},gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{privateSends++;return {errcode:0};}})},
+   groupRoundNotifications:{pool:faultingPool,mvpPolicy:true,routes:[{botId:'bot-test',groupId,url:'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=synthetic-recovery'}],resolveMentionUserId:async source=>{const allowed=await admission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'group',chat_id:source.groupId});armFinalLookup();return allowed?source.reporterUserId:null;},
     fetchImpl:async(_input,init)=>{groupSends++;assert.deepEqual(JSON.parse(String(init?.body)).text.mentioned_list,['user-test']);return new Response('{"errcode":0}');}}});
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
   const notices=(await context.pool.query<{id:string}>('SELECT delivery_id::text AS id FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid ORDER BY id',[created.ticket.id])).rows;assert.equal(notices.length,3);
   for(const row of notices){const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'PENDING');assert.equal(result.side_effect_state,'NOT_ATTEMPTED');}
   assert.equal(privateSends,0);assert.equal(groupSends,0);unavailable=false;
-  await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=ANY($1::uuid[])',[notices.map(row=>row.id)]);
-  for(const row of notices){const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await worker.deliver({deliveryId:row.id}),null);}
+  await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=ANY($1::uuid[])',[notices.map(row=>row.id)]);
+  for(const row of notices){const sendsBefore:number=privateSends+groupSends;failAfterQualification=true;const pending=await worker.deliver({deliveryId:row.id});assert.ok(pending&&'status'in pending);assert.equal(pending.status,'PENDING');assert.equal(pending.side_effect_state,'NOT_ATTEMPTED');assert.equal(privateSends+groupSends,sendsBefore);
+   await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[row.id]);
+   stallAfterQualification=true;releaseLookup=undefined;const stalled=await worker.deliver({deliveryId:row.id});assert.ok(stalled&&'status'in stalled);assert.equal(stalled.status,'PENDING');assert.equal(stalled.side_effect_state,'NOT_ATTEMPTED');assert.equal(privateSends+groupSends,sendsBefore);releaseFinalLookup();
+   await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[row.id]);
+   const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await worker.deliver({deliveryId:row.id}),null);}
   assert.equal(privateSends,2);assert.equal(groupSends,1);
  },{mvpNotificationsEnabled:true,groupNotificationTargets:[{botId:'bot-test',groupId}],manualRoundConsumption:true});
 });
@@ -100,17 +109,21 @@ test('MVP Bot member qualification rechecks the retained original inbox after it
  await withT24Fixture(async context=>{
   const http=await t11Http(context);await http.start(context.ticketId);await context.runtime.roundNotifications.runOnce();
   const delivery=(await context.pool.query<{id:string}>("SELECT b.delivery_id::text AS id FROM communication.ticket_round_notification_binding r JOIN communication.ticket_notification_binding b ON b.id=r.notification_binding_id WHERE r.ticket_id=$1::uuid AND r.node='FIRST_HANDLING'",[context.ticketId])).rows[0];assert.ok(delivery);
-  const source=(await context.pool.query<{primary_message_id:string}>('SELECT i.primary_message_id::text FROM pilot_ticket.ticket t JOIN intake.service_intake i ON i.id=t.source_intake_id WHERE t.id=$1::uuid',[context.ticketId])).rows[0];assert.ok(source);
-  let qualified=0,sdk=0;
+  const source=(await context.pool.query<{primary_message_id:string;received_epoch_ms:string}>('SELECT i.primary_message_id::text,cm.received_epoch_ms::text FROM pilot_ticket.ticket t JOIN intake.service_intake i ON i.id=t.source_intake_id JOIN channel.message_inbox cm ON cm.id=i.primary_message_id WHERE t.id=$1::uuid',[context.ticketId])).rows[0];assert.ok(source);
+  let qualified=0,sdk=0,expired=false;
   const sender=createP2016WeComSender({mvpPolicy:true,enabled:true,cardEnabled:true,allowedTargetHashes:[],linkMode:'MEMBER_REQUIRED',reporterAccess:context.runtime.reporterAccess,
    origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{sdk++;return {errcode:0};}})},
    qualifyBotNotificationRecipient:async()=>{
-    qualified++;await context.pool.query(`WITH stamp AS(SELECT platform.physical_epoch_ms()-1 AS cutoff)
-     UPDATE channel.message_inbox SET retention_until=platform.local_from_epoch_ms(cutoff),retention_until_epoch_ms=cutoff FROM stamp WHERE id=$1::bigint`,[source.primary_message_id]);return true;
+    qualified++;
+    // Business local timestamps have second precision: retain the real Inbox
+    // constraint retention_until > received_at while expiring its source.
+    await delay(Math.max(0,Number(source.received_epoch_ms)+1100-Date.now()));
+    const changed=await context.pool.query(`WITH stamp AS(SELECT platform.physical_epoch_ms()-1 AS cutoff)
+     UPDATE channel.message_inbox SET retention_until=platform.local_from_epoch_ms(cutoff),retention_until_epoch_ms=cutoff FROM stamp WHERE id=$1::bigint`,[source.primary_message_id]);assert.equal(changed.rowCount,1);expired=true;return true;
    }});
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
   const result=await worker.deliver({deliveryId:delivery.id});assert.ok(result&&'status'in result);assert.equal(result.status,'DEAD_LETTER');assert.equal(result.side_effect_state,'NOT_ATTEMPTED');
-  assert.equal(qualified,1);assert.equal(sdk,0);
+  assert.equal(expired,true);assert.equal(result.last_error_code,'P2_016_CARD_BINDING_INVALID');assert.equal(qualified,1);assert.equal(sdk,0);
  },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
 });
 
