@@ -9,6 +9,18 @@ export const RULE_ACTION_MESSAGE_JOIN_SQL=`(a.id=m.client_command_id OR (a.resul
   OR (a.action_type='REQUEST_ONE_DESCRIPTION' AND m.client_command_id::text IN ((${derivedSql('P2016_GUIDANCE:')}),(${derivedSql('P2016_PERSON_GUIDANCE:')}))))`;
 export interface RuleAdmissionInput {transaction:PostgresTransaction;deliveryId:string}
 export type DeliveryAttemptAdmission=((input:RuleAdmissionInput)=>Promise<boolean>)&{readonly mvpRepliesEnabled?:boolean};
+/** Call while holding the shared control lock; release never resumes this topic's rules. */
+export async function conversationTopicRulesPaused(tx:PostgresTransaction,topic:{journey_id:string;session_id:string|null;source_intake_id:string}):Promise<boolean>{
+  const accepted=await tx.query(`SELECT 1 FROM conversation.session s JOIN conversation.thread th ON th.id=s.thread_id
+    JOIN intake.service_intake i ON i.id=s.service_intake_id
+      AND i.source_provider=th.provider AND i.source_bot_id=th.channel_account_id AND i.reporter_wecom_userid=s.participant_key
+    ${SESSION_JOURNEY_JOIN_SQL}
+    WHERE (j.id=$1::uuid OR s.id=$2::uuid OR s.service_intake_id=$3::uuid)
+      AND (EXISTS(SELECT 1 FROM conversation.assignment a WHERE a.session_id=s.id AND (a.assignment_status='ASSIGNED' OR a.released_at IS NOT NULL))
+        OR EXISTS(SELECT 1 FROM conversation.control_event e WHERE e.session_id=s.id AND e.event_type IN ('ASSIGNMENT_ASSIGNED','ASSIGNMENT_TRANSFERRED','HANDOFF_ACCEPTED'))
+        OR EXISTS(SELECT 1 FROM conversation.handoff h WHERE h.session_id=s.id AND h.status IN ('ACCEPTED','RELEASED'))) LIMIT 1`,[topic.journey_id,topic.session_id,topic.source_intake_id]);
+  return accepted.rows.length>0;
+}
 /** Existing producers' primary/derived command identities, never text/time correlation. */
 export function createConversationRuleAdmission({existingAdmissionMounted=false,mvpRepliesEnabled=false}:{existingAdmissionMounted?:boolean;mvpRepliesEnabled?:boolean}={}):DeliveryAttemptAdmission{
   return async({transaction:tx,deliveryId})=>{
@@ -51,15 +63,7 @@ export function createConversationRuleAdmission({existingAdmissionMounted=false,
     const topic=matches.rows[0];if(!topic)return false;
     if(topic.decision_status==='HUMAN_OVERRIDDEN')return true;
     if(topic.decision_status!=='RECORDED')return false;
-    const accepted=await tx.query(`SELECT 1 FROM conversation.session s JOIN conversation.thread th ON th.id=s.thread_id
-      JOIN intake.service_intake i ON i.id=s.service_intake_id
-        AND i.source_provider=th.provider AND i.source_bot_id=th.channel_account_id AND i.reporter_wecom_userid=s.participant_key
-      ${SESSION_JOURNEY_JOIN_SQL}
-      WHERE (j.id=$1::uuid OR s.id=$2::uuid OR s.service_intake_id=$3::uuid)
-        AND (EXISTS(SELECT 1 FROM conversation.assignment a WHERE a.session_id=s.id AND (a.assignment_status='ASSIGNED' OR a.released_at IS NOT NULL))
-          OR EXISTS(SELECT 1 FROM conversation.control_event e WHERE e.session_id=s.id AND e.event_type IN ('ASSIGNMENT_ASSIGNED','ASSIGNMENT_TRANSFERRED','HANDOFF_ACCEPTED'))
-          OR EXISTS(SELECT 1 FROM conversation.handoff h WHERE h.session_id=s.id AND h.status IN ('ACCEPTED','RELEASED'))) LIMIT 1`,[topic.journey_id,topic.session_id,topic.source_intake_id]);
-    return accepted.rowCount===0;
+    return !await conversationTopicRulesPaused(tx,topic);
   };
 }
 export function composeConversationRuleAdmission(existing:DeliveryAttemptAdmission|null=null):DeliveryAttemptAdmission{

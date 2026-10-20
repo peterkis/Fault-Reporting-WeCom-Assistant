@@ -7,7 +7,7 @@ import type { DecisionRecord, ActionRow, DecisionStore } from './p2-015-decision
 import type { ManualReviewStore } from './p2-015-manual-review.mjs';
 export interface FixedAppendInput { transaction: PostgresTransaction; command: CommunicationCommand; actor: null; resolvedDestinations: CommunicationDestination[] }
 export type FixedCommunicationAppend = (input: FixedAppendInput) => Promise<CommunicationResult>;
-export interface SafeActionContext {suppress_group_fixed?:boolean; trace_id: string; session_id?: string | null; fixed_text?: string; message_type?: CommunicationCommand['message_type']; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; destination?: CommunicationDestination | null }
+export interface SafeActionContext {rule_actions_paused?:boolean;suppress_group_fixed?:boolean; trace_id: string; session_id?: string | null; fixed_text?: string; message_type?: CommunicationCommand['message_type']; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; destination?: CommunicationDestination | null }
 export interface ActionPortResult { replayed?: boolean; error?: unknown; ticket?: { id: string } | null; ticket_id?: string; id?: string; message_id?: string; appended?: boolean }
 export interface IntakeDecisionPort { apply(input: { transaction: PostgresTransaction; input: IntakeDecisionInput }): Promise<ActionPortResult> }
 export interface TicketCommandPort { createMinimalTicket(input: { transaction: PostgresTransaction; intake_id: string; occurred_at: LocalDateTime; trace_id: string }): Promise<ActionPortResult> }
@@ -82,6 +82,10 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
       for (const action of safeDecision.actions) {
         if (action.state !== 'PROPOSED') { results.push({ action_id: action.id, replayed: true }); continue; }
         const commandHash = safeHash({ action_key: action.action_key, payload_hash: action.payload_hash });
+        if(safeContext.rule_actions_paused===true){
+          await decisionStore.markAction({transaction,action_id:action.id,state:'CANCELLED',command_id:action.id,command_hash:commandHash,error_code:'RULE_ACTIONS_PAUSED_AFTER_TAKEOVER',retryable:false,executed_at:safeDecision.observed_at});
+          results.push({action_id:action.id,cancelled:true});continue;
+        }
         if(safeContext.suppress_group_fixed===true&&safeContext.destination?.target_type==='GROUP'
           &&['REQUEST_ONE_DESCRIPTION','SEND_FIXED_ACKNOWLEDGEMENT','SEND_FIXED_SCOPE_NOTICE'].includes(action.action_type)){
           await decisionStore.markAction({transaction,action_id:action.id,state:'CANCELLED',command_id:action.id,command_hash:commandHash,error_code:'MVP_GROUP_FIXED_SUPPRESSED',retryable:false,executed_at:safeDecision.observed_at});

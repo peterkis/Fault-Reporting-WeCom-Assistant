@@ -50,7 +50,7 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
     }},
   });
   const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey,safeActionExecutor:executor,decisionStore:decisions,directorySource,
-    mvpGroupReplies:mvpPolicy,afterDecision:mvpPolicy?input=>appendMvpGroupReplies({...input,append:communicationAppend}):null,
+    mvpGroupReplies:mvpPolicy,afterDecision:mvpPolicy?input=>appendMvpGroupReplies({...input,thanksOnly:input.rulesPaused===true,append:communicationAppend}):null,
     journeyStore:createP2016GuidedJourneyStore({now}),decisionOverride:p2016AssociationDecision,
     ...(directoryPort?{directoryPort}:{}),...(ruleEngine?{ruleEngine}:{})});
   // Scheduling cursor only: restart may rescan, but never invents or owns facts.

@@ -76,3 +76,57 @@ test('MVP human takeover permanently suppresses ordinary rules but permits a fix
   }finally{await worker.stop();}
  },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
 });
+
+test('MVP a newly batched fault remains eligible when followed by thanks',{timeout:240000},async()=>{
+ await withT24Fixture(async context=>{
+  const worker=createP2016OrchestrationWorker({pool:context.pool,mvpPolicy:true,identityHmacKey:'mvp-synthetic-identity-key',notifications:context.runtime.notifications,realtime:context.runtime.realtimeProjector});
+  const inbound=async(text:string)=>{
+   const msgid=randomUUID();const result=await context.runtime.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:'mvp-batch-'+msgid},body:{aibotid:'bot-test',msgid,chattype:'group',chatid:'mvp-batched-fault',from:{userid:'user-test'},msgtype:'text',text:{content:'@医小修 '+text}}});assert.equal(result.ok,true);
+   const row=(await context.pool.query<{intake_id:string}>('SELECT r.intake_id::text FROM channel.message_inbox m JOIN intake.service_intake_message r ON r.channel_message_id=m.id WHERE m.msg_id=$1',[msgid])).rows[0];assert.ok(row);return row.intake_id;
+  };
+  try{
+   const fault=await inbound('打印机打印不了。');assert.equal(await inbound('谢谢'),fault);
+   await worker.processDueBatch({feature_flags:flags,batch_size:20,now_epoch_ms:String(Date.now()+15000)});
+   const intake=(await context.pool.query<{ticket_id:string|null}>('SELECT pilot_ticket_id::text AS ticket_id FROM intake.service_intake WHERE id=$1::uuid',[fault])).rows[0];assert.ok(intake?.ticket_id,'a trailing thanks must not discard the unprocessed fault');
+   const replies=await context.pool.query<{text:string}>(`SELECT m.content->>'text' AS text FROM communication.message m JOIN intake.deterministic_decision d ON d.id::text=m.content->'group_reply'->>'decision_id' WHERE d.service_intake_id=$1::uuid ORDER BY m.created_at,m.id`,[fault]);
+   assert.equal(replies.rows.filter(row=>row.text===MVP_GROUP_RECEIVED).length,1);assert.equal(replies.rows.filter(row=>row.text===MVP_GROUP_THANKS).length,1);
+  }finally{await worker.stop();}
+ },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
+});
+
+test('MVP takeover and release pause all automatic business actions in the same group or direct topic',{timeout:240000},async()=>{
+ await withT24Fixture(async context=>{
+  const worker=createP2016OrchestrationWorker({pool:context.pool,mvpPolicy:true,identityHmacKey:'mvp-synthetic-identity-key',notifications:context.runtime.notifications,realtime:context.runtime.realtimeProjector});
+  const pump=()=>worker.processDueBatch({feature_flags:flags,batch_size:20,now_epoch_ms:String(Date.now()+15000)});
+  const cookie=context.cookies[0];assert.ok(cookie);
+  const read=async(path:string)=>{const response=await fetch(context.origin+path,{headers:{cookie}});assert.equal(response.status,200);return await response.json() as Record<string,unknown>;};
+  const bootstrap=await read('/api/lifecycle/bootstrap');
+  const state=async(id:string)=>(await context.pool.query(`SELECT i.request_type,i.status,i.version,i.pilot_ticket_id::text,j.status AS journey_status,j.row_version::text AS journey_version,
+   (SELECT count(*)::integer FROM intake.manual_review_item r WHERE r.service_intake_id=i.id) AS review_count
+   FROM intake.service_intake i JOIN intake.contact_journey j ON j.origin_intake_id=i.id WHERE i.id=$1::uuid`,[id])).rows[0];
+  try{
+   for(const chatType of ['group','single'] as const){
+    const inbound=async(text:string)=>{
+     const msgid=randomUUID();const result=await context.runtime.assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:'mvp-paused-'+msgid},body:{aibotid:'bot-test',msgid,chattype:chatType,...(chatType==='group'?{chatid:'mvp-paused-business'}:{}),from:{userid:'mvp-paused-'+chatType},msgtype:'text',text:{content:(chatType==='group'?'@医小修 ':'')+text}}});assert.equal(result.ok,true);
+     const row=(await context.pool.query<{intake_id:string}>('SELECT r.intake_id::text FROM channel.message_inbox m JOIN intake.service_intake_message r ON r.channel_message_id=m.id WHERE m.msg_id=$1',[msgid])).rows[0];assert.ok(row);return row.intake_id;
+    };
+    const intakeId=await inbound('在吗');await pump();await context.runtime.coordinator.runOnce();await pump();
+    const session=(await context.pool.query<{id:string}>('SELECT id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[intakeId])).rows[0];assert.ok(session);
+    const control=async(action:'takeover'|'release')=>{
+     const detail=await read('/api/conversations/'+session.id),value=detail.session as {row_version:number};
+     const command={client_command_id:randomUUID(),expected_row_version:value.row_version,...(action==='takeover'?{target_principal_id:context.principals[0]?.id}:{}),reason_code:action==='takeover'?'WORKBENCH_TAKEOVER':'WORKBENCH_RELEASE'};
+     const response=await fetch(context.origin+'/api/conversations/'+session.id+'/'+action,{method:'POST',headers:{cookie,origin:context.origin,'content-type':'application/json','x-csrf-token':String(bootstrap.csrf_token),'idempotency-key':command.client_command_id,'if-match':'"'+value.row_version+'"'},body:JSON.stringify(command)});assert.equal(response.status,200,await response.text());
+    };
+    await control('takeover');
+    for(const text of ['打印机打印不了。','电脑无法开机。']){
+     assert.equal(await inbound(text),intakeId);const before=await state(intakeId);assert.ok(before);assert.equal(before.pilot_ticket_id,null,'isolated '+chatType+' topic before '+text);
+     await pump();assert.deepEqual(await state(intakeId),before,'human takeover must prevent classification, tickets, journey transitions and review enqueueing');
+     await pump();assert.deepEqual(await state(intakeId),before,'a rescan must keep business state paused');
+     if(text==='打印机打印不了。')await control('release');
+    }
+    const actions=await context.pool.query<{state:string}>(`SELECT a.state FROM intake.safe_action_suggestion a JOIN intake.deterministic_decision d ON d.id=a.decision_id WHERE d.service_intake_id=$1::uuid AND d.source_window_end_sequence>1`,[intakeId]);
+    assert.ok(actions.rows.length>0);assert.ok(actions.rows.every(action=>action.state==='CANCELLED'));
+   }
+  }finally{await worker.stop();}
+ },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
+});

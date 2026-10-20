@@ -1,10 +1,10 @@
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {DeliveryAttemptAdmission} from './conversation-rule-admission.mjs';
+import {conversationTopicRulesPaused} from './conversation-rule-admission.mjs';
 import {appendCommunication} from './p2-004-communication-core.mjs';
 import {textHashP2016,failP2016} from './p2-016-domain-contracts.mjs';
 import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
-import {SESSION_JOURNEY_JOIN_SQL} from './conversation-topic-scope.mjs';
 
 export const MVP_GROUP_RECEIVED='收到啦～小修记下了，工程师马上联系您，稍等哦 🛠️';
 export const MVP_GROUP_CLARIFY='这条小修没完全看懂😅 麻烦您私信我一下啦，回复两句就能安排～';
@@ -23,7 +23,7 @@ function verifiedGroupName(value:unknown):string|null{
 }
 interface Source {intake_id:string;journey_id:string;session_id:string|null;bot_id:string;group_id:string;reporter:string;primary_message_id:string;result_code:string;ticket_id:string|null;retention_epoch:string;previous:boolean;previous_end:number;profile_snapshot:unknown}
 
-export async function appendMvpGroupReplies({transaction:tx,intakeId,decisionId,append=appendCommunication}:{transaction:PostgresTransaction;intakeId:string;decisionId:string;append?:typeof appendCommunication}){
+export async function appendMvpGroupReplies({transaction:tx,intakeId,decisionId,thanksOnly=false,append=appendCommunication}:{transaction:PostgresTransaction;intakeId:string;decisionId:string;thanksOnly?:boolean;append?:typeof appendCommunication}){
  const q=await tx.query<Source>(`SELECT i.id::text AS intake_id,d.journey_id::text,d.conversation_session_id::text AS session_id,
    i.source_bot_id AS bot_id,i.source_chat_id AS group_id,i.reporter_wecom_userid AS reporter,i.primary_message_id::text,
    d.result_code,i.pilot_ticket_id::text AS ticket_id,j.profile_snapshot,
@@ -54,7 +54,7 @@ export async function appendMvpGroupReplies({transaction:tx,intakeId,decisionId,
   if(!result||!('message_id'in result)||!result.outbox_id||result.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
  };
  const primary=messages.rows.find(m=>m.id===source.primary_message_id);
- if(!source.previous&&primary){
+ if(!thanksOnly&&!source.previous&&primary){
   if(isPureGroupThanks(primary.clean_text??''))await appendReply('THANKS',primary.id,primary.retention_epoch);
   else if(['TICKET_ELIGIBLE','INCIDENT_REVIEW_CANDIDATE'].includes(source.result_code)||source.result_code==='MANUAL_REVIEW_REQUIRED'&&source.ticket_id){
    if(source.ticket_id)await appendReply('RECEIVED',primary.id,primary.retention_epoch);
@@ -105,13 +105,7 @@ export function createMvpNotificationAdmission(existing:DeliveryAttemptAdmission
   if(row.sender_system_code==='MVP_GROUP_REPLY'){
    await lockP2016Realtime(tx);const basis=await readMvpGroupReplyBasis(tx,deliveryId);if(!basis)return false;
    if(basis.kind==='THANKS')return true;
-   const paused=await tx.query(`SELECT 1 FROM conversation.session s JOIN conversation.thread th ON th.id=s.thread_id
-    JOIN intake.service_intake i ON i.id=s.service_intake_id ${SESSION_JOURNEY_JOIN_SQL}
-    WHERE (j.id=$1::uuid OR s.id=$2::uuid OR s.service_intake_id=$3::uuid)
-      AND (EXISTS(SELECT 1 FROM conversation.assignment a WHERE a.session_id=s.id AND (a.assignment_status='ASSIGNED' OR a.released_at IS NOT NULL))
-       OR EXISTS(SELECT 1 FROM conversation.control_event e WHERE e.session_id=s.id AND e.event_type IN ('ASSIGNMENT_ASSIGNED','ASSIGNMENT_TRANSFERRED','HANDOFF_ACCEPTED'))
-       OR EXISTS(SELECT 1 FROM conversation.handoff h WHERE h.session_id=s.id AND h.status IN ('ACCEPTED','RELEASED'))) LIMIT 1`,[basis.journey_id,basis.session_id,basis.intake_id]);
-   return paused.rowCount===0;
+   return !await conversationTopicRulesPaused(tx,{journey_id:basis.journey_id,session_id:basis.session_id,source_intake_id:basis.intake_id});
   }
   if(row.node==='FIRST_RESPONSIBILITY')return false;
   if(row.target_type==='GROUP')return row.sender_system_code==='TICKET_LIFECYCLE'&&row.node==='STAFF_COMPLETED'&&row.route_policy==='P2_016_ORIGIN_GROUP_ROUND';

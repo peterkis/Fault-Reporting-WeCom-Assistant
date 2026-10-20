@@ -14,10 +14,12 @@ interface WindowRow { sequence_no: number; message_id: string; clean_text: strin
 interface Window { rows: WindowRow[]; bounded: boolean; text: string; total: number }
 export interface OrchestrationRuleEngine { evaluate(input: RuleEvaluationInput): unknown; catalog_version?: string; rule_set_version?: string; getServiceCatalog?:()=>ServiceCatalog }
 export interface OrchestrationJourneyStore { ensureJourney(input: { transaction: PostgresTransaction; input: ContactJourneyInput }): Promise<OrchestrationJourney>; ensureLeg(input: { transaction: PostgresTransaction; input: ChannelLegInput }): Promise<ChannelLegRow & { replayed: boolean }> }
-export interface OrchestrationOptions {mvpGroupReplies?:boolean;afterDecision?:((input:{transaction:PostgresTransaction;intakeId:string;decisionId:string})=>Promise<void>)|null; pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
+export interface OrchestrationOptions {mvpGroupReplies?:boolean;afterDecision?:((input:{transaction:PostgresTransaction;intakeId:string;decisionId:string;rulesPaused?:boolean})=>Promise<void>)|null; pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
 export interface ProcessInTransactionInput { transaction: PostgresTransaction; intakeId: string; profile: ReporterDirectoryResult; reporterHash: string; flags: ReturnType<typeof normalizeP2015FeatureFlags>; traceId: string }
 export type RuleFirstOrchestrator = ReturnType<typeof createRuleFirstOrchestrator>;
 import {isPureGroupThanks,groupMessageDescription} from './mvp-group-replies.mjs';
+import {conversationTopicRulesPaused} from './conversation-rule-admission.mjs';
+import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import { freezeReporterProfileEnvelope } from './p2-015-reporter-profile.mjs';
 import { createRuleEngine } from './p2-007-rule-engine.mjs';
 import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
@@ -145,10 +147,12 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
   if (!pool?.connect || typeof identityHmacKey !== 'string' || identityHmacKey.length < 16
     || !safeActionExecutor || (decisionOverride !== null && typeof decisionOverride !== 'function')) failP2015(P2_015_ERROR_CODES.inputInvalid);
   if(typeof mvpGroupReplies!=='boolean'||afterDecision!==null&&typeof afterDecision!=='function')failP2015(P2_015_ERROR_CODES.inputInvalid);
-  const decisionPolicy=mvpGroupReplies?'mvp-safe-route/1':P2_015_DECISION_POLICY_VERSION;
+  const decisionPolicy=mvpGroupReplies?'mvp-safe-route/2':P2_015_DECISION_POLICY_VERSION;
   const engine: OrchestrationRuleEngine = ruleEngine ?? createRuleEngine();
 
   async function processInTransaction({ transaction, intakeId, profile, reporterHash, flags, traceId }: ProcessInTransactionInput) {
+    // The standalone command and Worker use the same control-before-intake lock order.
+    if(mvpGroupReplies)await lockP2016Realtime(transaction);
     const intake = await loadIntake(transaction, intakeId, true);
     const window = await loadWindow(transaction, intakeId);
     if(intake.source_chat_type==='group') {
@@ -179,8 +183,9 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       channel_identity_hash: hmacIdentity(`${intake.source_bot_id}\u0000${intake.source_chat_type}\u0000${intake.source_chat_id ?? reporterHash}`, identityHmacKey),
       reporter_identity_hash: reporterHash, opened_at: intake.created_at,
     } });
+    const rulesPaused=mvpGroupReplies&&await conversationTopicRulesPaused(transaction,{journey_id:journey.id,session_id:intake.session_id,source_intake_id:intake.id});
     let continuation = null;
-    if (mode === 'GROUP_MENTION_TO_DIRECT_GUIDED') {
+    if (mode === 'GROUP_MENTION_TO_DIRECT_GUIDED'&&!rulesPaused) {
       continuation = await continuationService.issue({ transaction, input: {
         journey_id: journey.id, origin_leg_id: leg.id, purpose: 'GROUP_TO_DIRECT_GUIDANCE',
         reporter_binding_hash: reporterHash, bot_binding_hash: hmacIdentity(intake.source_bot_id, identityHmacKey),
@@ -224,7 +229,13 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       routed = freezePublic({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED', result_hash: safeHash({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED' }) });
     } else {
       try {
-        const evaluationText=mvpGroupReplies&&intake.source_chat_type==='group'&&isPureGroupThanks(window.rows.at(-1)?.clean_text??'')?groupMessageDescription(window.rows.at(-1)?.clean_text??''):window.text;
+        let evaluationText=window.text;
+        if(mvpGroupReplies&&intake.source_chat_type==='group'){
+          const previous=await transaction.query<{end_sequence:number}>('SELECT COALESCE(max(source_window_end_sequence),0)::integer AS end_sequence FROM intake.deterministic_decision WHERE service_intake_id=$1::uuid',[intake.id]);
+          const added=window.rows.filter(row=>row.sequence_no>(previous.rows[0]?.end_sequence??0));
+          // A batched fault must not disappear behind a trailing courtesy message.
+          if(added.length>0&&added.every(row=>isPureGroupThanks(row.clean_text??'')))evaluationText=groupMessageDescription(added.at(-1)?.clean_text??'');
+        }
         let output = engine.evaluate({ text: evaluationText, source_ref: `intake:${intake.id}`, observed_at: observedAt,
           context: { existing_ticket: intake.pilot_ticket_id !== null } });
         const prior=await transaction.query<{ safe_result: BoundarySafeRoute; input_hash: string; result_hash: string; source_hash: string }>(`SELECT safe_result,input_hash,result_hash,source_hash FROM intake.deterministic_decision
@@ -266,8 +277,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       observed_at: observedAt, safe_action_suggestions: routed.safe_action_suggestions,
     } });
     const actionResults = await safeActionExecutor.execute({ transaction, decision,
-      context: {...orchestrationContext({ intake, journey, window, traceId }),...(mvpGroupReplies?{suppress_group_fixed:true}:{})} });
-    if(afterDecision)await afterDecision({transaction,intakeId:intake.id,decisionId:decision.id});
+      context: {...orchestrationContext({ intake, journey, window, traceId }),...(mvpGroupReplies?{suppress_group_fixed:true,rule_actions_paused:rulesPaused}:{})} });
+    if(afterDecision)await afterDecision({transaction,intakeId:intake.id,decisionId:decision.id,rulesPaused});
     return freezePublic({ ok: true, flags, journey, leg, continuation, decision, action_results: actionResults,
       model_provider_calls: 0, sender_calls: 0, incident_writes: 0 });
   }

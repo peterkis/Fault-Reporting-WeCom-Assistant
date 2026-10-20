@@ -320,9 +320,16 @@ test('compiled entry completes normal Gateway intake, human handling, original r
     const unclearPath='/api/workbench/conversations/'+unclear.session_id;
     await post(staff,unclearPath+'/takeover',{client_command_id:randomUUID(),expected_row_version:object((await read(staff,unclearPath+'?view=chat')).session).row_version});
     const beforePausedSends=(await trace()).filter(row=>row.event==='bot-send'&&row.target==='user-test').length;
+    const pausedJourney=async()=>(await pool.query<{status:string;row_version:string;linked_ticket_id:string|null;origin_session_id:string|null;current_session_id:string|null}>('SELECT status,row_version::text,linked_ticket_id::text,origin_session_id::text,current_session_id::text FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[unclear.intake_id])).rows[0];
+    await until(async()=>{const value=await pausedJourney();return value?.origin_session_id===unclear.session_id&&value.current_session_id===unclear.session_id;});
+    const beforePausedJourney=await pausedJourney();assert.ok(beforePausedJourney);
     const unclearAgain=await accept('single','系统不行','user-test');assert.equal(unclearAgain.intake_id,unclear.intake_id);
-    await until(async()=>(await ruleDeliveries(2)).some(row=>row.status==='CANCELLED'));
-    const pausedRules=await ruleDeliveries(2);assert.ok(pausedRules.length>0);assert.ok(pausedRules.every(row=>row.status==='CANCELLED'&&row.side_effect_state==='NOT_ATTEMPTED'&&row.last_error_code==='COMMUNICATION_RULE_REPLY_SUPPRESSED'&&Number(row.attempt_count)===1));
+    await processed(unclearAgain.message_id);
+    const pausedRules=(await pool.query<{state:string;error_code:string|null}>(`SELECT a.state,a.error_code FROM intake.deterministic_decision d JOIN intake.safe_action_suggestion a ON a.decision_id=d.id
+      WHERE d.service_intake_id=$1::uuid AND d.source_window_end_sequence=2`,[unclear.intake_id])).rows;
+    assert.ok(pausedRules.length>0);assert.ok(pausedRules.every(row=>row.state==='CANCELLED'&&row.error_code==='RULE_ACTIONS_PAUSED_AFTER_TAKEOVER'));
+    assert.equal((await ruleDeliveries(2)).length,0,'paused actions must not create outbound messages or delivery attempts');
+    assert.deepEqual(await pausedJourney(),beforePausedJourney);
     assert.equal((await trace()).filter(row=>row.event==='bot-send'&&row.target==='user-test').length,beforePausedSends);
 
     mark('E_WEB_AND_UNVERIFIED_MANUAL');
@@ -419,7 +426,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
      assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM channel.message_inbox WHERE bot_id=$1 AND msg_id=$2',['bot-test',source.frame.body.msgid])).rows[0]?.n,1);
      assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid',[source.intake_id])).rows[0]?.n,1);
     }
-    evidence.B={explicit_communication_retained:true,web_system_resume:true,bot_explicit_resume:true,personal_read_independent:true,team_follow_up_explicit:true,paused_rules:pausedRules.length,paused_rule_sender_calls:0};
+    evidence.B={explicit_communication_retained:true,web_system_resume:true,bot_explicit_resume:true,personal_read_independent:true,team_follow_up_explicit:true,paused_rules:pausedRules.length,paused_rule_deliveries:0,paused_rule_sender_calls:0};
     evidence.C={closed_by_current_handler:true,channels:['WECOM_AIBOT','WECOM_MESSAGE_PUSH','WECOM_APP'],observed_delivery_state:'SENT',user_read_evidence:'NOT_ASSERTED',internal_material_not_sent:true};
     evidence.D={original_reporter_http_feedback:true,same_ticket_new_round:true,assignee_cleared:true,explicit_reaccept:true,ordinary_supplement_does_not_reopen:true};
     evidence.E={own_web_read:true,other_reporter_404:true,unverified_manual_no_notification:true};
