@@ -66,6 +66,32 @@ function stage(root:string):void {
   put(root,'.build/artifact-proof.json',JSON.stringify({manifest_sha256:hash(text),source_input_hash:source.input_hash})+'\n');
 }
 
+test('H5 Tailwind scanning uses production sources and ignores design and DEV changes',()=>{
+  const root=fixture();
+  try{
+    const dev=record(record(JSON.parse(readFileSync(path.join(original,'package.json'),'utf8')) as unknown).devDependencies);
+    const pkg=record(JSON.parse(readFileSync(path.join(root,'h5/package.json'),'utf8')) as unknown);
+    put(root,'h5/package.json',JSON.stringify({...pkg,devDependencies:{...record(pkg.devDependencies),tailwindcss:dev.tailwindcss,'@tailwindcss/vite':dev['@tailwindcss/vite']}}));
+    put(root,'h5/vite.config.ts',"import {defineConfig} from 'vite'; import tailwindcss from '@tailwindcss/vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',plugins:[tailwindcss()],build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
+    // Use the actual product's scan declarations so removing its boundary breaks this test.
+    const scope=readFileSync(path.join(original,'h5/src/styles.css'),'utf8').split(/\r?\n/u).filter(line=>/^@(?:import "tailwindcss"|source )/u.test(line)).join('\n');
+    put(root,'h5/src/style.css',scope+'\nmain{display:block;color:#123456}');
+    put(root,'h5/src/screen.tsx','export function Screen(){return <main className="w-[347px]">H5 production</main>;}');
+    buildH5(root);
+    const snapshot=()=>h5OutputFiles(root).map(file=>({file,sha256:hash(readFileSync(path.join(root,'.build/emit/h5',file)))}));
+    const before=snapshot();
+    const css=h5OutputFiles(root).find(file=>file.endsWith('.css'));assert.ok(css);
+    assert.match(readFileSync(path.join(root,'.build/emit/h5',css),'utf8'),/347px/u);
+    put(root,'h5/docs/prototype/private.html','<div class="w-[941px]"></div>');
+    put(root,'h5/design-baseline/original.html','<div class="w-[942px]"></div>');
+    put(root,'h5/src/dev/preview.ts','export const fixture="w-[943px]";');
+    put(root,'web/unrelated-page.html','<div class="w-[944px]"></div>');
+    buildH5(root);
+    assert.deepEqual(snapshot(),before);
+    assert.doesNotMatch(readFileSync(path.join(root,'.build/emit/h5',css),'utf8'),/94[1-4]px/u);
+  }finally{rmSync(root,{recursive:true,force:true});}
+});
+
 test('H5 release inputs, strict React sources, and controlled Vite assets share the formal artifact',async t=>{
   const root=fixture();
   try {

@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "./";
+@source not "./dev";
 @import "./assets/inter.css";
 @import "./assets/symbols.css";
 @theme inline {
