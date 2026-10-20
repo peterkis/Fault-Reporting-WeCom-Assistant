@@ -4,16 +4,34 @@ import {mkdtemp,readFile,writeFile,rm,link,unlink,symlink,mkdir,readdir} from 'n
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
+import {Readable} from 'node:stream';
+import {once} from 'node:events';
 import {randomUUID,randomBytes,createHash} from 'node:crypto';
 import {createYxxH5MediaPrivateStore} from '../src/yxx-h5-media-store.mjs';
 import {createYxxH5MediaWeCom} from '../src/yxx-h5-media-wecom.mjs';
 import {createYxxH5MediaFFmpegTranscoder} from '../src/yxx-h5-media-transcode.mjs';
 import {inspectMedia,H5_MEDIA_LIMITS} from '../src/yxx-h5-media-format.mjs';
+import {collectYxxH5MediaBody} from '../src/yxx-h5-media.mjs';
 import type {H5MediaObject} from '../contracts/yxx_h5_media_contracts.js';
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
 const signal=()=>new AbortController().signal;
 function asset(bytes:Buffer):H5MediaObject{return {media_ref:randomUUID(),variant:'ORIGINAL',kind:'IMAGE',mime_type:'image/png',byte_size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};}
 function wav(durationMs=400):Buffer{const size=Math.ceil(16000*durationMs/1000)*2,b=Buffer.alloc(44+size);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(16000,24);b.writeUInt32LE(32000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(size,40);return b;}
+
+for(const partial of [false,true])test(`caller abort closes a genuinely stalled Readable ${partial?'after collected bytes':'before its first byte'}`,{timeout:2000},async()=>{
+ let reached=()=>{};const stalled=new Promise<void>(resolve=>{reached=resolve;});
+ class StalledBody extends Readable {
+  sent=false;reads=0;pending=0;maximumPending=0;returns=0;lastRead:Promise<unknown>|null=null;
+  override _read(){if(partial&&!this.sent){this.sent=true;this.push(Buffer.from('private partial material'));}}
+  override [Symbol.asyncIterator](){const iterator=super[Symbol.asyncIterator](),next=iterator.next.bind(iterator),finish=iterator.return?.bind(iterator);
+   iterator.next=()=>{this.reads++;this.pending++;this.maximumPending=Math.max(this.maximumPending,this.pending);const result=next().finally(()=>{this.pending--;});this.lastRead=result;if(this.reads===(partial?2:1))reached();return result;};
+   if(finish)iterator.return=async()=>{this.returns++;return finish();};return iterator;
+  }
+ }
+ const body=new StalledBody(),closed=once(body,'close'),controller=new AbortController(),result=collectYxxH5MediaBody(body,1024,controller.signal);
+ await stalled;controller.abort();await assert.rejects(result,{code:'YXX_MEDIA_UPLOAD_CANCELLED'});await closed;await body.lastRead?.catch(()=>{});
+ assert.equal(body.destroyed,true);assert.equal(body.closed,true);assert.equal(body.pending,0);assert.equal(body.maximumPending,1);assert.equal(body.returns,1);assert.equal(body.reads,partial?2:1);
+});
 
 test('private encrypted originals authenticate metadata and content before exposing plaintext',async()=>{
  const root=await mkdtemp(join(tmpdir(),'yxx-media-encrypted-')),key=randomBytes(32),store=createYxxH5MediaPrivateStore({root,key}),a=asset(PNG);
