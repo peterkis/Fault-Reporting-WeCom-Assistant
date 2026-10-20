@@ -75,6 +75,8 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     assert.equal((await transactionP2016(f.pool,tx=>lifecycle.receipt(tx,a,ref,urge.client_command_id,'EVALUATION'))).state,'UNKNOWN');
     assert.equal((await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id)?.active,true);
     const http=await t11Http(f),started=await http.start(ticket.id),actor=f.principals[0]?.id;assert.ok(actor);
+    const afterFirstStart=(await lifecycle.activeForAuthorizedTickets([ticket.id])).get(ticket.id);assert.equal(afterFirstStart?.active,true);assert.equal(afterFirstStart?.count,1);
+    await assert.rejects(lifecycle.urge({scope:a,requestRef:ref,input:{...urge,client_command_id:randomUUID(),expected_ticket_version:started.version}}),{code:'YXX_URGE_RATE_LIMITED'});
     const onAuthorize=async(tx:import('../src/platform/postgres-pool.mjs').PostgresTransaction)=>{const current=await f.runtime.query.authorizedTicket({authContext:{principal_id:actor},ticketId:ticket.id,transaction:tx});return current.ticket.assignee_id===actor;};
     const p={client_command_id:randomUUID(),expected_version:started.version,summary:'合成公开进度：正在修复打印服务。',estimated_at:null};
     const published=await lifecycle.publishPublicProgress({ticketId:ticket.id,actorPrincipalId:actor,input:p,onAuthorize});
@@ -91,7 +93,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     const progressReceipt=await lifecycle.publicProgressReceipt({ticketId:ticket.id,actorPrincipalId:actor,clientCommandId:p.client_command_id,onAuthorize:async tx=>{await f.runtime.query.authorizedTicket({authContext:{principal_id:actor},ticketId:ticket.id,transaction:tx});return true;}});assert.equal(progressReceipt.state,'COMMITTED');
     const feedback=createYxxSelfServiceFeedback({pool:f.pool,scopeSecret:secret});
     await feedback.accept({scope:a,requestRef:ref,input:{schema_version:1,client_command_id:randomUUID(),expected_ticket_version:evaluation.expected_ticket_version,completed_round_ref:evaluation.completed_round_ref,feedback:'STILL_UNRESOLVED'}});
-    assert.equal((await http.detail(ticket.id)).status,'REOPENED');assert.equal((await transactionP2016(f.pool,tx=>lifecycle.context(tx,member,ref))).evaluation.can_evaluate,false);
+    assert.equal((await http.detail(ticket.id)).status,'REOPENED');const reopenedContext=await transactionP2016(f.pool,tx=>lifecycle.context(tx,member,ref));assert.equal(reopenedContext.evaluation.can_evaluate,false);assert.equal(reopenedContext.urge.active,false);assert.equal(reopenedContext.urge.count,0);
     const directory=createThirdPartyStaffDirectoryStore({pool:f.pool}),version='d'.repeat(64);
     const members=[['provider-a','EMP-A','合成同事甲'],['provider-b','EMP-B','合成同事乙'],['provider-c','EMP-C','合成同事丙']].map(([id,employee,name])=>({provider_user_id:id as string,employee_id:employee as string,nickname:name as string,phone:null,provider_wecom_id:null}));
     await directory.publishSnapshot({source_scope:'FORMAL',root_ref:'synthetic-root',snapshot:{snapshot_version:version,departments:[{provider_department_id:'dept-a',parent_provider_department_id:null,name:'合成科室甲',provider_gid:null,provider_gid_type:null,depth:0},{provider_department_id:'dept-b',parent_provider_department_id:null,name:'合成科室乙',provider_gid:null,provider_gid_type:null,depth:0}],members,memberships:members.map((m,index)=>({provider_user_id:m.provider_user_id,provider_department_id:index===2?'dept-b':'dept-a'})),protocol_warnings:[],counts:{departments:2,members:3,memberships:3,max_depth:0}}});

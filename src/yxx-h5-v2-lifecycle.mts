@@ -25,6 +25,10 @@ interface UrgeRow {ticket_id:string;count:number;last_epoch:string|null;active:b
 interface EvaluationRow {rating:number;comment:string|null;occurred_at:string;occurred_epoch_ms:string}
 interface ProgressRow {summary:string;estimated_at:string|null;estimated_epoch_ms:string|null;ticket_version:number;occurred_at:string;occurred_epoch_ms:string}
 const OPEN_STATUSES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'];
+/** A pre-assignment urge belongs to the initial round when its first cycle is established. */
+export const H5_CURRENT_URGE_SQL=`(u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id OR
+ (u.cycle_id IS NULL AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_handling_cycle first_cycle
+  WHERE first_cycle.id=t.current_handling_cycle_id AND first_cycle.ticket_id=t.id AND first_cycle.cycle_no=1)))`;
 const emptyUrge=():H5UrgeSummary=>({active:false,count:0,last_urged_at:null,last_urged_epoch_ms:null,next_allowed_at:null,next_allowed_epoch_ms:null,can_urge:false});
 const emptyEvaluation=():H5EvaluationContext=>({can_evaluate:false,completed_round_ref:null,completed_round_no:null,ticket_version:null,rating:null,comment:null,evaluated_at:null,evaluated_epoch_ms:null});
 const writeEnabled=(m:H5MemberContext)=>m.write_flag&&m.flags.YIXIAOXIU_SELF_SERVICE_ENABLED&&m.flags.YIXIAOXIU_MY_REPORTS_ENABLED;
@@ -57,7 +61,7 @@ export function createYxxH5Lifecycle({pool,scopeSecret,enabled=false,onUrge=null
     if(ids.length>100)h5Fail();const selected=[...new Set(ids.map(h5Uuid))];const map=new Map<string,H5UrgeSummary>();if(!selected.length)return map;
     const rows=(await tx.query<UrgeRow>(`SELECT t.id::text AS ticket_id,count(u.id)::integer AS count,max(u.occurred_epoch_ms)::text AS last_epoch,
       (t.status=ANY($2::text[])) AS active FROM pilot_ticket.ticket t
-      LEFT JOIN intake.web_report_urge u ON u.ticket_id=t.id AND u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id
+      LEFT JOIN intake.web_report_urge u ON u.ticket_id=t.id AND ${H5_CURRENT_URGE_SQL}
        AND u.retention_until_epoch_ms>platform.physical_epoch_ms()
        AND EXISTS(SELECT 1 FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
          WHERE b.intake_id=u.source_intake_id AND b.canonical_reporter_binding=u.scope_hash AND b.revoked_at IS NULL
@@ -107,8 +111,8 @@ export function createYxxH5Lifecycle({pool,scopeSecret,enabled=false,onUrge=null
     const now=await clock(tx);let urgeFact:H5UrgeFact|null=null;
     if(purpose==='URGE'){
       if(!OPEN_STATUSES.includes(current.ticket_status??''))h5Fail('YXX_CONFLICT',409);
-      const last=(await tx.query<{epoch:string}>(`SELECT max(occurred_epoch_ms)::text AS epoch FROM intake.web_report_urge
-        WHERE ticket_id=$1::uuid AND cycle_id IS NOT DISTINCT FROM $2::uuid AND retention_until_epoch_ms>platform.physical_epoch_ms()`,[current.ticket_id,current.cycle_id])).rows[0]?.epoch??null;
+      const last=(await tx.query<{epoch:string}>(`SELECT max(u.occurred_epoch_ms)::text AS epoch FROM intake.web_report_urge u JOIN pilot_ticket.ticket t ON t.id=u.ticket_id
+        WHERE t.id=$1::uuid AND ${H5_CURRENT_URGE_SQL} AND u.retention_until_epoch_ms>platform.physical_epoch_ms()`,[current.ticket_id])).rows[0]?.epoch??null;
       if(last!==null&&BigInt(last)+600000n>BigInt(now.epoch))h5Fail('YXX_URGE_RATE_LIMITED',429);
       const fact=(await tx.query<{id:string;sequence_no:string}>(`INSERT INTO intake.web_report_urge(ticket_id,cycle_id,source_intake_id,scope_hash,client_command_id,occurred_at,occurred_epoch_ms,retention_until_epoch_ms)
        VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5::uuid,$6::timestamp without time zone,$7::bigint,$8::bigint) RETURNING id::text,sequence_no::text`,[current.ticket_id,current.cycle_id,current.intake_id,input.scope.scopeHash,value.client_command_id,now.local,now.epoch,current.retention_epoch])).rows[0];if(!fact)h5Fail('YXX_UNAVAILABLE',503);
