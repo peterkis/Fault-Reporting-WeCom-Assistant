@@ -10,4 +10,3 @@ export function confirmedReceipt(value:unknown,id:string):boolean {
  if('client_command_id'in value.result&&value.result.client_command_id!==id)return false;
  return value.result.ok===true||acceptedReceipt(value.result,id);
 }
-

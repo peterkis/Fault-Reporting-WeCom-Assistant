@@ -78,4 +78,3 @@ export async function installPreview(){
   return json({code:'NOT_FOUND'},404);
  };
 }
-

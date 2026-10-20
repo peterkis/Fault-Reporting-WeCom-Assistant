@@ -105,4 +105,3 @@ test('H5 invalidates protected state for 401/403 and preserves recoverability fo
   assert.equal(client.isConflict(new client.ApiError(409,'CONFLICT')),true);
  }finally{client.authLost.removeEventListener('lost',listener);globalThis.fetch=originalFetch;}
 });
-
