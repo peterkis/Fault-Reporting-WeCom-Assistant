@@ -80,6 +80,52 @@ export function resources(root: string): string[] {
   return files.sort();
 }
 export function outputPath(source: string): string { return source.endsWith('.mts') ? source.slice(0, -4) + '.mjs' : source; }
+// H5 design originals and development-only fixtures never identify a release.
+// Keep every production source/style/asset and the actual build configuration.
+export function isH5ProductionInput(file: string): boolean {
+  return ['h5/index.html','h5/package.json','h5/tsconfig.json','h5/vite.config.ts','h5/components.json'].includes(file)
+    || file.startsWith('h5/src/') && !file.startsWith('h5/src/dev/')
+    || file.startsWith('h5/public/assets/');
+}
+const H5_ASSET = /^assets\/[A-Za-z0-9_-]+\.(?:js|css|woff2|png|jpe?g|webp|svg)$/u;
+const H5_PUBLIC_ASSET = /^assets\/[A-Za-z0-9_-]+\.(?:woff2|png|jpe?g|webp|svg)$/u;
+const H5_NON_PRODUCTION = /(?:^|\/)(?:docs|design-baseline|dev|__fixtures__|fixtures|preview)(?:[/.]|$)|^assets\/(?:preview|fixture)(?:[-_.]|$)/u;
+export function h5OutputFiles(root: string, withInventories = true): string[] {
+  const output = path.join(root,'.build/emit/h5'), files = outputFiles(output);
+  const metadata = ['index.html','.vite/manifest.json',...(withInventories ? ['asset-inventory.json','dependency-inventory.json'] : [])];
+  if (metadata.some(file => !files.includes(file)) || files.some(file => !metadata.includes(file) && (!H5_ASSET.test(file) || H5_NON_PRODUCTION.test(file)))) throw new Error('H5_BUILD_OUTPUT_INVALID');
+  const manifest = record(readJson(safeFile(output,'.vite/manifest.json'))), referenced = new Set<string>();
+  const asset = (value: unknown): void => {
+    if (typeof value !== 'string' || !H5_ASSET.test(value) || !files.includes(value) || H5_NON_PRODUCTION.test(value)) throw new Error('H5_MANIFEST_ASSET_INVALID');
+    referenced.add(value);
+  };
+  for (const [key,value] of Object.entries(manifest)) {
+    relativePath(key);
+    const chunk = record(value);
+    if (H5_NON_PRODUCTION.test(key)) throw new Error('H5_NON_PRODUCTION_OUTPUT');
+    if (chunk.src !== undefined) {
+      if (typeof chunk.src !== 'string') throw new Error('H5_MANIFEST_SOURCE_INVALID');
+      relativePath(chunk.src);
+      if (H5_NON_PRODUCTION.test(chunk.src)) throw new Error('H5_NON_PRODUCTION_OUTPUT');
+    }
+    asset(chunk.file);
+    for (const field of ['css','assets']) if (chunk[field] !== undefined) for (const file of strings(chunk[field])) asset(file);
+    for (const field of ['imports','dynamicImports']) if (chunk[field] !== undefined) for (const imported of strings(chunk[field])) {
+      relativePath(imported);
+      if (!Object.hasOwn(manifest,imported)) throw new Error('H5_MANIFEST_IMPORT_MISSING');
+    }
+  }
+  if (!Object.values(manifest).some(value => record(value).isEntry === true)) throw new Error('H5_MANIFEST_ENTRY_REQUIRED');
+  const publicRoot = path.join(root,'h5/public');
+  for (const file of existsSync(publicRoot) ? outputFiles(publicRoot) : []) {
+    if (!H5_PUBLIC_ASSET.test(file) || H5_NON_PRODUCTION.test(file) || !files.includes(file)
+      || !readFileSync(safeFile(output,file)).equals(readFileSync(safeFile(publicRoot,file)))) throw new Error('H5_PUBLIC_ASSET_INVALID');
+    referenced.add(file);
+  }
+  if (files.some(file => !metadata.includes(file) && !referenced.has(file))) throw new Error('H5_UNDECLARED_ASSET');
+  if (withInventories && JSON.stringify(readJson(safeFile(output,'asset-inventory.json'))) !== JSON.stringify(files.filter(file => !['asset-inventory.json','dependency-inventory.json'].includes(file)))) throw new Error('H5_ASSET_INVENTORY_DRIFT');
+  return files;
+}
 export function mappings(root: string): { source: string; path: string; kind: OutputFile['kind'] }[] {
   assertProductionSources(root);
   const outputs = new Map<string, { source: string; path: string; kind: OutputFile['kind'] }>();
@@ -99,11 +145,12 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
   if(existsSync(webOutput))for(const file of outputFiles(webOutput)){
     add('web/admin-workbench/index.html','web/admin-workbench/'+file,'WEB');
   }
+  if(existsSync(path.join(root,'.build/emit/h5')))for(const file of h5OutputFiles(root))add('h5/index.html','h5/'+file,'WEB');
   return [...outputs.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 export function inputs(root: string): FileDigest[] {
   const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|web\/admin-workbench)\//u.test(p)
-    || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
+    || isH5ProductionInput(p) || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
     || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
     || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
       '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs',
