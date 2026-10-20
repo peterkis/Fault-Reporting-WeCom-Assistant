@@ -298,9 +298,11 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
   await t.test('database tests fail closed before test launch',()=>{
     assert.throws(()=>testEnvironment(root,db,{}),/ISOLATED_DATABASE/u);
     assert.throws(()=>testEnvironment(root,db,{TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@production.invalid/test'}),/NOT_LOOPBACK/u);
-    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',npm_config_cache:'D:/wecom-workbench-runtime/npm-cache',PYTHONDONTWRITEBYTECODE:'1',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci'});
+    const ffmpeg=path.join(root,'controlled','ffmpeg'),ffprobe=path.join(root,'controlled','ffprobe');
+    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',npm_config_cache:'D:/wecom-workbench-runtime/npm-cache',PYTHONDONTWRITEBYTECODE:'1',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci',H5_MEDIA_FFMPEG:ffmpeg,H5_MEDIA_FFPROBE:ffprobe});
     assert.equal(env.NODE_OPTIONS,undefined);assert.equal(env.WECOM_BOT_SECRET,undefined);assert.ok(env.PILOT_DATABASE_URL);
     assert.equal(env.npm_config_cache,'D:/wecom-workbench-runtime/npm-cache');assert.equal(env.PYTHONDONTWRITEBYTECODE,'1');
+    if(db.some(entry=>entry.requires_ffmpeg)){assert.equal(env.H5_MEDIA_FFMPEG,ffmpeg);assert.equal(env.H5_MEDIA_FFPROBE,ffprobe);}
   });
   build(root);const digest=verifyArtifact(root);
   await t.test('runtime path is an artifact, source path is the real checkout',()=>{
