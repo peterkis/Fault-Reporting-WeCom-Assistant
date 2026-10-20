@@ -7,6 +7,7 @@ import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import {failP2016,guardP2016,transactionP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
 import {REALTIME_STREAM_NAME} from './p2-003-realtime-event-log.mjs';
+import {H5_CURRENT_URGE_SQL} from './yxx-h5-v2-lifecycle.mjs';
 
 const digest=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const decimal=(v:unknown):v is string=>typeof v==='string'&&/^(0|[1-9][0-9]{0,18})$/u.test(v)&&BigInt(v)<=9223372036854775807n;
@@ -167,9 +168,7 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           JOIN conversation.realtime_event e ON e.publisher_name='YXX_H5_URGE' AND e.source_type='WEB_REPORT_URGE'
             AND e.source_id=u.id::text AND e.event_variant='URGED' AND e.event_type='ticket.updated'
             AND e.aggregate_type='TICKET' AND e.aggregate_id=a.id
-          WHERE a.related AND (u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id OR (u.cycle_id IS NULL AND EXISTS(
-            SELECT 1 FROM pilot_ticket.ticket_handling_cycle first_cycle WHERE first_cycle.id=t.current_handling_cycle_id
-              AND first_cycle.ticket_id=t.id AND first_cycle.cycle_no=1))) AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
+          WHERE a.related AND ${H5_CURRENT_URGE_SQL} AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
             AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
             AND u.retention_until_epoch_ms>platform.physical_epoch_ms()
             AND u.occurred_epoch_ms::numeric>extract(epoch FROM ($4::timestamp AT TIME ZONE 'Asia/Shanghai'))*1000` : ''}
