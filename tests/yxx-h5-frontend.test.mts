@@ -49,6 +49,15 @@ test('H5 media admission applies per-kind counts, bounded duration, MIME and agg
  assert.equal(media.hasFaultMaterial('', ['uploaded-ref']),true);
  assert.equal(media.hasFaultMaterial('显示错误代码',[]),true);
 });
+test('H5 timeline keeps external safe summaries and orders loaded facts by their actual epoch',async()=>{
+ const timeline=await import(await moduleUrl('lib/timeline.ts'));
+ const accepted={event_type:'REQUEST_ACCEPTED',summary:'报修已收到',occurred_epoch_ms:'100',occurred_at:'2026-10-20 14:32:00',ticket:null};
+ const updated={...accepted,event_type:'TICKET_UPDATED',summary:'工作人员已完成本轮处理：已测试打印',occurred_epoch_ms:'200'};
+ const input=[accepted,updated];const rows=timeline.latestFirst(input);
+ assert.equal(rows[0],updated);assert.equal(input[0],accepted,'presentation must not mutate the cached API page');
+ assert.deepEqual(timeline.timelinePresentation(updated),{titleKey:'eventUpdated',summary:updated.summary});
+ assert.deepEqual(timeline.timelinePresentation({...updated,event_type:'FUTURE_SAFE_EVENT'}),{titleKey:null,summary:updated.summary});
+});
 test('H5 recovery requires the same original UUID and never treats UNKNOWN or an unrelated result as committed',async()=>{
  const receipts=await import(await moduleUrl('lib/command.ts'));
  const id='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222';

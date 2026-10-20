@@ -38,3 +38,43 @@
 @media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--background:#12141a;--foreground:#f3f4f6;--card:#1e222d;--muted:#191c24;--muted-foreground:#9ca3af;--secondary-text:#9ca3af;--primary:#5668e8;--primary-foreground:#fffcff;--primary-hover:#3d50d0;--link:#bcc2ff;--border:rgba(255,255,255,.08);--hairline:#2d3343;--elevated:#252a37;--subground:#191c24;--blue-bg:#1c38b066;--blue-text:#bac3ff;--green-bg:#10b98129;--green-text:#34d399;--orange-bg:#f59e0b29;--orange-text:#fbbf24;--purple-bg:#1c38b0;--purple-text:#a3b0ff;--red-bg:#f8717129;--red-text:#f87171;--warm-bg:#382d1c;--warm-text:#fcd34d;--header-bg:rgba(25,28,36,.95);--header-height:56px;--nav-height:64px;--shadow:0 4px 8px rgba(0,0,0,.12)}}
 
 body.h5-dialog-open{overflow:hidden}.ui-dialog-overlay{pointer-events:auto}
+
+/* Second source comparison: compact report controls and fuller detail chrome. */
+:root:not([data-theme=dark]) .voice-idle-hint{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+:root:not([data-theme=dark]) .voice-card{padding-bottom:15px}
+:root:not([data-theme=dark]) .text-card .ui-textarea{height:66px;min-height:66px}
+.quick-page .file-fallback{gap:4px}
+.quick-page .file-fallback>.ui-button{height:26px}
+.quick-page .file-fallback>p{line-height:1.4}
+.greeting-medical{display:none}
+[data-theme=dark] .home-page:not(.home-empty) .greeting-medical{display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;width:40px;height:40px;background:var(--card);color:var(--warm-text);border-radius:8px}
+[data-theme=dark] .greeting-medical>.material-symbols-outlined{font-size:22px}
+[data-theme=dark] .report-card .ui-card-title{font-weight:500}
+[data-theme=dark] .handler-strip>.inline-row{min-width:0;flex:1}
+[data-theme=dark] .handler-strip .inline-row>div{min-width:0}
+[data-theme=dark] .handler-strip p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.detail-header-main{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.detail-header-main>.ui-button{margin-left:-8px;width:32px;height:36px}
+.detail-header-main>.brand-mark{width:28px;height:28px;flex-shrink:0;font-size:13px;font-weight:700;border-radius:8px}
+.detail-header-title{display:flex;align-items:center;gap:6px;min-width:0}
+.detail-header-title h1{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-header-title>.ui-badge{padding:1px 6px;font-size:10px;border-radius:3px;flex-shrink:0}
+.detail-shell .header-tools{display:flex;margin-left:4px;gap:2px}
+.detail-shell .header-tools>.ui-button:first-child{width:28px}
+.detail-shell .header-tools>.ui-button:last-child{width:28px;height:28px}
+.material-voice{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);background:var(--subground);border-radius:8px;min-width:0}
+.voice-play-button{width:36px;height:36px;padding:0;border-radius:12px;box-shadow:none}
+.voice-play-button>.material-symbols-outlined{font-variation-settings:'FILL' 1;font-size:22px}
+.voice-material-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.voice-material-copy>strong{font-size:13px;font-weight:600;line-height:1.5}
+.voice-material-copy>small{font-size:11px;color:var(--muted-foreground)}
+.voice-material-wave{display:flex;align-items:center;height:14px;color:var(--link);opacity:.65}
+.voice-material-wave>.material-symbols-outlined{font-size:20px;line-height:14px}
+.voice-duration{align-self:flex-start;font-size:11px;color:var(--muted-foreground);white-space:nowrap}
+[data-theme=dark] .material-voice{border-color:transparent}
+[data-theme=dark] .voice-play-button{border-radius:50%}
+.timeline-public-progress .public-progress{margin:10px 0 0}
+.timeline-public-progress .public-progress>p{margin:0;color:var(--foreground)}
+.timeline-narrative{white-space:pre-wrap}
+[lang=en] .detail-header-title h1{font-size:13px}
+[lang=en] .detail-header-title>.ui-badge{font-size:9px;padding-inline:4px}

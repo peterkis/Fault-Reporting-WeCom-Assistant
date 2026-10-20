@@ -62,7 +62,7 @@ export async function installPreview(){
   }
   const match=/^\/requests\/([^/]+)(\/.*)?$/.exec(path);if(match){
    const requestRef=match[1]??'',suffix=match[2]??'',detail=getDetail(requestRef);
-   if(suffix==='/timeline')return json({items:[{event_type:'ticket.progress',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'ticket.accepted',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'ticket.created',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
+   if(suffix==='/timeline')return json({items:[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'REQUEST_ACCEPTED',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
    if(suffix.startsWith('/media/')){const mediaRef=suffix.split('/')[2];if(mediaRef?.startsWith('aaaa'))return new Response(silentWav(),{headers:{'content-type':'audio/wav'}});return nativeFetch(mediaRef?.startsWith('bbbb')?(theme==='dark'?photoDarkOne:photoLightOne):(theme==='dark'?photoDarkTwo:photoLightTwo));}
    if(suffix.includes('/member-commands/')||suffix.includes('/feedback/commands/')){const commandId=suffix.split('/').at(-1)??'';return json(commands.has(commandId)?{state:'COMMITTED',result:commands.get(commandId)}:{state:'UNKNOWN'});}
    if(method==='POST'){
