@@ -77,7 +77,7 @@ function client(base:string,initialCookie?:{name:string;value:string}) {
 test('H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID',{timeout:240000},async()=>{
   const databaseUrl=process.env.PILOT_DATABASE_URL;assert.ok(databaseUrl,'PILOT_DATABASE_URL is required for the H5 flow integration');
   assert.ok(['127.0.0.1','localhost','[::1]'].includes(new URL(databaseUrl).hostname));
-  const ffmpegPath=process.env.H5_MEDIA_TEST_FFMPEG_PATH,ffprobePath=process.env.H5_MEDIA_TEST_FFPROBE_PATH;
+  const ffmpegPath=process.env.H5_MEDIA_FFMPEG,ffprobePath=process.env.H5_MEDIA_FFPROBE;
   assert.ok(ffmpegPath&&ffprobePath,'controlled FFmpeg and FFprobe paths are required; conversion cannot be skipped');
   assert.ok((await stat(ffmpegPath)).isFile());assert.ok((await stat(ffprobePath)).isFile());
   const root=await mkdtemp(join(tmpdir(),'yxx-h5-flow-')),key=randomBytes(32);
