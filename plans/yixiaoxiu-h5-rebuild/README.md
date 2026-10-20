@@ -12,4 +12,10 @@ Root 管理公共合同、依赖锁、迁移编号、HTTP/runtime 装配、构�
 
 ## 验证状态
 
-当前为 IMPLEMENTING。strict、构建、业务集成、浏览器视觉与清理待执行；实机与真实外发 NOT_RUN。新增开关默认 false，不部署，不执行 full／certify，不推进 Gate。
+实施代码已整合。新版页面、媒体与 V2 业务、管理端消费、正式制品和现有 Worker 接线均有实现；新增开关保持 false。固定基线和本地预览见 [H5 README](../../h5/README.md)，实际成员／管理端接口已进入 [METHOD + PATH 索引](../../docs/api/endpoint-index.md)。
+
+分线实际验证包含真实 PG18 的原子媒体绑定、原 Core 建单、完成／重开／评价、当前 READ、催单事实及原 UUID 恢复；真实受控 FFmpeg 覆盖短 AMR、WAV 与 MP4，原失败与 setup 缺口保留。浏览器使用合成资料对照八屏，并检查英文、320px 及恢复栅栏。分线结果不重绑为统一候选结果。
+
+统一候选的源码身份、实际测试路径／数量、制品哈希、浏览器记录、资源清理和未执行项由本机本轮 [最终验证记录](/D:/wecom-workbench-evidence/h5-rebuild-20261020-c4d44923/validation.json)记录；日志和截图在同一自有证据目录。该记录在实际运行后更新，不改历史证据或旧 tested_head。新增测试登记到活动 selection 与独立 `yxx-h5-rebuild` 子集；普通 PR／current 回归准备显式 FFmpeg 路径，不以 SKIP 代替通过。
+
+实机企业微信（iOS／Android）录制、播放、首次绘制和真实收件仍为 NOT_RUN。没有部署、现场迁移或真实 Provider／WeCom 调用，没有执行 full／certify，不推进 Gate。缺少可信 App／第三方人员映射时资料保持缺失，报修可继续；后台补齐未扩张 Worker 密钥边界。原始 `h5/docs/prototype` 未改写、未纳入本次提交。

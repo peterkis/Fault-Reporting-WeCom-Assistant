@@ -13,7 +13,7 @@ export type G1RoleCommand =
   | { type: 'stop' };
 interface AppOptions { runtimeFactory?: (input: G1RuntimeOptions & { pool: PostgresPool; publicOrigin: string; allowedTargetHashes: readonly string[] }) => Pick<ReturnType<typeof createP2G1Runtime>, 'start' | 'stop' | 'disconnectRealtimePrincipal'>; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null | undefined; externalSendEnabled?: boolean }
 interface GatewayOptions { intakeFactory?: (input: { pool: PostgresPool; identityHashKey?: string }) => Pick<ReturnType<typeof createP2G1PilotOperationalIntake>, 'accept'>; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool; allowedTargetHashes: readonly string[]; gateway: ReturnType<typeof createP2G1WeComGateway> }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
-interface WorkerOptions { deliveryAttemptAdmissionFactory?:((input:{pool:PostgresPool})=>DeliveryAttemptAdmission)|null; extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
+interface WorkerOptions { deliveryAttemptAdmissionFactory?:((input:{pool:PostgresPool})=>DeliveryAttemptAdmission)|null; extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown>;close?():unknown|Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
@@ -282,7 +282,8 @@ export async function runWorker({deliveryAttemptAdmissionFactory=null,extensionF
     if (stopping) return;
     stopping = true;
     clearInterval(timer);
-    await task;
+    // Let extension-owned streams/processes cancel before awaiting the cycle.
+    await Promise.all([task,extension?.close?.()]);
     for (const value of pending.values()) value.reject(Object.assign(new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND'), { code: 'GATEWAY_UNAVAILABLE_BEFORE_SEND' }));
     pending.clear();
     await pool.end();

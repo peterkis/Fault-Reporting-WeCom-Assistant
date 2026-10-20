@@ -6559,6 +6559,107 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-admin-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-application-auth.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-http.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_ffmpeg": true
+    },
+    {
+      "path": "tests/yxx-h5-runtime.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-static.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-v2-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-v2.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-frontend.test.mts",
+      "mode": "MIXED_EXPLICIT_ROOTS",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-flow.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_ffmpeg": true
     }
   ],
   "legacy_commands": {
@@ -7679,7 +7780,18 @@
       "tests/mvp-application-member.test.mts",
       "tests/mvp-group-replies.integration.test.mts",
       "tests/mvp-notification-policy.integration.test.mts",
-      "tests/mvp-application-members.integration.test.mts"
+      "tests/mvp-application-members.integration.test.mts",
+      "tests/yxx-h5-admin-contracts.test.mts",
+      "tests/yxx-h5-application-auth.test.mts",
+      "tests/yxx-h5-http.test.mts",
+      "tests/yxx-h5-media.integration.test.mts",
+      "tests/yxx-h5-media.test.mts",
+      "tests/yxx-h5-runtime.test.mts",
+      "tests/yxx-h5-static.test.mts",
+      "tests/yxx-h5-v2-contract.test.mts",
+      "tests/yxx-h5-v2.integration.test.mts",
+      "tests/yxx-h5-frontend.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -8493,6 +8605,19 @@
     "human-workbench-wiring": [
       "tests/human-workbench-configuration.test.mts",
       "tests/human-workbench-process.browser.test.mts"
+    ],
+    "yxx-h5-rebuild": [
+      "tests/yxx-h5-admin-contracts.test.mts",
+      "tests/yxx-h5-application-auth.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/yxx-h5-frontend.test.mts",
+      "tests/yxx-h5-http.test.mts",
+      "tests/yxx-h5-media.integration.test.mts",
+      "tests/yxx-h5-media.test.mts",
+      "tests/yxx-h5-runtime.test.mts",
+      "tests/yxx-h5-static.test.mts",
+      "tests/yxx-h5-v2-contract.test.mts",
+      "tests/yxx-h5-v2.integration.test.mts"
     ]
   },
   "subprocess_entries": {

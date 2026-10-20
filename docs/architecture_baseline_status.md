@@ -2,6 +2,8 @@
 
 本文件记录业务架构与 Gate 事实；带日期的测试数字与候选是其历史快照。TypeScript 迁移进度只在 [迁移执行入口](../plans/typescript-migration/README.md) 维护。PR #38 的认证仅属于其被测对象，P01 合并或新迁移候选检查通过均不等于新候选 READY 或生产批准。
 
+2026-10-20 H5 前向修订：[ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)增加 React 双主题／双语言页面、Web 多媒体受理、催单事实、完成轮次评价和有限科室投影；沿统一 Ticket Core 扩展。064／065 增量迁移须显式执行，新开关默认关闭，原件保留和人员映射均按既有作用域约束。实现与实际验证入口见 [H5 执行记录](../plans/yixiaoxiu-h5-rebuild/README.md)；不授权部署、真实外联或 Gate 推进。
+
 2026-10-20 前向业务修订：[ADR-0034](../adr/0034_mvp_notifications_and_application_members.md)规定 human-v1 群固定回应、每轮实际接单／开始与工作人员完工通知、按原群 Webhook 完工原生提及，以及 H5 应用可见成员自动身份和持久通知绑定。使用 063 增量迁移；兼容模式与持久 flags 默认值保持。实施和本地证据见[本轮记录](../plans/mvp-notifications-h5/README.md)，不改变下文历史 tested head、Gate 或现场批准。
 
 2026-09-15 历史增量：ADR-0019 身份映射修补及 ADR-0020 定向建单模式本地验证完成，1056/1056、171测试文件及两轴独立审查通过。当前候选见 plans/current_phase.json 的 p2_g2_current_readiness（creation-v2 报告）。mapping-v1 的1053/1053与下文PR #8的1044/1044均为历史快照。A/B官方转换对应已证明；定向建单启动及工单结果以本次独立运行证据为准，A/B本人读取、他人拒绝及退出后新OAuth恢复已验证，云端已回退OAuth-only；多标签及旧Grant卡片现场未运行，结论见evidence/p2-g2-yxx-targeted-live-summary.json；完整P2-G2-LIVE/P2-008继续停止。

@@ -48,6 +48,15 @@ jobs:
         cache-dependency-path: package-lock.json
     - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Prepare media tools for the registered H5 tests
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+        fi
+        printf 'H5_MEDIA_FFMPEG=%s\nH5_MEDIA_FFPROBE=%s\n' "$(command -v ffmpeg)" "$(command -v ffprobe)" >> "$GITHUB_ENV"
     - name: Read the active nonempty selection and actual tool impact
       id: changes
       shell: bash
@@ -88,7 +97,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs
+        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/h5.test.mjs
         node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs
     - name: Verify the owned database and exact artifact
       if: always()
@@ -155,6 +164,15 @@ jobs:
     - name: Prepare the YAML parser required by current and historical OpenAPI tests
       run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Prepare media tools for the registered H5 tests
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+        fi
+        printf 'H5_MEDIA_FFMPEG=%s\nH5_MEDIA_FFPROBE=%s\n' "$(command -v ffmpeg)" "$(command -v ffprobe)" >> "$GITHUB_ENV"
     - name: Verify the actual published object before running its current shard
       id: current
       shell: bash

@@ -8,6 +8,16 @@ import ts from 'typescript';
 import {buildH5,typecheckH5} from './web.mjs';
 import {controlledBuildRoot,h5OutputFiles,hash,identity,inputs,mappings,record,sourceRoot,type BuildManifest} from './common.mjs';
 import {verifyArtifact} from './verify-artifact.mjs';
+import {testEnvironment,type Entry} from './routing.mjs';
+
+test('media test tools are explicit, absolute and forwarded only to registered consumers',()=>{
+ const entry:Entry={path:'tests/yxx-h5-media.test.mts',mode:'STAGED_RUNTIME',node_flags:[],requires_database:false,requires_browser:false,requires_powershell:false,requires_pyyaml:false,requires_ffmpeg:true};
+ const ffmpeg=path.resolve('controlled/ffmpeg'),ffprobe=path.resolve('controlled/ffprobe');
+ const input={H5_MEDIA_FFMPEG:ffmpeg,H5_MEDIA_FFPROBE:ffprobe,APP_SECRET:'synthetic-canary'};
+ const selected=testEnvironment(original,[entry],input);assert.equal(selected.H5_MEDIA_FFMPEG,ffmpeg);assert.equal(selected.H5_MEDIA_FFPROBE,ffprobe);assert.equal(selected.APP_SECRET,undefined);
+ assert.equal(testEnvironment(original,[],input).H5_MEDIA_FFMPEG,undefined);
+ for(const value of [{},{H5_MEDIA_FFMPEG:ffmpeg},{...input,H5_MEDIA_FFPROBE:'relative/ffprobe'}])assert.throws(()=>testEnvironment(original,[entry],value),/MIGRATION_H5_MEDIA_TOOL_REQUIRED/u);
+});
 
 const original=sourceRoot();
 function put(root:string,file:string,value:string|Uint8Array):void {

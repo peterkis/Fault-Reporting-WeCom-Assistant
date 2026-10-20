@@ -21,7 +21,8 @@ export function applicationRecipientProof(secret:string,scope:{scopeHash:string;
  return 'app_member_v1_'+createHmac('sha256',secret).update(JSON.stringify(['request-notification',scope.sourceCorpScope,scope.sourceAppScope,scope.scopeHash,'APP_OPEN_USERID',memberId])).digest('hex');
 }
 /** Provider qualification occurs once per request before any business transaction. */
-export function createYxxApplicationMemberAuthentication({oauth,config,identityMapping,secret,flags,verifyMember}:{oauth:EnabledWeComOAuth;config:MemberEntry;identityMapping?:YxxIdentityMapping|null;secret:string;flags:Partial<YxxMemberFlags>;verifyMember:ApplicationMemberVerifier}){
+export function createYxxApplicationMemberAuthentication({oauth,config,identityMapping,secret,flags,verifyMember,requestBudgetMs=5000}:{oauth:EnabledWeComOAuth;config:MemberEntry;identityMapping?:YxxIdentityMapping|null;secret:string;flags:Partial<YxxMemberFlags>;verifyMember:ApplicationMemberVerifier;requestBudgetMs?:number}){
+ if(!Number.isSafeInteger(requestBudgetMs)||requestBudgetMs<5000||requestBudgetMs>60000)failYxx('CONFIG_INVALID');
  const digest=(purpose:string,values:unknown[])=>createHmac('sha256',secret).update(JSON.stringify([purpose,...values])).digest('hex');
  type Context={profile:'FULL_SERVICE_LOOP'|'MEMBER_SELF_SERVICE';flags:Partial<YxxMemberFlags>;write_flag:boolean;csrf_token:string;session_generation:string;canonical_reporter_binding:string;source_corp_scope:string;source_app_scope:string;proof_ref:string;bot_owner:{botId:string;userId:string}|null;identity_mode:string;notification_recipient:BoundApplicationRecipient};
  const prepared=new WeakMap<IncomingMessage,{token:SessionToken;openId:string;expires:number;context:Context}>();
@@ -44,6 +45,8 @@ export function createYxxApplicationMemberAuthentication({oauth,config,identityM
   const context:Context={profile,flags,write_flag:flags.YIXIAOXIU_SELF_SERVICE_ENABLED===true,csrf_token:digest('csrf',[token]),session_generation:digest('session',[token]),
    canonical_reporter_binding:canonical,source_corp_scope:config.corpId,source_app_scope:config.agentId,proof_ref:config.proofRef as string,identity_mode:'VERIFIED_APP_OPENID',
    bot_owner:legacy?{botId:config.botId,userId:legacy}:null,notification_recipient:{namespace:'APP_OPEN_USERID',member_id:member.userid,proof_ref:applicationRecipientProof(secret,scope,member.userid),verified_epoch_ms:verified.checkedEpochMs}};
-  prepared.set(request,{token,openId:member.userid,expires:Date.now()+5000,context});return local(request);
+  // A media response can outlive qualification's 5s network budget. This proof
+  // remains request-local and each use still verifies the live OAuth session.
+  prepared.set(request,{token,openId:member.userid,expires:Date.now()+requestBudgetMs,context});return local(request);
  },recheck:local};
 }

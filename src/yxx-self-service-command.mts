@@ -30,7 +30,7 @@ function fail(code:string):never {
 }
 
 function preserveUnavailable(error:unknown):void{
-  if(error&&typeof error==='object'&&('status' in error&&error.status===503||'code' in error&&['YXX_ENTRY_UNAVAILABLE','YXX_UNAVAILABLE','APPLICATION_MEMBER_UNAVAILABLE'].includes(String(error.code))))throw error;
+  if(error&&typeof error==='object'&&('status' in error&&(error.status===403||Number(error.status)>=500)||'code' in error&&['YXX_ENTRY_UNAVAILABLE','YXX_UNAVAILABLE','APPLICATION_MEMBER_UNAVAILABLE'].includes(String(error.code))))throw error;
 }
 
 function text(value:unknown, code:string, maximum = 128) {
