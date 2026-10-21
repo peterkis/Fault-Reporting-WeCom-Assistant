@@ -41,6 +41,18 @@ SDK 额外依赖和浏览器策略是已复现缺陷；当前提示吞掉了原�
 
 独立后端审查还发现关闭聚合 entry 的兼容模式缺少滑动续期：实际第一候选在第七小时 V2 bootstrap 200、第九小时 401。现仅在 H5 V2 bootstrap 原 `authorization.read` 等待后终检成功后续期；四个既有 OAuth 入口私有回归 **62/62 PASS、0 SKIP**，覆盖原会话／CSRF／范围不变及撤权、退出、替换、等待到期不续期。其余实际后端差异未发现新的可复现 P1/P2；这不替代最终 PR 审查。
 
+### 第二候选的正式本地与云端组件验证
+
+候选 `135e91e21d18fb1e509c88de49b95c0fc594a5bb` 在干净源码上完成根构建（878 typed、2618 outputs），manifest SHA-256 为 `4ba397081fe813259f6de84f777231e478ceb9b4c8b2c25e9eb545cf23252293`。strict types、14 个实际注册相关入口 **214/214 PASS、0 SKIP**、4 个相关工具入口 **45/45 PASS**、指令链接检查及制品校验通过；未执行本轮 PG 全量／大库重测，不改写前轮结果。
+
+该候选初始必需 JS 为 111819 B gzip，home／report／reports／request／department 总闭包为 118195／120653／118304／122345／116969 B，均含 408 B gzip 主题脚本，仍低于原 122880 B 上限。raw／gzip／Brotli 与逐资源明细保存在正式 `startup-metrics.json`。
+
+同一编译身份的实际父 HTTP→Native→静态资源浏览器验收 **30/30 PASS**：温往返没有新 entry、文档或可见整页骨架，恢复事件合并为一次 entry；401 自动回原筛选、回调标记防循环、403／503、草稿／UNKNOWN、详情补充／评价保护及 reduced-motion 均通过。独立设备策略控制通过：HTML 允许同源 microphone，JS、404 与父 health 继续禁止。所有自有浏览器、页面请求及 HTTP 宿主归零。
+
+同批视觉只读检查没有横向溢出，但测得浅色认证说明文字对比度 **4.4573**，略低参考 4.5。原 30 用例只采集该数值，不能称其已通过 AA。后继修补仅在新认证状态页使用既有 `secondary-text`，并将保护提示正文改为 `foreground`，保留全站配色和原型；后继正式验证单独登记。
+
+该候选已按 2619 个逐文件哈希封装，在现有云镜像的隔离无网络、无配置／数据目录容器运行静态组件 **13/13 PASS**，容器删除确认；只是候选组件验证，未切换运行服务、修改数据库或 Nginx。PR 为 [#111](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/111)，已请求当前 head 的 `@codex review`；最终审查、CI 与实际切换结果待补。
+
 新版 iOS／Android 企业微信的锁屏、录音、相机与渐进播放实机复验为 **NOT_RUN**。外部 OAuth Provider、真实业务 POST、通知发送、数据库重置与 Gate 推进均未执行。
 
 外部原件根：`D:\wecom-workbench-evidence\h5-session-navigation-20261021-ccd73223`。包括首次 RED、夹具失配、超预算、所有中间失败、正式结果和资源记录；不上传私密配置。
