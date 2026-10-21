@@ -56,7 +56,7 @@ export class PageRuntime {
  private consumeEntry=async(entry:H5EntryResponse,input:H5EntryInput):Promise<void>=>{
   const sequence=this.sequence,wasReady=this.snapshot.ready,generation=captureAuthGeneration(),hadTask=this.task!==null;
   const current=()=>sequence===this.sequence&&!this.snapshot.denied&&this.snapshot.session?.recovery_scope===entry.bootstrap.recovery_scope;
-  const session=await this.acceptEntry(entry,input,current);if(!session||!current())throw new DOMException('Page load superseded','AbortError');this.update({session,membershipRevision:entry.membership_revision,ready:wasReady,expired:false,recoveryBlocked:false,error:null});
+  const session=await this.acceptEntry(entry,input,current);if(!session||!current())throw new DOMException('Aborted','AbortError');this.update({session,membershipRevision:entry.membership_revision,ready:wasReady,expired:false,recoveryBlocked:false,error:null});
   if(hadTask&&generation!==captureAuthGeneration())void this.navigate(this.snapshot.route,true,true).catch(()=>undefined);
  };
  private async acceptLegacy(bootstrap:Bootstrap,current:()=>boolean):Promise<void>{
@@ -96,7 +96,7 @@ export class PageRuntime {
    }catch(error){if(!entryUnavailable(error))throw error;const session=await legacyEntry(this.client,route.input,controller.signal,undefined,bootstrap=>this.acceptLegacy(bootstrap,current));return{session,revision:'legacy',legacy:true,at:Date.now(),generation:captureAuthGeneration()};}
   })();
   const work=Promise.all([page,data]).then(([,value])=>{
-   if(!current()||!value||value.generation!==captureAuthGeneration())throw new DOMException('Page load superseded','AbortError');this.verificationPending=false;
+   if(!current()||!value||value.generation!==captureAuthGeneration())throw new DOMException('Aborted','AbortError');this.verificationPending=false;
    if(!value.legacy){this.stamps.delete(route.key);this.stamps.set(route.key,{scope:value.session.recovery_scope,revision:value.revision,generation:value.generation,at:value.at});if(this.stamps.size>8){const oldest=this.stamps.keys().next().value;if(oldest!==undefined)this.stamps.delete(oldest);}}
    this.update({session:value.session,membershipRevision:value.revision,legacy:value.legacy,checking:false,ready:true,expired:false,recoveryBlocked:false,error:null});
   }).catch(error=>{if(current())this.update({checking:false,error});throw error;}).finally(()=>{if(this.taskKey===route.key&&sequence===this.sequence){this.task=null;this.taskKey=null;}});

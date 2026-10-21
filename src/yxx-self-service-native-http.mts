@@ -7,16 +7,17 @@ import type {createYxxSelfServiceQuery,YxxQueryInput} from './yxx-self-service-q
 import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
 import type {YxxMemberFlags,YxxMemberSource} from './yxx-self-service-authorization.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
-import type {H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
+import type {H5BootstrapExtension,H5DisplayProfile} from '../contracts/yxx_h5_v2_contracts.js';
 import type {H5EntryInput,H5EntryResponse} from '../contracts/yxx_h5_entry_contracts.js';
 import type {YxxSelfServiceBootstrap} from '../contracts/yxx_self_service_contracts.js';
 import {parseH5ReportFilters} from './yxx-h5-v2-contracts.mjs';
 import {beginH5Read} from './yxx-h5-read-batch.mjs';
 import type {createYxxH5Static} from './yxx-h5-static.mjs';
 type MemberServiceCatalog=Pick<ServiceCatalog,'catalog_version'|'listServices'>;
+interface H5DisplayProfileReader {authenticate:(input:Parameters<YxxNativeHttpOptions['authenticateMember']>[0]&{signal:AbortSignal})=>unknown|Promise<unknown>;read:(request:IncomingMessage)=>H5DisplayProfile['profile']}
 type RawAuth=Record<string,unknown>;
 type ErrorFields={code?:string;status?:number};
-export interface YxxNativeHttpOptions {h5Handler?:OAuthHttpHandler|null;h5Static?:ReturnType<typeof createYxxH5Static>|null;h5Bootstrap?:(request:IncomingMessage)=>Promise<H5BootstrapExtension>;h5Entry?:(input:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap})=>Promise<H5EntryResponse>;reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;authenticateH5EntryMember?:YxxNativeHttpOptions['authenticateMember'];profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
+export interface YxxNativeHttpOptions {h5DisplayProfile?:H5DisplayProfileReader;h5Handler?:OAuthHttpHandler|null;h5Static?:ReturnType<typeof createYxxH5Static>|null;h5Bootstrap?:(request:IncomingMessage)=>Promise<H5BootstrapExtension>;h5Entry?:(input:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap})=>Promise<H5EntryResponse>;reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;authenticateH5EntryMember?:YxxNativeHttpOptions['authenticateMember'];profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, renewWeComH5Session, sessionName } from './p2-g2-wecom-oauth-http.mjs';
@@ -205,10 +206,11 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 }
 
 export function createYxxSelfServiceNativeHttp({
-  publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember, authenticateH5EntryMember,
+  publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember, authenticateH5EntryMember,h5DisplayProfile,
   profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,h5Handler=null,h5Static=null,h5Bootstrap,h5Entry,
 }:Omit<YxxNativeHttpOptions,'command'|'query'> & {reporterFeedbackEnabled?:boolean;command:YxxNativeHttpOptions['command'] & Partial<Pick<YxxSelfServiceCommand,'feedback'>>;query:YxxNativeHttpOptions['query'] & Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'feedbackReceipt'>>}={} as YxxNativeHttpOptions) {
   if(authenticateH5EntryMember!==undefined&&typeof authenticateH5EntryMember!=='function')throw error('YXX_CONFIG_INVALID',503);
+  if(h5DisplayProfile!==undefined&&(typeof h5DisplayProfile.authenticate!=='function'||typeof h5DisplayProfile.read!=='function'))throw error('YXX_CONFIG_INVALID',503);
   if(typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled||typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
@@ -373,6 +375,22 @@ export function createYxxSelfServiceNativeHttp({
         const result=await h5Entry({request,input,bootstrap:bootstrapBase(context)});
         const renewed=renewWeComH5Session(request,oauth);
         json(response,200,result,renewed.length?{'set-cookie':renewed}:{});return true;
+      }
+      if(url.pathname==='/api/yixiaoxiu/h5/profile'){
+        if(request.method!=='GET')throw error('YXX_NOT_FOUND',404);
+        if(url.search||header(request,'transfer-encoding')||Number(header(request,'content-length')??0)>0)throw error('YXX_INPUT_INVALID');
+        if(header(request,'sec-fetch-site')==='cross-site'||header(request,'origin')&&header(request,'origin')!==origin.origin)throw error('YXX_FORBIDDEN',403);
+        if(!h5DisplayProfile)throw error('YXX_NOT_FOUND',404);
+        if(!readEnabled)throw error('YXX_FORBIDDEN',403);
+        const controller=new AbortController(),closed=()=>controller.abort();response.once('close',closed);
+        try{
+          const before=await currentMember(request,{authenticate:input=>h5DisplayProfile.authenticate({...input,signal:controller.signal})});
+          const profile=h5DisplayProfile.read(request);
+          const after=await currentMember(request);
+          if(before.recovery_scope!==after.recovery_scope||before.csrf_token!==after.csrf_token)throw error('YXX_FORBIDDEN',403);
+          const result:H5DisplayProfile={schema_version:1,recovery_scope:after.recovery_scope,profile};
+          if(!response.destroyed)json(response,200,result);return true;
+        }finally{response.removeListener('close',closed);controller.abort();}
       }
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');

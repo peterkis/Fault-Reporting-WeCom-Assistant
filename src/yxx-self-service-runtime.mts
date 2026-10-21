@@ -95,6 +95,9 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
     command, reporterFeedbackEnabled,reporterFeedbackDraftRecoveryEnabled, supplement: createYxxSelfServiceSupplement({ command }), query,
     authenticateMember: ({ request }:{request:IncomingMessage}) => authenticate(request), recoveryBindingSecret: reporterHmacSecret, serviceCatalog:catalog,
     h5Handler:h5Extension.enabled?h5Http.handler:null,h5Static:h5Extension.enabled?createYxxH5Static({enabled:true,...(h5Extension.previousStaticRoot?{previousRoot:pathToFileURL(h5Extension.previousStaticRoot.replace(/[\\/]?$/u,'/'))}:{})}):null,
+    ...(h5Extension.enabled&&appMember&&applicationMemberVerifier?.profileRead?{h5DisplayProfile:{
+      authenticate:({request,signal}:{request:IncomingMessage;signal:AbortSignal})=>appMember.authenticateProfile(request,profile,signal),read:appMember.currentDisplay,
+    }}:{}),
     ...(h5Extension.enabled?{h5Bootstrap:(request:IncomingMessage)=>query.h5Bootstrap({request,sdk:h5Extension.sdk})}:{}),
     ...(h5Extension.performanceEnabled&&h5EntryMemberVerifier?{authenticateH5EntryMember:({request}:{request:IncomingMessage})=>requestAuthentication.authenticateEntry(request)}:{}),
     ...(h5Extension.performanceEnabled?{h5Entry:({request,input,bootstrap})=>query.h5Entry({request,input,bootstrap,sdk:h5Extension.sdk})}:{}) });

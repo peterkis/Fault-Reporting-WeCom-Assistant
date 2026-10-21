@@ -1,5 +1,7 @@
 ## 2026-10-20：V2 H5 实现入口
 
+2026-10-22 本人资料修复：Home／资料弹窗按 [ADR-0039](../adr/0039_h5_member_display_profile.md) 在 entry 后独立读取官方姓名和主部门显示名称；不再要求当前 H5 开放身份先命中第三方本地目录。展示查询复用原有界 BASE 核验，不拖入关键 entry，也不授予科室工单权限。历史能力矩阵、原路径反例、云端只读诊断及本轮验收入口见[资料修复记录](../plans/yixiaoxiu-h5-performance/member-profile-2026-10-22.md)。
+
 本轮性能改造沿[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)实施。新增[页面引导／预览／Range](../docs/api/member/h5-performance.md)仅在`YIXIAOXIU_H5_PERFORMANCE_ENABLED=true`显式开启，默认false；新版前端遇明确`YXX_H5_ENTRY_DISABLED`回退原读取。代码／数据并行加载、30秒内存新鲜度、2分钟非活动缓存和统一刷新不替代服务端当前权限检查。预算与实际结果见[性能实施记录](../plans/yixiaoxiu-h5-performance/README.md)。
 
 2026-10-21按用户指定在本目录新增本地`h5/.env.local`（Git忽略），显式设置H5与性能开关为true，配套新本地私有媒体目录、独立媒体密钥及受控FFmpeg路径；App与Worker实际配置解析均验证`performanceEnabled=true`。服务端启动时将`--env-file=h5/.env.local`作为既有完整运行环境的后加载覆盖层；该文件只含H5配置，不能替代成员身份、数据库及宿主配置。密钥使用服务端变量名，不加`VITE_`前缀、不打包到网页。此项为本地配置完成，没有启动其他环境服务，公开进度写开关仍false；详见[续作验收](../plans/yixiaoxiu-h5-performance/closure-2026-10-21.md)。
