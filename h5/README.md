@@ -44,6 +44,17 @@ npm --prefix h5 run dev
 
 语言优先使用企业微信 UA 的 `Language/…`，全部中文归为简体中文，其余为 English。主题按 `ColorScheme/Dark`、显式 Light 和系统偏好自动选择，恢复可见时重查。生产入口使用 CSS 深色首屏变量与独立同源小主题脚本；主应用模块不整体阻塞绘制。iOS／Android 企业微信的实际首次绘制、录音权限、原生取消、上传和渐进播放须单独实机验证，未运行项记为 `NOT_RUN`。
 
+### H5 增量迁移维护
+
+已存在的开发库沿原迁移工具安装 036、049、053、063 后，再使用编译制品中的 H5 维护入口核对和安装 064–066。连接由受控环境的 `PILOT_DATABASE_URL` 提供；命令必须另写实际数据库名，名称不一致时拒绝执行。不把配置文件、连接值或密钥上传到 Git。
+
+~~~powershell
+node .build/runtime/scripts/yxx-h5-migrate.mjs --check --expected-database=project_development --include-previews
+node .build/runtime/scripts/yxx-h5-migrate.mjs --apply --expected-database=project_development --include-previews
+~~~
+
+将示例 `project_development` 替换为本次已授权的完整数据库名。省略 `--apply` 时仅检查；应用路径使用同一事务和维护锁，比较不可变 SQL 原字节校验值、ARCH-005 回执时间对与必要约束、函数、索引和外键。已安装阶段只复核并返回 `NOOP_ALREADY_APPLIED`，允许从 064/065 安装继续增加 066。无回执但已有对象、回执不连续或结构漂移均停止，不能改写旧回执、重放冻结的 033/034 全量 catalog、重新初始化工作人员或自动删库。App/Worker 启动不执行迁移。部署及测试结果在 [性能实施记录](../plans/yixiaoxiu-h5-performance/README.md)按候选身份单独登记。
+
 以下保留原后端交接要求；实际新增 API 与 DTO 以 [API 统一入口](../docs/api/README.md)及前向合同为准。
 
 ---
