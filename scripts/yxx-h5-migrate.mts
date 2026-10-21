@@ -20,7 +20,7 @@ type MigrationId=typeof migrations[number];
 type Stage=0|1|2|3;
 interface Options {databaseUrl:string;expectedDatabase:string;mode?:'check'|'apply';includePreviews?:boolean}
 interface Migration {id:MigrationId;body:string;checksum:string}
-interface Marker {migration_id:string;checksum_sha256:string;time_pair?:boolean}
+interface Marker {migration_id:string;checksum_sha256:string;time_pair:boolean}
 const prerequisites=[
   '031_p2_016_ticket_lifecycle_workbench_notifications',
   '033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check',
@@ -41,10 +41,10 @@ async function sqlInput(id:MigrationId):Promise<Migration>{
   return {id,body,checksum:digest(sql)};
 }
 async function assertPrerequisites(tx:PostgresTransaction){
-  const rows=(await tx.query<Marker>('SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[[...prerequisites]])).rows;
+  const rows=(await tx.query<Marker>('SELECT migration_id,checksum_sha256,applied_at=platform.local_from_epoch_ms(applied_epoch_ms) AS time_pair FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[[...prerequisites]])).rows;
   for(const id of prerequisites){
     const sql=await readFile(new URL('../database/migrations/'+id+'.sql',import.meta.url),'utf8');
-    if(!rows.some(row=>row.migration_id===id&&row.checksum_sha256===digest(sql)))invalid('H5_MIGRATION_PREREQUISITE_INVALID');
+    if(!rows.some(row=>row.migration_id===id&&row.checksum_sha256===digest(sql)&&row.time_pair===true))invalid('H5_MIGRATION_PREREQUISITE_INVALID');
   }
   // Do not call the frozen complete 034-catalog checker on successor schemas.
   if(!await followUpDueSchemaReady(tx)||!await mvpNotificationSchemaReady(tx))invalid('H5_MIGRATION_PREREQUISITE_INVALID');

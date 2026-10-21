@@ -4,6 +4,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
 import {migrateThirdPartyStaffDirectory} from '../scripts/p2-007-migrate.mjs';
@@ -24,6 +26,13 @@ const receiptRows=async(f:Fixture)=>(await f.pool.query('SELECT migration_id,che
 const h5Rows=async(f:Fixture)=>(await f.pool.query<{migration_id:string;checksum_sha256:string;time_pair:boolean}>(`SELECT migration_id,checksum_sha256,
   applied_at=platform.local_from_epoch_ms(applied_epoch_ms) AS time_pair FROM platform.schema_migration
   WHERE migration_id=ANY($1::text[]) ORDER BY migration_id`,[ids])).rows;
+function migrationCli(f:Fixture,args:readonly string[]){
+  const entry=fileURLToPath(new URL('../scripts/yxx-h5-migrate.mjs',import.meta.url));
+  const env:NodeJS.ProcessEnv={PILOT_DATABASE_URL:f.databaseUrl};
+  // Do not inherit NODE_OPTIONS, .env loading, Provider credentials or PG_*.
+  for(const name of ['SystemRoot','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR'])if(process.env[name]!==undefined)env[name]=process.env[name];
+  return spawnSync(process.execPath,[entry,...args],{cwd:fileURLToPath(new URL('..',import.meta.url)),env,encoding:'utf8',windowsHide:true,timeout:15_000,maxBuffer:64*1024});
+}
 async function preservedFacts(f:Fixture){
   // Only synthetic fixture data. Keep values private; assertions compare these
   // snapshots without emitting any real cloud identity or payload.
@@ -40,9 +49,60 @@ test('H5 migration check reports missing SQL without DDL or changing existing fa
   assert.ok(process.env.PILOT_DATABASE_URL,'owned PostgreSQL18 is required');
   await prepared(async f=>{
     const before=await receiptRows(f),facts=await preservedFacts(f);
-    assert.equal((await migrateYxxH5({...options(f),mode:'check',includePreviews:true})).status,'PENDING');
+    const expected=await migrateYxxH5({...options(f),mode:'check',includePreviews:true});assert.equal(expected.status,'PENDING');
+    const target='--expected-database='+options(f).expectedDatabase;
+    for(const args of [[target,'--include-previews'],['--check',target,'--include-previews']]){
+      const result=migrationCli(f,args);assert.equal(result.error,undefined);assert.equal(result.signal,null);assert.equal(result.status,0);assert.equal(result.stderr,'');
+      const output:unknown=JSON.parse(result.stdout);assert.deepEqual(output,expected);
+    }
+    const rejected=migrationCli(f,[target,'--unknown-option']);
+    assert.equal(rejected.error,undefined);assert.equal(rejected.signal,null);assert.equal(rejected.status,1);assert.equal(rejected.stdout,'');
+    const errorOutput:unknown=JSON.parse(rejected.stderr);assert.deepEqual(errorOutput,{ok:false,error_code:'H5_MIGRATION_FAILED'});
+    assert.ok(!rejected.stderr.includes(f.databaseUrl));
     assert.deepEqual(await receiptRows(f),before);assert.deepEqual(await preservedFacts(f),facts);
     assert.equal((await f.pool.query("SELECT to_regclass('intake.web_media_upload') AS media")).rows[0]?.media,null);
+  });
+});
+
+test('H5 maintenance rejects a prerequisite receipt with a broken ARCH005 time pair before H5 DDL',async()=>{
+  await prepared(async f=>{
+    const prerequisite='031_p2_016_ticket_lifecycle_workbench_notifications';
+    const before=await receiptRows(f),facts=await preservedFacts(f);
+    const constraint=(await f.pool.query<{definition:string;validated:boolean;enforced:boolean;deferrable:boolean}>(`SELECT pg_get_constraintdef(oid) AS definition,convalidated AS validated,conenforced AS enforced,condeferrable AS deferrable
+      FROM pg_constraint WHERE conrelid='platform.schema_migration'::regclass AND conname='platform_schema_migration_time_check' AND contype='c'`)).rows[0];
+    assert.ok(constraint);assert.equal(constraint.validated,true);assert.equal(constraint.enforced,true);assert.equal(constraint.deferrable,false);
+    const update='UPDATE platform.schema_migration SET applied_at=applied_at+interval \'1 second\' WHERE migration_id=$1';
+    await assert.rejects(f.pool.query(update,[prerequisite]),{code:'23514',constraint:'platform_schema_migration_time_check'});
+    assert.deepEqual(await receiptRows(f),before);
+    const changedChecks=async()=>(await f.pool.query(`SELECT conrelid::regclass::text AS relation,conname,pg_get_constraintdef(oid) AS definition
+      FROM pg_constraint WHERE conrelid='conversation.realtime_event'::regclass AND conname='conversation_realtime_event_source_type_check'
+      OR conrelid='intake.web_command_receipt'::regclass AND conname IN ('web_command_receipt_schema_check','web_command_receipt_kind_check') ORDER BY relation,conname`)).rows;
+    const originalChecks=await changedChecks();
+    // Corrupt only this fixture UUID database, after proving the real guard.
+    // Production migration code never disables or alters this constraint.
+    await f.pool.query('ALTER TABLE platform.schema_migration DROP CONSTRAINT platform_schema_migration_time_check');
+    try{
+      assert.equal((await f.pool.query(update,[prerequisite])).rowCount,1);
+      const broken=(await f.pool.query<{time_pair:boolean}>('SELECT applied_at=platform.local_from_epoch_ms(applied_epoch_ms) AS time_pair FROM platform.schema_migration WHERE migration_id=$1',[prerequisite])).rows[0];
+      assert.equal(broken?.time_pair,false);
+      const corrupted=await receiptRows(f);
+      for(const mode of ['check','apply'] as const){
+        await assert.rejects(migrateYxxH5({...options(f),mode,includePreviews:true}),{message:'H5_MIGRATION_PREREQUISITE_INVALID'});
+        assert.deepEqual(await receiptRows(f),corrupted);assert.deepEqual(await preservedFacts(f),facts);assert.deepEqual(await h5Rows(f),[]);assert.deepEqual(await changedChecks(),originalChecks);
+        const absent=(await f.pool.query<{pristine:boolean}>(`SELECT to_regclass('intake.web_report_urge') IS NULL AND to_regclass('intake.web_report_evaluation') IS NULL
+          AND to_regclass('pilot_ticket.ticket_public_progress') IS NULL AND to_regclass('intake.web_media_upload') IS NULL
+          AND to_regprocedure('intake.guard_web_media_identity()') IS NULL AND NOT EXISTS(SELECT 1 FROM pg_attribute WHERE attnum>0 AND NOT attisdropped AND (
+            attrelid='intake.web_command_receipt'::regclass AND attname='h5_result'
+            OR attrelid='intake.web_request_binding'::regclass AND attname IN ('h5_profile_attempts','h5_profile_next_attempt_epoch_ms'))) AS pristine`)).rows[0];
+        assert.equal(absent?.pristine,true);
+      }
+    }finally{
+      await f.pool.query('UPDATE platform.schema_migration SET applied_at=platform.local_from_epoch_ms(applied_epoch_ms) WHERE migration_id=$1',[prerequisite]);
+      await f.pool.query('ALTER TABLE platform.schema_migration ADD CONSTRAINT platform_schema_migration_time_check '+constraint.definition);
+    }
+    assert.deepEqual(await receiptRows(f),before);assert.deepEqual(await preservedFacts(f),facts);
+    const restored=(await f.pool.query<{validated:boolean;enforced:boolean;definition:string}>("SELECT convalidated AS validated,conenforced AS enforced,pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='platform.schema_migration'::regclass AND conname='platform_schema_migration_time_check'")).rows[0];
+    assert.deepEqual(restored,{validated:true,enforced:true,definition:constraint.definition});
   });
 });
 

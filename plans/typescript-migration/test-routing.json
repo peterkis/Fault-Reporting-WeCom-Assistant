@@ -8741,6 +8741,9 @@
     ]
   },
   "subprocess_entries": {
+    "tests/yxx-h5-migrate.integration.test.mts": [
+      "scripts/yxx-h5-migrate.mts"
+    ],
     "tests/p1-foundation-cli.test.mts": [
       "src/p1-001-pilot-foundation.mts"
     ],
