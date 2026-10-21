@@ -92,8 +92,13 @@ test('ARCH-005 staged failure receipts target canonical source evidence with exc
 });
 test('G2 staged preflight binds the source candidate and reads relative manifests from that source', () => {
   verifyArtifact(original);
-  const directory = mkdtempSync(path.join(tmpdir(), 'p02-g2-source-manifest-'));
+  // G2 inventories its entire candidate roots, including any local nested
+  // dependencies. Use the existing owned source fixture so user prototype
+  // node_modules cannot turn this source/runtime identity check into a scan
+  // of unrelated installed packages. The production inventory guard is intact.
+  const root = scratch(), directory = mkdtempSync(path.join(tmpdir(), 'p02-g2-source-manifest-'));
   try {
+    build(root);
     const manifestFile = path.join(directory, 'live.json');
     const probe = `
       import assert from 'node:assert/strict'; import path from 'node:path'; import {writeFileSync} from 'node:fs';
@@ -112,11 +117,14 @@ test('G2 staged preflight binds the source candidate and reads relative manifest
       assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),error => error instanceof Error && ['P2_G2_CANDIDATE_CHANGED','P2_G2_CANDIDATE_INVENTORY_LIMIT'].includes(error.code));
       console.log('SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION');`;
     const result = spawnSync(process.execPath, ['--input-type=module', '--eval', probe],
-      { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+      { cwd: root, env: testEnvironment(root, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
     assert.equal(result.error, undefined);
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(result.stdout, /SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION/u);
-  } finally { rmSync(directory, { recursive: true, force: true }); }
+  } finally {
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('t02-host-test-'));
+    rmSync(directory, { recursive: true, force: true });rmSync(root, { recursive: true, force: true });
+  }
 });
 test('P02 affected CLI launchers reach their safety guards from verified artifacts', () => {
   verifyArtifact(original);
@@ -298,9 +306,11 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
   await t.test('database tests fail closed before test launch',()=>{
     assert.throws(()=>testEnvironment(root,db,{}),/ISOLATED_DATABASE/u);
     assert.throws(()=>testEnvironment(root,db,{TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@production.invalid/test'}),/NOT_LOOPBACK/u);
-    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',npm_config_cache:'D:/wecom-workbench-runtime/npm-cache',PYTHONDONTWRITEBYTECODE:'1',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci'});
+    const ffmpeg=path.join(root,'controlled','ffmpeg'),ffprobe=path.join(root,'controlled','ffprobe');
+    const env=testEnvironment(root,db,{PATH:'synthetic',NODE_OPTIONS:'--require bad',WECOM_BOT_SECRET:'not-inherited',npm_config_cache:'D:/wecom-workbench-runtime/npm-cache',PYTHONDONTWRITEBYTECODE:'1',TS_MIGRATION_TEST_DB_ISOLATED:'1',PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/migration_ci',H5_MEDIA_FFMPEG:ffmpeg,H5_MEDIA_FFPROBE:ffprobe});
     assert.equal(env.NODE_OPTIONS,undefined);assert.equal(env.WECOM_BOT_SECRET,undefined);assert.ok(env.PILOT_DATABASE_URL);
     assert.equal(env.npm_config_cache,'D:/wecom-workbench-runtime/npm-cache');assert.equal(env.PYTHONDONTWRITEBYTECODE,'1');
+    if(db.some(entry=>entry.requires_ffmpeg)){assert.equal(env.H5_MEDIA_FFMPEG,ffmpeg);assert.equal(env.H5_MEDIA_FFPROBE,ffprobe);}
   });
   build(root);const digest=verifyArtifact(root);
   await t.test('runtime path is an artifact, source path is the real checkout',()=>{

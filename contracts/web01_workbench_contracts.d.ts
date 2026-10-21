@@ -17,6 +17,8 @@ export interface WorkbenchCard {
   created_at: string; updated_at: string; completed_at: string | null;
   /** Present only on authorized Ticket cards while shared-time viewing is enabled. */
   follow_up_schedule?:import('./workbench_follow_up_schedule_contracts.js').SharedFollowUpActive|null;
+  /** Current-round Web urge; projection only, never priority or responsibility. */
+  web_report_urge?:import('./workbench_web_report_contracts.js').WorkbenchWebUrge;
 }
 export interface BoardPage {
   items: WorkbenchCard[]; next_cursor: string | null; column: BoardColumn;

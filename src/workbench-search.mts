@@ -204,9 +204,10 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    // Release the query connection before original public projections; a pool of one cannot deadlock.
    const items:WorkbenchSearchPage['items'][number][]=[];
    for(const row of prepared.selected){
-    const current=await cards.authorizedItem(authContext,row.kind,row.id);
+    const current=await cards.authorizedItem(authContext,row.kind,row.id,false);
     if(current.kind!==row.kind||current.id!==row.id)failP2016('CURSOR_INVALID');items.push(current);
    }
+   const decoratedItems=await cards.decorateWebReportUrgency(items);
    const more=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
     const p=await query.principal(authContext,tx);if(binding(authContext,p)!==prepared.bound)failP2016('CURSOR_INVALID');await ready(tx,c);
@@ -242,7 +243,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     return proof.more;
    });
    const last=prepared.selected.at(-1),next=more&&last?encode({v:1,binding:prepared.bound,criteria,...prepared.window,at:last.order_at,order_group:last.order_group===1?1:0,kind:last.kind,id:last.id}):null;
-   return publicP2016({items,next_cursor:next,column:c.column,range:{...prepared.window,mode:c.range,timezone:'Asia/Shanghai' as const},criteria:c});
+   return publicP2016({items:decoratedItems,next_cursor:next,column:c.column,range:{...prepared.window,mode:c.range,timezone:'Asia/Shanghai' as const},criteria:c});
   }catch(error){if(error instanceof WorkbenchError)throw error;failP2016('ACTION_FAILED',503);}finally{busy=false;}
  }});
 }

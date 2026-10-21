@@ -5,6 +5,87 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/yxx-h5-member-scheduler.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-read-batch.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-read-batch.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-performance-observability.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-page-runtime.test.mts",
+      "mode": "MIXED_EXPLICIT_ROOTS",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media-controller.test.mts",
+      "mode": "MIXED_EXPLICIT_ROOTS",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media-races.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-entry.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-entry.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/t36-team-and-recovery.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -6559,6 +6640,107 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-admin-contracts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-application-auth.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-http.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-media.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_ffmpeg": true
+    },
+    {
+      "path": "tests/yxx-h5-runtime.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-static.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-v2-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-v2.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-frontend.test.mts",
+      "mode": "MIXED_EXPLICIT_ROOTS",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/yxx-h5-flow.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_ffmpeg": true
     }
   ],
   "legacy_commands": {
@@ -7679,7 +7861,18 @@
       "tests/mvp-application-member.test.mts",
       "tests/mvp-group-replies.integration.test.mts",
       "tests/mvp-notification-policy.integration.test.mts",
-      "tests/mvp-application-members.integration.test.mts"
+      "tests/mvp-application-members.integration.test.mts",
+      "tests/yxx-h5-admin-contracts.test.mts",
+      "tests/yxx-h5-application-auth.test.mts",
+      "tests/yxx-h5-http.test.mts",
+      "tests/yxx-h5-media.integration.test.mts",
+      "tests/yxx-h5-media.test.mts",
+      "tests/yxx-h5-runtime.test.mts",
+      "tests/yxx-h5-static.test.mts",
+      "tests/yxx-h5-v2-contract.test.mts",
+      "tests/yxx-h5-v2.integration.test.mts",
+      "tests/yxx-h5-frontend.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts"
     ],
     "v3-p08": [
       "tests/p2-g2-send-budget.test.mjs",
@@ -8493,6 +8686,46 @@
     "human-workbench-wiring": [
       "tests/human-workbench-configuration.test.mts",
       "tests/human-workbench-process.browser.test.mts"
+    ],
+    "yxx-h5-performance": [
+      "tests/yxx-h5-member-scheduler.test.mts",
+      "tests/mvp-application-member.test.mts",
+      "tests/yxx-h5-read-batch.test.mts",
+      "tests/yxx-h5-read-batch.integration.test.mts",
+      "tests/yxx-h5-performance-observability.test.mts",
+      "tests/human-workbench-configuration.test.mts",
+      "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "tests/yxx-h5-page-runtime.test.mts",
+      "tests/yxx-h5-media-controller.test.mts",
+      "tests/yxx-h5-media-races.integration.test.mts",
+      "tests/yxx-h5-entry.test.mts",
+      "tests/yxx-h5-entry.integration.test.mts",
+      "tests/yxx-h5-admin-contracts.test.mts",
+      "tests/yxx-h5-application-auth.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/yxx-h5-frontend.test.mts",
+      "tests/yxx-h5-http.test.mts",
+      "tests/yxx-h5-media.integration.test.mts",
+      "tests/yxx-h5-media.test.mts",
+      "tests/yxx-h5-runtime.test.mts",
+      "tests/yxx-h5-static.test.mts",
+      "tests/yxx-h5-v2-contract.test.mts",
+      "tests/yxx-h5-v2.integration.test.mts",
+      "tests/mvp-application-members.integration.test.mts",
+      "tests/human-workbench-process.browser.test.mts"
+    ],
+    "yxx-h5-rebuild": [
+      "tests/yxx-h5-admin-contracts.test.mts",
+      "tests/yxx-h5-application-auth.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/yxx-h5-frontend.test.mts",
+      "tests/yxx-h5-http.test.mts",
+      "tests/yxx-h5-media.integration.test.mts",
+      "tests/yxx-h5-media.test.mts",
+      "tests/yxx-h5-runtime.test.mts",
+      "tests/yxx-h5-static.test.mts",
+      "tests/yxx-h5-v2-contract.test.mts",
+      "tests/yxx-h5-v2.integration.test.mts"
     ]
   },
   "subprocess_entries": {
@@ -8531,6 +8764,12 @@
   },
   "support_files": {
     "SUBPROCESS_AND_ENVIRONMENT": [
+      "tests/yxx-h5-performance-qa.mts",
+      "tests/yxx-h5-performance-harness.mts",
+      "tests/yxx-h5-bounded-performance.mts",
+      "tests/yxx-h5-large-performance.mts",
+      "tests/yxx-h5-performance-worker.mts",
+      "tests/yxx-h5-performance-worker-controller.mts",
       "tests/fixtures/p1-003-inbox-worker.mjs",
       "tests/helpers/p2-002-migrate-child.mjs",
       "tests/helpers/p2-002-migrate-process-harness.mjs",
@@ -8581,6 +8820,7 @@
       "tests/helpers/t43-service-actions.mts"
     ],
     "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
+      "tests/helpers/yxx-h5-performance-observability.mts",
       "tests/helpers/p2-003-realtime-fixtures.mjs",
       "tests/helpers/p2-007-directory-fixture.mjs",
       "tests/helpers/p2-016-schema-assert.mjs",
@@ -8594,6 +8834,7 @@
       "tests/helpers/yxx-ss-010-fixture.mjs"
     ],
     "BROWSER_AND_STATIC_RESOURCES": [
+      "tests/helpers/h5-pure-module-loader.mts",
       "tests/helpers/p2-006-browser-harness.mjs",
       "tests/helpers/p2-016-browser-fixture.mjs",
       "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",

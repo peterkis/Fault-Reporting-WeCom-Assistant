@@ -1,0 +1,92 @@
+[
+  {
+    "file": "inter-0.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2",
+    "sha256": "ca157063339ac4ad418f214f3abfed119b0798ab4d377386ce5c9e5a7a435ebd",
+    "bytes": 25960
+  },
+  {
+    "file": "inter-1.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2",
+    "sha256": "71d5ee93cc1e9f1d520a3a8b66456de18c7879d8df09d57fcd2eaff75fef0075",
+    "bytes": 18748
+  },
+  {
+    "file": "inter-2.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2",
+    "sha256": "6e9e020a25f9b56d418f2c085b1d3c09725a4da23fe693a5b463064606732190",
+    "bytes": 11232
+  },
+  {
+    "file": "inter-3.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2",
+    "sha256": "1be3448e292fbf05ffe176fe1e43f135013d50b1e7d324ad1a558f623d3bb6f6",
+    "bytes": 18996
+  },
+  {
+    "file": "inter-4.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2",
+    "sha256": "5c66f9e07e90c6d4ac4922cc68d60de26c17b1858e677fb5e603fce3952b3ff2",
+    "bytes": 10252
+  },
+  {
+    "file": "inter-5.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2",
+    "sha256": "34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956",
+    "bytes": 85068
+  },
+  {
+    "file": "inter-6.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+    "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "bytes": 48256
+  },
+  {
+    "file": "symbols-0.woff2",
+    "source": "https://fonts.gstatic.com/l/font?kit=kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsL7GdxqJ1Xlr88jVas0g9EKX-fbxQeCz2AapRjahiLFyn-eHmAXSp_MzwD-VNLOueHmBt_i4bIQLehhE_QMsoDszormfpR8YxJw8kHYEPRbIudfhbVwZ6OTO3cIEaa-Q5zWHD7pksx6qhC8EBfTiE6bPHQAYF0liht9MX0&skey=b8dc2088854b122f&v=v377",
+    "sha256": "f949119c512f37c5f1831dcde3ba3077ed3f0eddbe72eb1d9e119f3802109ec2",
+    "bytes": 75036
+  },
+  {
+    "file": "reference-1.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuASGimJ1PJKhQU9B2RCp_ID0SHqqreLI2sXTowaevNo_ahJwNQl0LXeBRGaHiTo7mL_moZXVvwNb5mbfdj57zVnqfA7O_JI_JEWpC6JQoM_ZemRj6hdFVCDGLKf_7qUCpFuG0NAk1lmejHvKPEvOm-QHrb9oqWuEItUPwXKU__5-MQtgfz1U5t6GmuDYeqnbqOn4GbmzcyEIPoRwZTTn5apxhjY8YxMlh8Zt9Jc6l8YGUCf_Yn6iZhB",
+    "sha256": "d5b7203055dde9af689da71eb178e6583ef055d1f5a3ec839e908440401c8ad0",
+    "bytes": 28233
+  },
+  {
+    "file": "reference-2.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuBBU9FV8aJq75sG6M9rsMsMJk7hVvhs0S0MmRIABa7Yc_yKSd6Y7e7M7XmS_N9sic49CGJJQtKDD7SpSYjYD7X5aAVDoaKP_exPP3mygActDMX03lUxCB3XW0zbRcrSO17PNVckwEI_sJV9oHXnqv6249dgLoe75fXsrpfpy-HNIpXIvqxR7rB-fvI-LA1ms_xIceQfVD_IN8HUA7GuqLmbfXhem__xa9igXBzUfAatilUbf2oKgi3w",
+    "sha256": "60496e0c7d26d767f7f9e604413ea21c5c445f254968263c64371cd0bbec218d",
+    "bytes": 27426
+  },
+  {
+    "file": "reference-3.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuBKgEH9cLbqiQncBJQuiA3avHNdaguzOGHvMpYhOADrF3qUnqLsiZluC4Mfs6oxDJH4UGYxM_iO4QXjNR9YZZqLe2o2EUmfpcS4E_p3AErEZJO6M6ZKsCWJd3qWM-IChe_ZbYaz8C17PwgtphyxUbNNaqa3H1XeZFTFEQUv5xETfgZJ6R1NogtypbxsC9xFdGcv2XB4NU-LtRJjX0zS_1HSuvyHvC6AJFxZ_ZQLWcyYnGF2QGvHHl2b",
+    "sha256": "ef9d4baa7ff852ffae3d4813072b4199ee393979b3de419af23fae7c1276fc45",
+    "bytes": 24441
+  },
+  {
+    "file": "reference-4.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuBmXqGaTYMBGweFtHtSYw5wucaytNXiBYKxROwl6hJXxv2PQhBF2zHsU-taEDRGUwqaOkhZZ_BnMquEXpu7eFdEFx6epF0ZZEE2V8-JDq30zddk8Sw2Sn1EosmenSVwqO2v7t9y7RY_kUSRt6e6UEhLGST2VXDVrpoNS1DnFe3u_3h0l3W8as4EqvRMzS3RV_gmfb3EvNYDiCT6hkVIN6QN1e4SUONc8rrbCwIT-5ZPc4NQKF0Mr-5P",
+    "sha256": "9c9277283579a3bc0f74958c25e331d41e0bfe8eba2caad7b5d3a83a24c0b245",
+    "bytes": 38179
+  },
+  {
+    "file": "reference-5.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuD9DxQ9YiGfGMykpQtaty1Q8ykawdla5EWy8IjvT9SzweJEZ_kpHBIPTSa5-05PvejEN6TNLAcnad94iM5atNEFajn2DH9FD-BLfWgb6TfcE0YImko81bpWWk3R7pkLoN0QPXl3w5mjr5MjxpWkF_4HXISlVzjFd4SKjQuvkoNb2D2FlZz5DBgsZWN8y3WMKv-s340uDtvH3efOej1GGKSIzcJ14cA4ztVB6GBaf7Z9k9doAr5106R1",
+    "sha256": "f69ae7299a5355dabb3f35eb9700a16ec22d84b2d8d0c447280c7f87386cbf22",
+    "bytes": 48330
+  },
+  {
+    "file": "reference-6.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuDaWBFbkwUV5KQU2mDLvp715Na7nP8StexNg21bWGj9wK_xs_lD09AOQbfb2aOcpMs34ggUze1LqUodkMfNKHFcSCmF6ulBGI7pdkC2DFQisK1eYpP5g0NeRNe-MQ2J6O1RcJvd-LRZsb2sd8aMMIG6darBTA6Uf8qZ7Ny1wNkxy6CES-wiM_DToCZEpk54dDCAEZhhTsDndVC1KedSlCHtIn6ZuU412_srfdzpuyz3n7FeX1pYoFmM",
+    "sha256": "419ff70cb38638f98c1a2b648b18baf7d3112f35cafdfa5e592f82ead48c886f",
+    "bytes": 42881
+  },
+  {
+    "file": "reference-7.jpg",
+    "source": "https://lh3.googleusercontent.com/aida-public/AB6AXuDdaROly2NTgk9Y7m-kolIsvQb57VXcVxpwzM61H23tvIAdJdEgbJje7JcrRP0tlN5_SHS21jcSI6hFv1TSj4xUyh61UJh3EurGYAm6jbeBGUc-Mwr4cXy-xo7SoXOolP6drhcQk_VswS92Cbc3VvuXzIa3AzwimxRifoYLB9U9JntzDBiFOX0_s5-VJ2C-IKZrwF0H6U6ELfwO7xgiM5GD_Svr81pC8gn5G10H-e8pAyc3bDK472BF",
+    "sha256": "3811af56bd0f1dbaf5965276c490714b903477627c91d0dce4676eed4cadae15",
+    "bytes": 36816
+  }
+]

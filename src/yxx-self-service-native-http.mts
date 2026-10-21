@@ -7,10 +7,16 @@ import type {createYxxSelfServiceQuery,YxxQueryInput} from './yxx-self-service-q
 import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
 import type {YxxMemberFlags,YxxMemberSource} from './yxx-self-service-authorization.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
+import type {H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
+import type {H5EntryInput,H5EntryResponse} from '../contracts/yxx_h5_entry_contracts.js';
+import type {YxxSelfServiceBootstrap} from '../contracts/yxx_self_service_contracts.js';
+import {parseH5ReportFilters} from './yxx-h5-v2-contracts.mjs';
+import {beginH5Read} from './yxx-h5-read-batch.mjs';
+import type {createYxxH5Static} from './yxx-h5-static.mjs';
 type MemberServiceCatalog=Pick<ServiceCatalog,'catalog_version'|'listServices'>;
 type RawAuth=Record<string,unknown>;
 type ErrorFields={code?:string;status?:number};
-export interface YxxNativeHttpOptions {reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
+export interface YxxNativeHttpOptions {h5Handler?:OAuthHttpHandler|null;h5Static?:ReturnType<typeof createYxxH5Static>|null;h5Bootstrap?:(request:IncomingMessage)=>Promise<H5BootstrapExtension>;h5Entry?:(input:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap})=>Promise<H5EntryResponse>;reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;authenticateH5EntryMember?:YxxNativeHttpOptions['authenticateMember'];profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
@@ -199,9 +205,10 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 }
 
 export function createYxxSelfServiceNativeHttp({
-  publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,
+  publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember, authenticateH5EntryMember,
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,h5Handler=null,h5Static=null,h5Bootstrap,h5Entry,
 }:Omit<YxxNativeHttpOptions,'command'|'query'> & {reporterFeedbackEnabled?:boolean;command:YxxNativeHttpOptions['command'] & Partial<Pick<YxxSelfServiceCommand,'feedback'>>;query:YxxNativeHttpOptions['query'] & Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'feedbackReceipt'>>}={} as YxxNativeHttpOptions) {
+  if(authenticateH5EntryMember!==undefined&&typeof authenticateH5EntryMember!=='function')throw error('YXX_CONFIG_INVALID',503);
   if(typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled||typeof reporterFeedbackEnabled!=='boolean'||reporterFeedbackEnabled&&(!command?.feedback||!query?.feedbackReceipt))throw error('YXX_CONFIG_INVALID',503);
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
@@ -217,13 +224,13 @@ export function createYxxSelfServiceNativeHttp({
   const serviceEnabled = writeEnabled(profile, configuredFlags);
   const readEnabled = configuredFlags.YIXIAOXIU_MY_REPORTS_ENABLED;
 
-  async function currentMember(request:IncomingMessage, { requireWrite = false } = {}) {
+  async function currentMember(request:IncomingMessage, { requireWrite = false, authenticate = authenticateMember }:{requireWrite?:boolean;authenticate?:YxxNativeHttpOptions['authenticateMember']} = {}) {
     const token = cookie(request, sessionCookieName);
     if (!token) throw error('YXX_AUTH_REQUIRED', 401);
     let member;
     try { member = oauth.authenticate(token); } catch (value) { throw memberError(value); }
     let context:unknown;
-    try { context = await authenticateMember({ request, sessionToken: token, member }); } catch (value) { throw memberError(value); }
+    try { context = await authenticate({ request, sessionToken: token, member }); } catch (value) { throw memberError(value); }
     if (!context || typeof context !== 'object' || Array.isArray(context)) throw error('YXX_AUTH_REQUIRED', 401);
     const selectedProfile = safeProfile(context as RawAuth, configured.profile);
     const selectedFlags = safeFlags(context as RawAuth, configured.flags);
@@ -231,6 +238,31 @@ export function createYxxSelfServiceNativeHttp({
     if (typeof (context as RawAuth).csrf_token !== 'string' || (context as {csrf_token:string}).csrf_token.length < 32 || (context as {csrf_token:string}).csrf_token.length > 128) throw error('YXX_UNAVAILABLE', 503);
     return Object.freeze({ profile: selectedProfile, flags: selectedFlags, csrf_token: (context as {csrf_token:string}).csrf_token,
       recovery_scope: recoveryScope(context as RawAuth, scopeSecret) });
+  }
+
+  function bootstrapBase(context:Awaited<ReturnType<typeof currentMember>>):YxxSelfServiceBootstrap {
+    return {authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',read_only:!serviceEnabled,
+      can_submit:serviceEnabled,can_supplement:serviceEnabled,csrf_token:context.csrf_token,
+      recovery_scope:context.recovery_scope,
+      ...(reporterFeedbackEnabled?{feedback_draft_recovery_enabled:reporterFeedbackDraftRecoveryEnabled}:{})};
+  }
+
+  function entryInput(url:URL):H5EntryInput {
+    const view=url.searchParams.get('view');
+    const allowed=view==='request'?['view','request_ref']:view==='reports'?['view','source','search','status']:view==='department'?['view','search','status']:['view'];
+    for(const key of url.searchParams.keys())if(!allowed.includes(key)||url.searchParams.getAll(key).length!==1)throw error('YXX_INPUT_INVALID');
+    if(view==='home'||view==='report')return {view};
+    if(view==='request'){
+      const ref=url.searchParams.get('request_ref');if(!ref||!REQUEST_REF.test(ref))throw error('YXX_INPUT_INVALID');
+      return {view,request_ref:ref};
+    }
+    if(view==='reports'||view==='department'){
+      const filters=parseH5ReportFilters({search:url.searchParams.get('search'),status:url.searchParams.get('status') as 'OPEN'|'ACTIVE'|'COMPLETED'|null});
+      if(view==='department')return {view,...filters};
+      const source=url.searchParams.get('source');if(source!==null&&source!=='WEB'&&source!=='BOT')throw error('YXX_INPUT_INVALID');
+      return {view,source,...filters};
+    }
+    throw error('YXX_INPUT_INVALID');
   }
 
   async function asset(response:ServerResponse,item:readonly [string,string]) {
@@ -281,6 +313,7 @@ export function createYxxSelfServiceNativeHttp({
       }
       page(response, selected.status, '医小修', nativePageMessage(selected.status)); return true;
     }
+    if(await h5Static?.page(response))return true;
     await asset(response, ['self-service.html', 'text/html']); return true;
   }
 
@@ -293,6 +326,8 @@ export function createYxxSelfServiceNativeHttp({
       if(request.headers.host!==origin.host)throw error('YXX_ORIGIN_INVALID',403);
       if(!(request.url as string).startsWith('/')||(request.url as string).startsWith('//')||(request.url as string).split('?')[0]!==url.pathname)throw error('YXX_INPUT_INVALID');
       if (url.origin !== origin.origin || Buffer.byteLength(request.url ?? '', 'utf8') > 2048) throw error('YXX_INPUT_INVALID');
+      if(request.method==='GET'&&await h5Static?.asset(url,response))return true;
+      if(await h5Handler?.({request,response,url}))return true;
       if (ASSETS[url.pathname]) {
         if (request.method !== 'GET' || url.search) throw error('YXX_NOT_FOUND', 404);
         await asset(response, ASSETS[url.pathname] as readonly [string,string]); return true;
@@ -304,7 +339,7 @@ export function createYxxSelfServiceNativeHttp({
       if (request.method === 'GET' && url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });
         if (!readEnabled) return oauthHttp({ request, response, url });
-        try { await currentMember(request, { requireWrite: serviceEnabled }); await asset(response, ['self-service.html', 'text/html']); return true; }
+        try { await currentMember(request, { requireWrite: serviceEnabled }); if(await h5Static?.page(response))return true;await asset(response, ['self-service.html', 'text/html']); return true; }
         catch (value) {
           const selected = mapError(value);
           if (selected.status === 401) return await oauthHttp({ request, response, url });
@@ -322,13 +357,26 @@ export function createYxxSelfServiceNativeHttp({
       const pageMatch = url.pathname.match(/^\/wecom\/yixiaoxiu\/reports(?:\/(new|[A-Za-z0-9_-]{32}))?$/u);
       if (request.method === 'GET' && pageMatch && !url.search) return await nativePage({ request, response, requestRef: pageMatch[1]?.length === 32 ? pageMatch[1] : null });
 
+      if(url.pathname==='/api/yixiaoxiu/h5/entry'){
+        if(request.method!=='GET')throw error('YXX_NOT_FOUND',404);
+        if(header(request,'transfer-encoding')||Number(header(request,'content-length')??0)>0)throw error('YXX_INPUT_INVALID');
+        if(header(request,'sec-fetch-site')==='cross-site'||header(request,'origin')&&header(request,'origin')!==origin.origin)throw error('YXX_FORBIDDEN',403);
+        const input=entryInput(url);
+        if(!h5Entry){json(response,404,{error:{code:'YXX_H5_ENTRY_DISABLED',retryable:false}});return true;}
+        if(!readEnabled)throw error('YXX_FORBIDDEN',403);
+        // Start the bounded entry clock before the independent Provider/member check.
+        // This records a request-local timestamp only; queued work owns its later resources.
+        beginH5Read(request);
+        const context=await currentMember(request,{requireWrite:serviceEnabled,authenticate:authenticateH5EntryMember??authenticateMember});
+        json(response,200,await h5Entry({request,input,bootstrap:bootstrapBase(context)}));return true;
+      }
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
         if (!readEnabled) throw error('YXX_FORBIDDEN', 403);
         const context = await currentMember(request, { requireWrite: serviceEnabled });
-        json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: !serviceEnabled,
-          can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: (context as {csrf_token:string}).csrf_token,
-          recovery_scope: context.recovery_scope,...(reporterFeedbackEnabled?{feedback_draft_recovery_enabled:reporterFeedbackDraftRecoveryEnabled}:{}) }); return true;
+        const v2=(header(request,'accept')??'').split(',').some(value=>value.trim().split(';')[0]==='application/vnd.yixiaoxiu.v2+json');
+        const h5=v2&&h5Bootstrap?await h5Bootstrap(request):undefined;
+        json(response, 200, {...bootstrapBase(context),...(h5?{h5}:{})}); return true;
       }
       if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
         if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');
@@ -418,6 +466,8 @@ export function createYxxSelfServiceNativeHttp({
       if (requestPath && request.method === 'POST') {
         if (url.search) throw error('YXX_INPUT_INVALID');
         assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request, { requireWrite: true });
+        // V2 requires explicit negotiation; legacy shape validation stays in the command Port.
+        if(input.schema_version===2)throw error('YXX_INPUT_INVALID');
         if (header(request, 'x-csrf-token') !== (context as RawAuth).csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await command.accept({ request, input });
         const latest = await currentMember(request, { requireWrite: true });

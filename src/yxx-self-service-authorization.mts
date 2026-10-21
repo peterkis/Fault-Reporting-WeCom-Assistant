@@ -216,6 +216,8 @@ export function createYxxSelfServiceAuthorization<Request = IncomingMessage>({
       return context;
     } catch (error) {
       if ((error as {code?:string} | null)?.code?.startsWith('YXX_MEMBER_')) throw error;
+      if(Number((error as {status?:number}|null)?.status)>=500)fail('YXX_MEMBER_AUTH_UNAVAILABLE',503);
+      if((error as {status?:number}|null)?.status===403)fail('YXX_MEMBER_FORBIDDEN',403);
       fail(phase === 'recheck' ? 'YXX_MEMBER_AUTH_RECHECK_FAILED' : 'YXX_MEMBER_AUTH_REQUIRED', phase === 'recheck' ? 503 : 401);
     }
   }
@@ -246,6 +248,7 @@ export function createYxxSelfServiceAuthorization<Request = IncomingMessage>({
   return Object.freeze({
     authenticate: (request: Request) => resolve(request),
     authorize,
+    assertOperationAllowed: operationAllowed,
     read,
     revalidate,
     sameContext,

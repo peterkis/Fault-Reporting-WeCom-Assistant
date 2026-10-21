@@ -1,0 +1,278 @@
+<!DOCTYPE html><html lang="zh-CN" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#faf9f8;}body{overscroll-behavior:none;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#191918;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "on-secondary": "#ffffff",
+        "tertiary": "#823c00",
+        "surface-tint": "#3a53c9",
+        "on-error": "#ffffff",
+        "secondary-fixed": "#d5e3ff",
+        "on-error-container": "#93000a",
+        "on-primary": "#ffffff",
+        "surface-container-highest": "#e3e2e1",
+        "on-primary-fixed": "#001159",
+        "background": "#faf9f8",
+        "surface-bright": "#faf9f8",
+        "outline": "#757685",
+        "success": "#14832b",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f4f3f2",
+        "tertiary-container": "#a74f00",
+        "on-tertiary-fixed": "#321300",
+        "on-primary-fixed-variant": "#1c38b0",
+        "error-container": "#ffdad6",
+        "outline-variant": "#c5c5d6",
+        "warning": "#ff6d00",
+        "primary": "#455dd3",
+        "border-base": "rgba(0, 0, 0, 0.06)",
+        "primary-fixed-dim": "#bac3ff",
+        "secondary-fixed-dim": "#a8c8ff",
+        "secondary": "#0075de",
+        "surface": "#faf9f8",
+        "error": "#eb5757",
+        "on-secondary-container": "#002c5a",
+        "on-secondary-fixed": "#001b3c",
+        "on-background": "#191918",
+        "surface-container": "#efeeed",
+        "accent": "#0075de",
+        "tertiary-fixed": "#ffdbc8",
+        "on-primary-container": "#e5e6ff",
+        "on-secondary-fixed-variant": "#00468a",
+        "surface-variant": "#e3e2e1",
+        "surface-base": "#ffffff",
+        "inverse-primary": "#bac3ff",
+        "on-surface": "#191918",
+        "on-tertiary-container": "#ffe2d3",
+        "text-main": "#191918",
+        "surface-container-high": "#e9e8e7",
+        "primary-fixed": "#dee1ff",
+        "inverse-surface": "#2f3130",
+        "on-tertiary-fixed-variant": "#743500",
+        "on-surface-variant": "#5a5a58",
+        "inverse-on-surface": "#f1f0ef",
+        "surface-dim": "#dadad9",
+        "primary-container": "#455dd3",
+        "on-tertiary": "#ffffff",
+        "tertiary-fixed-dim": "#ffb68a",
+        "secondary-container": "#e8f3ff",
+        "tint-mint": "#eef8f1",
+        "tint-rose": "#fdf0f0",
+        "tint-sky": "#eff6ff",
+        "tint-peach": "#fff7ed"
+      },
+      "borderRadius": {
+        "DEFAULT": "4px",
+        "sm": "4px",
+        "md": "6px",
+        "lg": "8px",
+        "xl": "10px",
+        "2xl": "12px",
+        "full": "9999px"
+      },
+      "spacing": {
+        "space-md": "16px",
+        "space-sm": "8px",
+        "space-xl": "24px",
+        "space-xs": "4px",
+        "space-lg": "20px",
+        "gutter": "16px",
+        "margin": "16px"
+      }
+    }
+  }
+};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+      background-color: #faf9f8;
+    }
+  </style>
+</head><body class="bg-surface text-text-main min-h-screen flex flex-col antialiased selection:bg-primary/20 selection:text-primary"><header class="fixed top-0 w-full z-50 pt-safe bg-[#faf9f8]/90 backdrop-blur-md border-b border-black/[0.06]"><div class="h-14 px-margin flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 text-white font-bold text-[16px] shadow-sm select-none">修</div><div class="flex flex-col min-w-0 justify-center"><div class="flex items-center gap-1.5"><span class="font-semibold text-[15px] tracking-tight text-text-main truncate">医小修</span><span class="inline-flex items-center px-1.5 py-0.5 text-[11px] rounded bg-tint-mint text-success font-medium leading-none">在线</span></div><div class="flex items-center gap-0.5 text-on-surface-variant text-[12px] cursor-pointer hover:text-text-main transition-colors"><span class="truncate">本部院区</span><span class="material-symbols-outlined text-[14px]">arrow_drop_down</span></div></div></div><div class="flex items-center gap-1.5 flex-shrink-0"><button aria-label="搜索与帮助" class="w-8 h-8 flex items-center justify-center rounded-md text-on-surface-variant hover:text-text-main hover:bg-black/[0.04] transition-colors"></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-24 bg-surface"><div class="flex flex-col w-full px-margin py-3 gap-3">
+<!-- Top Location & Asset Code Bar (Notion Style Subtle Card) -->
+
+<!-- Hero Smart Input Box -->
+<div class="flex flex-col gap-3" id="hero-multimodal-panel">
+<!-- Hero Heading & Tagline -->
+<div class="flex items-center justify-between px-0.5">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-3.5 rounded-sm bg-primary"></div>
+<span class="font-semibold text-[14px] text-text-main">快捷申报</span>
+<span class="px-1.5 py-0.5 rounded bg-tint-mint text-success text-[11px] font-medium flex items-center gap-0.5"><span class="material-symbols-outlined text-[12px]">bolt</span><br></span>
+</div>
+
+</div>
+<!-- 1. Hero Big Voice Interaction Card (Notion Blue Respiratory Texture) -->
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#f5f7ff] via-white to-white border border-[#455dd3]/20 shadow-[0_2px_8px_rgba(69,93,211,0.06)] p-5 flex flex-col items-center justify-center text-center group cursor-pointer active:scale-[0.99] transition-all" id="voice-record-btn">
+<div class="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#455dd3]/10 text-primary text-[11px] font-medium">
+<span class="material-symbols-outlined text-[12px] animate-pulse">graphic_eq</span>
+
+</div>
+<!-- Pulsing microphone circle -->
+<div class="relative my-2.5 flex items-center justify-center">
+<div class="absolute w-20 h-20 rounded-full bg-[#455dd3]/10 animate-ping" style="animation-duration: 2.8s;"></div>
+<div class="w-14 h-14 rounded-full bg-primary shadow-md shadow-[#455dd3]/25 flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]" id="mic-icon">mic</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1 mt-0.5">
+<span class="font-semibold text-[16px] text-text-main tracking-tight" id="mic-text">按住大声说 · 语音倾诉报修</span>
+
+</div>
+<div class="w-full mt-3 py-1.5 px-3 rounded-md bg-[#455dd3]/10 text-primary text-[12px] flex items-center justify-center gap-1.5 hidden" id="voice-wave">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="">正在收音与语义分析中...&nbsp;</span>
+</div>
+</div>
+<!-- 2. Dual Fast Multi-modal Buttons (Photo/OCR & Video) -->
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Screen/Photo Auto Detection Button -->
+<button class="flex items-center gap-2.5 p-3 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.06] active:scale-95 transition-all text-left hover:bg-black/[0.02] group" id="photo-upload-btn" type="button">
+<div class="w-10 h-10 rounded-lg bg-tint-peach flex items-center justify-center text-[#d97706] flex-shrink-0 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[22px]">document_scanner</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-medium text-[13px] text-text-main truncate">拍照&nbsp;&nbsp;</span>
+<span class="text-[11px] text-on-surface-variant truncate">拍蓝屏或弹窗代码</span>
+</div>
+</button>
+<!-- Short Video Button -->
+<button class="flex items-center gap-2.5 p-3 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.06] active:scale-95 transition-all text-left hover:bg-black/[0.02] group" id="video-capture-btn" type="button">
+<div class="w-10 h-10 rounded-lg bg-tint-sky flex items-center justify-center text-secondary flex-shrink-0 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[22px]">videocam</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-medium text-[13px] text-text-main truncate">录像</span>
+<span class="text-[11px] text-on-surface-variant truncate">记录卡纸与硬件杂音</span>
+</div>
+</button>
+</div>
+<!-- 3. AI Automated Recognition Results Badge/Preview (Notion Property Pill Layout) -->
+
+<!-- 4. De-emphasized Auxiliary Text Note Input (Notion Compact Collapsible Note) -->
+<div class="rounded-lg bg-[#faf9f8] border border-black/[0.06] p-2 flex flex-col gap-1.5">
+<div class="flex items-center justify-between px-1 text-on-surface-variant">
+<div class="flex items-center gap-1 text-[12px] font-medium text-text-main">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">edit_note</span>
+<span class="">补充文字描述 (选填)</span>
+</div>
+<span class="text-[11px] text-on-surface-variant" id="char-counter">30/150</span>
+</div>
+<textarea class="w-full bg-white rounded-md p-2 text-text-main text-[13px] border border-black/[0.06] focus:outline-none focus:border-primary placeholder:text-on-surface-variant/60 resize-none" id="fault-desc" placeholder="如需补充房间号、其他异常表现或期望到达时间可在此输入..." rows="2"></textarea>
+</div>
+</div>
+<!-- Classification Quick Tag Selectors -->
+
+<!-- Urgency Toggle (Calm Clinical Triage) -->
+
+<!-- Submitter Contact Verification Card -->
+
+<!-- Friendly Clinical Tip -->
+<div class="rounded-xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-3 flex flex-col gap-2 transition-all"><div class="flex items-center justify-between"><div class="flex items-center gap-1.5 text-[12px] font-medium text-text-main"><span class="material-symbols-outlined text-[16px] text-primary">location_on</span><span class="">位置</span></div><span class="text-[11px] text-primary/80 font-medium px-1.5 py-0.5 rounded bg-primary/10">选填</span></div><div class="flex items-center gap-2 bg-[#faf9f8] border border-black/[0.06] rounded-lg px-2.5 py-2 cursor-pointer hover:border-primary/40 transition-colors"><div class="flex-1 flex flex-col min-w-0"><div class="flex items-center gap-1.5 text-[13px] font-medium text-text-main truncate"></div><span class="text-[11px] text-on-surface-variant truncate mt-0.5">可点击补充精准位置，如：12床床旁、配药间电脑</span></div><span class="material-symbols-outlined text-[18px] text-on-surface-variant flex-shrink-0">edit_location_alt</span></div></div>
+<!-- Sticky CTA Action Trigger (Notion Standard Action Button: #455dd3, 8px radius, font bold) -->
+<div class="pt-1">
+<button class="w-full h-11 rounded-[8px] bg-[#455dd3] hover:bg-[#394eb8] active:scale-[0.99] text-white font-semibold text-[14px] transition-all flex items-center justify-center gap-2 shadow-[0_2px_6px_rgba(69,93,211,0.25)]" id="submit-ticket-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span class="">立即提交报修</span>
+</button>
+<button type="button" class="w-full mt-2.5 h-11 rounded-[8px] bg-[#fff7ed] border border-[#ffdec4] text-[#d97706] hover:bg-[#ffedd5] active:scale-[0.99] font-medium text-[13px] transition-all flex items-center justify-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]" id="direct-contact-btn"><span class="material-symbols-outlined text-[18px]">support_agent</span><span class="">说不清楚，直接联系我</span><span class="text-[11px] text-[#d97706]/80 font-normal ml-0.5">(工程师将致电上门)</span></button></div>
+<!-- Success Toast Modal Mock (Hidden initially) -->
+<div class="hidden fixed inset-x-4 bottom-20 p-3.5 rounded-lg bg-[#191918] text-white shadow-xl flex items-center justify-between z-50 transition-all border border-white/10" id="toast-success">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[#34c759] text-[20px]">task_alt</span>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-white">报修单 #CL-8921 提交成功</span>
+<span class="text-[11px] text-white/70">心内科值班工程师 王工 已自动接收</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-white/60 hover:text-white cursor-pointer text-[18px]" onclick="document.getElementById('toast-success').classList.add('hidden')">close</span>
+</div>
+</div>
+<script>
+  (function() {
+    const desc = document.getElementById('fault-desc');
+    const counter = document.getElementById('char-counter');
+    const voiceBtn = document.getElementById('voice-record-btn');
+    const voiceWave = document.getElementById('voice-wave');
+    const micText = document.getElementById('mic-text');
+    const chips = document.querySelectorAll('.category-chip');
+    const urgencyBtns = document.querySelectorAll('.urgency-btn');
+    const submitBtn = document.getElementById('submit-ticket-btn');
+    const toast = document.getElementById('toast-success');
+    const removeEvidence = document.getElementById('remove-evidence');
+    const evidenceCard = document.getElementById('ocr-preview-card');
+
+    if (desc && counter) {
+      desc.addEventListener('input', () => {
+        counter.textContent = `${desc.value.length}/150`;
+      });
+    }
+
+    let isRecording = false;
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        isRecording = !isRecording;
+        if (isRecording) {
+          voiceWave.classList.remove('hidden');
+          micText.textContent = '正在倾听...';
+          voiceBtn.classList.add('border-primary');
+          if (desc && !desc.value) {
+            desc.value = '3号医生站电脑无法启动，按下电源键黑屏，急需开具12床医嘱。';
+            counter.textContent = `${desc.value.length}/150`;
+          }
+        } else {
+          voiceWave.classList.add('hidden');
+          micText.textContent = '按住大声说 · 语音倾诉报修';
+          voiceBtn.classList.remove('border-primary');
+        }
+      });
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.classList.remove('bg-primary', 'text-white', 'border-primary');
+          c.classList.add('bg-white', 'text-on-surface-variant', 'border-black/[0.06]');
+        });
+        chip.classList.remove('bg-white', 'text-on-surface-variant', 'border-black/[0.06]');
+        chip.classList.add('bg-primary', 'text-white', 'border-primary');
+      });
+    });
+
+    urgencyBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        urgencyBtns.forEach(b => {
+          b.classList.remove('bg-white', 'text-text-main', 'shadow-sm', 'border-black/[0.04]');
+          b.classList.add('bg-transparent', 'text-on-surface-variant', 'border-transparent');
+        });
+        btn.classList.add('bg-white', 'text-text-main', 'shadow-sm', 'border-black/[0.04]');
+        btn.classList.remove('bg-transparent', 'text-on-surface-variant', 'border-transparent');
+      });
+    });
+
+    if (removeEvidence && evidenceCard) {
+      removeEvidence.addEventListener('click', () => {
+        evidenceCard.classList.add('hidden');
+      });
+    }
+
+    if (submitBtn && toast) {
+      submitBtn.addEventListener('click', () => {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-80');
+        submitBtn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> <span>派工同步中...</span>`;
+        
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-80');
+          submitBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">check</span> <span>已完成提交</span>`;
+          toast.classList.remove('hidden');
+          setTimeout(() => {
+            toast.classList.add('hidden');
+          }, 4000);
+        }, 800);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#faf9f8]/90 backdrop-blur-md border-t border-black/[0.06]"><div class="h-14 px-space-md flex items-center justify-around"><a class="flex flex-col items-center justify-center min-w-[56px] h-11 gap-0.5 text-on-surface-variant hover:text-text-main transition-colors active:scale-95" data-path="workbench" href="#"><span class="material-symbols-outlined text-[20px]">dashboard_customize</span><span class="text-[11px] font-medium tracking-tight">工作台</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-11 gap-0.5 transition-colors active:scale-95 text-primary font-semibold" data-path="quick-report" href="#"><span class="material-symbols-outlined text-[20px]">bolt</span><span class="text-[11px] tracking-tight">快捷报修</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-11 gap-0.5 text-on-surface-variant hover:text-text-main transition-colors active:scale-95" data-path="ticket-records" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="text-[11px] font-medium tracking-tight">工单查询</span></a></div></nav>
+
+</body></html>

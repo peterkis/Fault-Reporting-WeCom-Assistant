@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="zh-CN" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#faf9f8;}body{overscroll-behavior:none;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;color:#191918;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary": "#455dd3",
+          "primary-pressed": "#354ab8",
+          "accent": "#213183",
+          "brand-blue-active": "#0075de",
+          "background": "#faf9f8",
+          "surface-base": "#ffffff",
+          "border-regular": "rgba(0, 0, 0, 0.08)",
+          "hairline": "#e5e3df",
+          "text-main": "#191918",
+          "text-muted": "#78736f",
+          "text-secondary": "#615d59",
+          "notion-blue-bg": "#e6f3fe",
+          "notion-blue-text": "#097fe8",
+          "notion-green-bg": "#d0f4d8",
+          "notion-green-text": "#14832b",
+          "notion-orange-bg": "#ffdec4",
+          "notion-orange-text": "#dd5b00",
+          "notion-purple-bg": "#f0ebfc",
+          "notion-purple-text": "#6941c6",
+          "notion-red-bg": "#fde8e8",
+          "notion-red-text": "#e03131",
+          "surface-container": "#efeeed",
+          "surface-container-low": "#f4f3f2",
+          "surface-container-high": "#e9e8e7",
+          "surface-container-highest": "#e3e2e1"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "sm": "0.25rem",
+          "md": "0.5rem",
+          "lg": "0.75rem",
+          "xl": "0.875rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-xs": "4px",
+          "space-sm": "8px",
+          "space-md": "16px",
+          "space-lg": "24px",
+          "space-xl": "32px",
+          "margin": "16px"
+        }
+      }
+    }
+  };
+</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-background text-text-main min-h-screen flex flex-col antialiased selection:bg-notion-blue-bg selection:text-brand-blue-active"><header class="fixed top-0 w-full z-50 pt-safe bg-[#faf9f8]/90 backdrop-blur-md border-b border-border-regular"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-8 h-8 rounded-md bg-primary text-white flex items-center justify-center font-semibold text-[15px] shadow-sm flex-shrink-0 tracking-tight">修</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-semibold text-[15px] text-text-main truncate tracking-tight">医小修</span><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-notion-green-bg text-notion-green-text">在线</span></div><div class="flex items-center gap-0.5 text-text-muted text-[12px]"><span class="truncate">本部院区</span><span class="material-symbols-outlined text-[14px]">arrow_drop_down</span></div></div></div><div class="flex items-center gap-1 flex-shrink-0"><button aria-label="搜索与帮助" class="w-9 h-9 flex items-center justify-center rounded-md text-text-secondary hover:bg-black/5 hover:text-text-main transition-colors"></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-background"><div class="flex flex-col w-full">
+<div class="px-margin pt-4 pb-space-lg flex flex-col gap-5">
+<!-- Notion-like Greeting Banner -->
+<div class="flex flex-col gap-2">
+
+<div class="flex items-baseline justify-between mt-1">
+<div>
+<h1 class="text-[23px] font-bold text-text-main tracking-tight">下午好，林主任医师</h1>
+<p class="text-[13px] text-text-muted mt-0.5">心内科一病区</p>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-container-high border border-border-regular flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">stethoscope</span>
+</div>
+</div>
+</div>
+<!-- Hero Report Card -->
+<div class="relative overflow-hidden rounded-xl bg-surface-base border border-border-regular shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-5 flex flex-col gap-4">
+<div class="flex items-start justify-between">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[12px] font-semibold text-primary uppercase tracking-wide">一键报障</span>
+</div>
+<h2 class="text-[20px] font-bold text-text-main tracking-tight">临床快速报修</h2>
+</div>
+
+</div>
+<p class="text-[13px] text-text-muted leading-relaxed">
+        如遇突发故障，支持长按录制语音、拍摄屏幕自动提取错误代码，急重症科室优先调度处理。
+      </p>
+<div class="pt-1 flex flex-col gap-2.5">
+<button class="w-full h-11 bg-primary hover:bg-primary-pressed active:bg-accent text-white rounded-md font-semibold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]" id="btn-quick-report">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="">立即上报 IT 故障</span>
+</button>
+
+</div>
+</div>
+<!-- Quick Utilities (3 Columns) -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-semibold text-text-main">常用支持</span>
+<span class="text-[11px] text-text-muted">24小时待命</span>
+</div>
+<div class="grid grid-cols-3 gap-2.5">
+<!-- Shortcut 1 -->
+<button class="bg-surface-base border border-border-regular p-3 rounded-lg flex flex-col items-center justify-center text-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:bg-surface-container-low transition-colors">
+<div class="w-9 h-9 rounded-md bg-notion-blue-bg text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+</div>
+<span class="text-[13px] font-medium text-text-main">应急电话</span>
+<span class="text-[11px] text-text-muted truncate w-full">18117887318</span>
+</button>
+<!-- Shortcut 2 -->
+<a class="bg-surface-base border border-border-regular p-3 rounded-lg flex flex-col items-center justify-center text-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:bg-surface-container-low transition-colors" href="tel:8820">
+<div class="w-9 h-9 rounded-md bg-notion-red-bg text-notion-red-text flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<span class="text-[13px] font-medium text-text-main">电话专线</span>
+<span class="text-[11px] text-notion-red-text font-medium">6131 8500</span>
+</a>
+<!-- Shortcut 3 -->
+<button class="bg-surface-base border border-border-regular p-3 rounded-lg flex flex-col items-center justify-center text-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:bg-surface-container-low transition-colors">
+<div class="w-9 h-9 rounded-md bg-notion-orange-bg text-notion-orange-text flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+</div>
+<span class="text-[13px] font-medium text-text-main">问题自查</span>
+<span class="text-[11px] text-text-muted truncate w-full">打印机卡纸/脱机&nbsp; &nbsp;</span>
+</button>
+</div>
+</div>
+<!-- Recent Tickets Section -> Empty State -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-semibold text-text-main">最近报修工单</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted text-[11px] font-medium">0</span>
+</div>
+<button class="text-[12px] font-medium text-primary hover:text-accent transition-colors flex items-center gap-0.5">
+          历史<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+<!-- Reassuring Notion-style Empty State Card -->
+<div class="bg-surface-base rounded-xl border border-border-regular p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col items-center text-center">
+<div class="w-14 h-14 rounded-2xl bg-notion-green-bg/70 border border-notion-green-text/20 flex items-center justify-center mb-3.5 text-notion-green-text shadow-sm">
+<span class="material-symbols-outlined text-[30px]">task_alt</span>
+</div>
+<h3 class="text-[16px] font-bold text-text-main tracking-tight mb-1">
+          当前无进行中或待处理工单
+        </h3>
+
+<div class="w-full pt-3 border-t border-border-regular flex flex-col sm:flex-row items-center justify-center gap-2">
+
+
+</div>
+</div>
+</div>
+<!-- System Health & Proactive Maintenance Card -->
+
+<!-- Emergency Clinical Fallback Notification -->
+
+</div>
+</div>
+<script>
+  (function() {
+    const reportBtn = document.getElementById('btn-quick-report');
+    if (reportBtn) {
+      reportBtn.addEventListener('click', function() {
+        const quickReportNav = document.querySelector('nav a[data-path="quick-report"]');
+        if (quickReportNav) {
+          quickReportNav.click();
+        } else {
+          window.location.hash = '#quick-report';
+        }
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#faf9f8]/90 backdrop-blur-md border-t border-border-regular" data-active-classes="text-primary font-medium"><div class="h-14 px-space-md flex items-center justify-around"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-12 gap-0.5 transition-colors active:scale-95 text-primary font-medium" data-path="workbench" href="#"><span class="material-symbols-outlined text-[22px]">dashboard_customize</span><span class="text-[11px] tracking-tight">工作台</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 gap-0.5 text-text-muted hover:text-text-main transition-colors active:scale-95" data-path="quick-report" href="#"><span class="material-symbols-outlined text-[22px]">bolt</span><span class="text-[11px] tracking-tight">快捷报修</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 gap-0.5 text-text-muted hover:text-text-main transition-colors active:scale-95" data-path="ticket-records" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="text-[11px] tracking-tight">工单查询</span></a></div></nav>
+
+
+</body></html>

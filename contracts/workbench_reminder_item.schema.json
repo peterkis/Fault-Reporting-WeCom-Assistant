@@ -32,7 +32,8 @@
         "AUTHORIZED_TEAM_NEW_REPORT",
         "RELATED_NEW_MATERIAL",
         "RELATED_REOPEN",
-        "RELATED_FOLLOW_UP_DUE"
+        "RELATED_FOLLOW_UP_DUE",
+        "RELATED_REPORT_URGE"
       ]
     },
     "canonical_item": {
@@ -84,7 +85,8 @@
           "reason": {
             "enum": [
               "RELATED_REOPEN",
-              "RELATED_FOLLOW_UP_DUE"
+              "RELATED_FOLLOW_UP_DUE",
+              "RELATED_REPORT_URGE"
             ]
           }
         }

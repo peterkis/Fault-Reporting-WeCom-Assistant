@@ -115,6 +115,7 @@ export const REALTIME_SOURCE_TYPES = Object.freeze([
   'INCIDENT_EVENT',
   'GATEWAY_EVENT',
   'MANUAL_REVIEW',
+  'WEB_REPORT_URGE',
 ] as const);
 
 export const REALTIME_AGGREGATE_TYPES = Object.freeze([

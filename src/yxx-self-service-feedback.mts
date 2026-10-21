@@ -19,6 +19,7 @@ export function parseYxxFeedbackInput(input:unknown):YxxFeedbackInput{
 }
 export interface FeedbackMemberContext{scope:YxxMemberScope;write_flag:boolean;flags:YxxMemberFlags}
 interface WebSource{intake_id:string;ticket_id:string|null;input_revision:string}
+export interface FeedbackReadProjection{source:WebSource;round:CompletedTicketRound|null;already_reopened:boolean}
 export interface FeedbackHooks{onNewCommand?:(input:{value:YxxFeedbackInput;transaction:PostgresTransaction})=>Promise<boolean>;onBeforeCommit?:(input:{transaction:PostgresTransaction})=>Promise<boolean>}
 export interface FeedbackStoreInput extends FeedbackHooks{scope:YxxMemberScope;requestRef:string;input:unknown;transaction?:PostgresTransaction}
 export type YxxFeedbackStore=ReturnType<typeof createYxxSelfServiceFeedback>;
@@ -46,6 +47,12 @@ export function createYxxSelfServiceFeedback({pool,scopeSecret}:{pool:PostgresPo
    const current=await tx.query("SELECT 1 FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_cycle_reopen r ON r.new_cycle_id=t.current_handling_cycle_id AND r.ticket_id=t.id WHERE t.id=$1::uuid AND t.status='REOPENED'",[original.ticket_id]);
    return denied(current.rowCount?'ROUND_ALREADY_REOPENED':'ROUND_NOT_COMPLETED');
   }
+  return {schema_version:1,can_feedback:true,completed_round_ref:roundRef(member.scope,requestRef,round),completed_round_no:round.cycle_no,ticket_version:round.version,rejection:null};
+ }
+ function contextFromAuthorizedProjection(member:FeedbackMemberContext,requestRef:string,{source:original,round,already_reopened}:FeedbackReadProjection):YxxFeedbackContext{
+  if(!member.write_flag||!member.flags.YIXIAOXIU_SELF_SERVICE_ENABLED||!member.flags.YIXIAOXIU_MY_REPORTS_ENABLED)return denied('WRITE_DISABLED');
+  if(!original.ticket_id)return denied('TICKET_NOT_CREATED');
+  if(!round||round.source_intake_id!==original.intake_id)return denied(already_reopened?'ROUND_ALREADY_REOPENED':'ROUND_NOT_COMPLETED');
   return {schema_version:1,can_feedback:true,completed_round_ref:roundRef(member.scope,requestRef,round),completed_round_no:round.cycle_no,ticket_version:round.version,rejection:null};
  }
  async function acceptInTransaction({scope,requestRef,input,transaction:tx,onNewCommand,onBeforeCommit}:FeedbackStoreInput & {transaction:PostgresTransaction}):Promise<YxxFeedbackResult>{
@@ -80,5 +87,5 @@ export function createYxxSelfServiceFeedback({pool,scopeSecret}:{pool:PostgresPo
   const row=(await tx.query<{feedback_result:YxxFeedbackResult}>(`SELECT feedback_result FROM intake.web_command_receipt WHERE scope_hash=$1 AND client_command_id=$2::uuid AND result_request_ref=$3 AND command_kind='FEEDBACK'`,[scope.scopeHash,id,requestRef])).rows[0];
   return row?{client_command_id:id,request_ref:requestRef,state:'COMMITTED',result:{...row.feedback_result,replayed:true}}:{client_command_id:id,request_ref:requestRef,state:'UNKNOWN'};
  }
- return Object.freeze({context,receipt,accept,acceptInTransaction});
+ return Object.freeze({context,contextFromAuthorizedProjection,receipt,accept,acceptInTransaction});
 }

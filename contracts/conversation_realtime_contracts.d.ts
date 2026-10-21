@@ -52,7 +52,8 @@ export type RealtimeSourceType =
   | 'READ_CURSOR'
   | 'INCIDENT_EVENT'
   | 'GATEWAY_EVENT'
-  | 'MANUAL_REVIEW';
+  | 'MANUAL_REVIEW'
+  | 'WEB_REPORT_URGE';
 
 export type RealtimeAggregateType =
   | 'CONVERSATION_SESSION'

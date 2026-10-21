@@ -3,7 +3,7 @@ import { record, strings, readJson, safeFile, workspaceFiles, git, outputPath } 
 
 export const ROUTING_BASE = '84d39b964d02db335c6c0c900d56d5b0a383f621';
 export type Host = 'SOURCE_HOST' | 'STAGED_RUNTIME' | 'MIXED_EXPLICIT_ROOTS';
-export type Entry = { path: string; mode: Host; node_flags: string[]; requires_database: boolean; requires_browser: boolean; requires_powershell: boolean; requires_pyyaml: boolean };
+export type Entry = { path: string; mode: Host; node_flags: string[]; requires_database: boolean; requires_browser: boolean; requires_powershell: boolean; requires_pyyaml: boolean;requires_ffmpeg?:boolean };
 export type Selection = { entries: Entry[]; flags: string[]; label: string };
 export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown>; frozen: Record<string, unknown>; subprocesses: Record<string, unknown> };
 export const logical = (p: string): string => p.endsWith('.mts') ? p.slice(0, -4) + '.mjs' : p;
@@ -21,8 +21,9 @@ export function loadRoutes(root: string): Routes {
     if (typeof e.path !== 'string' || !/^(?:tests\/|\.github\/review\/).+\.test\.(?:mjs|mts)$/u.test(e.path)
       || typeof e.mode !== 'string' || !hostNames.has(e.mode)) throw new Error('MIGRATION_TEST_ENTRY');
     for (const field of ['requires_database', 'requires_browser', 'requires_powershell', 'requires_pyyaml']) if (typeof e[field] !== 'boolean') throw new Error('MIGRATION_TEST_REQUIREMENT');
+    if(e.requires_ffmpeg!==undefined&&typeof e.requires_ffmpeg!=='boolean')throw new Error('MIGRATION_TEST_REQUIREMENT');
     return { path: e.path, mode: e.mode as Host, node_flags: flags(e.node_flags), requires_database: e.requires_database === true,
-      requires_browser: e.requires_browser === true, requires_powershell: e.requires_powershell === true, requires_pyyaml: e.requires_pyyaml === true };
+      requires_browser: e.requires_browser === true, requires_powershell: e.requires_powershell === true, requires_pyyaml: e.requires_pyyaml === true,...(e.requires_ffmpeg===undefined?{}:{requires_ffmpeg:e.requires_ffmpeg===true}) };
   });
   const current = workspaceFiles(root).filter(p => /^(?:tests\/|\.github\/review\/).+\.test\.(?:mjs|mts)$/u.test(p)).sort();
   const declared = entries.map(e => e.path).sort();
@@ -106,6 +107,12 @@ export function testEnvironment(root: string, entries: Entry[], input: NodeJS.Pr
     result.PILOT_DATABASE_URL = raw;
   }
   if (input.TS_MIGRATION_BROWSER_EXECUTABLE) result.TS_MIGRATION_BROWSER_EXECUTABLE = input.TS_MIGRATION_BROWSER_EXECUTABLE;
+  if(entries.some(entry=>entry.requires_ffmpeg)){
+    for(const name of ['H5_MEDIA_FFMPEG','H5_MEDIA_FFPROBE'] as const){
+      const value=input[name];if(!value||!path.isAbsolute(value)||/[\x00-\x1f\x7f]/u.test(value))throw new Error('MIGRATION_H5_MEDIA_TOOL_REQUIRED: '+name);
+      result[name]=value;
+    }
+  }
   result.TS_MIGRATION_TEST_SOURCE_ROOT = root;
   result.TS_MIGRATION_TEST_RUNTIME_ROOT = path.join(root, '.build/runtime');
   return result;

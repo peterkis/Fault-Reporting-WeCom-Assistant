@@ -34,9 +34,12 @@
 | 看板合法动作与原表单路由（T42，默认关闭；本地定向验证，待父验收） | [当前合同与交互边界](workbench/board-legal-actions-design.md)／[原七与分段证据](../../plans/admin-workbench-integration/execution/t42.md)；不新增 HTTP 命令 |
 | 本人显式关注／取消及当前获权“与我有关”（T34，默认关闭；本地定向验证，父验收待定） | [当前关注合同](workbench/follow-current-contract.md)／[历史提案](workbench/follow-design.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
+| Web 报修现场材料、需联系意图、催单、评价及工作人员公开进度（默认关闭） | [管理端网页报修资料：四项实际 GET／POST](workbench/web-reports.md) |
 | 完整人工工作台怎样分批接入、有哪些后端缺口 | [实施计划](../../plans/admin-workbench-integration/README.md)／[能力映射](../../plans/admin-workbench-integration/capability-map.md)；其中候选路径尚未挂载 |
 | 管理员检索／分页维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
 | 成员新报修、补充、我的报修、命令恢复、服务目录 | [医小修成员自助](member/self-service.md) |
+| 新版 H5 双主题、中英界面、多媒体报修、科室投影、催单及评价（默认关闭） | [H5 V2：实际路径、协商、SDK 签名、原 UUID 恢复与留存](member/h5-v2.md) |
+| H5 页面引导、最小分页、私有预览与获权渐进播放（性能开关默认关闭） | [H5 性能读取](member/h5-performance.md) |
 | 机器人卡片工单详情、旧 Grant 与成员读取 | [Reporter 访问](member/reporter-access.md) |
 | Bot原报修人明确仍未解决、同Ticket新轮待承接、原UUID恢复核对（默认关闭） | [Bot反馈与当前恢复合同](member/bot-feedback-design.md)／[T21本地七项证据](../../plans/admin-workbench-integration/execution/t21.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |
