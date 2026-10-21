@@ -6,7 +6,11 @@ import {tmpdir} from 'node:os';
 import {randomUUID,createHash} from 'node:crypto';
 import {withT16Fixture,T16_PNG} from './helpers/wbint-t16-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-test('production bundle displays a real authorized attachment and downloads actual stored bytes',async()=>{
+async function clickReadyDownload(browser:Browser){
+  await browser.waitFor("(()=>{const buttons=[...document.querySelectorAll('.attachment-section button')];return buttons.find(button=>button.textContent==='下载')?.disabled===false&&buttons.find(button=>button.textContent==='重新读取附件')?.disabled===false;})()",{timeoutMs:5000});
+  assert.equal(await browser.evaluate("(()=>{const button=[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='下载');if(!button||button.disabled)return false;button.click();return true;})()"),true,'the intended download button must be enabled and clicked');
+}
+test('production bundle displays a real authorized attachment and downloads actual stored bytes',async t=>{
   await withT16Fixture(async({origin,browserCookie,tickets,asset,save,pool,runtime,cookie})=>{
     const ticket=tickets[0];assert.ok(ticket);
     const directory=join(tmpdir(),'web01-ui-'+randomUUID()),downloads=await mkdtemp(join(tmpdir(),'t16-download-'));await mkdir(directory);
@@ -20,7 +24,7 @@ test('production bundle displays a real authorized attachment and downloads actu
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
       assert.equal(await browser.evaluate("document.querySelector('.attachment-section h3')?.textContent"),'报修附件');
       await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('报修附件.png')");
-      await browser.evaluate("[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='下载')?.click()");
+      await clickReadyDownload(browser);
       await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('已交给浏览器下载')");
       let bytes:Buffer|undefined;const deadline=Date.now()+5000;
       while(Date.now()<deadline){try{bytes=await readFile(join(downloads,'report-attachment.png'));break;}catch{await new Promise(r=>setTimeout(r,25));}}
@@ -32,14 +36,31 @@ test('production bundle displays a real authorized attachment and downloads actu
       const registered=await fetch(origin+'/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments',{headers:{cookie}});assert.equal(registered.status,200);assert.equal((await registered.json() as {items:{available:boolean}[]}).items[0]?.available,true,'a real browser-encoded JPEG must be supported');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:1080,deviceScaleFactor:1,mobile:false});
       await browser.evaluate("[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='重新读取附件')?.click()");await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('报修附件.jpg')");
-      await browser.evaluate("[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='下载')?.click()");await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('已交给浏览器下载')");
+      await clickReadyDownload(browser);await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('已交给浏览器下载')");
       let savedJpeg:Buffer|undefined;const jpegDeadline=Date.now()+5000;while(Date.now()<jpegDeadline){try{savedJpeg=await readFile(join(downloads,'report-attachment.jpg'));break;}catch{await new Promise(r=>setTimeout(r,25));}}
       assert.deepEqual(savedJpeg,jpeg);assert.equal(await browser.evaluate('window.t16Urls.size'),0);assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       const narrowPixels=Buffer.from(await browser.screenshot(),'base64'),narrowFile=join(directory,'new-detail-900.png');await writeFile(narrowFile,narrowPixels);
-      const locker=await pool.connect();let disconnected=false;const observe=(request:import('node:http').IncomingMessage,response:import('node:http').ServerResponse)=>{if(request.url?.startsWith('/api/attachments/'))response.once('close',()=>{disconnected=true;});};runtime.server.on('request',observe);
-      try{await locker.query('BEGIN');await locker.query('LOCK TABLE intake.service_intake_message IN ACCESS EXCLUSIVE MODE');await browser.evaluate("[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='下载')?.click()");
-        const blockedDeadline=Date.now()+5000;let blocked=false;while(Date.now()<blockedDeadline){blocked=(await pool.query<{count:number}>("SELECT count(*)::integer AS count FROM pg_locks WHERE relation='intake.service_intake_message'::regclass AND NOT granted")).rows[0]?.count===1;if(blocked)break;await new Promise(r=>setTimeout(r,25));}assert.equal(blocked,true);
-        await browser.evaluate("document.querySelector('button[aria-label=\"关闭详情\"]')?.click()");await browser.waitFor("!document.querySelector('#detail-title')");const closedDeadline=Date.now()+5000;while(!disconnected&&Date.now()<closedDeadline)await new Promise(r=>setTimeout(r,25));assert.equal(disconnected,true,'leaving the detail must abort its unfinished download');assert.equal(await browser.evaluate('window.t16Urls.size'),0);
+      const locker=await pool.connect(),target:{arrivals:number;finished:boolean;disconnected:boolean;response?:import('node:http').ServerResponse}={arrivals:0,finished:false,disconnected:false};let disconnected=false;
+      const observe=(request:import('node:http').IncomingMessage,response:import('node:http').ServerResponse)=>{const url=new URL(request.url??'/',origin);if(request.method==='GET'&&url.pathname==='/api/attachments/'+asset.ref&&url.searchParams.get('kind')==='ticket'&&url.searchParams.get('id')===ticket.ticket.id){target.arrivals++;target.response=response;response.once('finish',()=>{target.finished=true;});response.once('close',()=>{target.disconnected=!response.writableEnded;});}};runtime.server.on('request',observe);
+      try{await locker.query('BEGIN');const lockerPid=(await locker.query<{pid:number}>('SELECT pg_backend_pid()::integer AS pid')).rows[0]?.pid;assert.ok(lockerPid);
+        await locker.query('LOCK TABLE intake.service_intake_message IN ACCESS EXCLUSIVE MODE');
+        t.diagnostic('T16_TARGET_DOWNLOAD '+JSON.stringify({stage:'before-click',locker_pid:lockerPid,button:await browser.evaluate("(()=>{const button=[...document.querySelectorAll('.attachment-section button')].find(button=>button.textContent==='下载');return{exists:Boolean(button),disabled:button?.disabled??null};})()")}));
+        await clickReadyDownload(browser);
+        const blockedDeadline=Date.now()+5000;let blocked=false,waiterCount=0,targetPid:number|undefined;let lockEvidence:{pid:number;state:string;wait_event_type:string|null;wait_event:string|null;blocked_by_locker:boolean;source_query:boolean;query_sha256:string}[]=[];
+        while(Date.now()<blockedDeadline){
+          const observed=await pool.query<{pid:number;state:string;wait_event_type:string|null;wait_event:string|null;query:string;blockers:number[]}>(`SELECT activity.pid,activity.state,activity.wait_event_type,activity.wait_event,activity.query,pg_blocking_pids(activity.pid) AS blockers
+            FROM pg_stat_activity activity WHERE activity.datname=current_database() AND EXISTS(SELECT 1 FROM pg_locks waiting
+              WHERE waiting.pid=activity.pid AND waiting.database=(SELECT oid FROM pg_database WHERE datname=current_database())
+                AND waiting.relation='intake.service_intake_message'::regclass AND NOT waiting.granted) ORDER BY activity.pid`);
+          waiterCount=observed.rows.length;lockEvidence=observed.rows.map(row=>({pid:row.pid,state:row.state,wait_event_type:row.wait_event_type,wait_event:row.wait_event,blocked_by_locker:row.blockers.includes(lockerPid),source_query:row.query.trimStart().startsWith('SELECT a.ref,'),query_sha256:createHash('sha256').update(row.query).digest('hex')}));
+          const sourceWaiters=lockEvidence.filter(row=>row.source_query&&row.blocked_by_locker&&row.state==='active'&&row.wait_event_type==='Lock'&&row.wait_event==='relation');
+          blocked=target.arrivals===1&&!target.finished&&!target.disconnected&&sourceWaiters.length===1;targetPid=blocked?sourceWaiters[0]?.pid:undefined;if(blocked)break;await new Promise(r=>setTimeout(r,25));
+        }
+        t.diagnostic('T16_TARGET_DOWNLOAD '+JSON.stringify({stage:'blocked',locker_pid:lockerPid,target_pid:targetPid??null,target_arrivals:target.arrivals,target_finished:target.finished,relation_waiter_count:waiterCount,blocked,waiters:lockEvidence}));
+        assert.equal(blocked,true,'the actual attachment request must wait on its source relation held by this locker');assert.equal(target.arrivals,1);assert.equal(target.finished,false);assert.equal(target.disconnected,false);assert.ok(target.response);assert.equal(target.response.destroyed,false);assert.equal(target.response.headersSent,false,'the blocked read must not have emitted attachment headers or body');
+        assert.equal(await browser.evaluate("(()=>{const button=document.querySelector('button[aria-label=\"关闭详情\"]');if(!button||button.disabled)return false;button.click();return true;})()"),true);await browser.waitFor("!document.querySelector('#detail-title')",{timeoutMs:5000});const closedDeadline=Date.now()+5000;while(!target.disconnected&&Date.now()<closedDeadline)await new Promise(r=>setTimeout(r,25));disconnected=target.disconnected;
+        t.diagnostic('T16_TARGET_DOWNLOAD '+JSON.stringify({stage:'closed',target_arrivals:target.arrivals,target_finished:target.finished,disconnected,headers_sent:target.response.headersSent,writable_ended:target.response.writableEnded,destroyed:target.response.destroyed}));
+        assert.equal(disconnected,true,'leaving the detail must abort its unfinished download');assert.equal(target.finished,false);assert.equal(target.response.writableEnded,false);assert.equal(target.response.destroyed,true);assert.equal(await browser.evaluate('window.t16Urls.size'),0);
       }finally{await locker.query('ROLLBACK');locker.release();runtime.server.off('request',observe);}
       assert.deepEqual((await readdir(downloads)).sort(),['report-attachment.jpg','report-attachment.png']);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE',screenshots:[pngShot,{file:narrowFile,width:narrowPixels.readUInt32BE(16),height:narrowPixels.readUInt32BE(20),sha256:createHash('sha256').update(narrowPixels).digest('hex')}],downloads:[{mime_type:'image/png',byte_size:bytes.length,sha256:asset.sha256},{mime_type:'image/jpeg',byte_size:jpeg.length,sha256:jpegAsset.sha256}],unmount_aborted:disconnected,blob_urls:0}));
