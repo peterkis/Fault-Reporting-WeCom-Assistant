@@ -100,7 +100,7 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
     async ready() {
       if(!enabled)return true;
       try{
-        const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(performanceEnabled?['043_ticket_reopen_rounds','066_yixiaoxiu_h5_media_previews']:[])];
+        const migrations=[...(role==='APP'?['036_p2_007_third_party_staff_directory']:[]),'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(performanceEnabled?['043_ticket_reopen_rounds','066_yixiaoxiu_h5_media_previews']:[])];
         return (await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount===migrations.length;
       }
       catch{return false;}

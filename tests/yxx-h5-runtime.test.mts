@@ -10,6 +10,8 @@ import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs
 import {createYxxH5Media} from '../src/yxx-h5-media.mjs';
 import type {H5MediaPrivateStore} from '../contracts/yxx_h5_media_contracts.js';
 import {createSourceFile,createPrinter,factory,isImportDeclaration,ScriptKind,ScriptTarget} from 'typescript';
+import {createHash} from 'node:crypto';
+import {yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
@@ -54,6 +56,36 @@ function schemaPool(migrations:ReadonlySet<string>){
     assert.ok(required.length>0);queried.push(required);
     const rows=required.filter(id=>migrations.has(id)).map(migration_id=>({migration_id}));return {rowCount:rows.length,rows};
   }};
+}
+
+/** Keep the P2016 extension and its real schema guards; replace only the G1 host lifecycle. */
+async function workbenchReadiness(database:ReturnType<typeof pool>,h5Options:ReturnType<typeof readWorkbenchH5RuntimeOptions>){
+  const runtimeUrl=new URL('../src/p2-016-runtime.mjs',import.meta.url);
+  const data=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
+  const hostUrl=data(`export function createP2G1Runtime(options){
+    const extension=options.extensionFactory({controlService:{},realtime:{wakeup(){}},queryService:{},commandFacade:{},authorization:{}});
+    return {readiness:()=>extension.readiness({ok:true,checks:{host:true}}),stop:async()=>({stopped:true}),observability:{recordProjection(){}}};
+  }`);
+  const source=createSourceFile(runtimeUrl.pathname,await readFile(runtimeUrl,'utf8'),ScriptTarget.ES2022,true,ScriptKind.JS);
+  const statements=source.statements.map(statement=>{
+    if(!isImportDeclaration(statement)||!('text' in statement.moduleSpecifier)||typeof statement.moduleSpecifier.text!=='string')return statement;
+    const specifier=statement.moduleSpecifier.text;
+    const target=specifier.endsWith('/p2-g1-runtime.mjs')||specifier==='./p2-g1-runtime.mjs'?hostUrl:specifier.startsWith('.')?new URL(specifier,runtimeUrl).href:specifier;
+    return factory.updateImportDeclaration(statement,statement.modifiers,statement.importClause,factory.createStringLiteral(target),statement.attributes);
+  });
+  const module:unknown=await import(data(createPrinter().printFile(factory.updateSourceFile(source,statements))+'\n//# sourceURL='+runtimeUrl.href));
+  assert.ok(module&&typeof module==='object'&&'createP2016Runtime' in module&&typeof module.createP2016Runtime==='function');
+  const memberEntry={enabled:true,corpId:'synthetic-corp',agentId:'1000002',botId:'bot-test',identityMode:'VERIFIED_DELEGATED_MAPPING',memberIdsConfirmed:true,
+    proofRef:'tests/synthetic-identity-correspondence',proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST',reporterUserIds:['synthetic-reader']};
+  const runtime:unknown=Reflect.apply(module.createP2016Runtime,undefined,[{pool:database,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},
+    publicOrigin:'https://synthetic.invalid',reporterOrigin:'https://synthetic.invalid',gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,
+    reporterHmacSecret:'synthetic-runtime-reporter-secret'.repeat(2),identityHmacKey:'synthetic-runtime-identity-key',reporterPolicy:'MEMBER_REQUIRED',
+    reporterMemberEntry:memberEntry,identityMapping:{configHash:yxxIdentityConfigHash(memberEntry),resolve:()=>null},
+    wecomWebOAuth:{enabled:true,corpId:'synthetic-corp',agentId:'1000002',resolveCode:async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');}},
+    yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}},yxxH5:h5Options}]);
+  assert.ok(runtime&&typeof runtime==='object'&&'readiness' in runtime&&typeof runtime.readiness==='function'&&'stop' in runtime&&typeof runtime.stop==='function');
+  const readiness=runtime.readiness,stop=runtime.stop;
+  return {ready:async()=>{const result:unknown=await Reflect.apply(readiness,runtime,[]);assert.ok(result&&typeof result==='object'&&'ok' in result&&'checks' in result);return result;},close:async()=>{await Reflect.apply(stop,runtime,[]);}};
 }
 
 test('performance Worker refuses readiness before 066 and accepts the same database after 066 exists',async()=>{
@@ -231,7 +263,7 @@ test('concurrent media close waits for the same pending underlying close exactly
 
 test('performance readiness requires the incremental media schema and does not enable H5 implicitly',async()=>{
   const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-ready-'));
-  const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','043_ticket_reopen_rounds']);
+  const migrations=new Set(['036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','043_ticket_reopen_rounds']);
   const query=mock.method(database,'query',async(_sql:string,values:readonly unknown[])=>{
     const required=values[0];assert.ok(Array.isArray(required));
     const rows=required.filter((value):value is string=>typeof value==='string'&&migrations.has(value)).map(migration_id=>({migration_id}));
@@ -242,6 +274,66 @@ test('performance readiness requires the incremental media schema and does not e
     assert.equal(runtime.performanceEnabled,true);assert.equal(await runtime.ready(),false);
     migrations.add('066_yixiaoxiu_h5_media_previews');assert.equal(await runtime.ready(),true);
   }finally{await runtime.close();query.mock.restore();await database.end();await rm(directory,{recursive:true,force:true});}
+});
+
+test('App H5 readiness requires the directory schema while a media-only Worker does not',async()=>{
+  const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-directory-ready-'));
+  const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','043_ticket_reopen_rounds','066_yixiaoxiu_h5_media_previews']);
+  const query=mock.method(database,'query',async(sql:string,values:readonly unknown[])=>schemaPool(migrations).query(sql,values));
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  try{
+    for(const performanceEnabled of [false,true]){
+      const app=createYxxH5Runtime({pool:database,scopeSecret:'runtime-ready-secret'.repeat(3),publicOrigin:'https://synthetic.invalid',corpId:'synthetic',agentId:'1',options:{enabled:true,performanceEnabled,privateRoot:directory,key:Buffer.alloc(32,4)}});
+      try{
+        assert.equal(await app.ready(),false,'missing 036 must fail before the first App profile read');
+        migrations.add('036_p2_007_third_party_staff_directory');assert.equal(await app.ready(),true);
+        migrations.delete('036_p2_007_third_party_staff_directory');
+      }finally{await app.close();}
+      const worker=createYxxH5Runtime({pool:database,scopeSecret:'runtime-ready-secret'.repeat(3),role:'WORKER',options:{enabled:true,performanceEnabled,privateRoot:directory,key:Buffer.alloc(32,4),ffmpegPath:h5Env.YIXIAOXIU_H5_FFMPEG_PATH,ffprobePath:h5Env.YIXIAOXIU_H5_FFPROBE_PATH}});
+      try{assert.equal(await worker.ready(),true,'media-only Worker has no direct directory query');}finally{await worker.close();}
+    }
+    assert.equal(database.totalCount,0);assert.equal(fetch.mock.callCount(),0);
+  }finally{fetch.mock.restore();query.mock.restore();await database.end();await rm(directory,{recursive:true,force:true});}
+});
+
+test('H5-enabled P2016 readiness checks reminder tables even when follow-up actions are disabled',async()=>{
+  const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-reminders-ready-'));
+  const scheduleId='049_workbench_follow_up_schedules',dueId='053_workbench_follow_up_due_signals';
+  const checksum=async(id:string)=>createHash('sha256').update(await readFile(new URL('../database/migrations/'+id+'.sql',import.meta.url))).digest('hex');
+  const checksums=new Map([[scheduleId,await checksum(scheduleId)],[dueId,await checksum(dueId)]]);
+  const migrations=new Set(['031_p2_016_ticket_lifecycle_workbench_notifications','033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check','036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']);
+  let validCatalog=true;const queriedIds:string[]=[];
+  const query=mock.method(database,'query',async(sql:string,values?:readonly unknown[])=>{
+    const id=values?.[0];
+    if(typeof id==='string'&&[scheduleId,dueId].includes(id)){
+      queriedIds.push(id);const rows=migrations.has(id)?[{checksum_sha256:checksums.get(id),current_table:'pilot_ticket.follow_up_schedule',revision_table:'pilot_ticket.follow_up_schedule_revision',current_time_pair:true,revision_time_pair:true}]:[];
+      return {rows,rowCount:rows.length};
+    }
+    if(sql.includes("to_regclass('pilot_ticket.follow_up_due_signal')"))return {rows:[{ready:validCatalog}],rowCount:1};
+    assert.match(sql,/FROM platform\.schema_migration/u);
+    const ids=Array.isArray(id)?id:[...sql.matchAll(/'(\d{3}_[a-z0-9_]+)'/gu)].map(match=>match[1]);
+    assert.ok(ids.length>0);const rows=ids.filter(value=>typeof value==='string'&&migrations.has(value)).map(migration_id=>({migration_id}));return {rows,rowCount:rows.length};
+  });
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  let runtime:Awaited<ReturnType<typeof workbenchReadiness>>|undefined;
+  try{
+    runtime=await workbenchReadiness(database,readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PRIVATE_ROOT:directory}));
+    const missing=await runtime.ready();assert.equal(missing.ok,false,'H5 reminders cannot start with both 049 and 053 absent');
+    assert.ok(missing.checks&&typeof missing.checks==='object'&&'workbench_follow_up_schedules_schema' in missing.checks);
+    assert.equal(missing.checks.workbench_follow_up_schedules_schema,false,'health reports the failing dependency');
+    migrations.add(scheduleId);assert.equal((await runtime.ready()).ok,false,'049 alone cannot satisfy the due-signal read');
+    migrations.add(dueId);const ready=await runtime.ready();assert.equal(ready.ok,true);
+    assert.ok(ready.checks&&typeof ready.checks==='object'&&'workbench_follow_up_schedules_schema' in ready.checks);assert.equal(ready.checks.workbench_follow_up_schedules_schema,true);
+    validCatalog=false;assert.equal((await runtime.ready()).ok,false,'a receipt cannot hide a malformed due-signal table');validCatalog=true;
+    checksums.set(dueId,'0'.repeat(64));assert.equal((await runtime.ready()).ok,false,'a wrong 053 checksum is not readiness');
+    assert.ok(queriedIds.includes(scheduleId)&&queriedIds.includes(dueId));assert.equal(database.totalCount,0);assert.equal(fetch.mock.callCount(),0);
+    await runtime.close();runtime=undefined;
+    const previousQueries=queriedIds.length;
+    runtime=await workbenchReadiness(database,readWorkbenchH5RuntimeOptions({}));
+    const disabled=await runtime.ready();assert.equal(disabled.ok,true,'disabled H5 and disabled follow-up actions keep their previous schema requirements');
+    assert.ok(disabled.checks&&typeof disabled.checks==='object');assert.equal('workbench_follow_up_schedules_schema' in disabled.checks,false);
+    assert.equal(queriedIds.length,previousQueries);assert.equal(fetch.mock.callCount(),0);
+  }finally{await runtime?.close();fetch.mock.restore();query.mock.restore();await database.end();await rm(directory,{recursive:true,force:true});}
 });
 
 test('App composition derives SDK identity from the supplied member entry and releases only its media resources',async()=>{

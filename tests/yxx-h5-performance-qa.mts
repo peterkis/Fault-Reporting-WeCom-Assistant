@@ -112,6 +112,20 @@ async function legacyRoutes(options:QaOptions,directory:string,results:Record<st
     }catch(error){results.push({scenario:scenario.name,status:'FAIL',reason:error instanceof Error?error.message:'LEGACY_ROUTE_FAILED'});await writeFile(path.join(directory,scenario.name+'-failure.png'),Buffer.from(await browser.screenshot(),'base64')).catch(()=>{});}
   }
 }
+async function searchBoundary(options:QaOptions,directory:string,results:Record<string,unknown>[]):Promise<void>{
+  const {browser}=options,text='x'.repeat(101),accepted=text.slice(0,100);
+  try{
+    await direct(options,'reports');await pointer(browser,`document.querySelector('#report-search')`);
+    await browser.command('Input.insertText',{text});
+    assert.equal(await browser.evaluate(`document.querySelector('#report-search').value`),accepted,'the real input must reject the 101st character before submitting');
+    options.clearNetwork();await pointer(browser,`document.querySelector('.search-row button[type="submit"]')`);
+    await browser.waitFor(`!!document.querySelector('[data-h5-ready="reports"][data-h5-checking="false"]')&&new URL(location.hash.slice(1),location.origin).searchParams.get('search')===${JSON.stringify(accepted)}&&performance.getEntriesByType('resource').some(item=>{const url=new URL(item.name);return url.pathname==='/api/yixiaoxiu/h5/entry'&&url.searchParams.get('search')===${JSON.stringify(accepted)};})`,{timeoutMs:30000});
+    const reads=options.network().filter(item=>item.path==='/api/yixiaoxiu/h5/entry');assert.ok(reads.length>0);assert.ok(reads.every(item=>item.status===200&&item.end_ms>0));
+    assert.equal(await browser.evaluate(`document.querySelector('#report-search').value`),accepted);
+    results.push({scenario:'search-api-length-boundary',status:'PASS',attempted_characters:101,accepted_characters:100,entry_statuses:reads.map(item=>item.status)});
+    await writeFile(path.join(directory,'search-api-length-boundary.png'),Buffer.from(await browser.screenshot(),'base64'));
+  }catch(error){results.push({scenario:'search-api-length-boundary',status:'FAIL',reason:error instanceof Error?error.message:'SEARCH_BOUNDARY_FAILED'});}
+}
 function receivedBytes(reads:readonly MediaRequest[],total:number):number{
   const intervals=reads.filter(item=>item.status===200||item.status===206).map(item=>{
     const start=item.content_range?/^bytes (\d+)-\d+\/\d+$/u.exec(item.content_range):null;
@@ -191,6 +205,7 @@ export async function runH5BrowserQa(options:QaOptions):Promise<Record<string,un
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await browser.command('Emulation.setUserAgentOverride',{userAgent:'Mozilla/5.0 Android wxwork/4.1 Language/zh_CN ColorScheme/Light'});
   await legacyRoutes(options,directory,results);
+  await searchBoundary(options,directory,results);
   await direct(options,'home');
   await pointer(browser,`document.querySelector('.bottom-nav a[href="#/reports"]')`);await browser.waitFor(`!!document.querySelector('[data-h5-ready="reports"][data-h5-checking="false"]')`,{timeoutMs:20000});
   await pointer(browser,`document.querySelector('.bottom-nav a[href="#/"]')`);await browser.waitFor(`!!document.querySelector('[data-h5-ready="home"][data-h5-checking="false"]')`,{timeoutMs:20000});
