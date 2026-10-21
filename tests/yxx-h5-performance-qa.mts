@@ -79,6 +79,39 @@ async function direct(options:QaOptions,view:string,ref=options.requestRef):Prom
   await browser.waitFor(`performance.timeOrigin!==${Number(previous)}&&!!document.querySelector('[data-h5-ready="${view}"][data-h5-checking="false"]')${view==='request'?`&&document.querySelector('[data-h5-ready="request"]').dataset.requestRef===${JSON.stringify(ref)}`:''}`,{timeoutMs:45000});
   await browser.evaluate('document.fonts.ready');
 }
+async function legacyRoutes(options:QaOptions,directory:string,results:Record<string,unknown>[]):Promise<void>{
+  const {browser,origin,requestRef}=options;
+  for(const scenario of [
+    {name:'legacy-detail',document:'/reports/'+requestRef,view:'request',hash:'#/requests/'+requestRef},
+    {name:'legacy-new',document:'/reports/new',view:'report',hash:'#/report'},
+    {name:'legacy-list',document:'/reports',view:'reports',hash:'#/reports'},
+    {name:'legacy-explicit-hash',document:'/reports/'+requestRef+'#/reports',view:'reports',hash:'#/reports'},
+  ]){
+    try{
+      await browser.command('Network.setExtraHTTPHeaders',{headers:{'x-h5-performance-id':'qa-'+scenario.name}});
+      const previous=await browser.evaluate('performance.timeOrigin');
+      await browser.command('Page.navigate',{url:origin+'/wecom/yixiaoxiu'+scenario.document});
+      await browser.waitFor(`performance.timeOrigin!==${Number(previous)}&&!!document.querySelector('[data-h5-ready="${scenario.view}"][data-h5-checking="false"]')${scenario.view==='request'?`&&document.querySelector('[data-h5-ready="request"]').dataset.requestRef===${JSON.stringify(requestRef)}`:''}`,{timeoutMs:45000});
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      const state=record(await browser.evaluate(`({hash:location.hash,view:document.querySelector('[data-h5-ready]')?.dataset.h5Ready,request_ref:document.querySelector('[data-h5-ready]')?.dataset.requestRef??null,entry_views:performance.getEntriesByType('resource').map(item=>new URL(item.name)).filter(url=>url.pathname==='/api/yixiaoxiu/h5/entry').map(url=>url.searchParams.get('view')),errors:window.__h5Performance?.errors??[]})`));
+      assert.equal(state.hash,scenario.hash);assert.equal(state.view,scenario.view);assert.deepEqual(state.errors,[]);
+      assert.ok(Array.isArray(state.entry_views)&&state.entry_views.length>0,'the direct document must complete a real entry request');
+      assert.deepEqual([...new Set(state.entry_views)],[scenario.view],'the hash router must not replace the requested entry with a second home entry');
+      if(scenario.view==='request')assert.equal(state.request_ref,requestRef);
+      results.push({scenario:scenario.name,status:'PASS',...state});
+      await writeFile(path.join(directory,scenario.name+'.png'),Buffer.from(await browser.screenshot(),'base64'));
+      if(scenario.name==='legacy-detail'){
+        await pointer(browser,`document.querySelector('.detail-header-main button')`);
+        await browser.waitFor(`!!document.querySelector('[data-h5-ready="reports"][data-h5-checking="false"]')`,{timeoutMs:20000});
+        await browser.evaluate('window.history.back()');
+        await browser.waitFor(`!!document.querySelector('[data-h5-ready="request"][data-h5-checking="false"]')&&document.querySelector('[data-h5-ready="request"]').dataset.requestRef===${JSON.stringify(requestRef)}`,{timeoutMs:20000});
+        await browser.evaluate('window.history.forward()');
+        await browser.waitFor(`!!document.querySelector('[data-h5-ready="reports"][data-h5-checking="false"]')`,{timeoutMs:20000});
+        results.push({scenario:'legacy-history-back-forward',status:'PASS'});
+      }
+    }catch(error){results.push({scenario:scenario.name,status:'FAIL',reason:error instanceof Error?error.message:'LEGACY_ROUTE_FAILED'});await writeFile(path.join(directory,scenario.name+'-failure.png'),Buffer.from(await browser.screenshot(),'base64')).catch(()=>{});}
+  }
+}
 function receivedBytes(reads:readonly MediaRequest[],total:number):number{
   const intervals=reads.filter(item=>item.status===200||item.status===206).map(item=>{
     const start=item.content_range?/^bytes (\d+)-\d+\/\d+$/u.exec(item.content_range):null;
@@ -157,6 +190,7 @@ export async function runH5BrowserQa(options:QaOptions):Promise<Record<string,un
   }
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await browser.command('Emulation.setUserAgentOverride',{userAgent:'Mozilla/5.0 Android wxwork/4.1 Language/zh_CN ColorScheme/Light'});
+  await legacyRoutes(options,directory,results);
   await direct(options,'home');
   await pointer(browser,`document.querySelector('.bottom-nav a[href="#/reports"]')`);await browser.waitFor(`!!document.querySelector('[data-h5-ready="reports"][data-h5-checking="false"]')`,{timeoutMs:20000});
   await pointer(browser,`document.querySelector('.bottom-nav a[href="#/"]')`);await browser.waitFor(`!!document.querySelector('[data-h5-ready="home"][data-h5-checking="false"]')`,{timeoutMs:20000});

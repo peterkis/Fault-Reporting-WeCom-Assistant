@@ -175,6 +175,45 @@ test('H5 legacy reports replacement cancels an older fetchNextPage before seedin
  const data=client.getQueryData<{pages:{items:{safe_summary:string}[];next_cursor:string|null}[];pageParams:unknown[]}>(key);assert.equal(data?.pages.length,1);assert.equal(data?.pages[0]?.items[0]?.safe_summary,'fresh');assert.equal(data?.pages[0]?.next_cursor,'fresh-cursor');assert.deepEqual(data?.pageParams,[null]);
 });
 
+async function routingModule(){
+ const overrides=Object.fromEntries(['Home','Report','Reports','Detail','Department'].map(name=>['pages/'+name+'.ts','export default function Page(){return null;}']));
+ return import(await createH5PureModuleLoader({overrides}).moduleUrl('routing.ts'));
+}
+function browserLocation(t:TestContext,href:string){
+ const oldLocation=Object.getOwnPropertyDescriptor(globalThis,'location'),oldWindow=Object.getOwnPropertyDescriptor(globalThis,'window'),url=new URL(href),state={synthetic:'history-state'},replacements:string[]=[];
+ Object.defineProperty(globalThis,'location',{configurable:true,value:url});Object.defineProperty(globalThis,'window',{configurable:true,value:{history:{state,replaceState(next:unknown,_title:string,target:string){assert.equal(next,state);replacements.push(target);url.href=new URL(target,url).href;},pushState(){assert.fail('initial compatibility routing must not add a history entry');}}}});
+ t.after(()=>{if(oldLocation)Object.defineProperty(globalThis,'location',oldLocation);else Reflect.deleteProperty(globalThis,'location');if(oldWindow)Object.defineProperty(globalThis,'window',oldWindow);else Reflect.deleteProperty(globalThis,'window');});
+ return{url,replacements};
+}
+for(const example of [{suffix:'/'+ref,path:'/requests/'+ref,input:{view:'request',request_ref:ref}},{suffix:'/new',path:'/report',input:{view:'report'}},{suffix:'',path:'/reports',input:{view:'reports',search:null,status:null,source:null}}])test('H5 legacy document /reports'+example.suffix+' installs its canonical hash before hash navigation starts',async t=>{
+ const{url,replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/reports'+example.suffix),originalPath=url.pathname,routing=await routingModule(),route=routing.initialRoute();
+ assert.deepEqual(route.input,example.input);assert.equal(route.path,example.path);assert.equal(url.pathname,originalPath);assert.equal(url.hash,'#'+example.path);assert.deepEqual(replacements,['#'+example.path]);
+ const{createHashHistory}=await import(await createH5PureModuleLoader().moduleUrl('lib/hash-history.ts'));const history=createHashHistory({origin:url.origin,readHash:()=>url.hash,writeHash:()=>assert.fail('reading the initial route must not navigate'),go:()=>{},listen:()=>()=>{}});
+ const selected=history.getSnapshot();assert.equal(selected.pathname,example.path);assert.deepEqual(routing.describeRoute(selected.pathname,selected.search).input,route.input,'the mounted hash router must not replace the selected entry with home');
+ assert.deepEqual(routing.initialRoute(),route);assert.equal(replacements.length,1,'repeated initial reads do not add or replace history again');
+});
+
+test('H5 explicit hashes take priority over legacy document paths and keep query filters',async t=>{
+ const{url,replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/reports/'+ref),routing=await routingModule();
+ for(const example of [{hash:'#/reports?status=ACTIVE&source=WEB&search=printer',input:{view:'reports',search:'printer',status:'ACTIVE',source:'WEB'}},{hash:'#/department',input:{view:'department'}},{hash:'#/report',input:{view:'report'}},{hash:'#/',input:{view:'home'}},{hash:'#/requests/'+ref,input:{view:'request',request_ref:ref}}]){url.hash=example.hash;assert.deepEqual(routing.initialRoute().input,example.input);assert.equal(url.hash,example.hash);}
+ assert.deepEqual(replacements,[]);
+});
+
+test('H5 legacy path compatibility accepts only the native host whitelist and complete request references',async t=>{
+ const{url,replacements}=browserLocation(t,'https://synthetic.invalid/'),routing=await routingModule();
+ for(const path of ['/wecom/yixiaoxiu/reports/short','/wecom/yixiaoxiu/reports/'+ref+'extra','/wecom/yixiaoxiu/reports/'+ref+'/extra','/wecom/yixiaoxiu/reports/%E0%A4%A','/wecom/yixiaoxiu/reports/'+('%41'.repeat(32)),'/other/wecom/yixiaoxiu/reports/'+ref,'/wecom/yixiaoxiu/reports/','/wecom/yixiaoxiu/reports/new/','/wecom/yixiaoxiu/tickets/'+ref]){url.href='https://synthetic.invalid'+path;assert.deepEqual(routing.initialRoute().input,{view:'home'},path);assert.equal(url.hash,'',path);}
+ assert.deepEqual(replacements,[]);const legal='A_b-Cd09'.repeat(4);url.href='https://synthetic.invalid/wecom/yixiaoxiu/reports/'+legal;assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:legal});assert.equal(url.hash,'#/requests/'+legal);
+});
+
+test('H5 initial hash reference decoding remains bounded by the existing backend authority on malformed escapes',async t=>{
+ const{url,replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/reports/new#/requests/%E0%A4%A'),routing=await routingModule();
+ assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:''});url.hash='#/requests/'+('%41'.repeat(32));assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:'A'.repeat(32)});assert.deepEqual(replacements,[]);
+});
+
+test('H5 document query request_ref compatibility is retained without turning it into an untrusted document path',async t=>{
+ const{replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/?request_ref='+ref),routing=await routingModule();assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:ref});assert.deepEqual(replacements,[]);
+});
+
 test('H5 small hash history preserves query routes, native back/forward and modified links',async()=>{
  const loader=createH5PureModuleLoader(),navigation=await import(await loader.moduleUrl('lib/hash-history.ts'));let stack=['#/report'],position=0,native=()=>{},changes=0;
  const history=navigation.createHashHistory({origin:'https://synthetic.invalid',readHash:()=>stack[position]??'#/',writeHash:(hash:string,replace:boolean)=>{if(replace)stack[position]=hash;else{stack=stack.slice(0,position+1);stack.push(hash);position+=1;}},go:(delta:number)=>{position=Math.max(0,Math.min(stack.length-1,position+delta));native();},listen:(listener:()=>void)=>{native=listener;return()=>{native=()=>{};};}});

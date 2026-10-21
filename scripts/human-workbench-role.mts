@@ -112,7 +112,9 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
  const h5Options=readWorkbenchH5RuntimeOptions(process.env,{worker:true});
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  return runWorker({deliveryAttemptAdmissionFactory:()=>createMvpNotificationAdmission(),reportCycleHealth:true,beforeReady:async({pool})=>{
-  if(h5Options.enabled&&(await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media')")).rowCount!==2)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
+  if(!h5Options.enabled)return;
+  const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(h5Options.performanceEnabled===true?['066_yixiaoxiu_h5_media_previews']:[])];
+  if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
  },extensionFactory:({pool})=>{
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});

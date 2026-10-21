@@ -1,6 +1,6 @@
 import {test,mock} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,readdir} from 'node:fs/promises';
+import {mkdtemp,rm,readdir,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createYxxH5Runtime,validateYxxH5RuntimeOptions,createYxxH5RequestAuthentication} from '../src/yxx-h5-runtime.mjs';
@@ -9,11 +9,84 @@ import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs';
 import {createYxxH5Media} from '../src/yxx-h5-media.mjs';
 import type {H5MediaPrivateStore} from '../contracts/yxx_h5_media_contracts.js';
+import {createSourceFile,createPrinter,factory,isImportDeclaration,ScriptKind,ScriptTarget} from 'typescript';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
   YIXIAOXIU_H5_FFMPEG_PATH:join(tmpdir(),'ffmpeg.exe'),YIXIAOXIU_H5_FFPROBE_PATH:join(tmpdir(),'ffprobe.exe')};
 const pool=()=>createPostgresPool({connectionString:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_h5_no_connection',max:1,connectionTimeoutMillis:100});
+
+/** Exercise the compiled role's public main while replacing only process/Worker launch leaves. */
+async function workerBeforeReady(h5:NodeJS.ProcessEnv){
+  const roleUrl=new URL('../scripts/human-workbench-role.mjs',import.meta.url);
+  const data=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
+  const processUrl=data('export default {env:globalThis.process.env,argv:[],send(){return true},once(){},exit(){throw Error("UNEXPECTED_PROCESS_EXIT")}};');
+  const launchUrl=data('export function runWorker(options){return options} export function runApp(){throw Error("UNEXPECTED_APP_START")} export function runGateway(){throw Error("UNEXPECTED_GATEWAY_START")}');
+  const source=createSourceFile(roleUrl.pathname,await readFile(roleUrl,'utf8'),ScriptTarget.ES2022,true,ScriptKind.JS);
+  const statements=source.statements.map(statement=>{
+    if(!isImportDeclaration(statement)||!('text' in statement.moduleSpecifier)||typeof statement.moduleSpecifier.text!=='string')return statement;
+    const specifier=statement.moduleSpecifier.text;
+    const target=specifier==='./p2-g1-process-role.mjs'?launchUrl:specifier.startsWith('.')?new URL(specifier,roleUrl).href:specifier;
+    return factory.updateImportDeclaration(statement,statement.modifiers,statement.importClause,factory.createStringLiteral(target),statement.attributes);
+  });
+  const module:unknown=await import(data('import process from '+JSON.stringify(processUrl)+';\n'+createPrinter().printFile(factory.updateSourceFile(source,statements))));
+  assert.ok(module&&typeof module==='object'&&'main' in module&&typeof module.main==='function');
+  const environment:NodeJS.ProcessEnv={WORKBENCH_RUNTIME_PROFILE:'human-v1',WORKBENCH_ROLE_SETTINGS:JSON.stringify({role:'WORKER',transportEnabled:false,botId:'synthetic-worker-bot'}),
+    PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-worker-identity-key',P2_016_REPORTER_HMAC_SECRET:'synthetic-worker-reporter-secret'.repeat(2),...h5};
+  const names=[...new Set([...Object.keys(environment),...Object.keys(h5Env),'YIXIAOXIU_H5_PERFORMANCE_ENABLED','YIXIAOXIU_H5_PROGRESS_ENABLED','YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT','APP_SECRET','WECOM_BOT_SECRET'])];
+  const original=new Map(names.map(name=>[name,process.env[name]]));
+  let options:unknown;
+  try{
+    for(const name of names){const value=environment[name];if(value===undefined)delete process.env[name];else process.env[name]=value;}
+    options=await Reflect.apply(module.main,undefined,[['--role=worker']]);
+  }finally{for(const [name,value]of original){if(value===undefined)delete process.env[name];else process.env[name]=value;}}
+  assert.ok(options&&typeof options==='object'&&'beforeReady' in options&&typeof options.beforeReady==='function');
+  const beforeReady=options.beforeReady;
+  return async(database:{query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:{migration_id:string}[]}>})=>{await Reflect.apply(beforeReady,undefined,[{pool:database}]);};
+}
+
+function schemaPool(migrations:ReadonlySet<string>){
+  const queried:string[][]=[];
+  return {queried,query:async(sql:string,values?:readonly unknown[])=>{
+    assert.match(sql,/^SELECT migration_id FROM platform\.schema_migration WHERE migration_id\s*(?:IN|=\s*ANY)/u);
+    const parameter=values?.[0];
+    const required=Array.isArray(parameter)?parameter.map(value=>{assert.equal(typeof value,'string');return String(value);}):[...sql.matchAll(/'(\d{3}_[a-z0-9_]+)'/gu)].map(match=>match[1]??'');
+    assert.ok(required.length>0);queried.push(required);
+    const rows=required.filter(id=>migrations.has(id)).map(migration_id=>({migration_id}));return {rowCount:rows.length,rows};
+  }};
+}
+
+test('performance Worker refuses readiness before 066 and accepts the same database after 066 exists',async()=>{
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  try{
+    const ready=await workerBeforeReady({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'});
+    const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+    await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});
+    migrations.add('066_yixiaoxiu_h5_media_previews');await ready(database);
+    assert.deepEqual(database.queried,[['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews']]);
+    assert.equal(fetch.mock.callCount(),0);
+  }finally{fetch.mock.restore();}
+});
+
+test('nonperformance Worker keeps the 064/065 requirement without requiring 066',async()=>{
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  try{
+    for(const performance of [undefined,'false']){
+      const ready=await workerBeforeReady({...h5Env,...(performance===undefined?{}:{YIXIAOXIU_H5_PERFORMANCE_ENABLED:performance})});
+      const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+      await ready(database);assert.deepEqual(database.queried,[['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']]);
+      for(const missing of ['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']){
+        migrations.delete(missing);await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});migrations.add(missing);
+      }
+    }
+    assert.equal(fetch.mock.callCount(),0);
+  }finally{fetch.mock.restore();}
+});
+
+test('disabled H5 Worker readiness does not query schema or call a Provider',async()=>{
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  try{const ready=await workerBeforeReady({}),database=schemaPool(new Set());await ready(database);assert.deepEqual(database.queried,[]);assert.equal(fetch.mock.callCount(),0);}finally{fetch.mock.restore();}
+});
 
 test('H5 runtime and CLI stay disabled by default and reject non-boolean enablement',()=>{
   assert.equal(validateYxxH5RuntimeOptions(undefined),false);

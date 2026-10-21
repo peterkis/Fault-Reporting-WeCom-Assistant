@@ -18,5 +18,9 @@ export function describeRoute(pathname:string,search=''):PageRoute{
  else if(pathname==='/'){const ref=new URLSearchParams(location.search).get('request_ref');if(ref)input={view:'request',request_ref:ref};}
  return{key:JSON.stringify(input),input,path:pathname+search};
 }
-export function initialRoute():PageRoute{const url=new URL(location.hash.replace(/^#/,'')||'/',location.origin);return describeRoute(url.pathname,url.search);}
+export function initialRoute():PageRoute{
+ let path=location.hash.replace(/^#/,'');
+ if(!path){const match=/^\/wecom\/yixiaoxiu\/reports(?:\/(new|[A-Za-z0-9_-]{32}))?$/u.exec(location.pathname);if(match){path=match[1]?(match[1]==='new'?'/report':'/requests/'+match[1]):'/reports';window.history.replaceState(window.history.state,'','#'+path);}}
+ const url=new URL(path||'/',location.origin);return describeRoute(url.pathname,url.search);
+}
 export function preloadNavigation(path:string):void{const url=new URL(path,location.origin);void loadPage(describeRoute(url.pathname,url.search).input.view).catch(()=>undefined);}
