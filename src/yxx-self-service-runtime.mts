@@ -74,6 +74,10 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const authenticate=requestAuthentication.authenticate;
   const h5Extension=h5Runtime??createYxxH5Runtime({pool,scopeSecret:reporterHmacSecret,publicOrigin,corpId:config.enabled?config.corpId:'',agentId:config.enabled?config.agentId:'',options:h5,onUrge:projectYxxH5Urge,
     onPublicProgress:realtimeProjector?.ticket?async input=>{await realtimeProjector.ticket?.(input);}:null});
+  if(h5Extension.enabled){
+    if(!oauth.enabled||typeof oauth.enableH5Session!=='function')failYxx('CONFIG_INVALID');
+    oauth.enableH5Session();
+  }
   const store = createYxxSelfServiceStore({ pool, scopeSecret: reporterHmacSecret,h5Enabled:h5Extension.enabled,onBindMedia:h5Extension.media?.claimInTransaction??null });
   const feedbackStore=reporterFeedbackEnabled?createYxxSelfServiceFeedback({pool,scopeSecret:reporterHmacSecret}):null;
   const command = createYxxMemberCommandContext({ store, feedbackStore,h5Lifecycle:h5Extension.lifecycle, profile, flags: featureFlags, authenticate,

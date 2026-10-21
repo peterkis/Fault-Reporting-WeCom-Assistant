@@ -34,7 +34,7 @@ export async function readMediaBlob(requestRef:string,media:Pick<Media,'media_re
  const generation=captureAuthGeneration();
  const response=await fetch(mediaURL(requestRef,media.media_ref,variant),{credentials:'same-origin',cache:'no-store',redirect:'error',headers:{accept:V2_ACCEPT},signal});
  if(signal.aborted||generation!==captureAuthGeneration())throw new DOMException('Member scope changed','AbortError');
- if(!response.ok){if(response.status===401||response.status===403)reportAuthLost(generation,signal);throw new ApiError(response.status,'MEDIA_UNAVAILABLE');}
+ if(!response.ok){if(response.status===401||response.status===403)reportAuthLost(generation,signal,response.status);throw new ApiError(response.status,'MEDIA_UNAVAILABLE');}
  const limit=variant==='THUMBNAIL'?160*1024:media.kind==='VIDEO'?20*1024*1024:media.kind==='VOICE'?5*1024*1024:10*1024*1024;
  const blob=await boundedBlob(response,limit);
  if(signal.aborted||generation!==captureAuthGeneration())throw new DOMException('Member scope changed','AbortError');return blob;

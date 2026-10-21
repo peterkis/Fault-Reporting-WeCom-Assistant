@@ -1,3 +1,4 @@
+import {ReportCard} from '../components/ReportCard';
 import{useMemo,useState,type FormEvent}from'react';
 import{useInfiniteQuery}from'@tanstack/react-query';
 import{useSearchParams}from'../navigation';
@@ -7,7 +8,7 @@ import type{ReportsFilter}from'../api/types';
 import{useIdentity,useSessionStatus}from'../session';
 import{Button,Input,Field,FieldGroup,FieldLabel}from'../components/ui/primitives';
 import{Icon}from'../components/Icon';
-import{ReportCard,EmptyReports,Loading,ErrorPanel}from'../components/Common';
+import{EmptyReports,Loading,ErrorPanel}from'../components/Common';
 export default function Reports(){const{t}=useTranslation();const session=useIdentity(),status=useSessionStatus();const[params,setParams]=useSearchParams();const q=params.get('search')??'',statusFilter=reportStatus(params.get('status')??''),sourceFilter=reportSource(params.get('source')??'');const filter=useMemo<ReportsFilter>(()=>({q,status:statusFilter,source:sourceFilter}),[q,statusFilter,sourceFilter]);const[text,setText]=useState(q);
  const setFilter=(next:ReportsFilter)=>{const value=new URLSearchParams();if(next.q)value.set('search',next.q);if(next.status)value.set('status',next.status);if(next.source)value.set('source',next.source);setParams(value);};
  const reports=useInfiniteQuery(reportsOptions(session.recovery_scope,filter));

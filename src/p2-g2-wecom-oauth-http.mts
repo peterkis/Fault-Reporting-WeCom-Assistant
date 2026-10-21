@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse, OutgoingHttpHeaders } from 'node:
 import type { WeComOAuth, EnabledWeComOAuth, BrowserToken, SessionToken, OAuthState } from './p2-g2-wecom-web-oauth.mjs';
 export interface OAuthHttpContext { request: IncomingMessage; response: ServerResponse; url: URL }
 export type OAuthHttpHandler = (context: OAuthHttpContext) => Promise<boolean>;
-import { WeComOAuthError } from './p2-g2-wecom-web-oauth.mjs';
+import { WeComOAuthError,h5OAuthReturnPath } from './p2-g2-wecom-web-oauth.mjs';
 
 const root='/wecom/yixiaoxiu/';
 const homepageAuthReturn='?auth_return=1';
@@ -27,8 +27,14 @@ export function beginWeComOAuth({request,response,oauth,returnPath='/wecom/yixia
   const start=oauth.begin({browserToken:readWeComCookie(request,browserName),returnPath});
   const state=new URL(start.location).searchParams.get('state');
   response.writeHead(302,{location:start.location,'set-cookie':[
-    cookie(browserName,start.browserToken,1200),cookie(intentName(state),start.browserToken,300),
+    cookie(browserName,start.browserToken,oauth.browserMaxAgeSeconds??1200),cookie(intentName(state),start.browserToken,300),
   ]});response.end();
+}
+export function renewWeComH5Session(request:IncomingMessage,oauth:EnabledWeComOAuth):string[]{
+  if(oauth.h5Session!==true)return [];
+  const renewed=oauth.renewH5Session({sessionToken:readWeComCookie(request,sessionName),browserToken:readWeComCookie(request,browserName)});
+  if(!renewed)throw new WeComOAuthError('WECOM_AUTH_REQUIRED');
+  return [cookie(sessionName,readWeComCookie(request,sessionName),renewed.maxAgeSeconds),cookie(browserName,readWeComCookie(request,browserName),renewed.browserMaxAgeSeconds)];
 }
 export function logoutWeComBrowser({request,oauth}: {request: IncomingMessage; oauth: EnabledWeComOAuth}){
   oauth.logout(readWeComCookie(request,sessionName));
@@ -53,8 +59,10 @@ export function createWeComOAuthHttp({oauth,publicOrigin}: {oauth?: WeComOAuth; 
     if(!oauth?.enabled){page(response,503,'网页认证尚未启用。');return true;}
     try{
       if(url.origin!==publicOrigin)throw new WeComOAuthError('WECOM_AUTH_REQUIRED');
-      if(request.method==='GET'&&url.pathname===root+'login'&&!url.search){
-        beginWeComOAuth({request,response,oauth});return true;
+      if(request.method==='GET'&&url.pathname===root+'login'&&(!url.search||oauth.h5Session===true)){
+        if([...url.searchParams.keys()].some(key=>key!=='return_to')||url.searchParams.getAll('return_to').length>1)throw new WeComOAuthError('WECOM_AUTH_REQUIRED',400);
+        const returnPath=oauth.h5Session===true?h5OAuthReturnPath(url.searchParams.get('return_to')??'/'):root;
+        beginWeComOAuth({request,response,oauth,returnPath});return true;
       }
       if(request.method==='GET'&&url.pathname===root+'callback'){
         if([...url.searchParams.keys()].some(key=>!['code','state'].includes(key))||url.searchParams.getAll('code').length!==1||url.searchParams.getAll('state').length!==1)
@@ -65,7 +73,7 @@ export function createWeComOAuthHttp({oauth,publicOrigin}: {oauth?: WeComOAuth; 
         const result=await oauth.complete({code:url.searchParams.get('code'),state,browserToken:binding});
         oauth.logout(readWeComCookie(request,sessionName));
         response.writeHead(303,{location:result.returnPath??root,'set-cookie':[
-          cookie(intentName(state),'',0),cookie(browserName,binding,1200),cookie(sessionName,result.sessionToken,result.maxAgeSeconds),
+          cookie(intentName(state),'',0),cookie(browserName,binding,result.browserMaxAgeSeconds??1200),cookie(sessionName,result.sessionToken,result.maxAgeSeconds),
         ]});response.end();return true;
       }
       if(request.method==='GET'&&url.pathname===root){
@@ -87,6 +95,10 @@ export function createWeComOAuthHttp({oauth,publicOrigin}: {oauth?: WeComOAuth; 
       }
       page(response,404,'未找到此页面。');return true;
     }catch(error){
+      if(oauth.h5Session===true&&request.method==='GET'&&url.pathname===root+'callback'){
+        // Return only the public shell marker. Entry revalidates; the marker stops auto-login loops.
+        response.writeHead(303,{location:h5OAuthReturnPath('/')});response.end();return true;
+      }
       const status=error instanceof WeComOAuthError?error.status:502;
       page(response,status,status===403?'当前账号不支持此应用认证。':status>=500?'认证服务暂时不可用，请稍后重试。':'认证已失效，请重新认证。');return true;
     }

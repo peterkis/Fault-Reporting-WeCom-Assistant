@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {test,type TestContext} from 'node:test';
 import {setImmediate} from 'node:timers/promises';
+import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {Writable} from 'node:stream';
+import {createElement,type ComponentType} from 'react';
+import {renderToPipeableStream} from 'react-dom/server';
+import {transpileModule,ModuleKind,ScriptTarget,JsxEmit} from 'typescript';
 import {createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 
 // The production package targets browsers. Keep its DOM declarations out of the Node-only test lane.
@@ -9,7 +15,9 @@ const{QueryClient,InfiniteQueryObserver,QueryObserver}=await import(queryCoreSpe
 interface TestQueryClient {
  getQueryData<T>(key:readonly unknown[]):T|undefined;
  setQueryData<T>(key:readonly unknown[],value:T):unknown;
- getQueryState(key:readonly unknown[]):{fetchStatus:string}|undefined;
+ getQueryState(key:readonly unknown[]):{fetchStatus:string;isInvalidated:boolean}|undefined;
+ removeQueries(options:{queryKey:readonly unknown[];exact?:boolean}):void;
+ invalidateQueries(options:{queryKey:readonly unknown[];exact?:boolean;refetchType:'none'}):Promise<void>;
  clear():void;
 }
 
@@ -25,8 +33,9 @@ function response(value:unknown,status=200){return new Response(JSON.stringify(v
 const routingStub="export function initialRoute(){return {key:JSON.stringify({view:'request',request_ref:'"+ref+"'}),input:{view:'request',request_ref:'"+ref+"'},path:'/requests/"+ref+"'};} export async function loadPage(){return {default:()=>null};}";
 
 async function harness(t:TestContext,options:{home?:ReturnType<typeof homeEntry>}={}){
- const oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),oldWindow=Object.getOwnPropertyDescriptor(globalThis,'window');
- Object.defineProperty(globalThis,'document',{configurable:true,value:Object.assign(new EventTarget(),{visibilityState:'visible'})});Object.defineProperty(globalThis,'window',{configurable:true,value:new EventTarget()});
+ const oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),oldWindow=Object.getOwnPropertyDescriptor(globalThis,'window'),events=new EventTarget();
+ const document=Object.assign(new EventTarget(),{visibilityState:'visible',documentElement:{dataset:{} as Record<string,string|undefined>}});
+ Object.defineProperty(globalThis,'document',{configurable:true,value:document});Object.defineProperty(globalThis,'window',{configurable:true,value:events});
  const homeRouting="export function initialRoute(){return{key:JSON.stringify({view:'home'}),input:{view:'home'},path:'/'};}export async function loadPage(){return{default:()=>null};}";
  const loader=createH5PureModuleLoader({overrides:{'routing.ts':options.home?homeRouting:routingStub}});
  const runtimeModule=await import(await loader.moduleUrl('page-runtime.ts')),query=await import(await loader.moduleUrl('api/query.ts')),transport=await import(await loader.moduleUrl('api/client.ts'));
@@ -36,8 +45,143 @@ async function harness(t:TestContext,options:{home?:ReturnType<typeof homeEntry>
  const runtime=new runtimeModule.PageRuntime(client);
  t.after(()=>{runtime.stop();client.clear();if(oldDocument)Object.defineProperty(globalThis,'document',oldDocument);else Reflect.deleteProperty(globalThis,'document');if(oldWindow)Object.defineProperty(globalThis,'window',oldWindow);else Reflect.deleteProperty(globalThis,'window');});
  runtime.start();await until(()=>calls.length===1,'initial entry must start before page completion');calls[0]?.reply.resolve(response(options.home??entry(1)));await until(()=>runtime.getSnapshot().ready,'initial actual entry must be seeded');
- return{client,runtime,query,transport,calls};
+ return{client,runtime,query,transport,calls,events,document};
 }
+
+function tabRoute(view:'home'|'reports'|'report'){return{key:JSON.stringify({view}),input:{view},path:view==='home'?'/':'/'+view};}
+function tabEntry(view:'home'|'reports'|'report'){
+ if(view==='home')return homeEntry(4);
+ return{schema_version:1,view,bootstrap:bootstrap('scope-a',true),membership_revision:'membership-a',data:view==='report'?null:{reports:{items:homeEntry(4).data.recent_reports,next_cursor:null}}};
+}
+
+test('H5 rapid tab revisit keeps fresh authorized home content without repeating entry',async t=>{
+ const{runtime,calls}=await harness(t,{home:homeEntry(4)});
+ for(const view of ['reports'] as const){const before=calls.length,pending=runtime.navigate(tabRoute(view));await until(()=>calls.length===before+1,'a cold tab starts its entry');calls[before]?.reply.resolve(response(tabEntry(view)));await pending;}
+ const before=calls.length,pending=runtime.navigate(tabRoute('home')),snapshot=runtime.getSnapshot();
+ const observed={additional_entries:calls.length-before,ready:snapshot.ready,checking:snapshot.checking,session_present:snapshot.session!==null};t.diagnostic(JSON.stringify({revisit:observed}));
+ if(calls.length>before)calls[before]?.reply.resolve(response(homeEntry(4)));await pending;
+ assert.deepEqual(observed,{additional_entries:0,ready:true,checking:false,session_present:true},'same-scope home is already warm inside the 30-second freshness window');
+});
+
+test('H5 rapid tab return cancels the abandoned cold request while retaining the warm destination',async t=>{
+ const{runtime,client,query,calls}=await harness(t,{home:homeEntry(4)}),abandoned=runtime.navigate(tabRoute('reports')).catch((error:unknown)=>error);await until(()=>calls.length===2,'the first cold destination remains genuinely pending');
+ const before=calls.length,returned=runtime.navigate(tabRoute('home')),snapshot=runtime.getSnapshot(),observed={abandoned_aborted:calls[1]?.options.signal?.aborted,additional_entries:calls.length-before,ready:snapshot.ready,checking:snapshot.checking};
+ if(calls.length>before)calls[before]?.reply.resolve(response(homeEntry(4)));await returned;calls[1]?.reply.resolve(response(tabEntry('reports')));const stopped=await abandoned;assert.ok(stopped instanceof DOMException);assert.equal(stopped.name,'AbortError');
+ assert.equal(client.getQueryData(query.queryKeys.reports('scope-a',{q:'',status:'',source:''})),undefined,'a late abandoned response cannot install its private data');t.diagnostic(JSON.stringify({rapid_return:observed}));
+ assert.deepEqual(observed,{abandoned_aborted:true,additional_entries:0,ready:true,checking:false});
+});
+
+test('H5 warm entry stamps expire at thirty seconds without sliding on cache reads or navigation',async t=>{
+ const{runtime,calls}=await harness(t,{home:homeEntry(4)}),route=tabRoute('home'),initial=runtime.getSnapshot(),now=Date.now();let clock=now;t.mock.method(Date,'now',()=>clock);
+ let notifications=0;const off=runtime.subscribe(()=>{notifications+=1;});t.after(off);
+ assert.equal(runtime.canUseCached(route),true);assert.equal(runtime.canUseCached(route),true);assert.equal(runtime.getSnapshot(),initial);assert.equal(notifications,0,'cache selection must be a synchronous read');
+ clock=now+20_000;await runtime.navigate(route);assert.equal(calls.length,1);
+ clock=now+30_001;assert.equal(runtime.canUseCached(route),false,'warm navigation did not renew the authorization stamp');const renewed=runtime.navigate(route);await until(()=>calls.length===2,'the expired current route must read entry again');calls[1]?.reply.resolve(response(homeEntry(5)));await renewed;assert.equal(runtime.canUseCached(route),true);
+});
+
+for(const missing of ['home','summary','bootstrap','membership'] as const)test('H5 warm home requires its '+missing+' Query data even when its verified stamp is fresh',async t=>{
+ const{client,runtime,query,calls}=await harness(t,{home:homeEntry(4)}),route=tabRoute('home'),keys={home:query.queryKeys.home('scope-a'),summary:query.queryKeys.departmentSummary('scope-a','membership-a'),bootstrap:query.queryKeys.bootstrap,membership:query.queryKeys.membership('scope-a')};
+ assert.equal(runtime.canUseCached(route),true);client.removeQueries({queryKey:keys[missing],exact:true});assert.equal(runtime.canUseCached(route),false);
+ const renewed=runtime.navigate(route);await until(()=>calls.length===2,'missing page data requires a new entry, including on the current route');calls[1]?.reply.resolve(response(homeEntry(7)));await renewed;assert.equal(runtime.canUseCached(route),true);
+});
+
+test('H5 invalidated warm data cannot bypass entry and the reports filter is part of its identity',async t=>{
+ const{client,runtime,query,calls}=await harness(t,{home:homeEntry(4)}),route=tabRoute('reports'),opened=runtime.navigate(route);await until(()=>calls.length===2,'the unfiltered list is cold');calls[1]?.reply.resolve(response(tabEntry('reports')));await opened;
+ const input={view:'reports',search:'printer',status:null,source:null},filtered={key:JSON.stringify(input),input,path:'/reports?search=printer'};assert.equal(runtime.canUseCached(route),true);assert.equal(runtime.canUseCached(filtered),false);
+ await client.invalidateQueries({queryKey:query.queryKeys.reports('scope-a',{q:'',status:'',source:''}),exact:true,refetchType:'none'});assert.equal(runtime.canUseCached(route),false);const renewed=runtime.navigate(route);await until(()=>calls.length===3,'explicit invalidation forces current-list entry');calls[2]?.reply.resolve(response(tabEntry('reports')));await renewed;assert.equal(runtime.canUseCached(route),true);
+});
+
+test('H5 request cache requires complete detail and page chains while an unavailable timeline remains an explicit complete section',async t=>{
+ const{client,runtime,query,calls}=await harness(t),route=runtime.getSnapshot().route;assert.equal(runtime.canUseCached(route),true);
+ const supplements=query.queryKeys.supplements('scope-a',ref),timelineKey=query.queryKeys.timeline('scope-a',ref),section=query.queryKeys.timelineSection('scope-a',ref);
+ client.setQueryData(supplements,{pages:[],pageParams:[]});assert.equal(runtime.canUseCached(route),false);client.setQueryData(supplements,{pages:[{items:[],next_cursor:null}],pageParams:[null]});assert.equal(runtime.canUseCached(route),true);
+ client.removeQueries({queryKey:timelineKey,exact:true});assert.equal(runtime.canUseCached(route),false,'READY cannot hide a missing timeline page');client.setQueryData(section,'UNAVAILABLE');assert.equal(runtime.canUseCached(route),true,'an intentionally unavailable timeline offers its existing retry path');
+ await client.invalidateQueries({queryKey:section,exact:true,refetchType:'none'});assert.equal(runtime.canUseCached(route),false);assert.equal(calls.length,1,'cache inspection never starts an implicit fetch');
+});
+
+test('H5 route stamps are bounded to eight entries and warming a route does not discard its Query-independent identity checks',async t=>{
+ const{runtime,calls}=await harness(t,{home:homeEntry(4)}),routes=[];
+ for(let index=0;index<8;index+=1){const input={view:'reports',search:'filter-'+index,status:null,source:null},route={key:JSON.stringify(input),input,path:'/reports?search=filter-'+index};routes.push(route);const pending=runtime.navigate(route);await until(()=>calls.length===index+2,'each distinct filter needs its first authorization');calls[index+1]?.reply.resolve(response(tabEntry('reports')));await pending;}
+ assert.equal(runtime.canUseCached(tabRoute('home')),false,'the ninth distinct successful entry evicts the oldest stamp');for(const route of routes)assert.equal(runtime.canUseCached(route),true);assert.equal(calls.length,9);
+});
+
+test('H5 foreground events close writes immediately and merge into one entry without allowing a warm navigation escape',async t=>{
+ const{runtime,calls,events}=await harness(t,{home:homeEntry(4)});t.mock.timers.enable({apis:['setTimeout']});
+ events.dispatchEvent(new Event('focus'));assert.equal(runtime.getSnapshot().checking,true,'write gating precedes the 250ms debounce');assert.equal(runtime.canUseCached(tabRoute('home')),false);
+ for(const name of ['pageshow','online','focus'])events.dispatchEvent(new Event(name));t.mock.timers.tick(249);assert.equal(calls.length,1);t.mock.timers.tick(1);await until(()=>calls.length===2,'one coalesced foreground entry starts');
+ const same=runtime.navigate(tabRoute('home'));assert.equal(calls.length,2,'a route effect joins the actual pending entry');assert.equal(runtime.getSnapshot().checking,true);calls[1]?.reply.resolve(response(homeEntry(8)));await same;assert.equal(runtime.getSnapshot().checking,false);assert.equal(runtime.canUseCached(tabRoute('home')),true);
+});
+
+test('H5 a foreground recheck failure cannot be unlocked by a fresh warm-route stamp',async t=>{
+ const{runtime,calls,events}=await harness(t,{home:homeEntry(4)});t.mock.timers.enable({apis:['setTimeout']});events.dispatchEvent(new Event('focus'));t.mock.timers.tick(250);await until(()=>calls.length===2,'recheck starts');calls[1]?.reply.resolve(response({error:{code:'YXX_UNAVAILABLE'}},503));await until(()=>runtime.getSnapshot().error!==null,'failure is observed');
+ assert.equal(runtime.canUseCached(tabRoute('home')),false);const retried=runtime.navigate(tabRoute('home'));await until(()=>calls.length===3,'navigation retries actual authorization rather than treating old data as current');calls[2]?.reply.resolve(response(homeEntry(8)));await retried;assert.equal(runtime.canUseCached(tabRoute('home')),true);
+});
+
+for(const change of ['scope','revision','generation'] as const)test('H5 '+change+' change fences previously warm route stamps',async t=>{
+ const{runtime,transport,calls}=await harness(t,{home:homeEntry(4)}),reports=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===2,'reports acquires its own verified stamp');calls[1]?.reply.resolve(response(tabEntry('reports')));await reports;assert.equal(runtime.canUseCached(tabRoute('home')),true);
+ if(change==='generation')transport.advanceAuthGeneration();else{const updated=runtime.refresh();await until(()=>calls.length===3,'scope/revision is checked by entry');const value=tabEntry('reports');calls[2]?.reply.resolve(response({...value,bootstrap:bootstrap(change==='scope'?'scope-b':'scope-a',true),membership_revision:change==='revision'?'membership-b':'membership-a'}));await updated;}
+ assert.equal(runtime.canUseCached(tabRoute('home')),false,'a prior authorization cannot be reused in a different member context');
+});
+
+test('H5 resume after an expired session permits a fresh authorization attempt instead of a permanent denied state',async t=>{
+ const{runtime,calls,events}=await harness(t,{home:homeEntry(4)});t.mock.timers.enable({apis:['setTimeout']});
+ events.dispatchEvent(new Event('focus'));t.mock.timers.tick(250);await until(()=>calls.length===2,'the first real focus refresh starts');
+ calls[1]?.reply.resolve(response({error:{code:'YXX_AUTH_REQUIRED'}},401));await until(()=>runtime.getSnapshot().session===null&&!runtime.getSnapshot().ready,'expired session clears protected content');await setImmediate();
+ const expired=runtime.getSnapshot();assert.equal(expired.session,null);assert.equal(expired.ready,false);
+ assert.equal(expired.expired,true);assert.equal(expired.denied,false);
+ events.dispatchEvent(new Event('focus'));t.mock.timers.tick(250);await setImmediate();
+ t.diagnostic(JSON.stringify({after_401:{denied:expired.denied,protected_content_cleared:expired.session===null},after_next_focus:{entry_calls:calls.length,checking:runtime.getSnapshot().checking,denied:runtime.getSnapshot().denied}}));
+ assert.equal(calls.length,3,'a later visible focus must not be permanently suppressed after a 401');
+ calls[2]?.reply.resolve(response(homeEntry(4)));await until(()=>runtime.getSnapshot().ready,'fresh authorization can restore the current view');assert.equal(runtime.getSnapshot().denied,false);
+});
+
+for(const guard of ['h5Draft','h5CommandPending'] as const)test('H5 401 captures '+guard+' before protected cleanup and retains that recovery guard until successful reauthorization',async t=>{
+ const{runtime,transport,calls,document}=await harness(t,{home:homeEntry(4)});document.documentElement.dataset[guard]='true';const clear=()=>{delete document.documentElement.dataset[guard];};transport.authLost.addEventListener('lost',clear);t.after(()=>transport.authLost.removeEventListener('lost',clear));
+ transport.authLost.dispatchEvent(new transport.AuthFailureEvent(401));assert.equal(runtime.getSnapshot().recoveryBlocked,true);assert.equal(document.documentElement.dataset[guard],undefined);assert.equal(runtime.getSnapshot().expired,true);assert.equal(runtime.getSnapshot().denied,false);assert.equal(runtime.canUseCached(tabRoute('home')),false);
+ const retry=runtime.refresh().catch((error:unknown)=>error);await until(()=>calls.length===2,'explicit retry still uses a fresh entry');calls[1]?.reply.resolve(response({error:{code:'YXX_AUTH_REQUIRED'}},401));await retry;assert.equal(runtime.getSnapshot().recoveryBlocked,true,'cleanup of the old subtree cannot authorize a later automatic document jump');
+ const restored=runtime.refresh();await until(()=>calls.length===3,'reauthorization retry is not latched behind a cancelled task');calls[2]?.reply.resolve(response(homeEntry(4)));await restored;assert.equal(runtime.getSnapshot().expired,false);assert.equal(runtime.getSnapshot().recoveryBlocked,false);assert.equal(runtime.getSnapshot().ready,true);
+});
+
+test('H5 legacy plain lost events retain the conservative terminal 403 behavior',async t=>{
+ const{runtime,transport,client,query}=await harness(t,{home:homeEntry(4)});transport.authLost.dispatchEvent(new Event('lost'));const snapshot=runtime.getSnapshot();assert.equal(snapshot.denied,true);assert.equal(snapshot.expired,false);assert.equal(snapshot.session,null);assert.equal(runtime.canUseCached(tabRoute('home')),false);assert.equal(client.getQueryData(query.queryKeys.home('scope-a')),undefined);await assert.rejects(runtime.refresh(),{status:403});
+});
+
+const translationLoader=createH5PureModuleLoader();
+async function translatedApp(runtime:unknown){
+ const language=await import(await translationLoader.moduleUrl('i18n.ts'));
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/App.tsx'),'utf8');
+ const compiled=transpileModule(source,{fileName:'App.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const authSource=await readFile(resolve(root,'h5/src/components/AuthState.tsx'),'utf8'),authCompiled=transpileModule(authSource,{fileName:'AuthState.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const routing="import {createElement} from 'react';export function describeRoute(path){const view=path==='/'?'home':path.slice(1);return{key:JSON.stringify({view}),input:{view},path};}export const pages=Object.fromEntries(['home','reports','report','request','department'].map(view=>[view,()=>createElement('article',{'data-protected-page':view},view)]));";
+ const pass="export function SessionProvider({children}){return children;}export function CommandProvider({children}){return children;}";
+ const loader=createH5PureModuleLoader({overrides:{'App.tsx':compiled,'components/AuthState.ts':authCompiled,'components/PageFailure.ts':"export default function PageFailure(){return null;}",'routing.ts':routing,'navigation.ts':"export function HashRouter({children}){return children;}export function useLocation(){return{pathname:'/',search:''};}export function Navigate(){return null;}",'session.ts':pass,'hooks/useCommand.ts':pass,'components/AppShell.ts':"import {createElement} from 'react';export function Shell({children}){return createElement('main',null,children);}export function Loading(){return createElement('div',{'data-state':'loading'});}",'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({children,...props}){return createElement('button',props,children);}",'lib/reload.ts':"export function hasProtectedInput(){return false;}export function reloadIfSafe(){}"}});
+ const app:{default:ComponentType<{runtime:unknown}>}=await import(await loader.moduleUrl('App.tsx'));
+ await import(await loader.moduleUrl('components/AuthState.ts'));await language.default.changeLanguage('zh-CN');
+ return()=>new Promise<string>((done,reject)=>{let html='';const sink=new Writable({write(chunk,_encoding,callback){html+=String(chunk);callback();}});sink.on('finish',()=>done(html));sink.on('error',reject);const stream=renderToPipeableStream(createElement(app.default,{runtime}),{onAllReady(){stream.pipe(sink);},onError:reject});});
+}
+
+test('H5 App retains a warm page rather than replacing its protected subtree with the loading branch',async t=>{
+ const{runtime,calls}=await harness(t,{home:homeEntry(4)}),render=await translatedApp(runtime);assert.match(await render(),/data-protected-page="home"/u);
+ const opened=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===2,'the other cold tab loads');calls[1]?.reply.resolve(response(tabEntry('reports')));await opened;
+ const during=await render(),returned=runtime.navigate(tabRoute('home'));if(calls.length===3)calls[2]?.reply.resolve(response(homeEntry(4)));await returned;assert.match(await render(),/data-protected-page="home"/u);
+ t.diagnostic(JSON.stringify({actual_app_branch:{protected_page_present:during.includes('data-protected-page="home"'),loading_present:during.includes('data-state="loading"')},measurement:'Actual App server-rendered guard projection; no claim of browser lifecycle counts'}));
+ assert.match(during,/data-protected-page="home"/u,'the real App conditional must not remove an already warm protected page on a tab return');
+});
+
+test('H5 App expired-session state has an available authentication recovery action',async t=>{
+ const{runtime,calls}=await harness(t,{home:homeEntry(4)}),render=await translatedApp(runtime),expired=runtime.refresh().catch((error:unknown)=>error);await until(()=>calls.length===2,'a real entry recheck starts');calls[1]?.reply.resolve(response({error:{code:'YXX_AUTH_REQUIRED'}},401));await expired;
+ const markup=await render();t.diagnostic(JSON.stringify({actual_app_auth_branch:{recovery_action:/<button\b/u.test(markup),raw_translation_key:markup.includes('>authRequired<')},measurement:'Actual App/AuthState onAllReady server-rendered guard projection; client effects are not executed'}));
+ assert.match(markup,/<button\b/u,'the resolved authentication panel needs an actionable recovery control, not just the brand link');assert.match(markup,/[\p{Script=Han}]/u,'the actual resolved authentication panel contains the selected language');
+});
+
+test('H5 current-member 403 stays denied when foreground events recur',async t=>{
+ const{client,runtime,query,calls,events}=await harness(t,{home:homeEntry(4)});t.mock.timers.enable({apis:['setTimeout']});const rejected=runtime.refresh().catch((error:unknown)=>error);await until(()=>calls.length===2,'member check starts');calls[1]?.reply.resolve(response({error:{code:'YXX_MEMBER_FORBIDDEN'}},403));await rejected;
+ for(const name of ['focus','pageshow','online'])events.dispatchEvent(new Event(name));t.mock.timers.tick(250);await setImmediate();assert.equal(calls.length,2);assert.equal(runtime.getSnapshot().denied,true);assert.equal(runtime.getSnapshot().session,null);assert.equal(client.getQueryData(query.queryKeys.home('scope-a')),undefined);
+});
+
+test('H5 authRequired resolves in both actual language resources instead of falling through as a key',async()=>{
+ const language=await import(await translationLoader.moduleUrl('i18n.ts'));for(const lng of ['zh-CN','en']){const value=language.default.t('authRequired',{lng});assert.notEqual(value,'authRequired');assert.ok(value.length>0);if(lng==='zh-CN')assert.match(value,/\p{Script=Han}/u);}
+});
 
 test('H5 home observers use one authorized entry for recent reports and department statistics on mount and refresh',async t=>{
  const{client,runtime,query,calls}=await harness(t,{home:homeEntry(4)});

@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-import {h5ModuleUrl as moduleUrl} from './helpers/h5-pure-module-loader.mjs';
+import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 
 test('H5 frozen Stitch HTML and PNG remain byte identical to their recorded source hashes',async()=>{
@@ -148,12 +148,70 @@ test('H5 304 reuses only the current member generation and the same request body
 
 test('H5 manual chunk recovery rechecks newly created drafts and UNKNOWN fences at the click',async()=>{
  const reload=await import(await moduleUrl('lib/reload.ts')),oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),oldLocation=Object.getOwnPropertyDescriptor(globalThis,'location');
- const dataset:{h5Draft?:string;h5CommandPending?:string}={};let calls=0;
+ const dataset:{h5Draft?:string;h5DetailDraft?:string;h5CommandPending?:string}={};let calls=0;
  Object.defineProperty(globalThis,'document',{configurable:true,value:{documentElement:{dataset}}});Object.defineProperty(globalThis,'location',{configurable:true,value:{reload:()=>{calls++;}}});
  try{
   assert.equal(calls,0);assert.equal(reload.hasProtectedInput(),false);
   dataset.h5Draft='true';reload.reloadIfSafe();assert.equal(calls,0,'a draft created after rendering still blocks reload');
   delete dataset.h5Draft;dataset.h5CommandPending='true';reload.reloadIfSafe();assert.equal(calls,0,'a pending or UNKNOWN UUID remains protected');
-  delete dataset.h5CommandPending;reload.reloadIfSafe();assert.equal(calls,1);
+  delete dataset.h5CommandPending;dataset.h5DetailDraft='true';reload.reloadIfSafe();assert.equal(calls,0,'a detail dialog draft blocks reload independently of a report draft');
+  delete dataset.h5DetailDraft;reload.reloadIfSafe();assert.equal(calls,1);
  }finally{if(oldDocument)Object.defineProperty(globalThis,'document',oldDocument);else Reflect.deleteProperty(globalThis,'document');if(oldLocation)Object.defineProperty(globalThis,'location',oldLocation);else Reflect.deleteProperty(globalThis,'location');}
+});
+
+
+test('H5 silent OAuth reconnect is one-shot, same-origin and respects draft/UNKNOWN and return-loop guards',async()=>{
+ const descriptors=new Map(['document','location','navigator'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ const redirects:string[]=[],dataset:Record<string,string>={};
+ const current={search:'',replace:(url:string)=>redirects.push(url)};
+ Object.defineProperties(globalThis,{document:{configurable:true,value:{documentElement:{dataset}}},location:{configurable:true,value:current},navigator:{configurable:true,value:{userAgent:'Android MicroMessenger wxwork Language/zh_CN'}}});
+ try{
+  const loader=createH5PureModuleLoader(),auth=await import(await loader.moduleUrl('lib/reauth.ts'));
+  dataset.h5Draft='true';assert.equal(auth.reconnect('/report',{automatic:true}),false);delete dataset.h5Draft;
+  dataset.h5CommandPending='true';assert.equal(auth.reconnect('/reports',{automatic:true}),false);delete dataset.h5CommandPending;
+  dataset.h5DetailDraft='true';assert.equal(auth.reconnect('/requests/'+'r'.repeat(32),{automatic:true}),false);delete dataset.h5DetailDraft;
+  assert.equal(auth.reconnect('/reports',{automatic:true,blocked:true}),false,'captured guard must survive component cleanup');
+  current.search='?auth_return=1';assert.equal(auth.reconnect('/reports',{automatic:true}),false,'failed fresh OAuth must not loop');current.search='';
+  for(const path of ['https://attacker.invalid/','//attacker.invalid','/requests/short','/reports#foreign'])assert.equal(auth.reconnect(path),false,path);
+  assert.equal(redirects.length,0);
+  const route='/reports?status=ACTIVE&search='+encodeURIComponent('打印');
+  assert.equal(auth.reconnect(route,{automatic:true}),true);
+  assert.equal(redirects.length,1);const target=new URL(redirects[0]??'', 'https://hospital.example');
+  assert.equal(target.origin,'https://hospital.example');assert.equal(target.pathname,'/wecom/yixiaoxiu/login');assert.equal(target.searchParams.get('return_to'),route);
+  assert.equal(auth.reconnect('/report',{automatic:true}),false);assert.equal(redirects.length,1);
+ }finally{for(const [key,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}}
+});
+
+test('H5 detail draft guard layout-effect closure protects dirty input and cleans only its own marker and listener',async t=>{
+ const descriptors=new Map(['document','window'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)])),dataset:Record<string,string>={},events=new EventTarget();
+ Object.defineProperties(globalThis,{document:{configurable:true,value:{documentElement:{dataset,removeAttribute(name:string){assert.equal(name,'data-h5-detail-draft');delete dataset.h5DetailDraft;}}}},window:{configurable:true,value:events}});
+ const effectURL='data:text/javascript;base64,'+Buffer.from("let pending;export function useLayoutEffect(effect){pending=effect;}export function take(){const effect=pending;pending=undefined;if(!effect)throw new Error('Layout effect was not registered');return effect;}").toString('base64');
+ const actual=await readFile(resolve(sourceRoot,'h5/src/hooks/useDetailDraftGuard.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'hooks/useDetailDraftGuard.ts':actual.replace("'react'",JSON.stringify(effectURL))}});
+ type LayoutEffect=()=>void|(()=>void);
+ const effects:{take:()=>LayoutEffect}=await import(effectURL),guard=await import(await loader.moduleUrl('hooks/useDetailDraftGuard.ts')),reload=await import(await loader.moduleUrl('lib/reload.ts'));
+ let cleanup:(()=>void)|undefined;
+ try{
+  guard.useDetailDraftGuard(false);assert.equal(effects.take()(),undefined);assert.equal(reload.hasProtectedInput(),false);
+  guard.useDetailDraftGuard(true);assert.equal(dataset.h5DetailDraft,undefined,'the marker is a layout-effect side effect, not a render mutation');const mounted=effects.take()();assert.equal(typeof mounted,'function');if(!mounted)assert.fail('dirty effect must provide cleanup');cleanup=mounted;
+  assert.equal(dataset.h5DetailDraft,'true');assert.equal(reload.hasProtectedInput(),true);
+  const before=new Event('beforeunload',{cancelable:true});Object.defineProperty(before,'returnValue',{configurable:true,writable:true,value:'unchanged'});assert.equal(events.dispatchEvent(before),false);assert.equal(before.defaultPrevented,true);assert.equal(Object.getOwnPropertyDescriptor(before,'returnValue')?.value,'');
+  dataset.h5Draft='true';dataset.h5CommandPending='true';cleanup();cleanup=undefined;assert.equal(dataset.h5DetailDraft,undefined);assert.equal(dataset.h5Draft,'true');assert.equal(dataset.h5CommandPending,'true');assert.equal(reload.hasProtectedInput(),true);
+  const after=new Event('beforeunload',{cancelable:true});assert.equal(events.dispatchEvent(after),true,'unmount removes this dialog listener');assert.equal(after.defaultPrevented,false);
+  delete dataset.h5Draft;delete dataset.h5CommandPending;guard.useDetailDraftGuard(false);assert.equal(effects.take()(),undefined);assert.equal(reload.hasProtectedInput(),false);
+  t.diagnostic('ACTUAL_LAYOUT_EFFECT_CLOSURE_CONTRACT_ONLY: closure execution/cleanup is real; React commit and browser lifecycle are not measured here.');
+ }finally{cleanup?.();for(const[key,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}}
+});
+
+test('H5 transport preserves expired/forbidden distinction without retrying a write',async()=>{
+ const loader=createH5PureModuleLoader(),client=await import(await loader.moduleUrl('api/client.ts'));
+ const originalFetch=globalThis.fetch,events:number[]=[],calls:{method:string;status:number}[]=[];
+ let status=401;
+ client.authLost.addEventListener('lost',(event:Event)=>{assert.ok(event instanceof client.AuthFailureEvent);events.push((event as Event&{status:number}).status);});
+ globalThis.fetch=async(_input,options)=>{calls.push({method:options?.method??'GET',status});return new Response(JSON.stringify({error:{code:status===401?'YXX_AUTH_REQUIRED':'YXX_FORBIDDEN'}}),{status});};
+ try{
+  await assert.rejects(client.api.submit({schema_version:2,client_command_id:'11111111-1111-4111-8111-111111111111',intent:'CONTACT_REQUEST',description:null,location:{text:null,unknown:true},media_refs:[]},'csrf'),{status:401});
+  status=403;await assert.rejects(client.api.bootstrap(),{status:403});
+  status=503;await assert.rejects(client.api.bootstrap(),{status:503});
+  assert.deepEqual(events,[401,403]);assert.equal(calls.filter(item=>item.method==='POST').length,1);assert.equal(calls.length,3);
+ }finally{globalThis.fetch=originalFetch;}
 });

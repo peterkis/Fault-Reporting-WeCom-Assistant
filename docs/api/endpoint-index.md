@@ -210,7 +210,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | A01 | GET | `/workbench/login` | W，员工auth挂载 | 已实现：302登录 | [认证](platform/auth-health.md) |
 | A02 | GET | `/workbench/callback` | 同上 | 已实现：code/state→303 | [认证](platform/auth-health.md) |
 | A03 | POST | `/workbench/logout` | 同上 | 已实现：JSON退出 | [认证](platform/auth-health.md) |
-| A04 | GET | `/wecom/yixiaoxiu/login` | O/M/W按profile | 已实现：302成员OAuth | [认证](platform/auth-health.md) |
+| A04 | GET | `/wecom/yixiaoxiu/login` | O/M/W按profile | 已实现：302成员OAuth；显式 H5 支持白名单 return_to 与一次静默恢复，旧模式无 query | [认证](platform/auth-health.md) |
 | A05 | GET | `/wecom/yixiaoxiu/callback` | 同上 | 已实现：code/state→303 | [认证](platform/auth-health.md) |
 | H01 | GET | `/health/live` | W / O/M替代server | 已实现：不同宿主不同DTO | [健康](platform/auth-health.md) |
 | H02 | GET | `/health/ready` | W | 已实现：注入readiness provider | [健康](platform/auth-health.md) |

@@ -5,6 +5,7 @@ import type {RequestDetail} from '../api/types';
 import {useSession,useSessionStatus} from '../session';
 import {useCommand} from '../hooks/useCommand';
 import {detailReceipt} from '../hooks/detail-command-receipt';
+import {useDetailDraftGuard} from '../hooks/useDetailDraftGuard';
 import {Icon} from './Icon';
 import {RecoveryNotice} from './Common';
 import {Button,Textarea,Field,FieldLabel,FieldGroup,FieldDescription} from './ui/primitives';
@@ -13,6 +14,7 @@ export type DetailActionKind='evaluation'|'feedback'|'supplement';
 export default function DetailDialogs({kind,value,requestRef,onClose,onCommitted,onRefresh}:{kind:DetailActionKind;value:RequestDetail;requestRef:string;onClose:()=>void;onCommitted:()=>Promise<void>;onRefresh:()=>Promise<void>}){
  const {t}=useTranslation(),session=useSession(),status=useSessionStatus(),command=useCommand();
  const [rating,setRating]=useState(0),[comment,setComment]=useState(''),[text,setText]=useState(''),[formError,setFormError]=useState<string|null>(null);
+ useDetailDraftGuard(kind==='supplement'?text.length>0:kind==='evaluation'&&(rating>0||comment.length>0));
  const disabled=command.blocked||command.syncingRequests.includes(requestRef)||!status.writeReady;
  const submit=()=>{
   if(disabled)return;setFormError(null);const id=crypto.randomUUID();

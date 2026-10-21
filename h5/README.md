@@ -67,6 +67,10 @@ node .build/runtime/scripts/yxx-h5-migrate.mjs --apply --expected-database=proje
 
 使用既有医小修企业微信 OAuth 及同源 Cookie／CSRF。报修范围为当前应用可见成员，不逐人写报修名单；这不授予 PC 管理权限。开放身份与 Bot userid 不可互换。页面不能传入通知收件人、群 ID 或 Webhook。
 
+H5 显式装配使用 8 小时空闲、24 小时绝对会话期；entry 在当前成员核验、业务查询和终检成功后续期，SID／CSRF 保持稳定。前台恢复合并事件并立即关闭写操作，401 通过一次静默 OAuth 回当前页面；403 显示双语浅深色权限状态，503 可重试。草稿／UNKNOWN 期间不自动离开文档、不重放 POST；重新连接影响会明确提示。旧非 H5 OAuth 的 15 分钟合同不变。
+
+底部导航使用 Hash 路由；30 秒内已访问页面可复用同范围、同组织修订且未失效的内存 Query 数据。首次进入只加载当前页面，短时间往返不清空应用壳或重新请求 entry。前台复核、手动刷新和写后同步保留强制读取。骨架使用 CSS shimmer 并遵循 `prefers-reduced-motion`，认证状态与非关键操作／帮助文案按需加载。合同及验证边界见 [ADR-0037](../adr/0037_h5_session_resume_and_navigation.md)。
+
 后端显式选择 `memberEntry.identityMode=VERIFIED_APP_OPENID`，保持已核对的企业、应用、Bot 作用域和 proofRef。先核验并在授权数据库应用 063 增量迁移；启动不自动迁移。新成员不需要 reporterUserIds 或通知目标文件。可选旧名单和原资格文件仅兼容既有身份与记录；不得更换原 Reporter HMAC 或用开放身份冒充 Bot 原始 userid。配置、检查和关闭命令见[运行说明](../docs/runbooks/human-workbench-runtime.md#mvp-通知切换)。
 
 ## 接口

@@ -1,6 +1,31 @@
 @import "tailwindcss" source(none);
 @source "./";
 @source not "./dev";
+.auth-state{min-height:100vh;min-height:100svh;max-width:480px;margin:auto;padding:24px 24px max(32px,env(safe-area-inset-bottom));display:flex;flex-direction:column;background:var(--background)}
+.auth-brand{display:inline-flex;gap:10px;align-items:center;align-self:flex-start;color:var(--foreground);font-weight:650;font-size:18px;text-decoration:none}
+.auth-brand .brand-mark{width:34px;height:34px;font-size:19px;border-radius:11px}
+.auth-message{margin:auto 0;padding:32px 0 40px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.auth-connection{width:min(240px,72vw);height:auto;display:block;margin-bottom:26px;overflow:visible}
+.auth-orbit{fill:var(--subground);stroke:var(--border);stroke-width:1}
+.auth-traces{stroke:var(--hairline);stroke-width:2;stroke-linecap:round}
+.auth-paper{fill:var(--card);stroke:var(--link);stroke-width:2}
+.auth-lines{stroke:var(--muted-foreground);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.auth-cross{stroke:var(--link);stroke-width:5;stroke-linecap:round}
+.auth-seal{fill:var(--primary)}
+.auth-seal-icon{stroke:var(--primary-foreground);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.auth-node{fill:var(--link);opacity:.55}
+.auth-message h1{font-size:25px;line-height:1.3;letter-spacing:-.025em;font-weight:650;color:var(--foreground);text-wrap:balance;margin:0 0 12px}
+.auth-message>p{font-size:14px;line-height:1.75;color:var(--muted-foreground);max-width:32ch;margin:0;text-wrap:pretty}
+.auth-message>.auth-protected{margin-top:16px;color:var(--warm-text);background:var(--warm-bg);padding:12px 14px;border-radius:12px;max-width:100%}
+.auth-retry{margin-top:28px;max-width:100%;min-height:46px;height:auto;white-space:normal;line-height:1.5;padding:12px 22px}
+.auth-footnote{font-size:11px;line-height:1.6;color:var(--muted-foreground);margin-top:14px}
+.is-connecting .auth-seal-icon{transform-box:fill-box;transform-origin:center;animation:auth-connect 1.5s linear infinite}
+@keyframes auth-connect{to{transform:rotate(360deg)}}
+.loading-stack .ui-skeleton{position:relative;overflow:hidden;animation:none}
+.loading-stack .ui-skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(100deg,transparent 20%,rgba(120,120,140,.08) 50%,transparent 80%);background:linear-gradient(100deg,transparent 20%,color-mix(in srgb,var(--foreground) 7%,transparent) 50%,transparent 80%);animation:h5-shimmer 1.6s ease-in-out infinite}
+@keyframes h5-shimmer{to{transform:translateX(100%)}}
+@media(max-height:620px){.auth-message{padding-top:24px;padding-bottom:12px}.auth-connection{width:175px;margin-bottom:16px}}
+@media(prefers-reduced-motion:reduce){.loading-stack .ui-skeleton::after{display:none}.auth-connection{animation:none}}
 .ui-button[aria-disabled="true"]{opacity:.5;pointer-events:none}
 @import "./assets/inter.css";
 @import "./assets/symbols.css";
