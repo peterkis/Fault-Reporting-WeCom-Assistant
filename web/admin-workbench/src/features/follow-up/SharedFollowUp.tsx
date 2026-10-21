@@ -39,7 +39,10 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_STORAGE_UNAVAILABLE'))throw error;}
  },[draft.enabled,principal.principal_id,principal.follow_up_schedules_enabled,ticketId,commandId]);
  const deny=async(error:ApiError)=>{clear();if(error.status===401)await clearSessionAuthorization(client,principal.principal_id,401,'revoked');else await clearTicketAuthorization(client,principal.principal_id,ticketId,error);};
- useEffect(()=>{if(query.error instanceof ApiError&&[401,403,404].includes(query.error.status))void deny(query.error);},[query.error,principal.principal_id,ticketId]);
+ // A whole-item fence can leave an error in this disabled query. Only a new
+ // enabled read may raise another denial; replaying the cached fence on mount
+ // would purge each freshly authorized detail and prevent recovery forever.
+ useEffect(()=>{if(principal.follow_up_schedules_enabled&&query.isFetchedAfterMount&&query.error instanceof ApiError&&[401,403,404].includes(query.error.status))void deny(query.error);},[principal.follow_up_schedules_enabled,query.isFetchedAfterMount,query.error,principal.principal_id,ticketId]);
  const refresh=()=>{void client.invalidateQueries({queryKey:key});void client.invalidateQueries({queryKey:['ticket-command-context',principal.principal_id,ticketId]});void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
  const authorityRejected=query.error instanceof ApiError&&[401,403,404].includes(query.error.status);
  const view=authorityRejected?undefined:query.data;

@@ -69,6 +69,18 @@
 
 T38补充诊断中，原流程自然观测1 PASS；通过真实runtime端口主动断开原SSE再恢复的受控流程1 PASS，未构造RED，均不冒充已定位CI原因。两次沿原30秒、实际404拒绝、空草稿与0自动POST运行，2CPU／4GiB Job、PG正常退出及最终资源0。后继测试仅增加同步phase、最多128条不含Cookie／正文／身份的HTTP状态账及失败时的DOM白名单与现有runner可收录截图回执；成功路径无新增浏览器await，原4个waitFor参数逐字相同，后三例正文保持。最终私有strict退出0；其正式构建和当前CI另行执行，未直接将观测补丁称作产品修复。
 
+### T38自然复现与生产修复
+
+诊断head `456d96b32b913b1e8e9801281e1bfbde504d7ab9` 正式根构建、strict和制品校验通过，manifest为 `d1d03f3d0c2b169cb6d48454c76ef920df0836092344e3abd4d121c47b3a33a1`；与62逐项相比只有T38输入及其mjs／map改变，H5全部82个输出和其他非测试制品完全一致，原284／44／27度量仍绑定62。该head的Codex审查完成、无发现；云组件13/13仅为隔离预检，未切换服务。
+
+随后在该正式制品和实际2CPU／4GiB Job中执行T38四例，得到**3 PASS／1 FAIL的自然RED**。重新授权后bootstrap200×8、item200×5、context200×8且实时连接live，详情／编辑器仍未恢复、POST为0；截图为原404提示，稍后DOM为pending。未采响应正文，不以200推断解码。原权限、30秒、空草稿与0自动POST断言未改。Job正常结束、未强制清理，PG18.4正常停止，数据库／客户端／监听和活动进程归零，失败截图首次由现有runner完整归档。
+
+实际源码验证发现可解释该表象的闭环：整单当前READ拒绝先清空所有相应查询，其中包含未启用的`ticket-follow-up-schedule`。`SharedFollowUp`始终挂载，关闭功能的query不发请求，却在每次挂载时将缓存404当新拒绝，重新清空刚通过当前READ的详情；之后每5秒重读成功又重复。独立真实React／Query／IndexedDB、原组件与原刷新节奏的控制中，每次detail成功后0.5–1ms即再次变为404，live不变、POST为0，与自然RED表象一致。没有把缺少DOM的原CI直接绑定为该控制的因果证明。
+
+修复仅要求该组件在功能启用且当前挂载后确有读取时才再次处理拒绝；缓存错误仍隐藏旧资料，新的401／403／404仍沿原权限清理。采用Query的`isFetchedAfterMount`，其语义同时核对锁定版本QueryObserver的更新计数与[官方useQuery文档](https://tanstack.com/query/latest/docs/framework/react/reference/functions/useQuery)。不删除READ终检、不恢复旧草稿、不增加自动POST、不改变Feature Flag默认值或30秒预算。修复后的正式注册回归、当前head CI／审查和发布状态见后续[交付收据](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/112#issuecomment-6321712907)，本截点不预记PASS。
+
+此前另查A→B→A会话合并的外部停机控制，仅直接cache writer构成HYPOTHESIS；实际旧epoch网络读取已被丢弃的对照通过，且它的auth-blocked／无后续GET表象与本次live／多轮200自然RED不符，没有据此修改会话或放宽旧请求栅栏。
+
 截至本地验证截点，新62制品仅完成云端隔离组件预检13/13 PASS，未加载运行配置／业务数据库、未联网、未切换服务；实际在线仍为前轮14dad391。后续当前head的CI故障闭环、合并与新录音制品云切换按实际身份追加至 [PR #112 验收与发布收据](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/112#issuecomment-6321712907)，本截点不预先记为通过。
 
 Android／iOS新模式实际音质、实际Provider上传、录音相机与锁屏恢复完整实机复验继续 **NOT_RUN**；起录用户观察与本轮未验证的音质分别记录。不推进P2/P3 Gate，不主动发送消息，不重置已有工单、密钥或媒体。
