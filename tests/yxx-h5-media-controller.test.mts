@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {test} from 'node:test';
+import {test,type TestContext} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createElement,type ComponentType} from 'react';
@@ -12,7 +12,7 @@ import {createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 const bootstrap:H5EntryBootstrap={authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',read_only:false,can_submit:true,can_supplement:true,csrf_token:'synthetic-csrf',recovery_scope:'synthetic-member',h5:{profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:false,corp_id:null,agent_id:null},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:{voice_count:1,voice_duration_seconds:60,voice_bytes:5*1024*1024,image_count:6,image_bytes:10*1024*1024,video_count:1,video_duration_seconds:60,video_bytes:20*1024*1024,total_bytes:40*1024*1024}}};
 interface MediaElement {duration:number;src:string;preload:string;onloadedmetadata:(()=>void)|null;onerror:(()=>void)|null;loads:number;removeAttribute:(name:string)=>void;load:()=>void}
 interface ItemSnapshot {id:string;ref:string|null;status:string;progress:number}
-interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds:()=>readonly string[];getItem:(id:string)=>ItemSnapshot|null;getError:()=>string|null;add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;clear:(bound?:boolean)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
+interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds:()=>readonly string[];getItem:(id:string)=>ItemSnapshot|null;getError:()=>string|null;getRecording:()=>{recording:boolean};add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;clear:(bound?:boolean)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
 interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[];uploads:{id:string;signal:AbortSignal;progress:(value:number)=>void;complete:()=>void}[]};control:{pendingReserve:boolean;holdUploads:boolean}}
 const apiFixture=`
 export const authLost=new EventTarget();
@@ -121,9 +121,9 @@ test('H5 acquiring microphone permission remains busy until a released attempt i
   assert.equal(stopped,1);assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getItems().length,0);assert.equal(value.api.calls.reserves.length,0);
  }finally{if(previous)Object.defineProperty(globalThis,'MediaRecorder',previous);else Reflect.deleteProperty(globalThis,'MediaRecorder');value.close();}
 });
-test('H5 cold SDK auto-AGENT and explicit CORP signatures share one serialized registration',async()=>{
+test('H5 legacy SDK CORP and AGENT signature callbacks share one serialized registration',async()=>{
  const previous=Object.getOwnPropertyDescriptor(globalThis,'navigator');
- const sdk=`let options,agent;export let registrations=0;export function register(value){registrations+=1;options=value;agent=options.getAgentConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/');}export function ensureCorpConfigReady(){return options.getConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/');}export function ensureAgentConfigReady(){return agent;}`;
+ const sdk=`let ready;export let registrations=0;export function register(value){registrations+=1;ready=Promise.all([value.getConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/'),value.getAgentConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/')]);}export function ensureConfigReady(){return ready;}`;
  const sdkURL='data:text/javascript;base64,'+Buffer.from(sdk).toString('base64');
  const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
  const source=(await readFile(resolve(sourceRoot,'h5/src/hooks/wecom-registration.ts'),'utf8')).replace("const pending=import('../lib/wecom')",'const pending=import('+JSON.stringify(sdkURL)+')');
@@ -137,7 +137,7 @@ test('H5 cold SDK auto-AGENT and explicit CORP signatures share one serialized r
   Object.defineProperty(globalThis,'location',{configurable:true,value:{href:'https://synthetic.invalid/wecom/yixiaoxiu/#/report'}});
   const native={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:true,corp_id:'synthetic-corp',agent_id:'synthetic-agent'}}};
   const first=module.registeredWecom(native),second=module.registeredWecom(native);assert.equal(first,second);await first;
-  assert.equal(transport.stats.max,1);assert.equal(transport.stats.active,0);assert.deepEqual(transport.stats.kinds,['AGENT','CORP']);
+  assert.equal(transport.stats.max,1);assert.equal(transport.stats.active,0);assert.deepEqual(transport.stats.kinds,['CORP','AGENT']);
  }finally{if(previous)Object.defineProperty(globalThis,'navigator',previous);else Reflect.deleteProperty(globalThis,'navigator');if(oldLocation)Object.defineProperty(globalThis,'location',oldLocation);else Reflect.deleteProperty(globalThis,'location');}
 });
 
@@ -187,4 +187,23 @@ test('H5 legacy playback never retries a member refusal and cancels an oversized
   globalThis.fetch=async()=>new Response(new ReadableStream({cancel:()=>{canceled=true;}}),{headers:{'content-type':'audio/wav','content-length':String(5*1024*1024+1)}});
   await assert.rejects(()=>module.readMediaBlob('r'.repeat(32),legacyVoice,'PLAYABLE',new AbortController().signal),error=>error instanceof Error&&error.message==='MEDIA_TOO_LARGE');assert.equal(canceled,true);
  }finally{globalThis.fetch=previous;}
+});
+
+type VoiceFailureScenario='sdk'|'native'|'unsupported'|'denied'|'permission-network'|'browser-start'|'native-stop';
+async function voiceFailureFixture(t:TestContext,scenario:VoiceFailureScenario){
+ const secret='SYNTHETIC_PRIVATE_SIGNATURE_AND_URL',descriptors=new Map(['navigator','document','window','MediaRecorder'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)])),events=new EventTarget(),stats={browser:0,tracksStopped:0};
+ const native=scenario==='sdk'||scenario==='native'||scenario==='native-stop';
+ Object.defineProperties(globalThis,{window:{configurable:true,value:Object.assign(new EventTarget(),{setInterval,clearInterval,setTimeout,clearTimeout})},document:{configurable:true,value:Object.assign(events,{visibilityState:'visible'})},navigator:{configurable:true,value:{userAgent:native?'Android wxwork/5.0.4':'Synthetic browser',mediaDevices:scenario==='unsupported'?undefined:{getUserMedia:async()=>{stats.browser+=1;if(scenario==='denied')throw new DOMException(secret,'NotAllowedError');if(scenario==='permission-network')throw new Error(secret);return{getTracks:()=>[{stop:()=>{stats.tracksStopped+=1;}}]};}}}}});
+ if(scenario==='unsupported')Reflect.deleteProperty(globalThis,'MediaRecorder');else Object.defineProperty(globalThis,'MediaRecorder',{configurable:true,value:class {static isTypeSupported(){return false;}constructor(){throw new Error(secret);}}});
+ const registration="export const stats={initializations:0,starts:0,stops:0};export async function registeredWecom(){stats.initializations+=1;if('"+scenario+"'==='sdk')throw new Error('"+secret+"');return{startRecord:async()=>{stats.starts+=1;if('"+scenario+"'==='native')throw{errMsg:'startRecord:permission denied "+secret+"',errCode:10003};},onVoiceRecordEnd(){},stopRecord:async()=>{stats.stops+=1;throw new Error('"+secret+"');}};}";
+ const loader=createH5PureModuleLoader({overrides:{'api/client.ts':apiFixture,'hooks/wecom-registration.ts':registration}}),module:{createMediaController:(get:()=>H5EntryBootstrap,transcript:(text:string)=>void,message:(key:string)=>string)=>Controller}=await import(await loader.moduleUrl('hooks/useMedia.ts')),api:ApiFixture=await import(await loader.moduleUrl('api/client.ts')),sdk:{stats:{initializations:number;starts:number;stops:number}}=await import(await loader.moduleUrl('hooks/wecom-registration.ts'));
+ const value={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:native,corp_id:native?'synthetic-corp':null,agent_id:native?'synthetic-agent':null}}},controller=module.createMediaController(()=>value,()=>{},key=>key);controller.mount();
+ t.after(()=>{controller.dispose();for(const[key,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}});
+ return{controller,stats,sdk:sdk.stats,api,secret,native};
+}
+for(const [scenario,key]of [['sdk','setupFailed'],['native','nativeStartFailed'],['unsupported','browserUnavailable'],['denied','browserDenied'],['permission-network','browserFailed'],['browser-start','browserFailed'],['native-stop','finishFailed']]as const)test('H5 voice '+scenario+' failure uses an allowlisted phase message without retrying or exposing raw errors',async t=>{
+ const value=await voiceFailureFixture(t,scenario);await value.controller.start();if(scenario==='native-stop'){assert.equal(value.controller.getRecording().recording,true);value.controller.release();await until(()=>!value.controller.getBusy());}
+ assert.equal(value.controller.getError(),'voice:'+key);assert.equal(value.controller.getError()?.includes(value.secret),false);assert.equal(value.controller.getRecording().recording,false);assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getItems().length,0);assert.equal(value.api.calls.reserves.length,0,'a failed recording never starts a media POST');
+ if(value.native)assert.equal(value.stats.browser,0,'native failure must not start a second browser recorder');else assert.equal(value.sdk.initializations,0,'browser mode must not initialize native APIs');
+ if(scenario==='sdk')assert.equal(value.sdk.starts,0);if(scenario==='native')assert.equal(value.sdk.starts,1);if(scenario==='browser-start')assert.equal(value.stats.tracksStopped,1,'failed MediaRecorder construction releases the granted track');
 });

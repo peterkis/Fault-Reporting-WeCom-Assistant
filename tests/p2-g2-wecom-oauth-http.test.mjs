@@ -50,10 +50,10 @@ test('HTTP 关闭态拒绝所有认证路径且不调用提供商',async t=>{
   }
 });
 
-async function resumeFixture(t,{shell=false}={}){
+async function resumeFixture(t,{shell=false,fallback=false,h5Session=true}={}){
   const publicOrigin='https://session-resume.example.test',flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
   let clock=0,revoked=false,codeCalls=0,memberCalls=0,entryHook=async()=>{},codeHook=async()=>({userid:'session-test-member'}),loginCount=0;
-  const oauth=createWeComWebOAuth({enabled:true,h5Session:true,publicOrigin,corpId:'session-test-corp',agentId:'1000002',now:()=>clock,
+  const oauth=createWeComWebOAuth({enabled:true,h5Session,publicOrigin,corpId:'session-test-corp',agentId:'1000002',now:()=>clock,
     resolveCode:async()=>{codeCalls++;return codeHook();}});
   const authentication=createYxxApplicationMemberAuthentication({oauth,config:{corpId:'session-test-corp',agentId:'1000002',botId:'session-test-bot',proofRef:'session-test-proof'},
     secret:'session-resume-test-secret-over-thirty-two-characters',flags,verifyMember:async openUserId=>{memberCalls++;return revoked?null:{openUserId,checkedEpochMs:String(Date.now())};}});
@@ -63,7 +63,11 @@ async function resumeFixture(t,{shell=false}={}){
     authenticateMember:({request})=>authentication.authenticate(request,'MEMBER_SELF_SERVICE'),command:{accept:unused},supplement:{accept:unused},
     query:{list:unused,detailWithEtag:unused,timeline:unused,commandStatus:unused},
     h5Static:shell?{asset:async()=>false,page:async response=>{response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Public H5 shell</title><div id="root"></div>');return true;}}:null,
-    h5Entry:async({request,input,bootstrap})=>{await entryHook();authentication.recheck(request);return {schema_version:1,view:input.view,bootstrap,membership_revision:'session-test-revision',data:{recent_reports:[],department_summary:null}};}});
+    ...(fallback?{h5Bootstrap:async request=>{await entryHook();authentication.recheck(request);return {
+      profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:false,can_urge:false,can_evaluate:false,can_view_department:false,
+      sdk:{enabled:false,corp_id:null,agent_id:null},support:{emergency_phone:'18117887318',service_phone:'61318500'},
+      limits:{voice_count:1,voice_duration_seconds:60,voice_bytes:5*1024*1024,image_count:6,image_bytes:10*1024*1024,video_count:1,video_duration_seconds:60,video_bytes:20*1024*1024,total_bytes:40*1024*1024}};}}
+      :{h5Entry:async({request,input,bootstrap})=>{await entryHook();authentication.recheck(request);return {schema_version:1,view:input.view,bootstrap,membership_revision:'session-test-revision',data:{recent_reports:[],department_summary:null}};}})});
   const server=createConversationWorkbenchHttpServer({authenticate:async()=>null,queryService:{},commandFacade:{},publicOrigin,
     unauthenticatedHandler:async context=>await native.handler(context)||await oauthHttp(context)});
   server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -71,7 +75,7 @@ async function resumeFixture(t,{shell=false}={}){
   const base='http://127.0.0.1:'+server.address().port,headers={host:new URL(publicOrigin).host,origin:publicOrigin,'sec-fetch-site':'same-origin'};
   // Model the real reverse proxy Host explicitly; fetch may discard Host.
   const send=(path,cookie,options={})=>new Promise((resolve,reject)=>{
-    const req=requestHttp(new URL(path,base),{method:options.method??'GET',headers:{...headers,...(cookie?{cookie}:{}),...(options.body?{'content-type':'application/json'}:{})}},res=>{
+    const req=requestHttp(new URL(path,base),{method:options.method??'GET',headers:{...headers,...options.headers,...(cookie?{cookie}:{}),...(options.body?{'content-type':'application/json'}:{})}},res=>{
       const chunks=[];let length=0;
       res.on('data',chunk=>{length+=chunk.length;if(length>65536){res.destroy(Error('TEST_RESPONSE_LIMIT'));return;}chunks.push(chunk);});
       res.on('error',reject);res.on('end',()=>{
@@ -93,8 +97,42 @@ async function resumeFixture(t,{shell=false}={}){
     setEntryHook:hook=>{entryHook=hook;},setCodeHook:hook=>{codeHook=hook;},logout:()=>oauth.logout(session.split(';')[0].slice('__Host-wecom_session='.length)),
     replace:async()=>{const next=oauth.begin({browserToken:binding.split(';')[0].slice('__Host-wecom_oauth='.length)});await oauth.complete({state:new URL(next.location).searchParams.get('state'),browserToken:next.browserToken,code:'replacement-'+(++loginCount)});},
     close:()=>oauth.close(),send:(path,selectedCookie=cookie,options)=>send(path,selectedCookie,options),
-    read:()=>send('/api/yixiaoxiu/h5/entry?view=home',cookie)};
+    read:()=>fallback?send('/api/yixiaoxiu/bootstrap',cookie,{headers:{accept:'application/vnd.yixiaoxiu.v2+json'}}):send('/api/yixiaoxiu/h5/entry?view=home',cookie)};
 }
+
+test('H5 V2 bootstrap fallback slides the idle session after complete terminal validation',{timeout:5000},async t=>{
+  const f=await resumeFixture(t,{fallback:true});
+  const negotiation=await f.send('/api/yixiaoxiu/h5/entry?view=home');assert.equal(negotiation.status,404);assert.equal((await negotiation.json()).error.code,'YXX_H5_ENTRY_DISABLED');
+  const initial=await f.read();assert.equal(initial.status,200);const first=await initial.json();assert.equal(first.h5.sdk.enabled,false);
+  f.advance(7*60*60*1000);const renewed=await f.read();assert.equal(renewed.status,200);const middle=await renewed.json();
+  f.advance(9*60*60*1000);const continued=await f.read(),body=await continued.json();
+  t.diagnostic('H5_BOOTSTRAP_FALLBACK '+JSON.stringify({entry_status:404,at_seven_hours_status:renewed.status,renewal_cookie_count:renewed.headers.getSetCookie().length,at_nine_hours_status:continued.status,error_code:body.error?.code??null,...f.counts()}));
+  assert.equal(continued.status,200,'a successful seven-hour H5 fallback read must extend the eight-hour idle session');
+  assert.equal(middle.csrf_token,first.csrf_token);assert.equal(middle.recovery_scope,first.recovery_scope);
+  assert.equal(renewed.headers.getSetCookie().find(value=>value.startsWith('__Host-wecom_session=')).split(';')[0],f.sessionCookie);
+  assert.equal(renewed.headers.getSetCookie().find(value=>value.startsWith('__Host-wecom_oauth=')).split(';')[0],f.browserCookie);
+  assert.match(renewed.headers.getSetCookie().find(value=>value.startsWith('__Host-wecom_session=')),/Max-Age=28800$/u);
+  assert.deepEqual(f.counts(),{code_calls:1,current_member_calls:3});
+});
+
+test('H5 V2 bootstrap fallback never renews after failed or superseded terminal validation',{timeout:5000},async t=>{
+  for(const scenario of ['forbidden','unavailable','logout','replacement','expiry'])await t.test(scenario,async t=>{
+    const f=await resumeFixture(t,{fallback:true});let enter,release;
+    const entered=new Promise(resolve=>{enter=resolve;}),gate=new Promise(resolve=>{release=resolve;});
+    f.setEntryHook(async()=>{enter();await gate;if(scenario==='forbidden'||scenario==='unavailable')throw Object.assign(Error('TEST_TERMINAL_DENIED'),{code:scenario==='forbidden'?'YXX_FORBIDDEN':'YXX_UNAVAILABLE',status:scenario==='forbidden'?403:503});});
+    const pending=f.read();await entered;if(scenario==='logout')f.logout();if(scenario==='replacement')await f.replace();if(scenario==='expiry')f.advance(8*60*60*1000);release();
+    const denied=await pending;assert.equal(denied.status,scenario==='forbidden'?403:scenario==='unavailable'?503:401);assert.deepEqual(denied.headers.getSetCookie(),[]);assert.equal(denied.headers.get('location'),null);assert.equal(f.counts().current_member_calls,1);
+  });
+});
+
+test('Bootstrap renewal leaves V1 reads and non-H5 OAuth lifetimes unchanged',{timeout:5000},async t=>{
+  const h5=await resumeFixture(t,{fallback:true});h5.advance(7*60*60*1000);
+  const v1=await h5.send('/api/yixiaoxiu/bootstrap');assert.equal(v1.status,200);const body=await v1.json();assert.equal(body.h5,undefined);assert.deepEqual(v1.headers.getSetCookie(),[]);
+  h5.advance(9*60*60*1000);const expired=await h5.read();assert.equal(expired.status,401);await expired.json();
+  const legacy=await resumeFixture(t,{fallback:true,h5Session:false});assert.equal(legacy.maxAge,900);legacy.advance(14*60*1000);
+  const success=await legacy.read();assert.equal(success.status,200);await success.json();assert.deepEqual(success.headers.getSetCookie(),[]);
+  legacy.advance(16*60*1000);const old=await legacy.read();assert.equal(old.status,401);await old.json();assert.equal(legacy.counts().code_calls,1);
+});
 
 test('H5 session resume keeps the current member read after a sixteen-minute screen lock',{timeout:5000},async t=>{
   const f=await resumeFixture(t),first=await f.read();assert.equal(first.status,200);assert.equal((await first.json()).bootstrap.authenticated,true);

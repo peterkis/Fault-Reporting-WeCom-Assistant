@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import {test} from 'node:test';
+import {test,type TestContext} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
+import type {H5EntryBootstrap} from '../contracts/yxx_h5_entry_contracts.js';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 
 test('H5 frozen Stitch HTML and PNG remain byte identical to their recorded source hashes',async()=>{
@@ -214,4 +215,45 @@ test('H5 transport preserves expired/forbidden distinction without retrying a wr
   status=503;await assert.rejects(client.api.bootstrap(),{status:503});
   assert.deepEqual(events,[401,403]);assert.equal(calls.filter(item=>item.method==='POST').length,1);assert.equal(calls.length,3);
  }finally{globalThis.fetch=originalFetch;}
+});
+
+interface NativeVoiceController {start:()=>Promise<void>;release:(cancel?:boolean)=>void;dispose:()=>void;getBusy:()=>boolean;getNative:()=>boolean;getError:()=>string|null;getRecording:()=>{recording:boolean};choosePhotos:(fallback:()=>void)=>Promise<void>}
+async function nativeVoiceFixture(t:TestContext,corporateAvailable:boolean,clientVersion='5.0.4'){
+ const descriptors=new Map(['window','document','navigator','location'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)])),calls:string[]=[],listeners=new Map<string,(value:unknown)=>void>();
+ const bridge={invoke(name:string,_params:unknown,complete:(value:unknown)=>void){calls.push(name);complete({err_msg:name+':ok',localId:'synthetic-voice'});},on(name:string,callback:(value:unknown)=>void){listeners.set(name,callback);}};
+ const window=Object.assign(new EventTarget(),{WeixinJSBridge:bridge,setInterval,clearInterval,setTimeout,clearTimeout});
+ Object.defineProperties(globalThis,{window:{configurable:true,value:window},document:{configurable:true,value:Object.assign(new EventTarget(),{visibilityState:'visible',title:'Synthetic voice diagnostic'})},navigator:{configurable:true,value:{userAgent:'Mozilla/5.0 (Linux; Android 16) MicroMessenger/8.0.65 wxwork/'+clientVersion+' Language/zh_CN',platform:'Linux armv8l'}},location:{configurable:true,value:{href:'https://synthetic.invalid/wecom/yixiaoxiu/#/report'}}});
+ t.mock.method(globalThis,'fetch',async()=>{throw new Error('No network is authorized by this synthetic SDK test');});
+ const installed=await readFile(resolve(sourceRoot,'node_modules/@wecom/jssdk/dist/wecom.prod.js'),'utf8'),sdkURL='data:text/javascript;base64,'+Buffer.from(installed+'\n// native voice fixture '+String(corporateAvailable)+' '+clientVersion).toString('base64');
+ const client="export const authLost=new EventTarget();export const stats={kinds:[]};export const api={signature:async(url,kind)=>{stats.kinds.push(kind);if(kind==='CORP'&&!"+String(corporateAvailable)+")throw new Error('SYNTHETIC_CORPORATE_SIGNING_UNAVAILABLE');return{timestamp:1,nonceStr:'synthetic',signature:'synthetic'};}};";
+ const loader=createH5PureModuleLoader({overrides:{'lib/wecom.ts':'export * from '+JSON.stringify(sdkURL)+';','api/client.ts':client}}),module:{createMediaController:(get:()=>H5EntryBootstrap,transcript:(value:string)=>void,message:(key:string)=>string)=>NativeVoiceController}=await import(await loader.moduleUrl('hooks/useMedia.ts'));
+ const bootstrap:H5EntryBootstrap={authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',read_only:false,can_submit:true,can_supplement:true,csrf_token:'synthetic',recovery_scope:'synthetic-member',h5:{profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:true,corp_id:'synthetic-corp',agent_id:'synthetic-agent'},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:{voice_count:1,voice_duration_seconds:60,voice_bytes:5*1024*1024,image_count:6,image_bytes:10*1024*1024,video_count:1,video_duration_seconds:60,video_bytes:20*1024*1024,total_bytes:40*1024*1024}}};
+ const controller=module.createMediaController(()=>bootstrap,()=>{},key=>key),sdk:{startRecord:()=>Promise<unknown>;stopRecord:()=>Promise<unknown>;ensureAgentConfigReady:()=>Promise<unknown>}=await import(sdkURL),transport:{stats:{kinds:string[]}}=await import(await loader.moduleUrl('api/client.ts'));
+ t.after(()=>{controller.dispose();for(const[key,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}});
+ return{controller,sdk,calls,listeners,stats:transport.stats,sdkSHA256:createHash('sha256').update(installed).digest('hex')};
+}
+
+test('H5 native Android voice reaches the installed SDK bridge when its registration is ready',async t=>{
+ const value=await nativeVoiceFixture(t,true);await value.controller.start();
+ t.diagnostic(JSON.stringify({kind:'INSTALLED_SDK_SYNTHETIC_BRIDGE_CONTROL',sdkSHA256:value.sdkSHA256,native:value.controller.getNative(),signatures:value.stats.kinds,bridge_calls:value.calls,error:value.controller.getError()}));
+ assert.equal(value.controller.getNative(),true);assert.equal(value.controller.getError(),null);assert.equal(value.controller.getRecording().recording,true);assert.equal(value.calls.filter(name=>name==='startRecord').length,1);assert.ok(value.listeners.has('onVoiceRecordEnd'),'installed SDK accepts the actual callback API used by the controller');value.controller.release(true);
+ for(let attempt=0;attempt<20&&value.controller.getBusy();attempt+=1)await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 modern WeCom voice must not require corporate configuration after its installed SDK agent configuration succeeds',async t=>{
+ const value=await nativeVoiceFixture(t,false);await value.controller.start();await value.sdk.ensureAgentConfigReady();
+ t.diagnostic(JSON.stringify({kind:'CURRENT_AGENT_REGISTRATION_WITH_CORPORATE_SIGNER_UNAVAILABLE',sdkSHA256:value.sdkSHA256,native:value.controller.getNative(),signatures:value.stats.kinds,controller_recording:value.controller.getRecording().recording,controller_error:value.controller.getError(),bridge_calls:value.calls,real_device:false}));
+ assert.equal(value.controller.getRecording().recording,true,'the existing AGENT registration delegates readiness to the installed SDK');assert.equal(value.controller.getError(),null);assert.equal(value.calls.filter(name=>name==='startRecord').length,1);assert.deepEqual(value.stats.kinds,['AGENT'],'current clients must not require the unused corporate signing path');assert.equal(value.calls.includes('preVerifyJSAPI'),false);
+ value.controller.release(true);for(let attempt=0;attempt<20&&value.controller.getBusy();attempt+=1)await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 existing AGENT registration lets the installed SDK request corporate readiness first on an old WeCom client',async t=>{
+ const value=await nativeVoiceFixture(t,true,'3.0.23');await value.controller.start();
+ assert.equal(value.controller.getError(),null);assert.equal(value.controller.getRecording().recording,true);assert.deepEqual(value.stats.kinds,['CORP','AGENT']);assert.deepEqual(value.calls.slice(0,3),['preVerifyJSAPI','agentConfig','startRecord']);
+ value.controller.release(true);for(let attempt=0;attempt<20&&value.controller.getBusy();attempt+=1)await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 voice failures have feature-localized safe messages for both supported languages',async()=>{
+ const loader=createH5PureModuleLoader();await import(await loader.moduleUrl('components/voice-messages.ts'));const {default:i18n}=await import(await loader.moduleUrl('i18n.ts'));
+ for(const lng of ['zh-CN','en'])for(const key of ['setupFailed','nativeStartFailed','browserUnavailable','browserDenied','browserFailed','finishFailed']){const value=i18n.t('voice:'+key,{lng});assert.notEqual(value,key);assert.notEqual(value,'voice:'+key);if(lng==='zh-CN')assert.match(value,/\p{Script=Han}/u);}
 });

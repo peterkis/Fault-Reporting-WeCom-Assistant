@@ -380,7 +380,9 @@ export function createYxxSelfServiceNativeHttp({
         const context = await currentMember(request, { requireWrite: serviceEnabled });
         const v2=(header(request,'accept')??'').split(',').some(value=>value.trim().split(';')[0]==='application/vnd.yixiaoxiu.v2+json');
         const h5=v2&&h5Bootstrap?await h5Bootstrap(request):undefined;
-        json(response, 200, {...bootstrapBase(context),...(h5?{h5}:{})}); return true;
+        // The V2 fallback's authorization.read terminal must succeed before renewal.
+        const renewed=h5?renewWeComH5Session(request,oauth):[];
+        json(response, 200, {...bootstrapBase(context),...(h5?{h5}:{})},renewed.length?{'set-cookie':renewed}:{}); return true;
       }
       if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
         if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');

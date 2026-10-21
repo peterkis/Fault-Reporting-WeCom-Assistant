@@ -1,3 +1,4 @@
+import '../components/voice-messages';
 import {memo,useEffect,useRef,type ChangeEvent,type PointerEvent} from 'react';
 import {useNavigate} from '../navigation';
 import {useQueryClient} from '@tanstack/react-query';
