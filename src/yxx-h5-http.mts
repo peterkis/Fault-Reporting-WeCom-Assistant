@@ -1,6 +1,7 @@
 import {timingSafeEqual} from 'node:crypto';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {once} from 'node:events';
+import {finished} from 'node:stream/promises';
 import type {OAuthHttpHandler} from './p2-g2-wecom-oauth-http.mjs';
 import type {YxxSelfServiceCommand} from './yxx-self-service-command.mjs';
 import type {createYxxSelfServiceQuery} from './yxx-self-service-query.mjs';
@@ -8,6 +9,7 @@ import type {createYxxSelfServiceAuthorization,YxxMemberContext,YxxMemberSource}
 import type {YxxH5Media} from './yxx-h5-media.mjs';
 import type {H5MediaWeCom} from '../contracts/yxx_h5_media_contracts.js';
 import type {H5MediaLease} from '../contracts/yxx_h5_media_contracts.js';
+import type {H5MediaByteRange,H5MediaVariant} from '../contracts/yxx_h5_media_contracts.js';
 import type {H5BootstrapExtension,H5ReportFilters} from '../contracts/yxx_h5_v2_contracts.js';
 import {readYxxJsonBody} from './yxx-self-service-native-http.mjs';
 
@@ -17,9 +19,9 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const REF='([A-Za-z0-9_-]{32})';
 const HEADERS=Object.freeze({'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff'});
 interface HttpOptions {
- enabled?:boolean;publicOrigin:string;
+ enabled?:boolean;performanceEnabled?:boolean;publicOrigin:string;
  command:Pick<YxxSelfServiceCommand,'accept'|'authorize'|'revalidateWrite'|'urge'|'evaluate'>;
- query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'department'|'lifecycleReceipt'>;
+ query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'department'|'lifecycleReceipt'>&Partial<Pick<ReturnType<typeof createYxxSelfServiceQuery>,'departmentSummary'|'supplements'>>;
  authorization:Pick<ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>,'authorize'|'revalidate'>;
  media:YxxH5Media|null;wecom:H5MediaWeCom|null;sdk:H5BootstrapExtension['sdk'];
 }
@@ -39,13 +41,28 @@ function failure(value:unknown):{status:number;code:string}{
  const error=value as {status?:number;code?:string}|null;let status=error?.status;
  const code=typeof error?.code==='string'?error.code:'';
  if(status===undefined){if(/AUTH_REQUIRED|MEMBER_REQUIRED/u.test(code))status=401;else if(/FORBIDDEN|DISABLED|CSRF/u.test(code))status=403;else if(/NOT_FOUND/u.test(code))status=404;else if(/CONFLICT|VERSION|COOLDOWN/u.test(code))status=409;else if(/TOO_LARGE|OVERSIZED/u.test(code))status=413;else if(/INVALID|INPUT|LIMIT/u.test(code)||value instanceof TypeError)status=400;else status=503;}
- if(![400,401,403,404,409,413,415,422,429,503].includes(status))status=503;
+ if(![400,401,403,404,409,413,415,416,422,429,503].includes(status))status=503;
  return {status,code:/^YXX_[A-Z0-9_]{1,100}$/u.test(code)?code:status>=500?'YXX_UNAVAILABLE':'YXX_INPUT_INVALID'};
 }
 
+/** Single-range support is deliberately bounded; unsupported multi-range requests use a full 200. */
+export function parseYxxH5ByteRange(value:string|null,total:number):H5MediaByteRange|null|'UNSATISFIABLE'{
+ if(value===null||value.includes(','))return null;
+ const match=/^bytes=(\d*)-(\d*)$/iu.exec(value.trim());
+ if(!match||!match[1]&&!match[2])return null;
+ if(!Number.isSafeInteger(total)||total<1)return 'UNSATISFIABLE';
+ if(!match[1]){
+  const suffix=Number(match[2]);if(!Number.isSafeInteger(suffix)||suffix<=0)return 'UNSATISFIABLE';
+  return {start:Math.max(0,total-suffix),end:total-1};
+ }
+ const start=Number(match[1]),requestedEnd=match[2]?Number(match[2]):total-1;
+ if(!Number.isSafeInteger(start)||!Number.isSafeInteger(requestedEnd)||start>=total||requestedEnd<start)return 'UNSATISFIABLE';
+ return {start,end:Math.min(total-1,requestedEnd)};
+}
+
 /** V2 negotiation preserves the original member API; new media is scoped to its authenticated owner. */
-export function createYxxH5Http({enabled=false,publicOrigin,command,query,authorization,media,wecom,sdk}:HttpOptions){
- if(typeof enabled!=='boolean')fail('YXX_CONFIG_INVALID',503);
+export function createYxxH5Http({enabled=false,performanceEnabled=false,publicOrigin,command,query,authorization,media,wecom,sdk}:HttpOptions){
+ if(typeof enabled!=='boolean'||typeof performanceEnabled!=='boolean'||performanceEnabled&&!enabled)fail('YXX_CONFIG_INVALID',503);
  const origin=new URL(publicOrigin);
  const v2=(request:IncomingMessage)=>(header(request,'accept')??'').split(',').some(value=>value.trim().split(';')[0]===V2);
  async function member(request:IncomingMessage){const context=await authorization.authorize({request,operation:'WEB_DETAIL',source:'WEB'});if(!context.scope)fail('YXX_AUTH_REQUIRED',401);return context;}
@@ -56,6 +73,15 @@ export function createYxxH5Http({enabled=false,publicOrigin,command,query,author
    if(request.headers.host!==origin.host||url.origin!==origin.origin)fail('YXX_ORIGIN_INVALID',403);
    if(Buffer.byteLength(request.url??'')>2048||!(request.url??'').startsWith('/')||(request.url??'').startsWith('//')||(request.url??'').split('?')[0]!==url.pathname)fail('YXX_INPUT_INVALID');
    const path=url.pathname.slice(API.length),method=request.method;
+   if(path==='h5/department-summary'){
+    if(!performanceEnabled||method!=='GET'||!query.departmentSummary)fail('YXX_NOT_FOUND',404);
+    readGuard(request,origin.origin);params(url,[]);json(response,200,await query.departmentSummary({request}));return true;
+   }
+   const supplements=new RegExp('^requests/'+REF+'/supplements$','u').exec(path);
+   if(method==='GET'&&supplements&&performanceEnabled){
+    readGuard(request,origin.origin);params(url,['cursor','limit']);if(!query.supplements)fail('YXX_UNAVAILABLE',503);
+    json(response,200,await query.supplements({request,requestRef:supplements[1] as string,cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')??20}));return true;
+   }
    if(method==='GET'&&path==='my-reports'&&v2(request)){
     readGuard(request,origin.origin);params(url,['source','cursor','limit','search','status']);
     const source=url.searchParams.get('source');if(source!==null&&source!=='WEB'&&source!=='BOT')fail('YXX_INPUT_INVALID');
@@ -116,15 +142,36 @@ export function createYxxH5Http({enabled=false,publicOrigin,command,query,author
    }
    const resource=new RegExp('^requests/'+REF+'/media/([0-9a-f-]{36})$','iu').exec(path);
    if(resource){
-    if(method!=='GET')fail('YXX_NOT_FOUND',404);readGuard(request,origin.origin);params(url,['variant']);const variant=url.searchParams.get('variant')??'PLAYABLE';if(!['ORIGINAL','PLAYABLE'].includes(variant)||!UUID.test(resource[2] as string))fail('YXX_INPUT_INVALID');
+    if(method!=='GET'&&!(performanceEnabled&&method==='HEAD'))fail('YXX_NOT_FOUND',404);readGuard(request,origin.origin);params(url,['variant']);const variant=url.searchParams.get('variant')??'PLAYABLE';if(!['ORIGINAL','PLAYABLE',...(performanceEnabled?['THUMBNAIL']:[])].includes(variant)||!UUID.test(resource[2] as string))fail('YXX_INPUT_INVALID');
     if(!media)fail('YXX_MEDIA_DISABLED',503);const context=await member(request);if(!context.scope)fail('YXX_AUTH_REQUIRED',401);
-    const controller=new AbortController(),abort=()=>controller.abort();request.once('aborted',abort);response.once('close',abort);
+    const controller=new AbortController(),abort=()=>controller.abort(),timer=setTimeout(abort,60_000);timer.unref();request.once('aborted',abort);response.once('close',abort);
     let lease:H5MediaLease|null=null;
+    let outputSignal:AbortSignal|null=null;
+    const stopOutput=()=>{response.destroy();};
     try{
-     lease=await media.read({scope:context.scope,ref:resource[2] as string,requestRef:resource[1] as string,variant:variant as 'ORIGINAL'|'PLAYABLE',verifyCurrentRead:async()=>{await authorization.revalidate(request,context);},signal:controller.signal});
-     response.writeHead(200,{...HEADERS,'content-type':lease.mime_type,'content-length':lease.byte_size,'content-disposition':variant==='ORIGINAL'?'attachment':'inline'});
-     for await(const chunk of lease.stream){controller.signal.throwIfAborted();if(!response.write(chunk))await once(response,'drain',{signal:controller.signal});}response.end();
-    }finally{request.off('aborted',abort);response.off('close',abort);await lease?.close();}return true;
+     const input={scope:context.scope,ref:resource[2] as string,requestRef:resource[1] as string,variant:variant as H5MediaVariant,verifyCurrentRead:async()=>{await authorization.revalidate(request,context);},signal:controller.signal};
+     let range:H5MediaByteRange|null=null;
+     if(performanceEnabled){
+      const description=await media.describe(input);
+      const selected=header(request,'if-range')===null?parseYxxH5ByteRange(header(request,'range'),description.byte_size):null;
+      if(selected==='UNSATISFIABLE'){
+       response.setHeader('content-range','bytes */'+description.byte_size);fail('YXX_MEDIA_RANGE_NOT_SATISFIABLE',416);
+      }
+      range=selected;
+      if(method==='HEAD'){
+       response.writeHead(200,{...HEADERS,'accept-ranges':'bytes','content-type':description.mime_type,'content-length':description.byte_size,
+        'content-disposition':variant==='ORIGINAL'?'attachment':'inline'});response.end();return true;
+      }
+     }
+     lease=await media.read({...input,...(range?{range}:{})});
+     outputSignal=AbortSignal.any([controller.signal,lease.signal]);
+     outputSignal.addEventListener('abort',stopOutput,{once:true});outputSignal.throwIfAborted();
+     response.writeHead(range?206:200,{...HEADERS,...(performanceEnabled?{'accept-ranges':'bytes'}:{}),
+      'content-type':lease.mime_type,'content-length':lease.byte_size,'content-disposition':variant==='ORIGINAL'?'attachment':'inline',
+      ...(range?{'content-range':'bytes '+range.start+'-'+range.end+'/'+lease.total_byte_size}:{})});
+     for await(const chunk of lease.stream){outputSignal.throwIfAborted();if(!response.write(chunk))await once(response,'drain',{signal:outputSignal});}
+     response.end();await finished(response,{cleanup:true,signal:outputSignal});
+    }finally{clearTimeout(timer);outputSignal?.removeEventListener('abort',stopOutput);request.off('aborted',abort);response.off('close',abort);await lease?.close();}return true;
    }
    return false;
   }catch(value){const selected=failure(value);if(response.headersSent)response.destroy();else json(response,selected.status,{error:{code:selected.code,retryable:selected.status>=500}});return true;}

@@ -1,6 +1,6 @@
 import {crc32} from 'node:zlib';
 import type {H5MediaKind} from '../contracts/yxx_h5_media_contracts.js';
-export const H5_MEDIA_LIMITS=Object.freeze({VOICE:5*1024*1024,IMAGE:10*1024*1024,VIDEO:20*1024*1024,total:40*1024*1024,duration:60_000,count:8,unbound:16,ttl:24*60*60*1000,deadline:60_000,chunk:64*1024});
+export const H5_MEDIA_LIMITS=Object.freeze({VOICE:5*1024*1024,IMAGE:10*1024*1024,VIDEO:20*1024*1024,total:40*1024*1024,duration:60_000,count:8,unbound:16,ttl:24*60*60*1000,deadline:60_000,chunk:64*1024,thumbnail:160*1024,playableVideo:8*1024*1024,plaintext:32*1024*1024,readLeases:2,waiting:8});
 export class H5MediaError extends Error {constructor(public code:string,public status=400){super(code);this.name='H5MediaError';}}
 export function mediaFail(code:string,status=400):never {throw new H5MediaError(code,status);}
 export function mediaUuid(value:unknown):string {if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value))mediaFail('YXX_MEDIA_INPUT_INVALID');return value.toLowerCase();}

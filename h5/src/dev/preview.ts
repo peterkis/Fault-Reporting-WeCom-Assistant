@@ -31,6 +31,9 @@ export async function installPreview(){
  const getDetail=(id:string)=>{let value=details.get(id);if(!value){value=detailFixture(id,params.get('state')==='completed'||id.startsWith('2'));if(value.h5.handler)value.h5.handler.avatar_url=theme==='dark'?avatarDark:avatarLight;details.set(id,value);}return value;};
  const receipt=(id:string,requestRef:string)=>({client_command_id:id,status:'ACCEPTED',request_ref:requestRef,intake_no:'YXX-20261020-001',accepted_revision:'1',accepted_at:local,accepted_epoch_ms:now});
  const reservations=new Map<string,unknown>();
+ const reportPage=(url:URL)=>{const q=url.searchParams.get('search')?.toLowerCase(),status=url.searchParams.get('status'),source=url.searchParams.get('source');return{items:items.filter(item=>(!q||(item.safe_summary??'').toLowerCase().includes(q)||item.ticket?.ticket_no.toLowerCase().includes(q))&&(!source||(source==='WEB'&&item.kind==='WEB_REQUEST'||source==='BOT'&&item.kind==='BOT_TICKET'))&&(!status||(status==='COMPLETED'?item.ticket?.status==='CLOSED':status==='OPEN'?item.ticket?.status==='OPEN':item.ticket?.status==='IN_PROGRESS'))),next_cursor:null};};
+ const departmentPage=()=>({items:items.map(item=>({ticket_no:item.ticket?.ticket_no,service_category:item.service_category??null,status:item.ticket?.status,public_progress:item.h5?.public_progress??null,created_at:local})),total:4,active_count:1,next_cursor:null});
+ const timelinePage=(detail:RequestDetail)=>({items:[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'REQUEST_ACCEPTED',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
  class PreviewXHR{
   status=0;responseText='';withCredentials=false;upload:{onprogress:((event:ProgressEvent)=>void)|null}={onprogress:null};onload:(()=>void)|null=null;onerror:(()=>void)|null=null;onabort:(()=>void)|null=null;private timer:number|null=null;private url='';
   open(_method:string,url:string){this.url=url;}setRequestHeader(_name:string,_value:string){}
@@ -48,8 +51,18 @@ export async function installPreview(){
   if(params.get('auth')==='403'||denied)return json({code:'YXX_MEMBER_FORBIDDEN'},403);
   if(params.get('error')==='503')return json({code:'YXX_ENTRY_UNAVAILABLE'},503);
   if(path==='/bootstrap')return json(boot);
-  if(path==='/my-reports'){const q=url.searchParams.get('search')?.toLowerCase(),status=url.searchParams.get('status'),source=url.searchParams.get('source');return json({items:items.filter(item=>(!q||(item.safe_summary??'').toLowerCase().includes(q)||item.ticket?.ticket_no.toLowerCase().includes(q))&&(!source||(source==='WEB'&&item.kind==='WEB_REQUEST'||source==='BOT'&&item.kind==='BOT_TICKET'))&&(!status||(status==='COMPLETED'?item.ticket?.status==='CLOSED':status==='OPEN'?item.ticket?.status==='OPEN':item.ticket?.status==='IN_PROGRESS'))),next_cursor:null});}
-  if(path==='/department-reports')return json({items:items.map(item=>({ticket_no:item.ticket?.ticket_no,service_category:item.service_category??null,status:item.ticket?.status,public_progress:item.h5?.public_progress??null,created_at:local})),total:4,active_count:1,next_cursor:null});
+  if(path==='/h5/department-summary')return json({total:4,active_count:1,membership_revision:'preview-membership-1'});
+  if(path==='/h5/entry'){
+   const view=url.searchParams.get('view');let data:unknown=null;
+   if(view==='home')data={recent_reports:items.slice(0,3),department_summary:boot.h5.can_view_department?{total:4,active_count:1,membership_revision:'preview-membership-1'}:null};
+   else if(view==='reports')data={reports:reportPage(url)};
+   else if(view==='department')data={department:departmentPage()};
+   else if(view==='request'){const requestRef=url.searchParams.get('request_ref')??ref,detail=getDetail(requestRef);data={detail:{...detail,supplements:detail.supplements.slice(-20),supplements_cursor:null,h5:{...detail.h5,media:detail.h5.media.map(item=>({...item,thumbnail:item.kind==='IMAGE'?{status:'READY',url:'/api/yixiaoxiu/requests/'+encodeURIComponent(requestRef)+'/media/'+encodeURIComponent(item.media_ref)+'?variant=THUMBNAIL',mime_type:item.mime_type,byte_size:item.byte_size}:null}))}},timeline:{status:'READY',data:timelinePage(detail)}};}
+   else if(view!=='report')return json({code:'YXX_INPUT_INVALID'},400);
+   return json({schema_version:1,view,bootstrap:boot,membership_revision:'preview-membership-1',data});
+  }
+  if(path==='/my-reports')return json(reportPage(url));
+  if(path==='/department-reports')return json(departmentPage());
   if(path==='/media/uploads'&&method==='POST'){const mediaRef=crypto.randomUUID();const result={media_ref:mediaRef,kind:'kind'in obj?obj.kind:'IMAGE'};reservations.set(mediaRef,result);return json(result,201);}
   if(path.startsWith('/media/uploads/'))return method==='DELETE'?new Response(null,{status:204}):json(reservations.get(path.split('/')[3]??'')??{});
   if(path.startsWith('/commands/')){const commandId=path.split('/').at(-1)??'';return json(commands.has(commandId)?{state:'COMMITTED',client_command_id:commandId,result:commands.get(commandId)}:{state:'UNKNOWN',client_command_id:commandId});}
@@ -62,14 +75,15 @@ export async function installPreview(){
   }
   const match=/^\/requests\/([^/]+)(\/.*)?$/.exec(path);if(match){
    const requestRef=match[1]??'',suffix=match[2]??'',detail=getDetail(requestRef);
-   if(suffix==='/timeline')return json({items:[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'REQUEST_ACCEPTED',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
+   if(suffix==='/timeline')return json(timelinePage(detail));
+   if(suffix==='/supplements'&&method==='GET')return json({items:detail.supplements,next_cursor:null});
    if(suffix.startsWith('/media/')){const mediaRef=suffix.split('/')[2];if(mediaRef?.startsWith('aaaa'))return new Response(silentWav(),{headers:{'content-type':'audio/wav'}});return nativeFetch(mediaRef?.startsWith('bbbb')?(theme==='dark'?photoDarkOne:photoLightOne):(theme==='dark'?photoDarkTwo:photoLightTwo));}
-   if(suffix.includes('/member-commands/')||suffix.includes('/feedback/commands/')){const commandId=suffix.split('/').at(-1)??'';return json(commands.has(commandId)?{state:'COMMITTED',result:commands.get(commandId)}:{state:'UNKNOWN'});}
+   if(suffix.includes('/member-commands/')||suffix.includes('/feedback/commands/')){const commandId=suffix.split('/').at(-1)??'',value=commands.get(commandId);const result=value&&typeof value==='object'?{...value,replayed:true}:value;const base={client_command_id:commandId,request_ref:requestRef,...(suffix.includes('/member-commands/')?{purpose:url.searchParams.get('purpose')}:{} )};return json(commands.has(commandId)?{...base,state:'COMMITTED',result}:{...base,state:'UNKNOWN'});}
    if(method==='POST'){
     const result={ok:true,replayed:false,client_command_id:id,request_ref:requestRef,purpose:suffix==='/urge'?'URGE':'EVALUATION',accepted_at:local,accepted_epoch_ms:now};commands.set(id,result);
     if(suffix==='/urge'){detail.h5.urge={...detail.h5.urge,active:true,can_urge:false,count:1};}
     if(suffix==='/evaluation'){detail.h5.evaluation={...detail.h5.evaluation,can_evaluate:false,rating:'rating'in obj&&typeof obj.rating==='number'?obj.rating:5,comment:'comment'in obj&&typeof obj.comment==='string'?obj.comment:null};}
-    if(suffix==='/feedback'){detail.ticket={ticket_no:detail.ticket?.ticket_no??'',status:'REOPENED'};detail.feedback_context={schema_version:1,can_feedback:false,completed_round_ref:null,completed_round_no:null,ticket_version:null,rejection:'ROUND_ALREADY_REOPENED'};}
+    if(suffix==='/feedback'){const completedRoundRef=detail.feedback_context?.completed_round_ref??'dddddddddddddddddddddddddddddddd';detail.ticket={ticket_no:detail.ticket?.ticket_no??'',status:'REOPENED'};detail.feedback_context={schema_version:1,can_feedback:false,completed_round_ref:null,completed_round_no:null,ticket_version:null,rejection:'ROUND_ALREADY_REOPENED'};const feedbackResult={ok:true,replayed:false,request_ref:requestRef,completed_round_ref:completedRoundRef,reopened_round_no:2,ticket:{...detail.ticket,version:6}};commands.set(id,feedbackResult);return json(feedbackResult);}
     if(suffix==='/supplements'&&'text'in obj&&typeof obj.text==='string'){detail.supplements.push({input_revision:String(detail.supplements.length+2),text:obj.text});return json(receipt(id,requestRef));}
     return json(result);
    }

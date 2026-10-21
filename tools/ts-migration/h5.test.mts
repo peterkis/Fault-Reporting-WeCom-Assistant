@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import ts from 'typescript';
 import {buildH5,typecheckH5} from './web.mjs';
-import {controlledBuildRoot,h5OutputFiles,hash,identity,inputs,mappings,record,sourceRoot,type BuildManifest} from './common.mjs';
+import {controlledBuildRoot,h5OutputFiles,h5StartupMetrics,hash,identity,inputs,mappings,record,sourceRoot,type BuildManifest} from './common.mjs';
 import {verifyArtifact} from './verify-artifact.mjs';
 import {testEnvironment,type Entry} from './routing.mjs';
 
@@ -125,7 +125,7 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
       alter(root,'h5/src/style.css','main{color:red}',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_INPUT_DRIFT/u));
       alter(root,'.build/runtime/h5/assets/icon.png',Buffer.from('tampered'),()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_OUTPUT_TAMPERED/u));
       const script=h5OutputFiles(root).find(file=>file.endsWith('.js'));assert.ok(script);
-      alter(root,'.build/emit/h5/'+script,'// changed emitted script',()=>assert.throws(()=>verifyArtifact(root),/H5_OUTPUT_DRIFT/u));
+      alter(root,'.build/emit/h5/'+script,'// changed emitted script',()=>assert.throws(()=>verifyArtifact(root),/H5_(?:OUTPUT|REPRESENTATION)_DRIFT/u));
     });
     await t.test('out-of-scope production TSX fails even when the narrowed program compiles',()=>{
       const config=record(JSON.parse(readFileSync(path.join(root,'h5/tsconfig.json'),'utf8')) as unknown);
@@ -160,8 +160,57 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
       alter(root,'.build/emit/h5/assets/icon.png',Buffer.from('changed'),()=>assert.throws(()=>h5OutputFiles(root),/H5_PUBLIC_ASSET_INVALID/u));
       alter(root,'.build/emit/h5/asset-inventory.json','[]',()=>assert.throws(()=>h5OutputFiles(root),/H5_ASSET_INVENTORY_DRIFT/u));
     });
+    await t.test('compressed sidecars and startup dependency costs remain verified artifact outputs',()=>{
+      const files=h5OutputFiles(root),scripts=files.filter(file=>file.endsWith('.js'));
+      for(const script of scripts)for(const suffix of ['.gz','.br'])assert.ok(files.includes(script+suffix),script+suffix);
+      assert.ok(files.includes('startup-metrics.json'));
+      const metrics=h5StartupMetrics(root);assert.ok(metrics.initial.files.length>0);assert.ok(metrics.initial.gzip<=120*1024);
+      assert.deepEqual(JSON.parse(readFileSync(path.join(root,'.build/emit/h5/startup-metrics.json'),'utf8')) as unknown,metrics);
+      const compressed=scripts[0]+'.gz';
+      alter(root,'.build/emit/h5/'+compressed,Buffer.from('tampered compressed bytes'),()=>assert.throws(()=>h5OutputFiles(root),/H5_REPRESENTATION_DRIFT/u));
+      alter(root,'.build/runtime/h5/'+compressed,Buffer.from('tampered staged bytes'),()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_OUTPUT_TAMPERED/u));
+      alter(root,'.build/emit/h5/startup-metrics.json','{}',()=>assert.throws(()=>h5OutputFiles(root),/H5_STARTUP_METRICS_DRIFT/u));
+      put(root,'.build/emit/h5/assets/unregistered.js.gz',Buffer.from('SYNTHETIC_UNDECLARED'));
+      try{assert.throws(()=>h5OutputFiles(root),/H5_UNDECLARED_ASSET/u);}finally{rmSync(path.join(root,'.build/emit/h5/assets/unregistered.js.gz'));}
+    });
   } finally {
     assert.equal(path.dirname(root),tmpdir()); assert.ok(path.basename(root).startsWith('h5-artifact-test-'));
     rmSync(root,{recursive:true,force:true});
   }
+});
+
+test('startup metrics count all initial and route imports once, including the standalone theme script',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'h5-artifact-test-')),out='.build/emit/h5/';
+  try{
+    put(root,out+'index.html','<script src="/wecom/yixiaoxiu/assets/prepaint-Ab123.js"></script><script type="module" src="/wecom/yixiaoxiu/assets/main-Ab123.js"></script>');
+    put(root,out+'.vite/manifest.json',JSON.stringify({
+      'index.html':{file:'assets/main-Ab123.js',imports:['_shared.js'],isEntry:true},
+      '_shared.js':{file:'assets/shared-Ab123.js'},
+      'src/pages/Home.tsx':{file:'assets/home-Ab123.js',imports:['_shared.js','_widget.js']},
+      '_widget.js':{file:'assets/widget-Ab123.js',imports:['_shared.js']},
+    }));
+    for(const file of ['prepaint','main','shared','home','widget'])put(root,out+'assets/'+file+'-Ab123.js','export const '+file+'='+JSON.stringify(file.repeat(1000))+';');
+    const metrics=h5StartupMetrics(root);assert.deepEqual(metrics.initial.files,['assets/main-Ab123.js','assets/prepaint-Ab123.js','assets/shared-Ab123.js']);
+    assert.equal(metrics.routes[0]?.files.length,5);assert.ok((metrics.routes[0]?.gzip??0)>metrics.initial.gzip);
+    assert.equal(metrics.routes[0]?.gzip,metrics.assets.reduce((sum,asset)=>sum+asset.gzip,0));
+  }finally{rmSync(root,{recursive:true,force:true});}
+});
+
+test('actual theme build emits one small synchronous hashed script and a deferred application module',()=>{
+  const root=fixture();
+  try{
+    // The real product deliberately disables Vite's public directory. These two
+    // synthetic public assets belong only to the generic artifact fixture.
+    for(const file of ['assets/support.svg','assets/icon.png'])rmSync(path.join(root,'h5/public',file));
+    for(const file of ['h5/vite.config.ts','h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
+    put(root,'h5/index.html','<!doctype html><html><head><meta name="theme-color" content="#faf9f8"><!--h5-prepaint--></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
+    buildH5(root);
+    const html=readFileSync(path.join(root,'.build/emit/h5/index.html'),'utf8'),scripts=[...html.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*>/gu)];
+    assert.equal(scripts.length,2);assert.ok(scripts.some(match=>/^<script src="\/wecom\/yixiaoxiu\/assets\/prepaint-[a-f0-9]{16}\.js"><\/script>$/u.test(match[0]+'</script>')));
+    assert.doesNotMatch(html,/blocking="render"/u);
+    const theme=h5StartupMetrics(root).assets.find(asset=>asset.file.startsWith('assets/prepaint-'));assert.ok(theme);assert.ok(theme.gzip<=2048);
+    const bytes=readFileSync(path.join(root,'.build/emit/h5',theme.file),'utf8');assert.doesNotMatch(bytes,/\b(?:import|export)\s/u);assert.match(bytes,/ColorScheme/u);
+    assert.ok(html.indexOf('prepaint-')<html.indexOf('</head>'));
+    h5OutputFiles(root);
+  }finally{rmSync(root,{recursive:true,force:true});}
 });

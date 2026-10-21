@@ -1,11 +1,11 @@
-import {test} from 'node:test';
+import {test,mock} from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
+import {createServer,request as httpRequest} from 'node:http';
 import type {IncomingMessage} from 'node:http';
 import {Readable} from 'node:stream';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {once} from 'node:events';
-import {createYxxH5Http} from '../src/yxx-h5-http.mjs';
+import {createYxxH5Http,parseYxxH5ByteRange} from '../src/yxx-h5-http.mjs';
 import {createYxxSelfServiceNativeHttp} from '../src/yxx-self-service-native-http.mjs';
 import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
 import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
@@ -18,6 +18,9 @@ import {H5_ACCEPT,H5_LIMITS,parseH5UrgeInput,parseH5EvaluationInput,h5Fail} from
 import type {H5MediaMetadata,H5MediaWeCom} from '../contracts/yxx_h5_media_contracts.js';
 import type {YxxH5Media} from '../src/yxx-h5-media.mjs';
 import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
+import type {H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
+import type {H5EntryInput,H5EntryResponse} from '../contracts/yxx_h5_entry_contracts.js';
+import type {YxxSelfServiceBootstrap} from '../contracts/yxx_self_service_contracts.js';
 
 const REF='H'.repeat(32),OTHER_REF='X'.repeat(32);
 const MEDIA='2b1f2c30-a051-4a44-8a2a-dc4b6467d7b1';
@@ -33,8 +36,10 @@ interface Control {
  authFailure:'NONE'|'DENIED'|'UNAVAILABLE'|'UNSAFE';recheckFailure:'NONE'|'DENIED'|'UNAVAILABLE';
  stream:'NORMAL'|'DENY_SECOND'|'REJECT_OPEN'|'WAIT_DISCONNECT';readClosed:number;readOpened:number;readChunks:number;
  accepts:number;signatureCalls:number;reserved:number;uploaded:number;imported:number;cancelled:number;
+ nativeBaseAuthentications:number;nativeEntryAuthentications:number;
  lastScope:string|null;lastBody:Buffer|null;listCalls:QueryInput[];detailV2:boolean[];
  afterSign:()=>void;releaseStream:()=>void;afterClose:()=>void;
+ leaseDeadline:AbortController;forceBackpressure:boolean;afterHandled:()=>void;
  completed:{path:string;requestAbortedListeners:number;responseCloseListeners:number}[];
 }
 interface Fixture {base:string;origin:string;cookie:string;control:Control;headers:(commandId?:string)=>Record<string,string>;fetch:(path:string,init?:RequestInit)=>Promise<Response>}
@@ -43,8 +48,8 @@ async function json(response:Response):Promise<Record<string,unknown>>{const raw
 function v2Input(id=randomUUID()){return {schema_version:2,client_command_id:id,intent:'CONTACT_REQUEST',description:null,location:{text:null,unknown:true},media_refs:[]};}
 function v1Input(id=randomUUID()){return {schema_version:1,client_command_id:id,description:'合成故障',location:{text:null,unknown:true},service_code:null,impact_scope:'UNKNOWN',reported_department_text:null,extension:null};}
 
-async function fixture(run:(f:Fixture)=>Promise<void>){
- const control:Control={authFailure:'NONE',recheckFailure:'NONE',stream:'NORMAL',readClosed:0,readOpened:0,readChunks:0,accepts:0,signatureCalls:0,reserved:0,uploaded:0,imported:0,cancelled:0,lastScope:null,lastBody:null,listCalls:[],detailV2:[],afterSign:()=>{},releaseStream:()=>{},afterClose:()=>{},completed:[]};
+async function fixture(run:(f:Fixture)=>Promise<void>,performanceEnabled=false){
+ const control:Control={authFailure:'NONE',recheckFailure:'NONE',stream:'NORMAL',readClosed:0,readOpened:0,readChunks:0,accepts:0,signatureCalls:0,reserved:0,uploaded:0,imported:0,cancelled:0,nativeBaseAuthentications:0,nativeEntryAuthentications:0,lastScope:null,lastBody:null,listCalls:[],detailV2:[],afterSign:()=>{},releaseStream:()=>{},afterClose:()=>{},completed:[],leaseDeadline:new AbortController(),forceBackpressure:false,afterHandled:()=>{}};
  let dispatch:((request:IncomingMessage,response:import('node:http').ServerResponse)=>Promise<void>)|null=null;
  const server=createServer((request,response)=>{void dispatch?.(request,response).catch(()=>{if(response.headersSent)response.destroy();else{response.writeHead(500);response.end('H5_HTTP_HARNESS_FAILURE');}});});
  server.listen(0,'127.0.0.1');await once(server,'listening');const address=server.address();assert.ok(address&&typeof address!=='string');
@@ -79,6 +84,8 @@ async function fixture(run:(f:Fixture)=>Promise<void>){
   detailWithEtag:async input=>{assert.ok(input);control.detailV2.push(input.v2===true);await authorization.authorize({request:input.request});return {status:304,etag:'"h5-http-synthetic"',body:null};},
   department:async input=>{await authorization.authorize({request:input.request});return {items:[],next_cursor:null,total:0,active_count:0};},
   lifecycleReceipt:async input=>{await authorization.authorize({request:input.request});return {state:'UNKNOWN',client_command_id:String(input.clientCommandId),request_ref:REF,purpose:input.purpose};},
+  departmentSummary:async({request})=>{await authorization.authorize({request});return {total:7,active_count:3,membership_revision:'synthetic-revision'};},
+  supplements:async({request,requestRef})=>{await authorization.authorize({request});if(requestRef!==REF)h5Fail('YXX_NOT_FOUND',404);return {items:[{input_revision:'2',text:'合成补充'}],next_cursor:null};},
  };
  const media:YxxH5Media={
   reserve:async input=>{await input.verifyCurrentWrite();control.lastScope=input.scope.scopeHash;control.reserved++;return {media_ref:MEDIA,kind:'IMAGE',status:'RESERVED',expires_epoch_ms:String(Date.now()+60000),replayed:false};},
@@ -86,21 +93,41 @@ async function fixture(run:(f:Fixture)=>Promise<void>){
   upload:async input=>{await input.verifyCurrentWrite();const chunks:Buffer[]=[];for await(const chunk of input.body)chunks.push(Buffer.from(chunk));control.lastBody=Buffer.concat(chunks);control.uploaded++;return META;},
   importWeCom:async input=>{await input.verifyCurrentWrite();assert.equal(input.serverId,'H5_HTTP_SYNTHETIC_SERVER_ID');control.imported++;return META;},
   cancel:async input=>{await input.verifyCurrentWrite();control.cancelled++;},
-  list:async()=>[],listForRequest:async()=>[],listForRequestInTransaction:async()=>[],listForIntake:async()=>[],
+  list:async()=>[],listForRequest:async()=>[],listForRequestInTransaction:async()=>[],listForRequestPreviewInTransaction:async()=>[],listForIntake:async()=>[],
+  describe:async input=>{await input.verifyCurrentRead();if(input.requestRef!==REF)h5Fail('YXX_MEDIA_NOT_FOUND',404);return {asset:META,mime_type:META.mime_type,byte_size:BYTES.length,sha256:createHash('sha256').update(BYTES).digest('hex'),variant:input.variant??'PLAYABLE'};},
+  describeForIntake:async()=>{throw new Error('UNUSED_STAFF_DESCRIBE');},
   read:async input=>{
    await input.verifyCurrentRead();control.lastScope=input.scope.scopeHash;if(input.requestRef!==REF)h5Fail('YXX_MEDIA_NOT_FOUND',404);if(control.stream==='REJECT_OPEN')h5Fail('YXX_MEDIA_NOT_FOUND',404);control.readOpened++;
    let released=false;const close=async()=>{if(!released){released=true;control.readClosed++;control.afterClose();}};
-   let firstSent=false;const stream=control.stream==='WAIT_DISCONNECT'?new Readable({read(){if(!firstSent){firstSent=true;control.readChunks++;this.push(Buffer.from('first'));}}}):Readable.from((async function*(){try{if(control.stream==='DENY_SECOND'){await input.verifyCurrentRead();control.readChunks++;yield Buffer.from('first');await new Promise<void>(resolve=>{control.releaseStream=resolve;});await input.verifyCurrentRead();control.readChunks++;yield Buffer.from('PRIVATE_SECOND_CHUNK');}else{await input.verifyCurrentRead();control.readChunks++;yield BYTES;}}finally{await close();}})(),{objectMode:false});
-   const aborted=()=>stream.destroy();input.signal?.addEventListener('abort',aborted,{once:true});return {asset:META,mime_type:META.mime_type,byte_size:control.stream==='DENY_SECOND'||control.stream==='WAIT_DISCONNECT'?25:BYTES.length,stream,close:async()=>{input.signal?.removeEventListener('abort',aborted);stream.destroy();await close();}};
+   let firstSent=false;const stream=control.stream==='WAIT_DISCONNECT'?new Readable({read(){if(!firstSent){firstSent=true;control.readChunks++;this.push(Buffer.from('first'));}}}):Readable.from((async function*(){try{if(control.stream==='DENY_SECOND'){await input.verifyCurrentRead();control.readChunks++;yield Buffer.from('first');await new Promise<void>(resolve=>{control.releaseStream=resolve;});await input.verifyCurrentRead();control.readChunks++;yield Buffer.from('PRIVATE_SECOND_CHUNK');}else{await input.verifyCurrentRead();control.readChunks++;yield input.range?BYTES.subarray(input.range.start,input.range.end+1):BYTES;}}finally{await close();}})(),{objectMode:false});
+   const aborted=()=>stream.destroy();input.signal?.addEventListener('abort',aborted,{once:true});return {asset:META,mime_type:META.mime_type,byte_size:control.stream==='DENY_SECOND'||control.stream==='WAIT_DISCONNECT'?25:input.range?input.range.end-input.range.start+1:BYTES.length,total_byte_size:BYTES.length,range:input.range??null,signal:input.signal?AbortSignal.any([input.signal,control.leaseDeadline.signal]):control.leaseDeadline.signal,stream,close:async()=>{input.signal?.removeEventListener('abort',aborted);stream.destroy();await close();}};
   },
-  readForIntake:async()=>{throw new Error('UNUSED_STAFF_READ');},claimInTransaction:async()=>{},processNextTranscode:async()=>({processed:false}),cleanupExpired:async()=>0,close:async()=>{},ownedResourceState:()=>({active:0,plaintext_bytes:0}),
+  readForIntake:async()=>{throw new Error('UNUSED_STAFF_READ');},claimInTransaction:async()=>{},processNextTranscode:async()=>({processed:false}),cleanupExpired:async()=>0,close:async()=>{},ownedResourceState:()=>({active:0,plaintext_bytes:0}),resourceBudgetState:()=>({disk_operations:0,read_leases:0,plaintext_reserved_bytes:0,waiting:0}),
  };
  const wecom:H5MediaWeCom={sign:async input=>{input.signal.throwIfAborted();control.signatureCalls++;control.afterSign();return {corpId:'ww-h5-http-synthetic',agentId:'1000002',timestamp:1792470600,nonceStr:'synthetic-nonce',signature:'synthetic-signature'};},download:async()=>{throw new Error('UNUSED_DOWNLOAD');},close:async()=>{}};
- const h5=createYxxH5Http({enabled:true,publicOrigin:origin,command:lifecycleCommand,query,authorization,media,wecom,sdk:{enabled:true,corp_id:'ww-h5-http-synthetic',agent_id:'1000002'}});
- const native=createYxxSelfServiceNativeHttp({publicOrigin:origin,oauth,oauthHttp:async()=>false,command,supplement:{accept:async()=>{throw new Error('UNUSED_SUPPLEMENT');}},query:{...query,timeline:async()=>{throw new Error('UNUSED_TIMELINE');},commandStatus:async()=>{throw new Error('UNUSED_COMMAND_STATUS');}},authenticateMember:async()=>rawAuth(),profile:'FULL_SERVICE_LOOP',featureFlags:FLAGS,recoveryBindingSecret:'H5_HTTP_SYNTHETIC_RECOVERY_KEY_0000000001',h5Handler:h5.handler,
-  h5Bootstrap:async()=>({profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:true,corp_id:'ww-h5-http-synthetic',agent_id:'1000002'},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:H5_LIMITS}),
+ const extension:H5BootstrapExtension={profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:true,corp_id:'ww-h5-http-synthetic',agent_id:'1000002'},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:H5_LIMITS};
+ const entry=async({request,input,bootstrap}:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap}):Promise<H5EntryResponse>=>authorization.read({request,run:async()=>{
+  const common={schema_version:1 as const,bootstrap:{...bootstrap,h5:extension},membership_revision:'synthetic-revision'};
+  switch(input.view){
+   case 'home':return {...common,view:input.view,data:{recent_reports:[],department_summary:null}};
+   case 'report':return {...common,view:input.view,data:null};
+   case 'reports':return {...common,view:input.view,data:{reports:{items:[],next_cursor:null}}};
+   case 'department':return {...common,view:input.view,data:{department:{items:[],next_cursor:null,total:0,active_count:0}}};
+   case 'request':h5Fail('YXX_NOT_FOUND',404);
+  }
+ }});
+ const h5=createYxxH5Http({enabled:true,performanceEnabled,publicOrigin:origin,command:lifecycleCommand,query,authorization,media,wecom,sdk:{enabled:true,corp_id:'ww-h5-http-synthetic',agent_id:'1000002'}});
+ const native=createYxxSelfServiceNativeHttp({publicOrigin:origin,oauth,oauthHttp:async()=>false,command,supplement:{accept:async()=>{throw new Error('UNUSED_SUPPLEMENT');}},query:{...query,timeline:async()=>{throw new Error('UNUSED_TIMELINE');},commandStatus:async()=>{throw new Error('UNUSED_COMMAND_STATUS');}},authenticateMember:async()=>{control.nativeBaseAuthentications++;return rawAuth();},authenticateH5EntryMember:async()=>{control.nativeEntryAuthentications++;return rawAuth();},profile:'FULL_SERVICE_LOOP',featureFlags:FLAGS,recoveryBindingSecret:'H5_HTTP_SYNTHETIC_RECOVERY_KEY_0000000001',h5Handler:h5.handler,
+  h5Bootstrap:async()=>extension,...(performanceEnabled?{h5Entry:entry}:{}),
  });
- dispatch=async(request,response)=>{const beforeRequest=request.listenerCount('aborted'),beforeResponse=response.listenerCount('close'),url=new URL(request.url??'/',origin);const handled=await native.handler({request,response,url});if(!handled){response.writeHead(404,{'content-type':'application/json'});response.end('{"unhandled":true}');}control.completed.push({path:url.pathname,requestAbortedListeners:request.listenerCount('aborted')-beforeRequest,responseCloseListeners:response.listenerCount('close')-beforeResponse});};
+ dispatch=async(request,response)=>{
+  const beforeRequest=request.listenerCount('aborted'),beforeResponse=response.listenerCount('close'),url=new URL(request.url??'/',origin);
+  const originalWrite=response.write;
+  const blocked=control.forceBackpressure?mock.method(response,'write',(...args:Parameters<typeof response.write>)=>{Reflect.apply(originalWrite,response,args);return false;}):null;
+  try{const handled=await native.handler({request,response,url});if(!handled){response.writeHead(404,{'content-type':'application/json'});response.end('{"unhandled":true}');}
+   control.completed.push({path:url.pathname,requestAbortedListeners:request.listenerCount('aborted')-beforeRequest,responseCloseListeners:response.listenerCount('close')-beforeResponse});control.afterHandled();
+  }finally{blocked?.mock.restore();}
+ };
  const headers=(commandId?:string)=>({accept:H5_ACCEPT,origin,'content-type':'application/json','x-csrf-token':CSRF,cookie,...(commandId?{'idempotency-key':commandId}:{})});
  try{await run({base,origin,cookie,control,headers,fetch:(path,init={})=>fetch(base+path,{...init,headers:{cookie,...init.headers},signal:AbortSignal.timeout(5000)})});}
  finally{control.releaseStream();server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));oauth.close();}
@@ -170,3 +197,77 @@ test('H5 real HTTP releases the owned media lease when the browser cancels a str
  f.control.stream='WAIT_DISCONNECT';const closed=new Promise<void>(resolve=>{f.control.afterClose=resolve;});
  const response=await f.fetch('/api/yixiaoxiu/requests/'+REF+'/media/'+MEDIA);assert.ok(response.body);const reader=response.body.getReader();assert.equal(new TextDecoder().decode((await reader.read()).value),'first');await reader.cancel();reader.releaseLock();await closed;assert.equal(f.control.readClosed,1);
 }));
+
+test('H5 single Range parser covers suffix, open-ended, clamped, unsupported and unsatisfiable requests',()=>{
+ assert.deepEqual(parseYxxH5ByteRange('bytes=2-5',10),{start:2,end:5});
+ assert.deepEqual(parseYxxH5ByteRange('bytes=7-',10),{start:7,end:9});
+ assert.deepEqual(parseYxxH5ByteRange('bytes=-3',10),{start:7,end:9});
+ assert.deepEqual(parseYxxH5ByteRange('bytes=0-999',10),{start:0,end:9});
+ assert.deepEqual(parseYxxH5ByteRange('bytes=-999',10),{start:0,end:9});
+ for(const range of ['bytes=10-','bytes=4-2','bytes=-0','bytes=999999999999999999999-'])assert.equal(parseYxxH5ByteRange(range,10),'UNSATISFIABLE');
+ for(const range of [null,'bytes=0-1,3-4','items=0-1','bytes=-','garbage'])assert.equal(parseYxxH5ByteRange(range,10),null);
+});
+
+test('H5 performance HTTP scopes HEAD and Range, sends exact bytes and releases leases',{timeout:15000},async()=>fixture(async f=>{
+ const path='/api/yixiaoxiu/requests/'+REF+'/media/'+MEDIA;
+ const head=await f.fetch(path,{method:'HEAD'});assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(BYTES.length));assert.equal(head.headers.get('accept-ranges'),'bytes');assert.equal(await head.text(),'');assert.equal(f.control.readOpened,0);
+ const range=await f.fetch(path,{headers:{range:'bytes=2-6'}});assert.equal(range.status,206);assert.equal(range.headers.get('content-range'),'bytes 2-6/'+BYTES.length);assert.equal(range.headers.get('content-length'),'5');assert.equal(range.headers.get('cache-control'),'no-store');assert.deepEqual(Buffer.from(await range.arrayBuffer()),BYTES.subarray(2,7));assert.equal(f.control.readClosed,1);
+ const suffix=await f.fetch(path,{headers:{range:'bytes=-4'}});assert.equal(suffix.status,206);assert.deepEqual(Buffer.from(await suffix.arrayBuffer()),BYTES.subarray(BYTES.length-4));
+ const multi=await f.fetch(path,{headers:{range:'bytes=0-1,4-5'}});assert.equal(multi.status,200);assert.deepEqual(Buffer.from(await multi.arrayBuffer()),BYTES);
+ const invalid=await f.fetch(path,{headers:{range:'bytes=999999-'}});assert.equal(invalid.status,416);assert.equal(invalid.headers.get('content-range'),'bytes */'+BYTES.length);await invalid.text();
+ f.control.authFailure='DENIED';const forbidden=await f.fetch(path,{method:'HEAD'});assert.equal(forbidden.status,403);assert.equal(forbidden.headers.get('content-range'),null);
+},true));
+
+test('H5 entry uses the protected bootstrap scope and strictly validates each page argument',{timeout:15000},async()=>fixture(async f=>{
+ const home=await f.fetch('/api/yixiaoxiu/h5/entry?view=home');assert.equal(home.status,200);const value=await json(home);assert.deepEqual(Object.keys(value).sort(),['bootstrap','data','membership_revision','schema_version','view']);assert.equal(value.view,'home');assert.equal(record(value.bootstrap).csrf_token,CSRF);assert.ok(record(value.bootstrap).recovery_scope);
+ for(const path of ['?view=home&request_ref='+REF,'?view=home&view=report','?view=request','?view=request&request_ref=bad','?view=reports&source=ADMIN','?view=department&source=WEB','?view=unknown'])assert.equal((await f.fetch('/api/yixiaoxiu/h5/entry'+path)).status,400);
+ assert.equal((await f.fetch('/api/yixiaoxiu/h5/entry?view=report',{headers:{origin:'https://cross.invalid'}})).status,403);
+ const summary=await f.fetch('/api/yixiaoxiu/h5/department-summary');assert.equal(summary.status,200);assert.deepEqual(await json(summary),{total:7,active_count:3,membership_revision:'synthetic-revision'});
+ assert.equal((await f.fetch('/api/yixiaoxiu/requests/'+REF+'/supplements')).status,200);
+ f.control.recheckFailure='DENIED';assert.equal((await f.fetch('/api/yixiaoxiu/h5/entry?view=home')).status,403);
+},true));
+
+test('H5 performance entry stays explicitly disabled on the legacy configuration',{timeout:15000},async()=>fixture(async f=>{
+ const response=await f.fetch('/api/yixiaoxiu/h5/entry?view=home');assert.equal(response.status,404);assert.equal(record((await json(response)).error).code,'YXX_H5_ENTRY_DISABLED');
+ assert.equal((await f.fetch('/api/yixiaoxiu/h5/department-summary')).status,404);
+}));
+
+test('only enabled validated entry GET uses the Native entry authentication callback',{timeout:15000},async()=>fixture(async f=>{
+ const forged={'x-h5-entry-read':'true','x-h5-auth-purpose':'H5_ENTRY'};
+ const base=await f.fetch('/api/yixiaoxiu/bootstrap',{headers:forged});assert.equal(base.status,200);await base.text();
+ assert.equal(f.control.nativeBaseAuthentications,1);assert.equal(f.control.nativeEntryAuthentications,0);
+ const signature=await f.fetch('/api/yixiaoxiu/js-sdk/signature',{method:'POST',headers:{...f.headers(),...forged},body:JSON.stringify({url:f.origin+'/wecom/yixiaoxiu/',kind:'CORP'})});assert.equal(signature.status,200);await signature.text();assert.equal(f.control.signatureCalls,1);
+ const input=v2Input(),accepted=await f.fetch('/api/yixiaoxiu/requests',{method:'POST',headers:{...f.headers(input.client_command_id),...forged},body:JSON.stringify(input)});assert.equal(accepted.status,202);await accepted.text();assert.equal(f.control.accepts,1);assert.equal(f.control.nativeEntryAuthentications,0);
+ for(const view of ['home','report','reports','department']){const response=await f.fetch('/api/yixiaoxiu/h5/entry?view='+view);assert.equal(response.status,200);await response.text();}
+ const missing=await f.fetch('/api/yixiaoxiu/h5/entry?view=request&request_ref='+REF);assert.equal(missing.status,404);await missing.text();
+ assert.equal(f.control.nativeEntryAuthentications,5,'each valid entry route chooses its own authentication even if the protected record is absent');
+ assert.equal(f.control.nativeBaseAuthentications,1,'entry must not also invoke Native base authentication');
+},true));
+
+test('disabled, malformed, cross-origin and non-GET entry requests cannot select entry authentication',{timeout:15000},async()=>{
+ const forged={'x-h5-entry-read':'true','x-h5-auth-purpose':'H5_ENTRY'};
+ await fixture(async f=>{
+  for(const query of ['?view=unknown','?view=home&view=report','?view=request','?view=reports&source=ADMIN','?view=home&request_ref='+REF]){const response=await f.fetch('/api/yixiaoxiu/h5/entry'+query,{headers:forged});assert.equal(response.status,400);await response.text();}
+  const rejectedHeaders:Record<string,string>[]=[{origin:'https://cross.invalid'},{'sec-fetch-site':'cross-site'}];
+  for(const headers of rejectedHeaders){const response=await f.fetch('/api/yixiaoxiu/h5/entry?view=home',{headers:{...forged,...headers}});assert.equal(response.status,403);await response.text();}
+  const post=await f.fetch('/api/yixiaoxiu/h5/entry?view=home',{method:'POST',headers:{...f.headers(),...forged},body:'{}'});assert.equal(post.status,404);await post.text();
+  const bodyStatus=await new Promise<number>((resolve,reject)=>{
+   const outgoing=httpRequest(f.base+'/api/yixiaoxiu/h5/entry?view=home',{method:'GET',headers:{cookie:f.cookie,'content-length':'2',...forged},signal:AbortSignal.timeout(5000)},response=>{response.once('error',reject);response.once('end',()=>resolve(response.statusCode??0));response.resume();});
+   outgoing.once('error',reject);outgoing.end('{}');
+  });assert.equal(bodyStatus,400);
+  assert.equal(f.control.nativeEntryAuthentications,0);assert.equal(f.control.nativeBaseAuthentications,0);
+ },true);
+ await fixture(async f=>{
+  const response=await f.fetch('/api/yixiaoxiu/h5/entry?view=home',{headers:forged});assert.equal(response.status,404);assert.equal(record((await json(response)).error).code,'YXX_H5_ENTRY_DISABLED');
+  assert.equal(f.control.nativeEntryAuthentications,0);assert.equal(f.control.nativeBaseAuthentications,0);
+ });
+});
+
+test('H5 media deadline terminates a blocked HTTP drain and removes owned stream listeners',{timeout:15000},async()=>fixture(async f=>{
+ f.control.stream='WAIT_DISCONNECT';f.control.forceBackpressure=true;
+ const handled=new Promise<void>(resolve=>{f.control.afterHandled=resolve;});
+ const response=await f.fetch('/api/yixiaoxiu/requests/'+REF+'/media/'+MEDIA);assert.ok(response.body);
+ const reader=response.body.getReader();assert.equal(new TextDecoder().decode((await reader.read()).value),'first');
+ f.control.leaseDeadline.abort();await assert.rejects(reader.read());reader.releaseLock();await handled;
+ assert.equal(f.control.readClosed,1);const last=f.control.completed.at(-1);assert.ok(last);assert.equal(last.requestAbortedListeners,0);assert.equal(last.responseCloseListeners,0);
+},true));

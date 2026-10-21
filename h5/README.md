@@ -1,6 +1,10 @@
 ## 2026-10-20：V2 H5 实现入口
 
-新版页面使用 Vite、strict TypeScript、React、React Router、TanStack Query、shadcn/ui（Radix）、Tailwind CSS 与 react-i18next，前向边界见 [ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)。本目录为实际产品源码，现有根构建管线负责正式制品和 HTTP 装配。
+本轮性能改造沿[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)实施。新增[页面引导／预览／Range](../docs/api/member/h5-performance.md)仅在`YIXIAOXIU_H5_PERFORMANCE_ENABLED=true`显式开启，默认false；新版前端遇明确`YXX_H5_ENTRY_DISABLED`回退原读取。代码／数据并行加载、30秒内存新鲜度、2分钟非活动缓存和统一刷新不替代服务端当前权限检查。预算与实际结果见[性能实施记录](../plans/yixiaoxiu-h5-performance/README.md)。
+
+2026-10-21按用户指定在本目录新增本地`h5/.env.local`（Git忽略），显式设置H5与性能开关为true，配套新本地私有媒体目录、独立媒体密钥及受控FFmpeg路径；App与Worker实际配置解析均验证`performanceEnabled=true`。服务端启动时将`--env-file=h5/.env.local`作为既有完整运行环境的后加载覆盖层；该文件只含H5配置，不能替代成员身份、数据库及宿主配置。密钥使用服务端变量名，不加`VITE_`前缀、不打包到网页。此项为本地配置完成，没有启动其他环境服务，公开进度写开关仍false；详见[续作验收](../plans/yixiaoxiu-h5-performance/closure-2026-10-21.md)。
+
+新版页面使用 Vite、strict TypeScript、React、TanStack Query、shadcn/ui（Radix）、Tailwind CSS 与 react-i18next，前向边界见 [ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)及[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)。固定的五种Hash路径由小型类型化导航层处理，与页面引导共用路由描述；管理端保留自己的React Router。本目录为实际产品源码，现有根构建管线负责正式制品和 HTTP 装配。
 
 - [固定设计基线](design-baseline/README.md)：Stitch 项目“医院IT工单报修系统”的八个移动端屏幕、HTML、PNG 与哈希。
 - `src/pages`：工作台、快捷报修、本人查询、工单详情和科室有限共享。
@@ -14,7 +18,7 @@ npm --prefix h5 run typecheck
 npm --prefix h5 run dev
 ~~~
 
-开发服务只监听 `127.0.0.1:5196`，`/api` 代理到显式本地宿主 `127.0.0.1:5197`。HashRouter 提供 `#/`、`#/report`、`#/reports`、`#/requests/{requestRef}` 和 `#/department`；本人 Bot 历史仍链接原 `/wecom/yixiaoxiu/tickets/{ref}`。
+开发服务只监听 `127.0.0.1:5196`，`/api` 代理到显式本地宿主 `127.0.0.1:5197`。本地Hash导航提供 `#/`、`#/report`、`#/reports`、`#/requests/{requestRef}` 和 `#/department`，保留浏览器前进后退与查询参数；本人 Bot 历史仍链接原 `/wecom/yixiaoxiu/tickets/{ref}`。
 
 ### 显式合成预览
 
@@ -38,7 +42,7 @@ npm --prefix h5 run dev
 
 草稿、Blob、Query 缓存和操作恢复仅在当前成员范围的内存中。Mutation 不自动重试。提交结果不明时保留原 UUID 和用途，页面导航后仍由同一成员范围的内存栅栏阻止第二次 POST，只能显式 GET 核对原操作。404 与暂时 503 均不能证明未提交。401／403 清除受保护内容；范围改变时卸载旧资料、媒体和命令状态。
 
-语言优先使用企业微信 UA 的 `Language/…`，全部中文归为简体中文，其余为 English。主题按 `ColorScheme/Dark`、显式 Light 和系统偏好自动选择，恢复可见时重查。生产入口使用 CSS 深色首屏变量与 render-blocking 的同源模块；iOS／Android 企业微信的实际首次绘制、录音权限、原生取消和上传须单独实机验证，未运行项记为 `NOT_RUN`。
+语言优先使用企业微信 UA 的 `Language/…`，全部中文归为简体中文，其余为 English。主题按 `ColorScheme/Dark`、显式 Light 和系统偏好自动选择，恢复可见时重查。生产入口使用 CSS 深色首屏变量与独立同源小主题脚本；主应用模块不整体阻塞绘制。iOS／Android 企业微信的实际首次绘制、录音权限、原生取消、上传和渐进播放须单独实机验证，未运行项记为 `NOT_RUN`。
 
 以下保留原后端交接要求；实际新增 API 与 DTO 以 [API 统一入口](../docs/api/README.md)及前向合同为准。
 

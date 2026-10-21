@@ -19,6 +19,8 @@ Status: Accepted for the user's formal-environment test request and scope clarif
 - 单独接收且不使用 H5 时，允许 `memberEntry` 保留已核对企业／应用／Bot 作用域而使用 `UNVERIFIED`、无 `reporterUserIds`。App 不执行 H5 名单转换、不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续失败关闭，不回退旧 Grant。发送模式保留原映射要求。
 - 成员查询实际并发为 1，最多 32 项，5 秒截止包含排队。超时后未结束的底层操作继续持有串行占用。查询失败、截止或溢出拒绝该次入站；本增量不提供失败消息的持久化重放，恢复后需重新报修。
 
+2026-10-21前向窄例外：[ADR-0036](0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)仅为显式性能H5 entry允许同一APP成员verifier内的专用只读入口最多2实际操作，APP共享2实际／32总项、BASE仍最多1，原5秒含排队与真实settle占槽保持。Bot／Gateway及发送不选专用入口，本ADR入站1／32规则和其他权限制约不变。该本地性能实施不授权外发、部署或Gate。
+
 ## Deployment and verification
 
 开启新入站须有本次接收授权引用和 Bot 认证凭据；不借用真实发送批准。先完成合成三进程验证、完整 PR CI、两轴审查和制品核验，再在已授权隔离测试库部署。确认只有一个目标 Bot 长连接后测试实际回调。

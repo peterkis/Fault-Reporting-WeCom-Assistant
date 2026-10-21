@@ -1,5 +1,7 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+H5 性能改造按 [ADR-0036](adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)前向实施：页面引导聚合、路由与数据并行、私有图片预览和获权渐进播放；新增性能配置默认关闭。实际范围、预算、测试结果及未运行项见[实施记录](plans/yixiaoxiu-h5-performance/README.md)与[接口合同](docs/api/member/h5-performance.md)，不改变原 Gate 或现场授权。
+
 新版医小修 H5 使用 Vite、TypeScript、React、TanStack Query、shadcn/ui 和 react-i18next，按 Stitch“医院IT工单报修系统”的八屏固定基线实现浅色／深色页面。源码与合成预览见 [H5 入口](h5/README.md)，实际接口见 [V2 合同](docs/api/member/h5-v2.md)，范围、验证和停止线见 [本轮记录](plans/yixiaoxiu-h5-rebuild/README.md)与 [ADR-0035](adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)。新增功能与公开进度写入独立默认关闭，本地实现不改变部署或现场发送状态。
 
 MVP 群回应、实际接单／完工通知及应用成员后端的原交接见 [实施记录](plans/mvp-notifications-h5/README.md)与 [ADR-0034](adr/0034_mvp_notifications_and_application_members.md)。

@@ -44,6 +44,21 @@ The owned inventory is `channel`, `intake`, `pilot_ticket`, `notification`, `ope
 
 Every migrated deadline or elapsed anchor has an authoritative `*_epoch_ms` BIGINT. Its local `*_at` companion is a display/audit value constrained to the same second. Claim, retry, expiry, retention, waiting duration, and timeout comparisons use epoch values. A compatibility trigger protects frozen legacy isolated tests and derives a missing companion at the database boundary; current runtime paths pass/use epoch values explicitly.
 
+### H5 department read adapter (2026-10-21)
+
+Under [ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md), the initial adapter permitted the `departmentReportsSql` and `departmentInTransaction` constructors in `src/yxx-h5-v2-profile.mts` to expand the existing formula. The subsequent sealed-batch revision moves those closed fragments into `h5DepartmentDirectorySql`, `h5DepartmentReportsSql` and `h5DepartmentPageSql` in [the shared static SQL adapter](../src/yxx-h5-batch-sql.mts); independent reads and sealed batches select fixed local mappings from the same constructors. Only these department read constructors may expand the formula:
+
+```sql
+pg_catalog.floor(EXTRACT(epoch FROM pg_catalog.clock_timestamp())
+  OPERATOR(pg_catalog.*) 1000::pg_catalog.numeric)::pg_catalog.int8
+```
+
+Each original clock guard keeps its own expression at the original evaluation boundary. The adapter preserves numeric milliseconds, floor and BIGINT conversion; it must not introduce a shared clock parameter, single-row CTE, InitPlan, transaction/statement time, or STABLE/IMMUTABLE clock. Function, operator and type qualification protects the formula from a changed `search_path`. This is a local SQL adapter, not a change to migration 022, the global function definition, any other caller, or the time contract inventory. PostgreSQL documents [per-row volatile evaluation](https://www.postgresql.org/docs/18/xfunc-volatility.html) and [physical clock changes within a statement](https://www.postgresql.org/docs/18/functions-datetime.html).
+
+The adapter keeps all source, binding, retention, current membership and post-wait terminal checks. Its acceptance requires real expiry and controlled-wait cases, numeric floor boundaries, timezone/search-path cases, equivalent DTOs and constrained execution plans. Tests that replace `platform.physical_epoch_ms()` do not exercise an expanded formula and cannot substitute for these cases. If the helper's ACL or replaceable clock becomes a governance boundary, this narrow exception must be reviewed again. Clock-adapter rollback restores the helper expression in the shared constructors, without modifying persisted data or historical migrations; disabling performance reads separately restores the original HTTP read path.
+
+ADR-0036 additionally permits the narrowly scoped sealed in-flight H5 batch adapter. Each participant obtains its own current directory proof in the batch statement; only exactly equal authorized sets and read rules share that statement's source scan. Distinct source guards retain the qualified formula above and independently sample the physical clock. The batch deliberately reduces repeated evaluation across participating HTTP requests; it does not cache a clock value or claim the old per-HTTP call multiplicity. No request may attach after dispatch or reuse a completed result, and every participant still performs its own new-statement membership and outer READ terminal checks. This forward exception applies only to that adapter, not independent queries or any global time helper; original physical-expiry and controlled-wait acceptance remains required.
+
 ## Workbench and Evidence
 
 Workbench renders the server LocalDateTime text directly as `YYYY-MM-DD HH:mm`, so UTC, Asia/Tokyo, and America/New_York browser settings show the same value. New structured Evidence uses both `event_time` LocalDateTime and `event_epoch_ms` PhysicalEpochMs. Historical Evidence is not rewritten.

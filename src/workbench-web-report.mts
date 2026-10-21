@@ -1,4 +1,5 @@
 import {once} from 'node:events';
+import {finished} from 'node:stream/promises';
 import type {Readable} from 'node:stream';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
@@ -12,6 +13,7 @@ import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
 import {decodeWebMedia} from './workbench-web-report-browser-contracts.mjs';
+import {awaitYxxH5MediaRead} from './yxx-h5-media-budget.mjs';
 
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
@@ -24,7 +26,7 @@ export interface WorkbenchWebReportLifecyclePort {
 }
 export interface WorkbenchWebReportMediaPort {
  listForIntake(input:{intakeId:string;verifyCurrentRead:()=>Promise<void>}):Promise<readonly WorkbenchWebMedia[]>;
- readForIntake(input:{intakeId:string;ref:string;verifyCurrentRead:()=>Promise<void>;variant?:'ORIGINAL'|'PLAYABLE';signal?:AbortSignal}):Promise<{asset:WorkbenchWebMedia;mime_type:string;byte_size:number;stream:Readable;close():Promise<void>}>;
+ readForIntake(input:{intakeId:string;ref:string;verifyCurrentRead:()=>Promise<void>;variant?:'ORIGINAL'|'PLAYABLE';signal?:AbortSignal}):Promise<{asset:WorkbenchWebMedia;mime_type:string;byte_size:number;stream:Readable;signal?:AbortSignal;close():Promise<void>}>;
 }
 const EMPTY_URGE:WorkbenchWebUrge={active:false,count:0,last_urged_at:null};
 const OPEN=new Set(['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED']);
@@ -133,17 +135,21 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),60_000),disconnected=()=>controller.abort();timer.unref();active.add(controller);reading=true;response.once('close',disconnected);
     let complete=()=>{};const settled=new Promise<void>(resolve=>{complete=resolve;});settling.add(settled);
     let lease:Awaited<ReturnType<WorkbenchWebReportMediaPort['readForIntake']>>|null=null;
+    let outputSignal:AbortSignal|null=null;const stopOutput=()=>{response.destroy();};
     try{
-     const item=await query.authorizedItem(authContext,kind,id);if(!await source(item))failP2016('NOT_FOUND',404);
-     const verify=async()=>{controller.signal.throwIfAborted();await verifyRead(authContext,item);controller.signal.throwIfAborted();};
-     lease=await media.readForIntake({intakeId:item.intake_id,ref:uuidP2016(report[3]),variant,verifyCurrentRead:verify,signal:controller.signal});await verify();
+     const item=await awaitYxxH5MediaRead(controller.signal,()=>query.authorizedItem(authContext,kind,id));if(!await awaitYxxH5MediaRead(controller.signal,()=>source(item)))failP2016('NOT_FOUND',404);
+     const verify=async()=>{controller.signal.throwIfAborted();await awaitYxxH5MediaRead(controller.signal,()=>verifyRead(authContext,item));controller.signal.throwIfAborted();};
+     lease=await media.readForIntake({intakeId:item.intake_id,ref:uuidP2016(report[3]),variant,verifyCurrentRead:verify,signal:controller.signal});
+     outputSignal=lease.signal?AbortSignal.any([controller.signal,lease.signal]):controller.signal;
+     outputSignal.addEventListener('abort',stopOutput,{once:true});outputSignal.throwIfAborted();
+     await awaitYxxH5MediaRead(outputSignal,verify);
      const asset=decodeWebMedia(lease.asset),expectedMime=variant==='ORIGINAL'?asset.mime_type:asset.playback_mime_type;
      if(asset.media_ref!==uuidP2016(report[3])||lease.mime_type!==expectedMime||!Number.isSafeInteger(lease.byte_size)||lease.byte_size<1||lease.byte_size>20*1024*1024||variant==='ORIGINAL'&&lease.byte_size!==asset.byte_size)failP2016('ACTION_FAILED',503);
      response.writeHead(200,{'content-type':lease.mime_type,'content-length':String(lease.byte_size),'content-disposition':variant==='ORIGINAL'?'attachment; filename="report-material"':'inline; filename="report-material"','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"sandbox; default-src 'none'"});
-     let bytes=0;for await(const chunk of lease.stream){await verify();bytes+=Buffer.byteLength(chunk);if(bytes>lease.byte_size)throw new WorkbenchError('YXX_MEDIA_INTEGRITY_FAILED',502);if(!response.write(chunk))await once(response,'drain',{signal:controller.signal});}
-     if(bytes!==lease.byte_size)throw new WorkbenchError('YXX_MEDIA_INTEGRITY_FAILED',502);response.end();return true;
+     let bytes=0;for await(const chunk of lease.stream){outputSignal.throwIfAborted();await awaitYxxH5MediaRead(outputSignal,verify);bytes+=Buffer.byteLength(chunk);if(bytes>lease.byte_size)throw new WorkbenchError('YXX_MEDIA_INTEGRITY_FAILED',502);if(!response.write(chunk))await once(response,'drain',{signal:outputSignal});}
+     if(bytes!==lease.byte_size)throw new WorkbenchError('YXX_MEDIA_INTEGRITY_FAILED',502);response.end();await finished(response,{cleanup:true,signal:outputSignal});return true;
     }catch(error){if(response.headersSent){response.destroy();return true;}throw error;}
-    finally{try{await lease?.close();}finally{clearTimeout(timer);response.off('close',disconnected);active.delete(controller);reading=false;settling.delete(settled);complete();}}
+    finally{try{outputSignal?.removeEventListener('abort',stopOutput);await lease?.close();}finally{clearTimeout(timer);response.off('close',disconnected);active.delete(controller);reading=false;settling.delete(settled);complete();}}
    }catch(error){return externalError(error);}
   },
   async close(){stopped=true;for(const controller of active)controller.abort();await Promise.allSettled([...settling]);},

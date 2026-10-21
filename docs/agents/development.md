@@ -136,6 +136,7 @@ P3 只建设面向未来的 Source Registry、身份映射、Connector、内网�
 - AI concurrency：1；
 - Communication concurrency：1；
 - Integration concurrency：1；
+- 显式性能H5 entry的只读当前成员核验窄例外见[ADR-0036](../../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)：同APP总2实际／32项、BASE最多1，5秒含排队及真实settle占槽；默认、Bot／Gateway、发送与业务Integration规则不变；
 - SSE clients：默认 32；
 - 应用数据库连接池总量建议不超过 8。
 

@@ -7,9 +7,14 @@ import type {YxxFeedbackStore} from './yxx-self-service-feedback.mjs';
 import type {YxxH5Lifecycle} from './yxx-h5-v2-lifecycle.mjs';
 import type {YxxH5Profile} from './yxx-h5-v2-profile.mjs';
 import type {H5Media,H5ReportFilters,H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
+import type {H5EntryInput,H5EntryResponse,H5EntryDetail,H5EntryMedia,H5SupplementPage,H5DepartmentSummary} from '../contracts/yxx_h5_entry_contracts.js';
+import type {LocalDateTime,EpochMs,YxxSelfServiceBootstrap,YxxRequestDetail,YxxReportItem,YxxReportPage,YxxTimeline} from '../contracts/yxx_self_service_contracts.js';
 import {parseH5ReportFilters} from './yxx-h5-v2-contracts.mjs';
+import {h5RecentSql} from './yxx-h5-batch-sql.mjs';
+import {beginH5Read,checkH5Read,finishH5Read,createH5ReadBatch,type H5ReadBudget,type H5ReadLease} from './yxx-h5-read-batch.mjs';
+import {readH5EntryRow,h5SupplementPage,readH5Supplements,recheckH5EntryBinding,withH5TimelineBudget} from './yxx-h5-entry.mjs';
 type ActiveContext=YxxMemberContext & {scope:YxxMemberScope};
-export interface YxxQueryOptions {pool:PostgresPool;authorization:ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>;store?:Pick<YxxSelfServiceStore,'timeline'|'command'>|null;scopeSecret?:string;now?:()=>string;h5Lifecycle?:YxxH5Lifecycle|null;h5Profile?:YxxH5Profile|null;h5Media?:((input:{transaction:PostgresTransaction;scope:YxxMemberScope;requestRef:string})=>Promise<H5Media[]>)|null}
+export interface YxxQueryOptions {pool:PostgresPool;authorization:ReturnType<typeof createYxxSelfServiceAuthorization<IncomingMessage>>;store?:(Pick<YxxSelfServiceStore,'timeline'|'command'>&Partial<Pick<YxxSelfServiceStore,'timelineInTransaction'>>)|null;scopeSecret?:string;now?:()=>string;h5Lifecycle?:YxxH5Lifecycle|null;h5Profile?:YxxH5Profile|null;h5Media?:((input:{transaction:PostgresTransaction;scope:YxxMemberScope;requestRef:string})=>Promise<H5Media[]>)|null;h5MediaEntry?:((input:{transaction:PostgresTransaction;scope:YxxMemberScope;requestRef:string})=>Promise<H5EntryMedia[]>)|null}
 export interface YxxQueryInput {request:IncomingMessage;source?:YxxMemberSource|null;limit?:unknown;cursor?:string|null;requestRef?:string|undefined;publicRef?:string|undefined;ref?:string|undefined;kind?:'WEB_REQUEST'|'BOT_TICKET';ifNoneMatch?:string|null;after?:string|null;before?:string|null;clientCommandId?:unknown;v2?:boolean;search?:string|null;status?:H5ReportFilters['status']}
 declare const cursorMember:unique symbol;
 export type YxxReportCursor<Member extends string=string> = string & {readonly [cursorMember]:Member};
@@ -59,7 +64,7 @@ function limit(value:unknown) {
 function localTime(value:unknown) {
   const text = String(value);
   if (!LOCAL_TIME.test(text)) fail('YXX_TIME_INVALID', 503);
-  return text;
+  return text as LocalDateTime;
 }
 
 function epoch(value:unknown) {
@@ -68,7 +73,7 @@ function epoch(value:unknown) {
     if (!/^(0|[1-9][0-9]*)$/u.test(text)) throw new Error('epoch');
     const n = BigInt(text);
     if (n < 0n || n > 9223372036854775807n) throw new Error('epoch');
-    return text;
+    return text as EpochMs;
   } catch { fail('YXX_CURSOR_INVALID'); }
 }
 
@@ -111,8 +116,8 @@ function decodeCursor<Member extends string>(value:YxxReportCursor<NoInfer<Membe
 function ticketSummary(row:Pick<ReportRow,'ticket_no'|'ticket_status'|'ticket_updated_at'|'created_at'|'updated_at'>) {
   return row.ticket_no ? Object.freeze({
     ticket_no: row.ticket_no,
-    status: row.ticket_status,
-    updated_at: row.ticket_updated_at ? String(row.ticket_updated_at) : String(row.updated_at ?? row.created_at),
+    status: row.ticket_status??fail('YXX_QUERY_ROW_INVALID',503),
+    updated_at: localTime(row.ticket_updated_at ?? row.updated_at ?? row.created_at),
   }) : null;
 }
 
@@ -125,8 +130,8 @@ function webDisplayStatus(row:Pick<ReportRow,'ticket_no'|'input_revision'|'proce
   return 'RECEIVED_PROCESSING';
 }
 
-function reportItem(row:ReportRow) {
-  const created = String(row.created_at);
+function reportItem(row:ReportRow):YxxReportItem {
+  const created = localTime(row.created_at);
   const kind = row.kind === 'BOT_TICKET' ? 'BOT_TICKET' : 'WEB_REQUEST';
   const displayStatus = kind === 'BOT_TICKET'
     ? (EXTERNAL_TICKET_STATUS[row.ticket_status as TicketStatus] ?? String(row.ticket_status))
@@ -138,11 +143,31 @@ function reportItem(row:ReportRow) {
     ref: row.ref,
     display_status: displayStatus,
     created_at: created,
-    created_epoch_ms: createdEpoch,
+    created_epoch_ms: epoch(createdEpoch),
     ticket: ticketSummary(row),
     safe_summary: kind === 'WEB_REQUEST' ? row.safe_summary : null,
     safe_location: kind === 'WEB_REQUEST' ? row.safe_location : null,
   });
+}
+
+function reportItems(rows:ReportRow[],n:number){
+  const page=rows.slice(0,n).map(reportItem);
+  for(const item of page)if(!REF.test(item.ref))fail('YXX_QUERY_ROW_INVALID',503);
+  return page;
+}
+function batchRecord(value:unknown):value is Record<string,unknown>{return value!==null&&typeof value==='object'&&!Array.isArray(value);}
+function batchString(value:unknown){if(typeof value==='string')return value;return fail('YXX_QUERY_ROW_INVALID',503);}
+function batchNullableString(value:unknown){if(value===null||typeof value==='string')return value;return fail('YXX_QUERY_ROW_INVALID',503);}
+function knownTicketStatus(value:unknown):value is TicketStatus{return typeof value==='string'&&Object.hasOwn(EXTERNAL_TICKET_STATUS,value);}
+function batchHomeData(value:unknown){
+  if(!batchRecord(value)||!Array.isArray(value.recent_reports)||value.recent_reports.length>4||!batchRecord(value.department_summary))fail('YXX_QUERY_ROW_INVALID',503);
+  const counts=value.department_summary;if(typeof counts.total!=='number'||!Number.isSafeInteger(counts.total)||counts.total<0||typeof counts.active_count!=='number'||!Number.isSafeInteger(counts.active_count)||counts.active_count<0||counts.active_count>counts.total)fail('YXX_QUERY_ROW_INVALID',503);
+  const rows:ReportRow[]=value.recent_reports.map((item:unknown)=>{
+    if(!batchRecord(item)||(item.kind!=='WEB_REQUEST'&&item.kind!=='BOT_TICKET')||typeof item.kind_rank!=='number'||!Number.isInteger(item.kind_rank)||typeof item.has_pending_review!=='boolean'||(item.ticket_status!==null&&!knownTicketStatus(item.ticket_status)))fail('YXX_QUERY_ROW_INVALID',503);
+    const input=batchString(item.input_revision),processed=batchString(item.processed_revision);if(!/^[0-9]+$/u.test(input)||!/^[0-9]+$/u.test(processed))fail('YXX_QUERY_ROW_INVALID',503);
+    return {kind:item.kind,ref:batchString(item.ref),created_at:batchString(item.created_at),kind_rank:item.kind_rank,immutable_id:batchString(item.immutable_id),status:batchString(item.status),input_revision:input,processed_revision:processed,pilot_ticket_id:batchNullableString(item.pilot_ticket_id),ticket_no:batchNullableString(item.ticket_no),ticket_status:item.ticket_status,ticket_updated_at:batchNullableString(item.ticket_updated_at),has_pending_review:item.has_pending_review,safe_summary:batchNullableString(item.safe_summary),safe_location:batchNullableString(item.safe_location)};
+  });
+  return {reports:reportItems(rows,3),total:counts.total,active_count:counts.active_count};
 }
 
 function safeNeedsAction(row:WebDetailRow) {
@@ -152,7 +177,7 @@ function safeNeedsAction(row:WebDetailRow) {
   return null;
 }
 
-function safeWebDetail(row:WebDetailRow) {
+function safeWebDetail(row:WebDetailRow):YxxRequestDetail {
   const created = localTime(row.created_at);
   const updated = localTime(row.updated_at);
   const safeDescription = typeof row.safe_description === 'string' ? row.safe_description : '';
@@ -175,9 +200,9 @@ function safeWebDetail(row:WebDetailRow) {
     })),
     safe_location: row.safe_location ?? null,
     created_at: created,
-    created_epoch_ms: createdEpoch,
+    created_epoch_ms: epoch(createdEpoch),
     updated_at: updated,
-    updated_epoch_ms: updatedEpoch,
+    updated_epoch_ms: epoch(updatedEpoch),
     ticket: ticketSummary(row),
     safe_clarification: row.safe_clarification ?? null,
     can_supplement: BigInt(row.input_revision) < 50n
@@ -195,14 +220,25 @@ function snapshotNow(now:(()=>string)|unknown) {
   return epoch(value === undefined ? Date.now() : value);
 }
 
-async function listRows(transaction:PostgresTransaction,context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursor:ReturnType<typeof decodeCursor>|null,snapshotEpoch:string,filters:Required<H5ReportFilters>|null=null) {
+function unfilteredReportsStatement(context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursor:ReturnType<typeof decodeCursor>|null,snapshotEpoch:string) {
   const owner = context.bot_owner;
   const botId = owner?.botId ?? null;
   const botUserId = owner?.userId ?? null;
   const binding = owner ? botBindingHash(botId, botUserId) : null;
   const args = [context.scope.scopeHash, n + 1, selectedSource, snapshotEpoch, cursor?.created_at ?? null,
     cursor?.kind_rank ?? null, cursor?.immutable_id ?? null, botId, botUserId, binding,
-    context.scope.sourceCorpScope, context.scope.sourceAppScope,filters?.search??null,filters?.status??null];
+    context.scope.sourceCorpScope, context.scope.sourceAppScope];
+  // Each source contributes at most N keys before public summaries are read.
+  // Their bounded union still contains the exact first N rows of the shared order.
+  return {text:h5RecentSql(),values:args};
+}
+
+async function listRows(transaction:PostgresTransaction,context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursor:ReturnType<typeof decodeCursor>|null,snapshotEpoch:string,filters:Required<H5ReportFilters>|null=null) {
+  const prepared=unfilteredReportsStatement(context,selectedSource,n,cursor,snapshotEpoch);
+  if(filters===null||filters.search===null&&filters.status===null){
+    return (await transaction.query<ReportRow>(prepared.text,prepared.values)).rows;
+  }
+  const args=[...prepared.values,filters.search,filters.status];
   const q = await transaction.query<ReportRow>(`
     WITH report_rows AS (
       SELECT 'WEB_REQUEST'::text AS kind, b.request_ref AS ref, b.created_at::timestamp without time zone AS created_at,
@@ -271,26 +307,23 @@ export function createYxxSelfServiceQuery({
   store = null,
   scopeSecret = 'yxx-self-service-query-secret-32-bytes',
   now = () => String(Date.now()),
-  h5Lifecycle=null,h5Profile=null,h5Media=null,
+  h5Lifecycle=null,h5Profile=null,h5Media=null,h5MediaEntry=null,
 }:YxxQueryOptions & {feedbackStore?:YxxFeedbackStore|null}={} as YxxQueryOptions) {
   if (!pool?.connect || !authorization?.read || typeof scopeSecret !== 'string' || Buffer.byteLength(scopeSecret) < 16) {
     fail('YXX_QUERY_CONFIG_INVALID', 503);
   }
+  const h5Reads=createH5ReadBatch({pool});
 
-  async function listForContext(context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursorValue:string|null,filters:Required<H5ReportFilters>|null=null) {
+  async function listForContext(context:ActiveContext,selectedSource:YxxMemberSource|null,n:number,cursorValue:string|null,filters:Required<H5ReportFilters>|null=null,transaction?:PostgresTransaction):Promise<YxxReportPage> {
     const cursorSecret=filters===null?scopeSecret:createHmac('sha256',scopeSecret).update(JSON.stringify(['H5_FILTERS',filters])).digest('hex');
     const cursor = cursorValue === null || cursorValue === undefined
       ? null
       : decodeCursor(cursorValue as YxxReportCursor, cursorSecret, context.scope.scopeHash, selectedSource,
         context.scope.sourceCorpScope, context.scope.sourceAppScope);
     const snapshotEpoch = cursor?.snapshot_epoch ?? snapshotNow(now);
-    const rows = await transactionP2016(pool, async (transaction) => listRows(transaction, context, selectedSource, n, cursor, snapshotEpoch,filters));
-    const page = rows.slice(0, n).map(reportItem);
-    for (const item of page) {
-      localTime(item.created_at);
-      if (item.kind === 'WEB_REQUEST' && !REF.test(item.ref)) fail('YXX_QUERY_ROW_INVALID', 503);
-      if (item.kind === 'BOT_TICKET' && !REF.test(item.ref)) fail('YXX_QUERY_ROW_INVALID', 503);
-    }
+    const rows = transaction?await listRows(transaction,context,selectedSource,n,cursor,snapshotEpoch,filters)
+      :await transactionP2016(pool, async tx => listRows(tx, context, selectedSource, n, cursor, snapshotEpoch,filters));
+    const page=reportItems(rows,n);
     const next = rows.length > n && page.length > 0
       ? cursorToken({
         v: 1,
@@ -423,7 +456,99 @@ export function createYxxSelfServiceQuery({
       source: 'WEB', run: (context) => store.command({ scope: context.scope, clientCommandId }) });
   }
 
+  function timelineBody(body:Awaited<ReturnType<YxxSelfServiceStore['timeline']>>):YxxTimeline{
+    return {items:body.items.map(item=>({event_type:item.event_type,occurred_at:localTime(item.occurred_at),occurred_epoch_ms:epoch(item.occurred_epoch_ms),summary:item.summary,
+      ticket:item.ticket?{ticket_no:item.ticket.ticket_no,status:typeof item.ticket.status==='string'?item.ticket.status:fail('YXX_QUERY_ROW_INVALID',503),updated_at:localTime(item.ticket.updated_at)}:null})),next_cursor:body.next_cursor};
+  }
+  async function h5Entry({request,input,bootstrap,sdk}:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap;sdk?:H5BootstrapExtension['sdk']}):Promise<H5EntryResponse>{
+    const profile=h5Profile;if(!profile)fail('YXX_UNAVAILABLE',503);
+    const selectedSource=input.view==='reports'?source(input.source):input.view==='home'?null:'WEB';
+    const operation=input.view==='request'?YXX_MEMBER_READ_OPERATIONS.WEB_DETAIL:YXX_MEMBER_READ_OPERATIONS.MY_REPORTS;
+    beginH5Read(request);let budget:H5ReadBudget|null=null,lease:H5ReadLease|null=null,committed=false;
+    let admitted!:(value:H5ReadBudget)=>void;const ready=new Promise<H5ReadBudget>(resolve=>{admitted=resolve;});
+    const work=authorization.read({request,operation,source:selectedSource,run:async context=>{
+      authorization.assertOperationAllowed(context,YXX_MEMBER_READ_OPERATIONS.MY_REPORTS,null);
+      if(input.view==='request')authorization.assertOperationAllowed(context,YXX_MEMBER_READ_OPERATIONS.WEB_TIMELINE,'WEB');
+      if(input.view==='reports'&&selectedSource==='BOT')authorization.assertOperationAllowed(context,YXX_MEMBER_READ_OPERATIONS.BOT_LIST,'BOT');
+      const currentBudget=h5Reads.open(request);budget=currentBudget;admitted(currentBudget);
+      if(bootstrap.csrf_token!==context.csrf_token)fail('YXX_MEMBER_AUTH_RECHECK_FAILED',503);
+      const filters=input.view==='department'?parseH5ReportFilters({...(input.search===undefined?{}:{search:input.search}),...(input.status===undefined?{}:{status:input.status})}):null;
+      if(input.view==='home'||input.view==='department'&&filters?.search===null&&filters.status===null){
+        const member=await h5Reads.transaction(currentBudget,tx=>profile.resolveInTransaction(tx,context.scope));
+        const mayWrite=bootstrap.can_submit&&context.write_flag&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED;
+        const base={schema_version:1 as const,bootstrap:{...bootstrap,can_submit:mayWrite,can_supplement:bootstrap.can_supplement&&mayWrite,read_only:!mayWrite,h5:profile.bootstrapFromResolved(context,member,sdk)},membership_revision:member.membership_hash};
+        if(input.view==='home'&&!member.can_view_department){
+          const rows=await h5Reads.transaction(currentBudget,async tx=>{const rows=await listRows(tx,context,null,3,null,snapshotNow(now));await profile.revalidateInTransaction(tx,context.scope,member);return rows;});
+          return {...base,view:'home',data:{recent_reports:reportItems(rows,3),department_summary:null}} satisfies H5EntryResponse;
+        }
+        const recent=input.view==='home'?unfilteredReportsStatement(context,null,3,null,snapshotNow(now)).values:[];
+        const currentLease=h5Reads.enqueue(currentBudget,input.view,profile.batchInput(context.scope,member,recent));lease=currentLease;
+        const raw=await currentLease.result;currentBudget.check();profile.verifyBatchProof(member,raw.proof);
+        let result:H5EntryResponse;
+        if(input.view==='home'){const data=batchHomeData(raw.data);result={...base,view:'home',data:{recent_reports:data.reports,department_summary:{total:data.total,active_count:data.active_count,membership_revision:member.membership_hash}}};}
+        else result={...base,view:'department',data:{department:profile.departmentPageFromBatch(context.scope,member,raw.data)}};
+        h5Reads.terminalStart(currentBudget);await h5Reads.transaction(currentBudget,tx=>profile.revalidateInTransaction(tx,context.scope,member));h5Reads.terminalEnd(currentBudget);currentBudget.check();return result;
+      }
+      return h5Reads.transaction(currentBudget,async tx=>{
+      if(bootstrap.csrf_token!==context.csrf_token)fail('YXX_MEMBER_AUTH_RECHECK_FAILED',503);
+      const member=await profile.resolveInTransaction(tx,context.scope);
+      const mayWrite=bootstrap.can_submit&&context.write_flag&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED;
+      const base={schema_version:1 as const,bootstrap:{...bootstrap,can_submit:mayWrite,can_supplement:bootstrap.can_supplement&&mayWrite,read_only:!mayWrite,
+        h5:profile.bootstrapFromResolved(context,member,sdk)},membership_revision:member.membership_hash};
+      let result:H5EntryResponse;
+      switch(input.view){
+        case 'report':result={...base,view:'report',data:null};break;
+        case 'reports':{
+          const filters=parseH5ReportFilters({...(input.search===undefined?{}:{search:input.search}),...(input.status===undefined?{}:{status:input.status})});
+          const reports=await listForContext(context,selectedSource,20,null,filters,tx);
+          result={...base,view:'reports',data:{reports}};break;
+        }
+        case 'department':{
+          const filters=parseH5ReportFilters({...(input.search===undefined?{}:{search:input.search}),...(input.status===undefined?{}:{status:input.status})});
+          const department=await profile.departmentInTransaction(tx,context.scope,{limit:20,...filters,resolved:member});
+          // The department projection itself performs the current-relationship terminal check.
+          return {...base,view:'department',data:{department}} satisfies H5EntryResponse;
+        }
+        case 'request':{
+          const lifecycle=h5Lifecycle,feedback=feedbackStore,timelineRead=store?.timelineInTransaction;
+          if(!lifecycle||!timelineRead)fail('YXX_UNAVAILABLE',503);
+          const ref=requestRef(input.request_ref),row=await readH5EntryRow(tx,context.scope,ref);
+          const supplements=h5SupplementPage(row.supplement_items,context.scope,ref,row.input_revision,scopeSecret);
+          const projection={source:row,round:row.completed_round,urge:row.urge_read,epoch:row.read_epoch,progress:row.progress_read,evaluation:row.evaluation_read};
+          const detail:H5EntryDetail={...safeWebDetail({...row,supplement_items:supplements.items}),
+            can_supplement:BigInt(row.input_revision)<50n&&!['CLOSED','CANCELLED'].includes(row.ticket_status??'')&&context.write_flag&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED,
+            supplements_cursor:supplements.next_cursor,
+            ...(feedback?{feedback_context:feedback.contextFromAuthorizedProjection(context,ref,{source:row,round:row.completed_round,already_reopened:row.already_reopened})}:{}),
+            h5:{...lifecycle.contextFromAuthorizedProjection(context,ref,projection),media:h5MediaEntry?await h5MediaEntry({transaction:tx,scope:context.scope,requestRef:ref}):[]}};
+          const timeline=await withH5TimelineBudget(tx,async()=>timelineBody(await timelineRead({transaction:tx,scope:context.scope,requestRef:ref,authorizedIntakeId:row.intake_id,limit:20})));
+          await recheckH5EntryBinding(tx,context.scope,ref);
+          result={...base,view:'request',data:{detail,timeline}};break;
+        }
+        default:fail('YXX_INPUT_INVALID');
+      }
+      await profile.revalidateInTransaction(tx,context.scope,member);
+      return result;
+    });}});
+    const completed=work.then(result=>{if(budget)budget.check();else checkH5Read(request);committed=true;return result;}).finally(()=>{lease?.release();if(budget)h5Reads.finish(budget,committed?'committed':budget.signal.aborted?'cancelled':'failed');else finishH5Read(request,committed?'committed':'failed');});
+    return Promise.race([completed,ready.then(current=>current.wait(h5Reads.watch(current,completed)))]);
+  }
+  async function departmentSummary({request}:{request:IncomingMessage}):Promise<H5DepartmentSummary>{
+    const profile=h5Profile;if(!profile)fail('YXX_UNAVAILABLE',503);
+    return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.MY_REPORTS,source:'WEB',run:context=>transactionP2016(pool,async tx=>{
+      await tx.query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+      return profile.departmentSummaryInTransaction(tx,context.scope);
+    })});
+  }
+  async function supplements({request,requestRef:rawRef,cursor=null,limit:requestedLimit=20}:{request:IncomingMessage;requestRef:string;cursor?:string|null;limit?:unknown}):Promise<H5SupplementPage>{
+    const ref=requestRef(rawRef),n=limit(requestedLimit);
+    return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.WEB_DETAIL,source:'WEB',run:context=>transactionP2016(pool,async tx=>{
+      await tx.query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+      return readH5Supplements(tx,context.scope,ref,scopeSecret,cursor,n);
+    })});
+  }
+
   return Object.freeze({
+    h5Entry,departmentSummary,supplements,closeH5Reads:h5Reads.close,
     async h5Bootstrap({request,sdk}:{request:IncomingMessage;sdk?:H5BootstrapExtension['sdk']}){
       if(!h5Profile)fail('YXX_UNAVAILABLE',503);
       return authorization.read({request,operation:YXX_MEMBER_READ_OPERATIONS.MY_REPORTS,run:context=>h5Profile.bootstrap(context,sdk)});

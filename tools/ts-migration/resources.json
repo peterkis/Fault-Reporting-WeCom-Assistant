@@ -386,6 +386,7 @@
     "database/migrations/063_mvp_notifications_app_members.sql",
     "database/migrations/064_yixiaoxiu_h5_member_service.sql",
     "database/migrations/065_yixiaoxiu_h5_web_media.sql",
+    "database/migrations/066_yixiaoxiu_h5_media_previews.sql",
     "package-lock.json",
     "package.json",
     "tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl",

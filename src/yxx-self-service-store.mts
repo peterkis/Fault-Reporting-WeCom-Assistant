@@ -210,12 +210,15 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       COALESCE((SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,'text',s.safe_content->>'text') ORDER BY s.input_revision) FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.retention_until>platform.local_now()),'[]'::jsonb) AS supplement_items,
       t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,EXISTS (SELECT 1 FROM intake.manual_review_item r WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN LATERAL (SELECT s.safe_content->>'description' AS safe_description,CASE WHEN (s.safe_content->'location'->>'unknown')::boolean THEN NULL ELSE s.safe_content->'location'->>'text' END AS safe_location FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUBMIT' ORDER BY s.input_revision LIMIT 1) web ON TRUE LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now() FOR SHARE OF b,i`,[ref,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]);if(q.rowCount!==1){const e=new Error('YXX_NOT_FOUND') as Error & {code:string;status?:number};e.code='YXX_NOT_FOUND';e.status=404;throw e;}const row=(q.rows[0] as DetailRow);return publicDetail({...row,review_id:row.has_pending_review?'pending':null,safe_description:row.safe_description??'',safe_location:row.safe_location,ticket:row.ticket_no?{ticket_no:row.ticket_no,status:row.ticket_status,updated_at:row.ticket_updated_at}:null});});}
   async function listMyReports({scope,limit=20,cursor=null}:YxxStoreRead={} as YxxStoreRead){const scopeHash=commandScope(scope);if(!Number.isInteger(limit)||limit<1||limit>YXX_WEB_LIMITS.list)throw new TypeError('YXX_LIMIT_INVALID');const after=cursor===null||cursor===undefined?null:decodeCursor(cursor,scopeSecret,scopeHash);return transactionP2016(pool,async tx=>{const args:unknown[]=[scopeHash,scope.sourceCorpScope,scope.sourceAppScope,limit+1];let where='b.canonical_reporter_binding=$1 AND b.source_corp_scope=$2 AND b.source_app_scope=$3 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()';if(after){where+=' AND (b.created_at,b.intake_id)<($5::timestamp without time zone,$6::uuid)';args.push(after.created_at,after.id);}const q=await tx.query<ListRow>(`SELECT b.request_ref,b.intake_id::text AS id,i.intake_no,to_char(b.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,i.pilot_ticket_id::text,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,t.ticket_no,t.status AS ticket_status,i.status,b.input_revision,b.processed_revision FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE ${where} ORDER BY b.created_at DESC,b.intake_id DESC LIMIT $4`,args);const rows=q.rows.slice(0,limit);const items=rows.map(row=>({kind:'WEB_REQUEST',ref:row.request_ref,display_status:displayStatus(row),created_at:String(row.created_at),created_epoch_ms:localEpoch(row.created_at),ticket:row.ticket_no?{ticket_no:row.ticket_no,status:row.ticket_status,updated_at:String(row.ticket_updated_at)}:null}));const next=rows.length===limit&&q.rows.length>limit?cursorToken({scope_hash:scopeHash,created_at:String((rows.at(-1) as ListRow).created_at),id:(rows.at(-1) as ListRow).id},scopeSecret):null;return {items,next_cursor:next};});}
-  async function timelineCombined({scope,requestRef:ref,after=null,before=null,cursor=null,limit=50}:YxxStoreRead={} as YxxStoreRead) {
+  async function timelineCombined(input:YxxStoreRead) {
+    return transactionP2016(pool,transaction=>timelineInTransaction({...input,transaction}));
+  }
+  /** authorizedIntakeId is supplied only by a current-binding read in this same transaction. */
+  async function timelineInTransaction({transaction:tx,authorizedIntakeId=null,scope,requestRef:ref,after=null,before=null,cursor=null,limit=50}:YxxStoreRead&{transaction:PostgresTransaction;authorizedIntakeId?:string|null}) {
     const scopeHash=commandScope(scope);requestRef(ref);
     if(after!==null&&before!==null||cursor!==null&&(after!==null||before!==null))throw new TypeError('YXX_CURSOR_INVALID');
     if(!Number.isInteger(limit)||limit<1||limit>YXX_WEB_LIMITS.timeline)throw new TypeError('YXX_LIMIT_INVALID');
-    return transactionP2016(pool,async tx=>{
-      const owner=await tx.query<{intake_id:string}>('SELECT b.intake_id::text FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()',[ref,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]);
+      const owner=authorizedIntakeId===null?await tx.query<{intake_id:string}>('SELECT b.intake_id::text FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()',[ref,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]):{rowCount:1,rows:[{intake_id:uuidP2016(authorizedIntakeId)}]};
       if(owner.rowCount!==1){const e=new Error('YXX_NOT_FOUND') as Error & {code:string;status?:number};e.code='YXX_NOT_FOUND';e.status=404;throw e;}
       let key:TimelineCursor|null=null,numericBoundary:number|null=null,order='ASC';
        if(cursor){const [data,signature]=cursor.split('.');if(!data||!signature)throw new TypeError('YXX_CURSOR_INVALID');const expected=createHmac('sha256',scopeSecret).update(data).digest('base64url'),a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');try{const parsed:RawObject=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));if(parsed.scope_hash!==scopeHash||parsed.request_ref!==ref||!Number.isSafeInteger(parsed.timeline_ordinal)||(parsed.timeline_ordinal as number)<1||!Number.isInteger(parsed.intake_high_water)||!Number.isInteger(parsed.ticket_high_water)||(parsed.intake_high_water as number)<0||(parsed.ticket_high_water as number)<0||!['ASC','DESC'].includes(parsed.direction as string)||typeof parsed.occurred_at!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u.test(parsed.occurred_at)||!Number.isInteger(parsed.source_rank)||!Number.isInteger(parsed.source_ordinal)||!['INTAKE','TICKET'].includes(parsed.event_source as string)||typeof parsed.source_id!=='string'||!/^[0-9a-f-]{36}$/iu.test(parsed.source_id)||parsed.intake_gap_ranges!==undefined&&!validOrdinalRanges(parsed.intake_gap_ranges)||parsed.ticket_gap_ranges!==undefined&&!validOrdinalRanges(parsed.ticket_gap_ranges))throw new Error('cursor') as Error & {code:string;status?:number};parsed.intake_gap_ranges=validOrdinalRanges(parsed.intake_gap_ranges)?parsed.intake_gap_ranges:[];parsed.ticket_gap_ranges=validOrdinalRanges(parsed.ticket_gap_ranges)?parsed.ticket_gap_ranges:[];key=parsed as TimelineCursor;order=parsed.direction as string;}catch{throw new TypeError('YXX_CURSOR_INVALID');}}
@@ -224,30 +227,72 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       const args:unknown[]=[(owner.rows[0] as { intake_id: string; }).intake_id,limit+1,TICKET_TIMELINE_EVENTS];let boundarySql='';
         if(key){const intakeSeen=expandOrdinalRanges(key.intake_gap_ranges),ticketSeen=expandOrdinalRanges(key.ticket_gap_ranges);args.push(key.occurred_at,key.source_rank,key.source_id,key.intake_high_water,key.ticket_high_water,intakeSeen,ticketSeen);boundarySql=order==='ASC'?`WHERE NOT (event_source='INTAKE' AND source_ordinal=ANY($9::integer[])) AND NOT (event_source='TICKET' AND source_ordinal=ANY($10::integer[])) AND ((occurred_at>$4::timestamp without time zone OR (occurred_at=$4::timestamp without time zone AND source_rank>$5::integer) OR (occurred_at=$4::timestamp without time zone AND source_rank=$5::integer AND source_id>$6::text)) OR (event_source='INTAKE' AND source_ordinal>$7) OR (event_source='TICKET' AND source_ordinal>$8))`:`WHERE NOT (event_source='INTAKE' AND source_ordinal=ANY($9::integer[])) AND NOT (event_source='TICKET' AND source_ordinal=ANY($10::integer[])) AND ((event_source='INTAKE' AND source_ordinal<=$7) OR (event_source='TICKET' AND source_ordinal<=$8)) AND (occurred_at<$4::timestamp without time zone OR (occurred_at=$4::timestamp without time zone AND source_rank<$5::integer) OR (occurred_at=$4::timestamp without time zone AND source_rank=$5::integer AND source_id<$6::text))`;}
       else if(numericBoundary!==null){args.push(numericBoundary);boundarySql=order==='ASC'?'WHERE timeline_ordinal>$4':'WHERE timeline_ordinal<$4';}
-      const q=await tx.query<TimelineRow>(`WITH all_events AS (
-           SELECT 'INTAKE'::text AS event_source,e.event_type,e.payload,e.occurred_at::timestamp without time zone AS occurred_at,e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,
-                  t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,0::integer AS source_rank
-            FROM intake.service_intake_event e LEFT JOIN pilot_ticket.ticket t ON t.source_intake_id=e.intake_id
+      const historicalSql=`WITH current_ticket AS (
+          SELECT id,ticket_no,status,updated_at FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid
+         ), all_events AS (
+           SELECT 'INTAKE'::text AS event_source,e.event_type,e.occurred_at::timestamp without time zone AS occurred_at,
+             e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,0::integer AS source_rank
+            FROM intake.service_intake_event e LEFT JOIN current_ticket t ON TRUE
            WHERE e.intake_id=$1::uuid AND (e.event_type<>'intake.ticket_created' OR NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket_event te WHERE te.ticket_id=t.id AND te.event_type='ticket.created'))
           UNION ALL
-           SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
-             CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
-               AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
-               AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END),te.created_at::timestamp without time zone,te.event_ordinal::integer,te.event_id::text,
-                  t.ticket_no,te.new_status,to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS'),1::integer
-            FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id
-           WHERE t.source_intake_id=$1::uuid AND te.event_type=ANY($3::text[])
+           SELECT 'TICKET'::text AS event_source,te.event_type,te.created_at::timestamp without time zone,
+             te.event_ordinal::integer,te.event_id::text,1::integer
+            FROM current_ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id
+           WHERE te.event_type=ANY($3::text[])
          ), annotated AS (
           SELECT all_events.*,
                  COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='INTAKE') OVER (),0)::integer AS intake_high_water,
                   COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='TICKET') OVER (),0)::integer AS ticket_high_water,
                   row_number() OVER (ORDER BY occurred_at,source_rank,source_id)::bigint AS timeline_ordinal
             FROM all_events
+        ), page AS MATERIALIZED (
+          SELECT * FROM annotated ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_id ${order} LIMIT $2
         )
-        SELECT event_source,event_type,payload,to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
-               intake_high_water,ticket_high_water,timeline_ordinal,
-               ticket_no,ticket_status,ticket_updated_at
-         FROM annotated ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_id ${order} LIMIT $2`,args);
+        SELECT page.event_source,page.event_type,
+          CASE WHEN page.event_source='INTAKE' THEN ie.payload ELSE jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
+            CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
+              AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
+              AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END) END AS payload,
+          to_char(page.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
+          intake_high_water,ticket_high_water,timeline_ordinal,t.ticket_no,
+          CASE WHEN page.event_source='INTAKE' THEN t.status ELSE te.new_status END AS ticket_status,
+          CASE WHEN page.event_source='INTAKE' THEN to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') ELSE to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS') END AS ticket_updated_at
+        FROM page LEFT JOIN current_ticket t ON TRUE
+        LEFT JOIN intake.service_intake_event ie ON page.event_source='INTAKE' AND ie.event_id=page.source_id::uuid
+        LEFT JOIN pilot_ticket.ticket_event te ON page.event_source='TICKET' AND te.event_id=page.source_id::uuid
+        ORDER BY page.occurred_at ${order},source_rank ${order},source_id ${order}`;
+      // Initial pages need only the first N keys from each independently indexed source.
+      // Historical pages preserve the global ordinal/high-water windows over keys,
+      // materializing only the selected page before reading payloads and safe notes.
+      const initialSql=`WITH current_ticket AS (
+        SELECT id,ticket_no,status,updated_at FROM pilot_ticket.ticket WHERE source_intake_id=$1::uuid
+      ), intake_candidates AS (
+        SELECT 'INTAKE'::text AS event_source,e.event_type,e.payload,e.occurred_at::timestamp without time zone AS occurred_at,
+          e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,t.ticket_no,t.status AS ticket_status,
+          to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,0::integer AS source_rank
+        FROM intake.service_intake_event e LEFT JOIN current_ticket t ON TRUE
+        WHERE e.intake_id=$1::uuid AND (e.event_type<>'intake.ticket_created' OR NOT EXISTS(
+          SELECT 1 FROM pilot_ticket.ticket_event te WHERE te.ticket_id=t.id AND te.event_type='ticket.created'))
+        ORDER BY e.occurred_at,e.event_id LIMIT $2
+      ), ticket_candidates AS (
+        SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
+          CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
+            AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
+            AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END) AS payload,
+          te.created_at::timestamp without time zone AS occurred_at,te.event_ordinal::integer AS source_ordinal,te.event_id::text AS source_id,
+          t.ticket_no,te.new_status AS ticket_status,to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,1::integer AS source_rank
+        FROM current_ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id WHERE te.event_type=ANY($3::text[])
+        ORDER BY te.created_at,te.event_id LIMIT $2
+      ), candidates AS (SELECT * FROM intake_candidates UNION ALL SELECT * FROM ticket_candidates),
+      high_water AS (SELECT
+        COALESCE((SELECT max(e.event_ordinal) FROM intake.service_intake_event e LEFT JOIN current_ticket t ON TRUE WHERE e.intake_id=$1::uuid
+          AND (e.event_type<>'intake.ticket_created' OR NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_event te WHERE te.ticket_id=t.id AND te.event_type='ticket.created'))),0)::integer AS intake_high_water,
+        COALESCE((SELECT max(te.event_ordinal) FROM current_ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id WHERE te.event_type=ANY($3::text[])),0)::integer AS ticket_high_water)
+      SELECT event_source,event_type,payload,to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
+        intake_high_water,ticket_high_water,row_number() OVER(ORDER BY occurred_at,source_rank,source_id)::bigint AS timeline_ordinal,
+        ticket_no,ticket_status,ticket_updated_at FROM candidates CROSS JOIN high_water
+      ORDER BY candidates.occurred_at,source_rank,source_id LIMIT $2`;
+      const q=await tx.query<TimelineRow>(key===null&&numericBoundary===null?initialSql:historicalSql,args);
       const rows=q.rows.slice(0,limit);if(order==='DESC')rows.reverse();const items=rows.map(timelineItem);
         const next=rows.length===limit&&q.rows.length>limit?(()=>{
           const last=(rows.at(-1) as TimelineRow),previous=key?timelineKey(key):null;
@@ -264,9 +309,8 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
           return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');
         })():null;
       return {items,next_cursor:next};
-    });
   }
   async function timeline({scope,requestRef:ref,after=null,before=null,cursor=null,limit=50}:YxxStoreRead={} as YxxStoreRead){const scopeHash=commandScope(scope);requestRef(ref);if(after!==null&&before!==null||cursor!==null&&(after!==null||before!==null))throw new TypeError('YXX_CURSOR_INVALID');if(!Number.isInteger(limit)||limit<1||limit>YXX_WEB_LIMITS.timeline)throw new TypeError('YXX_LIMIT_INVALID');return transactionP2016(pool,async tx=>{const owner=await tx.query<{intake_id:string}>('SELECT b.intake_id::text FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()',[ref,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]);if(owner.rowCount!==1){const e=new Error('YXX_NOT_FOUND') as Error & {code:string;status?:number};e.code='YXX_NOT_FOUND';e.status=404;throw e;}let boundary:number|null=null,order='ASC';if(cursor){const [data,signature]=cursor.split('.');if(!data||!signature)throw new TypeError('YXX_CURSOR_INVALID');const expected=createHmac('sha256',scopeSecret).update(data).digest('base64url'),a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');try{const parsed:RawObject=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));if(parsed.scope_hash!==scopeHash||parsed.request_ref!==ref||!Number.isInteger(parsed.event_ordinal)||!['ASC','DESC'].includes(parsed.direction as string))throw new Error('cursor') as Error & {code:string;status?:number};boundary=parsed.event_ordinal as number;order=parsed.direction as string;}catch{throw new TypeError('YXX_CURSOR_INVALID');}}else if(after!==null){if(!/^[0-9]+$/u.test(after))throw new TypeError('YXX_CURSOR_INVALID');boundary=Number(after);}else if(before!==null){if(!/^[0-9]+$/u.test(before))throw new TypeError('YXX_CURSOR_INVALID');boundary=Number(before);order='DESC';}const args:unknown[]=[(owner.rows[0] as { intake_id: string; }).intake_id,limit+1];let where='e.intake_id=$1::uuid';if(boundary!==null){where+=order==='ASC'?' AND e.event_ordinal>$3':' AND e.event_ordinal<$3';args.push(boundary);}const q=await tx.query<IntakeTimelineRow>(`SELECT e.event_type,e.payload,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,e.event_ordinal,t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at FROM intake.service_intake_event e LEFT JOIN pilot_ticket.ticket t ON t.source_intake_id=e.intake_id WHERE ${where} ORDER BY e.event_ordinal ${order} LIMIT $2`,args);const rows=q.rows.slice(0,limit);if(order==='DESC')rows.reverse();const items=rows.map(timelineItem);const next=rows.length===limit&&q.rows.length>limit?(()=>{const ordinal=order==='ASC'?(rows.at(-1) as IntakeTimelineRow).event_ordinal:(rows[0] as IntakeTimelineRow).event_ordinal;const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,event_ordinal:Number(ordinal),direction:order}),'utf8').toString('base64url');return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');})():null;return {items,next_cursor:next};});}
   async function command({scope,clientCommandId}:{scope:YxxStoreScope;clientCommandId:unknown}){const scopeHash=commandScope(scope);uuidP2016(clientCommandId);return transactionP2016(pool,async tx=>{const q=await tx.query<YxxCommandReceipt>(`SELECT r.client_command_id::text,r.status,r.result_request_ref AS request_ref,i.intake_no,r.accepted_revision,to_char(r.accepted_at,'YYYY-MM-DD HH24:MI:SS') AS accepted_at,r.accepted_epoch_ms::text FROM intake.web_command_receipt r LEFT JOIN intake.service_intake i ON i.id=r.result_intake_id JOIN intake.web_request_binding b ON b.intake_id=r.result_intake_id WHERE r.scope_hash=$1 AND r.client_command_id=$2::uuid AND r.command_kind IN ('SUBMIT','SUPPLEMENT') AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()`,[scopeHash,clientCommandId,scope.sourceCorpScope,scope.sourceAppScope]);if(q.rowCount!==1){const e=new Error('YXX_NOT_FOUND') as Error & {code:string;status?:number};e.code='YXX_NOT_FOUND';e.status=404;throw e;}return (q.rows[0] as YxxCommandReceipt);});}
-  return Object.freeze({accept,acceptInTransaction,getRequest,listMyReports,timeline:timelineCombined,command,parseYxxRequestInput,parseYxxSupplementInput});
+  return Object.freeze({accept,acceptInTransaction,getRequest,listMyReports,timeline:timelineCombined,timelineInTransaction,command,parseYxxRequestInput,parseYxxSupplementInput});
 }

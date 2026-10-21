@@ -55,7 +55,9 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  const reporterHmacSecret=process.env.P2_016_REPORTER_HMAC_SECRET as string,identityHmacKey=process.env.PILOT_LOG_IDENTITY_HASH_KEY as string;
  const allowedHosts=[new URL(s.reporterOrigin).host],appNotifications=['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(s.memberEntry.identityMode)?createWorkbenchNotificationOptions(s,reporterHmacSecret):null;
  const tokenProvider=createWeComAppTokenProvider({corpId:s.memberEntry.corpId,appSecret:process.env.APP_SECRET??'disabled',fetchImpl});
- const applicationMemberVerifier=createApplicationMemberVerifier({accessTokenProvider:tokenProvider,fetchImpl});
+ const h5Options=role==='APP'?readWorkbenchH5RuntimeOptions():{enabled:false as const};
+ const h5EntryReadEnabled=h5Options.enabled===true&&h5Options.performanceEnabled===true;
+ const applicationMemberVerifier=createApplicationMemberVerifier({accessTokenProvider:tokenProvider,fetchImpl,h5EntryReadEnabled});
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  if(role==='APP'){
   const flags={TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true} as const;
@@ -68,7 +70,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
    runtimeFactory:options=>{
     const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
-    applicationMemberVerifier,yxxH5:{...readWorkbenchH5RuntimeOptions(),accessTokenProvider:tokenProvider,fetchImpl},groupNotificationTargets:s.groupNotificationTargets??[],reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
+    applicationMemberVerifier,h5EntryMemberVerifier:h5EntryReadEnabled?applicationMemberVerifier.h5EntryRead:null,yxxH5:{...h5Options,accessTokenProvider:tokenProvider,fetchImpl},groupNotificationTargets:s.groupNotificationTargets??[],reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
     return {...runtime,start:async()=>{
      const started=await runtime.start();

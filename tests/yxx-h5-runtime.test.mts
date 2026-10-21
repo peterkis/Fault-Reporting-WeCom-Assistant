@@ -7,6 +7,8 @@ import {createYxxH5Runtime,validateYxxH5RuntimeOptions,createYxxH5RequestAuthent
 import {readWorkbenchH5RuntimeOptions,readHumanWorkbenchConfiguration,workbenchRoleEnvironment} from '../src/human-workbench-configuration.mjs';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs';
+import {createYxxH5Media} from '../src/yxx-h5-media.mjs';
+import type {H5MediaPrivateStore} from '../contracts/yxx_h5_media_contracts.js';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
@@ -22,11 +24,14 @@ test('H5 runtime and CLI stay disabled by default and reject non-boolean enablem
   // Exercise malformed JavaScript input without weakening the TypeScript contract.
   assert.throws(()=>Reflect.apply(validateYxxH5RuntimeOptions,undefined,[{enabled:'true'}]),/CONFIG_INVALID/u);
   assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_PROGRESS_ENABLED:'true'}),/YIXIAOXIU_H5_PROGRESS_ENABLED/u);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'}),/YIXIAOXIU_H5_PERFORMANCE_ENABLED/u);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:privatePath}),/YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT/u);
+  assert.throws(()=>Reflect.apply(validateYxxH5RuntimeOptions,undefined,[{enabled:false,performanceEnabled:true}]),/CONFIG_INVALID/u);
 });
 
 test('explicit H5 configuration requires a private absolute root, 256-bit key and Worker executable pair',()=>{
   const app=readWorkbenchH5RuntimeOptions(h5Env);
-  assert.equal(app.enabled,true);assert.equal(app.key?.byteLength,32);assert.equal(app.workbenchProgressEnabled,false);
+  assert.equal(app.enabled,true);assert.equal(app.key?.byteLength,32);assert.equal(app.workbenchProgressEnabled,false);assert.equal(app.performanceEnabled,false);
   assert.equal(app.ffmpegPath,undefined);assert.equal(app.ffprobePath,undefined);
   assert.equal(validateYxxH5RuntimeOptions(app),true);
   assert.throws(()=>validateYxxH5RuntimeOptions(app,'WORKER'),/CONFIG_INVALID/u);
@@ -38,15 +43,21 @@ test('explicit H5 configuration requires a private absolute root, 256-bit key an
   assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_MEDIA_KEY_HEX:'gg'.repeat(32)}),/MEDIA_KEY_HEX/u);
   assert.throws(()=>validateYxxH5RuntimeOptions({...worker,key:Buffer.alloc(31)}),/CONFIG_INVALID/u);
   assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PROGRESS_ENABLED:'true'}).workbenchProgressEnabled,true);
+  assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'}).performanceEnabled,true);
+  assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:privatePath}).previousStaticRoot,privatePath);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'1'}),/PERFORMANCE_ENABLED/u);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:'relative'}),/PREVIOUS_STATIC_ROOT/u);
 });
 
 test('supervisor sends H5 storage to App and Worker while retaining role credential separation',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-config-'));
   try{
-    const f=workbenchTestSettings(directory),c=readHumanWorkbenchConfiguration({...f.env,...h5Env},{isolatedBoundaries:true});
+    const f=workbenchTestSettings(directory),c=readHumanWorkbenchConfiguration({...f.env,...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true',YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:privatePath},{isolatedBoundaries:true});
     assert.ok(c.enabled);
     const app=workbenchRoleEnvironment(c,'APP'),worker=workbenchRoleEnvironment(c,'WORKER'),gateway=workbenchRoleEnvironment(c,'GATEWAY');
     assert.equal(app.YIXIAOXIU_H5_ENABLED,'true');assert.equal(worker.YIXIAOXIU_H5_ENABLED,'true');
+    assert.equal(app.YIXIAOXIU_H5_PERFORMANCE_ENABLED,'true');assert.equal(worker.YIXIAOXIU_H5_PERFORMANCE_ENABLED,'true');
+    assert.equal(app.YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT,privatePath);assert.equal(gateway.YIXIAOXIU_H5_PERFORMANCE_ENABLED,undefined);assert.equal(gateway.YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT,undefined);
     assert.equal(app.YIXIAOXIU_H5_MEDIA_KEY_HEX,h5Env.YIXIAOXIU_H5_MEDIA_KEY_HEX);
     assert.equal(app.YIXIAOXIU_H5_FFMPEG_PATH,undefined);assert.equal(worker.YIXIAOXIU_H5_FFMPEG_PATH,h5Env.YIXIAOXIU_H5_FFMPEG_PATH);
     assert.equal(worker.APP_SECRET,undefined);assert.equal(worker.WECOM_BOT_SECRET,undefined);
@@ -81,6 +92,47 @@ test('qualification unavailability stays 503 and local revocation is checked bef
   await assert.rejects(ready.authenticate(request),{message:'YXX_AUTH_REQUIRED'});ready.release(request);
 });
 
+test('entry and general authentication overlap on the same pending qualification in either order',async()=>{
+  for(const firstPurpose of ['ENTRY','BASE'] as const){
+    const calls={ENTRY:0,BASE:0};let rechecks=0,revoked=false,release=()=>{},entered=()=>{};
+    const gate=new Promise<void>(resolve=>{release=resolve;}),started=new Promise<void>(resolve=>{entered=resolve;});
+    const qualify=async(purpose:'ENTRY'|'BASE')=>{calls[purpose]++;entered();await gate;return {scope:purpose};};
+    const authentication=createYxxH5RequestAuthentication<object,{scope:string}>({authenticate:()=>qualify('BASE'),authenticateEntry:()=>qualify('ENTRY'),
+      recheck:()=>{rechecks++;if(revoked)throw Object.assign(new Error('YXX_AUTH_REQUIRED'),{status:401});return {scope:'current'};}});
+    const request={};
+    try{
+      const first=firstPurpose==='ENTRY'?authentication.authenticateEntry(request):authentication.authenticate(request);
+      const second=firstPurpose==='ENTRY'?authentication.authenticate(request):authentication.authenticateEntry(request);
+      const third=authentication.authenticateEntry(request);
+      await started;assert.deepEqual(calls,firstPurpose==='ENTRY'?{ENTRY:1,BASE:0}:{ENTRY:0,BASE:1});assert.equal(rechecks,0);
+      release();const contexts=await Promise.all([first,second,third]);
+      assert.deepEqual(contexts,[{scope:firstPurpose},{scope:'current'},{scope:'current'}]);assert.equal(rechecks,2);
+      assert.deepEqual(await authentication.authenticateEntry(request),{scope:'current'});
+      assert.deepEqual(await authentication.authenticate(request),{scope:'current'});assert.equal(rechecks,4);
+      revoked=true;await Promise.all([assert.rejects(authentication.authenticateEntry(request),{status:401}),assert.rejects(authentication.authenticate(request),{status:401})]);
+      assert.deepEqual(calls,firstPurpose==='ENTRY'?{ENTRY:1,BASE:0}:{ENTRY:0,BASE:1});
+    }finally{release();authentication.release(request);}
+  }
+});
+
+test('a failed entry or base qualification is shared across purposes without retry until release',async()=>{
+  const unavailable=Object.assign(new Error('YXX_UNAVAILABLE'),{status:503,code:'YXX_UNAVAILABLE'});
+  for(const firstPurpose of ['ENTRY','BASE'] as const){
+    const calls={ENTRY:0,BASE:0};let rechecks=0;
+    const fail=async(purpose:'ENTRY'|'BASE'):Promise<boolean>=>{calls[purpose]++;throw unavailable;};
+    const authentication=createYxxH5RequestAuthentication<object,boolean>({authenticate:()=>fail('BASE'),authenticateEntry:()=>fail('ENTRY'),recheck:()=>{rechecks++;return true;}}),request={};
+    try{
+      const first=firstPurpose==='ENTRY'?authentication.authenticateEntry(request):authentication.authenticate(request);
+      const second=firstPurpose==='ENTRY'?authentication.authenticate(request):authentication.authenticateEntry(request);
+      await Promise.all([assert.rejects(first,error=>error===unavailable),assert.rejects(second,error=>error===unavailable)]);
+      await assert.rejects(authentication.authenticateEntry(request),error=>error===unavailable);await assert.rejects(authentication.authenticate(request),error=>error===unavailable);
+      assert.equal(rechecks,0);assert.deepEqual(calls,firstPurpose==='ENTRY'?{ENTRY:1,BASE:0}:{ENTRY:0,BASE:1});
+      authentication.release(request);await assert.rejects(authentication.authenticateEntry(request),error=>error===unavailable);
+      assert.deepEqual(calls,firstPurpose==='ENTRY'?{ENTRY:2,BASE:0}:{ENTRY:1,BASE:1});
+    }finally{authentication.release(request);}
+  }
+});
+
 test('disabled composition performs no IO and leaves its externally owned pool open',async()=>{
   const database=pool(),end=mock.method(database,'end');
   const runtime=createYxxH5Runtime({pool:database,scopeSecret:'runtime-test-secret'.repeat(3),publicOrigin:'https://synthetic.invalid',corpId:'synthetic',agentId:'1'});
@@ -89,6 +141,34 @@ test('disabled composition performs no IO and leaves its externally owned pool o
     assert.equal(await runtime.ready(),true);await runtime.runOnce();await runtime.close();await runtime.close();
     assert.equal(database.totalCount,0);assert.equal(end.mock.callCount(),0);
   }finally{end.mock.restore();await database.end();}
+});
+
+test('concurrent media close waits for the same pending underlying close exactly once',async()=>{
+  const database=pool();let release=()=>{},started=()=>{},closeCalls=0,secondFinished=false;
+  const gate=new Promise<void>(resolve=>{release=resolve;}),entered=new Promise<void>(resolve=>{started=resolve;});
+  const store:H5MediaPrivateStore={write:async()=>{throw new Error('UNUSED');},read:async()=>{throw new Error('UNUSED');},remove:async()=>{throw new Error('UNUSED');},
+    close:async()=>{closeCalls++;started();await gate;},ownedResourceState:()=>({active:0,handles:0,plaintext_bytes:0})};
+  const media=createYxxH5Media({pool:database,store,enabled:true});
+  try{
+    const first=media.close();await entered;const second=media.close().then(()=>{secondFinished=true;});
+    await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(secondFinished,false);assert.equal(closeCalls,1);
+    release();await Promise.all([first,second]);assert.equal(secondFinished,true);assert.equal(closeCalls,1);assert.deepEqual(media.ownedResourceState(),{active:0,plaintext_bytes:0});
+  }finally{release();await media.close();await database.end();}
+});
+
+test('performance readiness requires the incremental media schema and does not enable H5 implicitly',async()=>{
+  const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-ready-'));
+  const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','043_ticket_reopen_rounds']);
+  const query=mock.method(database,'query',async(_sql:string,values:readonly unknown[])=>{
+    const required=values[0];assert.ok(Array.isArray(required));
+    const rows=required.filter((value):value is string=>typeof value==='string'&&migrations.has(value)).map(migration_id=>({migration_id}));
+    return {rows,rowCount:rows.length};
+  });
+  const runtime=createYxxH5Runtime({pool:database,scopeSecret:'runtime-ready-secret'.repeat(3),publicOrigin:'https://synthetic.invalid',corpId:'synthetic',agentId:'1',options:{enabled:true,performanceEnabled:true,privateRoot:directory,key:Buffer.alloc(32,4)}});
+  try{
+    assert.equal(runtime.performanceEnabled,true);assert.equal(await runtime.ready(),false);
+    migrations.add('066_yixiaoxiu_h5_media_previews');assert.equal(await runtime.ready(),true);
+  }finally{await runtime.close();query.mock.restore();await database.end();await rm(directory,{recursive:true,force:true});}
 });
 
 test('App composition derives SDK identity from the supplied member entry and releases only its media resources',async()=>{
@@ -107,14 +187,15 @@ test('App composition derives SDK identity from the supplied member entry and re
 test('the existing Worker turn serializes media work, bounds cleanup cadence and cancels new work on close',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-worker-')),database=pool();
   let finishCleanup:((value:{rowCount:number;rows:never[]})=>void)|undefined,cleanupCalls=0,transactions=0;
-  const cleanup=mock.method(database,'query',async()=>{cleanupCalls++;return new Promise<{rowCount:number;rows:never[]}>(resolve=>{finishCleanup=resolve;});});
+  let cleanupStarted=()=>{};const started=new Promise<void>(resolve=>{cleanupStarted=resolve;});
+  const cleanup=mock.method(database,'query',async()=>{cleanupCalls++;cleanupStarted();return new Promise<{rowCount:number;rows:never[]}>(resolve=>{finishCleanup=resolve;});});
   const connect=mock.method(database,'connect',async()=>{transactions++;return {query:async()=>({rowCount:0,rows:[]}),release:()=>{}};});
   const end=mock.method(database,'end');
   const runtime=createYxxH5Runtime({pool:database,scopeSecret:'runtime-test-secret'.repeat(3),role:'WORKER',options:{
     enabled:true,privateRoot:directory,key:Buffer.alloc(32,2),ffmpegPath:h5Env.YIXIAOXIU_H5_FFMPEG_PATH,ffprobePath:h5Env.YIXIAOXIU_H5_FFPROBE_PATH,
   }});
   try{
-    const first=runtime.runOnce();await runtime.runOnce();assert.equal(cleanupCalls,1);assert.equal(transactions,0);
+    const first=runtime.runOnce();await runtime.runOnce();await started;assert.equal(cleanupCalls,1);assert.equal(transactions,0);
     assert.ok(finishCleanup);finishCleanup({rowCount:0,rows:[]});await first;
     await runtime.runOnce();assert.equal(cleanupCalls,1);assert.equal(transactions,2);
     await runtime.close();await runtime.runOnce();assert.equal(transactions,2);assert.equal(end.mock.callCount(),0);

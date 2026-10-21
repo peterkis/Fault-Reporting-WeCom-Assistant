@@ -88,6 +88,8 @@ human-v1 显式启用 `mvpNotificationsEnabled=true`；通用 Runtime 默认 fal
 | 字段 | 默认／要求 | 角色边界 |
 | --- | --- | --- |
 | `YIXIAOXIU_H5_ENABLED` | 缺省 `false`；只接受字面量 `true`／`false` | 显式传入 App／Worker，Gateway 不接收 |
+| `YIXIAOXIU_H5_PERFORMANCE_ENABLED` | 独立默认 `false`，H5关闭时不能单独true；开启前显式应用066预览迁移 | App最小页面引导／统计／补充分页、媒体HEAD／Range／THUMBNAIL及Worker预览；原V1/V2保持 |
+| `YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT` | 可选绝对路径，上一代已验证编译H5目录；H5关闭时不接受 | 仅回退登记的旧资源，不回退HTML、源码或设计原件 |
 | `YIXIAOXIU_H5_PROGRESS_ENABLED` | 独立默认 `false`；H5 关闭时不能单独为 `true` | App 的当前处理人公开进度写入；READ、原用途回执与新 WRITE 分开 |
 | `YIXIAOXIU_H5_PRIVATE_ROOT` | H5 开启时必需，绝对路径；预先准备的独立私有目录，不放在公开静态目录下 | App／Worker；构造器不自动创建根目录 |
 | `YIXIAOXIU_H5_MEDIA_KEY_HEX` | H5 开启时必需，64 位十六进制，即 32 字节 AES 密钥；不复用身份／Reporter 密钥 | App／Worker，日志与浏览器不接收 |
@@ -108,6 +110,8 @@ App 保存私有原件；Worker 在既有有限 `runOnce` 周期内串行处理�
 
 只停公开进度写入时设置 `YIXIAOXIU_H5_PROGRESS_ENABLED=false`；只停成员新写沿原 `write_flag`／成员写开关，保留 H5 当前获权历史 READ 和原用途核对。`YIXIAOXIU_H5_ENABLED=false` 则退出新版页面／新路由，保留原 V1 读取、数据库和私有文件；它不是删除、回滚迁移或轮换密钥的命令。
 
+只回退新增性能读取时设置`YIXIAOXIU_H5_PERFORMANCE_ENABLED=false`，保留H5和媒体原件读取；浏览器只对明确的`YXX_H5_ENTRY_DISABLED`回原读取。停止新预览生成后仍由原Worker到期清理已存在的预览，不能因回退延长材料留存。[性能读取合同](../api/member/h5-performance.md)记录每实例32MiB媒体缓冲、8项等待和60秒含排队截止；App与性能路径Worker合计受控媒体缓冲最多60MiB，并非跨进程共享32MiB，RSS及FFmpeg内存另行测量。实机效果与部署仍需独立验证及授权。
+
 反向代理除原成员路径外，还须保留 `/wecom/yixiaoxiu/assets/` 的编译资源请求。服务只读取本次 Vite manifest 可达的同源 JS／CSS／字体／图片，拒绝设计稿、preview、manifest／inventory 和符号链接；原 Reporter 卡片仍走下文 `/reporter/` 资源路径。不得用公开私有存储目录或放宽 CSP 来修复缺失资源。
 
 ### Bot 接收与真实发送分开
@@ -121,6 +125,8 @@ App 保存私有原件；Worker 在既有有限 `runOnce` 周期内串行处理�
 不使用 H5 时，保留 `memberEntry.enabled=true` 和已核对企业／应用／Bot 作用域，设置 `identityMode=UNVERIFIED`、`memberIdsConfirmed=false`、`proofRef=null`、`proofKind=null` 并省略 `reporterUserIds`。此时不转换 H5 名单、不读取通知资格文件，不装配成员自助／反馈或 App通知；原 MEMBER_REQUIRED 读取继续拒绝未证明的跨身份访问，不回退旧 Grant。既有映射模式真实发送仍要求原已证明映射；新 H5 原生应用身份不借用 Bot userid。
 
 成员查询按 1 个实际在途操作串行处理，最多保留 32 项。5 秒截止包含排队等待；超时且 Provider 未结束时仍保留占用，不能累积后台请求。无法核验、超时或队列满的本条消息不会进入业务库，也没有声称已自动重放；需在故障恢复后重新报修，不能把这一限制写成完整投递保障。
+
+2026-10-21的[H5性能窄例外](../../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)：APP中H5与性能开关都true时，合法entry专用当前成员核验最多2实际操作；与原BASE共用APP总2实际／32项，BASE仍最多1、Gateway／Bot和发送仍走原规则。5秒从入队起、底层未结束继续占槽、逐HTTP实际核验和等待后READ终检不变。该能力不启动额外服务或数据库池，默认关闭；性能验收结论以同编译身份的完整报告为准。
 
 启动前确认目标 Bot 没有其他活动连接，保持一个 Gateway。`--check` 只报告配置，不启动连接或发消息。真实接收后按原 Inbox、Intake、规则、工单核心和工作台查看结果。Sender、投递 Worker 及 App 对外发送仍由 `transportEnabled` 控制。单独接收不代表消息回执、通知或报修人 H5 已验收。
 

@@ -1,7 +1,8 @@
 import path from 'node:path';
 import {writeFileSync,readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles} from './common.mjs';
+import {brotliCompressSync,constants,gzipSync} from 'node:zlib';
+import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles,h5StartupMetrics} from './common.mjs';
 type WebProject = 'web/admin-workbench' | 'h5';
 function typecheckProject(root:string,relative:WebProject):void {
   const project=path.join(root,relative),code=relative==='h5'?'H5':'WEB01';
@@ -40,9 +41,25 @@ export function buildWeb(root:string):void {
 function emitH5(root:string):void {
   const output=path.join(controlledBuildRoot(root),'emit/h5');
   runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',path.join(root,'h5'),'--outDir',output,'--emptyOutDir']);
+  const original=h5OutputFiles(root,false),manifest=record(JSON.parse(readFileSync(safeFile(output,'.vite/manifest.json'),'utf8')) as unknown),main=record(manifest['index.html']);
+  // Public files are already compared against source bytes by h5OutputFiles.
+  // Register them in the reachable graph as well as the artifact inventory.
+  main.assets=[...new Set([...(Array.isArray(main.assets)?main.assets:[]),...original.filter(file=>/^assets\//u.test(file)&&!file.endsWith('.js')&&!file.endsWith('.css'))])];
+  const representations=[];
+  for(const source of original.filter(file=>file.startsWith('assets/'))){
+    const bytes=readFileSync(safeFile(output,source));representations.push({file:source,source,encoding:'identity',bytes:bytes.length,sha256:hash(bytes)});
+    if(!/\.(?:js|css)$/u.test(source))continue;
+    for(const [encoding,suffix,encoded] of [['gzip','.gz',gzipSync(bytes,{level:9})],['br','.br',brotliCompressSync(bytes,{params:{[constants.BROTLI_PARAM_QUALITY]:11}})]] as const){
+      const file=source+suffix;writeFileSync(path.join(output,file),encoded);representations.push({file,source,encoding,bytes:encoded.length,sha256:hash(encoded)});
+    }
+  }
+  main.h5Representations=representations;writeFileSync(path.join(output,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+  const startup=h5StartupMetrics(root);writeFileSync(path.join(output,'startup-metrics.json'),JSON.stringify(startup)+'\n');
   const files=h5OutputFiles(root,false);
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');
   const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
   writeFileSync(path.join(output,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+  if([startup.initial,...startup.routes].some(item=>item.gzip>startup.js_budget_gzip))throw new Error('H5_STARTUP_BUDGET_EXCEEDED');
+  if(startup.assets.some(item=>/^assets\/prepaint-/u.test(item.file)&&item.gzip>startup.prepaint_budget_gzip))throw new Error('H5_PREPAINT_BUDGET_EXCEEDED');
 }
 export function buildH5(root:string):void { typecheckH5(root); emitH5(root); }

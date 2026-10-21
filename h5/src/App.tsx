@@ -1,30 +1,29 @@
-import{useEffect,useRef,useState}from'react';
-import{HashRouter,Route,Routes,Navigate}from'react-router';
-import{useQuery,useQueryClient}from'@tanstack/react-query';
+import{Suspense,useEffect,useMemo,useSyncExternalStore}from'react';
+import{HashRouter,useLocation,Navigate}from'./navigation';
 import{useTranslation}from'react-i18next';
-import{api,authLost,ApiError}from'./api/client';
-import{SessionContext}from'./session';
+import{SessionProvider,type SessionStatus}from'./session';
 import{CommandProvider}from'./hooks/useCommand';
 import{Shell,Loading,ErrorPanel}from'./components/Common';
-import{Alert,AlertTitle,AlertDescription}from'./components/ui/primitives';
+import{Alert,AlertTitle,Button}from'./components/ui/primitives';
 import{followClientPreferences}from'./lib/preferences';
-import Home from'./pages/Home';
-import Report from'./pages/Report';
-import Reports from'./pages/Reports';
-import Detail from'./pages/Detail';
-import Department from'./pages/Department';
-function LegacyEntry(){const params=new URLSearchParams(location.search);const ref=params.get('request_ref');return ref?<Navigate replace to={'/requests/'+encodeURIComponent(ref)}/>:<Home/>;}
-export default function App(){
- const{t,i18n}=useTranslation(),client=useQueryClient();const[denied,setDenied]=useState(false);const previous=useRef<string|null>(null);
- const bootstrap=useQuery({queryKey:['bootstrap'],queryFn:({signal})=>api.bootstrap(signal),enabled:!denied,staleTime:0});
+import{describeRoute,pages}from'./routing';
+import type{PageRuntime}from'./page-runtime';
+import{hasProtectedInput,reloadIfSafe}from'./lib/reload';
+function PageFailure({error,runtime}:{error:unknown;runtime:PageRuntime}){const{t}=useTranslation();const asset=error instanceof Error&&/dynamically imported module|loading chunk|preload CSS/i.test(error.message),protectedDraft=hasProtectedInput();return <><ErrorPanel error={error} retry={()=>void runtime.refresh().catch(()=>undefined)}/>{asset&&<Alert><AlertTitle>{t('notAvailable')}</AlertTitle>{protectedDraft&&<p>{t('preserveDraft')}</p>}<Button variant="outline" disabled={protectedDraft} onClick={reloadIfSafe}>{t('refresh')}</Button></Alert>}</>;}
+function Navigation({runtime}:{runtime:PageRuntime}){
+ const{t}=useTranslation(),location=useLocation();const snapshot=useSyncExternalStore(runtime.subscribe,runtime.getSnapshot,runtime.getSnapshot);
+ const route=useMemo(()=>describeRoute(location.pathname,location.search),[location.pathname,location.search]);
+ useEffect(()=>{void runtime.navigate(route).catch(()=>undefined);},[runtime,route]);
+ const checking=snapshot.checking||snapshot.route.key!==route.key,routeReady=snapshot.ready&&snapshot.route.key===route.key;
+ const status=useMemo<SessionStatus>(()=>({checking,writeReady:!checking&&snapshot.ready&&!snapshot.error&&!snapshot.denied,membershipRevision:snapshot.membershipRevision,refresh:runtime.refresh}),[checking,snapshot.ready,snapshot.error,snapshot.denied,snapshot.membershipRevision,runtime]);
+ if(snapshot.denied)return <div className="standalone-state"><Alert variant="destructive"><AlertTitle>{t('authRequired')}</AlertTitle></Alert></div>;
+ if(!snapshot.session)return <div className="standalone-state">{snapshot.error?<PageFailure error={snapshot.error} runtime={runtime}/>:<Loading/>}</div>;
+ const Page=pages[route.input.view],ref=route.input.view==='request'?route.input.request_ref:undefined;
+ const legacyRef=location.pathname==='/'&&route.input.view==='request'?ref:null;
+ return <SessionProvider session={snapshot.session} status={status} key={snapshot.session.recovery_scope}><CommandProvider><Shell>{Boolean(snapshot.error)&&<div className="session-warning"><PageFailure error={snapshot.error} runtime={runtime}/></div>}{!routeReady?snapshot.error?null:<Loading/>:legacyRef?<Navigate replace to={'/requests/'+encodeURIComponent(legacyRef)}/>:<Suspense fallback={<Loading/>}><div key={snapshot.membershipRevision} data-h5-ready={snapshot.ready&&!checking&&!snapshot.error?route.input.view:undefined} data-h5-checking={String(checking)} data-h5-write-ready={String(status.writeReady)} data-request-ref={ref}><Page/></div></Suspense>}</Shell></CommandProvider></SessionProvider>;
+}
+export default function App({runtime}:{runtime:PageRuntime}){
+ const{i18n}=useTranslation();
  useEffect(()=>followClientPreferences(language=>{if(i18n.language!==language)void i18n.changeLanguage(language);document.documentElement.lang=language;}),[i18n]);
- useEffect(()=>{const lost=()=>{setDenied(true);void client.cancelQueries();client.clear();};authLost.addEventListener('lost',lost);return()=>authLost.removeEventListener('lost',lost);},[client]);
- useEffect(()=>{const scope=bootstrap.data?.recovery_scope;if(!scope)return;if(previous.current&&previous.current!==scope){void client.cancelQueries({predicate:query=>query.queryKey[0]!=='bootstrap'});client.removeQueries({predicate:query=>query.queryKey[0]!=='bootstrap'});}previous.current=scope;},[bootstrap.data?.recovery_scope,client]);
- useEffect(()=>{const check=()=>{if(document.visibilityState==='visible'&&!denied)void bootstrap.refetch();};document.addEventListener('visibilitychange',check);window.addEventListener('pageshow',check);return()=>{document.removeEventListener('visibilitychange',check);window.removeEventListener('pageshow',check);};},[denied,bootstrap.refetch]);
- if(denied||(bootstrap.error instanceof ApiError&&[401,403].includes(bootstrap.error.status)))return <div className="standalone-state"><Alert variant="destructive"><AlertTitle>{t('authRequired')}</AlertTitle></Alert></div>;
- if(bootstrap.isPending)return <div className="standalone-state"><Loading/></div>;
- if(bootstrap.isError&&!bootstrap.data)return <div className="standalone-state"><ErrorPanel error={bootstrap.error} retry={()=>void bootstrap.refetch()}/></div>;
- if(!bootstrap.data?.h5)return <div className="standalone-state"><Alert><AlertDescription>{t('notAvailable')}</AlertDescription></Alert></div>;
- const session=bootstrap.isError?{...bootstrap.data,can_submit:false,can_supplement:false,h5:{...bootstrap.data.h5,can_upload:false,can_urge:false,can_evaluate:false}}:bootstrap.data;
- return <SessionContext.Provider value={session} key={bootstrap.data.recovery_scope}><CommandProvider><HashRouter><Shell>{bootstrap.isError&&<div className="session-warning"><ErrorPanel error={bootstrap.error} retry={()=>void bootstrap.refetch()}/></div>}<Routes><Route path="/" element={<LegacyEntry/>}/><Route path="/report" element={<Report/>}/><Route path="/reports" element={<Reports/>}/><Route path="/requests/:requestRef" element={<Detail/>}/><Route path="/department" element={<Department/>}/><Route path="*" element={<Navigate replace to="/"/>}/></Routes></Shell></HashRouter></CommandProvider></SessionContext.Provider>;
+ return <HashRouter><Navigation runtime={runtime}/></HashRouter>;
 }

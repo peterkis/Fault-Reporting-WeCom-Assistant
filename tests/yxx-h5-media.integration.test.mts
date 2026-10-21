@@ -5,6 +5,8 @@ import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {Readable} from 'node:stream';
+import {setImmediate as nextTurn} from 'node:timers/promises';
+import {crc32} from 'node:zlib';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import {withP2015IsolatedDatabase} from './helpers/p2-015-postgres-harness.mjs';
 import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
@@ -12,18 +14,21 @@ import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
 import {createYxxH5Media} from '../src/yxx-h5-media.mjs';
 import type {YxxH5Media} from '../src/yxx-h5-media.mjs';
 import {createYxxH5MediaPrivateStore} from '../src/yxx-h5-media-store.mjs';
+import {H5_MEDIA_LIMITS} from '../src/yxx-h5-media-format.mjs';
 import type {H5MediaTranscoder,H5MediaWeCom} from '../contracts/yxx_h5_media_contracts.js';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
+// A generated 16px synthetic white JPEG, not a user material.
+const JPEG=Buffer.from('/9j/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYzLjEuMTAyAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAEAAQAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AP/9k=','base64');
 const allow=async()=>{};
 const scope:YxxMemberScope={scopeHash:'a'.repeat(64) as YxxMemberScope['scopeHash'],sourceCorpScope:'synthetic-corp',sourceAppScope:'100',proofRef:'synthetic-proof'};
 const other:YxxMemberScope={...scope,scopeHash:'b'.repeat(64) as YxxMemberScope['scopeHash']};
-async function fixture(run:(input:{pool:PostgresPool;media:YxxH5Media;root:string;providerControl:{onDownloaded:()=>void}})=>Promise<void>){
+async function fixture(run:(input:{pool:PostgresPool;media:YxxH5Media;root:string;providerControl:{onDownloaded:()=>void}})=>Promise<void>,{performanceEnabled=false,thumbnail}:{performanceEnabled?:boolean;thumbnail?:NonNullable<H5MediaTranscoder['thumbnail']>}={}){
  assert.ok(databaseUrl);assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));let media:YxxH5Media|undefined;const root=await mkdtemp(join(tmpdir(),'yxx-media-pg-')),key=randomBytes(32);
  try{await withP2015IsolatedDatabase({databaseUrl,purpose:'h5media',max:2,run:async({pool}:{pool:PostgresPool})=>{assert.ok(Number((await pool.query<{server_version_num:string}>('SHOW server_version_num')).rows[0]?.server_version_num)>=180000);
-  const migrations=resolve(process.env.H5_MEDIA_TEST_SOURCE_ROOT??process.cwd(),'database/migrations');for(const file of (await readdir(migrations)).filter(f=>/^\d{3}_.+\.sql$/u.test(f)&&Number(f.slice(0,3))<=65).sort())await pool.query(await readFile(join(migrations,file),'utf8'));
+  const migrations=resolve(process.env.H5_MEDIA_TEST_SOURCE_ROOT??process.cwd(),'database/migrations');for(const file of (await readdir(migrations)).filter(f=>/^\d{3}_.+\.sql$/u.test(f)&&Number(f.slice(0,3))<=(performanceEnabled?66:65)).sort())await pool.query(await readFile(join(migrations,file),'utf8'));
   const providerControl={onDownloaded:()=>{}};const wecom:H5MediaWeCom={sign:async()=>{throw new Error('unused synthetic signer');},download:async()=>{providerControl.onDownloaded();return {bytes:Buffer.from(PNG),mime_type:'image/png'};},close:async()=>{}};
-  const transcoder:H5MediaTranscoder={normalize:async()=>{throw new Error('synthetic conversion failure');},close:async()=>{},ownedResourceState:()=>({active:0,processes:0,temporary_files:0})};media=createYxxH5Media({pool,store:createYxxH5MediaPrivateStore({root,key}),enabled:true,transcoder,wecom});try{await run({pool,media,root,providerControl});}finally{await media.close();assert.equal(media.ownedResourceState().active,0);}
+  const transcoder:H5MediaTranscoder={normalize:async()=>{throw new Error('synthetic conversion failure');},...(thumbnail?{thumbnail}:{}),close:async()=>{},ownedResourceState:()=>({active:0,processes:0,temporary_files:0})};media=createYxxH5Media({pool,store:createYxxH5MediaPrivateStore({root,key}),enabled:true,performanceEnabled,transcoder,wecom});try{await run({pool,media,root,providerControl});}finally{await media.close();assert.equal(media.ownedResourceState().active,0);assert.deepEqual(media.resourceBudgetState(),{disk_operations:0,read_leases:0,plaintext_reserved_bytes:0,waiting:0});}
  }});}finally{await media?.close();key.fill(0);await rm(root,{recursive:true,force:true});}
 }
 async function reserve(media:YxxH5Media,owner=scope){return media.reserve({scope:owner,input:{schema_version:1,client_command_id:randomUUID(),kind:'IMAGE',mime_type:'image/png',byte_size:PNG.length,duration_ms:null},verifyCurrentWrite:allow});}
@@ -50,4 +55,48 @@ test('real PG media reservations, atomic Web binding, own/staff reads and conver
 test('real PG claims enforce per-report limits and foreign ownership in the same acceptance transaction',{skip:!databaseUrl?'NOT_RUN: own loopback PG18 control URL required':false},async()=>fixture(async({pool,media})=>{
  const foreign=await reserve(media,other);await upload(media,foreign.media_ref,other);await assert.rejects(bind(pool,media,[foreign.media_ref]),{code:'YXX_MEDIA_NOT_FOUND'});
  const refs:string[]=[];for(let i=0;i<7;i++){const r=await reserve(media);await upload(media,r.media_ref);refs.push(r.media_ref);}await assert.rejects(bind(pool,media,refs),{code:'YXX_MEDIA_QUOTA_EXCEEDED'});assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM intake.web_request_binding')).rows[0]?.n,0);const selected=refs[0];assert.ok(selected);const results=await Promise.allSettled([bind(pool,media,[selected]),bind(pool,media,[selected])]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.filter(r=>r.status==='rejected').length,1);
+}));
+
+async function waitForQueue(media:YxxH5Media){const deadline=performance.now()+3000;while(media.resourceBudgetState().waiting!==1){assert.ok(performance.now()<deadline,'media reaches the observable queued state');await nextTurn();}}
+
+test('real PG private previews preserve original bytes, closed legacy metadata, authenticated ranges and queued READ rechecks',{skip:!databaseUrl?'NOT_RUN: own loopback PG18 control URL required':false},async()=>fixture(async({pool,media,root})=>{
+ const reserved=await reserve(media);await upload(media,reserved.media_ref);const accepted=await bind(pool,media,[reserved.media_ref]),requestRef=accepted.receipt.request_ref;
+ const projected=()=>media.listForRequestPreviewInTransaction({transaction:pool,scope,requestRef});assert.equal((await projected())[0]?.thumbnail_status,'PENDING');assert.equal('thumbnail_status' in ((await media.listForRequest({scope,requestRef,verifyCurrentRead:allow}))[0]??{}),false);
+ await assert.rejects(media.read({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow}),{code:'YXX_MEDIA_THUMBNAIL_UNAVAILABLE'});assert.deepEqual(await media.processNextTranscode(),{processed:true});assert.equal((await projected())[0]?.thumbnail_status,'READY');assert.equal((await projected())[0]?.thumbnail_byte_size,JPEG.length);
+ const encrypted=await readFile(join(root,reserved.media_ref+'.thumbnail.asset'));assert.equal(encrypted.includes(JPEG),false);assert.deepEqual(await bytes(await media.read({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow})),JPEG);assert.deepEqual(await bytes(await media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',verifyCurrentRead:allow})),PNG);
+ const description=await media.describe({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow});assert.equal(description.byte_size,JPEG.length);assert.equal(description.variant,'THUMBNAIL');assert.equal(media.resourceBudgetState().read_leases,0,'metadata never opens a plaintext output lease');
+ const consumed=await media.read({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow});for await(const part of consumed.stream)assert.ok(Buffer.isBuffer(part));assert.equal(media.resourceBudgetState().read_leases,1,'normal stream completion retains the HTTP lease until its explicit finish/close');await consumed.close();assert.equal(media.resourceBudgetState().read_leases,0);
+ const partial=await media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',range:{start:3,end:10},verifyCurrentRead:allow});assert.equal(partial.byte_size,8);assert.equal(partial.total_byte_size,PNG.length);assert.deepEqual(await bytes(partial),PNG.subarray(3,11));await assert.rejects(media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',range:{start:0,end:PNG.length},verifyCurrentRead:allow}),{code:'YXX_MEDIA_RANGE_NOT_SATISFIABLE'});
+ await assert.rejects(media.describe({scope:other,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow}),{code:'YXX_MEDIA_NOT_FOUND'});
+ const one=await media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',verifyCurrentRead:allow}),two=await media.read({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:allow});assert.equal(media.resourceBudgetState().read_leases,2);assert.equal(media.resourceBudgetState().disk_operations,0);
+ let allowed=true;const pending=media.read({scope,ref:reserved.media_ref,requestRef,variant:'THUMBNAIL',verifyCurrentRead:async()=>{if(!allowed)throw new Error('synthetic queued READ revoked');}}),outcome=assert.rejects(pending,/synthetic queued READ revoked/u);await waitForQueue(media);allowed=false;await one.close();await outcome;await two.close();assert.equal(media.resourceBudgetState().read_leases,0);
+ await pool.query('UPDATE intake.web_media_upload SET expires_epoch_ms=created_epoch_ms+1 WHERE media_ref=$1::uuid',[reserved.media_ref]);await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1',[requestRef]);assert.equal(await media.cleanupExpired(),1);assert.equal((await readdir(root)).some(file=>file.startsWith(reserved.media_ref)),false,'original and preview share expiry cleanup');
+},{performanceEnabled:true,thumbnail:async()=>({bytes:Buffer.from(JPEG),mime_type:'image/jpeg'})}));
+
+test('real PG media checks current READ before each 64 KiB block and retains originals when thumbnail conversion fails',{skip:!databaseUrl?'NOT_RUN: own loopback PG18 control URL required':false},async()=>fixture(async({pool,media})=>{
+ const payload=Buffer.alloc(2*H5_MEDIA_LIMITS.chunk+17,7),chunk=Buffer.alloc(payload.length+12);chunk.writeUInt32BE(payload.length);chunk.write('paDd',4);payload.copy(chunk,8);chunk.writeUInt32BE(crc32(chunk.subarray(4,chunk.length-4)),chunk.length-4);const material=Buffer.concat([PNG.subarray(0,PNG.length-12),chunk,PNG.subarray(PNG.length-12)]);
+ const reserved=await media.reserve({scope,input:{schema_version:1,client_command_id:randomUUID(),kind:'IMAGE',mime_type:'image/png',byte_size:material.length,duration_ms:null},verifyCurrentWrite:allow});await media.upload({scope,ref:reserved.media_ref,body:Readable.from([material]),verifyCurrentWrite:allow});const accepted=await bind(pool,media,[reserved.media_ref]),requestRef=accepted.receipt.request_ref;
+ assert.deepEqual(await media.processNextTranscode(),{processed:true});assert.equal((await media.listForRequestPreviewInTransaction({transaction:pool,scope,requestRef}))[0]?.thumbnail_status,'UNAVAILABLE');assert.deepEqual(await bytes(await media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',verifyCurrentRead:allow})),material);
+ let allowed=true,checks=0;const lease=await media.read({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',verifyCurrentRead:async()=>{checks++;if(!allowed)throw new Error('synthetic block READ revoked');}}),iterator=lease.stream[Symbol.asyncIterator]();try{const first=await iterator.next();assert.equal(first.done,false);assert.equal(first.value.length,H5_MEDIA_LIMITS.chunk);allowed=false;await assert.rejects(iterator.next(),/synthetic block READ revoked/u);assert.ok(checks>=5);}finally{await lease.close();}
+},{performanceEnabled:true,thumbnail:async()=>{throw new Error('synthetic thumbnail conversion failure');}}));
+
+test('real PG metadata rechecks binding after the final member verification and exposes no revoked length',{skip:!databaseUrl?'NOT_RUN: own loopback PG18 control URL required':false},async()=>fixture(async({pool,media})=>{
+ for(const mode of ['owner','staff','expiry'] as const){
+  const reserved=await reserve(media);await upload(media,reserved.media_ref);const accepted=await bind(pool,media,[reserved.media_ref]),requestRef=accepted.receipt.request_ref,binding=(await pool.query<{intake_id:string}>('SELECT intake_id::text FROM intake.web_request_binding WHERE request_ref=$1',[requestRef])).rows[0];assert.ok(binding);let checks=0;
+  const verifyCurrentRead=async()=>{if(++checks===2){if(mode==='expiry')await pool.query('UPDATE intake.web_media_upload SET expires_epoch_ms=created_epoch_ms+1 WHERE media_ref=$1::uuid',[reserved.media_ref]);else await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1',[requestRef]);}};
+  const pending=mode==='staff'?media.describeForIntake({intakeId:binding.intake_id,ref:reserved.media_ref,variant:'ORIGINAL',verifyCurrentRead}):media.describe({scope,ref:reserved.media_ref,requestRef,variant:'ORIGINAL',verifyCurrentRead});await assert.rejects(pending,{code:'YXX_MEDIA_NOT_FOUND'});assert.equal(checks,2);assert.equal(media.resourceBudgetState().read_leases,0);
+ }
+}));
+
+test('real PG reservation samples one physical epoch across a millisecond boundary and preserves the 24-hour limit on replay',{skip:!databaseUrl?'NOT_RUN: own loopback PG18 control URL required':false},async()=>fixture(async({pool,media})=>{
+ // Only this disposable database advances by 1 ms per clock read. The production
+ // clock and the original retention CHECK remain unchanged.
+ const start=String(Date.now());await pool.query('CREATE SEQUENCE public.h5_media_reservation_clock AS bigint');await pool.query("SELECT setval('public.h5_media_reservation_clock',$1::bigint,false)",[start]);
+ await pool.query("CREATE OR REPLACE FUNCTION platform.physical_epoch_ms() RETURNS bigint LANGUAGE SQL VOLATILE AS 'SELECT nextval(''public.h5_media_reservation_clock'')'");
+ const input={schema_version:1,client_command_id:randomUUID(),kind:'IMAGE',mime_type:'image/png',byte_size:PNG.length,duration_ms:null},reserved=await media.reserve({scope,input,verifyCurrentWrite:allow});
+ const stored=async()=>{const row=(await pool.query<{created_epoch_ms:string;expires_epoch_ms:string}>('SELECT created_epoch_ms::text,expires_epoch_ms::text FROM intake.web_media_upload WHERE media_ref=$1::uuid',[reserved.media_ref])).rows[0];assert.ok(row);return row;};
+ const epochs=await stored();assert.equal(epochs.created_epoch_ms,start);assert.equal(BigInt(epochs.expires_epoch_ms)-BigInt(epochs.created_epoch_ms),BigInt(H5_MEDIA_LIMITS.ttl));assert.equal(reserved.expires_epoch_ms,epochs.expires_epoch_ms);
+ const clock=async()=>{const row=(await pool.query<{last_value:string;is_called:boolean}>('SELECT last_value::text,is_called FROM public.h5_media_reservation_clock')).rows[0];assert.ok(row);assert.equal(row.is_called,true);return BigInt(row.last_value)-BigInt(start)+1n;};
+ assert.equal(await clock(),1n,'creation and expiry use one physical clock sample');const replay=await media.reserve({scope,input,verifyCurrentWrite:allow});assert.equal(replay.replayed,true);assert.equal(replay.media_ref,reserved.media_ref);assert.equal(replay.expires_epoch_ms,reserved.expires_epoch_ms);assert.deepEqual(await stored(),epochs);assert.equal(await clock(),1n,'receipt replay preserves the original reservation epoch');
+ await assert.rejects(pool.query('UPDATE intake.web_media_upload SET expires_epoch_ms=expires_epoch_ms+1 WHERE media_ref=$1::uuid',[reserved.media_ref]),{code:'23514',constraint:'web_media_initial_retention'});assert.deepEqual(await stored(),epochs);
 }));

@@ -2,6 +2,7 @@ import type {PostgresPool} from './platform/postgres-pool.mjs';
 import type {WeComAccessTokenProvider} from './p2-g2-wecom-oauth-provider.mjs';
 import type {YxxMemberScope} from './yxx-self-service-authorization.mjs';
 import type {H5Media} from '../contracts/yxx_h5_v2_contracts.js';
+import type {H5EntryMedia} from '../contracts/yxx_h5_entry_contracts.js';
 import type {ReporterDirectoryPort} from '../contracts/p2_015_contracts.js';
 import type {H5ProfileEnricherOptions} from './yxx-h5-v2-profile-enricher.mjs';
 import {isAbsolute} from 'node:path';
@@ -24,6 +25,8 @@ export interface YxxH5RuntimeOptions {
   accessTokenProvider?:WeComAccessTokenProvider;
   fetchImpl?:typeof fetch;
   workbenchProgressEnabled?:boolean;
+  performanceEnabled?:boolean;
+  previousStaticRoot?:string;
 }
 interface RuntimeBase {
   pool:PostgresPool;
@@ -40,8 +43,10 @@ const absolutePath=(value:unknown)=>typeof value==='string'&&isAbsolute(value)&&
 export function validateYxxH5RuntimeOptions(options:YxxH5RuntimeOptions|null|undefined,role:'APP'|'WORKER'='APP') {
   if(options===null||options===undefined)return false;
   if(!options||typeof options!=='object'||Array.isArray(options)||options.enabled!==undefined&&typeof options.enabled!=='boolean'
-    ||options.workbenchProgressEnabled!==undefined&&typeof options.workbenchProgressEnabled!=='boolean')failYxx('CONFIG_INVALID');
-  if(options.enabled!==true){if(options.workbenchProgressEnabled===true)failYxx('CONFIG_INVALID');return false;}
+    ||options.workbenchProgressEnabled!==undefined&&typeof options.workbenchProgressEnabled!=='boolean'
+    ||options.performanceEnabled!==undefined&&typeof options.performanceEnabled!=='boolean'
+    ||options.previousStaticRoot!==undefined&&!absolutePath(options.previousStaticRoot))failYxx('CONFIG_INVALID');
+  if(options.enabled!==true){if(options.workbenchProgressEnabled===true||options.performanceEnabled===true||options.previousStaticRoot!==undefined)failYxx('CONFIG_INVALID');return false;}
   if(!absolutePath(options.privateRoot)||!(options.key instanceof Uint8Array)||options.key.byteLength!==32
     ||options.accessTokenProvider!==undefined&&typeof options.accessTokenProvider!=='function'
     ||options.fetchImpl!==undefined&&typeof options.fetchImpl!=='function'
@@ -53,6 +58,7 @@ export function validateYxxH5RuntimeOptions(options:YxxH5RuntimeOptions|null|und
 /** Reuses the supplied pool and the role's existing runOnce; creates no timer or directory. */
 export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId,options=null,role='APP',sourceScope='FORMAL',directoryPort=null,verifyCurrentMember=null,onUrge=null,onPublicProgress=null}:RuntimeInput) {
   const enabled=validateYxxH5RuntimeOptions(options,role);
+  const performanceEnabled=enabled&&options?.performanceEnabled===true;
   if(enabled&&role==='APP'&&(typeof publicOrigin!=='string'||typeof corpId!=='string'||!corpId||typeof agentId!=='string'||!agentId))failYxx('CONFIG_INVALID');
   const lifecycle=enabled?createYxxH5Lifecycle({pool,scopeSecret,enabled:true,onUrge,onPublicProgress}):null;
   const profile=enabled?createYxxH5Profile({pool,scopeSecret,enabled:true,sourceScope}):null;
@@ -66,7 +72,7 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
   const transcoder=selected&&role==='WORKER'?createYxxH5MediaFFmpegTranscoder({
     ffmpegPath:selected.ffmpegPath as string,ffprobePath:selected.ffprobePath as string,temporaryRoot:selected.privateRoot as string,
   }):null;
-  const media=store?createYxxH5Media({pool,store,wecom,transcoder,enabled:true}):null;
+  const media=store?createYxxH5Media({pool,store,wecom,transcoder,enabled:true,performanceEnabled}):null;
   const sdk=Object.freeze({enabled:wecom!==null,corp_id:wecom?corpId as string:null,agent_id:wecom?agentId as string:null});
   let stopped=false;
   let running:Promise<void>|null=null;
@@ -89,11 +95,14 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
     closing=(async()=>{await media?.close();await running;})();
     return closing;
   }
-  return Object.freeze({enabled,lifecycle,profile,profileEnricher,media,wecom,sdk,runOnce,close,
+  return Object.freeze({enabled,performanceEnabled,previousStaticRoot:options?.previousStaticRoot,lifecycle,profile,profileEnricher,media,wecom,sdk,runOnce,close,
     workbenchProgressEnabled:enabled&&options?.workbenchProgressEnabled===true,
     async ready() {
       if(!enabled)return true;
-      try{return (await pool.query("SELECT migration_id FROM platform.schema_migration WHERE migration_id IN ('064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media')")).rowCount===2;}
+      try{
+        const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(performanceEnabled?['043_ticket_reopen_rounds','066_yixiaoxiu_h5_media_previews']:[])];
+        return (await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount===migrations.length;
+      }
       catch{return false;}
     },
     async queryMedia({transaction,scope,requestRef}: {transaction:import('./platform/postgres-pool.mjs').PostgresTransaction;scope:YxxMemberScope;requestRef:string}):Promise<H5Media[]> {
@@ -101,21 +110,34 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
       const assets=await media.listForRequestInTransaction({transaction,scope,requestRef});
       return assets.map(asset=>({...asset,url:'/api/yixiaoxiu/requests/'+encodeURIComponent(requestRef)+'/media/'+encodeURIComponent(asset.media_ref)}));
     },
+    async queryMediaEntry({transaction,scope,requestRef}: {transaction:import('./platform/postgres-pool.mjs').PostgresTransaction;scope:YxxMemberScope;requestRef:string}):Promise<H5EntryMedia[]> {
+      if(!media||!performanceEnabled)return [];
+      const assets=await media.listForRequestPreviewInTransaction({transaction,scope,requestRef});
+      return assets.map(asset=>{
+        const url='/api/yixiaoxiu/requests/'+encodeURIComponent(requestRef)+'/media/'+encodeURIComponent(asset.media_ref);
+        return {media_ref:asset.media_ref,kind:asset.kind,mime_type:asset.mime_type,byte_size:asset.byte_size,duration_ms:asset.duration_ms,
+          playback_status:asset.playback_status,playback_mime_type:asset.playback_mime_type,url,
+          thumbnail:asset.kind==='IMAGE'?{status:asset.thumbnail_status,url:asset.thumbnail_status==='READY'?url+'?variant=THUMBNAIL':null,
+            mime_type:asset.thumbnail_mime_type,byte_size:asset.thumbnail_byte_size}:null};
+      });
+    },
   });
 }
 export type YxxH5Runtime=ReturnType<typeof createYxxH5Runtime>;
 
 /** One Provider qualification per HTTP request, including overlapping bootstrap reads. */
-export function createYxxH5RequestAuthentication<Request extends object,Context>({authenticate,recheck}:{authenticate:(request:Request)=>Context|Promise<Context>;recheck:(request:Request)=>Context|Promise<Context>}) {
+export function createYxxH5RequestAuthentication<Request extends object,Context>({authenticate,authenticateEntry=authenticate,recheck}:{authenticate:(request:Request)=>Context|Promise<Context>;authenticateEntry?:(request:Request)=>Context|Promise<Context>;recheck:(request:Request)=>Context|Promise<Context>}) {
   const pending=new WeakMap<Request,Promise<Context>>();
+  function start(request:Request,selected:(request:Request)=>Context|Promise<Context>) {
+    const ready=pending.get(request);
+    if(ready)return ready.then(()=>recheck(request));
+    const first=Promise.resolve().then(()=>selected(request));
+    pending.set(request,first);
+    return first;
+  }
   return Object.freeze({
-    authenticate(request:Request) {
-      const ready=pending.get(request);
-      if(ready)return ready.then(()=>recheck(request));
-      const first=Promise.resolve().then(()=>authenticate(request));
-      pending.set(request,first);
-      return first;
-    },
+    authenticate:(request:Request)=>start(request,authenticate),
+    authenticateEntry:(request:Request)=>start(request,authenticateEntry),
     release(request:Request){pending.delete(request);},
   });
 }

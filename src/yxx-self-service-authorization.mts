@@ -248,6 +248,7 @@ export function createYxxSelfServiceAuthorization<Request = IncomingMessage>({
   return Object.freeze({
     authenticate: (request: Request) => resolve(request),
     authorize,
+    assertOperationAllowed: operationAllowed,
     read,
     revalidate,
     sameContext,

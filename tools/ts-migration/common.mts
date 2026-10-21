@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import {brotliCompressSync,brotliDecompressSync,constants,gunzipSync,gzipSync} from 'node:zlib';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
@@ -89,12 +90,13 @@ export function isH5ProductionInput(file: string): boolean {
 }
 // Vite retains module qualifiers (for example wecom.prod) in hashed chunk names.
 const H5_ASSET = /^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2|png|jpe?g|webp|svg)$/u;
+const H5_ENCODED_ASSET = /^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)\.(?:gz|br)$/u;
 const H5_PUBLIC_ASSET = /^assets\/[A-Za-z0-9_-]+\.(?:woff2|png|jpe?g|webp|svg)$/u;
 const H5_NON_PRODUCTION = /(?:^|\/)(?:docs|design-baseline|dev|__fixtures__|fixtures|preview)(?:[/.]|$)|^assets\/(?:preview|fixture)(?:[-_.]|$)/u;
 export function h5OutputFiles(root: string, withInventories = true): string[] {
   const output = path.join(root,'.build/emit/h5'), files = outputFiles(output);
-  const metadata = ['index.html','.vite/manifest.json',...(withInventories ? ['asset-inventory.json','dependency-inventory.json'] : [])];
-  if (metadata.some(file => !files.includes(file)) || files.some(file => !metadata.includes(file) && (!H5_ASSET.test(file) || H5_NON_PRODUCTION.test(file)))) throw new Error('H5_BUILD_OUTPUT_INVALID');
+  const metadata = ['index.html','.vite/manifest.json',...(withInventories ? ['asset-inventory.json','dependency-inventory.json','startup-metrics.json'] : files.includes('startup-metrics.json')?['startup-metrics.json']:[])];
+  if (metadata.some(file => !files.includes(file)) || files.some(file => !metadata.includes(file) && ((!H5_ASSET.test(file)&&!H5_ENCODED_ASSET.test(file)) || H5_NON_PRODUCTION.test(file)))) throw new Error('H5_BUILD_OUTPUT_INVALID');
   const manifest = record(readJson(safeFile(output,'.vite/manifest.json'))), referenced = new Set<string>();
   const asset = (value: unknown): void => {
     if (typeof value !== 'string' || !H5_ASSET.test(value) || !files.includes(value) || H5_NON_PRODUCTION.test(value)) throw new Error('H5_MANIFEST_ASSET_INVALID');
@@ -123,9 +125,65 @@ export function h5OutputFiles(root: string, withInventories = true): string[] {
       || !readFileSync(safeFile(output,file)).equals(readFileSync(safeFile(publicRoot,file)))) throw new Error('H5_PUBLIC_ASSET_INVALID');
     referenced.add(file);
   }
+  const representations=record(manifest['index.html']).h5Representations;
+  if(representations!==undefined){
+    if(!Array.isArray(representations)||representations.length>768)throw new Error('H5_REPRESENTATION_SCHEMA');
+    const declared=new Set<string>(),identities=new Set<string>();
+    for(const value of representations){
+      const item=record(value),{file,source,encoding,bytes,sha256}=item;
+      if(typeof file!=='string'||typeof source!=='string'||!referenced.has(source)||!H5_ASSET.test(source)||declared.has(file)||!files.includes(file)||!Number.isSafeInteger(bytes)||typeof bytes!=='number'||bytes<0||bytes>20*1024*1024||typeof sha256!=='string'||!/^[a-f0-9]{64}$/u.test(sha256))throw new Error('H5_REPRESENTATION_INVALID');
+      const actual=readFileSync(safeFile(output,file));if(actual.length!==bytes||hash(actual)!==sha256)throw new Error('H5_REPRESENTATION_DRIFT');
+      if(encoding==='identity'){
+        if(file!==source)throw new Error('H5_REPRESENTATION_INVALID');identities.add(source);
+      }else if(encoding==='gzip'||encoding==='br'){
+        if(!/\.(?:js|css)$/u.test(source)||file!==source+(encoding==='gzip'?'.gz':'.br'))throw new Error('H5_REPRESENTATION_INVALID');
+        const decoded=encoding==='gzip'?gunzipSync(actual,{maxOutputLength:20*1024*1024}):brotliDecompressSync(actual,{maxOutputLength:20*1024*1024});
+        if(!decoded.equals(readFileSync(safeFile(output,source))))throw new Error('H5_REPRESENTATION_CONTENT_DRIFT');
+      }else throw new Error('H5_REPRESENTATION_INVALID');
+      declared.add(file);
+    }
+    if([...referenced].some(file=>!identities.has(file)))throw new Error('H5_REPRESENTATION_IDENTITY_MISSING');
+    for(const file of declared)referenced.add(file);
+  }
   if (files.some(file => !metadata.includes(file) && !referenced.has(file))) throw new Error('H5_UNDECLARED_ASSET');
   if (withInventories && JSON.stringify(readJson(safeFile(output,'asset-inventory.json'))) !== JSON.stringify(files.filter(file => !['asset-inventory.json','dependency-inventory.json'].includes(file)))) throw new Error('H5_ASSET_INVENTORY_DRIFT');
+  if(withInventories&&JSON.stringify(readJson(safeFile(output,'startup-metrics.json')))!==JSON.stringify(h5StartupMetrics(root)))throw new Error('H5_STARTUP_METRICS_DRIFT');
   return files;
+}
+
+/** Count the whole initial dependency closure plus each selected route. A small
+ * entry chunk cannot hide its cost by moving required code into shared chunks. */
+export function h5StartupMetrics(root:string){
+  const output=path.join(root,'.build/emit/h5'),manifest=record(readJson(safeFile(output,'.vite/manifest.json')));
+  const html=readFileSync(safeFile(output,'index.html'),'utf8'),byFile=new Map<string,string>();
+  for(const [key,value] of Object.entries(manifest)){const chunk=record(value);if(typeof chunk.file==='string')byFile.set(chunk.file,key);}
+  const base=new Set<string>(),sizes=new Map<string,{file:string;raw:number;gzip:number;brotli:number}>();
+  function collect(key:string,files:Set<string>,seen=new Set<string>()):void{
+    if(seen.has(key))return;seen.add(key);const chunk=record(manifest[key]);
+    if(typeof chunk.file!=='string'||!H5_ASSET.test(chunk.file))throw new Error('H5_MANIFEST_ASSET_INVALID');
+    if(chunk.file.endsWith('.js'))files.add(chunk.file);
+    if(chunk.imports!==undefined)for(const dependency of strings(chunk.imports))collect(dependency,files,seen);
+  }
+  for(const match of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gu)){
+    const url=match[1];if(!url?.startsWith('/wecom/yixiaoxiu/'))throw new Error('H5_STARTUP_SCRIPT_INVALID');
+    const file=url.slice('/wecom/yixiaoxiu/'.length);if(!H5_ASSET.test(file)||!file.endsWith('.js'))throw new Error('H5_STARTUP_SCRIPT_INVALID');
+    base.add(file);const key=byFile.get(file);if(key)collect(key,base);
+  }
+  if(!base.size)throw new Error('H5_STARTUP_SCRIPT_REQUIRED');
+  function summary(files:Set<string>){
+    const sorted=[...files].sort();let raw=0,gzip=0,brotli=0;
+    for(const file of sorted){
+      let size=sizes.get(file);if(!size){const bytes=readFileSync(safeFile(output,file));size={file,raw:bytes.length,gzip:gzipSync(bytes,{level:9}).length,brotli:brotliCompressSync(bytes,{params:{[constants.BROTLI_PARAM_QUALITY]:11}}).length};sizes.set(file,size);}
+      raw+=size.raw;gzip+=size.gzip;brotli+=size.brotli;
+    }
+    return {files:sorted,raw,gzip,brotli};
+  }
+  const initial=summary(base),routes=[];
+  for(const [view,page] of Object.entries({home:'Home',report:'Report',reports:'Reports',request:'Detail',department:'Department'})){
+    const key='src/pages/'+page+'.tsx';if(!Object.hasOwn(manifest,key))continue;
+    const files=new Set(base);collect(key,files);routes.push({view,...summary(files)});
+  }
+  return {schema_version:1,js_budget_gzip:120*1024,prepaint_budget_gzip:2048,initial,routes,assets:[...sizes.values()].sort((a,b)=>a.file<b.file?-1:a.file>b.file?1:0)};
 }
 export function mappings(root: string): { source: string; path: string; kind: OutputFile['kind'] }[] {
   assertProductionSources(root);

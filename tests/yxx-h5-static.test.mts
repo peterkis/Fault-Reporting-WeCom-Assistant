@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {createServer} from 'node:http';
+import {createServer,request as nativeRequest} from 'node:http';
 import {lstatSync,mkdirSync,mkdtempSync,renameSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import {brotliCompressSync,gzipSync} from 'node:zlib';
 import {createYxxH5Static,YXX_H5_SECURITY_HEADERS} from '../src/yxx-h5-static.mjs';
 
 const assets=new Map<string,{type:string;body:Uint8Array}>([
@@ -34,8 +36,8 @@ function fixture():string{
  return root;
 }
 function cleanup(root:string):void{assert.equal(path.dirname(root),tmpdir());assert.ok(path.basename(root).startsWith('yxx-h5-static-test-'));rmSync(root,{recursive:true,force:true});}
-async function host(root:string,enabled:boolean|undefined,check:(origin:string)=>Promise<void>):Promise<void>{
- const api=createYxxH5Static({root:pathToFileURL(root+path.sep),...(enabled===undefined?{}:{enabled})});
+async function host(root:string,enabled:boolean|undefined,check:(origin:string)=>Promise<void>,previousRoot?:string):Promise<void>{
+ const api=createYxxH5Static({root:pathToFileURL(root+path.sep),...(enabled===undefined?{}:{enabled}),...(previousRoot?{previousRoot:pathToFileURL(previousRoot+path.sep)}:{})});
  const server=createServer((request,response)=>{void(async()=>{
   try{
    const url=new URL(request.url??'/','http://127.0.0.1');
@@ -50,6 +52,26 @@ async function host(root:string,enabled:boolean|undefined,check:(origin:string)=
  await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
  try{const address=server.address();assert.ok(address&&typeof address!=='string');await check('http://127.0.0.1:'+address.port);}
  finally{server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
+}
+async function raw(origin:string,file:string,acceptEncoding?:string){
+ return new Promise<{status:number;headers:import('node:http').IncomingHttpHeaders;body:Buffer}>((resolve,reject)=>{
+  const request=nativeRequest(origin+'/wecom/yixiaoxiu/'+file,{headers:acceptEncoding===undefined?{}:{'accept-encoding':acceptEncoding}},response=>{
+   const parts:Buffer[]=[];response.on('data',(chunk:Buffer)=>parts.push(chunk));response.once('error',reject);response.once('end',()=>resolve({status:response.statusCode??0,headers:response.headers,body:Buffer.concat(parts)}));
+  });request.once('error',reject);request.end();
+ });
+}
+function encodings(root:string):void{
+ const graph=manifest(),main=graph['index.html'];assert.ok(main&&typeof main==='object');
+ const representations=[];
+ for(const [source,value] of assets){
+  const bytes=Buffer.from(value.body),sha=(buffer:Buffer)=>createHash('sha256').update(buffer).digest('hex');
+  representations.push({file:source,source,encoding:'identity',bytes:bytes.length,sha256:sha(bytes)});
+  if(!/\.(?:js|css)$/u.test(source))continue;
+  for(const [encoding,suffix,compressed] of [['gzip','.gz',gzipSync(bytes)],['br','.br',brotliCompressSync(bytes)]] as const){
+   const file=source+suffix;put(root,file,compressed);representations.push({file,source,encoding,bytes:compressed.length,sha256:sha(compressed)});
+  }
+ }
+ Object.assign(main,{h5Representations:representations});put(root,'.vite/manifest.json',JSON.stringify(graph));
 }
 
 test('H5 static serving stays off by default without reading a missing artifact',async()=>{
@@ -72,9 +94,66 @@ test('enabled H5 serves only the reachable manifest graph with exact MIME, bytes
   assert.doesNotMatch(policy,/(?:^|;\s*)script-src[^;]*(?:unsafe-inline|unsafe-eval|https?:|\*)/u);
   assert.equal(page.headers.get('cache-control'),'no-store');assert.equal(page.headers.get('referrer-policy'),'no-referrer');assert.equal(page.headers.get('x-content-type-options'),'nosniff');
   for(const [file,asset] of assets){
-   const response=await fetch(origin+'/wecom/yixiaoxiu/'+file);assert.equal(response.status,200,file);assert.equal(response.headers.get('content-type'),asset.type,file);assert.equal(response.headers.get('content-length'),String(asset.body.byteLength),file);assert.equal(response.headers.get('content-security-policy'),policy);assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.from(asset.body),file);
+   const response=await fetch(origin+'/wecom/yixiaoxiu/'+file);assert.equal(response.status,200,file);assert.equal(response.headers.get('content-type'),asset.type,file);assert.equal(response.headers.get('content-length'),String(asset.body.byteLength),file);assert.equal(response.headers.get('content-security-policy'),policy);assert.equal(response.headers.get('cache-control'),'public, max-age=31536000, immutable');assert.equal(response.headers.get('vary'),'Accept-Encoding');assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.from(asset.body),file);
   }
  });}finally{cleanup(root);}
+});
+
+test('H5 chooses declared gzip or Brotli with q-values and preserves exact wire length',async()=>{
+ const root=fixture(),file='assets/main-Ab123.js',source=assets.get(file);assert.ok(source);
+ try{encodings(root);await host(root,true,async origin=>{
+  for(const [header,expected] of [[undefined,'identity'],['br, gzip','br'],['gzip;q=1,br;q=0.5','gzip'],['BR;q=0.7, gzip;q=0.8, identity;q=0','gzip'],['br;q=0,gzip;q=0','identity'],['*;q=0.5, identity;q=0','br'],['gzip;q=0.3','identity']] as const){
+   const response=await raw(origin,file,header);assert.equal(response.status,200,String(header));assert.equal(response.headers['content-encoding'],expected==='identity'?undefined:expected);assert.equal(response.headers['content-length'],String(response.body.length));assert.equal(response.headers.vary,'Accept-Encoding');
+   assert.deepEqual(response.body,expected==='identity'?Buffer.from(source.body):expected==='br'?brotliCompressSync(source.body):gzipSync(source.body));
+  }
+  for(const header of ['identity;q=0,gzip;q=0,br;q=0','*;q=0','identity;q=0,gzip;q=2,br;q=0'])assert.equal((await raw(origin,file,header)).status,406,header);
+  for(const suffix of ['.gz','.br'])assert.equal((await raw(origin,file+suffix,'br,gzip')).status,404);
+ });}finally{cleanup(root);}
+});
+
+test('H5 rejects unverified sidecars and hash drift before exposing the page',async()=>{
+ const root=fixture();
+ try{
+  encodings(root);put(root,'assets/main-Ab123.js.br',Buffer.from('tampered'));
+  await host(root,true,async origin=>{assert.equal((await fetch(origin+'/wecom/yixiaoxiu/')).status,503);});
+  encodings(root);const graph=manifest();Object.assign(graph['index.html']??{}, {h5Representations:[{file:'assets/main-Ab123.js.gz',source:'docs/prototype/private.html',encoding:'gzip',bytes:1,sha256:'a'.repeat(64)}]});put(root,'.vite/manifest.json',JSON.stringify(graph));
+  await host(root,true,async origin=>{assert.equal((await fetch(origin+'/wecom/yixiaoxiu/')).status,503);});
+ }finally{cleanup(root);}
+});
+
+test('H5 verifies one immutable generation once and keeps only bounded public byte buffers',async()=>{
+ const root=fixture();
+ try{
+  await host(root,true,async origin=>{
+   const pages=await Promise.all(Array.from({length:8},()=>fetch(origin+'/wecom/yixiaoxiu/')));assert.ok(pages.every(page=>page.status===200));
+   put(root,'.vite/manifest.json','not-json');put(root,'index.html','UNVERIFIED_CHANGED_PAGE');put(root,'assets/main-Ab123.js','PRIVATE_CHANGED_BYTES');
+   assert.match(await(await fetch(origin+'/wecom/yixiaoxiu/')).text(),/SYNTHETIC_H5_PAGE/u);
+   assert.equal((await raw(origin,'assets/main-Ab123.js')).body.toString(),Buffer.from(assets.get('assets/main-Ab123.js')?.body??[]).toString());
+  });
+  put(root,'.vite/manifest.json',JSON.stringify({'index.html':{file:'assets/large1-Ab123.js',isEntry:true,assets:['assets/large2-Ab123.js','assets/large3-Ab123.js']}}));
+  for(const index of [1,2,3])put(root,'assets/large'+index+'-Ab123.js',Buffer.alloc(2*1024*1024+1,index));
+  await host(root,true,async origin=>{
+   assert.equal((await fetch(origin+'/wecom/yixiaoxiu/')).status,200);
+   rmSync(path.join(root,'assets/large1-Ab123.js'));rmSync(path.join(root,'assets/large3-Ab123.js'));
+   assert.equal((await raw(origin,'assets/large1-Ab123.js')).status,503);
+   assert.equal((await raw(origin,'assets/large3-Ab123.js')).status,200);
+  });
+ }finally{cleanup(root);}
+});
+
+test('H5 previous generation contributes only verified old assets, never old HTML',async()=>{
+ const root=fixture(),previous=fixture();
+ try{
+  const graph=manifest();Object.assign(graph['src/detail.tsx']??{},{file:'assets/old-detail-Xy789.js'});put(previous,'.vite/manifest.json',JSON.stringify(graph));put(previous,'assets/old-detail-Xy789.js','SYNTHETIC_OLD_DETAIL');put(previous,'index.html','OLD_PAGE_MUST_NOT_REPLACE_CURRENT');
+  await host(root,true,async origin=>{
+   assert.equal((await raw(origin,'assets/old-detail-Xy789.js')).status,404);
+  });
+  await host(root,true,async origin=>{
+   assert.equal((await raw(origin,'assets/old-detail-Xy789.js')).body.toString(),'SYNTHETIC_OLD_DETAIL');
+   assert.match(await(await fetch(origin+'/wecom/yixiaoxiu/')).text(),/SYNTHETIC_H5_PAGE/u);
+   assert.equal((await raw(origin,'assets/unmanifested.js')).status,404);
+  },previous);
+ }finally{cleanup(root);cleanup(previous);}
 });
 
 test('H5 refuses designs, dev fixtures, metadata, unmanifested assets, queries, and encoded traversal',async()=>{

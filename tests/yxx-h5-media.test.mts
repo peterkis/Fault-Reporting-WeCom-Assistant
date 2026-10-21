@@ -12,6 +12,7 @@ import {createYxxH5MediaWeCom} from '../src/yxx-h5-media-wecom.mjs';
 import {createYxxH5MediaFFmpegTranscoder} from '../src/yxx-h5-media-transcode.mjs';
 import {inspectMedia,H5_MEDIA_LIMITS} from '../src/yxx-h5-media-format.mjs';
 import {collectYxxH5MediaBody} from '../src/yxx-h5-media.mjs';
+import {createYxxH5MediaBudget} from '../src/yxx-h5-media-budget.mjs';
 import type {H5MediaObject} from '../contracts/yxx_h5_media_contracts.js';
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
 const signal=()=>new AbortController().signal;
@@ -31,6 +32,26 @@ for(const partial of [false,true])test(`caller abort closes a genuinely stalled 
  const body=new StalledBody(),closed=once(body,'close'),controller=new AbortController(),result=collectYxxH5MediaBody(body,1024,controller.signal);
  await stalled;controller.abort();await assert.rejects(result,{code:'YXX_MEDIA_UPLOAD_CANCELLED'});await closed;await body.lastRead?.catch(()=>{});
  assert.equal(body.destroyed,true);assert.equal(body.closed,true);assert.equal(body.pending,0);assert.equal(body.maximumPending,1);assert.equal(body.returns,1);assert.equal(body.reads,partial?2:1);
+});
+
+test('known uploads use an exact bounded buffer and reject short or longer declared content',async()=>{
+ const original=Buffer.from('private material');const result=await collectYxxH5MediaBody(Readable.from([original.subarray(0,3),original.subarray(3)]),1024,signal(),original.length);assert.deepEqual(result,original);assert.equal(result.buffer.byteLength,original.length);result.fill(0);assert.equal(original.toString(),'private material','the caller retains its input ownership');
+ await assert.rejects(collectYxxH5MediaBody(Readable.from([original]),1024,signal(),original.length+1),{code:'YXX_MEDIA_SIZE_MISMATCH'});
+ await assert.rejects(collectYxxH5MediaBody(Readable.from([original]),1024,signal(),original.length-1),{code:'YXX_MEDIA_SIZE_MISMATCH'});
+});
+
+test('media budget releases disk before HTTP completion and enforces two leases, eight waiters and cancellation',async()=>{
+ const budget=createYxxH5MediaBudget(),one=await budget.acquire({disk:true,read:true,bytes:1024},signal());one.releaseDisk();
+ const two=await budget.acquire({disk:true,read:true,bytes:1024},signal());two.releaseDisk();assert.equal(budget.snapshot().read_leases,2);assert.equal(budget.snapshot().disk_operations,0);
+ const controllers=Array.from({length:8},()=>new AbortController()),pending=controllers.map(controller=>budget.acquire({disk:true,read:true,bytes:1024},controller.signal));const outcomes=pending.map(result=>result.then(()=>false,()=>true));
+ assert.equal(budget.snapshot().waiting,8);await assert.rejects(budget.acquire({disk:true,read:true,bytes:1},signal()),{code:'YXX_MEDIA_BUSY'});
+ for(const controller of controllers)controller.abort();assert.deepEqual(await Promise.all(outcomes),Array(8).fill(true));assert.equal(budget.snapshot().waiting,0);
+ one.release();one.release();two.release();budget.close();assert.deepEqual(budget.snapshot(),{disk_operations:0,read_leases:0,plaintext_reserved_bytes:0,waiting:0});
+});
+
+test('aggregate media plaintext reservations cannot exceed 32 MiB',async()=>{
+ const budget=createYxxH5MediaBudget(),one=await budget.acquire({disk:true,read:true,bytes:20*1024*1024},signal());one.releaseDisk();let acquired=false;
+ const pending=budget.acquire({disk:true,read:true,bytes:20*1024*1024},signal()).then(reservation=>{acquired=true;return reservation;});await Promise.resolve();assert.equal(acquired,false);assert.equal(budget.snapshot().waiting,1);one.release();const two=await pending;assert.equal(budget.snapshot().plaintext_reserved_bytes,20*1024*1024);two.release();budget.close();
 });
 
 test('private encrypted originals authenticate metadata and content before exposing plaintext',async()=>{
@@ -59,6 +80,11 @@ test('official JS-SDK signatures cache corporate and agent tickets and never exp
   await provider.sign({url,type:'AGENT',signal:signal()});assert.equal(calls[1]?.pathname,'/cgi-bin/ticket/get');assert.equal(calls[1]?.searchParams.get('type'),'agent_config');await assert.rejects(provider.sign({url:'https://foreign.example/wecom/yixiaoxiu/',signal:signal()}),{code:'YXX_MEDIA_INPUT_INVALID'});
  }finally{await provider.close();}
 });
+test('a cached JS-SDK signature does not contend with an in-flight external material download',async()=>{
+ let release=()=>{},started=()=>{};const downloadStarted=new Promise<void>(resolve=>{started=resolve;}),hold=new Promise<void>(resolve=>{release=resolve;});
+ const provider=createYxxH5MediaWeCom({accessTokenProvider:async()=> 'synthetic-token',publicOrigin:'https://h5.example.test',corpId:'corp-test',agentId:'100',fetchImpl:async input=>{if(new URL(String(input)).pathname.endsWith('/media/get')){started();await hold;return new Response(new Uint8Array(PNG),{headers:{'content-length':String(PNG.length)}});}return Response.json({errcode:0,ticket:'synthetic-ticket',expires_in:7200});}});
+ try{const signing={url:'https://h5.example.test/wecom/yixiaoxiu/',signal:signal()};await provider.sign(signing);const download=provider.download({kind:'IMAGE',serverId:'synthetic-media-id',signal:signal()});await downloadStarted;assert.match((await provider.sign(signing)).signature,/^[a-f0-9]{40}$/u);release();const result=await download;assert.deepEqual(result.bytes,PNG);result.bytes.fill(0);}finally{release();await provider.close();}
+});
 test('WeCom originals use fixed ordinary media endpoint, validate bytes and sanitize token failures',async()=>{
  const amr=Buffer.concat([Buffer.from('#!AMR\n'),Buffer.from([4]),Buffer.alloc(12)]),calls:URL[]=[];let fail=false,invalidated='';const credential=Object.assign(async()=> 'private-token-canary',{invalidate:(token:string)=>{invalidated=token;}});
  const fetchImpl:typeof fetch=async(input,init)=>{const url=new URL(String(input));calls.push(url);assert.equal(init?.redirect,'error');return fail?Response.json({errcode:42001,errmsg:'must not leak private-token-canary'}):new Response(new Uint8Array(amr),{headers:{'content-type':'audio/amr','content-length':String(amr.length)}});};
@@ -80,6 +106,9 @@ test('explicit FFmpeg port generates playable PCM and rejects actual recordings 
  try{const pending=converter.normalize({bytes:wav(),kind:'VOICE',mime_type:'audio/wav',signal:signal()});await assert.rejects(converter.normalize({bytes:wav(),kind:'VOICE',mime_type:'audio/wav',signal:signal()}),{code:'YXX_MEDIA_BUSY'});const result=await pending;assert.equal(result.mime_type,'audio/wav');assert.ok(result.duration_ms>=399&&result.duration_ms<=401);assert.equal(result.bytes.toString('ascii',8,12),'WAVE');result.bytes.fill(0);assert.equal((await readdir(join(root,'private'))).length,0);
   const amr=Buffer.concat([Buffer.from('#!AMR\n'),Buffer.from([4]),Buffer.alloc(12)]),native=await converter.normalize({bytes:amr,kind:'VOICE',mime_type:'audio/amr',signal:signal()});assert.equal(native.mime_type,'audio/wav');assert.equal(native.bytes.toString('ascii',8,12),'WAVE');assert.ok(native.duration_ms>=20&&native.duration_ms<=21);native.bytes.fill(0);
   const synthetic=join(root,'synthetic-input.mp4'),generated=spawnSync(resolve(process.env.H5_MEDIA_FFMPEG??''),['-nostdin','-v','error','-f','lavfi','-i','color=c=black:s=64x48:r=10','-t','0.5','-threads','1','-c:v','libx264','-pix_fmt','yuv420p',synthetic],{windowsHide:true,timeout:10_000,maxBuffer:64*1024});assert.equal(generated.status,0);const video=await converter.normalize({bytes:await readFile(synthetic),kind:'VIDEO',mime_type:'video/mp4',signal:signal()});assert.equal(video.mime_type,'video/mp4');assert.equal(video.bytes.toString('ascii',4,8),'ftyp');assert.ok(video.duration_ms>=400&&video.duration_ms<=600);video.bytes.fill(0);
+  const mobile=await converter.normalize({bytes:await readFile(synthetic),kind:'VIDEO',mime_type:'video/mp4',signal:signal(),performanceEnabled:true,maxOutputBytes:H5_MEDIA_LIMITS.playableVideo});assert.ok(mobile.bytes.length<=H5_MEDIA_LIMITS.playableVideo);const mobileFile=join(root,'mobile.mp4');await writeFile(mobileFile,mobile.bytes);const mobileProbe=spawnSync(resolve(process.env.H5_MEDIA_FFPROBE??''),['-v','error','-show_entries','stream=width,height,r_frame_rate','-of','json',mobileFile],{windowsHide:true,timeout:5000,maxBuffer:64*1024});assert.equal(mobileProbe.status,0);const mobileInfo:unknown=JSON.parse(mobileProbe.stdout.toString());assert.ok(mobileInfo&&typeof mobileInfo==='object'&&'streams' in mobileInfo&&Array.isArray(mobileInfo.streams));const mobileStream:unknown=mobileInfo.streams[0];assert.ok(mobileStream&&typeof mobileStream==='object'&&'width' in mobileStream&&'height' in mobileStream&&'r_frame_rate' in mobileStream);assert.ok(Number(mobileStream.width)<=720&&Number(mobileStream.height)<=720);assert.equal(mobileStream.r_frame_rate,'24/1');mobile.bytes.fill(0);
+  const thumbnail=converter.thumbnail;assert.ok(thumbnail);const preview=await thumbnail({bytes:PNG,mime_type:'image/png',signal:signal()});assert.equal(preview.mime_type,'image/jpeg');assert.ok(preview.bytes.length<=H5_MEDIA_LIMITS.thumbnail);assert.equal(inspectMedia(preview.bytes,'IMAGE','image/jpeg'),null);preview.bytes.fill(0);
+  const largeImage=join(root,'synthetic-large.png'),imageGenerated=spawnSync(resolve(process.env.H5_MEDIA_FFMPEG??''),['-nostdin','-v','error','-f','lavfi','-i','testsrc2=s=2000x1600:r=1','-frames:v','1','-c:v','png','-threads','1',largeImage],{windowsHide:true,timeout:10_000,maxBuffer:64*1024});assert.equal(imageGenerated.status,0);const largePreview=await thumbnail({bytes:await readFile(largeImage),mime_type:'image/png',signal:signal()});assert.ok(largePreview.bytes.length<=H5_MEDIA_LIMITS.thumbnail);const previewFile=join(root,'preview.jpg');await writeFile(previewFile,largePreview.bytes);const imageProbe=spawnSync(resolve(process.env.H5_MEDIA_FFPROBE??''),['-v','error','-show_entries','stream=width,height','-of','json',previewFile],{windowsHide:true,timeout:5000,maxBuffer:64*1024});assert.equal(imageProbe.status,0);const imageInfo:unknown=JSON.parse(imageProbe.stdout.toString());assert.ok(imageInfo&&typeof imageInfo==='object'&&'streams' in imageInfo&&Array.isArray(imageInfo.streams));const imageStream:unknown=imageInfo.streams[0];assert.ok(imageStream&&typeof imageStream==='object'&&'width' in imageStream&&'height' in imageStream);assert.ok(Number(imageStream.width)<=960&&Number(imageStream.height)<=960);largePreview.bytes.fill(0);
   await assert.rejects(converter.normalize({bytes:wav(61_000),kind:'VOICE',mime_type:'audio/wav',signal:signal()}),{code:'YXX_MEDIA_DURATION_EXCEEDED'});assert.deepEqual(converter.ownedResourceState(),{active:0,processes:0,temporary_files:0});
  }finally{await converter.close();await rm(root,{recursive:true,force:true});}
 });

@@ -7,17 +7,19 @@ import type {OAuthState,SessionToken} from '../src/p2-g2-wecom-web-oauth.mjs';
 import {sessionName} from '../src/p2-g2-wecom-oauth-http.mjs';
 import {createYxxApplicationMemberAuthentication} from '../src/yxx-application-member-auth.mjs';
 import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
+import type {ApplicationMemberVerifier} from '../src/wecom-application-member.mjs';
 
 const config=validateYxxEntryConfig({enabled:true,corpId:'synthetic-h5-corp',agentId:'1000002',botId:'synthetic-h5-bot',identityMode:'VERIFIED_APP_OPENID',memberIdsConfirmed:true,proofRef:'tests/h5-media-auth',proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'});
 const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
 function request(token:SessionToken){const r=new IncomingMessage(new Socket());r.headers.cookie=sessionName+'='+token;return r;}
-async function fixture(budget?:number){
+async function fixture(budget?:number,h5EntryVerifier?:ApplicationMemberVerifier){
  assert.ok(config.enabled);
  const oauth=createWeComWebOAuth({enabled:true,corpId:config.corpId,agentId:config.agentId,publicOrigin:'https://h5.synthetic.test',resolveCode:async()=>({userid:'synthetic-open-A'})});assert.ok(oauth.enabled);
  const begin=oauth.begin(),state=new URL(begin.location).searchParams.get('state');assert.match(state??'',/^[a-f0-9]{64}$/u);
  const session=await oauth.complete({browserToken:begin.browserToken,state:state as OAuthState,code:'synthetic-initial'});
  let lookups=0;
  const auth=createYxxApplicationMemberAuthentication({oauth,config,secret:'synthetic-only-h5-request-proof-secret-32bytes',flags,
+   ...(h5EntryVerifier===undefined?{}:{h5EntryVerifier}),
   ...(budget===undefined?{}:{requestBudgetMs:budget}),verifyMember:async id=>{lookups++;return {openUserId:id,displayName:'合成测试',checkedEpochMs:String(Date.now())};}});
  return {oauth,auth,session,lookups:()=>lookups};
 }
@@ -51,4 +53,37 @@ test('longer H5 request proof never overrides live session revocation or Cookie 
 
 test('H5 proof budget rejects an unbounded or invalid configuration',async()=>{
  for(const budget of [0,4999,60001,Infinity,5500.5])await assert.rejects(fixture(budget),{status:503});
+});
+
+test('H5 entry qualification shares its prepared proof with general reads but never another HTTP request',async()=>{
+ let entryLookups=0;
+ const f=await fixture(60000,async id=>{entryLookups++;return {openUserId:id,displayName:null,checkedEpochMs:String(Date.now())};});
+ try{
+  const first=request(f.session.sessionToken),qualified=await f.auth.authenticateEntry(first);
+  assert.equal(entryLookups,1);assert.equal(f.lookups(),0);
+  assert.deepEqual(await f.auth.authenticate(first),qualified);assert.deepEqual(f.auth.recheck(first),qualified);
+  assert.deepEqual(await f.auth.authenticateEntry(first),qualified);assert.equal(entryLookups,1);assert.equal(f.lookups(),0);
+  const second=request(f.session.sessionToken),independent=await f.auth.authenticateEntry(second);
+  assert.equal(independent.canonical_reporter_binding,qualified.canonical_reporter_binding);
+  assert.equal(entryLookups,2,'the same userid on another HTTP request requires a fresh lookup');assert.equal(f.lookups(),0);
+  const general=request(f.session.sessionToken),base=await f.auth.authenticate(general);
+  assert.equal(f.lookups(),1);assert.deepEqual(await f.auth.authenticateEntry(general),base);assert.equal(entryLookups,2);
+ }finally{f.oauth.close();}
+});
+
+test('H5 entry prepared proof cannot override Cookie replacement, logout or a denied current member',async()=>{
+ let entryLookups=0,deniedLookups=0;
+ const f=await fixture(60000,async id=>{entryLookups++;return {openUserId:id,displayName:null,checkedEpochMs:String(Date.now())};});
+ const denied=await fixture(60000,async()=>{deniedLookups++;return null;});
+ try{
+  const r=request(f.session.sessionToken);await f.auth.authenticateEntry(r);
+  r.headers.cookie=sessionName+'='+'a'.repeat(64);
+  await assert.rejects(f.auth.authenticateEntry(r),{status:401});await assert.rejects(f.auth.authenticate(r),{status:401});
+  r.headers.cookie=sessionName+'='+f.session.sessionToken;assert.doesNotThrow(()=>f.auth.recheck(r));
+  f.oauth.logout(f.session.sessionToken);
+  await assert.rejects(f.auth.authenticateEntry(r),{status:401});await assert.rejects(f.auth.authenticate(r),{status:401});assert.throws(()=>f.auth.recheck(r),{status:401});
+  assert.equal(entryLookups,1);assert.equal(f.lookups(),0);
+  const rejected=request(denied.session.sessionToken);await assert.rejects(denied.auth.authenticateEntry(rejected),{status:403});
+  assert.throws(()=>denied.auth.recheck(rejected),{status:401});assert.equal(deniedLookups,1);assert.equal(denied.lookups(),0);
+ }finally{f.oauth.close();denied.oauth.close();}
 });

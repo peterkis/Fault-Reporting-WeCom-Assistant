@@ -18,11 +18,15 @@ export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,a
  }
  async function credential(signal:AbortSignal){const token=await accessTokenProvider({signal});signal.throwIfAborted();if(typeof token!=='string'||!token||token.length>4096||/[\r\n]/u.test(token))mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);return token;}
  function invalidate(token:string,value:unknown){if(value&&typeof value==='object'&&[40014,42001].includes(Number((value as {errcode?:unknown}).errcode)))accessTokenProvider.invalidate?.(token);}
+ function signature(ticket:{value:string},signingUrl:string,signal:AbortSignal){if(stopped)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);signal.throwIfAborted();const timestamp=Math.floor(now()/1000),nonceStr=randomBytes(18).toString('base64url'),signature=createHash('sha1').update('jsapi_ticket='+ticket.value+'&noncestr='+nonceStr+'&timestamp='+timestamp+'&url='+signingUrl).digest('hex');return {corpId,agentId,timestamp,nonceStr,signature};}
  return Object.freeze({
   async sign({url,type='CORPORATE',signal}:Parameters<H5MediaWeCom['sign']>[0]){
    if(typeof url!=='string'||url.length>4096||/[\r\n]/u.test(url)||!['CORPORATE','AGENT'].includes(type))mediaFail('YXX_MEDIA_INPUT_INVALID');let page:URL;try{page=new URL(url);}catch{mediaFail('YXX_MEDIA_INPUT_INVALID');}
    if(page.origin!==origin.origin||page.username||page.password||page.pathname!=='/wecom/yixiaoxiu'&&!page.pathname.startsWith('/wecom/yixiaoxiu/'))mediaFail('YXX_MEDIA_INPUT_INVALID');
    const signingUrl=url.split('#',1)[0];if(!signingUrl)mediaFail('YXX_MEDIA_INPUT_INVALID');
+   // Signing with a live ticket performs no external work and must not contend
+   // with an ordinary-media download for the Integration single slot.
+   const cached=tickets.get(type);if(cached&&cached.expires>now())return signature(cached,signingUrl,signal);
    return operation(signal,5000,async combined=>{
     let ticket=tickets.get(type);if(!ticket||ticket.expires<=now()){
      if((nextAttempt.get(type)??0)>now())mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);nextAttempt.set(type,now()+30_000);
@@ -32,7 +36,7 @@ export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,a
      if(body.errcode!==0||typeof body.ticket!=='string'||!body.ticket||Buffer.byteLength(body.ticket)>512||!Number.isSafeInteger(body.expires_in)||Number(body.expires_in)<1||Number(body.expires_in)>86400)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);
      const lifetime=Number(body.expires_in)*1000;ticket={value:body.ticket,expires:started+lifetime-Math.min(60_000,lifetime/10)};tickets.set(type,ticket);nextAttempt.delete(type);
     }
-    const timestamp=Math.floor(now()/1000),nonceStr=randomBytes(18).toString('base64url');const signature=createHash('sha1').update('jsapi_ticket='+ticket.value+'&noncestr='+nonceStr+'&timestamp='+timestamp+'&url='+signingUrl).digest('hex');combined.throwIfAborted();return {corpId,agentId,timestamp,nonceStr,signature};
+    return signature(ticket,signingUrl,combined);
    });
   },
   async download({kind,serverId,signal}:Parameters<H5MediaWeCom['download']>[0]){
@@ -40,14 +44,15 @@ export function createYxxH5MediaWeCom({accessTokenProvider,publicOrigin,corpId,a
    return operation(signal,30_000,async combined=>{
     const token=await credential(combined),url=new URL('https://qyapi.weixin.qq.com/cgi-bin/media/get');url.searchParams.set('access_token',token);url.searchParams.set('media_id',serverId);
     const response=await fetchImpl(url,{method:'GET',redirect:'error',signal:combined});if(!response.ok||!response.body){await response.body?.cancel().catch(()=>{});mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);}
-    const reader=response.body.getReader(),chunks:Buffer[]=[];let length=0,bytes:Buffer|null=null;
+    const reader=response.body.getReader();let length=0,bytes:Buffer|null=null;const abortRead=()=>{void reader.cancel().catch(()=>{});};combined.addEventListener('abort',abortRead,{once:true});
     try{const declared=response.headers.get('content-length');if(declared!==null&&(!/^[0-9]+$/u.test(declared)||Number(declared)>H5_MEDIA_LIMITS[kind]))mediaFail('YXX_MEDIA_OVERSIZED',413);
-     for(;;){combined.throwIfAborted();const value=await reader.read();if(value.done)break;length+=value.value.byteLength;if(length>H5_MEDIA_LIMITS[kind])mediaFail('YXX_MEDIA_OVERSIZED',413);chunks.push(Buffer.from(value.value));}
-     bytes=Buffer.concat(chunks,length);if(!length)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);
+     bytes=Buffer.alloc(declared===null?H5_MEDIA_LIMITS[kind]:Number(declared));
+     for(;;){combined.throwIfAborted();const value=await reader.read();combined.throwIfAborted();if(value.done)break;if(length+value.value.byteLength>H5_MEDIA_LIMITS[kind])mediaFail('YXX_MEDIA_OVERSIZED',413);if(length+value.value.byteLength>bytes.length)mediaFail('YXX_MEDIA_SIZE_MISMATCH',422);bytes.set(value.value,length);length+=value.value.byteLength;}
+     if(!length)mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);if(declared!==null&&length!==Number(declared))mediaFail('YXX_MEDIA_SIZE_MISMATCH',422);bytes=bytes.subarray(0,length);
      if(bytes[0]===123){let body:unknown;try{body=JSON.parse(bytes.toString('utf8'));}catch{body=null;}invalidate(token,body);mediaFail('YXX_MEDIA_PROVIDER_UNAVAILABLE',503);}
      const mime=kind==='VOICE'?'audio/amr':kind==='VIDEO'?'video/mp4':bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))?'image/png':bytes.toString('ascii',8,12)==='WEBP'?'image/webp':'image/jpeg';
      inspectMedia(bytes,kind,mime);combined.throwIfAborted();const result=bytes;bytes=null;return {bytes:result,mime_type:mime};
-    }finally{bytes?.fill(0);for(const c of chunks)c.fill(0);await reader.cancel().catch(()=>{});reader.releaseLock();}
+    }finally{combined.removeEventListener('abort',abortRead);bytes?.fill(0);await reader.cancel().catch(()=>{});reader.releaseLock();}
    });
   },
   async close(){stopped=true;current?.abort();await settled;tickets.clear();nextAttempt.clear();},

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#68fcbf", "surface-card": "#1e222d", "text-secondary": "#9ca3af", "surface-tint": "#bcc2ff", "on-secondary": "#00218d", "surface": "#111319", "status-success": "#34d399", "inverse-surface": "#e2e2ea", "on-background": "#e2e2ea", "surface-elevated": "#252a37", "on-primary-fixed": "#000c61", "primary-fixed": "#dfe0ff", "status-danger": "#f87171", "on-error-container": "#ffdad6", "on-error": "#690005", "secondary-fixed-dim": "#bac3ff", "surface-subground": "#191c24", "on-surface": "#e2e2ea", "on-secondary-fixed-variant": "#1c38b0", "surface-container-lowest": "#0c0e14", "outline": "#8f8fa0", "callout-warm-bg": "#382d1c", "on-secondary-container": "#a3b0ff", "error": "#ffb4ab", "secondary-container": "#1c38b0", "on-tertiary-fixed": "#002114", "on-primary": "#001999", "surface-variant": "#33343b", "surface-container-low": "#191b22", "inverse-primary": "#3d50d0", "on-primary-container": "#fffcff", "tertiary-fixed-dim": "#45dfa4", "primary-fixed-dim": "#bcc2ff", "primary": "#bcc2ff", "callout-warm-text": "#fcd34d", "secondary-fixed": "#dee1ff", "border-glass": "rgba(255, 255, 255, 0.08)", "outline-variant": "#454654", "on-tertiary-fixed-variant": "#005137", "on-secondary-fixed": "#001159", "primary-container": "#5668e8", "border-subtle": "#2d3343", "surface-bright": "#373940", "surface-container-high": "#282a30", "on-tertiary": "#003825", "error-container": "#93000a", "tertiary": "#45dfa4", "tertiary-container": "#00865d", "inverse-on-surface": "#2e3037", "secondary": "#bac3ff", "surface-dim": "#111319", "status-danger-bg": "rgba(248, 113, 113, 0.16)", "status-success-bg": "rgba(16, 185, 129, 0.16)", "status-warning-bg": "rgba(245, 158, 11, 0.16)", "on-primary-fixed-variant": "#2034b8", "surface-canvas": "#12141a", "status-warning": "#fbbf24", "background": "#111319", "on-surface-variant": "#c5c5d6", "callout-warm-border": "#78521a", "surface-container": "#1d1f26", "surface-container-highest": "#33343b", "text-muted": "#6b7280", "text-primary": "#f3f4f6", "on-tertiary-container": "#fbfff9" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1rem", "space-xl": "1.5rem", "margin": "1.5rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "margin-mobile": "1rem", "gutter": "1rem" }, fontFamily: { "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "headline-xl-mobile": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "label-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;background-color:#12141a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface-canvas text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-subground/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Back" class="w-11 h-11 -ml-space-sm flex items-center justify-center text-on-surface hover:text-text-primary transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-text-primary">Ticket Detail</h1></div><div class="flex items-center gap-space-xs"><button aria-label="Search" class="w-11 h-11 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[22px]">search</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 bg-surface-canvas min-h-screen"><div class="flex flex-col w-full pb-28 space-y-space-md px-margin-mobile">
+<!-- Ticket Info Header Card -->
+<div class="w-full bg-surface-card rounded-xl p-space-lg shadow-md flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="inline-block w-2 h-2 rounded-full bg-status-warning animate-pulse"></span>
+<span class="font-label-md text-label-md text-text-secondary truncate">工单编号 #IT-20250518-094</span>
+<button aria-label="复制工单号" class="p-1 rounded text-text-muted hover:text-text-primary transition-colors flex items-center" id="copy-btn" onclick="navigator.clipboard?.writeText('IT-20250518-094'); this.classList.add('text-status-success'); setTimeout(()=>this.classList.remove('text-status-success'), 1500);">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-status-warning-bg text-status-warning font-label-sm text-label-sm shrink-0">处理中</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary leading-snug">
+      心内科护士站 3 号发药机标签打印机卡纸并提示代码 E-102
+    </h2>
+<div class="flex items-center gap-space-xs pt-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-subground text-text-secondary font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[15px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="truncate">新外科楼 7F 心内科护士站</span>
+</div>
+</div>
+</div>
+<!-- Assigned Specialist Card -->
+<div class="w-full bg-surface-card rounded-xl p-space-lg shadow-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">接单运维专家</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-status-success-bg text-status-success font-label-sm text-label-sm">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-status-success"></span>
+        正在处理
+      </span>
+</div>
+<div class="flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="relative w-12 h-12 rounded-xl bg-surface-elevated overflow-hidden shrink-0 shadow-sm flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Portrait photo of a professional Asian hospital biomedical engineer wearing navy scrub jacket, looking confident and smiling reassuringly under clinical soft ambient lighting in medical office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdaROly2NTgk9Y7m-kolIsvQb57VXcVxpwzM61H23tvIAdJdEgbJje7JcrRP0tlN5_SHS21jcSI6hFv1TSj4xUyh61UJh3EurGYAm6jbeBGUc-Mwr4cXy-xo7SoXOolP6drhcQk_VswS92Cbc3VvuXzIa3AzwimxRifoYLB9U9JntzDBiFOX0_s5-VJ2C-IKZrwF0H6U6ELfwO7xgiM5GD_Svr81pC8gn5G10H-e8pAyc3bDK472BF"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary">王浩</span>
+<span class="font-label-sm text-label-sm text-secondary">高级工程师</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted truncate">计算机中心 · 运维组</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<a class="flex items-center justify-center gap-1.5 h-11 px-3 rounded-lg bg-surface-elevated text-text-primary font-label-md text-label-md active:bg-surface-subground transition-colors" href="tel:13900001120">
+<span class="material-symbols-outlined text-[18px] text-primary" style="font-variation-settings: 'FILL' 1;">phone_in_talk</span>
+<span>电话直连</span>
+</a>
+<button class="flex items-center justify-center gap-1.5 h-11 px-3 rounded-lg bg-surface-elevated text-text-primary font-label-md text-label-md active:bg-surface-subground transition-colors" onclick="this.classList.add('opacity-75'); setTimeout(()=>this.classList.remove('opacity-75'), 200);">
+<span class="material-symbols-outlined text-[18px] text-tertiary" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span>企微发消息</span>
+</button>
+</div>
+</div>
+<!-- Fault On-Site Evidence Card -->
+<div class="w-full bg-surface-card rounded-xl p-space-lg shadow-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">现场故障留证</span>
+<span class="font-label-md text-label-md text-text-muted">报修时上传</span>
+</div>
+<!-- Voice memo player -->
+<div class="w-full bg-surface-subground rounded-lg p-space-sm flex items-center gap-space-md">
+<button aria-label="播放语音备忘" class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow shrink-0 active:scale-95 transition-transform" id="voice-play-toggle" onclick="const p = this.querySelector('span'); p.textContent = p.textContent === 'play_arrow' ? 'pause' : 'play_arrow';">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-primary truncate">语音报修备注 · 护士长张琴</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">12"</span>
+</div>
+<!-- Simulated Waveform -->
+<div class="flex items-center gap-1 h-4 mt-1">
+<span class="w-1 h-2 rounded-full bg-primary/40"></span>
+<span class="w-1 h-3 rounded-full bg-primary/70"></span>
+<span class="w-1 h-4 rounded-full bg-primary"></span>
+<span class="w-1 h-2 rounded-full bg-primary"></span>
+<span class="w-1 h-3.5 rounded-full bg-primary"></span>
+<span class="w-1 h-1.5 rounded-full bg-primary/50"></span>
+<span class="w-1 h-3 rounded-full bg-primary/80"></span>
+<span class="w-1 h-4 rounded-full bg-primary"></span>
+<span class="w-1 h-2.5 rounded-full bg-primary"></span>
+<span class="w-1 h-1 rounded-full bg-primary/40"></span>
+<span class="w-1 h-3 rounded-full bg-primary"></span>
+<span class="w-1 h-3.5 rounded-full bg-primary"></span>
+<span class="w-1 h-2 rounded-full bg-primary/60"></span>
+<span class="w-1 h-1.5 rounded-full bg-primary/40"></span>
+<span class="w-1 h-2.5 rounded-full bg-primary/50"></span>
+</div>
+</div>
+</div>
+<!-- Photos & Status grid -->
+<div class="grid grid-cols-3 gap-space-sm">
+<!-- Thumbnail 1 -->
+<div class="flex flex-col space-y-1">
+<div class="relative w-full aspect-square rounded-lg bg-surface-elevated overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Macro close-up photo of medical label printer control panel showing flashing red warning LED indicator beside an amber error message display in a dimly lit hospital ward" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASGimJ1PJKhQU9B2RCp_ID0SHqqreLI2sXTowaevNo_ahJwNQl0LXeBRGaHiTo7mL_moZXVvwNb5mbfdj57zVnqfA7O_JI_JEWpC6JQoM_ZemRj6hdFVCDGLKf_7qUCpFuG0NAk1lmejHvKPEvOm-QHrb9oqWuEItUPwXKU__5-MQtgfz1U5t6GmuDYeqnbqOn4GbmzcyEIPoRwZTTn5apxhjY8YxMlh8Zt9Jc6l8YGUCf_Yn6iZhB"/>
+<div class="absolute inset-x-0 bottom-0 py-0.5 px-1 bg-surface-canvas/80 backdrop-blur-sm text-center">
+<span class="font-label-sm text-label-sm text-status-danger truncate block">指示灯红闪</span>
+</div>
+</div>
+</div>
+<!-- Thumbnail 2 -->
+<div class="flex flex-col space-y-1">
+<div class="relative w-full aspect-square rounded-lg bg-surface-elevated overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Detailed photographic close up of a thermal pharmacy barcode sticker printer feed slot jammed with crumpled white thermal labels stuck around roller mechanism" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBU9FV8aJq75sG6M9rsMsMJk7hVvhs0S0MmRIABa7Yc_yKSd6Y7e7M7XmS_N9sic49CGJJQtKDD7SpSYjYD7X5aAVDoaKP_exPP3mygActDMX03lUxCB3XW0zbRcrSO17PNVckwEI_sJV9oHXnqv6249dgLoe75fXsrpfpy-HNIpXIvqxR7rB-fvI-LA1ms_xIceQfVD_IN8HUA7GuqLmbfXhem__xa9igXBzUfAatilUbf2oKgi3w"/>
+<div class="absolute inset-x-0 bottom-0 py-0.5 px-1 bg-surface-canvas/80 backdrop-blur-sm text-center">
+<span class="font-label-sm text-label-sm text-text-secondary truncate block">卡纸进纸槽</span>
+</div>
+</div>
+</div>
+<!-- SN QR Card -->
+<div class="flex flex-col space-y-1">
+<div class="relative w-full aspect-square rounded-lg bg-surface-subground p-1.5 flex flex-col items-center justify-center text-center shadow-sm">
+<span class="material-symbols-outlined text-[28px] text-primary mb-0.5">qr_code_2</span>
+<span class="font-label-sm text-label-sm text-secondary truncate w-full">SN: PR-9941</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Service Progress Timeline Card -->
+<div class="w-full bg-surface-card rounded-xl p-space-lg shadow-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">服务进展时序</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm">
+        预计 15 分钟内解决
+      </span>
+</div>
+<!-- Timeline sequence -->
+<div class="relative pl-6 space-y-space-lg">
+<!-- Continuous vertical track -->
+<div class="absolute left-2.5 top-2.5 bottom-2.5 w-0.5 bg-surface-elevated"></div>
+<!-- Step 1 (Current / Ongoing) -->
+<div class="relative flex flex-col space-y-space-xs">
+<div class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">build</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary">工程师到场检修中</span>
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-status-warning-bg text-status-warning font-label-sm text-label-sm">进行中</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">14:48</span>
+</div>
+<!-- Field work callout box -->
+<div class="mt-1.5 p-space-md rounded-lg bg-surface-elevated flex flex-col space-y-1">
+<span class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+            现场作业备注：王浩已完成进纸胶辊清洁并更换 3 号进纸传感器，正在重新载药房标签条码驱动进行走纸测试打印。
+          </span>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex flex-col space-y-space-xs">
+<div class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-surface-elevated text-status-success flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">工程师接单前往</span>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">14:40</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+          工程师 王浩 (139****1120) 响应派工，携带微型热敏清洁套件与激光对齐治具出发。
+        </p>
+</div>
+<!-- Step 3 -->
+<div class="relative flex flex-col space-y-space-xs">
+<div class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-surface-elevated text-status-success flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">信息科接单与智能派单</span>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">14:35</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+          AI 智能派单路由系统根据故障代码 E-102 匹配硬件维护专家，已自动通知心内科联络专员。
+        </p>
+</div>
+<!-- Step 4 -->
+<div class="relative flex flex-col space-y-space-xs">
+<div class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-surface-elevated text-status-success flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">用户提交临床报修</span>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">14:32</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+          护士站终端提交报修，附现场音频与卡纸故障照片 2 张。
+        </p>
+</div>
+<!-- Step 5 (Upcoming) -->
+<div class="relative flex flex-col space-y-space-xs opacity-60">
+<div class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-surface-subground text-text-muted flex items-center justify-center">
+<span class="material-symbols-outlined text-[13px]">radio_button_unchecked</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-muted">待完成：修复确认与医护评价</span>
+<span class="font-label-sm text-label-sm text-text-muted">待进行</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Fixed Bottom Action Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-surface-subground/95 backdrop-blur-lg pb-safe">
+<div class="w-full max-w-md mx-auto px-margin-mobile py-2.5 grid grid-cols-2 gap-space-sm items-center">
+<!-- Urgent Call Button -->
+<button class="h-11 px-3 rounded-lg bg-callout-warm-bg text-callout-warm-text font-label-md text-label-md flex items-center justify-center gap-1.5 active:opacity-85 transition-opacity" onclick="this.innerHTML='<span class=\'material-symbols-outlined text-[18px]\'>done</span> 已提醒催单'; this.disabled=true;">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+<span>加急催单</span>
+</button>
+<!-- Primary Confirmation Button -->
+<button class="h-11 px-3 rounded-lg bg-primary-container text-on-primary font-headline-sm text-headline-sm flex items-center justify-center gap-1.5 shadow-md active:bg-inverse-primary transition-colors" onclick="alert('感谢您的确认与评价！');">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>确认解决并评价</span>
+</button>
+</div>
+</div>
+</div></main></body></html>

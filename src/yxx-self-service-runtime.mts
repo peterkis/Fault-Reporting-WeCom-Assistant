@@ -9,7 +9,7 @@ import type {YxxQuota} from './yxx-self-service-command.mjs';
 import type {YxxOrchestratorOptions} from './yxx-self-service-orchestrator.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type {YxxH5Runtime,YxxH5RuntimeOptions} from './yxx-h5-runtime.mjs';
-export interface YxxSelfServiceExtensionOptions {h5?:YxxH5RuntimeOptions|null;h5Runtime?:YxxH5Runtime|null;applicationMemberVerifier?:ApplicationMemberVerifier|null;reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
+export interface YxxSelfServiceExtensionOptions {h5?:YxxH5RuntimeOptions|null;h5Runtime?:YxxH5Runtime|null;applicationMemberVerifier?:ApplicationMemberVerifier|null;h5EntryMemberVerifier?:ApplicationMemberVerifier|null;reporterFeedbackDraftRecoveryEnabled?:boolean;reporterFeedbackEnabled?:boolean;pool:PostgresPool;oauth:WeComOAuth;publicOrigin:string;reporterMemberEntry:unknown;identityMapping?:YxxIdentityMapping|null|undefined;reporterHmacSecret:string|undefined;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:Partial<YxxMemberFlags>|undefined;ruleEngine?:YxxOrchestratorOptions['ruleEngine'];realtimeProjector?:YxxOrchestratorOptions['realtimeProjector'];pollMilliseconds?:number|undefined;quota?:YxxQuota|undefined;serviceCatalog?:ServiceCatalog|null}
 import { createHmac } from 'node:crypto';
 import {createYxxSelfServiceFeedback} from './yxx-self-service-feedback.mjs';
 import { createYxxMemberAuthorizer } from './p2-g2-yixiaoxiu-authorizer.mjs';
@@ -27,6 +27,7 @@ import {createRuleEngine} from './p2-007-rule-engine.mjs';
 import {createYxxApplicationMemberAuthentication} from './yxx-application-member-auth.mjs';
 import type {ApplicationMemberVerifier} from './wecom-application-member.mjs';
 import {createYxxH5Runtime,createYxxH5RequestAuthentication} from './yxx-h5-runtime.mjs';
+import {pathToFileURL} from 'node:url';
 import {createYxxH5Http} from './yxx-h5-http.mjs';
 import {createYxxH5Static} from './yxx-h5-static.mjs';
 import {projectYxxH5Urge} from './yxx-h5-realtime.mjs';
@@ -42,7 +43,7 @@ export function resolveYxxServiceCatalog(selected:ServiceCatalog|null|undefined,
 }
 
 export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, reporterMemberEntry,
-  identityMapping, reporterHmacSecret, applicationMemberVerifier=null, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
+  identityMapping, reporterHmacSecret, applicationMemberVerifier=null,h5EntryMemberVerifier=null, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
   ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true as const}), serviceCatalog, reporterFeedbackEnabled=false,reporterFeedbackDraftRecoveryEnabled=false,h5=null,h5Runtime=null }:YxxSelfServiceExtensionOptions & {reporterFeedbackEnabled?:boolean}={} as YxxSelfServiceExtensionOptions) {
   if(typeof reporterFeedbackEnabled!=='boolean'||typeof reporterFeedbackDraftRecoveryEnabled!=='boolean'||reporterFeedbackDraftRecoveryEnabled&&!reporterFeedbackEnabled)failYxx('CONFIG_INVALID');
   const config = validateYxxEntryConfig(reporterMemberEntry);
@@ -54,7 +55,9 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const member = createYxxMemberAuthorizer({ pool, oauth, config, identityMapping });
   const digest = (purpose:string,values:unknown[]) => createHmac('sha256', reporterHmacSecret)
     .update(JSON.stringify([purpose, ...values])).digest('hex');
-  const appMember=config.enabled&&config.identityMode==='VERIFIED_APP_OPENID'&&applicationMemberVerifier?createYxxApplicationMemberAuthentication({oauth:oauth as EnabledWeComOAuth,config,identityMapping:identityMapping??null,secret:reporterHmacSecret,flags:featureFlags,verifyMember:applicationMemberVerifier,...(h5Runtime?.enabled===true||h5?.enabled===true?{requestBudgetMs:60_000}:{})}):null;
+  const performanceEntryEnabled=h5Runtime?.performanceEnabled===true||h5?.enabled===true&&h5.performanceEnabled===true;
+  if(h5EntryMemberVerifier!==null&&(!performanceEntryEnabled||typeof h5EntryMemberVerifier!=='function'))failYxx('CONFIG_INVALID');
+  const appMember=config.enabled&&config.identityMode==='VERIFIED_APP_OPENID'&&applicationMemberVerifier?createYxxApplicationMemberAuthentication({oauth:oauth as EnabledWeComOAuth,config,identityMapping:identityMapping??null,secret:reporterHmacSecret,flags:featureFlags,verifyMember:applicationMemberVerifier,h5EntryVerifier:h5EntryMemberVerifier,...(h5Runtime?.enabled===true||h5?.enabled===true?{requestBudgetMs:60_000}:{})}):null;
   function legacyAuthenticate(request:IncomingMessage) {
     const token = readWeComCookie(request, sessionName);
     const identity = member.authenticate(token);
@@ -67,7 +70,7 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
       bot_owner: { botId: config.botId, userId: identity.userid } };
   }
   const recheck=(request:IncomingMessage)=>appMember?appMember.recheck(request):legacyAuthenticate(request);
-  const requestAuthentication=createYxxH5RequestAuthentication({authenticate:(request:IncomingMessage)=>appMember?appMember.authenticate(request,profile):legacyAuthenticate(request),recheck});
+  const requestAuthentication=createYxxH5RequestAuthentication({authenticate:(request:IncomingMessage)=>appMember?appMember.authenticate(request,profile):legacyAuthenticate(request),authenticateEntry:(request:IncomingMessage)=>appMember?appMember.authenticateEntry(request,profile):legacyAuthenticate(request),recheck});
   const authenticate=requestAuthentication.authenticate;
   const h5Extension=h5Runtime??createYxxH5Runtime({pool,scopeSecret:reporterHmacSecret,publicOrigin,corpId:config.enabled?config.corpId:'',agentId:config.enabled?config.agentId:'',options:h5,onUrge:projectYxxH5Urge,
     onPublicProgress:realtimeProjector?.ticket?async input=>{await realtimeProjector.ticket?.(input);}:null});
@@ -79,15 +82,18 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const authorization = createYxxSelfServiceAuthorization({ profile, flags: featureFlags, authenticate,
     recheck: Object.assign(recheck, { localOnly: true as const }) });
   const query = createYxxSelfServiceQuery({ pool, store, feedbackStore, authorization, scopeSecret: reporterHmacSecret,
-    h5Lifecycle:h5Extension.lifecycle,h5Profile:h5Extension.profile,h5Media:h5Extension.enabled?h5Extension.queryMedia:null });
+    h5Lifecycle:h5Extension.lifecycle,h5Profile:h5Extension.profile,h5Media:h5Extension.enabled?h5Extension.queryMedia:null,
+    h5MediaEntry:h5Extension.performanceEnabled?h5Extension.queryMediaEntry:null });
   const catalog=resolveYxxServiceCatalog(serviceCatalog,ruleEngine);
-  const h5Http=createYxxH5Http({enabled:h5Extension.enabled,publicOrigin,command,query,authorization,media:h5Extension.media,wecom:h5Extension.wecom,sdk:h5Extension.sdk});
+  const h5Http=createYxxH5Http({enabled:h5Extension.enabled,performanceEnabled:h5Extension.performanceEnabled,publicOrigin,command,query,authorization,media:h5Extension.media,wecom:h5Extension.wecom,sdk:h5Extension.sdk});
   const native = createYxxSelfServiceNativeHttp({ publicOrigin, oauth:oauth as EnabledWeComOAuth,
     oauthHttp: createWeComOAuthHttp({ oauth, publicOrigin }), profile, featureFlags,
     command, reporterFeedbackEnabled,reporterFeedbackDraftRecoveryEnabled, supplement: createYxxSelfServiceSupplement({ command }), query,
     authenticateMember: ({ request }:{request:IncomingMessage}) => authenticate(request), recoveryBindingSecret: reporterHmacSecret, serviceCatalog:catalog,
-    h5Handler:h5Extension.enabled?h5Http.handler:null,h5Static:h5Extension.enabled?createYxxH5Static({enabled:true}):null,
-    ...(h5Extension.enabled?{h5Bootstrap:(request:IncomingMessage)=>query.h5Bootstrap({request,sdk:h5Extension.sdk})}:{}) });
+    h5Handler:h5Extension.enabled?h5Http.handler:null,h5Static:h5Extension.enabled?createYxxH5Static({enabled:true,...(h5Extension.previousStaticRoot?{previousRoot:pathToFileURL(h5Extension.previousStaticRoot.replace(/[\\/]?$/u,'/'))}:{})}):null,
+    ...(h5Extension.enabled?{h5Bootstrap:(request:IncomingMessage)=>query.h5Bootstrap({request,sdk:h5Extension.sdk})}:{}),
+    ...(h5Extension.performanceEnabled&&h5EntryMemberVerifier?{authenticateH5EntryMember:({request}:{request:IncomingMessage})=>requestAuthentication.authenticateEntry(request)}:{}),
+    ...(h5Extension.performanceEnabled?{h5Entry:({request,input,bootstrap})=>query.h5Entry({request,input,bootstrap,sdk:h5Extension.sdk})}:{}) });
   // FULL is processed by the original Worker. Its App never constructs a Web pump.
   const orchestrator = profile === 'MEMBER_SELF_SERVICE'
     ? createYxxSelfServiceOrchestrator({ pool, profile, featureFlags,
@@ -106,6 +112,6 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
       try { return await native.handler(context); } finally { requestAuthentication.release(context.request);inFlight--; }
     },
     start() { return pump?.start(); },
-    async close() { member.close(); await pump?.stop();if(!h5Runtime)await h5Extension.close(); },
+    async close() { member.close(); await query.closeH5Reads(); await pump?.stop();if(!h5Runtime)await h5Extension.close(); },
   });
 }

@@ -24,6 +24,8 @@ interface SourceRow {intake_id:string;ticket_id:string|null;input_revision:strin
 interface UrgeRow {ticket_id:string;count:number;last_epoch:string|null;active:boolean}
 interface EvaluationRow {rating:number;comment:string|null;occurred_at:string;occurred_epoch_ms:string}
 interface ProgressRow {summary:string;estimated_at:string|null;estimated_epoch_ms:string|null;ticket_version:number;occurred_at:string;occurred_epoch_ms:string}
+/** Only a query that has checked the current Web Request binding may construct this projection. */
+export interface H5LifecycleReadProjection {source:SourceRow;round:CompletedTicketRound|null;urge:UrgeRow|null;epoch:string;progress:ProgressRow|null;evaluation:EvaluationRow|null}
 const OPEN_STATUSES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'];
 /** A pre-assignment urge belongs to the initial round when its first cycle is established. */
 export const H5_CURRENT_URGE_SQL=`(u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id OR
@@ -95,6 +97,21 @@ export function createYxxH5Lifecycle({pool,scopeSecret,enabled=false,onUrge=null
     }
     return {ticket_version:s.ticket_version,media:[],handler:s.handler_name||s.team_name?{name:s.handler_name,team_name:s.team_name,phone:null,avatar_url:null,chat_url:null}:null,public_progress:p,urge:u,evaluation:e,intent:s.intent};
   }
+  function contextFromAuthorizedProjection(member:H5MemberContext,requestRef:string,value:H5LifecycleReadProjection):H5RequestExtension{
+    const s=value.source,mayWrite=enabled&&writeEnabled(member);let e=emptyEvaluation(),u=emptyUrge();
+    if(s.ticket_id){
+      const urge=value.urge;
+      if(urge){const next=urge.last_epoch===null?null:String(BigInt(urge.last_epoch)+600000n);u={active:urge.active&&urge.count>0,count:urge.count,
+        last_urged_at:urge.last_epoch===null?null:formatEpochMsToShanghaiLocal(urge.last_epoch),last_urged_epoch_ms:urge.last_epoch,
+        next_allowed_at:next===null?null:formatEpochMsToShanghaiLocal(next),next_allowed_epoch_ms:next,
+        can_urge:mayWrite&&urge.active&&(next===null||BigInt(next)<=BigInt(value.epoch))};}
+      const round=value.round,rating=value.evaluation;
+      if(round&&round.source_intake_id===s.intake_id)e={can_evaluate:mayWrite&&rating===null,completed_round_ref:roundRef(member.scope,requestRef,round),completed_round_no:round.cycle_no,ticket_version:round.version,
+        rating:rating?.rating??null,comment:rating?.comment??null,evaluated_at:rating?.occurred_at??null,evaluated_epoch_ms:rating?.occurred_epoch_ms??null};
+    }
+    return {ticket_version:s.ticket_version,media:[],handler:s.handler_name||s.team_name?{name:s.handler_name,team_name:s.team_name,phone:null,avatar_url:null,chat_url:null}:null,
+      public_progress:publicProgress(value.progress??undefined),urge:u,evaluation:e,intent:s.intent};
+  }
   async function beforeCommit(tx:PostgresTransaction,input:H5LifecycleInput){await source(tx,input.scope,input.requestRef);if(input.onBeforeCommit&&await input.onBeforeCommit({transaction:tx})!==true)h5Fail('YXX_AUTH_RECHECK_FAILED',403);}
   async function acceptInTransaction(input:H5LifecycleInput&{transaction:PostgresTransaction},purpose:'URGE'|'EVALUATION'):Promise<H5LifecycleResult>{
     if(!enabled)h5Fail('YXX_MEMBER_WRITE_DISABLED',403);const tx=input.transaction;
@@ -164,7 +181,7 @@ export function createYxxH5Lifecycle({pool,scopeSecret,enabled=false,onUrge=null
         JOIN intake.service_intake i ON i.id=t.source_intake_id WHERE p.ticket_id=$1::uuid AND p.actor_principal_id=$2::uuid AND p.client_command_id=$3::uuid AND i.retention_until_epoch_ms>platform.physical_epoch_ms()`,[ticketId,actor,id])).rows[0];
       if(await onAuthorize(tx)!==true)h5Fail('YXX_FORBIDDEN',403);return row?{state:'COMMITTED',ticket_id:ticketId,client_command_id:id,result:{...row.result_snapshot,replayed:true}}:{state:'UNKNOWN',ticket_id:ticketId,client_command_id:id};});
   }
-  return Object.freeze({context,receipt,publishPublicProgress,publicProgressReceipt,
+  return Object.freeze({context,contextFromAuthorizedProjection,receipt,publishPublicProgress,publicProgressReceipt,
     urgeInTransaction:(input:H5LifecycleInput&{transaction:PostgresTransaction})=>acceptInTransaction(input,'URGE'),
     evaluateInTransaction:(input:H5LifecycleInput&{transaction:PostgresTransaction})=>acceptInTransaction(input,'EVALUATION'),
     urge:(input:H5LifecycleInput)=>transactionP2016(pool,tx=>acceptInTransaction({...input,transaction:tx},'URGE')),

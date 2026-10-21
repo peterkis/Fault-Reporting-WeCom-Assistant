@@ -28,17 +28,19 @@ function record(value:unknown,field:string):Record<string,unknown>{if(!value||ty
 function exact(value:unknown,keys:readonly string[],field:string){const r=record(value,field);if(Object.keys(r).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(r,k)))configurationError(field);return r;}
 function text(value:unknown,field:string,max=512):string{if(typeof value!=='string'||!value||value.length>max||/[\r\n\x00]/u.test(value))configurationError(field);return value;}
 function origin(value:unknown,field:string){const s=text(value,field);let url:URL;try{url=new URL(s);}catch{configurationError(field);}if(url.origin!==s||url.protocol!=='https:'||url.username||url.password)configurationError(field);return s;}
-const h5EnvironmentKeys=['YIXIAOXIU_H5_ENABLED','YIXIAOXIU_H5_PRIVATE_ROOT','YIXIAOXIU_H5_MEDIA_KEY_HEX','YIXIAOXIU_H5_FFMPEG_PATH','YIXIAOXIU_H5_FFPROBE_PATH','YIXIAOXIU_H5_PROGRESS_ENABLED'] as const;
+const h5EnvironmentKeys=['YIXIAOXIU_H5_ENABLED','YIXIAOXIU_H5_PRIVATE_ROOT','YIXIAOXIU_H5_MEDIA_KEY_HEX','YIXIAOXIU_H5_FFMPEG_PATH','YIXIAOXIU_H5_FFPROBE_PATH','YIXIAOXIU_H5_PROGRESS_ENABLED','YIXIAOXIU_H5_PERFORMANCE_ENABLED','YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT'] as const;
 /** No environment default enables H5, a Provider, or an external delivery. */
 export function readWorkbenchH5RuntimeOptions(env:NodeJS.ProcessEnv=process.env,{worker=false}:{worker?:boolean}={}):YxxH5RuntimeOptions {
- const enabled=env.YIXIAOXIU_H5_ENABLED,progress=env.YIXIAOXIU_H5_PROGRESS_ENABLED;
+ const enabled=env.YIXIAOXIU_H5_ENABLED,progress=env.YIXIAOXIU_H5_PROGRESS_ENABLED,performance=env.YIXIAOXIU_H5_PERFORMANCE_ENABLED;
  if(enabled!==undefined&&!['true','false'].includes(enabled))configurationError('YIXIAOXIU_H5_ENABLED');
  if(progress!==undefined&&!['true','false'].includes(progress))configurationError('YIXIAOXIU_H5_PROGRESS_ENABLED');
- if(enabled!=='true'){if(progress==='true')configurationError('YIXIAOXIU_H5_PROGRESS_ENABLED');return {enabled:false};}
+ if(performance!==undefined&&!['true','false'].includes(performance))configurationError('YIXIAOXIU_H5_PERFORMANCE_ENABLED');
+ if(enabled!=='true'){if(progress==='true')configurationError('YIXIAOXIU_H5_PROGRESS_ENABLED');if(performance==='true')configurationError('YIXIAOXIU_H5_PERFORMANCE_ENABLED');if(env.YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT!==undefined)configurationError('YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT');return {enabled:false};}
  const path=(key:typeof h5EnvironmentKeys[number])=>{const value=text(env[key],key,2048);if(!isAbsolute(value))configurationError(key);return value;};
  const privateRoot=path('YIXIAOXIU_H5_PRIVATE_ROOT'),keyHex=text(env.YIXIAOXIU_H5_MEDIA_KEY_HEX,'YIXIAOXIU_H5_MEDIA_KEY_HEX',64);
  if(!/^[a-fA-F0-9]{64}$/u.test(keyHex))configurationError('YIXIAOXIU_H5_MEDIA_KEY_HEX');
- const result:YxxH5RuntimeOptions={enabled:true,privateRoot,key:Buffer.from(keyHex,'hex'),workbenchProgressEnabled:progress==='true'};
+ const result:YxxH5RuntimeOptions={enabled:true,privateRoot,key:Buffer.from(keyHex,'hex'),workbenchProgressEnabled:progress==='true',performanceEnabled:performance==='true'};
+ if(env.YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT!==undefined)result.previousStaticRoot=path('YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT');
  if(worker){result.ffmpegPath=path('YIXIAOXIU_H5_FFMPEG_PATH');result.ffprobePath=path('YIXIAOXIU_H5_FFPROBE_PATH');}
  return result;
 }
