@@ -38,7 +38,7 @@ interface Control {
  accepts:number;signatureCalls:number;reserved:number;uploaded:number;imported:number;cancelled:number;
  nativeBaseAuthentications:number;nativeEntryAuthentications:number;
  lastScope:string|null;lastBody:Buffer|null;listCalls:QueryInput[];detailV2:boolean[];
- afterSign:()=>void;releaseStream:()=>void;afterClose:()=>void;
+ afterSign:()=>void;releaseStream:()=>void;afterClose:()=>void;afterProfile?:()=>void;
  leaseDeadline:AbortController;forceBackpressure:boolean;afterHandled:()=>void;
  completed:{path:string;requestAbortedListeners:number;responseCloseListeners:number}[];
 }
@@ -48,7 +48,7 @@ async function json(response:Response):Promise<Record<string,unknown>>{const raw
 function v2Input(id=randomUUID()){return {schema_version:2,client_command_id:id,intent:'CONTACT_REQUEST',description:null,location:{text:null,unknown:true},media_refs:[]};}
 function v1Input(id=randomUUID()){return {schema_version:1,client_command_id:id,description:'合成故障',location:{text:null,unknown:true},service_code:null,impact_scope:'UNKNOWN',reported_department_text:null,extension:null};}
 
-async function fixture(run:(f:Fixture)=>Promise<void>,performanceEnabled=false){
+async function fixture(run:(f:Fixture)=>Promise<void>,performanceEnabled=false,displayProfile=false){
  const control:Control={authFailure:'NONE',recheckFailure:'NONE',stream:'NORMAL',readClosed:0,readOpened:0,readChunks:0,accepts:0,signatureCalls:0,reserved:0,uploaded:0,imported:0,cancelled:0,nativeBaseAuthentications:0,nativeEntryAuthentications:0,lastScope:null,lastBody:null,listCalls:[],detailV2:[],afterSign:()=>{},releaseStream:()=>{},afterClose:()=>{},completed:[],leaseDeadline:new AbortController(),forceBackpressure:false,afterHandled:()=>{}};
  let dispatch:((request:IncomingMessage,response:import('node:http').ServerResponse)=>Promise<void>)|null=null;
  const server=createServer((request,response)=>{void dispatch?.(request,response).catch(()=>{if(response.headersSent)response.destroy();else{response.writeHead(500);response.end('H5_HTTP_HARNESS_FAILURE');}});});
@@ -119,6 +119,7 @@ async function fixture(run:(f:Fixture)=>Promise<void>,performanceEnabled=false){
  const h5=createYxxH5Http({enabled:true,performanceEnabled,publicOrigin:origin,command:lifecycleCommand,query,authorization,media,wecom,sdk:{enabled:true,corp_id:'ww-h5-http-synthetic',agent_id:'1000002'}});
  const native=createYxxSelfServiceNativeHttp({publicOrigin:origin,oauth,oauthHttp:async()=>false,command,supplement:{accept:async()=>{throw new Error('UNUSED_SUPPLEMENT');}},query:{...query,timeline:async()=>{throw new Error('UNUSED_TIMELINE');},commandStatus:async()=>{throw new Error('UNUSED_COMMAND_STATUS');}},authenticateMember:async()=>{control.nativeBaseAuthentications++;return rawAuth();},authenticateH5EntryMember:async()=>{control.nativeEntryAuthentications++;return rawAuth();},profile:'FULL_SERVICE_LOOP',featureFlags:FLAGS,recoveryBindingSecret:'H5_HTTP_SYNTHETIC_RECOVERY_KEY_0000000001',h5Handler:h5.handler,
   h5Bootstrap:async()=>extension,...(performanceEnabled?{h5Entry:entry}:{}),
+  ...(displayProfile?{h5DisplayProfile:{authenticate:async()=>rawAuth(),read:()=>{control.afterProfile?.();return {name:'合成成员',department:'合成科室'};}}}:{}),
  });
  dispatch=async(request,response)=>{
   const beforeRequest=request.listenerCount('aborted'),beforeResponse=response.listenerCount('close'),url=new URL(request.url??'/',origin);
@@ -207,6 +208,29 @@ test('H5 single Range parser covers suffix, open-ended, clamped, unsupported and
  for(const range of ['bytes=10-','bytes=4-2','bytes=-0','bytes=999999999999999999999-'])assert.equal(parseYxxH5ByteRange(range,10),'UNSATISFIABLE');
  for(const range of [null,'bytes=0-1,3-4','items=0-1','bytes=-','garbage'])assert.equal(parseYxxH5ByteRange(range,10),null);
 });
+
+test('H5 display GET returns only same-scope names, keeps authority separate and rejects invalid public input',{timeout:15000},async()=>fixture(async f=>{
+ const response=await f.fetch('/api/yixiaoxiu/h5/profile'),body=await json(response);assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+ assert.deepEqual(Object.keys(body).sort(),['profile','recovery_scope','schema_version']);assert.equal(body.schema_version,1);assert.equal(typeof body.recovery_scope,'string');assert.match(String(body.recovery_scope),/^[a-f0-9]{64}$/u);assert.deepEqual(body.profile,{name:'合成成员',department:'合成科室'});
+ const entry=await json(await f.fetch('/api/yixiaoxiu/h5/entry?view=home')),bootstrap=record(entry.bootstrap),h5=record(bootstrap.h5);assert.equal(bootstrap.recovery_scope,body.recovery_scope);assert.equal(h5.can_view_department,false);assert.equal(record(h5.profile).name,null);
+ assert.equal(f.control.accepts,0);assert.equal(f.control.reserved,0);
+ for(const [path,init,status] of [
+  ['/api/yixiaoxiu/h5/profile?userid=other',{},400],
+  ['/api/yixiaoxiu/h5/profile',{method:'POST'},404],
+  ['/api/yixiaoxiu/h5/profile',{headers:{origin:'https://foreign.invalid'}},403],
+  ['/api/yixiaoxiu/h5/profile',{headers:{'sec-fetch-site':'cross-site'}},403],
+  ['/api/yixiaoxiu/h5/profile',{headers:{cookie:''}},401],
+ ] as const)assert.equal((await f.fetch(path,init)).status,status);
+},true,true));
+
+test('H5 display GET retains terminal member checks and keeps unavailable distinct from denied',{timeout:15000},async()=>fixture(async f=>{
+ f.control.afterProfile=()=>{f.control.authFailure='DENIED';};let response=await f.fetch('/api/yixiaoxiu/h5/profile');assert.equal(response.status,403);assert.equal((await response.text()).includes('合成成员'),false);
+ delete f.control.afterProfile;f.control.authFailure='UNAVAILABLE';response=await f.fetch('/api/yixiaoxiu/h5/profile');assert.equal(response.status,503);assert.equal((await response.text()).includes('合成科室'),false);
+ f.control.authFailure='NONE';assert.equal((await f.fetch('/api/yixiaoxiu/h5/profile')).status,200);
+ assert.ok(f.control.completed.filter(value=>value.path==='/api/yixiaoxiu/h5/profile').every(value=>value.requestAbortedListeners===0&&value.responseCloseListeners===0));assert.equal(f.control.accepts,0);
+},false,true));
+
+test('H5 display GET is absent when its explicit runtime is not assembled',{timeout:15000},async()=>fixture(async f=>{assert.equal((await f.fetch('/api/yixiaoxiu/h5/profile')).status,404);}));
 
 test('H5 performance HTTP scopes HEAD and Range, sends exact bytes and releases leases',{timeout:15000},async()=>fixture(async f=>{
  const path='/api/yixiaoxiu/requests/'+REF+'/media/'+MEDIA;

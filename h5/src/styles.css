@@ -116,3 +116,5 @@ body.h5-dialog-open{overflow:hidden}.ui-dialog-overlay{pointer-events:auto}
 .voice-modes input:focus-visible+span{outline:3px solid color-mix(in srgb,var(--primary) 42%,transparent);outline-offset:2px}
 .voice-modes:disabled>label{cursor:default;opacity:.6}
 .voice-card .voice-mode-hint{max-width:32ch;margin:0 0 10px;color:var(--secondary-text);font-size:12px;line-height:1.6}
+.greeting>div:nth-child(2){min-width:0;overflow-wrap:anywhere}
+.profile-block h3,.profile-block p{max-width:100%;overflow-wrap:anywhere}

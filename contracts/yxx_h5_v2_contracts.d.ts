@@ -10,6 +10,8 @@ export interface H5RequestInput {
   media_refs: string[];
 }
 export interface H5Profile { name: string | null; department: string | null; phone: string | null; avatar_url: string | null }
+/** ADR-0039. Current member display metadata never grants department READ. */
+export interface H5DisplayProfile {schema_version:1;recovery_scope:string;profile:Pick<H5Profile,'name'|'department'>}
 export interface H5Media { media_ref: string; kind: H5MediaKind; mime_type: string; byte_size: number; duration_ms: number | null; url: string; playback_status: 'PENDING' | 'READY' | 'UNAVAILABLE'; playback_mime_type: string | null }
 export interface H5Handler { name: string | null; team_name: string | null; phone: string | null; avatar_url: string | null; chat_url: string | null }
 export interface H5PublicProgress { summary: string; estimated_at: string | null; estimated_epoch_ms: string | null; version: number; updated_at: string; updated_epoch_ms: string }

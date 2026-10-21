@@ -7,6 +7,40 @@ import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pu
 import type {H5EntryBootstrap} from '../contracts/yxx_h5_entry_contracts.js';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 
+test('H5 optional display query decodes only the current scope and has its own bounded cache',async t=>{
+ const loader=createH5PureModuleLoader(),{displayProfileOptions}=await import(await loader.moduleUrl('api/display-profile.ts'));
+ const calls:{url:string;options:RequestInit}[]=[];
+ t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{calls.push({url:String(input),options});return Response.json({schema_version:1,recovery_scope:'scope-a',profile:{name:'合成成员',department:'合成科室'}});});
+ const options=displayProfileOptions('scope-a','revision-a'),controller=new AbortController();
+ assert.deepEqual(options.queryKey,['display-profile','scope-a','revision-a']);assert.equal(options.staleTime,30000);assert.equal(options.gcTime,120000);assert.equal(options.retry,false);
+ assert.equal(options.refetchOnWindowFocus,false);assert.equal(options.refetchOnReconnect,false);assert.equal(options.refetchOnMount,true);
+ assert.deepEqual(await options.queryFn({signal:controller.signal}),{name:'合成成员',department:'合成科室'});
+ assert.equal(calls.length,1);assert.equal(calls[0]?.url,'/api/yixiaoxiu/h5/profile');assert.equal(calls[0]?.options.signal,controller.signal);assert.equal(calls[0]?.options.credentials,'same-origin');assert.equal(calls[0]?.options.cache,'no-store');
+ assert.notDeepEqual(options.queryKey,displayProfileOptions('scope-b','revision-a').queryKey);assert.notDeepEqual(options.queryKey,displayProfileOptions('scope-a','revision-b').queryKey);
+});
+
+test('H5 optional display query rejects a foreign scope and malformed profile without returning personal data',async t=>{
+ const loader=createH5PureModuleLoader(),{displayProfileOptions}=await import(await loader.moduleUrl('api/display-profile.ts')),transport=await import(await loader.moduleUrl('api/client.ts'));
+ let rechecks=0;const cleanup=transport.registerSessionRecheck(async()=>{rechecks++;});
+ let body:unknown={schema_version:1,recovery_scope:'scope-b',profile:{name:'FOREIGN_SYNTHETIC',department:'FOREIGN_DEPARTMENT'}};
+ t.mock.method(globalThis,'fetch',async()=>Response.json(body));
+ try{
+  await assert.rejects(displayProfileOptions('scope-a','r').queryFn({signal:new AbortController().signal}),{code:'MEMBER_SCOPE_CHANGED'});assert.equal(rechecks,1);
+  for(const profile of [{name:'Synthetic'},{name:8,department:null},{name:null,department:8},{name:'x'.repeat(81),department:null}]){body={schema_version:1,recovery_scope:'scope-a',profile};await assert.rejects(displayProfileOptions('scope-a','r').queryFn({signal:new AbortController().signal}),{code:'INVALID_RESPONSE'});}
+ }finally{cleanup();}
+});
+
+test('H5 optional display query discards a late response after cancellation or an auth-generation change',async t=>{
+ const loader=createH5PureModuleLoader(),{displayProfileOptions}=await import(await loader.moduleUrl('api/display-profile.ts')),transport=await import(await loader.moduleUrl('api/client.ts'));
+ let release:(value:Response)=>void=()=>{throw Error('PROFILE_NOT_PENDING');};
+ t.mock.method(globalThis,'fetch',()=>new Promise<Response>(resolve=>{release=resolve;}));
+ for(const reason of ['cancel','generation']){
+  const controller=new AbortController(),pending=displayProfileOptions('scope-a','r').queryFn({signal:controller.signal});
+  if(reason==='cancel')controller.abort();else transport.advanceAuthGeneration();
+  release(Response.json({schema_version:1,recovery_scope:'scope-a',profile:{name:'OLD_SYNTHETIC',department:'OLD_DEPARTMENT'}}));await assert.rejects(pending,{name:'AbortError'});
+ }
+});
+
 test('H5 frozen Stitch HTML and PNG remain byte identical to their recorded source hashes',async()=>{
  const baseline=resolve(sourceRoot,'h5/design-baseline');
  const manifest=JSON.parse(await readFile(resolve(baseline,'sha256.json'),'utf8'));

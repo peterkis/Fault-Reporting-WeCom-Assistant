@@ -12,7 +12,7 @@ import type {ApplicationMemberVerifier} from '../src/wecom-application-member.mj
 const config=validateYxxEntryConfig({enabled:true,corpId:'synthetic-h5-corp',agentId:'1000002',botId:'synthetic-h5-bot',identityMode:'VERIFIED_APP_OPENID',memberIdsConfirmed:true,proofRef:'tests/h5-media-auth',proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'});
 const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
 function request(token:SessionToken){const r=new IncomingMessage(new Socket());r.headers.cookie=sessionName+'='+token;return r;}
-async function fixture(budget?:number,h5EntryVerifier?:ApplicationMemberVerifier){
+async function fixture(budget?:number,h5EntryVerifier?:ApplicationMemberVerifier,profileRead?:ApplicationMemberVerifier){
  assert.ok(config.enabled);
  const oauth=createWeComWebOAuth({enabled:true,corpId:config.corpId,agentId:config.agentId,publicOrigin:'https://h5.synthetic.test',resolveCode:async()=>({userid:'synthetic-open-A'})});assert.ok(oauth.enabled);
  const begin=oauth.begin(),state=new URL(begin.location).searchParams.get('state');assert.match(state??'',/^[a-f0-9]{64}$/u);
@@ -20,7 +20,7 @@ async function fixture(budget?:number,h5EntryVerifier?:ApplicationMemberVerifier
  let lookups=0;
  const auth=createYxxApplicationMemberAuthentication({oauth,config,secret:'synthetic-only-h5-request-proof-secret-32bytes',flags,
    ...(h5EntryVerifier===undefined?{}:{h5EntryVerifier}),
-  ...(budget===undefined?{}:{requestBudgetMs:budget}),verifyMember:async id=>{lookups++;return {openUserId:id,displayName:'合成测试',checkedEpochMs:String(Date.now())};}});
+  ...(budget===undefined?{}:{requestBudgetMs:budget}),verifyMember:Object.assign(async(id:string)=>{lookups++;return {openUserId:id,displayName:'合成测试',checkedEpochMs:String(Date.now())};},profileRead?{profileRead}:{})});
  return {oauth,auth,session,lookups:()=>lookups};
 }
 
@@ -33,6 +33,25 @@ test('H5 media proof survives a bounded transfer and is never reused by another 
   const second=request(f.session.sessionToken);await f.auth.authenticate(second);assert.equal(f.lookups(),2);
   t.mock.timers.setTime(epoch+60000);assert.throws(()=>f.auth.recheck(first),{status:401});assert.doesNotThrow(()=>f.auth.recheck(second));
  }finally{f.oauth.close();t.mock.timers.reset();}
+});
+
+test('H5 current display is request-local and never changes authority or skips Cookie/logout terminal checks',async()=>{
+ let profiles=0;const f=await fixture(60000,undefined,async id=>{profiles++;return {openUserId:id,displayName:'合成成员',departmentName:'合成科室',checkedEpochMs:String(Date.now())};});
+ try{
+  const r=request(f.session.sessionToken),authority=await f.auth.authenticateProfile(r);assert.equal(profiles,1);assert.equal(f.lookups(),0);
+  assert.deepEqual(f.auth.currentDisplay(r),{name:'合成成员',department:'合成科室'});assert.deepEqual(await f.auth.authenticate(r),authority);assert.equal(f.lookups(),0);
+  assert.equal(Object.hasOwn(authority,'displayName'),false);assert.equal(Object.hasOwn(authority,'departmentName'),false);
+  assert.throws(()=>f.auth.currentDisplay(request(f.session.sessionToken)),{status:401});
+  r.headers.cookie=sessionName+'='+'a'.repeat(64);assert.throws(()=>f.auth.currentDisplay(r),{status:401});
+  r.headers.cookie=sessionName+'='+f.session.sessionToken;f.oauth.logout(f.session.sessionToken);assert.throws(()=>f.auth.currentDisplay(r),{status:401});
+ }finally{f.oauth.close();}
+});
+
+test('H5 display never returns a profile after logout while the Provider was pending',async()=>{
+ let release:()=>void=()=>{throw Error('PROFILE_NOT_PENDING');};const wait=new Promise<void>(resolve=>{release=resolve;});
+ const f=await fixture(60000,undefined,async id=>{await wait;return {openUserId:id,displayName:'PRIVATE_SYNTHETIC',departmentName:'PRIVATE_DEPARTMENT',checkedEpochMs:String(Date.now())};});
+ try{const r=request(f.session.sessionToken),pending=f.auth.authenticateProfile(r);f.oauth.logout(f.session.sessionToken);release();await assert.rejects(pending,{status:401});assert.throws(()=>f.auth.currentDisplay(r),{status:401});}
+ finally{release();f.oauth.close();}
 });
 
 test('legacy member qualification keeps its original five second request proof budget',async t=>{

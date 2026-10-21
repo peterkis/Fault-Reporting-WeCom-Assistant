@@ -9,7 +9,7 @@ let authGeneration=0;
 const responseGenerations=new WeakMap<Response,number>();
 export const captureAuthGeneration=():number=>authGeneration;
 export function advanceAuthGeneration():void{authGeneration+=1;}
-function assertGeneration(generation:number,signal?:AbortSignal|null):void{if(generation!==authGeneration||signal?.aborted)throw new DOMException('Member request superseded','AbortError');}
+function assertGeneration(generation:number,signal?:AbortSignal|null):void{if(generation!==authGeneration||signal?.aborted)throw new DOMException('Aborted','AbortError');}
 export {assertGeneration as assertAuthGeneration};
 export class AuthFailureEvent extends Event {constructor(public readonly status:401|403){super('lost');}}
 export function reportAuthLost(generation:number,signal?:AbortSignal|null,status:401|403=403):void{if(generation===authGeneration&&!signal?.aborted)authLost.dispatchEvent(new AuthFailureEvent(status));}

@@ -1,5 +1,7 @@
 # 医小修 H5 性能改造实施记录
 
+2026-10-22 用户反馈首页姓名／部门回退后的诊断与修复见[本人展示资料记录](member-profile-2026-10-22.md)及[Issue #113](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/113)。官方资料异步补充不改变原 entry 的 SQL／时延预算，也不授予科室 READ；新候选的验证与实际部署单独登记。
+
 用户追加的页面试听杂音、上传0%失败、转写归属与下部录音交互另见[录音续作记录](voice-followup-2026-10-21.md)。用户已明确继续默认企业微信录音。该轮与下述已发布候选分别登记，不用旧通过覆盖新验收或实机缺口。
 
 当前会话／导航／录音修复候选 `14dad391` 已经 [PR #111](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/111) 审查与合并，并在云端实际切换。正式浏览器30/30、当前源码普通CI 638/638、独立生产Profiler27/27窗口通过；首次INVALID、发布失败和回退、旧资源权限修复及清理均保留。完整身份与边界见[本轮诊断与验收](resume-navigation-2026-10-21.md)，Android/iOS实机复验仍NOT_RUN，用户此次5分钟锁屏和起录失败的直接原因仍NOT_CONFIRMED。

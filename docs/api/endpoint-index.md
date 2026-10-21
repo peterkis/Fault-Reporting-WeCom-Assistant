@@ -186,6 +186,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | H5-M08 | POST | `/api/yixiaoxiu/media/uploads/{mediaRef}/wecom` | M / F | H5 默认关闭：服务端获取并私有保存临时素材，当前范围／CSRF／UUID，不伪造 Bot 来源 | [签名与媒体](member/h5-v2.md#签名和媒体) |
 | H5-M09 | DELETE | `/api/yixiaoxiu/media/uploads/{mediaRef}` | M / F | H5 默认关闭：取消本人未绑定材料，当前写权／CSRF／UUID；BOUND／WRITING 拒绝 | [签名与媒体](member/h5-v2.md#签名和媒体) |
 | H5-M10 | GET | `/api/yixiaoxiu/requests/{requestRef}/media/{mediaRef}` | M / F | H5 默认关闭：本人当前 READ／原 Request 绑定／留存，ORIGINAL／PLAYABLE 逐块终检 | [签名与媒体](member/h5-v2.md#签名和媒体) |
+| H5-M11 | GET | `/api/yixiaoxiu/h5/profile` | M / F | H5 默认关闭：当前成员姓名／主部门展示、独立异步加载及终检；不授予科室 READ | [本人展示资料](member/h5-v2.md#本人展示资料) |
 | H5-P01 | GET | `/api/yixiaoxiu/h5/entry` | M / F | 性能开关独立默认关闭：当前页面bootstrap与最小获权数据，闭合view合同及等待后终检 | [性能读取](member/h5-performance.md) |
 | H5-P02 | GET | `/api/yixiaoxiu/h5/department-summary` | M / F | 性能开关默认关闭：当前组织关系有限统计与不透明修订 | [性能读取](member/h5-performance.md) |
 | H5-P03 | GET | `/api/yixiaoxiu/requests/{requestRef}/supplements` | M / F | 性能开关默认关闭：本人补充历史签名游标分页，不改变同路径POST | [性能读取](member/h5-performance.md) |
