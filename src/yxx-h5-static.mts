@@ -2,6 +2,8 @@ import {createHash} from 'node:crypto';
 import {readFile,lstat} from 'node:fs/promises';
 import type {ServerResponse} from 'node:http';
 import {brotliDecompressSync,gunzipSync} from 'node:zlib';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 export const YXX_H5_SECURITY_HEADERS=Object.freeze({
  'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
@@ -52,10 +54,13 @@ export function createYxxH5Static({enabled=false,root=new URL('../h5/',import.me
   cache.set(key,bytes);cacheBytes+=bytes.length;
  }
  async function regular(artifactRoot:URL,relative:string,maximum:number):Promise<Buffer>{
-  const rootInfo=await lstat(artifactRoot);if(rootInfo.isSymbolicLink()||!rootInfo.isDirectory())unavailable();
-  const parts=relative.split('/');let cursor=artifactRoot;
-  for(let index=0;index<parts.length;index++){
-   cursor=new URL(parts[index]+(index<parts.length-1?'/':''),cursor);
+  // A trailing slash makes POSIX lstat resolve a directory link. Inspect each
+  // native path without that separator; realpath would hide the link itself.
+  let cursor=resolve(fileURLToPath(artifactRoot));
+  const rootInfo=await lstat(cursor);if(rootInfo.isSymbolicLink()||!rootInfo.isDirectory())unavailable();
+  const parts=relative.split('/');
+  for(const [index,part]of parts.entries()){
+   cursor=resolve(cursor,part);
    const info=await lstat(cursor);if(info.isSymbolicLink())unavailable();
    if(index<parts.length-1&&!info.isDirectory())unavailable();
    if(index===parts.length-1&&(!info.isFile()||info.size>maximum))unavailable();

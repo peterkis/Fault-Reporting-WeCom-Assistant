@@ -204,14 +204,32 @@ test('unreachable chunks cannot add public assets and cyclic imports stay bounde
  }finally{cleanup(root);}
 });
 
-test('H5 refuses linked artifact roots, asset directories, and manifest directories',async()=>{
+test('H5 refuses a linked artifact root before exposing a page or asset',async()=>{
  const root=fixture(),wrapper=mkdtempSync(path.join(tmpdir(),'yxx-h5-static-test-'));
  try{
   const linkedRoot=path.join(wrapper,'linked-h5');symlinkSync(root,linkedRoot,process.platform==='win32'?'junction':'dir');assert.ok(lstatSync(linkedRoot).isSymbolicLink());
-  await host(linkedRoot,true,async origin=>{const response=await fetch(origin+'/wecom/yixiaoxiu/');assert.equal(response.status,503);});
-  renameSync(path.join(root,'assets'),path.join(root,'saved-assets'));symlinkSync(path.join(root,'saved-assets'),path.join(root,'assets'),process.platform==='win32'?'junction':'dir');
-  await host(root,true,async origin=>{const response=await fetch(origin+'/wecom/yixiaoxiu/assets/main-Ab123.js');assert.equal(response.status,503);assert.doesNotMatch(await response.text(),/SYNTHETIC_H5_MAIN/u);});
-  renameSync(path.join(root,'.vite'),path.join(root,'saved-vite'));symlinkSync(path.join(root,'saved-vite'),path.join(root,'.vite'),process.platform==='win32'?'junction':'dir');
-  await host(root,true,async origin=>{const response=await fetch(origin+'/wecom/yixiaoxiu/');assert.equal(response.status,503);});
+  await host(linkedRoot,true,async origin=>{
+   for(const route of ['/wecom/yixiaoxiu/','/wecom/yixiaoxiu/assets/main-Ab123.js']){const response=await fetch(origin+route);assert.equal(response.status,503);assert.doesNotMatch(await response.text(),/SYNTHETIC_H5|PRIVATE_H5/u);}
+  });
  }finally{cleanup(wrapper);cleanup(root);}
+});
+
+test('H5 refuses a linked assets directory in an otherwise regular artifact',async()=>{
+ const root=fixture();
+ try{
+  assert.equal(lstatSync(path.join(root,'.vite')).isSymbolicLink(),false);
+  renameSync(path.join(root,'assets'),path.join(root,'saved-assets'));symlinkSync(path.join(root,'saved-assets'),path.join(root,'assets'),process.platform==='win32'?'junction':'dir');
+  assert.ok(lstatSync(path.join(root,'assets')).isSymbolicLink());
+  await host(root,true,async origin=>{const response=await fetch(origin+'/wecom/yixiaoxiu/assets/main-Ab123.js');assert.equal(response.status,503);assert.doesNotMatch(await response.text(),/SYNTHETIC_H5_MAIN/u);});
+ }finally{cleanup(root);}
+});
+
+test('H5 refuses a linked manifest directory without an assets link masking it',async()=>{
+ const root=fixture();
+ try{
+  assert.equal(lstatSync(path.join(root,'assets')).isSymbolicLink(),false);
+  renameSync(path.join(root,'.vite'),path.join(root,'saved-vite'));symlinkSync(path.join(root,'saved-vite'),path.join(root,'.vite'),process.platform==='win32'?'junction':'dir');
+  assert.ok(lstatSync(path.join(root,'.vite')).isSymbolicLink());
+  await host(root,true,async origin=>{const response=await fetch(origin+'/wecom/yixiaoxiu/');assert.equal(response.status,503);assert.doesNotMatch(await response.text(),/SYNTHETIC_H5|PRIVATE_H5/u);});
+ }finally{cleanup(root);}
 });

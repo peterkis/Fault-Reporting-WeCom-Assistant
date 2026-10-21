@@ -2,6 +2,8 @@
 
 2026-10-21续作的本地合成预算已通过：首页整页从6次业务SELECT降为3次，十万科室／十成员并发的三视图HTTP p95均满足原1500ms；Windows Job实际约束2CPU／4GiB。最终候选07、25入口197项注册测试、80浏览器主样本及38项QA见[续作验收记录](closure-2026-10-21.md)。企业微信实机项仍为NOT_RUN；旧失败与原候选分别保留。
 
+用户随后明确授权提交设计原件、PR审查修复与合并、main快进、自有资源清理，以及合并后的生产Profiler和新H5云部署。该发布阶段的当前身份、回归、CI失败与修复另见[发布验收记录](publication-2026-10-21.md)；下文候选07的历史度量不改绑。真实发送和Gate批准仍不在本次授权内。
+
 授权：用户于2026-10-20批准完整计划并明确要求实施。基点为`b88e5ff1a22110cf5479d89677df77192e034864`，当前分支`codex/yixiaoxiu-h5-rebuild`。用户`h5/docs/prototype`原件、八屏设计基线、原历史Evidence和Gate停止线保留。
 
 决策见[ADR-0036](../../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)，新闭合页面DTO见[entry合同](../../contracts/yxx_h5_entry_contracts.d.ts)。原API继续兼容；实际新增路径必须同时登记[接口索引](../../docs/api/endpoint-index.md)。
