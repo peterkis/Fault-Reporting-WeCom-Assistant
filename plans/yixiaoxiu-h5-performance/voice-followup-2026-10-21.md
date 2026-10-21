@@ -50,8 +50,27 @@
 
 ## 正式验收状态
 
-新候选正式根构建、注册回归、浏览器8组合、生产Profiler、当前head远端CI／审查与云切换尚待本轮执行并追加。旧候选结果和私有预检不代替未执行项。
+录音源码候选为 `62c21984ed1229d75e3a342e3a4d5adad0c4f76f`，tree为 `266e6463709d6bc8d7957bbad485efc2da378b9a`。正式根构建、活动selection strict和制品校验均退出0：878个typed implementation、351个legacy、2618个输出；manifest为 `390aa755c25b3b1b39dc49a1e15411f97a85d2b9bac05da0d887d823c1a61bd6`，source input为 `b95cd71dc6daf4fab649ab5d2d9310b0dc4098994d6bf261d900e099be536ced`。构建后所有验证完成再做制品检查仍通过，用户配置不进入制品。
+
+| 当前源码62的本地验证 | 实际结果及边界 |
+| --- | --- |
+| 正式五页完整首屏JS闭包（raw／gzip／Brotli，B） | home 375642／118050／101862；report 390406／122822／105903；reports 375500／118160／101943；request 388563／122197／105586；department 372025／116823／100854；主题671／408／333。原122880／2048 B gzip上限保持，报修页余量58 B |
+| 注册回归 | 17个实际入口、284/284 PASS，fail／cancel／skip／todo均0。含H5／OAuth、实际T16浏览器4例、媒体FFmpeg14例、PG媒体6例；任务自有PG18.4、Windows Job硬约束2CPU／4GiB，峰值commit 1495089152 B，非整库full或Gate |
+| 工具及文档 | H5、性能、资源预算与agent-docs共45/45 PASS；docs:agents:check退出0 |
+| 正式浏览器 | 44/44 PASS：原30项会话／温导航／shimmer等，加320／390 px×浅深色×中英8组合、录音流程、PUT 503和能力分支。实际WECOM默认，CLEAR仅手动或无SDK夹具；短录音、429／503本地提示、无自动POST重试、输入选择／非输入禁选均覆盖；根任务另查看8张布局截图，不声明像素差分验收 |
+| 生产React Profiler | 独立production B0/P1构建，9控制＋18业务窗口共27/27 PASS、各场景3次。文字Description 9、Location 6次本叶提交；录音3个真实秒跳仅Recorder；上传item 6次＋SubmitActions 1次；补充／评价弹窗各7次。整页、Provider、时间线、结构媒体列表与非活动item无无关提交；父Profiler的子树回调另记，未冒充父组件提交。SDK关闭夹具使用CLEAR，不是实机原生音质证明 |
+| 独立审查 | review03确认跨controller停止ACK的P2已关闭，无新增P1/P2；实际安装SDK原2模式反例2/2 GREEN，另7个具体注册生命周期用例通过，不拼作新整套计数 |
+
+44项浏览器首次36 PASS／8 FAIL原件保留：夹具把视觉隐藏的1px说明算作溢出，并读到textarea已有选择；按确切CSS隐藏规则及先清空／blur再真实拖选修正测试驱动，未改页面、布局预算或选择策略。随后44项完整重跑通过。Profiler首次准备因旧FileFallback函数已删除而失败；核对AST后只移除该已不存在的探针，核心探针、27窗口和无关提交为0断言保持，未伪造删除组件的计数。
+
+注册回归、44项浏览器及Profiler各自的PG、Job、浏览器／profile、服务器／socket／timer、媒体轨道／录音器／Blob与租约均按各自收据释放为0；PG正常停止退出0、status 3，数据库／客户端为空，Job未强制终止。Profiler另核1981个正式input无变化；405份捕获中404份正式源与1份DEV-only预览分开，不将插桩发布。
+
+该head的[Codex审查](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/112#issuecomment-6321188507)已完成、findings=false且无未解决inline意见；[CI run 39634414243](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/39634414243)仍为**FAIL**：237个注册文件选中，151执行、86 NOT_RUN，361项中360 PASS、1 FAIL。失败为既有工作台T38第一例在再次授予权限后等待editor＋live的30秒超时，其余3例通过。原始ZIP的API digest、10457721 B完整SHA与717条目CRC均已核，PG18.6清理为空；原CI未归档失败DOM／截图，不能凭空确定页面状态或根因。本机原流程自然PASS，尚不能作为修复前RED或CI已关闭的证明，诊断另行记账。**本地通过与审查通过均不覆盖此CI失败，未据此合并或切换云服务。**
+
+T38补充诊断中，原流程自然观测1 PASS；通过真实runtime端口主动断开原SSE再恢复的受控流程1 PASS，未构造RED，均不冒充已定位CI原因。两次沿原30秒、实际404拒绝、空草稿与0自动POST运行，2CPU／4GiB Job、PG正常退出及最终资源0。后继测试仅增加同步phase、最多128条不含Cookie／正文／身份的HTTP状态账及失败时的DOM白名单与现有runner可收录截图回执；成功路径无新增浏览器await，原4个waitFor参数逐字相同，后三例正文保持。最终私有strict退出0；其正式构建和当前CI另行执行，未直接将观测补丁称作产品修复。
+
+截至本地验证截点，新62制品仅完成云端隔离组件预检13/13 PASS，未加载运行配置／业务数据库、未联网、未切换服务；实际在线仍为前轮14dad391。后续当前head的CI故障闭环、合并与新录音制品云切换按实际身份追加至 [PR #112 验收与发布收据](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/112#issuecomment-6321712907)，本截点不预先记为通过。
 
 Android／iOS新模式实际音质、实际Provider上传、录音相机与锁屏恢复完整实机复验继续 **NOT_RUN**；起录用户观察与本轮未验证的音质分别记录。不推进P2/P3 Gate，不主动发送消息，不重置已有工单、密钥或媒体。
 
-外部原件根：`D:\wecom-workbench-evidence\h5-session-navigation-20261021-ccd73223`，本轮目录包括 `voice-followup-frontend-01/`、`voice-followup-layout-02/`、`voice-followup-backend-01/`、`voice-quality-browser-01/` 与 `wbint-t16-lock-diagnosis-01/`。失败与中间态原件保留；用户配置及设计原件不改写。
+外部原件根：`D:\wecom-workbench-evidence\h5-session-navigation-20261021-ccd73223`，本轮目录包括 `voice-followup-frontend-01/`、`voice-followup-layout-02/`、`voice-followup-backend-01/`、`voice-quality-browser-01/`、`wbint-t16-lock-diagnosis-01/`、`formal-build-voice-04/`、`registered-voice-05-host-01/`、`tooling-voice-01/`、`browser-qa/formal-62c21984-voice-44-02/`、`profiler-voice-feedback-01/`、`voice-followup-review-03/` 与 `cloud-release-voice-01/`。失败与中间态原件保留；用户配置及设计原件不改写。

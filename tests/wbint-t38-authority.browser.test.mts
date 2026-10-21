@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
-import {mkdtemp,writeFile,rmdir} from 'node:fs/promises';
+import {createHash,randomUUID} from 'node:crypto';
+import {mkdir,mkdtemp,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {Server} from 'node:http';
@@ -13,35 +13,56 @@ type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
 interface Fixture {pool:PostgresPool;origin:string;backendOrigin?:string;sessionId:string;certificateSpki:string;browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string;wecom_user_id:string;display_name:string}[];runtime:{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 const inputExpression=(note:string)=>`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(note)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.setSelectionRange(2,6);})()`;
 
-test('effective scope changes revoke facts and draft authority without relying on a visible SSE event, and a later grant re-reads',async()=>{
+test('effective scope changes revoke facts and draft authority without relying on a visible SSE event, and a later grant re-reads',async(t)=>{
   await withWeb01Fixture(async({pool,origin,browserCookies,tickets,principals,runtime}:Fixture)=>{
     const ticket=tickets[5],principal=principals[0],cookie=browserCookies[0];assert.ok(ticket&&principal&&cookie);
-    let deniedBodies=false,posts=0,denials=0;
+    let deniedBodies=false,posts=0,denials=0,phase='initial';const started=performance.now();
+    const reads:{kind:'bootstrap'|'item'|'command-context'|'realtime';phase:string;started_ms:number;status:number|null;finished_ms:number|null;closed_ms:number|null}[]=[];
     runtime.server.on('request',(request,response)=>{
       if(request.method==='POST')posts++;
+      const path=(request.url??'').split('?')[0];
+      const kind=path==='/api/lifecycle/bootstrap'?'bootstrap':path==='/api/realtime/events'?'realtime':path==='/api/workbench/items/ticket/'+ticket.ticket.id?'item':path==='/api/tickets/'+ticket.ticket.id?'command-context':null;
+      if(request.method==='GET'&&kind&&reads.length<128){
+        const read:typeof reads[number]={kind,phase,started_ms:Math.round(performance.now()-started),status:null,finished_ms:null,closed_ms:null};reads.push(read);
+        response.once('finish',()=>{read.status=response.statusCode;read.finished_ms=Math.round(performance.now()-started);});
+        response.once('close',()=>{read.status=response.statusCode;read.closed_ms=Math.round(performance.now()-started);});
+      }
       if(request.method!=='GET'||!((request.url??'').startsWith('/api/workbench/items/ticket/'+ticket.ticket.id)||(request.url??'')==='/api/tickets/'+ticket.ticket.id))return;
       const end=response.end;response.end=(...args:unknown[])=>{const rejected=[401,403,404].includes(response.statusCode);if(rejected)denials++;Reflect.apply(end,response,deniedBodies&&rejected?['{']:args);return response;};
     });
-    const directory=await mkdtemp(join(tmpdir(),'web01-ui-'));let browser:Browser|undefined,error:unknown;
+    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,error:unknown;
+    const observe=async()=>{
+      if(!browser)return;
+      const state=await browser.evaluate('({editor:Boolean(document.querySelector("textarea")),activity:Boolean(document.querySelector(".activity-list")),realtime:document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus??null,session_recheck:document.body.innerText.includes("会话需要重新核验"),expired:document.body.innerText.includes("会话已失效"),denied:document.body.innerText.includes("当前身份没有查看权限"),retry:[...document.querySelectorAll("button")].some(button=>button.textContent==="重新读取"),hidden:document.visibilityState==="hidden"})');
+      t.diagnostic('T38_AUTHORITY_STATE '+JSON.stringify({phase,at_ms:Math.round(performance.now()-started),state,posts,denials}));
+    };
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});
       assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      phase='saving-draft';
       await browser.evaluate(inputExpression('T38 authorized draft revoked with its scope'));
       await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
-      const access=createPilotAccessService({pool});deniedBodies=true;
+      phase='revoking';const access=createPilotAccessService({pool});deniedBodies=true;
       await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['HANDLER'],resolverTeamIds:[]});
       await browser.waitFor('!document.querySelector("textarea")&&!document.querySelector(".activity-list")');
       for(let i=0;i<100&&denials===0;i++)await new Promise(resolve=>setTimeout(resolve,50));assert.ok(denials>0,'current object GET must actually reject the changed scope before the later grant');
+      phase='revoked-bootstrap';
       assert.equal(await browser.evaluate('document.body.innerText.includes("T38 authorized draft revoked with its scope")'),false);
       assert.equal(posts,0);
       const bootstrap=await fetch(origin+'/api/lifecycle/bootstrap',{headers:{cookie:cookie.name+'='+cookie.value}});assert.equal(bootstrap.status,200);
-      deniedBodies=false;await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      phase='regranting';deniedBodies=false;await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      phase='regrant-wait';
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'','lost authorization must not restore revoked plaintext after a new grant');
       assert.equal(posts,0);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',effective_scope_revoke:true,malformed_credible_denial:true,new_grant_reauth:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    }catch(failure){error=failure;try{if(browser){
+      await observe();const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'failure-1280.png');await writeFile(file,bytes);
+      await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',failed_stage:phase,screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));
+    }}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    t.diagnostic('T38_AUTHORITY_READS '+JSON.stringify(reads));
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
