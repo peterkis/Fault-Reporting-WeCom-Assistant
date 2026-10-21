@@ -18,11 +18,11 @@ interface RecordingSession {started:number;cancel:boolean;released:boolean;media
 type Listener=()=>void;
 
 export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(text:string)=>void,message:(key:string)=>string){
- let items:DraftMedia[]=[],error:string|null=null,recording:RecordingSnapshot={recording:false,seconds:0,cancelling:false};
+ let items:DraftMedia[]=[],itemIds:readonly string[]=[],error:string|null=null,recording:RecordingSnapshot={recording:false,seconds:0,cancelling:false};
  let alive=true,queue=Promise.resolve(),sdk:Wecom|null=null,record:RecordingSession|null=null,admitting=0;
  const listeners=new Set<Listener>(),pendingMeasurements=new Set<()=>void>();
  const progressTimers=new Map<string,ReturnType<typeof setTimeout>>(),progressValues=new Map<string,number>(),lastProgress=new Map<string,number>();
- const emit=()=>{if(alive)for(const listener of listeners)listener();};
+ const emit=()=>{if(items.length!==itemIds.length||items.some((item,index)=>item.id!==itemIds[index]))itemIds=items.map(item=>item.id);if(alive)for(const listener of listeners)listener();};
  const subscribe=(listener:Listener)=>{listeners.add(listener);return()=>{listeners.delete(listener);};};
  const replace=(id:string,update:(item:DraftMedia)=>DraftMedia)=>{items=items.map(item=>item.id===id?update(item):item);emit();};
  const setError=(value:string|null)=>{error=value;emit();};
@@ -160,7 +160,7 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(tex
   // Unbound files retain their original bounded expiry; only explicit remove cancels a draft upload.
   clear(true);recording={recording:false,seconds:0,cancelling:false};listeners.clear();
  };
- return {subscribe,getItems:()=>items,getError:()=>error,getRecording:()=>recording,getBusy:()=>alive&&(admitting>0||pendingMeasurements.size>0||record!==null||recording.recording||items.some(item=>item.status!=='READY')),getHasVoice:()=>items.some(item=>item.kind==='VOICE'),getNative:native,setError,add,remove,choosePhotos,retry:upload,start,release,slide,playNative,clear,mount,dispose};
+ return {subscribe,getItems:()=>items,getItemIds:()=>itemIds,getItem:(id:string)=>items.find(item=>item.id===id)??null,getError:()=>error,getRecording:()=>recording,getBusy:()=>alive&&(admitting>0||pendingMeasurements.size>0||record!==null||recording.recording||items.some(item=>item.status!=='READY')),getHasVoice:()=>items.some(item=>item.kind==='VOICE'),getNative:native,setError,add,remove,choosePhotos,retry:upload,start,release,slide,playNative,clear,mount,dispose};
 }
 export type MediaController=ReturnType<typeof createMediaController>;
 /** The controller is stable. Components subscribe only to the slice they display. */
@@ -170,7 +170,8 @@ export function useMedia(bootstrap:Bootstrap,onTranscript:(text:string)=>void):M
  if(!controller.current)controller.current=createMediaController(()=>current.current.bootstrap,text=>current.current.onTranscript(text),key=>current.current.t(key));
  const value=controller.current;useEffect(()=>{value.mount();return()=>value.dispose();},[value]);return value;
 }
-export function useMediaItems(controller:MediaController){return useSyncExternalStore(controller.subscribe,controller.getItems,controller.getItems);}
+export function useMediaItemIds(controller:MediaController){return useSyncExternalStore(controller.subscribe,controller.getItemIds,controller.getItemIds);}
+export function useMediaItem(controller:MediaController,id:string){const snapshot=()=>controller.getItem(id);return useSyncExternalStore(controller.subscribe,snapshot,snapshot);}
 export function useMediaRecording(controller:MediaController){return useSyncExternalStore(controller.subscribe,controller.getRecording,controller.getRecording);}
 export function useMediaError(controller:MediaController){return useSyncExternalStore(controller.subscribe,controller.getError,controller.getError);}
 export function useMediaBusy(controller:MediaController){return useSyncExternalStore(controller.subscribe,controller.getBusy,controller.getBusy);}

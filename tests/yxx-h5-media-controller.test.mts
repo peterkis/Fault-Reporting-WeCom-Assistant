@@ -11,15 +11,16 @@ import {createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 
 const bootstrap:H5EntryBootstrap={authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',read_only:false,can_submit:true,can_supplement:true,csrf_token:'synthetic-csrf',recovery_scope:'synthetic-member',h5:{profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:false,corp_id:null,agent_id:null},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:{voice_count:1,voice_duration_seconds:60,voice_bytes:5*1024*1024,image_count:6,image_bytes:10*1024*1024,video_count:1,video_duration_seconds:60,video_bytes:20*1024*1024,total_bytes:40*1024*1024}}};
 interface MediaElement {duration:number;src:string;preload:string;onloadedmetadata:(()=>void)|null;onerror:(()=>void)|null;loads:number;removeAttribute:(name:string)=>void;load:()=>void}
-interface Controller {getBusy:()=>boolean;getItems:()=>{id:string;ref:string|null;status:string}[];getError:()=>string|null;add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
-interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[]};control:{pendingReserve:boolean}}
+interface ItemSnapshot {id:string;ref:string|null;status:string;progress:number}
+interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds:()=>readonly string[];getItem:(id:string)=>ItemSnapshot|null;getError:()=>string|null;add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;clear:(bound?:boolean)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
+interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[];uploads:{id:string;signal:AbortSignal;progress:(value:number)=>void;complete:()=>void}[]};control:{pendingReserve:boolean;holdUploads:boolean}}
 const apiFixture=`
 export const authLost=new EventTarget();
-export const calls={reserves:[],cancels:[]};
-export const control={pendingReserve:false};
+export const calls={reserves:[],cancels:[],uploads:[]};
+export const control={pendingReserve:false,holdUploads:false};
 export const api={
  reserve:async(input,csrf,signal)=>{calls.reserves.push({signal});if(control.pendingReserve)await new Promise((resolve,reject)=>{signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});});return{media_ref:'11111111-1111-4111-8111-111111111111',kind:input.kind};},
- upload:async(ref,file,csrf,id,signal,progress)=>{if(signal.aborted)throw new DOMException('Aborted','AbortError');progress(22);progress(100);return{media_ref:ref,kind:'IMAGE'};},
+ upload:async(ref,file,csrf,id,signal,progress)=>{if(signal.aborted)throw new DOMException('Aborted','AbortError');if(control.holdUploads)await new Promise((resolve,reject)=>{const abort=()=>reject(new DOMException('Aborted','AbortError'));signal.addEventListener('abort',abort,{once:true});calls.uploads.push({id,signal,progress,complete:()=>{signal.removeEventListener('abort',abort);resolve();}});});else progress(22);progress(100);return{media_ref:ref,kind:'IMAGE'};},
  cancelUpload:async(ref)=>{calls.cancels.push(ref);},
  importWecom:async()=>{throw new Error('Native device APIs are not used by this fixture');}
 };`;
@@ -77,6 +78,35 @@ test('H5 a pending reservation receives and honors the page abort signal',async(
   await value.controller.add(new File(['synthetic image'],'photo.jpg',{type:'image/jpeg'}),'IMAGE');await until(()=>value.api.calls.reserves.length===1);
   const signal=value.api.calls.reserves[0]?.signal;assert.ok(signal);assert.equal(signal.aborted,false);
   value.controller.dispose();assert.equal(signal.aborted,true);await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getBusy(),false);assert.deepEqual(value.api.calls.cancels,[]);
+ }finally{value.close();}
+});
+
+test('H5 progress preserves member and unrelated item snapshots while flushing 100 percent immediately',async()=>{
+ const value=await fixture(),previousClock=Object.getOwnPropertyDescriptor(globalThis,'performance');
+ try{
+  for(const name of ['one','two']){await value.controller.add(new File([name],name+'.png',{type:'image/png'}),'IMAGE');await until(()=>!value.controller.getBusy());}
+  const originalIds=value.controller.getItemIds(),first=originalIds[0],second=originalIds[1];assert.ok(first&&second);
+  const firstItem=value.controller.getItem(first),secondItem=value.controller.getItem(second);assert.ok(firstItem&&secondItem);
+  value.api.control.holdUploads=true;await value.controller.add(new File(['three'],'three.png',{type:'image/png'}),'IMAGE');await until(()=>value.api.calls.uploads.length===1);
+  const ids=value.controller.getItemIds(),activeId=ids[2],upload=value.api.calls.uploads[0];assert.ok(activeId&&upload);assert.notEqual(ids,originalIds);assert.deepEqual(originalIds,[first,second]);assert.equal(value.controller.getBusy(),true);
+  let memberChanges=0,firstChanges=0,activeChanges=0,active=value.controller.getItem(activeId);const unsubscribe=value.controller.subscribe(()=>{if(value.controller.getItemIds()!==ids)memberChanges+=1;if(value.controller.getItem(first)!==firstItem)firstChanges+=1;const next=value.controller.getItem(activeId);if(next!==active){activeChanges+=1;active=next;}});
+  // The controlled clock makes the existing 100ms throttle/100% flush deterministic.
+  Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>1000}});
+  const commandSnapshot=value.controller.getItems();upload.progress(22);assert.equal(value.controller.getItem(activeId)?.progress,22);upload.progress(55);assert.equal(value.controller.getItem(activeId)?.progress,22,'Intermediate progress waits for the existing throttle');
+  upload.progress(100);assert.equal(value.controller.getItem(activeId)?.progress,100,'Completion flushes without waiting for the pending timer');upload.complete();await until(()=>value.controller.getItem(activeId)?.status==='READY');
+  assert.equal(value.controller.getItemIds(),ids);assert.equal(value.controller.getItem(first),firstItem);assert.equal(value.controller.getItem(second),secondItem);assert.notEqual(value.controller.getItems(),commandSnapshot);assert.equal(value.controller.getBusy(),false);assert.equal(memberChanges,0);assert.equal(firstChanges,0);assert.ok(activeChanges>=2);unsubscribe();
+ }finally{value.close();if(previousClock)Object.defineProperty(globalThis,'performance',previousClock);else Reflect.deleteProperty(globalThis,'performance');}
+});
+
+test('H5 member snapshots change only for membership and clear nullable selectors without changing the single upload queue',async()=>{
+ const value=await fixture();
+ try{
+  const empty=value.controller.getItemIds();assert.equal(value.controller.getItemIds(),empty);assert.equal(value.controller.getItem('missing'),null);value.api.control.holdUploads=true;
+  await value.controller.add(new File(['one'],'one.png',{type:'image/png'}),'IMAGE');await until(()=>value.api.calls.uploads.length===1);const one=value.controller.getItemIds(),first=one[0],firstUpload=value.api.calls.uploads[0];assert.ok(first&&firstUpload);assert.notEqual(one,empty);assert.deepEqual(empty,[]);
+  await value.controller.add(new File(['two'],'two.png',{type:'image/png'}),'IMAGE');const two=value.controller.getItemIds(),second=two[1];assert.ok(second);assert.notEqual(two,one);assert.deepEqual(one,[first]);assert.equal(value.controller.getItem(second)?.status,'QUEUED');assert.equal(value.api.calls.reserves.length,1,'Queued membership cannot start a second concurrent upload');
+  firstUpload.complete();await until(()=>value.api.calls.uploads.length===2);const secondUpload=value.api.calls.uploads[1],secondItem=value.controller.getItem(second);assert.ok(secondUpload&&secondItem);assert.equal(value.api.calls.reserves.length,2);
+  value.controller.remove(first);const remaining=value.controller.getItemIds();assert.notEqual(remaining,two);assert.deepEqual(remaining,[second]);assert.equal(value.controller.getItem(first),null);assert.equal(value.controller.getItem(second),secondItem);value.controller.remove('missing');assert.equal(value.controller.getItemIds(),remaining);
+  value.controller.clear(true);const cleared=value.controller.getItemIds();assert.deepEqual(cleared,[]);assert.equal(value.controller.getItem(second),null);assert.equal(secondUpload.signal.aborted,true);assert.equal(value.controller.getBusy(),false);value.controller.clear(true);assert.equal(value.controller.getItemIds(),cleared);value.controller.dispose();assert.equal(value.controller.getItemIds(),cleared);
  }finally{value.close();}
 });
 test('H5 acquiring microphone permission remains busy until a released attempt is cleaned up',async()=>{

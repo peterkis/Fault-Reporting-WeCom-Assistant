@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/yxx-h5-migrate.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/yxx-h5-member-scheduler.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7637,6 +7646,7 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/yxx-h5-migrate.integration.test.mts",
       "tests/wbint-t13-assignment-history.integration.test.mts",
       "tests/t09-command-contract.test.mts",
       "tests/t09-second-session-rollback.integration.test.mts",
@@ -8688,6 +8698,7 @@
       "tests/human-workbench-process.browser.test.mts"
     ],
     "yxx-h5-performance": [
+      "tests/yxx-h5-migrate.integration.test.mts",
       "tests/yxx-h5-member-scheduler.test.mts",
       "tests/mvp-application-member.test.mts",
       "tests/yxx-h5-read-batch.test.mts",
@@ -8715,6 +8726,7 @@
       "tests/human-workbench-process.browser.test.mts"
     ],
     "yxx-h5-rebuild": [
+      "tests/yxx-h5-migrate.integration.test.mts",
       "tests/yxx-h5-admin-contracts.test.mts",
       "tests/yxx-h5-application-auth.test.mts",
       "tests/yxx-h5-flow.integration.test.mts",
@@ -8729,6 +8741,9 @@
     ]
   },
   "subprocess_entries": {
+    "tests/yxx-h5-migrate.integration.test.mts": [
+      "scripts/yxx-h5-migrate.mts"
+    ],
     "tests/p1-foundation-cli.test.mts": [
       "src/p1-001-pilot-foundation.mts"
     ],
