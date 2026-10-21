@@ -4,29 +4,34 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createElement,type ComponentType} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {transpileModule,ModuleKind,ScriptTarget,JsxEmit} from 'typescript';
+import {transpileModule,ModuleKind,ScriptTarget,JsxEmit,createSourceFile,isFunctionDeclaration,isVariableStatement,ScriptKind} from 'typescript';
 import type {H5EntryBootstrap,H5Thumbnail} from '../contracts/yxx_h5_entry_contracts.js';
 import type {H5Media} from '../contracts/yxx_h5_v2_contracts.js';
 import {createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 
 const bootstrap:H5EntryBootstrap={authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',read_only:false,can_submit:true,can_supplement:true,csrf_token:'synthetic-csrf',recovery_scope:'synthetic-member',h5:{profile:{name:null,department:null,phone:null,avatar_url:null},can_upload:true,can_urge:true,can_evaluate:true,can_view_department:false,sdk:{enabled:false,corp_id:null,agent_id:null},support:{emergency_phone:'18117887318',service_phone:'61318500'},limits:{voice_count:1,voice_duration_seconds:60,voice_bytes:5*1024*1024,image_count:6,image_bytes:10*1024*1024,video_count:1,video_duration_seconds:60,video_bytes:20*1024*1024,total_bytes:40*1024*1024}}};
 interface MediaElement {duration:number;src:string;preload:string;onloadedmetadata:(()=>void)|null;onerror:(()=>void)|null;loads:number;removeAttribute:(name:string)=>void;load:()=>void}
-interface ItemSnapshot {id:string;ref:string|null;status:string;progress:number}
-interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds:()=>readonly string[];getItem:(id:string)=>ItemSnapshot|null;getError:()=>string|null;getRecording:()=>{recording:boolean};add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;clear:(bound?:boolean)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
-interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[];uploads:{id:string;signal:AbortSignal;progress:(value:number)=>void;complete:()=>void}[]};control:{pendingReserve:boolean;holdUploads:boolean}}
+interface ItemSnapshot {id:string;ref:string|null;status:string;progress:number;durationMs?:number|null;failure?:{stage:string;code:string;messageKey:string}}
+interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds:()=>readonly string[];getItem:(id:string)=>ItemSnapshot|null;getError:()=>string|null;getErrorTone:()=>string;getRecording:()=>{mode:'CLEAR'|'WECOM';canClear:boolean;canWecom:boolean;starting:boolean;recording:boolean};setRecordingMode:(mode:'CLEAR'|'WECOM')=>boolean;getNative:()=>boolean;choosePhotos:(fallback:()=>void)=>Promise<void>;add:(file:File,kind:'IMAGE'|'VOICE'|'VIDEO')=>Promise<void>;remove:(id:string)=>void;clear:(bound?:boolean)=>void;start:()=>Promise<void>;release:(cancel?:boolean)=>void;playNative:(item:ItemSnapshot)=>Promise<void>;retry:(id:string)=>void;subscribe:(listener:()=>void)=>()=>void;dispose:()=>void;mount:()=>void}
+interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[];uploads:{id:string;signal:AbortSignal;progress:(value:number)=>void;complete:()=>void}[]};control:{pendingReserve:boolean;holdUploads:boolean;uploadStatus:number|null}}
+/** Keep the actual singleton device-work coordinator when replacing only SDK registration in a controller fixture. */
+async function previewCoordinatorSource(){
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/hooks/wecom-registration.ts'),'utf8'),ast=createSourceFile('wecom-registration.ts',source,ScriptTarget.Latest,true,ScriptKind.TS),names=new Set(['markNativePreview','hasNativePreviewWork','stopNativePreview','waitNativePreviewStops']);
+ const selected=ast.statements.filter(node=>isFunctionDeclaration(node)&&node.name&&names.has(node.name.text)||isVariableStatement(node)&&node.declarationList.declarations.some(value=>['nativePreview','nativeStops'].includes(value.name.getText(ast))));assert.equal(selected.length,6);return selected.map(node=>node.getText(ast)).join('\n');
+}
 const apiFixture=`
 export const authLost=new EventTarget();
 export const calls={reserves:[],cancels:[],uploads:[]};
-export const control={pendingReserve:false,holdUploads:false};
+export const control={pendingReserve:false,holdUploads:false,uploadStatus:null};
 export const api={
  reserve:async(input,csrf,signal)=>{calls.reserves.push({signal});if(control.pendingReserve)await new Promise((resolve,reject)=>{signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});});return{media_ref:'11111111-1111-4111-8111-111111111111',kind:input.kind};},
- upload:async(ref,file,csrf,id,signal,progress)=>{if(signal.aborted)throw new DOMException('Aborted','AbortError');if(control.holdUploads)await new Promise((resolve,reject)=>{const abort=()=>reject(new DOMException('Aborted','AbortError'));signal.addEventListener('abort',abort,{once:true});calls.uploads.push({id,signal,progress,complete:()=>{signal.removeEventListener('abort',abort);resolve();}});});else progress(22);progress(100);return{media_ref:ref,kind:'IMAGE'};},
+ upload:async(ref,file,csrf,id,signal,progress)=>{if(signal.aborted)throw new DOMException('Aborted','AbortError');if(control.uploadStatus!==null)throw{status:control.uploadStatus,message:'unsafe private URL'};if(control.holdUploads)await new Promise((resolve,reject)=>{const abort=()=>reject(new DOMException('Aborted','AbortError'));signal.addEventListener('abort',abort,{once:true});calls.uploads.push({id,signal,progress,complete:()=>{signal.removeEventListener('abort',abort);resolve();}});});else progress(22);progress(100);return{media_ref:ref,kind:'IMAGE'};},
  cancelUpload:async(ref)=>{calls.cancels.push(ref);},
  importWecom:async()=>{throw new Error('Native device APIs are not used by this fixture');}
 };`;
 
 async function fixture(){
- const loader=createH5PureModuleLoader({overrides:{'api/client.ts':apiFixture,'hooks/wecom-registration.ts':"export async function registeredWecom(){throw new Error('No native SDK in this fixture');}"}});
+ const loader=createH5PureModuleLoader({overrides:{'api/client.ts':apiFixture,'hooks/wecom-registration.ts':await previewCoordinatorSource()+"export async function registeredWecom(){throw new Error('No native SDK in this fixture');}"}});
  const source:{createMediaController:(bootstrap:()=>H5EntryBootstrap,transcript:(value:string)=>void,message:(key:string)=>string)=>Controller}=await import(await loader.moduleUrl('hooks/useMedia.ts'));
  const api:ApiFixture=await import(await loader.moduleUrl('api/client.ts'));
  const elements:MediaElement[]=[],events=new EventTarget(),oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),oldNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator');
@@ -38,6 +43,159 @@ async function fixture(){
  return{controller,api,elements,close:()=>{controller.dispose();if(oldDocument)Object.defineProperty(globalThis,'document',oldDocument);else Reflect.deleteProperty(globalThis,'document');if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else Reflect.deleteProperty(globalThis,'navigator');}};
 }
 async function until(check:()=>boolean){for(let index=0;index<20;index++){if(check())return;await new Promise<void>(resolve=>setImmediate(resolve));}assert.fail('Bounded media task did not settle');}
+
+/** Runs the actual reservation parser and its real format guards without starting a database or host. */
+async function reservationParserUrl(){
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'src/yxx-h5-media.mts'),'utf8');
+ const ast=createSourceFile('yxx-h5-media.mts',source,ScriptTarget.Latest,true,ScriptKind.TS),parser=ast.statements.find(node=>isFunctionDeclaration(node)&&node.name?.text==='parse');assert.ok(parser);
+ const format=transpileModule(await readFile(resolve(root,'src/yxx-h5-media-format.mts'),'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+ const formatUrl='data:text/javascript;base64,'+Buffer.from(format).toString('base64');
+ const parsed=transpileModule(`import {mediaFail,mediaUuid,supportedMedia,H5_MEDIA_LIMITS} from ${JSON.stringify(formatUrl)};${parser.getText(ast)};export const parseReservation=parse;`,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+ return 'data:text/javascript;base64,'+Buffer.from(parsed).toString('base64');
+}
+type TranscriptEvent={type:'BEGIN';id:string}|{type:'READY';id:string;text:string}|{type:'REMOVE';id:string};
+interface DraftFixtureStore {getDescription:()=>string;setDescription:(value:string)=>void;getLocation:()=>string;setLocation:(value:string)=>void;transcript:(event:TranscriptEvent)=>void;clear:()=>void}
+async function draftStore():Promise<DraftFixtureStore>{
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/components/ReportDraftProvider.tsx'),'utf8'),ast=createSourceFile('ReportDraftProvider.tsx',source,ScriptTarget.Latest,true,ScriptKind.TSX),factory=ast.statements.find(node=>isFunctionDeclaration(node)&&node.name?.text==='createDraft');assert.ok(factory);
+ const code=transpileModule(factory.getText(ast)+';export const create=createDraft;',{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText,module:{create:()=>DraftFixtureStore}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));return module.create();
+}
+interface VoiceApi {calls:{reserves:{duration_ms:number;client_command_id:string}[];rejections:{status:number;code:string}[];imports:number;binaries:number};control:{reserveStatus:number;importStatus:number}}
+interface VoiceSdk {calls:string[];control:{holdStart:boolean;holdStop:boolean;holdTranslate:boolean;uploadFailure:boolean};resolvers:{start:()=>void;stop:()=>void;translations:((text:string)=>void)[]}}
+interface CaptureOptions {mimeType?:string;audioBitsPerSecond?:number}
+interface CaptureConstraints {audio:{echoCancellation:boolean;noiseSuppression:boolean;autoGainControl:boolean;sampleRate:{ideal:number};channelCount:{ideal:number}}}
+async function nativeVoiceController(t:TestContext,transcript:(event:TranscriptEvent)=>void=()=>{},browser=false,wecom=true){
+ const parser=await reservationParserUrl(),loader=createH5PureModuleLoader({overrides:{
+  'api/client.ts':`import{parseReservation}from${JSON.stringify(parser)};export const authLost=new EventTarget();export const calls={reserves:[],rejections:[],imports:0,binaries:0};export const control={reserveStatus:0,importStatus:0};export const api={reserve:async input=>{calls.reserves.push(input);try{parseReservation(input);}catch(reason){calls.rejections.push({status:reason.status,code:reason.code});throw reason;}if(control.reserveStatus)throw{status:control.reserveStatus,code:'YXX_MEDIA_STORAGE_UNAVAILABLE',message:'unsafe secret URL'};return{media_ref:'11111111-1111-4111-8111-111111111111'};},upload:async(ref,file,csrf,id,signal,progress)=>{calls.binaries+=1;progress(100);},importWecom:async()=>{calls.imports+=1;if(control.importStatus)throw{status:control.importStatus,errMsg:'unsafe secret URL'};},cancelUpload:async()=>{}};`,
+  'hooks/wecom-registration.ts':await previewCoordinatorSource()+`export const calls=[],control={holdStart:false,holdStop:false,holdTranslate:false,uploadFailure:false},resolvers={start:()=>{},stop:()=>{},translations:[]};export async function registeredWecom(){return{SizeType:{original:'original'},SourceType:{camera:'camera',album:'album'},chooseImage:async()=>{calls.push('chooseImage');return{localIds:[]};},startRecord:async()=>{calls.push('startRecord');if(control.holdStart)await new Promise(resolve=>{resolvers.start=resolve;});},stopRecord:async()=>{calls.push('stopRecord');if(control.holdStop)await new Promise(resolve=>{resolvers.stop=resolve;});return{localId:'synthetic-local-voice'};},onVoiceRecordEnd:()=>{},uploadVoice:async()=>{calls.push('uploadVoice');if(control.uploadFailure)throw{errMsg:'unsafe secret URL'};return{serverId:'synthetic-server-voice'};},translateVoice:async()=>{calls.push('translateVoice');return{translateResult:control.holdTranslate?await new Promise(resolve=>resolvers.translations.push(resolve)):'synthetic transcript'};},playVoice:async()=>{calls.push('playVoice');},stopVoice:async()=>{calls.push('stopVoice');}};}`,
+ }});
+ const source:{createMediaController:(bootstrap:()=>H5EntryBootstrap,transcript:(event:TranscriptEvent)=>void,message:(key:string)=>string)=>Controller}=await import(await loader.moduleUrl('hooks/useMedia.ts'));
+ const api:VoiceApi=await import(await loader.moduleUrl('api/client.ts')),sdk:VoiceSdk=await import(await loader.moduleUrl('hooks/wecom-registration.ts'));
+ const names=['document','navigator','window','performance','MediaRecorder'] as const,previous=names.map(name=>({name,descriptor:Object.getOwnPropertyDescriptor(globalThis,name)}));let clock=1000.25;
+ const capture={permissionCalls:0,activeTracks:0,recorderStarts:0,options:null as CaptureOptions|null,constraints:null as CaptureConstraints|null,holdPermission:false,holdStop:false,permissionError:null as unknown,grant:()=>{},flushStop:()=>{}};
+ class SyntheticRecorder {
+  static isTypeSupported(mime:string){return mime==='audio/webm;codecs=opus';}
+  state='inactive';mimeType:string;ondataavailable:((event:{data:Blob})=>void)|null=null;onstop:(()=>void)|null=null;
+  constructor(_stream:unknown,options:CaptureOptions){capture.options=options;this.mimeType=options.mimeType??'audio/webm';}
+  start(){capture.recorderStarts+=1;this.state='recording';}
+  stop(){this.state='inactive';const flush=()=>{this.ondataavailable?.({data:new Blob(['synthetic recording'],{type:this.mimeType})});this.onstop?.();};if(capture.holdStop)capture.flushStop=flush;else flush();}
+ }
+ const documentEvents=new EventTarget(),dataset:Record<string,string>={};
+ Object.defineProperty(globalThis,'document',{configurable:true,value:{visibilityState:'visible',documentElement:{dataset,removeAttribute:(name:string)=>{if(name==='data-h5-draft')delete dataset.h5Draft;}},addEventListener:documentEvents.addEventListener.bind(documentEvents),removeEventListener:documentEvents.removeEventListener.bind(documentEvents)}});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:wecom?'wxwork Synthetic Android':'Synthetic browser',...(browser?{mediaDevices:{getUserMedia:async(constraints:CaptureConstraints)=>{capture.permissionCalls+=1;capture.constraints=constraints;if(capture.holdPermission)await new Promise<void>(resolve=>{capture.grant=resolve;});if(capture.permissionError)throw capture.permissionError;capture.activeTracks=1;return{getTracks:()=>[{stop:()=>{capture.activeTracks=0;}}]};}}}:{})}});
+ if(browser)Object.defineProperty(globalThis,'MediaRecorder',{configurable:true,value:SyntheticRecorder});else Reflect.deleteProperty(globalThis,'MediaRecorder');
+ Object.defineProperty(globalThis,'window',{configurable:true,value:{setTimeout,setInterval}});
+ Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>clock}});
+ const native={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:wecom,corp_id:wecom?'synthetic-corp':null,agent_id:wecom?'synthetic-agent':null}}},controller=source.createMediaController(()=>native,transcript,key=>key);controller.mount();
+ t.after(()=>{controller.dispose();for(const item of previous)if(item.descriptor)Object.defineProperty(globalThis,item.name,item.descriptor);else Reflect.deleteProperty(globalThis,item.name);});
+ return{controller,api,sdk,capture,setClock:(value:number)=>{clock=value;}};
+}
+
+test('H5 fractional recording clock reserves integer milliseconds accepted by the actual backend parser',async t=>{
+ const value=await nativeVoiceController(t);await value.controller.start();value.setClock(5000.65);value.controller.release();await until(()=>['READY','ERROR'].includes(value.controller.getItems()[0]?.status??''));
+ assert.equal(value.api.calls.reserves.length,1);assert.deepEqual(value.api.calls.rejections,[],'A fractional performance.now elapsed must not become a reservation 400');assert.equal(Number.isSafeInteger(value.api.calls.reserves[0]?.duration_ms),true);assert.equal(value.controller.getItems()[0]?.status,'READY');assert.equal(value.api.calls.imports,1);
+});
+
+test('H5 a recording below three raw seconds is not rounded into a valid upload or transcription',async t=>{
+ const value=await nativeVoiceController(t);await value.controller.start();value.setClock(4000.24);value.controller.release();await until(()=>!value.controller.getBusy());
+ assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.controller.getErrorTone(),'info');assert.deepEqual(value.controller.getItems(),[]);assert.equal(value.api.calls.reserves.length,0);assert.equal(value.api.calls.imports,0);assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.equal(value.sdk.calls.includes('uploadVoice'),false);
+});
+
+test('H5 the successful recording clock excludes SDK initialization and stop response delays',async t=>{
+ const value=await nativeVoiceController(t);value.sdk.control.holdStart=true;const start=value.controller.start();await until(()=>value.sdk.calls.includes('startRecord'));value.setClock(9000.75);value.sdk.resolvers.start();await start;
+ value.sdk.control.holdStop=true;value.setClock(12000.75);value.controller.release();await until(()=>value.sdk.calls.includes('stopRecord'));value.setClock(25000.5);value.sdk.resolvers.stop();await until(()=>value.controller.getItems()[0]?.status==='READY');
+ assert.equal(value.api.calls.reserves[0]?.duration_ms,3000);assert.equal(value.controller.getItems()[0]?.durationMs,3000);
+});
+
+test('H5 canceling or disposing a short recording stays silent and starts no upload or ASR',async t=>{
+ const value=await nativeVoiceController(t);await value.controller.start();value.setClock(1100.5);value.controller.release(true);await until(()=>!value.controller.getBusy());assert.equal(value.controller.getError(),null);
+ await value.controller.start();value.controller.dispose();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getError(),null);assert.equal(value.api.calls.reserves.length,0);assert.equal(value.sdk.calls.includes('translateVoice'),false);
+});
+
+test('H5 transcript ownership removes only unedited voice text and rejects late results from removed and cleared recordings',async t=>{
+ let draft:DraftFixtureStore|undefined;const value=await nativeVoiceController(t,event=>draft?.transcript(event));draft=await draftStore();draft.setLocation('synthetic ward');value.sdk.control.holdTranslate=true;
+ const record=async()=>{await value.controller.start();value.setClock(5000.5+value.api.calls.reserves.length*5000);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');await until(()=>value.sdk.resolvers.translations.length>value.api.calls.reserves.length-1);const item=value.controller.getItems()[0];assert.ok(item);return item;};
+ const one=await record();value.sdk.resolvers.translations[0]?.('first recognized text');await until(()=>draft?.getDescription()==='first recognized text');value.controller.remove(one.id);assert.equal(draft.getDescription(),'');assert.equal(draft.getLocation(),'synthetic ward');
+ const two=await record();draft.setDescription('handwritten correction');value.sdk.resolvers.translations[1]?.('second recognized text');await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(draft.getDescription(),'handwritten correction');value.controller.remove(two.id);assert.equal(draft.getDescription(),'handwritten correction');
+ draft.setDescription('');const three=await record();value.controller.remove(three.id);const four=await record();value.sdk.resolvers.translations[2]?.('late removed text');await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(draft.getDescription(),'');value.sdk.resolvers.translations[3]?.('current voice text');await until(()=>draft?.getDescription()==='current voice text');
+ draft.setDescription('current voice text edited');value.controller.clear(true);assert.equal(draft.getDescription(),'current voice text edited');draft.clear();draft.transcript({type:'READY',id:four.id,text:'late after clear'});assert.equal(draft.getDescription(),'');
+});
+
+test('H5 manual editing an automatic transcript, including deleting it, prevents a delayed ASR overwrite',async t=>{
+ await nativeVoiceController(t);const draft=await draftStore();draft.transcript({type:'BEGIN',id:'one'});draft.setDescription('handwritten');draft.setDescription('');draft.transcript({type:'READY',id:'one',text:'late text'});assert.equal(draft.getDescription(),'');
+ draft.transcript({type:'BEGIN',id:'two'});draft.transcript({type:'READY',id:'two',text:'original'});draft.setDescription('original');draft.transcript({type:'REMOVE',id:'two'});assert.equal(draft.getDescription(),'original','Even an explicit edit with equal text transfers ownership to the user');
+ draft.clear();draft.transcript({type:'BEGIN',id:'three'});draft.transcript({type:'READY',id:'three',text:'replaceable'});draft.transcript({type:'BEGIN',id:'four'});assert.equal(draft.getDescription(),'');draft.transcript({type:'READY',id:'three',text:'stale'});assert.equal(draft.getDescription(),'');draft.transcript({type:'READY',id:'four',text:'replacement'});assert.equal(draft.getDescription(),'replacement');
+});
+
+for(const [status,code]of [[400,'INPUT_REJECTED'],[401,'AUTH_REQUIRED'],[403,'FORBIDDEN'],[409,'EXPIRED'],[429,'BUSY'],[503,'UNAVAILABLE'],[418,'UPLOAD_FAILED']] as const)test('H5 reserve '+status+' failures expose only a safe phase and classification without automatic retry',async t=>{
+ const value=await nativeVoiceController(t);value.api.control.reserveStatus=status;await value.controller.start();value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='ERROR');
+ const item=value.controller.getItems()[0];assert.ok(item);assert.deepEqual(item.failure,{stage:'RESERVE',code,messageKey:'voice:'+({INPUT_REJECTED:'uploadInvalid',AUTH_REQUIRED:'uploadSignIn',FORBIDDEN:'uploadForbidden',EXPIRED:'uploadExpired',BUSY:'uploadBusy',UNAVAILABLE:'uploadUnavailable',UPLOAD_FAILED:'uploadFailed'} as const)[code]});assert.equal(JSON.stringify(item.failure).includes('unsafe'),false);await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.api.calls.reserves.length,1);assert.equal(value.api.calls.imports,0);
+});
+
+test('H5 native transfer and server import failures retain distinct safe stages and explicit retry reuses the original reservation',async t=>{
+ const value=await nativeVoiceController(t);value.sdk.control.uploadFailure=true;await value.controller.start();value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='ERROR');
+ let item=value.controller.getItems()[0];assert.ok(item);assert.deepEqual(item.failure,{stage:'NATIVE_UPLOAD',code:'SDK_FAILED',messageKey:'voice:nativeUploadFailed'});assert.equal(value.api.calls.reserves.length,1);
+ value.sdk.control.uploadFailure=false;value.api.control.importStatus=503;value.controller.retry(item.id);await until(()=>value.controller.getItems()[0]?.failure?.stage==='SERVER_IMPORT');item=value.controller.getItems()[0];assert.ok(item);assert.equal(item.failure?.code,'UNAVAILABLE');assert.equal(value.api.calls.reserves.length,1);assert.equal(value.api.calls.imports,1);
+ value.api.control.importStatus=0;value.controller.retry(item.id);await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.controller.getItems()[0]?.failure,undefined);assert.equal(value.api.calls.reserves.length,1);assert.equal(value.api.calls.imports,2);
+});
+
+test('H5 a preview requested immediately before removal cannot restart native audio after cleanup',async t=>{
+ const value=await nativeVoiceController(t);await value.controller.start();value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');const item=value.controller.getItems()[0];assert.ok(item);
+ const playback=value.controller.playNative(item);value.controller.remove(item.id);await playback;assert.equal(value.sdk.calls.filter(call=>call==='playVoice').length,0);assert.equal(value.sdk.calls.includes('stopVoice'),false,'A canceled preview that never reached the bridge needs no native stop');assert.equal(value.controller.getError(),null);
+});
+
+test('H5 native preview coalesces a repeated pending play and clear invalidates queued playback',async t=>{
+ const value=await nativeVoiceController(t);await value.controller.start();value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');const item=value.controller.getItems()[0];assert.ok(item);
+ await Promise.all([value.controller.playNative(item),value.controller.playNative(item)]);assert.equal(value.sdk.calls.filter(call=>call==='playVoice').length,1);
+ const next=value.controller.playNative(item);value.controller.clear(true);await next;assert.equal(value.sdk.calls.filter(call=>call==='playVoice').length,1);assert.ok(value.sdk.calls.includes('stopVoice'));
+});
+
+test('H5 binary upload network errors retain a safe file-upload phase and never retry themselves',async()=>{
+ const value=await fixture();try{value.api.control.uploadStatus=0;await value.controller.add(new File(['synthetic image'],'photo.jpg',{type:'image/jpeg'}),'IMAGE');await until(()=>value.controller.getItems()[0]?.status==='ERROR');assert.deepEqual(value.controller.getItems()[0]?.failure,{stage:'BINARY_UPLOAD',code:'NETWORK',messageKey:'voice:uploadNetwork'});assert.equal(value.api.calls.reserves.length,1);assert.equal(value.controller.getError(),null);}finally{value.close();}
+});
+
+test('H5 dual-capability recording defaults to WeCom while manually selected clear audio keeps native photos independent',async t=>{
+ const events:TranscriptEvent[]=[],value=await nativeVoiceController(t,event=>events.push(event),true);
+ assert.deepEqual(value.controller.getRecording(),{mode:'WECOM',canClear:true,canWecom:true,starting:false,recording:false,seconds:0,cancelling:false});assert.equal(value.capture.permissionCalls,0);assert.equal(value.controller.getNative(),true);assert.equal(value.controller.setRecordingMode('CLEAR'),true);
+ await value.controller.choosePhotos(()=>assert.fail('Clear recording mode must not turn native photos into a file fallback'));assert.ok(value.sdk.calls.includes('chooseImage'));assert.equal(value.controller.getRecording().mode,'CLEAR');
+ const ids=value.controller.getItemIds();await value.controller.start();assert.equal(value.controller.setRecordingMode('WECOM'),false);assert.equal(value.controller.getRecording().recording,true);assert.equal(value.controller.getItemIds(),ids);
+ assert.deepEqual(value.capture.constraints,{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}});assert.deepEqual(value.capture.options,{mimeType:'audio/webm;codecs=opus',audioBitsPerSecond:128000});
+ value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,1);assert.equal(value.api.calls.imports,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.ok(events.some(event=>event.type==='BEGIN'));assert.equal(events.some(event=>event.type==='READY'),false);assert.equal(value.capture.activeTracks,0);assert.equal(value.controller.setRecordingMode('WECOM'),false,'An existing voice keeps its capture mode stable');
+ const item=value.controller.getItems()[0];assert.ok(item);value.controller.remove(item.id);assert.equal(value.controller.setRecordingMode('WECOM'),true);
+});
+
+test('H5 explicitly selecting WeCom recording preserves ASR without starting a browser recorder',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);assert.equal(value.controller.setRecordingMode('CLEAR'),true);assert.equal(value.controller.setRecordingMode('WECOM'),true);await value.controller.start();value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');
+ assert.equal(value.capture.permissionCalls,0);assert.equal(value.capture.recorderStarts,0);assert.equal(value.sdk.calls.filter(call=>call==='startRecord').length,1);assert.ok(value.sdk.calls.includes('translateVoice'));assert.equal(value.api.calls.imports,1);assert.equal(value.api.calls.binaries,0);
+});
+
+test('H5 a quick browser release before permission resolves produces a short hint and never starts another recorder',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);assert.equal(value.controller.setRecordingMode('CLEAR'),true);value.capture.holdPermission=true;const start=value.controller.start();assert.equal(value.controller.getRecording().starting,true);assert.equal(value.controller.setRecordingMode('WECOM'),false);value.controller.release();value.setClock(10000);value.capture.grant();await start;
+ assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.controller.getErrorTone(),'info');assert.equal(value.controller.getRecording().starting,false);assert.equal(value.capture.activeTracks,0);assert.equal(value.capture.recorderStarts,0);assert.equal(value.api.calls.reserves.length,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 a quick native release before SDK start completes produces a short hint while explicit cancellation stays silent',async t=>{
+ const value=await nativeVoiceController(t);value.sdk.control.holdStart=true;const start=value.controller.start();await until(()=>value.sdk.calls.includes('startRecord'));value.controller.release();value.setClock(10000);value.sdk.resolvers.start();await start;
+ assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.controller.getRecording().starting,false);assert.equal(value.api.calls.reserves.length,0);assert.equal(value.sdk.calls.includes('translateVoice'),false);
+ const cancelled=value.controller.start();await until(()=>value.sdk.calls.filter(call=>call==='startRecord').length===2);value.controller.release(true);value.sdk.resolvers.start();await cancelled;assert.equal(value.controller.getError(),null);assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 browser stop latency cannot make a short recording eligible and cancellation releases granted tracks silently',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);assert.equal(value.controller.setRecordingMode('CLEAR'),true);value.capture.holdStop=true;await value.controller.start();value.setClock(4000.15);value.controller.release();assert.equal(value.controller.getBusy(),true);value.setClock(20000);value.capture.flushStop();assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.api.calls.reserves.length,0);assert.equal(value.capture.activeTracks,0);
+ value.capture.holdStop=false;await value.controller.start();value.controller.release(true);assert.equal(value.controller.getError(),null);assert.equal(value.capture.activeTracks,0);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 denied browser recording in WeCom remains a single user attempt without falling back to native recording',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);assert.equal(value.controller.setRecordingMode('CLEAR'),true);value.capture.permissionError=new DOMException('unsafe private device detail','NotAllowedError');await value.controller.start();
+ assert.equal(value.controller.getError(),'voice:browserDenied');assert.equal(value.controller.getErrorTone(),'error');assert.equal(value.controller.getBusy(),false);assert.equal(value.capture.permissionCalls,1);assert.equal(value.capture.recorderStarts,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.controller.getRecording().mode,'CLEAR');assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 native-only recording defaults to WeCom and cannot select an unavailable clear recorder',async t=>{
+ const value=await nativeVoiceController(t);assert.equal(value.controller.getRecording().mode,'WECOM');assert.equal(value.controller.getRecording().canClear,false);assert.equal(value.controller.getRecording().canWecom,true);assert.equal(value.controller.setRecordingMode('CLEAR'),false);await value.controller.start();assert.equal(value.sdk.calls.filter(call=>call==='startRecord').length,1);assert.equal(value.capture.permissionCalls,0);value.controller.release(true);await until(()=>!value.controller.getBusy());
+});
+
+test('H5 a plain browser defaults to clear recording and never initializes unavailable WeCom voice',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true,false);assert.equal(value.controller.getRecording().mode,'CLEAR');assert.equal(value.controller.getRecording().canClear,true);assert.equal(value.controller.getRecording().canWecom,false);assert.equal(value.controller.getNative(),false);assert.equal(value.controller.setRecordingMode('WECOM'),false);await value.controller.start();value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.capture.permissionCalls,1);assert.equal(value.sdk.calls.length,0);assert.equal(value.api.calls.binaries,1);assert.equal(value.capture.activeTracks,0);
+});
 
 test('H5 media admission stays busy while metadata is pending and through upload readiness',async()=>{
  const value=await fixture();
@@ -123,7 +281,7 @@ test('H5 acquiring microphone permission remains busy until a released attempt i
 });
 test('H5 legacy SDK CORP and AGENT signature callbacks share one serialized registration',async()=>{
  const previous=Object.getOwnPropertyDescriptor(globalThis,'navigator');
- const sdk=`let ready;export let registrations=0;export function register(value){registrations+=1;ready=Promise.all([value.getConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/'),value.getAgentConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/')]);}export function ensureConfigReady(){return ready;}`;
+ const sdk=`let ready;export let registrations=0;export function register(value){registrations+=1;ready=Promise.all([value.getConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/'),value.getAgentConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/')]);}export function ensureConfigReady(){return ready;}export function onVoicePlayEnd(){}`;
  const sdkURL='data:text/javascript;base64,'+Buffer.from(sdk).toString('base64');
  const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
  const source=(await readFile(resolve(sourceRoot,'h5/src/hooks/wecom-registration.ts'),'utf8')).replace("const pending=import('../lib/wecom')",'const pending=import('+JSON.stringify(sdkURL)+')');
@@ -195,9 +353,9 @@ async function voiceFailureFixture(t:TestContext,scenario:VoiceFailureScenario){
  const native=scenario==='sdk'||scenario==='native'||scenario==='native-stop';
  Object.defineProperties(globalThis,{window:{configurable:true,value:Object.assign(new EventTarget(),{setInterval,clearInterval,setTimeout,clearTimeout})},document:{configurable:true,value:Object.assign(events,{visibilityState:'visible'})},navigator:{configurable:true,value:{userAgent:native?'Android wxwork/5.0.4':'Synthetic browser',mediaDevices:scenario==='unsupported'?undefined:{getUserMedia:async()=>{stats.browser+=1;if(scenario==='denied')throw new DOMException(secret,'NotAllowedError');if(scenario==='permission-network')throw new Error(secret);return{getTracks:()=>[{stop:()=>{stats.tracksStopped+=1;}}]};}}}}});
  if(scenario==='unsupported')Reflect.deleteProperty(globalThis,'MediaRecorder');else Object.defineProperty(globalThis,'MediaRecorder',{configurable:true,value:class {static isTypeSupported(){return false;}constructor(){throw new Error(secret);}}});
- const registration="export const stats={initializations:0,starts:0,stops:0};export async function registeredWecom(){stats.initializations+=1;if('"+scenario+"'==='sdk')throw new Error('"+secret+"');return{startRecord:async()=>{stats.starts+=1;if('"+scenario+"'==='native')throw{errMsg:'startRecord:permission denied "+secret+"',errCode:10003};},onVoiceRecordEnd(){},stopRecord:async()=>{stats.stops+=1;throw new Error('"+secret+"');}};}";
+ const registration=await previewCoordinatorSource()+"export const stats={initializations:0,starts:0,stops:0};export async function registeredWecom(){stats.initializations+=1;if('"+scenario+"'==='sdk')throw new Error('"+secret+"');return{startRecord:async()=>{stats.starts+=1;if('"+scenario+"'==='native')throw{errMsg:'startRecord:permission denied "+secret+"',errCode:10003};},onVoiceRecordEnd(){},stopRecord:async()=>{stats.stops+=1;throw new Error('"+secret+"');}};}";
  const loader=createH5PureModuleLoader({overrides:{'api/client.ts':apiFixture,'hooks/wecom-registration.ts':registration}}),module:{createMediaController:(get:()=>H5EntryBootstrap,transcript:(text:string)=>void,message:(key:string)=>string)=>Controller}=await import(await loader.moduleUrl('hooks/useMedia.ts')),api:ApiFixture=await import(await loader.moduleUrl('api/client.ts')),sdk:{stats:{initializations:number;starts:number;stops:number}}=await import(await loader.moduleUrl('hooks/wecom-registration.ts'));
- const value={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:native,corp_id:native?'synthetic-corp':null,agent_id:native?'synthetic-agent':null}}},controller=module.createMediaController(()=>value,()=>{},key=>key);controller.mount();
+ const value={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:native,corp_id:native?'synthetic-corp':null,agent_id:native?'synthetic-agent':null}}},controller=module.createMediaController(()=>value,()=>{},key=>key);controller.mount();if(native)assert.equal(controller.setRecordingMode('WECOM'),true);
  t.after(()=>{controller.dispose();for(const[key,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}});
  return{controller,stats,sdk:sdk.stats,api,secret,native};
 }

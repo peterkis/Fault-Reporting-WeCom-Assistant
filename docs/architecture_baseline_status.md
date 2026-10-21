@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-10-21／22 H5客户端修订：[ADR-0037](../adr/0037_h5_session_resume_and_navigation.md)规定有限滑动会话、静默恢复与当前成员范围内的温导航；[ADR-0038](../adr/0038_h5_voice_capture_and_transcript_lifecycle.md)按用户选择继续默认企业微信录音，限定整数时长、转写归属、试听清理与可选浏览器录音。当前权限、等待后终检、留存、Ticket事实及持久开关默认值保持。不同候选的本地、CI、云端与实机结论分别见[会话验收](../plans/yixiaoxiu-h5-performance/resume-navigation-2026-10-21.md)及[录音续作](../plans/yixiaoxiu-h5-performance/voice-followup-2026-10-21.md)，合成测试不代替实机音质或Gate批准。
+
 2026-10-20 H5 性能前向修订：[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)规定最小页面聚合读、受控缓存与媒体资源预算，新增性能读取独立默认关闭，原 V1/V2、当前权限终检、Ticket Core 与留存不变。2026-10-21续作允许有限封闭在途批次共同执行相同获权关系的来源扫描，每HTTP的Provider、初始投影及新语句／外层READ终检仍独立；实际物理SQL和每请求参与阶段双账记录，原2C4G与1.5秒预算不变。06完整大库时延仍FAIL后，进一步前向限定性能entry当前成员核验与BASE共用APP总2实际／32项，BASE仍最多1、默认及Bot／Gateway／发送规则保持；每HTTP实际核验、5秒含队列和底层实际settle占槽不变。07最终manifest `4b0fe5e35cb4305b4c98f63e61b2d0b2cae7d084e21ebd3438aa574604d2a7ce`已通过25入口197测试、原2CPU／4GiB下完整600正式＋90预热，home／request／department p95为1041.179／624.560／1204.216ms；首页整页从6 SELECT降为3，终检保留。同身份浏览器80样本及QA38通过，实机仍NOT_RUN，注册轮conhost回收及旧失败分别保留。用户仅在H5根目录本地配置显式开启，持久默认值仍false。本地实施及量化／未运行边界见[本轮记录](../plans/yixiaoxiu-h5-performance/README.md)；此记录不升级任何历史测试、部署或 Gate 事实。
 
 本文件记录业务架构与 Gate 事实；带日期的测试数字与候选是其历史快照。TypeScript 迁移进度只在 [迁移执行入口](../plans/typescript-migration/README.md) 维护。PR #38 的认证仅属于其被测对象，P01 合并或新迁移候选检查通过均不等于新候选 READY 或生产批准。
