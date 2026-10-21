@@ -11,7 +11,8 @@ export const captureAuthGeneration=():number=>authGeneration;
 export function advanceAuthGeneration():void{authGeneration+=1;}
 function assertGeneration(generation:number,signal?:AbortSignal|null):void{if(generation!==authGeneration||signal?.aborted)throw new DOMException('Member request superseded','AbortError');}
 export {assertGeneration as assertAuthGeneration};
-export function reportAuthLost(generation:number,signal?:AbortSignal|null):void{if(generation===authGeneration&&!signal?.aborted)authLost.dispatchEvent(new Event('lost'));}
+export class AuthFailureEvent extends Event {constructor(public readonly status:401|403){super('lost');}}
+export function reportAuthLost(generation:number,signal?:AbortSignal|null,status:401|403=403):void{if(generation===authGeneration&&!signal?.aborted)authLost.dispatchEvent(new AuthFailureEvent(status));}
 function assertResponse(response:Response,signal?:AbortSignal|null):void{const generation=responseGenerations.get(response);if(generation===undefined)throw new ApiError(502,'INVALID_RESPONSE');assertGeneration(generation,signal);}
 async function checkedResponse(path:string,options:RequestInit={}):Promise<Response>{
  const generation=authGeneration;
@@ -21,7 +22,7 @@ async function checkedResponse(path:string,options:RequestInit={}):Promise<Respo
  if(response.ok||response.status===304)return response;
  let code='REQUEST_FAILED';
  try{const value:unknown=await response.json();if(record(value)&&typeof value.code==='string')code=value.code;else if(record(value)&&record(value.error)&&typeof value.error.code==='string')code=value.error.code;else if(response.status===404&&record(value)&&(value.error==='Not Found'||value.error==='NOT_FOUND'))code='HTTP_NOT_FOUND';}catch{if(response.status===404)code='HTTP_NOT_FOUND';}
- assertGeneration(generation,options.signal);if(response.status===401||response.status===403)reportAuthLost(generation,options.signal);
+ assertGeneration(generation,options.signal);if(response.status===401||response.status===403)reportAuthLost(generation,options.signal,response.status);
  throw new ApiError(response.status,code);
 }
 export async function request<T>(path:string,decode:Decoder<T>,options:RequestInit={}):Promise<T>{

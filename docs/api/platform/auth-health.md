@@ -26,12 +26,14 @@ T03 的 lifecycle bootstrap 增加 `logout_enabled:boolean`，默认false；实�
 
 | METHOD + PATH | 请求 | 响应 |
 | --- | --- | --- |
-| `GET /wecom/yixiaoxiu/login` | 无query | 302 到成员OAuth，scope=snsapi_base |
+| `GET /wecom/yixiaoxiu/login` | 旧模式无 query；显式 H5 模式可带唯一 `return_to`，仅白名单 SPA 页面及有界筛选 | 302 到成员 OAuth，scope=snsapi_base；目标只保存在不透明服务端 intent |
 | `GET /wecom/yixiaoxiu/callback` | 仅code/state、各一次 | 303合法returnPath，替换成员session并设置Cookie |
-| `GET /wecom/yixiaoxiu/` | 无query，或限定 `auth_return=1` | OAuth-only为认证HTML/302；auth_return成功303清query；M启用时为自助HTML |
+| `GET /wecom/yixiaoxiu/` | 无query，或限定 `auth_return=1` | OAuth-only为认证HTML/302；旧 auth_return 成功303清query；新版 H5 为无成员数据的应用壳，由 entry 核验当前成员 |
 | `POST /wecom/yixiaoxiu/logout` | OAuth-only：同源Origin、非cross-site；member/native：空JSON `{}` | OAuth-only 200 **HTML**；member/native 200 **JSON** `{logged_out:true}`；不能跨profile假定响应格式 |
 
-Cookie：`__Host-wecom_oauth`、每state的 `__Host-wecom_intent_<state>`、`__Host-wecom_session`；HttpOnly/Secure/SameSite=Lax/Path=/。state与浏览器绑定，一次性且有期限；认证失效时显示重新认证，不自动循环。disabled时503 HTML。
+Cookie：`__Host-wecom_oauth`、每state的 `__Host-wecom_intent_<state>`、`__Host-wecom_session`；HttpOnly/Secure/SameSite=Lax/Path=/。state 与 code 仍为 5 分钟且一次性。旧模式 session 15 分钟、浏览器绑定 20 分钟。P2-016 显式 H5 装配采用 8 小时空闲／24 小时绝对上限，成功完成 entry 当前资格及等待后终检后续期，保持 SID／CSRF／恢复范围。认证寿命不替代每次业务权限核验。
+
+H5 401 可在无草稿／UNKNOWN 栅栏时单次自动 `snsapi_base` 认证；成功回 `/wecom/yixiaoxiu/?auth_return=1#<白名单页面>`，由 entry 再核验，成功后客户端清标记。H5 callback 失败也回清洁应用壳显示可恢复提示；返回标记防止自动循环。403 不自动换身份重试，503 不视为撤权。没有浏览器 refresh_token；不自动重放业务 POST。白名单和前台恢复细节见 [ADR-0037](../../../adr/0037_h5_session_resume_and_navigation.md)。disabled 时仍为 503 HTML。
 
 成员卡片的continue/tickets入口见 [Reporter](../member/reporter-access.md)。[测试](../../../tests/p2-g2-wecom-oauth-http.test.mjs)、[首页返回](../../../tests/yxx-ss-001-homepage-oauth.test.mjs)。
 

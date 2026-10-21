@@ -35,8 +35,7 @@ export function registeredWecom(bootstrap:Bootstrap):Promise<Wecom>{
    getConfigSignature:url=>signature(url,'CORP'),
    getAgentConfigSignature:url=>signature(url,'AGENT'),
   });
-  await ww.ensureCorpConfigReady();
-  if(agentId)await ww.ensureAgentConfigReady();
+  await ww.ensureConfigReady();
   if(activeScope!==scope||generation!==turn)throw new DOMException('Member scope changed','AbortError');
   return ww;
  });

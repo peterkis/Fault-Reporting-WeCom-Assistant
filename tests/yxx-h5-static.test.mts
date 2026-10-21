@@ -40,6 +40,8 @@ async function host(root:string,enabled:boolean|undefined,check:(origin:string)=
  const api=createYxxH5Static({root:pathToFileURL(root+path.sep),...(enabled===undefined?{}:{enabled}),...(previousRoot?{previousRoot:pathToFileURL(previousRoot+path.sep)}:{})});
  const server=createServer((request,response)=>{void(async()=>{
   try{
+   // The parent workbench HTTP adapter denies device access by default.
+   response.setHeader('permissions-policy','camera=(), microphone=(), geolocation=()');
    const url=new URL(request.url??'/','http://127.0.0.1');
    const handled=url.pathname==='/wecom/yixiaoxiu'||url.pathname==='/wecom/yixiaoxiu/'?await api.page(response):await api.asset(url,response);
    if(!handled){response.writeHead(404,{'content-type':'application/json'});response.end('{"error":{"code":"YXX_NOT_FOUND"}}');}
@@ -79,7 +81,7 @@ test('H5 static serving stays off by default without reading a missing artifact'
  try{
   rmSync(path.join(root,'.vite/manifest.json'));
   for(const enabled of [undefined,false])await host(root,enabled,async origin=>{
-   for(const route of ['/wecom/yixiaoxiu/','/wecom/yixiaoxiu/assets/main-Ab123.js']){const response=await fetch(origin+route);assert.equal(response.status,404);assert.doesNotMatch(await response.text(),/SYNTHETIC_H5|PRIVATE_H5/u);}
+   for(const route of ['/wecom/yixiaoxiu/','/wecom/yixiaoxiu/assets/main-Ab123.js']){const response=await fetch(origin+route);assert.equal(response.status,404);assert.equal(response.headers.get('permissions-policy'),'camera=(), microphone=(), geolocation=()');assert.doesNotMatch(await response.text(),/SYNTHETIC_H5|PRIVATE_H5/u);}
   });
  }finally{cleanup(root);}
 });
@@ -89,12 +91,13 @@ test('enabled H5 serves only the reachable manifest graph with exact MIME, bytes
  try{await host(root,true,async origin=>{
   const page=await fetch(origin+'/wecom/yixiaoxiu/');assert.equal(page.status,200);assert.match(await page.text(),/SYNTHETIC_H5_PAGE/u);
   assert.equal(page.headers.get('content-type'),'text/html; charset=utf-8');
+  assert.equal(page.headers.get('permissions-policy'),'camera=(), microphone=(self), geolocation=()');
   const policy=page.headers.get('content-security-policy')??'';
   for(const directive of ["default-src 'self'","script-src 'self'","style-src 'self'","connect-src 'self'","object-src 'none'","base-uri 'none'","frame-ancestors 'none'","media-src 'self' blob:","font-src 'self'"])assert.ok(policy.includes(directive),directive);
   assert.doesNotMatch(policy,/(?:^|;\s*)script-src[^;]*(?:unsafe-inline|unsafe-eval|https?:|\*)/u);
   assert.equal(page.headers.get('cache-control'),'no-store');assert.equal(page.headers.get('referrer-policy'),'no-referrer');assert.equal(page.headers.get('x-content-type-options'),'nosniff');
   for(const [file,asset] of assets){
-   const response=await fetch(origin+'/wecom/yixiaoxiu/'+file);assert.equal(response.status,200,file);assert.equal(response.headers.get('content-type'),asset.type,file);assert.equal(response.headers.get('content-length'),String(asset.body.byteLength),file);assert.equal(response.headers.get('content-security-policy'),policy);assert.equal(response.headers.get('cache-control'),'public, max-age=31536000, immutable');assert.equal(response.headers.get('vary'),'Accept-Encoding');assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.from(asset.body),file);
+   const response=await fetch(origin+'/wecom/yixiaoxiu/'+file);assert.equal(response.status,200,file);assert.equal(response.headers.get('content-type'),asset.type,file);assert.equal(response.headers.get('content-length'),String(asset.body.byteLength),file);assert.equal(response.headers.get('content-security-policy'),policy);assert.equal(response.headers.get('permissions-policy'),'camera=(), microphone=(), geolocation=()');assert.equal(response.headers.get('cache-control'),'public, max-age=31536000, immutable');assert.equal(response.headers.get('vary'),'Accept-Encoding');assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.from(asset.body),file);
   }
  });}finally{cleanup(root);}
 });

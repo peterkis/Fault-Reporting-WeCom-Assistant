@@ -1,3 +1,4 @@
+import {ReportCard} from '../components/ReportCard';
 import{useState}from'react';
 import{Link}from'../navigation';
 import{preloadNavigation}from'../routing';
@@ -7,7 +8,7 @@ import{homeOptions,departmentSummaryOptions}from'../api/query';
 import{useIdentity,useProfile,useSessionStatus}from'../session';
 import{Icon}from'../components/Icon';
 import{Button,ButtonLink,Card,CardHeader,CardTitle,CardDescription,CardContent,CardFooter,Badge,Skeleton}from'../components/ui/primitives';
-import{ReportCard,EmptyReports,ErrorPanel,Loading,SelfCheck}from'../components/Common';
+import{EmptyReports,ErrorPanel,Loading,SelfCheck}from'../components/Common';
 export default function Home(){const{t}=useTranslation();const session=useIdentity(),profile=useProfile(),status=useSessionStatus();const[help,setHelp]=useState(false);
  const reports=useQuery(homeOptions(session.recovery_scope));
  const department=useQuery({...departmentSummaryOptions(session.recovery_scope,status.membershipRevision),enabled:session.h5.can_view_department});

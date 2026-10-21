@@ -120,7 +120,7 @@ export function createYxxH5Static({enabled=false,root=new URL('../h5/',import.me
  return Object.freeze({enabled,
   async page(response:ServerResponse){
    if(!enabled)return false;const active=await generation();
-   response.writeHead(200,{...YXX_H5_SECURITY_HEADERS,'content-type':'text/html; charset=utf-8','content-length':active.html.length});response.end(active.html);return true;
+   response.writeHead(200,{...YXX_H5_SECURITY_HEADERS,'permissions-policy':'camera=(), microphone=(self), geolocation=()','content-type':'text/html; charset=utf-8','content-length':active.html.length});response.end(active.html);return true;
   },
   async asset(url:URL,response:ServerResponse){
    if(!enabled||!url.pathname.startsWith('/wecom/yixiaoxiu/assets/'))return false;

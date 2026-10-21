@@ -34,6 +34,20 @@ export function filterInput(filter:ReportsFilter):Extract<H5EntryInput,{view:'re
  return{view:'reports',search:filter.q||null,status,source};
 }
 export function inputFilter(input:H5EntryInput):ReportsFilter{return input.view==='reports'?{q:input.search??'',status:input.status??'',source:input.source??''}:EMPTY_FILTER;}
+/** Entry stamps never stand in for evicted, invalidated or incomplete page data. */
+export function hasEntryData(client:QueryClient,input:H5EntryInput,scope:string,revision:string):boolean{
+ const data=<T>(key:readonly unknown[]):T|undefined=>{const state=client.getQueryState<T>(key);return state?.status==='success'&&!state.isInvalidated?state.data:undefined;};
+ const page=(key:readonly unknown[])=>{const value=data<InfiniteData<{items:unknown[]},string|null>>(key);return !!value&&Array.isArray(value.pages)&&value.pages.length>0&&Array.isArray(value.pageParams)&&value.pageParams.length===value.pages.length&&value.pageParams[0]===null&&value.pages.every(part=>part&&Array.isArray(part.items));};
+ const summary=()=>data<H5DepartmentSummary>(queryKeys.departmentSummary(scope,revision))?.membership_revision===revision;
+ const bootstrap=data<Bootstrap>(queryKeys.bootstrap);if(bootstrap?.recovery_scope!==scope||data<string>(queryKeys.membership(scope))!==revision)return false;
+ switch(input.view){
+  case'home':return Array.isArray(data(queryKeys.home(scope)))&&(!bootstrap.h5.can_view_department||summary());
+  case'report':return true;
+  case'reports':return page(queryKeys.reports(scope,inputFilter(input)));
+  case'department':return page(queryKeys.department(scope,revision))&&summary();
+  case'request':{const ref=input.request_ref,section=data<string>(queryKeys.timelineSection(scope,ref));return data<RequestDetail>(queryKeys.detail(scope,ref))?.request_ref===ref&&page(queryKeys.supplements(scope,ref))&&(section==='UNAVAILABLE'||section==='READY'&&page(queryKeys.timeline(scope,ref)));}
+ }
+}
 /** Called only after the entry scope and selected view have been checked. */
 export function seedEntry(client:QueryClient,entry:H5EntryResponse,input:H5EntryInput):Bootstrap{
  const scope=entry.bootstrap.recovery_scope;

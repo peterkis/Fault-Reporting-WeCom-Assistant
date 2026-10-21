@@ -19,7 +19,7 @@ type ErrorFields={code?:string;status?:number};
 export interface YxxNativeHttpOptions {h5Handler?:OAuthHttpHandler|null;h5Static?:ReturnType<typeof createYxxH5Static>|null;h5Bootstrap?:(request:IncomingMessage)=>Promise<H5BootstrapExtension>;h5Entry?:(input:{request:IncomingMessage;input:H5EntryInput;bootstrap:YxxSelfServiceBootstrap})=>Promise<H5EntryResponse>;reporterFeedbackDraftRecoveryEnabled?:boolean;publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;authenticateH5EntryMember?:YxxNativeHttpOptions['authenticateMember'];profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
-import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
+import { beginWeComOAuth, logoutWeComBrowser, renewWeComH5Session, sessionName } from './p2-g2-wecom-oauth-http.mjs';
 
 const ROOT = '/wecom/yixiaoxiu/';
 const REQUEST_REF = /^[A-Za-z0-9_-]{32}$/u;
@@ -337,6 +337,8 @@ export function createYxxSelfServiceNativeHttp({
         await recoveryAsset(url,response);return true;
       }
       if (request.method === 'GET' && url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
+        // The compiled H5 shell contains no member data. Its entry API owns authentication.
+        if(await h5Static?.page(response))return true;
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });
         if (!readEnabled) return oauthHttp({ request, response, url });
         try { await currentMember(request, { requireWrite: serviceEnabled }); if(await h5Static?.page(response))return true;await asset(response, ['self-service.html', 'text/html']); return true; }
@@ -368,7 +370,9 @@ export function createYxxSelfServiceNativeHttp({
         // This records a request-local timestamp only; queued work owns its later resources.
         beginH5Read(request);
         const context=await currentMember(request,{requireWrite:serviceEnabled,authenticate:authenticateH5EntryMember??authenticateMember});
-        json(response,200,await h5Entry({request,input,bootstrap:bootstrapBase(context)}));return true;
+        const result=await h5Entry({request,input,bootstrap:bootstrapBase(context)});
+        const renewed=renewWeComH5Session(request,oauth);
+        json(response,200,result,renewed.length?{'set-cookie':renewed}:{});return true;
       }
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
@@ -376,7 +380,9 @@ export function createYxxSelfServiceNativeHttp({
         const context = await currentMember(request, { requireWrite: serviceEnabled });
         const v2=(header(request,'accept')??'').split(',').some(value=>value.trim().split(';')[0]==='application/vnd.yixiaoxiu.v2+json');
         const h5=v2&&h5Bootstrap?await h5Bootstrap(request):undefined;
-        json(response, 200, {...bootstrapBase(context),...(h5?{h5}:{})}); return true;
+        // The V2 fallback's authorization.read terminal must succeed before renewal.
+        const renewed=h5?renewWeComH5Session(request,oauth):[];
+        json(response, 200, {...bootstrapBase(context),...(h5?{h5}:{})},renewed.length?{'set-cookie':renewed}:{}); return true;
       }
       if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
         if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');

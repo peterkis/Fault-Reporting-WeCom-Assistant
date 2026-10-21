@@ -1,0 +1,11 @@
+import {memo} from 'react';
+import {useTranslation} from 'react-i18next';
+import type {ReportItem} from '../api/types';
+import {reportState,reportTone} from '../lib/report';
+import {formatDate,safePhone,safeMemberLink} from '../lib/utils';
+import {Icon} from './Icon';
+import {ButtonLink,Card,CardHeader,CardTitle,CardContent,CardFooter,Badge} from './ui/primitives';
+export const ReportCard=memo(function ReportCard({item}:{item:ReportItem}){
+ const{t,i18n}=useTranslation();const state=reportState(item),tone=reportTone(state),handler=item.h5?.handler;const phone=safePhone(handler?.phone);const link=item.kind==='WEB_REQUEST'?'#/requests/'+encodeURIComponent(item.ref):safeMemberLink(item.detail_url)??'/wecom/yixiaoxiu/tickets/'+encodeURIComponent(item.ref);
+ return <Card className="report-card"><CardHeader><div className="report-meta"><div className="inline-row"><Badge variant={item.service_category?.includes('打印')?'warning':item.service_category?.includes('网络')?'purple':'blue'}>{item.service_category||t(item.kind==='BOT_TICKET'?'botSource':'reportKind')}</Badge><time>{formatDate(item.created_epoch_ms,i18n.language)}</time></div><Badge variant={tone}><Icon name={state==='completed'?'check_circle':state==='processing'?'build':'schedule'}/>{t(state)}</Badge></div><CardTitle><a href={link}>{item.safe_summary||t(item.h5?.intent==='CONTACT_REQUEST'?'contactIntent':'noDescription')}</a></CardTitle></CardHeader><CardContent>{handler?.name&&<div className="handler-strip"><div className="inline-row"><span className="avatar">{handler.name.slice(0,1)}</span><div><strong>{t('engineer',{name:handler.name})}</strong>{item.h5?.public_progress?.summary&&<p>{item.h5.public_progress.summary}</p>}</div></div>{phone&&<ButtonLink variant="outline" size="icon" href={phone} aria-label={t('callEngineer')}><Icon name="call"/></ButtonLink>}</div>}{!handler?.name&&item.h5?.public_progress?.summary&&<p className="report-summary">{item.h5.public_progress.summary}</p>}</CardContent><CardFooter><span>{t('reportNo',{number:item.ticket?.ticket_no||item.ref.slice(0,8)})}</span><a href={link} className={state==='completed'?'muted-link':'text-link'}>{t(item.kind==='BOT_TICKET'?'botHistory':state==='completed'?'viewReceipt':'track')}<Icon name={state==='completed'?'chevron_right':'arrow_forward'}/></a></CardFooter></Card>;
+});

@@ -168,7 +168,7 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
   if(scope&&((inboundScope as { bot_id?: unknown }).bot_id!==botId||scope.allowed_target_hashes.some(h=>!allowedTargetHashes.includes(h))||allowedTargetHashes.some(h=>!scope.allowed_target_hashes.includes(h))))failP2016('LIVE_SCOPE_REQUIRED',403);
   if(featureFlags.WECOM_TEMPLATE_CARD_ENABLED&&!featureFlags.REPORTER_TIMELINE_ENABLED)failP2016('REPORTER_REQUIRED_FOR_CARD',503);
   const access=createP2016ReporterAccess({pool,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,hmacSecret:reporterHmacSecret as string});
-  const webOAuth: WebOAuthPort=(createWeComWebOAuth as typeof createWeComWebOAuth)({...wecomWebOAuth,publicOrigin:reporterOrigin});
+  const webOAuth: WebOAuthPort=(createWeComWebOAuth as typeof createWeComWebOAuth)({...wecomWebOAuth,publicOrigin:reporterOrigin,h5Session:h5Requested});
   const oauthHttp: ReporterHttpHandler=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:mvpNotificationsEnabled,enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,roundNotificationBotId:ticketRoundNotificationsEnabled?roundBotId:null});
   const roundNotifications=createTicketRoundNotifications({pool,mvpPolicy:mvpNotificationsEnabled,groupNotificationTargets,enabled:ticketRoundNotificationsEnabled,botId:roundBotId,reporterAccess:access,personDestinationAuthorizer,communicationAppend,appNotifications:app});

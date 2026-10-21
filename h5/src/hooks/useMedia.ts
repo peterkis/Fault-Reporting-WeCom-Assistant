@@ -16,6 +16,15 @@ export type DraftMedia=DraftMediaBase & (
 interface RecordingSnapshot {recording:boolean;seconds:number;cancelling:boolean}
 interface RecordingSession {started:number;cancel:boolean;released:boolean;media:MediaRecorder|null;stream:MediaStream|null;timer:number|null;interval:number|null;stopping:boolean;ready:boolean}
 type Listener=()=>void;
+type VoiceStage='SDK_READY'|'START_RECORD'|'STOP_RECORD'|'BROWSER_CAPABILITY'|'BROWSER_PERMISSION'|'BROWSER_START';
+function voiceFailureKey(stage:VoiceStage,reason:unknown):string{
+ if(stage==='SDK_READY')return 'voice:setupFailed';
+ if(stage==='START_RECORD')return 'voice:nativeStartFailed';
+ if(stage==='STOP_RECORD')return 'voice:finishFailed';
+ if(stage==='BROWSER_CAPABILITY')return 'voice:browserUnavailable';
+ if(stage==='BROWSER_PERMISSION'&&reason!==null&&typeof reason==='object'&&'name'in reason&&(reason.name==='NotAllowedError'||reason.name==='SecurityError'))return 'voice:browserDenied';
+ return 'voice:browserFailed';
+}
 
 export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(text:string)=>void,message:(key:string)=>string){
  let items:DraftMedia[]=[],itemIds:readonly string[]=[],error:string|null=null,recording:RecordingSnapshot={recording:false,seconds:0,cancelling:false};
@@ -119,29 +128,29 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(tex
   const state=record;if(!state||state.stopping)return;state.released=true;state.cancel=state.cancel||cancel;if(!state.ready)return;state.stopping=true;
   if(state.timer)clearTimeout(state.timer);if(state.interval)clearInterval(state.interval);setRecording({recording:false,cancelling:false});
   if(state.media){state.media.stop();state.stream?.getTracks().forEach(track=>track.stop());return;}
-  else if(native())try{const ww=await getSdk(),result=await ww.stopRecord();if(!state.cancel&&alive)saveVoice(result.localId,null,performance.now()-state.started);}catch{if(alive&&!state.cancel)setError(message('voiceFailed'));}
+  else if(native())try{const ww=await getSdk(),result=await ww.stopRecord();if(!state.cancel&&alive)saveVoice(result.localId,null,performance.now()-state.started);}catch{if(alive&&!state.cancel)setError(message('voice:finishFailed'));}
   if(record===state)record=null;emit();
  };
  const start=async()=>{
   if(record||items.some(item=>item.kind==='VOICE')||!alive)return;
   setError(null);setRecording({seconds:0});
-  const state:RecordingSession={started:performance.now(),cancel:false,released:false,media:null,stream:null,timer:null,interval:null,stopping:false,ready:false};record=state;emit();
+  const state:RecordingSession={started:performance.now(),cancel:false,released:false,media:null,stream:null,timer:null,interval:null,stopping:false,ready:false};record=state;emit();let stage:VoiceStage='BROWSER_CAPABILITY';
   try{
    if(native()){
-    const ww=await getSdk();await ww.startRecord();
-    if(state.released||!alive){await ww.stopRecord();if(record===state)record=null;emit();return;}
+    stage='SDK_READY';const ww=await getSdk();stage='START_RECORD';await ww.startRecord();
+    if(state.released||!alive){stage='STOP_RECORD';await ww.stopRecord();if(record===state)record=null;emit();return;}
     ww.onVoiceRecordEnd(event=>{if(record!==state||state.stopping)return;state.stopping=true;if(state.interval)clearInterval(state.interval);if(state.timer)clearTimeout(state.timer);setRecording({recording:false,cancelling:false});if(!state.cancel)saveVoice(event.localId,null,60_000);record=null;emit();});
    }else{
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')throw new Error('voiceUnavailable');
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});state.stream=stream;
+    stage='BROWSER_PERMISSION';const stream=await navigator.mediaDevices.getUserMedia({audio:true});state.stream=stream;
     if(state.released||!alive){stream.getTracks().forEach(track=>track.stop());if(record===state)record=null;emit();return;}
-    const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(value=>MediaRecorder.isTypeSupported(value)),recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);state.media=recorder;const chunks:Blob[]=[];
+    stage='BROWSER_START';const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(value=>MediaRecorder.isTypeSupported(value)),recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);state.media=recorder;const chunks:Blob[]=[];
     recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};recorder.onstop=()=>{stream.getTracks().forEach(track=>track.stop());if(!state.cancel&&alive)saveVoice(null,new Blob(chunks,{type:recorder.mimeType}),performance.now()-state.started);chunks.length=0;if(record===state)record=null;emit();};recorder.start();
    }
    state.ready=true;state.started=performance.now();if(!alive)return;setRecording({recording:true});
    state.interval=window.setInterval(()=>setRecording({seconds:Math.floor((performance.now()-state.started)/1000)}),1000);
    state.timer=window.setTimeout(()=>void stop(false),60_000);
-  }catch{if(alive&&!state.cancel)setError(message('voiceFailed'));state.stream?.getTracks().forEach(track=>track.stop());if(record===state)record=null;setRecording({recording:false,cancelling:false});}
+  }catch(reason){if(alive&&!state.cancel)setError(message(voiceFailureKey(stage,reason)));state.stream?.getTracks().forEach(track=>track.stop());if(record===state)record=null;setRecording({recording:false,cancelling:false});}
  };
  const release=(cancel=false)=>{const state=record;if(!state)return;state.released=true;state.cancel=state.cancel||cancel;if(state.ready)void stop(cancel);};
  const slide=(cancel:boolean)=>{if(record&&record.cancel!==cancel){record.cancel=cancel;setRecording({cancelling:cancel});}};
