@@ -305,6 +305,11 @@ async function playbackFixture(){
   'api/client.ts':`export class ApiError extends Error{constructor(status,code){super(code);this.status=status;this.code=code;}}export const V2_ACCEPT='application/vnd.yixiaoxiu.v2+json';export const authLost=new EventTarget();export const stats={lost:0};export const captureAuthGeneration=()=>0;export function reportAuthLost(generation,signal){if(generation===0&&!signal.aborted){stats.lost+=1;authLost.dispatchEvent(new Event('lost'));}}`,
   'session.ts':"export function useSessionStatus(){return{refresh:async()=>{}};}",
   'components/Icon.ts':"export function Icon(){return null;}",
+  // This pure playback fixture never opens the optional image viewer. Keep
+  // its lazy UI graph outside the eager data-URL loader used by these tests.
+  'enhancements/loader.ts':"export const interactions={load(){throw new Error('Unexpected animation in pure playback test');}};",
+  'enhancements/ImageViewer.ts':"export default function ImageViewer(){throw new Error('Unexpected image viewer in pure playback test');}",
+  'components/LazyPanelBoundary.ts':"export function LazyPanelBoundary({children}){return children;}",
   'components/ui/primitives.ts':"import{createElement}from'react';export function Button({children,...props}){return createElement('button',props,children);}",
  }});
  const module:{Material:ComponentType<{media:PlaybackMedia;requestRef:string}>;supportsProgressivePlayback:(media:PlaybackMedia)=>boolean;readMediaBlob:(ref:string,media:PlaybackMedia,variant:'PLAYABLE',signal:AbortSignal)=>Promise<Blob>}=await import(await loader.moduleUrl('components/Materials.ts'));
