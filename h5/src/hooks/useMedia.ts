@@ -146,13 +146,13 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(eve
   const state:RecordingSession={capture:null,released:false,cancel:false,sliding:false};record=state;emit();
   try{
    const {createVoiceCapture}=await import('./voice-capture');
-   if(!alive||record!==state||state.released){if(alive&&!state.cancel)setError(message('voice:tooShort'),'info');if(record===state)record=null;setRecording({starting:false});return;}
+   if(!alive||record!==state||state.released)return;
    const capture=createVoiceCapture({canClear,canWecom,current:()=>alive&&record===state,getSdk,update:value=>{if(alive&&record===state)setRecording(value);},
     error:(key,tone,id)=>{if(alive&&(record===state||id&&items.some(item=>item.id===id)))setError(message(key),tone);},save:(localId,blob,duration)=>alive&&record===state?saveVoice(localId,blob,duration):null,transcribe,done:()=>{if(record===state){record=null;emit();}}});
    state.capture=capture;lastCapture=capture;if(state.sliding)capture.slide(true);await capture.start();
-  }catch{if(alive&&!state.cancel)setError(message('voice:browserFailed'));if(record===state)record=null;setRecording({starting:false,recording:false,cancelling:false});}
+  }catch{if(alive&&record===state){if(!state.cancel)setError(message('voice:browserFailed'));record=null;setRecording({starting:false,recording:false,cancelling:false});}}
  };
- const release=(cancel=false)=>{const state=record;if(!state)return;state.released=true;state.cancel=state.cancel||cancel||state.sliding;state.capture?.release(state.cancel);};
+ const release=(cancel=false)=>{const state=record;if(!state)return;state.released=true;state.cancel=state.cancel||cancel||state.sliding;if(state.capture)state.capture.release(state.cancel);else{record=null;setRecording({starting:false,recording:false,cancelling:false});if(alive&&!state.cancel)setError(message('voice:tooShort'),'info');}};
  const slide=(cancel:boolean)=>{if(record){record.sliding=cancel;record.capture?.slide(cancel);if(!record.capture)setRecording({cancelling:cancel});}};
  const playNative=async(item:DraftMedia)=>{
   if(!item.localId||!alive||!items.some(value=>value.id===item.id)||playbackPending===item.id)return;

@@ -63,8 +63,11 @@ interface VoiceApi {calls:{reserves:{duration_ms:number;client_command_id:string
 interface VoiceSdk {calls:string[];control:{holdSdk:boolean;holdStart:boolean;holdStop:boolean;holdTranslate:boolean;setupFailure:boolean;startFailure:boolean;stopFailure:boolean;translateFailure:boolean;uploadFailure:boolean};resolvers:{sdk:(()=>void)[];start:()=>void;stop:()=>void;translations:((text:string)=>void)[]}}
 interface CaptureOptions {mimeType?:string;audioBitsPerSecond?:number}
 interface CaptureConstraints {audio:{echoCancellation:boolean;noiseSuppression:boolean;autoGainControl:boolean;sampleRate:{ideal:number};channelCount:{ideal:number}}}
-async function nativeVoiceController(t:TestContext,transcript:(event:TranscriptEvent)=>void=()=>{},browser=false,wecom=true){
+async function nativeVoiceController(t:TestContext,transcript:(event:TranscriptEvent)=>void=()=>{},browser=false,wecom=true,holdChunk=false){
+ const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
+ const chunkOverrides:Record<string,string>=holdChunk?{'hooks/capture-chunk-gate.ts':"let resolve,reject;export let entered=0;export const pending=new Promise((ok,fail)=>{resolve=ok;reject=fail;});export const enter=()=>{entered+=1;return pending;};export const open=()=>resolve();export const fail=()=>reject(new Error('synthetic chunk unavailable'));",'hooks/voice-capture.ts':"import{enter}from'./capture-chunk-gate';await enter();\n"+await readFile(resolve(sourceRoot,'h5/src/hooks/voice-capture.ts'),'utf8')}:{};
  const parser=await reservationParserUrl(),loader=createH5PureModuleLoader({overrides:{
+  ...chunkOverrides,
   'api/client.ts':`import{parseReservation}from${JSON.stringify(parser)};export const authLost=new EventTarget();export const calls={reserves:[],rejections:[],imports:0,binaries:0};export const control={reserveStatus:0,importStatus:0};export const api={reserve:async input=>{calls.reserves.push(input);try{parseReservation(input);}catch(reason){calls.rejections.push({status:reason.status,code:reason.code});throw reason;}if(control.reserveStatus)throw{status:control.reserveStatus,code:'YXX_MEDIA_STORAGE_UNAVAILABLE',message:'unsafe secret URL'};return{media_ref:'11111111-1111-4111-8111-111111111111'};},upload:async(ref,file,csrf,id,signal,progress)=>{calls.binaries+=1;progress(100);},importWecom:async()=>{calls.imports+=1;if(control.importStatus)throw{status:control.importStatus,errMsg:'unsafe secret URL'};},cancelUpload:async()=>{}};`,
   'hooks/wecom-registration.ts':await previewCoordinatorSource()+`export const calls=[],control={holdSdk:false,holdStart:false,holdStop:false,holdTranslate:false,setupFailure:false,startFailure:false,stopFailure:false,translateFailure:false,uploadFailure:false},resolvers={sdk:[],start:()=>{},stop:()=>{},translations:[]};export async function registeredWecom(){calls.push('registered');if(control.holdSdk)await new Promise(resolve=>resolvers.sdk.push(resolve));if(control.setupFailure)throw new Error('unsafe SDK URL');return{SizeType:{original:'original'},SourceType:{camera:'camera',album:'album'},chooseImage:async()=>{calls.push('chooseImage');return{localIds:[]};},startRecord:async()=>{calls.push('startRecord');if(control.holdStart)await new Promise(resolve=>{resolvers.start=resolve;});if(control.startFailure)throw new Error('unsafe native start');},stopRecord:async()=>{calls.push('stopRecord');if(control.holdStop)await new Promise(resolve=>{resolvers.stop=resolve;});if(control.stopFailure)throw new Error('unsafe native stop');return{localId:'synthetic-local-voice'};},onVoiceRecordEnd:()=>{},uploadVoice:async()=>{calls.push('uploadVoice');if(control.uploadFailure)throw{errMsg:'unsafe secret URL'};return{serverId:'synthetic-server-voice'};},translateVoice:async()=>{calls.push('translateVoice');if(control.translateFailure)throw new Error('unsafe transcript');return{translateResult:control.holdTranslate?await new Promise(resolve=>resolvers.translations.push(resolve)):'synthetic transcript'};},playVoice:async()=>{calls.push('playVoice');},stopVoice:async()=>{calls.push('stopVoice');}};}`,
  }});
@@ -88,7 +91,8 @@ async function nativeVoiceController(t:TestContext,transcript:(event:TranscriptE
  Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>clock}});
  const native={...bootstrap,h5:{...bootstrap.h5,sdk:{enabled:wecom,corp_id:wecom?'synthetic-corp':null,agent_id:wecom?'synthetic-agent':null}}},controller=source.createMediaController(()=>native,transcript,key=>key);controller.mount();
  t.after(()=>{controller.dispose();for(const item of previous)if(item.descriptor)Object.defineProperty(globalThis,item.name,item.descriptor);else Reflect.deleteProperty(globalThis,item.name);});
- return{controller,api,sdk,capture,track,setClock:(value:number)=>{clock=value;}};
+ const chunk:{entered:number;open:()=>void;fail:()=>void}|null=holdChunk?await import(await loader.moduleUrl('hooks/capture-chunk-gate.ts')):null;
+ return{controller,api,sdk,capture,track,chunk,setClock:(value:number)=>{clock=value;}};
 }
 
 test('H5 fractional recording clock reserves integer milliseconds accepted by the actual backend parser',async t=>{
@@ -423,4 +427,31 @@ test('H5 unified unresolved SDK preparation owns no device slot and does not blo
  await value.controller.start();assert.equal(value.controller.getRecording().recording,true);assert.equal(value.capture.permissionCalls,2);assert.equal(value.sdk.resolvers.sdk.length,2);assert.equal(value.sdk.calls.includes('startRecord'),false);value.setClock(9000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,2);
  value.sdk.control.holdSdk=false;for(const ready of value.sdk.resolvers.sdk)ready();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.sdk.calls.includes('startRecord'),false,'Canceled SDK setup must never dispatch a late native start');assert.equal(value.sdk.calls.includes('stopRecord'),false,'No actual start was dispatched, so no physical stop is required');assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getError(),'voice:transcriptUnavailable');
  const second=value.controller.getItems()[0];assert.ok(second);value.controller.remove(second.id);await value.controller.start();assert.equal(value.capture.permissionCalls,3);await until(()=>value.sdk.calls.includes('startRecord'));value.controller.release(true);
+});
+
+test('H5 lazy capture cancellation ends busy immediately while the actual import is still pending',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true,false,true),chunk=value.chunk;assert.ok(chunk);const starting=value.controller.start();value.controller.release(true);
+ try{assert.equal(value.controller.getBusy(),false,'Pure chunk loading must not retain a released recording');assert.equal(value.controller.getRecording().starting,false);assert.equal(value.controller.getError(),null);assert.equal(value.capture.permissionCalls,0);assert.equal(value.api.calls.reserves.length,0);}
+ finally{chunk.open();await starting;}
+ assert.equal(value.capture.permissionCalls,0);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 lazy normal release immediately gives the short hint and a late import starts no device work',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true,true,true),chunk=value.chunk;assert.ok(chunk);const starting=value.controller.start();value.controller.release();
+ try{assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.controller.getErrorTone(),'info');assert.equal(value.controller.getRecording().starting,false);}
+ finally{chunk.open();await starting;}
+ assert.equal(value.capture.permissionCalls,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 lazy canceled imports cannot clear a newer gesture starting state or acquire extra microphones',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true,false,true),chunk=value.chunk;assert.ok(chunk);value.capture.holdPermission=true;
+ const old=value.controller.start();value.controller.release(true);const recent=value.controller.start();value.controller.release(true);const current=value.controller.start();assert.equal(value.controller.getRecording().starting,true);await until(()=>chunk.entered===1);chunk.open();await Promise.all([old,recent]);await until(()=>value.capture.permissionCalls===1);
+ try{assert.equal(value.controller.getRecording().starting,true,'Old import continuations must not reset the current permission wait');assert.equal(value.controller.getBusy(),true);assert.equal(value.controller.getError(),null);assert.equal(value.capture.recorderStarts,0);}
+ finally{value.controller.release(true);value.capture.grant();await current;}
+ assert.equal(value.controller.getBusy(),false);assert.equal(value.capture.permissionCalls,1);assert.equal(value.capture.activeTracks,0);assert.equal(value.capture.recorderStarts,0);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 lazy rejected obsolete import cannot replace a completed normal-release notice',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true,true,true),chunk=value.chunk;assert.ok(chunk);const starting=value.controller.start();value.controller.release();await until(()=>chunk.entered===1);chunk.fail();await starting;
+ assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getRecording().starting,false);assert.equal(value.controller.getError(),'voice:tooShort');assert.equal(value.controller.getErrorTone(),'info');assert.equal(value.capture.permissionCalls,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.api.calls.reserves.length,0);
 });
