@@ -126,7 +126,8 @@ test('H5 date display preserves Shanghai rollover and rejects unsafe or malforme
 });
 
 test('H5 ticket collection labels stay consistent without changing Chinese reporting or original-source wording',async()=>{
- const {en,zh}=await import(await moduleUrl('i18n.ts'));
+ const base=await import(await moduleUrl('i18n.ts')),workspace=await import(await moduleUrl('components/workspace-messages.ts'));
+ const en={...base.en,...workspace.en},zh={...base.zh,...workspace.zh};
  assert.equal(en.records,'My tickets');assert.equal(en.recent,'Recent tickets');
  for(const key of ['records','departmentStats','recent','emptyDescription','queryEmpty','readonly','viewReceipt','noDescription','webSource','emptyHistory','readFailure'])assert.doesNotMatch(en[key],/\breports\b/i,key);
  const chinese={records:'工单查询',departmentStats:'上报 {{total}} 件 · {{active}} 件处理中',recent:'最近报修工单',emptyDescription:'提交报修后，可在这里查看处理进度。',queryEmpty:'没有符合条件的工单',readonly:'当前报修入口为只读，可继续查看本人记录。',viewReceipt:'查看回执',noDescription:'现场材料报修',webSource:'网页报修',emptyHistory:'当前无进行中或待处理工单',readFailure:'暂时无法读取工单'};
