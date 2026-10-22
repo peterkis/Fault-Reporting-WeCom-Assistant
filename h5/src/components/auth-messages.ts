@@ -3,6 +3,8 @@ import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/auth';
 
 export const en={
  app:'Yixiaoxiu',
+ externalTitle:'Please open in WeCom',
+ externalText:'Open Yixiaoxiu from your WeCom workplace or a ticket message so we can securely confirm your work account.',
  reconnectingTitle:'Connecting you back',
  reconnectingText:'Checking your access securely through WeCom. You’ll return to this page.',
  reconnectTitle:'Let’s reconnect',
@@ -17,6 +19,8 @@ export const en={
 };
 export const zh={
  app:'医小修',
+ externalTitle:'请在企业微信中打开',
+ externalText:'请返回企业微信，从工作台或工单消息中打开医小修，以便安全核验你的工作身份。',
  reconnectingTitle:'正在接回这段连接',
  reconnectingText:'正在通过企业微信安全核验，完成后回到当前页面。',
  reconnectTitle:'连接歇了一会儿',

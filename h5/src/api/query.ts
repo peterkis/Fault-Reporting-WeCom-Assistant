@@ -4,6 +4,7 @@ import type {Bootstrap,ReportsFilter,ReportItem,ReportPage,RequestDetail,YxxTime
 
 export const EMPTY_FILTER:ReportsFilter=Object.freeze({q:'',status:'',source:''});
 export const BUSINESS_STALE_TIME=30_000;
+export const BUSINESS_CACHE_TIME=120_000;
 export function reportStatus(value:string):ReportsFilter['status']{return value==='OPEN'||value==='ACTIVE'||value==='COMPLETED'?value:'';}
 export function reportSource(value:string):ReportsFilter['source']{return value==='WEB'||value==='BOT'?value:'';}
 export const queryKeys={

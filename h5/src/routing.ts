@@ -10,6 +10,11 @@ const modules=new Map<H5EntryView,Promise<PageModule>>();
 export function loadPage(view:H5EntryView):Promise<PageModule>{let task=modules.get(view);if(!task){task=imports[view]().catch(error=>{modules.delete(view);throw error;});modules.set(view,task);}return task;}
 export const pages={home:lazy(()=>loadPage('home')),report:lazy(()=>loadPage('report')),reports:lazy(()=>loadPage('reports')),request:lazy(()=>loadPage('request')),department:lazy(()=>loadPage('department'))} satisfies Record<H5EntryView,ComponentType>;
 export interface PageRoute {key:string;input:H5EntryInput;path:string}
+/** Router-accepted trailing slashes must not escape the login return whitelist. */
+export function loginReturnPath(route:PageRoute):string{
+ if(route.input.view==='request')return '/requests/'+encodeURIComponent(route.input.request_ref);
+ const query=route.path.indexOf('?');return (route.input.view==='home'?'/':'/'+route.input.view)+(query<0?'':route.path.slice(query));
+}
 export function describeRoute(pathname:string,search=''):PageRoute{
  const params=new URLSearchParams(search),matches=(path:string)=>matchPath({path,caseSensitive:true,end:true},pathname);let input:H5EntryInput={view:'home'};
  if(matches('/report'))input={view:'report'};

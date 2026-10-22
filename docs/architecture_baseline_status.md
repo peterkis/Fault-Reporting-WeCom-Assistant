@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-10-22 部署后加载体验反馈沿 [ADR-0042](../adr/0042_h5_continuous_navigation_and_silent_entry.md) 前向修订：移除骨架、保留切换前视图、独立顶部进度条、同范围旧缓存后台复核及首次静默认证；外部浏览器显示企业微信打开指引。输入反例、候选验证与交付状态见 [连续展示记录](../plans/yixiaoxiu-h5-performance/loading-continuity-2026-10-22.md)，不改写上一候选的验收或真机状态。
+
 2026-10-22 H5 路由与交互前向修订：[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)沿既有SPA接入官方React Router、统一共享页头，将纯导航与写就绪分别控制，并修正原生起录确认前的提示时序。英文工单／日期、分时欢迎语、同秒展示顺序和延迟骨架保持原事实及120KiB预算；本轮实测、失败和NOT_RUN边界见[路由交互记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)。
 
 2026-10-22 H5 单入口录音前向修订：[ADR-0040](../adr/0040_h5_single_voice_capture_and_optional_transcription.md)按最新用户要求移除方式选择，以清晰Blob作为唯一回听／上传材料，同手势企业微信采集仅辅助转写，下限改为2秒。此项替代ADR-0038的手动双模式及3秒规则，原权限、上传预算、草稿归属与资源清理保持；真机双路效果单独保持NOT_RUN，实际候选与验证见[本轮记录](../plans/yixiaoxiu-h5-performance/unified-voice-2026-10-22.md)。

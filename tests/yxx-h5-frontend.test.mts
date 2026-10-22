@@ -127,7 +127,7 @@ test('H5 greeting periods translate with a member name in Simplified Chinese and
  }
 });
 
-test('H5 official compiled catalogs preserve all 408 bilingual messages and their interpolation',async t=>{
+test('H5 official compiled catalogs preserve all 412 bilingual messages and their interpolation',async t=>{
  const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),language=i18n.language;
  const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts'};let count=0;
  for(const[namespace,path]of Object.entries(sources)){
@@ -137,7 +137,7 @@ test('H5 official compiled catalogs preserve all 408 bilingual messages and thei
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,408);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 204 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,412);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 206 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
@@ -419,11 +419,14 @@ test('H5 silent OAuth reconnect is one-shot, same-origin and respects draft/UNKN
  Object.defineProperties(globalThis,{document:{configurable:true,value:{documentElement:{dataset}}},location:{configurable:true,value:current},navigator:{configurable:true,value:{userAgent:'Android MicroMessenger wxwork Language/zh_CN'}}});
  try{
   const loader=createH5PureModuleLoader(),auth=await import(await loader.moduleUrl('lib/reauth.ts'));
+  assert.equal(auth.isWeComClient(),true);assert.equal(auth.canReconnectAutomatically(),true);
   dataset.h5Draft='true';assert.equal(auth.reconnect('/report',{automatic:true}),false);delete dataset.h5Draft;
   dataset.h5CommandPending='true';assert.equal(auth.reconnect('/reports',{automatic:true}),false);delete dataset.h5CommandPending;
   dataset.h5DetailDraft='true';assert.equal(auth.reconnect('/requests/'+'r'.repeat(32),{automatic:true}),false);delete dataset.h5DetailDraft;
   assert.equal(auth.reconnect('/reports',{automatic:true,blocked:true}),false,'captured guard must survive component cleanup');
-  current.search='?auth_return=1';assert.equal(auth.reconnect('/reports',{automatic:true}),false,'failed fresh OAuth must not loop');current.search='';
+  current.search='?auth_return=1';assert.equal(auth.canReconnectAutomatically(),false);assert.equal(auth.reconnect('/reports',{automatic:true}),false,'failed fresh OAuth must not loop');current.search='';
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'Mozilla/5.0 Chrome/132.0'}});assert.equal(auth.isWeComClient(),false);assert.equal(auth.canReconnectAutomatically(),false);assert.equal(auth.reconnect('/reports',{automatic:true}),false);
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'MicroMessenger wxwork/4.1'}});
   for(const path of ['https://attacker.invalid/','//attacker.invalid','/requests/short','/reports#foreign'])assert.equal(auth.reconnect(path),false,path);
   assert.equal(redirects.length,0);
   const route='/reports?status=ACTIVE&search='+encodeURIComponent('打印');

@@ -1,5 +1,7 @@
 ## 2026-10-20：V2 H5 实现入口
 
+2026-10-22 部署后连续展示与首次认证调整见 [ADR-0042](../adr/0042_h5_continuous_navigation_and_silent_entry.md)及 [本轮记录](../plans/yixiaoxiu-h5-performance/loading-continuity-2026-10-22.md)：取消骨架，切换保留当前视图，顶部进度条独立延迟和结束；企业微信正常首次认证不展示重连页，外部浏览器显示打开指引。以下旧候选保留各自的实现与验收时点。
+
 2026-10-22 路由与交互修订见[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)及[本轮记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)：官方React Router接管主内容导航，三主页面共用页头，首页导航与写就绪分别控制；英文工单／日期、分时欢迎语、同秒时间线及快慢骨架同步调整。原生起录确认前保留准备提示，真机漏词改善另行验证。
 
 2026-10-22 单入口录音调整见 [ADR-0040](../adr/0040_h5_single_voice_capture_and_optional_transcription.md)和[本轮记录](../plans/yixiaoxiu-h5-performance/unified-voice-2026-10-22.md)：移除录音方式选择，具备网页采集能力时清晰音频作为唯一回听／上传材料，同一手势尝试企业微信辅助转写；下限为2秒，移除报修页header下方的Quick report装饰标题。真机双路采集不沿用两种独立模式的实测结果。
@@ -79,7 +81,9 @@ node .build/runtime/scripts/yxx-h5-migrate.mjs --apply --expected-database=proje
 
 H5 显式装配使用 8 小时空闲、24 小时绝对会话期；entry 及兼容读取的 V2 bootstrap 在当前成员核验、业务查询和终检成功后续期，SID／CSRF 保持稳定。前台恢复合并事件并立即关闭写操作，401 通过一次静默 OAuth 回当前页面；403 显示双语浅深色权限状态，503 可重试。草稿／UNKNOWN 期间不自动离开文档、不重放 POST；重新连接影响会明确提示。旧非 H5 OAuth 的 15 分钟合同不变。
 
-底部导航使用 Hash 路由；30 秒内已访问页面可复用同范围、同组织修订且未失效的内存 Query 数据。首次进入只加载当前页面，短时间往返不清空应用壳或重新请求 entry。前台复核、手动刷新和写后同步保留强制读取。骨架使用 CSS shimmer 并遵循 `prefers-reduced-motion`，认证状态与非关键操作／帮助文案按需加载。合同及验证边界见 [ADR-0037](../adr/0037_h5_session_resume_and_navigation.md)。
+底部导航使用 Hash 路由；30 秒内已访问页面可复用同范围、同组织修订且未失效的内存 Query 数据。30 秒至 2 分钟内的完整旧缓存先展示并后台核验，复核中不允许写操作。页面切换保留当前视图，代码与数据就绪后再切换，不挂载隐藏页面集合。前台复核、手动刷新和写后同步保留强制读取。
+
+按 [ADR-0042](../adr/0042_h5_continuous_navigation_and_silent_entry.md) 移除所有产品骨架与 shimmer；冷启动和切换共用延迟 200ms 的顶部细进度条，最短显示时间只作用于进度条，不阻塞内容。企业微信首次自动认证保持相同加载体验，失败后才显示主动恢复入口；外部浏览器直接提示在企业微信中打开。原 [ADR-0037](../adr/0037_h5_session_resume_and_navigation.md) 的单次 OAuth、草稿／UNKNOWN、撤权清理、范围代际与终检边界保持，动效遵循 `prefers-reduced-motion`。
 
 后端显式选择 `memberEntry.identityMode=VERIFIED_APP_OPENID`，保持已核对的企业、应用、Bot 作用域和 proofRef。先核验并在授权数据库应用 063 增量迁移；启动不自动迁移。新成员不需要 reporterUserIds 或通知目标文件。可选旧名单和原资格文件仅兼容既有身份与记录；不得更换原 Reporter HMAC 或用开放身份冒充 Bot 原始 userid。配置、检查和关闭命令见[运行说明](../docs/runbooks/human-workbench-runtime.md#mvp-通知切换)。
 

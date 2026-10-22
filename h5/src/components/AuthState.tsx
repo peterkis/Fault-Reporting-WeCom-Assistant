@@ -5,18 +5,13 @@ import {reconnect} from '../lib/reauth';
 import {hasProtectedInput} from '../lib/reload';
 import './auth-messages';
 
-export default function AuthState({expired,blocked,returnTo}:{expired:boolean;blocked:boolean;returnTo:string}){
- const {t}=useTranslation('auth'),[intent,setIntent]=useState<'automatic'|'manual'|'confirmed'|null>(null),[protectedInput,setProtectedInput]=useState(blocked);
+export default function AuthState({expired,blocked,returnTo,external=false}:{expired:boolean;blocked:boolean;returnTo:string;external?:boolean}){
+ const {t}=useTranslation('auth'),[intent,setIntent]=useState<'manual'|'confirmed'|null>(null),[protectedInput,setProtectedInput]=useState(blocked);
  const connecting=intent!==null;
- useEffect(()=>{if(expired&&!blocked&&!hasProtectedInput()&&new URLSearchParams(location.search).get('auth_return')!=='1'&&/wxwork/i.test(navigator.userAgent))setIntent('automatic');},[expired,blocked,returnTo]);
  useEffect(()=>{
-  if(!intent)return;
-  // Commit and paint the reconnect state before leaving this document.
-  let frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{
-   if(!reconnect(returnTo,{automatic:intent==='automatic',blocked,confirmed:intent==='confirmed'})){setIntent(null);if(hasProtectedInput())setProtectedInput(true);}
-  });});
-  return()=>cancelAnimationFrame(frame);
- },[intent,blocked,returnTo]);
+  if(!intent||external)return;
+  if(!reconnect(returnTo,{blocked,confirmed:intent==='confirmed'})){setIntent(null);if(hasProtectedInput())setProtectedInput(true);}
+ },[intent,blocked,returnTo,external]);
  const retry=()=>{
   const mustConfirm=protectedInput||hasProtectedInput();
   if(mustConfirm&&!protectedInput){setProtectedInput(true);return;}
@@ -35,10 +30,10 @@ export default function AuthState({expired,blocked,returnTo}:{expired:boolean;bl
     {expired?<path d="M151 122a11 11 0 0 1 18-6l4 4m0-8v8h-8m8 7a11 11 0 0 1-18 6l-4-4m0 8v-8h8" className="auth-seal-icon"/>:<><rect x="152" y="122" width="20" height="14" rx="4" className="auth-seal-icon"/><path d="M157 122v-5a5 5 0 0 1 10 0v5" className="auth-seal-icon"/></>}
     <circle cx="47" cy="67" r="4" className="auth-node"/><circle cx="191" cy="111" r="3" className="auth-node"/>
    </svg>
-   <h1 id="auth-title">{t(connecting?'reconnectingTitle':expired?'reconnectTitle':'accessTitle')}</h1>
-   <p role="status" aria-live="polite">{t(connecting?'reconnectingText':expired?'reconnectText':'accessText')}</p>
+   <h1 id="auth-title">{t(external?'externalTitle':connecting?'reconnectingTitle':expired?'reconnectTitle':'accessTitle')}</h1>
+   <p role="status" aria-live="polite">{t(external?'externalText':connecting?'reconnectingText':expired?'reconnectText':'accessText')}</p>
    {protectedInput&&<p className="auth-protected">{t('reconnectProtected')}</p>}
-   <Button className="auth-retry" disabled={connecting} onClick={retry}>{t(connecting?'reconnectingAction':protectedInput?'reconnectConfirm':'reconnectAction')}</Button>
+   {!external&&<Button className="auth-retry" disabled={connecting} onClick={retry}>{t(connecting?'reconnectingAction':protectedInput?'reconnectConfirm':'reconnectAction')}</Button>}
    <span className="auth-footnote">{t('reconnectFootnote')}</span>
   </section>
  </main>;
