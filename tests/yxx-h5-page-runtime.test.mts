@@ -216,6 +216,31 @@ async function translatedApp(runtime:unknown){
 // Deferred route continuity is verified with actual browser frames. Server
 // rendering never commits the client transition and cannot prove that behavior.
 
+test('H5 report controls follow the target search while rows retain the presented query and invalidated target data stays unused',async t=>{
+ const {client,query,calls}=await harness(t,{home:homeEntry(4)}),root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
+ const compiled=async(path:string)=>transpileModule(await readFile(resolve(root,'h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const filterA={q:'A',status:'',source:''},filterB={q:'B',status:'ACTIVE',source:'WEB'},keyA=query.queryKeys.reports('scope-a',filterA),keyB=query.queryKeys.reports('scope-a',filterB);
+ const page=(label:string)=>({pages:[{items:homeEntry(4).data.recent_reports.map(item=>({...item,safe_summary:label})),next_cursor:'synthetic-cursor'}],pageParams:[null]});
+ client.setQueryData(keyA,page('visible-A'));client.setQueryData(keyB,page('invalidated-B'));await client.invalidateQueries({queryKey:keyB,exact:true,refetchType:'none'});
+ const loader=createH5PureModuleLoader({overrides:{
+  'pages/Reports.tsx':await compiled('pages/Reports.tsx'),'session.ts':await compiled('session.tsx'),
+  'navigation.ts':"export {useSearchParams} from 'react-router';",
+  'components/ReportCard.ts':"import {createElement} from 'react';export function ReportCard({item}){return createElement('article',{'data-summary':item.safe_summary},item.safe_summary);}",
+  'components/Common.ts':"export function Loading(){return null;}export function ErrorPanel(){return null;}export function EmptyReports(){return null;}",
+  'components/Icon.ts':"export function Icon(){return null;}",
+  'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({variant,className,children,...props}){return createElement('button',props,children);}export function Input(props){return createElement('input',props);}export function Field({children}){return createElement('div',null,children);}export const FieldGroup=Field;export function FieldLabel({children,...props}){return createElement('label',props,children);}",
+  'reports-render-test.ts':[
+   "import {createElement as h} from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {QueryClientProvider} from '@tanstack/react-query';import {MemoryRouter} from 'react-router';",
+   "import Reports from './pages/Reports.tsx';import {SessionProvider} from './session.ts';import {I18nProvider} from './i18n-react.ts';",
+   "export function render(client,session){return renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(MemoryRouter,{initialEntries:['/reports?search=A']},h(SessionProvider,{session,status:{checking:true,writeReady:false,membershipRevision:'membership-a',refresh:async()=>{}}},h(Reports,{targetSearch:'?search=B&status=ACTIVE&source=WEB'}))))));}",
+  ].join('\n')
+ }});
+ const module:unknown=await import(await loader.moduleUrl('reports-render-test.ts'));assert.ok(module!==null&&typeof module==='object'&&'render'in module&&typeof module.render==='function');
+ const before=calls.length,markup:unknown=Reflect.apply(module.render,module,[client,bootstrap('scope-a',true)]);assert.equal(typeof markup,'string');if(typeof markup!=='string')assert.fail('Expected actual Reports markup');
+ assert.match(markup,/data-summary="visible-A"/u);assert.doesNotMatch(markup,/invalidated-B/u);assert.match(markup,/id="report-search"[^>]*value="B"/u);assert.match(markup,/<option value="ACTIVE" selected=""/u);assert.match(markup,/<option value="WEB" selected=""/u);assert.match(markup,/<button\b[^>]*disabled=""/u);
+ assert.equal(client.getQueryState(keyB)?.isInvalidated,true);assert.equal(calls.length,before,'waiting controls must not issue another list request');
+});
+
 test('H5 App expired-session state has an available authentication recovery action',async t=>{
  const{runtime,calls}=await harness(t,{home:homeEntry(4)}),render=await translatedApp(runtime),expired=runtime.refresh().catch((error:unknown)=>error);await until(()=>calls.length===2,'a real entry recheck starts');calls[1]?.reply.resolve(response({error:{code:'YXX_AUTH_REQUIRED'}},401));await expired;
  const markup=await render();t.diagnostic(JSON.stringify({actual_app_auth_branch:{recovery_action:/<button\b/u.test(markup),raw_translation_key:markup.includes('>authRequired<')},measurement:'Actual App/AuthState onAllReady server-rendered guard projection; client effects are not executed'}));
