@@ -54,6 +54,58 @@ function tabEntry(view:'home'|'reports'|'report'){
  return{schema_version:1,view,bootstrap:bootstrap('scope-a',true),membership_revision:'membership-a',data:view==='report'?null:{reports:{items:homeEntry(4).data.recent_reports,next_cursor:null}}};
 }
 
+test('H5 navigation keeps the presented page until the actual destination entry succeeds',async t=>{
+ const {runtime,calls}=await harness(t,{home:homeEntry(4)}),home=runtime.getSnapshot().displayRoute;
+ assert.equal(home?.input.view,'home');
+ const pending=runtime.navigate(tabRoute('report'));await until(()=>calls.length===2,'destination must read entry');
+ assert.equal(runtime.getSnapshot().route.input.view,'report');assert.equal(runtime.getSnapshot().displayRoute,home);assert.equal(runtime.getSnapshot().checking,true);assert.equal(runtime.getSnapshot().ready,false);
+ calls[1]?.reply.resolve(response(tabEntry('report')));await pending;
+ assert.equal(runtime.getSnapshot().displayRoute?.input.view,'report');assert.equal(runtime.getSnapshot().checking,false);
+});
+
+test('H5 stale complete cache is displayed immediately while entry revalidates without renewing its stamp',async t=>{
+ const {runtime,calls}=await harness(t,{home:homeEntry(4)}),home=tabRoute('home'),start=Date.now();let clock=start;t.mock.method(Date,'now',()=>clock);
+ const reports=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===2,'reports entry');calls[1]?.reply.resolve(response(tabEntry('reports')));await reports;
+ clock=start+30_001;assert.equal(runtime.canUseCached(home),false);assert.equal(runtime.canDisplayCached(home),true);
+ const pending=runtime.navigate(home);await until(()=>calls.length===3,'stale cache must revalidate');
+ assert.equal(runtime.getSnapshot().displayRoute?.key,home.key);assert.equal(runtime.getSnapshot().checking,true);assert.equal(runtime.getSnapshot().ready,false);assert.equal(runtime.canUseCached(home),false);
+ calls[2]?.reply.resolve(response(homeEntry(8)));await pending;assert.equal(runtime.canUseCached(home),true);assert.equal(runtime.getSnapshot().checking,false);
+});
+
+for(const reason of ['expired-cache','invalidated-cache'] as const)test('H5 '+reason+' cannot replace the current view while a destination is pending',async t=>{
+ const {runtime,client,query,calls}=await harness(t,{home:homeEntry(4)}),home=tabRoute('home'),start=Date.now();
+ const reports=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===2,'reports entry');calls[1]?.reply.resolve(response(tabEntry('reports')));await reports;
+ if(reason==='expired-cache')t.mock.method(Date,'now',()=>start+120_001);else await client.invalidateQueries({queryKey:query.queryKeys.home('scope-a'),exact:true,refetchType:'none'});
+ assert.equal(runtime.canDisplayCached(home),false);const displayed=runtime.getSnapshot().displayRoute,pending=runtime.navigate(home);await until(()=>calls.length===3,'destination revalidation');
+ assert.equal(runtime.getSnapshot().displayRoute,displayed);assert.equal(displayed?.input.view,'reports');
+ calls[2]?.reply.resolve(response(homeEntry(9)));await pending;assert.equal(runtime.getSnapshot().displayRoute?.input.view,'home');
+});
+
+for(const status of [401,403] as const)test('H5 retained display clears immediately on authorization status '+status,async t=>{
+ const {runtime,transport,calls}=await harness(t,{home:homeEntry(4)}),pending=runtime.navigate(tabRoute('report')).catch((error:unknown)=>error);
+ await until(()=>calls.length===2,'destination entry');assert.equal(runtime.getSnapshot().displayRoute?.input.view,'home');
+ transport.reportAuthLost(transport.captureAuthGeneration(),null,status);assert.equal(runtime.getSnapshot().displayRoute,null);assert.equal(runtime.getSnapshot().session,null);assert.equal(runtime.canDisplayCached(tabRoute('home')),false);
+ calls[1]?.reply.resolve(response(tabEntry('report')));await pending;assert.equal(runtime.getSnapshot().displayRoute,null,'late successful bytes cannot restore a cleared view');
+});
+
+test('H5 abandoned navigation cannot replace a newer presented page after its late response',async t=>{
+ const {runtime,calls}=await harness(t,{home:homeEntry(4)}),first=runtime.navigate(tabRoute('report')).catch((error:unknown)=>error);await until(()=>calls.length===2,'first destination');
+ const second=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===3,'replacement destination');assert.equal(runtime.getSnapshot().displayRoute?.input.view,'home');
+ calls[2]?.reply.resolve(response(tabEntry('reports')));await second;calls[1]?.reply.resolve(response(tabEntry('report')));await first;
+ assert.equal(runtime.getSnapshot().displayRoute?.input.view,'reports');assert.equal(runtime.getSnapshot().route.input.view,'reports');
+});
+
+test('H5 a background detail entry with a new membership revision clears then reloads the visible home',async t=>{
+ const {runtime,query,client,calls}=await harness(t,{home:homeEntry(4)}),observed:{revision:string;display:string|null}[]=[];
+ const off=runtime.subscribe(()=>{const value=runtime.getSnapshot();observed.push({revision:value.membershipRevision,display:value.displayRoute?.input.view??null});});t.after(off);
+ const background=query.refreshRequest(client,'scope-a',ref);await until(()=>calls.length===2,'background detail read');calls[1]?.reply.resolve(response(entry(2,'scope-a','membership-b')));await background;
+ assert.ok(observed.some(value=>value.revision==='membership-b'&&value.display===null),'old membership content must be cleared before rebuilding a current view');
+ await until(()=>calls.length===3,'revision change must revalidate the visible home even without an earlier route task');
+ assert.equal(runtime.getSnapshot().checking,true);assert.equal(runtime.getSnapshot().displayRoute,null);
+ calls[2]?.reply.resolve(response(homeEntry(8,'scope-a','membership-b')));await until(()=>runtime.getSnapshot().ready&&!runtime.getSnapshot().checking,'replacement home entry completes');
+ assert.equal(runtime.getSnapshot().displayRoute?.input.view,'home');assert.equal(runtime.getSnapshot().membershipRevision,'membership-b');
+});
+
 test('H5 rapid tab revisit keeps fresh authorized home content without repeating entry',async t=>{
  const{runtime,calls}=await harness(t,{home:homeEntry(4)});
  for(const view of ['reports'] as const){const before=calls.length,pending=runtime.navigate(tabRoute(view));await until(()=>calls.length===before+1,'a cold tab starts its entry');calls[before]?.reply.resolve(response(tabEntry(view)));await pending;}
@@ -150,22 +202,43 @@ const translationLoader=createH5PureModuleLoader();
 async function translatedApp(runtime:unknown){
  const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/App.tsx'),'utf8');
  const compiled=transpileModule(source,{fileName:'App.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
- const authSource=await readFile(resolve(root,'h5/src/components/AuthState.tsx'),'utf8'),authCompiled=transpileModule(authSource,{fileName:'AuthState.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
- const routing="import {createElement} from 'react';export function describeRoute(path){const view=path==='/'?'home':path.slice(1);return{key:JSON.stringify({view}),input:{view},path};}export const pages=Object.fromEntries(['home','reports','report','request','department'].map(view=>[view,()=>createElement('article',{'data-protected-page':view},view)]));";
+ const component=async(path:string)=>transpileModule(await readFile(resolve(root,'h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const authCompiled=await component('components/AuthState.tsx'),sessionCompiled=await component('session.tsx'),progressCompiled=await component('components/LoadingProgress.tsx');
+ const routing="import {createElement} from 'react';export function describeRoute(path){const view=path==='/'?'home':path.slice(1);return{key:JSON.stringify({view}),input:{view},path};}export function loginReturnPath(route){return route.path;}export const pages=Object.fromEntries(['home','reports','report','request','department'].map(view=>[view,()=>createElement('article',{'data-protected-page':view},view)]));";
  const pass="export function SessionProvider({children}){return children;}export function CommandProvider({children}){return children;}";
- const loader=createH5PureModuleLoader({overrides:{'App.tsx':compiled,'components/AuthState.ts':authCompiled,'components/PageFailure.ts':"export default function PageFailure(){return null;}",'routing.ts':routing,'navigation.ts':"export {MemoryRouter as HashRouter,useLocation,Navigate,Route,Routes} from 'react-router';",'session.ts':pass,'hooks/useCommand.ts':pass,'components/AppShell.ts':"import {createElement} from 'react';export function Shell({children}){return createElement('main',null,children);}export function Loading(){return createElement('div',{'data-state':'loading'});}",'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({children,...props}){return createElement('button',props,children);}",'lib/reload.ts':"export function hasProtectedInput(){return false;}export function reloadIfSafe(){}"}});
+ const loader=createH5PureModuleLoader({overrides:{'App.tsx':compiled,'components/AuthState.ts':authCompiled,'components/LoadingProgress.ts':progressCompiled,'components/PageFailure.ts':"export default function PageFailure(){return null;}",'routing.ts':routing,'navigation.ts':"export {MemoryRouter as HashRouter,useLocation,Navigate,Route,Routes} from 'react-router';",'session.ts':sessionCompiled,'hooks/useCommand.ts':pass,'components/AppShell.ts':"import {createElement} from 'react';export function Shell({children}){return createElement('main',null,children);}export function Loading(){return createElement('div',{'data-state':'loading'});}",'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({children,...props}){return createElement('button',props,children);}",'lib/reload.ts':"export function hasProtectedInput(){return false;}export function reloadIfSafe(){}"}});
  const app:{default:ComponentType<{runtime:unknown}>}=await import(await loader.moduleUrl('App.tsx'));
  const language=await import(await loader.moduleUrl('i18n.ts')),bridge:{I18nProvider:ComponentType<{children:ReactNode}>}=await import(await loader.moduleUrl('i18n-react.ts'));
  await import(await loader.moduleUrl('components/AuthState.ts'));await language.default.changeLanguage('zh-CN');
  return()=>new Promise<string>((done,reject)=>{let html='';const sink=new Writable({write(chunk,_encoding,callback){html+=String(chunk);callback();}});sink.on('finish',()=>done(html));sink.on('error',reject);const stream=renderToPipeableStream(createElement(bridge.I18nProvider,{children:createElement(app.default,{runtime})}),{onAllReady(){stream.pipe(sink);},onError:reject});});
 }
 
-test('H5 App retains a warm page rather than replacing its protected subtree with the loading branch',async t=>{
- const{runtime,calls}=await harness(t,{home:homeEntry(4)}),render=await translatedApp(runtime);assert.match(await render(),/data-protected-page="home"/u);
- const opened=runtime.navigate(tabRoute('reports'));await until(()=>calls.length===2,'the other cold tab loads');calls[1]?.reply.resolve(response(tabEntry('reports')));await opened;
- const during=await render(),returned=runtime.navigate(tabRoute('home'));if(calls.length===3)calls[2]?.reply.resolve(response(homeEntry(4)));await returned;assert.match(await render(),/data-protected-page="home"/u);
- t.diagnostic(JSON.stringify({actual_app_branch:{protected_page_present:during.includes('data-protected-page="home"'),loading_present:during.includes('data-state="loading"')},measurement:'Actual App server-rendered guard projection; no claim of browser lifecycle counts'}));
- assert.match(during,/data-protected-page="home"/u,'the real App conditional must not remove an already warm protected page on a tab return');
+// Deferred route continuity is verified with actual browser frames. Server
+// rendering never commits the client transition and cannot prove that behavior.
+
+test('H5 report controls follow the target search while rows retain the presented query and invalidated target data stays unused',async t=>{
+ const {client,query,calls}=await harness(t,{home:homeEntry(4)}),root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
+ const compiled=async(path:string)=>transpileModule(await readFile(resolve(root,'h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const filterA={q:'A',status:'',source:''},filterB={q:'B',status:'ACTIVE',source:'WEB'},keyA=query.queryKeys.reports('scope-a',filterA),keyB=query.queryKeys.reports('scope-a',filterB);
+ const page=(label:string)=>({pages:[{items:homeEntry(4).data.recent_reports.map(item=>({...item,safe_summary:label})),next_cursor:'synthetic-cursor'}],pageParams:[null]});
+ client.setQueryData(keyA,page('visible-A'));client.setQueryData(keyB,page('invalidated-B'));await client.invalidateQueries({queryKey:keyB,exact:true,refetchType:'none'});
+ const loader=createH5PureModuleLoader({overrides:{
+  'pages/Reports.tsx':await compiled('pages/Reports.tsx'),'session.ts':await compiled('session.tsx'),
+  'navigation.ts':"export {useSearchParams} from 'react-router';",
+  'components/ReportCard.ts':"import {createElement} from 'react';export function ReportCard({item}){return createElement('article',{'data-summary':item.safe_summary},item.safe_summary);}",
+  'components/Common.ts':"export function Loading(){return null;}export function ErrorPanel(){return null;}export function EmptyReports(){return null;}",
+  'components/Icon.ts':"export function Icon(){return null;}",
+  'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({variant,className,children,...props}){return createElement('button',props,children);}export function Input(props){return createElement('input',props);}export function Field({children}){return createElement('div',null,children);}export const FieldGroup=Field;export function FieldLabel({children,...props}){return createElement('label',props,children);}",
+  'reports-render-test.ts':[
+   "import {createElement as h} from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {QueryClientProvider} from '@tanstack/react-query';import {MemoryRouter} from 'react-router';",
+   "import Reports from './pages/Reports.tsx';import {SessionProvider} from './session.ts';import {I18nProvider} from './i18n-react.ts';",
+   "export function render(client,session){return renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(MemoryRouter,{initialEntries:['/reports?search=A']},h(SessionProvider,{session,status:{checking:true,writeReady:false,membershipRevision:'membership-a',refresh:async()=>{}}},h(Reports,{targetSearch:'?search=B&status=ACTIVE&source=WEB'}))))));}",
+  ].join('\n')
+ }});
+ const module:unknown=await import(await loader.moduleUrl('reports-render-test.ts'));assert.ok(module!==null&&typeof module==='object'&&'render'in module&&typeof module.render==='function');
+ const before=calls.length,markup:unknown=Reflect.apply(module.render,module,[client,bootstrap('scope-a',true)]);assert.equal(typeof markup,'string');if(typeof markup!=='string')assert.fail('Expected actual Reports markup');
+ assert.match(markup,/data-summary="visible-A"/u);assert.doesNotMatch(markup,/invalidated-B/u);assert.match(markup,/id="report-search"[^>]*value="B"/u);assert.match(markup,/<option value="ACTIVE" selected=""/u);assert.match(markup,/<option value="WEB" selected=""/u);assert.match(markup,/<button\b[^>]*disabled=""/u);
+ assert.equal(client.getQueryState(keyB)?.isInvalidated,true);assert.equal(calls.length,before,'waiting controls must not issue another list request');
 });
 
 test('H5 App expired-session state has an available authentication recovery action',async t=>{
@@ -354,6 +427,16 @@ test('H5 initial hash reference decoding remains bounded by the existing backend
 
 test('H5 document query request_ref compatibility is retained without turning it into an untrusted document path',async t=>{
  const{replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/?request_ref='+ref),routing=await routingModule();assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:ref});assert.deepEqual(replacements,[]);
+});
+
+test('H5 login return paths canonicalize accepted trailing slashes and retain query filters',async t=>{
+ browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/');const routing=await routingModule();
+ for(const view of ['reports','report','department']){
+  const route=routing.describeRoute('/'+view+'/', '?status=ACTIVE&search=printer');assert.equal(route.input.view,view);
+  assert.equal(routing.loginReturnPath(route),'/'+view+'?status=ACTIVE&search=printer');
+ }
+ assert.equal(routing.loginReturnPath(routing.describeRoute('/requests/'+ref+'/')),'/requests/'+ref);
+ assert.equal(routing.loginReturnPath(routing.describeRoute('/not-a-route')),'/');
 });
 
 async function navigationModuleLoader(overrides:Record<string,string>={}){

@@ -1,5 +1,7 @@
 # 医小修 H5 性能改造实施记录
 
+2026-10-22 PR #118 部署后骨架闪烁与首次重连提示续作见 [连续展示记录](loading-continuity-2026-10-22.md)及 [ADR-0042](../../adr/0042_h5_continuous_navigation_and_silent_entry.md)：取消骨架，保留当前页面并使用顶部进度条，旧缓存只作展示、后台仍核验权限；正常首次认证不显示重连中间页。当前候选与上一部署分开验收。
+
 2026-10-22 首击导航、官方React Router、共享页头与录音起录提示续作见[本轮记录](router-ux-2026-10-22.md)及[Issue #117](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/117)。八项页面调整和漏词时序诊断沿ADR-0041，首屏超标反例保留，后继候选继续执行原120KiB预算；实机与合成结论分别登记。
 
 2026-10-22 单入口录音、2秒下限与报修页标题精简见[本轮记录](unified-voice-2026-10-22.md)及[Issue #115](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/115)。清晰音频作为唯一材料、企业微信辅助转写，用户对两种独立模式的观察与双路真机NOT_RUN分开登记；首屏预算及无关渲染验证不放宽。

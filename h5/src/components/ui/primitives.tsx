@@ -20,7 +20,6 @@ export function FieldGroup({className,...props}:React.ComponentProps<'div'>){ret
 export function Field({className,...props}:React.ComponentProps<'div'>){return <div data-slot="field" role="group" className={cn('ui-field',className)} {...props}/>;}
 export function FieldLabel({className,...props}:React.ComponentProps<'label'>){return <label data-slot="field-label" className={cn('ui-field-label',className)} {...props}/>;}
 export function FieldDescription({className,...props}:React.ComponentProps<'p'>){return <p data-slot="field-description" className={cn('ui-field-description',className)} {...props}/>;}
-export function Skeleton({className,...props}:React.ComponentProps<'div'>){return <div data-slot="skeleton" className={cn('ui-skeleton',className)} {...props}/>;}
 export function Empty({className,...props}:React.ComponentProps<'div'>){return <div data-slot="empty" className={cn('ui-empty',className)} {...props}/>;}
 export function EmptyHeader({className,...props}:React.ComponentProps<'div'>){return <div data-slot="empty-header" className={cn('ui-empty-header',className)} {...props}/>;}
 export function EmptyMedia({className,...props}:React.ComponentProps<'div'>){return <div data-slot="empty-media" className={cn('ui-empty-media',className)} {...props}/>;}

@@ -6,7 +6,7 @@ import {Icon} from './Icon';
 import {AppHeader} from './AppHeader';
 import {LazyPanelBoundary} from './LazyPanelBoundary';
 import {preloadNavigation} from '../routing';
-export {Loading} from './DelayedLoading';
+export {Loading} from './LoadingProgress';
 const HelpDialog=lazy(()=>import('./HelpDialog'));
 export function SelfCheck({open,onOpenChange}:{open:boolean;onOpenChange:(open:boolean)=>void}){return open?<LazyPanelBoundary onClose={()=>onOpenChange(false)}><Suspense fallback={null}><HelpDialog open={open} onOpenChange={onOpenChange}/></Suspense></LazyPanelBoundary>:null;}
 export function Shell({children}:{children:ReactNode}){

@@ -7,6 +7,8 @@ import{PageRuntime}from'./page-runtime';
 import i18n from'./i18n';
 import{I18nProvider}from'./i18n-react';
 import{hasProtectedInput,reloadIfSafe}from'./lib/reload';
+import{isWeComClient}from'./lib/reauth';
+import{BUSINESS_CACHE_TIME,BUSINESS_STALE_TIME}from'./api/query';
 import'./styles.css';
 class ErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{
  state={failed:false};
@@ -16,10 +18,11 @@ class ErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{
 }
 async function start(){
  if(import.meta.env.DEV&&new URLSearchParams(location.search).get('preview')==='1'){const{installPreview}=await import('./dev/preview');await installPreview();}
- const client=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false,refetchOnMount:false,staleTime:30_000,gcTime:2*60_000},mutations:{retry:false,networkMode:'always'}}});
- const runtime=new PageRuntime(client);runtime.start();
+ const client=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false,refetchOnMount:false,staleTime:BUSINESS_STALE_TIME,gcTime:BUSINESS_CACHE_TIME},mutations:{retry:false,networkMode:'always'}}});
+ const embedded=isWeComClient()||import.meta.env.DEV&&new URLSearchParams(location.search).get('preview')==='1';
+ const runtime=new PageRuntime(client);if(embedded)runtime.start();
  const root=document.getElementById('root');if(!root)throw new Error('Missing H5 root');
- createRoot(root).render(<ErrorBoundary><I18nProvider><QueryClientProvider client={client}><App runtime={runtime}/></QueryClientProvider></I18nProvider></ErrorBoundary>);
+ createRoot(root).render(<ErrorBoundary><I18nProvider><QueryClientProvider client={client}><App runtime={runtime} embedded={embedded}/></QueryClientProvider></I18nProvider></ErrorBoundary>);
  if(import.meta.hot)import.meta.hot.dispose(()=>{runtime.stop();void client.cancelQueries();client.clear();});
 }
 void start();
