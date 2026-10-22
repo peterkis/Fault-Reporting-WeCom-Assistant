@@ -1,18 +1,15 @@
-import {createContext,useContext,useEffect,useMemo,useState,useSyncExternalStore,useCallback,type ComponentProps,type ReactNode} from 'react';
-import {createHashHistory,handleLinkClick,type HashLocation} from './lib/hash-history';
+import {forwardRef,type ComponentProps} from 'react';
+import {useHref,useLinkClickHandler,useMatch,useResolvedPath,type To} from 'react-router';
 
-type History=ReturnType<typeof createHashHistory>;
-const HistoryContext=createContext<History|null>(null);
-function useHistory():History{const history=useContext(HistoryContext);if(!history)throw new Error('H5 hash navigation is required');return history;}
-function browserHistory():History{return createHashHistory({origin:location.origin,readHash:()=>location.hash,writeHash:(hash,replace)=>{const url=new URL(location.href);url.hash=hash;if(replace)window.history.replaceState(window.history.state,'',url.href);else window.history.pushState(window.history.state,'',url.href);},go:delta=>window.history.go(delta),listen:listener=>{window.addEventListener('hashchange',listener);window.addEventListener('popstate',listener);return()=>{window.removeEventListener('hashchange',listener);window.removeEventListener('popstate',listener);};}});}
-export function HashRouter({children}:{children:ReactNode}){const[history]=useState(browserHistory);return <HistoryContext.Provider value={history}>{children}</HistoryContext.Provider>;}
-export function useLocation():HashLocation{const history=useHistory();return useSyncExternalStore(history.subscribe,history.getSnapshot,history.getSnapshot);}
-export function useNavigate(){return useHistory().navigate;}
-export function useParams():{requestRef?:string}{const location=useLocation();return useMemo(()=>{const match=/^\/requests\/([^/]+)$/.exec(location.pathname);if(!match?.[1])return{};try{return{requestRef:decodeURIComponent(match[1])};}catch{return{};}},[location.pathname]);}
-type SearchInput=URLSearchParams|string|Record<string,string>;
-type SearchUpdater=SearchInput|((previous:URLSearchParams)=>SearchInput);
-export function useSearchParams():readonly[URLSearchParams,(value:SearchUpdater,options?:{replace?:boolean})=>void]{const location=useLocation(),navigate=useNavigate();const params=useMemo(()=>new URLSearchParams(location.search),[location.search]);const setParams=useCallback((value:SearchUpdater,options?:{replace?:boolean})=>{const next=new URLSearchParams(typeof value==='function'?value(new URLSearchParams(location.search)):value),search=next.toString();navigate(location.pathname+(search?'?'+search:''),options);},[location.pathname,location.search,navigate]);return[params,setParams];}
-export type LinkProps=Omit<ComponentProps<'a'>,'href'>&{to:string;replace?:boolean};
-export function Link({to,replace,onClick,target,...props}:LinkProps){const history=useHistory();return <a {...props} href={history.href(to)} target={target} onClick={event=>{onClick?.(event);if(handleLinkClick(event,target,event.currentTarget.hasAttribute('download'))){event.preventDefault();history.navigate(to,{replace:replace===true});}}}/>;}
-export function NavLink({to,end=false,className,...props}:Omit<LinkProps,'className'>&{end?:boolean;className?:string|((state:{isActive:boolean})=>string)}){const location=useLocation(),history=useHistory(),target=history.href(to).slice(1).split('?')[0]??'/',active=location.pathname===target||!end&&location.pathname.startsWith(target.endsWith('/')?target:target+'/');const classes=typeof className==='function'?className({isActive:active}):[className,active?'active':''].filter(Boolean).join(' ');return <Link {...props} to={to} className={classes} aria-current={active?'page':undefined}/>;}
-export function Navigate({to,replace=false}:{to:string;replace?:boolean}){const navigate=useNavigate();useEffect(()=>{navigate(to,{replace});},[navigate,to,replace]);return null;}
+// History, route matching and link handling all use public React Router APIs.
+// This SPA preloads its own code/data, so links need no Framework prefetch UI.
+export {HashRouter,Navigate,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
+export type LinkProps=Omit<ComponentProps<'a'>,'href'>&{to:To;replace?:boolean};
+export const Link=forwardRef<HTMLAnchorElement,LinkProps>(function Link({to,replace,target,onClick,...props},ref){
+ const href=useHref(to),navigate=useLinkClickHandler<HTMLAnchorElement>(to,{...(target===undefined?{}:{target}),...(replace===undefined?{}:{replace})});
+ return <a {...props} ref={ref} href={href} target={target} onClick={event=>{onClick?.(event);if(!event.defaultPrevented&&!event.currentTarget.hasAttribute('download'))navigate(event);}}/>;
+});
+export function NavLink({end=false,className,...props}:LinkProps&{end?:boolean}){
+ const path=useResolvedPath(props.to),active=useMatch({path:path.pathname,end})!==null;
+ return <Link {...props} className={[className,active?'active':''].filter(Boolean).join(' ')} aria-current={active?'page':undefined}/>;
+}

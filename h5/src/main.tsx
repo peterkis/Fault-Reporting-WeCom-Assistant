@@ -5,6 +5,7 @@ import{QueryClient,QueryClientProvider}from'@tanstack/react-query';
 import App from'./App';
 import{PageRuntime}from'./page-runtime';
 import i18n from'./i18n';
+import{I18nProvider}from'./i18n-react';
 import{hasProtectedInput,reloadIfSafe}from'./lib/reload';
 import'./styles.css';
 class ErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{
@@ -18,7 +19,7 @@ async function start(){
  const client=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false,refetchOnMount:false,staleTime:30_000,gcTime:2*60_000},mutations:{retry:false,networkMode:'always'}}});
  const runtime=new PageRuntime(client);runtime.start();
  const root=document.getElementById('root');if(!root)throw new Error('Missing H5 root');
- createRoot(root).render(<ErrorBoundary><QueryClientProvider client={client}><App runtime={runtime}/></QueryClientProvider></ErrorBoundary>);
+ createRoot(root).render(<ErrorBoundary><I18nProvider><QueryClientProvider client={client}><App runtime={runtime}/></QueryClientProvider></I18nProvider></ErrorBoundary>);
  if(import.meta.hot)import.meta.hot.dispose(()=>{runtime.stop();void client.cancelQueries();client.clear();});
 }
 void start();

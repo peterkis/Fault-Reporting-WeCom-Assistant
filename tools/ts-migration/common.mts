@@ -84,7 +84,7 @@ export function outputPath(source: string): string { return source.endsWith('.mt
 // H5 design originals and development-only fixtures never identify a release.
 // Keep every production source/style/asset and the actual build configuration.
 export function isH5ProductionInput(file: string): boolean {
-  return ['h5/index.html','h5/package.json','h5/tsconfig.json','h5/vite.config.ts','h5/components.json'].includes(file)
+  return ['h5/index.html','h5/package.json','h5/tsconfig.json','h5/vite.config.ts','h5/compile-i18n.ts','h5/components.json'].includes(file)
     || file.startsWith('h5/src/') && !file.startsWith('h5/src/dev/')
     || file.startsWith('h5/public/assets/');
 }

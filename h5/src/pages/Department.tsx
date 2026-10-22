@@ -1,6 +1,6 @@
 import{useMemo}from'react';
 import{useInfiniteQuery}from'@tanstack/react-query';
-import{useTranslation}from'react-i18next';
+import{useTranslation}from"../i18n-react";
 import{departmentOptions}from'../api/query';
 import{useIdentity,useProfile,useSessionStatus}from'../session';
 import{Card,CardHeader,CardTitle,CardContent,CardDescription,Badge,Button,Alert,AlertDescription}from'../components/ui/primitives';

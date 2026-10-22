@@ -1,5 +1,5 @@
 import {memo} from 'react';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import type {ReportItem} from '../api/types';
 import {reportState,reportTone} from '../lib/report';
 import {formatDate,safePhone,safeMemberLink} from '../lib/utils';

@@ -1,5 +1,6 @@
 import i18n from '../i18n';
-const en={
+import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/voice';
+export const en={
  captureHint:'Hold to record; speech may become editable text.',
  preparing:'Preparing recording…',
  previewStopFailed:'Playback did not stop. Retry recording.',
@@ -22,7 +23,7 @@ const en={
  nativeUploadFailed:'WeCom transfer failed. Retry upload.',
  uploadFailed:'Upload failed. Retry later.',
 };
-const zh={
+export const zh={
  captureHint:'按住录音，语音可辅助转成文字。',
  preparing:'正在准备录音…',
  previewStopFailed:'试听未能停止，请重试录音。',
@@ -45,5 +46,5 @@ const zh={
  nativeUploadFailed:'企业微信传输失败，请重试。',
  uploadFailed:'上传失败，请稍后重试。',
 } satisfies Record<keyof typeof en,string>;
-i18n.addResourceBundle('en','voice',en);
-i18n.addResourceBundle('zh-CN','voice',zh);
+i18n.addResourceBundle('en','voice',compiledEn);
+i18n.addResourceBundle('zh-CN','voice',compiledZh);

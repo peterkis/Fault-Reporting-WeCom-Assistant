@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test,type TestContext} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {createElement,type ComponentType} from 'react';
+import {createElement,type ComponentType,type ReactNode} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {transpileModule,ModuleKind,ScriptTarget,JsxEmit,createSourceFile,isFunctionDeclaration,isVariableStatement,ScriptKind} from 'typescript';
 import type {H5EntryBootstrap,H5Thumbnail} from '../contracts/yxx_h5_entry_contracts.js';
@@ -162,7 +162,7 @@ test('H5 unified clear canonical recording keeps native photos independent of au
  const events:TranscriptEvent[]=[],value=await nativeVoiceController(t,event=>events.push(event),true);
  assert.deepEqual(value.controller.getRecording(),{canClear:true,canWecom:true,starting:false,recording:false,seconds:0,cancelling:false});assert.equal(value.capture.permissionCalls,0);assert.equal(value.controller.getNative(),true);
  await value.controller.choosePhotos(()=>assert.fail('Unified recording must not turn native photos into a file fallback'));assert.ok(value.sdk.calls.includes('chooseImage'));
- const ids=value.controller.getItemIds();await value.controller.start();assert.equal(value.controller.getRecording().recording,true);assert.equal(value.controller.getItemIds(),ids);
+ const ids=value.controller.getItemIds();await value.controller.start();await until(()=>value.controller.getRecording().recording);assert.equal(value.controller.getItemIds(),ids);
  assert.deepEqual(value.capture.constraints,{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}});assert.deepEqual(value.capture.options,{mimeType:'audio/webm;codecs=opus',audioBitsPerSecond:128000});
  value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,1);assert.equal(value.api.calls.imports,0);assert.equal(value.sdk.calls.includes('startRecord'),true);await until(()=>events.some(event=>event.type==='READY'));assert.equal(value.capture.activeTracks,0);
  const item=value.controller.getItems()[0];assert.ok(item);await value.controller.start();assert.equal(value.capture.recorderStarts,1,'An existing voice blocks a second capture');value.controller.remove(item.id);
@@ -199,7 +199,7 @@ test('H5 native-only capability uses the compatibility recorder without a browse
 });
 
 test('H5 a plain browser defaults to clear recording and never initializes unavailable WeCom voice',async t=>{
- const value=await nativeVoiceController(t,()=>{},true,false);assert.equal(value.controller.getRecording().canClear,true);assert.equal(value.controller.getRecording().canWecom,false);assert.equal(value.controller.getNative(),false);await value.controller.start();value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.capture.permissionCalls,1);assert.equal(value.sdk.calls.length,0);assert.equal(value.api.calls.binaries,1);assert.equal(value.capture.activeTracks,0);
+ const value=await nativeVoiceController(t,()=>{},true,false);assert.equal(value.controller.getRecording().canClear,true);assert.equal(value.controller.getRecording().canWecom,false);assert.equal(value.controller.getNative(),false);await value.controller.start();assert.equal(value.controller.getRecording().recording,true);assert.equal(value.controller.getRecording().starting,false);value.setClock(5000.65);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.capture.permissionCalls,1);assert.equal(value.sdk.calls.length,0);assert.equal(value.api.calls.binaries,1);assert.equal(value.capture.activeTracks,0);
 });
 
 test('H5 media admission stays busy while metadata is pending and through upload readiness',async()=>{
@@ -309,18 +309,19 @@ async function playbackFixture(){
  }});
  const module:{Material:ComponentType<{media:PlaybackMedia;requestRef:string}>;supportsProgressivePlayback:(media:PlaybackMedia)=>boolean;readMediaBlob:(ref:string,media:PlaybackMedia,variant:'PLAYABLE',signal:AbortSignal)=>Promise<Blob>}=await import(await loader.moduleUrl('components/Materials.ts'));
  const client:{stats:{lost:number}}=await import(await loader.moduleUrl('api/client.ts'));
- return{module,client};
+ const bridge:{I18nProvider:ComponentType<{children:ReactNode}>}=await import(await loader.moduleUrl('i18n-react.ts'));
+ return{module,client,I18nProvider:bridge.I18nProvider};
 }
 const legacyVoice:PlaybackMedia={media_ref:'11111111-1111-4111-8111-111111111111',kind:'VOICE',mime_type:'audio/wav',byte_size:12,duration_ms:12_000,url:'',playback_status:'READY',playback_mime_type:'audio/wav'};
 test('H5 entry AV metadata opts into native playback; legacy rendering starts no media download',async()=>{
- const {module}=await playbackFixture(),previous=globalThis.fetch;let reads=0;
+ const {module,I18nProvider}=await playbackFixture(),previous=globalThis.fetch;let reads=0;
  globalThis.fetch=async()=>{reads+=1;throw new Error('No media may be read while rendering');};
  try{
   assert.equal(module.supportsProgressivePlayback(legacyVoice),false);
   assert.equal(module.supportsProgressivePlayback({...legacyVoice,thumbnail:null}),true);
   assert.equal(module.supportsProgressivePlayback({...legacyVoice,kind:'IMAGE',thumbnail:null}),false);
-  const voice=renderToStaticMarkup(createElement(module.Material,{media:legacyVoice,requestRef:'r'.repeat(32)}));
-  const video=renderToStaticMarkup(createElement(module.Material,{media:{...legacyVoice,kind:'VIDEO',mime_type:'video/mp4',playback_mime_type:'video/mp4'},requestRef:'r'.repeat(32)}));
+  const voice=renderToStaticMarkup(createElement(I18nProvider,{children:createElement(module.Material,{media:legacyVoice,requestRef:'r'.repeat(32)})}));
+  const video=renderToStaticMarkup(createElement(I18nProvider,{children:createElement(module.Material,{media:{...legacyVoice,kind:'VIDEO',mime_type:'video/mp4',playback_mime_type:'video/mp4'},requestRef:'r'.repeat(32)})}));
   assert.match(voice,/<audio[^>]*preload="none"/u);assert.doesNotMatch(voice,/<audio[^>]*src=/u);assert.doesNotMatch(video,/<video/u);assert.equal(reads,0);
  }finally{globalThis.fetch=previous;}
 });
@@ -394,12 +395,44 @@ test('H5 unified missing browser stop event has a bounded cleanup and late event
 });
 
 for(const phase of ['setupFailure','startFailure','stopFailure','translateFailure']as const)test('H5 unified auxiliary '+phase+' retains clear canonical audio and does not block upload or submit',async t=>{
- const value=await nativeVoiceController(t,()=>{},true);value.sdk.control[phase]=true;await value.controller.start();assert.equal(value.controller.getRecording().recording,true);value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');await until(()=>value.controller.getError()==='voice:transcriptUnavailable');
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control[phase]=true;await value.controller.start();await until(()=>value.controller.getRecording().recording);assert.equal(value.controller.getRecording().starting,false);value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');await until(()=>value.controller.getError()==='voice:transcriptUnavailable');
  assert.equal(value.controller.getErrorTone(),'info');assert.equal(value.api.calls.binaries,1);assert.equal(value.api.calls.imports,0);assert.equal(value.sdk.calls.includes('uploadVoice'),false);assert.equal(value.controller.getBusy(),false);assert.ok(value.controller.getItems()[0]?.file instanceof Blob);assert.equal(value.controller.getItems()[0]?.localId,null);
 });
 
 test('H5 unified SDK initialization overlaps the user permission request but cannot bypass denial or release',async t=>{
  const value=await nativeVoiceController(t,()=>{},true);value.capture.holdPermission=true;const starting=value.controller.start();await until(()=>value.capture.permissionCalls===1);assert.ok(value.sdk.calls.includes('registered'),'SDK readiness begins without waiting for the permission response');assert.equal(value.sdk.calls.includes('startRecord'),false);value.controller.release(true);await starting;value.capture.grant();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.capture.activeTracks,0);assert.equal(value.capture.recorderStarts,0);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 unified recording announcement waits for the auxiliary native start ACK without postponing clear capture',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdStart=true;const starting=value.controller.start();await until(()=>value.sdk.calls.includes('startRecord'));
+ try{assert.equal(value.capture.recorderStarts,1);assert.equal(value.controller.getRecording().starting,true,'The preparation cue must remain until the native microphone really starts');assert.equal(value.controller.getRecording().recording,false,'Do not invite speech while the ASR microphone has not acknowledged start');}
+ finally{value.setClock(1800.25);value.sdk.resolvers.start();await starting;}
+ await until(()=>value.controller.getRecording().recording);assert.equal(value.controller.getRecording().starting,false);value.setClock(4000.25);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.reserves[0]?.duration_ms,3000);assert.equal(value.capture.activeTracks,0);assert.equal(value.api.calls.binaries,1);assert.equal(value.api.calls.imports,0);
+});
+
+test('H5 unified cold SDK preparation keeps the cue honest while clear capture already owns the microphone',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdSdk=true;await value.controller.start();
+ try{assert.equal(value.capture.recorderStarts,1);assert.equal(value.controller.getRecording().starting,true);assert.equal(value.controller.getRecording().recording,false);assert.equal(value.sdk.calls.includes('startRecord'),false);}
+ finally{value.sdk.control.holdSdk=false;for(const ready of value.sdk.resolvers.sdk)ready();}
+ await until(()=>value.controller.getRecording().recording);assert.equal(value.sdk.calls.filter(call=>call==='startRecord').length,1);value.controller.release(true);await until(()=>!value.controller.getBusy());assert.equal(value.capture.activeTracks,0);assert.equal(value.api.calls.reserves.length,0);
+});
+
+test('H5 unified auxiliary SDK preparation is bounded and cannot dispatch a native start after degradation',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdSdk=true;t.mock.timers.enable({apis:['setTimeout']});await value.controller.start();assert.equal(value.controller.getRecording().starting,true);t.mock.timers.tick(4999);await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getRecording().recording,false);
+ t.mock.timers.tick(1);await until(()=>value.controller.getRecording().recording);assert.equal(value.controller.getRecording().starting,false);assert.equal(value.controller.getError(),'voice:transcriptUnavailable');value.sdk.control.holdSdk=false;for(const ready of value.sdk.resolvers.sdk)ready();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.sdk.calls.includes('startRecord'),false,'An expired auxiliary preparation must never acquire a late microphone');
+ value.setClock(8000.25);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,1);assert.equal(value.api.calls.imports,0);assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.equal(value.capture.activeTracks,0);assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 unified timed-out auxiliary start still owns real device work until its late ACK is stopped',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdStart=true;t.mock.timers.enable({apis:['setTimeout']});await value.controller.start();await until(()=>value.sdk.calls.includes('startRecord'));assert.equal(value.controller.getRecording().starting,true);
+ t.mock.timers.tick(5000);await until(()=>value.controller.getRecording().recording);value.setClock(8000.25);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,1);assert.equal(value.sdk.calls.includes('translateVoice'),false);const item=value.controller.getItems()[0];assert.ok(item);value.controller.remove(item.id);
+ const second=value.controller.start();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.capture.permissionCalls,1,'Real pending native work must fence the next microphone');assert.equal(value.sdk.calls.filter(call=>call==='startRecord').length,1);value.controller.release(true);await second;value.sdk.resolvers.start();await until(()=>value.sdk.calls.includes('stopRecord'));assert.equal(value.sdk.calls.filter(call=>call==='stopRecord').length,1);assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.equal(value.capture.activeTracks,0);assert.equal(value.controller.getBusy(),false);
+});
+
+test('H5 unified canceled SDK preparation cannot replace the next gesture cue or start an obsolete microphone',async t=>{
+ const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdSdk=true;await value.controller.start();value.controller.release(true);assert.equal(value.controller.getBusy(),false);await value.controller.start();assert.equal(value.capture.recorderStarts,2);assert.equal(value.controller.getRecording().starting,true);
+ value.sdk.resolvers.sdk[0]?.();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.controller.getRecording().starting,true);assert.equal(value.controller.getRecording().recording,false);assert.equal(value.sdk.calls.includes('startRecord'),false);assert.equal(value.controller.getError(),null);
+ value.sdk.resolvers.sdk[1]?.();await until(()=>value.controller.getRecording().recording);assert.equal(value.sdk.calls.filter(call=>call==='startRecord').length,1);value.controller.release(true);await until(()=>!value.controller.getBusy());assert.equal(value.capture.activeTracks,0);assert.equal(value.api.calls.reserves.length,0);assert.equal(value.sdk.calls.includes('translateVoice'),false);
 });
 
 test('H5 unified clear upload completes before a native stop ACK and deletion fences its late result',async t=>{
@@ -424,7 +457,7 @@ test('H5 unified sixty-second canonical auto-stop saves one bounded clear file a
 
 test('H5 unified unresolved SDK preparation owns no device slot and does not block the next clear gesture',async t=>{
  const value=await nativeVoiceController(t,()=>{},true);value.sdk.control.holdSdk=true;await value.controller.start();assert.equal(value.sdk.resolvers.sdk.length,1);value.setClock(5000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.controller.getBusy(),false);const first=value.controller.getItems()[0];assert.ok(first);value.controller.remove(first.id);
- await value.controller.start();assert.equal(value.controller.getRecording().recording,true);assert.equal(value.capture.permissionCalls,2);assert.equal(value.sdk.resolvers.sdk.length,2);assert.equal(value.sdk.calls.includes('startRecord'),false);value.setClock(9000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,2);
+ await value.controller.start();assert.equal(value.controller.getRecording().starting,true);assert.equal(value.controller.getRecording().recording,false);assert.equal(value.capture.recorderStarts,2);assert.equal(value.capture.permissionCalls,2);assert.equal(value.sdk.resolvers.sdk.length,2);assert.equal(value.sdk.calls.includes('startRecord'),false);value.setClock(9000.5);value.controller.release();await until(()=>value.controller.getItems()[0]?.status==='READY');assert.equal(value.api.calls.binaries,2);
  value.sdk.control.holdSdk=false;for(const ready of value.sdk.resolvers.sdk)ready();await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.sdk.calls.includes('startRecord'),false,'Canceled SDK setup must never dispatch a late native start');assert.equal(value.sdk.calls.includes('stopRecord'),false,'No actual start was dispatched, so no physical stop is required');assert.equal(value.sdk.calls.includes('translateVoice'),false);assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getError(),'voice:transcriptUnavailable');
  const second=value.controller.getItems()[0];assert.ok(second);value.controller.remove(second.id);await value.controller.start();assert.equal(value.capture.permissionCalls,3);await until(()=>value.sdk.calls.includes('startRecord'));value.controller.release(true);
 });

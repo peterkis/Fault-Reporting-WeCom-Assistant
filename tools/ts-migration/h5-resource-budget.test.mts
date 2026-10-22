@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {mkdtemp,readFile,mkdir,writeFile} from 'node:fs/promises';
+import {mkdtemp,readFile,mkdir,writeFile,lstat,rm,symlink} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
-import {join,resolve} from 'node:path';
+import {basename,dirname,join,resolve} from 'node:path';
+import {createSourceFile,isVariableStatement,isTaggedTemplateExpression,isNoSubstitutionTemplateLiteral,ScriptTarget} from 'typescript';
 import {H5_MEMORY_BYTES,decodeWindowsBudgetRecord,prepareWindowsResourceBudget,runWindowsResourceBudget,validateWindowsBudgetOptions} from './h5-resource-budget.mjs';
 
 test('hard resource budget rejects relative paths and invalid sample/deadline inputs',()=>{
@@ -13,6 +15,57 @@ test('hard resource budget rejects relative paths and invalid sample/deadline in
   assert.throws(()=>validateWindowsBudgetOptions({...valid,sampleMs:1}),/INVALID_SAMPLE_INTERVAL/u);
   assert.throws(()=>validateWindowsBudgetOptions({...valid,args:['bad\0argument']}),/INVALID_ARGUMENT/u);
   assert.throws(()=>decodeWindowsBudgetRecord({schema_version:1,kind:'WIN32_JOB_OBJECT',status:'COMPLETED',limits:{cpu_count:4}}),/INVALID_LIMITS/u);
+});
+
+test('prepared resource helper copies only exact verified bytes without invoking the compiler',{skip:process.platform!=='win32'},async t=>{
+  const text=await readFile(new URL('./h5-resource-budget.mjs',import.meta.url),'utf8'),ast=createSourceFile('h5-resource-budget.mjs',text,ScriptTarget.Latest,true);
+  const declaration=ast.statements.flatMap(node=>isVariableStatement(node)?[...node.declarationList.declarations]:[]).find(node=>node.name.getText(ast)==='WINDOWS_HELPER');
+  assert.ok(declaration?.initializer&&isTaggedTemplateExpression(declaration.initializer)&&isNoSubstitutionTemplateLiteral(declaration.initializer.template));
+  const source=(declaration.initializer.template.rawText??declaration.initializer.template.text).replace(/\r\n?/gu,'\n');
+  const sourceSha256=createHash('sha256').update(source).digest('hex'),bytes=Buffer.from('SYNTHETIC_NOT_EXECUTABLE_HELPER'),executableSha256=createHash('sha256').update(bytes).digest('hex');
+  const root=await mkdtemp(join(tmpdir(),'h5-prepared-helper-')),cache=join(root,'cache');await mkdir(cache);
+  t.after(async()=>{assert.equal(dirname(resolve(root)),resolve(tmpdir()));assert.match(basename(root),/^h5-prepared-helper-/u);assert.equal((await lstat(root)).isSymbolicLink(),false);await rm(root,{recursive:true,force:true});});
+  const cachedSource=join(cache,'H5ResourceBudget.cs'),cachedExecutable=join(cache,'H5ResourceBudget.exe'),prepared={executable:cachedExecutable,sourceSha256,executableSha256};
+  await writeFile(cachedSource,source);await writeFile(cachedExecutable,bytes);
+  await t.test('valid prepared copy preserves exact source, binary and provenance',async()=>{
+    const copied=await prepareWindowsResourceBudget(join(root,'valid'),prepared),directory=dirname(copied.executable);
+    assert.equal(copied.sourceSha256,sourceSha256);assert.equal(copied.executableSha256,executableSha256);
+    assert.deepEqual(await readFile(copied.executable),bytes);assert.equal(await readFile(join(directory,'H5ResourceBudget.cs'),'utf8'),source);
+    const identity:unknown=JSON.parse(await readFile(join(directory,'native-identity.json'),'utf8'));
+    assert.deepEqual(identity,{source_sha256:sourceSha256,executable_sha256:executableSha256,node:process.version,prepared_from:{executable:cachedExecutable,source_sha256:sourceSha256,executable_sha256:executableSha256}});
+    await assert.rejects(readFile(join(directory,'compile.log')),{code:'ENOENT'});
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'valid'),prepared),{code:'EEXIST'});
+    assert.deepEqual(await readFile(copied.executable),bytes,'exclusive writes must not overwrite an existing helper');
+  });
+  await t.test('mismatched source bytes fail closed',async()=>{
+    await writeFile(cachedSource,source+'\n// SYNTHETIC_CHANGED_SOURCE');
+    try{await assert.rejects(prepareWindowsResourceBudget(join(root,'bad-source'),prepared),/PREPARED_SOURCE_MISMATCH/u);}
+    finally{await writeFile(cachedSource,source);}
+  });
+  await t.test('mismatched supplied source hash fails closed',async()=>{
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'bad-source-hash'),{...prepared,sourceSha256:'0'.repeat(64)}),/PREPARED_SOURCE_MISMATCH/u);
+  });
+  await t.test('mismatched executable hash fails closed',async()=>{
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'bad-exe'),{...prepared,executableSha256:'0'.repeat(64)}),/PREPARED_EXECUTABLE_MISMATCH/u);
+  });
+  await t.test('relative prepared paths are rejected',async()=>{
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'relative'),{...prepared,executable:'relative.exe'}),/ABSOLUTE_PATH_REQUIRED/u);
+  });
+  await t.test('a reparse point anywhere in the prepared path chain is rejected',async()=>{
+    const linked=join(root,'linked-cache');await symlink(cache,linked,'junction');
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'bad-chain'),{...prepared,executable:join(linked,'H5ResourceBudget.exe')}),/REPARSE_PATH_REFUSED/u);
+  });
+  await t.test('a reparse source leaf is rejected',async()=>{
+    const linked=join(root,'source-leaf');await mkdir(linked);await writeFile(join(linked,'H5ResourceBudget.exe'),bytes);await symlink(cache,join(linked,'H5ResourceBudget.cs'),'junction');
+    await assert.rejects(prepareWindowsResourceBudget(join(root,'bad-leaf'),{...prepared,executable:join(linked,'H5ResourceBudget.exe')}),/REPARSE_PATH_REFUSED/u);
+  });
+  await t.test('a reparse destination is rejected before either helper file is written',async()=>{
+    const destination=join(root,'bad-destination'),escaped=join(root,'escaped');await mkdir(destination);await mkdir(escaped);
+    await symlink(escaped,join(destination,'native-'+sourceSha256.slice(0,16)),'junction');
+    await assert.rejects(prepareWindowsResourceBudget(destination,prepared),/REPARSE_PATH_REFUSED/u);
+    await assert.rejects(readFile(join(escaped,'H5ResourceBudget.cs')),{code:'ENOENT'});
+    await assert.rejects(readFile(join(escaped,'H5ResourceBudget.exe')),{code:'ENOENT'});
+  });
 });
 
 test('Windows kernel job enforces CPU, aggregate commit, inherited membership, breakaway denial and kill-on-close',{skip:process.platform!=='win32',timeout:120000},async t=>{

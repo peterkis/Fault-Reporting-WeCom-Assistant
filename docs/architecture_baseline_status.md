@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-10-22 H5 路由与交互前向修订：[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)沿既有SPA接入官方React Router、统一共享页头，将纯导航与写就绪分别控制，并修正原生起录确认前的提示时序。英文工单／日期、分时欢迎语、同秒展示顺序和延迟骨架保持原事实及120KiB预算；本轮实测、失败和NOT_RUN边界见[路由交互记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)。
+
 2026-10-22 H5 单入口录音前向修订：[ADR-0040](../adr/0040_h5_single_voice_capture_and_optional_transcription.md)按最新用户要求移除方式选择，以清晰Blob作为唯一回听／上传材料，同手势企业微信采集仅辅助转写，下限改为2秒。此项替代ADR-0038的手动双模式及3秒规则，原权限、上传预算、草稿归属与资源清理保持；真机双路效果单独保持NOT_RUN，实际候选与验证见[本轮记录](../plans/yixiaoxiu-h5-performance/unified-voice-2026-10-22.md)。
 
 2026-10-22 H5 本人资料前向修复：[ADR-0039](../adr/0039_h5_member_display_profile.md)将已验证的官方姓名／主部门读取接入独立异步展示，复用原 BASE 有界核验，保留会话及返回前终检；不从展示名称授予科室 READ，不修改身份或历史快照。实际复现、验收和交付回执入口见[本轮记录](../plans/yixiaoxiu-h5-performance/member-profile-2026-10-22.md)，原失败及实机 NOT_RUN 保留。

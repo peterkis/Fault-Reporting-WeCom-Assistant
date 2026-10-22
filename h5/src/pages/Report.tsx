@@ -2,7 +2,7 @@ import '../components/voice-messages';
 import {memo,useEffect,useRef,type ChangeEvent,type PointerEvent} from 'react';
 import {useNavigate} from '../navigation';
 import {useQueryClient} from '@tanstack/react-query';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {api} from '../api/client';
 import type {H5RequestInput} from '../api/types';
 import {useSession,useSessionStatus} from '../session';

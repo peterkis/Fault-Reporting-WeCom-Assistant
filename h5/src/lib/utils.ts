@@ -15,6 +15,7 @@ export function formatDate(epoch: string | null | undefined, language: string, t
   const value = Number(epoch);
   if (!Number.isSafeInteger(value) || !Number.isFinite(new Date(value).getTime())) return '';
   const locale=/^zh/i.test(language)?'zh-CN':'en',key=locale+':'+String(timeOnly);let formatter=dateFormatters.get(key);
-  if(!formatter){formatter=new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',...(timeOnly?{hour:'2-digit',minute:'2-digit'}:{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});dateFormatters.set(key,formatter);}
+  if(!formatter){formatter=new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',...(timeOnly?{hour:'2-digit',minute:'2-digit'}:locale==='en'?{month:'short',day:'2-digit'}:{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});dateFormatters.set(key,formatter);}
+  if(locale==='en'&&!timeOnly){const parts=formatter.formatToParts(value);return `${parts.find(part=>part.type==='day')?.value}, ${parts.find(part=>part.type==='month')?.value}, ${formatDate(epoch,language,true)}`;}
   return formatter.format(value);
 }

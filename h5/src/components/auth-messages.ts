@@ -1,6 +1,7 @@
 import i18n from '../i18n';
+import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/auth';
 
-const en={
+export const en={
  app:'Yixiaoxiu',
  reconnectingTitle:'Connecting you back',
  reconnectingText:'Checking your access securely through WeCom. You’ll return to this page.',
@@ -12,9 +13,9 @@ const en={
  reconnectConfirm:'Leave this page and reconnect',
  reconnectAction:'Reconnect with WeCom',
  reconnectingAction:'Connecting…',
- reconnectFootnote:'Your submitted reports stay safely recorded.',
+ reconnectFootnote:'Your submitted tickets stay safely recorded.',
 };
-const zh={
+export const zh={
  app:'医小修',
  reconnectingTitle:'正在接回这段连接',
  reconnectingText:'正在通过企业微信安全核验，完成后回到当前页面。',
@@ -28,5 +29,5 @@ const zh={
  reconnectingAction:'正在连接…',
  reconnectFootnote:'已经提交的报修仍会保留。',
 } satisfies Record<keyof typeof en,string>;
-i18n.addResourceBundle('en','auth',en);
-i18n.addResourceBundle('zh-CN','auth',zh);
+i18n.addResourceBundle('en','auth',compiledEn);
+i18n.addResourceBundle('zh-CN','auth',compiledZh);

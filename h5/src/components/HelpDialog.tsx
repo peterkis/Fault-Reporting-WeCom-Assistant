@@ -1,5 +1,5 @@
 import './help-messages';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {useIdentity} from '../session';
 import {Icon} from './Icon';
 import {Button,ButtonLink} from './ui/primitives';

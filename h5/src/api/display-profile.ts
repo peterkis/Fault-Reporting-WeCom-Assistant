@@ -1,7 +1,7 @@
 import {queryOptions} from '@tanstack/react-query';
 import type {H5DisplayProfile} from '../../../contracts/yxx_h5_v2_contracts.js';
 import {api,ApiError,request} from './client';
-import {record,InvalidResponse} from './decode';
+import {record,InvalidResponse} from './guards';
 
 function decode(value:unknown):H5DisplayProfile{
  if(!record(value)||value.schema_version!==1||typeof value.recovery_scope!=='string'||!record(value.profile))throw new InvalidResponse();

@@ -1,5 +1,6 @@
 import i18n from '../i18n';
-const en={
+import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/command';
+export const en={
   "errorTitle": "Unable to complete this action",
   "unknownTitle": "Result not confirmed",
   "unknownDescription": "Keep this page open. Check the original operation before doing anything else.",
@@ -14,7 +15,7 @@ const en={
   "pendingDescription": "The original result is being checked",
   "refresh": "Refresh"
 };
-const zh={
+export const zh={
   "errorTitle": "操作未完成",
   "unknownTitle": "提交结果暂未确认",
   "unknownDescription": "请保留当前页面，先核对原操作结果。",
@@ -29,5 +30,5 @@ const zh={
   "pendingDescription": "正在核对原操作结果",
   "refresh": "刷新"
 } satisfies Record<keyof typeof en,string>;
-i18n.addResourceBundle('en','command',en);
-i18n.addResourceBundle('zh-CN','command',zh);
+i18n.addResourceBundle('en','command',compiledEn);
+i18n.addResourceBundle('zh-CN','command',compiledZh);

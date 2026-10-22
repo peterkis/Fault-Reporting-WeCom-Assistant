@@ -1,4 +1,4 @@
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {ErrorPanel} from './Common';
 import {Alert,AlertTitle,Button} from './ui/primitives';
 import {hasProtectedInput,reloadIfSafe} from '../lib/reload';

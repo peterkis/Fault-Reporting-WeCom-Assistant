@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {api} from '../api/client';
 import type {RequestDetail} from '../api/types';
 import {useSession,useSessionStatus} from '../session';
