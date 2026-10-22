@@ -1,5 +1,7 @@
 ## 2026-10-20：V2 H5 实现入口
 
+2026-10-22 路由与交互修订见[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)及[本轮记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)：官方React Router接管主内容导航，三主页面共用页头，首页导航与写就绪分别控制；英文工单／日期、分时欢迎语、同秒时间线及快慢骨架同步调整。原生起录确认前保留准备提示，真机漏词改善另行验证。
+
 2026-10-22 单入口录音调整见 [ADR-0040](../adr/0040_h5_single_voice_capture_and_optional_transcription.md)和[本轮记录](../plans/yixiaoxiu-h5-performance/unified-voice-2026-10-22.md)：移除录音方式选择，具备网页采集能力时清晰音频作为唯一回听／上传材料，同一手势尝试企业微信辅助转写；下限为2秒，移除报修页header下方的Quick report装饰标题。真机双路采集不沿用两种独立模式的实测结果。
 
 2026-10-22 本人资料修复：Home／资料弹窗按 [ADR-0039](../adr/0039_h5_member_display_profile.md) 在 entry 后独立读取官方姓名和主部门显示名称；不再要求当前 H5 开放身份先命中第三方本地目录。展示查询复用原有界 BASE 核验，不拖入关键 entry，也不授予科室工单权限。历史能力矩阵、原路径反例、云端只读诊断及本轮验收入口见[资料修复记录](../plans/yixiaoxiu-h5-performance/member-profile-2026-10-22.md)。
@@ -8,7 +10,7 @@
 
 2026-10-21按用户指定在本目录新增本地`h5/.env.local`（Git忽略），显式设置H5与性能开关为true，配套新本地私有媒体目录、独立媒体密钥及受控FFmpeg路径；App与Worker实际配置解析均验证`performanceEnabled=true`。服务端启动时将`--env-file=h5/.env.local`作为既有完整运行环境的后加载覆盖层；该文件只含H5配置，不能替代成员身份、数据库及宿主配置。密钥使用服务端变量名，不加`VITE_`前缀、不打包到网页。此项为本地配置完成，没有启动其他环境服务，公开进度写开关仍false；详见[续作验收](../plans/yixiaoxiu-h5-performance/closure-2026-10-21.md)。
 
-新版页面使用 Vite、strict TypeScript、React、TanStack Query、shadcn/ui（Radix）、Tailwind CSS 与 react-i18next，前向边界见 [ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)及[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)。固定的五种Hash路径由小型类型化导航层处理，与页面引导共用路由描述；管理端保留自己的React Router。本目录为实际产品源码，现有根构建管线负责正式制品和 HTTP 装配。
+新版页面使用 Vite、strict TypeScript、React、React Router、TanStack Query、shadcn/ui（Radix）、Tailwind CSS 与 Lingui React i18n，前向边界见 [ADR-0035](../adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)、[ADR-0036](../adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)及[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)。五种Hash路径由官方声明式路由管理，与页面引导共用类型化路由描述；代码与数据继续并行启动。国际化消息在开发／构建侧预编译，浏览器只加载执行目录；语言功能与既有五个namespace保持。本目录为实际产品源码，现有根构建管线负责正式制品和 HTTP 装配。
 
 - [固定设计基线](design-baseline/README.md)：Stitch 项目“医院IT工单报修系统”的八个移动端屏幕、HTML、PNG 与哈希。
 - `src/pages`：工作台、快捷报修、本人查询、工单详情和科室有限共享。

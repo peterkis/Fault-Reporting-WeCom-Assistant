@@ -1,7 +1,7 @@
 import {lazy,memo,Suspense,useCallback,useMemo,useState} from 'react';
 import {useParams} from '../navigation';
 import {skipToken,useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {api,ApiError} from '../api/client';
 import {detailOptions,timelineOptions,supplementsOptions,queryKeys,firstPage,refreshRequest} from '../api/query';
 import type {RequestDetail,H5SupplementPage} from '../api/types';

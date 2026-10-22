@@ -1,5 +1,5 @@
 import {Component,type ReactNode} from 'react';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {Alert,AlertTitle,AlertDescription,Button} from './ui/primitives';
 import {hasProtectedInput,reloadIfSafe} from '../lib/reload';
 function PanelFailure({onClose}:{onClose:()=>void}){const{t}=useTranslation(),protectedInput=hasProtectedInput();return <Alert variant="destructive"><AlertTitle>{t('notAvailable')}</AlertTitle><AlertDescription>{protectedInput&&<p>{t('preserveDraft')}</p>}<Button variant="outline" onClick={onClose}>{t('close')}</Button><Button variant="outline" disabled={protectedInput} onClick={reloadIfSafe}>{t('refresh')}</Button></AlertDescription></Alert>;}

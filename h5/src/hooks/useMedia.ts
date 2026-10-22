@@ -1,5 +1,5 @@
 import {useEffect,useRef,useSyncExternalStore} from 'react';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {api,authLost} from '../api/client';
 import type {Bootstrap} from '../api/types';
 import {validateMedia,type MediaKind,type MediaCandidate} from '../lib/media';

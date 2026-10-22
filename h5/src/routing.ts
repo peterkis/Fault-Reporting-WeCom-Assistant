@@ -1,4 +1,5 @@
 import {lazy,type ComponentType} from 'react';
+import {matchPath} from 'react-router';
 import type {H5EntryInput,H5EntryView} from './api/types';
 import {filterInput,reportStatus,reportSource} from './api/query';
 
@@ -10,12 +11,12 @@ export function loadPage(view:H5EntryView):Promise<PageModule>{let task=modules.
 export const pages={home:lazy(()=>loadPage('home')),report:lazy(()=>loadPage('report')),reports:lazy(()=>loadPage('reports')),request:lazy(()=>loadPage('request')),department:lazy(()=>loadPage('department'))} satisfies Record<H5EntryView,ComponentType>;
 export interface PageRoute {key:string;input:H5EntryInput;path:string}
 export function describeRoute(pathname:string,search=''):PageRoute{
- const params=new URLSearchParams(search);let input:H5EntryInput={view:'home'};
- if(pathname==='/report')input={view:'report'};
- else if(pathname==='/reports')input=filterInput({q:params.get('search')??'',status:reportStatus(params.get('status')??''),source:reportSource(params.get('source')??'')});
- else if(pathname==='/department')input={view:'department'};
- else if(pathname.startsWith('/requests/')){let requestRef='';try{requestRef=decodeURIComponent(pathname.slice('/requests/'.length));}catch{/* The backend remains the authority on invalid references. */}input={view:'request',request_ref:requestRef};}
- else if(pathname==='/'){const ref=new URLSearchParams(location.search).get('request_ref');if(ref)input={view:'request',request_ref:ref};}
+ const params=new URLSearchParams(search),matches=(path:string)=>matchPath({path,caseSensitive:true,end:true},pathname);let input:H5EntryInput={view:'home'};
+ if(matches('/report'))input={view:'report'};
+ else if(matches('/reports'))input=filterInput({q:params.get('search')??'',status:reportStatus(params.get('status')??''),source:reportSource(params.get('source')??'')});
+ else if(matches('/department'))input={view:'department'};
+ else if(matches('/requests/:requestRef')){const encoded=matches('/requests/:requestRef')?.params.requestRef??'';let requestRef='';try{requestRef=decodeURIComponent(encoded);}catch{/* The backend remains the authority on invalid references. */}input={view:'request',request_ref:requestRef};}
+ else if(matches('/')){const ref=new URLSearchParams(location.search).get('request_ref');if(ref)input={view:'request',request_ref:ref};}
  return{key:JSON.stringify(input),input,path:pathname+search};
 }
 export function initialRoute():PageRoute{

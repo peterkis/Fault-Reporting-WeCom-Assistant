@@ -1,13 +1,13 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { clientLanguage } from './lib/preferences';
+import {createI18nAdapter} from './i18n-adapter';
+import {clientLanguage} from './lib/preferences';
+import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/translation';
 export const en = {
   "app": "Yixiaoxiu",
   "online": "Online",
   "campus": "IT service",
   "home": "Workspace",
   "report": "Quick report",
-  "records": "My reports",
+  "records": "My tickets",
   "detail": "Ticket detail",
   "detailTracking": "Ticket progress",
   "eventCreated": "Ticket created",
@@ -28,7 +28,9 @@ export const en = {
   "greeting": "Hello, {{name}}",
   "member": "colleague",
   "departmentUnknown": "Department not available",
-  "greetingTime": "Good afternoon, {{name}}",
+  "greetingMorning": "Good morning, {{name}}",
+  "greetingAfternoon": "Good afternoon, {{name}}",
+  "greetingEvening": "Good evening, {{name}}",
   "heroEyebrow": "ONE TAP REPORT",
   "heroTitle": "Clinical IT support",
   "heroDescription": "Describe a fault by voice, photo, video or text. Your report is sent to the IT support team.",
@@ -41,14 +43,14 @@ export const en = {
   "selfCheck": "Quick checks",
   "selfCheckShort": "Paper jam / offline",
   "departmentTickets": "Department tickets",
-  "departmentStats": "{{total}} reports · {{active}} active",
-  "recent": "Recent reports",
-  "emptyDescription": "Your submitted reports and their progress will appear here.",
-  "queryEmpty": "No matching reports",
+  "departmentStats": "{{total}} tickets · {{active}} active",
+  "recent": "Recent tickets",
+  "emptyDescription": "Your submitted tickets and their progress will appear here.",
+  "queryEmpty": "No matching tickets",
   "queryEmptyHint": "Try another search or filter.",
   "notAvailable": "This service is temporarily unavailable. Please try again later.",
   "authRequired": "Reconnect to check your access.",
-  "readonly": "Reporting is currently read only. You can still view your reports.",
+  "readonly": "Reporting is currently read only. You can still view your tickets.",
   "reportNo": "Ticket: {{number}}",
   "received": "Received",
   "processing": "In progress",
@@ -60,9 +62,9 @@ export const en = {
   "cancelled": "Cancelled",
   "notService": "Not a service request",
   "track": "Track progress",
-  "viewReceipt": "View report",
+  "viewReceipt": "View ticket",
   "botHistory": "Open original report",
-  "noDescription": "Media report",
+  "noDescription": "Media ticket",
   "contactIntent": "Please contact me",
   "contactEngineer": "Message in WeCom",
   "reportKind": "IT fault",
@@ -103,7 +105,7 @@ export const en = {
   "submitting": "Submitting…",
   "sourceLabel": "Source",
   "allSources": "All sources",
-  "webSource": "Web reports",
+  "webSource": "Web tickets",
   "botSource": "WeCom history",
   "statusLabel": "Status",
   "allStatuses": "All statuses",
@@ -146,8 +148,8 @@ export const en = {
   "phoneMissing": "Phone not available",
   "attachmentCount": "{{count}} attachment(s)",
   "intentContact": "Needs contact",
-  "emptyHistory": "No ongoing or pending reports",
-  "readFailure": "Unable to load reports",
+  "emptyHistory": "No ongoing or pending tickets",
+  "readFailure": "Unable to load tickets",
   "pendingDescription": "The original result is being checked",
   "help": "Help",
   "loadingMore": "Loading more…"
@@ -179,7 +181,9 @@ export const zh: Record<keyof typeof en, string> = {
   "greeting": "你好，{{name}}",
   "member": "同事",
   "departmentUnknown": "科室资料暂缺",
-  "greetingTime": "下午好，{{name}}",
+  "greetingMorning": "早上好，{{name}}",
+  "greetingAfternoon": "下午好，{{name}}",
+  "greetingEvening": "晚上好，{{name}}",
   "heroEyebrow": "一键报障",
   "heroTitle": "临床快速报修",
   "heroDescription": "支持长按录制语音、拍摄故障屏幕或录制视频。信息科将接收并处理你的报修。",
@@ -303,5 +307,7 @@ export const zh: Record<keyof typeof en, string> = {
   "help": "帮助",
   "loadingMore": "正在加载更多…"
 };
-void i18n.use(initReactI18next).init({resources:{en:{translation:en},'zh-CN':{translation:zh}},lng:clientLanguage(navigator.userAgent,navigator.language),fallbackLng:'en',interpolation:{escapeValue:false},react:{useSuspense:false}});
-export default i18n;
+const adapter=createI18nAdapter({en:compiledEn,'zh-CN':compiledZh},clientLanguage(navigator.userAgent,navigator.language));
+export const instance=adapter.instance;
+export const translate=adapter.translate;
+export default adapter.i18n;

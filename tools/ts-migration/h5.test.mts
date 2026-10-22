@@ -202,7 +202,7 @@ test('actual theme build emits one small synchronous hashed script and a deferre
     // The real product deliberately disables Vite's public directory. These two
     // synthetic public assets belong only to the generic artifact fixture.
     for(const file of ['assets/support.svg','assets/icon.png'])rmSync(path.join(root,'h5/public',file));
-    for(const file of ['h5/vite.config.ts','h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
+    for(const file of ['h5/vite.config.ts','h5/compile-i18n.ts','h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
     put(root,'h5/index.html','<!doctype html><html><head><meta name="theme-color" content="#faf9f8"><!--h5-prepaint--></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
     buildH5(root);
     const html=readFileSync(path.join(root,'.build/emit/h5/index.html'),'utf8'),scripts=[...html.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*>/gu)];

@@ -1,5 +1,5 @@
 import {lazy,Suspense}from 'react';
-import {useTranslation}from 'react-i18next';
+import {useTranslation}from "../i18n-react";
 import {ApiError}from '../api/client';
 import type{useCommand}from '../hooks/useCommand';
 import{Icon}from './Icon';

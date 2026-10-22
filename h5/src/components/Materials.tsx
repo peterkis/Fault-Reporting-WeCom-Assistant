@@ -1,5 +1,5 @@
 import {createContext,memo,useCallback,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {authLost,ApiError,V2_ACCEPT,captureAuthGeneration,reportAuthLost} from '../api/client';
 import type {RequestDetail} from '../api/types';
 import {useSessionStatus} from '../session';

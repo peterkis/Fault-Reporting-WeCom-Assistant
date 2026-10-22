@@ -42,7 +42,7 @@ function nativeWork(sdkTask:Promise<Wecom>,active:()=>boolean){
  return{ready,result,stop,getSdk:()=>sdk,isStarted:()=>started};
 }
 export function createVoiceCapture(options:CaptureOptions):VoiceCapture{
- const abort=new AbortController();let released=false,cancelled=false,sliding=false,finished=false,ready=false,stopping=false,interrupted=false,nativeEligible=false,started=0,ended:number|null=null,itemId:string|null=null;
+ const abort=new AbortController();let released=false,cancelled=false,sliding=false,finished=false,ready=false,stopping=false,interrupted=false,nativeEligible=false,auxiliaryAvailable=true,started=0,ended:number|null=null,itemId:string|null=null;
  let stream:MediaStream|null=null,recorder:MediaRecorder|null=null,voice:ReturnType<typeof nativeWork>|null=null,interval:ReturnType<typeof setInterval>|null=null,timer:ReturnType<typeof setTimeout>|null=null,stopTimer:ReturnType<typeof setTimeout>|null=null;
  const chunks:Blob[]=[],tracks:MediaStreamTrack[]=[];
  const current=()=>options.current()&&!released&&!cancelled;
@@ -59,14 +59,14 @@ export function createVoiceCapture(options:CaptureOptions):VoiceCapture{
  };
  const finishLegacy=(localId:string|null)=>{if(finished)return;if(!cancelled&&localId&&ended!==null){itemId=options.save(localId,null,ended-started);const sdk=voice?.getSdk();if(itemId&&sdk)options.transcribe(itemId,localId,sdk);}done();};
  function release(cancel=false){
-  if(released){if(cancel){cancelled=true;abort.abort();if(recorder)finalizeBrowser();else done();}return;}released=true;cancelled=cancelled||cancel||sliding;ended=ready?performance.now():null;nativeEligible=voice?.isStarted()??false;clearClock();options.update({starting:false,recording:false,cancelling:false});
+  if(released){if(cancel){cancelled=true;abort.abort();if(recorder)finalizeBrowser();else done();}return;}released=true;cancelled=cancelled||cancel||sliding;ended=ready?performance.now():null;nativeEligible=auxiliaryAvailable&&(voice?.isStarted()??false);clearClock();options.update({starting:false,recording:false,cancelling:false});
   if(!ready){abort.abort();if(voice)void voice.stop().catch(()=>undefined);cleanStream();if(!cancelled)options.error('voice:tooShort','info');done();return;}
   stopping=true;
   if(recorder){stopNative();if(!cancelled)stopTimer=setTimeout(()=>{interrupted=true;cancelled=true;abort.abort();options.error('voice:finishFailed');finalizeBrowser();},5000);try{if(recorder.state==='recording')recorder.stop();else{interrupted=true;if(!cancelled)options.error('voice:interrupted');finalizeBrowser();}}catch{interrupted=true;if(!cancelled)options.error('voice:interrupted');finalizeBrowser();}cleanStream();if(cancelled){abort.abort();finalizeBrowser();}}
   else if(voice)void waiting(voice.stop(),abort.signal,true).then(finishLegacy,()=>{if(!cancelled)options.error('voice:finishFailed');done();});
   else done();
  }
- const clock=()=>{ready=true;started=performance.now();options.update({starting:false,recording:true});interval=setInterval(()=>options.update({seconds:Math.floor((performance.now()-started)/1000)}),1000);timer=setTimeout(()=>release(),60_000);};
+ const clock=(preparing=false)=>{ready=true;started=performance.now();options.update({starting:preparing,recording:!preparing});interval=setInterval(()=>options.update({seconds:Math.floor((performance.now()-started)/1000)}),1000);timer=setTimeout(()=>release(),60_000);};
  const start=async()=>{
   let stage:'PREVIEW'|'PERMISSION'|'BROWSER'|'SDK'|'NATIVE'='PREVIEW';
   try{
@@ -80,8 +80,9 @@ export function createVoiceCapture(options:CaptureOptions):VoiceCapture{
     const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(value=>MediaRecorder.isTypeSupported(value));recorder=new MediaRecorder(stream,{...(mime?{mimeType:mime}:{}),audioBitsPerSecond:128_000});
     for(const track of tracks){track.addEventListener?.('mute',interrupt);track.addEventListener?.('ended',interrupt);if(track.muted||track.readyState==='ended')throw new Error('interrupted');}
     recorder.ondataavailable=event=>{if(!cancelled&&event.data.size)chunks.push(event.data);};recorder.onerror=interrupt;recorder.onstop=()=>{if(!stopping){interrupted=true;cancelled=true;options.error('voice:interrupted');released=true;clearClock();stopNative();}finalizeBrowser();};
-    recorder.start();clock();
-    if(sdkTask){voice=nativeWork(sdkTask,current);const work=voice;void waiting(work.ready,abort.signal,true).catch(()=>{void work.stop().catch(()=>undefined);optionalFailure();});}
+    recorder.start();clock(sdkTask!==null);
+    // Keep clear capture immediate, but invite speech only once ASR has really started or safely degraded.
+    if(sdkTask){voice=nativeWork(sdkTask,()=>current()&&auxiliaryAvailable);const work=voice;void waiting(work.ready,abort.signal,true).then(()=>{if(current())options.update({starting:false,recording:true});},()=>{auxiliaryAvailable=false;void work.stop().catch(()=>undefined);optionalFailure();if(current())options.update({starting:false,recording:true});});}
    }else{
     if(!options.canWecom){options.error('voice:browserUnavailable');done();return;}
     stage='SDK';const sdk=await waiting(sdkTask??options.getSdk(),abort.signal,true);if(!current())throw aborted();stage='NATIVE';voice=nativeWork(Promise.resolve(sdk),current);await waiting(voice.ready,abort.signal,true);if(!current())throw aborted();clock();

@@ -1,16 +1,15 @@
-import {lazy,Suspense,useState,type ReactNode} from 'react';
-import {Link,NavLink,useLocation,useNavigate} from '../navigation';
-import {useTranslation} from 'react-i18next';
+import {lazy,Suspense,type ReactNode} from 'react';
+import {NavLink,useLocation} from '../navigation';
+import {useTranslation} from "../i18n-react";
 import {cn} from '../lib/utils';
 import {Icon} from './Icon';
+import {AppHeader} from './AppHeader';
 import {LazyPanelBoundary} from './LazyPanelBoundary';
 import {preloadNavigation} from '../routing';
-import {Button,Badge,Skeleton} from './ui/primitives';
+export {Loading} from './DelayedLoading';
 const HelpDialog=lazy(()=>import('./HelpDialog'));
-const ProfileDialog=lazy(()=>import('./ProfileDialog'));
-export function Loading(){const{t}=useTranslation();return <div className="loading-stack" role="status" aria-label={t('loading')}><Skeleton className="loading-title"/><Skeleton className="loading-card"/><Skeleton className="loading-card"/></div>;}
 export function SelfCheck({open,onOpenChange}:{open:boolean;onOpenChange:(open:boolean)=>void}){return open?<LazyPanelBoundary onClose={()=>onOpenChange(false)}><Suspense fallback={null}><HelpDialog open={open} onOpenChange={onOpenChange}/></Suspense></LazyPanelBoundary>:null;}
 export function Shell({children}:{children:ReactNode}){
- const{t}=useTranslation(),location=useLocation(),navigate=useNavigate();const[profile,setProfile]=useState(false);const[help,setHelp]=useState(false);const detail=location.pathname.startsWith('/requests/');
- return <div className={cn('app-shell',location.pathname==='/report'&&'report-shell',detail&&'detail-shell')}><header className="app-header"><div className="header-inner">{detail?<div className="detail-header-main"><Button variant="ghost" size="icon" onClick={()=>navigate('/reports')} aria-label={t('back')}><Icon name="arrow_back"/></Button><Link to="/" className="brand-mark" aria-label={t('home')}>修</Link><div className="detail-header-title"><h1>{t('detailTracking')}</h1><Badge variant="blue"><Link to="/">{t('app')}</Link></Badge></div></div>:<Link to="/" className="brand"><span className="brand-mark">修</span><span className="brand-copy"><span className="brand-title">{t('app')}<Badge variant="success">{t('online')}</Badge></span><span className="brand-location"><Icon name="location_on"/>{t('campus')}</span></span></Link>}<div className="header-tools"><Button variant="ghost" size="icon" onClick={()=>detail?setHelp(true):navigate('/reports')} aria-label={t(detail?'help':'search')}><Icon name={detail?'more_horiz':'search'}/></Button><Button variant="secondary" size="icon" data-h5-action="profile" onClick={()=>setProfile(true)} aria-label={t('profile')}><Icon name="person"/></Button></div></div></header><main id="main-content">{children}</main>{!detail&&<nav className="bottom-nav" aria-label={t('app')}><NavLink to="/" end onPointerDown={()=>preloadNavigation('/')} onFocus={()=>preloadNavigation('/')}><Icon name="dashboard_customize"/><span>{t('home')}</span></NavLink><NavLink to="/report" onPointerDown={()=>preloadNavigation('/report')} onFocus={()=>preloadNavigation('/report')}><Icon name="bolt"/><span>{t('report')}</span></NavLink><NavLink to="/reports" onPointerDown={()=>preloadNavigation('/reports')} onFocus={()=>preloadNavigation('/reports')}><Icon name="receipt_long"/><span>{t('records')}</span></NavLink></nav>}{profile&&<LazyPanelBoundary onClose={()=>setProfile(false)}><Suspense fallback={null}><ProfileDialog open={profile} onOpenChange={setProfile}/></Suspense></LazyPanelBoundary>}<SelfCheck open={help} onOpenChange={setHelp}/></div>;
+ const{t}=useTranslation(),location=useLocation(),detail=location.pathname.startsWith('/requests/');
+ return <div className={cn('app-shell',location.pathname==='/report'&&'report-shell',detail&&'detail-shell')}><AppHeader/><main id="main-content">{children}</main>{!detail&&<nav className="bottom-nav" aria-label={t('app')}><NavLink to="/" end onPointerDown={()=>preloadNavigation('/')} onFocus={()=>preloadNavigation('/')}><Icon name="dashboard_customize"/><span>{t('home')}</span></NavLink><NavLink to="/report" onPointerDown={()=>preloadNavigation('/report')} onFocus={()=>preloadNavigation('/report')}><Icon name="bolt"/><span>{t('report')}</span></NavLink><NavLink to="/reports" onPointerDown={()=>preloadNavigation('/reports')} onFocus={()=>preloadNavigation('/reports')}><Icon name="receipt_long"/><span>{t('records')}</span></NavLink></nav>}</div>;
 }

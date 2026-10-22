@@ -4,7 +4,7 @@ import {setImmediate} from 'node:timers/promises';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {Writable} from 'node:stream';
-import {createElement,type ComponentType} from 'react';
+import {createElement,type ComponentType,type ReactNode} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {transpileModule,ModuleKind,ScriptTarget,JsxEmit} from 'typescript';
 import {createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
@@ -148,16 +148,16 @@ test('H5 legacy plain lost events retain the conservative terminal 403 behavior'
 
 const translationLoader=createH5PureModuleLoader();
 async function translatedApp(runtime:unknown){
- const language=await import(await translationLoader.moduleUrl('i18n.ts'));
  const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/App.tsx'),'utf8');
  const compiled=transpileModule(source,{fileName:'App.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  const authSource=await readFile(resolve(root,'h5/src/components/AuthState.tsx'),'utf8'),authCompiled=transpileModule(authSource,{fileName:'AuthState.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  const routing="import {createElement} from 'react';export function describeRoute(path){const view=path==='/'?'home':path.slice(1);return{key:JSON.stringify({view}),input:{view},path};}export const pages=Object.fromEntries(['home','reports','report','request','department'].map(view=>[view,()=>createElement('article',{'data-protected-page':view},view)]));";
  const pass="export function SessionProvider({children}){return children;}export function CommandProvider({children}){return children;}";
- const loader=createH5PureModuleLoader({overrides:{'App.tsx':compiled,'components/AuthState.ts':authCompiled,'components/PageFailure.ts':"export default function PageFailure(){return null;}",'routing.ts':routing,'navigation.ts':"export function HashRouter({children}){return children;}export function useLocation(){return{pathname:'/',search:''};}export function Navigate(){return null;}",'session.ts':pass,'hooks/useCommand.ts':pass,'components/AppShell.ts':"import {createElement} from 'react';export function Shell({children}){return createElement('main',null,children);}export function Loading(){return createElement('div',{'data-state':'loading'});}",'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({children,...props}){return createElement('button',props,children);}",'lib/reload.ts':"export function hasProtectedInput(){return false;}export function reloadIfSafe(){}"}});
+ const loader=createH5PureModuleLoader({overrides:{'App.tsx':compiled,'components/AuthState.ts':authCompiled,'components/PageFailure.ts':"export default function PageFailure(){return null;}",'routing.ts':routing,'navigation.ts':"export {MemoryRouter as HashRouter,useLocation,Navigate,Route,Routes} from 'react-router';",'session.ts':pass,'hooks/useCommand.ts':pass,'components/AppShell.ts':"import {createElement} from 'react';export function Shell({children}){return createElement('main',null,children);}export function Loading(){return createElement('div',{'data-state':'loading'});}",'components/ui/primitives.ts':"import {createElement} from 'react';export function Button({children,...props}){return createElement('button',props,children);}",'lib/reload.ts':"export function hasProtectedInput(){return false;}export function reloadIfSafe(){}"}});
  const app:{default:ComponentType<{runtime:unknown}>}=await import(await loader.moduleUrl('App.tsx'));
+ const language=await import(await loader.moduleUrl('i18n.ts')),bridge:{I18nProvider:ComponentType<{children:ReactNode}>}=await import(await loader.moduleUrl('i18n-react.ts'));
  await import(await loader.moduleUrl('components/AuthState.ts'));await language.default.changeLanguage('zh-CN');
- return()=>new Promise<string>((done,reject)=>{let html='';const sink=new Writable({write(chunk,_encoding,callback){html+=String(chunk);callback();}});sink.on('finish',()=>done(html));sink.on('error',reject);const stream=renderToPipeableStream(createElement(app.default,{runtime}),{onAllReady(){stream.pipe(sink);},onError:reject});});
+ return()=>new Promise<string>((done,reject)=>{let html='';const sink=new Writable({write(chunk,_encoding,callback){html+=String(chunk);callback();}});sink.on('finish',()=>done(html));sink.on('error',reject);const stream=renderToPipeableStream(createElement(bridge.I18nProvider,{children:createElement(app.default,{runtime})}),{onAllReady(){stream.pipe(sink);},onError:reject});});
 }
 
 test('H5 App retains a warm page rather than replacing its protected subtree with the loading branch',async t=>{
@@ -332,8 +332,6 @@ function browserLocation(t:TestContext,href:string){
 for(const example of [{suffix:'/'+ref,path:'/requests/'+ref,input:{view:'request',request_ref:ref}},{suffix:'/new',path:'/report',input:{view:'report'}},{suffix:'',path:'/reports',input:{view:'reports',search:null,status:null,source:null}}])test('H5 legacy document /reports'+example.suffix+' installs its canonical hash before hash navigation starts',async t=>{
  const{url,replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/reports'+example.suffix),originalPath=url.pathname,routing=await routingModule(),route=routing.initialRoute();
  assert.deepEqual(route.input,example.input);assert.equal(route.path,example.path);assert.equal(url.pathname,originalPath);assert.equal(url.hash,'#'+example.path);assert.deepEqual(replacements,['#'+example.path]);
- const{createHashHistory}=await import(await createH5PureModuleLoader().moduleUrl('lib/hash-history.ts'));const history=createHashHistory({origin:url.origin,readHash:()=>url.hash,writeHash:()=>assert.fail('reading the initial route must not navigate'),go:()=>{},listen:()=>()=>{}});
- const selected=history.getSnapshot();assert.equal(selected.pathname,example.path);assert.deepEqual(routing.describeRoute(selected.pathname,selected.search).input,route.input,'the mounted hash router must not replace the selected entry with home');
  assert.deepEqual(routing.initialRoute(),route);assert.equal(replacements.length,1,'repeated initial reads do not add or replace history again');
 });
 
@@ -358,17 +356,49 @@ test('H5 document query request_ref compatibility is retained without turning it
  const{replacements}=browserLocation(t,'https://synthetic.invalid/wecom/yixiaoxiu/?request_ref='+ref),routing=await routingModule();assert.deepEqual(routing.initialRoute().input,{view:'request',request_ref:ref});assert.deepEqual(replacements,[]);
 });
 
-test('H5 small hash history preserves query routes, native back/forward and modified links',async()=>{
- const loader=createH5PureModuleLoader(),navigation=await import(await loader.moduleUrl('lib/hash-history.ts'));let stack=['#/report'],position=0,native=()=>{},changes=0;
- const history=navigation.createHashHistory({origin:'https://synthetic.invalid',readHash:()=>stack[position]??'#/',writeHash:(hash:string,replace:boolean)=>{if(replace)stack[position]=hash;else{stack=stack.slice(0,position+1);stack.push(hash);position+=1;}},go:(delta:number)=>{position=Math.max(0,Math.min(stack.length-1,position+delta));native();},listen:(listener:()=>void)=>{native=listener;return()=>{native=()=>{};};}});
- const off=history.subscribe(()=>{changes+=1;});assert.deepEqual(history.getSnapshot(),{pathname:'/report',search:''});
- history.navigate('/reports?status=ACTIVE');assert.deepEqual(history.getSnapshot(),{pathname:'/reports',search:'?status=ACTIVE'});assert.equal(history.href('/report'),'#/report');
- history.navigate('/requests/'+ref,{replace:true});assert.equal(stack.length,2);history.navigate(-1);assert.equal(history.getSnapshot().pathname,'/report');history.navigate(1);assert.equal(history.getSnapshot().pathname,'/requests/'+ref);
- const before=changes;native();assert.equal(changes,before,'duplicate hashchange/popstate does not publish a second location');
- assert.throws(()=>history.href('https://other.invalid/route'));
- const click={button:0,metaKey:false,altKey:false,ctrlKey:false,shiftKey:false,defaultPrevented:false};assert.equal(navigation.handleLinkClick(click,undefined,false),true);
- for(const key of ['metaKey','altKey','ctrlKey','shiftKey','defaultPrevented'])assert.equal(navigation.handleLinkClick({...click,[key]:true},undefined,false),false);
- assert.equal(navigation.handleLinkClick({...click,button:1},undefined,false),false);assert.equal(navigation.handleLinkClick(click,'_blank',false),false);assert.equal(navigation.handleLinkClick(click,undefined,true),false);off();
+async function navigationModuleLoader(overrides:Record<string,string>={}){
+ const source=await readFile(resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'h5/src/navigation.tsx'),'utf8');
+ const compiled=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ return createH5PureModuleLoader({overrides:{...overrides,'navigation.tsx':compiled}});
+}
+
+test('H5 navigation delegates to the official router and preserves query routes, replacements and back/forward',async()=>{
+ // Resolve at the runtime boundary: the backend test program intentionally has
+ // Node libraries only. Validate this frontend module instead of adding DOM
+ // globals to every backend test's fetch/RequestInit types.
+ const object=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null;
+ const call=(value:Record<string,unknown>,key:string,args:unknown[]):unknown=>{const method=value[key];assert.ok(typeof method==='function',key);return Reflect.apply(method,value,args);};
+ const loader=await navigationModuleLoader(),navigation=await import(await loader.moduleUrl('navigation.tsx')),official:unknown=await import(import.meta.resolve('react-router'));
+ assert.ok(object(official));
+ for(const key of ['HashRouter','Routes','Route','Navigate','useLocation','useNavigate','useParams','useSearchParams'])assert.equal(navigation[key],official[key]);
+ const router=call(official,'createMemoryRouter',[[{path:'/',children:[{path:'report'},{path:'reports'},{path:'requests/:requestRef'}]}],{initialEntries:['/report']}]);assert.ok(object(router));
+ const state=()=>{const value=router.state;assert.ok(object(value));const location=value.location;assert.ok(object(location));assert.equal(typeof location.pathname,'string');assert.equal(typeof location.search,'string');const matches=value.matches;assert.ok(Array.isArray(matches));const last:unknown=matches.at(-1);assert.ok(object(last));const params=last.params;assert.ok(object(params));return{pathname:location.pathname,search:location.search,action:value.historyAction,requestRef:params.requestRef};};
+ try{
+  assert.equal(state().pathname,'/report');await call(router,'navigate',['/reports?status=ACTIVE']);assert.equal(state().pathname,'/reports');assert.equal(state().search,'?status=ACTIVE');
+  await call(router,'navigate',['/requests/'+ref,{replace:true}]);assert.equal(state().action,'REPLACE');assert.equal(state().requestRef,ref);
+  await call(router,'navigate',[-1]);assert.equal(state().pathname,'/report');await call(router,'navigate',[1]);assert.equal(state().pathname,'/requests/'+ref);
+ }finally{call(router,'dispose',[]);}
+});
+
+test('H5 router links render through MemoryRouter with query/hash hrefs and exact active matching',async()=>{
+ const loader=await navigationModuleLoader({'navigation-link-ssr-test.tsx':[
+  "import {createElement} from 'react';",
+  "import {renderToStaticMarkup} from 'react-dom/server';",
+  "import {MemoryRouter} from 'react-router';",
+  "import {Link,NavLink} from './navigation.tsx';",
+  "export function renderAt(path){return renderToStaticMarkup(createElement(MemoryRouter,{initialEntries:[path]},",
+  "createElement('nav',null,",
+  "createElement(Link,{to:{pathname:'/reports',search:'?status=ACTIVE',hash:'#latest'},'data-link':'query-hash'},'Tickets'),",
+  "createElement(NavLink,{to:'/reports',end:true,'data-link':'exact'},'Exact'),",
+  "createElement(NavLink,{to:'/reports','data-link':'prefix'},'Prefix'),",
+  "createElement(NavLink,{to:'/report','data-link':'other'},'Report'))));}",
+ ].join('\n')});
+ const projection:unknown=await import(await loader.moduleUrl('navigation-link-ssr-test.tsx'));assert.ok(projection!==null&&typeof projection==='object'&&'renderAt'in projection&&typeof projection.renderAt==='function');const renderAt=projection.renderAt;
+ const render=(path:string)=>{const markup:unknown=Reflect.apply(renderAt,projection,[path]);assert.ok(typeof markup==='string');return markup;};
+ const link=(markup:string,name:string)=>{const tag=[...markup.matchAll(/<a\b[^>]*>/gu)].map(match=>match[0]).find(value=>value.includes('data-link="'+name+'"'));assert.ok(tag);return tag;};
+ const exact=render('/reports?status=ACTIVE');assert.match(link(exact,'query-hash'),/href="\/reports\?status=ACTIVE#latest"/u);assert.match(link(exact,'exact'),/aria-current="page"/u);assert.match(link(exact,'prefix'),/aria-current="page"/u);assert.doesNotMatch(link(exact,'other'),/aria-current/u);
+ const nested=render('/reports/archive');assert.doesNotMatch(link(nested,'exact'),/aria-current/u);assert.match(link(nested,'prefix'),/aria-current="page"/u);
+ const other=render('/reports-other');assert.doesNotMatch(link(other,'exact'),/aria-current/u);assert.doesNotMatch(link(other,'prefix'),/aria-current/u);
 });
 
 for(const reason of ['abort','scope-change'] as const)test('H5 upload does not send after '+reason+' while its optional module is loading',async t=>{

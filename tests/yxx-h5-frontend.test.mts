@@ -3,9 +3,24 @@ import {test,type TestContext} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
+import {createSourceFile,forEachChild,isCallExpression,isFunctionDeclaration,isIdentifier,isJsxSelfClosingElement,ScriptKind,ScriptTarget,type Node} from 'typescript';
 import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 import type {H5EntryBootstrap} from '../contracts/yxx_h5_entry_contracts.js';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
+
+let actionImportProbeId=0;
+const actionProbeId='11111111-1111-4111-8111-111111111111';
+const actionProbeReceipt={client_command_id:actionProbeId,status:'ACCEPTED',request_ref:'r'.repeat(32),intake_no:'SYNTHETIC',accepted_revision:'1',accepted_at:'2026-10-22 12:00:00',accepted_epoch_ms:'1792641600000'};
+const actionProbeInput={schema_version:2 as const,client_command_id:actionProbeId,intent:'FAULT' as const,description:'SYNTHETIC',location:{text:null,unknown:true},media_refs:[]};
+async function pendingActionImport(t:TestContext){
+ let release:()=>void=()=>{throw new Error('Action import gate is not ready');},reject:(reason:Error)=>void=()=>{throw new Error('Action import gate is not ready');},entered:()=>void=()=>{throw new Error('Action import observation is not ready');};
+ const gate=new Promise<void>((resolve,fail)=>{release=resolve;reject=fail;}),started=new Promise<void>(resolve=>{entered=resolve;}),key='__h5ActionImportProbe'+String(++actionImportProbeId);void gate.catch(()=>undefined);
+ Object.defineProperty(globalThis,key,{configurable:true,value:{wait:()=>{entered();return gate;}}});t.after(()=>{release();Reflect.deleteProperty(globalThis,key);});
+ const actual=await readFile(resolve(sourceRoot,'h5/src/api/action-client.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'api/action-client.ts':`await globalThis[${JSON.stringify(key)}].wait();\n`+actual}}),client=await import(await loader.moduleUrl('api/client.ts')),calls:{url:string;options:RequestInit}[]=[];
+ t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{calls.push({url:String(input),options});return Response.json(actionProbeReceipt);});
+ const loading=async(pending:Promise<unknown>)=>{await Promise.race([started,pending.then(()=>{throw new Error('Action completed before its actual module gate');},()=>{throw new Error('Action failed before its actual module gate');})]);assert.equal(calls.length,0);};
+ return{client,calls,release,reject,loading};
+}
 
 test('H5 optional display query decodes only the current scope and has its own bounded cache',async t=>{
  const loader=createH5PureModuleLoader(),{displayProfileOptions}=await import(await loader.moduleUrl('api/display-profile.ts'));
@@ -60,6 +75,145 @@ test('H5 maps WeCom Chinese variants to Simplified Chinese and honors explicit c
  assert.equal(preferences.clientTheme('wxwork',true),'dark');
  assert.equal(preferences.clientTheme('wxwork',false),'light');
 });
+
+test('H5 English dates use explicit dd, Mon and preserve the hospital-local clock',async()=>{
+ const {formatDate}=await import(await moduleUrl('lib/utils.ts')),value=Date.parse('2026-10-22T14:35:00+08:00');
+ const clock=new Intl.DateTimeFormat('en',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value);
+ assert.equal(formatDate(String(value),'en'),'22, Oct, '+clock);assert.equal(formatDate(String(value),'en',true),clock);
+});
+
+test('H5 English dates use every short month and a two-digit day',async()=>{
+ const {formatDate}=await import(await moduleUrl('lib/utils.ts')),months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ for(const[index,month]of months.entries()){
+  const value=Date.parse(`2026-${String(index+1).padStart(2,'0')}-03T09:05:00+08:00`),clock=new Intl.DateTimeFormat('en',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value);
+  assert.equal(formatDate(String(value),'en-GB'),`03, ${month}, ${clock}`);
+ }
+});
+
+test('H5 Chinese dates and both languages time-only output retain their original format',async()=>{
+ const {formatDate}=await import(await moduleUrl('lib/utils.ts'));
+ for(const language of ['zh-CN','zh-HK','zh-TW','en'])for(const instant of ['2026-10-22T00:05:00+08:00','2026-12-31T23:59:00+08:00']){
+  const value=Date.parse(instant),locale=language.startsWith('zh')?'zh-CN':'en';
+  assert.equal(formatDate(String(value),language,true),new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value));
+  if(locale==='zh-CN')assert.equal(formatDate(String(value),language),new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(value));
+ }
+});
+
+test('H5 date display preserves Shanghai rollover and rejects unsafe or malformed epochs',async()=>{
+ const {formatDate}=await import(await moduleUrl('lib/utils.ts'));
+ assert.match(formatDate(String(Date.parse('2026-10-21T16:05:00Z')),'en'),/^22, Oct, /);assert.notEqual(formatDate('0','en'),'');
+ for(const invalid of [null,undefined,'','-1','1.2','not-a-date',' 1','Infinity','9007199254740992','8640000000000001'])for(const language of ['en','zh-CN'])assert.equal(formatDate(invalid,language),'');
+});
+
+test('H5 ticket collection labels stay consistent without changing Chinese reporting or original-source wording',async()=>{
+ const {en,zh}=await import(await moduleUrl('i18n.ts'));
+ assert.equal(en.records,'My tickets');assert.equal(en.recent,'Recent tickets');
+ for(const key of ['records','departmentStats','recent','emptyDescription','queryEmpty','readonly','viewReceipt','noDescription','webSource','emptyHistory','readFailure'])assert.doesNotMatch(en[key],/\breports\b/i,key);
+ const chinese={records:'工单查询',departmentStats:'上报 {{total}} 件 · {{active}} 件处理中',recent:'最近报修工单',emptyDescription:'提交报修后，可在这里查看处理进度。',queryEmpty:'没有符合条件的工单',readonly:'当前报修入口为只读，可继续查看本人记录。',viewReceipt:'查看回执',noDescription:'现场材料报修',webSource:'网页报修',emptyHistory:'当前无进行中或待处理工单',readFailure:'暂时无法读取工单'};
+ for(const[key,value]of Object.entries(chinese))assert.equal(zh[key],value,key);
+ assert.equal(en.botHistory,'Open original report');assert.equal(zh.botHistory,'查看原报修记录');assert.equal(en.heroCta,'Report an IT fault');assert.equal(zh.heroCta,'立即上报 IT 故障');
+});
+
+test('H5 greeting transitions at 05 12 and 18 in hospital time with exact boundary delays',async()=>{
+ const {greetingAt}=await import(await moduleUrl('hooks/useGreeting.ts'));
+ const cases=[['04:59:59.999','greetingEvening',1],['05:00:00.000','greetingMorning',7*3600000],['11:59:59.999','greetingMorning',1],['12:00:00.000','greetingAfternoon',6*3600000],['17:59:59.999','greetingAfternoon',1],['18:00:00.000','greetingEvening',11*3600000],['23:59:59.999','greetingEvening',5*3600000+1],['00:00:00.000','greetingEvening',5*3600000]]as const;
+ for(const[time,key,delay]of cases)assert.deepEqual(greetingAt(Date.parse('2026-10-22T'+time+'+08:00')),{key,delay});
+});
+
+test('H5 greeting periods translate with a member name in Simplified Chinese and English',async()=>{
+ const {default:i18n}=await import(await moduleUrl('i18n.ts'));
+ for(const[lng,name,expected]of [['zh-CN','合成同事',['早上好，合成同事','下午好，合成同事','晚上好，合成同事']],['en','Synthetic Colleague',['Good morning, Synthetic Colleague','Good afternoon, Synthetic Colleague','Good evening, Synthetic Colleague']]]as const){
+  for(const[index,key]of ['greetingMorning','greetingAfternoon','greetingEvening'].entries())assert.equal(i18n.t(key,{lng,name}),expected[index]);
+ }
+});
+
+test('H5 official compiled catalogs preserve all 408 bilingual messages and their interpolation',async t=>{
+ const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),language=i18n.language;
+ const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts'};let count=0;
+ for(const[namespace,path]of Object.entries(sources)){
+  const raw=await readFile(resolve(sourceRoot,'h5/src',path),'utf8'),compiled=compileH5Catalog(raw,namespace),values=await import(await loader.moduleUrl(path));assert.deepEqual(Object.keys(values.en).sort(),Object.keys(values.zh).sort());
+  for(const[lng,source,catalog]of [['en',values.en,compiled.en],['zh-CN',values.zh,compiled.zh]])for(const[key,message]of Object.entries(source)){
+   assert.equal(typeof message,'string');if(typeof message!=='string')assert.fail('Catalog must remain string literals');const parameters:Record<string,string>={};for(const match of message.matchAll(/\{\{\s*([\w]+)\s*\}\}/gu)){const name=match[1];assert.ok(name);parameters[name]='SYNTHETIC <'+name+'&>';}
+   const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
+  }
+ }
+ assert.equal(count,408);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 204 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+});
+
+test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
+ const loader=createH5PureModuleLoader(),{compileH5Catalog,catalogModuleCode}=await import(await loader.moduleUrl('../compile-i18n.ts'));
+ const valid="export const en={hello:'Hello {{name}}'};export const zh={hello:'你好，{{name}}'};",catalog=compileH5Catalog(valid,'translation');assert.deepEqual(catalog.en['translation:hello'],['Hello ',['name']]);assert.match(catalogModuleCode(valid,'translation'),/export const en=/);
+ for(const[source,code]of [["const en=load();const zh={};",'H5_CATALOG_LITERAL_REQUIRED'],["const en={...remote};const zh={};",'H5_CATALOG_STRING_REQUIRED'],["const en={value:42};const zh={};",'H5_CATALOG_STRING_REQUIRED'],["const en={same:'first',same:'second'};const zh={};",'H5_CATALOG_DUPLICATE_ID'],["const en={value:'{{ user.name }}'};const zh={};",'H5_CATALOG_INTERPOLATION_INVALID']])assert.throws(()=>compileH5Catalog(source,'translation'),{message:code});
+});
+
+test('H5 catalog compiler rejects missing bilingual entries before emitting a browser module',async()=>{
+ const loader=createH5PureModuleLoader(),{catalogModuleCode}=await import(await loader.moduleUrl('../compile-i18n.ts'));
+ for(const source of ["const en={hello:'Hello'};const zh={};","const en={};const zh={hello:'你好'};","const en={hello:'Hello'};const zh={other:'你好'};","const en={};const zh={};"])assert.throws(()=>catalogModuleCode(source,'help'),{message:'H5_CATALOG_KEYS_MISMATCH'});
+});
+
+test('H5 catalog compiler validates actual compiled parameters while permitting translation order and repetition',async()=>{
+ const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts'));
+ for(const [english,chinese]of [['Hello {{name}}','你好'],['Hello','你好，{{name}}'],['Hello {{name}}','你好，{{user}}'],['Hello {name}','你好，{user}'],['Hello {{name}}',"你好，'{name}'"]]){
+  const source='const en={hello:'+JSON.stringify(english)+'};const zh={hello:'+JSON.stringify(chinese)+'};';assert.throws(()=>compileH5Catalog(source,'translation'),{message:'H5_CATALOG_PARAMETERS_MISMATCH'});
+ }
+ const catalog=compileH5Catalog("const en={hello:'{{first}} {{last}} {{first}}'};const zh={hello:'{{last}}，{{first}}'};",'translation');assert.deepEqual(catalog.zh['translation:hello'],[['last'],'，',['first']]);
+});
+
+test('H5 Lingui facade keeps English fallback unknown-key behavior and isolated explicit-language reads',async()=>{
+ const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{createI18nAdapter}=await import(await loader.moduleUrl('i18n-adapter.ts'));
+ const catalog=compileH5Catalog("const en={hello:'Hello {{name}}',fallback:'Fallback {{count}}'};const zh={hello:'你好，{{name}}',fallback:'回退 {{count}}'};",'translation');delete catalog.zh['translation:fallback'];const{i18n}=createI18nAdapter({en:catalog.en,'zh-CN':catalog.zh},'zh-CN');
+ assert.equal(i18n.t('hello',{name:'Synthetic'}),'你好，Synthetic');assert.equal(i18n.t('fallback',{count:0}),'Fallback 0');assert.equal(i18n.t('future:absent'),'absent');assert.equal(i18n.t('absent'),'absent');
+ assert.equal(i18n.t('hello',{lng:'en',name:'Synthetic'}),'Hello Synthetic');assert.equal(i18n.language,'zh-CN');await i18n.changeLanguage('fr');assert.equal(i18n.language,'en');assert.equal(i18n.t('hello',{lng:'zh-TW',name:'合成'}),'你好，合成');assert.equal(i18n.language,'en');
+ const late=compileH5Catalog("const en={late:'Late {{name}}'};const zh={late:'延后 {{name}}'};",'voice');i18n.addResourceBundle('en','voice',late.en);i18n.addResourceBundle('zh-CN','voice',late.zh);assert.equal(i18n.t('voice:late',{lng:'zh-CN',name:'合成'}),'延后 合成');assert.equal(i18n.t('voice:late',{name:'Synthetic'}),'Late Synthetic');
+ await i18n.changeLanguage('zh-Hant');assert.equal(i18n.language,'zh-CN');assert.equal(i18n.t('fallback',{count:2}),'Fallback 2');
+});
+
+test('H5 official language subscription observes complete lazy fallback state and releases its listener',async()=>{
+ const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{createI18nAdapter}=await import(await loader.moduleUrl('i18n-adapter.ts'));
+ const catalog=compileH5Catalog("const en={label:'English'};const zh={label:'中文'};",'translation'),{instance,i18n}=createI18nAdapter({en:catalog.en,'zh-CN':catalog.zh},'zh-CN'),observed:string[]=[];
+ const unsubscribe=instance.on('change',()=>observed.push(i18n.language+'|'+i18n.t('label')+'|'+i18n.t('help:late')));
+ try{const late=compileH5Catalog("const en={late:'Available'};const zh={late:'可用'};",'help');i18n.addResourceBundle('en','help',late.en);assert.deepEqual(observed,['zh-CN|中文|Available']);await i18n.changeLanguage('en');assert.equal(observed.at(-1),'en|English|Available');unsubscribe();const count=observed.length;await i18n.changeLanguage('zh-CN');assert.equal(observed.length,count);}finally{unsubscribe();}
+});
+
+test('H5 official React Provider renders lazy namespaces locale changes fallback and escaped interpolation',async t=>{
+ const loader=createH5PureModuleLoader(),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),{I18nProvider,useTranslation}=await import(await loader.moduleUrl('i18n-react.ts')),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{createElement}=await import('react'),{renderToStaticMarkup}=await import('react-dom/server');
+ const render=()=>renderToStaticMarkup(createElement(I18nProvider,null,createElement(function Label(){const{t:base,i18n:state}=useTranslation(),{t:help}=useTranslation('help');return createElement('div',{'data-language':state.language},base('greetingMorning',{name:'<SYN &>'}),'|',help('checksPrinter'),'|',help('englishOnly',{count:3}));})));
+ await i18n.changeLanguage('en');assert.equal(i18n.t('help:checksPrinter'),'checksPrinter','A lazy namespace must not be installed by base startup');const initial=render();assert.match(initial,/Good morning, &lt;SYN &amp;&gt;/);assert.doesNotMatch(initial,/<SYN/);assert.match(initial,/checksPrinter/);
+ const late=compileH5Catalog("const en={englishOnly:'Fallback {{count}}'};const zh={englishOnly:'回退 {{count}}'};",'help');i18n.addResourceBundle('en','help',late.en);await import(await loader.moduleUrl('components/help-messages.ts'));const english=render();assert.match(english,/Printer paper jam/);assert.match(english,/Fallback 3/);
+ await i18n.changeLanguage('zh-CN');const chinese=render();assert.match(chinese,/data-language="zh-CN"/);assert.match(chinese,/早上好，&lt;SYN &amp;&gt;/);assert.match(chinese,/打印机卡纸/);assert.match(chinese,/Fallback 3/);t.diagnostic('ACTUAL_REACT19_SSR_PROVIDER_ONLY: official context/hook rendering is exercised; client commits and browser effects remain outside this Node test.');
+});
+
+test('H5 actual greeting subscription owns one boundary timer and releases hidden and unmounted resources',async t=>{
+ const {subscribeGreeting}=await import(await moduleUrl('hooks/useGreeting.ts')),names=['document','window','setTimeout','clearTimeout'],descriptors=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ const tracked=()=>{const events=new EventTarget(),listeners=new Map<string,Set<(event:Event)=>void>>();return{addEventListener(type:string,callback:(event:Event)=>void){events.addEventListener(type,callback);const values=listeners.get(type)??new Set();values.add(callback);listeners.set(type,values);},removeEventListener(type:string,callback:(event:Event)=>void){events.removeEventListener(type,callback);listeners.get(type)?.delete(callback);},dispatchEvent:(event:Event)=>events.dispatchEvent(event),count:()=>[...listeners.values()].reduce((sum,values)=>sum+values.size,0)};};
+ const document=Object.assign(tracked(),{visibilityState:'visible'}),window=tracked(),timers=new Map<number,{callback:()=>void;delay:number}>(),values:string[]=[];let next=0,now=Date.parse('2026-10-22T11:59:59.750+08:00'),cleanup:(()=>void)|undefined;
+ Object.defineProperties(globalThis,{document:{configurable:true,value:document},window:{configurable:true,value:window},setTimeout:{configurable:true,value:(callback:()=>void,delay:number)=>{const id=++next;timers.set(id,{callback,delay});return id;}},clearTimeout:{configurable:true,value:(id:number)=>timers.delete(id)}});t.mock.method(Date,'now',()=>now);
+ const onlyTimer=()=>{assert.equal(timers.size,1);const entry=timers.entries().next().value;assert.ok(entry);return entry;};
+ try{
+  cleanup=subscribeGreeting((value:string)=>values.push(value));assert.ok(cleanup);assert.deepEqual(values,['greetingMorning']);const[id,first]=onlyTimer();assert.equal(first.delay,250);timers.delete(id);now+=250;first.callback();assert.equal(values.at(-1),'greetingAfternoon');assert.equal(onlyTimer()[1].delay,6*3600000);
+  document.visibilityState='hidden';document.dispatchEvent(new Event('visibilitychange'));assert.equal(timers.size,0);const count=values.length;now=Date.parse('2026-10-22T20:30:00+08:00');window.dispatchEvent(new Event('pageshow'));assert.equal(values.length,count);
+  document.visibilityState='visible';document.dispatchEvent(new Event('visibilitychange'));assert.equal(values.at(-1),'greetingEvening');assert.equal(onlyTimer()[1].delay,8.5*3600000);window.dispatchEvent(new Event('pageshow'));window.dispatchEvent(new Event('focus'));const late=onlyTimer()[1].callback;
+  cleanup();assert.equal(timers.size,0);assert.equal(document.count(),0);assert.equal(window.count(),0);const after=values.length;late();assert.equal(values.length,after);assert.equal(timers.size,0);cleanup();
+  t.diagnostic('ACTUAL_GREETING_SUBSCRIPTION_CLOSURE_ONLY: timer/listener execution and cleanup are real; React commits and browser lifecycle are not measured.');
+ }finally{cleanup?.();for(const[name,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else Reflect.deleteProperty(globalThis,name);}}
+});
+
+test('H5 greeting state and its actual effect stay within the current Home heading leaf',async t=>{
+ const actual=await readFile(resolve(sourceRoot,'h5/src/hooks/useGreeting.ts'),'utf8'),home=createSourceFile('Home.tsx',await readFile(resolve(sourceRoot,'h5/src/pages/Home.tsx'),'utf8'),ScriptTarget.Latest,true,ScriptKind.TSX);
+ const functions=home.statements.filter(isFunctionDeclaration),heading=functions.find(node=>node.name?.text==='GreetingHeading'),page=functions.find(node=>node.name?.text==='Home');assert.ok(heading?.body);assert.ok(page?.body);
+ const count=(node:Node,match:(value:Node)=>boolean)=>{let total=0;const visit=(value:Node)=>{if(match(value))total++;forEachChild(value,visit);};visit(node);return total;};
+ const callsGreeting=(node:Node)=>isCallExpression(node)&&isIdentifier(node.expression)&&node.expression.text==='useGreeting';
+ assert.equal(count(heading.body,callsGreeting),1);assert.equal(count(page.body,callsGreeting),0);assert.equal(count(page.body,node=>isJsxSelfClosingElement(node)&&isIdentifier(node.tagName)&&node.tagName.text==='GreetingHeading'),1);
+ const reactURL='data:text/javascript;base64,'+Buffer.from("let effect,deps,initial;const changes=[];export function useState(value){initial=typeof value==='function'?value():value;return[initial,value=>changes.push(value)];}export function useEffect(value,dependencies){effect=value;deps=dependencies;}export function take(){if(!effect)throw new Error('Greeting effect was not registered');const value=effect;effect=undefined;return value;}export function snapshot(){return{initial,changes:[...changes],deps};}").toString('base64');
+ const effects:{take:()=>()=>void|(()=>void);snapshot:()=>{initial:string;changes:string[];deps:unknown[]}}=await import(reactURL),loader=createH5PureModuleLoader({overrides:{'hooks/useGreeting.ts':actual.replace("'react'",JSON.stringify(reactURL))}}),hook=await import(await loader.moduleUrl('hooks/useGreeting.ts'));
+ const descriptors=new Map(['document','window'].map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)])),document=Object.assign(new EventTarget(),{visibilityState:'visible'}),window=new EventTarget();let now=Date.parse('2026-10-22T06:00:00+08:00'),cleanup:(()=>void)|undefined;
+ Object.defineProperties(globalThis,{document:{configurable:true,value:document},window:{configurable:true,value:window}});t.mock.method(Date,'now',()=>now);
+ try{
+  assert.equal(hook.useGreeting(),'greetingMorning');assert.deepEqual(effects.snapshot(),{initial:'greetingMorning',changes:[],deps:[]});const mounted=effects.take()();assert.equal(typeof mounted,'function');if(!mounted)assert.fail('Greeting effect must return its subscription cleanup');cleanup=mounted;assert.deepEqual(effects.snapshot().changes,['greetingMorning']);
+  cleanup();cleanup=undefined;now=Date.parse('2026-10-22T13:00:00+08:00');document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));assert.deepEqual(effects.snapshot().changes,['greetingMorning']);
+  t.diagnostic('ACTUAL_USE_GREETING_EFFECT_CLOSURE_AND_AST_OWNERSHIP_ONLY: no React commit count or browser rendering claim.');
+ }finally{cleanup?.();for(const[name,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else Reflect.deleteProperty(globalThis,name);}}
+});
 test('H5 media admission applies per-kind counts, bounded duration, MIME and aggregate size',async()=>{
  const media=await import(await moduleUrl('lib/media.ts'));
  const image={kind:'IMAGE',byteSize:10*1024*1024,mimeType:'image/jpeg',durationMs:null};
@@ -86,6 +240,32 @@ test('H5 timeline keeps external safe summaries and orders loaded facts by their
  assert.equal(rows[0],updated);assert.equal(input[0],accepted,'presentation must not mutate the cached API page');
  assert.deepEqual(timeline.timelinePresentation(updated),{titleKey:'eventUpdated',summary:updated.summary});
  assert.deepEqual(timeline.timelinePresentation({...updated,event_type:'FUTURE_SAFE_EVENT'}),{titleKey:null,summary:updated.summary});
+});
+
+test('H5 same-epoch initial stages read Received, Ticket created, In progress from bottom to top',async()=>{
+ const {latestFirst}=await import(await moduleUrl('lib/timeline.ts'));
+ const event=(event_type:string,suffix='')=>({event_type,summary:'SYNTHETIC_'+event_type+suffix,occurred_at:'2026-10-22 10:00:00',occurred_epoch_ms:'1792634400000',ticket:null});
+ const received=event('REQUEST_ACCEPTED'),created=event('TICKET_CREATED'),processing=event('PROCESSING');
+ for(const input of [[received,processing,created],[received,created,processing],[processing,received,created],[processing,created,received],[created,received,processing],[created,processing,received]]){
+  const snapshot=[...input];assert.deepEqual(latestFirst(input),[processing,created,received]);assert.deepEqual(input,snapshot);
+ }
+ const laterProcessing=event('PROCESSING','-second');assert.deepEqual(latestFirst([received,processing,created,laterProcessing]),[processing,laterProcessing,created,received]);
+});
+
+test('H5 semantic ties preserve different epochs and unrelated safe event slots',async()=>{
+ const {latestFirst}=await import(await moduleUrl('lib/timeline.ts'));
+ const event=(event_type:string,epoch='1792634400000')=>({event_type,summary:'SYNTHETIC_'+event_type,occurred_at:'2026-10-22 10:00:00',occurred_epoch_ms:epoch,ticket:null});
+ const received=event('REQUEST_ACCEPTED'),created=event('TICKET_CREATED'),processing=event('PROCESSING'),future=event('FUTURE_SAFE_EVENT'),supplement=event('SUPPLEMENT_ACCEPTED'),updated=event('TICKET_UPDATED');
+ assert.deepEqual(latestFirst([received,future,processing,supplement,created,updated]),[processing,future,created,supplement,received,updated]);
+ const newer=event('REQUEST_ACCEPTED','1792634400001'),older=event('PROCESSING','1792634399999');assert.deepEqual(latestFirst([older,created,newer]),[newer,created,older]);
+});
+
+test('H5 flattened timeline pages reorder only same-epoch display stages without mutating cursors or late facts',async()=>{
+ const {latestFirst}=await import(await moduleUrl('lib/timeline.ts'));
+ const event=(event_type:string,epoch='1792634400000')=>Object.freeze({event_type,summary:'SYNTHETIC_'+event_type,occurred_at:'2026-10-22 10:00:00',occurred_epoch_ms:epoch,ticket:null});
+ const received=event('REQUEST_ACCEPTED'),created=event('TICKET_CREATED'),processing=event('PROCESSING'),older=event('TICKET_UPDATED','1792634399999');
+ const pages=Object.freeze([Object.freeze({items:Object.freeze([received,created]),next_cursor:'synthetic.cursor'}),Object.freeze({items:Object.freeze([older,processing]),next_cursor:null})]);
+ const before=JSON.stringify(pages);assert.deepEqual(latestFirst(pages.flatMap(page=>page.items)),[processing,created,received,older]);assert.equal(JSON.stringify(pages),before);
 });
 test('H5 recovery requires the same original UUID and never treats UNKNOWN or an unrelated result as committed',async()=>{
  const receipts=await import(await moduleUrl('lib/command.ts'));
@@ -165,6 +345,43 @@ test('H5 decodes actual command receipts and never fabricates media success from
   Object.defineProperty(globalThis,'fetch',{configurable:true,value:async()=>Response.json({ok:true,replayed:false,receipt:{...receipt,client_command_id:'22222222-2222-4222-8222-222222222222'}})});
   await assert.rejects(()=>client.api.submit({schema_version:2,client_command_id:id,intent:'CONTACT_REQUEST',description:null,location:{text:null,unknown:true},media_refs:[]},'csrf'),{code:'INVALID_RECEIPT'});
  }finally{globalThis.fetch=originalFetch;}
+});
+
+for(const change of ['generation','signal']as const)test('H5 '+change+' change during a pending actual action import prevents any POST',async t=>{
+ const value=await pendingActionImport(t),controller=new AbortController(),pending=change==='generation'?value.client.api.submit(actionProbeInput,'synthetic-csrf'):value.client.api.reserve({schema_version:1,client_command_id:actionProbeId,kind:'VOICE',mime_type:'audio/webm',byte_size:100,duration_ms:2000},'synthetic-csrf',controller.signal);void pending.catch(()=>undefined);
+ try{await value.loading(pending);if(change==='generation')value.client.advanceAuthGeneration();else controller.abort();value.release();await assert.rejects(pending,{name:'AbortError'});assert.equal(value.calls.length,0);}finally{value.release();await pending.catch(()=>undefined);}
+});
+
+test('H5 a late failed action import reports cancellation after scope change rather than a new-scope load error',async t=>{
+ const value=await pendingActionImport(t),pending=value.client.api.submit(actionProbeInput,'synthetic-csrf');void pending.catch(()=>undefined);
+ try{await value.loading(pending);value.client.advanceAuthGeneration();value.reject(new TypeError('SYNTHETIC_CHUNK_UNAVAILABLE'));await assert.rejects(pending,{name:'AbortError'});assert.equal(value.calls.length,0);}finally{value.release();await pending.catch(()=>undefined);}
+});
+
+test('H5 pending action imports preserve the original serialized body UUID and version',async t=>{
+ const value=await pendingActionImport(t),input={...actionProbeInput,location:{text:'SYNTHETIC_ORIGINAL',unknown:false},media_refs:['synthetic-original']},urge={schema_version:1,client_command_id:actionProbeId,expected_ticket_version:7},originalBody=JSON.stringify(input),originalUrge=JSON.stringify(urge);
+ t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{value.calls.push({url:String(input),options});return Response.json(String(input).endsWith('/urge')?{ok:true,replayed:false,client_command_id:actionProbeId,request_ref:actionProbeReceipt.request_ref,purpose:'URGE',accepted_at:actionProbeReceipt.accepted_at,accepted_epoch_ms:actionProbeReceipt.accepted_epoch_ms}:actionProbeReceipt);});
+ const submitted=value.client.api.submit(input,'synthetic-csrf'),urged=value.client.api.urge(actionProbeReceipt.request_ref,urge,'synthetic-csrf');void submitted.catch(()=>undefined);void urged.catch(()=>undefined);
+ try{
+  await value.loading(submitted);input.client_command_id='22222222-2222-4222-8222-222222222222';input.description='SYNTHETIC_CHANGED';input.location.text='SYNTHETIC_CHANGED';input.media_refs.push('synthetic-changed');urge.expected_ticket_version=99;value.release();
+  assert.deepEqual(await submitted,actionProbeReceipt);await urged;assert.equal(value.calls.length,2);const submittedCall=value.calls.find(call=>call.url.endsWith('/requests')),urgedCall=value.calls.find(call=>call.url.endsWith('/urge'));assert.ok(submittedCall);assert.ok(urgedCall);
+  assert.equal(submittedCall.options.body,originalBody);assert.equal(new Headers(submittedCall.options.headers).get('idempotency-key'),actionProbeId);assert.equal(urgedCall.options.body,originalUrge);assert.equal(new Headers(urgedCall.options.headers).get('if-match'),'"7"');
+ }finally{value.release();await Promise.allSettled([submitted,urged]);}
+});
+
+test('H5 only a local action-load error is safely retryable while same-code 503 and actual fetch rejection stay UNKNOWN',async t=>{
+ const local=await pendingActionImport(t),pending=local.client.api.submit(actionProbeInput,'synthetic-csrf');void pending.catch(()=>undefined);
+ try{await local.loading(pending);local.reject(new TypeError('SYNTHETIC_CHUNK_UNAVAILABLE'));await assert.rejects(pending,(error:unknown)=>{assert.ok(error instanceof local.client.ActionLoadError);assert.ok(error instanceof local.client.ApiError);assert.equal(local.client.isUnknownResult(error),false);return true;});assert.equal(local.calls.length,0);}finally{local.release();await pending.catch(()=>undefined);}
+ const loader=createH5PureModuleLoader(),client=await import(await loader.moduleUrl('api/client.ts'));let sent=0;
+ t.mock.method(globalThis,'fetch',async()=>{sent++;return Response.json({error:{code:'ACTION_LOAD_FAILED'}},{status:503});});
+ await assert.rejects(client.api.submit(actionProbeInput,'synthetic-csrf'),(error:unknown)=>{assert.ok(error instanceof client.ApiError);assert.equal(error instanceof client.ActionLoadError,false);assert.equal(client.isUnknownResult(error),true);return true;});assert.equal(sent,1);
+ t.mock.method(globalThis,'fetch',async()=>{sent++;throw new TypeError('SYNTHETIC_FETCH_FAILURE');});await assert.rejects(client.api.submit(actionProbeInput,'synthetic-csrf'),(error:unknown)=>client.isUnknownResult(error));assert.equal(sent,2,'neither real request failure is automatically retried');
+});
+
+test('H5 lazy action transport accepts only the original UUID receipt and preserves CSRF and input',async t=>{
+ const loader=createH5PureModuleLoader(),client=await import(await loader.moduleUrl('api/client.ts')),calls:{url:string;options:RequestInit}[]=[];let body:unknown=actionProbeReceipt;
+ t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{calls.push({url:String(input),options});return Response.json(body);});
+ assert.deepEqual(await client.api.submit(actionProbeInput,'synthetic-csrf'),actionProbeReceipt);assert.equal(calls.length,1);const first=calls[0];assert.ok(first);assert.equal(first.url,'/api/yixiaoxiu/requests');assert.equal(first.options.method,'POST');const headers=new Headers(first.options.headers);assert.equal(headers.get('idempotency-key'),actionProbeId);assert.equal(headers.get('x-csrf-token'),'synthetic-csrf');assert.equal(typeof first.options.body,'string');assert.deepEqual(JSON.parse(String(first.options.body)),actionProbeInput);
+ body={...actionProbeReceipt,client_command_id:'22222222-2222-4222-8222-222222222222'};await assert.rejects(client.api.submit(actionProbeInput,'synthetic-csrf'),{status:502,code:'INVALID_RECEIPT'});assert.equal(calls.length,2);
 });
 
 test('H5 304 reuses only the current member generation and the same request body',async()=>{

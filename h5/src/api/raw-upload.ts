@@ -1,4 +1,5 @@
-import {decoders,InvalidResponse} from './decode';
+import {actionDecoders as decoders} from './action-decode';
+import {InvalidResponse} from './guards';
 import type {UploadReceipt} from './types';
 interface UploadRuntime {accept:string;assertGeneration:(generation:number,signal:AbortSignal)=>void;reportAuthLost:(generation:number,signal:AbortSignal,status:401|403)=>void;error:(status:number,code:string)=>Error}
 interface RawUploadInput {ref:string;blob:Blob;csrf:string;id:string;signal:AbortSignal;generation:number;onProgress:(progress:number)=>void;runtime:UploadRuntime}

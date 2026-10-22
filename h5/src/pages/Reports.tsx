@@ -2,7 +2,7 @@ import {ReportCard} from '../components/ReportCard';
 import{useMemo,useState,type FormEvent}from'react';
 import{useInfiniteQuery}from'@tanstack/react-query';
 import{useSearchParams}from'../navigation';
-import{useTranslation}from'react-i18next';
+import{useTranslation}from"../i18n-react";
 import{reportsOptions,reportStatus,reportSource}from'../api/query';
 import type{ReportsFilter}from'../api/types';
 import{useIdentity,useSessionStatus}from'../session';

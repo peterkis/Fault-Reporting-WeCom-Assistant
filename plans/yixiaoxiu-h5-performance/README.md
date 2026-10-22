@@ -1,5 +1,7 @@
 # 医小修 H5 性能改造实施记录
 
+2026-10-22 首击导航、官方React Router、共享页头与录音起录提示续作见[本轮记录](router-ux-2026-10-22.md)及[Issue #117](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/117)。八项页面调整和漏词时序诊断沿ADR-0041，首屏超标反例保留，后继候选继续执行原120KiB预算；实机与合成结论分别登记。
+
 2026-10-22 单入口录音、2秒下限与报修页标题精简见[本轮记录](unified-voice-2026-10-22.md)及[Issue #115](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/115)。清晰音频作为唯一材料、企业微信辅助转写，用户对两种独立模式的观察与双路真机NOT_RUN分开登记；首屏预算及无关渲染验证不放宽。
 
 2026-10-22 用户反馈首页姓名／部门回退后的诊断与修复见[本人展示资料记录](member-profile-2026-10-22.md)及[Issue #113](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/113)。官方资料异步补充不改变原 entry 的 SQL／时延预算，也不授予科室 READ；新候选的验证与实际部署单独登记。

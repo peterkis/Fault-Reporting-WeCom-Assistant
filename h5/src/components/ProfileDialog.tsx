@@ -1,4 +1,4 @@
-import {useTranslation} from 'react-i18next';
+import {useTranslation} from "../i18n-react";
 import {useDisplayProfile} from '../hooks/useDisplayProfile';
 import {Icon} from './Icon';
 import {Button,Separator} from './ui/primitives';

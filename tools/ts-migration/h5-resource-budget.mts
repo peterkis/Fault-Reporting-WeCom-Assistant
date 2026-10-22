@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {mkdir,readFile,writeFile,lstat} from 'node:fs/promises';
-import {isAbsolute,join,resolve} from 'node:path';
+import {dirname,isAbsolute,join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
 export const H5_CPU_COUNT=2;
@@ -14,6 +14,7 @@ export interface WindowsBudgetOptions {
   environment?:NodeJS.ProcessEnv;
   timeoutMs:number;
   sampleMs?:number;
+  preparedHelper?:PreparedWindowsBudget;
 }
 export interface WindowsBudgetRecord {
   schema_version:1;
@@ -181,13 +182,35 @@ public static class H5Budget {
 }
 `;
 
-export async function prepareWindowsResourceBudget(evidenceRoot:string):Promise<PreparedWindowsBudget>{
+async function readPreparedWindowsBudget(prepared:PreparedWindowsBudget,sourceSha256:string):Promise<{source:Buffer;executable:Buffer;origin:string;executableSha256:string}>{
+  if(!object(prepared)||typeof prepared.executable!=='string'||typeof prepared.sourceSha256!=='string'||typeof prepared.executableSha256!=='string')throw new Error('H5_BUDGET_PREPARED_IDENTITY_INVALID');
+  if(!isAbsolute(prepared.executable))throw new Error('H5_BUDGET_ABSOLUTE_PATH_REQUIRED');
+  const executable=resolve(prepared.executable),source=join(dirname(executable),'H5ResourceBudget.cs');
+  await noSymlinkChain(executable);await noSymlinkChain(source);
+  if(!(await lstat(executable)).isFile()||!(await lstat(source)).isFile())throw new Error('H5_BUDGET_PREPARED_FILE_REQUIRED');
+  const sourceBytes=await readFile(source);
+  if(!sourceBytes.equals(Buffer.from(WINDOWS_HELPER))||createHash('sha256').update(sourceBytes).digest('hex')!==prepared.sourceSha256||prepared.sourceSha256!==sourceSha256)throw new Error('H5_BUDGET_PREPARED_SOURCE_MISMATCH');
+  // Hash and copy this same read, rather than reopening a path after validation.
+  const executableBytes=await readFile(executable),executableSha256=createHash('sha256').update(executableBytes).digest('hex');
+  if(executableSha256!==prepared.executableSha256)throw new Error('H5_BUDGET_PREPARED_EXECUTABLE_MISMATCH');
+  return {source:sourceBytes,executable:executableBytes,origin:executable,executableSha256};
+}
+
+export async function prepareWindowsResourceBudget(evidenceRoot:string,preparedHelper?:PreparedWindowsBudget):Promise<PreparedWindowsBudget>{
   if(process.platform!=='win32')throw new Error('H5_BUDGET_WINDOWS_REQUIRED');
   if(!isAbsolute(evidenceRoot))throw new Error('H5_BUDGET_ABSOLUTE_PATH_REQUIRED');
   await noSymlinkChain(evidenceRoot);await mkdir(evidenceRoot,{recursive:true});
   const sourceSha256=createHash('sha256').update(WINDOWS_HELPER).digest('hex');
   const directory=join(evidenceRoot,`native-${sourceSha256.slice(0,16)}`);await mkdir(directory,{recursive:true});
   const source=join(directory,'H5ResourceBudget.cs'),executable=join(directory,'H5ResourceBudget.exe');
+  if(preparedHelper!==undefined){
+    const cached=await readPreparedWindowsBudget(preparedHelper,sourceSha256);
+    await noSymlinkChain(directory);
+    await writeFile(source,cached.source,{flag:'wx'});await writeFile(executable,cached.executable,{flag:'wx'});
+    await writeFile(join(directory,'native-identity.json'),JSON.stringify({source_sha256:sourceSha256,executable_sha256:cached.executableSha256,node:process.version,
+      prepared_from:{executable:cached.origin,source_sha256:sourceSha256,executable_sha256:cached.executableSha256}},null,2),{flag:'wx'});
+    return {executable,sourceSha256,executableSha256:cached.executableSha256};
+  }
   try{await writeFile(source,WINDOWS_HELPER,{flag:'wx'});}catch(error){if(!object(error)||error.code!=='EEXIST'||await readFile(source,'utf8')!==WINDOWS_HELPER)throw error;}
   try{await lstat(executable);}catch(error){if(!object(error)||error.code!=='ENOENT')throw error;
     const compiler=join(process.env.SystemRoot??'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe');
@@ -202,7 +225,7 @@ export async function prepareWindowsResourceBudget(evidenceRoot:string):Promise<
 export async function runWindowsResourceBudget(options:WindowsBudgetOptions):Promise<WindowsBudgetRecord>{
   validateWindowsBudgetOptions(options);if(process.platform!=='win32')throw new Error('H5_BUDGET_WINDOWS_REQUIRED');
   await noSymlinkChain(options.evidenceRoot);await mkdir(options.evidenceRoot);
-  const prepared=await prepareWindowsResourceBudget(join(options.evidenceRoot,'native'));
+  const prepared=await prepareWindowsResourceBudget(join(options.evidenceRoot,'native'),options.preparedHelper);
   const spec=join(options.evidenceRoot,'launch.json');
   await writeFile(spec,JSON.stringify({evidenceRoot:resolve(options.evidenceRoot),executable:options.executable,args:options.args,cwd:options.cwd,timeoutMs:options.timeoutMs,sampleMs:options.sampleMs??250,parentPid:process.pid}));
   const result=await processExit(prepared.executable,['run',spec],{cwd:options.cwd,...(options.environment?{env:options.environment}:{})});
