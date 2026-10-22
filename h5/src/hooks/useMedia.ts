@@ -3,7 +3,8 @@ import {useTranslation} from 'react-i18next';
 import {api,authLost} from '../api/client';
 import type {Bootstrap} from '../api/types';
 import {validateMedia,type MediaKind,type MediaCandidate} from '../lib/media';
-import {registeredWecom,markNativePreview,hasNativePreviewWork,stopNativePreview,waitNativePreviewStops} from './wecom-registration';
+import {registeredWecom,markNativePreview,stopNativePreview} from './wecom-registration';
+import type {VoiceCapture} from './voice-capture';
 type Wecom=typeof import('../lib/wecom');
 interface DraftMediaBase extends MediaCandidate {id:string;file:Blob|null;localId:string|null;url:string|null;name:string}
 type UploadStage='RESERVE'|'SDK_READY'|'NATIVE_UPLOAD'|'SERVER_IMPORT'|'BINARY_UPLOAD';
@@ -18,20 +19,9 @@ export type DraftMedia=DraftMediaBase & (
  | {status:'READY';progress:100;ref:string;controller:null}
  | {status:'ERROR';progress:number;ref:string|null;controller:null;failure:MediaUploadFailure}
 );
-export type RecordingMode='CLEAR'|'WECOM';
-interface RecordingSnapshot {mode:RecordingMode;canClear:boolean;canWecom:boolean;starting:boolean;recording:boolean;seconds:number;cancelling:boolean}
-interface RecordingSession {mode:RecordingMode;started:number;ended:number|null;cancel:boolean;released:boolean;waiting:AbortController|null;media:MediaRecorder|null;stream:MediaStream|null;timer:number|null;interval:number|null;stopping:boolean;ready:boolean}
+interface RecordingSnapshot {canClear:boolean;canWecom:boolean;starting:boolean;recording:boolean;seconds:number;cancelling:boolean}
+interface RecordingSession {capture:VoiceCapture|null;released:boolean;cancel:boolean;sliding:boolean}
 type Listener=()=>void;
-type VoiceStage='PREVIEW_STOP'|'SDK_READY'|'START_RECORD'|'STOP_RECORD'|'BROWSER_CAPABILITY'|'BROWSER_PERMISSION'|'BROWSER_START';
-function voiceFailureKey(stage:VoiceStage,reason:unknown):string{
- if(stage==='PREVIEW_STOP')return 'voice:previewStopFailed';
- if(stage==='SDK_READY')return 'voice:setupFailed';
- if(stage==='START_RECORD')return 'voice:nativeStartFailed';
- if(stage==='STOP_RECORD')return 'voice:finishFailed';
- if(stage==='BROWSER_CAPABILITY')return 'voice:browserUnavailable';
- if(stage==='BROWSER_PERMISSION'&&reason!==null&&typeof reason==='object'&&'name'in reason&&(reason.name==='NotAllowedError'||reason.name==='SecurityError'))return 'voice:browserDenied';
- return 'voice:browserFailed';
-}
 function uploadFailure(stage:UploadStage,reason:unknown):MediaUploadFailure{
  const status=reason!==null&&typeof reason==='object'&&'status'in reason&&typeof reason.status==='number'?reason.status:null;
  const code:UploadCode=status===401?'AUTH_REQUIRED':status===403?'FORBIDDEN':status===409||status===410?'EXPIRED':status===429?'BUSY':status!==null&&[400,413,415,422].includes(status)?'INPUT_REJECTED':status!==null&&status>=500?'UNAVAILABLE':status===0||status===408||reason instanceof TypeError?'NETWORK':stage==='SDK_READY'||stage==='NATIVE_UPLOAD'?'SDK_FAILED':'UPLOAD_FAILED';
@@ -41,8 +31,8 @@ function uploadFailure(stage:UploadStage,reason:unknown):MediaUploadFailure{
 export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(event:VoiceTranscriptEvent)=>void,message:(key:string)=>string){
  const native=()=>getBootstrap().h5.sdk.enabled&&/wxwork/i.test(navigator.userAgent);
  const canClear=typeof navigator!=='undefined'&&Boolean(navigator.mediaDevices?.getUserMedia)&&typeof MediaRecorder!=='undefined',canWecom=typeof navigator!=='undefined'&&native();
- let items:DraftMedia[]=[],itemIds:readonly string[]=[],error:string|null=null,errorTone:'error'|'info'='error',recording:RecordingSnapshot={mode:canWecom?'WECOM':'CLEAR',canClear,canWecom,starting:false,recording:false,seconds:0,cancelling:false};
- let alive=true,queue=Promise.resolve(),sdk:Wecom|null=null,record:RecordingSession|null=null,admitting=0;
+ let items:DraftMedia[]=[],itemIds:readonly string[]=[],error:string|null=null,errorTone:'error'|'info'='error',recording:RecordingSnapshot={canClear,canWecom,starting:false,recording:false,seconds:0,cancelling:false};
+ let alive=true,queue=Promise.resolve(),record:RecordingSession|null=null,lastCapture:VoiceCapture|null=null,admitting=0;
  let playbackAttempt=0,playbackPending:string|null=null;
  const listeners=new Set<Listener>(),pendingMeasurements=new Set<()=>void>();
  const progressTimers=new Map<string,ReturnType<typeof setTimeout>>(),progressValues=new Map<string,number>(),lastProgress=new Map<string,number>();
@@ -51,7 +41,7 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(eve
  const replace=(id:string,update:(item:DraftMedia)=>DraftMedia)=>{items=items.map(item=>item.id===id?update(item):item);emit();};
  const setError=(value:string|null,tone:'error'|'info'='error')=>{error=value;errorTone=tone;emit();};
  const setRecording=(value:Partial<RecordingSnapshot>)=>{recording={...recording,...value};emit();};
- const getSdk=async()=>{const value=await registeredWecom(getBootstrap());if(!alive)throw new DOMException('Aborted','AbortError');sdk=value;return value;};
+ const getSdk=async()=>{const value=await registeredWecom(getBootstrap());if(!alive)throw new DOMException('Aborted','AbortError');return value;};
  const cancelProgress=(id:string)=>{const timer=progressTimers.get(id);if(timer)clearTimeout(timer);progressTimers.delete(id);progressValues.delete(id);lastProgress.delete(id);};
  const publishProgress=(id:string,value:number)=>{lastProgress.set(id,performance.now());replace(id,item=>item.status==='UPLOADING'?{...item,progress:value}:item);};
  const progress=(id:string,value:number)=>{
@@ -115,7 +105,7 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(eve
   const item=items.find(value=>value.id===id);if(!item)return;
   cancelProgress(id);item.controller?.abort();if(item.url?.startsWith('blob:'))URL.revokeObjectURL(item.url);
   if(playbackPending===id){playbackAttempt+=1;playbackPending=null;}
-  if(record?.waiting){record.cancel=true;record.released=true;record.waiting.abort();}
+  if(item.kind==='VOICE')lastCapture?.release(true);
   if(item.localId&&item.kind==='VOICE')stopNativePreview(item.localId);
   if(item.kind==='VOICE')transcript({type:'REMOVE',id});
   items=items.filter(value=>value.id!==id);emit();
@@ -137,47 +127,33 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(eve
    }
   }catch{if(alive){setError(message('mediaInvalid'));fallback();}}finally{admitting-=1;emit();}
  };
- const saveVoice=(localId:string|null,blob:Blob|null,duration:number)=>{
-  if(!alive)return;
-  if(!Number.isFinite(duration)){setError(message('mediaInvalid'));return;}
-  if(duration<3000){setError(message('voice:tooShort'),'info');return;}
+ const saveVoice=(localId:string|null,blob:Blob|null,duration:number):string|null=>{
+  if(!alive)return null;
+  if(!Number.isFinite(duration)){setError(message('mediaInvalid'));return null;}
+  if(duration<2000){setError(message('voice:tooShort'),'info');return null;}
   const candidate:MediaCandidate={kind:'VOICE',byteSize:blob?.size??null,mimeType:blob?.type??'audio/amr',durationMs:Math.min(60_000,Math.round(duration))},invalid=validateMedia(candidate,items,getBootstrap().h5.limits);
-  if(invalid){setError(message(invalid));return;}
+  if(invalid){setError(message(invalid));return null;}
   const id=crypto.randomUUID();transcript({type:'BEGIN',id});items=[...items,{...candidate,id,file:blob,localId,url:blob?URL.createObjectURL(blob):null,name:message('voiceLabel'),progress:0,status:'QUEUED',ref:null,controller:null}];emit();upload(id);
-  if(localId)void getSdk().then(ww=>{if(!alive||!items.some(item=>item.id===id))throw new DOMException('Aborted','AbortError');return ww.translateVoice({localId,isShowProgressTips:false});}).then(result=>{if(alive&&items.some(item=>item.id===id)&&result.translateResult)transcript({type:'READY',id,text:result.translateResult});}).catch(()=>{/* Optional transcript never blocks intake. */});
+  return id;
  };
- const stop=async(cancel=false)=>{
-  const state=record;if(!state||state.stopping)return;state.released=true;state.cancel=state.cancel||cancel;if(!state.ready){state.waiting?.abort();return;}state.stopping=true;state.ended=performance.now();
-  if(state.timer)clearTimeout(state.timer);if(state.interval)clearInterval(state.interval);setRecording({recording:false,cancelling:false});
-  if(state.media){state.media.stop();state.stream?.getTracks().forEach(track=>track.stop());return;}
-  else if(state.mode==='WECOM')try{const ww=await getSdk(),result=await ww.stopRecord();if(!state.cancel&&alive)saveVoice(result.localId,null,(state.ended??performance.now())-state.started);}catch{if(alive&&!state.cancel)setError(message('voice:finishFailed'));}
-  if(record===state)record=null;emit();
+ const transcribe=(id:string,localId:string,ww:Wecom)=>{
+  if(!alive||!items.some(item=>item.id===id))return;
+  void ww.translateVoice({localId,isShowProgressTips:false}).then(result=>{if(alive&&items.some(item=>item.id===id)&&result.translateResult)transcript({type:'READY',id,text:result.translateResult});}).catch(()=>{if(alive&&items.some(item=>item.id===id))setError(message('voice:transcriptUnavailable'),'info');});
  };
  const start=async()=>{
   if(record||items.some(item=>item.kind==='VOICE')||!alive)return;
   setError(null);setRecording({seconds:0,starting:true});
-  const state:RecordingSession={mode:recording.mode,started:0,ended:null,cancel:false,released:false,waiting:null,media:null,stream:null,timer:null,interval:null,stopping:false,ready:false};record=state;emit();let stage:VoiceStage='BROWSER_CAPABILITY';
+  const state:RecordingSession={capture:null,released:false,cancel:false,sliding:false};record=state;emit();
   try{
-   if(hasNativePreviewWork()){stage='PREVIEW_STOP';state.waiting=new AbortController();try{await waitNativePreviewStops(state.waiting.signal);}finally{state.waiting=null;}if(!alive||state.released||record!==state)throw new DOMException('Aborted','AbortError');}
-   if(state.mode==='WECOM'){
-    stage='SDK_READY';const ww=await getSdk();stage='START_RECORD';await ww.startRecord();
-    if(state.released||!alive){stage='STOP_RECORD';await ww.stopRecord();if(alive&&!state.cancel)setError(message('voice:tooShort'),'info');if(record===state)record=null;setRecording({starting:false});return;}
-    ww.onVoiceRecordEnd(event=>{if(record!==state||state.stopping)return;state.stopping=true;if(state.interval)clearInterval(state.interval);if(state.timer)clearTimeout(state.timer);setRecording({recording:false,cancelling:false});if(!state.cancel)saveVoice(event.localId,null,performance.now()-state.started);record=null;emit();});
-   }else{
-    if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')throw new Error('voiceUnavailable');
-    stage='BROWSER_PERMISSION';const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48_000},channelCount:{ideal:1}}});state.stream=stream;
-    if(state.released||!alive){stream.getTracks().forEach(track=>track.stop());if(alive&&!state.cancel)setError(message('voice:tooShort'),'info');if(record===state)record=null;setRecording({starting:false});return;}
-    stage='BROWSER_START';const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(value=>MediaRecorder.isTypeSupported(value)),recorder=new MediaRecorder(stream,{...(mime?{mimeType:mime}:{}),audioBitsPerSecond:128_000});state.media=recorder;const chunks:Blob[]=[];
-    recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};recorder.onstop=()=>{stream.getTracks().forEach(track=>track.stop());if(!state.cancel&&alive)saveVoice(null,new Blob(chunks,{type:recorder.mimeType}),(state.ended??performance.now())-state.started);chunks.length=0;if(record===state)record=null;emit();};recorder.start();
-   }
-   state.ready=true;state.started=performance.now();if(!alive)return;setRecording({starting:false,recording:true});
-   state.interval=window.setInterval(()=>setRecording({seconds:Math.floor((performance.now()-state.started)/1000)}),1000);
-   state.timer=window.setTimeout(()=>void stop(false),60_000);
-  }catch(reason){if(alive&&!state.cancel)setError(message(state.released&&stage==='PREVIEW_STOP'?'voice:tooShort':voiceFailureKey(stage,reason)),state.released&&stage==='PREVIEW_STOP'?'info':'error');state.stream?.getTracks().forEach(track=>track.stop());if(record===state)record=null;setRecording({starting:false,recording:false,cancelling:false});}
+   const {createVoiceCapture}=await import('./voice-capture');
+   if(!alive||record!==state||state.released)return;
+   const capture=createVoiceCapture({canClear,canWecom,current:()=>alive&&record===state,getSdk,update:value=>{if(alive&&record===state)setRecording(value);},
+    error:(key,tone,id)=>{if(alive&&(record===state||id&&items.some(item=>item.id===id)))setError(message(key),tone);},save:(localId,blob,duration)=>alive&&record===state?saveVoice(localId,blob,duration):null,transcribe,done:()=>{if(record===state){record=null;emit();}}});
+   state.capture=capture;lastCapture=capture;if(state.sliding)capture.slide(true);await capture.start();
+  }catch{if(alive&&record===state){if(!state.cancel)setError(message('voice:browserFailed'));record=null;setRecording({starting:false,recording:false,cancelling:false});}}
  };
- const release=(cancel=false)=>{const state=record;if(!state)return;state.released=true;state.cancel=state.cancel||cancel;if(state.ready)void stop(cancel);else state.waiting?.abort();};
- const slide=(cancel:boolean)=>{if(record&&record.cancel!==cancel){record.cancel=cancel;setRecording({cancelling:cancel});}};
- const setRecordingMode=(mode:RecordingMode)=>{if(!alive||record||items.some(item=>item.kind==='VOICE')||(mode==='CLEAR'?!canClear:mode==='WECOM'?!canWecom:true))return false;if(recording.mode!==mode){setError(null);setRecording({mode});}return true;};
+ const release=(cancel=false)=>{const state=record;if(!state)return;state.released=true;state.cancel=state.cancel||cancel||state.sliding;if(state.capture)state.capture.release(state.cancel);else{record=null;setRecording({starting:false,recording:false,cancelling:false});if(alive&&!state.cancel)setError(message('voice:tooShort'),'info');}};
+ const slide=(cancel:boolean)=>{if(record){record.sliding=cancel;record.capture?.slide(cancel);if(!record.capture)setRecording({cancelling:cancel});}};
  const playNative=async(item:DraftMedia)=>{
   if(!item.localId||!alive||!items.some(value=>value.id===item.id)||playbackPending===item.id)return;
   const attempt=++playbackAttempt;playbackPending=item.id;
@@ -185,21 +161,21 @@ export function createMediaController(getBootstrap:()=>Bootstrap,transcript:(eve
  };
  const clear=(bound=false)=>{
   playbackAttempt+=1;playbackPending=null;
-  if(record?.waiting){record.cancel=true;record.released=true;record.waiting.abort();}
+  release(true);lastCapture?.release(true);
   for(const item of items){cancelProgress(item.id);item.controller?.abort();if(item.url?.startsWith('blob:'))URL.revokeObjectURL(item.url);if(item.kind==='VOICE')transcript({type:'REMOVE',id:item.id});if(item.localId&&item.kind==='VOICE')stopNativePreview(item.localId);if(!bound&&item.ref)void api.cancelUpload(item.ref,getBootstrap().csrf_token,item.id).catch(()=>undefined);}
   items=[];emit();
  };
- const hide=()=>{if(document.visibilityState!=='visible'&&record){record.cancel=true;record.released=true;void stop(true);}};
+ const hide=()=>{if(document.visibilityState!=='visible')release(true);};
  const scopeChanged=()=>dispose();
  const mount=()=>{alive=true;document.addEventListener('visibilitychange',hide);authLost.addEventListener('lost',scopeChanged);authLost.addEventListener('scope-change',scopeChanged);};
  const dispose=()=>{
   alive=false;document.removeEventListener('visibilitychange',hide);authLost.removeEventListener('lost',scopeChanged);authLost.removeEventListener('scope-change',scopeChanged);for(const cancel of pendingMeasurements)cancel();
-  const state=record;if(state){state.cancel=true;state.released=true;state.waiting?.abort();if(state.timer)clearTimeout(state.timer);if(state.interval)clearInterval(state.interval);if(state.media?.state==='recording')state.media.stop();else if(state.ready)void sdk?.stopRecord().catch(()=>undefined);state.stream?.getTracks().forEach(track=>track.stop());record=null;}
+  release(true);lastCapture?.release(true);lastCapture=null;record=null;
   // Navigation can leave a POST pending/UNKNOWN. Its ready refs must survive for binding/recovery.
   // Unbound files retain their original bounded expiry; only explicit remove cancels a draft upload.
   clear(true);recording={...recording,starting:false,recording:false,seconds:0,cancelling:false};listeners.clear();
  };
- return {subscribe,getItems:()=>items,getItemIds:()=>itemIds,getItem:(id:string)=>items.find(item=>item.id===id)??null,getError:()=>error,getErrorTone:()=>errorTone,getRecording:()=>recording,getBusy:()=>alive&&(admitting>0||pendingMeasurements.size>0||record!==null||recording.recording||items.some(item=>item.status!=='READY')),getHasVoice:()=>items.some(item=>item.kind==='VOICE'),getNative:native,setError,setRecordingMode,add,remove,choosePhotos,retry:upload,start,release,slide,playNative,clear,mount,dispose};
+ return {subscribe,getItems:()=>items,getItemIds:()=>itemIds,getItem:(id:string)=>items.find(item=>item.id===id)??null,getError:()=>error,getErrorTone:()=>errorTone,getRecording:()=>recording,getBusy:()=>alive&&(admitting>0||pendingMeasurements.size>0||record!==null||recording.recording||items.some(item=>item.status!=='READY')),getHasVoice:()=>items.some(item=>item.kind==='VOICE'),getNative:native,setError,add,remove,choosePhotos,retry:upload,start,release,slide,playNative,clear,mount,dispose};
 }
 export type MediaController=ReturnType<typeof createMediaController>;
 /** The controller is stable. Components subscribe only to the slice they display. */

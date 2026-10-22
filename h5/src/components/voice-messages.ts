@@ -1,6 +1,6 @@
 import i18n from '../i18n';
 const en={
- modeClear:'Clear audio',modeWecom:'WeCom audio',modeLabel:'Recording mode',clearHint:'Record sounds; add details.',wecomHint:'Speech becomes editable text.',nativeOnlyHint:'WeCom voice and transcription.',
+ captureHint:'Hold to record; speech may become editable text.',
  preparing:'Preparing recording…',
  previewStopFailed:'Playback did not stop. Retry recording.',
  setupFailed:'WeCom voice unavailable. Retry or type.',
@@ -9,7 +9,9 @@ const en={
  browserDenied:'Microphone blocked. Check permissions or type.',
  browserFailed:'Web recording failed. Retry or type.',
  finishFailed:'Recording not saved. Record again or type.',
- tooShort:'Too short. Hold for 3 seconds or more.',
+ tooShort:'Too short. Hold for 2 seconds or more.',
+ transcriptUnavailable:'Transcription unavailable. Audio is kept; add text.',
+ interrupted:'Recording interrupted. Please record again.',
  uploadInvalid:'Attachment rejected. Remove and add again.',
  uploadSignIn:'Session expired. Reconnect to upload.',
  uploadForbidden:'Upload permission denied.',
@@ -21,7 +23,7 @@ const en={
  uploadFailed:'Upload failed. Retry later.',
 };
 const zh={
- modeClear:'清晰录音',modeWecom:'企业微信录音',modeLabel:'录音方式',clearHint:'保留现场声音，请手动补充文字。',wecomHint:'可转文字，识别结果可编辑。',nativeOnlyHint:'仅支持企业微信录音，可转文字。',
+ captureHint:'按住录音，语音可辅助转成文字。',
  preparing:'正在准备录音…',
  previewStopFailed:'试听未能停止，请重试录音。',
  setupFailed:'企业微信录音暂不可用，请稍后重试或补充文字。',
@@ -30,7 +32,9 @@ const zh={
  browserDenied:'麦克风未获授权，请检查权限或填写文字。',
  browserFailed:'网页起录失败，请重试或填写文字。',
  finishFailed:'录音未保存，请重录或填写文字。',
- tooShort:'录音太短了，请按住至少 3 秒后重试。',
+ tooShort:'录音太短了，请按住至少 2 秒后重试。',
+ transcriptUnavailable:'转写暂不可用，录音已保留，请补充文字。',
+ interrupted:'录音已中断，请重新录制。',
  uploadInvalid:'材料不合要求，请移除后重新添加。',
  uploadSignIn:'登录已过期，请重新连接后再上传。',
  uploadForbidden:'当前无上传权限。',

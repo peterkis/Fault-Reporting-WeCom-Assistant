@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-10-22 H5 单入口录音前向修订：[ADR-0040](../adr/0040_h5_single_voice_capture_and_optional_transcription.md)按最新用户要求移除方式选择，以清晰Blob作为唯一回听／上传材料，同手势企业微信采集仅辅助转写，下限改为2秒。此项替代ADR-0038的手动双模式及3秒规则，原权限、上传预算、草稿归属与资源清理保持；真机双路效果单独保持NOT_RUN，实际候选与验证见[本轮记录](../plans/yixiaoxiu-h5-performance/unified-voice-2026-10-22.md)。
+
 2026-10-22 H5 本人资料前向修复：[ADR-0039](../adr/0039_h5_member_display_profile.md)将已验证的官方姓名／主部门读取接入独立异步展示，复用原 BASE 有界核验，保留会话及返回前终检；不从展示名称授予科室 READ，不修改身份或历史快照。实际复现、验收和交付回执入口见[本轮记录](../plans/yixiaoxiu-h5-performance/member-profile-2026-10-22.md)，原失败及实机 NOT_RUN 保留。
 
 2026-10-21／22 H5客户端修订：[ADR-0037](../adr/0037_h5_session_resume_and_navigation.md)规定有限滑动会话、静默恢复与当前成员范围内的温导航；[ADR-0038](../adr/0038_h5_voice_capture_and_transcript_lifecycle.md)按用户选择继续默认企业微信录音，限定整数时长、转写归属、试听清理与可选浏览器录音。当前权限、等待后终检、留存、Ticket事实及持久开关默认值保持。不同候选的本地、CI、云端与实机结论分别见[会话验收](../plans/yixiaoxiu-h5-performance/resume-navigation-2026-10-21.md)及[录音续作](../plans/yixiaoxiu-h5-performance/voice-followup-2026-10-21.md)，合成测试不代替实机音质或Gate批准。

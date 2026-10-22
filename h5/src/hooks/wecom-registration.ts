@@ -1,6 +1,9 @@
 import {api,authLost} from '../api/client';
 import type {Bootstrap} from '../api/types';
 type Wecom=typeof import('../lib/wecom');
+export interface NativeCaptureWork {stop:()=>Promise<string|null>;end:(localId:string)=>void}
+/** The device operation, unlike its page waiter, survives navigation and scope changes. */
+export const nativeCapture:{current:NativeCaptureWork|null}={current:null};
 let activeScope:string|null=null;
 let generation=0;
 const registrations=new Map<string,Promise<Wecom>>();
