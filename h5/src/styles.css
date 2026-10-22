@@ -116,3 +116,32 @@ body.h5-dialog-open{overflow:hidden}.ui-dialog-overlay{pointer-events:auto}
 .ui-button-voice:not(:disabled)[aria-busy=false][aria-pressed=false]::before{animation:h5-voice-breathe 3.2s ease-in-out infinite}
 .ui-button-voice.is-recording:not(:disabled)::before{border-color:color-mix(in srgb,var(--red-text) 45%,transparent);animation:h5-voice-record 1.8s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){.ui-button-voice::before{display:none}}
+
+/* Explicit A/B/C evaluation. Static controls are the default and always usable. */
+.h5-report-entry{position:relative;isolation:isolate;overflow:hidden;transition:transform .12s cubic-bezier(.16,1,.3,1)}
+.h5-report-entry:active:not([aria-disabled=true]){transform:scale(.985)}
+.h5-ambient{position:absolute;pointer-events:none;display:block}
+.h5-ambient-entry{inset:0;z-index:-1;border-radius:inherit;overflow:hidden}
+.h5-shine{width:100%;height:100%}
+.h5-current-node{position:relative;outline:2px solid var(--link);outline-offset:3px}
+.h5-ambient-current{inset:-6px;border-radius:50%}
+.h5-current-pulse{display:block;width:100%;height:100%;border:2px solid var(--link);border-radius:50%}
+.h5-send-slot{position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;overflow:hidden}
+.ui-dialog-content.h5-experience-sheet{left:0;right:0;top:auto;bottom:0;margin-inline:auto;transform:none;width:min(100%,480px);max-height:85vh;max-height:85dvh;border-radius:20px 20px 0 0;padding:24px 20px max(20px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;gap:16px}
+.h5-experience-sheet>[data-slot=dialog-title]{margin:0}
+.h5-experience-sheet .ui-textarea{font-size:16px}
+.h5-rating{display:flex;gap:4px;justify-content:space-between}
+.h5-rating label,.h5-rating-item{position:relative;display:grid;place-items:center;width:48px;min-height:48px;background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:0}
+.h5-rating-item>.material-symbols-outlined{font-size:30px;color:var(--secondary-text)}
+.h5-rating-item>.star-selected{color:var(--warm-text);font-variation-settings:'FILL' 1}
+.h5-rating-indicator{position:absolute;inset:0;border:2px solid var(--primary);border-radius:inherit;pointer-events:none}
+.h5-rating-item:focus-visible{outline:2px solid var(--link);outline-offset:3px}
+.h5-upload-progress{height:6px;width:100%;border-radius:8px;overflow:hidden;background:var(--muted)}
+.h5-upload-indicator{height:100%;width:100%;background:var(--primary);border-radius:inherit}
+.h5-image-zoom{display:block;width:100%;height:48vh;height:48dvh;overflow:hidden;background:var(--muted);border:0;padding:0;border-radius:12px;touch-action:manipulation}
+.h5-image-zoom img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none}
+.h5-image-zoom:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.h5-image-actions{display:flex;justify-content:space-between;gap:12px}
+.h5-image-actions>.ui-button{flex:1}
+@media(min-width:600px){.ui-dialog-content.h5-experience-sheet{top:50%;bottom:auto;translate:0 -50%;width:calc(100% - 32px);max-width:480px;border-radius:20px}}
+@media(prefers-reduced-motion:reduce){.h5-report-entry{transition:none}.h5-report-entry:active:not([aria-disabled=true]){transform:none}.h5-ambient{display:none}}

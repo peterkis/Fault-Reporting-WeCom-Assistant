@@ -9,6 +9,9 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@animate-ui/react": "2.0.0",
+    "motion": "14.6.0",
+    "radix-ui": "1.6.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "7.18.4",

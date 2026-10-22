@@ -8,6 +8,26 @@ import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pu
 import type {H5EntryBootstrap} from '../contracts/yxx_h5_entry_contracts.js';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 
+test('H5 experience modes require an explicit document choice and never persist it',async()=>{
+ const loader=createH5PureModuleLoader({overrides:{'enhancements/loader.ts':'export const interactions={load(){}};'}});
+ const {parseExperienceMode}=await import(await loader.moduleUrl('experience.ts'));
+ for(const value of ['', '?ui=', '?ui=unknown', '?ui=ANIMATED', '?ui=true', '?preview=1'])assert.equal(parseExperienceMode(value),'baseline');
+ for(const value of ['baseline','static','animated'])assert.equal(parseExperienceMode('?ui='+value+'&preview=1'),value);
+ assert.equal(parseExperienceMode('','static'),'static');assert.equal(parseExperienceMode('?ui=baseline','animated'),'baseline');
+});
+
+test('H5 motion capability follows reduced motion and safely rejects older media-query APIs',async t=>{
+ const previousLocation=Object.getOwnPropertyDescriptor(globalThis,'location'),previousMedia=Object.getOwnPropertyDescriptor(globalThis,'matchMedia');
+ t.after(()=>{for(const[key,value]of [['location',previousLocation],['matchMedia',previousMedia]]as const){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}});
+ Object.defineProperty(globalThis,'location',{configurable:true,value:{search:'?ui=animated'}});
+ let reduced=false;
+ Object.defineProperty(globalThis,'matchMedia',{configurable:true,value:()=>({matches:reduced,addEventListener(){}})});
+ const loader=createH5PureModuleLoader({overrides:{'enhancements/loader.ts':'export const interactions={load(){}};'}}),{motionAllowed}=await import(await loader.moduleUrl('experience.ts'));
+ assert.equal(motionAllowed(),true);reduced=true;assert.equal(motionAllowed(),false);reduced=false;assert.equal(motionAllowed(),true);
+ Object.defineProperty(globalThis,'matchMedia',{configurable:true,value:()=>({matches:false})});assert.equal(motionAllowed(),false);
+ Reflect.deleteProperty(globalThis,'matchMedia');assert.equal(motionAllowed(),false);
+});
+
 let actionImportProbeId=0;
 const actionProbeId='11111111-1111-4111-8111-111111111111';
 const actionProbeReceipt={client_command_id:actionProbeId,status:'ACCEPTED',request_ref:'r'.repeat(32),intake_no:'SYNTHETIC',accepted_revision:'1',accepted_at:'2026-10-22 12:00:00',accepted_epoch_ms:'1792641600000'};
@@ -127,9 +147,9 @@ test('H5 greeting periods translate with a member name in Simplified Chinese and
  }
 });
 
-test('H5 official compiled catalogs preserve all 412 bilingual messages and their interpolation',async t=>{
+test('H5 official compiled catalogs preserve all 414 bilingual messages and their interpolation',async t=>{
  const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),language=i18n.language;
- const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts'};let count=0;
+ const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts',interaction:'components/interaction-messages.ts',workspace:'components/workspace-messages.ts'};let count=0;
  for(const[namespace,path]of Object.entries(sources)){
   const raw=await readFile(resolve(sourceRoot,'h5/src',path),'utf8'),compiled=compileH5Catalog(raw,namespace),values=await import(await loader.moduleUrl(path));assert.deepEqual(Object.keys(values.en).sort(),Object.keys(values.zh).sort());
   for(const[lng,source,catalog]of [['en',values.en,compiled.en],['zh-CN',values.zh,compiled.zh]])for(const[key,message]of Object.entries(source)){
@@ -137,7 +157,7 @@ test('H5 official compiled catalogs preserve all 412 bilingual messages and thei
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,412);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 206 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,414);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 207 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{

@@ -8,7 +8,9 @@ const catalogs=new Map([
  ['virtual:yxx-i18n/auth',{namespace:'auth',file:'components/auth-messages.ts'}],
  ['virtual:yxx-i18n/command',{namespace:'command',file:'components/command-messages.ts'}],
  ['virtual:yxx-i18n/help',{namespace:'help',file:'components/help-messages.ts'}],
- ['virtual:yxx-i18n/voice',{namespace:'voice',file:'components/voice-messages.ts'}]
+ ['virtual:yxx-i18n/voice',{namespace:'voice',file:'components/voice-messages.ts'}],
+ ['virtual:yxx-i18n/interaction',{namespace:'interaction',file:'components/interaction-messages.ts'}],
+ ['virtual:yxx-i18n/workspace',{namespace:'workspace',file:'components/workspace-messages.ts'}]
 ]);
 let nextLoader=0;
 export interface H5ModuleLoaderOptions {overrides?:Readonly<Record<string,string>>}

@@ -1,4 +1,4 @@
-import {createContext,memo,useCallback,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import {lazy,Suspense,createContext,memo,useCallback,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {useTranslation} from "../i18n-react";
 import {authLost,ApiError,V2_ACCEPT,captureAuthGeneration,reportAuthLost} from '../api/client';
 import type {RequestDetail} from '../api/types';
@@ -6,6 +6,10 @@ import {useSessionStatus} from '../session';
 import {Icon} from './Icon';
 import {Button} from './ui/primitives';
 import {createMaterialQueue} from './material-request-queue';
+import {newExperience,prepareInteractions} from '../experience';
+import {LazyPanelBoundary} from './LazyPanelBoundary';
+const loadImagePreview=()=>{prepareInteractions();return import('../enhancements/ImageViewer');};
+const ImagePreview=lazy(loadImagePreview);
 type Media=RequestDetail['h5']['media'][number];
 type MediaVariant='PLAYABLE'|'ORIGINAL'|'THUMBNAIL';
 type Queue=ReturnType<typeof createMaterialQueue>;
@@ -41,6 +45,7 @@ export async function readMediaBlob(requestRef:string,media:Pick<Media,'media_re
 }
 export const Material=memo(function Material({media,requestRef}:{media:Media;requestRef:string}){
  const {t}=useTranslation(),session=useSessionStatus(),queue=useContext(QueueContext);
+ const [preview,setPreview]=useState(false);
  const [url,setUrl]=useState<string|null>(null),[original,setOriginal]=useState(false),[error,setError]=useState(false),[loading,setLoading]=useState(false),[playing,setPlaying]=useState(false),[videoActive,setVideoActive]=useState(false);
  const root=useRef<HTMLDivElement|null>(null),controller=useRef<AbortController|null>(null),objectURL=useRef<string|null>(null),audio=useRef<HTMLAudioElement|null>(null),video=useRef<HTMLVideoElement|null>(null),alive=useRef(true),checkingError=useRef(false),playbackGeneration=useRef<number|null>(null),refresher=useRef(session.refresh);refresher.current=session.refresh;
  const clearPlayback=useCallback(()=>{
@@ -69,7 +74,7 @@ export const Material=memo(function Material({media,requestRef}:{media:Media;req
  useEffect(()=>{
   alive.current=true;
   const elements=[audio.current,video.current];
-  const lost=()=>{queue?.dispose();controller.current?.abort();clearPlayback();if(objectURL.current){URL.revokeObjectURL(objectURL.current);objectURL.current=null;}setUrl(null);};
+  const lost=()=>{queue?.dispose();controller.current?.abort();clearPlayback();if(objectURL.current){URL.revokeObjectURL(objectURL.current);objectURL.current=null;}setUrl(null);setPreview(false);};
   authLost.addEventListener('lost',lost);authLost.addEventListener('scope-change',lost);
   return()=>{alive.current=false;authLost.removeEventListener('lost',lost);authLost.removeEventListener('scope-change',lost);controller.current?.abort();for(const element of elements)if(element){element.pause();element.removeAttribute('src');element.load();}clearPlayback();if(objectURL.current){URL.revokeObjectURL(objectURL.current);objectURL.current=null;}};
  },[media.media_ref,requestRef,clearPlayback]);
@@ -94,7 +99,7 @@ export const Material=memo(function Material({media,requestRef}:{media:Media;req
   if(progressive||url){setVideoActive(true);return;}
   void load('PLAYABLE').then(next=>{if(next&&alive.current)setVideoActive(true);else queue?.setPlayback(media.media_ref,false);});
  };
- if(media.kind==='IMAGE')return <div ref={root} className="material-image">{url?<a href={url} target="_blank" rel="noreferrer" onClick={event=>{if(!original){event.preventDefault();controller.current?.abort();controller.current=null;void load('ORIGINAL');}}} aria-label={t('downloadOriginal')}><img src={url} alt={t('photoAlt')} width={320} height={240} loading="lazy" decoding="async" onError={()=>{if(objectURL.current){URL.revokeObjectURL(objectURL.current);objectURL.current=null;}setUrl(null);setOriginal(false);setError(true);}}/></a>:<Button variant="outline" disabled={loading} onClick={()=>void load('ORIGINAL')}><Icon name={error?'refresh':'photo_library'}/><span>{t(loading?'loading':error?'retry':'downloadOriginal')}</span></Button>}</div>;
+ if(media.kind==='IMAGE')return <div ref={root} className="material-image">{preview&&url&&<LazyPanelBoundary onClose={()=>setPreview(false)}><Suspense fallback={null}><ImagePreview url={url} original={original} loading={loading} error={error} onOriginal={()=>{controller.current?.abort();controller.current=null;void load('ORIGINAL');}} onClose={()=>setPreview(false)}/></Suspense></LazyPanelBoundary>}{url?<a href={url} target="_blank" rel="noreferrer" onPointerDown={()=>{if(newExperience)void loadImagePreview().catch(()=>undefined);}} onFocus={()=>{if(newExperience)void loadImagePreview().catch(()=>undefined);}} onClick={event=>{if(newExperience){event.preventDefault();setPreview(true);}if(!original){event.preventDefault();controller.current?.abort();controller.current=null;void load('ORIGINAL');}}} aria-label={t('downloadOriginal')}><img src={url} alt={t('photoAlt')} width={320} height={240} loading="lazy" decoding="async" onError={()=>{if(objectURL.current){URL.revokeObjectURL(objectURL.current);objectURL.current=null;}setUrl(null);setOriginal(false);setError(true);}}/></a>:<Button variant="outline" disabled={loading} onClick={()=>{if(newExperience){setPreview(true);void loadImagePreview().catch(()=>undefined);}void load('ORIGINAL');}}><Icon name={error?'refresh':'photo_library'}/><span>{t(loading?'loading':error?'retry':'downloadOriginal')}</span></Button>}</div>;
  if(media.kind==='VOICE')return <div className="material-voice"><Button variant="default" size="icon" className="voice-play-button" disabled={loading||media.playback_status!=='READY'} onClick={toggleVoice} aria-label={t(playing?'voiceStop':error?'retry':'voicePlay')} aria-pressed={playing}><Icon name={playing?'pause':error?'refresh':'play_arrow'}/></Button><div className="voice-material-copy"><strong>{t('voiceLabel')}</strong>{media.playback_status!=='READY'?<small>{t(media.playback_status==='PENDING'?'playbackPending':'playbackUnavailable')}</small>:error?<small className="voice-play-error">{t('voicePlay')}</small>:<span className="voice-material-wave" aria-hidden="true"><Icon name="graphic_eq"/></span>}</div>{media.duration_ms!==null&&<small className="voice-duration">{Math.round(media.duration_ms/1000)}s</small>}<audio ref={audio} hidden preload="none" onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);queue?.setPlayback(media.media_ref,false);}} onEnded={()=>{setPlaying(false);queue?.setPlayback(media.media_ref,false);}} onError={playbackError} aria-label={t('voiceLabel')}/></div>;
  return <div className="material-av"><div className="inline-row"><Icon name="videocam"/><strong>{t('videoLabel')}</strong>{media.duration_ms!==null&&<small>{Math.round(media.duration_ms/1000)}s</small>}</div>{videoActive?<video ref={video} controls autoPlay preload="none" src={progressive?mediaURL(requestRef,media.media_ref,'PLAYABLE'):url??undefined} onPlay={()=>queue?.setPlayback(media.media_ref,true)} onPause={()=>queue?.setPlayback(media.media_ref,false)} onEnded={()=>queue?.setPlayback(media.media_ref,false)} onError={playbackError} aria-label={t('videoLabel')}/>:media.playback_status==='READY'?<Button variant="outline" size="sm" disabled={loading} onClick={startVideo}><Icon name="play_arrow"/>{t(loading?'loading':error?'retry':'voicePlay')}</Button>:<p>{t(media.playback_status==='PENDING'?'playbackPending':'playbackUnavailable')}</p>}</div>;
 });

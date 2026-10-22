@@ -1,5 +1,13 @@
 ## 2026-10-20：V2 H5 实现入口
 
+2026-10-22 动效验证分支见[实施计划](../plans/yixiaoxiu-h5-performance/animate-ui-evaluation-2026-10-22.md)。根锁定 `@animate-ui/react@2.0.0`、`motion@14.6.0`；正式默认仍为 baseline。当前分支的本地合成对照入口为：
+
+- A 当前布局：`http://127.0.0.1:5196/wecom/yixiaoxiu/?preview=1&ui=baseline`
+- B 新交互静态版：`http://127.0.0.1:5196/wecom/yixiaoxiu/?preview=1&ui=static`
+- C 官方动效版：`http://127.0.0.1:5196/wecom/yixiaoxiu/?preview=1&ui=animated`
+
+先执行下文的本地开发命令。以上 `preview=1` 仅在 DEV 中使用合成数据，正式包会移除夹具。云端按用户要求逐组发布验证，实际入口与当前组以发布回执为准；`H5_UI_EVALUATION_PROFILE` 是显式构建参数，不修改成员授权或命令权限。Android 企业微信为目标实机，iPad mini 2 为探索项，未实际运行的设备不算通过。
+
 2026-10-22 部署后连续展示与首次认证调整见 [ADR-0042](../adr/0042_h5_continuous_navigation_and_silent_entry.md)及 [本轮记录](../plans/yixiaoxiu-h5-performance/loading-continuity-2026-10-22.md)：取消骨架，切换保留当前视图，顶部进度条独立延迟和结束；企业微信正常首次认证不展示重连页，外部浏览器显示打开指引。以下旧候选保留各自的实现与验收时点。
 
 2026-10-22 路由与交互修订见[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)及[本轮记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)：官方React Router接管主内容导航，三主页面共用页头，首页导航与写就绪分别控制；英文工单／日期、分时欢迎语、同秒时间线及快慢骨架同步调整。原生起录确认前保留准备提示，真机漏词改善另行验证。

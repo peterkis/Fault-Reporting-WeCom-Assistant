@@ -4,8 +4,8 @@ import type {Messages} from '@lingui/core';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 
-const files={translation:'src/i18n.ts',auth:'src/components/auth-messages.ts',command:'src/components/command-messages.ts',help:'src/components/help-messages.ts',voice:'src/components/voice-messages.ts'} as const;
-const namespaces=['translation','auth','command','help','voice'] as const;
+const files={translation:'src/i18n.ts',auth:'src/components/auth-messages.ts',command:'src/components/command-messages.ts',help:'src/components/help-messages.ts',voice:'src/components/voice-messages.ts',interaction:'src/components/interaction-messages.ts',workspace:'src/components/workspace-messages.ts'} as const;
+const namespaces=['translation','auth','command','help','voice','interaction','workspace'] as const;
 export type Namespace=keyof typeof files;
 /** Compare required values in the official output, including ICU branches and quoting. */
 function parameters(message:unknown):string{

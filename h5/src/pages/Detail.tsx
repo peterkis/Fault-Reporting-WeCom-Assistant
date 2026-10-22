@@ -1,3 +1,5 @@
+import {Ambient} from '../enhancements/Ambient';
+import {newExperience,prepareInteractions} from '../experience';
 import {lazy,memo,Suspense,useCallback,useMemo,useState} from 'react';
 import {useParams} from '../navigation';
 import {skipToken,useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -17,7 +19,7 @@ import {ErrorPanel,Loading,RecoveryNotice} from '../components/Common';
 import {LazyPanelBoundary} from '../components/LazyPanelBoundary';
 import type {DetailActionKind} from '../components/DetailDialogs';
 import {Button,ButtonLink,Avatar,Card,CardHeader,CardTitle,CardContent,CardDescription,Badge} from '../components/ui/primitives';
-const loadDetailDialogs=()=>import('../components/DetailDialogs');
+const loadDetailDialogs=()=>{prepareInteractions();return import('../components/DetailDialogs');};
 const DetailDialogs=lazy(loadDetailDialogs);
 
 const Overview=memo(function Overview({value}:{value:RequestDetail}){
@@ -32,7 +34,7 @@ const Materials=memo(function Materials({media,requestRef}:{media:RequestDetail[
  const {t}=useTranslation();if(!media.length)return null;
  return <MaterialsProvider requestRef={requestRef}><Card className="materials-card"><CardHeader><CardTitle>{t('media')}</CardTitle><CardDescription>{t('attachmentCount',{count:media.length})}</CardDescription></CardHeader><CardContent><div className="materials-grid">{media.map(item=><Material key={item.media_ref} media={item} requestRef={requestRef}/>)}</div></CardContent></Card></MaterialsProvider>;
 });
-const DetailTimeline=memo(function DetailTimeline({requestRef,progress}:{requestRef:string;progress:RequestDetail['h5']['public_progress']}){
+const DetailTimeline=memo(function DetailTimeline({requestRef,progress,active}:{requestRef:string;progress:RequestDetail['h5']['public_progress'];active:boolean}){
  const {t,i18n}=useTranslation(),session=useIdentity(),client=useQueryClient();
  const retry=useCallback(()=>void refreshRequest(client,session.recovery_scope,requestRef).catch(()=>undefined),[client,session.recovery_scope,requestRef]);
  // Explicit retries replace history with a fresh entry first page.
@@ -40,7 +42,7 @@ const DetailTimeline=memo(function DetailTimeline({requestRef,progress}:{request
  const section=useQuery({queryKey:queryKeys.timelineSection(session.recovery_scope,requestRef),queryFn:skipToken});
  const events=useMemo(()=>latestFirst(timeline.data?.pages.flatMap(page=>page.items)??[]),[timeline.data]);
  const unavailable=section.data==='UNAVAILABLE'&&!timeline.data;
- return <Card className="progress-card"><CardHeader><CardTitle>{t('progress')}</CardTitle>{progress?.estimated_epoch_ms&&<Badge variant="blue">{t('estimated',{time:formatDate(progress.estimated_epoch_ms,i18n.language)})}</Badge>}</CardHeader><CardContent>{unavailable?<ErrorPanel error={new ApiError(503,'YXX_UNAVAILABLE')} retry={retry}/>:timeline.isPending?<Loading/>:timeline.isError?<ErrorPanel error={timeline.error} retry={retry}/>:events.length||progress?<ol className="timeline">{progress&&<li className="timeline-public-progress"><span className="timeline-icon"><Icon name="build"/></span><div><div className="timeline-top"><strong>{t('publicProgress')}</strong><time>{formatDate(progress.updated_epoch_ms,i18n.language,true)}</time></div><div className="public-progress"><p>{progress.summary}</p></div></div></li>}{events.map((event,index)=>{const presentation=timelinePresentation(event),title=presentation.titleKey?t(presentation.titleKey):presentation.summary;return <li key={event.event_type+event.occurred_epoch_ms+index}><span className="timeline-icon"><Icon name={index===0&&!progress?'build':'check'}/></span><div><div className="timeline-top"><strong>{title}</strong><time>{formatDate(event.occurred_epoch_ms,i18n.language,true)}</time></div>{presentation.summary!==title&&<p className="timeline-narrative">{presentation.summary}</p>}</div></li>;})}</ol>:<p className="muted">{t('noProgress')}</p>}{timeline.hasNextPage&&<Button variant="link" disabled={timeline.isFetchingNextPage} onClick={()=>void timeline.fetchNextPage()}>{t('more')}</Button>}</CardContent></Card>;
+ return <Card className="progress-card"><CardHeader><CardTitle>{t('progress')}</CardTitle>{progress?.estimated_epoch_ms&&<Badge variant="blue">{t('estimated',{time:formatDate(progress.estimated_epoch_ms,i18n.language)})}</Badge>}</CardHeader><CardContent>{unavailable?<ErrorPanel error={new ApiError(503,'YXX_UNAVAILABLE')} retry={retry}/>:timeline.isPending?<Loading/>:timeline.isError?<ErrorPanel error={timeline.error} retry={retry}/>:events.length||progress?<ol className="timeline">{progress&&<li className="timeline-public-progress"><span className={"timeline-icon"+(newExperience?" h5-current-node":"")}><Icon name="build"/><Ambient kind="current" active={active&&!timeline.isFetching&&!timeline.isError}/></span><div><div className="timeline-top"><strong>{t('publicProgress')}</strong><time>{formatDate(progress.updated_epoch_ms,i18n.language,true)}</time></div><div className="public-progress"><p>{progress.summary}</p></div></div></li>}{events.map((event,index)=>{const presentation=timelinePresentation(event),title=presentation.titleKey?t(presentation.titleKey):presentation.summary;return <li key={event.event_type+event.occurred_epoch_ms+index}><span className={"timeline-icon"+(newExperience&&index===0&&!progress?" h5-current-node":"")}><Icon name={index===0&&!progress?'build':'check'}/>{index===0&&!progress&&<Ambient kind="current" active={active&&!timeline.isFetching&&!timeline.isError}/>}</span><div><div className="timeline-top"><strong>{title}</strong><time>{formatDate(event.occurred_epoch_ms,i18n.language,true)}</time></div>{presentation.summary!==title&&<p className="timeline-narrative">{presentation.summary}</p>}</div></li>;})}</ol>:<p className="muted">{t('noProgress')}</p>}{timeline.hasNextPage&&<Button variant="link" disabled={timeline.isFetchingNextPage} onClick={()=>void timeline.fetchNextPage()}>{t('more')}</Button>}</CardContent></Card>;
 });
 const Supplements=memo(function Supplements({value,requestRef}:{value:RequestDetail;requestRef:string}){
  const {t}=useTranslation(),session=useIdentity();
@@ -68,10 +70,10 @@ function ManualRefresh({requestRef}:{requestRef:string}){
  return <Button variant="link" onClick={()=>void refreshRequest(client,session.recovery_scope,requestRef).then(()=>actions.acknowledgeSync(requestRef)).catch(()=>undefined)}>{t('refresh')}</Button>;
 }
 export default function Detail(){
- const session=useIdentity(),client=useQueryClient(),{requestRef=''}=useParams();
+ const session=useIdentity(),status=useSessionStatus(),client=useQueryClient(),{requestRef=''}=useParams();
  const detail=useQuery(detailOptions(session.recovery_scope,requestRef));
  if(detail.isPending)return <Loading/>;
  if(detail.isError)return <div className="detail-page"><ErrorPanel error={detail.error} retry={()=>void refreshRequest(client,session.recovery_scope,requestRef).catch(()=>undefined)}/></div>;
  const value=detail.data;
- return <div className="detail-page"><Overview value={value}/><Handler handler={value.h5.handler}/><Materials media={value.h5.media} requestRef={requestRef}/><DetailTimeline requestRef={requestRef} progress={value.h5.public_progress}/>{value.safe_clarification&&<Card><CardContent><p>{value.safe_clarification}</p></CardContent></Card>}<Supplements value={value} requestRef={requestRef}/><DetailActions value={value} requestRef={requestRef}/><ManualRefresh requestRef={requestRef}/></div>;
+ return <div className="detail-page"><Overview value={value}/><Handler handler={value.h5.handler}/><Materials media={value.h5.media} requestRef={requestRef}/><DetailTimeline requestRef={requestRef} progress={value.h5.public_progress} active={status.writeReady&&!detail.isFetching&&!(["completed","cancelled","notService"].includes(reportState(value)))}/>{value.safe_clarification&&<Card><CardContent><p>{value.safe_clarification}</p></CardContent></Card>}<Supplements value={value} requestRef={requestRef}/><DetailActions value={value} requestRef={requestRef}/><ManualRefresh requestRef={requestRef}/></div>;
 }

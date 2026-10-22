@@ -48,10 +48,14 @@ function prepaint(): Plugin {
     }
   };
 }
-export default defineConfig(({command})=>({
+export default defineConfig(({command})=>{
+ const evaluation=process.env.H5_UI_EVALUATION_PROFILE??'baseline';
+ if(!['baseline','static','animated'].includes(evaluation))throw new Error('H5_UI_EVALUATION_PROFILE_INVALID');
+ return {
   root: fileURLToPath(new URL('.', import.meta.url)),
   base: '/wecom/yixiaoxiu/',
   publicDir: false,
+  define:{__H5_UI_EVALUATION__:JSON.stringify(evaluation)},
   plugins: [react(), tailwindcss(), h5Catalogs(fileURLToPath(new URL('.', import.meta.url))), prepaint()],
   // The pinned router package's ESM export targets its development tree, whose
   // ENABLE_DEV_WARNINGS constant stays true even in Vite production mode. Use
@@ -64,4 +68,4 @@ export default defineConfig(({command})=>({
     // $initial tag excludes route, dialog and device-bridge dynamic imports.
     rolldownOptions:{output:{codeSplitting:{groups:[{name:'app-core',tags:['$initial']}]}}}
   }
-}));
+};});
