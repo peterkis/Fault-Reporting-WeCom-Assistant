@@ -12,7 +12,7 @@ import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
 import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {textHashP2016,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
-import {withT21DraftFixture,t21Config,t21Mapping} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
+import {withT21DraftFixture,t21Config,t21Mapping,t21ChineseBrowser} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {secret} from './helpers/yxx-ss-009-http-fixture.mjs';
@@ -84,7 +84,7 @@ async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
     stopApp:async(server:Server)=>{const runtime=managed.find(candidate=>candidate.server===server);assert.ok(runtime);await runtime.stop();assert.equal(server.listening,false);}});
    assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    assert.ok(fixture);const browserOrigin=fixture.origin,page=(ticket:Ticket)=>browserOrigin+'/wecom/yixiaoxiu/tickets/'+ticket.ref;
-   await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await browser.command('Page.navigate',{url:page(original)});await browser.waitFor(enabled);
+   await browser.command('Page.enable');await t21ChineseBrowser(browser);await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await browser.command('Page.navigate',{url:page(original)});await browser.waitFor(enabled);
    await writeFile(join(directory,'eligible-member-page.png'),Buffer.from(await browser.screenshot(),'base64'));
    assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-h5-reporter=true]'))&&Array.from(document.querySelectorAll('script[type=module][src]')).some(node=>/^\\/wecom\\/yixiaoxiu\\/assets\\/.+\\.js$/.test(node.getAttribute('src')||''))"),true);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[src=\"/reporter/bot-feedback.js\"]'))"),false);
@@ -121,7 +121,7 @@ test('Bot original UNKNOWN recovery remains current READ when a same-origin rest
 test('logout from another own Bot Ticket clears all same-actor sensitive copies while a genuine hidden tab retains only original UUIDs and requires fresh own READ',async()=>{
  await withTracer(true,async({original,second,fixture,browser,peers,directory,serverWire,page})=>{
   assert.ok(second);const actor=await principal(browser),firstId=await begin(browser,original);
-  const peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await peer.command('Page.navigate',{url:page(second)});await peer.command('Page.bringToFront');await peer.waitFor(enabled);assert.equal(await principal(peer),actor);const secondId=await begin(peer,second);assert.notEqual(secondId,firstId);
+  const peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await t21ChineseBrowser(peer);await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await peer.command('Page.navigate',{url:page(second)});await peer.command('Page.bringToFront');await peer.waitFor(enabled);assert.equal(await principal(peer),actor);const secondId=await begin(peer,second);assert.notEqual(secondId,firstId);
   await browser.waitFor('document.hidden===true');const before=await copies(peer,actor);assert.equal(before.drafts.length,2);assert.equal(before.operations.length,2);assert.deepEqual(before.operations.map(row=>row.commandId).sort(),[firstId,secondId].sort());
   // Observe genuine production broadcasts only. No manufactured invalidation.
   await browser.evaluate(`(()=>{globalThis.__t21AuthEvents=0;globalThis.__t21ActorLogouts=0;const auth=new BroadcastChannel('yixiaoxiu-auth'),drafts=new BroadcastChannel('wecom-workbench-drafts-v1');auth.onmessage=()=>globalThis.__t21AuthEvents++;drafts.onmessage=event=>{if(event.data?.principal===${JSON.stringify(actor)}&&event.data.reason==='logout')globalThis.__t21ActorLogouts++;};globalThis.__t21CloseObservers=()=>{auth.close();drafts.close();};})()`);
@@ -182,7 +182,7 @@ test('logout before a newly opened other Bot Ticket first recovery response arri
    assert.equal(serverWire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback')).length,0,'the original UNKNOWN command never reached the server');
    let peer:Peer|undefined,boundaryError:unknown;
    try{
-    peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport+';\n'+t21HoldFirstRecoveryResponse});
+    peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await t21ChineseBrowser(peer);await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport+';\n'+t21HoldFirstRecoveryResponse});
     await peer.command('Page.navigate',{url:page(second)});await peer.command('Page.bringToFront');
     await peer.waitFor("globalThis.__t21SlowRecovery?.held===true&&document.querySelector('#ticket')?.hidden===false&&document.readyState==='complete'");
     await browser.waitFor('document.hidden===true');

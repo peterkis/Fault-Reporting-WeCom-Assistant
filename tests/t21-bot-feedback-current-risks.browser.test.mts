@@ -9,7 +9,7 @@ import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import type {IncomingMessage,ServerResponse,Server} from 'node:http';
-import {withT21DraftFixture,t21Config,t21Mapping} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
+import {withT21DraftFixture,t21Config,t21Mapping,t21ChineseBrowser} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
@@ -89,7 +89,7 @@ async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:R
    }});
    assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    const page=fixture.origin+'/wecom/yixiaoxiu/tickets/'+f.publicRef;
-   await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport(mode)});await browser.command('Page.navigate',{url:page});await browser.waitFor(enabled);
+   await browser.command('Page.enable');await t21ChineseBrowser(browser);await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport(mode)});await browser.command('Page.navigate',{url:page});await browser.waitFor(enabled);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-h5-reporter=true]'))&&Array.from(document.querySelectorAll('script[type=module][src]')).some(node=>/^\\/wecom\\/yixiaoxiu\\/assets\\/.+\\.js$/.test(node.getAttribute('src')||''))"),true,'execute the staged production H5 Reporter bundle');
    assert.equal(await browser.evaluate("Boolean(document.querySelector('script[src=\"/reporter/bot-feedback.js\"]'))"),false);
    await run({f,fixture,browser,peers,serverWire,directory,page});
@@ -138,7 +138,7 @@ test('Bot raw recovery expires at 24h and restores only current-member READ; gen
   assert.equal(wires(await browser.evaluate('globalThis.__t21Wire')).filter(row=>row.method==='POST').length,0);assert.equal(serverWire.filter(row=>row.method==='POST').length,0);
  });
  await withBrowser(true,'hold',async({f,fixture,browser,peers,serverWire,page})=>{
-  const principal=await scope(browser),peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport('hold')});await peer.command('Page.navigate',{url:page});await peer.waitFor(enabled);assert.equal(await scope(peer),principal);
+  const principal=await scope(browser),peer=await yxxTab(browser,'about:blank');peers.push(peer);await peer.command('Page.enable');await t21ChineseBrowser(peer);await peer.command('Page.addScriptToEvaluateOnNewDocument',{source:transport('hold')});await peer.command('Page.navigate',{url:page});await peer.waitFor(enabled);assert.equal(await scope(peer),principal);
   // Refresh the first target before starting either intent. Never navigate the
   // peer after the first intent: its auth broadcast would invalidate that actor.
   await browser.command('Page.bringToFront');await reload(browser);await browser.waitFor(enabled);await browser.evaluate(holdEncryption);await browser.evaluate(`${submit}.click()`);await browser.waitFor('globalThis.__t21EncryptionHeld===1');

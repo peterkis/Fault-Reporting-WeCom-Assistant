@@ -114,3 +114,11 @@ export async function t21FeedbackCommand(member:ReturnType<typeof browser>,path:
 }
 export function t21Send(member:ReturnType<typeof browser>,path:string,command:BotReporterFeedbackInput,csrf:string){return member.request(path+'/feedback',{
  ...post(command,csrf),headers:{...post(command,csrf).headers,'if-match':'"'+command.expected_ticket_version+'"'}});}
+
+// These browser contracts assert Chinese Reporter status copy. Set the real
+// browser language explicitly instead of inheriting the runner's OS locale.
+export async function t21ChineseBrowser(surface:{evaluate(expression:string):Promise<unknown>;command(method:string,params:Record<string,unknown>):Promise<unknown>}):Promise<void>{
+ const userAgent=await surface.evaluate('navigator.userAgent');assert.equal(typeof userAgent,'string');
+ await surface.command('Emulation.setUserAgentOverride',{userAgent,acceptLanguage:'zh-CN'});
+ assert.equal(await surface.evaluate('navigator.language'),'zh-CN');
+}
