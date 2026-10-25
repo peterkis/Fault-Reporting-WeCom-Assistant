@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {decodeNotificationExceptionItem as item,decodeNotificationExceptionPage as page} from '../src/workbench-notification-exception-browser-contracts.mjs';
+import {decodeNotificationExceptionItem as item,decodeNotificationExceptionPage as page} from '../app/pc-admin/src/contracts/workbench-notification-exception-browser-contracts.mjs';
 const parent='11111111-1111-4111-8111-111111111111',delivery='22222222-2222-4222-8222-222222222222';
 const fact={domain:'TICKET',parent_id:parent,delivery_id:delivery,source_kind:'TICKET_NOTIFICATION',route_kind:'BOT_DIRECT',destination_type:'PERSON',status:'DEAD_LETTER',side_effect_state:'NOT_ATTEMPTED',attempt_count:1,last_attempt:{attempt_no:1,outcome:'REJECTED_NOT_APPLIED',side_effect_state:'NOT_ATTEMPTED',started_at:'2026-10-14T12:34:56.123456',finished_at:'2026-10-14T12:34:56.123456'},safe_summary:'工单通知',error_code:'FAILURE_RECORDED',created_at:'2026-10-14T12:34:56.123456',updated_at:'2026-10-14T12:34:56.123456',sent_at:null,allowed_actions:['RETRY'],parent_link:'/workbench/app/items/ticket/'+parent};
 test('T32 closed browser contract rejects private fields, wrong identities and fabricated control',()=>{

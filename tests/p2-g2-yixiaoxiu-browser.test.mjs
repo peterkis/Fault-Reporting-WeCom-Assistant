@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {randomUUID,createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {withYxxDatabase,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {createYxxBrowserFixture,yxxTab,pollYxx} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -42,7 +42,7 @@ for(const [width,height] of [[1440,900],[390,844]])test('YXX-02 YXX-19 YXX-35 YX
         assert.equal(await browser.evaluate("document.querySelector('#times').textContent"),times);
       }
       assert.equal(fixture.providerCalls,1,'reload does not replay OAuth code');
-      await browser.pressTab();assert.equal(await browser.evaluate("['refresh','logout','more'].includes(document.activeElement.id)"),true);
+      await browser.pressTab();assert.equal(await browser.evaluate("document.activeElement.getClientRects().length>0&&['reporter-back','reporter-home','refresh','logout','more'].includes(document.activeElement.id)"),true);
       await mkdir(screenshotPath,{recursive:true});
       const screenshot=Buffer.from(await browser.screenshot(),'base64'),output=join(screenshotPath,width+'.png');
       await writeFile(output,screenshot,{flag:'wx'});

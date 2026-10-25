@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { snapshotP2016 } from '../../src/p2-016-domain-contracts.mjs';
-import { assertLocalDateTime,assertEpochMsString } from '../../src/platform/time-contract.mjs';
+import { snapshotP2016 } from '../../app/server/src/p2-016-domain-contracts.mjs';
+import { assertLocalDateTime,assertEpochMsString } from '../../app/server/src/platform/time-contract.mjs';
 const cache=new Map();
 // Test-only checks for the exact JSON Schema vocabulary used by the P2-016 contracts; runtime uses domain guards.
 export async function assertP2016Schema(name,input){

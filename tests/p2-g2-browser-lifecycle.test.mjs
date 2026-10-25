@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { readdir } from 'node:fs/promises';
+import { readdir,readFile,stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import {join,relative,isAbsolute} from 'node:path';
 import WebSocket,{WebSocketServer} from 'ws';
 import { selectBrowserTarget,launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 
@@ -41,9 +42,25 @@ test('real browser cleanup reclaims a CDP transport whose peer never finishes th
     browser=await launchSystemBrowser({url:'http://127.0.0.1:'+server.address().port+'/',width:600,height:400,
       socketFactory:address=>{targetAddress=address;return new WebSocket('ws://127.0.0.1:'+proxy.address().port);}});
     assert.equal(await browser.evaluate('document.title'),'real stalled-close document');
+    let ownership;
+    if(process.platform==='win32'){
+      assert.equal(typeof browser.ownershipReceipt,'string');
+      ownership=JSON.parse(await readFile(join(browser.ownershipReceipt,'started.json'),'utf8'));
+      assert.equal(ownership.owner_pid,process.pid);assert.equal(ownership.root_parent_pid,ownership.supervisor_pid);
+      assert.equal(ownership.suspended_assigned_before_execution,true);assert.equal(ownership.verified_member_before_resume,true);
+      assert.equal(ownership.kill_on_close,true);assert.equal(ownership.breakaway_allowed,false);
+      assert.ok(ownership.root_pid>0&&typeof ownership.root_created_utc==='string'&&typeof ownership.owner_created_utc==='string');
+      const profile=relative(tmpdir(),ownership.profile);assert.ok(!isAbsolute(profile)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(profile));
+    }
     await browser.close();
     assert.equal(stalled,true,'the real transport must exercise the missing close handshake');
     assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});
+    if(ownership){
+      const closed=JSON.parse(await readFile(join(browser.ownershipReceipt,'closed.json'),'utf8'));
+      assert.equal(closed.root_pid,ownership.root_pid);assert.equal(closed.cleanup_active_processes,0);
+      await assert.rejects(stat(ownership.profile),{code:'ENOENT'});
+      console.log('OWNED_BROWSER_JOB '+JSON.stringify({receipt:browser.ownershipReceipt,root_pid:ownership.root_pid,root_created_utc:ownership.root_created_utc,profile_removed:true,cleanup_active_processes:0}));
+    }
     for(const peer of proxy.clients)peer.resume();
     const deadline=Date.now()+3000;
     while(proxy.clients.size&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,20));

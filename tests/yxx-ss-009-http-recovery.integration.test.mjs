@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {request} from 'node:http';
 import {randomUUID} from 'node:crypto';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {origin,secret,flags,config,oauthOptions,mapping,browser,login,input,post,eventually} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('SS-009 lost actual HTTP response recovers the same authorized command without a second intake',{timeout:120000},async t=>{

@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {withT26Fixture,t26Group,t26Deliveries,t26Control,t26Sender,t26Object} from './helpers/t26-group-notification-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 test('unknown group effects and an interrupted native Worker require explicit administrator reconciliation without resending private success',{timeout:240000},async()=>{
  await withT26Fixture(async context=>{

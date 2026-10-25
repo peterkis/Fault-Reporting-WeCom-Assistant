@@ -3,20 +3,20 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
-import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from '../app/server/src/platform/postgres-types.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
-} from '../src/p1-003-channel-message-inbox.mjs';
+} from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
   applyServiceIntakeMigration,
   createServiceIntakeProcessor,
   mapServiceIntakeMigrationFailure,
-} from '../src/p1-004-service-intake.mjs';
+} from '../app/server/src/p1-004-service-intake.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -1038,17 +1038,17 @@ test('migration is limited to Service Intake, message relations and Intake audit
   assert.doesNotMatch(sql, /\bVARCHAR\b/iu);
 
   const source = readFileSync(
-    sourceFile('src/p1-004-service-intake.mjs'),
+    sourceFile('app/server/src/p1-004-service-intake.mjs'),
     'utf8',
   );
   assert.match(source, /GREATEST\(4,\s*char_length\([^)]*sequence_value/iu);
   const migrationRunner = readFileSync(
-    sourceFile('scripts/p1-004-migrate.mjs'),
+    sourceFile('app/server/scripts/p1-004-migrate.mjs'),
     'utf8',
   );
   assert.match(migrationRunner, /mapServiceIntakeMigrationFailure\(error\)/u);
   const verifier = readFileSync(
-    sourceFile('scripts/p1-004-verify.mjs'),
+    sourceFile('app/server/scripts/p1-004-verify.mjs'),
     'utf8',
   );
   assert.match(verifier, /pilot_ticket_schema_exists:\s*false/u);

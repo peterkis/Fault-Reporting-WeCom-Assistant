@@ -15,7 +15,7 @@
 | `GET /api/workbench/search` | 同一闭合 criteria 的 query 编码，另加可选 `cursor`／`limit`；单值键不得重复，数组以逗号分隔。 | `200 WorkbenchSearchPage`。 |
 | `POST /api/workbench/search` | 同一读取的长条件传输；无 query，`application/json` body 必须恰为 `{criteria,cursor,limit}`。 | 同一 `200 WorkbenchSearchPage`，授权、分页、错误与限流预算相同。 |
 
-调用方为 [正式 api.search](../../../web/admin-workbench/src/api/client.ts) 和 [搜索组件](../../../web/admin-workbench/src/features/search/WorkbenchSearch.tsx)。完整 GET target 不超过原 2048 字节时用 GET，超出时自动改用同路径 POST，保留全部 criteria、cursor 和 limit。POST 沿用宿主 32 KiB body 上限；不截短 q、不放宽全局 URL 上限，也不执行命令或写入 ledger。
+调用方为 [正式 api.search](../../../app/pc-admin/src/api/client.ts) 和 [搜索组件](../../../app/pc-admin/src/features/search/WorkbenchSearch.tsx)。完整 GET target 不超过原 2048 字节时用 GET，超出时自动改用同路径 POST，保留全部 criteria、cursor 和 limit。POST 沿用宿主 32 KiB body 上限；不截短 q、不放宽全局 URL 上限，也不执行命令或写入 ledger。
 
 两种方法都经过 W 的当前身份认证和对象 READ。Cookie POST 必须提交当前 `X-CSRF-Token`，Origin 必须精确等于当前认证的 public origin，拒绝 cross-site；Bearer 沿既有认证规则。读取不要求 `Idempotency-Key`、`If-Match` 或命令 UUID。正式客户端的读 POST 使用原读取 signal／epoch 和恢复路径，不经过业务命令的 `transportWritable` 门。
 
@@ -93,7 +93,7 @@ T38 周期刷新不自动重搜已加载搜索页，也不把其错误变成全�
 
 将 `workbenchSearchEnabled=false` 即关闭搜索 HTTP／UI，回到原分页看板／列表，不改业务事实或草稿。未执行真实 WeCom／Provider／OAuth／外发／部署／full／certify／Gate。Node24.18.0 的 strict、各实际一次构建／制品和分段测试见执行记录；原 PG／浏览器已精确释放，此后只进行静态归档和文档。浏览器证据使用正式 bundle、原 PG 与 loopback HTTP；网络延迟／失败为明确受控输入，不证明真实现场或生产／临床可用。
 
-源码入口：[HTTP](../../../src/workbench-search-http.mts)、[查询与当前核验](../../../src/workbench-search.mts)、[纯闭合解析](../../../src/workbench-search-contracts.mts)、[端口](../../../src/workbench-search-port.mts)、[装配](../../../src/p2-016-runtime.mts)。本票验证：[原 HTTP first](../../../tests/wbint-t41-search-http-first.integration.test.mts)、[合同](../../../tests/t41-search-contract.test.mts)、[获权分页](../../../tests/t41-search-pagination-authority.integration.test.mts)、[当前读取](../../../tests/t41-search-current-read.integration.test.mts)、[长读](../../../tests/t41-search-long-read.integration.test.mts)、[末次范围](../../../tests/t41-search-final-scope.integration.test.mts)、[T15组合](../../../tests/t41-search-review-start.integration.test.mts)、[全部字段／来源／PG](../../../tests/t41-search-acceptance.integration.test.mts)、[正式 UI](../../../tests/t41-search-production.browser.test.mts)、[pending hint](../../../tests/t41-search-pending-hint.browser.test.mts)、[两页／Unicode／T38](../../../tests/t41-search-refresh-and-long-pages.browser.test.mts)。
+源码入口：[HTTP](../../../app/server/src/workbench-search-http.mts)、[查询与当前核验](../../../app/server/src/workbench-search.mts)、[纯闭合解析](../../../shared/workbench-search-contracts.mts)、[端口](../../../app/server/src/workbench-search-port.mts)、[装配](../../../app/server/src/p2-016-runtime.mts)。本票验证：[原 HTTP first](../../../tests/wbint-t41-search-http-first.integration.test.mts)、[合同](../../../tests/t41-search-contract.test.mts)、[获权分页](../../../tests/t41-search-pagination-authority.integration.test.mts)、[当前读取](../../../tests/t41-search-current-read.integration.test.mts)、[长读](../../../tests/t41-search-long-read.integration.test.mts)、[末次范围](../../../tests/t41-search-final-scope.integration.test.mts)、[T15组合](../../../tests/t41-search-review-start.integration.test.mts)、[全部字段／来源／PG](../../../tests/t41-search-acceptance.integration.test.mts)、[正式 UI](../../../tests/t41-search-production.browser.test.mts)、[pending hint](../../../tests/t41-search-pending-hint.browser.test.mts)、[两页／Unicode／T38](../../../tests/t41-search-refresh-and-long-pages.browser.test.mts)。
 
 ---
 

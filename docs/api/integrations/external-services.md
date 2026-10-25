@@ -10,18 +10,18 @@ API origin=`https://qyapi.weixin.qq.com`。只有经过现有部署/现场授权
 
 | METHOD + PATH / URL | 调用方 / 输入 | 接受的返回与目的 | 源码 |
 | --- | --- | --- | --- |
-| `GET /cgi-bin/gettoken` | 后端；query corpid/corpsecret | errcode=0、access_token、正expires_in；闭包缓存/提前刷新，单飞、5秒deadline | [app token](../../../src/p2-g2-wecom-app-token.mts) |
-| `GET /cgi-bin/auth/getuserinfo` | 后端；access_token/code | errcode=0、合法userid→`{userid}`；一次性code不自动重放，5秒deadline | [OAuth provider](../../../src/p2-g2-wecom-oauth-provider.mts) |
-| `POST /cgi-bin/batch/userid_to_openuserid` | 后端；access_token；JSON `{userid_list:[...]}` | errcode=0、完整无歧义open_userid_list，无失败成员；namespace官方映射 | [成员映射](../../../src/p2-g2-yixiaoxiu-delegated-identity.mts)、[员工映射](../../../src/p2-016-workbench-wecom-auth.mts) |
-| `GET /cgi-bin/user/get` | WeCom目录adapter；access_token/userid | errcode=0、userid匹配、合法department；规范化name/mobile/telephone/status/main_department | [member directory](../../../src/p2-015-wecom-member-directory.mts) |
-| `GET /cgi-bin/department/get` | 上述adapter；access_token/id | department.id/name；失败可保留membership名称为空，不能阻断明确报修 | [member directory](../../../src/p2-015-wecom-member-directory.mts) |
-| `POST /cgi-bin/webhook/send?key=<secret>` | 专用群关闭sender；固定text模板、mentioned_list | HTTP成功且errcode=0认ACK；未知结果人工对账；每群每分钟≤20 | [group closure webhook](../../../src/p2-016-group-closure-webhook.mts) |
-| `GET https://open.weixin.qq.com/connect/oauth2/authorize` | 浏览器跳转；appid/agentid/redirect_uri/response_type=code/scope=snsapi_base/state | 成员OAuth回调到本项目 `/wecom/yixiaoxiu/callback` | [web OAuth](../../../src/p2-g2-wecom-web-oauth.mts) |
-| `GET https://login.work.weixin.qq.com/wwlogin/sso/login` | 浏览器跳转；login_type=CorpApp/appid/agentid/redirect_uri/state/lang=zh | 员工扫码回调 `/workbench/callback` | [workbench auth](../../../src/p2-016-workbench-wecom-auth.mts) |
+| `GET /cgi-bin/gettoken` | 后端；query corpid/corpsecret | errcode=0、access_token、正expires_in；闭包缓存/提前刷新，单飞、5秒deadline | [app token](../../../app/server/src/p2-g2-wecom-app-token.mts) |
+| `GET /cgi-bin/auth/getuserinfo` | 后端；access_token/code | errcode=0、合法userid→`{userid}`；一次性code不自动重放，5秒deadline | [OAuth provider](../../../app/server/src/p2-g2-wecom-oauth-provider.mts) |
+| `POST /cgi-bin/batch/userid_to_openuserid` | 后端；access_token；JSON `{userid_list:[...]}` | errcode=0、完整无歧义open_userid_list，无失败成员；namespace官方映射 | [成员映射](../../../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mts)、[员工映射](../../../app/server/src/p2-016-workbench-wecom-auth.mts) |
+| `GET /cgi-bin/user/get` | WeCom目录adapter；access_token/userid | errcode=0、userid匹配、合法department；规范化name/mobile/telephone/status/main_department | [member directory](../../../app/server/src/p2-015-wecom-member-directory.mts) |
+| `GET /cgi-bin/department/get` | 上述adapter；access_token/id | department.id/name；失败可保留membership名称为空，不能阻断明确报修 | [member directory](../../../app/server/src/p2-015-wecom-member-directory.mts) |
+| `POST /cgi-bin/webhook/send?key=<secret>` | 专用群关闭sender；固定text模板、mentioned_list | HTTP成功且errcode=0认ACK；未知结果人工对账；每群每分钟≤20 | [group closure webhook](../../../app/server/src/p2-016-group-closure-webhook.mts) |
+| `GET https://open.weixin.qq.com/connect/oauth2/authorize` | 浏览器跳转；appid/agentid/redirect_uri/response_type=code/scope=snsapi_base/state | 成员OAuth回调到本项目 `/wecom/yixiaoxiu/callback` | [web OAuth](../../../app/server/src/p2-g2-wecom-web-oauth.mts) |
+| `GET https://login.work.weixin.qq.com/wwlogin/sso/login` | 浏览器跳转；login_type=CorpApp/appid/agentid/redirect_uri/state/lang=zh | 员工扫码回调 `/workbench/callback` | [workbench auth](../../../app/server/src/p2-016-workbench-wecom-auth.mts) |
 
 WeCom目录还需enabled、memberIdsConfirmed、bot范围和token provider；未满足返回DEFERRED。bot成员ID与delegated app ID不能直接互换；user/get失败不是自动判定账号无效的依据。
 
-human-v1 的可选 Bot 接收按 [ADR-0033](../../../adr/0033_bot_member_intake_without_manual_roster.md) 使用可信 SDK 回调中的单人成员 ID，自动调用上述官方转换，再以返回的应用身份调用 `user/get`。此路径不消费逐人报修名单，不授予 PC 或发送权限；5 秒截止内失败即拒绝本次入站，原回调身份不被改写。实现见 [Bot 成员准入](../../../src/human-workbench-bot-member-admission.mts)，接收开关与发送开关见[运行入口](../../runbooks/human-workbench-runtime.md#bot-接收与真实发送分开)。
+human-v1 的可选 Bot 接收按 [ADR-0033](../../../adr/0033_bot_member_intake_without_manual_roster.md) 使用可信 SDK 回调中的单人成员 ID，自动调用上述官方转换，再以返回的应用身份调用 `user/get`。此路径不消费逐人报修名单，不授予 PC 或发送权限；5 秒截止内失败即拒绝本次入站，原回调身份不被改写。实现见 [Bot 成员准入](../../../app/server/src/human-workbench-bot-member-admission.mts)，接收开关与发送开关见[运行入口](../../runbooks/human-workbench-runtime.md#bot-接收与真实发送分开)。
 
 合成映射请求形状（不得填真实成员ID/token到文档）：
 
@@ -41,19 +41,19 @@ human-v1 的可选 Bot 接收按 [ADR-0033](../../../adr/0033_bot_member_intake_
 | `POST https://rd-api.mobimedical.cn/8024/token/getOrganizationTree` | token、parent_id、get_user=get | result="TRUE"、data数组→departments/members/memberships/snapshot_version/counts |
 | `POST https://rd-api.mobimedical.cn/8024/token/getUserInfo` | token、uid | result="TRUE"、data.user_id/employee_id/nickname/phoneno/sex/avatar→PersonProfile；必要时核对本地成员 |
 
-[adapter](../../../src/p2-007-third-party-staff-directory-adapter.mts)、[规范化/limits](../../../src/p2-007-staff-directory-contracts.mts)、[进程配置](../../../src/p2-007-third-party-staff-directory.mts)、[Provider说明](../../66_p2_007_formal_third_party_staff_directory_provider.md)。失败/字段缺失走既有有界降级，不伪造权威人员身份。不存在供浏览器读取原Provider响应的REST透传入口。
+[adapter](../../../app/server/src/p2-007-third-party-staff-directory-adapter.mts)、[规范化/limits](../../../app/server/src/p2-007-staff-directory-contracts.mts)、[进程配置](../../../app/server/src/p2-007-third-party-staff-directory.mts)、[Provider说明](../../66_p2_007_formal_third_party_staff_directory_provider.md)。失败/字段缺失走既有有界降级，不伪造权威人员身份。不存在供浏览器读取原Provider响应的REST透传入口。
 
 传输使用 `application/x-www-form-urlencoded`，redirect:error；请求deadline可配置且最长30秒。目录上限5000部门、20000成员、40000 membership、深度16；tree/token/detail响应上限分别4MiB/64KiB/256KiB，超限拒绝规范化。
 
 ## WSS与SDK（没有本项目REST入口）
 
-`wss://openws.work.weixin.qq.com` 经 `@wecom/aibot-node-sdk` 的WSClient单活访问。[Gateway](../../../src/p2-g1-wecom-gateway.mts) 的start/stop/getAuthenticatedClient/getStatus；client.connect/disconnect/sendMessage；监听authenticated、message.text、disconnected、error。全局活动连接最多1，reconnect attempts=10，auth failure attempts=1。
+`wss://openws.work.weixin.qq.com` 经 `@wecom/aibot-node-sdk` 的WSClient单活访问。[Gateway](../../../app/server/src/p2-g1-wecom-gateway.mts) 的start/stop/getAuthenticatedClient/getStatus；client.connect/disconnect/sendMessage；监听authenticated、message.text、disconnected、error。全局活动连接最多1，reconnect attempts=10，auth failure attempts=1。
 
 群内 @Bot 的实际入站为 `aibot_msg_callback`：`body.chatid`提供群ID，本次真实回调未提供群名称。完整字段、来源识别方式及2026-10-07最小现场回执见 [消息回调契约](wecom-message-callback.md)。
 
-[G1 sender](../../../src/p2-g1-wecom-sender.mts) 把text/markdown转为SDK markdown，检查目标hash allowlist；[P2-016 sender](../../../src/p2-016-wecom-sender.mts) 增加模板卡片/Reporter绑定。结果分类 `ACKNOWLEDGED|REJECTED_NOT_APPLIED|UNKNOWN`，必须经过Communication Outbox/Delivery；浏览器和AI Worker不能直接调用SDK。
+[G1 sender](../../../app/server/src/p2-g1-wecom-sender.mts) 把text/markdown转为SDK markdown，检查目标hash allowlist；[P2-016 sender](../../../app/server/src/p2-016-wecom-sender.mts) 增加模板卡片/Reporter绑定。结果分类 `ACKNOWLEDGED|REJECTED_NOT_APPLIED|UNKNOWN`，必须经过Communication Outbox/Delivery；浏览器和AI Worker不能直接调用SDK。
 
-G0冻结工具另有replyWelcome/replyStream/reply/replyTemplateCard/updateTemplateCard/uploadMedia/replyMedia/downloadFile，以及webhook `POST /cgi-bin/webhook/upload_media?key=<secret>&type=file|voice`（multipart media→media_id）。见 [G0 reply](../../../src/g0-006a-reply-capability.mjs)、[card](../../../src/g0-006-template-card.mjs)、[media](../../../src/g0-004-media-capture.mjs)、[webhook probe](../../../src/g0-webhook-message-capability.mjs)。这是冻结验证工具能力，不是新增可调用的业务HTTP服务。
+G0冻结工具另有replyWelcome/replyStream/reply/replyTemplateCard/updateTemplateCard/uploadMedia/replyMedia/downloadFile，以及webhook `POST /cgi-bin/webhook/upload_media?key=<secret>&type=file|voice`（multipart media→media_id）。见 [G0 reply](../../../app/server/src/g0-006a-reply-capability.mjs)、[card](../../../app/server/src/g0-006-template-card.mjs)、[media](../../../app/server/src/g0-004-media-capture.mjs)、[webhook probe](../../../app/server/src/g0-webhook-message-capability.mjs)。这是冻结验证工具能力，不是新增可调用的业务HTTP服务。
 
 ## 配置名称与核对入口
 

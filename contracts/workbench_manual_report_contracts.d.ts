@@ -1,5 +1,5 @@
 import type {P2015ResultCode} from './p2_015_contracts.js';
-import type {TicketStatus} from '../src/p1-005-pilot-ticket-core.mjs';
+import type {TicketStatus} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 export interface ManualReporterSnapshot {readonly verification:'UNVERIFIED';readonly name:string;readonly contact:string;readonly department:string|null}
 export interface ManualReportCommand {readonly schema_version:1;readonly client_command_id:string;readonly source:'PHONE'|'ON_SITE';readonly description:string;readonly location:{readonly text:string|null;readonly unknown:boolean};readonly reporter:ManualReporterSnapshot}
 export type ManualReportFields=Pick<ManualReportCommand,'source'|'description'|'location'|'reporter'>;

@@ -1,8 +1,8 @@
 // Owned test process only. Never imported by a Runtime or enabled by a persistent flag.
-import {createPostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {createYxxSelfServiceStore} from '../../src/yxx-self-service-store.mjs';
-import {createYxxMemberCommandContext} from '../../src/yxx-self-service-command.mjs';
-import {createYxxSelfServiceOrchestrator} from '../../src/yxx-self-service-orchestrator.mjs';
+import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {createYxxSelfServiceStore} from '../../app/server/src/yxx-self-service-store.mjs';
+import {createYxxMemberCommandContext} from '../../app/server/src/yxx-self-service-command.mjs';
+import {createYxxSelfServiceOrchestrator} from '../../app/server/src/yxx-self-service-orchestrator.mjs';
 if(process.env.SS009_STARTUP_MODE==='FAIL')throw Error('SS009_TEST_START_FAILED');
 if(process.env.SS009_STARTUP_MODE==='HOLD'){process.on('message',()=>{});await new Promise(()=>{});}
 const base=createPostgresPool({connectionString:process.env.PILOT_DATABASE_URL,max:2,application_name:'ss009_owned_crash'});

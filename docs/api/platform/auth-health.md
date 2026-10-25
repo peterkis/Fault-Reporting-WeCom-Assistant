@@ -6,7 +6,7 @@
 
 ## 内部员工登录（W）
 
-[实现](../../../src/p2-016-workbench-wecom-auth.mts)；[装配](../../../scripts/p2-016-process-role.mts)。`WORKBENCH_WECOM_LOGIN_ENABLED` 默认关闭；启用还要求应用配置、approved员工列表/映射、内部public origin。其他宿主构造时须显式注入这个认证端口。
+[实现](../../../app/server/src/p2-016-workbench-wecom-auth.mts)；[装配](../../../app/server/scripts/p2-016-process-role.mts)。`WORKBENCH_WECOM_LOGIN_ENABLED` 默认关闭；启用还要求应用配置、approved员工列表/映射、内部public origin。其他宿主构造时须显式注入这个认证端口。
 
 | METHOD + PATH | 请求 | 响应 |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ T03 的 lifecycle bootstrap 增加 `logout_enabled:boolean`，默认false；实�
 
 ## 企业微信成员OAuth（O/M/W按模式）
 
-[OAuth handler](../../../src/p2-g2-wecom-oauth-http.mts)、[web OAuth](../../../src/p2-g2-wecom-web-oauth.mts)。条件：`WECOM_WEB_OAUTH_ENABLED`，member读取/写入另需自身Flag。默认关闭。
+[OAuth handler](../../../app/server/src/p2-g2-wecom-oauth-http.mts)、[web OAuth](../../../app/server/src/p2-g2-wecom-web-oauth.mts)。条件：`WECOM_WEB_OAUTH_ENABLED`，member读取/写入另需自身Flag。默认关闭。
 
 | METHOD + PATH | 请求 | 响应 |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ H5 401 可在无草稿／UNKNOWN 栅栏时单次自动 `snsapi_base` 认证；�
 | `/reporter/`、`/reporter/open`、`/reporter/reporter.js`、`reporter.css` | Reporter | 旧/成员Reporter资源，无query；shell可打开不代表数据授权 |
 | `/`、`/static/pilot-workbench.css`、`/static/pilot-workbench.js` | P | 历史Pilot页面/内嵌资源 |
 
-源码：[conversation static](../../../src/p2-006-workbench-static.mts)、[WEB01 static](../../../src/web01-workbench-static.mts)、[P2-016 runtime](../../../src/p2-016-runtime.mts)、[Incident assembly](../../../src/p2-012-workbench-assembly.mts)。原型/preview不是当前业务REST的新宿主，见 [差异](../design-and-gaps.md)。
+源码：[conversation static](../../../app/server/src/p2-006-workbench-static.mts)、[WEB01 static](../../../app/server/src/web01-workbench-static.mts)、[P2-016 runtime](../../../app/server/src/p2-016-runtime.mts)、[Incident assembly](../../../app/server/src/p2-012-workbench-assembly.mts)。原型/preview不是当前业务REST的新宿主，见 [差异](../design-and-gaps.md)。
 
 ## 健康与指标
 
@@ -69,11 +69,11 @@ H5 401 可在无草稿／UNKNOWN 栅栏时单次自动 `snsapi_base` 认证；�
 | `GET /health/live` | O/M替代OAuth server | 200 `{ok:true,mode,authenticated_callbacks,authenticated_pages}`，无query；Host不匹配421，URL过长414 |
 | `GET /healthz` | P1 foundation独立server | 200 `{status:'ok',service:'pilot-foundation',phase:'P1'}` |
 
-W handler通过注入provider返回对象，不能假定所有装配的readiness字段一致。当前G1 provider见 [runtime](../../../src/p2-g1-runtime.mts)、[observability](../../../src/p2-g1-observability.mts)；替代OAuth见 [server](../../../src/p2-g2-wecom-oauth-server.mts)。base_service_ready与ai_enhancement_ready须独立；健康技术结果不是Gate/生产批准。`GET /metrics` 没有当前主宿主handler，正确路径为 `/health/metrics`。
+W handler通过注入provider返回对象，不能假定所有装配的readiness字段一致。当前G1 provider见 [runtime](../../../app/server/src/p2-g1-runtime.mts)、[observability](../../../app/server/src/p2-g1-observability.mts)；替代OAuth见 [server](../../../app/server/src/p2-g2-wecom-oauth-server.mts)。base_service_ready与ai_enhancement_ready须独立；健康技术结果不是Gate/生产批准。`GET /metrics` 没有当前主宿主handler，正确路径为 `/health/metrics`。
 
 ## P1历史Pilot业务API（P）
 
-仍在仓库的独立 [Pilot server](../../../src/p1-009-pilot-access-workbench.mts)，不是当前W/M同origin API。认证器注入 `{id,type}` actor；读取按REPORTER本人/内部团队权限。内嵌浏览器只调用第一条GET。
+仍在仓库的独立 [Pilot server](../../../app/server/src/p1-009-pilot-access-workbench.mts)，不是当前W/M同origin API。认证器注入 `{id,type}` actor；读取按REPORTER本人/内部团队权限。内嵌浏览器只调用第一条GET。
 
 | METHOD + PATH | 输入 | 响应 |
 | --- | --- | --- |

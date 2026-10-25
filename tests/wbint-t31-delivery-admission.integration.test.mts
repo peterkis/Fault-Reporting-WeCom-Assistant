@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {t31Http,record,text} from './helpers/t31-public-progress-fixture.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('T31 the production runtime worker cancels queued personal progress after subscription pause before calling Sender',async()=>{

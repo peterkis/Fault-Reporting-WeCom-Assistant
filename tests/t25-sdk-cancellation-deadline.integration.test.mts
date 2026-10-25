@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {setTimeout as delay} from 'node:timers/promises';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import type {CommunicationSenderRequest} from '../contracts/communication_contracts.js';
 
 test('response cancellation cannot hold the actual Sender beyond its expired deadline or resend the original intent',{timeout:240000},async()=>{

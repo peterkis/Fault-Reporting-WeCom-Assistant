@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
-import {UNASSIGN_MIGRATION_ID} from '../scripts/ticket-unassign-migrate.mjs';
+import {UNASSIGN_MIGRATION_ID} from '../app/server/scripts/ticket-unassign-migrate.mjs';
 
 const command=(version:number)=>({client_command_id:randomUUID(),expected_version:version,reason_code:'WORKBENCH_UNASSIGN',reason:'T08 隔离默认与迁移验证内部原因',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
 

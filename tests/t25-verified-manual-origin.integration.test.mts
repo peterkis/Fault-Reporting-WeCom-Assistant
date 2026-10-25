@@ -4,8 +4,8 @@ import {createHmac,randomUUID} from 'node:crypto';
 import {withT25ManualFixture} from './helpers/t25-app-notification-fixture.mjs';
 import {createT18Directory} from './helpers/t18-verified-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {TicketAppNotificationAuthority,TicketAppNotificationTargetResolver,EligibleTicketAppNotificationTarget} from '../contracts/workbench_app_notification_contracts.js';
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}

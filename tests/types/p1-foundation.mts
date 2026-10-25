@@ -1,4 +1,4 @@
-import { validatePilotConfig, parseCliArgs, runPilotPreflight, listenPilotFoundation, closePilotFoundation, createPilotFoundationServer } from '../../src/p1-001-pilot-foundation.mjs';
+import { validatePilotConfig, parseCliArgs, runPilotPreflight, listenPilotFoundation, closePilotFoundation, createPilotFoundationServer } from '../../app/server/src/p1-001-pilot-foundation.mjs';
 
 const config = validatePilotConfig(process.env);
 const phase: 'P1' = config.phase;

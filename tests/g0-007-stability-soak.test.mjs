@@ -8,7 +8,7 @@ import {
   parseCliArgs,
   runStabilitySoak,
   validateStabilityConfig,
-} from '../src/g0-007-stability-soak.mjs';
+} from '../app/server/src/g0-007-stability-soak.mjs';
 
 const baseEnv = {
   ARCHITECTURE_BASELINE: 'V1.2',

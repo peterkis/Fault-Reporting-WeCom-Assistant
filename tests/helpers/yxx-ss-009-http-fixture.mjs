@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {request as httpRequest} from 'node:http';
-import {createYxxDelegatedIdentityMapping} from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createYxxDelegatedIdentityMapping} from '../../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 const origin='https://127.0.0.1';
 const secret='ss009-synthetic-secret-at-least-32-bytes';

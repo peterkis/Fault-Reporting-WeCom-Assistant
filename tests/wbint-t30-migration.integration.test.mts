@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {migrateIncidentInternalNotes,INTERNAL_NOTE_MIGRATION_ID} from '../scripts/incident-internal-notes-migrate.mjs';
-import {internalNoteSchemaReady} from '../src/p2-012-internal-note-schema.mjs';
+import {migrateIncidentInternalNotes,INTERNAL_NOTE_MIGRATION_ID} from '../app/server/scripts/incident-internal-notes-migrate.mjs';
+import {internalNoteSchemaReady} from '../app/server/src/p2-012-internal-note-schema.mjs';
 import {t30Http,text,record} from './helpers/t30-internal-note-fixture.mjs';
 import {randomUUID} from 'node:crypto';
 test('T30 actual 055 check rolls back, apply records its checksum, repeat validates and schema drift fails closed',async()=>{

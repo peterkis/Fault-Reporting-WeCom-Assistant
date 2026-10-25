@@ -1,7 +1,7 @@
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
 
 /** Test-only SOURCE preparation: forward the planned false-default option; no production implementation. */
 export async function withT12Fixture(run:(context:T11Fixture)=>Promise<void>){

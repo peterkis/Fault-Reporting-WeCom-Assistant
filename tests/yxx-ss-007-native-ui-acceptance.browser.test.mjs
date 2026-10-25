@@ -1,3 +1,4 @@
+// Retired V1 client fixture: preserves historical API/lifecycle assertions; not new H5 UI acceptance.
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

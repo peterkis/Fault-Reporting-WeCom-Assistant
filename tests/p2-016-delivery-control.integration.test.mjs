@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { appendTicketEvent } from '../src/p1-006-ticket-state-actions.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
-import { createP2016DeliveryControl } from '../src/p2-016-delivery-control.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
-import { transactionP2016 } from '../src/p2-016-domain-contracts.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { appendTicketEvent } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
+import { createP2016DeliveryControl } from '../app/server/src/p2-016-delivery-control.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { transactionP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 test('Ticket delivery operator commands authorize before receipt, persist idempotence and never blindly retry UNKNOWN',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016dc',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});

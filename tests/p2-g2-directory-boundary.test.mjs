@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createReporterDirectoryPort } from '../src/p2-015-contact-journey.mjs';
+import { createReporterDirectoryPort } from '../app/server/src/p2-015-contact-journey.mjs';
 
 test('D12-020 unresolved directory call defers within deadline without growing pending calls', async () => {
   let calls=0,finish,signal;

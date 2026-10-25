@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxReadonlyServer} from '../src/p2-g2-yixiaoxiu-server.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxReadonlyServer} from '../app/server/src/p2-g2-yixiaoxiu-server.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {entryOrigin,entryConfig,entryKey,withYxxDatabase,listenYxx,stopYxx,httpBrowser,loginYxx,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 
 test('delegated OAuth HTTP reads own original Bot tickets, denies other members and preserves Grant and business facts',async()=>{

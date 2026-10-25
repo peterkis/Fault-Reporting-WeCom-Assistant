@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import type {WeComAccessTokenProvider} from '../src/p2-g2-wecom-oauth-provider.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import type {WeComAccessTokenProvider} from '../app/server/src/p2-g2-wecom-oauth-provider.mjs';
 
 test('a transport for another application is rejected before any credential or SDK call',{timeout:240000},async()=>{
  await withT24Fixture(async context=>{

@@ -1,4 +1,4 @@
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -6,13 +6,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
-import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
+import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
-} from '../src/p1-003-channel-message-inbox.mjs';
+} from '../app/server/src/p1-003-channel-message-inbox.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const execFileAsync = promisify(execFile);

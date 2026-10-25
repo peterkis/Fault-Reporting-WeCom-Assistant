@@ -3,8 +3,8 @@ import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {normalizeP2016TicketCommand} from '../src/p2-016-ticket-command-facade.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {normalizeP2016TicketCommand} from '../app/server/src/p2-016-ticket-command-facade.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 test('four waiting command routes retain closed human internal reason, exact scalar bounds and immutable caller input copies',async()=>{
   const wire={client_command_id:randomUUID(),expected_version:2147483647,reason_code:'HUMAN_INTERNAL_REASON',note:'😀'.repeat(1000),external_visible:false};await assertP2016Schema('p2_016_waiting_action_command',wire);

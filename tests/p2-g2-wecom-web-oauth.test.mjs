@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWeComWebOAuth } from '../src/p2-g2-wecom-web-oauth.mjs';
-import { createWeComOAuthCodeResolver } from '../src/p2-g2-wecom-oauth-provider.mjs';
+import { createWeComWebOAuth } from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import { createWeComOAuthCodeResolver } from '../app/server/src/p2-g2-wecom-oauth-provider.mjs';
 
 const config={enabled:true,corpId:'ww-test-corp',agentId:'1000002',publicOrigin:'https://cd3120.mobimedical.cn'};
 test('网页授权使用固定回调、snsapi_base 和浏览器绑定 state，成员身份仅保留在服务端',async()=>{

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { evaluateG2Gate, G2_SCENARIO_IDS, G2_CLIENT_SCENARIOS } from '../src/p2-g2-gate-evaluator.mjs';
-import { G2_METRIC_NAMES } from '../src/p2-g2-evidence.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
+import { evaluateG2Gate, G2_SCENARIO_IDS, G2_CLIENT_SCENARIOS } from '../app/server/src/p2-g2-gate-evaluator.mjs';
+import { G2_METRIC_NAMES } from '../app/server/src/p2-g2-evidence.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
 
 // In-memory evaluator fixtures only. These are never written as actual Gate/owner evidence.

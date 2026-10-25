@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
-import {normalizeReturnToDispatchCommand} from '../src/workbench-ticket-return-to-dispatch.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {normalizeReturnToDispatchCommand} from '../app/server/src/workbench-ticket-return-to-dispatch.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 const base=()=>({action:'return-to-dispatch',ticket_id:randomUUID(),client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_RETURN_TO_DISPATCH',reason:'停止当前已开始的维修。',unfinished_work:'设备仍须维修。',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
 test('the public return command port freezes original intent, enforces canonical selection and keeps the two independent UTF16 input limits',()=>{

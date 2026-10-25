@@ -11,6 +11,11 @@ import { batchSelection } from './batches.mjs';
 import { testEnvironment } from './routing.mjs';
 import {typecheckWeb} from './web.mjs';
 
+function measured<T>(phase:string,operation:()=>T):T{
+  const started=performance.now(),before=process.memoryUsage();let completed=false;
+  try{const result=operation();completed=true;return result;}
+  finally{const after=process.memoryUsage();console.log(JSON.stringify({event:'MIGRATION_GATE_PHASE',phase,status:completed?'PASS':'FAIL',elapsed_ms:Math.round(performance.now()-started),rss_before:before.rss,rss_after:after.rss,heap_used_after:after.heapUsed}));}
+}
 export function typeGate(root: string): void {
   // Keep every original strict program; release all backend ASTs before Go.
   runNode(root,[fileURLToPath(new URL('./emit.mjs',import.meta.url)),'--root',root,'--types']);
@@ -22,7 +27,7 @@ export function negativeTypes(root: string): void {
   for (const bad of [false, true]) {
     const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
     host.getSourceFile = (f, language, onError, shouldCreate) => f === filename ? ts.createSourceFile(f,
-      `import { canary } from '../../src/migration-canary.mjs';\ncanary({ label: 'checked', sequence: ${bad ? "'invalid'" : '1'} });`, language, true, ts.ScriptKind.TS)
+      `import { canary } from '../../app/server/src/migration-canary.mjs';\ncanary({ label: 'checked', sequence: ${bad ? "'invalid'" : '1'} });`, language, true, ts.ScriptKind.TS)
       : original(f, language, onError, shouldCreate);
     const candidate = ts.createProgram([filename], options, host), errors = ts.getPreEmitDiagnostics(candidate);
     if (bad ? !errors.some(e => e.code === 2322 && e.file?.fileName === filename) : errors.length !== 0) throw new Error('MIGRATION_NEGATIVE_TYPE_CANARY_FAILED\n' + ts.formatDiagnosticsWithColorAndContext(errors, diagnosticHost(root)));
@@ -43,14 +48,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const receipt: Record<string, unknown> = { batch: id, status: 'FAIL', selected_files: selected.entries.map(e => e.path), not_run: selected.entries.map(e => e.path), behavior: 'NOT_RUN', review: 'NOT_RUN', production_ready: false };
     try {
       testEnvironment(root, selected.entries);
-      typeGate(root); negativeTypes(root);
-      const first = build(root), digest = verifyArtifact(root);
-      const second = build(root);
-      if (digest !== verifyArtifact(root) || hash(JSON.stringify(first.outputs)) !== hash(JSON.stringify(second.outputs))) throw new Error('MIGRATION_NONDETERMINISTIC_BUILD');
+      measured('strict',()=>typeGate(root));measured('negative-types',()=>negativeTypes(root));
+      const first=measured('first-build',()=>build(root)),digest=measured('first-verify',()=>verifyArtifact(root));
+      const second=measured('second-build',()=>build(root,{syntaxReference:first}));
+      measured('determinism',()=>{if(digest!==verifyArtifact(root)||hash(JSON.stringify(first.outputs))!==hash(JSON.stringify(second.outputs)))throw new Error('MIGRATION_NONDETERMINISTIC_BUILD');});
       receipt.manifest_sha256 = digest;
       receipt.source = second.source;
       receipt.behavior = 'RUNNING';
-      receipt.counts = runSelection(root, selected, { reportDir: path.join(report, 'tests') });
+      receipt.counts = measured('selected-tests',()=>runSelection(root, selected, { reportDir: path.join(report, 'tests') }));
       receipt.behavior = 'PASS'; receipt.status = 'MIGRATION_AUTOMATED_CHECKS_PASS_NOT_REVIEW';
     } catch (error) {
       receipt.error = error instanceof Error ? error.message : 'MIGRATION_UNKNOWN_FAILURE';
@@ -69,12 +74,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (args.length > 1) throw new Error('MIGRATION_UNKNOWN_GATE_ARGUMENT');
   const action = args[0] ?? 'all';
   if (!['all','types','type-tests'].includes(action)) throw new Error('MIGRATION_UNKNOWN_GATE');
-  typeGate(root); negativeTypes(root);
+  measured('strict',()=>typeGate(root));measured('negative-types',()=>negativeTypes(root));
   if (action === 'all') {
-    const first = build(root), firstDigest = verifyArtifact(root);
-    const second = build(root), secondDigest = verifyArtifact(root);
-    if (firstDigest !== secondDigest || hash(JSON.stringify(first.outputs)) !== hash(JSON.stringify(second.outputs))) throw new Error('MIGRATION_NONDETERMINISTIC_BUILD');
-    runTests(root);
+    const first=measured('first-build',()=>build(root)),firstDigest=measured('first-verify',()=>verifyArtifact(root));
+    const second=measured('second-build',()=>build(root,{syntaxReference:first})),secondDigest=measured('second-verify',()=>verifyArtifact(root));
+    measured('determinism',()=>{if(firstDigest!==secondDigest||hash(JSON.stringify(first.outputs))!==hash(JSON.stringify(second.outputs)))throw new Error('MIGRATION_NONDETERMINISTIC_BUILD');});
+    measured('canary',()=>runTests(root));
   }
   console.log(JSON.stringify({ status: 'MIGRATION_GATE_PASS', scope: action, compiler: ts.version, production_ready: false }));
   }

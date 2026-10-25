@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 import {http,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
 for(const kind of ['operator-role','original-visible-membership','operator-active','target-team-active'] as const)test('self takeover linearizes '+kind+' revocation at the actual Ticket write',async()=>{

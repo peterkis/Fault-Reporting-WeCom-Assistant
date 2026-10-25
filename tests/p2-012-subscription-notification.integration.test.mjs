@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createP2012IncidentCommandService } from '../src/p2-012-incident-command-service.mjs';
-import { createP2012IncidentQuery } from '../src/p2-012-incident-query.mjs';
-import { createP2012NotificationPolicy } from '../src/p2-012-notification-policy.mjs';
-import { createP2012ReporterTimelineAdapter } from '../src/p2-012-reporter-timeline-adapter.mjs';
-import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
-import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
+import { createP2012IncidentCommandService } from '../app/server/src/p2-012-incident-command-service.mjs';
+import { createP2012IncidentQuery } from '../app/server/src/p2-012-incident-query.mjs';
+import { createP2012NotificationPolicy } from '../app/server/src/p2-012-notification-policy.mjs';
+import { createP2012ReporterTimelineAdapter } from '../app/server/src/p2-012-reporter-timeline-adapter.mjs';
+import { createP2016WeComSender } from '../app/server/src/p2-016-wecom-sender.mjs';
+import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import { withP2012Database,applyThrough031,apply032Raw,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 const make=(action,id,version='1',extra={})=>({action,client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED',

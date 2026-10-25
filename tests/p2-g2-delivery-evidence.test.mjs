@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { writeG2SourceFile, readG2SourceFile, g2SourceBinding } from '../src/p2-g2-evidence-files.mjs';
-import { captureG2ProviderReceipt, withG2ProviderReceipt } from '../src/p2-g2-provider-receipts.mjs';
-import { G2_RECONCILIATION_QUERY_HASH } from '../src/p2-g2-reconciliation.mjs';
-import { deriveG2DeliveryEvidence } from '../src/p2-g2-delivery-evidence.mjs';
+import { G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { writeG2SourceFile, readG2SourceFile, g2SourceBinding } from '../app/server/src/p2-g2-evidence-files.mjs';
+import { captureG2ProviderReceipt, withG2ProviderReceipt } from '../app/server/src/p2-g2-provider-receipts.mjs';
+import { G2_RECONCILIATION_QUERY_HASH } from '../app/server/src/p2-g2-reconciliation.mjs';
+import { deriveG2DeliveryEvidence } from '../app/server/src/p2-g2-delivery-evidence.mjs';
 
 test('synthetic evidence fixture: SENT alone, unrelated attempt, seeded startup and organic prior-group cannot prove live receipt',async t=>{
   mkdirSync(path.join(G2_ROOT,'tmp'),{recursive:true});

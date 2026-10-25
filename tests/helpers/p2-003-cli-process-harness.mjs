@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const REPOSITORY_PATH = fileURLToPath(new URL('../..', import.meta.url));
 const MIGRATION_SCRIPT_PATH = fileURLToPath(
-  new URL('../../scripts/p2-003-migrate.mjs', import.meta.url),
+  new URL('../../app/server/scripts/p2-003-migrate.mjs', import.meta.url),
 );
 const RETENTION_SCRIPT_PATH = fileURLToPath(
-  new URL('../../scripts/p2-003-retention.mjs', import.meta.url),
+  new URL('../../app/server/scripts/p2-003-retention.mjs', import.meta.url),
 );
 const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
   'SystemRoot',

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { g2Hash } from '../../src/p2-g2-validation-config.mjs';
+import { g2Hash } from '../../app/server/src/p2-g2-validation-config.mjs';
 
 // Contract assertions, independent of the router's implementation/configuration.
 const requiredActions = Object.freeze({

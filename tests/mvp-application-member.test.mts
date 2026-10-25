@@ -2,11 +2,11 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {setTimeout as delay} from 'node:timers/promises';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createApplicationMemberVerifier} from '../src/wecom-application-member.mjs';
-import type {VerifiedApplicationMember} from '../src/wecom-application-member.mjs';
-import {isPureGroupThanks} from '../src/mvp-group-replies.mjs';
+import {validateYxxEntryConfig} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createApplicationMemberVerifier} from '../app/server/src/wecom-application-member.mjs';
+import type {VerifiedApplicationMember} from '../app/server/src/wecom-application-member.mjs';
+import {isPureGroupThanks} from '../app/server/src/mvp-group-replies.mjs';
 
 test('MVP app member mode needs no roster while explicit legacy correspondence remains scoped and case sensitive',async()=>{
  const config=validateYxxEntryConfig({...entryConfig,identityMode:'VERIFIED_APP_OPENID'});let calls=0;
@@ -60,7 +60,7 @@ test('MVP courtesy recognizes only a pure current thanks and never consumes a mi
 });
 
 test('H5 display reads use the exact qualified open identity and only its primary department, with no entry lookup overhead',async()=>{
- const calls:string[]=[];const events:import('../src/wecom-application-member.mjs').ApplicationMemberVerificationEvent[]=[];
+ const calls:string[]=[];const events:import('../app/server/src/wecom-application-member.mjs').ApplicationMemberVerificationEvent[]=[];
  const verify=createApplicationMemberVerifier({h5EntryReadEnabled:true,accessTokenProvider:async()=> 'synthetic-profile-token',observe:event=>events.push(event),fetchImpl:async(input,init)=>{
   const url=new URL(String(input));calls.push(url.pathname);assert.equal(init?.method,'GET');assert.equal(init?.redirect,'error');
   if(url.pathname==='/cgi-bin/user/get'){assert.equal(url.searchParams.get('userid'),'open-profile-A');return Response.json({errcode:0,userid:'open-profile-A',name:'合成成员',status:1,department:[7,9],main_department:9});}

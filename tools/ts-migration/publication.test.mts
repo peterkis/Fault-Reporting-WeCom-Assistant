@@ -18,7 +18,7 @@ function fixture(run:(value:{root:string;packet:string;files:Array<{path:string;
     save('raw.bin',Buffer.from([0,13,10,255]));
     mkdirSync(path.join(packet,'current'));save('current/empty.stderr',Buffer.alloc(0));
     const reference={...raw,path:'evidence/yxx-current-fixture/'+raw.path};
-    save('report.json',Buffer.from(JSON.stringify({schema_version:1,contract:'ADR-0027',run_id:'fixture',status:'CURRENT_AUTOMATION_COMPLETE',
+    save('report.json',Buffer.from(JSON.stringify({schema_version:1,contract:'ADR-0045',run_id:'fixture',status:'CURRENT_AUTOMATION_COMPLETE',
       synthetic_parser_fixture:true,live_authorized:false,parent_gate_advanced:false,build:reference,current_runs:[reference],reviews:[reference,reference],
       cleanup:reference,historical:reference,specialized:reference,source_accounting:reference,scenarios:reference,migration_scope:reference})+'\r\n'));
     const originalFiles=files.map(file=>({...file,path:'evidence/yxx-current-fixture/'+file.path,

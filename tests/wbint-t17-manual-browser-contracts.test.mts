@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {ManualReportContractError,emptyManualReportInput,manualReportCommandFromInput,decodeManualReportCommand,encodeManualReportDraft,decodeManualReportDraft,decodeManualReportReceipt} from '../src/workbench-manual-report-browser-contracts.mjs';
+import {ManualReportContractError,emptyManualReportInput,manualReportCommandFromInput,decodeManualReportCommand,encodeManualReportDraft,decodeManualReportDraft,decodeManualReportReceipt} from '../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mjs';
 import type {ManualReportResult} from '../contracts/workbench_manual_report_contracts.js';
 
 test('the recoverable pending manual command contains the original business intent once and never accepts an operator or credential override',()=>{

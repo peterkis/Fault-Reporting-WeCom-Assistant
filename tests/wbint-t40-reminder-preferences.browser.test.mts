@@ -9,16 +9,22 @@ const key='wbint-reminder-preferences-v1';
 // Native browser APIs are forwarded. Visibility is a labeled controlled sensor;
 // only the explicit refusal case rejects AudioContext.resume, never fabricates success.
 const observe=`(()=>{
-  const m=globalThis.__t40Preferences={starts:0,resumes:0,refusals:0,permissionRequests:0,notifications:0,posts:0,reads:[],bootstraps:[],acquired:0,released:0,acquireReads:[],refuse:false};
+  const m=globalThis.__t40Preferences={documentId:crypto.randomUUID(),starts:0,resumes:0,refusals:0,permissionRequests:0,notifications:0,posts:0,reads:[],requests:[],inFlight:0,bootstraps:[],acquired:0,released:0,acquireReads:[],refuse:false};
   Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'visible'});
   const fetch=globalThis.fetch;globalThis.fetch=async function(input,options){
     const url=new URL(input instanceof Request?input.url:String(input),location.href),method=(options?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(url.origin===location.origin&&url.pathname.startsWith('/api/')&&method==='POST')m.posts++;
-    const response=await Reflect.apply(fetch,this,[input,options]);
-    if(url.origin===location.origin&&response.ok&&(url.pathname==='/api/workbench/reminders'||url.pathname==='/api/lifecycle/bootstrap')){
-      const value=await response.clone().json();if(url.pathname.endsWith('/reminders'))m.reads.push({baseline:!url.searchParams.has('after_event_id'),asof:value.as_of_event_id,ids:value.items.map(x=>x.reminder_id),itemIds:value.items.map(x=>x.canonical_item.id)});
-      else m.bootstraps.push(value.principal_id);
-    }return response;
+    const reminder=url.origin===location.origin&&url.pathname==='/api/workbench/reminders',signal=options?.signal??(input instanceof Request?input.signal:null);
+    const observed=reminder?{id:m.requests.length+1,started:performance.now(),after:url.searchParams.get('after_event_id'),hasToken:url.searchParams.has('baseline_token'),paged:url.searchParams.has('cursor'),response:null,rejected:null,aborted:false}:null;
+    const abort=()=>{if(observed)observed.aborted=true;};if(observed){m.requests.push(observed);m.inFlight++;signal?.addEventListener('abort',abort,{once:true});}
+    try{
+      const response=await Reflect.apply(fetch,this,[input,options]);if(observed)observed.response={at:performance.now(),status:response.status};
+      if(url.origin===location.origin&&response.ok&&(reminder||url.pathname==='/api/lifecycle/bootstrap')){
+        const value=await response.clone().json();if(reminder)m.reads.push({requestId:observed.id,baseline:!url.searchParams.has('after_event_id'),asof:value.as_of_event_id,reset:value.reset_required,paged:Boolean(value.next_cursor),ids:value.items.map(x=>x.reminder_id),itemIds:value.items.map(x=>x.canonical_item.id)});
+        else m.bootstraps.push(value.principal_id);
+      }return response;
+    }catch(error){if(observed)observed.rejected={at:performance.now(),name:error.name};throw error;}
+    finally{if(observed){m.inFlight--;signal?.removeEventListener('abort',abort);}}
   };
   const resume=AudioContext.prototype.resume;AudioContext.prototype.resume=function(...args){m.resumes++;if(m.refuse){m.refusals++;return Promise.reject(new DOMException('T40_CONTROLLED_BROWSER_AUDIO_REFUSAL','NotAllowedError'));}return Reflect.apply(resume,this,args);};
   const start=AudioScheduledSourceNode.prototype.start;AudioScheduledSourceNode.prototype.start=function(...args){m.starts++;return Reflect.apply(start,this,args);};
@@ -45,8 +51,9 @@ function port(browser:Browser,sessionId:string|null=null){
   };
   const ready=()=>wait('Boolean(document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\'))');
   const install=async(origin:string)=>{await command('Page.enable');await command('Runtime.enable');await command('Page.addScriptToEvaluateOnNewDocument',{source:observe});await command('Page.navigate',{url:origin+'/workbench/app/'});await ready();};
-  const baselineAfterLeader=()=>wait('globalThis.__t40Preferences.acquired>0&&globalThis.__t40Preferences.reads.slice(globalThis.__t40Preferences.acquireReads.at(-1)).some(x=>x.baseline)');
-  return {command,evaluate,wait,click,ready,install,baselineAfterLeader};
+  const stableBaseline=()=>wait('__t40Preferences.inFlight===0&&Boolean(document.querySelector(\'[data-reminders-ready="true"]\'))');
+  const baselineAfterLeader=async()=>{await wait('globalThis.__t40Preferences.acquired>0&&globalThis.__t40Preferences.reads.slice(globalThis.__t40Preferences.acquireReads.at(-1)).some(x=>x.baseline)');await stableBaseline();};
+  return {command,evaluate,wait,click,ready,install,baselineAfterLeader,stableBaseline};
 }
 async function launch(f:T40ReminderRiskFixture){const browser=await launchSystemBrowser({url:f.origin+'/api/lifecycle/bootstrap',width:1280,height:900,cookies:[f.browserCookie]});assert.ok(browser);return browser;}
 async function close(browser:Browser|undefined,primary:unknown){await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
@@ -100,7 +107,8 @@ test('T40 two actual browser tabs share one native leader, merge a short event c
     assert.equal((await f.runtime.observability.metrics()).sse_clients,2);
     for(const p of [main,peer]){await p.click('button[aria-label="提醒偏好"]');await p.click('input[aria-label="开启声音提醒"]');await p.click('button[aria-label="关闭提醒偏好"]');}
     await main.wait('(async()=>{const s=await navigator.locks.query();return s.held.filter(x=>x.name.startsWith("wbint-reminders-")).length===1&&s.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length===1;})()');
-    await main.baselineAfterLeader();const before=Number(await main.evaluate('__t40Preferences.starts'))+Number(await peer.evaluate('__t40Preferences.starts'));
+    await main.baselineAfterLeader();await main.stableBaseline();await peer.stableBaseline();
+    const before=Number(await main.evaluate('__t40Preferences.starts'))+Number(await peer.evaluate('__t40Preferences.starts'));
     const serverBaseline=await f.http.get('/api/workbench/reminders');assert.equal(serverBaseline.status,200);
     const first=await f.createTeamReport(),second=await f.createTeamReport();
     const serverNew=await f.http.get('/api/workbench/reminders?'+new URLSearchParams({after_event_id:text(serverBaseline.value.as_of_event_id),baseline_token:text(serverBaseline.value.baseline_token)}));assert.equal(serverNew.status,200);

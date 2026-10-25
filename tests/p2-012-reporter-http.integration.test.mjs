@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { test } from 'node:test';
-import { appendTicketEvent } from '../src/p1-006-ticket-state-actions.mjs';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { transaction } from '../src/p2-012-domain-contracts.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { appendTicketEvent } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { transaction } from '../app/server/src/p2-012-domain-contracts.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 import { withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 

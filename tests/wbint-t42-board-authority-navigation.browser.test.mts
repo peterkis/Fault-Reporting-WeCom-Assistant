@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
 import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('T42 full-page expansion preserves the original completion intent through a real version conflict',{timeout:240000},async()=>{
   await withT11Fixture(async f=>{

@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {withP2016IsolatedDatabase} from './p2-016-postgres-harness.mjs';
-import {createPostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {g2EvidenceTime} from '../../src/p2-g2-evidence-time.mjs';
-import {g2CandidateInventory} from '../../src/p2-g2-candidate.mjs';
+import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {g2EvidenceTime} from '../../app/server/src/p2-g2-evidence-time.mjs';
+import {g2CandidateInventory} from '../../app/server/src/p2-g2-candidate.mjs';
+import {currentRuntimeFingerprint} from '../../app/server/src/yxx-current-evidence.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 export const closeSS009Resources=closeBrowserTestResources;
 
-export async function withSS009Database({testContext,databaseUrl,run,candidateRoot,...options}){
+export async function withSS009Database({testContext,databaseUrl,run,candidateRoot,candidateRepresentation='SOURCE',...options}){
+  assert.ok(['SOURCE','STAGED_RUNTIME'].includes(candidateRepresentation));
   assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
   const observers=[];let name,ownedPool;
   const result=await withP2016IsolatedDatabase({databaseUrl,...options,run:async context=>{
@@ -20,6 +22,7 @@ export async function withSS009Database({testContext,databaseUrl,run,candidateRo
   }finally{await control.end();}
   const resources=[{resource:'owned_database',remaining:databaseCount},{resource:'owned_database_backends',remaining:backendCount},{resource:'fixture_pool',remaining:ownedPool.totalCount},{resource:'cleanup_observer_pool',remaining:control.totalCount},...observers.map(({resource,observe})=>({resource,remaining:observe()}))];
   for(const r of resources)assert.equal(r.remaining,0,r.resource);
-  testContext.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'cleanup',status:'PASS',candidate_fingerprint:g2CandidateInventory(candidateRoot).fingerprint,resources,scope:'OWNED_RUN_RESOURCES_ONLY',preexisting_resources_touched:false}));
+  const fingerprint=candidateRepresentation==='STAGED_RUNTIME'?currentRuntimeFingerprint(candidateRoot):g2CandidateInventory(candidateRoot).fingerprint;
+  testContext.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'cleanup',status:'PASS',candidate_fingerprint:fingerprint,resources,scope:'OWNED_RUN_RESOURCES_ONLY',preexisting_resources_touched:false}));
   return result;
 }

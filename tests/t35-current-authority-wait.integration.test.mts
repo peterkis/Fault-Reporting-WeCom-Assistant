@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('T35 a public replay waiting on its real receipt rechecks current authority before returning committed data',{timeout:120_000},()=>withT35Fixture(async f=>{
   const selected=f.tickets[1],retained=f.tickets[8];assert.ok(selected);assert.ok(retained);

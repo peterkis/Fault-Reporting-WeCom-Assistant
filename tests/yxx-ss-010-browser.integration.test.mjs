@@ -1,3 +1,4 @@
+// Retired V1 client fixture: preserves historical API/lifecycle assertions; not new H5 UI acceptance.
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import test from 'node:test';
@@ -9,24 +10,25 @@ import path from 'node:path';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {runtimeFixture} from './helpers/yxx-ss-010-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
-import {startLimitedRuntime} from '../src/yxx-limited-write-runner.mjs';
+import {retiredSelfServiceProcessPresentation} from './helpers/retired-self-service-ui.mjs';
+import {startLimitedRuntime} from '../app/server/src/yxx-limited-write-runner.mjs';
 import {browser,post,eventually} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
 
-test('SS011 single approved Reporter uses the real browser form supplement and logout',{timeout:90000},async t=>{
+test('retired V1 client fixture SS011 single approved Reporter uses the real browser form supplement and logout',{timeout:90000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
     const setup=await runtimeFixture({...context,reporterAliases:['A']}),directory=mkdtempSync(path.join(tmpdir(),'ss011-browser-'));
     let fixture,runtime,tab,primaryError;
     try{
-      fixture=await createYxxBrowserFixture({pool:context.pool,createApp:()=>createServer((request,response)=>{
+      fixture=await createYxxBrowserFixture({pool:context.pool,createApp:()=>createServer(retiredSelfServiceProcessPresentation((request,response)=>{
         const url=new URL(request.url,'https://127.0.0.1');
         // The owned synthetic provider's UUID is translated to the limited role's A test code.
         if(url.pathname==='/wecom/yixiaoxiu/callback')url.searchParams.set('code','a');
         const outgoing=httpRequest({hostname:'127.0.0.1',port:setup.manifest.listen_port,path:url.pathname+url.search,method:request.method,headers:request.headers},incoming=>{
           response.writeHead(incoming.statusCode,incoming.headers);incoming.pipe(response);
         });outgoing.on('error',()=>{response.writeHead(503);response.end();});request.pipe(outgoing);
-      })});
+      }))});
       setup.manifest.public_origin=fixture.origin;
       runtime=await startLimitedRuntime({...setup,stateDirectory:directory,synthetic:true});
       context.observeResource('ss011_browser_process',()=>tab?.ownedResourceState().processes??0);
@@ -52,16 +54,16 @@ test('SS011 single approved Reporter uses the real browser form supplement and l
   }});
 });
 
-test('SS010 AC093 real browser limited roles complete supplement review and safe member feedback',{timeout:180000},async t=>{
+test('retired V1 client fixture SS010 AC093 real browser limited roles complete supplement review and safe member feedback',{timeout:180000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
     const setup=await runtimeFixture(context);let fixture,runtime,tab,primaryError;
     const screenshots=[];
     try{
-      fixture=await createYxxBrowserFixture({pool:context.pool,createApp:()=>createServer((request,response)=>{
+      fixture=await createYxxBrowserFixture({pool:context.pool,createApp:()=>createServer(retiredSelfServiceProcessPresentation((request,response)=>{
         const outgoing=httpRequest({hostname:'127.0.0.1',port:setup.manifest.listen_port,path:request.url,method:request.method,headers:request.headers},incoming=>{
           response.writeHead(incoming.statusCode,incoming.headers);incoming.pipe(response);
         });outgoing.on('error',()=>{response.writeHead(503);response.end();});request.pipe(outgoing);
-      })});
+      }))});
       setup.manifest.public_origin=fixture.origin;
       runtime=await startLimitedRuntime({...setup,stateDirectory:path.join(tmpdir(),'ss010-browser-'+randomUUID()),synthetic:true});
       tab=await fixture.launch({path:'/wecom/yixiaoxiu/',width:390,height:844});

@@ -3,9 +3,9 @@ import {writeFileSync,readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {brotliCompressSync,constants,gzipSync} from 'node:zlib';
 import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles,h5StartupMetrics} from './common.mjs';
-type WebProject = 'web/admin-workbench' | 'h5';
+type WebProject = 'app/pc-admin' | 'app/h5';
 function typecheckProject(root:string,relative:WebProject):void {
-  const project=path.join(root,relative),code=relative==='h5'?'H5':'WEB01';
+  const project=path.join(root,relative),code=relative==='app/h5'?'H5':'WEB01';
   const declared=record(JSON.parse(readFileSync(safeFile(project,'package.json'),'utf8')) as unknown);
   const installed=record(record(JSON.parse(readFileSync(safeFile(root,'package.json'),'utf8')) as unknown).devDependencies);
   for(const [name,version] of Object.entries({...record(declared.dependencies),...record(declared.devDependencies)})){
@@ -18,18 +18,19 @@ function typecheckProject(root:string,relative:WebProject):void {
   for(const key of ['strict','noUncheckedIndexedAccess','exactOptionalPropertyTypes','useUnknownInCatchVariables','verbatimModuleSyntax','forceConsistentCasingInFileNames','noEmit','noEmitOnError'])if(options[key]!==true)throw new Error(code+'_STRICT_FLAG_REQUIRED: '+key);
   // Preserve the prototype's vendor declaration exception. Our public .d.ts inputs
   // are also checked by the existing strict root type program with skipLibCheck=false.
-  if(options.noCheck||['noImplicitAny','strictNullChecks',...(relative==='h5'?['strictFunctionTypes','strictBindCallApply','strictPropertyInitialization','noImplicitThis','alwaysStrict']:[])].some(k=>options[k]===false))throw new Error(code+'_TYPE_BYPASS');
+  if(options.noCheck||['noImplicitAny','strictNullChecks',...(relative==='app/h5'?['strictFunctionTypes','strictBindCallApply','strictPropertyInitialization','noImplicitThis','alwaysStrict']:[])].some(k=>options[k]===false))throw new Error(code+'_TYPE_BYPASS');
   const args=[path.join(root,'node_modules/typescript-web/bin/tsc'),'-p',path.join(project,'tsconfig.json')];
   runNode(root,args);
   const checked=new Set(execFileSync(process.execPath,[...args,'--listFilesOnly'],{cwd:root,encoding:'utf8',windowsHide:true}).split(/\r?\n/u).map(slash));
-  const sources=workspaceFiles(root).filter(f=>relative==='h5'?isH5ProductionInput(f)&&/\.(ts|tsx)$/u.test(f):/^web\/admin-workbench\/.+\.(ts|tsx)$/u.test(f));
-  if(!sources.length||relative==='h5'&&!sources.some(f=>f.startsWith('h5/src/'))||sources.some(f=>!checked.has(slash(path.join(root,f)))))throw new Error(code+'_UNCHECKED_SOURCE');
+  const sources=workspaceFiles(root).filter(f=>relative==='app/h5'?isH5ProductionInput(f)&&/\.(mts|ts|tsx)$/u.test(f):/^app\/pc-admin\/.+\.(mts|ts|tsx)$/u.test(f));
+  if(!sources.length||relative==='app/h5'&&!sources.some(f=>f.startsWith('app/h5/src/'))||sources.some(f=>!checked.has(slash(path.join(root,f)))))throw new Error(code+'_UNCHECKED_SOURCE');
 }
-export function typecheckH5(root:string):void { typecheckProject(root,'h5'); }
-export function typecheckWeb(root:string):void { typecheckProject(root,'web/admin-workbench'); typecheckH5(root); }
+export function typecheckH5(root:string):void { typecheckProject(root,'app/h5'); }
+export function typecheckWeb(root:string):void { typecheckProject(root,'app/pc-admin'); typecheckH5(root); }
 export function buildWeb(root:string):void {
   typecheckWeb(root);
-  const project=path.join(root,'web/admin-workbench'),output=path.join(controlledBuildRoot(root),'emit/web/admin-workbench');
+  // Source layout is independent of the established runtime asset location.
+  const project=path.join(root,'app/pc-admin'),output=path.join(controlledBuildRoot(root),'emit/web/admin-workbench');
   runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--outDir',output,'--emptyOutDir']);
   const files=outputFiles(output);
   if(!files.includes('index.html')||!files.includes('.vite/manifest.json')||files.some(f=>!['index.html','.vite/manifest.json'].includes(f)&&!/^assets\/[A-Za-z0-9_-]+\.(js|css)$/u.test(f)))throw new Error('WEB01_BUILD_OUTPUT_INVALID');
@@ -40,7 +41,7 @@ export function buildWeb(root:string):void {
 }
 function emitH5(root:string):void {
   const output=path.join(controlledBuildRoot(root),'emit/h5');
-  runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',path.join(root,'h5'),'--outDir',output,'--emptyOutDir']);
+  runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',path.join(root,'app/h5'),'--outDir',output,'--emptyOutDir']);
   const original=h5OutputFiles(root,false),manifest=record(JSON.parse(readFileSync(safeFile(output,'.vite/manifest.json'),'utf8')) as unknown),main=record(manifest['index.html']);
   // Public files are already compared against source bytes by h5OutputFiles.
   // Register them in the reachable graph as well as the artifact inventory.

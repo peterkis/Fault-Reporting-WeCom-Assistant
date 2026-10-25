@@ -7,7 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {setImmediate as nextTurn} from 'node:timers/promises';
 import {H5PerformanceSqlLedger,H5PerformanceMemberVerificationLedger,recordH5PerformanceProviderDelay,type H5PerformanceTrace,type PerformanceBatchContext,type PerformanceBatchTiming} from './helpers/yxx-h5-performance-observability.mjs';
 import {createH5PerformanceHttpClient} from './yxx-h5-performance-harness.mjs';
-import {createApplicationMemberVerifier,type ApplicationMemberVerificationEvent} from '../src/wecom-application-member.mjs';
+import {createApplicationMemberVerifier,type ApplicationMemberVerificationEvent} from '../app/server/src/wecom-application-member.mjs';
 
 function fixture(){
   let now=0,context:PerformanceBatchContext|undefined;

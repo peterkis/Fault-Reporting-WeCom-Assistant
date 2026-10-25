@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT08Fixture,rows,text} from './helpers/t08-fixture.mjs';
-import {transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import {createP2016TicketNotificationProjector} from '../src/p2-016-ticket-notification-projector.mjs';
+import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {createP2016TicketNotificationProjector} from '../app/server/src/p2-016-ticket-notification-projector.mjs';
 
 test('the existing public notification projector still reports an exact accepted-event replay inside a real handling round',async()=>{
  await withT08Fixture(async fixture=>{

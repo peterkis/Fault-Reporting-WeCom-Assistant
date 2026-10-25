@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {mkdtemp,rm,readdir,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {createYxxH5Runtime,validateYxxH5RuntimeOptions,createYxxH5RequestAuthentication} from '../src/yxx-h5-runtime.mjs';
-import {readWorkbenchH5RuntimeOptions,readHumanWorkbenchConfiguration,workbenchRoleEnvironment} from '../src/human-workbench-configuration.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createYxxH5Runtime,validateYxxH5RuntimeOptions,createYxxH5RequestAuthentication} from '../app/server/src/yxx-h5-runtime.mjs';
+import {readWorkbenchH5RuntimeOptions,readHumanWorkbenchConfiguration,workbenchRoleEnvironment} from '../app/server/src/human-workbench-configuration.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs';
-import {createYxxH5Media} from '../src/yxx-h5-media.mjs';
+import {createYxxH5Media} from '../app/server/src/yxx-h5-media.mjs';
 import type {H5MediaPrivateStore} from '../contracts/yxx_h5_media_contracts.js';
 import {createSourceFile,createPrinter,factory,isImportDeclaration,ScriptKind,ScriptTarget} from 'typescript';
 import {createHash} from 'node:crypto';
-import {yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
@@ -20,7 +20,7 @@ const pool=()=>createPostgresPool({connectionString:'postgres://synthetic:synthe
 
 /** Exercise the compiled role's public main while replacing only process/Worker launch leaves. */
 async function workerBeforeReady(h5:NodeJS.ProcessEnv){
-  const roleUrl=new URL('../scripts/human-workbench-role.mjs',import.meta.url);
+  const roleUrl=new URL('../app/server/scripts/human-workbench-role.mjs',import.meta.url);
   const data=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
   const processUrl=data('export default {env:globalThis.process.env,argv:[],send(){return true},once(){},exit(){throw Error("UNEXPECTED_PROCESS_EXIT")}};');
   const launchUrl=data('export function runWorker(options){return options} export function runApp(){throw Error("UNEXPECTED_APP_START")} export function runGateway(){throw Error("UNEXPECTED_GATEWAY_START")}');
@@ -60,7 +60,7 @@ function schemaPool(migrations:ReadonlySet<string>){
 
 /** Keep the P2016 extension and its real schema guards; replace only the G1 host lifecycle. */
 async function workbenchReadiness(database:ReturnType<typeof pool>,h5Options:ReturnType<typeof readWorkbenchH5RuntimeOptions>){
-  const runtimeUrl=new URL('../src/p2-016-runtime.mjs',import.meta.url);
+  const runtimeUrl=new URL('../app/server/src/p2-016-runtime.mjs',import.meta.url);
   const data=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
   const hostUrl=data(`export function createP2G1Runtime(options){
     const extension=options.extensionFactory({controlService:{},realtime:{wakeup(){}},queryService:{},commandFacade:{},authorization:{}});

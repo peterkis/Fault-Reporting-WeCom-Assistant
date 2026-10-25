@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016Runtime } from '../src/p2-016-runtime.mjs';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016Runtime } from '../app/server/src/p2-016-runtime.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
 import { applyThrough031, withP2012Database, assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 
 // Gate acceptance tests; the pre-repair RED remains immutable in evidence/.
 // Business inputs enter only through the normal Frame -> Inbox -> Intake pipeline.

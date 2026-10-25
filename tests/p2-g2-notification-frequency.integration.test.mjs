@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2012DynamicWeComSender } from '../src/p2-012-live-reporter-scope.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
-import { textHashP2016,transactionP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
+import { createP2012DynamicWeComSender } from '../app/server/src/p2-012-live-reporter-scope.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { textHashP2016,transactionP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
 
 test('existing group-only receipt replays without duplicate artifacts even when the optional private authorizer is absent',async()=>{
   await withG2Runtime(async f=>{

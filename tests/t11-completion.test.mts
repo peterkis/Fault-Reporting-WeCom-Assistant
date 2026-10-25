@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {getTicketActionTransitions} from '../src/p1-006-ticket-state-actions.mjs';
-import {normalizeCompletionCommand} from '../src/workbench-ticket-completion.mjs';
+import {getTicketActionTransitions} from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import {normalizeCompletionCommand} from '../app/server/src/workbench-ticket-completion.mjs';
 import {randomUUID} from 'node:crypto';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 

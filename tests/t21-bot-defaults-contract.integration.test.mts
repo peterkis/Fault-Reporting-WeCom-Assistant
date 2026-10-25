@@ -2,8 +2,8 @@ import {t21Login as login} from './helpers/t21-bot-feedback-current-scope-fixtur
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
 import {withT21DraftFixture,t21Config,t21Mapping,t21OAuthOptions,t21FeedbackCommand,t21Send,t21Object} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {browser,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write capability or cross-source recovery',async()=>{
  await withT21DraftFixture(async f=>{
   let app=await f.replaceMember(),member=browser(app.server);await login(member);const prepared=await t21FeedbackCommand(member,f.path);await f.closeMember();

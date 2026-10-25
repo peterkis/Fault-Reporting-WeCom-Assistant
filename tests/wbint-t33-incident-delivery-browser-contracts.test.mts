@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {decodeIncidentDeliveryAuthority,INCIDENT_DELIVERY_AUTHORITY_HEADERS} from '../src/workbench-incident-delivery-authority.mjs';
-import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,decodeIncidentDeliveryRefusal,matchesIncidentDeliveryResult} from '../src/workbench-incident-delivery-browser-contracts.mjs';
+import {decodeIncidentDeliveryAuthority,INCIDENT_DELIVERY_AUTHORITY_HEADERS} from '../shared/workbench-incident-delivery-authority.mjs';
+import {decodeIncidentDeliveryOperation,decodeIncidentDeliveryCapability,decodeIncidentDeliveryResult,decodeIncidentDeliveryReceipt,decodeIncidentDeliveryRefusal,matchesIncidentDeliveryResult} from '../app/pc-admin/src/contracts/workbench-incident-delivery-browser-contracts.mjs';
 const incidentId='11111111-1111-4111-8111-111111111111',deliveryId='22222222-2222-4222-8222-222222222222',commandId='33333333-3333-4333-8333-333333333333',other='44444444-4444-4444-8444-444444444444';
 const expected={incidentId,deliveryId,purpose:'INCIDENT_LIFECYCLE' as const};
 const body={client_command_id:commandId,expected_row_version:'9223372036854775807',expected_status:'RECONCILIATION_REQUIRED',expected_side_effect_state:'UNKNOWN',expected_delivery_attempt_count:1,reason_code:'OPERATOR_VERIFIED_DELIVERY',resolution:'CONFIRMED_SENT'};

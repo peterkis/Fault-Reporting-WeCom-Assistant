@@ -1,17 +1,17 @@
-import type { DirectoryProfileResult } from '../../src/p2-007-third-party-staff-directory-adapter.mjs';
-import type { RuleAction, RuleResult } from '../../src/p2-007-rule-engine.mjs';
-import type { ReporterDirectoryResult } from '../../src/p2-015-contact-journey.mjs';
-import { createServiceIntakeDecisionPort } from '../../src/p2-015-service-intake-decision-port.mjs';
-import type { IntakeDecisionInput } from '../../src/p2-015-service-intake-decision-port.mjs';
+import type { DirectoryProfileResult } from '../../app/server/src/p2-007-third-party-staff-directory-adapter.mjs';
+import type { RuleAction, RuleResult } from '../../app/server/src/p2-007-rule-engine.mjs';
+import type { ReporterDirectoryResult } from '../../app/server/src/p2-015-contact-journey.mjs';
+import { createServiceIntakeDecisionPort } from '../../app/server/src/p2-015-service-intake-decision-port.mjs';
+import type { IntakeDecisionInput } from '../../app/server/src/p2-015-service-intake-decision-port.mjs';
 import type { P2015SafeRoute } from '../../contracts/p2_015_contracts.js';
-import type { PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
-import { createRuleEngine } from '../../src/p2-007-rule-engine.mjs';
+import type { PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
+import { createRuleEngine } from '../../app/server/src/p2-007-rule-engine.mjs';
 declare const catalogEngine:ReturnType<typeof createRuleEngine>;
 const engineCatalogVersion:string=catalogEngine.getServiceCatalog().catalog_version;
 void engineCatalogVersion;
-import { resolveFactConflicts } from '../../src/p2-007-conflict-resolver.mjs';
-import type { FactConflict } from '../../src/p2-007-conflict-resolver.mjs';
-import { resolveDirectJourneyAssociation } from '../../src/p2-015-contact-journey.mjs';
+import { resolveFactConflicts } from '../../app/server/src/p2-007-conflict-resolver.mjs';
+import type { FactConflict } from '../../app/server/src/p2-007-conflict-resolver.mjs';
+import { resolveDirectJourneyAssociation } from '../../app/server/src/p2-015-contact-journey.mjs';
 
 declare const profile: DirectoryProfileResult;
 if (profile.status === 'RESOLVED') {

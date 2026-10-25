@@ -2,11 +2,11 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
-import {parseH5RequestInput,parseH5UrgeInput,parseH5EvaluationInput,parseH5PublicProgressInput,parseH5ReportFilters,H5_LIMITS} from '../src/yxx-h5-v2-contracts.mjs';
-import {parseYxxRequestInput,parseYxxInitialRequestInput} from '../src/yxx-self-service-store.mjs';
-import {routeH5DeclaredRequest} from '../src/yxx-self-service-orchestrator.mjs';
-import {routeP2007Decision} from '../src/p2-015-decision-router.mjs';
-import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
+import {parseH5RequestInput,parseH5UrgeInput,parseH5EvaluationInput,parseH5PublicProgressInput,parseH5ReportFilters,H5_LIMITS} from '../app/server/src/yxx-h5-v2-contracts.mjs';
+import {parseYxxRequestInput,parseYxxInitialRequestInput} from '../app/server/src/yxx-self-service-store.mjs';
+import {routeH5DeclaredRequest} from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import {routeP2007Decision} from '../app/server/src/p2-015-decision-router.mjs';
+import {createYxxMemberCommandContext} from '../app/server/src/yxx-self-service-command.mjs';
 
 const input=()=>({schema_version:2,client_command_id:randomUUID(),intent:'FAULT',description:null,location:{text:null,unknown:true},media_refs:[randomUUID()]});
 const rejects=(run:()=>unknown)=>assert.throws(run,{code:'YXX_INPUT_INVALID'});

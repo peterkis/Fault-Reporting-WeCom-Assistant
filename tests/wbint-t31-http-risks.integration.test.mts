@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {t31Http,record,text} from './helpers/t31-public-progress-fixture.mjs';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 const input=(version:string,summary='合成独立公开摘要')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_PUBLIC_PROGRESS' as const,summary,preview_confirmed:true as const});
 test('T31 exact HTTP input, current purpose, scope, version, UUID competition and stable safe pages use the original ledger',async()=>{
   await t31Http({purpose:'t31http'},async({pool,f,confirm,get,post})=>{

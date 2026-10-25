@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {withG2Runtime} from './helpers/p2-g2-runtime-harness.mjs';
-import {createReporterDirectoryPort} from '../src/p2-015-contact-journey.mjs';
+import {createReporterDirectoryPort} from '../app/server/src/p2-015-contact-journey.mjs';
 
 // These scope assertions evaluate a complete input cohort, not a smaller prefix
 // observed by the background correlation worker during fixture collection.

@@ -6,10 +6,10 @@ import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import type {IncomingMessage} from 'node:http';
 import {createServer} from 'node:net';
-import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
-import {FOLLOW_UP_MIGRATION_ID,followUpSchemaReady} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
-import {FOLLOW_UP_DUE_MIGRATION_ID,followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate.mjs';
+import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
+import {FOLLOW_UP_MIGRATION_ID,followUpSchemaReady} from '../app/server/scripts/workbench-follow-up-schedules-migrate.mjs';
+import {FOLLOW_UP_DUE_MIGRATION_ID,followUpDueSchemaReady} from '../app/server/scripts/workbench-follow-up-due-migrate.mjs';
 import {withT37Fixture,object,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
 
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}

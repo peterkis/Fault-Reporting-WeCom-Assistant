@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FaultingDirectory, MockResolvedDirectory, reporterIdentityHash, resolveDirectJourneyAssociation } from '../src/p2-015-contact-journey.mjs';
+import { FaultingDirectory, MockResolvedDirectory, reporterIdentityHash, resolveDirectJourneyAssociation } from '../app/server/src/p2-015-contact-journey.mjs';
 
 test('reporter identity is HMAC-bound and directory failures defer safely', async () => {
   const first = reporterIdentityHash({ provider: 'WECOM_AIBOT', bot_id: 'bot-a', reporter_external_id: 'user-a', hmac_key: '0123456789abcdef' });

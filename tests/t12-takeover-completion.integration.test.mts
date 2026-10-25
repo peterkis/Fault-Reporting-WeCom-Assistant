@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {createTicketStaffCompletionService} from '../src/workbench-ticket-completion.mjs';
-import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
+import {createTicketStaffCompletionService} from '../app/server/src/workbench-ticket-completion.mjs';
+import {createP2016TicketQuery} from '../app/server/src/p2-016-ticket-query.mjs';
 import type {P2016TakeoverCompletionCommand} from '../contracts/p2_016_takeover_completion_contracts.js';
 
 test('a currently visible non-owner HANDLER takes actual self-team responsibility and staff-closes the original started cycle in one public command while retaining communication and one safe commitment',async()=>{

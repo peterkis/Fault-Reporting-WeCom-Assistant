@@ -1,7 +1,7 @@
-import type { G1ProviderResponse } from '../../scripts/p2-g1-process-role.mjs';
-import type { G1SenderPort } from '../../src/p2-g1-runtime.mjs';
-import { createP2G1Runtime } from '../../src/p2-g1-runtime.mjs';
-import { createP2G1TimelineProjector } from '../../src/p2-g1-inbound-projection-coordinator.mjs';
+import type { G1ProviderResponse } from '../../app/server/scripts/p2-g1-process-role.mjs';
+import type { G1SenderPort } from '../../app/server/src/p2-g1-runtime.mjs';
+import { createP2G1Runtime } from '../../app/server/src/p2-g1-runtime.mjs';
+import { createP2G1TimelineProjector } from '../../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
 const sender: G1SenderPort = { async send() { return { outcome: 'ACKNOWLEDGED', provider_message_id: 'synthetic', error_code: null, retryable: false }; } };
 createP2G1Runtime({ senderAdapter: sender });
 // @ts-expect-error -- Internal SenderPort must return the validated receipt union.

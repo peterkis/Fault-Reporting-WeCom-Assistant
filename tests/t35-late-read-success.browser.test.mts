@@ -5,11 +5,11 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 for(const mode of ['SOURCE','SESSION'] as const)test('T35 late genuine '+mode+' committed200 body cannot restore the previous account scope',{timeout:120_000},()=>withT22Fixture(async f=>{
@@ -23,13 +23,14 @@ for(const mode of ['SOURCE','SESSION'] as const)test('T35 late genuine '+mode+' 
     const identity=await (await get('/api/lifecycle/bootstrap',true)).json() as {principal_id:string;display_name:string};assert.equal(identity.principal_id,f.principals[1]?.id);
     const position=async(second=false)=>mode==='SOURCE'?(await (await get('/api/workbench/items/ticket/'+ticket.ticket.id+'/read-position',second)).json() as {sources:{last_read_position:string}[]}).sources[0]?.last_read_position:(await (await get('/api/conversations/'+session.id,second)).json() as {read_cursor:{last_read_sequence:string}}).read_cursor.last_read_sequence;
     assert.equal(await position(),'0');assert.equal(await position(true),'0');
-    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:1000,cookies:[{...a,url:f.origin+'/'}]});assert.ok(browser);await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});await browser.command('Page.enable');
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:mode==='SESSION'?160:1000,cookies:[{...a,url:f.origin+'/'}]});assert.ok(browser);await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});await browser.command('Page.enable');
     const suffix=mode==='SOURCE'?'/read-position':'/read-cursor';
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__t35Visible=false;globalThis.__t35Focused=true;globalThis.__t35Posts=[];globalThis.__t35Responses=[];globalThis.__t35Held=0;globalThis.__t35Delivered=0;globalThis.__t35OldAborted=false;globalThis.__t35Release=[];globalThis.__t35Identities=[];Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>globalThis.__t35Visible?'visible':'hidden'});Object.defineProperty(document,'hasFocus',{configurable:true,value:()=>globalThis.__t35Focused});const original=fetch;globalThis.fetch=(path,options)=>{const value=String(path),write=options?.method==='POST'&&value.endsWith(${JSON.stringify(suffix)});if(write){globalThis.__t35Posts.push(JSON.parse(options.body));options.signal.addEventListener('abort',()=>globalThis.__t35OldAborted=true,{once:true});}return original(path,options).then(async response=>{if(value==='/api/lifecycle/bootstrap'&&response.status===200){const actual=await response.clone().json();globalThis.__t35Identities.push({id:actual.principal_id,name:actual.display_name});}if(write&&response.status===200){const actual=await response.json();globalThis.__t35Responses.push({status:response.status,body:actual});response.json=()=>{globalThis.__t35Held++;return new Promise(resolve=>globalThis.__t35Release.push(()=>{globalThis.__t35Delivered++;resolve(actual);}));};}return response;});};document.addEventListener('DOMContentLoaded',()=>{const observer=new MutationObserver(()=>{if(globalThis.__t35Held&&document.querySelector('.account strong')?.textContent===${JSON.stringify(identity.display_name)}){globalThis.__t35ActorAtRelease=document.querySelector('.account strong').textContent;globalThis.__t35AbortBeforeRelease=globalThis.__t35OldAborted;for(const release of globalThis.__t35Release.splice(0))release();observer.disconnect();}});observer.observe(document.body,{subtree:true,childList:true,characterData:true});});})()`});
     const selector=mode==='SOURCE'?'.activity-list p[data-personal-read-ref]':'p[data-session-read-sequence="1"]',url=mode==='SOURCE'?'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page':'/workbench/app/conversations/'+session.id;
     await browser.command('Page.navigate',{url:f.origin+url});await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))&&Boolean(document.querySelector('.account strong'))`);assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[]);
     // A's real command commits before B is installed; only response-body delivery is held.
-    await browser.evaluate(`(()=>{document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'});globalThis.__t35Visible=true;window.dispatchEvent(new Event('focus'));})()`);await browser.waitFor('globalThis.__t35Held===1');
+    await browser.evaluate('document.fonts.ready.then(()=>true)');
+    await browser.evaluate(`(()=>{const first=document.querySelector(${JSON.stringify(selector)});first.scrollIntoView({block:'center'});const second=document.querySelector('p[data-session-read-sequence="2"]')?.getBoundingClientRect();if(${mode==='SESSION'}&&second&&second.bottom<=innerHeight+1)throw Error('T35_LATE_FIRST_COORDINATE_REQUIRED');globalThis.__t35Visible=true;window.dispatchEvent(new Event('focus'));})()`);await browser.waitFor('globalThis.__t35Held===1');
     const responses=await browser.evaluate('globalThis.__t35Responses') as {status:number;body:unknown}[];assert.equal(responses.length,1);assert.equal(responses[0]?.status,200);assert.equal(await position(),'1');assert.equal(await position(true),'0');
     await browser.command('Network.deleteCookies',{name:a.name,url:f.origin+'/'});const changed=await browser.command('Network.setCookie',{name:b.name,value:b.value,url:f.origin+'/',httpOnly:true,sameSite:'Strict'}) as {success:boolean};assert.equal(changed.success,true);
     await browser.evaluate("globalThis.__t35Focused=false;document.dispatchEvent(new Event('visibilitychange'))");await browser.waitFor('globalThis.__t35Delivered===1');

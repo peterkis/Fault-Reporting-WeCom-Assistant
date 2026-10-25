@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { createP2012DynamicWeComSender, createP2012LiveReporterScope } from '../src/p2-012-live-reporter-scope.mjs';
-import { P2012_LIVE_FUSES, P2012_REPORTER_SCOPE_MODE, readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
+import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { createP2012DynamicWeComSender, createP2012LiveReporterScope } from '../app/server/src/p2-012-live-reporter-scope.mjs';
+import { P2012_LIVE_FUSES, P2012_REPORTER_SCOPE_MODE, readP2012LiveConfiguration } from '../app/server/src/p2-012-live-configuration.mjs';
 
 const tagged = '【p2-012测试】范围登记';
 const message = ({ sender, chatType, chatId = null }) => ({

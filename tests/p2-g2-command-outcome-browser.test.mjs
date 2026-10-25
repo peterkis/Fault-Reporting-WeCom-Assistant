@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createServer } from 'node:net';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database, applyThrough031, fixtureP2012 } from './helpers/p2-012-postgres-harness.mjs';
 import { launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 

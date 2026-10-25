@@ -35,7 +35,7 @@ bootstrap 的 `manual_reports_enabled`、`reporter_candidates_enabled`、`manual
 {"can_create":true,"manual_contact_required":true,"external_notification":false,"draft_recovery_enabled":false}
 ```
 
-这里的 `manual_contact_required:true` 是手填入口基线，不能替代某次核实选择结果的独立通知资格。代码：[宿主装配](../../../src/p2-016-runtime.mts)、[bootstrap](../../../src/p2-016-workbench-http.mts)、[代录 handler](../../../src/workbench-manual-reports.mts)。
+这里的 `manual_contact_required:true` 是手填入口基线，不能替代某次核实选择结果的独立通知资格。代码：[宿主装配](../../../app/server/src/p2-016-runtime.mts)、[bootstrap](../../../app/server/src/p2-016-workbench-http.mts)、[代录 handler](../../../app/server/src/workbench-manual-reports.mts)。
 
 ## 2. 候选查询 GET
 
@@ -122,7 +122,7 @@ Body 最多 16 KiB。字段不得包含患者详情、口令或其它敏感业�
 }
 ```
 
-顶层只有 error/receipt，receipt 只有原 UUID、FAILED 和 error；两个 code 必须相同，retryable 均 false，不含资料/目标。原 COMMITTED 不得被失败覆盖，也不通过对象拒绝返回其正文。目录等待期间当前创建权失效，先拒绝，不为该失败新建账本记录。定义与解析见[拒绝类型](../../../contracts/workbench_reporter_candidates_contracts.d.ts)、[闭合 decoder](../../../src/workbench-manual-report-browser-contracts.mts)。
+顶层只有 error/receipt，receipt 只有原 UUID、FAILED 和 error；两个 code 必须相同，retryable 均 false，不含资料/目标。原 COMMITTED 不得被失败覆盖，也不通过对象拒绝返回其正文。目录等待期间当前创建权失效，先拒绝，不为该失败新建账本记录。定义与解析见[拒绝类型](../../../contracts/workbench_reporter_candidates_contracts.d.ts)、[闭合 decoder](../../../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mts)。
 
 浏览器仅在严格解析同 UUID 的 FAILED 信号且重新读取的当前创建能力仍获准时，结算原标识并允许显式手填。额外字段、错 UUID、矛盾 state/code 或普通错误都不证明失败。提交后权限复验拒绝、网络丢响应等保留 UNKNOWN 和原操作；权限恢复也不自动重提，须由用户显式 GET 核对。真正创建失权仍按原用途清理敏感内容。
 
@@ -166,15 +166,15 @@ ADMISSION 同时检查：用途/selection 精确匹配；envelope/proof actor �
 
 GET producer 与 ADMISSION producer 基于同一现有权威生成/重算，宿主再次重算。profile 包含报修时姓名、部门；scope 不能从姓名/手机号生成。授权/过期时刻、可达性检查时刻与其短期 proof_ref 不参与版本，避免时钟推进制造版本冲突；稳定资料、绑定或可达性观察改变会使原选择提交返回 409。
 
-绝对时刻采用 Asia/Shanghai 无时区后缀秒精度字符串和 epoch 毫秒字符串双值，须由[时间合同](../../../src/platform/time-contract.mts)验证一致，不能用 Date.parse 猜时区。授权/验证不能在未来，返回时授权不超过 5 分钟；`0 < valid_until_epoch_ms-authorized_at_epoch_ms <= 300000` 且当前时刻未过期。proof.verified_at 与授权时刻相同，reachability.checked_at 不晚于它且间隔至多 5 分钟。envelope 最多 16 KiB；畸形、错 pin、错 actor/app/目标或时间不自洽拒绝，不制造成功。
+绝对时刻采用 Asia/Shanghai 无时区后缀秒精度字符串和 epoch 毫秒字符串双值，须由[时间合同](../../../app/server/src/platform/time-contract.mts)验证一致，不能用 Date.parse 猜时区。授权/验证不能在未来，返回时授权不超过 5 分钟；`0 < valid_until_epoch_ms-authorized_at_epoch_ms <= 300000` 且当前时刻未过期。proof.verified_at 与授权时刻相同，reachability.checked_at 不晚于它且间隔至多 5 分钟。envelope 最多 16 KiB；畸形、错 pin、错 actor/app/目标或时间不自洽拒绝，不制造成功。
 
-READ_COMMITTED 只证明当前可读原对象：target 必须与原持久目标一致，不要求旧 candidate_version 等于最新目录版本，不重建 profile/reachability 或改写原结果。原 ADMISSION 的过期时钟不被当成新的授权。实现：[候选边界](../../../src/workbench-reporter-candidates.mts)、[proof 解析与原目标](../../../src/workbench-reporter-verification.mts)。
+READ_COMMITTED 只证明当前可读原对象：target 必须与原持久目标一致，不要求旧 candidate_version 等于最新目录版本，不重建 profile/reachability 或改写原结果。原 ADMISSION 的过期时钟不被当成新的授权。实现：[候选边界](../../../app/server/src/workbench-reporter-candidates.mts)、[proof 解析与原目标](../../../app/server/src/workbench-reporter-verification.mts)。
 
 ## 6. 受理规则、MANUAL 复核与来源展示
 
 明确症状经现有纯规则/安全动作执行器进入 Unified Ticket Core；Ticket 状态与编号取 Core，Review 取原队列。高风险、规则不可用、咨询或缺少可判现象沿原路由进入必要 Review。MANUAL 入口的 `WBINT_T17_MANUAL_SYMPTOMS/1.0.0` overlay 只将实际症状“无法打印”映射到既有 `PRINT.NO_OUTPUT`，委托原 AliasResolver、FaultTaxonomyResolver 和规则路由，不修改 BOT/WEB 默认 profile、旧词表或历史规则。
 
-局部 `workbench-manual-print-affirmation/1.0.0` 排除明确否定、纯词义/假设提问；电话转述“打印机无法打印”和“打印机无法打印怎么办”仍可生成症状。原描述、Source 引用、source/input hash 保留；safe_result 的 classification_source 记录实际 base/overlay ID、版本、hash、new_alias_applied 与 affirmation_gate_version。engine=`workbench-manual-rule-adapter/1.0.0`，policy=`workbench-manual-safe-route/1.0.0`。缺少可判现象保留 `NEEDS_DESCRIPTION` 并同事务追加既有 `ENQUEUE_MANUAL_REVIEW`，不伪造已建单或发送催问。见[规则适配](../../../src/workbench-manual-report-policy.mts)。
+局部 `workbench-manual-print-affirmation/1.0.0` 排除明确否定、纯词义/假设提问；电话转述“打印机无法打印”和“打印机无法打印怎么办”仍可生成症状。原描述、Source 引用、source/input hash 保留；safe_result 的 classification_source 记录实际 base/overlay ID、版本、hash、new_alias_applied 与 affirmation_gate_version。engine=`workbench-manual-rule-adapter/1.0.0`，policy=`workbench-manual-safe-route/1.0.0`。缺少可判现象保留 `NEEDS_DESCRIPTION` 并同事务追加既有 `ENQUEUE_MANUAL_REVIEW`，不伪造已建单或发送催问。见[规则适配](../../../app/server/src/workbench-manual-report-policy.mts)。
 
 受理同事务保存原 Intake、Journey/Leg、Decision、Core 或必要 Review、公开资料快照及核实分支 private ADMISSION 观察。不会凭空建立 Channel Message、Conversation、Reporter Access、Communication/Notification Outbox/Delivery；AI 和 Sender 不参与。Core 标题/Intake 摘要沿 200/500 UTF-16 单位上限取完整 Unicode 字符前缀，原描述与 hash 保持。
 
@@ -187,9 +187,9 @@ READ_COMMITTED 只证明当前可读原对象：target 必须与原持久目标�
 | `reporter` | `{verification:UNVERIFIED,name,contact,department}` | `{verification:VERIFIED,name,departments}` |
 | `notification_eligibility` | 不存在，manual_contact_required 固定 true | ELIGIBLE 对应 false；NOT_REACHABLE 对应 true |
 
-见[联合资料 Schema](../../../contracts/workbench_manual_report_projection.schema.json)、[核实资料 Schema](../../../contracts/workbench_verified_manual_report_projection.schema.json)、[原资料读取](../../../src/workbench-manual-report-source.mts)。核实公开资料不含联系方式、raw 成员 ID、candidate ref、scope/hash、配置或 private proof；T17 联系资料仅在原获权 MANUAL 材料范围内展示，仍未核实，不能用来推断 Person/WeCom 身份。后续目录改名/调岗不更新任一报修时快照。
+见[联合资料 Schema](../../../contracts/workbench_manual_report_projection.schema.json)、[核实资料 Schema](../../../contracts/workbench_verified_manual_report_projection.schema.json)、[原资料读取](../../../app/server/src/workbench-manual-report-source.mts)。核实公开资料不含联系方式、raw 成员 ID、candidate ref、scope/hash、配置或 private proof；T17 联系资料仅在原获权 MANUAL 材料范围内展示，仍未核实，不能用来推断 Person/WeCom 身份。后续目录改名/调岗不更新任一报修时快照。
 
-正式复核页独立显示报修主体与代录主体；仅 actor UUID 等于当前 principal 时取当前工作人员名称，其它 actor 保留实际标识，不按姓名猜身份。看板/列表/详情统一显示“电话代录/现场代录”，核实选择附“本次已核实”，手填附“身份未核实”。沿既有读取权限和保留期，不通过回执授予额外权限，也不为展示查询当前 Directory。[聚合](../../../src/web01-workbench-query.mts)、[复核 facade](../../../src/p2-016-manual-review-facade.mts)、[复核 UI](../../../web/admin-workbench/src/features/manual-review/ReviewWorkspace.tsx)。
+正式复核页独立显示报修主体与代录主体；仅 actor UUID 等于当前 principal 时取当前工作人员名称，其它 actor 保留实际标识，不按姓名猜身份。看板/列表/详情统一显示“电话代录/现场代录”，核实选择附“本次已核实”，手填附“身份未核实”。沿既有读取权限和保留期，不通过回执授予额外权限，也不为展示查询当前 Directory。[聚合](../../../app/server/src/web01-workbench-query.mts)、[复核 facade](../../../app/server/src/p2-016-manual-review-facade.mts)、[复核 UI](../../../app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx)。
 
 MANUAL 复核沿原账本、材料 capture hash/provenance 和事务，仅执行适用的 APP_ONLY 数据库动作。`CONFIRM_TICKET_ELIGIBLE`/`CLASSIFY_SERVICE_REQUEST` 将原 Intake request_type 设为 INCIDENT/SERVICE_REQUEST，再创建原生 Core QUEUED、未分配工单；另外六种合法结论不建单。所有结论保留原来源和 Decision，不自动接单或发送通知；BOT/WEB 原权限、材料和通知语义保持。
 
@@ -203,13 +203,13 @@ MANUAL 复核沿原账本、材料 capture hash/provenance 和事务，仅执行
 - 已提交结果未知：只保存一次原命令 body、selection ref/version 和 UUID；不得修改原意图、重新选择覆盖或自动 POST。正文过期后仅保留 opaque 操作标识，用户显式 GET 核对。
 - 成功、主动丢弃、退出、真实失权和过期沿原 T03 清理。清理尚未确认时禁止新提交；新意图仅在原结果确定及清理条件满足后建立。
 
-沿 T38 authorization epoch/transport fence，新提交先核对连接事实；只读原操作核对不产生新命令。实现：[表单](../../../web/admin-workbench/src/features/manual-report/ManualReportForm.tsx)、[本用途草稿](../../../web/admin-workbench/src/features/manual-report/use-manual-report-draft.ts)、[API client](../../../web/admin-workbench/src/api/client.ts)、[闭合 codec](../../../src/workbench-manual-report-browser-contracts.mts)。
+沿 T38 authorization epoch/transport fence，新提交先核对连接事实；只读原操作核对不产生新命令。实现：[表单](../../../app/pc-admin/src/features/manual-report/ManualReportForm.tsx)、[本用途草稿](../../../app/pc-admin/src/features/manual-report/use-manual-report-draft.ts)、[API client](../../../app/pc-admin/src/api/client.ts)、[闭合 codec](../../../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mts)。
 
 ## 8. 数据库、迁移、资源与关闭方式
 
 T17 的 [042](../../../database/migrations/042_workbench_manual_reports.sql) 在同一 Intake 保存人工来源、描述/Reporter 未核实快照、authenticated actor 与原命令引用。T18 的 [045](../../../database/migrations/045_workbench_verified_manual_reports.sql) 增加 nullable `manual_reporter_verification`，约束闭合 VERIFIED public snapshot 与 private envelope 一致；[051](../../../database/migrations/051_workbench_verified_manual_report_candidate_ref_check.sql) 前向修正 candidate_ref 检查为独立长度 32–256 与同 ASCII 字符集，不缩窄 HTTP/JS/Schema 合同、不删除 CHECK。两份历史 SQL 原字节不改，不回填旧 UNVERIFIED、不新建长期身份或 Ticket 事实源。
 
-公开入口是 [migrateWorkbenchVerifiedManualReports](../../../scripts/workbench-verified-manual-reports-migrate.mts)（模块 API，非 HTTP）：
+公开入口是 [migrateWorkbenchVerifiedManualReports](../../../app/server/scripts/workbench-verified-manual-reports-migrate.mts)（模块 API，非 HTTP）：
 
 ```text
 migrateWorkbenchVerifiedManualReports({databaseUrl, mode?:'check'|'apply'})
@@ -257,7 +257,7 @@ migrateWorkbenchVerifiedManualReports({databaseUrl, mode?:'check'|'apply'})
 
 草稿复用 T03 当前浏览器 AES-GCM、不可导出 key、每份 16 KiB／最多 20 份及首次保存固定 24 小时；使用独立 `manual-report-self-handling` 用途和原固定槽位，保留完整输入、原组与一次性原 UUID。恢复先核验当前人员、创建权和精确原组；目录不参与 UNVERIFIED 分支。UNKNOWN 只能显式 GET 核对，不能自动 POST、换 UUID／组、降级普通受理或串行补旧接单。401／403／404、可信撤权或过期清理敏感明文／密文，仅保留规定 opaque 未定操作标识；网络／5xx 保留真实未定原意图。异步保存或清理的迟到结果受原 generation／当前 capture 围栏约束，不能覆盖后来的撤权或新意图。清理未确认时禁止新提交。
 
-实现：[原代录服务](../../../src/workbench-manual-reports.mts)、[表单](../../../web/admin-workbench/src/features/manual-report/ManualSelfHandlingForm.tsx)、[独立用途草稿](../../../web/admin-workbench/src/features/manual-report/use-manual-self-handling-draft.ts)、[闭合 codec](../../../src/workbench-manual-self-handling-browser-contracts.mts)。资源沿单 App／Worker、Gateway 单活、SSE32、共享 pool4／总预算8、单表单 in-flight1，无新常驻 worker。关闭任一入口依赖停止新复合命令，已存受理、责任、轮次、事件和原回执保留；原 GET 核对按自身代录／恢复开关及现权工作。关闭 `workbenchDraftRecoveryEnabled` 停止本用途恢复，不改变已存事实。
+实现：[原代录服务](../../../app/server/src/workbench-manual-reports.mts)、[表单](../../../app/pc-admin/src/features/manual-report/ManualSelfHandlingForm.tsx)、[独立用途草稿](../../../app/pc-admin/src/features/manual-report/use-manual-self-handling-draft.ts)、[闭合 codec](../../../app/pc-admin/src/contracts/workbench-manual-self-handling-browser-contracts.mts)。资源沿单 App／Worker、Gateway 单活、SSE32、共享 pool4／总预算8、单表单 in-flight1，无新常驻 worker。关闭任一入口依赖停止新复合命令，已存受理、责任、轮次、事件和原回执保留；原 GET 核对按自身代录／恢复开关及现权工作。关闭 `workbenchDraftRecoveryEnabled` 停止本用途恢复，不改变已存事实。
 
 原 first 4280B 的真实 404→202、正式 bundle 控件 RED→GREEN、后续真实权限／会话／恢复风险和当前必要消费者结果见执行记录及 D 盘原件。历史失败、observer 错误与未到达断言均保留。本地隔离验证不等于真实目录、外发、部署、full／certify、阶段 Gate 或生产批准。
 

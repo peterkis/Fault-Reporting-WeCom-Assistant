@@ -3,7 +3,7 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 import {monitorEventLoopDelay,performance} from 'node:perf_hooks';
 import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {H5PerformanceTrace,PerformanceSqlLedgerSnapshot,H5PerformanceSqlLedger,H5PerformanceMemberVerificationLedger,PerformanceMemberVerificationSnapshot} from './helpers/yxx-h5-performance-observability.mjs';
 
 interface MemberDataset {member:number;scopeHash:string;requestRef:string}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 test('T27 requires an explicit primary choice and confirms an explicit null team with the selected real personal Ticket only as its independent reference',async()=>{
  await candidateBrowser({purpose:'t27primary',setup:async({pool,f,candidateId})=>{assert.equal((await createP2012IncidentCommandService({pool,enabled:true}).perform({authContext:{principal_id:text(record(f.admin).id)},command:{action:'START_REVIEW',candidate_review_id:candidateId,expected_row_version:'1',client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED'}})).ok,true);}},async({pool,f,candidateId,browser,root,choose})=>{

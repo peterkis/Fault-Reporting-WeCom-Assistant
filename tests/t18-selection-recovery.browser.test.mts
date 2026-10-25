@@ -10,8 +10,8 @@ import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
-import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;pool:PostgresPool;principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;

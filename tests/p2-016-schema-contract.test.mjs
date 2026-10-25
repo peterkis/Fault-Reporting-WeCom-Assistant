@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { readFile,readdir } from 'node:fs/promises';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
-import { validateP2016,p2016FrozenInputsMatch,p2016CompletionEvidenceValid } from '../scripts/validate-p2-016-ticket-lifecycle-workbench.mjs';
-import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
+import { validateP2016,p2016FrozenInputsMatch,p2016CompletionEvidenceValid } from '../app/server/scripts/validate-p2-016-ticket-lifecycle-workbench.mjs';
+import { validateHistoricalP2016 } from '../app/server/scripts/validate-p2-016-historical.mjs';
 let historicalResult;
 function assertClosedObjectDocument(documents,name,ancestors=new Set()){
   assert.match(name,/^[a-z0-9_-]+\.schema\.json$/u,'controlled local schema basename');

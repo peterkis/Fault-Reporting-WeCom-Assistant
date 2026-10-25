@@ -5,8 +5,8 @@ import {createServer} from 'node:net';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 

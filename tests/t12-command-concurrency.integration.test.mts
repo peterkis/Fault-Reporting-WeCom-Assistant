@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 for(const kind of ['same UUID','different UUIDs','different actors sharing a UUID'] as const){
  test('real concurrent '+kind+' yield one composite staff end, original cycle and immutable replay capture',async()=>{

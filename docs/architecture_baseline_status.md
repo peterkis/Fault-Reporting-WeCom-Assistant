@@ -1,5 +1,17 @@
 # Architecture Baseline Status
 
+2026-10-25 首批候选后继修正T35可见材料上界及G2同步核验造成的当前发送截止复现，保持原SDK终检、5秒超时、默认开关与业务边界。精确身份和本地验证见[后继交付](../plans/app-layout/candidate-followup-2026-10-25.md)，不重绑历史或批准Gate。
+
+2026-10-25 本地交付目标修订为关键门槛、可回退的小范围候选；human-v1当前装配已完成定向验证，旧G2首次SENT失败和未完成全集均保留。范围与证据见[首批候选报告](../plans/app-layout/first-gray-candidate-2026-10-25.md)。不改变任何历史tested_head、默认开关、完整readiness合同或业务Gate。
+
+2026-10-24 后端目录整理当前状态：按 [ADR-0044](../adr/0044_server_application_layout_and_logical_source_identity.md) 完成 `app/server`、根 `shared` 及 PC 专属模块归属，采用统一编译的原生目录输出。源码迁移及本地验证执行已收口；全部失败及工具 rename NOT_RUN 保留，不代表无保留验收通过。实际结果见[后端迁移记录](../plans/app-layout/server-migration-2026-10-23.md)，分步导航见[应用整理记录](../plans/app-layout/README.md)；不改变业务合同、历史身份、私有配置或任何 Gate。
+
+2026-10-23 H5 目录前向整理：按用户批准的第二步计划，将根 H5 工程及原件整体迁至 `app/h5`，继续共享根依赖、锁文件和统一构建；运行制品及同源地址保持。PC、H5 已完成本地迁移和验收，后端待实施。迁移与验收状态见[应用整理记录](../plans/app-layout/README.md)，不改变业务、默认开关、历史 tested_head 或 Gate；主工作区私有配置保持原位。
+
+2026-10-23 通知页面前向修订：[ADR-0043](../adr/0043_h5_notification_entry_and_legacy_ui_retirement.md)规定机器人／经核实代录的原卡片链接由新 React H5 承接，保留原成员／Grant 权限、独立 Bot 反馈及原 UUID 核对。旧成员页面在替代验证后退役；新自助 H5 关闭时页面失败关闭，V1 API 及业务开关不自动扩大。实际验证与清理见[应用整理记录](../plans/app-layout/README.md)，不改变历史 tested_head 或 Gate。
+
+2026-10-22 应用源码目录整理：目标为 `app/pc-admin`、`app/h5`、`app/server`，第一步仅迁移正式 PC 前端；详见[应用目录](../app/README.md)与[迁移记录](../plans/app-layout/README.md)。继续使用根统一依赖和构建，保留现有同源入口及运行制品位置；H5 与后端后续分步迁移。此项不改变模块化单体、角色分工、业务合同或任何 Gate 事实。
+
 2026-10-22 部署后加载体验反馈沿 [ADR-0042](../adr/0042_h5_continuous_navigation_and_silent_entry.md) 前向修订：移除骨架、保留切换前视图、独立顶部进度条、同范围旧缓存后台复核及首次静默认证；外部浏览器显示企业微信打开指引。输入反例、候选验证与交付状态见 [连续展示记录](../plans/yixiaoxiu-h5-performance/loading-continuity-2026-10-22.md)，不改写上一候选的验收或真机状态。
 
 2026-10-22 H5 路由与交互前向修订：[ADR-0041](../adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)沿既有SPA接入官方React Router、统一共享页头，将纯导航与写就绪分别控制，并修正原生起录确认前的提示时序。英文工单／日期、分时欢迎语、同秒展示顺序和延迟骨架保持原事实及120KiB预算；本轮实测、失败和NOT_RUN边界见[路由交互记录](../plans/yixiaoxiu-h5-performance/router-ux-2026-10-22.md)。

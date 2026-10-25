@@ -20,7 +20,7 @@
 
 前向合同为 [ADR-0034](../../adr/0034_mvp_notifications_and_application_members.md)。新增 [063 增量迁移](../../database/migrations/063_mvp_notifications_app_members.sql)，仅扩展原表的轮次节点与 H5 通知绑定。提供校验和显式应用入口，不随服务启动迁移。通用 Runtime 的持久开关默认 false；human-v1 装配显式选用 MVP 策略。现场切换和关闭方式见[运行说明](../../docs/runbooks/human-workbench-runtime.md#mvp-通知切换)。
 
-H5 继续使用原报修、详情、补充、时间线和反馈 API；公开 DTO 不暴露通知收件目标。新版 UI 的登录、接口和验收约定见 [h5/README.md](../../h5/README.md)。本轮未新增队列、目录同步、规则平台或工单核心。
+H5 继续使用原报修、详情、补充、时间线和反馈 API；公开 DTO 不暴露通知收件目标。新版 UI 的登录、接口和验收约定见 [h5/README.md](../../app/h5/README.md)。本轮未新增队列、目录同步、规则平台或工单核心。
 
 ## 候选与验证结果
 

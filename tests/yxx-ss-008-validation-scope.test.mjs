@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
-import { readYxxLocalValidationScope } from '../src/yxx-self-service-validation-scope.mjs';
+import { readYxxLocalValidationScope } from '../app/server/src/yxx-self-service-validation-scope.mjs';
 
 test('SS-008 local successor never suppresses state, migration or historical evidence drift',()=>{
   const root=process.cwd(),temporaryRoot=path.resolve(root,'tmp');mkdirSync(temporaryRoot,{recursive:true});
@@ -25,6 +25,7 @@ test('SS-008 local successor never suppresses state, migration or historical evi
     }
     const extra=path.join(directory,'database/migrations/unregistered.tmp');
     try{writeFileSync(extra,'unregistered');assert.throws(()=>readYxxLocalValidationScope(directory));}finally{unlinkSync(extra);}
-    assert.equal(readYxxLocalValidationScope(directory).migration_files.length,readYxxLocalValidationScope(root).migration_files.length);
+    assert.equal(readYxxLocalValidationScope(directory).migration_files.length,20);
+    assert.throws(()=>readYxxLocalValidationScope(root),'the fixed historical scope must reject the current successor checkout');
   }finally{git(['worktree','remove','--force',directory]);}
 });

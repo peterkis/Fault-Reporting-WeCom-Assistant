@@ -5,13 +5,13 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker,createCommunicationReconciliationPort} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createMvpNotificationAdmission} from '../src/mvp-group-replies.mjs';
-import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
-import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker,createCommunicationReconciliationPort} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createMvpNotificationAdmission} from '../app/server/src/mvp-group-replies.mjs';
+import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
+import {createWorkbenchBotMemberAdmission} from '../app/server/src/human-workbench-bot-member-admission.mjs';
 
 test('MVP actual handling and completion use independent private notices and only the exact configured group completion Webhooks',{timeout:240000},async()=>{
  const targets=[{botId:'bot-test',groupId:'group-mvp-a'},{botId:'bot-test',groupId:'group-mvp-b'}];

@@ -5,9 +5,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { testRoots } from './helpers/migration-roots.mjs';
-import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
-import { P2_015_RESULT_CODES, normalizeP2015FeatureFlags, safeHash, snapshotP2015Json } from '../src/p2-015-domain-contracts.mjs';
-import { routeP2007Decision, routeRuleFailure } from '../src/p2-015-decision-router.mjs';
+import { createRuleEngine } from '../app/server/src/p2-007-rule-engine.mjs';
+import { P2_015_RESULT_CODES, normalizeP2015FeatureFlags, safeHash, snapshotP2015Json } from '../app/server/src/p2-015-domain-contracts.mjs';
+import { routeP2007Decision, routeRuleFailure } from '../app/server/src/p2-015-decision-router.mjs';
 
 const context = (text, extra = {}) => ({ service_intake_id: '00000000-0000-0000-0000-000000000001',
   journey_ref: '00000000-0000-0000-0000-000000000002', source_refs: ['channel:1'],
@@ -94,15 +94,15 @@ test('public P2-015 validator accepts a committed type migration and rejects run
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'p2015-freeze-cli-'));
   const git = (...args) => execFileSync('git', ['-c', 'user.name=Synthetic validation fixture', '-c', 'user.email=fixture@example.invalid', ...args],
     { cwd: fixture, encoding: 'utf8', windowsHide: true });
-  const validator = path.join(runtimeRoot, 'scripts/validate-p2-015-rule-first-intake.mjs');
+  const validator = path.join(runtimeRoot, 'app/server/scripts/validate-p2-015-rule-first-intake.mjs');
   const run = () => spawnSync(process.execPath, [validator], { cwd: fixture, encoding: 'utf8', windowsHide: true, timeout: 15_000 });
   try {
-    const files = execFileSync('git', ['ls-files', '-z'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).split('\0').filter(file =>
-      /^(?:contracts\/|src\/p2-015-|scripts\/p2-015-|tests\/p2-015-|tests\/helpers\/p2-015-|tests\/fixtures\/p2-015\/|docs\/(?:55_|56_|57_)|evidence\/p2-015-(?:start-authorization|rule-first-intake-orchestration-report)\.md$|database\/migrations\/(?:001_|030_)|plans\/typescript-migration\/scope\.json$|\.env\.example$)/u.test(file));
+    const files = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).split('\0').filter(file =>
+      /^(?:contracts\/|app\/server\/(?:src|scripts)\/p2-015-|tests\/p2-015-|tests\/helpers\/p2-015-|tests\/fixtures\/p2-015\/|docs\/(?:55_|56_|57_)|evidence\/p2-015-(?:start-authorization|rule-first-intake-orchestration-report)\.md$|database\/migrations\/(?:001_|030_)|plans\/typescript-migration\/scope\.json$|\.env\.example$)/u.test(file));
     for (const file of files) {
       const target = path.join(fixture, file); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(path.join(sourceRoot, file), target);
     }
-    const logical = 'src/p2-007-domain-utils.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
+    const logical = 'app/server/src/p2-007-domain-utils.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
     fs.writeFileSync(path.join(fixture, logical), 'export const enabled = false;\n');
     git('init', '--quiet'); git('add', '.'); git('commit', '--quiet', '-m', 'Synthetic unchanged baseline');
     git('update-ref', 'refs/remotes/origin/main', 'HEAD');

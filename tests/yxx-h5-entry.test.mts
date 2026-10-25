@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
-import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
-import {h5SupplementPage,readH5Supplements,withH5TimelineBudget} from '../src/yxx-h5-entry.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
+import type {PostgresTransaction} from '../app/server/src/platform/postgres-pool.mjs';
+import type {YxxMemberScope} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {h5SupplementPage,readH5Supplements,withH5TimelineBudget} from '../app/server/src/yxx-h5-entry.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
 
 const secret='h5-entry-unit-secret-longer-than-thirty-two-bytes';
 const ref='a'.repeat(32);

@@ -142,7 +142,7 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   const selectionStep=record(mergeSteps.find(step=>String(record(step).run??'').includes('runSelection')));
   assert.equal(record(selectionStep.env).MIGRATION_REPORT_DIR,'${{ runner.temp }}/types-merge/tests');
   const selected=String(selectionStep.run);
-  const failed=selected.replace('node .build/runtime/scripts/migrate-current-baseline.mjs',':')
+  const failed=selected.replace('node .build/runtime/app/server/scripts/migrate-current-baseline.mjs',':')
     .replace(/(?<=<<'NODE'\n)[\s\S]+(?=\nNODE\n)/u,"throw Error('SELECTED_TESTS_FAIL');");
   assert.notEqual(spawnSync(bash,['-c',failed],{cwd:root,encoding:'utf8',windowsHide:true}).status,0);
   const history=record(workflows['ss009-evidence-history']), historyJobs=record(history.jobs), light=record(historyJobs['evidence-history']);
@@ -158,8 +158,8 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   for(const workflow of [types,history])assert.equal(record(workflow.on).workflow_call,undefined);
   const directory=record(record(record(workflows['p2-staff-directory']).on).pull_request);
   const paths=strings(directory.paths);
-  for(const broad of ['src/**/*.mts','scripts/**/*.mts','tools/ts-migration/**','plans/typescript-migration/**'])assert.ok(!paths.includes(broad));
-  assert.ok(paths.includes('src/p2-007-*.mts'));assert.ok(paths.includes('src/platform/**'));
+  for(const broad of ['app/server/src/**/*.mts','app/server/scripts/**/*.mts','tools/ts-migration/**','plans/typescript-migration/**'])assert.ok(!paths.includes(broad));
+  assert.ok(paths.includes('app/server/src/p2-007-*.mts'));assert.ok(paths.includes('app/server/src/platform/**'));assert.ok(paths.includes('shared/**'));
   const directoryJob=record(record(record(workflows['p2-staff-directory']).jobs).regression);
   assert.ok(Array.isArray(directoryJob.steps));
   const optional=record(directoryJob.steps.find(step=>record(step).id==='optional'));
@@ -170,10 +170,10 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   assert.equal(prototypeStep.if,"${{ !cancelled() && steps.optional.outputs.prototype == 'true' }}");
   assert.equal(historicalStep.if,"${{ !cancelled() && steps.optional.outputs.historical == 'true' }}");
   const cases:[string[],boolean,boolean,Record<string,string>?,Record<string,string>?][]=[
-    [['src/p2-007-rule-engine.mts','src/p2-015-contact-journey.mts','package.json'],false,false],
+    [['app/server/src/p2-007-rule-engine.mts','app/server/src/p2-015-contact-journey.mts','package.json'],false,false],
     [['web/admin-workbench-prototype/src/App.tsx'],true,false],
     [['web/admin-workbench-prototype/package-lock.json'],true,false],
-    [['scripts/validate-p2-016-historical.mjs'],false,true],
+    [['app/server/scripts/validate-p2-016-historical.mjs'],false,true],
     [['.github/review/pr-evidence-delta.mjs'],false,true],
     [['.github/review/README.md'],false,false],
     [['tests/p2-016-historical-validation.test.mjs'],false,true],

@@ -1,10 +1,10 @@
-import { createFirstAcknowledgementService } from '../../src/p1-008-first-acknowledgement.mjs';
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import { createServiceIntakeProcessor } from '../../src/p1-004-service-intake.mjs';
-import { createPilotTicketCore } from '../../src/p1-005-pilot-ticket-core.mjs';
-import { createTicketClosureService, createTicketLifecycleProcessor } from '../../src/p1-010-ticket-closure.mjs';
-import { createNotificationDeliveryWorker } from '../../src/p1-007-notification-outbox.mjs';
-import type { PostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createFirstAcknowledgementService } from '../../app/server/src/p1-008-first-acknowledgement.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createServiceIntakeProcessor } from '../../app/server/src/p1-004-service-intake.mjs';
+import { createPilotTicketCore } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createNotificationDeliveryWorker } from '../../app/server/src/p1-007-notification-outbox.mjs';
+import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
 declare const pool: PostgresPool;
 const inbox = createChannelMessageInbox({ pool });
@@ -42,7 +42,7 @@ if (accepted.ok && (accepted.acknowledgement.state === 'SENT' || accepted.acknow
   void validatedId;
 }
 
-import type { NotificationDeliveryWorker } from '../../src/p1-007-notification-outbox.mjs';
+import type { NotificationDeliveryWorker } from '../../app/server/src/p1-007-notification-outbox.mjs';
 // @ts-expect-error -- Pre-labelling a narrower Worker must not bypass function-property variance.
 const narrowedWorker: NotificationDeliveryWorker = { deliver: async (_input: { deliveryId: 'only-one-id' }) => null, getDelivery: deliveryWorker.getDelivery, runOnce: deliveryWorker.runOnce };
 void narrowedWorker;

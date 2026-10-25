@@ -1,5 +1,5 @@
-import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
-import type {BoundApplicationRecipient} from '../src/yxx-application-member-auth.mjs';
+import type {YxxMemberScope} from '../app/server/src/yxx-self-service-authorization.mjs';
+import type {BoundApplicationRecipient} from '../app/server/src/yxx-application-member-auth.mjs';
 import type {LocalDateTime,PhysicalEpochMs} from './time_contracts.js';
 
 /** T25 original-source App notification options implemented by the existing round consumer/runtime. */

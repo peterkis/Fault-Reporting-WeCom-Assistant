@@ -7,7 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
 import {browser} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 function errorFacts(error:unknown):unknown{return error instanceof Error?{name:error.name,message:error.message,stack:error.stack,...(error instanceof AggregateError?{errors:error.errors.map(errorFacts)}:{})}:error===null?null:String(error);}
 test('production PC consumes the authorized previous completion actor hint from real own-Reporter feedback and hides it on lost authentication',{timeout:240_000},async()=>{

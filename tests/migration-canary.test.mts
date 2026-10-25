@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { canary, moduleIdentity } from '../src/migration-canary.mjs';
+import { canary, moduleIdentity } from '../app/server/src/migration-canary.mjs';
 import { callFromLegacy, legacyIdentity } from './fixtures/ts-migration/caller.mjs';
 
 test('compiled TypeScript is called by legacy MJS within one runtime module graph', () => {

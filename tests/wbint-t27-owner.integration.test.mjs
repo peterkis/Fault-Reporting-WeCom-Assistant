@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 import {withP2012Database,applyThrough031,apply032Raw,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 const command=(action,id,version='1',extra={})=>({action,candidate_review_id:id,client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED',...(action==='CONFIRM_INCIDENT'?{expected_candidate_version:version}:{expected_row_version:version}),...extra});

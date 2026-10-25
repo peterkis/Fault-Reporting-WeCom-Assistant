@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { g2Hash,readG2Configuration } from '../src/p2-g2-validation-config.mjs';
+import { g2Hash,readG2Configuration } from '../app/server/src/p2-g2-validation-config.mjs';
 
 test('approved webhook route binds private URL and group without exposing the key in manifest',()=>{
   const f=configurationFixture(),url='https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=synthetic-unused';

@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {ReviewResolveAndStartCommand} from '../contracts/workbench_review_start_contracts.js';
 
 // T42 current board-to-Review tracer reuses the existing real T15 public behavior; no original test is changed.
@@ -87,8 +87,7 @@ test('T42 board action requires an explicit current review conclusion before the
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),basis.current_hash);
       const contextBefore=object(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-board-intent-panel]'))"),true);
-      await browser.waitFor("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]')?.disabled"),true,'opening the board action must not guess a conclusion');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]'))"),false,'opening the board action must not guess a conclusion');
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal((await get('/api/tickets/'+known.ticket.id)).status,'QUEUED');
       // A human explicitly adopts current material and makes both choices. None is a write command.
@@ -97,6 +96,8 @@ test('T42 board action requires an explicit current review conclusion before the
         const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] [aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
         set('复核结论','CONFIRM_TICKET_ELIGIBLE');set('复核原因','HUMAN_CONFIRMED');
       })()`);
+      await browser.waitFor("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]'))");
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]')?.disabled"),true,'the explicit conclusion alone cannot choose a Session');
       await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]:not(:disabled)'))`);
       assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice]:checked').length"),0,'no Session may be guessed or automatically selected');
       await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);

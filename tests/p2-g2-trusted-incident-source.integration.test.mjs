@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withG2Runtime} from './helpers/p2-g2-runtime-harness.mjs';
-import {generateIncidentCandidate} from '../src/p2-007-incident-candidate.mjs';
+import {generateIncidentCandidate} from '../app/server/src/p2-007-incident-candidate.mjs';
 import {g2BusinessCounts} from './helpers/p2-g2-gold-observation.mjs';
 
 test('X033/D12-046 trusted monitor mechanism is recommendation only; Reporter prose is not monitoring authority',async t=>{

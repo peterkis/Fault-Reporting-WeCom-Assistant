@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { hash, record, safeFile, strings } from './common.mjs';
 import { loadRoutes, type Selection } from './routing.mjs';
 
-export const ACCEPTANCE_PATH='plans/yxx-current-readiness-acceptance.json';
+export const ACCEPTANCE_PATH='plans/yxx-current-readiness-acceptance.v2.json';
 export function currentAcceptance(root:string): {
   status:string; contract_sha256:string; current_files:string[]; historical_registered_files:string[];
   historical_head:string; historical_base:string; historical_strict_command:string[]; historical_regression_files:string[];
@@ -12,7 +12,7 @@ export function currentAcceptance(root:string): {
   const text=readFileSync(safeFile(root,ACCEPTANCE_PATH),'utf8'),doc=record(JSON.parse(text) as unknown);
   assert.deepEqual(Object.keys(doc).sort(),['schema_version','contract','current_files','historical_registered_files',
     'historical_head','historical_base','historical_strict_command','historical_regression_files','live_authorized'].sort());
-  assert.equal(doc.schema_version,1);assert.equal(doc.contract,'ADR-0027');assert.equal(doc.live_authorized,false);
+  assert.equal(doc.schema_version,1);assert.equal(doc.contract,'ADR-0045');assert.equal(doc.live_authorized,false);
   assert.equal(doc.historical_head,'41edd855e7bc55149facb6a4b2e0076776c22e66');
   assert.equal(doc.historical_base,'375d47b013017edb858206cc5f3475c9aed77dfd');
   const current=strings(doc.current_files),historical=strings(doc.historical_registered_files);

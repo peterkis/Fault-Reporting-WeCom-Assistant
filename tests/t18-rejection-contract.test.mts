@@ -2,7 +2,7 @@
 // implemented/registered by this source-only preparation; no receipt is persisted.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeVerifiedManualReportRejection,ManualReportContractError} from '../src/workbench-manual-report-browser-contracts.mjs';
+import {decodeVerifiedManualReportRejection,ManualReportContractError} from '../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mjs';
 
 const commandId='00000000-0000-4000-8000-000000000018';
 const otherId='00000000-0000-4000-8000-000000000019';

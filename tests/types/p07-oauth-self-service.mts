@@ -1,8 +1,8 @@
-import type {OAuthState,BrowserToken,SessionToken,InternalReturnPath,InternalMemberId,OpenMemberId,OAuthMemberId,EnabledWeComOAuth} from '../../src/p2-g2-wecom-web-oauth.mjs';
-import {readWeComResponse,createWeComOAuthCodeResolver} from '../../src/p2-g2-wecom-oauth-provider.mjs';
-import {createWeComAppTokenProvider} from '../../src/p2-g2-wecom-app-token.mjs';
-import {createWeComOAuthServer} from '../../src/p2-g2-wecom-oauth-server.mjs';
-import {createYxxSelfServiceAuthorization} from '../../src/yxx-self-service-authorization.mjs';
+import type {OAuthState,BrowserToken,SessionToken,InternalReturnPath,InternalMemberId,OpenMemberId,OAuthMemberId,EnabledWeComOAuth} from '../../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {readWeComResponse,createWeComOAuthCodeResolver} from '../../app/server/src/p2-g2-wecom-oauth-provider.mjs';
+import {createWeComAppTokenProvider} from '../../app/server/src/p2-g2-wecom-app-token.mjs';
+import {createWeComOAuthServer} from '../../app/server/src/p2-g2-wecom-oauth-server.mjs';
+import {createYxxSelfServiceAuthorization} from '../../app/server/src/yxx-self-service-authorization.mjs';
 import type {IncomingMessage} from 'node:http';
 declare const oauth:EnabledWeComOAuth, state:OAuthState,browser:BrowserToken,session:SessionToken;
 oauth.complete({state,browserToken:browser,code:'synthetic'});
@@ -46,15 +46,15 @@ createYxxSelfServiceAuthorization({authenticate,recheck:authenticate});
 createYxxSelfServiceAuthorization({authenticate,recheck:Object.assign(authenticate,{localOnly:true as const}),scopeResolver:Object.assign(authenticate,{localOnly:false as const})});
 void [internalPath,internalId,memberId];
 
-import {WeComOAuthError} from '../../src/p2-g2-wecom-web-oauth.mjs';
-import type {YxxMemberScope,YxxMemberContext} from '../../src/yxx-self-service-authorization.mjs';
-import type {YxxRequestInput,YxxSupplementInput,ParsedYxxCommand,YxxAcceptResult,YxxStoreRead} from '../../src/yxx-self-service-store.mjs';
-import {decodeYxxReportCursor,encodeYxxReportCursor} from '../../src/yxx-self-service-query.mjs';
-import type {YxxReportCursorPayload,YxxQueryInput} from '../../src/yxx-self-service-query.mjs';
-import type {YxxVerifiedWriteContext,YxxHttpCommandInput} from '../../src/yxx-self-service-command.mjs';
-import type {YxxSelfServiceExtensionOptions} from '../../src/yxx-self-service-runtime.mjs';
-import type {YxxOrchestratorOptions} from '../../src/yxx-self-service-orchestrator.mjs';
-import type {YxxProfileLifecycle,main} from '../../scripts/p2-g2-yixiaoxiu-serve.mjs';
+import {WeComOAuthError} from '../../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import type {YxxMemberScope,YxxMemberContext} from '../../app/server/src/yxx-self-service-authorization.mjs';
+import type {YxxRequestInput,YxxSupplementInput,ParsedYxxCommand,YxxAcceptResult,YxxStoreRead} from '../../app/server/src/yxx-self-service-store.mjs';
+import {decodeYxxReportCursor,encodeYxxReportCursor} from '../../app/server/src/yxx-self-service-query.mjs';
+import type {YxxReportCursorPayload,YxxQueryInput} from '../../app/server/src/yxx-self-service-query.mjs';
+import type {YxxVerifiedWriteContext,YxxHttpCommandInput} from '../../app/server/src/yxx-self-service-command.mjs';
+import type {YxxSelfServiceExtensionOptions} from '../../app/server/src/yxx-self-service-runtime.mjs';
+import type {YxxOrchestratorOptions} from '../../app/server/src/yxx-self-service-orchestrator.mjs';
+import type {YxxProfileLifecycle,main} from '../../app/server/scripts/p2-g2-yixiaoxiu-serve.mjs';
 declare const providerOutcome:typeof resolved | WeComOAuthError;
 if(providerOutcome instanceof WeComOAuthError){
  const failedStatus:number=providerOutcome.status;
@@ -116,14 +116,14 @@ declare const checkResult:Awaited<ReturnType<typeof main>>;
 checkResult.pool;
 void [memberBRead,submit,supplementCommand,wrongSubmit,wrongRevision,conflicting,partialContext,externalSource,noCsrf,readonlyWrite,noRequest,oauthWrite,secondCore,missingActionPort,missingReviewPort,memberContext];
 
-import type {YxxIdentityMapping} from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import type {YxxIdentityMapping} from '../../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 declare const verifiedMapping:YxxIdentityMapping;
 const mappedInternal:InternalMemberId|null=verifiedMapping.resolve(resolved.userid);
 // @ts-expect-error -- Canonical bot identity cannot masquerade as a delegated OAuth lookup key.
 verifiedMapping.resolve(mappedInternal as InternalMemberId);
 void [prematureInternal,mappedInternal];
 
-import {validateYxxEntryConfig} from '../../src/p2-g2-yixiaoxiu-contract.mjs';
+import {validateYxxEntryConfig} from '../../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
 const disabledConfig=validateYxxEntryConfig({enabled:false,corpId:{unexpected:true}});
 if(disabledConfig.enabled){const validatedCorp:string=disabledConfig.corpId;void validatedCorp;}
 else{

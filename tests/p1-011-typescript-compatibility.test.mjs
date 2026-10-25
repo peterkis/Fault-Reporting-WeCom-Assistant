@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createPilotAlertRegistry, createPilotSecurityLogger, createPilotTelemetry, createPilotReadinessService, createCoreIntakeSafetyBoundary, createPilotOperationsService } from '../src/p1-011-pilot-operations-baseline.mjs';
+import { createPilotAlertRegistry, createPilotSecurityLogger, createPilotTelemetry, createPilotReadinessService, createCoreIntakeSafetyBoundary, createPilotOperationsService } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 
 test('T04-03 preserves omitted arguments, validation and alert identity', async () => {
   assert.throws(() => createPilotSecurityLogger(), /identity hash key/);

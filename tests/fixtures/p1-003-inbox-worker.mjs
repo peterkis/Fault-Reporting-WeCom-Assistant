@@ -1,7 +1,7 @@
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { adaptWeComSdkFrame } from '../../src/p1-002-wecom-sdk-adapter.mjs';
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import { formatEpochMsToShanghaiLocal } from '../../src/platform/time-contract.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { adaptWeComSdkFrame } from '../../app/server/src/p1-002-wecom-sdk-adapter.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import { formatEpochMsToShanghaiLocal } from '../../app/server/src/platform/time-contract.mjs';
 
 const [mode, msgId] = process.argv.slice(2);
 if (!['first', 'replay'].includes(mode) || !/^p1-003-restart-[a-f0-9-]{36}$/.test(msgId ?? '')) {

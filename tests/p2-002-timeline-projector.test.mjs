@@ -26,7 +26,7 @@ import {
   mapNotificationDeliveryTimelineSource,
   mapTicketEventTimelineSources,
   normalizeTimelineSourceRecord,
-} from '../src/p2-002-timeline-projector.mjs';
+} from '../app/server/src/p2-002-timeline-projector.mjs';
 
 const SESSION_ID = '01990c80-0000-7000-8000-000000000001';
 const SOURCE_ID = '01990c80-0000-7000-8000-000000000002';

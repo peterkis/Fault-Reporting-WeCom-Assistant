@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import type {Server} from 'node:http';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
+import {createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;backendOrigin:string;cookies:string[];pool:PostgresPool;principals:{id:string}[];runtime:{server:Server};certificateSpki:string;browserCookies:{name:string;value:string;url:string}[]}
 function obj(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}

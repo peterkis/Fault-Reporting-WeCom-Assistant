@@ -1,11 +1,11 @@
 import { createServer } from 'node:http';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
-import { createRealtimeEventStore } from '../../src/p2-003-realtime-event-log.mjs';
+import { createRealtimeEventStore } from '../../app/server/src/p2-003-realtime-event-log.mjs';
 import {
   createRealtimeSseHandler,
   createRealtimeWakeupHub,
-} from '../../src/p2-003-realtime-sse.mjs';
+} from '../../app/server/src/p2-003-realtime-sse.mjs';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const APPLICATION_NAME_PATTERN = /^p2_003_[a-z0-9_]{1,54}$/u;

@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
 type Ids={messages:string[];outboxes:string[];deliveries:string[];bindings:string[];rounds:string[];attempts:string[];refs:string[];grants:string[]};
 async function physical(pool:PostgresPool){return (await pool.query<Ids>(`SELECT

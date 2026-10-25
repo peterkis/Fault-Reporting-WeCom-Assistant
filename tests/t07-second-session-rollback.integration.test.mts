@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
 import {acceptedSetup,acceptedOptions,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
 test('second canonical communication write failure rolls back the first real Control and all takeover-start facts, then a new explicit command commits one original round',async()=>{

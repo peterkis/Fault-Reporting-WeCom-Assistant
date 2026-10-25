@@ -6,10 +6,10 @@ import {createT18Directory} from './helpers/t18-verified-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {t25Object,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig,entryKey,entryOrigin,httpBrowser,loginYxx} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {TicketAppNotificationOptions,EligibleTicketAppNotificationTarget} from '../contracts/workbench_app_notification_contracts.js';
 
 test('the actual verified MANUAL app card reauthenticates and reveals safe details only to its original member',{timeout:240000},async()=>{

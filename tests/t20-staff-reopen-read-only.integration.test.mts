@@ -5,7 +5,7 @@ import {writeFile,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {t20Object} from './helpers/t20-feedback-fixture.mjs';
 import {browser} from './helpers/yxx-ss-009-http-fixture.mjs';
 

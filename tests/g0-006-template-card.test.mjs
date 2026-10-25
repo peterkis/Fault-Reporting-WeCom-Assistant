@@ -6,7 +6,7 @@ import {
   buildUpdatedCard,
   parseCardArgs,
   runCardProbe,
-} from '../src/g0-006-template-card.mjs';
+} from '../app/server/src/g0-006-template-card.mjs';
 
 class FakeClient extends EventEmitter {
   constructor({ replyTemplateCard, updateTemplateCard }) {

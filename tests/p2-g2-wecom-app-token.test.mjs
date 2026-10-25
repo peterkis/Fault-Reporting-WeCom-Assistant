@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWeComAppTokenProvider } from '../src/p2-g2-wecom-app-token.mjs';
+import { createWeComAppTokenProvider } from '../app/server/src/p2-g2-wecom-app-token.mjs';
 
 test('应用令牌按应用缓存，并发合并，按 expires_in 提前刷新且不泄露 secret',async()=>{
   let now=0,calls=0;

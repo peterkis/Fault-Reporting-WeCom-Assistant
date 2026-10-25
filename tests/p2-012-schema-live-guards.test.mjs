@@ -1,14 +1,14 @@
 import { sourceFile } from './helpers/migration-roots.mjs';
-import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
+import { validateHistoricalP2016 } from '../app/server/scripts/validate-p2-016-historical.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid,p2012SubscriptionReviewPathsValid,p2012SubscriptionReviewEvidenceValid,p2012PausedReviewPathsValid,p2012PausedReviewEvidenceValid,p2012RefreshReviewPathsValid,p2012RefreshReviewEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
-import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
-import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
-import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid,p2012SubscriptionReviewPathsValid,p2012SubscriptionReviewEvidenceValid,p2012PausedReviewPathsValid,p2012PausedReviewEvidenceValid,p2012RefreshReviewPathsValid,p2012RefreshReviewEvidenceValid } from '../app/server/scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { checkP2012Live } from '../app/server/scripts/p2-012-live-check.mjs';
+import { p2012LiveDuration } from '../app/server/scripts/p2-012-live-e2e.mjs';
+import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../app/server/src/p2-012-live-configuration.mjs';
 
 test('P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures',async()=>{
   const path='/api/incidents/{incidentId}/subscriptions/{subscriptionId}/direct-destinations';
@@ -36,7 +36,7 @@ test('P2-012 both parsed OpenAPI documents declare canonical subscription destin
       assert.deepEqual(item.post.responses[409],{description:'Version, state or command conflict'});
     }
   }
-  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile(sourceFile('src/p2-012-incident-query.mjs'),'utf8');
+  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile(sourceFile('app/server/src/p2-012-incident-query.mjs'),'utf8');
   assert.ok(ui.includes("root+'/subscriptions/'+s.id+'/direct-destinations?limit=100'"));
   assert.ok(query.includes('subscriptions\\/([a-f0-9-]{36})\\/direct-destinations'));
 });

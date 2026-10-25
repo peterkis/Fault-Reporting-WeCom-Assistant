@@ -2,7 +2,16 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
-import { validateArch005TimeContract } from '../scripts/validate-arch-005-time-contract.mjs';
+import { validateArch005TimeContract,hasWorkbenchItemOrdering } from '../app/server/scripts/validate-arch-005-time-contract.mjs';
+import {sourceFile} from './helpers/migration-roots.mjs';
+
+test('ARCH005 checks both real item-order branches and their sequence tie breaker',async()=>{
+  const source=await readFile(sourceFile('app/server/src/p2-006-workbench-query.mjs'),'utf8');assert.equal(hasWorkbenchItemOrdering(source),true);
+  for(const changed of [source.replace('occurred_at ${direction}, sequence_no ${direction}','occurred_at ${direction}'),
+    source.replace('`sequence_no ${direction}`','`occurred_at ${direction}`')]){
+    assert.notEqual(changed,source);assert.equal(hasWorkbenchItemOrdering(changed),false);
+  }
+});
 
 test('ARCH-005 architecture validator freezes migrations and reports all hard static counts at zero', async () => {
   const result = await validateArch005TimeContract();

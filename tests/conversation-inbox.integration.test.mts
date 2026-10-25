@@ -8,10 +8,10 @@ import {join} from 'node:path';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {addInboxSession,attachInboxJourney,conversationPost,freshCommand,INBOX_IDENTITY_KEY} from './helpers/conversation-inbox-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createConversationInbox} from '../src/workbench-conversation-inbox.mjs';
-import {createPilotWorkbenchAuthorizationAdapter} from '../src/p2-006-workbench-authorization.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createConversationInbox} from '../app/server/src/workbench-conversation-inbox.mjs';
+import {createPilotWorkbenchAuthorizationAdapter} from '../app/server/src/p2-006-workbench-authorization.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {ConversationInboxPage,ConversationRelatedPage,ConversationChatEntry,ConversationChatDeliveryPage,ConversationChatItemPage} from '../contracts/workbench_conversation_inbox_contracts.js';
 import type {ConversationMessageResult} from '../contracts/workbench_conversation_workspace_contracts.js';
 

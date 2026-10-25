@@ -1,6 +1,6 @@
 import type {IncomingMessage} from 'node:http';
 import {setTimeout as delay} from 'node:timers/promises';
-import type {ApplicationMemberVerificationEvent} from '../../src/wecom-application-member.mjs';
+import type {ApplicationMemberVerificationEvent} from '../../app/server/src/wecom-application-member.mjs';
 
 export interface PerformanceMemberVerificationOperation {
   operation_id:string;purpose:'BASE'|'H5_ENTRY';request_key:string|null;request_id:string|null;

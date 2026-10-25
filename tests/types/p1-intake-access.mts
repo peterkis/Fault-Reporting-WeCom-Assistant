@@ -1,7 +1,7 @@
-import { adaptWeComSdkFrame } from '../../src/p1-002-wecom-sdk-adapter.mjs';
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import type { PostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { assertEpochMsString, assertLocalDateTime } from '../../src/platform/time-contract.mjs';
+import { adaptWeComSdkFrame } from '../../app/server/src/p1-002-wecom-sdk-adapter.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { assertEpochMsString, assertLocalDateTime } from '../../app/server/src/platform/time-contract.mjs';
 
 declare const pool: PostgresPool;
 declare const frame: unknown;
@@ -21,11 +21,11 @@ if (adapted.ok) {
 // @ts-expect-error -- Physical epoch milliseconds are string values, not numbers.
 adaptWeComSdkFrame(frame, { receivedEpochMs: 1790733600000 });
 
-import { createServiceIntakeProcessor } from '../../src/p1-004-service-intake.mjs';
-import { createPilotTicketCore, createPilotTicketProcessor } from '../../src/p1-005-pilot-ticket-core.mjs';
-import type { PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
-import type { PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
-import type { InboxMessage } from '../../src/p1-003-channel-message-inbox.mjs';
+import { createServiceIntakeProcessor } from '../../app/server/src/p1-004-service-intake.mjs';
+import { createPilotTicketCore, createPilotTicketProcessor } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import type { PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
+import type { PostgresPoolClient } from '../../app/server/src/platform/postgres-pool.mjs';
+import type { InboxMessage } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
 declare const transaction: PostgresTransaction;
 declare const client: PostgresPoolClient;
 declare const message: InboxMessage;
@@ -49,8 +49,8 @@ ticketProcessor({ message, transaction });
 // @ts-expect-error -- The composed processor preserves the normalized message contract.
 ticketProcessor({ channelMessageId: '1', message: { idempotency_key: 'key', received_at: local }, transaction });
 
-import { createTicketClosureService, createTicketLifecycleProcessor } from '../../src/p1-010-ticket-closure.mjs';
-import { createPilotOperationalIntake } from '../../src/p1-011-pilot-operations-baseline.mjs';
+import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createPilotOperationalIntake } from '../../app/server/src/p1-011-pilot-operations-baseline.mjs';
 declare const closure: ReturnType<typeof createTicketClosureService>;
 const lifecycle = createTicketLifecycleProcessor({ serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }), closure });
 createChannelMessageInbox({ pool }).accept({}, lifecycle);
@@ -61,10 +61,10 @@ lifecycle({ channelMessageId: '1', message, transaction: pool });
 lifecycle({ channelMessageId: '1', message: { idempotency_key: 'key', received_at: local, sender_user_id: 'synthetic' }, transaction });
 createPilotOperationalIntake({ pool, serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }), closure, identityHashKey: 'synthetic', writeLogRecord() {}, coreChecks: { postgres: () => ({ ok: true }), intake: () => ({ ok: true }), outbox: () => ({ ok: true }) } });
 
-import { createPilotAccessService, createPilotWorkbenchServer, listenPilotWorkbenchServer, closePilotWorkbenchServer } from '../../src/p1-009-pilot-access-workbench.mjs';
-import { createTicketActionService } from '../../src/p1-006-ticket-state-actions.mjs';
-import type { PilotHttpActionInput, PilotHttpActionPort } from '../../src/p1-009-pilot-access-workbench.mjs';
-import type { TicketAction, TicketActionResult } from '../../src/p1-006-ticket-state-actions.mjs';
+import { createPilotAccessService, createPilotWorkbenchServer, listenPilotWorkbenchServer, closePilotWorkbenchServer } from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createTicketActionService } from '../../app/server/src/p1-006-ticket-state-actions.mjs';
+import type { PilotHttpActionInput, PilotHttpActionPort } from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type { TicketAction, TicketActionResult } from '../../app/server/src/p1-006-ticket-state-actions.mjs';
 const numberVersionOnly = {
   async perform(input: PilotHttpActionInput & { expectedVersion: number }): Promise<TicketActionResult> {
     input.expectedVersion.toFixed(0);
@@ -137,7 +137,7 @@ createPilotWorkbenchServer({ access, authenticate: async () => ({ type: 'PILOT_U
     // @ts-expect-error -- Contextual notes are also unvalidated HTTP input.
     const note: string = input.note;
     // @ts-expect-error -- HTTP route text is not yet a validated Ticket Action.
-    const action: import('../../src/p1-006-ticket-state-actions.mjs').TicketAction = input.action;
+    const action: import('../../app/server/src/p1-006-ticket-state-actions.mjs').TicketAction = input.action;
     void [version, note, action];
     return { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } };
   },

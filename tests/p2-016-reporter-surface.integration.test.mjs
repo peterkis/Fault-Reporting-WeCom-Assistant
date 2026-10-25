@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { appendTicketEvent } from '../src/p1-006-ticket-state-actions.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016ReporterAccess } from '../src/p2-016-reporter-access.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
-import { createP2016ReporterTimeline } from '../src/p2-016-reporter-timeline.mjs';
-import { transactionP2016 } from '../src/p2-016-domain-contracts.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { appendTicketEvent } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016ReporterAccess } from '../app/server/src/p2-016-reporter-access.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
+import { createP2016ReporterTimeline } from '../app/server/src/p2-016-reporter-timeline.mjs';
+import { transactionP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 test('Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016access',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});

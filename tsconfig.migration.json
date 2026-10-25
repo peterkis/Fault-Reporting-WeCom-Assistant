@@ -7,8 +7,11 @@
     "checkJs": false
   },
   "include": [
-    "src/**/*.mts",
-    "scripts/**/*.mts",
+    "app/server/src/**/*.mts",
+    "app/server/scripts/**/*.mts",
+    "shared/**/*.mts",
+    "app/pc-admin/src/contracts/*.mts",
+    "app/pc-admin/src/realtime/workbench-realtime-client.mts",
     "tests/**/*.mts"
   ],
   "exclude": [

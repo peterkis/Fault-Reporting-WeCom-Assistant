@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {execFileSync} from 'node:child_process';
 import {readFile,mkdir,mkdtemp,writeFile,unlink,rmdir} from 'node:fs/promises';
-import {INCIDENT_STATES} from '../src/p2-012-domain-contracts.mjs';
+import {INCIDENT_STATES} from '../app/server/src/p2-012-domain-contracts.mjs';
 
 test('P2-012 real TypeScript consumers accept nullable cursors and optional owner teams',async()=>{
   await mkdir('tmp',{recursive:true});const directory=await mkdtemp('tmp/p2012-contract-'),file=directory+'/consumer.ts';

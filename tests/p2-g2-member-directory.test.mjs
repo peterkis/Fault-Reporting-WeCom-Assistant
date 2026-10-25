@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWeComMemberDirectory} from '../src/p2-015-wecom-member-directory.mjs';
+import {createWeComMemberDirectory} from '../app/server/src/p2-015-wecom-member-directory.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
-import {readG2Configuration} from '../src/p2-g2-validation-config.mjs';
-import {installG2NetworkBoundary} from '../src/p2-g2-network-boundary.mjs';
+import {readG2Configuration} from '../app/server/src/p2-g2-validation-config.mjs';
+import {installG2NetworkBoundary} from '../app/server/src/p2-g2-network-boundary.mjs';
 
 const input={source:'WECOM_DIRECTORY',bot_id:'synthetic-bot',reporter_external_id:'synthetic-member'};
 function setup(user={}) {

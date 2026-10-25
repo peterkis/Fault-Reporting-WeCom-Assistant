@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {t31Http} from './helpers/t31-public-progress-fixture.mjs';
-import {migrateIncidentInternalNotes} from '../scripts/incident-internal-notes-migrate.mjs';
-import {migrateIncidentPublicProgress} from '../scripts/incident-public-progress-migrate.mjs';
-import {internalNoteSchemaReady,internalNoteSchemaInventory,internalNoteSchemaHash,INTERNAL_NOTE_SCHEMA_SHA256} from '../src/p2-012-internal-note-schema.mjs';
-import {publicProgressSchemaReady} from '../src/p2-012-public-progress-schema.mjs';
+import {migrateIncidentInternalNotes} from '../app/server/scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../app/server/scripts/incident-public-progress-migrate.mjs';
+import {internalNoteSchemaReady,internalNoteSchemaInventory,internalNoteSchemaHash,INTERNAL_NOTE_SCHEMA_SHA256} from '../app/server/src/p2-012-internal-note-schema.mjs';
+import {publicProgressSchemaReady} from '../app/server/src/p2-012-public-progress-schema.mjs';
 test('T31 actual additive migration preserves 055 marker/checksum/NOOP and exact private/public constraints fail closed together',async()=>{
   await t31Http({purpose:'t31migrate',ddl:false,notes:false,publication:false},async({pool,databaseUrl})=>{
     assert.equal((await migrateIncidentInternalNotes({databaseUrl,mode:'apply'})).status,'APPLIED');assert.equal(internalNoteSchemaHash(await internalNoteSchemaInventory(pool)),INTERNAL_NOTE_SCHEMA_SHA256);

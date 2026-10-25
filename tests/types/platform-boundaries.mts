@@ -1,6 +1,6 @@
 import type { LocalDate, LocalTime, LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
-import { assertLocalDate, assertLocalTime, assertLocalDateTime, assertEpochMsString, formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs, addEpochMilliseconds } from '../../src/platform/time-contract.mjs';
-import { createPostgresPool, createPostgresClient } from '../../src/platform/postgres-pool.mjs';
+import { assertLocalDate, assertLocalTime, assertLocalDateTime, assertEpochMsString, formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs, addEpochMilliseconds } from '../../app/server/src/platform/time-contract.mjs';
+import { createPostgresPool, createPostgresClient } from '../../app/server/src/platform/postgres-pool.mjs';
 const date: LocalDate = assertLocalDate('2024-02-29');
 const time: LocalTime = assertLocalTime('12:30');
 const local: LocalDateTime = formatEpochMsToShanghaiLocal(assertEpochMsString('0'));
@@ -33,7 +33,7 @@ pool.on('connect', async connection => {
   const eventLeak: string = (await connection.query('SELECT 1')).rows[0]?.value;
   void eventLeak;
 });
-import { createStringPreservingPgTypes } from '../../src/platform/postgres-types.mjs';
+import { createStringPreservingPgTypes } from '../../app/server/src/platform/postgres-types.mjs';
 // @ts-expect-error -- A parser factory must return parser functions, never a scalar.
 createStringPreservingPgTypes({ getTypeParser() { return 42; } });
 const textParser = createStringPreservingPgTypes().getTypeParser(20);

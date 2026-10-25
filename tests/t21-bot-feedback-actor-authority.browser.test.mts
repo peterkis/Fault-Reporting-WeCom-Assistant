@@ -8,10 +8,10 @@ import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import type {IncomingMessage,Server,ServerResponse} from 'node:http';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {textHashP2016,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {textHashP2016,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
 import {withT21DraftFixture,t21Config,t21Mapping} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
@@ -86,7 +86,8 @@ async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
    assert.ok(fixture);const browserOrigin=fixture.origin,page=(ticket:Ticket)=>browserOrigin+'/wecom/yixiaoxiu/tickets/'+ticket.ref;
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport});await browser.command('Page.navigate',{url:page(original)});await browser.waitFor(enabled);
    await writeFile(join(directory,'eligible-member-page.png'),Buffer.from(await browser.screenshot(),'base64'));
-   assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true);
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-h5-reporter=true]'))&&Array.from(document.querySelectorAll('script[type=module][src]')).some(node=>/^\\/wecom\\/yixiaoxiu\\/assets\\/.+\\.js$/.test(node.getAttribute('src')||''))"),true);
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('script[src=\"/reporter/bot-feedback.js\"]'))"),false);
    await run({f,original,second,fixture,browser,peers,directory,serverWire,setMyReports:value=>{myReports=value;},page});
   }catch(error){primary=error;try{await writeFile(join(directory,'primary-error.json'),JSON.stringify(failure(error)));}catch(diagnosticFailure){primary=new AggregateError([primary,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([

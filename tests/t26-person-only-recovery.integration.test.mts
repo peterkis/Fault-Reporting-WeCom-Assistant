@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT26Fixture,t26Group,t26Deliveries,t26Control,t26Sender,t26Object} from './helpers/t26-group-notification-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 test('a successful group delivery survives a private-route failure and exact HTTP retry replay without group resend',{timeout:240000},async()=>{
  await withT26Fixture(async context=>{
   const tag='t26-person-recovery',{id,http,started}=await t26Group(context,tag),before=await t26Deliveries(http,id),group=before.find(row=>row.destination_type==='GROUP'),person=before.find(row=>row.destination_type==='PERSON');assert.ok(group&&person);

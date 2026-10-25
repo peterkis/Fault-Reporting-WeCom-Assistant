@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createG2OperationalIntake } from '../src/p2-g2-service-loop-assembly.mjs';
-import { createP2012ApprovedGroupReporterRegistry, createP2012LiveReporterScope } from '../src/p2-012-live-reporter-scope.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createG2OperationalIntake } from '../app/server/src/p2-g2-service-loop-assembly.mjs';
+import { createP2012ApprovedGroupReporterRegistry, createP2012LiveReporterScope } from '../app/server/src/p2-012-live-reporter-scope.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
 
 test('G2 frozen continuation template accepts the actual dynamic receipt ref and preserves raw case and run label',async()=>{
   await withG2Runtime(async f=>{

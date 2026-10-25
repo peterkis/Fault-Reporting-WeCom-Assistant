@@ -5,12 +5,12 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { createG2SendGuard } from '../src/p2-g2-send-guard.mjs';
-import { initializeG2SendBudget, openG2SendBudget } from '../src/p2-g2-send-budget.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
-import { createConversationRuleAdmission } from '../src/conversation-rule-admission.mjs';
-import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
-import { g2DatabaseIdentity, g2Hash } from '../src/p2-g2-validation-config.mjs';
+import { createG2SendGuard } from '../app/server/src/p2-g2-send-guard.mjs';
+import { initializeG2SendBudget, openG2SendBudget } from '../app/server/src/p2-g2-send-budget.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { createConversationRuleAdmission } from '../app/server/src/conversation-rule-admission.mjs';
+import { g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2DatabaseIdentity, g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
 
 test('Gate guard checks actual PostgreSQL Delivery binding and preserves existing Direct Leg and numeric ACK sender', async t => {
   await withG2Runtime(async f => {

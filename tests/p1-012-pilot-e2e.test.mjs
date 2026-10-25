@@ -3,7 +3,7 @@ import test from 'node:test';
 import {
   createPilotE2EHandler,
   evaluatePilotGoNoGo,
-} from '../src/p1-012-pilot-e2e.mjs';
+} from '../app/server/src/p1-012-pilot-e2e.mjs';
 
 const TEST_GROUP_ID = 'p1-012-test-group';
 const TEST_ACCOUNT_USER_ID = 'p1-012-tester';

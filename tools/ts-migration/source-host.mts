@@ -12,7 +12,7 @@ export function installSourceHost(root: string): void {
       const url = new URL(specifier, context.parentURL);
       if (url.protocol === 'file:') {
         const relative = path.relative(root, fileURLToPath(url)).split(path.sep).join('/');
-        if (relative.startsWith('src/')) {
+        if (relative.startsWith('app/server/src/') || relative.startsWith('shared/') || /^app\/pc-admin\/src\/.+\.mjs$/u.test(relative)) {
           const target = safeFile(path.join(root, '.build/runtime'), relative);
           return nextResolve(pathToFileURL(target).href, context);
         }

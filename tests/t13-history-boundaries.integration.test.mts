@@ -1,10 +1,10 @@
 import assert from'node:assert/strict';import{test}from'node:test';import{randomUUID}from'node:crypto';
 import{withT13Profile}from'./helpers/t13-profile-fixture.mjs';
 import{acceptedSetup,http,object,rows,text,version}from'./helpers/t07-public-fixture.mjs';
-import{createPilotAccessService}from'../src/p1-009-pilot-access-workbench.mjs';
-import{createPilotTicketCore}from'../src/p1-005-pilot-ticket-core.mjs';
-import{createContactJourneyStore}from'../src/p2-015-contact-journey.mjs';
-import{assertLocalDateTime}from'../src/platform/time-contract.mjs';
+import{createPilotAccessService}from'../app/server/src/p1-009-pilot-access-workbench.mjs';
+import{createPilotTicketCore}from'../app/server/src/p1-005-pilot-ticket-core.mjs';
+import{createContactJourneyStore}from'../app/server/src/p2-015-contact-journey.mjs';
+import{assertLocalDateTime}from'../app/server/src/platform/time-contract.mjs';
 import{seedPersistedIntake}from'./helpers/p2-015-postgres-harness.mjs';
 import{assertP2016Schema}from'./helpers/p2-016-schema-assert.mjs';
 

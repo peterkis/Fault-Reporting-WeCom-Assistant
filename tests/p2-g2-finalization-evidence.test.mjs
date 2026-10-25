@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { G2_METRIC_NAMES, buildG2AutomatedEvidence } from '../src/p2-g2-evidence.mjs';
-import { G2_RESOURCE_SQL } from '../src/p2-g2-resource-sampler.mjs';
-import { G2_RECONCILIATION_QUERY_HASH } from '../src/p2-g2-reconciliation.mjs';
-import { writeG2SourceFile, g2SourceBinding } from '../src/p2-g2-evidence-files.mjs';
-import { deriveG2Finalization } from '../src/p2-g2-finalization-evidence.mjs';
+import { G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { G2_METRIC_NAMES, buildG2AutomatedEvidence } from '../app/server/src/p2-g2-evidence.mjs';
+import { G2_RESOURCE_SQL } from '../app/server/src/p2-g2-resource-sampler.mjs';
+import { G2_RECONCILIATION_QUERY_HASH } from '../app/server/src/p2-g2-reconciliation.mjs';
+import { writeG2SourceFile, g2SourceBinding } from '../app/server/src/p2-g2-evidence-files.mjs';
+import { deriveG2Finalization } from '../app/server/src/p2-g2-finalization-evidence.mjs';
 
 test('synthetic finalization fixture rejects pending reconciliation, stale cleanup and invented browser removal',t=>{
   mkdirSync(path.join(G2_ROOT,'tmp'),{recursive:true});

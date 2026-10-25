@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT21DraftFixture,t21Object,t21FeedbackCommand,t21Send} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {browser,origin} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {transactionP2016} from '../src/p2-016-domain-contracts.mjs';
+import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
 
 test('original Bot feedback response loss is reconciled by current independent READ after logout and write/raw OFF; another member or revoked source cannot read it',async()=>{
  await withT21DraftFixture(async f=>{

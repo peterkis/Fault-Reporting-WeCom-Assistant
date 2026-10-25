@@ -35,12 +35,12 @@ function stored(principal:string,ticketId:string){
  return `(async()=>{if(!(await indexedDB.databases()).some(database=>database.name==='wecom-workbench-drafts-v1'))return {drafts:0,operations:0,revision:null,commandId:null};return new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onupgradeneeded=()=>request.transaction.abort();request.onerror=()=>reject(request.error);request.onblocked=()=>reject(Error('T37_STORE_OBSERVER_BLOCKED'));request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations'],'readonly'),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();const draft=drafts.result.find(row=>row.scope===${JSON.stringify(scope)}),operation=operations.result.find(row=>row.scope===${JSON.stringify(scope)});resolve({drafts:drafts.result.length,operations:operations.result.length,revision:draft?.revision??null,commandId:operation?.commandId??null});};tx.onabort=()=>{db.close();reject(tx.error??Error('T37_STORE_OBSERVER_ABORTED'));};tx.onerror=()=>{};};});})()`;
 }
 /** Observe real replies; optional seams lose/delay delivery after the real server has answered. */
-function transport(schedulePath:string){return `(()=>{const original=globalThis.fetch;globalThis.__t37Transport={posts:[],acks:[],views:[],dropPost:false,failAfterPost:false,failViews:false,holdAckId:null,held:0,ackState:'NONE'};
- globalThis.__t37ReleaseAck=()=>{};globalThis.__t37RestoreFetch=()=>{globalThis.fetch=original;};
+function transport(schedulePath:string){return `(()=>{const original=globalThis.fetch;globalThis.__t37Transport={posts:[],acks:[],views:[],dropPost:false,failAfterPost:false,failViews:false,holdAckId:null,held:0,ackState:'NONE',holdNextView:false,heldViews:0,viewState:'NONE'};
+ globalThis.__t37ReleaseAck=()=>{};const viewReleases=[];globalThis.__t37ReleaseView=()=>{globalThis.__t37Transport.holdNextView=false;for(const release of viewReleases.splice(0))release();};globalThis.__t37RestoreFetch=()=>{globalThis.fetch=original;};
  globalThis.fetch=async(input,options)=>{const path=new URL(input instanceof Request?input.url:String(input),location.href).pathname,method=(options?.method??(input instanceof Request?input.method:'GET')).toUpperCase(),state=globalThis.__t37Transport;
   const response=await original(input,options);
   if(method==='POST'&&path===${JSON.stringify(schedulePath)}){const body=await response.clone().json(),command=JSON.parse(options?.body??(input instanceof Request?await input.clone().text():'{}'));state.posts.push({status:response.status,body,command});if(response.status===200&&state.failAfterPost)state.failViews=true;if(response.status===200&&state.dropPost)throw new TypeError('T37_REAL_COMMIT_RESPONSE_LOST');}
-  if(method==='GET'&&path===${JSON.stringify(schedulePath)}){state.views.push({status:response.status,body:await response.clone().json()});if(state.failViews)throw new TypeError('T37_REAL_VIEW_RESPONSE_LOST');}
+  if(method==='GET'&&path===${JSON.stringify(schedulePath)}){state.views.push({status:response.status,body:await response.clone().json()});if(state.holdNextView&&state.acks.length>0){state.heldViews++;state.viewState='HELD';const signal=options?.signal??(input instanceof Request?input.signal:null);await new Promise((resolve,reject)=>{let finished=false;const finish=(error)=>{if(finished)return;finished=true;clearTimeout(timer);signal?.removeEventListener('abort',aborted);state.viewState=error?'ABORTED':'RELEASED';error?reject(error):resolve();},aborted=()=>finish(new DOMException('Actual consumer aborted held current view','AbortError')),timer=setTimeout(()=>finish(Error('T37_HELD_REAL_VIEW_TIMEOUT')),60_000);viewReleases.push(()=>finish());signal?.addEventListener('abort',aborted,{once:true});if(signal?.aborted)aborted();});}if(state.failViews)throw new TypeError('T37_REAL_VIEW_RESPONSE_LOST');}
   if(method==='GET'&&path.startsWith(${JSON.stringify(schedulePath+'/commands/')})){state.acks.push({path,status:response.status,body:await response.clone().json()});if(path===${JSON.stringify(schedulePath+'/commands/')}+state.holdAckId){state.held++;state.ackState='HELD';const signal=options?.signal??(input instanceof Request?input.signal:null);
    await new Promise((resolve,reject)=>{let finished=false;const finish=(error)=>{if(finished)return;finished=true;clearTimeout(timer);signal?.removeEventListener('abort',aborted);state.ackState=error?'ABORTED':'RELEASED';error?reject(error):resolve();},aborted=()=>finish(new DOMException('Actual consumer aborted held ACK','AbortError')),timer=setTimeout(()=>finish(Error('T37_HELD_REAL_ACK_TIMEOUT')),60_000);globalThis.__t37ReleaseAck=()=>finish();signal?.addEventListener('abort',aborted,{once:true});if(signal?.aborted)aborted();});}
   }
@@ -82,8 +82,8 @@ async function withBrowserCase(label:string,otherCount:number,run:(context:Conte
   }catch(error){primary=error;try{await writeFile(join(directory,'primary-error.json'),JSON.stringify(errorFacts(error),null,2));if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate(`({text:${regionNode}?.innerText??'',transport:globalThis.__t37Transport})`)));}}catch(evidenceError){primary=new AggregateError([error,evidenceError],'T37_RECOVERY_COMPETITION_EVIDENCE');}
    console.log('T37_BROWSER_FAILURE '+JSON.stringify({directory}));}
   await closeBrowserTestResources([
-   async()=>{if(browser)await browser.evaluate('globalThis.__t37ReleaseAck?.();globalThis.__t37ReleaseEncryption?.();globalThis.__t37RestoreFetch?.();');},
-   ...tabs.map(tab=>async()=>{try{await tab.evaluate('globalThis.__t37ReleaseAck?.();globalThis.__t37RestoreFetch?.();');}finally{await tab.close();}}),
+   async()=>{if(browser)await browser.evaluate('globalThis.__t37ReleaseAck?.();globalThis.__t37ReleaseView?.();globalThis.__t37ReleaseEncryption?.();globalThis.__t37RestoreFetch?.();');},
+   ...tabs.map(tab=>async()=>{try{await tab.evaluate('globalThis.__t37ReleaseAck?.();globalThis.__t37ReleaseView?.();globalThis.__t37RestoreFetch?.();');}finally{await tab.close();}}),
    async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
    async()=>{fixture.runtime.server.off('request',observe);await writeFile(join(directory,'requests.json'),JSON.stringify(requests));},
   ],primary);
@@ -124,7 +124,14 @@ test('a delayed real ACK for X cannot replace another tab Y operation or send X 
   const originalAck=object(rows(object(await browser.evaluate('globalThis.__t37Transport')).acks)[0]);assert.equal(originalAck.status,200);assert.equal(object(originalAck.body).state,'COMMITTED');
   const other=await peer();await other.command('Page.bringToFront');
   const beforeOtherAckViews=await other.evaluate('globalThis.__t37Transport.views.length');assert.ok(typeof beforeOtherAckViews==='number');
-  await click(other,'只读核对原操作');
+  // Hold delivery of the real current view while the same ACK still owns the request.
+  await other.evaluate('globalThis.__t37Transport.holdNextView=true');await click(other,'只读核对原操作');
+  await other.waitFor('globalThis.__t37Transport.heldViews===1&&globalThis.__t37Transport.viewState==="HELD"');await tick(other);
+  const heldView=object(rows(object(await other.evaluate('globalThis.__t37Transport')).views).at(-1));
+  assert.equal(heldView.status,200);assert.equal(object(heldView.body).schedule_version,'1');assert.equal(object(object(heldView.body).active).due_at,dueX);
+  assert.equal(await other.evaluate(`${inputNode}.disabled`),true,'the previous ACK current-view read must keep the form busy');
+  assert.equal(await other.evaluate(readyButton('设置共享时间')),false,'Y must not be offered while the old ACK still owns the request');
+  assert.equal(requests.filter(request=>request.method==='POST').length,1);await other.evaluate('globalThis.__t37ReleaseView()');
   await other.waitFor(`${regionNode}?.innerText.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})&&globalThis.__t37Transport.views.length>${beforeOtherAckViews}`);
   await tick(other);await other.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled`);
   await other.evaluate('globalThis.__t37Transport.dropPost=true');await fill(other,dueY);await click(other,'设置共享时间');

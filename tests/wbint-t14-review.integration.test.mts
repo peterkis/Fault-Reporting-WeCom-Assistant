@@ -1,9 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {randomUUID} from 'node:crypto';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {appendReviewMaterial as appendBot} from './helpers/wbint-t14-review-material.mjs';

@@ -4,12 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { createNotificationDeliveryWorker } from '../src/p1-007-notification-outbox.mjs';
-import { PilotConfigError } from '../src/p1-001-pilot-foundation.mjs';
-import { createFirstAcknowledgementService } from '../src/p1-008-first-acknowledgement.mjs';
-import { createPilotE2EHandler, evaluatePilotGoNoGo } from '../src/p1-012-pilot-e2e.mjs';
-import { encryptBackupStream, decryptBackupStream } from '../src/p1-011-encrypted-backup.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { createNotificationDeliveryWorker } from '../app/server/src/p1-007-notification-outbox.mjs';
+import { PilotConfigError } from '../app/server/src/p1-001-pilot-foundation.mjs';
+import { createFirstAcknowledgementService } from '../app/server/src/p1-008-first-acknowledgement.mjs';
+import { createPilotE2EHandler, evaluatePilotGoNoGo } from '../app/server/src/p1-012-pilot-e2e.mjs';
+import { encryptBackupStream, decryptBackupStream } from '../app/server/src/p1-011-encrypted-backup.mjs';
 
 test('untyped callers retain omitted-option errors and the configuration Error shape', async () => {
   assert.throws(() => Reflect.apply(createFirstAcknowledgementService, undefined, []), /A Channel Message Inbox is required\./u);

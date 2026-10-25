@@ -7,7 +7,7 @@ import {
   INBOUND_MEDIA_EVENT_TYPES,
   parseMediaCaptureArgs,
   sanitizeMediaFrame,
-} from '../src/g0-004-media-capture.mjs';
+} from '../app/server/src/g0-004-media-capture.mjs';
 
 test('media capture records only desensitized frame, download, and filename metadata', async () => {
   const sensitiveText = '患者张三住院号123456';

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {createG2SourceAudit} from '../src/p2-g2-source-audit.mjs';
-import {g2Hash} from '../src/p2-g2-validation-config.mjs';
+import {createG2SourceAudit} from '../app/server/src/p2-g2-source-audit.mjs';
+import {g2Hash} from '../app/server/src/p2-g2-validation-config.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 
 test('source audit uses the same canonical corpus hashes in Windows CRLF and Linux LF candidate checkouts',()=>{
@@ -33,7 +33,7 @@ function fixture(ids){
     exit_code:0,error:null,signal:null,candidate_unchanged:true,stdout_sha256:g2Hash(tap),counts}};
 }
 test('source audit retains all 202 cases, fixed 122 denominator and explicit unsupported original surfaces',()=>{
-  const ids=readFileSync(new URL('../tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl',import.meta.url),'utf8')
+  const ids=readFileSync(new URL('./fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl',import.meta.url),'utf8')
     .trim().split(/\r?\n/u).map(JSON.parse).map(r=>r.source_case_id).filter(id=>!['D12-005','D12-023'].includes(id));
   const a=createG2SourceAudit(fixture(ids));assert.equal(a.total_source_cases,202);assert.equal(a.normal_input_cases,122);
   assert.equal(a.observed_normal_pass_cases,122);assert.equal(a.accounting_complete,true);

@@ -8,7 +8,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab,pollYxx} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 

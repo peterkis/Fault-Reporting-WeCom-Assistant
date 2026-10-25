@@ -3,16 +3,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { createYxxSelfServiceStore } from '../src/yxx-self-service-store.mjs';
-import { createYxxSelfServiceOrchestrator, createYxxSelfServiceWorker } from '../src/yxx-self-service-orchestrator.mjs';
-import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.mjs';
-import { routeP2007Decision } from '../src/p2-015-decision-router.mjs';
-import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
-import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
+import { createYxxSelfServiceStore } from '../app/server/src/yxx-self-service-store.mjs';
+import { createYxxSelfServiceOrchestrator, createYxxSelfServiceWorker } from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import { createYxxMemberCommandContext } from '../app/server/src/yxx-self-service-command.mjs';
+import { routeP2007Decision } from '../app/server/src/p2-015-decision-router.mjs';
+import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-review-facade.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
+import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { withP2015IsolatedDatabase } from './helpers/p2-015-postgres-harness.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
@@ -88,7 +88,7 @@ async function facts(pool, requestRef) {
 }
 
 test('SS-004 Web adapter is shared-rule, APP_ONLY, and never creates message-side facts', async () => {
-  const source = await readFile(sourceFile('src/yxx-self-service-orchestrator.mjs'), 'utf8');
+  const source = await readFile(sourceFile('app/server/src/yxx-self-service-orchestrator.mjs'), 'utf8');
   assert.match(source, /source_kind: 'WEB'/u);
   assert.match(source, /delivery_mode: 'APP_ONLY'/u);
   assert.match(source, /WEB_FORM/u);

@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, appendFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { withG2ProviderReceipt, captureG2ProviderReceipt, readG2ProviderReceipts } from '../src/p2-g2-provider-receipts.mjs';
+import { withG2ProviderReceipt, captureG2ProviderReceipt, readG2ProviderReceipts } from '../app/server/src/p2-g2-provider-receipts.mjs';
 
 test('numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity', async t => {
   const directory=mkdtempSync(path.join(tmpdir(),'g2-receipts-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));

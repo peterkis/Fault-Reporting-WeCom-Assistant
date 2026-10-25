@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createThirdPartyStaffDirectoryProcessOptions as options } from '../src/p2-007-third-party-staff-directory.mjs';
-import { staffDirectorySchemaReady, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
+import { createThirdPartyStaffDirectoryProcessOptions as options } from '../app/server/src/p2-007-third-party-staff-directory.mjs';
+import { staffDirectorySchemaReady, requireStaffDirectorySchema } from '../app/server/src/p2-007-third-party-staff-directory.mjs';
 
 test('enabled directory requires the local 036 marker before Worker readiness', async () => {
   const missing={query:async()=>({rowCount:0})};

@@ -4,7 +4,7 @@ import {mkdtemp,writeFile,rm,link,symlink,unlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createCipheriv,createHash,randomBytes,randomUUID} from 'node:crypto';
-import {createWorkbenchAttachmentStore} from '../src/workbench-attachment-store.mjs';
+import {createWorkbenchAttachmentStore} from '../app/server/src/workbench-attachment-store.mjs';
 import type {StoredAttachment} from '../contracts/workbench_attachment_contracts.js';
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
 async function withSavedAsset(run:(store:ReturnType<typeof createWorkbenchAttachmentStore>,root:string,asset:StoredAttachment,key:Buffer)=>Promise<void>){

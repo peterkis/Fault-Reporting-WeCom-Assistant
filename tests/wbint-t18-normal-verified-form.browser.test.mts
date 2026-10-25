@@ -12,9 +12,9 @@ import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {hashP2016,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {hashP2016,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {ManualReporterDirectoryOptions} from '../contracts/workbench_reporter_candidates_contracts.js';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;pool:PostgresPool;principals:{id:string}[];certificateSpki:string;browserCookies:{name:string;value:string;url:string}[]}

@@ -1,9 +1,9 @@
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
-import {limitedTemplate,databaseIdentity,digest} from '../../src/yxx-limited-write-contract.mjs';
-import {formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
-import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
-import {migrateCurrentBaselineWithYxx} from '../../scripts/migrate-current-baseline.mjs';
+import {limitedTemplate,databaseIdentity,digest} from '../../app/server/src/yxx-limited-write-contract.mjs';
+import {formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {migrateCurrentBaselineWithYxx} from '../../app/server/scripts/migrate-current-baseline.mjs';
 import {config,secret} from './yxx-ss-009-http-fixture.mjs';
 import {browser} from './yxx-ss-009-http-fixture.mjs';
 

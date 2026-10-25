@@ -1,6 +1,6 @@
-import {createPostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {createWeComWebOAuth} from '../../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxProfile} from '../../src/p2-g2-yixiaoxiu-profile.mjs';
+import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {createWeComWebOAuth} from '../../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
 import {entryOrigin,entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 
 if(typeof process.send!=='function')throw new Error('YXX_TEST_IPC_REQUIRED');

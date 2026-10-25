@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {createChannelMessageInbox} from '../src/p1-003-channel-message-inbox.mjs';
-import {createServiceIntakeProcessor} from '../src/p1-004-service-intake.mjs';
-import {adaptWeComSdkFrame} from '../src/p1-002-wecom-sdk-adapter.mjs';
-import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createP2012CandidateSourceAdapter,createP2012CandidateReviewStore} from '../src/p2-012-candidate-source-adapter.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {createChannelMessageInbox} from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import {createServiceIntakeProcessor} from '../app/server/src/p1-004-service-intake.mjs';
+import {adaptWeComSdkFrame} from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
+import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createP2012CandidateSourceAdapter,createP2012CandidateReviewStore} from '../app/server/src/p2-012-candidate-source-adapter.mjs';
 import {withP2012Database,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 
 test('T27 trusted candidate preserves supplied real decimal Bot and UUID Web producer source references',async()=>{

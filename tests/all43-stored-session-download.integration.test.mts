@@ -8,9 +8,9 @@ import {tmpdir} from 'node:os';
 import {randomBytes,randomUUID,createHash,createCipheriv} from 'node:crypto';
 import {crc32} from 'node:zlib';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createWorkbenchAttachmentStore} from '../src/workbench-attachment-store.mjs';
+import {createWorkbenchAttachmentStore} from '../app/server/src/workbench-attachment-store.mjs';
 import {T16_PNG} from './helpers/wbint-t16-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 type Fixture={pool:PostgresPool;origin:string;backendOrigin:string;cookies:string[];browserCookies:{name:string;value:string}[];sessionId:string;principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[]};

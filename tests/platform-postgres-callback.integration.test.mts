@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Pool } from 'pg';
 import type { PoolClient, QueryResult } from 'pg';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
 
 const connectionString = process.env.PILOT_DATABASE_URL;
 if (!connectionString) throw new Error('POSTGRES_CALLBACK_TEST_DATABASE_REQUIRED');

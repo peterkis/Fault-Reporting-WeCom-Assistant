@@ -4,6 +4,9 @@ import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {testRoots} from './migration-roots.mjs';
 import WebSocket from 'ws';
 
 export const systemBrowserCandidates = Object.freeze([
@@ -69,12 +72,27 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
-  const child=spawn(executable,[
+  const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-gpu','--disable-background-networking',
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
-  ],{stdio:'ignore',windowsHide:true});
+  ];
+  let ownership=null,child;
+  try{
+    if(process.platform==='win32'){
+      let root=testRoots().sourceRoot;
+      if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
+      const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
+      ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
+    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true});
+  }catch(error){
+    await closeBrowserTestResources([async()=>{
+      const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
+      await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
+    }],error);
+    throw error;
+  }
   let socket=null,sequence=0,closePromise=null,launchError=null;
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
   const pending=new Map();
@@ -107,7 +125,8 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     await closeBrowserTestResources([async()=>{
       // Let Browser.close flush its profile before forcing the owned process exit.
       await waitForExit();
-      if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await waitForExit();}
+      if(ownership)await ownership.close();
+      else if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await waitForExit();}
       if(child.exitCode===null&&child.signalCode===null&&!launchError)throw new Error('P2_006_BROWSER_PROCESS_NOT_STOPPED');
     },async()=>{
       // A lost closing handshake can leave the transport in CLOSING after Chrome
@@ -181,7 +200,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     async function pressTab(){
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }
-    return Object.freeze({executable,evaluate,pressTab,command,
+    return Object.freeze({executable,evaluate,pressTab,command,ownershipReceipt:ownership?.receiptDirectory??null,
       ownedResourceState,
       setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
       screenshot:async()=>(await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,

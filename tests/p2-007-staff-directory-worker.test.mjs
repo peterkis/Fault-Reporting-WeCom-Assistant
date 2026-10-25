@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createP2015Worker } from '../src/p2-015-worker.mjs';
+import { createP2015Worker } from '../app/server/src/p2-015-worker.mjs';
 
 test('directory maintenance runs in the existing worker even when rule orchestration is disabled', async () => {
   let calls = 0;

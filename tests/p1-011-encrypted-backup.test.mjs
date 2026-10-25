@@ -8,7 +8,7 @@ import test from 'node:test';
 import {
   decryptBackupStream,
   encryptBackupStream,
-} from '../src/p1-011-encrypted-backup.mjs';
+} from '../app/server/src/p1-011-encrypted-backup.mjs';
 
 test('P1-011 keeps a logical backup encrypted at rest while restoring the exact stream', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'p1-011-encrypted-backup-'));

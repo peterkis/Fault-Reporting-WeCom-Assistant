@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {migrateMvpNotifications} from '../../scripts/mvp-notifications-migrate.mjs';
-import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {migrateMvpNotifications} from '../../app/server/scripts/mvp-notifications-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
-import {migrateTicketRoundNotifications} from '../../scripts/ticket-round-notifications-migrate.mjs';
-import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
-import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
-import {migrateTicketReturnToDispatch} from '../../scripts/ticket-return-to-dispatch-migrate.mjs';
+import {migrateTicketRoundNotifications} from '../../app/server/scripts/ticket-round-notifications-migrate.mjs';
+import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateTicketReturnToDispatch} from '../../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
 
 export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,mvpNotificationsEnabled=false,groupNotificationTargets=[],manualRoundConsumption=false,roundNotificationsOff=false,externalSendEnabled=false}:{ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;mvpNotificationsEnabled?:boolean;groupNotificationTargets?:{botId:string;groupId:string}[];manualRoundConsumption?:boolean;roundNotificationsOff?:boolean;externalSendEnabled?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{

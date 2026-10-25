@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT09Fixture,object,rows,text,version} from './helpers/t09-fixture.mjs';
 import type {T09Fixture,T09Http} from './helpers/t09-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 async function get(http:T09Http,path:string){const response=await http.get(path);assert.equal(response.status,200,path);return response.value;}
 const body=(v:number)=>({client_command_id:randomUUID(),expected_version:v,reason_code:'WORKBENCH_RETURN_TO_DISPATCH',reason:'合成停止原因：重新安排。',unfinished_work:'合成未完成工作：仍需维修。',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
 async function started(f:T09Fixture){const admin=await f.http(0),handler=await f.http(2),path='/api/tickets/'+await f.createTicket();const assigned=await admin.post(path+'/assign',{client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_ASSIGN',target_principal_id:f.handler,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]});assert.equal(assigned.status,200);await f.runtime.coordinator.runOnce();

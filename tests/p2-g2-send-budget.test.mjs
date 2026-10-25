@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { initializeG2SendBudget, openG2SendBudget } from '../src/p2-g2-send-budget.mjs';
+import { initializeG2SendBudget, openG2SendBudget } from '../app/server/src/p2-g2-send-budget.mjs';
 
 function setup(t, limits = { group: 2, person: 2, total: 3 }) {
   const directory = mkdtempSync(path.join(tmpdir(), 'g2-budget-'));

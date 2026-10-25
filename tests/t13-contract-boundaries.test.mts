@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';import{test}from'node:test';import{randomUUID}from'node:crypto';
-import{decodeAssignmentHistory}from'../src/workbench-assignment-history-browser-contracts.mjs';
-import{createP2016TicketQuery}from'../src/p2-016-ticket-query.mjs';
-import{createP2016Runtime}from'../src/p2-016-runtime.mjs';
+import{decodeAssignmentHistory}from'../app/pc-admin/src/contracts/workbench-assignment-history-browser-contracts.mjs';
+import{createP2016TicketQuery}from'../app/server/src/p2-016-ticket-query.mjs';
+import{createP2016Runtime}from'../app/server/src/p2-016-runtime.mjs';
 import{assertP2016Schema}from'./helpers/p2-016-schema-assert.mjs';
 function page(){const id=randomUUID();return{schema_version:1,ticket_id:id,initial_basis:'UNKNOWN',items:[{ticket_event_id:randomUUID(),event_ordinal:2,kind:'RESPONSIBILITY_CHANGE',occurred_at:'2026-10-13 12:30:00',actor:{state:'KNOWN',name:'安全姓名'},handling_cycle:{state:'UNKNOWN'},previous:{person:{state:'UNKNOWN'},team:{state:'UNKNOWN'}},next:{person:{state:'NONE'},team:{state:'KNOWN',name:'安全处理组'}},communication:[]}],next_cursor:null};}
 test('closed read contracts preserve missing evidence as UNKNOWN and proven unassignment as NONE without inventing an initial owner or round',async()=>{const value=page();await assertP2016Schema('p2_016_assignment_history_page',value);assert.deepEqual(decodeAssignmentHistory(value,value.ticket_id),value);await assertP2016Schema('p2_016_assignment_history_capability',{});await assertP2016Schema('p2_016_assignment_history_capability',{assignment_history_enabled:false});});

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {normalizeReviewStartCommand} from '../src/workbench-review-start.mjs';
+import {normalizeReviewStartCommand} from '../app/server/src/workbench-review-start.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 
 function command(){return {client_command_id:randomUUID(),expected_row_version:'9007199254740993',expected_material_basis:'a'.repeat(64),

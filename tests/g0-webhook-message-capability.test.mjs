@@ -11,7 +11,7 @@ import {
   parseWebhookUrl,
   redactWebhookEndpoint,
   runWebhookCapabilityProbe,
-} from '../src/g0-webhook-message-capability.mjs';
+} from '../app/server/src/g0-webhook-message-capability.mjs';
 
 const webhookUrl = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-secret-key';
 

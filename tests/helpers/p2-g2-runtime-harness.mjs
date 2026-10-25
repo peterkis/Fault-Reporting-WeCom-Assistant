@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { withP2012Database, applyThrough031, assertNoP2012Residual } from './p2-012-postgres-harness.mjs';
-import { migrateP2012 } from '../../scripts/p2-012-migrate.mjs';
-import { migrateCurrentBaselineWithYxx } from '../../scripts/migrate-current-baseline.mjs';
-import { createP2012Runtime } from '../../src/p2-012-workbench-assembly.mjs';
-import { createP2016OrchestrationWorker } from '../../src/p2-016-orchestration-adapters.mjs';
-import { createP2012PersonDestinationAuthorizer, createP2012DynamicWeComSender } from '../../src/p2-012-live-reporter-scope.mjs';
-import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
-import {composeConversationRuleAdmission} from '../../src/conversation-rule-admission.mjs';
-import { createPilotAccessService } from '../../src/p1-009-pilot-access-workbench.mjs';
-import { textHashP2016 } from '../../src/p2-016-domain-contracts.mjs';
+import { migrateP2012 } from '../../app/server/scripts/p2-012-migrate.mjs';
+import { migrateCurrentBaselineWithYxx } from '../../app/server/scripts/migrate-current-baseline.mjs';
+import { createP2012Runtime } from '../../app/server/src/p2-012-workbench-assembly.mjs';
+import { createP2016OrchestrationWorker } from '../../app/server/src/p2-016-orchestration-adapters.mjs';
+import { createP2012PersonDestinationAuthorizer, createP2012DynamicWeComSender } from '../../app/server/src/p2-012-live-reporter-scope.mjs';
+import { createCommunicationDeliveryWorker } from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../../app/server/src/conversation-rule-admission.mjs';
+import { createPilotAccessService } from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { textHashP2016 } from '../../app/server/src/p2-016-domain-contracts.mjs';
 
 export const G2_RULE_FLAGS = Object.freeze({ RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true });
 export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketNotificationAdditionalEvents=[],reporterCount=3,webSchema=false,incidentBackgroundMaintenance=true}={}) {

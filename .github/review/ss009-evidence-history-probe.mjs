@@ -4,9 +4,9 @@ import {readFileSync,writeFileSync,copyFileSync} from 'node:fs';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import path from 'node:path';
-import {G2_ROOT,g2CandidateInventory} from '../../src/p2-g2-candidate.mjs';
-import {validateYxxSelfService} from '../../src/yxx-self-service-verification.mjs';
-import {verifyYxxEvidenceHistory,SS009_PUBLISHED_EVIDENCE_ANCHOR} from '../../src/yxx-self-service-evidence-history.mjs';
+import {G2_ROOT,g2CandidateInventory} from '../../app/server/src/p2-g2-candidate.mjs';
+import {validateYxxSelfService} from '../../app/server/src/yxx-self-service-verification.mjs';
+import {verifyYxxEvidenceHistory,SS009_PUBLISHED_EVIDENCE_ANCHOR} from '../../app/server/src/yxx-self-service-evidence-history.mjs';
 
 const BASELINE='a1a48f9839315d7683d9973a1d9febfd14aa39a8';
 const TARGET='evidence/yxx-ss-009-r5-review-fix-report.md';
@@ -18,7 +18,7 @@ const owned=path.join(G2_ROOT,'tmp','ss009-evidence-history-'+randomUUID());
 const git=(args,cwd=G2_ROOT)=>execFileSync('git',args,{cwd,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
 const experiments=[];let created=false;
 function legacy(){
-  const result=spawnSync(process.execPath,['scripts/validate-yxx-self-service.mjs','--require-ready'],{cwd:owned,encoding:'utf8',windowsHide:true,timeout:120000});
+  const result=spawnSync(process.execPath,['app/server/scripts/validate-yxx-self-service.mjs','--require-ready'],{cwd:owned,encoding:'utf8',windowsHide:true,timeout:120000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stderr+'\n'+result.stdout);
   const output=JSON.parse(result.stdout.trim());assert.equal(output.status,'SS009_LOCAL_VERIFICATION_COMPLETE');
   return {exit_code:result.status,status:output.status,candidate_fingerprint:output.candidate_fingerprint};

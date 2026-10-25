@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;

@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createThirdPartyReporterDirectory, buildThirdPartyReportSnapshot } from '../src/p2-007-third-party-reporter-directory.mjs';
-import { THIRD_STAFF_SOURCE } from '../src/p2-007-staff-directory-contracts.mjs';
+import { createThirdPartyReporterDirectory, buildThirdPartyReportSnapshot } from '../app/server/src/p2-007-third-party-reporter-directory.mjs';
+import { THIRD_STAFF_SOURCE } from '../app/server/src/p2-007-staff-directory-contracts.mjs';
 
-import { createReporterDirectoryPort } from '../src/p2-015-contact-journey.mjs';
-import { createRuleFirstOrchestrator } from '../src/p2-015-rule-first-orchestrator.mjs';
-import { projectContactJourney } from '../src/p2-015-projections.mjs';
-import { sha256Canonical } from '../src/p2-007-domain-utils.mjs';
-import { snapshotP2015Json } from '../src/p2-015-domain-contracts.mjs';
+import { createReporterDirectoryPort } from '../app/server/src/p2-015-contact-journey.mjs';
+import { createRuleFirstOrchestrator } from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import { projectContactJourney } from '../app/server/src/p2-015-projections.mjs';
+import { sha256Canonical } from '../app/server/src/p2-007-domain-utils.mjs';
+import { snapshotP2015Json } from '../app/server/src/p2-015-domain-contracts.mjs';
 
-import { snapshotReporterProfile, snapshotReporterProfileEnvelope } from '../src/p2-015-reporter-profile.mjs';
+import { snapshotReporterProfile, snapshotReporterProfileEnvelope } from '../app/server/src/p2-015-reporter-profile.mjs';
 
 const hash = 'a'.repeat(64);
 const member = Object.freeze({

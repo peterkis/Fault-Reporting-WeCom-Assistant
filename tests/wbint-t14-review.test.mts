@@ -2,10 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createP2016ManualReviewFacade} from '../src/p2-016-manual-review-facade.mjs';
-import type {ManualReviewFacadeOptions} from '../src/p2-016-manual-review-facade.mjs';
+import {createManualReviewStore} from '../app/server/src/p2-015-manual-review.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createP2016ManualReviewFacade} from '../app/server/src/p2-016-manual-review-facade.mjs';
+import type {ManualReviewFacadeOptions} from '../app/server/src/p2-016-manual-review-facade.mjs';
 
 test('T14 receipt and captured Review intent schemas reject unrelated facts and unsafe versions',async()=>{
   const base={review_id:randomUUID(),client_command_id:randomUUID()},unknown={...base,state:'UNKNOWN'};

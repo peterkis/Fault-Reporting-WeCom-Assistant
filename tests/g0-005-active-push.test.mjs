@@ -6,7 +6,7 @@ import {
   buildOutboundMessages,
   parsePushArgs,
   runPushProbe,
-} from '../src/g0-005-active-push.mjs';
+} from '../app/server/src/g0-005-active-push.mjs';
 
 class FakeClient extends EventEmitter {
   constructor(sendMessage) {

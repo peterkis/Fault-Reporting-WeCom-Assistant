@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {withG2Runtime} from './helpers/p2-g2-runtime-harness.mjs';
-import {createWeComMemberDirectory} from '../src/p2-015-wecom-member-directory.mjs';
+import {createWeComMemberDirectory} from '../app/server/src/p2-015-wecom-member-directory.mjs';
 import {launchSystemBrowser} from './helpers/p2-006-browser-harness.mjs';
 
 test('group fault exposes trusted contact only through authorized internal ticket endpoint',async()=>{

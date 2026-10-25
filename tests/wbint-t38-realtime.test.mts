@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorkbenchRealtimeClient,decodeWorkbenchRealtimeHint,WORKBENCH_REALTIME_EVENT_TYPES} from '../src/workbench-realtime-client.mjs';
-import {REALTIME_EVENT_TYPES} from '../src/p2-003-realtime-event-log.mjs';
-import type {RealtimeTransport} from '../src/workbench-realtime-client.mjs';
+import {createWorkbenchRealtimeClient,decodeWorkbenchRealtimeHint,WORKBENCH_REALTIME_EVENT_TYPES} from '../app/pc-admin/src/realtime/workbench-realtime-client.mjs';
+import {REALTIME_EVENT_TYPES} from '../app/server/src/p2-003-realtime-event-log.mjs';
+import type {RealtimeTransport} from '../app/pc-admin/src/realtime/workbench-realtime-client.mjs';
 import type {WorkbenchRealtimeStatus} from '../contracts/workbench_realtime_contracts.js';
 const capability={realtime_sse_enabled:true,realtime_sse_available:true,sse_endpoint:'/api/realtime/events?scope=workbench' as const,polling_interval_ms:5000,expires_epoch_ms:'1800000000000',authorization_revision:'a'.repeat(64)};
 function transport(){

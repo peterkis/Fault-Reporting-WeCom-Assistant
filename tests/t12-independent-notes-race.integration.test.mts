@@ -4,8 +4,8 @@ import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 test('independent T12 and existing notes serialize real receipt FK and stream waits without a deadlock, enabling no legacy business capability',async()=>{
  await withT12Fixture(async f=>{

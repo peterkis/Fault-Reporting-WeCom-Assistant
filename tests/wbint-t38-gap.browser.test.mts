@@ -5,10 +5,10 @@ import {mkdtemp,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {Server} from 'node:http';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {cleanupRealtimeRetention,REALTIME_MAX_CLEANUP_LIMIT} from '../src/p2-003-realtime-event-log.mjs';
+import {cleanupRealtimeRetention,REALTIME_MAX_CLEANUP_LIMIT} from '../app/server/src/p2-003-realtime-event-log.mjs';
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
 interface Fixture {pool:PostgresPool;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>};disconnectRealtimePrincipal:(index?:number)=>unknown}}
 test('a real retained replay gap falls back to current GET facts and creates a fresh native source without carrying the obsolete cursor',async()=>{

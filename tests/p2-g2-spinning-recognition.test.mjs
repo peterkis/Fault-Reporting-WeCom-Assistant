@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
+import { createRuleEngine } from '../app/server/src/p2-007-rule-engine.mjs';
 const engine = createRuleEngine();
 const evaluate = text => engine.evaluate({ text, source_ref: 'synthetic-g2-spinning', observed_at: '2026-09-08 12:00:00' });
 

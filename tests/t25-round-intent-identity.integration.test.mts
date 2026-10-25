@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 
 test('App FIRST and completion identities survive same-round withdrawal, reacceptance, handoffs, waiting and replay while a new round adds exactly its own two intents',{timeout:240000},async()=>{

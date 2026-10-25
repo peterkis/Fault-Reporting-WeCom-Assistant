@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ticketNotificationP2016 } from '../src/p2-016-ticket-notification-policy.mjs';
+import { ticketNotificationP2016 } from '../app/server/src/p2-016-ticket-notification-policy.mjs';
 
 test('default private progress policy sends accepted and final closed only',()=>{
   const events=[['ticket.created','NEW'],['ticket.accepted','ACCEPTED'],['ticket.started','IN_PROGRESS'],

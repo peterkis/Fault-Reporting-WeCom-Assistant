@@ -2,10 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('raw recovery false creates no recovery storage and a real Web Store Port Ticket has no fabricated conversation editor',async()=>{

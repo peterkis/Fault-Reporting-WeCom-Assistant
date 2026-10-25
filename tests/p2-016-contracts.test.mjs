@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
-import { snapshotP2016,publicP2016,flagsP2016,hashP2016,limitP2016,textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { normalizeP2016TicketCommand } from '../src/p2-016-ticket-command-facade.mjs';
-import { validateP2016CardModel,buildP2016TemplateCard,reporterCardLinkP2016 } from '../src/p2-016-template-card-builder.mjs';
-import { ticketNotificationP2016 } from '../src/p2-016-ticket-notification-policy.mjs';
-import { createP2016ReporterAccess } from '../src/p2-016-reporter-access.mjs';
-import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
-import { createP2016InboundScope } from '../src/p2-016-inbound-scope.mjs';
+import { snapshotP2016,publicP2016,flagsP2016,hashP2016,limitP2016,textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { normalizeP2016TicketCommand } from '../app/server/src/p2-016-ticket-command-facade.mjs';
+import { validateP2016CardModel,buildP2016TemplateCard,reporterCardLinkP2016 } from '../app/server/src/p2-016-template-card-builder.mjs';
+import { ticketNotificationP2016 } from '../app/server/src/p2-016-ticket-notification-policy.mjs';
+import { createP2016ReporterAccess } from '../app/server/src/p2-016-reporter-access.mjs';
+import { createP2016WeComSender } from '../app/server/src/p2-016-wecom-sender.mjs';
+import { createP2016InboundScope } from '../app/server/src/p2-016-inbound-scope.mjs';
 const model=()=>({public_ref:'p'.repeat(32),suffix:'0012',status:'QUEUED',version:1,notification_type:'TICKET_CREATED',source:'GROUP',occurred_at:'2026-09-04 10:00:00'});
 const command=()=>({ticket_id:randomUUID(),client_command_id:randomUUID(),action:'accept',expected_version:1,reason_code:'TEST'});
 test('P2-016 plain JSON excludes active objects without invoking user hooks',()=>{

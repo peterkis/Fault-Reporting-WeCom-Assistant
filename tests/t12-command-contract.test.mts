@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {normalizeTakeoverCompletionCommand} from '../src/workbench-ticket-takeover-completion.mjs';
+import {normalizeTakeoverCompletionCommand} from '../app/server/src/workbench-ticket-takeover-completion.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 
 test('closed composite contracts retain one immutable confirmed capture and reject hidden authority, unbounded fields and ambiguous communication',async()=>{

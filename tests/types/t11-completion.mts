@@ -1,5 +1,5 @@
-import {normalizeCompletionCommand} from '../../src/workbench-ticket-completion.mjs';
-import type {createTicketStaffCompletionService} from '../../src/workbench-ticket-completion.mjs';
+import {normalizeCompletionCommand} from '../../app/server/src/workbench-ticket-completion.mjs';
+import type {createTicketStaffCompletionService} from '../../app/server/src/workbench-ticket-completion.mjs';
 import type {P2016CompletionCommand,P2016CompletionResult} from '../../contracts/p2_016_contracts.js';
 declare const external:unknown;
 const normalized=normalizeCompletionCommand(external);

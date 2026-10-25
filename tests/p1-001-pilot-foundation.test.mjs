@@ -9,7 +9,7 @@ import {
   parseCliArgs,
   runPilotPreflight,
   validatePilotConfig,
-} from '../src/p1-001-pilot-foundation.mjs';
+} from '../app/server/src/p1-001-pilot-foundation.mjs';
 
 const baseEnv = {
   ARCHITECTURE_BASELINE: 'V1.2',

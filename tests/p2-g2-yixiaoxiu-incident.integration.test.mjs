@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {fixtureP2012} from './helpers/p2-012-postgres-harness.mjs';
 import {withYxxDatabase,entryConfig,entryKey,entryOrigin,listenYxx,stopYxx,httpBrowser,loginYxx,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2012WorkbenchExtension} from '../src/p2-012-workbench-assembly.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxReadonlyServer} from '../src/p2-g2-yixiaoxiu-server.mjs';
-import {textHashP2016,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
+import {createP2012WorkbenchExtension} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxReadonlyServer} from '../app/server/src/p2-g2-yixiaoxiu-server.mjs';
+import {textHashP2016,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
 
 test('YXX-38 member-safe Incident milestones disappear on unlink without changing the other reporter facts',async()=>{
   await withYxxDatabase(async({pool,access})=>{

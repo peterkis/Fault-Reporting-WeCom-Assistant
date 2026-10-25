@@ -9,13 +9,13 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withT37Fixture,object,rows,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
-import {createSafeActionExecutor,createExistingTicketCommandPort} from '../src/p2-015-safe-action-executor.mjs';
-import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
-import {createDecisionStore} from '../src/p2-015-decision-store.mjs';
-import {createServiceIntakeDecisionPort} from '../src/p2-015-service-intake-decision-port.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import {createSafeActionExecutor,createExistingTicketCommandPort} from '../app/server/src/p2-015-safe-action-executor.mjs';
+import {createManualReviewStore} from '../app/server/src/p2-015-manual-review.mjs';
+import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
+import {createServiceIntakeDecisionPort} from '../app/server/src/p2-015-service-intake-decision-port.mjs';
 
 interface OriginLeg {journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}
 interface SessionRow {id:string;thread_id:string;row_version:string;status:string;service_intake_id:string}

@@ -6,7 +6,7 @@ import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
 import {acceptedSetup,http,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 test('T12 alone exposes its current cycle and canonical choices without enabling either legacy T07 or T11 commands',async()=>{
  let phase='INITIAL_FIXTURE';

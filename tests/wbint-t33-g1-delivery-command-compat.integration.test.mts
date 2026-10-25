@@ -4,16 +4,16 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
 import {test} from 'node:test';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {applyP2G1Migrations} from '../src/p2-g1-migrations.mjs';
-import {createP2G1Runtime} from '../src/p2-g1-runtime.mjs';
-import {createP2G1PilotOperationalIntake} from '../src/p2-g1-human-only-assembly.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../src/p2-001-conversation-contracts.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createMockCommunicationSender} from '../src/p2-004-communication-sender-port.mjs';
-import {CONVERSATION_DELIVERY_MIGRATION_ID,conversationDeliveryReceiptSchemaShape} from '../src/p2-006-delivery-command-schema.mjs';
-import {migrateConversationDeliveryCommands} from '../scripts/conversation-delivery-commands-migrate.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {applyP2G1Migrations} from '../app/server/src/p2-g1-migrations.mjs';
+import {createP2G1Runtime} from '../app/server/src/p2-g1-runtime.mjs';
+import {createP2G1PilotOperationalIntake} from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../app/server/src/p2-001-conversation-contracts.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createMockCommunicationSender} from '../app/server/src/p2-004-communication-sender-port.mjs';
+import {CONVERSATION_DELIVERY_MIGRATION_ID,conversationDeliveryReceiptSchemaShape} from '../app/server/src/p2-006-delivery-command-schema.mjs';
+import {migrateConversationDeliveryCommands} from '../app/server/scripts/conversation-delivery-commands-migrate.mjs';
 import {catalogSnapshot,withP2006IsolatedDatabase} from './helpers/p2-006-postgres-harness.mjs';
 
 function isRecord(value:unknown):value is Record<string,unknown>{

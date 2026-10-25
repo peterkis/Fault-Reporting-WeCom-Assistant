@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createYxxDelegatedIdentityMapping,yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createYxxDelegatedIdentityMapping,yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import {createYxxMemberAuthorizer} from '../src/p2-g2-yixiaoxiu-authorizer.mjs';
+import {validateYxxEntryConfig} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import {createYxxMemberAuthorizer} from '../app/server/src/p2-g2-yixiaoxiu-authorizer.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {main as serve} from '../scripts/p2-g2-yixiaoxiu-serve.mjs';
+import {main as serve} from '../app/server/scripts/p2-g2-yixiaoxiu-serve.mjs';
 import {mkdtempSync,writeFileSync,unlinkSync,rmdirSync} from 'node:fs';
-import {readYxxG2AppConfiguration} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
+import {readYxxG2AppConfiguration} from '../app/server/src/p2-g2-yixiaoxiu-g2-config.mjs';
 
 const config={...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:['synthetic-A','synthetic-B']};
 const success={errcode:0,open_userid_list:[{userid:'synthetic-a',open_userid:'encrypted-A'},{userid:'synthetic-B',open_userid:'encrypted-B'}],invalid_userid_list:[]};

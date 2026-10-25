@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {personalReadCommand,personalReadRevision} from '../src/workbench-personal-read.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {personalReadCommand,personalReadRevision} from '../app/server/src/workbench-personal-read.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('T35 public personal-read contracts stay closed, bounded, private, currently authorized and default off',async()=>{
   const id=randomUUID(),valid={client_command_id:id,source_ref:'channel:9223372036854775807',revision:'9223372036854775807'};

@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('a truncated same-person responsibility chain fails closed rather than treating a group-only transfer as a new unstarted segment',async()=>{
  await withT08Fixture(async fixture=>{

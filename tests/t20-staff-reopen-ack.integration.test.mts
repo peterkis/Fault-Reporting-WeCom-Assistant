@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {t20Object} from './helpers/t20-feedback-fixture.mjs';
 
 test('independent HANDLER reads its original STAFF_REOPEN purpose without a resend or raw recovery prerequisite',async()=>{

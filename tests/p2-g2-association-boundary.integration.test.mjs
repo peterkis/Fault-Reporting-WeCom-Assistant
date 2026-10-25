@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
-import { createReporterDirectoryPort } from '../src/p2-015-contact-journey.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import { createReporterDirectoryPort } from '../app/server/src/p2-015-contact-journey.mjs';
 import { G2_RULE_FLAGS } from './helpers/p2-g2-runtime-harness.mjs';
-import { createContinuationRefService } from '../src/p2-015-continuation-ref.mjs';
-import { hmacIdentity } from '../src/p2-015-domain-contracts.mjs';
-import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
+import { createContinuationRefService } from '../app/server/src/p2-015-continuation-ref.mjs';
+import { hmacIdentity } from '../app/server/src/p2-015-domain-contracts.mjs';
+import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { g2BusinessCounts,g2DecisionObservation } from './helpers/p2-g2-gold-observation.mjs';
 
 test('G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites',async t=>{

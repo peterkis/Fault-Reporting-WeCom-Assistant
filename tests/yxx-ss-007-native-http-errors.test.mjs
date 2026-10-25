@@ -1,8 +1,9 @@
+// Explicit retired V1 UI fixture regression; not new-H5 or production-page acceptance.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
-import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
-import { createServiceCatalog } from '../src/p2-007-service-catalog.mjs';
+import { createYxxSelfServiceNativeHttpWithRetiredUi as createYxxSelfServiceNativeHttp } from './helpers/retired-self-service-ui.mjs';
+import { createServiceCatalog } from '../app/server/src/p2-007-service-catalog.mjs';
 
 const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
 

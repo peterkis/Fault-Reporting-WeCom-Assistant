@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import { test } from 'node:test';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { appendTicketEvent } from '../src/p1-006-ticket-state-actions.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016Runtime } from '../src/p2-016-runtime.mjs';
-import { transactionP2016 } from '../src/p2-016-domain-contracts.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { appendTicketEvent } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016Runtime } from '../app/server/src/p2-016-runtime.mjs';
+import { transactionP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import { launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 for(const [width,height] of [[1440,900],[390,844]])test('Reporter browser '+width+'x'+height+' real DB/session, fragment removal, refresh, timezone, safe data and logout',{timeout:90000},async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016browser',run:async({pool,databaseUrl})=>{

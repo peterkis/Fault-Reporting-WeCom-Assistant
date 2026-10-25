@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createP2012IncidentCommandService } from '../src/p2-012-incident-command-service.mjs';
-import { createP2012IncidentQuery } from '../src/p2-012-incident-query.mjs';
-import { createP2012WorkbenchExtension } from '../src/p2-012-workbench-assembly.mjs';
-import { createP2012NotificationPolicy } from '../src/p2-012-notification-policy.mjs';
+import { createP2012IncidentCommandService } from '../app/server/src/p2-012-incident-command-service.mjs';
+import { createP2012IncidentQuery } from '../app/server/src/p2-012-incident-query.mjs';
+import { createP2012WorkbenchExtension } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { createP2012NotificationPolicy } from '../app/server/src/p2-012-notification-policy.mjs';
 import { withP2012Database,applyThrough031,apply032Raw,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 const command=(action,id,version='1',extra={})=>({action,client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED',
@@ -54,7 +54,7 @@ test('P2-012 maintenance expires a bounded ordered batch through private SYSTEM 
       (SELECT count(*) FROM communication.message)::int AS messages,(SELECT count(*) FROM communication.outbox)::int AS outboxes,
       (SELECT count(*) FROM communication.delivery)::int AS deliveries`)).rows[0];
     assert.deepEqual(after,before);
-    assert.deepEqual(await createP2012WorkbenchExtension({pool:{query(){assert.fail('disabled scanned');}}}).runOnce(),{processed:0});
+    assert.deepEqual(await createP2012WorkbenchExtension({pool:{query(){assert.fail('disabled scanned');},connect(){assert.fail('disabled connected');}}}).runOnce(),{processed:0});
   }});await assertNoP2012Residual({databaseUrl});
 });
 

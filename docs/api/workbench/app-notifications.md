@@ -1,6 +1,6 @@
 # 医小修 App 原来源轮次通知（WBINT-T25）
 
-2026-10-20 前向调整见 [ADR-0034](../../../adr/0034_mvp_notifications_and_application_members.md)。human-v1 使用 `FIRST_HANDLING`（首次实际接单或开始）与 `STAFF_COMPLETED`，派单、转派、等待不通知。063 为原 Web Request 追加不可改投的应用收件绑定；新 `VERIFIED_APP_OPENID` 模式不依赖逐人名单或当前 OAuth 会话定位通知。发送前在事务外核验当前应用成员，随后保留原来源、绑定、物理留存和等待后终检。原生应用身份直接作为应用收件人，不能当作原始 userid 再转换。个人卡片没有顶部渠道来源，已受理标题为“工程师正在处理你的工单”。下文 T25 保留为原兼容模式合同和历史证据；新 H5 接口见[接入说明](../../../h5/README.md)。
+2026-10-20 前向调整见 [ADR-0034](../../../adr/0034_mvp_notifications_and_application_members.md)。human-v1 使用 `FIRST_HANDLING`（首次实际接单或开始）与 `STAFF_COMPLETED`，派单、转派、等待不通知。063 为原 Web Request 追加不可改投的应用收件绑定；新 `VERIFIED_APP_OPENID` 模式不依赖逐人名单或当前 OAuth 会话定位通知。发送前在事务外核验当前应用成员，随后保留原来源、绑定、物理留存和等待后终检。原生应用身份直接作为应用收件人，不能当作原始 userid 再转换。个人卡片没有顶部渠道来源，已受理标题为“工程师正在处理你的工单”。下文 T25 保留为原兼容模式合同和历史证据；新 H5 接口见[接入说明](../../../app/h5/README.md)。
 
 已实现、默认关闭；仅本地隔离合成验证。实际实现和各被测祖先见 [T25 执行记录](../../../plans/admin-workbench-integration/execution/t25.md)。没有真实送达或现场批准。
 
@@ -32,7 +32,7 @@ Resolver 1秒、闭合结果≤8KiB。SDK 链共享5秒 signal，credential/fetc
 
 两者沿既有 login/callback 当前 OAuth 与独立对象归属。H5 MEMBER_SELF_SERVICE 可 MY_REPORTS=true/SELF_SERVICE=false，只读；MANUAL READ 核对 canonical member HMAC、原 scope/journey、ACTIVE public-ref/App binding 和物理 retention；reader await 与 COMMIT 后复查当前 OAuth。MANUAL 不进入 BOT_TICKET/Bot feedback。**保留匹配配置并 app.enabled=false 时历史本人 READ 继续有效**，不调用发送 Resolver；app=null 不是该读取装配。timeline 仅安全里程碑/批准的≤500字完工摘要，内部过程不可见。
 
-源码：`src/p2-g2-yixiaoxiu-authorizer.mts:19–100`；`src/yxx-self-service-native-http.mts:217–233,325–331,387–404`；`src/yxx-self-service-query.mts:300–336`；`src/p2-016-reporter-timeline.mts:36–49`；`contracts/p2_016_contracts.d.ts:34`；`contracts/p2_016_ticket_notification.schema.json:18,111`；`web/admin-workbench/src/api/client.ts:130–144`。
+源码：`src/p2-g2-yixiaoxiu-authorizer.mts:19–100`；`src/yxx-self-service-native-http.mts:217–233,325–331,387–404`；`src/yxx-self-service-query.mts:300–336`；`src/p2-016-reporter-timeline.mts:36–49`；`contracts/p2_016_contracts.d.ts:34`；`contracts/p2_016_ticket_notification.schema.json:18,111`；`app/pc-admin/src/api/client.ts:130–144`。
 
 ## 3. SDK 与原恢复
 
@@ -44,7 +44,7 @@ Resolver 1秒、闭合结果≤8KiB。SDK 链共享5秒 signal，credential/fetc
 
 ## 4. 合同、资源、关闭
 
-当前[窄配置types](../../../contracts/workbench_app_notification_contracts.d.ts)、[安全Delivery Schema](../../../contracts/p2_016_ticket_notification.schema.json)、[目标核验](../../../src/workbench-app-notification-target.mts)、[实际App Sender](../../../src/workbench-app-notification-sender.mts)和[原Runtime](../../../src/p2-016-runtime.mts)是实现入口。公共route_kind仅允许YIXIAOXIU_APP，且destination_type必须PERSON；node/cycle_no成对。成员和管理端仍独立权限域，不公开账号、目标、绑定、mapping/proof或SDK receipt。
+当前[窄配置types](../../../contracts/workbench_app_notification_contracts.d.ts)、[安全Delivery Schema](../../../contracts/p2_016_ticket_notification.schema.json)、[目标核验](../../../app/server/src/workbench-app-notification-target.mts)、[实际App Sender](../../../app/server/src/workbench-app-notification-sender.mts)和[原Runtime](../../../app/server/src/p2-016-runtime.mts)是实现入口。公共route_kind仅允许YIXIAOXIU_APP，且destination_type必须PERSON；node/cycle_no成对。成员和管理端仍独立权限域，不公开账号、目标、绑定、mapping/proof或SDK receipt。
 
 T25无数据库变更；054仅预留，无SQL文件。旧033/041/045/051/052不改，无第二Core/Outbox/Worker或新HTTP命令。消费批次沿20候选及(cycle_id,node)游标；复用单App/Worker、Communication并发1、Gateway单活、SSE32及池总建议≤8。SDK响应≤8192字节，共享5秒截止；Resolver≤8192字节/1秒。只验证这些有界场景，不声称2C4G现场容量。
 

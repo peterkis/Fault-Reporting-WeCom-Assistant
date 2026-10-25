@@ -86,7 +86,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        node .build/runtime/scripts/migrate-current-baseline.mjs
+        node .build/runtime/app/server/scripts/migrate-current-baseline.mjs
         node --input-type=module <<'NODE'
         import {runSelection} from './.build/tools/run-tests.mjs';
         import {loadRoutes,select} from './.build/tools/routing.mjs';
@@ -182,7 +182,7 @@ jobs:
         mkdir -p "$OUT"
         node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
         npm run migration:build > "$OUT/bootstrap-build.txt" 2>&1
-        node .build/runtime/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
+        node .build/runtime/app/server/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
         if ! SHARD_ID="$SHARD/4" MIGRATION_REPORT_DIR="$OUT/tests" node --input-type=module -e "import {runSelection} from './.build/tools/run-tests.mjs';import {currentSelection} from './.build/tools/current-acceptance.mjs';runSelection(process.cwd(),currentSelection(process.cwd(),process.env.SHARD_ID),{reportDir:process.env.MIGRATION_REPORT_DIR});" > "$OUT/gate.txt" 2>&1; then
           tail -n 100 "$OUT/gate.txt"
           exit 1
@@ -256,7 +256,7 @@ jobs:
         cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
         git rev-parse HEAD > "$OUT/source-sha.txt"
         git diff --exit-code
-        node .build/runtime/scripts/yxx-self-service-readiness.mjs
+        node .build/runtime/app/server/scripts/yxx-self-service-readiness.mjs
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       if: always()
       with:
@@ -314,7 +314,7 @@ jobs:
         set -euo pipefail
         OUT="$RUNNER_TEMP/types-baseline"
         printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('CURRENT_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
-        node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
+        node --import "$OUT/offline-guard.mjs" app/server/scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
     - name: Preserve the original SS009 rejection on current source
       shell: bash
       run: |
@@ -322,7 +322,7 @@ jobs:
         OUT="$RUNNER_TEMP/types-baseline"
         # The unchanged SS009 command is historical: retain its current rejection.
         RC=0
-        node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?
+        node app/server/scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?
         echo "$RC" > "$OUT/historical-command-on-current-exit.txt"
         test "$RC" = 1
         grep -q YXX_VERIFICATION_REJECTED "$OUT/historical-command-on-current.txt"

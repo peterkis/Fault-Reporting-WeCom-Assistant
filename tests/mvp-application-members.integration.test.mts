@@ -5,20 +5,20 @@ import {randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {entryConfig,entryKey,listenYxx,stopYxx} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createWeComOAuthServer} from '../src/p2-g2-wecom-oauth-server.mjs';
-import {createYxxSelfServiceExtension} from '../src/yxx-self-service-runtime.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import {createApplicationMemberVerifier} from '../src/wecom-application-member.mjs';
-import {migrateBotReporterFeedback} from '../scripts/bot-reporter-feedback-migrate.mjs';
-import {createWorkbenchNotificationOptions} from '../src/human-workbench-configuration.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {createP2016OrchestrationWorker} from '../src/p2-016-orchestration-adapters.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
-import {createMvpNotificationAdmission} from '../src/mvp-group-replies.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createWeComOAuthServer} from '../app/server/src/p2-g2-wecom-oauth-server.mjs';
+import {createYxxSelfServiceExtension} from '../app/server/src/yxx-self-service-runtime.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {validateYxxEntryConfig} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import {createApplicationMemberVerifier} from '../app/server/src/wecom-application-member.mjs';
+import {migrateBotReporterFeedback} from '../app/server/scripts/bot-reporter-feedback-migrate.mjs';
+import {createWorkbenchNotificationOptions} from '../app/server/src/human-workbench-configuration.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {createP2016OrchestrationWorker} from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
+import {createMvpNotificationAdmission} from '../app/server/src/mvp-group-replies.mjs';
 
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function nativeClient(base:string,origin:string){

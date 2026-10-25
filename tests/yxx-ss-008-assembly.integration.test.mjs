@@ -3,23 +3,24 @@ import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { fork } from 'node:child_process';
 import { request as httpRequest } from 'node:http';
-import { createYxxProfile } from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import { createWeComWebOAuth } from '../src/p2-g2-wecom-web-oauth.mjs';
-import { createYxxDelegatedIdentityMapping } from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { migrateCurrentBaseline, migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
+import { createYxxProfile } from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import { createYxxH5Static } from '../app/server/src/yxx-h5-static.mjs';
+import { createWeComWebOAuth } from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import { createYxxDelegatedIdentityMapping } from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { migrateCurrentBaseline, migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
-import { createPilotWorkbenchAuthorizationAdapter } from '../src/p2-006-workbench-authorization.mjs';
-import { listAuthorizedRealtimeEvents, normalizeRealtimeAuthorization } from '../src/p2-003-realtime-event-log.mjs';
+import { createPilotWorkbenchAuthorizationAdapter } from '../app/server/src/p2-006-workbench-authorization.mjs';
+import { listAuthorizedRealtimeEvents, normalizeRealtimeAuthorization } from '../app/server/src/p2-003-realtime-event-log.mjs';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
-import { g2DatabaseIdentity, minimalG2Environment } from '../src/p2-g2-validation-config.mjs';
-import { yxxSelfServiceRoleEnvironment } from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
-import { yxxIdentityConfigHash } from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createServiceCatalog,loadServiceCatalog} from '../src/p2-007-service-catalog.mjs';
-import {createRuleEngine} from '../src/p2-007-rule-engine.mjs';
+import { g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2DatabaseIdentity, minimalG2Environment } from '../app/server/src/p2-g2-validation-config.mjs';
+import { yxxSelfServiceRoleEnvironment } from '../app/server/src/p2-g2-yixiaoxiu-g2-config.mjs';
+import { yxxIdentityConfigHash } from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createServiceCatalog,loadServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
+import {createRuleEngine} from '../app/server/src/p2-007-rule-engine.mjs';
 
 const origin='https://127.0.0.1';
 const secret='ss008-synthetic-secret-at-least-32-bytes';
@@ -160,11 +161,18 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
     await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
     const identityMapping=await mapping();
     const options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret};
-    const self=createYxxProfile({...options,profile:'MEMBER_SELF_SERVICE',oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
+    // This V1 API assembly explicitly mounts the current formal H5 presentation.
+    // Its V2 business runtime has separate registered integration obligations.
+    const self=createYxxProfile({...options,profile:'MEMBER_SELF_SERVICE',oauth:createWeComWebOAuth(oauthOptions),h5Presentation:createYxxH5Static({enabled:true}),yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
+    const defaultClosed=createYxxProfile({...options,profile:'MEMBER_SELF_SERVICE',oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:flags}});
     let full,read;
     try{
+      try{await defaultClosed.start();const closed=browser(defaultClosed.server);await login(closed);assert.equal((await closed.request('/wecom/yixiaoxiu/')).status,503,'the persistent default must not enable the new presentation');}
+      finally{await defaultClosed.stop();}
       await self.start();const a=browser(self.server),b=browser(self.server);await login(a);await login(b,'b');
-      assert.equal((await a.request('/wecom/yixiaoxiu/')).status,200);
+      const page=await a.request('/wecom/yixiaoxiu/');assert.equal(page.status,200);
+      const module=/<script[^>]*type="module"[^>]*src="([^"]+)"/u.exec(page.text)?.[1];assert.ok(module&&module.startsWith('/wecom/yixiaoxiu/assets/'));
+      assert.equal((await a.request(module)).status,200,'the positive loads the actual compiled H5 asset');
       const bootstrap=(await a.request('/api/yixiaoxiu/bootstrap')).json();
       const catalogResponse=await a.request('/api/yixiaoxiu/service-catalog');
       assert.equal(catalogResponse.status,200);
@@ -219,7 +227,7 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
       const flagEnv=Object.fromEntries(Object.entries(flags).map(([key,value])=>[key,String(value)]));
       assert.deepEqual(yxxSelfServiceRoleEnvironment('APP',flagEnv),yxxSelfServiceRoleEnvironment('WORKER',flagEnv));
       assert.deepEqual(yxxSelfServiceRoleEnvironment('GATEWAY',flagEnv),{});
-      const worker=fork('scripts/p2-g2-process-role.mjs',['--role=worker'],{windowsHide:true,execArgv:['--expose-gc'],
+      const worker=fork('app/server/scripts/p2-g2-process-role.mjs',['--role=worker'],{windowsHide:true,execArgv:['--expose-gc'],
         env:{...minimalG2Environment(),...fixture.env,PILOT_DATABASE_URL:isolated,P2_G2_MANIFEST:JSON.stringify(fixture.manifest),P2_G1_SENDER_ENABLED:'false',...yxxSelfServiceRoleEnvironment('WORKER',flagEnv)},stdio:['ignore','ignore','ignore','ipc']});
       const messages=[];worker.on('message',value=>messages.push(value));
       try{

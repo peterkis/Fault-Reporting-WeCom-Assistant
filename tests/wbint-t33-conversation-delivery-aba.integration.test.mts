@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../src/p2-001-conversation-contracts.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../app/server/src/p2-001-conversation-contracts.mjs';
 import {t33WholeHttp,t33Record,t33Text} from './helpers/t33-whole-fixture.mjs';
 
 function version(value:unknown):number{

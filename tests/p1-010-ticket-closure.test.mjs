@@ -1,39 +1,39 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
-} from '../src/p1-003-channel-message-inbox.mjs';
+} from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
   applyServiceIntakeMigration,
   createServiceIntakeProcessor,
-} from '../src/p1-004-service-intake.mjs';
+} from '../app/server/src/p1-004-service-intake.mjs';
 import {
   applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
-} from '../src/p1-005-pilot-ticket-core.mjs';
+} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
   applyTicketStateActionMigration,
   createTicketActionService,
-} from '../src/p1-006-ticket-state-actions.mjs';
+} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
   applyNotificationOutboxMigration,
   createNotificationOutbox,
-} from '../src/p1-007-notification-outbox.mjs';
+} from '../app/server/src/p1-007-notification-outbox.mjs';
 import {
   applyPilotAccessMigration,
   createPilotAccessService,
-} from '../src/p1-009-pilot-access-workbench.mjs';
+} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {
   applyTicketClosureMigration,
   createTicketClosureService,
   createTicketLifecycleProcessor,
-} from '../src/p1-010-ticket-closure.mjs';
+} from '../app/server/src/p1-010-ticket-closure.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;

@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createP2016DirectIntakeProcessor } from '../src/p2-016-direct-intake.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createP2016DirectIntakeProcessor } from '../app/server/src/p2-016-direct-intake.mjs';
+import { shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 
 async function exercise({ gap, followUp, expectedJourneys, expectedTickets, mutate = null, idleTimeoutMs,
   otherReporter = false, otherBot = false, gapFromLastActivity = false, expectedEndedReason }) {

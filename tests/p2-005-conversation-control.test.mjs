@@ -10,8 +10,8 @@ import {
   normalizeConversationControlCommand, computeConversationControlCommandHash,
   createDenyAllConversationControlAuthorization, createConversationControlService,
   captureGenerationFence, assertGenerationFence, createAssignedCommunicationAuthorizer,
-} from '../src/p2-005-conversation-control.mjs';
-import { mapAssignmentToRealtimeEvent, mapControlEventToTimelineSourceRecord, mapHandoffToRealtimeEvent, mapReadCursorToRealtimeEvent } from '../src/p2-005-conversation-control-projections.mjs';
+} from '../app/server/src/p2-005-conversation-control.mjs';
+import { mapAssignmentToRealtimeEvent, mapControlEventToTimelineSourceRecord, mapHandoffToRealtimeEvent, mapReadCursorToRealtimeEvent } from '../app/server/src/p2-005-conversation-control-projections.mjs';
 
 const SESSION = '018f6f15-7a11-7cc0-9e40-111111111111';
 const ACTOR = '018f6f15-7a11-7cc0-9e40-222222222222';

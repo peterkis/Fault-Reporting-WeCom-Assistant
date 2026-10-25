@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { createAliasResolver } from '../../src/p2-007-alias-resolver.mjs';
-import { P2007DomainError } from '../../src/p2-007-domain-utils.mjs';
-import { createRuleEngine } from '../../src/p2-007-rule-engine.mjs';
-import {createServiceCatalog,loadServiceCatalog} from '../../src/p2-007-service-catalog.mjs';
+import { createAliasResolver } from '../../app/server/src/p2-007-alias-resolver.mjs';
+import { P2007DomainError } from '../../app/server/src/p2-007-domain-utils.mjs';
+import { createRuleEngine } from '../../app/server/src/p2-007-rule-engine.mjs';
+import {createServiceCatalog,loadServiceCatalog} from '../../app/server/src/p2-007-service-catalog.mjs';
 
 const OBSERVED_AT = '2026-09-03 15:30:00';
 const dictionary = JSON.parse(readFileSync('config_examples/p2-007-alias-dictionary.example.json', 'utf8'));

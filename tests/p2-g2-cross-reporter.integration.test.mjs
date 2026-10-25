@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createIncidentCorrelationWorker } from '../src/p2-015-incident-correlation.mjs';
+import { createIncidentCorrelationWorker } from '../app/server/src/p2-015-incident-correlation.mjs';
 
 test('X031 three real independent reports generate one review candidate from persisted facts', async () => {
   const example = readFileSync('tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl', 'utf8').trim().split(/\r?\n/u).map(JSON.parse).find(r => r.case_id === 'P2-007-X031');

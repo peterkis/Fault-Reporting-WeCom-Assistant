@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {t33WholeHttp,t33Record,t33Text} from './helpers/t33-whole-fixture.mjs';
 
 test('T33 pending retry is an audited noop; proven dead letter retries once; Dispatcher cannot reconcile and CANCEL preserves UNKNOWN',{timeout:120000},async()=>{

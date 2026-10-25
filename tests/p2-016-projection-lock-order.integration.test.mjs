@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createP2016OrchestrationWorker} from '../src/p2-016-orchestration-adapters.mjs';
-import {createP2016RealtimeProjector} from '../src/p2-016-realtime-projector.mjs';
-import {createP2G1InboundProjectionCoordinator} from '../src/p2-g1-inbound-projection-coordinator.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {P2016_TEST_FLAGS} from '../src/p2-016-live-configuration.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createP2016OrchestrationWorker} from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import {createP2016RealtimeProjector} from '../app/server/src/p2-016-realtime-projector.mjs';
+import {createP2G1InboundProjectionCoordinator} from '../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {P2016_TEST_FLAGS} from '../app/server/src/p2-016-live-configuration.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
-import {migrateP2016} from '../scripts/p2-016-migrate.mjs';
+import {migrateP2016} from '../app/server/scripts/p2-016-migrate.mjs';
 
 test('PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source', {timeout:30000},async t=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'pr8lock',run:async({pool,databaseUrl})=>{

@@ -1,26 +1,26 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
-} from '../src/p1-003-channel-message-inbox.mjs';
+} from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
   applyServiceIntakeMigration,
   createServiceIntakeProcessor,
-} from '../src/p1-004-service-intake.mjs';
+} from '../app/server/src/p1-004-service-intake.mjs';
 import {
   applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
-} from '../src/p1-005-pilot-ticket-core.mjs';
+} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
   applyTicketStateActionMigration,
   createTicketActionService,
-} from '../src/p1-006-ticket-state-actions.mjs';
+} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;

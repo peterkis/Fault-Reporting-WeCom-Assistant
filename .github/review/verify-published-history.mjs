@@ -119,7 +119,7 @@ export function verifyPublishedHistory({ root = process.cwd(), expectedHead, exp
     merge_base: git(['merge-base', tested.sha, checkout]),
     shallow: false, history_overlays: false, worktree_clean: true,
     strict_readiness: 'NOT_RUN',
-    next_command: 'node scripts/validate-yxx-self-service.mjs --require-ready',
+    next_command: 'node app/server/scripts/validate-yxx-self-service.mjs --require-ready',
   };
 }
 

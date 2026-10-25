@@ -8,9 +8,9 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {randomUUID} from 'node:crypto';
-import {verifyYxxCaseTrace,evidenceHash} from '../../src/yxx-self-service-verification.mjs';
-import {G2_ROOT,g2CandidateInventory} from '../../src/p2-g2-candidate.mjs';
-import {createG2SourceAudit} from '../../src/p2-g2-source-audit.mjs';
+import {verifyYxxCaseTrace,evidenceHash} from '../../app/server/src/yxx-self-service-verification.mjs';
+import {G2_ROOT,g2CandidateInventory} from '../../app/server/src/p2-g2-candidate.mjs';
+import {createG2SourceAudit} from '../../app/server/src/p2-g2-source-audit.mjs';
 
 const BASELINE='7535ea9db15ac0e0565ac83ae7bfa0fc28a63184';
 const FIX='9bee25cab09ae10cd1e0d02c52db0364791818d9';
@@ -29,7 +29,7 @@ const experiments=[],created=[];
 const assertOwned=root=>assert.match(path.relative(path.join(G2_ROOT,'tmp'),root),/^ss009-file-coverage-(fixture|checker)-[a-f0-9-]{36}$/u);
 
 function legacy(){
-  const result=spawnSync(process.execPath,['scripts/validate-yxx-self-service.mjs','--require-ready'],{
+  const result=spawnSync(process.execPath,['app/server/scripts/validate-yxx-self-service.mjs','--require-ready'],{
     cwd:owned,encoding:'utf8',windowsHide:true,timeout:60_000,
   });
   assert.ifError(result.error);assert.equal(result.signal,null);
@@ -68,7 +68,7 @@ try{
   for(const [root,commit] of [[owned,BASELINE],[checker,FIX]]){
     assertOwned(root);git(['worktree','add','--detach',root,commit]);created.push(root);
   }
-  const {validateYxxSelfService:fixedValidator}=await import(pathToFileURL(path.join(checker,'src/yxx-self-service-verification.mjs')).href);
+  const {validateYxxSelfService:fixedValidator}=await import(pathToFileURL(path.join(checker,'app/server/src/yxx-self-service-verification.mjs')).href);
   copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));
   const original=read(reportPath),run=read(original.run.path),cases=text(original.case_trace.path).trim().split('\n').map(JSON.parse);
   const fileExecution=run.files.map(file=>{const rows=cases.filter(c=>c.file===file.path&&c.event==='test:pass'&&!c.skip&&!c.todo),identities=rows.map(c=>JSON.stringify([c.nesting,c.name,c.line??null])).sort();const pass=rows.length;return {path:file.path,total:pass,pass,fail:0,skipped:0,todo:0,identity_sha256:evidenceHash(JSON.stringify(identities))};});

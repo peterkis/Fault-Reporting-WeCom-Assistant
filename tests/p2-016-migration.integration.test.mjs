@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { migrateP2016, validateP2016Catalog, p2016CatalogHash } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016, validateP2016Catalog, p2016CatalogHash } from '../app/server/scripts/p2-016-migrate.mjs';
 import { withP2016IsolatedDatabase, applyThrough030, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;

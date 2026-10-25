@@ -1,5 +1,5 @@
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 
 /** Reuses the owned WEB01 synthetic database and current HTTP host. */

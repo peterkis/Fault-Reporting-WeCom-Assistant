@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createTicketStaffCompletionService} from '../src/workbench-ticket-completion.mjs';
-import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
-import {createP2016ReporterTimeline} from '../src/p2-016-reporter-timeline.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
-import {createPilotAccessService,createPilotWorkbenchServer} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
+import {createTicketStaffCompletionService} from '../app/server/src/workbench-ticket-completion.mjs';
+import {createP2016TicketQuery} from '../app/server/src/p2-016-ticket-query.mjs';
+import {createP2016ReporterTimeline} from '../app/server/src/p2-016-reporter-timeline.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {createPilotAccessService,createPilotWorkbenchServer} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {randomUUID} from 'node:crypto';
 
 test('current handler closes one real cycle through one HTTP completion with independent internal and safe external records',async()=>{

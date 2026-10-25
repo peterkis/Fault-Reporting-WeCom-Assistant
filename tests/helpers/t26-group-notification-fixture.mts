@@ -4,12 +4,12 @@ import {withT24Fixture} from './t24-round-notification-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {t11Http} from './t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016WeComSender} from '../../src/p2-016-wecom-sender.mjs';
-import {migrateWorkbenchSourceGroups} from '../../scripts/workbench-source-groups-migrate.mjs';
+import {createP2016WeComSender} from '../../app/server/src/p2-016-wecom-sender.mjs';
+import {migrateWorkbenchSourceGroups} from '../../app/server/scripts/workbench-source-groups-migrate.mjs';
 export function t26Object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export async function withT26Fixture(run:(context:T11Fixture)=>Promise<void>,{roundLifecycle=false,sourceGroups=false}:{roundLifecycle?:boolean;sourceGroups?:boolean}={}){
  await withT24Fixture(async original=>{

@@ -12,8 +12,8 @@ import type {IncomingMessage,ServerResponse,Server} from 'node:http';
 import {withT21DraftFixture,t21Config,t21Mapping} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import type {T21DraftFixture} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {secret} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {createYxxBrowserFixture,yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
@@ -35,7 +35,7 @@ function failure(value:unknown):unknown{return value instanceof Error?{name:valu
 
 // No substitute business response. Drop means no native fetch is called for the
 // feedback POST; hold releases the original native fetch with its original signal.
-function transport(mode:'drop'|'hold') {return `(()=>{const send=globalThis.fetch;globalThis.__t21Wire=[];globalThis.__t21PostReleased=false;globalThis.__t21PostSettled=false;globalThis.__t21HeldSignalAborted=false;
+function transport(mode:'drop'|'hold') {return `(()=>{const send=globalThis.fetch;globalThis.__t21Wire=[];globalThis.__t21ReporterCalls=0;globalThis.__t21PostReleased=false;globalThis.__t21PostSettled=false;globalThis.__t21HeldSignalAborted=false;
  if(${JSON.stringify(mode==='hold')}){
   const descriptor=Object.getOwnPropertyDescriptor(BroadcastChannel.prototype,'onmessage');if(!descriptor?.set||!descriptor.configurable)throw Error('T21_NATIVE_CALLBACK_GATE_UNAVAILABLE');const handlers=new Map(),queued=[];let delay=false,observer,status;
   globalThis.__t21RealLogoutStatus=null;globalThis.__t21LogoutGate=null;
@@ -45,7 +45,7 @@ function transport(mode:'drop'|'hold') {return `(()=>{const send=globalThis.fetc
   globalThis.__t21ArmLogoutCallbackGate=()=>{status=document.querySelector('#status');if(!status)throw Error('T21_LOGOUT_STATUS_REQUIRED');delay=true;globalThis.__t21LogoutGate={timeOrigin:performance.timeOrigin,queued:[],released:[],real_status:null,success_dom:false,after_release:null,completed:false};observer=new MutationObserver(maybeRelease);observer.observe(status,{childList:true,subtree:true,characterData:true});};
   globalThis.__t21StopLogoutCallbackGate=()=>{observer?.disconnect();release();for(const [channel,handler]of handlers)descriptor.set.call(channel,handler);Object.defineProperty(BroadcastChannel.prototype,'onmessage',descriptor);};
  }
- globalThis.fetch=async(input,init)=>{const path=new URL(typeof input==='string'?input:input.url,location.origin).pathname,method=init?.method??'GET';
+ globalThis.fetch=async(input,init)=>{const path=new URL(typeof input==='string'?input:input.url,location.origin).pathname,method=init?.method??'GET';if(path.startsWith('/api/reporter/'))globalThis.__t21ReporterCalls++;
   if(method==='POST'&&/^\\/api\\/reporter\\/tickets\\/[A-Za-z0-9_-]{32}\\/feedback$/.test(path)){
    const command=JSON.parse(init.body),row={method,path,status:null,commandId:command.client_command_id,body:null};globalThis.__t21Wire.push(row);
    ${mode==='drop'?"throw new TypeError('SYNTHETIC_REQUEST_NEVER_REACHED_SERVER');":"await new Promise(resolve=>{globalThis.__t21ReleasePost=resolve;});globalThis.__t21PostReleased=true;globalThis.__t21HeldSignalAborted=init.signal?.aborted===true;"}
@@ -90,7 +90,8 @@ async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:R
    assert.ok(fixture);fixture.setMember('open-a');browser=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(browser);
    const page=fixture.origin+'/wecom/yixiaoxiu/tickets/'+f.publicRef;
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:transport(mode)});await browser.command('Page.navigate',{url:page});await browser.waitFor(enabled);
-   assert.equal(await browser.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/bot-feedback.js\"]'))"),true,'execute the staged production Bot bundle');
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-h5-reporter=true]'))&&Array.from(document.querySelectorAll('script[type=module][src]')).some(node=>/^\\/wecom\\/yixiaoxiu\\/assets\\/.+\\.js$/.test(node.getAttribute('src')||''))"),true,'execute the staged production H5 Reporter bundle');
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('script[src=\"/reporter/bot-feedback.js\"]'))"),false);
    await run({f,fixture,browser,peers,serverWire,directory,page});
   }catch(error){primary=error;try{await writeFile(join(directory,'primary-error.json'),JSON.stringify(failure(error)));if(browser){const gate=await browser.evaluate('globalThis.__t21LogoutGate??null');if(gate)console.log('T21_LOGOUT_GATE '+JSON.stringify(gate));}}catch(diagnosticFailure){primary=new AggregateError([primary,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([
@@ -150,6 +151,11 @@ test('Bot raw recovery expires at 24h and restores only current-member READ; gen
   await browser.evaluate('globalThis.__t21ArmLogoutCallbackGate()');await browser.command('Page.bringToFront');await browser.evaluate("document.querySelector('#logout').click()");await browser.waitFor("document.querySelector('#status')?.textContent.includes('已退出访问')&&globalThis.__t21LogoutGate?.completed===true");
   const gate=object(await browser.evaluate('globalThis.__t21LogoutGate'));assert.equal(gate.real_status,200);assert.equal(gate.success_dom,true);assert.equal(gate.after_release,'已退出访问。');assert.equal(gate.timeOrigin,await browser.evaluate('performance.timeOrigin'));const queued=records(gate.queued),released=records(gate.released);assert.ok(queued.some(event=>event.kind==='bot-feedback-logout'));assert.equal(released.length,queued.length);assert.ok([...queued,...released].every(event=>event.trusted===true&&['revalidate','bot-feedback-logout'].includes(String(event.kind))));console.log('T21_LOGOUT_GATE '+JSON.stringify(gate));
   await peer.waitFor("document.querySelector('#bot-feedback-panel')?.hidden===true");
+  const calls=await browser.evaluate('globalThis.__t21ReporterCalls');
+  await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));document.querySelector('#refresh').click()");
+  assert.equal(await browser.evaluate('globalThis.__t21ReporterCalls'),calls,'a cached page restored after confirmed logout cannot resume Reporter or feedback requests');
+  assert.equal(await browser.evaluate("document.querySelector('#ticket').hidden"),true);
+  assert.equal(await browser.evaluate("document.querySelector('#status').textContent"),'已退出访问。');
   const cleared=await snapshot(browser,f.publicRef);assert.deepEqual(cleared.drafts,[]);assert.equal(cleared.operations.length,1);assert.equal(cleared.operations[0]?.commandId,id);assert.deepEqual(await snapshot(peer,f.publicRef),cleared,'native BroadcastChannel cleanup reaches the real peer tab');
   await browser.evaluate('globalThis.__t21ReleasePost()');await browser.waitFor('globalThis.__t21PostReleased===true&&globalThis.__t21PostSettled===true');assert.equal(await browser.evaluate('globalThis.__t21HeldSignalAborted'),true);assert.equal(serverWire.filter(row=>row.method==='POST').length,0,'logout aborts the original signal before a held request can reach the server');
   fixture.setMember('open-a');await browser.command('Page.navigate',{url:page});await browser.waitFor(checkable);assert.equal(await scope(browser),principal);await unknown(browser,f.path,id);

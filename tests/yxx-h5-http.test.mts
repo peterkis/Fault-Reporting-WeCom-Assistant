@@ -5,19 +5,19 @@ import type {IncomingMessage} from 'node:http';
 import {Readable} from 'node:stream';
 import {randomUUID,createHash} from 'node:crypto';
 import {once} from 'node:events';
-import {createYxxH5Http,parseYxxH5ByteRange} from '../src/yxx-h5-http.mjs';
-import {createYxxSelfServiceNativeHttp} from '../src/yxx-self-service-native-http.mjs';
-import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import type {OAuthState} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {sessionName} from '../src/p2-g2-wecom-oauth-http.mjs';
-import {parseYxxInitialRequestInput} from '../src/yxx-self-service-store.mjs';
-import type {YxxSelfServiceStore,YxxStoreCommand,YxxCommandReceipt,YxxAcceptResult} from '../src/yxx-self-service-store.mjs';
-import {H5_ACCEPT,H5_LIMITS,parseH5UrgeInput,parseH5EvaluationInput,h5Fail} from '../src/yxx-h5-v2-contracts.mjs';
+import {createYxxH5Http,parseYxxH5ByteRange} from '../app/server/src/yxx-h5-http.mjs';
+import {createYxxSelfServiceNativeHttp} from '../app/server/src/yxx-self-service-native-http.mjs';
+import {createYxxMemberCommandContext} from '../app/server/src/yxx-self-service-command.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import type {OAuthState} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {sessionName} from '../app/server/src/p2-g2-wecom-oauth-http.mjs';
+import {parseYxxInitialRequestInput} from '../app/server/src/yxx-self-service-store.mjs';
+import type {YxxSelfServiceStore,YxxStoreCommand,YxxCommandReceipt,YxxAcceptResult} from '../app/server/src/yxx-self-service-store.mjs';
+import {H5_ACCEPT,H5_LIMITS,parseH5UrgeInput,parseH5EvaluationInput,h5Fail} from '../app/server/src/yxx-h5-v2-contracts.mjs';
 import type {H5MediaMetadata,H5MediaWeCom} from '../contracts/yxx_h5_media_contracts.js';
-import type {YxxH5Media} from '../src/yxx-h5-media.mjs';
-import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
+import type {YxxH5Media} from '../app/server/src/yxx-h5-media.mjs';
+import type {PostgresTransaction} from '../app/server/src/platform/postgres-pool.mjs';
 import type {H5BootstrapExtension} from '../contracts/yxx_h5_v2_contracts.js';
 import type {H5EntryInput,H5EntryResponse} from '../contracts/yxx_h5_entry_contracts.js';
 import type {YxxSelfServiceBootstrap} from '../contracts/yxx_self_service_contracts.js';
@@ -144,6 +144,12 @@ test('H5 real HTTP negotiates V2 lists/details/bootstrap while preserving native
 
 test('H5 real HTTP accepts V2 once and retains V1 input with status and original UUID replay',{timeout:15000},async()=>fixture(async f=>{
  for(const input of [v1Input(),v2Input()]){const headers={...f.headers(input.client_command_id),accept:input.schema_version===1?'application/json':H5_ACCEPT};const first=await f.fetch('/api/yixiaoxiu/requests',{method:'POST',headers,body:JSON.stringify(input)});assert.equal(first.status,202);const body=await json(first);assert.equal(record(body.receipt).client_command_id,input.client_command_id);assert.equal(body.location,'/wecom/yixiaoxiu/reports/'+REF);const replay=await f.fetch('/api/yixiaoxiu/requests',{method:'POST',headers,body:JSON.stringify(input)});assert.equal(replay.status,200);assert.equal((await json(replay)).replayed,true);}assert.equal(f.control.accepts,2);assert.equal(f.control.lastScope,'a'.repeat(64));
+}));
+
+test('retired native pages fail closed without a new H5 renderer while V1 APIs remain available',{timeout:15000},async()=>fixture(async f=>{
+ for(const path of ['/wecom/yixiaoxiu/','/wecom/yixiaoxiu/reports','/wecom/yixiaoxiu/reports/new']){const page=await f.fetch(path);assert.equal(page.status,503);assert.doesNotMatch(await page.text(),/self-service\.js|self-service\.css/u);}
+ for(const path of ['/wecom/yixiaoxiu/self-service.js','/wecom/yixiaoxiu/self-service.css'])assert.equal((await f.fetch(path)).status,404);
+ assert.equal((await f.fetch('/api/yixiaoxiu/bootstrap')).status,200);
 }));
 
 test('H5 real HTTP requires explicit V2 negotiation rather than falling through native V1 submission',{timeout:15000},async()=>fixture(async f=>{

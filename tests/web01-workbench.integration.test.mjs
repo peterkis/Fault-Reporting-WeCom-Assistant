@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '../src/p2-g1-inbound-projection-coordinator.mjs';
-import {createConversationControlService,createPilotConversationControlAuthorization} from '../src/p2-005-conversation-control.mjs';
-import {appendRealtimeEvent} from '../src/p2-003-realtime-event-log.mjs';
-import {migrateWorkbenchSourceGroups} from '../scripts/workbench-source-groups-migrate.mjs';
+import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
+import {createConversationControlService,createPilotConversationControlAuthorization} from '../app/server/src/p2-005-conversation-control.mjs';
+import {appendRealtimeEvent} from '../app/server/src/p2-003-realtime-event-log.mjs';
+import {migrateWorkbenchSourceGroups} from '../app/server/scripts/workbench-source-groups-migrate.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
   await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals,databaseUrl})=>{
     const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});

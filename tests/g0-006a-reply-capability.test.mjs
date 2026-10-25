@@ -9,7 +9,7 @@ import {
   createReplyFixture,
   parseReplyArgs,
   runReplyProbe,
-} from '../src/g0-006a-reply-capability.mjs';
+} from '../app/server/src/g0-006a-reply-capability.mjs';
 
 class FakeClient extends EventEmitter {
   constructor({ reply, replyStream, replyWelcome, uploadMedia, replyMedia, downloadFile } = {}) {

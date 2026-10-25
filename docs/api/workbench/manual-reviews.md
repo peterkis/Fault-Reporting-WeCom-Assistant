@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 W；调用方 [lifecycle UI](../../../web/p2-workbench/lifecycle.js)。条件：`TICKET_LIFECYCLE_WORKBENCH_ENABLED` 默认 false。实现：[HTTP](../../../src/p2-016-workbench-http.mts)、[manual review facade](../../../src/p2-016-manual-review-facade.mts)、[P2-015 store/executor](../../../src/p2-015-manual-review.mts)。权限沿用内部坐席、工单/Journey 范围。
+宿主 W；调用方 [lifecycle UI](../../../web/p2-workbench/lifecycle.js)。条件：`TICKET_LIFECYCLE_WORKBENCH_ENABLED` 默认 false。实现：[HTTP](../../../app/server/src/p2-016-workbench-http.mts)、[manual review facade](../../../app/server/src/p2-016-manual-review-facade.mts)、[P2-015 store/executor](../../../app/server/src/p2-015-manual-review.mts)。权限沿用内部坐席、工单/Journey 范围。
 
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ Bot原分类依据仍是生产者按 sequence ASC 取得的最多51条前缀、�
 
 ## 确认明确故障并开始处理（WBINT-T15，默认关闭）
 
-本地合成实现与证据见 [T15 原七执行记录](../../../plans/admin-workbench-integration/execution/t15.md)。本节描述当前挂载的 W 接口；下方 SOURCE 历史仍只表示当时准备状态。实现复用 [T15 Port](../../../src/workbench-review-start.mts)、原 Review facade、Unified Ticket Core、既有责任与 Control 事务，无第二 Ticket 或 receipt 事实源。
+本地合成实现与证据见 [T15 原七执行记录](../../../plans/admin-workbench-integration/execution/t15.md)。本节描述当前挂载的 W 接口；下方 SOURCE 历史仍只表示当时准备状态。实现复用 [T15 Port](../../../app/server/src/workbench-review-start.mts)、原 Review facade、Unified Ticket Core、既有责任与 Control 事务，无第二 Ticket 或 receipt 事实源。
 
 | METHOD + PATH | 闭合请求／结果 |
 | --- | --- |

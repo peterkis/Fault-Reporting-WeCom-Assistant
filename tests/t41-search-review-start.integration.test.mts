@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {ReviewResolveAndStartCommand} from '../contracts/workbench_review_start_contracts.js';
 import {object,rows} from './helpers/t41-search-risk-fixture.mjs';
 

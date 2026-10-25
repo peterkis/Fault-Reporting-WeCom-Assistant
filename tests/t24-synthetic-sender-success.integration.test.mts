@@ -4,11 +4,11 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {appendCommunication} from '../src/p2-004-communication-core.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createCommunicationDeliveryWorker,createCommunicationDeliveryOperatorPort,createCommunicationReconciliationPort} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {appendCommunication} from '../app/server/src/p2-004-communication-core.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createCommunicationDeliveryWorker,createCommunicationDeliveryOperatorPort,createCommunicationReconciliationPort} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 type Ids={messages:string[];outboxes:string[];deliveries:string[];bindings:string[];rounds:string[];public_refs:string[];grants:string[]};

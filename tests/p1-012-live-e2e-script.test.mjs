@@ -16,10 +16,10 @@ import {
   runP1_012LiveE2E,
   runP1_012SharedDeliveryReconciliation,
   validateP1_012LiveConfig,
-} from '../scripts/p1-012-live-e2e.mjs';
+} from '../app/server/scripts/p1-012-live-e2e.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const script = resolve(root, 'scripts', 'p1-012-live-e2e.mjs');
+const script = resolve(root, 'app/server/scripts', 'p1-012-live-e2e.mjs');
 
 function liveEnvironment(overrides = {}) {
   return {

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { get } from 'node:http';
-import { createWeComOAuthServer } from '../src/p2-g2-wecom-oauth-server.mjs';
-import { createWeComWebOAuth } from '../src/p2-g2-wecom-web-oauth.mjs';
+import { createWeComOAuthServer } from '../app/server/src/p2-g2-wecom-oauth-server.mjs';
+import { createWeComWebOAuth } from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 
 test('独立认证启动模式只提供认证路由，固定 Host，无业务 API，关闭后撤销会话',async t=>{
   const publicOrigin='https://cd3120.mobimedical.cn';

@@ -5,7 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('T35 a remounted Review page denial clears its existing canonical intent before receipt lookup',{timeout:180_000},()=>withT35Fixture(async f=>{

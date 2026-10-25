@@ -5,12 +5,12 @@ import type {Server} from 'node:http';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
-import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
-import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
-import {migrateIncidentOwnerTransfer} from '../../scripts/incident-owner-transfer-migrate.mjs';
+import {createP2012Runtime} from '../../app/server/src/p2-012-workbench-assembly.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
+import {migrateIncidentInternalNotes} from '../../app/server/scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../app/server/scripts/incident-public-progress-migrate.mjs';
+import {migrateIncidentOwnerTransfer} from '../../app/server/scripts/incident-owner-transfer-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../src/p2-001-conversation-contracts.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../app/server/src/p2-001-conversation-contracts.mjs';
 import {t33WholeHttp,t33Record,t33Text} from './helpers/t33-whole-fixture.mjs';
 
 test('T33 Conversation v2 binds a later real attempt and preserves original UUID result across another UNKNOWN',{timeout:120000},async t=>{

@@ -8,9 +8,9 @@ import type {ClientRequest,Server} from 'node:http';
 import type {Socket} from 'node:net';
 import {withT09Fixture,object,rows,text,version} from './helpers/t09-fixture.mjs';
 import type {T09Http} from './helpers/t09-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 async function get(http:T09Http,path:string){const response=await http.get(path);assert.equal(response.status,200,path);return response.value;}
 async function snapshot(http:T09Http,path:string){return {ticket:await get(http,path),responsibility:await get(http,path+'/responsibility'),events:await get(http,path+'/events?limit=200'),deliveries:await get(http,path+'/deliveries')};}

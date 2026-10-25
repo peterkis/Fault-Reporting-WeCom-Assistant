@@ -2,9 +2,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {normalizeFollowUpCommand,followUpRevision} from '../src/workbench-follow-up-schedules.mjs';
-import {hashP2016} from '../src/p2-016-domain-contracts.mjs';
-import {shanghaiLocalToEpochMs} from '../src/platform/time-contract.mjs';
+import {normalizeFollowUpCommand,followUpRevision} from '../app/server/src/workbench-follow-up-schedules.mjs';
+import {hashP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {shanghaiLocalToEpochMs} from '../app/server/src/platform/time-contract.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 
 const ticketId=randomUUID(),commandId=randomUUID(),eventId=randomUUID();

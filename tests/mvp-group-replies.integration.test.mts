@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createP2016OrchestrationWorker} from '../src/p2-016-orchestration-adapters.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createMvpNotificationAdmission,MVP_GROUP_RECEIVED,MVP_GROUP_CLARIFY,MVP_GROUP_THANKS} from '../src/mvp-group-replies.mjs';
-import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
-import {ApplicationMemberUnavailableError} from '../src/wecom-application-member.mjs';
+import {createP2016OrchestrationWorker} from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createMvpNotificationAdmission,MVP_GROUP_RECEIVED,MVP_GROUP_CLARIFY,MVP_GROUP_THANKS} from '../app/server/src/mvp-group-replies.mjs';
+import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
+import {ApplicationMemberUnavailableError} from '../app/server/src/wecom-application-member.mjs';
 
 const flags={RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true};
 test('MVP production rule worker classifies group faults, uncertainty, pure thanks and silence with one source-bound receipt and no Webhook dependency',{timeout:240000},async()=>{

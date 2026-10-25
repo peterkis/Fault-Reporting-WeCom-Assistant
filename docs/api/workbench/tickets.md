@@ -2,11 +2,11 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#撤销未开始派工wbint-t08plannednot_run)。计划路径不表示已挂载。
+WBINT-T08撤销未开始派工的后继合同见[PLANNED / NOT_RUN](#wbint-t08-撤销未开始派工)。计划路径不表示已挂载。
 
 WBINT-T37 的[共享跟进安排合同](follow-up-schedules.md)完整业务仍进行中：原调度员POST404形成真实RED后，后继仅SOURCE挂载三条W路径与049，尚未构建／迁移／HTTP验证。当前处理人／获权调度源码已补，canonical沟通人、Worker、生命周期与正式页面待逐片验收；不能当作已交付的预约服务。
 
-宿主：W，P2-016 扩展。调用方：[lifecycle UI](../../../web/p2-workbench/lifecycle.js)。默认关闭：`TICKET_LIFECYCLE_WORKBENCH_ENABLED`。实现：[HTTP](../../../src/p2-016-workbench-http.mts)、[query](../../../src/p2-016-ticket-query.mts)、[command facade](../../../src/p2-016-ticket-command-facade.mts)、[command ledger](../../../src/p2-016-ticket-command-ledger.mts)。Ticket 是唯一编号/状态/处理责任事实源，Conversation Assignment 单独管理沟通责任。
+宿主：W，P2-016 扩展。调用方：[lifecycle UI](../../../web/p2-workbench/lifecycle.js)。默认关闭：`TICKET_LIFECYCLE_WORKBENCH_ENABLED`。实现：[HTTP](../../../app/server/src/p2-016-workbench-http.mts)、[query](../../../app/server/src/p2-016-ticket-query.mts)、[command facade](../../../app/server/src/p2-016-ticket-command-facade.mts)、[command ledger](../../../app/server/src/p2-016-ticket-command-ledger.mts)。Ticket 是唯一编号/状态/处理责任事实源，Conversation Assignment 单独管理沟通责任。
 
 ## 查询
 
@@ -53,7 +53,7 @@ Notification：`notification_type,destination_type,delivery_id,status,side_effec
 | `POST /api/tickets/{ticketId}/internal-notes` | 默认关闭的专用内部备注；必需非空白 note 和 external_visible=false，详见下文 |
 | `POST /api/tickets/{ticketId}/transfer` | facade action=`transfer-assignment`；必需 `target_principal_id:UUID`，可选 `resolver_team_id` |
 
-具体状态迁移和角色由 [Action 服务](../../../src/p1-006-ticket-state-actions.mts) 与 query 的 allowed_actions 决定；不要用前端枚举绕过状态检查。`auto-close` 只在获授权 SYSTEM job，未开放 HTTP。
+具体状态迁移和角色由 [Action 服务](../../../app/server/src/p1-006-ticket-state-actions.mts) 与 query 的 allowed_actions 决定；不要用前端枚举绕过状态检查。`auto-close` 只在获授权 SYSTEM job，未开放 HTTP。
 
 200 成功结果：`{ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id,replayed}`。失败 ledger 结果：`{ok:false,error:{code,retryable},replayed}`；HTTP 按结果映射为 403/409/503。每次 receipt 查找先重查活动身份和对象可读权限；新写入另查当前动作权限和版本。已 COMMITTED／FAILED 的 receipt 重放只读取原结果，不再次写入，也不重新执行动作许可检查。仅失去写动作但仍可读时可核对旧收据；身份失效或对象失权拒绝收据。改 payload 不能沿用同一 ID。
 
@@ -93,13 +93,13 @@ W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade�
 
 200 结果沿上文，专用备注的 `control_event_id:null`；无正文或私有身份回传。新增写入保持状态／处理责任，版本增加一次，追加 `ticket.note_added` 的 `internal_note`，`external_note=null`。备注不生成外部通知意图；Reporter 按既有里程碑 allowlist 读取，不能读取此正文。沿用原 principal scope＋UUID，原 payload／版本重放返回原 receipt；改 payload 为 409，陈旧新命令为 409，当前动作拒绝为 403，对象不可读为 404，身份失效为 401／403。事务／SAVEPOINT、通知策略和实时锁顺序保持。
 
-正式 React [TicketNotes](../../../web/admin-workbench/src/features/ticket-notes/TicketNotes.tsx) 只在 `internal_notes_enabled=true` 时读取真实 `GET /api/tickets/{ticketId}`。界面显示服务器当前 `allowed_actions` 和数字 `version`；只有当前 `add-note` 许可才提供新写入，未建单事项不猜测能力。`idle／submitting／checking／succeeded／denied／conflict／unknown` 分别呈现；单表单只允许一个 in-flight。可信成功才清输入并使 context／detail／board 查询失效，重读失败不反转已提交结论。
+正式 React [TicketNotes](../../../app/pc-admin/src/features/ticket-notes/TicketNotes.tsx) 只在 `internal_notes_enabled=true` 时读取真实 `GET /api/tickets/{ticketId}`。界面显示服务器当前 `allowed_actions` 和数字 `version`；只有当前 `add-note` 许可才提供新写入，未建单事项不猜测能力。`idle／submitting／checking／succeeded／denied／conflict／unknown` 分别呈现；单表单只允许一个 in-flight。可信成功才清输入并使 context／detail／board 查询失效，重读失败不反转已提交结论。
 
 网络失败、发出后的 abort、200 正文／字段不可信、无法确认的 5xx 均保留不可变原 UUID＋原版本＋原 payload，锁定输入并显式“核对保存结果”重放同一 POST；不自动重试或生成新操作。409 保留输入并重读，用户再次明确提交才产生新意图。可信 401／403／404 即使正文不可解析仍触发授权清理；401 清整个会话，对象拒绝取消并清同对象 detail／command-context、刷新 board。组件卸载 abort 自有 POST，abort 不证明未提交。未启用恢复时草稿／原命令仍只存组件内存，close／move 和 beforeunload 保护保留；启用 T03 后，仅实际持久快照已保存才可安全离开。
 
 ## 当前浏览器草稿与只读核对（WBINT-T03）
 
-宿主 `workbenchDraftRecoveryEnabled:boolean=false`；只有 notes 与 recovery 均启用，bootstrap 的 `draft_recovery_enabled` 才为 true。当前消费者是内部备注；通用 [存储](../../../web/admin-workbench/src/features/drafts/encrypted-drafts.ts) 以 `[principal_id,kind,id,purpose]` 隔离，后续表单须定义自身闭合载荷和权限恢复规则，不能直接借用内部备注授权。详见[前端合同](../../../web/admin-workbench/README.md#当前浏览器草稿恢复wbint-t03)和[执行记录](../../../plans/admin-workbench-integration/execution/t03.md)。
+宿主 `workbenchDraftRecoveryEnabled:boolean=false`；只有 notes 与 recovery 均启用，bootstrap 的 `draft_recovery_enabled` 才为 true。当前消费者是内部备注；通用 [存储](../../../app/pc-admin/src/features/drafts/encrypted-drafts.ts) 以 `[principal_id,kind,id,purpose]` 隔离，后续表单须定义自身闭合载荷和权限恢复规则，不能直接借用内部备注授权。详见[前端合同](../../../app/pc-admin/README.md#当前浏览器草稿恢复wbint-t03)和[执行记录](../../../plans/admin-workbench-integration/execution/t03.md)。
 
 W `GET /api/tickets/{ticketId}/internal-notes/commands/{commandId}`：两个 UUID、空 query、无 body、`no-store`；不需写动作、CSRF、If-Match 或 Idempotency-Key。原生命周期、notes、recovery 三开关均须启用；关闭返回 `503 P2_016_DISABLED`，不调用新增 receipt 查询。先核对当前 active principal 与 Ticket 可读权限，再在现有 ledger 的只读事务按 `P2_016:<principal>`、原 command UUID、Ticket 和服务器用途 `WORKBENCH_INTERNAL_NOTE` 查找。无数据库变更、第二 ledger、草稿服务或后台轮询。
 
@@ -149,7 +149,7 @@ NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先�
 
 关闭选项返回503并隐藏按钮，旧 profiles 不访问039/new fields，旧 accept/start 保持；已提交责任/轮次/事件保留。启用缺039时 readiness 与新命令 fail closed。body32KiB、单表单in-flight1、无自动重试/新增轮询/常驻进程，复用原池预算、单App/Worker/Gateway与SSE32。
 
-正式 [TicketSelfHandling](../../../web/admin-workbench/src/features/ticket-handling/TicketSelfHandling.tsx) 仅在 bootstrap 能力开启后读取真实 Ticket command-context，按服务端新 actions 呈现两种按钮。处理组固定为服务端当前组，不从卡片、角色或沟通责任推断。共享 T02 的 unknown 响应核验；原动作与闭合 payload 在组件内存冻结，未知仅显式核对同一 POST，不使用新 UUID/版本/组。成功失效 context/detail/board，GET 未返回前不接受新的提交；不会按动画或 version+N 移卡。可信失权取消/清同对象缓存，组件卸载 abort 自有 POST；abort 不证明未提交。提交中与未知限制详情关闭/切换并提醒页面离开；跨刷新持久恢复仍由 T03 的独立合同维护，不在本票扩展。
+正式 [TicketSelfHandling](../../../app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx) 仅在 bootstrap 能力开启后读取真实 Ticket command-context，按服务端新 actions 呈现两种按钮。处理组固定为服务端当前组，不从卡片、角色或沟通责任推断。共享 T02 的 unknown 响应核验；原动作与闭合 payload 在组件内存冻结，未知仅显式核对同一 POST，不使用新 UUID/版本/组。成功失效 context/detail/board，GET 未返回前不接受新的提交；不会按动画或 version+N 移卡。可信失权取消/清同对象缓存，组件卸载 abort 自有 POST；abort 不证明未提交。提交中与未知限制详情关闭/切换并提醒页面离开；跨刷新持久恢复仍由 T03 的独立合同维护，不在本票扩展。
 
 错误：输入/额外字段400，Header/版本或责任/状态/真会话冲突409，当前角色/组/成员拒绝403，对象失权404，活动身份失效401/403，关闭或未安装039为503。稳定拒绝含 `P2_016_SELF_HANDLING_OWNER_CONFLICT/CONVERSATION_REQUIRED/STATE_CONFLICT/UNAVAILABLE`；前缀后三个分别为完整 `P2_016_SELF_HANDLING_*` code。事务失败的 FAILED receipt 以既有 `P2_016_ACTION_FAILED` 返回503且不重试业务。
 
@@ -166,7 +166,7 @@ NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先�
 | `POST /api/tickets/{ticketId}/deliveries/{deliveryId}/retry` | client_command_id、reason_code 必需 | 200 `{ok:true,delivery_id,status,replayed}` |
 | `POST /api/tickets/{ticketId}/deliveries/{deliveryId}/reconcile` | 同上，加 resolution=`CONFIRMED_SENT\|CONFIRMED_NOT_SENT_REQUEUE\|CANCEL` | 同上 |
 
-这两条无需 If-Match，仍需幂等和身份/CSRF，检查 delivery 属于该 Ticket。[控制实现](../../../src/p2-016-delivery-control.mts)。UNKNOWN 不可普通重发；核对操作须具备相应权限。
+这两条无需 If-Match，仍需幂等和身份/CSRF，检查 delivery 属于该 Ticket。[控制实现](../../../app/server/src/p2-016-delivery-control.mts)。UNKNOWN 不可普通重发；核对操作须具备相应权限。
 
 常见码：`P2_016_FORBIDDEN/NOT_FOUND/VERSION_CONFLICT/COMMAND_CONFLICT/ACTION_FAILED/TARGET_INVALID/CONTROL_CONFLICT/DELIVERY_STATE_CONFLICT`，以及主宿主 WORKBENCH 错误。详情刷新不能等于命令成功。
 
@@ -174,7 +174,7 @@ NEW/QUEUED 的合法 Action 链为 queue（仅 NEW）→accept→start，或先�
 
 ## 同事接管并工作人员完工（WBINT-T12，默认关闭）
 
-W 的三个入口与正式管理端表单已实现，隔离 PG、真实 loopback HTTP 和本次生产 bundle 的局部业务验证已完成；最终整票检查、两轴审查与自有清理进度见[本票执行](../../../plans/admin-workbench-integration/execution/t12.md)。这不是部署启用或现场发送授权。[command](../../../contracts/p2_016_takeover_completion_command.schema.json)、[result](../../../contracts/p2_016_takeover_completion_result.schema.json)、[targets](../../../contracts/p2_016_takeover_completion_targets.schema.json)、[safe ACK](../../../contracts/p2_016_takeover_completion_receipt.schema.json)、[DTS](../../../contracts/p2_016_takeover_completion_contracts.d.ts)保持原冻结合同；[service](../../../src/workbench-ticket-takeover-completion.mts)复用原 T07/T11 callerTx。
+W 的三个入口与正式管理端表单已实现，隔离 PG、真实 loopback HTTP 和本次生产 bundle 的局部业务验证已完成；最终整票检查、两轴审查与自有清理进度见[本票执行](../../../plans/admin-workbench-integration/execution/t12.md)。这不是部署启用或现场发送授权。[command](../../../contracts/p2_016_takeover_completion_command.schema.json)、[result](../../../contracts/p2_016_takeover_completion_result.schema.json)、[targets](../../../contracts/p2_016_takeover_completion_targets.schema.json)、[safe ACK](../../../contracts/p2_016_takeover_completion_receipt.schema.json)、[DTS](../../../contracts/p2_016_takeover_completion_contracts.d.ts)保持原冻结合同；[service](../../../app/server/src/workbench-ticket-takeover-completion.mts)复用原 T07/T11 callerTx。
 
 `POST /api/tickets/{ticketId}/takeover-and-complete` 使用独立宿主 `ticketTakeoverCompletionEnabled:boolean=false`。空 query、闭合十字段 client_command_id/expected_version/reason_code=STAFF_COMPLETED/resolver_team_id/handling_cycle_id/communication_choice/sessions/internal_process/external_summary/external_summary_confirmed=true；UUID、整数1..2147483647、CODE沿现有 guard。RETAIN_CURRENT 必须 []；TAKE_SELECTED 必须1..8个规范去重 Session 与各自原版本。单 body32KiB，JSON、同源 Origin/CSRF、Idempotency-Key=UUID、强引用 `If-Match: "<expected_version>"`；拒绝 actor、target、force 和额外字段。默认同时承接沟通，但不预选组或 Session；用户明确选择本人的真实组及关联对象，或明确保留沟通责任。内部过程必填、trim非空、原长≤2000；独立空白公开摘要必填、原长≤500，预览并显式确认，编辑及非 pending 恢复后须重新确认。
 
@@ -224,7 +224,7 @@ bootstrap的 `staff_completion_draft_recovery_enabled` 为实际完工能力AND 
 
 ## 明确派单与转派（WBINT-T06）
 
-W 的 `POST /api/tickets/{ticketId}/assign` 与 `/transfer-assignment` 使用宿主 `ticketAssignmentEnabled:boolean=false`。有效人/组、明确沟通原子交接、候选查询、正式表单、终态、回执、同轮通知、事务权限锁及专用恢复均已完成隔离公开验证；固定被测身份、七项映射与相关回归见[本票执行记录](../../../plans/admin-workbench-integration/execution/t06.md)。[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../src/workbench-ticket-assignment.mts)。
+W 的 `POST /api/tickets/{ticketId}/assign` 与 `/transfer-assignment` 使用宿主 `ticketAssignmentEnabled:boolean=false`。有效人/组、明确沟通原子交接、候选查询、正式表单、终态、回执、同轮通知、事务权限锁及专用恢复均已完成隔离公开验证；固定被测身份、七项映射与相关回归见[本票执行记录](../../../plans/admin-workbench-integration/execution/t06.md)。[command](../../../contracts/p2_016_assignment_command.schema.json)、[result](../../../contracts/p2_016_assignment_result.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)、[service](../../../app/server/src/workbench-ticket-assignment.mts)。
 
 沿W认证/当前Ticket可见范围、Origin/CSRF、Idempotency-Key=client_command_id、If-Match=expected_version和32KiB上限。闭合body的七字段为UUID client_command_id、数字整数expected_version（1..2147483647）、CODE reason_code、UUID target_principal_id、CODE resolver_team_id、communication_choice、sessions。RETAIN_CURRENT必须空sessions；TRANSFER_SELECTED必须1..8个唯一、真实关联且当前分别获权的 `{session_id:UUID,expected_row_version:number}`。调用者必须独立具有Conversation Control权限；Ticket读取不授予Session权限。Session按UUID排序锁定，在原Ticket组范围内先执行Control caller事务，再执行人/组责任写；任何业务写失败全部回滚，保留FAILED审计。拒绝actor/来源/通知目的地/force/任意额外字段。
 

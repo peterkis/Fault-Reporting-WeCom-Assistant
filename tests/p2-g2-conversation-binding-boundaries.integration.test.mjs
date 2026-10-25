@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {withLateBindingFixture} from './helpers/p2-g2-late-binding-harness.mjs';
-import {reconcileP2016ConversationBindings} from '../src/p2-016-conversation-binding.mjs';
+import {reconcileP2016ConversationBindings} from '../app/server/src/p2-016-conversation-binding.mjs';
 
 test('same-topic Direct input keeps its Intake while the actual Session exists before delayed Leg and Journey binding',async t=>{
   await withLateBindingFixture(async f=>{

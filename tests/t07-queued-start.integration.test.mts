@@ -4,9 +4,9 @@ import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {acceptedSetup,acceptedOptions,rows,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
-import {migrateTicketUnassign} from '../scripts/ticket-unassign-migrate.mjs';
-import {createTicketUnassignService} from '../src/workbench-ticket-unassign.mjs';
-import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
+import {migrateTicketUnassign} from '../app/server/scripts/ticket-unassign-migrate.mjs';
+import {createTicketUnassignService} from '../app/server/src/workbench-ticket-unassign.mjs';
+import {createP2016TicketQuery} from '../app/server/src/p2-016-ticket-query.mjs';
 test('a queued ticket with existing round and first promise uses one self takeover accept-start command without inventing another round or first notice',async()=>{
  await withWeb01Fixture(async(f:T07Fixture)=>{
   const s=await acceptedSetup(f);await migrateTicketUnassign({databaseUrl:f.databaseUrl,mode:'apply'});

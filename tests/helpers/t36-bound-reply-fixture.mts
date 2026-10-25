@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {SupplementFollowUpPage,SupplementFollowUpTarget,SupplementFollowUpReplyCommand} from '../../contracts/workbench_supplement_follow_up_contracts.js';
 import {withT35Fixture} from './t35-read-fixture.mjs';
 import {ownedHttp} from './t36-supplement-fixture.mjs';
 import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
-import {migrateWorkbenchSupplementFollowUp} from '../../scripts/workbench-supplement-follow-up-migrate.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
-import type {PilotRole} from '../../src/p1-009-pilot-access-workbench.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {createRuleFirstOrchestrator} from '../../src/p2-015-rule-first-orchestrator.mjs';
-import {createDecisionStore} from '../../src/p2-015-decision-store.mjs';
-import {createManualReviewStore} from '../../src/p2-015-manual-review.mjs';
-import {createServiceIntakeDecisionPort} from '../../src/p2-015-service-intake-decision-port.mjs';
-import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004FixedCommunicationPort} from '../../src/p2-015-safe-action-executor.mjs';
+import {migrateWorkbenchSupplementFollowUp} from '../../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PilotRole} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createRuleFirstOrchestrator} from '../../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import {createDecisionStore} from '../../app/server/src/p2-015-decision-store.mjs';
+import {createManualReviewStore} from '../../app/server/src/p2-015-manual-review.mjs';
+import {createServiceIntakeDecisionPort} from '../../app/server/src/p2-015-service-intake-decision-port.mjs';
+import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004FixedCommunicationPort} from '../../app/server/src/p2-015-safe-action-executor.mjs';
 
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export interface T36BoundReplyFixture {
@@ -25,7 +25,7 @@ export interface T36BoundReplyFixture {
  setActorRoles(roles:PilotRole[]):Promise<void>;
  expire(target:SupplementFollowUpTarget):Promise<void>;
  disableEntry():Promise<void>;
- pool:PostgresPool;sessionId:string;ticketId:string;actorId:string;reporterId:string;
+ pool:PostgresPool;databaseUrl:string;sessionId:string;ticketId:string;actorId:string;reporterId:string;
  r2:SupplementFollowUpTarget;rowVersion:number;internalCanary:string;
  postReply(body:SupplementFollowUpReplyCommand):Promise<Response>;
  page():Promise<SupplementFollowUpPage>;
@@ -86,7 +86,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const page=()=>read<SupplementFollowUpPage>(followPath);assert.equal((await page()).items.find(x=>x.source_ref===r2.source_ref)?.follow_up_state,'PENDING','read and internal note do not clear a supplement');
   const postReply=(body:SupplementFollowUpReplyCommand)=>ownedHttp(base.origin+sessionPath+'/messages',{method:'POST',headers:{cookie:cookieHeader,
    origin:base.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'x-csrf-token':csrf,'if-match':'"'+body.expected_row_version+'"'},body:JSON.stringify(body)});
-  await run({setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER',pool:base.pool,sessionId,ticketId,actorId:admin.id,reporterId,r2,rowVersion,internalCanary,
+  await run({setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER',pool:base.pool,databaseUrl:base.databaseUrl,sessionId,ticketId,actorId:admin.id,reporterId,r2,rowVersion,internalCanary,
    setActorRoles:async roles=>{const actor=(await base.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[admin.id])).rows[0];assert.ok(actor);const changed=await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles,resolverTeamIds:[]});assert.equal(changed.id,admin.id);},
    takeoverSelf:async()=>{const current=await currentSession(),command={client_command_id:randomUUID(),expected_row_version:current.session.row_version};return ownedHttp(base.origin+sessionPath+'/takeover',{method:'POST',headers:{cookie:cookieHeader,origin:base.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf,'if-match':'\"'+command.expected_row_version+'\"'},body:JSON.stringify(command)});},
    origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},

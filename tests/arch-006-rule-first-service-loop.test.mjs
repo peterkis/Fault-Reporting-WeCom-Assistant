@@ -4,6 +4,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
+import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import ts from 'typescript';
 import { testRoots } from './helpers/migration-roots.mjs';
 
@@ -11,32 +13,70 @@ const root = process.cwd();
 const text = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const json = (file) => JSON.parse(text(file));
 
-test('ARCH-006 logical source migration allows the approved inventory and rejects dual or out-of-scope source', () => {
-  const source = text('scripts/validate-arch-006-rule-first-service-loop.mjs');
+test('ARCH-006 logical source migration allows the approved inventory and rejects dual or out-of-scope source', async () => {
+  const source = text('app/server/scripts/validate-arch-006-rule-first-service-loop.mjs');
   const gate = source.slice(source.indexOf('function erasedMigrationRuntime('), source.indexOf('const historicalEvidence='));
   const scope = json('plans/typescript-migration/scope.json');
+  const repairPath='contracts/communication_lock_order_repair.v1.json',approvedRepairRecord=json(repairPath);
+  const {logicalSource,physicalSource,canonicalSourceText}=await import(new URL('../.build/tools/backend-layout.mjs',import.meta.url));
   const logical = 'src/p2-001-conversation-contracts.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
   // Model the first conversion before its completed mapping exists.
   delete scope.current_module_map[logical];
   assert.equal(scope.current_module_map[logical], undefined, 'approval comes from the full inventory, before completion mapping');
-  function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;', alreadyTyped = false) {
+  function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;', alreadyTyped = false, extraBaseline = [], linked = false, repairRecord = approvedRepairRecord) {
     const errors = [], inventory = Object.values(scope.migration_batches).flat();
-    const context = { root, path, ts, errors, json: () => scope, read: () => after,
-      fs: { existsSync: file => files.has(path.relative(root, file).replaceAll('\\', '/')), readFileSync: () => after },
-      execFileSync: (_git, args) => args.includes('ls-tree') ? inventory.map(file => alreadyTyped ? file.replace(/\.mjs$/u, '.mts') : file).join('\n')
+    const context = { root, path, ts, createHash, errors, logicalSource,physicalSource,canonicalSourceText,json: relative => relative===repairPath?repairRecord:scope, read: () => after,
+      fs: { existsSync: file => files.has(logicalSource(path.relative(root, file).replaceAll('\\', '/'))), readFileSync: () => after,
+        lstatSync:()=>({isFile:()=>true,isSymbolicLink:()=>linked}) },
+      execFileSync: (_git, args) => args.includes('ls-tree') ? [...inventory.map(file => alreadyTyped ? file.replace(/\.mjs$/u, '.mts') : file), ...extraBaseline].join('\n')
         : args.includes('diff') ? changes.join('\0') : args.includes('show') ? before : '',
       check: (accepted, reason) => { if (!accepted) errors.push(reason); },
       p2016Authorized: true, p2g2Authorized: true,
     };
-    runInNewContext(gate + '\nresult = { changedPaths, languageMigrations: [...languageMigrations] };', context);
+    runInNewContext(gate + '\nresult = { changedPaths, languageMigrations: [...languageMigrations], localCommunicationRepairs: [...localCommunicationRepairs] };', context);
     return { errors, result: context.result };
   }
   const migrated = inspect([logical, typed], new Set([typed]));
   assert.deepEqual(migrated.errors, []);
   assert.deepEqual(Array.from(migrated.result.changedPaths), [logical]);
   assert.deepEqual(Array.from(migrated.result.languageMigrations), [logical]);
+  const relocated=inspect([physicalSource(logical),physicalSource(typed)],new Set([typed]));
+  assert.deepEqual(relocated.errors,[]);
+  assert.deepEqual(Array.from(relocated.result.changedPaths),[logical]);
+  assert.deepEqual(Array.from(relocated.result.languageMigrations),[logical]);
+  const existingTyped = 'src/p2-006-existing-layout-module.mts';
+  const existingLogical = existingTyped.replace(/\.mts$/u, '.mjs');
+  const existingLayout = inspect([physicalSource(existingTyped)], new Set([existingTyped]),
+    'export const allowed: boolean = false;', 'export const allowed: false = false;', true, [existingTyped]);
+  assert.deepEqual(existingLayout.errors, [], 'an existing typed module may move without becoming a new legacy exemption');
+  assert.deepEqual(Array.from(existingLayout.result.languageMigrations), [existingLogical]);
+  const changedLayout = inspect([physicalSource(existingTyped)], new Set([existingTyped]),
+    'export const allowed: boolean = false;', 'export const allowed: boolean = true;', true, [existingTyped]);
+  assert.match(changedLayout.errors.join('\n'), /no forbidden Runtime/u);
+  assert.deepEqual(Array.from(changedLayout.result.languageMigrations), []);
+  const postT00='src/yxx-h5-static.mts';
+  const ordinaryTyped=inspect([physicalSource(postT00)],new Set([postT00]),'export const allowed: boolean = false;','export const allowed: boolean = true;',true,[postT00]);
+  assert.deepEqual(ordinaryTyped.errors,[],'an existing post-T00 strict module is not a new suffix conversion');
+  assert.deepEqual(Array.from(ordinaryTyped.result.languageMigrations),[],'an executable update receives no type-only exemption');
+  assert.deepEqual(inspect(['src/bot-reporter-static.mts'],new Set(),undefined,undefined,true,['src/bot-reporter-static.mts']).errors,[],'a removed typed module is a retirement');
+  const oldPc='web/admin-workbench/src/app/App.tsx',newPc='app/pc-admin/src/app/App.tsx';
+  assert.deepEqual(inspect([oldPc,newPc],new Set([newPc]),undefined,undefined,false,[oldPc]).errors,[],'each tracked PC path needs its actual counterpart');
+  const oldFeedback='web/admin-workbench/src/bot-feedback.ts',newFeedback='app/h5/src/reporter/feedback.ts',retirement='adr/0043_h5_notification_entry_and_legacy_ui_retirement.md';
+  assert.deepEqual(inspect([oldFeedback],new Set([newFeedback,retirement]),undefined,undefined,false,[oldFeedback]).errors,[],'the exact accepted Reporter entry retirement retains its replacement');
+  assert.match(inspect([oldFeedback],new Set([retirement]),undefined,undefined,false,[oldFeedback]).errors.join('\n'),/no forbidden Runtime/u);
+  assert.match(inspect([oldFeedback],new Set([newFeedback]),undefined,undefined,false,[oldFeedback]).errors.join('\n'),/no forbidden Runtime/u,'the replacement alone cannot authorize retirement without the accepted ADR');
+  for(const result of [
+    inspect([oldPc],new Set(),undefined,undefined,false,[oldPc]),
+    inspect([oldPc,newPc],new Set([oldPc,newPc]),undefined,undefined,false,[oldPc]),
+    inspect([oldPc,newPc],new Set([newPc])),
+    inspect([oldPc,newPc],new Set([newPc]),undefined,undefined,false,[oldPc],true),
+    inspect(['web/unapproved/page.js'],new Set(['web/unapproved/page.js'])),
+  ])assert.match(result.errors.join('\n'),/no forbidden Runtime/u);
   assert.match(inspect([logical, typed], new Set([logical, typed])).errors.join('\n'), /MIGRATION_DUAL_SOURCE/u);
-  assert.match(inspect(['src/p2-006-unapproved.mts'], new Set(['src/p2-006-unapproved.mts'])).errors.join('\n'), /ARCH006_MIGRATION_OUTSIDE_SCOPE/u);
+  assert.match(inspect(['src/p2-006-unapproved.mts'], new Set(['src/p2-006-unapproved.mts'])).errors.join('\n'), /no forbidden Runtime/u);
+  assert.match(inspect(['src/unregistered-legacy.mts'],new Set(['src/unregistered-legacy.mts']),undefined,undefined,false,['src/unregistered-legacy.mjs']).errors.join('\n'),/ARCH006_MIGRATION_OUTSIDE_SCOPE/u);
+  const addedStrict=inspect(['src/current-catalog.mts'],new Set(['src/current-catalog.mts']));
+  assert.deepEqual(addedStrict.errors,[]);assert.deepEqual(Array.from(addedStrict.result.languageMigrations),[]);
   assert.match(inspect(['src/p2-006-unapproved.mjs'], new Set(['src/p2-006-unapproved.mjs'])).errors.join('\n'), /no forbidden Runtime/u);
   const protectedPath = 'src/p2-006-workbench-query.mjs', protectedTyped = protectedPath.replace(/\.mjs$/u, '.mts');
   const typeOnly = inspect([protectedPath, protectedTyped], new Set([protectedTyped]));
@@ -63,29 +103,88 @@ test('ARCH-006 logical source migration allows the approved inventory and reject
   const runtimeRepair = inspect([authorized, authorizedTyped], new Set([authorizedTyped]), 'export const allowed = false;', 'export const allowed: boolean = true;');
   assert.deepEqual(Array.from(runtimeRepair.result.languageMigrations), []);
   assert.deepEqual(runtimeRepair.errors, [], 'non-type changes still use the separately authorized predecessor seam rules');
+  const core='src/p2-004-communication-core.mjs',coreTyped=core.replace(/\.mjs$/u,'.mts');
+  const predecessor=spawnSync('git',['show','d3b7fda4f2cfb4291f550a9ed0952812dcf9a18f:'+coreTyped],{cwd:root,encoding:'utf8',windowsHide:true});
+  assert.equal(predecessor.status,0,predecessor.stderr);
+  const currentCore=text(physicalSource(coreTyped)),approvedFiles=new Set([coreTyped,repairPath]);
+  const scoped=inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true);
+  assert.deepEqual(scoped.errors,[]);
+  assert.deepEqual(Array.from(scoped.result.localCommunicationRepairs),[core]);
+  assert.deepEqual(Array.from(scoped.result.languageMigrations),[],'the runtime repair must not borrow a type-only exemption');
+  for(const rejected of [
+    inspect([physicalSource(coreTyped)],new Set([coreTyped]),predecessor.stdout,currentCore,true),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true,[],true),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true,[],false,{...approvedRepairRecord,live_authorized:true}),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true,[],false,{...approvedRepairRecord,replacement_query:approvedRepairRecord.replacement_query+'\nDELETE FROM ticket;',replacement_query_sha256:createHash('sha256').update(approvedRepairRecord.replacement_query+'\nDELETE FROM ticket;').digest('hex')}),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true,[],false,{...approvedRepairRecord,authorization_id:'UNAPPROVED'}),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore,true,[],false,{...approvedRepairRecord,replacement_query:approvedRepairRecord.replacement_query+'\nDELETE FROM ticket;'}),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore.replace('FOR UPDATE OF thread','FOR SHARE OF thread'),true),
+    inspect([physicalSource(coreTyped)],approvedFiles,predecessor.stdout,currentCore+'\nglobalThis.__unexpected_arch006_runtime=true;\n',true),
+    inspect([physicalSource('src/p2-006-workbench-query.mts')],new Set(['src/p2-006-workbench-query.mts',repairPath]),predecessor.stdout,currentCore,true),
+  ]){
+    assert.deepEqual(Array.from(rejected.result.localCommunicationRepairs),[]);
+    assert.match(rejected.errors.join('\n'),/no forbidden Runtime/u);
+  }
+
 });
 
 test('ARCH-006 validator passes', () => {
-  const result = spawnSync(process.execPath, ['scripts/validate-arch-006-rule-first-service-loop.mjs'], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, ['app/server/scripts/validate-arch-006-rule-first-service-loop.mjs'], { cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
-test('ARCH-006 current structure rejects missing scope and changed historical evidence', () => {
+test('ARCH-006 current structure rejects missing scope and changed historical evidence', async () => {
   const { sourceRoot, runtimeRoot } = testRoots();
-  for (const relative of ['plans/yxx-current-readiness-scope.json', 'evidence/g0-005-active-push-matrix.md']) {
-    const file = path.join(sourceRoot, relative), original = fs.readFileSync(file);
-    try {
-      if (relative.endsWith('.json')) fs.unlinkSync(file);
-      else fs.appendFileSync(file, '\nSynthetic unauthorized change\n');
-      const result = spawnSync(process.execPath, [path.join(runtimeRoot, 'scripts/validate-arch-006-rule-first-service-loop.mjs')], {
-        cwd: root, encoding: 'utf8', windowsHide: true, timeout: 90_000,
-      });
-      assert.equal(result.status, 1, result.stdout + result.stderr);
-      assert.match(result.stderr, /current ADR-0027 structure and protected history are valid/u);
-    } finally {
-      fs.writeFileSync(file, original);
-      assert.ok(fs.readFileSync(file).equals(original));
-    }
+  const {withScopeCheckout}=await import(new URL('../.build/runtime/tests/helpers/yxx-current-scope-checkout.mjs',import.meta.url));
+  const {checkSS010}=await import(new URL('../.build/runtime/app/server/src/yxx-self-service-readiness.mjs',import.meta.url));
+  const scope='plans/yxx-current-readiness-scope.v2.json',history='evidence/g0-005-active-push-matrix.md';
+  const originals=new Map([scope,history].map(file=>[file,fs.readFileSync(path.join(sourceRoot,file))]));
+  const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
+  const receipt=fs.mkdtempSync(path.join(tmpdir(),'arch006-negative-receipt-'));
+  try{
+    withScopeCheckout(fixture=>{
+      assert.notEqual(path.resolve(fixture),path.resolve(sourceRoot));
+      assert.equal(path.dirname(fixture),path.resolve(tmpdir()));
+      assert.equal(fs.lstatSync(fixture).isSymbolicLink(),false);
+      const dependencyLink=path.join(fixture,'node_modules');
+      fs.symlinkSync(path.join(sourceRoot,'node_modules'),dependencyLink,process.platform==='win32'?'junction':'dir');
+      const tool=path.join(fixture,'.build/tools/backend-layout.mjs');fs.mkdirSync(path.dirname(tool),{recursive:true});
+      fs.copyFileSync(path.join(sourceRoot,'.build/tools/backend-layout.mjs'),tool);
+      const retirement='adr/0043_h5_notification_entry_and_legacy_ui_retirement.md';
+      assert.equal(fs.lstatSync(path.join(sourceRoot,retirement)).isSymbolicLink(),false);
+      fs.copyFileSync(path.join(sourceRoot,retirement),path.join(fixture,retirement));
+      const owner={fixture,source_root:sourceRoot,pid:process.pid,scope_sha256:digest(originals.get(scope)),history_sha256:digest(originals.get(history)),retirement_adr_sha256:digest(fs.readFileSync(path.join(fixture,retirement)))};
+      fs.writeFileSync(path.join(receipt,'owner.json'),JSON.stringify(owner,null,2)+'\n');
+      console.log('ARCH006_NEGATIVE_FIXTURE '+JSON.stringify({fixture,receipt,pid:process.pid}));
+      try{
+        for(const [file,bytes]of originals)assert.ok(fs.readFileSync(path.join(fixture,file)).equals(bytes),file);
+        fs.unlinkSync(path.join(fixture,scope));
+        assert.throws(()=>checkSS010({root:fixture,requireReady:false}),{code:'CURRENT_SCOPE_INVALID'});
+        fs.writeFileSync(path.join(fixture,scope),originals.get(scope));
+        fs.appendFileSync(path.join(fixture,history),'\nSynthetic unauthorized change\n');
+        assert.throws(()=>checkSS010({root:fixture,requireReady:false}),{code:'CURRENT_EVIDENCE_HISTORY_INVALID'});
+        // Both real refusal branches above are independent. The complete CLI
+        // checks their wiring once, without repeating every unrelated scan.
+        fs.unlinkSync(path.join(fixture,scope));
+        const result = spawnSync(process.execPath, [path.join(runtimeRoot, 'app/server/scripts/validate-arch-006-rule-first-service-loop.mjs')], {
+          cwd: fixture, encoding: 'utf8', windowsHide: true, timeout: 90_000,
+        });
+        fs.writeFileSync(path.join(receipt,'stdout.log'),result.stdout??'');fs.writeFileSync(path.join(receipt,'stderr.log'),result.stderr??'');
+        assert.ifError(result.error);
+        assert.equal(result.status, 1, result.stdout + result.stderr);
+        assert.deepEqual(result.stderr.split(/\r?\n/u).filter(line=>line.startsWith('- ')).sort(),[
+          '- current ADR-0045 structure and protected history are valid',
+          '- historical Evidence is immutable; current receipts are append-only',
+        ].sort());
+        fs.writeFileSync(path.join(receipt,'refusals.json'),JSON.stringify({scope:'CURRENT_SCOPE_INVALID',history:'CURRENT_EVIDENCE_HISTORY_INVALID',cli_exit_code:result.status,cli_denials:2,original_files_written:false})+'\n');
+      }finally{
+        assert.equal(fs.lstatSync(dependencyLink).isSymbolicLink(),true);
+        fs.rmSync(dependencyLink,{force:true});
+      }
+    });
+  }finally{
+    for(const [file,original]of originals)assert.ok(fs.readFileSync(path.join(sourceRoot,file)).equals(original),'original bytes remain unchanged: '+file);
+    fs.writeFileSync(path.join(receipt,'original-files.json'),JSON.stringify({source_root:sourceRoot,scope_sha256:digest(fs.readFileSync(path.join(sourceRoot,scope))),history_sha256:digest(fs.readFileSync(path.join(sourceRoot,history))),original_bytes_unchanged:true})+'\n');
   }
 });
 

@@ -38,20 +38,20 @@ function fixture():string {
   put(root,'tools/ts-migration/resources.json',JSON.stringify({schema_version:1,files:['package.json','package-lock.json']}));
   const dev=record(record(JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')) as unknown).devDependencies);
   const webCompiler=record(JSON.parse(readFileSync(path.join(original,'node_modules/typescript-web/package.json'),'utf8')) as unknown);
-  put(root,'h5/package.json',JSON.stringify({name:'synthetic-h5-artifact',private:true,type:'module',dependencies:{react:dev.react,'react-dom':dev['react-dom']},devDependencies:{vite:dev.vite,typescript:webCompiler.version}}));
-  put(root,'h5/tsconfig.json',JSON.stringify({compilerOptions:{target:'ES2022',lib:['ES2022','DOM','DOM.Iterable'],module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',strict:true,skipLibCheck:true,noUncheckedIndexedAccess:true,exactOptionalPropertyTypes:true,useUnknownInCatchVariables:true,noEmit:true,noEmitOnError:true,verbatimModuleSyntax:true,forceConsistentCasingInFileNames:true,types:['vite/client']},include:['src','vite.config.ts'],exclude:['src/dev']}));
-  put(root,'h5/vite.config.ts',"import {defineConfig} from 'vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
-  put(root,'h5/index.html','<!doctype html><html lang="zh-CN"><head><title>H5 artifact fixture</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
-  put(root,'h5/src/main.tsx',"import {createRoot} from 'react-dom/client'; import {Screen} from './screen'; import './style.css'; const root=document.getElementById('root'); if(root)createRoot(root).render(<Screen/>); document.body.addEventListener('fixture-native',()=>import('./bridge.native').then(module=>module.activate())); if(import.meta.env.DEV)void import('./dev/preview');\n");
-  put(root,'h5/src/bridge.native.ts',"export function activate(){document.documentElement.dataset.bridge='ready';}\n");
-  put(root,'h5/src/screen.tsx',"import logo from './logo.svg'; export function Screen(){return <main><img src={logo} alt=\"synthetic\"/>H5 production</main>;}\n");
-  put(root,'h5/src/style.css','main{display:block;color:#123456}');
-  put(root,'h5/src/logo.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>');
-  put(root,'h5/src/dev/preview.ts','export const fixture="H5_SYNTHETIC_PREVIEW_MUST_NOT_SHIP";');
-  put(root,'h5/public/assets/support.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle r="3" cx="4" cy="4"/></svg>');
-  put(root,'h5/public/assets/icon.png',Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j+1sAAAAASUVORK5CYII=','base64'));
-  put(root,'h5/docs/prototype/private.html','SYNTHETIC_DESIGN_ONLY');
-  put(root,'h5/design-baseline/original.html','SYNTHETIC_BASELINE_ONLY');
+  put(root,'app/h5/package.json',JSON.stringify({name:'synthetic-h5-artifact',private:true,type:'module',dependencies:{react:dev.react,'react-dom':dev['react-dom']},devDependencies:{vite:dev.vite,typescript:webCompiler.version}}));
+  put(root,'app/h5/tsconfig.json',JSON.stringify({compilerOptions:{target:'ES2022',lib:['ES2022','DOM','DOM.Iterable'],module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',strict:true,skipLibCheck:true,noUncheckedIndexedAccess:true,exactOptionalPropertyTypes:true,useUnknownInCatchVariables:true,noEmit:true,noEmitOnError:true,verbatimModuleSyntax:true,forceConsistentCasingInFileNames:true,types:['vite/client']},include:['src','vite.config.ts'],exclude:['src/dev']}));
+  put(root,'app/h5/vite.config.ts',"import {defineConfig} from 'vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
+  put(root,'app/h5/index.html','<!doctype html><html lang="zh-CN"><head><title>H5 artifact fixture</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
+  put(root,'app/h5/src/main.tsx',"import {createRoot} from 'react-dom/client'; import {Screen} from './screen'; import './style.css'; const root=document.getElementById('root'); if(root)createRoot(root).render(<Screen/>); document.body.addEventListener('fixture-native',()=>import('./bridge.native').then(module=>module.activate())); if(import.meta.env.DEV)void import('./dev/preview');\n");
+  put(root,'app/h5/src/bridge.native.ts',"export function activate(){document.documentElement.dataset.bridge='ready';}\n");
+  put(root,'app/h5/src/screen.tsx',"import logo from './logo.svg'; export function Screen(){return <main><img src={logo} alt=\"synthetic\"/>H5 production</main>;}\n");
+  put(root,'app/h5/src/style.css','main{display:block;color:#123456}');
+  put(root,'app/h5/src/logo.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>');
+  put(root,'app/h5/src/dev/preview.ts','export const fixture="H5_SYNTHETIC_PREVIEW_MUST_NOT_SHIP";');
+  put(root,'app/h5/public/assets/support.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle r="3" cx="4" cy="4"/></svg>');
+  put(root,'app/h5/public/assets/icon.png',Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j+1sAAAAASUVORK5CYII=','base64'));
+  put(root,'app/h5/docs/prototype/private.html','SYNTHETIC_DESIGN_ONLY');
+  put(root,'app/h5/design-baseline/original.html','SYNTHETIC_BASELINE_ONLY');
   return root;
 }
 function stage(root:string):void {
@@ -70,21 +70,21 @@ test('H5 Tailwind scanning uses production sources and ignores design and DEV ch
   const root=fixture();
   try{
     const dev=record(record(JSON.parse(readFileSync(path.join(original,'package.json'),'utf8')) as unknown).devDependencies);
-    const pkg=record(JSON.parse(readFileSync(path.join(root,'h5/package.json'),'utf8')) as unknown);
-    put(root,'h5/package.json',JSON.stringify({...pkg,devDependencies:{...record(pkg.devDependencies),tailwindcss:dev.tailwindcss,'@tailwindcss/vite':dev['@tailwindcss/vite']}}));
-    put(root,'h5/vite.config.ts',"import {defineConfig} from 'vite'; import tailwindcss from '@tailwindcss/vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',plugins:[tailwindcss()],build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
+    const pkg=record(JSON.parse(readFileSync(path.join(root,'app/h5/package.json'),'utf8')) as unknown);
+    put(root,'app/h5/package.json',JSON.stringify({...pkg,devDependencies:{...record(pkg.devDependencies),tailwindcss:dev.tailwindcss,'@tailwindcss/vite':dev['@tailwindcss/vite']}}));
+    put(root,'app/h5/vite.config.ts',"import {defineConfig} from 'vite'; import tailwindcss from '@tailwindcss/vite'; export default defineConfig({base:'/wecom/yixiaoxiu/',plugins:[tailwindcss()],build:{manifest:true,sourcemap:false,assetsInlineLimit:0}});\n");
     // Use the actual product's scan declarations so removing its boundary breaks this test.
-    const scope=readFileSync(path.join(original,'h5/src/styles.css'),'utf8').split(/\r?\n/u).filter(line=>/^@(?:import "tailwindcss"|source )/u.test(line)).join('\n');
-    put(root,'h5/src/style.css',scope+'\nmain{display:block;color:#123456}');
-    put(root,'h5/src/screen.tsx','export function Screen(){return <main className="w-[347px]">H5 production</main>;}');
+    const scope=readFileSync(path.join(original,'app/h5/src/styles.css'),'utf8').split(/\r?\n/u).filter(line=>/^@(?:import "tailwindcss"|source )/u.test(line)).join('\n');
+    put(root,'app/h5/src/style.css',scope+'\nmain{display:block;color:#123456}');
+    put(root,'app/h5/src/screen.tsx','export function Screen(){return <main className="w-[347px]">H5 production</main>;}');
     buildH5(root);
     const snapshot=()=>h5OutputFiles(root).map(file=>({file,sha256:hash(readFileSync(path.join(root,'.build/emit/h5',file)))}));
     const before=snapshot();
     const css=h5OutputFiles(root).find(file=>file.endsWith('.css'));assert.ok(css);
     assert.match(readFileSync(path.join(root,'.build/emit/h5',css),'utf8'),/347px/u);
-    put(root,'h5/docs/prototype/private.html','<div class="w-[941px]"></div>');
-    put(root,'h5/design-baseline/original.html','<div class="w-[942px]"></div>');
-    put(root,'h5/src/dev/preview.ts','export const fixture="w-[943px]";');
+    put(root,'app/h5/docs/prototype/private.html','<div class="w-[941px]"></div>');
+    put(root,'app/h5/design-baseline/original.html','<div class="w-[942px]"></div>');
+    put(root,'app/h5/src/dev/preview.ts','export const fixture="w-[943px]";');
     put(root,'web/unrelated-page.html','<div class="w-[944px]"></div>');
     buildH5(root);
     assert.deepEqual(snapshot(),before);
@@ -96,12 +96,15 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
   const root=fixture();
   try {
     await t.test('source identity includes production TSX/styles/assets/config/dependencies and excludes design/preview originals',()=>{
+      put(root,'app/h5/.env.local','PRIVATE_H5_ENV_MUST_NOT_IDENTIFY_OR_SHIP=1');
+      put(root,'app/h5/node_modules/.cache/private.ts','PRIVATE_H5_CACHE_MUST_NOT_IDENTIFY_OR_SHIP');
       const files=inputs(root).map(file=>file.path);
-      for(const file of ['h5/src/main.tsx','h5/src/screen.tsx','h5/src/style.css','h5/src/logo.svg','h5/public/assets/icon.png','h5/index.html','h5/package.json','h5/tsconfig.json','h5/vite.config.ts','package-lock.json'])assert.ok(files.includes(file),file);
-      for(const file of ['h5/docs/prototype/private.html','h5/design-baseline/original.html','h5/src/dev/preview.ts'])assert.ok(!files.includes(file),file);
+      for(const file of ['app/h5/src/main.tsx','app/h5/src/screen.tsx','app/h5/src/style.css','app/h5/src/logo.svg','app/h5/public/assets/icon.png','app/h5/index.html','app/h5/package.json','app/h5/tsconfig.json','app/h5/vite.config.ts','package-lock.json'])assert.ok(files.includes(file),file);
+      for(const file of ['app/h5/docs/prototype/private.html','app/h5/design-baseline/original.html','app/h5/src/dev/preview.ts','app/h5/.env.local','app/h5/node_modules/.cache/private.ts'])assert.ok(!files.includes(file),file);
+      assert.ok(!files.some(file=>file.startsWith('h5/')),'runtime h5 output paths cannot become an alternative source root');
       const before=identity(root).input_hash;
-      alter(root,'h5/src/style.css','main{color:red}',()=>assert.notEqual(identity(root).input_hash,before));
-      alter(root,'h5/docs/prototype/private.html','SYNTHETIC_DESIGN_CHANGED',()=>assert.equal(identity(root).input_hash,before));
+      alter(root,'app/h5/src/style.css','main{color:red}',()=>assert.notEqual(identity(root).input_hash,before));
+      alter(root,'app/h5/docs/prototype/private.html','SYNTHETIC_DESIGN_CHANGED',()=>assert.equal(identity(root).input_hash,before));
     });
     await t.test('a real production Vite build stages hashed scripts/styles and same-origin image assets without preview code',()=>{
       buildH5(root);
@@ -117,29 +120,30 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
       stage(root); assert.match(verifyArtifact(root),/^[a-f0-9]{64}$/u);
       const outputs=mappings(root);
       assert.ok(outputs.some(file=>file.kind==='WEB'&&file.path==='h5/assets/icon.png'));
+      assert.ok(outputs.filter(file=>file.kind==='WEB'&&file.path.startsWith('h5/')).every(file=>file.source==='app/h5/index.html'));
       assert.ok(outputs.every(file=>!file.path.includes('/docs/')&&!file.path.includes('design-baseline')&&!file.path.includes('/dev/')));
       const dependency=record(JSON.parse(readFileSync(path.join(root,'.build/runtime/h5/dependency-inventory.json'),'utf8')) as unknown);
       assert.equal(dependency.lock_sha256,hash(readFileSync(path.join(root,'package-lock.json'))));
     });
     await t.test('source or staged H5 asset drift is rejected by the existing artifact verifier',()=>{
-      alter(root,'h5/src/style.css','main{color:red}',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_INPUT_DRIFT/u));
+      alter(root,'app/h5/src/style.css','main{color:red}',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_INPUT_DRIFT/u));
       alter(root,'.build/runtime/h5/assets/icon.png',Buffer.from('tampered'),()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_OUTPUT_TAMPERED/u));
       const script=h5OutputFiles(root).find(file=>file.endsWith('.js'));assert.ok(script);
       alter(root,'.build/emit/h5/'+script,'// changed emitted script',()=>assert.throws(()=>verifyArtifact(root),/H5_(?:OUTPUT|REPRESENTATION)_DRIFT/u));
     });
     await t.test('out-of-scope production TSX fails even when the narrowed program compiles',()=>{
-      const config=record(JSON.parse(readFileSync(path.join(root,'h5/tsconfig.json'),'utf8')) as unknown);
-      alter(root,'h5/tsconfig.json',JSON.stringify({...config,include:['src/main.tsx','src/screen.tsx','vite.config.ts']}),()=>{
-        put(root,'h5/src/not-imported.tsx','export function Missing(){return <div>Must also be checked</div>;}');
-        try{assert.throws(()=>typecheckH5(root),/H5_UNCHECKED_SOURCE/u);}finally{rmSync(path.join(root,'h5/src/not-imported.tsx'));}
+      const config=record(JSON.parse(readFileSync(path.join(root,'app/h5/tsconfig.json'),'utf8')) as unknown);
+      alter(root,'app/h5/tsconfig.json',JSON.stringify({...config,include:['src/main.tsx','src/screen.tsx','vite.config.ts']}),()=>{
+        put(root,'app/h5/src/not-imported.tsx','export function Missing(){return <div>Must also be checked</div>;}');
+        try{assert.throws(()=>typecheckH5(root),/H5_UNCHECKED_SOURCE/u);}finally{rmSync(path.join(root,'app/h5/src/not-imported.tsx'));}
       });
     });
     await t.test('TSX type errors, disabled strictness, and dependency drift fail before release emission',()=>{
-      alter(root,'h5/src/screen.tsx','export function Screen(){const count:number="wrong";return <main>{count}</main>;}',()=>assert.throws(()=>typecheckH5(root),/MIGRATION_COMMAND_FAILED/u));
-      const config=record(JSON.parse(readFileSync(path.join(root,'h5/tsconfig.json'),'utf8')) as unknown);
-      alter(root,'h5/tsconfig.json',JSON.stringify({...config,compilerOptions:{...record(config.compilerOptions),strict:false}}),()=>assert.throws(()=>typecheckH5(root),/H5_STRICT_FLAG_REQUIRED/u));
-      const pkg=record(JSON.parse(readFileSync(path.join(root,'h5/package.json'),'utf8')) as unknown);
-      alter(root,'h5/package.json',JSON.stringify({...pkg,devDependencies:{...record(pkg.devDependencies),vite:'0.0.0'}}),()=>assert.throws(()=>typecheckH5(root),/H5_DEPENDENCY_LOCK_DRIFT/u));
+      alter(root,'app/h5/src/screen.tsx','export function Screen(){const count:number="wrong";return <main>{count}</main>;}',()=>assert.throws(()=>typecheckH5(root),/MIGRATION_COMMAND_FAILED/u));
+      const config=record(JSON.parse(readFileSync(path.join(root,'app/h5/tsconfig.json'),'utf8')) as unknown);
+      alter(root,'app/h5/tsconfig.json',JSON.stringify({...config,compilerOptions:{...record(config.compilerOptions),strict:false}}),()=>assert.throws(()=>typecheckH5(root),/H5_STRICT_FLAG_REQUIRED/u));
+      const pkg=record(JSON.parse(readFileSync(path.join(root,'app/h5/package.json'),'utf8')) as unknown);
+      alter(root,'app/h5/package.json',JSON.stringify({...pkg,devDependencies:{...record(pkg.devDependencies),vite:'0.0.0'}}),()=>assert.throws(()=>typecheckH5(root),/H5_DEPENDENCY_LOCK_DRIFT/u));
     });
     await t.test('manifest path traversal, hidden documents, development chunks, and orphan scripts cannot enter runtime mappings',()=>{
       const manifestPath='.build/emit/h5/.vite/manifest.json';
@@ -154,8 +158,8 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
     });
     await t.test('public files are limited to declared image/font assets with original bytes',()=>{
       for(const file of ['private.html','.secret','assets/runtime.js','assets/preview.png']){
-        put(root,'h5/public/'+file,'SYNTHETIC_NOT_PUBLIC');
-        try{assert.throws(()=>h5OutputFiles(root),/H5_PUBLIC_ASSET_INVALID/u);}finally{rmSync(path.join(root,'h5/public',file));}
+        put(root,'app/h5/public/'+file,'SYNTHETIC_NOT_PUBLIC');
+        try{assert.throws(()=>h5OutputFiles(root),/H5_PUBLIC_ASSET_INVALID/u);}finally{rmSync(path.join(root,'app/h5/public',file));}
       }
       alter(root,'.build/emit/h5/assets/icon.png',Buffer.from('changed'),()=>assert.throws(()=>h5OutputFiles(root),/H5_PUBLIC_ASSET_INVALID/u));
       alter(root,'.build/emit/h5/asset-inventory.json','[]',()=>assert.throws(()=>h5OutputFiles(root),/H5_ASSET_INVENTORY_DRIFT/u));
@@ -201,9 +205,9 @@ test('actual theme build emits one small synchronous hashed script and a deferre
   try{
     // The real product deliberately disables Vite's public directory. These two
     // synthetic public assets belong only to the generic artifact fixture.
-    for(const file of ['assets/support.svg','assets/icon.png'])rmSync(path.join(root,'h5/public',file));
-    for(const file of ['h5/vite.config.ts','h5/compile-i18n.ts','h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
-    put(root,'h5/index.html','<!doctype html><html><head><meta name="theme-color" content="#faf9f8"><!--h5-prepaint--></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
+    for(const file of ['assets/support.svg','assets/icon.png'])rmSync(path.join(root,'app/h5/public',file));
+    for(const file of ['app/h5/vite.config.ts','app/h5/compile-i18n.ts','app/h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
+    put(root,'app/h5/index.html','<!doctype html><html><head><meta name="theme-color" content="#faf9f8"><!--h5-prepaint--></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
     buildH5(root);
     const html=readFileSync(path.join(root,'.build/emit/h5/index.html'),'utf8'),scripts=[...html.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*>/gu)];
     assert.equal(scripts.length,2);assert.ok(scripts.some(match=>/^<script src="\/wecom\/yixiaoxiu\/assets\/prepaint-[a-f0-9]{16}\.js"><\/script>$/u.test(match[0]+'</script>')));

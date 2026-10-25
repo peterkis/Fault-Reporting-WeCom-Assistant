@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 import {withP2012Database,applyThrough031,apply032Raw,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 
 test('T27 current decision context separates exact parent version, retained material basis and lawful owner choices',async()=>{

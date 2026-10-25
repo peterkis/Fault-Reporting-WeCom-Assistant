@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { createAliasResolver, resolveAlias } from '../../src/p2-007-alias-resolver.mjs';
-import { planClarification } from '../../src/p2-007-clarification-planner.mjs';
-import { resolveFactConflicts } from '../../src/p2-007-conflict-resolver.mjs';
-import { P2007DomainError, canonicalJson } from '../../src/p2-007-domain-utils.mjs';
-import { buildFactProvenance } from '../../src/p2-007-fact-provenance.mjs';
-import { resolveFaultTaxonomy } from '../../src/p2-007-fault-taxonomy.mjs';
-import { generateIncidentCandidate } from '../../src/p2-007-incident-candidate.mjs';
-import { generateNotificationRecommendation } from '../../src/p2-007-notification-recommendation.mjs';
-import { createServiceCatalog, loadServiceCatalog } from '../../src/p2-007-service-catalog.mjs';
+import { createAliasResolver, resolveAlias } from '../../app/server/src/p2-007-alias-resolver.mjs';
+import { planClarification } from '../../app/server/src/p2-007-clarification-planner.mjs';
+import { resolveFactConflicts } from '../../app/server/src/p2-007-conflict-resolver.mjs';
+import { P2007DomainError, canonicalJson } from '../../app/server/src/p2-007-domain-utils.mjs';
+import { buildFactProvenance } from '../../app/server/src/p2-007-fact-provenance.mjs';
+import { resolveFaultTaxonomy } from '../../app/server/src/p2-007-fault-taxonomy.mjs';
+import { generateIncidentCandidate } from '../../app/server/src/p2-007-incident-candidate.mjs';
+import { generateNotificationRecommendation } from '../../app/server/src/p2-007-notification-recommendation.mjs';
+import { createServiceCatalog, loadServiceCatalog } from '../../app/server/src/p2-007-service-catalog.mjs';
 
 const LOCAL_TIME = '2026-09-03 15:30:00';
 const aliasDictionary = JSON.parse(readFileSync('config_examples/p2-007-alias-dictionary.example.json', 'utf8'));

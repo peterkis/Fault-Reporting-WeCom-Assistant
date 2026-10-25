@@ -3,7 +3,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {normalizeTicketUnassignCommand} from '../src/workbench-ticket-unassign.mjs';
+import {normalizeTicketUnassignCommand} from '../app/server/src/workbench-ticket-unassign.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 

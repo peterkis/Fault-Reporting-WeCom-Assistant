@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createManualReviewStore } from '../src/p2-015-manual-review.mjs';
+import { createManualReviewStore } from '../app/server/src/p2-015-manual-review.mjs';
 
 test('manual review internal query and resolve default deny before storage access', async () => {
   let queries = 0;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import type {IncomingMessage,ServerResponse} from 'node:http';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';

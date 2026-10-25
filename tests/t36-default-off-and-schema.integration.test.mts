@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
 import {ownedHttp} from './helpers/t36-supplement-fixture.mjs';
-import {migrateWorkbenchSupplementFollowUp,supplementFollowUpSchemaReady} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
+import {migrateWorkbenchSupplementFollowUp,supplementFollowUpSchemaReady} from '../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
 test('T36 default OFF starts the original host without 062 and preserves original Ticket READ',{timeout:240000},()=>withT35Fixture(async f=>{
  const get=(path:string)=>ownedHttp(f.origin+path,{headers:{cookie:f.firstCookie}}),id=f.tickets[0]?.ticket.id;assert.ok(id);
  const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.status,200);const body=await bootstrap.json() as {supplement_follow_up_enabled:boolean;supplement_follow_up_draft_recovery_enabled:boolean};assert.equal(body.supplement_follow_up_enabled,false);assert.equal(body.supplement_follow_up_draft_recovery_enabled,false);

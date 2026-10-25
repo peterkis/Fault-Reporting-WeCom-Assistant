@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {createP2016WorkbenchHttp} from '../src/p2-016-workbench-http.mjs';
+import {createP2016WorkbenchHttp} from '../app/server/src/p2-016-workbench-http.mjs';
 
 test('internal-note receipt schema admits only safe closed UNKNOWN, COMMITTED and FAILED shapes',async()=>{
   const base={client_command_id:randomUUID(),ticket_id:randomUUID()};

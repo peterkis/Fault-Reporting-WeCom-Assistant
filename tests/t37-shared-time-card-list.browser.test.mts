@@ -86,6 +86,7 @@ async function openDetail(browser:Browser,node:string,linkSelector:string){
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)}))`);
 }
 async function clickSchedule(browser:Browser,label:string){
+  await browser.waitFor(`(()=>{const root=document.querySelector(${JSON.stringify(region)}),button=[...(root?.querySelectorAll('button')??[])].find(node=>node.textContent.trim()===${JSON.stringify(label)});return Boolean(button&&!button.disabled);})()`);
   await browser.evaluate(`(()=>{const root=document.querySelector(${JSON.stringify(region)}),button=[...(root?.querySelectorAll('button')??[])].find(node=>node.textContent.trim()===${JSON.stringify(label)});if(!button||button.disabled)throw Error('T37_NATIVE_SHARED_TIME_CONTROL_REQUIRED');button.click();})()`);
 }
 async function capture(browser:Browser,phase:string,name:'new-board-1920.png'|'new-list-1920.png'|'new-detail-1920.png'):Promise<ImageReceipt>{

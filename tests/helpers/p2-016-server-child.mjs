@@ -1,5 +1,5 @@
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { createP2016Runtime } from '../../src/p2-016-runtime.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { createP2016Runtime } from '../../app/server/src/p2-016-runtime.mjs';
 const pool=createPostgresPool({connectionString:process.env.PILOT_DATABASE_URL,max:2,application_name:'p2_016_test_server_child'});
 let runtime;
 process.once('message',async input=>{

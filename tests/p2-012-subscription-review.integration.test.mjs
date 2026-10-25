@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createP2012NotificationPolicy} from '../src/p2-012-notification-policy.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createP2012NotificationPolicy} from '../app/server/src/p2-012-notification-policy.mjs';
 import {withP2012Database,applyThrough031,apply032Raw,fixtureP2012} from './helpers/p2-012-postgres-harness.mjs';
 
 test('P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation',async()=>{

@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { compileG2ManualAssertion, verifyG2ManualSource } from '../src/p2-g2-manual-evidence.mjs';
-import { readG2SourceFile, writeG2SourceFile, g2SourceBinding } from '../src/p2-g2-evidence-files.mjs';
+import { G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { compileG2ManualAssertion, verifyG2ManualSource } from '../app/server/src/p2-g2-manual-evidence.mjs';
+import { readG2SourceFile, writeG2SourceFile, g2SourceBinding } from '../app/server/src/p2-g2-evidence-files.mjs';
 
 test('manual evidence consumes exact human assertion and preserved fragment; ACK, altered claim and changed fragment are rejected',t=>{
   mkdirSync(path.join(G2_ROOT,'tmp'),{recursive:true});

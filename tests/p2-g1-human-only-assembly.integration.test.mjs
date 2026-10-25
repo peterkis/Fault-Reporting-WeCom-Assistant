@@ -2,35 +2,36 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
 
-import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
-import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
-import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
-import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
-import { applyPilotAccessMigration, createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
-import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
-import { applyConversationContractsMigration } from '../src/p2-001-conversation-contracts.mjs';
-import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
-import { appendRealtimeEvent, applyRealtimeEventLogMigration } from '../src/p2-003-realtime-event-log.mjs';
-import { applyCommunicationMigration, createCommunicationService } from '../src/p2-004-communication-core.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
-import { createMockCommunicationSender } from '../src/p2-004-communication-sender-port.mjs';
-import { applyConversationControlMigration, CONVERSATION_CONTROL_ERROR_CODES, createAssignedCommunicationAuthorizer, createConversationControlService, createPilotConversationControlAuthorization } from '../src/p2-005-conversation-control.mjs';
-import { createPilotWorkbenchAuthorizationAdapter } from '../src/p2-006-workbench-authorization.mjs';
-import { createConversationWorkbenchCommandFacade } from '../src/p2-006-workbench-command-facade.mjs';
-import { createConversationWorkbenchQueryService } from '../src/p2-006-workbench-query.mjs';
-import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../src/p2-g1-human-only-assembly.mjs';
-import { createP2G1InboundProjectionCoordinator } from '../src/p2-g1-inbound-projection-coordinator.mjs';
-import { captureP2G1CatalogSnapshot } from '../src/p2-g1-observability.mjs';
-import { createP2G1ProcessCluster } from '../src/p2-g1-process-cluster.mjs';
-import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
+import { applyChannelMessageInboxMigration } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { applyServiceIntakeMigration } from '../app/server/src/p1-004-service-intake.mjs';
+import { applyPilotTicketCoreMigration } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { applyTicketStateActionMigration } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { applyNotificationOutboxMigration } from '../app/server/src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration, createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
+import { applyConversationContractsMigration } from '../app/server/src/p2-001-conversation-contracts.mjs';
+import { applyTimelineProjectionMigration, mapChannelMessageTimelineSource } from '../app/server/src/p2-002-timeline-projector.mjs';
+import { appendRealtimeEvent, applyRealtimeEventLogMigration } from '../app/server/src/p2-003-realtime-event-log.mjs';
+import { applyCommunicationMigration, createCommunicationService } from '../app/server/src/p2-004-communication-core.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { createMockCommunicationSender } from '../app/server/src/p2-004-communication-sender-port.mjs';
+import { applyConversationControlMigration, CONVERSATION_CONTROL_ERROR_CODES, createAssignedCommunicationAuthorizer, createConversationControlService, createPilotConversationControlAuthorization } from '../app/server/src/p2-005-conversation-control.mjs';
+import { createPilotWorkbenchAuthorizationAdapter } from '../app/server/src/p2-006-workbench-authorization.mjs';
+import { createConversationWorkbenchCommandFacade } from '../app/server/src/p2-006-workbench-command-facade.mjs';
+import { createConversationWorkbenchQueryService } from '../app/server/src/p2-006-workbench-query.mjs';
+import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createP2G1InboundProjectionCoordinator, createP2G1TimelineProjector } from '../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
+import { captureP2G1CatalogSnapshot } from '../app/server/src/p2-g1-observability.mjs';
+import { createP2G1ProcessCluster } from '../app/server/src/p2-g1-process-cluster.mjs';
+import { createP2G1Runtime } from '../app/server/src/p2-g1-runtime.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
-import { runP2G1ReplayGap } from '../scripts/p2-g1-replay-gap-e2e.mjs';
-import { submitP2G1ResourceInternalNote } from '../scripts/p2-g1-resource-observation.mjs';
+import { runP2G1ReplayGap } from '../app/server/scripts/p2-g1-replay-gap-e2e.mjs';
+import { submitP2G1ResourceInternalNote } from '../app/server/scripts/p2-g1-resource-observation.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_G1_INTEGRATION_DATABASE_REQUIRED');
@@ -447,4 +448,48 @@ test('P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 50
     t.diagnostic(JSON.stringify({ synthetic_inbound: 1000, projected, delivery_backlog: 500, delivery_sent: 500, sender_calls: 500, projector_batch: 20, delivery_batch: 20, pool_max: 4, catalog_unchanged: true, oom: 0, soak_24h: false }));
   } });
   await assertNoP2006Residual({ databaseUrl });
+});
+
+test('P2-G1 takes the original Thread before any Session foreign-key lock and replays the same material once',{timeout:TIMEOUT},async t=>{
+ await withP2006IsolatedDatabase({databaseUrl,purpose:'g1lock',run:async({pool,databaseUrl:isolated})=>{
+  await base(pool,isolated);let observation={};
+ const original=await seedPersistedIntake({pool,text:'G1 lock ordering original channel material'});
+ const coordinator=createP2G1InboundProjectionCoordinator({pool,enabled:true});
+ const initial=await coordinator.runOnce();assert.equal(initial.failures,0);
+ const session=(await pool.query('SELECT s.id::text,s.thread_id::text,i.retention_until FROM conversation.session s JOIN intake.service_intake i ON i.id=s.service_intake_id WHERE s.service_intake_id=$1::uuid',[original.intakeId])).rows[0];assert.ok(session);
+ const clock=(await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0];assert.ok(clock);
+ const tag='g1-lock-'+randomUUID();
+ const message=(await pool.query(`INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,
+   chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,
+   processing_status,response_snapshot,privacy_class,trace_id,retention_until,completed_at)
+   SELECT schema_version,provider,$2,'WECOM_AIBOT:'||$2,'req-'||$2,bot_id,chat_type,chat_id,sender_user_id,msg_type,
+    platform.local_from_epoch_ms($3::bigint),raw_text,clean_text,normalized_message,'COMPLETED','{}'::jsonb,privacy_class,
+    'trace-'||$2,retention_until,platform.local_from_epoch_ms($3::bigint) FROM channel.message_inbox WHERE id=$1::bigint
+   RETURNING id::text,provider,bot_id,chat_type,chat_id,sender_user_id,msg_type,clean_text,received_at,privacy_class,retention_until`,[original.messageId,tag,clock.epoch])).rows[0];assert.ok(message);
+ await pool.query(`INSERT INTO intake.service_intake_message(intake_id,channel_message_id,relation_type,sequence_no,linked_at,trace_id)
+   VALUES($1::uuid,$2::bigint,'SUPPLEMENT',2,platform.local_from_epoch_ms($3::bigint),$4)`,[original.intakeId,message.id,clock.epoch,tag]);
+ const record=mapChannelMessageTimelineSource({...message,source_ordinal:2},{projectorName:'CONVERSATION_TIMELINE',projectorVersion:'P2-G1.1',sourceStream:'CHANNEL_MESSAGE_INBOX',sessionId:session.id,privacyClass:message.privacy_class,retentionUntil:message.retention_until});
+ const blocker=await pool.connect();let pending=null,writerPid=null;
+ const projector=createP2G1TimelineProjector({pool,enabled:true,transactionStartHook:async({transaction})=>{writerPid=(await transaction.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;}});
+ try{
+  await blocker.query('BEGIN');const blockerPid=(await blocker.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+  await blocker.query('SELECT id FROM conversation.thread WHERE id=$1::uuid FOR UPDATE',[session.thread_id]);
+  pending=projector.projectBatch({projectorName:'CONVERSATION_TIMELINE',projectorVersion:'P2-G1.1',sourceStream:'CHANNEL_MESSAGE_INBOX',records:[record],cursorValue:message.id});
+  void pending.catch(()=>{});
+  let blocked=false;const deadline=performance.now()+10000;
+  while(performance.now()<deadline){
+   if(writerPid!==null)blocked=(await pool.query("SELECT 1 FROM pg_stat_activity WHERE pid=$1 AND wait_event_type='Lock' AND $2=ANY(pg_blocking_pids(pid))",[writerPid,blockerPid])).rowCount===1;
+   if(blocked)break;await new Promise(resolve=>setTimeout(resolve,20));
+  }
+  assert.equal(blocked,true,'the original projector transaction must be waiting on the held original Thread');
+  observation={blocker_pid:blockerPid,writer_pid:writerPid,session_id:session.id,thread_id:session.thread_id,writer_waiting_on_blocker:true};
+  await blocker.query('SELECT id FROM conversation.session WHERE id=$1::uuid FOR UPDATE NOWAIT',[session.id]);
+  observation.session_lock_available_while_thread_held=true;
+  await blocker.query('ROLLBACK');const result=await pending;assert.equal(result.inserted_count,1);
+  const replay=await projector.projectBatch({projectorName:'CONVERSATION_TIMELINE',projectorVersion:'P2-G1.1',sourceStream:'CHANNEL_MESSAGE_INBOX',records:[record],cursorValue:message.id});
+  assert.equal(replay.inserted_count,0);assert.equal(replay.replayed_count,1);
+  assert.equal((await coordinator.runOnce()).failures,0);assert.equal((await coordinator.backlog()).total,0);
+ }finally{await blocker.query('ROLLBACK');blocker.release();await pending?.catch(()=>{});}
+  t.diagnostic(JSON.stringify({lock_order:'THREAD_BEFORE_SESSION',...observation,actual_inserted:1,replay_inserted:0,replay_replayed:1,backlog:0}));
+ }});
 });

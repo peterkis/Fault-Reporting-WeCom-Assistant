@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createWorkbenchActivity} from '../src/workbench-activity.mjs';
+import {createWorkbenchActivity} from '../app/server/src/workbench-activity.mjs';
 import type {WorkbenchActivityTarget} from '../contracts/workbench_activity_contracts.js';
 function service(){
   return createWorkbenchActivity({enabled:true,now:()=>100000,authorize:async auth=>{

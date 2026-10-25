@@ -6,11 +6,11 @@ import {readFileSync,mkdtempSync,writeFileSync,rmSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {limitedTemplate,validateLimitedManifest,parseLimitedArguments,databaseIdentity,readLimitedConfiguration,limitedConfigurationDigest,approvalScope,verifyLimitedApproval,digest} from '../src/yxx-limited-write-contract.mjs';
+import {limitedTemplate,validateLimitedManifest,parseLimitedArguments,databaseIdentity,readLimitedConfiguration,limitedConfigurationDigest,approvalScope,verifyLimitedApproval,digest} from '../app/server/src/yxx-limited-write-contract.mjs';
 import {manifestFixture} from './helpers/yxx-ss-010-fixture.mjs';
 import {config,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {readSS010Artifact} from '../src/yxx-self-service-readiness.mjs';
-import {stopLimitedChild} from '../src/yxx-limited-write-runner.mjs';
+import {readSS010Artifact} from '../app/server/src/yxx-self-service-readiness.mjs';
+import {stopLimitedChild} from '../app/server/src/yxx-limited-write-runner.mjs';
 
 test('SS010 AC092 offline defaults and unapproved template never start runtime capabilities',()=>{
   validateLimitedManifest(limitedTemplate(),{template:true});
@@ -20,7 +20,7 @@ test('SS010 AC092 offline defaults and unapproved template never start runtime c
     const hook=path.join(folder,'guard.mjs');
     writeFileSync(hook,"import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{throw Error('FORBIDDEN_RUNTIME_IO');};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();");
     for(const args of [[],['--check']]){
-      const result=JSON.parse(execFileSync(process.execPath,['--import',pathToFileURL(hook).href,'scripts/yxx-self-service-live.mjs',...args],{encoding:'utf8',windowsHide:true}));
+      const result=JSON.parse(execFileSync(process.execPath,['--import',pathToFileURL(hook).href,'app/server/scripts/yxx-self-service-live.mjs',...args],{encoding:'utf8',windowsHide:true}));
       assert.equal(result.status,'TEMPLATE_VALID_NOT_AUTHORIZED');for(const key of ['database_connections','provider_calls','processes_started'])assert.equal(result[key],0);
     }
     // The Git-bound readiness CLI is compared against authentic T01 in the source-host CI step.
@@ -41,7 +41,7 @@ test('SS010 AC092 closed permissions identity window and conservative budget rej
 test('SS010 AC094 unknown duplicate and run arguments fail without implicit authorization',()=>{
   for(const args of [['--run','--check'],['--wat'],['--resume'],['--manifest=a','--manifest=b']])assert.throws(()=>parseLimitedArguments(args));
   for(const args of [['--run'],['--run','--resume'],['--require-ready']]){
-    const result=spawnSync(process.execPath,['scripts/yxx-self-service-live.mjs',...args],{encoding:'utf8',windowsHide:true});assert.equal(result.status,1);assert.equal(JSON.parse(result.stdout).live_authorized,false);
+    const result=spawnSync(process.execPath,['app/server/scripts/yxx-self-service-live.mjs',...args],{encoding:'utf8',windowsHide:true});assert.equal(result.status,1);assert.equal(JSON.parse(result.stdout).live_authorized,false);
   }
 });
 test('SS011 single approved Reporter accepts only A or the existing ordered A B pair',()=>{

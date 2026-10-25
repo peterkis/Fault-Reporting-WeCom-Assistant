@@ -1,5 +1,5 @@
-import {normalizeSelfHandlingCommand} from '../../src/workbench-ticket-self-handling.mjs';
-import type {createTicketSelfHandlingService} from '../../src/workbench-ticket-self-handling.mjs';
+import {normalizeSelfHandlingCommand} from '../../app/server/src/workbench-ticket-self-handling.mjs';
+import type {createTicketSelfHandlingService} from '../../app/server/src/workbench-ticket-self-handling.mjs';
 import type {P2016SelfHandlingCommand,P2016SelfHandlingResult} from '../../contracts/p2_016_contracts.js';
 declare const external:unknown;
 const normalized=normalizeSelfHandlingCommand(external);

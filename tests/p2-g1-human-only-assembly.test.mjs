@@ -8,19 +8,19 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { testRoots } from './helpers/migration-roots.mjs';
 
-import { createP2G1HumanOnlyAssembly, P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
-import { createP2G1InboundProjectionCoordinator, P2_G1_PROJECTION_STREAMS } from '../src/p2-g1-inbound-projection-coordinator.mjs';
-import { createP2G1ProcessMetrics } from '../src/p2-g1-process-metrics.mjs';
-import { createP2G1TestAuthentication } from '../src/p2-g1-test-authentication.mjs';
-import { createP2G1WeComGateway } from '../src/p2-g1-wecom-gateway.mjs';
-import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mjs';
-import { configuredP2G1PrincipalIds, createP2G1RunId } from '../scripts/p2-g1-live-e2e.mjs';
+import { createP2G1HumanOnlyAssembly, P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createP2G1InboundProjectionCoordinator, P2_G1_PROJECTION_STREAMS } from '../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
+import { createP2G1ProcessMetrics } from '../app/server/src/p2-g1-process-metrics.mjs';
+import { createP2G1TestAuthentication } from '../app/server/src/p2-g1-test-authentication.mjs';
+import { createP2G1WeComGateway } from '../app/server/src/p2-g1-wecom-gateway.mjs';
+import { createP2G1WeComCommunicationSender } from '../app/server/src/p2-g1-wecom-sender.mjs';
+import { configuredP2G1PrincipalIds, createP2G1RunId } from '../app/server/scripts/p2-g1-live-e2e.mjs';
 
 function hash(value) { return createHash('sha256').update(value).digest('hex'); }
 
 test('G1 staged preflight recognizes assembly files from source and runtime working directories without activating services', () => {
   const { sourceRoot, runtimeRoot } = testRoots();
-  const script = pathToFileURL(path.join(runtimeRoot, 'scripts/p2-g1-check.mjs')).href;
+  const script = pathToFileURL(path.join(runtimeRoot, 'app/server/scripts/p2-g1-check.mjs')).href;
   const probe = `import { runP2G1Check } from ${JSON.stringify(script)}; console.log(JSON.stringify(await runP2G1Check({ env: {} })));`;
   for (const cwd of [sourceRoot, runtimeRoot]) {
     const child = spawnSync(process.execPath, ['--input-type=module', '--eval', probe], { cwd, encoding: 'utf8', windowsHide: true });
@@ -194,7 +194,7 @@ test('temporary database failure is isolated behind stable projection errors wit
 });
 
 test('P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence', () => {
-  const projector = readFileSync('src/p2-002-timeline-projector.mjs', 'utf8');
+  const projector = readFileSync('app/server/src/p2-002-timeline-projector.mjs', 'utf8');
   assert.match(projector, /itemTransactionHook = null/u);
   assert.match(projector, /await itemTransactionHook/u);
   const browser = readFileSync('web/p2-workbench/workbench.js', 'utf8');
@@ -211,8 +211,8 @@ test('P2-002 transaction hook is optional and P2-G1 browser source has an in-fli
 });
 
 test('live script has no broad --live mode and no default live-send npm command', () => {
-  const live = readFileSync('scripts/p2-g1-live-e2e.mjs', 'utf8');
-  const browserSessions = readFileSync('src/p2-g1-browser-sessions.mjs', 'utf8');
+  const live = readFileSync('app/server/scripts/p2-g1-live-e2e.mjs', 'utf8');
+  const browserSessions = readFileSync('app/server/src/p2-g1-browser-sessions.mjs', 'utf8');
   assert.doesNotMatch(live, /--live\b/u);
   assert.match(live, /supported_modes: P2_G1_LIVE_MODES/u);
   assert.match(live, /p2_g1_live_ready/u);
@@ -233,19 +233,19 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.doesNotMatch(browserSessions, /lastEventId/u);
   assert.match(live, /process\.stdin\.removeAllListeners\('data'\)/u);
   assert.match(live, /process\.stdin\.pause\(\)/u);
-  assert.match(readFileSync('src/p2-g1-runtime.mjs', 'utf8'), /refreshAuthorization: true/u);
-  assert.match(readFileSync('src/p2-003-realtime-sse.mjs', 'utf8'), /state\.authorization = normalizeRealtimeAuthorization\(await authorizePrincipal/u);
+  assert.match(readFileSync('app/server/src/p2-g1-runtime.mjs', 'utf8'), /refreshAuthorization: true/u);
+  assert.match(readFileSync('app/server/src/p2-003-realtime-sse.mjs', 'utf8'), /state\.authorization = normalizeRealtimeAuthorization\(await authorizePrincipal/u);
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);
-  const resource = readFileSync('scripts/p2-g1-resource-observation.mjs', 'utf8');
+  const resource = readFileSync('app/server/scripts/p2-g1-resource-observation.mjs', 'utf8');
   assert.match(resource, /MINIMUM_DURATION_MS = 3_600_000/u);
   assert.match(resource, /app_rss_bytes/u);
   assert.match(resource, /worker_rss_bytes/u);
   assert.match(resource, /gateway_rss_bytes/u);
   assert.match(resource, /postgres_connection_utilization_percent/u);
   assert.match(resource, /claim_24h_soak: false/u);
-  const replayGap = readFileSync('scripts/p2-g1-replay-gap-e2e.mjs', 'utf8');
+  const replayGap = readFileSync('app/server/scripts/p2-g1-replay-gap-e2e.mjs', 'utf8');
   assert.match(replayGap, /P2_G1_ISOLATED_REPLAY_GAP_APPROVED/u);
   assert.match(replayGap, /pilot_database_mutated: false/u);
   assert.match(replayGap, /withP2G1IsolatedPostgres/u);

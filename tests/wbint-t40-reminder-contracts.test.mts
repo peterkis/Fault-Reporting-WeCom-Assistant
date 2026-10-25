@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeReminderPage,decodeReminderCoordination,decodeReminderPreferences,mutedReminderPreferences} from '../src/workbench-reminder-browser-contracts.mjs';
+import {decodeReminderPage,decodeReminderCoordination,decodeReminderPreferences,mutedReminderPreferences} from '../app/pc-admin/src/contracts/workbench-reminder-browser-contracts.mjs';
 
 test('T40 browser preferences accept only bounded settings and fail closed for identity or draft fields',()=>{
   assert.deepEqual(decodeReminderPreferences(null),mutedReminderPreferences);

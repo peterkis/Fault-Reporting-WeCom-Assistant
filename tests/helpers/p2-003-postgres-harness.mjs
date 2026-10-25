@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
 export const P2003_DATABASE_NAME_PATTERN = /^p2_003_[a-z0-9]{1,12}_[a-f0-9_]{36}$/u;
 const APPLICATION_NAME_PATTERN = /^p2_003_[a-z0-9_]{1,54}$/u;

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
-import { createWorkbenchDeliveryControl } from '../src/p2-006-workbench-delivery-control.mjs';
-import { WORKBENCH_ERROR_CODES, WorkbenchError } from '../src/p2-006-workbench-query.mjs';
-import { migrateWorkbenchAuth } from '../scripts/p2-016-workbench-auth-migrate.mjs';
+import { createWeComWorkbenchAuthentication } from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
+import { createWorkbenchDeliveryControl } from '../app/server/src/p2-006-workbench-delivery-control.mjs';
+import { WORKBENCH_ERROR_CODES, WorkbenchError } from '../app/server/src/p2-006-workbench-query.mjs';
+import { migrateWorkbenchAuth } from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
 
 const origin = 'https://cd3120.mobimedical.cn';
 

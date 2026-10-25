@@ -4,12 +4,12 @@ import {createHash} from 'node:crypto';
 import {request as httpRequest} from 'node:http';
 import {withP2012Database,applyThrough031} from './p2-012-postgres-harness.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
-import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {appendTicketEvent} from '../../src/p1-006-ticket-state-actions.mjs';
-import {createP2016ReporterAccess} from '../../src/p2-016-reporter-access.mjs';
-import {createP2016TicketNotificationProjector} from '../../src/p2-016-ticket-notification-projector.mjs';
-import {transactionP2016} from '../../src/p2-016-domain-contracts.mjs';
+import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {appendTicketEvent} from '../../app/server/src/p1-006-ticket-state-actions.mjs';
+import {createP2016ReporterAccess} from '../../app/server/src/p2-016-reporter-access.mjs';
+import {createP2016TicketNotificationProjector} from '../../app/server/src/p2-016-ticket-notification-projector.mjs';
+import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
 
 export const entryOrigin='https://entry.test';
 export const entryConfig=Object.freeze({enabled:true,corpId:'synthetic-corp',agentId:'1000002',botId:'bot-test',

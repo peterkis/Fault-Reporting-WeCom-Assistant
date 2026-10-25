@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {browser,login,oauthOptions,mapping,post} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('M feedback capability defaults false and does not extend the old own-detail or command ledger',async()=>{

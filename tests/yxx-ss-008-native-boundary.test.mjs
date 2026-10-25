@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createServer } from 'node:http';
-import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
+import { createYxxSelfServiceNativeHttp } from '../app/server/src/yxx-self-service-native-http.mjs';
 
 test('SS-008 submit and supplement suppress an old member receipt after a committed identity change',async()=>{
   let native,binding='a',committed=0;

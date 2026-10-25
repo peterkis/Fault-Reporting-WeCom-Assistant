@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { P2_015_LIMITS } from '../src/p2-015-domain-contracts.mjs';
-import { createP2015Worker } from '../src/p2-015-worker.mjs';
+import { P2_015_LIMITS } from '../app/server/src/p2-015-domain-contracts.mjs';
+import { createP2015Worker } from '../app/server/src/p2-015-worker.mjs';
 
 test('worker defaults are bounded and disabled flags claim nothing', async () => {
   let queries = 0;

@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {normalizeCommand,hash} from '../src/p2-012-domain-contracts.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
+import {normalizeCommand,hash} from '../app/server/src/p2-012-domain-contracts.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 test('T31 public command preserves the manually confirmed original summary and rejects unsafe or privileged inputs',()=>{
   const body={action:'PUBLISH_PUBLIC_PROGRESS',incident_id:randomUUID(),client_command_id:randomUUID(),expected_row_version:'9223372036854775807',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary:'😀'.repeat(1000),preview_confirmed:true};
   assert.deepEqual(normalizeCommand(body),body);assert.equal(hash(body),hash(Object.fromEntries(Object.entries(body).reverse())));assert.notEqual(hash(body),hash({...body,summary:'另一原意图'}));

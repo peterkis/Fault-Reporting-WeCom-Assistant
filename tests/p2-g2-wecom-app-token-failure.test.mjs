@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWeComAppTokenProvider } from '../src/p2-g2-wecom-app-token.mjs';
-import { createWeComOAuthCodeResolver } from '../src/p2-g2-wecom-oauth-provider.mjs';
+import { createWeComAppTokenProvider } from '../app/server/src/p2-g2-wecom-app-token.mjs';
+import { createWeComOAuthCodeResolver } from '../app/server/src/p2-g2-wecom-oauth-provider.mjs';
 
 test('提前失效的应用令牌被清除，30秒刷新保护后新登录获取新令牌，不重试 code',async()=>{
   let now=0,tokens=0,users=0;

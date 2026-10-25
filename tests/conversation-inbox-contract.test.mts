@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {conversationInboxCriteria} from '../src/workbench-conversation-inbox.mjs';
-import {conversationReference} from '../src/conversation-topic-scope.mjs';
+import {conversationInboxCriteria} from '../app/server/src/workbench-conversation-inbox.mjs';
+import {conversationReference} from '../app/server/src/conversation-topic-scope.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 test('inbox criteria are closed, bounded and preserve explicit origin filters',()=>{
   const url=(q:string)=>new URL('/api/workbench/conversation-inbox'+q,'http://127.0.0.1');

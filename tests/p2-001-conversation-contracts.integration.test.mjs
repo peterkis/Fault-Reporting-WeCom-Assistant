@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
-import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { applyChannelMessageInboxMigration } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { applyServiceIntakeMigration } from '../app/server/src/p1-004-service-intake.mjs';
+import { applyPilotTicketCoreMigration } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
   CONVERSATION_ERROR_CODES,
   applyConversationContractsMigration,
@@ -12,7 +12,7 @@ import {
   buildConversationThreadIdentity,
   createConversationSessionContractRecord,
   mapConversationStorageError,
-} from '../src/p2-001-conversation-contracts.mjs';
+} from '../app/server/src/p2-001-conversation-contracts.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;

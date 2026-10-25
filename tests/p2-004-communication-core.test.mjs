@@ -18,19 +18,19 @@ import {
   normalizeCommunicationCommand,
   resolveCommunicationDestination,
   snapshotCommunicationJson,
-} from '../src/p2-004-communication-core.mjs';
+} from '../app/server/src/p2-004-communication-core.mjs';
 import {
   createCommunicationSenderPort,
   createMockCommunicationSender,
   validateCommunicationSenderResult,
-} from '../src/p2-004-communication-sender-port.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
+} from '../app/server/src/p2-004-communication-sender-port.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {
   mapCommunicationDeliveryChangedRealtimeEvent,
   mapCommunicationDeliveryToTimelineSourceRecord,
   mapCommunicationMessageToTimelineSourceRecord,
   mapLegacyNotificationDeliveryToCommunicationView,
-} from '../src/p2-004-communication-projections.mjs';
+} from '../app/server/src/p2-004-communication-projections.mjs';
 
 const sessionId = '018f6f15-7a11-7cc0-9e40-111111111111';
 const actorId = '018f6f15-7a11-7cc0-9e40-222222222222';

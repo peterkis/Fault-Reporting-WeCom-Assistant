@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withYxxDatabase,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createTargetedTicketCreation} from '../src/p2-g2-yxx-targeted-creation.mjs';
+import {createTargetedTicketCreation} from '../app/server/src/p2-g2-yxx-targeted-creation.mjs';
 
 test('targeted Bot ingestion persists four isolated tickets and bounds concurrent retries across restart',async()=>{
  await withYxxDatabase(async({pool})=>{

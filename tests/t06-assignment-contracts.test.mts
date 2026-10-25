@@ -1,11 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {normalizeTicketAssignmentCommand,assignmentActions} from '../src/workbench-ticket-assignment.mjs';
+import {normalizeTicketAssignmentCommand,assignmentActions} from '../app/server/src/workbench-ticket-assignment.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {P2016TicketRow} from '../src/p2-016-ticket-query.mjs';
-import type {WorkbenchPrincipal} from '../src/p2-006-workbench-authorization.mjs';
+import type {P2016TicketRow} from '../app/server/src/p2-016-ticket-query.mjs';
+import type {WorkbenchPrincipal} from '../app/server/src/p2-006-workbench-authorization.mjs';
 test('the real enabled public Ticket detail remains covered by the closed published schema',async()=>{
  await withWeb01Fixture(async(context:{origin:string;cookies:string[];tickets:{ticket:{id:string}}[]})=>{const first=context.tickets[0],cookie=context.cookies[0];assert.ok(first&&cookie);const response=await fetch(context.origin+'/api/tickets/'+first.ticket.id,{headers:{cookie}});assert.equal(response.status,200);const value:unknown=await response.json();await assertP2016Schema('p2_016_ticket_detail',value);},{ticketAssignmentEnabled:true,ticketSelfHandlingWebSource:false});
 });

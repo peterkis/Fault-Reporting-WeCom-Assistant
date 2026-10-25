@@ -3,21 +3,21 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
-import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
-import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
-import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
-import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
-import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
+import { applyChannelMessageInboxMigration } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { applyServiceIntakeMigration } from '../app/server/src/p1-004-service-intake.mjs';
+import { applyPilotTicketCoreMigration } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { applyTicketStateActionMigration } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { applyNotificationOutboxMigration } from '../app/server/src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
 import {
   applyConversationContractsMigration,
   buildConversationSessionScope,
   buildConversationThreadIdentity,
-} from '../src/p2-001-conversation-contracts.mjs';
-import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
+} from '../app/server/src/p2-001-conversation-contracts.mjs';
+import { applyTimelineProjectionMigration } from '../app/server/src/p2-002-timeline-projector.mjs';
 import {
   REALTIME_ERROR_CODES,
   REALTIME_STREAM_NAME,
@@ -28,7 +28,7 @@ import {
   createRealtimeEventStore,
   getRealtimeReplayWindow,
   listAuthorizedRealtimeEvents,
-} from '../src/p2-003-realtime-event-log.mjs';
+} from '../app/server/src/p2-003-realtime-event-log.mjs';
 import {
   assertNoP2003CliChildResidual,
   runP2003MigrationProcess,

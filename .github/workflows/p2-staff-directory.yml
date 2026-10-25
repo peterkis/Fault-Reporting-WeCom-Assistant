@@ -4,25 +4,25 @@ on:
     paths:
       - '.github/workflows/p2-staff-directory.yml'
       - '.github/review/**'
-      - 'scripts/validate-p2-016-historical.mjs'
-      - 'scripts/validate-p2-016-ticket-lifecycle-workbench.mjs'
+      - 'app/server/scripts/validate-p2-016-historical.mjs'
+      - 'app/server/scripts/validate-p2-016-ticket-lifecycle-workbench.mjs'
       - 'tests/p2-016-historical-validation.test.mjs'
       - 'tools/ts-migration/run-tests.mts'
       - 'tools/ts-migration/routing.mts'
-      - 'src/p2-007-*.mjs'
-      - 'src/p2-007-*.mts'
-      - 'src/p2-015-*.mjs'
-      - 'src/p2-015-*.mts'
-      - 'src/p2-016-*.mjs'
-      - 'src/p2-016-*.mts'
-      - 'scripts/p2-016-process-role.mjs'
-      - 'scripts/p2-016-process-role.mts'
-      - 'scripts/p2-012-process-role.mjs'
-      - 'scripts/p2-012-process-role.mts'
-      - 'scripts/p2-007-migrate.mjs'
-      - 'scripts/p2-007-migrate.mts'
-      - 'scripts/p2-g1-process-role.mjs'
-      - 'scripts/p2-g1-process-role.mts'
+      - 'app/server/src/p2-007-*.mjs'
+      - 'app/server/src/p2-007-*.mts'
+      - 'app/server/src/p2-015-*.mjs'
+      - 'app/server/src/p2-015-*.mts'
+      - 'app/server/src/p2-016-*.mjs'
+      - 'app/server/src/p2-016-*.mts'
+      - 'app/server/scripts/p2-016-process-role.mjs'
+      - 'app/server/scripts/p2-016-process-role.mts'
+      - 'app/server/scripts/p2-012-process-role.mjs'
+      - 'app/server/scripts/p2-012-process-role.mts'
+      - 'app/server/scripts/p2-007-migrate.mjs'
+      - 'app/server/scripts/p2-007-migrate.mts'
+      - 'app/server/scripts/p2-g1-process-role.mjs'
+      - 'app/server/scripts/p2-g1-process-role.mts'
       - 'tests/p2-016-workbench-http.integration.test.mjs'
       - 'tests/p2-016-workbench-http.integration.test.mts'
       - 'tests/p2-016-schema-contract.test.mjs'
@@ -37,7 +37,8 @@ on:
       - 'tests/helpers/p2-015-postgres-harness.mts'
       - 'tests/helpers/p2-016-postgres-harness.mjs'
       - 'tests/helpers/p2-016-postgres-harness.mts'
-      - 'src/platform/**'
+      - 'app/server/src/platform/**'
+      - 'shared/**'
       - 'tsconfig*.json'
       - 'package.json'
       - 'package-lock.json'
@@ -110,7 +111,7 @@ jobs:
             historicalScript=before['validate:p2:016:historical']!==after['validate:p2:016:historical'];
           }
           const prototype=prototypeScript||changed.some(p=>/^web\/admin-workbench-prototype\//.test(p));
-          const historical=historicalScript||changed.some(p=>/^(?:\.github\/review\/[^/]+\.(?:mjs|json)$|scripts\/validate-p2-016-(?:historical|ticket-lifecycle-workbench)\.mjs$|tests\/p2-016-historical-validation\.test\.mjs$|tools\/ts-migration\/(?:run-tests|routing)\.mts$)/.test(p));
+          const historical=historicalScript||changed.some(p=>/^(?:\.github\/review\/[^/]+\.(?:mjs|json)$|(?:app\/server\/)?scripts\/validate-p2-016-(?:historical|ticket-lifecycle-workbench)\.mjs$|tests\/p2-016-historical-validation\.test\.mjs$|tools\/ts-migration\/(?:run-tests|routing)\.mts$)/.test(p));
           appendFileSync(output,`prototype=${prototype}\nhistorical=${historical}\n`);
           NODE
       - name: Current directory and orchestration regression

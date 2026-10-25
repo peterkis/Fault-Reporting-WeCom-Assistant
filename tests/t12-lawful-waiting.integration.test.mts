@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 
 for(const [action,status] of [['request-information','WAITING_REQUESTER'],['wait-vendor','WAITING_VENDOR']] as const){
  test('one public composite command transfers, resumes and staff-closes the lawful '+status+' original cycle without a second receipt or reporter confirmation',async()=>{

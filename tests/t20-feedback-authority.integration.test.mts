@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
 import {browser,login,post,origin} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {mapping,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('ordinary thanks and supplementary material keep the completed Ticket and round closed',async()=>{

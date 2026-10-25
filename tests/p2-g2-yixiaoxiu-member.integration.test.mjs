@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxReadonlyServer} from '../src/p2-g2-yixiaoxiu-server.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxReadonlyServer} from '../app/server/src/p2-g2-yixiaoxiu-server.mjs';
 import {entryOrigin,entryConfig,entryKey,withYxxDatabase,listenYxx,stopYxx,httpBrowser,loginYxx,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016ReporterTimeline} from '../src/p2-016-reporter-timeline.mjs';
-import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
-import {transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import {p2016CatalogInventory} from '../scripts/p2-016-migrate.mjs';
-import {p2012CatalogInventory} from '../scripts/p2-012-migrate.mjs';
+import {createP2016ReporterTimeline} from '../app/server/src/p2-016-reporter-timeline.mjs';
+import {createP2012ReporterTimelineAdapter} from '../app/server/src/p2-012-reporter-timeline-adapter.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {p2016CatalogInventory} from '../app/server/scripts/p2-016-migrate.mjs';
+import {p2012CatalogInventory} from '../app/server/scripts/p2-012-migrate.mjs';
 
 const post=body=>({method:'POST',headers:{origin:entryOrigin,'content-type':'application/json'},body:JSON.stringify(body)});
 async function openMember({pool,config=entryConfig,clock=Date.now,secret=entryKey}){

@@ -6,12 +6,12 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { testRoots } from './helpers/migration-roots.mjs';
-import { checkSS010 } from '../src/yxx-self-service-readiness.mjs';
-import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
+import { checkSS010 } from '../app/server/src/yxx-self-service-readiness.mjs';
+import { g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
 
 test('current readiness CLI rejects unknown arguments with a safe actionable reason', () => {
   const roots = testRoots();
-  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs'), '--not-a-readiness-option'], {
+  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs'), '--not-a-readiness-option'], {
     cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 15_000,
   });
   assert.equal(result.status, 1);
@@ -23,7 +23,7 @@ test('current readiness CLI rejects unknown arguments with a safe actionable rea
 
 test('current readiness CLI validates the accepted successor structure without claiming readiness', () => {
   const roots = testRoots();
-  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs')], {
+  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs')], {
     cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 60_000,
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -42,7 +42,7 @@ test('current readiness CLI reports the current evidence decision before and aft
     assert.ok(error && typeof error === 'object' && 'code' in error && typeof error.code === 'string');
     refusal = error.code;
   }
-  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs'), '--require-ready'], {
+  const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs'), '--require-ready'], {
     cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 60_000,
   });
   assert.equal(result.stderr, '');
@@ -66,9 +66,9 @@ test('current readiness CLI distinguishes a missing build from evidence or histo
   const roots = testRoots();
   const temporary = mkdtempSync(path.join(tmpdir(), 'yxx-current-build-'));
   try {
-    mkdirSync(path.join(temporary, 'scripts'));
-    copyFileSync(path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs'), path.join(temporary, 'scripts/yxx-self-service-readiness.mjs'));
-    const result = spawnSync(process.execPath, ['scripts/yxx-self-service-readiness.mjs', '--require-ready'], {
+    mkdirSync(path.join(temporary, 'app/server/scripts'),{recursive:true});
+    copyFileSync(path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs'), path.join(temporary, 'app/server/scripts/yxx-self-service-readiness.mjs'));
+    const result = spawnSync(process.execPath, ['app/server/scripts/yxx-self-service-readiness.mjs', '--require-ready'], {
       cwd: temporary, encoding: 'utf8', windowsHide: true, timeout: 15_000,
     });
     assert.equal(result.status, 1);
@@ -85,13 +85,13 @@ test('current readiness CLI distinguishes a missing build from evidence or histo
 
 test('current readiness CLI rejects builds predating a scope or historical adjudication control change', () => {
   const roots = testRoots();
-  for (const relative of ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.gitattributes', '.github/review/pr-evidence-delta.test.mjs', '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs', '.github/review/verify-published-history.mjs']) {
+  for (const relative of ['plans/yxx-current-readiness-scope.v2.json', 'plans/yxx-current-readiness-acceptance.v2.json', 'plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.gitattributes', '.github/review/pr-evidence-delta.test.mjs', '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs', '.github/review/verify-published-history.mjs']) {
     const file = path.join(roots.sourceRoot, relative), original = readFileSync(file);
     const fingerprint = g2CandidateInventory(roots.sourceRoot).fingerprint;
     try {
       writeFileSync(file, Buffer.concat([original, Buffer.from('\n')]));
       assert.notEqual(g2CandidateInventory(roots.sourceRoot).fingerprint, fingerprint, relative);
-      const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs')], {
+      const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs')], {
         cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 60_000,
       });
       assert.equal(result.status, 1, relative + ': ' + result.stdout);
@@ -111,7 +111,7 @@ test('current readiness structural checking remains offline and never starts bus
   try {
     const hook = path.join(temporary, 'guard.mjs');
     writeFileSync(hook, "import net from 'node:net';import cp from 'node:child_process';import path from 'node:path';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{throw Error('FORBIDDEN_RUNTIME_IO');};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;cp.exec=fail;cp.execSync=fail;globalThis.fetch=fail;for(const name of ['execFileSync','spawnSync']){const original=cp[name];cp[name]=(file,...args)=>{if(path.basename(String(file)).toLowerCase()!=='git'&&path.basename(String(file)).toLowerCase()!=='git.exe')fail();return original(file,...args);};}syncBuiltinESMExports();");
-    const result = spawnSync(process.execPath, ['--import', pathToFileURL(hook).href, path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs')], {
+    const result = spawnSync(process.execPath, ['--import', pathToFileURL(hook).href, path.join(roots.runtimeRoot, 'app/server/scripts/yxx-self-service-readiness.mjs')], {
       cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 60_000,
     });
     assert.equal(result.status, 0, result.stdout + result.stderr);

@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 test('original waiting ACK is a minimal current Ticket READ independent of write and raw recovery capabilities',async()=>{
   await withT10Fixture(async context=>{

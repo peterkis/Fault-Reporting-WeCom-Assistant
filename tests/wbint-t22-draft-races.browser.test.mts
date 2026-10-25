@@ -7,7 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Surface=Pick<Browser,'evaluate'|'waitFor'>;
 const ready="document.querySelectorAll('[data-conversation-draft]').length===2&&Array.from(document.querySelectorAll('[data-conversation-draft]')).every(e=>e.textContent.includes('草稿仅在当前浏览器'))";

@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withP2012Database, applyThrough031 } from './helpers/p2-012-postgres-harness.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createP2016DirectIntakeProcessor } from '../src/p2-016-direct-intake.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createP2016DirectIntakeProcessor } from '../app/server/src/p2-016-direct-intake.mjs';
 
 test('late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket',async()=>{
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2latebind',run:async({pool,databaseUrl})=>{

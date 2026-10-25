@@ -4,27 +4,27 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
-import { applyChannelMessageInboxMigration, createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration, createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
-import { applyPilotTicketCoreMigration, createPilotTicketCore, createPilotTicketProcessor } from '../src/p1-005-pilot-ticket-core.mjs';
-import { applyTicketStateActionMigration, createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
-import { applyNotificationOutboxMigration, createNotificationDeliveryWorker, createNotificationOutbox } from '../src/p1-007-notification-outbox.mjs';
-import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
-import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../src/p2-001-conversation-contracts.mjs';
-import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
-import { applyRealtimeEventLogMigration } from '../src/p2-003-realtime-event-log.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
+import { applyChannelMessageInboxMigration, createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { applyServiceIntakeMigration, createServiceIntakeProcessor } from '../app/server/src/p1-004-service-intake.mjs';
+import { applyPilotTicketCoreMigration, createPilotTicketCore, createPilotTicketProcessor } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { applyTicketStateActionMigration, createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { applyNotificationOutboxMigration, createNotificationDeliveryWorker, createNotificationOutbox } from '../app/server/src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../app/server/src/p2-001-conversation-contracts.mjs';
+import { applyTimelineProjectionMigration } from '../app/server/src/p2-002-timeline-projector.mjs';
+import { applyRealtimeEventLogMigration } from '../app/server/src/p2-003-realtime-event-log.mjs';
 import {
   COMMUNICATION_ERROR_CODES,
   applyCommunicationMigration,
   createCommunicationService,
   createP1NotificationCompatibilityAdapter,
-} from '../src/p2-004-communication-core.mjs';
-import { createCommunicationDeliveryWorker, createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
-import { createMockCommunicationSender } from '../src/p2-004-communication-sender-port.mjs';
+} from '../app/server/src/p2-004-communication-core.mjs';
+import { createCommunicationDeliveryWorker, createCommunicationReconciliationPort } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { createMockCommunicationSender } from '../app/server/src/p2-004-communication-sender-port.mjs';
 import { assertNoP2004Residual, withP2004IsolatedDatabase } from './helpers/p2-004-postgres-harness.mjs';
 import { assertNoP2004WorkerChildResidual, killP2004WorkerChild, spawnP2004WorkerStage } from './helpers/p2-004-worker-process-harness.mjs';
 
@@ -76,7 +76,7 @@ async function catalogSignature(pool, relations) {
 }
 
 async function runMigrationCli(isolatedDatabaseUrl, mode) {
-  const args = ['scripts/p2-004-migrate.mjs', mode === 'check' ? '--check' : '--migrate'];
+  const args = ['app/server/scripts/p2-004-migrate.mjs', mode === 'check' ? '--check' : '--migrate'];
   const { stdout, stderr } = await execFileAsync(process.execPath, args, {
     cwd: process.cwd(), env: { ...process.env, PILOT_DATABASE_URL: isolatedDatabaseUrl }, timeout: 30_000,
   });

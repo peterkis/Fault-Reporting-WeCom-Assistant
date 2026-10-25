@@ -4,9 +4,9 @@ import { mkdtempSync, readFileSync, writeFileSync, unlinkSync, rmdirSync } from 
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { createG2EvidenceWriter, readG2Evidence, validateG2EvidenceRecord } from '../src/p2-g2-evidence.mjs';
-import { verifyG2LiveSource } from '../src/p2-g2-live-evidence.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
+import { createG2EvidenceWriter, readG2Evidence, validateG2EvidenceRecord } from '../app/server/src/p2-g2-evidence.mjs';
+import { verifyG2LiveSource } from '../app/server/src/p2-g2-live-evidence.mjs';
+import { shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 
 const sha = x => createHash('sha256').update(x).digest('hex');
 const stamp = shanghaiLocalToEpochMs('2026-09-08 10:00:00');
