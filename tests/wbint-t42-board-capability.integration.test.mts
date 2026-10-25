@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 
 test('T42 current bootstrap is default false; explicit opt-in advertises only existing enabled actions and never writes a command',{timeout:240000},async()=>{
   for(const enabled of [false,true]){

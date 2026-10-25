@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {t31Browser,inspectT31Drafts} from './helpers/t31-public-progress-browser-fixture.mjs';
 import {record,text} from './helpers/t31-public-progress-fixture.mjs';
 import type {Browser} from './helpers/wbint-t27-browser-fixture.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 async function publish(browser:Browser){

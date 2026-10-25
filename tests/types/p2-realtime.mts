@@ -1,6 +1,6 @@
-import { createRealtimeEventStore, mapConversationItemCreatedEvent, normalizeRealtimeEventCommand } from '../../src/p2-003-realtime-event-log.mjs';
-import type { RealtimeMappedEvent } from '../../src/p2-003-realtime-event-log.mjs';
-import type { PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
+import { createRealtimeEventStore, mapConversationItemCreatedEvent, normalizeRealtimeEventCommand } from '../../app/server/src/p2-003-realtime-event-log.mjs';
+import type { RealtimeMappedEvent } from '../../app/server/src/p2-003-realtime-event-log.mjs';
+import type { PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
 const store = createRealtimeEventStore({ enabled: false });
 const item = mapConversationItemCreatedEvent({});
 const sequence: string = item.payload.sequence_no;
@@ -24,7 +24,7 @@ if (mapped.event_type === 'conversation.timeline.rebuilt') {
 }
 void sequence; void wrongItem;
 
-import { createTimelineProjector } from '../../src/p2-002-timeline-projector.mjs';
+import { createTimelineProjector } from '../../app/server/src/p2-002-timeline-projector.mjs';
 declare const checkpoint: NonNullable<Awaited<ReturnType<ReturnType<typeof createTimelineProjector>['getProjectionCheckpoint']>>>;
 const emptyBatchHash: typeof checkpoint.last_batch_hash = null;
 // @ts-expect-error -- An initial persisted checkpoint may have a null last batch hash.

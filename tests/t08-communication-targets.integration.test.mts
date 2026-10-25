@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {withT08Fixture,rows,text} from './helpers/t08-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 

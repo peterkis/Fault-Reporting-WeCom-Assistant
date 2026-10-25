@@ -1,10 +1,11 @@
+// Explicit retired V1 UI fixture regression; not new-H5 or production-page acceptance.
 import assert from 'node:assert/strict';
-import {createServiceCatalog} from '../src/p2-007-service-catalog.mjs';
+import {createServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
-import { EXTERNAL_TICKET_STATUS } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createYxxSelfServiceNativeHttpWithRetiredUi as createYxxSelfServiceNativeHttp } from './helpers/retired-self-service-ui.mjs';
+import { EXTERNAL_TICKET_STATUS } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
@@ -637,7 +638,7 @@ test('SS-007 rejects an invalid extension before sending a report', { timeout: 4
       cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
-    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#app-status')?.textContent==='已验证成员会话，请填写故障现象后提交。'&&document.querySelector('#submit-report')?.disabled===false");
     await browser.evaluate("document.querySelector('#description').value='分机格式校验';document.querySelector('#location-unknown').checked=true;document.querySelector('#extension').value='+123';document.querySelector('#new-report-form').requestSubmit()");
     await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('分机仅支持数字、空格和短横线')");
     assert.equal(await browser.evaluate("document.activeElement?.id"), 'extension');
@@ -721,7 +722,7 @@ test('SS-007 unavailable tab or durable storage blocks new POST commands', { tim
         cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
       await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
       await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
-      await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#app-status')?.textContent==='已验证成员会话，请填写故障现象后提交。'&&document.querySelector('#submit-report')?.disabled===false");
       await browser.evaluate(`(() => {
         const actual=Storage.prototype.setItem;
         Storage.prototype.setItem=function(key,value){
@@ -777,7 +778,7 @@ test('SS-007 durable recovery quota covers all scopes without deleting other mem
       cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
-    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#app-status')?.textContent==='已验证成员会话，请填写故障现象后提交。'&&document.querySelector('#submit-report')?.disabled===false");
     await browser.evaluate(`(() => {
       for(let index=1;index<=20;index+=1){
         const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
@@ -795,12 +796,14 @@ test('SS-007 durable recovery quota covers all scopes without deleting other mem
     assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 21);
     assert.equal(await browser.evaluate("JSON.stringify(Object.entries(localStorage).sort())===window.__existingDurable"), true);
     assert.equal(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.invalid')"), 'not-a-pending-record');
+    const durableBefore=await browser.evaluate('window.__existingDurable');assert.equal(typeof durableBefore,'string');
     // Simulate a resolved fixture record freeing one slot; production must not
     // evict another member's unresolved record to make space.
     await browser.evaluate("localStorage.removeItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000001');document.querySelector('#new-report-form').requestSubmit()");
     await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
     assert.equal(f.state.commandCalls.length, 1);
     assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+    assert.deepEqual(await browser.evaluate('Object.entries(localStorage).sort()'),JSON.parse(durableBefore).filter(([key])=>key!=='yxx.self_service.pending_command.00000000-0000-4000-8000-000000000001'),'the original other-member records and malformed record must remain byte-for-byte after the owned slot is released');
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
@@ -811,7 +814,7 @@ test('SS-007 durable capacity recheck retains another scope record added during 
       cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
-    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#app-status')?.textContent==='已验证成员会话，请填写故障现象后提交。'&&document.querySelector('#submit-report')?.disabled===false");
     await browser.evaluate(`(() => {
       const prefix='yxx.self_service.pending_command.';
       for(let index=1;index<=19;index++){
@@ -1513,7 +1516,7 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
     assert.equal(await other.evaluate("document.body.textContent.includes('B')"), true);
     assert.equal(await other.evaluate("document.body.textContent.includes('A')"), false);
     assert.equal(state.commandCalls.filter(call => call.member === 'B').length, 0);
-    const source = await readFile(new URL('../web/p2-reporter/self-service.js', import.meta.url), 'utf8');
+    const source = await readFile(new URL('./fixtures/retired-self-service/self-service.js', import.meta.url), 'utf8');
     assert.doesNotMatch(source, /innerHTML|outerHTML|eval\(/u);
     assert.match(source, /AbortController/u);
     assert.match(source, /visibilitychange/u);

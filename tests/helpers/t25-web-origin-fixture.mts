@@ -3,11 +3,11 @@ import {createHash,createHmac,randomUUID} from 'node:crypto';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {t11Http} from './t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
-import {createYxxSelfServiceAuthorization} from '../../src/yxx-self-service-authorization.mjs';
-import {createYxxSelfServiceStore} from '../../src/yxx-self-service-store.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {createTicketRoundNotifications} from '../../src/workbench-ticket-round-notifications.mjs';
-import {assertLocalDateTime,assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
+import {createYxxSelfServiceAuthorization} from '../../app/server/src/yxx-self-service-authorization.mjs';
+import {createYxxSelfServiceStore} from '../../app/server/src/yxx-self-service-store.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createTicketRoundNotifications} from '../../app/server/src/workbench-ticket-round-notifications.mjs';
+import {assertLocalDateTime,assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
 import type {TicketAppNotificationAuthority,EligibleTicketAppNotificationTarget,TicketAppNotificationOptions,TicketAppNotificationTargetResolver} from '../../contracts/workbench_app_notification_contracts.js';
 
 /** Real original Web Store/Core/staff HTTP and round Port; only the configured local identity authority is synthetic. */

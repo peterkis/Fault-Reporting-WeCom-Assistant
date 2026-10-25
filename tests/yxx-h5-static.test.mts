@@ -7,7 +7,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {brotliCompressSync,gzipSync} from 'node:zlib';
-import {createYxxH5Static,YXX_H5_SECURITY_HEADERS} from '../src/yxx-h5-static.mjs';
+import {createYxxH5Static,YXX_H5_SECURITY_HEADERS,type H5ReporterPresentation} from '../app/server/src/yxx-h5-static.mjs';
 
 const assets=new Map<string,{type:string;body:Uint8Array}>([
  ['assets/main-Ab123.js',{type:'text/javascript; charset=utf-8',body:Buffer.from('export const page="SYNTHETIC_H5_MAIN";')}],
@@ -36,8 +36,8 @@ function fixture():string{
  return root;
 }
 function cleanup(root:string):void{assert.equal(path.dirname(root),tmpdir());assert.ok(path.basename(root).startsWith('yxx-h5-static-test-'));rmSync(root,{recursive:true,force:true});}
-async function host(root:string,enabled:boolean|undefined,check:(origin:string)=>Promise<void>,previousRoot?:string):Promise<void>{
- const api=createYxxH5Static({root:pathToFileURL(root+path.sep),...(enabled===undefined?{}:{enabled}),...(previousRoot?{previousRoot:pathToFileURL(previousRoot+path.sep)}:{})});
+async function host(root:string,enabled:boolean|undefined,check:(origin:string)=>Promise<void>,previousRoot?:string,reporter?:H5ReporterPresentation):Promise<void>{
+ const api=createYxxH5Static({root:pathToFileURL(root+path.sep),...(enabled===undefined?{}:{enabled}),...(previousRoot?{previousRoot:pathToFileURL(previousRoot+path.sep)}:{}),...(reporter?{reporter}:{})});
  const server=createServer((request,response)=>{void(async()=>{
   try{
    // The parent workbench HTTP adapter denies device access by default.
@@ -75,6 +75,22 @@ function encodings(root:string):void{
  }
  Object.assign(main,{h5Representations:representations});put(root,'.vite/manifest.json',JSON.stringify(graph));
 }
+
+test('Reporter presentation uses only fixed metadata, preserves verified assets and disables capture',async()=>{
+ const root=fixture();
+ try{
+  for(const identityMode of ['MEMBER_REQUIRED','BOUND_ACCESS_SESSION'] as const)await host(root,true,async origin=>{
+   const page=await fetch(origin+'/wecom/yixiaoxiu/'),html=await page.text();assert.equal(page.status,200);
+   assert.ok(html.includes('data-reporter-identity="'+identityMode+'"'));assert.ok(html.includes('data-reporter-feedback="false"'));
+   assert.doesNotMatch(html,/grant=|public_ref|\/reporter\/reporter\.js|\/reporter\/bot-feedback\.js/u);
+   assert.equal(page.headers.get('permissions-policy'),'camera=(), microphone=(), geolocation=()');
+   const script=await fetch(origin+'/wecom/yixiaoxiu/assets/main-Ab123.js');assert.equal(script.status,200);assert.deepEqual(Buffer.from(await script.arrayBuffer()),assets.get('assets/main-Ab123.js')?.body);
+  },undefined,{identityMode,feedback:false});
+  await host(root,true,async origin=>{const page=await fetch(origin+'/wecom/yixiaoxiu/');assert.doesNotMatch(await page.text(),/data-reporter-/u);});
+  put(root,'index.html','<main>INVALID_REPORTER_PAGE</main>');
+  await host(root,true,async origin=>{const page=await fetch(origin+'/wecom/yixiaoxiu/');assert.equal(page.status,503);assert.doesNotMatch(await page.text(),/INVALID_REPORTER_PAGE/u);},undefined,{identityMode:'MEMBER_REQUIRED',feedback:false});
+ }finally{cleanup(root);}
+});
 
 test('H5 static serving stays off by default without reading a missing artifact',async()=>{
  const root=fixture();

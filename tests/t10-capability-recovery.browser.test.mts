@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import type {IncomingMessage} from 'node:http';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';

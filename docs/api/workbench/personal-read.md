@@ -37,7 +37,7 @@ Review→Ticket 只是导航；principal+真实来源同一行、同一规范事
 
 ## 事务、047 与关闭
 
-[047 SQL](../../../database/migrations/047_workbench_personal_read.sql) 和 [迁移器](../../../scripts/workbench-personal-read-migrate.mts) 已实现。迁移器要求031及042，防止042随后覆盖同一资源约束；支持默认 check 回滚、apply、同 checksum noop。检查 marker、个人表精确 PK 和 receipt 新 UUID 列，不声称覆盖所有约束漂移。旧031/042 SQL字节保持；本地应用不证明现场库已应用。
+[047 SQL](../../../database/migrations/047_workbench_personal_read.sql) 和 [迁移器](../../../app/server/scripts/workbench-personal-read-migrate.mts) 已实现。迁移器要求031及042，防止042随后覆盖同一资源约束；支持默认 check 回滚、apply、同 checksum noop。检查 marker、个人表精确 PK 和 receipt 新 UUID 列，不声称覆盖所有约束漂移。旧031/042 SQL字节保持；本地应用不证明现场库已应用。
 
 新 `pilot_ticket.personal_material_read_position` 只有 principal+source_kind+source_intake 主键、BIGINT position/row_version 与本地更新时间。原 ticket_command_receipt 增加 nullable source_intake 外键，保留042的 WORKBENCH_MANUAL_REPORT 裸受理分支；固定 WORKBENCH_PERSONAL_READ 用途及 actor scope，沿同一 ledger。意图包含 actor、真实 Intake、ref、revision、原 UUID，忽略导航 alias。同事务锁来源、receipt、当前资源/主体/role/team/Journey 事实；等待后重验当前事项/材料，再提交或重放。位置 GREATEST 单调，只有更高位置增 row_version；无第二 Ticket Core、状态所有权或命令账本。
 
@@ -49,10 +49,10 @@ Review→Ticket 只是导航；principal+真实来源同一行、同一规范事
 
 Review 原材料与普通详情 REPORT 记录消费精确 read_material。普通 BOT/WEB 的真实引用与 revision 来自获权 Query；普通 MANUAL 追加经受信快照解码的原文 REPORT，没有 Review 也能消费。摘要、内部事件/备注和占位文字不猜测原文坐标。
 
-观察要求非空安全正文已挂载、document visible/focus、transport 可写、当前 actor/epoch/事项一致。[foreground-text](../../../web/admin-workbench/src/features/personal-read/foreground-text.ts) 在 viewport 与祖先 overflow 裁剪内累积全部纵向可见区间，尺寸变化重置；长文可分段看到，不要求整段一次塞进屏幕。隐藏、预加载、离开视口、折叠或未加载均不能写。随后真实当前获权 GET，再确认正文仍在前台，才 POST 该确切 ref/revision。几何/focus 是合成浏览器的平台边界；没有另行声称物理DWM或覆盖层像素识别已验证。
+观察要求非空安全正文已挂载、document visible/focus、transport 可写、当前 actor/epoch/事项一致。[foreground-text](../../../app/pc-admin/src/features/personal-read/foreground-text.ts) 在 viewport 与祖先 overflow 裁剪内累积全部纵向可见区间，尺寸变化重置；长文可分段看到，不要求整段一次塞进屏幕。隐藏、预加载、离开视口、折叠或未加载均不能写。随后真实当前获权 GET，再确认正文仍在前台，才 POST 该确切 ref/revision。几何/focus 是合成浏览器的平台边界；没有另行声称物理DWM或覆盖层像素识别已验证。
 
 非 Session 传输未知保留 QueryClient 内 UUID/ref/revision 安全元数据，无正文/凭据明文持久化。下次实际前景观察先 fresh page，再按当前授权核对同一原 UUID receipt，只 GET、不自动重试 POST；跨 Review/Ticket alias 仍按同 principal/ref/revision 找到原意图。上限100，未核对 UNKNOWN 不静默淘汰，容量满暂停新增命令；真实前景核对已提交结果后释放容量。已知结果只清其精确 UUID。
 
 401或可信403 WORKBENCH_CSRF_INVALID 沿原会话/epoch清理；普通对象403/404清当前精确恢复意图和原事项显示，包括 canonical 移动后、初始 fresh page 先失败的时序，保留其它仍获权项目。账号切换取消旧观察、请求和该主体恢复权。personal-read-position 纳入现有 realtime family；迟到成功与403正文在真实新账号显示、旧 signal 已中止的生命周期得到验证，不把静态调度推断替代运行证据。Session继续原 current cursor GET/CAS恢复，不添加个人材料 receipt 路由。
 
-主要实现：[服务/HTTP](../../../src/workbench-personal-read.mts)、[runtime](../../../src/p2-016-runtime.mts)、[Query](../../../src/web01-workbench-query.mts)、[个人 client](../../../web/admin-workbench/src/features/personal-read/client.ts)、[Material](../../../web/admin-workbench/src/features/personal-read/PersonalReadMaterial.tsx)、[Session](../../../web/admin-workbench/src/features/conversations/ConversationReadTimeline.tsx)、[原首验收](../../../tests/wbint-t35-visible-read.browser.test.mts)。每个真实运行的对象/结果和未到达断言见执行记录及其外置证据，默认 false 与无真实OAuth/WeCom/Provider/SDK发送、部署、push/PR、full/certify/Gate 边界保持。
+主要实现：[服务/HTTP](../../../app/server/src/workbench-personal-read.mts)、[runtime](../../../app/server/src/p2-016-runtime.mts)、[Query](../../../app/server/src/web01-workbench-query.mts)、[个人 client](../../../app/pc-admin/src/features/personal-read/client.ts)、[Material](../../../app/pc-admin/src/features/personal-read/PersonalReadMaterial.tsx)、[Session](../../../app/pc-admin/src/features/conversations/ConversationReadTimeline.tsx)、[原首验收](../../../tests/wbint-t35-visible-read.browser.test.mts)。每个真实运行的对象/结果和未到达断言见执行记录及其外置证据，默认 false 与无真实OAuth/WeCom/Provider/SDK发送、部署、push/PR、full/certify/Gate 边界保持。

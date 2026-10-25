@@ -16,9 +16,9 @@ import {runH5BrowserQa} from './yxx-h5-performance-qa.mjs';
 import {explainLargeConcurrency,measureLargeConcurrency,seedLargeConcurrencyDataset} from './yxx-h5-large-performance.mjs';
 import {startH5PerformanceWorker} from './yxx-h5-performance-worker-controller.mjs';
 import {H5PerformanceSqlLedger,H5PerformanceMemberVerificationLedger,recordH5PerformanceProviderDelay,type H5PerformanceTrace} from './helpers/yxx-h5-performance-observability.mjs';
-import type {ApplicationMemberVerificationEvent} from '../src/wecom-application-member.mjs';
-import type {PostgresPool,PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {ApplicationMemberVerificationEvent} from '../app/server/src/wecom-application-member.mjs';
+import type {PostgresPool,PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 
 interface VitalsReading {lcp:number|null;cls:number;supported:string[];events:{id:number;duration:number}[];trustedClicks:number;errors:string[]}
 interface Metrics {
@@ -119,38 +119,38 @@ async function run(options:Config):Promise<void>{
   const module=<T,>(relative:string)=>import(pathToFileURL(path.join(root,relative)).href) as Promise<T>;
   const [isolation,baseline,migrations,authMigration,directoryMigration,selfHandling,completion,round,reopen,mvp,runtimeModule,accessModule,identityModule,memberModule,tokenModule,contractsModule,fixtureModule,browserModule,directoryModule,orchestratorModule,metrics]=await Promise.all([
     module<typeof import('./helpers/p2-015-postgres-harness.mjs')>('tests/helpers/p2-015-postgres-harness.mjs'),
-    module<typeof import('../scripts/migrate-current-baseline.mjs')>('scripts/migrate-current-baseline.mjs'),
+    module<typeof import('../app/server/scripts/migrate-current-baseline.mjs')>('app/server/scripts/migrate-current-baseline.mjs'),
     readdir(path.join(root,'database/migrations')),
-    module<typeof import('../scripts/p2-016-workbench-auth-migrate.mjs')>('scripts/p2-016-workbench-auth-migrate.mjs'),
-    module<typeof import('../scripts/p2-007-migrate.mjs')>('scripts/p2-007-migrate.mjs'),
-    module<typeof import('../scripts/ticket-self-handling-migrate.mjs')>('scripts/ticket-self-handling-migrate.mjs'),
-    module<typeof import('../scripts/ticket-staff-completion-migrate.mjs')>('scripts/ticket-staff-completion-migrate.mjs'),
-    module<typeof import('../scripts/ticket-round-notifications-migrate.mjs')>('scripts/ticket-round-notifications-migrate.mjs'),
-    module<typeof import('../scripts/ticket-reopen-rounds-migrate.mjs')>('scripts/ticket-reopen-rounds-migrate.mjs'),
-    module<typeof import('../scripts/mvp-notifications-migrate.mjs')>('scripts/mvp-notifications-migrate.mjs'),
-    module<typeof import('../src/p2-016-runtime.mjs')>('src/p2-016-runtime.mjs'),
-    module<typeof import('../src/p1-009-pilot-access-workbench.mjs')>('src/p1-009-pilot-access-workbench.mjs'),
-    module<typeof import('../src/p2-g2-yixiaoxiu-delegated-identity.mjs')>('src/p2-g2-yixiaoxiu-delegated-identity.mjs'),
-    module<typeof import('../src/wecom-application-member.mjs')>('src/wecom-application-member.mjs'),
-    module<typeof import('../src/p2-g2-wecom-app-token.mjs')>('src/p2-g2-wecom-app-token.mjs'),
-    module<typeof import('../src/p2-g2-yixiaoxiu-contract.mjs')>('src/p2-g2-yixiaoxiu-contract.mjs'),
+    module<typeof import('../app/server/scripts/p2-016-workbench-auth-migrate.mjs')>('app/server/scripts/p2-016-workbench-auth-migrate.mjs'),
+    module<typeof import('../app/server/scripts/p2-007-migrate.mjs')>('app/server/scripts/p2-007-migrate.mjs'),
+    module<typeof import('../app/server/scripts/ticket-self-handling-migrate.mjs')>('app/server/scripts/ticket-self-handling-migrate.mjs'),
+    module<typeof import('../app/server/scripts/ticket-staff-completion-migrate.mjs')>('app/server/scripts/ticket-staff-completion-migrate.mjs'),
+    module<typeof import('../app/server/scripts/ticket-round-notifications-migrate.mjs')>('app/server/scripts/ticket-round-notifications-migrate.mjs'),
+    module<typeof import('../app/server/scripts/ticket-reopen-rounds-migrate.mjs')>('app/server/scripts/ticket-reopen-rounds-migrate.mjs'),
+    module<typeof import('../app/server/scripts/mvp-notifications-migrate.mjs')>('app/server/scripts/mvp-notifications-migrate.mjs'),
+    module<typeof import('../app/server/src/p2-016-runtime.mjs')>('app/server/src/p2-016-runtime.mjs'),
+    module<typeof import('../app/server/src/p1-009-pilot-access-workbench.mjs')>('app/server/src/p1-009-pilot-access-workbench.mjs'),
+    module<typeof import('../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs')>('app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs'),
+    module<typeof import('../app/server/src/wecom-application-member.mjs')>('app/server/src/wecom-application-member.mjs'),
+    module<typeof import('../app/server/src/p2-g2-wecom-app-token.mjs')>('app/server/src/p2-g2-wecom-app-token.mjs'),
+    module<typeof import('../app/server/src/p2-g2-yixiaoxiu-contract.mjs')>('app/server/src/p2-g2-yixiaoxiu-contract.mjs'),
     module<typeof import('./helpers/p2-g2-yixiaoxiu-browser.mjs')>('tests/helpers/p2-g2-yixiaoxiu-browser.mjs'),
     module<typeof import('./helpers/p2-006-browser-harness.mjs')>('tests/helpers/p2-006-browser-harness.mjs'),
-    module<typeof import('../src/p2-007-staff-directory-store.mjs')>('src/p2-007-staff-directory-store.mjs'),
-    module<typeof import('../src/yxx-self-service-orchestrator.mjs')>('src/yxx-self-service-orchestrator.mjs'),
+    module<typeof import('../app/server/src/p2-007-staff-directory-store.mjs')>('app/server/src/p2-007-staff-directory-store.mjs'),
+    module<typeof import('../app/server/src/yxx-self-service-orchestrator.mjs')>('app/server/src/yxx-self-service-orchestrator.mjs'),
     import(pathToFileURL(options.metricsModule).href) as Promise<Metrics>,
   ]);
   mkdirSync(options.outputRoot,{recursive:false});
   const ledger=new H5PerformanceSqlLedger(),verificationLedger=new H5PerformanceMemberVerificationLedger(options.mode==='current');
   // The current candidate must expose its actual compiled batch context. An older baseline is explicitly unbatched.
   if(options.mode==='current'){
-    const batch=await module<typeof import('../src/yxx-h5-read-batch.mjs')>('src/yxx-h5-read-batch.mjs');
+    const batch=await module<typeof import('../app/server/src/yxx-h5-read-batch.mjs')>('app/server/src/yxx-h5-read-batch.mjs');
     assert.equal(typeof batch.getH5ReadBatchContext,'function');assert.equal(typeof batch.getH5ReadBatchTiming,'function');assert.equal(typeof batch.getH5ReadParticipantId,'function');
     ledger.setBatchReaders(batch.getH5ReadBatchContext,batch.getH5ReadBatchTiming,batch.getH5ReadParticipantId);
   }
   const privateRoot=await mkdtemp(path.join(tmpdir(),'h5-performance-media-')),key=randomBytes(32),traces:Trace[]=[],sqlSamples=new Map<string,SqlSample>();
   const width=options.profile==='weak320'?320:390,downlink=options.profile==='weak320'?1_600_000:4_000_000;
-  const report:Record<string,unknown>={schema_version:1,mode:options.mode,component_preflight:component,manifest_sha256:manifest?hash(manifest):null,compiled_sql_modules:['src/yxx-self-service-query.mjs','src/yxx-self-service-store.mjs','src/yxx-h5-v2-profile.mjs',...(options.mode==='current'?['src/yxx-h5-read-batch.mjs','src/yxx-h5-batch-sql.mjs']:[])].map(file=>({file,sha256:hash(readFileSync(path.join(root,file)))})),harness_sha256:hash(readFileSync(fileURLToPath(import.meta.url))),metrics_sha256:hash(readFileSync(options.metricsModule)),source:identity.source,started_at:new Date().toISOString(),parameters:{profile:options.profile,samples:options.samples,warmups:options.warmups,provider_delay_ms:100,width,height:844,downlink_bps:downlink,uplink_bps:1_000_000,rtt_ms:150,cpu_slowdown:4},host:{node:process.version,logical_processors:cpus().length,memory_bytes:totalmem(),resource_enforcement:'NOT_ENFORCED_2C4G',browser:'OWNED_SYSTEM_BROWSER_CDP'},status:'RUNNING',samples:[],traces:[],cleanup:{}};
+  const report:Record<string,unknown>={schema_version:1,mode:options.mode,component_preflight:component,manifest_sha256:manifest?hash(manifest):null,compiled_sql_modules:['app/server/src/yxx-self-service-query.mjs','app/server/src/yxx-self-service-store.mjs','app/server/src/yxx-h5-v2-profile.mjs',...(options.mode==='current'?['app/server/src/yxx-h5-read-batch.mjs','app/server/src/yxx-h5-batch-sql.mjs']:[])].map(file=>({file,sha256:hash(readFileSync(path.join(root,file)))})),harness_sha256:hash(readFileSync(fileURLToPath(import.meta.url))),metrics_sha256:hash(readFileSync(options.metricsModule)),source:identity.source,started_at:new Date().toISOString(),parameters:{profile:options.profile,samples:options.samples,warmups:options.warmups,provider_delay_ms:100,width,height:844,downlink_bps:downlink,uplink_bps:1_000_000,rtt_ms:150,cpu_slowdown:4},host:{node:process.version,logical_processors:cpus().length,memory_bytes:totalmem(),resource_enforcement:'NOT_ENFORCED_2C4G',browser:'OWNED_SYSTEM_BROWSER_CDP'},status:'RUNNING',samples:[],traces:[],cleanup:{}};
   if(options.largeConcurrency)report.host={node:process.version,logical_processors:cpus().length,memory_bytes:totalmem(),resource_enforcement:'WINDOWS_JOB_OBJECT_EXTERNAL_EVIDENCE_REQUIRED',budget_scope:'Root Node / load generator / App / Worker and all PostgreSQL descendants; external Job proof must be bound before claiming ENFORCED',browser:'NOT_STARTED_FOR_SERVER_CONCURRENCY'};
   report.timing_semantics={business_selects:'Direct request-owned physical SELECTs only; whole-page SQL budget uses read_dependencies including one shared dependency',sql_ms:'Direct request-owned awaited SQL only; pool.query includes its internal checkout',sql_shared_dependency_ms:'Inclusive batch SQL awaited time linked to each participant; never add replicated participant values to physical throughput',pool_wait_ms:'Explicit request-owned pool.connect checkout',pool_wait_shared_dependency_ms:'Inclusive shared checkout dependency; counted once in the physical ledger',batch_queue_ms:'Actual queued_at_ms to sealed_at_ms; received_at_ms remains a separate pre-Provider timestamp',other_ms:'Residual including shared reads and admission; not an independently measured queue',provider_queue_ms:options.mode==='current'?'Actual verifier STARTED.started_at_ms minus QUEUED.queued_at_ms; opaque operation ID binds back to its own HTTP trace':'NOT_RUN',provider_fetch_ms:'Existing provider_ms remains only the fixed 100 ms fetch delay measured in finally',concurrency_dataset:{members:10,own_reports:5,department_reports:5},large_dataset:'Separate 10000 own / 100000 department / 10000 event EXPLAIN, never a concurrency benchmark'};
   writeFileSync(path.join(options.outputRoot,'harness.mjs'),readFileSync(fileURLToPath(import.meta.url)),{flag:'wx'});writeFileSync(path.join(options.outputRoot,'metrics.mjs'),readFileSync(options.metricsModule),{flag:'wx'});
@@ -381,7 +381,7 @@ async function run(options:Config):Promise<void>{
   }
   if(primary)throw primary;
 }
-async function seedQaMedia({owner,orchestrator,pool,privateRoot,key,secret,root}:{owner:ReturnType<typeof client>;orchestrator:ReturnType<typeof import('../src/yxx-self-service-orchestrator.mjs').createYxxSelfServiceOrchestrator>;pool:PostgresPool;privateRoot:string;key:Uint8Array;secret:string;root:string}):Promise<{requestRef:string;images:string[];voiceRef:string;videoRef:string;voiceBytes:number;videoBytes:number}>{
+async function seedQaMedia({owner,orchestrator,pool,privateRoot,key,secret,root}:{owner:ReturnType<typeof client>;orchestrator:ReturnType<typeof import('../app/server/src/yxx-self-service-orchestrator.mjs').createYxxSelfServiceOrchestrator>;pool:PostgresPool;privateRoot:string;key:Uint8Array;secret:string;root:string}):Promise<{requestRef:string;images:string[];voiceRef:string;videoRef:string;voiceBytes:number;videoBytes:number}>{
   const ffmpegPath=process.env.H5_MEDIA_FFMPEG,ffprobePath=process.env.H5_MEDIA_FFPROBE;
   assert.ok(ffmpegPath&&ffprobePath&&path.isAbsolute(ffmpegPath)&&path.isAbsolute(ffprobePath)&&existsSync(ffmpegPath)&&existsSync(ffprobePath),'controlled FFmpeg/FFprobe paths are required for nonempty browser media evidence');
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
@@ -397,7 +397,7 @@ async function seedQaMedia({owner,orchestrator,pool,privateRoot,key,secret,root}
   const images:string[]=[];for(let index=0;index<6;index++)images.push(await upload('IMAGE',png,'image/png',null));
   const voiceRef=await upload('VOICE',voice,'audio/wav',30000),videoRef=await upload('VIDEO',video,'video/mp4',20000),refs=[...images,voiceRef,videoRef];
   const accepted=await owner.send('/api/yixiaoxiu/requests',{method:'POST',body:{schema_version:2,client_command_id:randomUUID(),intent:'FAULT',description:'合成私有材料浏览器校验',location:{text:'合成科室',unknown:false},media_refs:refs}});assert.equal(accepted.status,202);const requestRef=text(record(accepted.body.receipt).request_ref);await orchestrator.processOne({requestRef});
-  const module=await import(pathToFileURL(path.join(root,'src/yxx-h5-runtime.mjs')).href) as typeof import('../src/yxx-h5-runtime.mjs');
+  const module=await import(pathToFileURL(path.join(root,'app/server/src/yxx-h5-runtime.mjs')).href) as typeof import('../app/server/src/yxx-h5-runtime.mjs');
   const worker=module.createYxxH5Runtime({pool,scopeSecret:secret,role:'WORKER',options:{enabled:true,performanceEnabled:true,privateRoot,key,ffmpegPath,ffprobePath}});
   let voiceBytes=0,videoBytes=0;
   try{

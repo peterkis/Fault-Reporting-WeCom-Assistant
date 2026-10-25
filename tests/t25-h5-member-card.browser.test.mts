@@ -1,3 +1,4 @@
+// Retired V1 client fixture: preserves historical API/lifecycle assertions; not new H5 UI acceptance.
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -9,16 +10,17 @@ import {t25WebOrigin,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function shot(browser:Browser){const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-600.png');await writeFile(file,pixels);return {file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')};}
 
-test('the actual H5 App card opens the original safe report through independent member OAuth and the formal read-only browser refuses another member',{timeout:240000},async()=>{
+test('the original App card with the retired V1 client fixture opens the original safe report through independent member OAuth and the formal read-only browser refuses another member',{timeout:240000},async()=>{
  const diagnostic=join(tmpdir(),'t25-h5-member-'+randomUUID());await mkdir(diagnostic);
  const memberA='T25_SYNTHETIC_INTERNAL_MEMBER_A',memberB='T25_SYNTHETIC_INTERNAL_MEMBER_B';
  const config={...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:[memberA,memberB]};
@@ -27,7 +29,7 @@ test('the actual H5 App card opens the original safe report through independent 
   const source=await t25WebOrigin(context,{memberId:memberA,mappingHash:identityMapping.configHash});await source.round.runOnce();await context.runtime.stop();let app:ReturnType<typeof createYxxProfile>|undefined,fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,tab:Browser|undefined,error:unknown,cardUrl:string|null=null,sends=0;
   try{
    fixture=await createYxxBrowserFixture({pool:context.pool,createApp:({oauth,origin:publicOrigin}:{oauth:WeComOAuth;origin:string})=>{
-    const actual=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:context.pool,publicOrigin,oauth,reporterMemberEntry:config,identityMapping,reporterHmacSecret:entryKey,appNotifications:{...source.appNotifications,enabled:false},yxxSelfService:{featureFlags:{YIXIAOXIU_MY_REPORTS_ENABLED:true,YIXIAOXIU_SELF_SERVICE_ENABLED:false}}});app=actual;return actual.server;
+    const actual=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool:context.pool,publicOrigin,oauth,h5Presentation:createRetiredSelfServiceFixture(),reporterMemberEntry:config,identityMapping,reporterHmacSecret:entryKey,appNotifications:{...source.appNotifications,enabled:false},yxxSelfService:{featureFlags:{YIXIAOXIU_MY_REPORTS_ENABLED:true,YIXIAOXIU_SELF_SERVICE_ENABLED:false}}});app=actual;return actual.server;
    },startApp:async server=>{assert.ok(app);await app.start();const address=server.address();assert.ok(address&&typeof address!=='string');return 'http://127.0.0.1:'+address.port;},stopApp:async()=>{await app?.stop();}});assert.ok(fixture);
    const fetchImpl:typeof fetch=async(input,init)=>{
     assert.ok(typeof init?.body==='string');const path=new URL(input instanceof Request?input.url:String(input)).pathname;

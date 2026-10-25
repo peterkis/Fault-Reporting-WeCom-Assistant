@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT37Fixture,object,rows,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
 async function current(http:T37Http,path:string){const result=await http.get(path);assert.equal(result.status,200,JSON.stringify(result.value));return result.value;}

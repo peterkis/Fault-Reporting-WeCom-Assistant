@@ -4,12 +4,12 @@ import {join} from 'node:path';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createServer } from 'node:net';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database,applyThrough031,fixtureP2012 } from './helpers/p2-012-postgres-harness.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
+import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
 for(const [width,height] of [[1440,900],[1366,768],[390,844]])test('P2-012 database-backed browser '+width+'x'+height+' human confirmation, refresh and accessibility',{timeout:90000},async()=>{
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2012browser',run:async({pool,databaseUrl})=>{
     await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});const f=await fixtureP2012(pool,{reporters:3}),candidate=await f.newCandidate();

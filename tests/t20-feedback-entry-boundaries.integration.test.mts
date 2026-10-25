@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
 import {withT11Fixture} from './helpers/t11-completion-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {browser,login,origin,secret,config,oauthOptions,mapping,input,post} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('enabled M feedback declares its independent protected raw recovery capability as default false',async()=>{

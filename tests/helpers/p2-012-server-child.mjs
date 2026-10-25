@@ -1,5 +1,5 @@
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { createP2012Runtime } from '../../src/p2-012-workbench-assembly.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { createP2012Runtime } from '../../app/server/src/p2-012-workbench-assembly.mjs';
 const pool=createPostgresPool({connectionString:process.env.PILOT_DATABASE_URL,max:2,application_name:'p2_012_test_server_child'});
 let runtime;
 process.once('message',async input=>{

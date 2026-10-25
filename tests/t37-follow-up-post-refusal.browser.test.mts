@@ -8,8 +8,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withT37Fixture,object,rows,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const region='dialog.detail-dialog[open] [role="region"][aria-label="共享下次跟进时间"]',due='2030-01-02 09:30:00';

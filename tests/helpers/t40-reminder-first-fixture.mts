@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
-import {migrateWorkbenchManualReports} from '../../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
-import {migrateWorkbenchFollow} from '../../scripts/workbench-follow-migrate.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
+import {migrateWorkbenchManualReports} from '../../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
+import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-migrate.mjs';
 import {withT37Fixture,object,text,type T37Http} from './t37-follow-up-fixture.mjs';
 
 export {object,text};

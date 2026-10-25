@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
-import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
-import {normalizeSelfHandlingCommand} from '../src/workbench-ticket-self-handling.mjs';
+import {createP2016TicketQuery} from '../app/server/src/p2-016-ticket-query.mjs';
+import {migrateTicketSelfHandling} from '../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {normalizeSelfHandlingCommand} from '../app/server/src/workbench-ticket-self-handling.mjs';
 
 test('bounded public command normalization rejects private fields and active objects without invoking hooks',()=>{
   const input={action:'take-and-start',ticket_id:randomUUID(),client_command_id:randomUUID(),expected_version:1,reason_code:'TEST',resolver_team_id:'PILOT_IT'};

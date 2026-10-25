@@ -5,11 +5,11 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('T35 actual Session items use their own cursor without latest metadata, other Session or source-position writes',{timeout:120_000},()=>withT22Fixture(async f=>{

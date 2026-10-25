@@ -10,12 +10,12 @@ import {join,resolve} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createP2016ReporterAccess} from '../src/p2-016-reporter-access.mjs';
-import {textHashP2016,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createP2016ReporterAccess} from '../app/server/src/p2-016-reporter-access.mjs';
+import {textHashP2016,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {config,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -90,12 +90,12 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       assert.equal(detailBody.public_ref,original.public_ref);assert.equal(detailBody.ticket_no,completed.ticket_no);assert.equal(detailBody.version,completed.version);
       assert.equal(eligibility.can_feedback,true);assert.equal(eligibility.completed_round_no,completedCycle.cycle_no);assert.equal(eligibility.ticket_version,completed.version);
       assert.ok(fixture.providerCalls>0,'the actual browser must pass local OAuth code resolution');
-      // Reporter.js is a legacy static resource staged by the real build, not a
-      // Vite/TS-transformed frontend today. Test/server execute compiled runtime.
-      assert.equal(await tab.evaluate("Boolean(document.querySelector('script[type=module][src=\"/reporter/reporter.js\"]'))"),true);
-      const servedScript=await tab.evaluate("fetch('/reporter/reporter.js').then(async response=>({status:response.status,text:await response.text()}))");
-      const asset=object(servedScript);assert.equal(asset.status,200);assert.equal(typeof asset.text,'string');
-      const stagedAsset=await readFile(new URL('../web/p2-reporter/reporter.js',import.meta.url),'utf8');assert.equal(asset.text,stagedAsset,'browser executes the same staged production asset');
+      assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-h5-reporter=true]'))"),true,'the original Bot card must open the shared React H5');
+      assert.equal(await tab.evaluate("Boolean(document.querySelector('script[src=\"/reporter/reporter.js\"]'))"),false);
+      assert.equal(await tab.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(node=>/^\\/wecom\\/yixiaoxiu\\/assets\\/.+\\.js$/.test(node.getAttribute('src')||''))"),true,'the page loads a compiled H5 asset');
+      const h5Manifest=object(JSON.parse(await readFile(new URL('../h5/.vite/manifest.json',import.meta.url),'utf8'))),h5Entry=object(h5Manifest['index.html']);assert.ok(typeof h5Entry.file==='string');assert.match(h5Entry.file,/^assets\/[A-Za-z0-9_.-]+\.js$/u);
+      const stagedAsset=await readFile(new URL('../h5/'+h5Entry.file,import.meta.url),'utf8'),servedAsset=object(await tab.evaluate('fetch('+JSON.stringify('/wecom/yixiaoxiu/'+h5Entry.file)+').then(async response=>({status:response.status,text:await response.text()}))'));assert.equal(servedAsset.status,200);assert.equal(servedAsset.text,stagedAsset,'the browser receives the verified H5 bundle bytes');
+      for(const path of ['/reporter/reporter.js','/reporter/reporter.css','/reporter/bot-feedback.js','/wecom/yixiaoxiu/self-service.js','/wecom/yixiaoxiu/self-service.css'])assert.equal(await tab.evaluate('fetch('+JSON.stringify(path)+').then(response=>response.status)'),404,'retired production asset stays unavailable: '+path);
       const capture=async(name:string)=>{assert.ok(tab);const bytes=Buffer.from(await tab.screenshot(),'base64'),path=join(directory,name);await writeFile(path,bytes);screenshots.push({path,sha256:createHash('sha256').update(bytes).digest('hex')});const receiptDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());await mkdir(receiptDirectory);const file=join(receiptDirectory,randomUUID()+'.png');await writeFile(file,bytes);console.log('SS010_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));};
       await capture('closed-own-ticket-1440.png');
       // Future actual RED: current 8cc production DOM has only refresh/more/logout,

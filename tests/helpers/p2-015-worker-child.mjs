@@ -1,11 +1,11 @@
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { createPilotTicketCore } from '../../src/p1-005-pilot-ticket-core.mjs';
-import { createDecisionStore } from '../../src/p2-015-decision-store.mjs';
-import { createManualReviewStore } from '../../src/p2-015-manual-review.mjs';
-import { createRuleFirstOrchestrator } from '../../src/p2-015-rule-first-orchestrator.mjs';
-import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../../src/p2-015-safe-action-executor.mjs';
-import { createServiceIntakeDecisionPort } from '../../src/p2-015-service-intake-decision-port.mjs';
-import { createP2015Worker } from '../../src/p2-015-worker.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { createPilotTicketCore } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createDecisionStore } from '../../app/server/src/p2-015-decision-store.mjs';
+import { createManualReviewStore } from '../../app/server/src/p2-015-manual-review.mjs';
+import { createRuleFirstOrchestrator } from '../../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../../app/server/src/p2-015-safe-action-executor.mjs';
+import { createServiceIntakeDecisionPort } from '../../app/server/src/p2-015-service-intake-decision-port.mjs';
+import { createP2015Worker } from '../../app/server/src/p2-015-worker.mjs';
 
 const mode = process.argv[2];
 const intakeId = process.argv[3];

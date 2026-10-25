@@ -1,12 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
-import {migrateP2016} from '../scripts/p2-016-migrate.mjs';
-import {migrateWorkbenchPersonalRead,personalReadSchemaReady} from '../scripts/workbench-personal-read-migrate.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {migrateP2016} from '../app/server/scripts/p2-016-migrate.mjs';
+import {migrateWorkbenchPersonalRead,personalReadSchemaReady} from '../app/server/scripts/workbench-personal-read-migrate.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
 test('T35 forward migration refuses before 042, checks with rollback, and refuses applied schema drift',()=>withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t35schema',run:async(f:{databaseUrl:string;pool:PostgresPool})=>{
   const input={databaseUrl:f.databaseUrl,mode:'apply'};await applyThrough030(f);await migrateP2016(input);

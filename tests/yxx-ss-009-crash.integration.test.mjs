@@ -4,10 +4,10 @@ import {fork} from 'node:child_process';
 import {once} from 'node:events';
 import {randomUUID} from 'node:crypto';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {minimalG2Environment} from '../src/p2-g2-validation-config.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {minimalG2Environment} from '../app/server/src/p2-g2-validation-config.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {input} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 async function child(databaseUrl,observeResource=()=>{},{startupMode=null,readyTimeout=15000}={}){

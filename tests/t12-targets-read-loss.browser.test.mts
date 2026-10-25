@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT12Profile} from './helpers/t12-profile-fixture.mjs';
 import {acceptedSetup,text,version} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function checkCleanupAndRescue(cleanup:Promise<void>,validate:(operation:Promise<void>)=>Promise<void>,rescue:()=>Promise<void>){

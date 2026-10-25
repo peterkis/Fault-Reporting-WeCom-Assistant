@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseCaptureArgs, sanitizeTextFrame } from '../src/g0-003-frame-capture.mjs';
+import { parseCaptureArgs, sanitizeTextFrame } from '../app/server/src/g0-003-frame-capture.mjs';
 
 test('text frame capture records only the permitted, desensitized shape', () => {
   const sensitiveText = '患者张三住院号123456，HIS 登录失败';

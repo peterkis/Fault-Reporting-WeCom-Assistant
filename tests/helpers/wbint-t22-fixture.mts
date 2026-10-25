@@ -1,16 +1,16 @@
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../src/p2-001-conversation-contracts.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {createP2G1TestAuthentication} from '../../src/p2-g1-test-authentication.mjs';
-import {computeTimelineCanonicalOrderKey} from '../../src/p2-002-timeline-projector.mjs';
-import type {G1AuthenticationPort} from '../../src/p2-g1-runtime.mjs';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../../scripts/yxx-self-service-migrate.mjs';
-import {migrateWorkbenchManualReports} from '../../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../app/server/src/p2-001-conversation-contracts.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createP2G1TestAuthentication} from '../../app/server/src/p2-g1-test-authentication.mjs';
+import {computeTimelineCanonicalOrderKey} from '../../app/server/src/p2-002-timeline-projector.mjs';
+import type {G1AuthenticationPort} from '../../app/server/src/p2-g1-runtime.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 interface Base {databaseUrl:string;pool:PostgresPool;tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string}
 export interface T22Session {id:string;intakeId:string;ticketId:string;reporter:string;rowVersion:number}
 export interface T22Fixture extends Base {sessions:T22Session[];cookie:string;outsiderCookie:string;handlerCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};restoreResponses:()=>void;bootstrapAuthenticationBoundary?:{armNext:(callback:()=>Promise<void>)=>void;readonly calls:number;readonly authenticatedPrincipalId:string|null}}

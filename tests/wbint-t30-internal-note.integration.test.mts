@@ -3,10 +3,10 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
 import {readFile} from 'node:fs/promises';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
-import type {P2012RuntimeOptions} from '../src/p2-012-workbench-assembly.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import type {P2012RuntimeOptions} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
 import type {IncidentInternalNoteInput,IncidentInternalNoteHostOptions} from '../contracts/workbench_incident_internal_notes_contracts.js';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 

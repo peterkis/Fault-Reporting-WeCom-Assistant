@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
-import { migrateWorkbenchAuth } from '../scripts/p2-016-workbench-auth-migrate.mjs';
-import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
+import { migrateWorkbenchAuth } from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import { createWeComWorkbenchAuthentication } from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
 import { withP2016IsolatedDatabase, applyThrough030, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const origin = 'https://cd3120.mobimedical.cn';

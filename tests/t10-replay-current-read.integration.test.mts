@@ -4,7 +4,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {test} from 'node:test';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('same UUID replay waiting on a real receipt lock rechecks current Ticket READ before returning the historical result',async()=>{
   await withT10Fixture(async context=>{

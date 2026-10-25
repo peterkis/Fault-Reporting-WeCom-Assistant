@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {object} from './helpers/t42-board-browser-fixture.mjs';
 
 test('T42 board completion and independent staff reopen each require their original explicit form and official successful movement',{timeout:240000},async()=>{

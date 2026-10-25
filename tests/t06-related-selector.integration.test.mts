@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 type Fixture={runtime:P2016EnabledRuntime;origin:string;cookies:string[];tickets:{ticket:{id:string}}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}

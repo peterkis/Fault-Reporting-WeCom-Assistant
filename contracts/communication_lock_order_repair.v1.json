@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "authorization_id": "LOCAL_COMMUNICATION_LOCK_ORDER_REPAIR_2026_10_24",
+  "authorization_record": "adr/0046_scoped_communication_lock_order_repair.md",
+  "authorization_source": "User-approved remaining-failure repair plan, 2026-10-24, proven lock-order repair in section 3",
+  "predecessor_commit": "d3b7fda4f2cfb4291f550a9ed0952812dcf9a18f",
+  "logical_source": "src/p2-004-communication-core.mjs",
+  "function": "loadSessionAndThread",
+  "local_only": true,
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "original_query": "SELECT session.id::text AS session_id, session.status AS session_status,\n            session.row_version, session.thread_id::text,\n            thread.provider, thread.channel_account_id, thread.chat_type,\n            thread.external_thread_key, thread.status AS thread_status\n       FROM conversation.session AS session\n       JOIN conversation.thread AS thread ON thread.id = session.thread_id\n      WHERE session.id = $1::uuid\n      FOR UPDATE OF session, thread",
+  "original_query_sha256": "0c9345d24254def630c0b7d98f49b6b50fc06c452464a49775f5af41b004057b",
+  "replacement_query": "WITH locked_thread AS MATERIALIZED (\n         SELECT thread.id FROM conversation.thread AS thread\n         JOIN conversation.session AS source_session ON source_session.thread_id = thread.id\n        WHERE source_session.id = $1::uuid\n        FOR UPDATE OF thread\n       )\n     SELECT session.id::text AS session_id, session.status AS session_status,\n            session.row_version, session.thread_id::text,\n            thread.provider, thread.channel_account_id, thread.chat_type,\n            thread.external_thread_key, thread.status AS thread_status\n       FROM conversation.session AS session\n       JOIN conversation.thread AS thread ON thread.id = session.thread_id\n       JOIN locked_thread ON locked_thread.id = thread.id\n      WHERE session.id = $1::uuid\n      FOR UPDATE OF session, thread",
+  "replacement_query_sha256": "a2222ebb37c6103e2aacb6a0052593c3aa9e06883e83588e237a677bddef6870"
+}

@@ -3,8 +3,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createWorkbenchReporterCandidates} from '../src/workbench-reporter-candidates.mjs';
-import {decodeReporterCandidates,decodeManualReportProjection} from '../src/workbench-manual-report-browser-contracts.mjs';
+import {createWorkbenchReporterCandidates} from '../app/server/src/workbench-reporter-candidates.mjs';
+import {decodeReporterCandidates,decodeManualReportProjection} from '../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mjs';
 import {createT18Directory} from './helpers/t18-verified-fixture.mjs';
 
 const name=' 合成成员甲 ',department=' 合成门诊 ';

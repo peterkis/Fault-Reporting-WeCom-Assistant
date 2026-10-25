@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { readP2016LiveConfiguration,P2016_LIVE_FUSES } from '../src/p2-016-live-configuration.mjs';
-import { checkP2016Live,assertP2016ReadyCandidate } from '../scripts/p2-016-live-check.mjs';
-import { p2016LiveDuration } from '../scripts/p2-016-live-e2e.mjs';
+import { readP2016LiveConfiguration,P2016_LIVE_FUSES } from '../app/server/src/p2-016-live-configuration.mjs';
+import { checkP2016Live,assertP2016ReadyCandidate } from '../app/server/scripts/p2-016-live-check.mjs';
+import { p2016LiveDuration } from '../app/server/scripts/p2-016-live-e2e.mjs';
 
 function env(){return {...Object.fromEntries(P2016_LIVE_FUSES.map(k=>[k,'true'])),
   PILOT_DATABASE_URL:'postgres://synthetic.invalid/test',PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-private-key-not-for-logging',
@@ -37,7 +37,7 @@ test('P2-016 live requires an exact verified candidate and at least 15 minutes; 
 test('P2-016 live CLI with no approvals exits before DB, listener, Evidence or SDK work',()=>{
   const e={...process.env};for(const k of P2016_LIVE_FUSES)delete e[k];
   for(const script of ['p2-016-live-check.mjs','p2-016-live-e2e.mjs']){
-    const result=spawnSync(process.execPath,['scripts/'+script,...(script.includes('e2e')?['--observe-seconds=900']:[])],{env:e,encoding:'utf8',timeout:10000});
+    const result=spawnSync(process.execPath,['app/server/scripts/'+script,...(script.includes('e2e')?['--observe-seconds=900']:[])],{env:e,encoding:'utf8',timeout:10000});
     assert.equal(result.status,1,result.stderr);const line=JSON.parse(result.stdout.trim());assert.equal(line.provider_calls,0);
     assert.equal(line.listener_started,false);assert.equal(line.error_code,'P2_016_LIVE_APPROVAL_REQUIRED');
   }

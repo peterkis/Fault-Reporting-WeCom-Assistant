@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { setInterval } from 'node:timers';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
-import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
+import { createCommunicationDeliveryWorker } from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 const { P2_004_CHILD_DATABASE_URL: databaseUrl, P2_004_CHILD_DELIVERY_ID: deliveryId, P2_004_CHILD_MODE: mode, P2_004_CHILD_NOW_MS: nowText } = process.env;
 const nowMs = Number(nowText);

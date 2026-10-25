@@ -1,11 +1,11 @@
-import { validateG2Manifest, readG2Configuration } from '../../src/p2-g2-validation-config.mjs';
-import type { SyntheticManifest, LiveManifest, CandidateFingerprint, ApprovalScopeHash, SourceSHA256, EvidenceSHA256, DatabaseIdentityHash, G2Role } from '../../src/p2-g2-validation-config.mjs';
-import type { CandidateInventory, G2CandidateFile, PreparedG2Candidate } from '../../src/p2-g2-candidate.mjs';
-import type { G2EvidenceType, G2ResultValue, G2MetricName, G2BooleanFact } from '../../src/p2-g2-evidence.mjs';
-import type { G2ScenarioId } from '../../src/p2-g2-gate-evaluator.mjs';
-import { createG2SourceAudit } from '../../src/p2-g2-source-audit.mjs';
-import type { G2HostMetrics, G2ResourceDatabaseMetrics } from '../../src/p2-g2-resource-sampler.mjs';
-import type { ReconciliationCounts, ReconciliationDelivery } from '../../src/p2-g2-reconciliation.mjs';
+import { validateG2Manifest, readG2Configuration } from '../../app/server/src/p2-g2-validation-config.mjs';
+import type { SyntheticManifest, LiveManifest, CandidateFingerprint, ApprovalScopeHash, SourceSHA256, EvidenceSHA256, DatabaseIdentityHash, G2Role } from '../../app/server/src/p2-g2-validation-config.mjs';
+import type { CandidateInventory, G2CandidateFile, PreparedG2Candidate } from '../../app/server/src/p2-g2-candidate.mjs';
+import type { G2EvidenceType, G2ResultValue, G2MetricName, G2BooleanFact } from '../../app/server/src/p2-g2-evidence.mjs';
+import type { G2ScenarioId } from '../../app/server/src/p2-g2-gate-evaluator.mjs';
+import { createG2SourceAudit } from '../../app/server/src/p2-g2-source-audit.mjs';
+import type { G2HostMetrics, G2ResourceDatabaseMetrics } from '../../app/server/src/p2-g2-resource-sampler.mjs';
+import type { ReconciliationCounts, ReconciliationDelivery } from '../../app/server/src/p2-g2-reconciliation.mjs';
 
 declare const json: unknown;
 const manifest = validateG2Manifest(json);
@@ -67,16 +67,16 @@ const uncheckedCount: number = counts.out_of_scope_deliveries;
 void delivery.raw_content;
 void [unverified,role,wrongCandidate,wrongEvidence,wrongDatabase,wrongApproval,wrongEncoding,ready,stale,type,result,metric,fact,scenario,accounting,hostCpu,incorrectHost,outOfScope];
 
-import type { SendBudgetReservation } from '../../src/p2-g2-send-budget.mjs';
-import type { CommunicationSenderResult, ValidatedSenderRequest } from '../../src/p2-004-communication-sender-port.mjs';
-import type { ProviderReceipt } from '../../src/p2-g2-provider-receipts.mjs';
-import type { StoredWebhookReceipt } from '../../src/p2-g2-webhook-receipts.mjs';
-import type { G2SendGuardOptions } from '../../src/p2-g2-send-guard.mjs';
-import type { G2NetworkCapabilities } from '../../src/p2-g2-network-boundary.mjs';
-import { inspectG2DatabaseScope } from '../../src/p2-g2-database-scope.mjs';
-import { limitedTemplate, validateLimitedManifest } from '../../src/yxx-limited-write-contract.mjs';
-import type { ApprovedLimitedManifest, LimitedPermission, LimitedPermissions } from '../../src/yxx-limited-write-contract.mjs';
-import { createLimitedGuard } from '../../src/yxx-limited-write-guard.mjs';
+import type { SendBudgetReservation } from '../../app/server/src/p2-g2-send-budget.mjs';
+import type { CommunicationSenderResult, ValidatedSenderRequest } from '../../app/server/src/p2-004-communication-sender-port.mjs';
+import type { ProviderReceipt } from '../../app/server/src/p2-g2-provider-receipts.mjs';
+import type { StoredWebhookReceipt } from '../../app/server/src/p2-g2-webhook-receipts.mjs';
+import type { G2SendGuardOptions } from '../../app/server/src/p2-g2-send-guard.mjs';
+import type { G2NetworkCapabilities } from '../../app/server/src/p2-g2-network-boundary.mjs';
+import { inspectG2DatabaseScope } from '../../app/server/src/p2-g2-database-scope.mjs';
+import { limitedTemplate, validateLimitedManifest } from '../../app/server/src/yxx-limited-write-contract.mjs';
+import type { ApprovedLimitedManifest, LimitedPermission, LimitedPermissions } from '../../app/server/src/yxx-limited-write-contract.mjs';
+import { createLimitedGuard } from '../../app/server/src/yxx-limited-write-guard.mjs';
 
 declare const reservation: SendBudgetReservation;
 if (reservation.kind === 'REPLAY') {
@@ -123,16 +123,16 @@ if (guardResult) { const allowed:true = guardResult; void allowed; }
 else { const rejected:false = guardResult; void rejected; }
 void [ack,webhookReceipt,network,databaseReady,notAuthorized,approvedTemplate,newPermission,messaging,parentLive,localQuota];
 
-import { createYxxProfile } from '../../src/p2-g2-yixiaoxiu-profile.mjs';
-import type { OAuthOnlyProfileOptions, SelfServiceProfileOptions, FullServiceProfileOptions, YxxProfileOptions } from '../../src/p2-g2-yixiaoxiu-profile.mjs';
-import type { YxxG2AppConfiguration } from '../../src/p2-g2-yixiaoxiu-g2-config.mjs';
-import { yxxSelfServiceRoleEnvironment } from '../../src/p2-g2-yixiaoxiu-g2-config.mjs';
-import { createG2ProcessCluster } from '../../src/p2-g2-service-loop-assembly.mjs';
-import type { G2RoleEnvironment } from '../../src/p2-g2-service-loop-assembly.mjs';
-import type { G2ResourceCluster } from '../../src/p2-g2-resource-sampler.mjs';
-import type { G2ControlMessage, G2RoleControl, SyntheticG2ProviderResult } from '../../scripts/p2-g2-process-role.mjs';
-import type { YxxIdentityMapping } from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import type { YxxMemberFlags } from '../../src/yxx-self-service-authorization.mjs';
+import { createYxxProfile } from '../../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import type { OAuthOnlyProfileOptions, SelfServiceProfileOptions, FullServiceProfileOptions, YxxProfileOptions } from '../../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import type { YxxG2AppConfiguration } from '../../app/server/src/p2-g2-yixiaoxiu-g2-config.mjs';
+import { yxxSelfServiceRoleEnvironment } from '../../app/server/src/p2-g2-yixiaoxiu-g2-config.mjs';
+import { createG2ProcessCluster } from '../../app/server/src/p2-g2-service-loop-assembly.mjs';
+import type { G2RoleEnvironment } from '../../app/server/src/p2-g2-service-loop-assembly.mjs';
+import type { G2ResourceCluster } from '../../app/server/src/p2-g2-resource-sampler.mjs';
+import type { G2ControlMessage, G2RoleControl, SyntheticG2ProviderResult } from '../../app/server/scripts/p2-g2-process-role.mjs';
+import type { YxxIdentityMapping } from '../../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import type { YxxMemberFlags } from '../../app/server/src/yxx-self-service-authorization.mjs';
 
 declare const oauthOnlyOptions: OAuthOnlyProfileOptions;
 const oauthOnly = createYxxProfile(oauthOnlyOptions);
@@ -201,8 +201,8 @@ declare const storedWebhook: StoredWebhookReceipt;
 const webhookTime: string = storedWebhook.physical_epoch_ms;
 // @ts-expect-error -- Limited manifest OID may retain a number accepted by the original regex.
 const databaseOid: string = approved.database.oid;
-import { validateG2EvidenceRecord } from '../../src/p2-g2-evidence.mjs';
-import { validateTargetedCreationConfig } from '../../src/p2-g2-yxx-targeted-creation.mjs';
+import { validateG2EvidenceRecord } from '../../app/server/src/p2-g2-evidence.mjs';
+import { validateTargetedCreationConfig } from '../../app/server/src/p2-g2-yxx-targeted-creation.mjs';
 const evidenceRecord = validateG2EvidenceRecord(json);
 // @ts-expect-error -- Regex-only source digests do not prove a normalized source string.
 const evidenceSource: SourceSHA256 = evidenceRecord.source_refs[0]?.sha256;

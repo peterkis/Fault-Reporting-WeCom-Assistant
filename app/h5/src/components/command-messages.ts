@@ -1,0 +1,68 @@
+import i18n from '../i18n';
+import {en as compiledEn,zh as compiledZh} from 'virtual:yxx-i18n/command';
+export const en={
+  "reporterLoading": "Checking your ticket access…",
+  "reporterUpdated": "Updated",
+  "reporterIncident": "Related service incident",
+  "reporterAuthExpired": "Your session has expired. Reconnect to view this ticket.",
+  "reporterAccessExpired": "This access has expired. Open the latest ticket message in WeCom.",
+  "reporterDenied": "This ticket is unavailable or you do not have access.",
+  "reporterRetry": "Progress could not be loaded. Please refresh to retry.",
+  "reporterMemberVerified": "Your access has been checked. Progress is checked every 5 seconds.",
+  "reporterGrantVerified": "Your ticket access is verified. Progress is checked every 5 seconds.",
+  "reporterLoggingOut": "Signing out…",
+  "reporterLoggedOut": "You have signed out of this ticket.",
+  "reporterLogoutUnknown": "Sign-out could not be confirmed. Reconnect to retry.",
+  "reporterOpenCard": "Open this ticket from its original WeCom message.",
+  "reporterRevalidating": "Checking your access again…",
+  "reporterReconnect": "Reconnect",
+  "reporterLogout": "Sign out of this ticket",
+
+  "errorTitle": "Unable to complete this action",
+  "unknownTitle": "Result not confirmed",
+  "unknownDescription": "Keep this page open. Check the original operation before doing anything else.",
+  "checkOriginal": "Check original operation",
+  "stillUnknown": "No confirmed result yet. Please check again later.",
+  "conflictTitle": "The report has changed",
+  "conflictDescription": "View the latest progress before starting a new action.",
+  "resetConflict": "Use the latest version",
+  "requestRejected": "This action is not available. Refresh to check the latest permissions.",
+  "originalOperationDone": "Original operation confirmed",
+  "syncFailure": "Submitted, but this page could not be synchronized. Refresh before continuing.",
+  "pendingDescription": "The original result is being checked",
+  "refresh": "Refresh"
+};
+export const zh={
+  "reporterLoading": "正在核验工单访问权限…",
+  "reporterUpdated": "最近更新",
+  "reporterIncident": "关联公共故障",
+  "reporterAuthExpired": "认证已失效，请重新认证后查看。",
+  "reporterAccessExpired": "访问已失效，请重新点击企业微信中的最新通知。",
+  "reporterDenied": "您无权查看此工单，或工单已不可用。",
+  "reporterRetry": "暂时无法读取进度，请刷新重试。",
+  "reporterMemberVerified": "已核验工单归属；页面每 5 秒检查进度。",
+  "reporterGrantVerified": "已验证绑定访问会话；页面每 5 秒检查进度。",
+  "reporterLoggingOut": "正在退出…",
+  "reporterLoggedOut": "已退出访问。",
+  "reporterLogoutUnknown": "退出尚未确认，请恢复网络后重试。",
+  "reporterOpenCard": "请从企业微信发给您的原工单卡片进入。",
+  "reporterRevalidating": "正在重新核验访问权限…",
+  "reporterReconnect": "重新认证",
+  "reporterLogout": "退出本次访问",
+
+  "errorTitle": "操作未完成",
+  "unknownTitle": "提交结果暂未确认",
+  "unknownDescription": "请保留当前页面，先核对原操作结果。",
+  "checkOriginal": "只读核对原操作",
+  "stillUnknown": "暂未查到确定结果，请稍后再次核对。",
+  "conflictTitle": "工单已有更新",
+  "conflictDescription": "请先查看最新进度，再明确发起新操作。",
+  "resetConflict": "使用最新版本重新填写",
+  "requestRejected": "当前无法执行此操作，请刷新核对最新权限。",
+  "originalOperationDone": "已核对原操作结果",
+  "syncFailure": "已提交，页面同步失败。请刷新后再继续操作。",
+  "pendingDescription": "正在核对原操作结果",
+  "refresh": "刷新"
+} satisfies Record<keyof typeof en,string>;
+i18n.addResourceBundle('en','command',compiledEn);
+i18n.addResourceBundle('zh-CN','command',compiledZh);

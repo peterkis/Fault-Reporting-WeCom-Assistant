@@ -5,13 +5,13 @@ import {randomUUID} from 'node:crypto';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 import type {T08Fixture} from './helpers/t08-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
-import {createSafeActionExecutor,createExistingTicketCommandPort} from '../src/p2-015-safe-action-executor.mjs';
-import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
-import {createDecisionStore} from '../src/p2-015-decision-store.mjs';
-import {createServiceIntakeDecisionPort} from '../src/p2-015-service-intake-decision-port.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import {createSafeActionExecutor,createExistingTicketCommandPort} from '../app/server/src/p2-015-safe-action-executor.mjs';
+import {createManualReviewStore} from '../app/server/src/p2-015-manual-review.mjs';
+import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
+import {createServiceIntakeDecisionPort} from '../app/server/src/p2-015-service-intake-decision-port.mjs';
 
 const command=(target:string,sessions:{session_id:string;expected_row_version:number}[])=>({client_command_id:randomUUID(),expected_version:2,
  reason_code:'WORKBENCH_UNASSIGN',reason:'原处理未开始，明确原子交接所选沟通。',communication_choice:'TRANSFER_SELECTED',communication_target_principal_id:target,sessions});

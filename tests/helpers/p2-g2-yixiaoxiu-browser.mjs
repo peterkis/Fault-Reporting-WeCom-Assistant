@@ -7,9 +7,9 @@ import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve,relative,isAbsolute} from 'node:path';
-import {createWeComWebOAuth} from '../../src/p2-g2-wecom-web-oauth.mjs';
-import {createWeComOAuthCodeResolver} from '../../src/p2-g2-wecom-oauth-provider.mjs';
-import {createYxxReadonlyServer} from '../../src/p2-g2-yixiaoxiu-server.mjs';
+import {createWeComWebOAuth} from '../../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createWeComOAuthCodeResolver} from '../../app/server/src/p2-g2-wecom-oauth-provider.mjs';
+import {createYxxReadonlyServer} from '../../app/server/src/p2-g2-yixiaoxiu-server.mjs';
 import {entryConfig,entryKey,listenYxx,stopYxx} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 

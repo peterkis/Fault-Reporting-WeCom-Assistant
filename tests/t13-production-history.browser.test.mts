@@ -8,7 +8,7 @@ import type {Server,IncomingMessage,ServerResponse} from 'node:http';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {acceptedSetup,acceptedOptions,http,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 interface Fixture extends T07Fixture {browserCookies:{name:string;value:string;url:string}[];runtime:T07Fixture['runtime']&{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 

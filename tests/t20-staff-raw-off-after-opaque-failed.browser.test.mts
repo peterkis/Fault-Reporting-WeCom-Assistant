@@ -8,7 +8,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {browser} from './helpers/yxx-ss-009-http-fixture.mjs';
 import type {P2016TicketDetail} from '../contracts/p2_016_contracts.js';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;

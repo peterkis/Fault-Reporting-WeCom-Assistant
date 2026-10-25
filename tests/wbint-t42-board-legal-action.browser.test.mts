@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {P2016SelfHandlingCommand} from '../contracts/p2_016_contracts.js';
 
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;

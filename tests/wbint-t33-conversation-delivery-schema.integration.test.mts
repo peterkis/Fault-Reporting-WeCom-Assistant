@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
-import {migrateP2016,p2016CatalogInventory,p2016CatalogHash} from '../scripts/p2-016-migrate.mjs';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateYxxSelfService} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateWorkbenchManualReports} from '../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../scripts/workbench-personal-read-migrate.mjs';
-import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
-import {migrateTicketStaffCompletion} from '../scripts/ticket-staff-completion-migrate.mjs';
-import {migrateTicketReopenRounds} from '../scripts/ticket-reopen-rounds-migrate.mjs';
-import {migrateBotReporterFeedback} from '../scripts/bot-reporter-feedback-migrate.mjs';
-import {migrateWorkbenchFollow,followSchemaReady} from '../scripts/workbench-follow-migrate.mjs';
-import {migrateConversationDeliveryCommands} from '../scripts/conversation-delivery-commands-migrate.mjs';
-import {conversationDeliveryReceiptSchemaReady,conversationDeliveryReceiptSchemaShape} from '../src/p2-006-delivery-command-schema.mjs';
+import {migrateP2016,p2016CatalogInventory,p2016CatalogHash} from '../app/server/scripts/p2-016-migrate.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateWorkbenchManualReports} from '../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../app/server/scripts/workbench-personal-read-migrate.mjs';
+import {migrateTicketSelfHandling} from '../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../app/server/scripts/bot-reporter-feedback-migrate.mjs';
+import {migrateWorkbenchFollow,followSchemaReady} from '../app/server/scripts/workbench-follow-migrate.mjs';
+import {migrateConversationDeliveryCommands} from '../app/server/scripts/conversation-delivery-commands-migrate.mjs';
+import {conversationDeliveryReceiptSchemaReady,conversationDeliveryReceiptSchemaShape} from '../app/server/src/p2-006-delivery-command-schema.mjs';
 
 test('T33 explicit 061 check rolls back and exact 031/032 consumers retain complete catalog guards',{timeout:120000},async()=>{
  assert.ok(process.env.PILOT_DATABASE_URL);

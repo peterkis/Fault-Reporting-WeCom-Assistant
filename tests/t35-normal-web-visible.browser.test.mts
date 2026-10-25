@@ -5,9 +5,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('T35 normal Web Ticket without Review acknowledges only its actual original submission body',{timeout:120_000},()=>withT35Fixture(async f=>{

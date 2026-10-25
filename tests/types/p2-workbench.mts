@@ -1,7 +1,7 @@
-import { createConversationWorkbenchQueryService } from '../../src/p2-006-workbench-query.mjs';
-import { createPilotWorkbenchAuthorizationAdapter } from '../../src/p2-006-workbench-authorization.mjs';
-import type { WorkbenchPrincipal } from '../../src/p2-006-workbench-authorization.mjs';
-import type { PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
+import { createConversationWorkbenchQueryService } from '../../app/server/src/p2-006-workbench-query.mjs';
+import { createPilotWorkbenchAuthorizationAdapter } from '../../app/server/src/p2-006-workbench-authorization.mjs';
+import type { WorkbenchPrincipal } from '../../app/server/src/p2-006-workbench-authorization.mjs';
+import type { PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
 
 declare const pool: PostgresTransaction;
 declare const principal: WorkbenchPrincipal;

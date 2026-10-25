@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createAliasResolver} from '../src/p2-007-alias-resolver.mjs';
-import {createRuleEngine} from '../src/p2-007-rule-engine.mjs';
-import {routeP2007Decision} from '../src/p2-015-decision-router.mjs';
-import {safeHash,safeTextHash} from '../src/p2-015-domain-contracts.mjs';
-import {createManualReportRulePolicy,MANUAL_REPORT_ALIAS_SET_VERSION} from '../src/workbench-manual-report-policy.mjs';
+import {createAliasResolver} from '../app/server/src/p2-007-alias-resolver.mjs';
+import {createRuleEngine} from '../app/server/src/p2-007-rule-engine.mjs';
+import {routeP2007Decision} from '../app/server/src/p2-015-decision-router.mjs';
+import {safeHash,safeTextHash} from '../app/server/src/p2-015-domain-contracts.mjs';
+import {createManualReportRulePolicy,MANUAL_REPORT_ALIAS_SET_VERSION} from '../app/server/src/workbench-manual-report-policy.mjs';
 
 const input={text:'合成电话报修：打印机无法打印',source_ref:'manual:00000000-0000-4000-8000-000000000017',source_kind:'USER_TEXT',observed_at:'2026-10-09 08:00:00',occurrence_location:null};
 const context={service_intake_id:'00000000-0000-4000-8000-000000000017',journey_ref:'00000000-0000-4000-8000-000000000018',

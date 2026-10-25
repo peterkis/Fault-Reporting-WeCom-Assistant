@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import * as weComSdkAdapter from '../src/p1-002-wecom-sdk-adapter.mjs';
+import * as weComSdkAdapter from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 
 const { adaptWeComSdkFrame } = weComSdkAdapter;
 

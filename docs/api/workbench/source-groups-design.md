@@ -125,6 +125,6 @@ node .build/runtime/scripts/workbench-source-groups-migrate.mjs --apply
 
 ## 实现和验证
 
-[后端模块](../../../src/workbench-source-groups.mts)、[HTTP](../../../src/web01-workbench-http.mts)、[读取查询](../../../src/web01-workbench-query.mts)、[运行装配](../../../src/p2-016-runtime.mts)、[客户端](../../../web/admin-workbench/src/api/client.ts)、[目录](../../../web/admin-workbench/src/features/source-groups/SourceGroupDirectory.tsx)、[共用名称表单](../../../web/admin-workbench/src/features/source-groups/GroupNameEditor.tsx)、[迁移器](../../../scripts/workbench-source-groups-migrate.mts)。
+[后端模块](../../../app/server/src/workbench-source-groups.mts)、[HTTP](../../../app/server/src/web01-workbench-http.mts)、[读取查询](../../../app/server/src/web01-workbench-query.mts)、[运行装配](../../../app/server/src/p2-016-runtime.mts)、[客户端](../../../app/pc-admin/src/api/client.ts)、[目录](../../../app/pc-admin/src/features/source-groups/SourceGroupDirectory.tsx)、[共用名称表单](../../../app/pc-admin/src/features/source-groups/GroupNameEditor.tsx)、[迁移器](../../../app/server/scripts/workbench-source-groups-migrate.mts)。
 
 既有核心验证记录保持[原本地证据](../../../evidence/workbench-source-group-names-local.md)的原对象和状态。T23的当前检索／设置／可靠表单、同名Ref、版本依据、撤权及关闭的实际候选、报告和清理见[本票执行记录](../../../plans/admin-workbench-integration/execution/t23.md)；不由旧结果推导本票通过或已发布。

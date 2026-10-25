@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createYxxSelfServiceStore } from '../src/yxx-self-service-store.mjs';
-import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.mjs';
-import { createYxxSelfServiceSupplement } from '../src/yxx-self-service-supplement.mjs';
-import { createYxxSelfServiceOrchestrator } from '../src/yxx-self-service-orchestrator.mjs';
-import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
-import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
+import { createYxxSelfServiceStore } from '../app/server/src/yxx-self-service-store.mjs';
+import { createYxxMemberCommandContext } from '../app/server/src/yxx-self-service-command.mjs';
+import { createYxxSelfServiceSupplement } from '../app/server/src/yxx-self-service-supplement.mjs';
+import { createYxxSelfServiceOrchestrator } from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-review-facade.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;

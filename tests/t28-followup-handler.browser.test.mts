@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createP2016TicketCommandFacade} from '../src/p2-016-ticket-command-facade.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createP2016TicketCommandFacade} from '../app/server/src/p2-016-ticket-command-facade.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {prepareFollowup,navigateFollowup,chooseFollowup,personalSnapshots,rows,observeFollowupPosts} from './helpers/t28-followup-source-fixture.mjs';
 

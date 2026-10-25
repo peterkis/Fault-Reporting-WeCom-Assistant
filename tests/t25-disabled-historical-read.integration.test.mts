@@ -6,12 +6,12 @@ import {createT18Directory} from './helpers/t18-verified-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {t25Object,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig,entryKey,entryOrigin,httpBrowser,loginYxx} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {TicketAppNotificationOptions,EligibleTicketAppNotificationTarget} from '../contracts/workbench_app_notification_contracts.js';
 
 test('notification shutdown stops new App intents while independently authenticated members retain their safe original MANUAL history',{timeout:240000},async()=>{

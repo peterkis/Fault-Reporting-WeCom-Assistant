@@ -4,9 +4,9 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {IneligibleTicketAppNotificationTarget,TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
 
 test('current member qualification revoked during a real source DB wait prevents the original App send',{timeout:240000},async()=>{

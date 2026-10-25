@@ -15,7 +15,7 @@ import {
   mapConversationStorageError,
   normalizeConversationFeatureFlags,
   runConversationCenterGuarded,
-} from '../src/p2-001-conversation-contracts.mjs';
+} from '../app/server/src/p2-001-conversation-contracts.mjs';
 
 const INTAKE_A = '018f4f00-1111-7111-8111-111111111111';
 const INTAKE_B = '018f4f00-2222-7222-8222-222222222222';

@@ -2,12 +2,12 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import type {Server} from 'node:http';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture,seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../src/p2-001-conversation-contracts.mjs';
-import {createPilotWorkbenchAuthorizationAdapter} from '../src/p2-006-workbench-authorization.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../app/server/src/p2-001-conversation-contracts.mjs';
+import {createPilotWorkbenchAuthorizationAdapter} from '../app/server/src/p2-006-workbench-authorization.mjs';
 interface Fixture {pool:PostgresPool;runtime:{server:Server};origin:string;cookies:string[];principals:{id:string}[]}
 async function session(pool:PostgresPool){
   const label=randomUUID(),identity=buildConversationThreadIdentity({provider:'WECOM_AIBOT',botId:'t38-synthetic',chatType:'group',chatId:label,senderUserId:'t38-synthetic-reporter'});

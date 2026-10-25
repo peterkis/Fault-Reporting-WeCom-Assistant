@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {test} from 'node:test';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {withT43Fixture,text,object,version} from './helpers/t43-full-service-fixture.mjs';
 import {get,post,start,complete,launch,screenshot,close} from './helpers/t43-service-actions.mjs';
 import type {Browser,Screenshot} from './helpers/t43-service-actions.mjs';

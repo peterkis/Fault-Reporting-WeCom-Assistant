@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {generateIncidentCandidate} from '../src/p2-007-incident-candidate.mjs';
-import {createP2012CandidateSourceAdapter,createP2012CandidateReviewStore} from '../src/p2-012-candidate-source-adapter.mjs';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {generateIncidentCandidate} from '../app/server/src/p2-007-incident-candidate.mjs';
+import {createP2012CandidateSourceAdapter,createP2012CandidateReviewStore} from '../app/server/src/p2-012-candidate-source-adapter.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 import {withP2012Database,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 
 test('T27 real Web submit and supplement preserve original evidence while projecting only latest retained material',async()=>{

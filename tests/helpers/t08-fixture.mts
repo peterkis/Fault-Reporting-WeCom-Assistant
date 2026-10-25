@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import type {P2016RuntimeOptions,P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
-import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
-import type {PilotRole} from '../../src/p1-009-pilot-access-workbench.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {assertLocalDateTime} from '../../src/platform/time-contract.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import type {P2016RuntimeOptions,P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PilotRole} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {assertLocalDateTime} from '../../app/server/src/platform/time-contract.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harness.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
-import {migrateP2016} from '../../scripts/p2-016-migrate.mjs';
-import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
-import {migrateTicketUnassign} from '../../scripts/ticket-unassign-migrate.mjs';
+import {migrateP2016} from '../../app/server/scripts/p2-016-migrate.mjs';
+import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}

@@ -4,7 +4,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {object,rows} from './helpers/t41-search-risk-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
 interface Fixture {pool:PostgresPool;origin:string;backendOrigin?:string;cookies:string[];sessionId?:string;
  tickets:{ticket:{id:string};intake:{intakeId:string}}[]}

@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import {request as requestHttp} from 'node:http';
 import {EventEmitter} from 'node:events';
-import { createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
-import { createWeComWebOAuth,h5OAuthReturnPath,WeComOAuthError } from '../src/p2-g2-wecom-web-oauth.mjs';
-import { createWeComOAuthHttp } from '../src/p2-g2-wecom-oauth-http.mjs';
-import {createYxxSelfServiceNativeHttp} from '../src/yxx-self-service-native-http.mjs';
-import {createYxxApplicationMemberAuthentication} from '../src/yxx-application-member-auth.mjs';
-import {createYxxSelfServiceExtension} from '../src/yxx-self-service-runtime.mjs';
-import {yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import { createConversationWorkbenchHttpServer } from '../app/server/src/p2-006-workbench-http.mjs';
+import { createWeComWebOAuth,h5OAuthReturnPath,WeComOAuthError } from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import { createWeComOAuthHttp } from '../app/server/src/p2-g2-wecom-oauth-http.mjs';
+import {createYxxSelfServiceNativeHttp} from '../app/server/src/yxx-self-service-native-http.mjs';
+import {createYxxApplicationMemberAuthentication} from '../app/server/src/yxx-application-member-auth.mjs';
+import {createYxxSelfServiceExtension} from '../app/server/src/yxx-self-service-runtime.mjs';
+import {yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 test('真实 HTTP 授权往返使用安全 Cookie 和清洁成功 URL，不向浏览器泄露成员身份',async t=>{
   const publicOrigin='https://cd3120.mobimedical.cn';

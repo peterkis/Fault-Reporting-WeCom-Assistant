@@ -1,10 +1,10 @@
-import { createPilotE2EHandler, evaluatePilotGoNoGo } from '../../src/p1-012-pilot-e2e.mjs';
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import { createServiceIntakeProcessor } from '../../src/p1-004-service-intake.mjs';
-import { createPilotTicketCore } from '../../src/p1-005-pilot-ticket-core.mjs';
-import { createTicketClosureService, createTicketLifecycleProcessor } from '../../src/p1-010-ticket-closure.mjs';
-import { createNotificationDeliveryWorker } from '../../src/p1-007-notification-outbox.mjs';
-import type { PostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPilotE2EHandler, evaluatePilotGoNoGo } from '../../app/server/src/p1-012-pilot-e2e.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createServiceIntakeProcessor } from '../../app/server/src/p1-004-service-intake.mjs';
+import { createPilotTicketCore } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createNotificationDeliveryWorker } from '../../app/server/src/p1-007-notification-outbox.mjs';
+import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
 declare const pool: PostgresPool;
 const inbox = createChannelMessageInbox({ pool });
@@ -38,7 +38,7 @@ createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['syntheti
 // @ts-expect-error -- The normalized E2E delivery port must accept every string ID, not a single literal.
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: core, reply: async () => ({}), deliver: async (_input: { deliveryId: 'only-one-id' }) => null });
 
-import { createFirstAcknowledgementService } from '../../src/p1-008-first-acknowledgement.mjs';
+import { createFirstAcknowledgementService } from '../../app/server/src/p1-008-first-acknowledgement.mjs';
 const actualFirstAcknowledgement = createFirstAcknowledgementService({ inbox, processor, deliveryWorker: worker });
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: actualFirstAcknowledgement.accept, reply: async () => ({}) });
 const requestSpecificAcknowledgement = { accept: async (request: { onlyThisRequest: string }) => {

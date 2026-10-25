@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import type {ManualReporterDirectoryOptions} from '../../contracts/workbench_reporter_candidates_contracts.js';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import type {P2016RuntimeOptions} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
-import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
-import {migrateTicketRoundNotifications} from '../../scripts/ticket-round-notifications-migrate.mjs';
-import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
-import {migrateBotReporterFeedback} from '../../scripts/bot-reporter-feedback-migrate.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {P2016RuntimeOptions} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
+import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketRoundNotifications} from '../../app/server/scripts/ticket-round-notifications-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 
 /** Real migration/admission/Core/HTTP; only scheduled consumption is omitted in this explicit Port fixture. */

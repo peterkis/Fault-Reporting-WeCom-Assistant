@@ -8,12 +8,12 @@
 
 | 编号 | HTTP 宿主 / 装配 | 接口范围 | 入口源码 |
 | --- | --- | --- | --- |
-| W | 内部 Conversation Workbench；G1 → P2-016 → P2-012 逐层扩展 | `/api/conversations`、`/api/tickets`、复核、Incident、WEB01、SSE、内部静态页面 | [G1 runtime](../../src/p2-g1-runtime.mts)、[P2-016 runtime](../../src/p2-016-runtime.mts)、[P2-012 assembly](../../src/p2-012-workbench-assembly.mts) |
-| M | 医小修成员 HTTP handler；member self-service 独立宿主或 FULL_SERVICE_LOOP 中的 W 扩展 | `/wecom/yixiaoxiu/`、`/api/yixiaoxiu/`、成员 Reporter 读取 | [self-service runtime](../../src/yxx-self-service-runtime.mts)、[native handler](../../src/yxx-self-service-native-http.mts) |
-| O | OAuth-only / 成员只读 profile 的替代宿主 | 成员认证页面和条件 Reporter 读取；不等于 M 的报修写入能力 | [OAuth server](../../src/p2-g2-wecom-oauth-server.mts) |
-| P | 历史 P1 Pilot access/workbench 与 foundation 独立宿主 | 试点工作清单、Ticket 动作；foundation healthz 另有宿主 | [Pilot access/workbench](../../src/p1-009-pilot-access-workbench.mts)、[foundation](../../src/p1-001-pilot-foundation.mts) |
+| W | 内部 Conversation Workbench；G1 → P2-016 → P2-012 逐层扩展 | `/api/conversations`、`/api/tickets`、复核、Incident、WEB01、SSE、内部静态页面 | [G1 runtime](../../app/server/src/p2-g1-runtime.mts)、[P2-016 runtime](../../app/server/src/p2-016-runtime.mts)、[P2-012 assembly](../../app/server/src/p2-012-workbench-assembly.mts) |
+| M | 医小修成员 HTTP handler；member self-service 独立宿主或 FULL_SERVICE_LOOP 中的 W 扩展 | `/wecom/yixiaoxiu/`、`/api/yixiaoxiu/`、成员 Reporter 读取 | [self-service runtime](../../app/server/src/yxx-self-service-runtime.mts)、[native handler](../../app/server/src/yxx-self-service-native-http.mts) |
+| O | OAuth-only / 成员只读 profile 的替代宿主 | 成员认证页面和条件 Reporter 读取；不等于 M 的报修写入能力 | [OAuth server](../../app/server/src/p2-g2-wecom-oauth-server.mts) |
+| P | 历史 P1 Pilot access/workbench 与 foundation 独立宿主 | 试点工作清单、Ticket 动作；foundation healthz 另有宿主 | [Pilot access/workbench](../../app/server/src/p1-009-pilot-access-workbench.mts)、[foundation](../../app/server/src/p1-001-pilot-foundation.mts) |
 
-W 原生宿主的处理顺序是：未认证扩展 → 可用的 health provider → 静态资源（`/workbench/app/` 先验身份）→ `/api/` 的 enabled/认证检查 → 已认证扩展 → G1 会话与 SSE → 404。[HTTP server](../../src/p2-006-workbench-http.mts) 是实际顺序依据。P2-012 在 P2-016 外面增加 Incident 路由；成员 handler 可以在 `/api/` 的内部坐席认证前处理成员请求。
+W 原生宿主的处理顺序是：未认证扩展 → 可用的 health provider → 静态资源（`/workbench/app/` 先验身份）→ `/api/` 的 enabled/认证检查 → 已认证扩展 → G1 会话与 SSE → 404。[HTTP server](../../app/server/src/p2-006-workbench-http.mts) 是实际顺序依据。P2-012 在 P2-016 外面增加 Incident 路由；成员 handler 可以在 `/api/` 的内部坐席认证前处理成员请求。
 
 Base URL 从宿主配置取得，浏览器使用同源相对路径。内部 W 的监听 helper 限定 loopback；Reporter/成员公开 origin 必须遵循各自配置及 HTTPS 规则。不得把测试随机端口、当前云域名或 P1 origin 写成所有 API 的固定地址。
 

@@ -1,5 +1,5 @@
 import type {ManualReportCommand,ManualReportResult} from './workbench_manual_report_contracts.js';
-import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
+import type {YxxMemberScope} from '../app/server/src/yxx-self-service-authorization.mjs';
 
 /** T18 GET locally validated; verified admission contracts await their own real first RED. */
 export interface ManualReporterApplicationScope {readonly sourceCorpScope:string;readonly sourceAppScope:string}

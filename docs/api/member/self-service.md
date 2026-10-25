@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 M：`MEMBER_SELF_SERVICE` 的替代 server，或 W 中 `FULL_SERVICE_LOOP` 的扩展。调用方：[self-service.js](../../../web/p2-reporter/self-service.js)。实现：[native HTTP](../../../src/yxx-self-service-native-http.mts)、[runtime](../../../src/yxx-self-service-runtime.mts)、[command](../../../src/yxx-self-service-command.mts)、[supplement](../../../src/yxx-self-service-supplement.mts)、[query](../../../src/yxx-self-service-query.mts)、[authorization](../../../src/yxx-self-service-authorization.mts)。
+宿主 M：`MEMBER_SELF_SERVICE` 的替代 server，或 W 中 `FULL_SERVICE_LOOP` 的扩展。调用方：[新 H5](../../../app/h5/README.md)。2026-10-23 按 [ADR-0043](../../../adr/0043_h5_notification_entry_and_legacy_ui_retirement.md)移除旧 V1 页面和生产 fallback；以下 V1 API 仍保留，旧客户端仅作为[历史测试夹具](../../../tests/fixtures/retired-self-service/README.md)。实现：[native HTTP](../../../app/server/src/yxx-self-service-native-http.mts)、[runtime](../../../app/server/src/yxx-self-service-runtime.mts)、[command](../../../app/server/src/yxx-self-service-command.mts)、[supplement](../../../app/server/src/yxx-self-service-supplement.mts)、[query](../../../app/server/src/yxx-self-service-query.mts)、[authorization](../../../app/server/src/yxx-self-service-authorization.mts)。
 
 ## 身份、profile 与开关
 
@@ -10,7 +10,7 @@ OAuth 成员 Cookie `__Host-wecom_session`。既有映射模式保持原 canonic
 
 新模式明确无成员资格时返回 403；成员查询暂不可用时返回既有 `503 YXX_ENTRY_UNAVAILABLE`，不将网络／Provider 故障当作撤权。两种情况均不进入业务写事务。应用通知的资格查询暂不可用时，沿既有 Worker 有界重试；实际发送后的 UNKNOWN 仍须人工核对。
 
-063 迁移为原 Web Request 绑定追加应用通知身份、命名空间、签名和核验时间；仅在服务端新报修时写入，后续不可改投。个人通知在实际接单／开始和工作人员完工产生；发送前独立复核当前成员。退出、会话过期和重启不丢失原通知定位。新页面按 [H5 接入说明](../../../h5/README.md)复用下列 API；本轮不生成页面。
+063 迁移为原 Web Request 绑定追加应用通知身份、命名空间、签名和核验时间；仅在服务端新报修时写入，后续不可改投。个人通知在实际接单／开始和工作人员完工产生；发送前独立复核当前成员。退出、会话过期和重启不丢失原通知定位。新页面按 [H5 接入说明](../../../app/h5/README.md)复用下列 API。新版自助 UI 须显式装配 H5，未装配时页面返回 503，不自动开启任何业务 Flag。
 
 读取依赖 `YIXIAOXIU_MY_REPORTS_ENABLED`。写入同时要求 profile 为 MEMBER_SELF_SERVICE/FULL_SERVICE_LOOP、`YIXIAOXIU_SELF_SERVICE_ENABLED`、MY_REPORTS_ENABLED 和当前 `write_flag`。两开关默认 false。SS011 单一批准 Reporter 的 guard 还会限制写入范围；bootstrap 是最终能力提示，不得由 profile 名推定所有成员能写。OAUTH_ONLY/MEMBER_TICKET_READONLY 没有这些自助 API 的业务能力；替代 server 对其 `/api/yixiaoxiu/*` 返回 `403 YXX_MEMBER_WRITE_DISABLED`。
 

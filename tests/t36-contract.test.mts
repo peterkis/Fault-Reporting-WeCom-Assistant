@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {supplementDispositionCommand,supplementTarget} from '../src/workbench-supplement-follow-up.mjs';
-import {normalizeCommunicationCommand,computeCommunicationCommandHash} from '../src/p2-004-communication-core.mjs';
+import {supplementDispositionCommand,supplementTarget} from '../app/server/src/workbench-supplement-follow-up.mjs';
+import {normalizeCommunicationCommand,computeCommunicationCommandHash} from '../app/server/src/p2-004-communication-core.mjs';
 const target={ticket_id:'11111111-1111-4111-8111-111111111111',source_ref:'channel:2',revision:'2'};
 const message={session_id:'22222222-2222-4222-8222-222222222222',expected_row_version:1,sender_kind:'AGENT' as const,purpose:'HUMAN_REPLY' as const,visibility:'EXTERNAL' as const,client_command_id:'33333333-3333-4333-8333-333333333333',text:'独立人工对外回复',privacy_class:'INTERNAL' as const,retention_until:'2099-01-01 00:00:00'};
 test('T36 disposition contract counts Unicode characters and rejects implicit or additional actions',()=>{

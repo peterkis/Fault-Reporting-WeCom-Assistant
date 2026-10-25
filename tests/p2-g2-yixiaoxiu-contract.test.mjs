@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateYxxEntryConfig,reporterAccessPolicy} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import {buildP2016TemplateCard} from '../src/p2-016-template-card-builder.mjs';
-import {createP2016ReporterHttp} from '../src/p2-016-reporter-http.mjs';
-import {createYxxMemberAuthorizer} from '../src/p2-g2-yixiaoxiu-authorizer.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {validateYxxEntryConfig,reporterAccessPolicy} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import {buildP2016TemplateCard} from '../app/server/src/p2-016-template-card-builder.mjs';
+import {createP2016ReporterHttp} from '../app/server/src/p2-016-reporter-http.mjs';
+import {createYxxMemberAuthorizer} from '../app/server/src/p2-g2-yixiaoxiu-authorizer.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {entryConfig,entryOrigin} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {textHashP2016} from '../src/p2-016-domain-contracts.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {textHashP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
 import {randomUUID} from 'node:crypto';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {computeCommunicationContentHash} from '../src/p2-004-communication-core.mjs';
+import {computeCommunicationContentHash} from '../app/server/src/p2-004-communication-core.mjs';
 
 test('YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback',()=>{
   assert.equal(reporterAccessPolicy('MEMBER_REQUIRED'),'MEMBER_REQUIRED');

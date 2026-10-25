@@ -2,12 +2,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac,randomUUID} from 'node:crypto';
-import {hashP2016} from '../src/p2-016-domain-contracts.mjs';
-import {WorkbenchError} from '../src/p2-006-workbench-query.mjs';
-import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../src/platform/postgres-pool.mjs';
+import {hashP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {WorkbenchError} from '../app/server/src/p2-006-workbench-query.mjs';
+import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PilotPrincipal} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../app/server/src/platform/postgres-pool.mjs';
 import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand,WorkbenchReporterCandidate} from '../contracts/workbench_reporter_candidates_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';

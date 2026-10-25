@@ -2,12 +2,12 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {IncomingMessage} from 'node:http';
 import {Socket} from 'node:net';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import type {OAuthState,SessionToken} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {sessionName} from '../src/p2-g2-wecom-oauth-http.mjs';
-import {createYxxApplicationMemberAuthentication} from '../src/yxx-application-member-auth.mjs';
-import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import type {ApplicationMemberVerifier} from '../src/wecom-application-member.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import type {OAuthState,SessionToken} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {sessionName} from '../app/server/src/p2-g2-wecom-oauth-http.mjs';
+import {createYxxApplicationMemberAuthentication} from '../app/server/src/yxx-application-member-auth.mjs';
+import {validateYxxEntryConfig} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import type {ApplicationMemberVerifier} from '../app/server/src/wecom-application-member.mjs';
 
 const config=validateYxxEntryConfig({enabled:true,corpId:'synthetic-h5-corp',agentId:'1000002',botId:'synthetic-h5-bot',identityMode:'VERIFIED_APP_OPENID',memberIdsConfirmed:true,proofRef:'tests/h5-media-auth',proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'});
 const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime,G2_RULE_FLAGS } from './helpers/p2-g2-runtime-harness.mjs';
-import { createReporterDirectoryPort } from '../src/p2-015-contact-journey.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createP2016DirectIntakeProcessor } from '../src/p2-016-direct-intake.mjs';
+import { createReporterDirectoryPort } from '../app/server/src/p2-015-contact-journey.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createP2016DirectIntakeProcessor } from '../app/server/src/p2-016-direct-intake.mjs';
 import { g2BusinessCounts,g2DecisionObservation } from './helpers/p2-g2-gold-observation.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
+import { shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 const source=readFileSync('tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl','utf8').trim().split(/\r?\n/u).map(JSON.parse);
 
 test('original X020 preserves earliest Provider report time across actual explicit Direct continuation',async t=>{

@@ -5,10 +5,10 @@ import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
-import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
+import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 test('second canonical Session failure rolls back the first real Control, and a new explicit composite records original and new responsibility plus one staff end',async()=>{
  await withT12Fixture(async f=>{

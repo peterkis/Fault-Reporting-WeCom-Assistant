@@ -1,3 +1,5 @@
+// Retired V1 client fixture against actual compiled APIs; current React H5 has separate acceptance.
+import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {writeFile,mkdir} from 'node:fs/promises';
@@ -7,19 +9,19 @@ import {randomUUID,createHash} from 'node:crypto';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {withT20FeedbackFixture} from './helpers/t20-feedback-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {mapping} from './helpers/yxx-ss-009-http-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 function errorFacts(value:unknown):unknown{return value instanceof Error?{name:value.name,message:value.message,stack:value.stack,...(value instanceof AggregateError?{errors:value.errors.map(errorFacts)}:{})}:value===null?null:String(value);}
 
-test('production H5 raw recovery retains the original feedback across same-browser reload and only GETs its purpose result',async()=>{
+test('retired V1 client fixture raw recovery retains the original feedback across same-browser reload and only GETs its purpose result',async()=>{
  await withT20FeedbackFixture(async f=>{
   await f.app.stop();const identityMapping=await mapping(),directory=join(tmpdir(),'t20-feedback-browser-'+randomUUID());await mkdir(directory);
   let fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,tab:Browser|undefined,app:ReturnType<typeof createYxxProfile>|undefined,error:unknown;
   try{
    fixture=await createYxxBrowserFixture({pool:f.context.pool,createApp:({oauth,origin:publicOrigin}:{oauth:WeComOAuth;origin:string})=>{
-    const runtime=createYxxProfile({...f.options,identityMapping,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,yxxSelfService:{featureFlags:f.options.featureFlags,pollMilliseconds:100,reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true}});app=runtime;return runtime.server;
+    const runtime=createYxxProfile({...f.options,identityMapping,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,h5Presentation:createRetiredSelfServiceFixture(),yxxSelfService:{featureFlags:f.options.featureFlags,pollMilliseconds:100,reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true}});app=runtime;return runtime.server;
    }});
    assert.ok(fixture);fixture.setMember('open-a');tab=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(tab);
    await tab.evaluate("location.assign('/wecom/yixiaoxiu/')",{awaitPromise:false});await tab.waitFor("document.querySelector('#home-view')?.hidden===false");

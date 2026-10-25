@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import type {TicketAppNotificationOptions} from '../contracts/workbench_app_notification_contracts.js';
 
 test('revoking the retained H5 source during the final local qualification never sends its original App intent',{timeout:240000},async()=>{

@@ -4,17 +4,17 @@ import {randomUUID} from 'node:crypto';
 import {fork} from 'node:child_process';
 import {once} from 'node:events';
 import {performance} from 'node:perf_hooks';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
-import {g2DatabaseIdentity,minimalG2Environment} from '../src/p2-g2-validation-config.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {g2DatabaseIdentity,minimalG2Environment} from '../app/server/src/p2-g2-validation-config.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
+import {yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {origin,secret,flags,config,oauthOptions,mapping,browser,login,input,post} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 async function until(fn){const deadline=Date.now()+60000;while(Date.now()<deadline){const value=await fn();if(value)return value;await new Promise(r=>setTimeout(r,50));}throw Error('SS009_RECOVERY_TIMEOUT');}
@@ -44,7 +44,7 @@ async function capacity(profile,t){
       if(profile==='FULL_SERVICE_LOOP'){
         assert.equal(app.selfService.pump,null);const f=configurationFixture();f.manifest.scope.database_identity_hash=g2DatabaseIdentity(databaseUrl).fingerprint;
         f.manifest.scope.reporter_access_policy='MEMBER_REQUIRED';f.manifest.scope.member_entry_config_sha256=yxxIdentityConfigHash(config);f.manifest.candidate_fingerprint=fingerprint;
-        worker=fork('scripts/p2-g2-process-role.mjs',['--role=worker'],{windowsHide:true,execArgv:['--expose-gc'],env:{...minimalG2Environment(),...f.env,PILOT_DATABASE_URL:databaseUrl,P2_G2_MANIFEST:JSON.stringify(f.manifest),P2_G1_SENDER_ENABLED:'false',YIXIAOXIU_SELF_SERVICE_ENABLED:'true',YIXIAOXIU_MY_REPORTS_ENABLED:'true'},stdio:['ignore','ignore','ignore','ipc']});
+        worker=fork('app/server/scripts/p2-g2-process-role.mjs',['--role=worker'],{windowsHide:true,execArgv:['--expose-gc'],env:{...minimalG2Environment(),...f.env,PILOT_DATABASE_URL:databaseUrl,P2_G2_MANIFEST:JSON.stringify(f.manifest),P2_G1_SENDER_ENABLED:'false',YIXIAOXIU_SELF_SERVICE_ENABLED:'true',YIXIAOXIU_MY_REPORTS_ENABLED:'true'},stdio:['ignore','ignore','ignore','ipc']});
         worker.on('message',m=>{if(m.type==='metrics-response')samples.push({...g2EvidenceTime(),role:'WORKER',...m.metrics});else messages.push(m);});
         await until(()=>{const failed=messages.find(m=>m.type==='role-failed');if(failed)throw Error(failed.error_code);return messages.find(m=>m.type==='role-ready');});
       }

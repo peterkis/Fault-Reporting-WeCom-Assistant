@@ -4,9 +4,9 @@ import {createHash} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 
 test('the configured group route renders an exact low-sensitivity text and native explicit mention through the real Sender and Worker',{timeout:240000},async()=>{

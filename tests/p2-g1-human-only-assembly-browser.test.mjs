@@ -3,9 +3,9 @@ import { createServer as createHttpServer } from 'node:http';
 import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
 
-import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
-import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
-import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs';
+import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../app/server/src/p2-006-workbench-http.mjs';
+import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
+import { launchP2G1TestBrowserSessions } from '../app/server/src/p2-g1-browser-sessions.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 
 const SESSION_ID = '018f0000-0000-7000-8000-000000000061';

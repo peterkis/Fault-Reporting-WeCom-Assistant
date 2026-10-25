@@ -4,24 +4,24 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
-import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
-import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
-import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
-import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
-import { applyPilotAccessMigration, createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
-import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../src/p2-001-conversation-contracts.mjs';
-import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
-import { appendRealtimeEvent, applyRealtimeEventLogMigration } from '../src/p2-003-realtime-event-log.mjs';
-import { applyCommunicationMigration, appendCommunication } from '../src/p2-004-communication-core.mjs';
+import { applyChannelMessageInboxMigration } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { applyServiceIntakeMigration } from '../app/server/src/p1-004-service-intake.mjs';
+import { applyPilotTicketCoreMigration } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { applyTicketStateActionMigration } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { applyNotificationOutboxMigration } from '../app/server/src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration, createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../app/server/src/p2-001-conversation-contracts.mjs';
+import { applyTimelineProjectionMigration } from '../app/server/src/p2-002-timeline-projector.mjs';
+import { appendRealtimeEvent, applyRealtimeEventLogMigration } from '../app/server/src/p2-003-realtime-event-log.mjs';
+import { applyCommunicationMigration, appendCommunication } from '../app/server/src/p2-004-communication-core.mjs';
 import {
   CONVERSATION_CONTROL_ERROR_CODES, applyConversationControlMigration,
   createConversationControlService, createPilotConversationControlAuthorization,
   captureGenerationFence, assertGenerationFence, createAssignedCommunicationAuthorizer,
-} from '../src/p2-005-conversation-control.mjs';
+} from '../app/server/src/p2-005-conversation-control.mjs';
 import { assertNoP2005Residual, withP2005IsolatedDatabase } from './helpers/p2-005-postgres-harness.mjs';
 
 const execFileAsync=promisify(execFile); const databaseUrl=process.env.PILOT_DATABASE_URL;
@@ -35,7 +35,7 @@ function control(pool){const authorization=createPilotConversationControlAuthori
 function command(type,s,actor,overrides={}){return {command_type:type,session_id:s.id,client_command_id:randomUUID(),idempotency_scope:'P2_005_TEST',expected_row_version:s.row_version,actor_principal_id:actor.id,target_principal_id:['TAKEOVER','TRANSFER'].includes(type)?actor.id:null,reason_code:type==='INVALIDATE_GENERATION'?'USER_MESSAGE_COMMITTED':type,...overrides};}
 async function current(pool,id){return (await pool.query('SELECT id::text,row_version::integer,generation_version::integer,control_mode FROM conversation.session WHERE id=$1::uuid',[id])).rows[0];}
 async function tables(pool){return (await pool.query(`SELECT schemaname||'.'||tablename name FROM pg_tables WHERE schemaname!~'^pg_' AND schemaname<>'information_schema' ORDER BY 1`)).rows.map(r=>r.name);}
-async function cli(url,flag){const {stdout,stderr}=await execFileAsync(process.execPath,['scripts/p2-005-migrate.mjs',flag],{cwd:process.cwd(),env:{...process.env,PILOT_DATABASE_URL:url},timeout:30_000});assert.equal(stderr,'');assert.equal(stdout.includes(url),false);return JSON.parse(stdout);}
+async function cli(url,flag){const {stdout,stderr}=await execFileAsync(process.execPath,['app/server/scripts/p2-005-migrate.mjs',flag],{cwd:process.cwd(),env:{...process.env,PILOT_DATABASE_URL:url},timeout:30_000});assert.equal(stderr,'');assert.equal(stdout.includes(url),false);return JSON.parse(stdout);}
 
 test('migration 021 is scoped, reentrant, check-rolls-back, and drift fails closed', {timeout:TIMEOUT}, async t=>{
   await withP2005IsolatedDatabase({databaseUrl,purpose:'migration',run:async({pool,databaseUrl:url})=>{await base(pool);const before=await tables(pool);const checked=await cli(url,'--check');assert.equal(checked.ok,true);assert.deepEqual(await tables(pool),before);await applyConversationControlMigration({pool});await applyConversationControlMigration({pool});assert.deepEqual((await tables(pool)).filter(x=>!before.includes(x)),['conversation.assignment','conversation.control_event','conversation.handoff','conversation.read_cursor']);const forbidden=await pool.query(`SELECT (SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='conversation' AND p.proname LIKE 'p2_005%') routines,(SELECT count(*)::integer FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='conversation' AND NOT t.tgisinternal) triggers`);assert.deepEqual(forbidden.rows[0],{routines:0,triggers:0});t.diagnostic(JSON.stringify({first_apply:true,repeated_apply:true,check_rollback:true,new_tables:4}));}});

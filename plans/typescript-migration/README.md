@@ -2,6 +2,12 @@
 
 ACTIVE_SELECTION: v3-p09
 
+2026-10-23 后端目录前向整理按 [ADR-0044](../../adr/0044_server_application_layout_and_logical_source_identity.md) 实施：源码及脚本为 `app/server`，三份共用运行模块为根 `shared`，九份 PC 纯模块归入 PC。严格程序以仓库根原生输出对应运行目录，manifest 使用物理路径；T00 legacy 和退休规则保留原逻辑身份，前向映射受检查。固定历史 checkout 的原路径、REF、哈希及命令保持；活动 selection、全部注册宿主、flags、预算与 full／certify 合同不变。范围及实际验证见[目录记录](../app-layout/README.md)。
+
+2026-10-23 新 H5 源码迁至 `app/h5`。现有严格工具使用新源码定位、输入指纹与来源映射，运行输出仍为 `.build/runtime/h5`；源码型测试夹具更新位置，运行／历史根不批量替换。活动 selection、host、flags、原预算及 full／certify 合同保持。前向范围与实际验收见[应用目录整理](../app-layout/README.md)。
+
+2026-10-22 正式 PC 源码迁至 `app/pc-admin`。严格类型、输入指纹及制品来源映射使用新路径，运行输出仍为 `.build/runtime/web/admin-workbench`；现有 selection、宿主及历史认证对象保持。目录目标、后续 H5／后端顺序与本轮验证见[应用目录整理](../app-layout/README.md)。
+
 ## MVP 通知与新 H5 后端（2026-10-20）
 
 沿原活动 v3-p09 追加本轮四个已注册的群回应、通知策略和应用成员入口，不改原 host、flags 或历史清单。使用 063 前向迁移、隔离 PG18 和模拟 Provider；普通本地只运行实际相关子集，不称 full／certify 或真实客户端验收。行为、兼容和证据见[实施记录](../mvp-notifications-h5/README.md)。
@@ -16,7 +22,7 @@ ACTIVE_SELECTION: v3-p09
 
 活动 `v3-p09` 保持可解析及原七项入口，新增 WEB01 映射、真实 PostgreSQL/HTTP 和生产 bundle 浏览器直接检查。新前端声明与根锁文件安装原型同版本 React/Vite/HeroUI/Tailwind，新增选型见 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md)；安装命令为根目录 `npm ci --ignore-scripts`。现有 build 同时执行前端严格类型、Vite emit、bundle/manifest inventory 与原制品 hash 验证，types gate 检查全部正式 TS/TSX；旧管理端/成员端保留。
 
-WEB01 仅提交授权三列看板、列表和只读详情；数据来自新建合成隔离开发库的真实 HTTP，运行 bundle 不导入原型 seed。无 schema migration、业务写动作、默认 flag 或历史 Evidence 变更。适用普通 PR checks 与直接 tooling/hosts 回归，不默认运行 standalone full/certify；不自动合并、不进入 WEB02、不部署或真实发送。实现入口与合成浏览器验证见 [正式前端说明](../../web/admin-workbench/README.md)；原型→API映射见 [WEB01映射](../../docs/ui/admin-workbench-web01-map.md)。
+WEB01 仅提交授权三列看板、列表和只读详情；数据来自新建合成隔离开发库的真实 HTTP，运行 bundle 不导入原型 seed。无 schema migration、业务写动作、默认 flag 或历史 Evidence 变更。适用普通 PR checks 与直接 tooling/hosts 回归，不默认运行 standalone full/certify；不自动合并、不进入 WEB02、不部署或真实发送。实现入口与合成浏览器验证见 [正式前端说明](../../app/pc-admin/README.md)；原型→API映射见 [WEB01映射](../../docs/ui/admin-workbench-web01-map.md)。
 
 ## SS011 单名获批 Reporter 兼容（2026-10-06，当时记录）
 
@@ -118,6 +124,8 @@ P00～P04 已合并，历史 P05 无数据库变更，制品为 STAGED_NOT_ACTIV
 ## 当前交接（2026-10-02）
 
 PR #37 已合并：发布 head `5ea7982bad2dc8d2236f36b25ce5a9c7427199bf`，merge `78fc466af50c6d4c27850998267510fb1592157b`。独立复审与当前 head CI 已用于本次授权合并；各轮回执仍保留原测试身份，不重绑。随后历史研究归档合并为 `562a96ffdd7148d729ab0eed9d215abe894f12c2`。T04-05 合并收口；T05-01 不自动启动。
+
+2026-10-24 当前离线结构按 [ADR-0045](../../adr/0045_versioned_current_readiness_scope.md) 使用版本化的 49 SQL scope 与完整显式 acceptance，原 ADR-0027 的 22 SQL 合同及固定历史证明保持原样。第二次构建仅在同一进程、同一完整源身份、相同实际编译字节及 Node 身份下复用首次真实语法检查证明，实际执行与复用数量分开记录；两次编译、全部制品/历史检查、canary 和 360 秒预算保持。实施与新旧失败证据见[剩余失败修复记录](../app-layout/failure-repair-2026-10-24.md)，不据本地未提交结果宣布 READY 或推进 Gate。
 
 当前严格 readiness 恢复作为 [独立任务](../yxx-current-readiness-implementation.md) 执行，按 [ADR-0027](../../adr/0027_yxx_current_readiness.md) 区分当前限定 Web 技术准备与历史 SS009 验收。在取得新候选完整证据之前，保持 NOT_READY。下文是合并前各轮实际记录，不表示 PR #37 仍处于 OPEN。
 

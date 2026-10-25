@@ -1,4 +1,4 @@
-import type { ApprovedLimitedManifest } from '../../src/yxx-limited-write-contract.mjs';
+import type { ApprovedLimitedManifest } from '../../app/server/src/yxx-limited-write-contract.mjs';
 
 const single: ApprovedLimitedManifest['reporter_aliases'] = ['A'];
 const pair: ApprovedLimitedManifest['reporter_aliases'] = ['A', 'B'];

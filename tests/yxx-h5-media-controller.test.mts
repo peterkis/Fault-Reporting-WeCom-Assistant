@@ -16,7 +16,7 @@ interface Controller {getBusy:()=>boolean;getItems:()=>ItemSnapshot[];getItemIds
 interface ApiFixture {calls:{reserves:{signal:AbortSignal|undefined}[];cancels:string[];uploads:{id:string;signal:AbortSignal;progress:(value:number)=>void;complete:()=>void}[]};control:{pendingReserve:boolean;holdUploads:boolean;uploadStatus:number|null}}
 /** Keep the actual singleton device-work coordinator when replacing only SDK registration in a controller fixture. */
 async function previewCoordinatorSource(){
- const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/hooks/wecom-registration.ts'),'utf8'),ast=createSourceFile('wecom-registration.ts',source,ScriptTarget.Latest,true,ScriptKind.TS),names=new Set(['markNativePreview','hasNativePreviewWork','stopNativePreview','waitNativePreviewStops']);
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'app/h5/src/hooks/wecom-registration.ts'),'utf8'),ast=createSourceFile('wecom-registration.ts',source,ScriptTarget.Latest,true,ScriptKind.TS),names=new Set(['markNativePreview','hasNativePreviewWork','stopNativePreview','waitNativePreviewStops']);
  const selected=ast.statements.filter(node=>isFunctionDeclaration(node)&&node.name&&names.has(node.name.text)||isVariableStatement(node)&&node.declarationList.declarations.some(value=>['nativePreview','nativeStops','nativeCapture'].includes(value.name.getText(ast))));assert.equal(selected.length,7);return selected.map(node=>node.getText(ast)).join('\n');
 }
 const apiFixture=`
@@ -46,9 +46,9 @@ async function until(check:()=>boolean){for(let index=0;index<20;index++){if(che
 
 /** Runs the actual reservation parser and its real format guards without starting a database or host. */
 async function reservationParserUrl(){
- const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'src/yxx-h5-media.mts'),'utf8');
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'app/server/src/yxx-h5-media.mts'),'utf8');
  const ast=createSourceFile('yxx-h5-media.mts',source,ScriptTarget.Latest,true,ScriptKind.TS),parser=ast.statements.find(node=>isFunctionDeclaration(node)&&node.name?.text==='parse');assert.ok(parser);
- const format=transpileModule(await readFile(resolve(root,'src/yxx-h5-media-format.mts'),'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+ const format=transpileModule(await readFile(resolve(root,'app/server/src/yxx-h5-media-format.mts'),'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
  const formatUrl='data:text/javascript;base64,'+Buffer.from(format).toString('base64');
  const parsed=transpileModule(`import {mediaFail,mediaUuid,supportedMedia,H5_MEDIA_LIMITS} from ${JSON.stringify(formatUrl)};${parser.getText(ast)};export const parseReservation=parse;`,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
  return 'data:text/javascript;base64,'+Buffer.from(parsed).toString('base64');
@@ -56,7 +56,7 @@ async function reservationParserUrl(){
 type TranscriptEvent={type:'BEGIN';id:string}|{type:'READY';id:string;text:string}|{type:'REMOVE';id:string};
 interface DraftFixtureStore {getDescription:()=>string;setDescription:(value:string)=>void;getLocation:()=>string;setLocation:(value:string)=>void;transcript:(event:TranscriptEvent)=>void;clear:()=>void}
 async function draftStore():Promise<DraftFixtureStore>{
- const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/components/ReportDraftProvider.tsx'),'utf8'),ast=createSourceFile('ReportDraftProvider.tsx',source,ScriptTarget.Latest,true,ScriptKind.TSX),factory=ast.statements.find(node=>isFunctionDeclaration(node)&&node.name?.text==='createDraft');assert.ok(factory);
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'app/h5/src/components/ReportDraftProvider.tsx'),'utf8'),ast=createSourceFile('ReportDraftProvider.tsx',source,ScriptTarget.Latest,true,ScriptKind.TSX),factory=ast.statements.find(node=>isFunctionDeclaration(node)&&node.name?.text==='createDraft');assert.ok(factory);
  const code=transpileModule(factory.getText(ast)+';export const create=createDraft;',{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText,module:{create:()=>DraftFixtureStore}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));return module.create();
 }
 interface VoiceApi {calls:{reserves:{duration_ms:number;client_command_id:string}[];rejections:{status:number;code:string}[];imports:number;binaries:number};control:{reserveStatus:number;importStatus:number}}
@@ -65,7 +65,7 @@ interface CaptureOptions {mimeType?:string;audioBitsPerSecond?:number}
 interface CaptureConstraints {audio:{echoCancellation:boolean;noiseSuppression:boolean;autoGainControl:boolean;sampleRate:{ideal:number};channelCount:{ideal:number}}}
 async function nativeVoiceController(t:TestContext,transcript:(event:TranscriptEvent)=>void=()=>{},browser=false,wecom=true,holdChunk=false){
  const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
- const chunkOverrides:Record<string,string>=holdChunk?{'hooks/capture-chunk-gate.ts':"let resolve,reject;export let entered=0;export const pending=new Promise((ok,fail)=>{resolve=ok;reject=fail;});export const enter=()=>{entered+=1;return pending;};export const open=()=>resolve();export const fail=()=>reject(new Error('synthetic chunk unavailable'));",'hooks/voice-capture.ts':"import{enter}from'./capture-chunk-gate';await enter();\n"+await readFile(resolve(sourceRoot,'h5/src/hooks/voice-capture.ts'),'utf8')}:{};
+ const chunkOverrides:Record<string,string>=holdChunk?{'hooks/capture-chunk-gate.ts':"let resolve,reject;export let entered=0;export const pending=new Promise((ok,fail)=>{resolve=ok;reject=fail;});export const enter=()=>{entered+=1;return pending;};export const open=()=>resolve();export const fail=()=>reject(new Error('synthetic chunk unavailable'));",'hooks/voice-capture.ts':"import{enter}from'./capture-chunk-gate';await enter();\n"+await readFile(resolve(sourceRoot,'app/h5/src/hooks/voice-capture.ts'),'utf8')}:{};
  const parser=await reservationParserUrl(),loader=createH5PureModuleLoader({overrides:{
   ...chunkOverrides,
   'api/client.ts':`import{parseReservation}from${JSON.stringify(parser)};export const authLost=new EventTarget();export const calls={reserves:[],rejections:[],imports:0,binaries:0};export const control={reserveStatus:0,importStatus:0};export const api={reserve:async input=>{calls.reserves.push(input);try{parseReservation(input);}catch(reason){calls.rejections.push({status:reason.status,code:reason.code});throw reason;}if(control.reserveStatus)throw{status:control.reserveStatus,code:'YXX_MEDIA_STORAGE_UNAVAILABLE',message:'unsafe secret URL'};return{media_ref:'11111111-1111-4111-8111-111111111111'};},upload:async(ref,file,csrf,id,signal,progress)=>{calls.binaries+=1;progress(100);},importWecom:async()=>{calls.imports+=1;if(control.importStatus)throw{status:control.importStatus,errMsg:'unsafe secret URL'};},cancelUpload:async()=>{}};`,
@@ -281,7 +281,7 @@ test('H5 legacy SDK CORP and AGENT signature callbacks share one serialized regi
  const sdk=`let ready;export let registrations=0;export function register(value){registrations+=1;ready=Promise.all([value.getConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/'),value.getAgentConfigSignature('https://synthetic.invalid/wecom/yixiaoxiu/')]);}export function ensureConfigReady(){return ready;}export function onVoicePlayEnd(){}`;
  const sdkURL='data:text/javascript;base64,'+Buffer.from(sdk).toString('base64');
  const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
- const source=(await readFile(resolve(sourceRoot,'h5/src/hooks/wecom-registration.ts'),'utf8')).replace("const pending=import('../lib/wecom')",'const pending=import('+JSON.stringify(sdkURL)+')');
+ const source=(await readFile(resolve(sourceRoot,'app/h5/src/hooks/wecom-registration.ts'),'utf8')).replace("const pending=import('../lib/wecom')",'const pending=import('+JSON.stringify(sdkURL)+')');
  const client=`export const authLost=new EventTarget();export const stats={active:0,max:0,kinds:[]};export const api={signature:async(url,kind,csrf,signal)=>{if(signal.aborted)throw new DOMException('Aborted','AbortError');stats.active+=1;stats.max=Math.max(stats.max,stats.active);stats.kinds.push(kind);await new Promise(resolve=>setTimeout(resolve,5));stats.active-=1;return{timestamp:1,nonceStr:'synthetic',signature:'synthetic'};}};`;
  const loader=createH5PureModuleLoader({overrides:{'hooks/wecom-registration.ts':source,'api/client.ts':client}});
  const module:{registeredWecom:(bootstrap:H5EntryBootstrap)=>Promise<unknown>}=await import(await loader.moduleUrl('hooks/wecom-registration.ts'));
@@ -299,7 +299,7 @@ test('H5 legacy SDK CORP and AGENT signature callbacks share one serialized regi
 type PlaybackMedia=H5Media&{thumbnail?:H5Thumbnail|null};
 async function playbackFixture(){
  const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
- const source=transpileModule(await readFile(resolve(root,'h5/src/components/Materials.tsx'),'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const source=transpileModule(await readFile(resolve(root,'app/h5/src/components/Materials.tsx'),'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  const loader=createH5PureModuleLoader({overrides:{
   'components/Materials.ts':source,
   'api/client.ts':`export class ApiError extends Error{constructor(status,code){super(code);this.status=status;this.code=code;}}export const V2_ACCEPT='application/vnd.yixiaoxiu.v2+json';export const authLost=new EventTarget();export const stats={lost:0};export const captureAuthGeneration=()=>0;export function reportAuthLost(generation,signal){if(generation===0&&!signal.aborted){stats.lost+=1;authLost.dispatchEvent(new Event('lost'));}}`,

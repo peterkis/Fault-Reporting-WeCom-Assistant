@@ -5,11 +5,11 @@ import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {assertEpochMsString,assertLocalDateTime,formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {assertEpochMsString,assertLocalDateTime,formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import type {EligibleTicketAppNotificationTarget,TicketAppNotificationAuthority,TicketAppNotificationOptions,TicketAppNotificationTargetResolver} from '../contracts/workbench_app_notification_contracts.js';
 
 function object(value:unknown):Record<string,unknown>{

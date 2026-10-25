@@ -3,18 +3,18 @@ import {test} from 'node:test';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT32Fixture,seedT32SessionExceptions,t32Record,t32Text} from './helpers/t32-notification-exception-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createCommunicationSenderPort} from '../src/p2-004-communication-sender-port.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../app/server/src/p2-004-communication-sender-port.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
 import {t26Group,t26Deliveries} from './helpers/t26-group-notification-fixture.mjs';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
-import {createIncidentPublicProgressAdmission} from '../src/p2-012-public-progress-admission.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import {createIncidentPublicProgressAdmission} from '../app/server/src/p2-012-public-progress-admission.mjs';
 
 test('T32 omission defaults OFF in the existing T24 host without blocking its old Ticket reads',{timeout:240000},async()=>{
  await withT24Fixture(async f=>{const http=await t11Http(f);assert.equal(t32Record(await(await http.get('/api/lifecycle/bootstrap')).json()).notification_exceptions_enabled,false);assert.equal((await http.get('/api/notification-exceptions')).status,404);assert.equal((await http.get('/api/tickets/'+f.ticketId)).status,200);assert.equal((await fetch(f.origin+'/workbench/app/notification-exceptions',{headers:{cookie:f.cookies[0]??''}})).status,404);},{manualRoundConsumption:true});

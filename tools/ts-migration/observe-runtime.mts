@@ -10,7 +10,7 @@ import { sourceRoot, hash, record, git } from './common.mjs';
 const probe = `
 import {pathToFileURL} from 'node:url'; import path from 'node:path';
 const root=process.cwd();
-const load=p=>import(pathToFileURL(path.join(root,p)).href);
+const load=p=>import(pathToFileURL(path.join(root,process.env.TS_MIGRATION_OBSERVE_LAYOUT==='APP_SERVER'?'app/server/'+p:p)).href);
 const names=['src/platform/time-contract.mjs','src/p2-007-domain-utils.mjs','src/p2-007-staff-directory-contracts.mjs','src/p2-016-domain-contracts.mjs','src/platform/postgres-types.mjs','src/platform/legacy-migration-guard.mjs','src/platform/postgres-pool.mjs'];
 const modules=await Promise.all(names.map(load));const [time,json,staff,ticket,parsers,legacy,pg]=modules;
 const outcome=fn=>{try{return {ok:true,data:fn()};}catch(e){return {ok:false,code:e.code??e.message,status:e.status??null};}};
@@ -34,16 +34,16 @@ const client=pg.createPostgresClient({}, {ClientClass:FakeClient});results.clien
 results.rejected=outcome(()=>client.query('SELECT $1',[new Date(0)]));
 results.errorKeys=Object.keys(new pg.PostgresBoundaryError('X'));
 console.log(JSON.stringify(results));`;
-function observe(root: string): Record<string, unknown> {
-  const result = spawnSync(process.execPath, ['--input-type=module', '-e', probe], { cwd: root, env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, TZ: 'Asia/Shanghai' }, encoding: 'utf8', windowsHide: true, timeout: 30_000, maxBuffer: 2*1024*1024 });
+function observe(root: string,layout:'LEGACY'|'APP_SERVER'): Record<string, unknown> {
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', probe], { cwd: root, env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, TZ: 'Asia/Shanghai',TS_MIGRATION_OBSERVE_LAYOUT:layout }, encoding: 'utf8', windowsHide: true, timeout: 30_000, maxBuffer: 2*1024*1024 });
   if (result.status !== 0 || result.error) throw new Error('MIGRATION_OBSERVATION_FAILED: ' + result.stderr);
   return record(JSON.parse(result.stdout.trim()) as unknown);
 }
 export function compareRuntime(root: string, referenceRoot: string): Record<string, unknown> {
   if (git(referenceRoot, ['rev-parse', 'HEAD']) !== '7eefaa99591bfaa2e787701efd315ff701c51f35' || git(referenceRoot, ['status', '--porcelain'])) throw new Error('MIGRATION_REFERENCE_NOT_CLEAN_T02');
-  const reference = observe(referenceRoot), first = build(root), digest = verifyArtifact(root);
-  const one = observe(path.join(root, '.build/runtime'));
-  const second = build(root), two = observe(path.join(root, '.build/runtime'));
+  const reference = observe(referenceRoot,'LEGACY'), first = build(root), digest = verifyArtifact(root);
+  const one = observe(path.join(root, '.build/runtime'),'APP_SERVER');
+  const second = build(root), two = observe(path.join(root, '.build/runtime'),'APP_SERVER');
   assert.deepEqual(reference, one); assert.deepEqual(one, two);
   assert.equal(digest, verifyArtifact(root)); assert.deepEqual(first.outputs, second.outputs);
   return { status: 'SOURCE_AND_TWO_SHADOWS_EQUIVALENT', observation: reference, observation_sha256: hash(JSON.stringify(reference)), manifest_sha256: digest, production_ready: false };

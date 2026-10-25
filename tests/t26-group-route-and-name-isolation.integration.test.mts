@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT26Fixture,t26Group,t26Deliveries,t26Control,t26Object} from './helpers/t26-group-notification-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createWorkbenchGroupNotificationSender} from '../src/workbench-group-notification-sender.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createWorkbenchGroupNotificationSender} from '../app/server/src/workbench-group-notification-sender.mjs';
 
 test('same and renamed display names never replace the original group or Bot and unqualified or disabled routes never call fetch',{timeout:240000},async()=>{
  await withT26Fixture(async context=>{

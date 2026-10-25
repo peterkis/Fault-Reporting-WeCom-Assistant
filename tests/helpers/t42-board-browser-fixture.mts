@@ -5,8 +5,8 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 export interface T42Fixture {pool:PostgresPool;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string}[];runtime:P2016EnabledRuntime;restoreSelfHandlingResponses:()=>void}
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}

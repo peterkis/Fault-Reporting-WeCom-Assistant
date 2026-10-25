@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
-import {createYxxSelfServiceStore,parseYxxRequestInput,parseYxxSupplementInput,YXX_WEB_LIMITS} from '../src/yxx-self-service-store.mjs';
-import {migrateYxxSelfService,yxxCatalogHash} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateCurrentBaseline,migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
+import {createYxxSelfServiceStore,parseYxxRequestInput,parseYxxSupplementInput,YXX_WEB_LIMITS} from '../app/server/src/yxx-self-service-store.mjs';
+import {migrateYxxSelfService,yxxCatalogHash} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateCurrentBaseline,migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
 import {withP2016IsolatedDatabase,assertNoP2016Residual} from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl=process.env.PILOT_DATABASE_URL;

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorkbenchRealtimeClient} from '../src/workbench-realtime-client.mjs';
-import type {RealtimeTransport} from '../src/workbench-realtime-client.mjs';
+import {createWorkbenchRealtimeClient} from '../app/pc-admin/src/realtime/workbench-realtime-client.mjs';
+import type {RealtimeTransport} from '../app/pc-admin/src/realtime/workbench-realtime-client.mjs';
 import type {WorkbenchRealtimeStatus} from '../contracts/workbench_realtime_contracts.js';
 
 test('a delayed or failed activity request cannot fail healthy authoritative reads or own their deadline',async t=>{

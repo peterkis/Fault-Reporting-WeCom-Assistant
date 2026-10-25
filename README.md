@@ -1,8 +1,14 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+2026-10-25 首批候选后继已收口T35测试前提和G2当前复现，最终同候选定向验证通过，完整G2连续3轮通过。见[后继交付](plans/app-layout/candidate-followup-2026-10-25.md)；旧失败与未完成全集保持，真实外部/部署/Gate仍需原具名批准。
+
+2026-10-25 按用户修订目标，先交付通过关键门槛、可增量回退的 human-v1 小范围候选；完整回归停止于322/741入口，G2投递失败保留。候选范围、限制和回退见[首批候选报告](plans/app-layout/first-gray-candidate-2026-10-25.md)，不代替完整认证或上线批准。
+
+应用目录按 [整体布局](app/README.md) 分步整理为 `app/pc-admin`、`app/h5`、`app/server`。正式 PC 前端位于 [app/pc-admin](app/pc-admin/README.md)，新 H5 已迁至 [app/h5](app/h5/README.md)，继续使用根统一依赖、构建及既有运行制品位置；后端按 [ADR-0044](adr/0044_server_application_layout_and_logical_source_identity.md) 迁至 [app/server](app/server/README.md)。2026-10-24 源码迁移及本地验证执行已收口；保留失败和工具 rename NOT_RUN，不代表无保留验收通过。实际结果见[后端迁移记录](plans/app-layout/server-migration-2026-10-23.md)，整体范围见[应用整理记录](plans/app-layout/README.md)，不改变业务架构或 Gate。
+
 H5 性能改造按 [ADR-0036](adr/0036_yixiaoxiu_h5_performance_read_and_media_budgets.md)前向实施：页面引导聚合、路由与数据并行、私有图片预览和获权渐进播放；新增性能配置默认关闭。实际范围、预算、测试结果及未运行项见[实施记录](plans/yixiaoxiu-h5-performance/README.md)与[接口合同](docs/api/member/h5-performance.md)，不改变原 Gate 或现场授权。
 
-新版医小修 H5 使用 Vite、TypeScript、React、React Router、TanStack Query、shadcn/ui 和 Lingui React 国际化，按 Stitch“医院IT工单报修系统”的八屏固定基线实现浅色／深色页面。源码与合成预览见 [H5 入口](h5/README.md)，实际接口见 [V2 合同](docs/api/member/h5-v2.md)，原实现范围见 [重做记录](plans/yixiaoxiu-h5-rebuild/README.md)与 [ADR-0035](adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)，路由与预编译国际化前向修订见 [ADR-0041](adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)。新增功能与公开进度写入独立默认关闭，本地实现不改变部署或现场发送状态。
+新版医小修 H5 使用 Vite、TypeScript、React、React Router、TanStack Query、shadcn/ui 和 Lingui React 国际化，按 Stitch“医院IT工单报修系统”的八屏固定基线实现浅色／深色页面。源码与合成预览见 [H5 入口](app/h5/README.md)，实际接口见 [V2 合同](docs/api/member/h5-v2.md)，原实现范围见 [重做记录](plans/yixiaoxiu-h5-rebuild/README.md)与 [ADR-0035](adr/0035_yixiaoxiu_h5_multimedia_and_member_service.md)，路由与预编译国际化前向修订见 [ADR-0041](adr/0041_h5_react_router_shared_shell_and_interaction_readiness.md)。新增功能与公开进度写入独立默认关闭，本地实现不改变部署或现场发送状态。
 
 MVP 群回应、实际接单／完工通知及应用成员后端的原交接见 [实施记录](plans/mvp-notifications-h5/README.md)与 [ADR-0034](adr/0034_mvp_notifications_and_application_members.md)。
 

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import{withWeb01Fixture}from'./web01-workbench-fixture.mjs';
-import{createP2016Runtime}from'../../src/p2-016-runtime.mjs';import type{P2016EnabledRuntime}from'../../src/p2-016-runtime.mjs';
+import{createP2016Runtime}from'../../app/server/src/p2-016-runtime.mjs';import type{P2016EnabledRuntime}from'../../app/server/src/p2-016-runtime.mjs';
 import type{T07Fixture}from'./t07-public-fixture.mjs';
-import{migrateTicketStaffCompletion}from'../../scripts/ticket-staff-completion-migrate.mjs';
-import{migrateTicketReopenRounds}from'../../scripts/ticket-reopen-rounds-migrate.mjs';
-import{migrateTicketUnassign}from'../../scripts/ticket-unassign-migrate.mjs';
-import{migrateTicketReturnToDispatch}from'../../scripts/ticket-return-to-dispatch-migrate.mjs';
+import{migrateTicketStaffCompletion}from'../../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import{migrateTicketReopenRounds}from'../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import{migrateTicketUnassign}from'../../app/server/scripts/ticket-unassign-migrate.mjs';
+import{migrateTicketReturnToDispatch}from'../../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
 import{closeBrowserTestResources}from'./p2-006-browser-harness.mjs';
 export interface T13Fixture extends Omit<T07Fixture,'runtime'>{outsider:{id:string};runtime:P2016EnabledRuntime;browserCookies:readonly{name:string;value:string;url:string|undefined}[]}
 /** Additional owned profiles form real facts through existing public commands; the original first stays frozen. */

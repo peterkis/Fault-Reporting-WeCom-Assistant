@@ -3,10 +3,10 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomBytes,randomUUID,createHash,createCipheriv} from 'node:crypto';
-import {createWorkbenchAttachmentStore} from '../../src/workbench-attachment-store.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import {createWorkbenchAttachmentStore} from '../../app/server/src/workbench-attachment-store.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {StoredAttachment,AttachmentStore} from '../../contracts/workbench_attachment_contracts.js';
 export const T16_PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
 interface Base {pool:PostgresPool;tickets:{ticket:{id:string};intake:{intakeId:string;messageId:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string}

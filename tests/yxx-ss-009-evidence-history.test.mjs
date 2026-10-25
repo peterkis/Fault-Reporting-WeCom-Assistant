@@ -4,7 +4,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,symlinkSync} from 
 import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {verifyYxxEvidenceHistory} from '../src/yxx-self-service-evidence-history.mjs';
+import {verifyYxxEvidenceHistory} from '../app/server/src/yxx-self-service-evidence-history.mjs';
 
 const TARGET='evidence/yxx-ss-009-r5-review-fix-report.md';
 const CHANGED='SS009_PUBLISHED_EVIDENCE_CHANGED';

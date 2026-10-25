@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT08Fixture,rows,object,text} from './helpers/t08-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 test('real withdrawal and a different handler acceptance preserve the already acknowledged responsibility promise in the same handling round',async()=>{
  await withT08Fixture(async fixture=>{

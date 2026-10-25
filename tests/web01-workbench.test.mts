@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {boardColumn} from '../src/web01-workbench-query.mjs';
-import {sourceGroupNameCommand,sourceGroupSearch,sourceLabel} from '../src/workbench-source-groups.mjs';
+import {boardColumn} from '../app/server/src/web01-workbench-query.mjs';
+import {sourceGroupNameCommand,sourceGroupSearch,sourceLabel} from '../app/server/src/workbench-source-groups.mjs';
 test('WEB01 grouping preserves terminal meaning and rejects unknown states',()=>{
   for(const state of ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'])assert.equal(boardColumn(state),'pending');
   for(const state of ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'])assert.equal(boardColumn(state),'active');

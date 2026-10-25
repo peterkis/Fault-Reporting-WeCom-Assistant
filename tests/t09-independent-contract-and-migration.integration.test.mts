@@ -6,8 +6,8 @@ import {withT09IndependentFixture} from './helpers/t09-independent-fixture.mjs';
 import type {T09IndependentFixture} from './helpers/t09-independent-fixture.mjs';
 import {object,rows,text,version} from './helpers/t09-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import {migrateTicketReturnToDispatch} from '../scripts/ticket-return-to-dispatch-migrate.mjs';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
+import {migrateTicketReturnToDispatch} from '../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import type {P2016TicketDetail} from '../contracts/p2_016_contracts.js';
 import type {SharedFollowUpCommand} from '../contracts/workbench_follow_up_schedule_contracts.js';
 

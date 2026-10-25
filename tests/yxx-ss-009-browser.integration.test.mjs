@@ -1,3 +1,4 @@
+// Retired V1 client fixture: preserves historical API/lifecycle assertions; not new H5 UI acceptance.
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import test from 'node:test';
@@ -6,15 +7,16 @@ import {randomUUID,createHash} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui.mjs';
+import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {origin,secret,flags,config,oauthOptions,browser,post} from './helpers/yxx-ss-009-http-fixture.mjs';
 
-test('SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket',{timeout:180000},async t=>{
+test('retired V1 client fixture SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket',{timeout:180000},async t=>{
   const screenshots=[];
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ui',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl});
@@ -25,7 +27,7 @@ test('SS-009 real browser and PostgreSQL submit supplement review and original w
       observeResource('member_listener',()=>runtime?.server.listening?1:0);observeResource('staff_listener',()=>staffRuntime?.server.listening?1:0);
       observeResource('browser_process',()=>tab?.ownedResourceState().processes??0);observeResource('browser_profile',()=>tab?.ownedResourceState().profiles??0);observeResource('browser_command_timers',()=>tab?.ownedResourceState().commandTimers??0);observeResource('browser_socket',()=>tab?.ownedResourceState().sockets??0);
       fixture=await createYxxBrowserFixture({pool,createApp:({oauth,origin:publicOrigin})=>{
-        runtime=createYxxProfile({pool,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret,yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});return runtime.server;
+        runtime=createYxxProfile({pool,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,h5Presentation:createRetiredSelfServiceFixture(),reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret,yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});return runtime.server;
       }});runtime.selfService.start();tab=await fixture.launch({path:'/synthetic-start',width:390,height:844});
       await tab.evaluate("location.assign('/wecom/yixiaoxiu/')",{awaitPromise:false});await tab.waitFor("document.querySelector('#home-view')?.hidden===false");
       async function submit(text){await tab.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')",{awaitPromise:false});await tab.waitFor("document.querySelector('#new-view')?.hidden===false");await tab.evaluate(`document.querySelector('#description').value=${JSON.stringify(text)};document.querySelector('#location-unknown').checked=true;document.querySelector('#submit-report').click()`);await tab.waitFor("/^\\/wecom\\/yixiaoxiu\\/reports\\/[A-Za-z0-9_-]{32}$/.test(location.pathname)");return tab.evaluate('location.pathname.split("/").at(-1)');}

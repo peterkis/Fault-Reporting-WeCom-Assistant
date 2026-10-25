@@ -7,8 +7,8 @@ import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {test} from 'node:test';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 interface Identity {wecom_user_id:string;display_name:string;team_ids:string[]}
 function object(value:unknown):Record<string,unknown>{

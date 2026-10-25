@@ -1,9 +1,9 @@
-import { normalizeP2016TicketCommand } from '../../src/p2-016-ticket-command-facade.mjs';
-import type { TicketCommand } from '../../src/p2-016-ticket-command-facade.mjs';
-import { createP2016CommandLedger } from '../../src/p2-016-ticket-command-ledger.mjs';
-import type { LedgerExecution } from '../../src/p2-016-ticket-command-ledger.mjs';
-import type { PostgresPool } from '../../src/platform/postgres-pool.mjs';
-import type { ReporterTimeline } from '../../src/p2-016-reporter-timeline.mjs';
+import { normalizeP2016TicketCommand } from '../../app/server/src/p2-016-ticket-command-facade.mjs';
+import type { TicketCommand } from '../../app/server/src/p2-016-ticket-command-facade.mjs';
+import { createP2016CommandLedger } from '../../app/server/src/p2-016-ticket-command-ledger.mjs';
+import type { LedgerExecution } from '../../app/server/src/p2-016-ticket-command-ledger.mjs';
+import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import type { ReporterTimeline } from '../../app/server/src/p2-016-reporter-timeline.mjs';
 
 declare const externalCommand: unknown;
 const command = normalizeP2016TicketCommand(externalCommand);

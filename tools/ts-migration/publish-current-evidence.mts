@@ -66,7 +66,7 @@ export function publishCurrentEvidence(root:string,packetRoot:string,expectedPoi
     const catalogFile=files.find(item=>item.path==='artifact-catalog.json');assert.ok(catalogFile);
     const attestationFile=files.find(item=>item.path==='artifact-catalog-attestation.json');assert.ok(attestationFile);
     const report=record(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes(packetRoot,'report.json'))) as unknown);
-    assert.equal(report.schema_version,1);assert.equal(report.contract,'ADR-0027');assert.equal(report.run_id,packet.run_id);
+    assert.equal(report.schema_version,1);assert.equal(report.contract,'ADR-0045');assert.equal(report.run_id,packet.run_id);
     assert.equal(report.status,'CURRENT_AUTOMATION_COMPLETE');assert.equal(report.live_authorized,false);assert.equal(report.parent_gate_advanced,false);
     const reference=(value:unknown)=>{
       const ref=record(value);assert.deepEqual(Object.keys(ref).sort(),['bytes','path','sha256']);

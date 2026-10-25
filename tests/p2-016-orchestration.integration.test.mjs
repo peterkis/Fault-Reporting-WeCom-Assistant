@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
-import { createP2016RealtimeProjector } from '../src/p2-016-realtime-projector.mjs';
-import { createP2016TicketCommandFacade } from '../src/p2-016-ticket-command-facade.mjs';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
-import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
-import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
+import { createP2016RealtimeProjector } from '../app/server/src/p2-016-realtime-projector.mjs';
+import { createP2016TicketCommandFacade } from '../app/server/src/p2-016-ticket-command-facade.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
+import { createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 test('P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016orch',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});

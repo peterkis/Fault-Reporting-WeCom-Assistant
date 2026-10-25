@@ -12,7 +12,7 @@ Root 管理公共合同、依赖锁、迁移编号、HTTP/runtime 装配、构�
 
 ## 验证状态
 
-实施代码已整合。新版页面、媒体与 V2 业务、管理端消费、正式制品和现有 Worker 接线均有实现；新增开关保持 false。固定基线和本地预览见 [H5 README](../../h5/README.md)，实际成员／管理端接口已进入 [METHOD + PATH 索引](../../docs/api/endpoint-index.md)。
+实施代码已整合。新版页面、媒体与 V2 业务、管理端消费、正式制品和现有 Worker 接线均有实现；新增开关保持 false。固定基线和本地预览见 [H5 README](../../app/h5/README.md)，实际成员／管理端接口已进入 [METHOD + PATH 索引](../../docs/api/endpoint-index.md)。
 
 分线实际验证包含真实 PG18 的原子媒体绑定、原 Core 建单、完成／重开／评价、当前 READ、催单事实及原 UUID 恢复；真实受控 FFmpeg 覆盖短 AMR、WAV 与 MP4，原失败与 setup 缺口保留。浏览器使用合成资料对照八屏，并检查英文、320px 及恢复栅栏。分线结果不重绑为统一候选结果。
 

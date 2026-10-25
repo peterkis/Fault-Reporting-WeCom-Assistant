@@ -1,12 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../src/platform/postgres-pool.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool,PostgresPoolClient,PostgresQuery} from '../app/server/src/platform/postgres-pool.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PilotPrincipal} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ManualReportCommand} from '../contracts/workbench_manual_report_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;principals:PilotPrincipal[];cookies:string[];sessionId:string}
+interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;databaseUrl:string;principals:PilotPrincipal[];cookies:string[];sessionId:string}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');assert.ok(value);return value as string;}
 function command(description='合成电话报修：打印机无法打印'):ManualReportCommand{return {schema_version:1,client_command_id:randomUUID(),source:'PHONE',description,location:{text:null,unknown:true},reporter:{verification:'UNVERIFIED',name:'合成实际报修人',contact:'人工联系4455',department:null}};}
@@ -59,7 +60,7 @@ for(const replay of [false,true])for(const loss of ['session','creation'] as con
         waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.ticket_command_receipt'::regclass AND NOT granted")).rowCount!==0;
         if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));
       }assert.ok(waiting,'the actual receipt INSERT is waiting after the initial authorization');
-      if(loss==='session')await fixture.pool.query("UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=platform.physical_epoch_ms(),revoked_at=platform.local_now() WHERE session_id=$1::uuid",[fixture.sessionId]);
+      if(loss==='session')await fixture.pool.query("WITH clock AS MATERIALIZED (SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=clock.epoch,revoked_at=platform.local_from_epoch_ms(clock.epoch) FROM clock WHERE session_id=$1::uuid",[fixture.sessionId]);
       else{const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});}
       await blocker.query('ROLLBACK');const response=await pending;assert.equal(response.status,403,'authority lost while waiting must reject both admission and replay');
       assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');assert.deepEqual(await facts(fixture.pool),before);
@@ -76,7 +77,7 @@ test('manual admission rolls back every business fact when logout finishes durin
         waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='intake.service_intake'::regclass AND NOT granted")).rowCount!==0;
         if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));
       }assert.ok(waiting,'the real intake INSERT is waiting inside the business savepoint');
-      await fixture.pool.query("UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=platform.physical_epoch_ms(),revoked_at=platform.local_now() WHERE session_id=$1::uuid",[fixture.sessionId]);
+      await fixture.pool.query("WITH clock AS MATERIALIZED (SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=clock.epoch,revoked_at=platform.local_from_epoch_ms(clock.epoch) FROM clock WHERE session_id=$1::uuid",[fixture.sessionId]);
       await blocker.query('ROLLBACK');const response=await pending;assert.equal(response.status,503);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');
       const after=await facts(fixture.pool);assert.deepEqual({...after,receipts:before.receipts},before);assert.equal(after.receipts,before.receipts+1,'only the existing failed ledger receipt remains');
     }finally{await blocker.query('ROLLBACK');blocker.release();await pending?.catch(()=>{});}
@@ -86,15 +87,22 @@ test('manual admission rolls back every business fact when logout finishes durin
 test('manual admission rechecks creation authority after the final Session share-lock wait',async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{
     const token=await csrf(fixture),body=command(),before=await facts(fixture.pool),intakeLock=await fixture.pool.connect(),sessionLock=await fixture.pool.connect();let pending:Promise<Response>|undefined;
+    // The four-connection application pool contains both blockers, the command
+    // and its scheduled worker. Observation and fixture authority changes must
+    // not queue behind the command whose wait this test is trying to inspect.
+    const control=createPostgresPool({connectionString:fixture.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t17_owned_lock_observer'});
     try{
-      await intakeLock.query('BEGIN');await intakeLock.query('LOCK TABLE intake.service_intake IN SHARE MODE');pending=post(fixture,token,body);
-      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_locks WHERE relation='intake.service_intake'::regclass AND NOT granted")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting);
-      await sessionLock.query('BEGIN');await sessionLock.query('SELECT session_id FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid FOR UPDATE',[fixture.sessionId]);await intakeLock.query('ROLLBACK');
-      waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await fixture.pool.query("SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%FROM pilot_ticket.workbench_auth_session%' AND query LIKE '%FOR SHARE%'")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the actual final Session FOR SHARE is waiting');
-      const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});
+      await intakeLock.query('BEGIN');const intakePid=(await intakeLock.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(intakePid);
+      await intakeLock.query('LOCK TABLE intake.service_intake IN SHARE MODE');pending=post(fixture,token,body);
+      let commandPid:number|undefined;for(let attempt=0;attempt<200;attempt++){commandPid=(await control.query<{pid:number}>("SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND $1=ANY(pg_blocking_pids(pid)) AND query LIKE '%INSERT INTO intake.service_intake%'",[intakePid])).rows[0]?.pid;if(commandPid)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(commandPid,'the original manual command must be waiting on the owned intake blocker');
+      await sessionLock.query('BEGIN');const sessionPid=(await sessionLock.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(sessionPid);
+      await sessionLock.query('SELECT session_id FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid FOR UPDATE',[fixture.sessionId]);await intakeLock.query('ROLLBACK');
+      let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await control.query("SELECT 1 FROM pg_stat_activity WHERE pid=$1 AND wait_event_type='Lock' AND $2=ANY(pg_blocking_pids(pid)) AND query LIKE '%FROM pilot_ticket.workbench_auth_session%' AND query LIKE '%FOR SHARE%'",[commandPid,sessionPid])).rowCount===1;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the same command backend must reach the original final Session FOR SHARE wait');
+      console.log('T17_BOUND_LOCK_WAIT '+JSON.stringify({intake_pid:intakePid,session_pid:sessionPid,command_pid:commandPid,application_pool_max:fixture.pool.options.max,independent_control_pool_max:control.options.max,original_uuid:body.client_command_id}));
+      const actor=fixture.principals[0];assert.ok(actor);await createPilotAccessService({pool:control}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles:['HANDLER'],resolverTeamIds:[]});
       await sessionLock.query('ROLLBACK');const response=await pending;assert.equal(response.status,503);assert.equal(object(object(await response.json()).error).code,'P2_016_FORBIDDEN');
       const after=await facts(fixture.pool);assert.deepEqual({...after,receipts:before.receipts},before);assert.equal((await fixture.pool.query('SELECT state FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[fixture.sessionId])).rows[0]?.state,'ACTIVE');
-    }finally{await intakeLock.query('ROLLBACK');await sessionLock.query('ROLLBACK');intakeLock.release();sessionLock.release();await pending?.catch(()=>{});}
+    }finally{await intakeLock.query('ROLLBACK');await sessionLock.query('ROLLBACK');intakeLock.release();sessionLock.release();await pending?.catch(()=>{});await control.end();}
   },enabled);
 });
 

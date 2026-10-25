@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database,applyThrough031,fixtureP2012 } from './helpers/p2-012-postgres-harness.mjs';
 export async function freeP2012Port(){const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const p=s.address().port;await new Promise(r=>s.close(r));return p;}
 test('P2-012 actual HTTP inherits authentication, CSRF, command fence and durable realtime',async()=>{

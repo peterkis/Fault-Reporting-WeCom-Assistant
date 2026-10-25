@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {AsyncLocalStorage} from 'node:async_hooks';
 import {test} from 'node:test';
-import {createApplicationMemberVerifier,type ApplicationMemberVerificationEvent,type ApplicationMemberVerificationPurpose} from '../src/wecom-application-member.mjs';
+import {createApplicationMemberVerifier,type ApplicationMemberVerificationEvent,type ApplicationMemberVerificationPurpose} from '../app/server/src/wecom-application-member.mjs';
 
 function deferred<T>(){let resolve!:(value:T)=>void;const promise=new Promise<T>(yes=>{resolve=yes;});return {promise,resolve};}
 function eventTape(){

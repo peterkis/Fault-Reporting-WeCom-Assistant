@@ -16,7 +16,7 @@
 
 下文完整保留WHOLE启动前db031/旧SOURCE的拟议、NOT_MOUNTED、NOT_RUN和054 reserved说明；这些是历史as-of，不表示当前实现仍缺失或追认当时已运行。原源码/首例/证据原件继续保存。
 
-状态：**SOURCE_FROZEN／PROPOSED_NOT_MOUNTED／NOT_RUN**。来源 WBINT-T29/#84、WBINT-10/A10；基线为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 的人类明确目标读取规则。本文件不是现有 API 清单或启用授权。当前 [Incident handler](../../../src/p2-012-workbench-http.mts) 没有这两个操作，当前事件投影亦没有责任交接详情。
+状态：**SOURCE_FROZEN／PROPOSED_NOT_MOUNTED／NOT_RUN**。来源 WBINT-T29/#84、WBINT-10/A10；基线为 [ADR-0031](../../../adr/0031_human_workbench_collaboration_policy.md) 的人类明确目标读取规则。本文件不是现有 API 清单或启用授权。当前 [Incident handler](../../../app/server/src/p2-012-workbench-http.mts) 没有这两个操作，当前事件投影亦没有责任交接详情。
 
 ### SOURCE 时点事实与拟议入口
 
@@ -64,5 +64,5 @@
 
 055封闭目录为15 command/18 event；058为16/19，完整保留055并只增加PUBLISH_PUBLIC_PROGRESS及incident.public_progress_published。未来054若加入TRANSFER_OWNER／incident.owner.transferred，必须在最新Root的完整目录上追加，不能回退到032枚举或丢掉ADD_INTERNAL_NOTE／internal_note_added。原note/public shape、列、已validated检查、FK和索引、订阅/Communication模板全部保留；owner交接不创建外发意图。
 
-现行[055 guard](../../../src/p2-012-internal-note-schema.mts)只接受原055摘要或通过完整[058 guard](../../../src/p2-012-public-progress-schema.mts)；055／058 typed migrator还核原SQLchecksum、marker和具体catalog，正常新增枚举会改变这些精确摘要。后续在真实first RED后通过原受控机制证明合法054＋055＋058目录及status/check/apply，不改旧SQL，不用枚举包含、宽松hash、假058 stamp或新验证平台。最小已有指针为T30 migration/schema与T31 migration，再按实际common consumer diff选原command-port/public-progress/contracts；本窗口全部未运行。
+现行[055 guard](../../../app/server/src/p2-012-internal-note-schema.mts)只接受原055摘要或通过完整[058 guard](../../../app/server/src/p2-012-public-progress-schema.mts)；055／058 typed migrator还核原SQLchecksum、marker和具体catalog，正常新增枚举会改变这些精确摘要。后续在真实first RED后通过原受控机制证明合法054＋055＋058目录及status/check/apply，不改旧SQL，不用枚举包含、宽松hash、假058 stamp或新验证平台。最小已有指针为T30 migration/schema与T31 migration，再按实际common consumer diff选原command-port/public-progress/contracts；本窗口全部未运行。
 

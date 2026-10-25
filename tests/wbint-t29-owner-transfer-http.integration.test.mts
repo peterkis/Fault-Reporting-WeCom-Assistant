@@ -7,8 +7,9 @@ import {ownerTransferHttp,record,text} from './helpers/t29-owner-transfer-http-f
 // Frozen SOURCE / NOT_RUN: this public HTTP first precedes any new production behavior.
 // The historical browser first stays byte-identical and owns the later formal UI proof.
 test('T29 real HTTP transfers a currently readable valid Incident target once without changing personal Ticket or notifications',{timeout:240000},async()=>{
-  await ownerTransferHttp(async({f,get,post,confirm,posts})=>{
+  await ownerTransferHttp(async({f,get,post,confirm,posts,settleProjection})=>{
     const id=await confirm(),path='/api/incidents/'+id;
+    await settleProjection();
     const before=await get(path);assert.equal(before.status,200);
     const oldOwner=text(record(f.handler).id),targetId=text(record(f.dispatcher).id),actor=text(record(f.admin).id);
     assert.equal(before.body.owner_principal_id,oldOwner);assert.equal(before.body.owner_team_id,null);assert.equal(before.body.row_version,'1');

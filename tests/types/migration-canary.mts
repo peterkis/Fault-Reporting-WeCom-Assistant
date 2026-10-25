@@ -1,4 +1,4 @@
-import { canary } from '../../src/migration-canary.mjs';
+import { canary } from '../../app/server/src/migration-canary.mjs';
 const valid: string = canary({ label: 'positive', sequence: 1 });
 void valid;
 // @ts-expect-error -- numeric sequence cannot accept an arbitrary string.

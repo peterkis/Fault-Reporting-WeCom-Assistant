@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime,G2_RULE_FLAGS } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createP2016DirectIntakeProcessor } from '../src/p2-016-direct-intake.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createP2016DirectIntakeProcessor } from '../app/server/src/p2-016-direct-intake.mjs';
 
 test('group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries',async()=>{
   await withG2Runtime(async f=>{

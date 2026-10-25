@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 
 const root = resolve(import.meta.dirname, '..');
-const script = resolve(root, 'scripts', 'p1-012-wecom-burst-ui.ps1');
+const script = resolve(root, 'app/server/scripts', 'p1-012-wecom-burst-ui.ps1');
 const powershellProbe = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.ToString()'], {
   encoding: 'utf8',
 });

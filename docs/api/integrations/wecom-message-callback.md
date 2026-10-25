@@ -48,7 +48,7 @@ wsClient.on('message.text', (frame) => {
 {"cmd":"aibot_msg_callback","headers":{"req_id":"synthetic-req"},"body":{"aibotid":"synthetic-bot","chatid":"synthetic-group","chattype":"group","from":{"userid":"synthetic-user"},"msgid":"synthetic-msg","msgtype":"text","response_url":"https://example.invalid/reply","text":{"content":"群信息验证"}}}
 ```
 
-实现：[Gateway](../../../src/p2-g1-wecom-gateway.mts)、[adaptWeComSdkFrame](../../../src/p1-002-wecom-sdk-adapter.mts)、[标准化Schema](../../../contracts/normalized_wecom_message.schema.json)。官方SDK的[消息结构与命令协议](https://github.com/WecomTeam/aibot-node-sdk)定义chatid，未定义群名称字段。
+实现：[Gateway](../../../app/server/src/p2-g1-wecom-gateway.mts)、[adaptWeComSdkFrame](../../../app/server/src/p1-002-wecom-sdk-adapter.mts)、[标准化Schema](../../../contracts/normalized_wecom_message.schema.json)。官方SDK的[消息结构与命令协议](https://github.com/WecomTeam/aibot-node-sdk)定义chatid，未定义群名称字段。
 
 ## 如何知道消息来自哪个群
 

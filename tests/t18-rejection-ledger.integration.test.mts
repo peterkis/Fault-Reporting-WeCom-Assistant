@@ -2,9 +2,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PilotPrincipal} from '../src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PilotPrincipal} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ManualReporterDirectoryOptions,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';

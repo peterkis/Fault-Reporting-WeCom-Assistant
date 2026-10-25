@@ -200,9 +200,9 @@ test('H5 legacy plain lost events retain the conservative terminal 403 behavior'
 
 const translationLoader=createH5PureModuleLoader();
 async function translatedApp(runtime:unknown){
- const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'h5/src/App.tsx'),'utf8');
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),source=await readFile(resolve(root,'app/h5/src/App.tsx'),'utf8');
  const compiled=transpileModule(source,{fileName:'App.tsx',compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
- const component=async(path:string)=>transpileModule(await readFile(resolve(root,'h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const component=async(path:string)=>transpileModule(await readFile(resolve(root,'app/h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  const authCompiled=await component('components/AuthState.tsx'),sessionCompiled=await component('session.tsx'),progressCompiled=await component('components/LoadingProgress.tsx');
  const routing="import {createElement} from 'react';export function describeRoute(path){const view=path==='/'?'home':path.slice(1);return{key:JSON.stringify({view}),input:{view},path};}export function loginReturnPath(route){return route.path;}export const pages=Object.fromEntries(['home','reports','report','request','department'].map(view=>[view,()=>createElement('article',{'data-protected-page':view},view)]));";
  const pass="export function SessionProvider({children}){return children;}export function CommandProvider({children}){return children;}";
@@ -218,7 +218,7 @@ async function translatedApp(runtime:unknown){
 
 test('H5 report controls follow the target search while rows retain the presented query and invalidated target data stays unused',async t=>{
  const {client,query,calls}=await harness(t,{home:homeEntry(4)}),root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
- const compiled=async(path:string)=>transpileModule(await readFile(resolve(root,'h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const compiled=async(path:string)=>transpileModule(await readFile(resolve(root,'app/h5/src',path),'utf8'),{fileName:path,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  const filterA={q:'A',status:'',source:''},filterB={q:'B',status:'ACTIVE',source:'WEB'},keyA=query.queryKeys.reports('scope-a',filterA),keyB=query.queryKeys.reports('scope-a',filterB);
  const page=(label:string)=>({pages:[{items:homeEntry(4).data.recent_reports.map(item=>({...item,safe_summary:label})),next_cursor:'synthetic-cursor'}],pageParams:[null]});
  client.setQueryData(keyA,page('visible-A'));client.setQueryData(keyB,page('invalidated-B'));await client.invalidateQueries({queryKey:keyB,exact:true,refetchType:'none'});
@@ -440,7 +440,7 @@ test('H5 login return paths canonicalize accepted trailing slashes and retain qu
 });
 
 async function navigationModuleLoader(overrides:Record<string,string>={}){
- const source=await readFile(resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'h5/src/navigation.tsx'),'utf8');
+ const source=await readFile(resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'app/h5/src/navigation.tsx'),'utf8');
  const compiled=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
  return createH5PureModuleLoader({overrides:{...overrides,'navigation.tsx':compiled}});
 }

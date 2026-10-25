@@ -1,16 +1,16 @@
-import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
-import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
-import {migrateIncidentOwnerTransfer} from '../../scripts/incident-owner-transfer-migrate.mjs';
-import {migrateIncidentDeliveryControl} from '../../scripts/incident-delivery-control-migrate.mjs';
+import {migrateIncidentInternalNotes} from '../../app/server/scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../app/server/scripts/incident-public-progress-migrate.mjs';
+import {migrateIncidentOwnerTransfer} from '../../app/server/scripts/incident-owner-transfer-migrate.mjs';
+import {migrateIncidentDeliveryControl} from '../../app/server/scripts/incident-delivery-control-migrate.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {IncidentDeliveryControlPermissionPort} from '../../contracts/workbench_incident_delivery_control_contracts.js';
-import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
-import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
-import {createCommunicationSenderPort} from '../../src/p2-004-communication-sender-port.mjs';
-import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
+import {createP2012Runtime} from '../../app/server/src/p2-012-workbench-assembly.mjs';
+import {createCommunicationDeliveryWorker} from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../../app/server/src/p2-004-communication-sender-port.mjs';
+import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 

@@ -4,9 +4,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
-import {createWorkbenchReporterCandidates} from '../src/workbench-reporter-candidates.mjs';
-import {WorkbenchError} from '../src/p2-006-workbench-query.mjs';
-import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
+import {createWorkbenchReporterCandidates} from '../app/server/src/workbench-reporter-candidates.mjs';
+import {WorkbenchError} from '../app/server/src/p2-006-workbench-query.mjs';
+import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
 import {createT18Directory} from './helpers/t18-verified-fixture.mjs';
 import type {ManualReporterDirectoryOptions,ManualReporterSelection,ManualReporterSearch,WorkbenchReporterCandidate} from '../contracts/workbench_reporter_candidates_contracts.js';
 

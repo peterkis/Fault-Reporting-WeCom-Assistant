@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createThirdPartyStaffDirectorySyncJob } from '../src/p2-007-staff-directory-sync.mjs';
+import { createThirdPartyStaffDirectorySyncJob } from '../app/server/src/p2-007-staff-directory-sync.mjs';
 
 const snapshot = Object.freeze({
   snapshot_version: 'a'.repeat(64),

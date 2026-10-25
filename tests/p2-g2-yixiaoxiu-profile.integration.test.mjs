@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
 import {once} from 'node:events';
 import {createHash} from 'node:crypto';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {minimalG2Environment} from '../src/p2-g2-validation-config.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {minimalG2Environment} from '../app/server/src/p2-g2-validation-config.mjs';
 import {entryOrigin,entryConfig,entryKey,withYxxDatabase,httpBrowser,loginYxx,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 
 async function catalog(pool){

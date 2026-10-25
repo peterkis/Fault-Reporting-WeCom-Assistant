@@ -3,12 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { fork } from 'node:child_process';
 import { createServer } from 'node:net';
 import { test } from 'node:test';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createCommunicationReconciliationPort } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030,assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 function start(role,databaseUrl,input){
   const child=fork(new URL('./helpers/p2-016-'+role+'-child.mjs',import.meta.url),[],{env:{...process.env,PILOT_DATABASE_URL:databaseUrl},execArgv:[],stdio:['ignore','ignore','ignore','ipc'],windowsHide:true});
   const messages=[];child.on('message',message=>messages.push(message));child.send(input);

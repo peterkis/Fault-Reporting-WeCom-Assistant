@@ -7,11 +7,11 @@ import {readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
-import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
-import {migrateThirdPartyStaffDirectory} from '../scripts/p2-007-migrate.mjs';
-import {migrateWorkbenchFollowUpSchedules} from '../scripts/workbench-follow-up-schedules-migrate.mjs';
-import {migrateWorkbenchFollowUpDueSignals} from '../scripts/workbench-follow-up-due-migrate.mjs';
-import {migrateYxxH5} from '../scripts/yxx-h5-migrate.mjs';
+import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {migrateThirdPartyStaffDirectory} from '../app/server/scripts/p2-007-migrate.mjs';
+import {migrateWorkbenchFollowUpSchedules} from '../app/server/scripts/workbench-follow-up-schedules-migrate.mjs';
+import {migrateWorkbenchFollowUpDueSignals} from '../app/server/scripts/workbench-follow-up-due-migrate.mjs';
+import {migrateYxxH5} from '../app/server/scripts/yxx-h5-migrate.mjs';
 type Fixture=Parameters<Parameters<typeof withT24Fixture>[0]>[0];
 const ids=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'];
 async function prepared(run:(fixture:Fixture)=>Promise<void>){
@@ -27,7 +27,7 @@ const h5Rows=async(f:Fixture)=>(await f.pool.query<{migration_id:string;checksum
   applied_at=platform.local_from_epoch_ms(applied_epoch_ms) AS time_pair FROM platform.schema_migration
   WHERE migration_id=ANY($1::text[]) ORDER BY migration_id`,[ids])).rows;
 function migrationCli(f:Fixture,args:readonly string[]){
-  const entry=fileURLToPath(new URL('../scripts/yxx-h5-migrate.mjs',import.meta.url));
+  const entry=fileURLToPath(new URL('../app/server/scripts/yxx-h5-migrate.mjs',import.meta.url));
   const env:NodeJS.ProcessEnv={PILOT_DATABASE_URL:f.databaseUrl};
   // Do not inherit NODE_OPTIONS, .env loading, Provider credentials or PG_*.
   for(const name of ['SystemRoot','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR'])if(process.env[name]!==undefined)env[name]=process.env[name];

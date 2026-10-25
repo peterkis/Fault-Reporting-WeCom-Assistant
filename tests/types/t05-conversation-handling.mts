@@ -1,4 +1,4 @@
-import {normalizeConversationHandlingCommand} from '../../src/workbench-ticket-conversation-handling.mjs';
+import {normalizeConversationHandlingCommand} from '../../app/server/src/workbench-ticket-conversation-handling.mjs';
 import type {P2016ConversationHandlingCommand,P2016RelatedConversationPage,P2016ConversationHandlingAcknowledgement} from '../../contracts/p2_016_contracts.js';
 declare const input:unknown;
 const command=normalizeConversationHandlingCommand(input);

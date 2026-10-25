@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 type Fixture={pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;cookies:string[];tickets:{ticket:{id:string}}[];principals:{id:string}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}

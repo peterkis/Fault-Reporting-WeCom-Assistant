@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { formatEpochMsToShanghaiLocal } from '../../src/platform/time-contract.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../../app/server/src/platform/time-contract.mjs';
 
 const RUN = randomUUID().replaceAll('-', '_').slice(0, 12);
 const databases = new Set();

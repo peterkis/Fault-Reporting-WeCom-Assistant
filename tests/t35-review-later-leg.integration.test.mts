@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createContactJourneyStore} from '../src/p2-015-contact-journey.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
 
 test('T35 the real later Leg displayed by an original Review has its own personal position and remains within that Journey',()=>withT35Fixture(async f=>{
   const board=await (await f.get('/api/workbench/board?column=pending')).json() as {items:{kind:string;id:string}[]};

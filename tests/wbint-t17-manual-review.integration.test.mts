@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 interface Fixture {origin:string;cookies:string[];pool:PostgresPool;principals:{id:string}[]}

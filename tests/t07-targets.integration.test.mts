@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 test('takeover targets independently expose only the current visible worker own active teams and validate explicit choice without granting notification access',async()=>{

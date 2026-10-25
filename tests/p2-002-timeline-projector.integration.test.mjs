@@ -2,40 +2,40 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
-import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import { postgresTimestampToLocalDateTime } from '../app/server/src/platform/postgres-types.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
-} from '../src/p1-003-channel-message-inbox.mjs';
+} from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
   applyServiceIntakeMigration,
   createServiceIntakeProcessor,
-} from '../src/p1-004-service-intake.mjs';
+} from '../app/server/src/p1-004-service-intake.mjs';
 import {
   applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
-} from '../src/p1-005-pilot-ticket-core.mjs';
+} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
   applyTicketStateActionMigration,
   createTicketActionService,
-} from '../src/p1-006-ticket-state-actions.mjs';
+} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
   applyNotificationOutboxMigration,
   createNotificationDeliveryWorker,
   createNotificationOutbox,
-} from '../src/p1-007-notification-outbox.mjs';
-import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
-import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
+} from '../app/server/src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 import {
   applyConversationContractsMigration,
   buildConversationSessionScope,
   buildConversationThreadIdentity,
-} from '../src/p2-001-conversation-contracts.mjs';
+} from '../app/server/src/p2-001-conversation-contracts.mjs';
 import {
   TIMELINE_ERROR_CODES,
   applyTimelineProjectionMigration,
@@ -44,7 +44,7 @@ import {
   createTimelineProjector,
   createTimelineProjectorWorker,
   normalizeTimelineSourceRecord,
-} from '../src/p2-002-timeline-projector.mjs';
+} from '../app/server/src/p2-002-timeline-projector.mjs';
 import {
   databaseUrlForP2002Database,
   withP2002IsolatedDatabase,

@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 interface Fixture {origin:string;cookies:string[];principals:{id:string}[];pool:PostgresPool}
 function obj(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 const input=()=>({schema_version:1,client_command_id:randomUUID(),source:'ON_SITE',description:'T19 合成现场：打印机无法打印',location:{text:'合成值班室',unknown:false},reporter:{verification:'UNVERIFIED',name:'实际报修人T19',contact:'合成内线1919',department:'合成科室'},resolver_team_id:'PILOT_IT'});

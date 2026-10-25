@@ -1,4 +1,4 @@
-import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
+import type {PostgresTransaction} from '../app/server/src/platform/postgres-pool.mjs';
 /** SOURCE contract only. No handler or permission implementation is supplied here. */
 export type IncidentDeliveryPermission='INCIDENT_DELIVERY_RETRY'|'INCIDENT_DELIVERY_RECONCILE';
 export interface IncidentDeliveryControlPermissionPort {

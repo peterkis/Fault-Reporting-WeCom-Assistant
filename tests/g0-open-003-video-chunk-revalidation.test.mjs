@@ -8,7 +8,7 @@ import {
   prepareVideoFixture,
   runVideoChunkProbe,
   uploadVideoInDocumentedLayers,
-} from '../src/g0-open-003-video-chunk-revalidation.mjs';
+} from '../app/server/src/g0-open-003-video-chunk-revalidation.mjs';
 
 const CHUNK_BYTES = 512 * 1024;
 

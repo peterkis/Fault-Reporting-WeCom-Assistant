@@ -17,7 +17,7 @@ test('G2 synthetic wrapper executes runtime tests and keeps source receipts', ()
     import * as cp from 'node:child_process';import {EventEmitter} from 'node:events';import path from 'node:path';import {pathToFileURL} from 'node:url';
     const root=process.cwd(),runtime=path.join(root,'.build/runtime'),writes=[],url=p=>pathToFileURL(path.join(runtime,p)).href;
     const file='tests/p2-g2-directory-boundary.test.mjs',fingerprint='a'.repeat(64);
-    mock.module(url('src/p2-g2-candidate.mjs'),{namedExports:{G2_ROOT:root,g2CandidateInventory:()=>({fingerprint,files:[{path:file,sha256:fingerprint}]})}});
+    mock.module(url('app/server/src/p2-g2-candidate.mjs'),{namedExports:{G2_ROOT:root,g2CandidateInventory:()=>({fingerprint,files:[{path:file,sha256:fingerprint}]})}});
     mock.module('node:fs',{namedExports:{...Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default')),
       readdirSync:p=>{assert.equal(p,path.join(root,'tests'));return [path.basename(file)];},
       mkdirSync:p=>{assert.equal(path.dirname(p),path.join(root,'tmp'));},
@@ -27,7 +27,7 @@ test('G2 synthetic wrapper executes runtime tests and keeps source receipts', ()
       spawn:(command,args,options)=>{assert.equal(options.cwd,runtime);assert.equal(options.env.TS_MIGRATION_TEST_SOURCE_ROOT,root);assert.equal(options.env.TS_MIGRATION_TEST_RUNTIME_ROOT,runtime);
         assert.ok(args.includes(file));for(const arg of args.filter(a=>a.startsWith('--test-reporter-destination=')&&a!=='--test-reporter-destination=stdout'))assert.ok(arg.slice(arg.indexOf('=')+1).startsWith(path.join(root,'tmp')+path.sep));
         const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();queueMicrotask(()=>{child.stdout.emit('data',Buffer.from('# tests 1\\n# pass 1\\n# fail 0\\n# skipped 0\\n# cancelled 0\\n# todo 0\\n'));child.emit('close',0,null);});return child;}}});
-    const {runG2Tests}=await import(url('scripts/p2-g2-synthetic-e2e.mjs'));const result=await runG2Tests({envFile:'synthetic.env'});
+    const {runG2Tests}=await import(url('app/server/scripts/p2-g2-synthetic-e2e.mjs'));const result=await runG2Tests({envFile:'synthetic.env'});
     assert.equal(result.ok,true);assert.equal(writes.length,3);console.log('G2_RUNTIME_TESTS_CANONICAL_RECEIPTS_PASS_NO_REAL_IO');`;
   const result=spawnSync(process.execPath,['--experimental-test-module-mocks','--input-type=module','-e',probe],
     {cwd:original,env:testEnvironment(original,[]),encoding:'utf8',windowsHide:true,timeout:15_000});
@@ -41,14 +41,14 @@ test('P2 staged live checks read canonical source evidence before database gates
       import {pathToFileURL,fileURLToPath} from 'node:url'; import {randomUUID} from 'node:crypto'; import * as fs from 'node:fs/promises';
       const root=process.cwd(),task=${JSON.stringify(task)},runtime=path.join(root,'.build/runtime'),reads=[];
       const url=p=>pathToFileURL(path.join(runtime,p)).href;
-      const config=await import(url('src/p2-'+task+'-live-configuration.mjs'));
+      const config=await import(url('app/server/src/p2-'+task+'-live-configuration.mjs'));
       const state='READY_FOR_TARGETED_LIVE_VALIDATION',hash='a'.repeat(64);
       const report={status:state,runtime_input_sha256:hash,all_automated_checks_passed:true,regression:{pass:523,fail:0,skipped:0,cancelled:0,todo:0},live_validation:'NOT_RUN',second_commit_created:false};
       const exports=Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default'));
       mock.module('node:fs/promises',{namedExports:{...exports,readFile:async file=>{reads.push(file instanceof URL?fileURLToPath(file):String(file));return JSON.stringify(report);}}});
       const suffix=task==='016'?'ticket-lifecycle-workbench':'human-confirmed-incident';
-      mock.module(url('scripts/validate-p2-'+task+'-'+suffix+'.mjs'),{namedExports:{['validateP2'+task]:async()=>({ok:true,state,readiness_evidence_checked:true,runtime_input_sha256:hash})}});
-      mock.module(url('scripts/p2-'+task+'-migrate.mjs'),{namedExports:{['migrateP2'+task]:async()=>({status:'NOT_APPLIED_SYNTHETIC_FIXTURE'})}});
+      mock.module(url('app/server/scripts/validate-p2-'+task+'-'+suffix+'.mjs'),{namedExports:{['validateP2'+task]:async()=>({ok:true,state,readiness_evidence_checked:true,runtime_input_sha256:hash})}});
+      mock.module(url('app/server/scripts/p2-'+task+'-migrate.mjs'),{namedExports:{['migrateP2'+task]:async()=>({status:'NOT_APPLIED_SYNTHETIC_FIXTURE'})}});
       const prefix='P2_'+task+'_',env={...Object.fromEntries(config['P2'+task+'_LIVE_FUSES'].map(k=>[k,'true'])),
         PILOT_DATABASE_URL:'postgres://synthetic.invalid/test',PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-private-key-not-for-logging',
         WECOM_BOT_ID:'synthetic-bot',WECOM_BOT_SECRET:'synthetic-private-bot-secret',WECOM_WS_URL:'wss://synthetic.invalid'};
@@ -56,7 +56,7 @@ test('P2 staged live checks read canonical source evidence before database gates
         [prefix+'TEST_GROUP_TARGET_HASHES']:'b'.repeat(64),[prefix+'REPORTER_ORIGIN']:'https://reporter.invalid',
         [prefix+'REPORTER_ALLOWED_HOSTS']:'reporter.invalid',[prefix+'REPORTER_HMAC_SECRET']:'synthetic-reporter-private-key-0001'});
       if(task==='012')env.P2_012_REPORTER_SCOPE_MODE='APPROVED_GROUP_PARTICIPANTS';
-      const api=await import(url('scripts/p2-'+task+'-live-check.mjs')); const result=await api['checkP2'+task+'Live'](env);
+      const api=await import(url('app/server/scripts/p2-'+task+'-live-check.mjs')); const result=await api['checkP2'+task+'Live'](env);
       assert.deepEqual(reads,[path.join(root,'evidence/p2-'+task+'-automated-readiness-report.json')]);
       assert.equal(result.ok,false); assert.equal(result.error_code,'P2_'+task+'_COMMITTED_'+(task==='016'?'031':'032')+'_REQUIRED');
       assert.equal(result.provider_calls,0);assert.equal(result.listener_started,false);assert.equal(result.network_started,false);
@@ -73,12 +73,12 @@ test('ARCH-005 staged failure receipts target canonical source evidence with exc
     import {pathToFileURL,fileURLToPath} from 'node:url'; import * as fs from 'node:fs/promises';
     const root=process.cwd(),runtime=path.join(root,'.build/runtime'),writes=[],directories=[];
     const url=p=>pathToFileURL(path.join(runtime,p)).href;
-    const pool=await import(url('src/platform/postgres-pool.mjs'));
-    mock.module(url('src/platform/postgres-pool.mjs'),{namedExports:{...pool,createPostgresPool:()=>({connect:async()=>{throw Error('SYNTHETIC_CONNECTION_REFUSED');},end:async()=>{}})}});
+    const pool=await import(url('app/server/src/platform/postgres-pool.mjs'));
+    mock.module(url('app/server/src/platform/postgres-pool.mjs'),{namedExports:{...pool,createPostgresPool:()=>({connect:async()=>{throw Error('SYNTHETIC_CONNECTION_REFUSED');},end:async()=>{}})}});
     const exports=Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default'));
     mock.module('node:fs/promises',{namedExports:{...exports,mkdir:async file=>{directories.push(file instanceof URL?fileURLToPath(file):String(file));},
       writeFile:async(file,text,options)=>{writes.push({file:file instanceof URL?fileURLToPath(file):String(file),record:JSON.parse(text),options});}}});
-    const {reprojectArch005TimeHashes}=await import(url('scripts/arch-005-reproject-time-hashes.mjs'));
+    const {reprojectArch005TimeHashes}=await import(url('app/server/scripts/arch-005-reproject-time-hashes.mjs'));
     await assert.rejects(reprojectArch005TimeHashes({databaseUrl:'postgres://synthetic.invalid/test',approved:false}),/NOT_AUTHORIZED/u);
     assert.equal(writes.length,0);
     await assert.rejects(reprojectArch005TimeHashes({databaseUrl:'postgres://synthetic.invalid/test',approved:true}),/SYNTHETIC_CONNECTION_REFUSED/u);
@@ -102,8 +102,8 @@ test('G2 staged preflight binds the source candidate and reads relative manifest
     const manifestFile = path.join(directory, 'live.json');
     const probe = `
       import assert from 'node:assert/strict'; import path from 'node:path'; import {writeFileSync} from 'node:fs';
-      import {G2_ROOT,g2CandidateInventory,verifyG2Candidate} from './.build/runtime/src/p2-g2-candidate.mjs';
-      import {readG2ManifestFile} from './.build/runtime/scripts/p2-g2-check.mjs';
+      import {G2_ROOT,g2CandidateInventory,verifyG2Candidate} from './.build/runtime/app/server/src/p2-g2-candidate.mjs';
+      import {readG2ManifestFile} from './.build/runtime/app/server/scripts/p2-g2-check.mjs';
       import {configurationFixture} from './.build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs';
       const root=process.cwd(),runtime=path.join(root,'.build/runtime');
       assert.equal(path.resolve(G2_ROOT),root);
@@ -161,7 +161,7 @@ test('P02 affected CLI launchers reach their safety guards from verified artifac
 });
 test('G1 synthetic wrapper runs its nested assembly tests from the staged tree', () => {
   verifyArtifact(original);
-  const result = spawnSync(process.execPath, ['.build/runtime/scripts/p2-g1-synthetic-e2e.mjs'],
+  const result = spawnSync(process.execPath, ['.build/runtime/app/server/scripts/p2-g1-synthetic-e2e.mjs'],
     { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 30_000 });
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -171,7 +171,7 @@ test('G1 synthetic wrapper runs its nested assembly tests from the staged tree',
 test('routed reporter rejects a case trace naming a different execution file',()=>{
   const root=scratch(), log=mkdtempSync(path.join(tmpdir(),'current-case-invalid-'));
   try{
-    const file=path.join(root,'scripts/p2-g2-case-reporter.mjs');
+    const file=path.join(root,'app/server/scripts/p2-g2-case-reporter.mjs');
     writeFileSync(file,readFileSync(file,'utf8').replace("path.relative(process.cwd(),d.file).replaceAll('\\\\','/')", "'tests/not-the-executed-file.mjs'"));
     build(root);
     assert.throws(()=>runSelection(root,select(loadRoutes(root),'selection','canary'),{reportDir:log}),/MIGRATION_CASE_TRACE_INVALID/u);
@@ -246,7 +246,7 @@ function scratch(reference = false): string {
   execFileSync('git',['clone','--quiet','--no-hardlinks',original,root],{windowsHide:true,stdio:'pipe'});
   if(reference)execFileSync('git',['checkout','--quiet','--detach','7eefaa99591bfaa2e787701efd315ff701c51f35'],{cwd:root,windowsHide:true});
   // Overlay deletions as well as additions, so uncommitted renames cannot create dual sources.
-  if (!reference) { const current = new Set(workspaceFiles(original)); for (const relative of workspaceFiles(root)) if (!current.has(relative)) rmSync(path.join(root, relative)); }
+  if (!reference) { const current = new Set(workspaceFiles(original)); for (const relative of workspaceFiles(root)) if (!current.has(relative)) rmSync(path.join(root, relative)); for (const directory of ['src','scripts']) if (!workspaceFiles(original).some(file=>file.startsWith(directory+'/'))) rmSync(path.join(root,directory),{recursive:true,force:true}); }
   for(const relative of reference?[]:workspaceFiles(original)){const target=path.join(root,relative);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(original,relative),target);}
   symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
   return root;
@@ -335,19 +335,19 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     }
   });
   await t.test('current source guards still reject substantive violations in MTS',()=>{
-    alter(root,'src/migration-business-violation.mts',"import pg from 'pg'; const pool = new Pool(); export {pool};",()=>{
-      const result=spawnSync(process.execPath,['scripts/validate-arch-005-time-contract.mjs'],{cwd:root,encoding:'utf8',windowsHide:true});
-      assert.equal(result.status,1);assert.match(result.stdout,/ARCH_005_DIRECT_PG_FACTORY_BYPASS:src\/migration-business-violation.mts/u);
+    alter(root,'app/server/src/migration-business-violation.mts',"import pg from 'pg'; const pool = new Pool(); export {pool};",()=>{
+      const result=spawnSync(process.execPath,['app/server/scripts/validate-arch-005-time-contract.mjs'],{cwd:root,encoding:'utf8',windowsHide:true});
+      assert.equal(result.status,1);assert.match(result.stdout,/ARCH_005_DIRECT_PG_FACTORY_BYPASS:app\/server\/src\/migration-business-violation.mts/u);
     });
   });
   await t.test('candidate binds MTS, declaration and build-control bytes',()=>{
-    const probe="import {g2CandidateInventory} from './.build/runtime/src/p2-g2-candidate.mjs'; console.log(g2CandidateInventory(process.cwd()).fingerprint);";
+    const probe="import {g2CandidateInventory} from './.build/runtime/app/server/src/p2-g2-candidate.mjs'; console.log(g2CandidateInventory(process.cwd()).fingerprint);";
     const fingerprint=()=>execFileSync(process.execPath,['--input-type=module','-e',probe],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
     const before=fingerprint();
-    for(const p of ['src/migration-canary.mts','tests/types/contracts.mts','contracts/time_contracts.d.ts','tsconfig.type-tests.json','tools/ts-migration/resources.json'])alter(root,p,readFileSync(path.join(root,p),'utf8')+'\n// synthetic change',()=>assert.notEqual(fingerprint(),before));
+    for(const p of ['app/server/src/migration-canary.mts','tests/types/contracts.mts','contracts/time_contracts.d.ts','tsconfig.type-tests.json','tools/ts-migration/resources.json'])alter(root,p,readFileSync(path.join(root,p),'utf8')+'\n// synthetic change',()=>assert.notEqual(fingerprint(),before));
   });
   await t.test('browser discovery rejects missing explicit path and retains platform candidates',()=>{
-    const code="import assert from 'node:assert/strict'; import {findSystemBrowser,systemBrowserCandidates} from './tests/helpers/p2-006-browser-harness.mjs'; assert.ok(systemBrowserCandidates.some(p=>p.startsWith('/usr/bin/'))); assert.ok(systemBrowserCandidates.some(p=>p.startsWith('C:'))); assert.throws(()=>findSystemBrowser({executable:'relative invalid'}),/EXPLICIT_BROWSER_INVALID/); assert.throws(()=>findSystemBrowser({candidates:[]}),/SYSTEM_EDGE_OR_CHROME_REQUIRED/); console.log('PASS');";
+    const code="import assert from 'node:assert/strict'; import {findSystemBrowser,systemBrowserCandidates} from './tests/helpers/p2-006-browser-harness.mjs'; delete process.env.TS_MIGRATION_BROWSER_EXECUTABLE; assert.ok(systemBrowserCandidates.some(p=>p.startsWith('/usr/bin/'))); assert.ok(systemBrowserCandidates.some(p=>p.startsWith('C:'))); assert.throws(()=>findSystemBrowser({executable:'relative invalid'}),/EXPLICIT_BROWSER_INVALID/); assert.throws(()=>findSystemBrowser({candidates:[]}),/SYSTEM_EDGE_OR_CHROME_REQUIRED/); console.log('PASS');";
     assert.match(execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:root,encoding:'utf8',windowsHide:true}),/PASS/u);
   });
   await t.test('worker launch rejects absent synthetic database before spawning',()=>{

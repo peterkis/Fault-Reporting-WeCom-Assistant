@@ -7,12 +7,12 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {t21Object} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createRuleFirstOrchestrator} from '../src/p2-015-rule-first-orchestrator.mjs';
-import {createDecisionStore} from '../src/p2-015-decision-store.mjs';
-import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
-import {createServiceIntakeDecisionPort} from '../src/p2-015-service-intake-decision-port.mjs';
-import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004FixedCommunicationPort} from '../src/p2-015-safe-action-executor.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
+import {createManualReviewStore} from '../app/server/src/p2-015-manual-review.mjs';
+import {createServiceIntakeDecisionPort} from '../app/server/src/p2-015-service-intake-decision-port.mjs';
+import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004FixedCommunicationPort} from '../app/server/src/p2-015-safe-action-executor.mjs';
 
 test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journey without implicitly reopening a staff-completed Ticket',
   {timeout:240_000,concurrency:false},async()=>{

@@ -6,10 +6,10 @@ import {
   matchDirectoryProfile,
   normalizeOrganizationTree,
   THIRD_STAFF_DIRECTORY_LIMITS,
-} from '../src/p2-007-staff-directory-contracts.mjs';
-import { createThirdPartyStaffDirectoryAdapter } from '../src/p2-007-third-party-staff-directory-adapter.mjs';
-import { createThirdPartyStaffDirectory } from '../src/p2-007-third-party-staff-directory.mjs';
-import { sha256Canonical } from '../src/p2-007-domain-utils.mjs';
+} from '../app/server/src/p2-007-staff-directory-contracts.mjs';
+import { createThirdPartyStaffDirectoryAdapter } from '../app/server/src/p2-007-third-party-staff-directory-adapter.mjs';
+import { createThirdPartyStaffDirectory } from '../app/server/src/p2-007-third-party-staff-directory.mjs';
+import { sha256Canonical } from '../app/server/src/p2-007-domain-utils.mjs';
 import { syntheticDirectoryTree } from './helpers/p2-007-directory-fixture.mjs';
 
 const USER = Object.freeze({

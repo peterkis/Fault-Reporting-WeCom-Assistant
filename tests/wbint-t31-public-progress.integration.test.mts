@@ -3,12 +3,12 @@ import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:net';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
-import type {P2012RuntimeOptions} from '../src/p2-012-workbench-assembly.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
+import type {P2012RuntimeOptions} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import type {IncidentPublicProgressHostOptions,IncidentPublicProgressInput} from '../contracts/workbench_incident_public_progress_contracts.js';
-import {migrateP2012} from '../scripts/p2-012-migrate.mjs';
-import {migrateIncidentInternalNotes} from '../scripts/incident-internal-notes-migrate.mjs';
+import {migrateP2012} from '../app/server/scripts/p2-012-migrate.mjs';
+import {migrateIncidentInternalNotes} from '../app/server/scripts/incident-internal-notes-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './helpers/p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 

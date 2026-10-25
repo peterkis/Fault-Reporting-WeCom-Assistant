@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {ownerTransferHttp,record,text} from './helpers/t29-owner-transfer-http-fixture.mjs';
-import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
+import {createP2012ReporterTimelineAdapter} from '../app/server/src/p2-012-reporter-timeline-adapter.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import type {PostgresTransaction,PostgresQueryRow} from '../app/server/src/platform/postgres-pool.mjs';
 const input=(version:string,target:string,team:string|null='PILOT_IT')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'OPERATOR_REVIEWED',owner_principal_id:target,owner_team_id:team});
 for(const seam of ['owner-teams','public-progress','progress-deliveries'] as const)test(`T29 current Incident purpose is rechecked after the ${seam} data await`,async()=>{
   await ownerTransferHttp(async({pool,f,confirm,post})=>{

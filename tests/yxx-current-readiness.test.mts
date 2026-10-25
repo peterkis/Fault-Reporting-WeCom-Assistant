@@ -6,14 +6,24 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { testRoots } from './helpers/migration-roots.mjs';
-import { CURRENT_YXX_SCOPE, readCurrentYxxScope } from '../src/yxx-current-readiness-scope.mjs';
-import { checkSS010 } from '../src/yxx-self-service-readiness.mjs';
-import { withScopeCheckout } from './helpers/yxx-current-scope-checkout.mjs';
-import { CURRENT_YXX_POINTER, readCurrentYxxReport, verifyCurrentYxxReportBinding } from '../src/yxx-current-evidence.mjs';
-import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
+import { CURRENT_YXX_SCOPE, LEGACY_YXX_BASE, LEGACY_YXX_SCOPE, readCurrentYxxScope, readLegacyYxxScope } from '../app/server/src/yxx-current-readiness-scope.mjs';
+import { checkSS010 } from '../app/server/src/yxx-self-service-readiness.mjs';
+import { withScopeCheckout,freezeCurrentCandidateFixture } from './helpers/yxx-current-scope-checkout.mjs';
+import { CURRENT_YXX_POINTER, readCurrentYxxReport, verifyCurrentYxxReportBinding } from '../app/server/src/yxx-current-evidence.mjs';
+import { g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
 
 test('current readiness public API resolves its source root when called from compiled runtime', () => {
   assert.equal(checkSS010().status, 'STRUCTURE_VALID_NOT_READY');
+});
+
+test('public environment templates retain UTF8 LF identity across a genuine Git checkout',()=>{
+  withScopeCheckout(root=>{
+    const relative='config_examples/human-workbench.env.example',file=path.join(root,relative),original=readFileSync(file,'utf8');
+    const inventory=g2CandidateInventory(root),entry=inventory.files.find(value=>value.path===relative);assert.ok(entry);assert.equal(entry.encoding,'UTF8_LF');
+    const lf=original.replaceAll('\r\n','\n');writeFileSync(file,lf);assert.equal(g2CandidateInventory(root).fingerprint,inventory.fingerprint);
+    writeFileSync(file,lf.replaceAll('\n','\r\n'));assert.equal(g2CandidateInventory(root).fingerprint,inventory.fingerprint);
+    writeFileSync(file,lf+'\n# actual template content changed\n');assert.notEqual(g2CandidateInventory(root).fingerprint,inventory.fingerprint);
+  });
 });
 
 test('current strict readiness distinguishes a malformed current pointer from absent evidence', () => {
@@ -61,12 +71,13 @@ test('current raw evidence survives Git checkout without newline conversion', ()
 
 test('current strict readiness rejects a report bound to another candidate', () => {
   withScopeCheckout(root => {
+    freezeCurrentCandidateFixture(root);
     const git=(args:string[]):string=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true}).trim();
     const digest=(text:string):string=>createHash('sha256').update(text.replaceAll('\r\n','\n')).digest('hex');
-    const report={schema_version:1,contract:'ADR-0027',run_id:'fixture',tested_head:git(['rev-parse','HEAD']),
+    const report={schema_version:1,contract:'ADR-0045',run_id:'fixture',tested_head:git(['rev-parse','HEAD']),
       tested_tree:git(['rev-parse','HEAD^{tree}']),candidate_fingerprint:g2CandidateInventory(root).fingerprint,
       scope_sha256:digest(readFileSync(path.join(root,CURRENT_YXX_SCOPE),'utf8')),
-      acceptance_sha256:digest(readFileSync(path.join(root,'plans/yxx-current-readiness-acceptance.json'),'utf8'))};
+      acceptance_sha256:digest(readFileSync(path.join(root,'plans/yxx-current-readiness-acceptance.v2.json'),'utf8'))};
     const relative='evidence/yxx-current-fixture/report.json';mkdirSync(path.dirname(path.join(root,relative)),{recursive:true});
     const publish=(value:unknown):void=>{
       const bytes=Buffer.from(JSON.stringify(value));writeFileSync(path.join(root,relative),bytes);
@@ -78,13 +89,29 @@ test('current strict readiness rejects a report bound to another candidate', () 
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_EVIDENCE_INCOMPLETE'});
     const orphan=git(['-c','user.name=Synthetic Fixture','-c','user.email=fixture@example.invalid',
       '-c','commit.gpgsign=false','commit-tree',report.tested_tree,'-m','synthetic non-ancestor negative control']);
-    for(const changed of [{...report,tested_tree:'0'.repeat(40)},{...report,scope_sha256:'0'.repeat(64)},
+    for(const changed of [{...report,contract:'ADR-0027'},{...report,tested_tree:'0'.repeat(40)},{...report,scope_sha256:'0'.repeat(64)},
       {...report,acceptance_sha256:'0'.repeat(64)},{...report,tested_head:orphan},
       {...report,tested_head:'562a96ffdd7148d729ab0eed9d215abe894f12c2',tested_tree:'fc20b1021291aca44b45ba3be461423a61bcee48'}]){
       publish(changed);
       assert.throws(()=>verifyCurrentYxxReportBinding(root,readCurrentYxxReport(root).report),{code:'CURRENT_CANDIDATE_MISMATCH'});
     }
   });
+});
+
+test('the explicit ADR0027 predecessor keeps its 22-file positive and rejects the current 49-file checkout',()=>{
+  const source=testRoots().sourceRoot,root=mkdtempSync(path.join(tmpdir(),'yxx-predecessor-scope-'));
+  const git=(args:string[]):void=>{execFileSync('git',args,{cwd:source,windowsHide:true,stdio:'pipe'});};let attached=false;
+  assert.throws(()=>readLegacyYxxScope(source),{code:'CURRENT_SCOPE_INVALID'});
+  try{
+    git(['worktree','add','--detach',root,LEGACY_YXX_BASE]);attached=true;
+    copyFileSync(path.join(source,LEGACY_YXX_SCOPE),path.join(root,LEGACY_YXX_SCOPE));
+    const legacy=readLegacyYxxScope(root);assert.equal(legacy.contract,'ADR-0027');assert.equal(legacy.migration_files.length,22);
+    copyFileSync(path.join(source,'database/migrations/037_workbench_source_group_names.sql'),path.join(root,'database/migrations/037_workbench_source_group_names.sql'));
+    assert.throws(()=>readLegacyYxxScope(root),{code:'CURRENT_SCOPE_INVALID'});
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-predecessor-scope-'));
+    if(attached)git(['worktree','remove','--force',root]);else rmSync(root,{recursive:true,force:true});
+  }
 });
 
 
@@ -105,7 +132,7 @@ test('current scope rejects enabling AI in the checked default configuration', (
 
 test('current scope keeps SQL content and inventory pinned even when a local manifest is edited', () => {
   withScopeCheckout(root => {
-    assert.equal(readCurrentYxxScope(root).migration_files.length, 22);
+    assert.equal(readCurrentYxxScope(root).migration_files.length, 49);
     const file = path.join(root, 'database/migrations/035_p2_016_workbench_wecom_auth.sql');
     const original = readFileSync(file), changed = Buffer.concat([original, Buffer.from('\n-- unapproved SQL change\n')]);
     const hash = (bytes: Buffer): string => createHash('sha256').update(bytes.toString('utf8').replaceAll('\r\n', '\n')).digest('hex');

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
+import { createRuleEngine } from '../app/server/src/p2-007-rule-engine.mjs';
 import { g2BusinessCounts,g2CountDelta,g2DecisionObservation } from './helpers/p2-g2-gold-observation.mjs';
 const corpus=readFileSync('tests/fixtures/p2-007/multichannel_decision_cases.v1.2.jsonl','utf8').trim().split(/\r?\n/u).map(JSON.parse);
 const ids=[1,2,3,4,6,27,28,29,31,32,33,34].map(n=>'D12-'+String(n).padStart(3,'0'));

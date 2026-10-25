@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 const body=(version:number)=>({client_command_id:randomUUID(),expected_version:version,reason_code:'HUMAN_INTERNAL_REASON',note:'  INTERNAL_T10_BOUNDARY_CANARY：合成人工原因。  ',external_visible:false});
 

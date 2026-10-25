@@ -1,23 +1,23 @@
-import {assertLocalDateTime,shanghaiLocalToEpochMs} from '../../src/platform/time-contract.mjs';
+import {assertLocalDateTime,shanghaiLocalToEpochMs} from '../../app/server/src/platform/time-contract.mjs';
 import {createHash,createHmac,randomBytes} from 'node:crypto';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {createChannelMessageInbox} from '../../src/p1-003-channel-message-inbox.mjs';
-import {createP2016DirectIntakeProcessor} from '../../src/p2-016-direct-intake.mjs';
-import {createP2G1HumanOnlyAssembly} from '../../src/p2-g1-human-only-assembly.mjs';
-import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
-import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
-import {createContactJourneyStore} from '../../src/p2-015-contact-journey.mjs';
-import {migrateWorkbenchSupplementFollowUp} from '../../scripts/workbench-supplement-follow-up-migrate.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createChannelMessageInbox} from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import {createP2016DirectIntakeProcessor} from '../../app/server/src/p2-016-direct-intake.mjs';
+import {createP2G1HumanOnlyAssembly} from '../../app/server/src/p2-g1-human-only-assembly.mjs';
+import {migrateWorkbenchAuth} from '../../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {createWeComWorkbenchAuthentication} from '../../app/server/src/p2-016-workbench-wecom-auth.mjs';
+import {createContactJourneyStore} from '../../app/server/src/p2-015-contact-journey.mjs';
+import {migrateWorkbenchSupplementFollowUp} from '../../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
-import {migrateWorkbenchManualReports} from '../../scripts/workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
-import {migrateWorkbenchFollow} from '../../scripts/workbench-follow-migrate.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
+import {migrateWorkbenchManualReports} from '../../app/server/scripts/workbench-manual-reports-migrate.mjs';
+import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
+import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-migrate.mjs';
 import {withT37Fixture,object,text,type T37Http} from './t37-follow-up-fixture.mjs';
 
 export {object,text};
@@ -169,9 +169,12 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       const deferredInbox=createChannelMessageInbox({pool:base.pool}),deferredProcessor=createP2016DirectIntakeProcessor();
       const deferredAssembly=createP2G1HumanOnlyAssembly({projectAfterCommit:false,operationalIntake:{accept:(input:unknown)=>deferredInbox.accept(input,deferredProcessor)}});
       const createTeamReport=async({project=true}:{project?:boolean}={})=>{
-        const msgid='t40-new-'+randomUUID(),assembly=project?runtime.assembly:deferredAssembly;
+        // This finite fixture owns Core creation after raw ingress. Publish the
+        // original material only after its canonical Ticket exists, so a live
+        // team reader cannot advance past an event whose card is not ready yet.
+        const msgid='t40-new-'+randomUUID(),assembly=deferredAssembly;
         const accepted=object(await assembly.handleFrame({cmd:'aibot_msg_callback',headers:{req_id:msgid},body:{msgid,aibotid:'bot-test',chattype:'single',from:{userid:'t40-reporter-'+randomUUID()},msgtype:'text',text:{content:'新报修：T40合成打印机打印不了。'}}}));
-        assert.equal(accepted.ok,true);const intakeId=text(object(object(accepted.result).intake).id);
+        assert.equal(accepted.ok,true);assert.equal(object(accepted.projection).deferred,true);const intakeId=text(object(object(accepted.result).intake).id);
         const intake=(await base.pool.query<{created_at:string;request_type:string;status:string}>("SELECT to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,request_type,status FROM intake.service_intake WHERE id=$1::uuid",[intakeId])).rows[0];assert.ok(intake);
         assert.equal(intake.request_type,'INCIDENT');assert.equal(intake.status,'RECEIVED');
         const created=await createPilotTicketCore({pool:base.pool}).createForIntake({intakeId,occurredAt:assertLocalDateTime(intake.created_at),traceId:msgid});assert.ok(created.ticket);

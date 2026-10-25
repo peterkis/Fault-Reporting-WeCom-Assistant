@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 import {withT08Fixture,rows} from './helpers/t08-fixture.mjs';
 const release=(version:number)=>({client_command_id:randomUUID(),expected_version:version,reason_code:'WORKBENCH_UNASSIGN',reason:'当前尚未开始，交回调度安排。',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
 

@@ -5,8 +5,8 @@ import {writeFile,readFile,unlink,mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createWorkbenchAttachmentStore} from '../src/workbench-attachment-store.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createWorkbenchAttachmentStore} from '../app/server/src/workbench-attachment-store.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withT16Fixture,T16_PNG} from './helpers/wbint-t16-fixture.mjs';
 import type {AttachmentPage,AttachmentStore,StoredAttachment} from '../contracts/workbench_attachment_contracts.js';
 test('attachment metadata rechecks parent READ in the final official Session statement after its database wait',async()=>{

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withG2Runtime,G2_RULE_FLAGS} from './helpers/p2-g2-runtime-harness.mjs';
-import {createP2016OrchestrationWorker} from '../src/p2-016-orchestration-adapters.mjs';
+import {createP2016OrchestrationWorker} from '../app/server/src/p2-016-orchestration-adapters.mjs';
 import {g2BusinessCounts} from './helpers/p2-g2-gold-observation.mjs';
 
 test('D12-057 real rollback after notification append leaves accepted Inbox but no Ticket/card delivery',async t=>{

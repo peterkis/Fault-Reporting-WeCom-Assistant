@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
-import { createP2016RealtimeProjector } from '../src/p2-016-realtime-projector.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
+import { createP2016RealtimeProjector } from '../app/server/src/p2-016-realtime-projector.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
-import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createServiceIntakeProcessor } from '../app/server/src/p1-004-service-intake.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
+import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-review-facade.mjs';
 const flags={RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true};
 
 test('P2-016 real-format group wakeup and direct description remain one Journey through public queries',async()=>{

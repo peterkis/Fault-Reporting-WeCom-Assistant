@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT32Fixture,t32Record,t32Text} from './helpers/t32-notification-exception-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {createCommunicationSenderPort} from '../src/p2-004-communication-sender-port.mjs';
-import {createIncidentPublicProgressAdmission} from '../src/p2-012-public-progress-admission.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../app/server/src/p2-004-communication-sender-port.mjs';
+import {createIncidentPublicProgressAdmission} from '../app/server/src/p2-012-public-progress-admission.mjs';
 
 test('T32 Incident exception rows preserve lifecycle and public purpose boundaries before pagination',{timeout:240000},async()=>{
   await withT32Fixture(async f=>{

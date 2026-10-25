@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {http,rows,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
 test('self takeover preserves lawful active states and nullable historical cycles while rejecting ownerless, reopened, terminal, no-op and illegal starts',async()=>{

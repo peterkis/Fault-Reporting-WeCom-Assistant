@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2G1HumanOnlyAssembly } from '../src/p2-g1-human-only-assembly.mjs';
-import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
-import { createP2016DirectIntakeProcessor } from '../src/p2-016-direct-intake.mjs';
+import { createP2G1HumanOnlyAssembly } from '../app/server/src/p2-g1-human-only-assembly.mjs';
+import { createChannelMessageInbox } from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createP2016DirectIntakeProcessor } from '../app/server/src/p2-016-direct-intake.mjs';
 
 test('G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay',async t=>{
   await withG2Runtime(async f=>{

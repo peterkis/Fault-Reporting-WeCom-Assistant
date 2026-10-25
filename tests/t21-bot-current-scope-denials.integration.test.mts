@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT21DraftFixture,t21Object,t21FeedbackCommand,t21Send,t21Config,t21Mapping,t21OAuthOptions} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {browser,post,input,origin,secret,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 
 test('current approved App ownership rejects another member, wrong Bot, Web ref, legacy cookie, OAuth/config mismatch and an old mapping under a new config',async()=>{
  await withT21DraftFixture(async f=>{

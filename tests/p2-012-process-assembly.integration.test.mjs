@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createP2012LiveCluster } from '../src/p2-012-live-cluster.mjs';
-import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { createP2012LiveCluster } from '../app/server/src/p2-012-live-cluster.mjs';
+import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 

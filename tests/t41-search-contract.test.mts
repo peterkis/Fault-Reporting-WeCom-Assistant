@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseSearchRequest,normalizeSearchCriteria,searchCriteriaKey,searchParameters,SearchInputError} from '../src/workbench-search-contracts.mjs';
+import {parseSearchRequest,normalizeSearchCriteria,searchCriteriaKey,searchParameters,SearchInputError} from '../shared/workbench-search-contracts.mjs';
 
 test('search canonicalizes complete criteria without treating literal wildcard characters as a pattern',()=>{
  const raw=new URLSearchParams('q=%20%25_%20&sources=WECOM_GROUP,WECOM_DIRECT&statuses=QUEUED,NEW&limit=2');

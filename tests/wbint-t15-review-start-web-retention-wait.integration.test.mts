@@ -3,10 +3,10 @@ import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
-import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 
 interface Fixture {pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string;requestRef?:string}}[]}
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}

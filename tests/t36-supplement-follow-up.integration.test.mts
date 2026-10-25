@@ -1,5 +1,5 @@
 import {test} from 'node:test';
-import {migrateWorkbenchSupplementFollowUp} from '../scripts/workbench-supplement-follow-up-migrate.mjs';
+import {migrateWorkbenchSupplementFollowUp} from '../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
 import {request as requestHttp} from 'node:http';
 // The fixture deliberately restarts its App on the same port. Each test-owned
 // request uses its own connection instead of retaining the stopped App's socket.
@@ -17,10 +17,10 @@ function ownedHttp(url:string,options:{method?:string;headers:Record<string,stri
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createYxxSelfServiceAuthorization} from '../src/yxx-self-service-authorization.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createYxxSelfServiceAuthorization} from '../app/server/src/yxx-self-service-authorization.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
 import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUpResult} from '../contracts/workbench_supplement_follow_up_contracts.js';
 import type {PersonalReadPage} from '../contracts/workbench_personal_read_contracts.js';
 

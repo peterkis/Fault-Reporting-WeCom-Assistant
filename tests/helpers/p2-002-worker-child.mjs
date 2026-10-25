@@ -1,4 +1,4 @@
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 import { takeCoverage } from 'node:v8';
 import {
   TIMELINE_ERROR_CODES,
@@ -6,7 +6,7 @@ import {
   createTimelineProjector,
   createTimelineProjectorWorker,
   normalizeTimelineSourceRecord,
-} from '../../src/p2-002-timeline-projector.mjs';
+} from '../../app/server/src/p2-002-timeline-projector.mjs';
 
 const MODES = new Set(['normal', 'block-before-commit', 'block-after-commit']);
 const DATABASE_NAME_PATTERN = /^p2_002_[a-z0-9]+_[a-f0-9_]+$/u;

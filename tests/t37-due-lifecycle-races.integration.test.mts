@@ -3,10 +3,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createRealtimeEventStore} from '../src/p2-003-realtime-event-log.mjs';
-import {createPilotWorkbenchAuthorizationAdapter} from '../src/p2-006-workbench-authorization.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createRealtimeEventStore} from '../app/server/src/p2-003-realtime-event-log.mjs';
+import {createPilotWorkbenchAuthorizationAdapter} from '../app/server/src/p2-006-workbench-authorization.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withT37Fixture,object,rows,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
 
 const past='2020-01-02 09:30:00',future='2030-01-02 09:30:00';

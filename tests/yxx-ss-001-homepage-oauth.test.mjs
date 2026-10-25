@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
-import {createConversationWorkbenchHttpServer} from '../src/p2-006-workbench-http.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createWeComOAuthHttp} from '../src/p2-g2-wecom-oauth-http.mjs';
+import {createConversationWorkbenchHttpServer} from '../app/server/src/p2-006-workbench-http.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createWeComOAuthHttp} from '../app/server/src/p2-g2-wecom-oauth-http.mjs';
 
 const origin='https://entry.test';
 const app=oauth=>createConversationWorkbenchHttpServer({authenticate:async()=>null,queryService:{},commandFacade:{},publicOrigin:origin,

@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createServer } from 'node:net';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016Runtime } from '../src/p2-016-runtime.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016Runtime } from '../app/server/src/p2-016-runtime.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 test('Real DB internal browser traverses every user lifecycle action, transfer and atomic takeover/accept',{timeout:120000},async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016uibiz',run:async({pool,databaseUrl})=>{

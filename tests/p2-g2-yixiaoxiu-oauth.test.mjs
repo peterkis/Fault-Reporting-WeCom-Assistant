@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 
 const config={enabled:true,corpId:'synthetic-corp',agentId:'1000002',publicOrigin:'https://entry.test',resolveCode:async()=>({userid:'synthetic-A'})};
 const state=start=>new URL(start.location).searchParams.get('state');

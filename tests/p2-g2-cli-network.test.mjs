@@ -5,15 +5,15 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { G2_ROOT, g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
-import { minimalG2Environment } from '../src/p2-g2-validation-config.mjs';
-import { installG2NetworkBoundary, probeG2NetworkBoundary } from '../src/p2-g2-network-boundary.mjs';
-import { loadG2PrivateEnvironment } from '../scripts/p2-g2-check.mjs';
+import { G2_ROOT, g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
+import { minimalG2Environment } from '../app/server/src/p2-g2-validation-config.mjs';
+import { installG2NetworkBoundary, probeG2NetworkBoundary } from '../app/server/src/p2-g2-network-boundary.mjs';
+import { loadG2PrivateEnvironment } from '../app/server/scripts/p2-g2-check.mjs';
 import { testRoots } from './helpers/migration-roots.mjs';
-import { g2SourceBinding } from '../src/p2-g2-evidence-files.mjs';
+import { g2SourceBinding } from '../app/server/src/p2-g2-evidence-files.mjs';
 
 const { sourceRoot, runtimeRoot } = testRoots();
-const runtimeScript = file => path.join(runtimeRoot, 'scripts', file);
+const runtimeScript = file => path.join(runtimeRoot, 'app/server/scripts', file);
 
 test('process HTTP policy permits owned health traffic and blocks model endpoints, redirects and option overrides',async()=>{
   let requests=0;const server=http.createServer((req,res)=>{requests++;if(req.url==='/redirect'){res.writeHead(302,{location:'https://api.openai.com/v1/models'});res.end();}else res.end('ready');});

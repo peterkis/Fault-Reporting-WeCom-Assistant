@@ -31,9 +31,16 @@ test('raw-off UNKNOWN retains the original capture and mounted controller but it
    const closed=await s.b.get(s.path);assert.equal(closed.status,200);assert.equal(closed.value.status,'CLOSED');assert.equal(closed.value.version,version(initial.version)+2);
    assert.equal((await f.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.staff_completion_notification_commitment WHERE ticket_id=$1::uuid',[s.first.ticket.id])).rows[0]?.n,1);
    drop=false;
-   // A public legacy refresh re-reads the shared context and removes all new completion actions; the T12 controller must remain mounted.
-   await browser.evaluate("document.querySelector('[data-action=refresh-completion]').click()");await browser.waitFor(`document.querySelector('.ticket-takeover-completion-version')?.textContent.includes('工单版本 ${version(initial.version)+2}')`);
+   // This profile disables notes and keeps workflow refresh controls hidden in
+   // UNKNOWN. Use the current public board READ and the original browser's Ticket
+   // READ; neither is allowed to replace its mounted private command capture.
+   await browser.evaluate("(()=>{globalThis.__t12Mounted=document.querySelector('.ticket-takeover-completion');const button=[...document.querySelectorAll('.tools button')].find(button=>button.textContent.includes('刷新'));if(!button)throw Error('T12_PUBLIC_BOARD_REFRESH_REQUIRED');button.click();})()");
+   const browserCurrent=object(await browser.evaluate(`(async()=>{const response=await fetch(${JSON.stringify(s.path)});const value=await response.json();return {status:response.status,ticket_status:value.status,version:value.version};})()`));
+   assert.deepEqual(browserCurrent,{status:200,ticket_status:'CLOSED',version:version(initial.version)+2});
+   assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover-completion')===globalThis.__t12Mounted"),true);
+   assert.deepEqual(object(rows(await browser.evaluate('globalThis.__t12Posts'))[0]?.body),original,'a current CLOSED fact must not replace the original UUID, version, round or private capture');
    assert.equal(await browser.evaluate("document.querySelector('#takeover-completion-process').value"),'T12_RAW_OFF_CAPTURE_CANARY');assert.equal(await browser.evaluate("document.querySelector('[data-action=takeover-and-complete]').disabled"),true);
+   assert.equal(await browser.evaluate("document.querySelector('[data-action=check-takeover-completion]').disabled"),true);
    await browser.evaluate("document.querySelector('[data-action=check-takeover-completion]').click()");
    await browser.waitFor("globalThis.__t12Posts.length>1||document.querySelector('[data-action=check-takeover-completion]')?.disabled===true");
    assert.equal(rows(await browser.evaluate('globalThis.__t12Posts')).length,1,'checking an UNKNOWN is never a business POST, even with the same original UUID');

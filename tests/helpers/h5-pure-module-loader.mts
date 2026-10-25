@@ -14,12 +14,12 @@ let nextLoader=0;
 export interface H5ModuleLoaderOptions {overrides?:Readonly<Record<string,string>>}
 /** Loads the actual pure frontend source, with one isolated dependency graph per test. */
 export function createH5PureModuleLoader({overrides={}}:H5ModuleLoaderOptions={}){
- const identity=++nextLoader,root=resolve(sourceRoot,'h5/src'),cache=new Map<string,Promise<string>>();
+ const identity=++nextLoader,root=resolve(sourceRoot,'app/h5/src'),cache=new Map<string,Promise<string>>();
  async function catalogUrl(specifier:string):Promise<string>{
   const known=cache.get(specifier);if(known)return known;
   const task=(async()=>{
    const catalog=catalogs.get(specifier);if(!catalog)throw new Error('H5_CATALOG_NAMESPACE_UNSUPPORTED');
-   const compiler:unknown=await import(await moduleUrl(resolve(sourceRoot,'h5/compile-i18n.ts')));
+   const compiler:unknown=await import(await moduleUrl(resolve(sourceRoot,'app/h5/compile-i18n.ts')));
    if(typeof compiler!=='object'||compiler===null||!('catalogModuleCode'in compiler)||typeof compiler.catalogModuleCode!=='function')throw new Error('H5_CATALOG_COMPILER_REQUIRED');
    const output:unknown=compiler.catalogModuleCode(await readFile(resolve(root,catalog.file),'utf8'),catalog.namespace);
    if(typeof output!=='string')throw new Error('H5_CATALOG_MODULE_REQUIRED');

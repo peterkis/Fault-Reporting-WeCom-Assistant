@@ -3,8 +3,8 @@ import {test} from 'node:test';
 import {withT26Fixture,t26Deliveries} from './helpers/t26-group-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
 import type {P2016TicketDetail} from '../contracts/p2_016_contracts.js';
 
 test('a 20-candidate page cannot permanently hide the completion node of its last real cycle',{timeout:240000},async()=>{

@@ -5,10 +5,10 @@ import {mkdir,mkdtemp,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {Server} from 'node:http';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
 interface Fixture {pool:PostgresPool;origin:string;backendOrigin?:string;sessionId:string;certificateSpki:string;browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string;wecom_user_id:string;display_name:string}[];runtime:{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 const inputExpression=(note:string)=>`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(note)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.setSelectionRange(2,6);})()`;

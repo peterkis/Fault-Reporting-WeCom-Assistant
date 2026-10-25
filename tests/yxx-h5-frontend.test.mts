@@ -16,7 +16,7 @@ async function pendingActionImport(t:TestContext){
  let release:()=>void=()=>{throw new Error('Action import gate is not ready');},reject:(reason:Error)=>void=()=>{throw new Error('Action import gate is not ready');},entered:()=>void=()=>{throw new Error('Action import observation is not ready');};
  const gate=new Promise<void>((resolve,fail)=>{release=resolve;reject=fail;}),started=new Promise<void>(resolve=>{entered=resolve;}),key='__h5ActionImportProbe'+String(++actionImportProbeId);void gate.catch(()=>undefined);
  Object.defineProperty(globalThis,key,{configurable:true,value:{wait:()=>{entered();return gate;}}});t.after(()=>{release();Reflect.deleteProperty(globalThis,key);});
- const actual=await readFile(resolve(sourceRoot,'h5/src/api/action-client.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'api/action-client.ts':`await globalThis[${JSON.stringify(key)}].wait();\n`+actual}}),client=await import(await loader.moduleUrl('api/client.ts')),calls:{url:string;options:RequestInit}[]=[];
+ const actual=await readFile(resolve(sourceRoot,'app/h5/src/api/action-client.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'api/action-client.ts':`await globalThis[${JSON.stringify(key)}].wait();\n`+actual}}),client=await import(await loader.moduleUrl('api/client.ts')),calls:{url:string;options:RequestInit}[]=[];
  t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{calls.push({url:String(input),options});return Response.json(actionProbeReceipt);});
  const loading=async(pending:Promise<unknown>)=>{await Promise.race([started,pending.then(()=>{throw new Error('Action completed before its actual module gate');},()=>{throw new Error('Action failed before its actual module gate');})]);assert.equal(calls.length,0);};
  return{client,calls,release,reject,loading};
@@ -57,7 +57,7 @@ test('H5 optional display query discards a late response after cancellation or a
 });
 
 test('H5 frozen Stitch HTML and PNG remain byte identical to their recorded source hashes',async()=>{
- const baseline=resolve(sourceRoot,'h5/design-baseline');
+ const baseline=resolve(sourceRoot,'app/h5/design-baseline');
  const manifest=JSON.parse(await readFile(resolve(baseline,'sha256.json'),'utf8'));
  assert.equal(manifest.project_id,'1016264531564507497');assert.equal(manifest.files.length,16);
  for(const entry of manifest.files){assert.match(entry.file,/^[a-z0-9]+\.(html|png)$/);assert.equal(createHash('sha256').update(await readFile(resolve(baseline,entry.file))).digest('hex'),entry.sha256,entry.file);}
@@ -127,17 +127,17 @@ test('H5 greeting periods translate with a member name in Simplified Chinese and
  }
 });
 
-test('H5 official compiled catalogs preserve all 412 bilingual messages and their interpolation',async t=>{
+test('H5 official compiled catalogs preserve all 444 bilingual messages and their interpolation',async t=>{
  const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),language=i18n.language;
  const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts'};let count=0;
  for(const[namespace,path]of Object.entries(sources)){
-  const raw=await readFile(resolve(sourceRoot,'h5/src',path),'utf8'),compiled=compileH5Catalog(raw,namespace),values=await import(await loader.moduleUrl(path));assert.deepEqual(Object.keys(values.en).sort(),Object.keys(values.zh).sort());
+  const raw=await readFile(resolve(sourceRoot,'app/h5/src',path),'utf8'),compiled=compileH5Catalog(raw,namespace),values=await import(await loader.moduleUrl(path));assert.deepEqual(Object.keys(values.en).sort(),Object.keys(values.zh).sort());
   for(const[lng,source,catalog]of [['en',values.en,compiled.en],['zh-CN',values.zh,compiled.zh]])for(const[key,message]of Object.entries(source)){
    assert.equal(typeof message,'string');if(typeof message!=='string')assert.fail('Catalog must remain string literals');const parameters:Record<string,string>={};for(const match of message.matchAll(/\{\{\s*([\w]+)\s*\}\}/gu)){const name=match[1];assert.ok(name);parameters[name]='SYNTHETIC <'+name+'&>';}
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,412);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 206 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,444);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 222 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
@@ -199,7 +199,7 @@ test('H5 actual greeting subscription owns one boundary timer and releases hidde
 });
 
 test('H5 greeting state and its actual effect stay within the current Home heading leaf',async t=>{
- const actual=await readFile(resolve(sourceRoot,'h5/src/hooks/useGreeting.ts'),'utf8'),home=createSourceFile('Home.tsx',await readFile(resolve(sourceRoot,'h5/src/pages/Home.tsx'),'utf8'),ScriptTarget.Latest,true,ScriptKind.TSX);
+ const actual=await readFile(resolve(sourceRoot,'app/h5/src/hooks/useGreeting.ts'),'utf8'),home=createSourceFile('Home.tsx',await readFile(resolve(sourceRoot,'app/h5/src/pages/Home.tsx'),'utf8'),ScriptTarget.Latest,true,ScriptKind.TSX);
  const functions=home.statements.filter(isFunctionDeclaration),heading=functions.find(node=>node.name?.text==='GreetingHeading'),page=functions.find(node=>node.name?.text==='Home');assert.ok(heading?.body);assert.ok(page?.body);
  const count=(node:Node,match:(value:Node)=>boolean)=>{let total=0;const visit=(value:Node)=>{if(match(value))total++;forEachChild(value,visit);};visit(node);return total;};
  const callsGreeting=(node:Node)=>isCallExpression(node)&&isIdentifier(node.expression)&&node.expression.text==='useGreeting';
@@ -441,7 +441,7 @@ test('H5 detail draft guard layout-effect closure protects dirty input and clean
  const descriptors=new Map(['document','window'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)])),dataset:Record<string,string>={},events=new EventTarget();
  Object.defineProperties(globalThis,{document:{configurable:true,value:{documentElement:{dataset,removeAttribute(name:string){assert.equal(name,'data-h5-detail-draft');delete dataset.h5DetailDraft;}}}},window:{configurable:true,value:events}});
  const effectURL='data:text/javascript;base64,'+Buffer.from("let pending;export function useLayoutEffect(effect){pending=effect;}export function take(){const effect=pending;pending=undefined;if(!effect)throw new Error('Layout effect was not registered');return effect;}").toString('base64');
- const actual=await readFile(resolve(sourceRoot,'h5/src/hooks/useDetailDraftGuard.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'hooks/useDetailDraftGuard.ts':actual.replace("'react'",JSON.stringify(effectURL))}});
+ const actual=await readFile(resolve(sourceRoot,'app/h5/src/hooks/useDetailDraftGuard.ts'),'utf8'),loader=createH5PureModuleLoader({overrides:{'hooks/useDetailDraftGuard.ts':actual.replace("'react'",JSON.stringify(effectURL))}});
  type LayoutEffect=()=>void|(()=>void);
  const effects:{take:()=>LayoutEffect}=await import(effectURL),guard=await import(await loader.moduleUrl('hooks/useDetailDraftGuard.ts')),reload=await import(await loader.moduleUrl('lib/reload.ts'));
  let cleanup:(()=>void)|undefined;

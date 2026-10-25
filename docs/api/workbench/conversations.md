@@ -4,7 +4,7 @@
 
 2026-10-17 会话增量：[联系人收件箱、相关主题与显式聊天投影](conversation-inbox.md)使用独立默认关闭开关；本页原默认接口与历史验证记录保持原合同。
 
-宿主：W。调用方：[既有会话 UI](../../../web/p2-workbench/workbench.js)。实现：[HTTP 路由](../../../src/p2-006-workbench-http.mts)、[query](../../../src/p2-006-workbench-query.mts)、[command facade](../../../src/p2-006-workbench-command-facade.mts)、[授权](../../../src/p2-006-workbench-authorization.mts)。工厂使用enabled参数；持久政策Flag为默认false的 `HUMAN_WORKBENCH_V2_ENABLED`，获授权G1装配显式enabled:true。消息外发还受通信/实际sender授权和开关约束。
+宿主：W。调用方：[既有会话 UI](../../../web/p2-workbench/workbench.js)。实现：[HTTP 路由](../../../app/server/src/p2-006-workbench-http.mts)、[query](../../../app/server/src/p2-006-workbench-query.mts)、[command facade](../../../app/server/src/p2-006-workbench-command-facade.mts)、[授权](../../../app/server/src/p2-006-workbench-authorization.mts)。工厂使用enabled参数；持久政策Flag为默认false的 `HUMAN_WORKBENCH_V2_ENABLED`，获授权G1装配显式enabled:true。消息外发还受通信/实际sender授权和开关约束。
 
 ## 查询入口
 
@@ -70,7 +70,7 @@ Origin: <workbench-origin>
 | `POST /api/deliveries/{deliveryId}/retry` | `reason_code?` | 200，底层 delivery control 结果 |
 | `POST /api/deliveries/{deliveryId}/reconcile` | `reason_code` 和 `resolution` 必需；`CONFIRMED_SENT\|CONFIRMED_NOT_SENT_REQUEUE\|CANCEL` | 200，显式核对结果 |
 
-不要求 If-Match。实现：[delivery control](../../../src/p2-006-workbench-delivery-control.mts)。PENDING 可幂等 no-op；普通 retry 不处理 UNKNOWN/RECONCILIATION_REQUIRED，ADMIN 才可显式 reconcile。Ticket 通知另用 [Ticket delivery 路由](tickets.md)，不要混用两个资源域。
+不要求 If-Match。实现：[delivery control](../../../app/server/src/p2-006-workbench-delivery-control.mts)。PENDING 可幂等 no-op；普通 retry 不处理 UNKNOWN/RECONCILIATION_REQUIRED，ADMIN 才可显式 reconcile。Ticket 通知另用 [Ticket delivery 路由](tickets.md)，不要混用两个资源域。
 
 ## 失败与限制
 
@@ -117,7 +117,7 @@ POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie
 
 闭合 Schema：[文本命令](../../../contracts/workbench_conversation_text_command.schema.json)、[安全收据](../../../contracts/workbench_conversation_command_receipt.schema.json)、[工作区详情](../../../contracts/workbench_conversation_workspace.schema.json)、[工作区分页](../../../contracts/workbench_conversation_workspace_page.schema.json)、[材料分页](../../../contracts/workbench_conversation_item_page.schema.json)、[精确投递分页](../../../contracts/workbench_conversation_delivery_page.schema.json)。材料的 RESTRICTED visibility 沿既有 ADMIN audience；Schema 取值不授予额外读取权。
 
-关闭新workspace选项可回退，保留已提交的Control/Communication/Delivery事实与旧获权profile。源码：[workspace](../../../src/workbench-conversations.mts)、[production UI](../../../web/admin-workbench/src/features/conversations/Conversations.tsx)、[types](../../../contracts/workbench_conversation_workspace_contracts.d.ts)。当前实际测试与精确候选/资源证据见 [T22执行记录](../../../plans/admin-workbench-integration/execution/t22.md)；不代表真实服务发送、部署或Gate批准。
+关闭新workspace选项可回退，保留已提交的Control/Communication/Delivery事实与旧获权profile。源码：[workspace](../../../app/server/src/workbench-conversations.mts)、[production UI](../../../app/pc-admin/src/features/conversations/Conversations.tsx)、[types](../../../contracts/workbench_conversation_workspace_contracts.d.ts)。当前实际测试与精确候选/资源证据见 [T22执行记录](../../../plans/admin-workbench-integration/execution/t22.md)；不代表真实服务发送、部署或Gate批准。
 
 2026-10-10 本地整票验证的实际源码为 `06f3c880c6d759497eb68f44a8865a3c45d1fff3`，制品 manifest `7f7766c7eb05f675d7cd88028e18169034886de3bc013b17214e34a1fa7f5277`。原九文件22项、相关既有14文件46项和有限工具保护原生27/18/1项均通过；回复终态使用隔离PG与明确的合成Sender Port，实际SSE及当前授权GET来自生产bundle/真实loopback HTTP。默认关闭、单一事实源及停止线保持。此文档后继只记录原结果，不重建或重绑被测源码；完整原报告、失败与资源清理指针见执行记录。
 

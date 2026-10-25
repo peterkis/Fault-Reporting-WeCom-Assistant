@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2012NotificationPolicy } from '../src/p2-012-notification-policy.mjs';
-import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
-import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
-import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
+import { createP2012NotificationPolicy } from '../app/server/src/p2-012-notification-policy.mjs';
+import { createP2016WeComSender } from '../app/server/src/p2-016-wecom-sender.mjs';
+import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
 
 for(const chatType of ['group','single'])test('original Ticket notification source '+chatType,async t=>{
   await withG2Runtime(async f=>{

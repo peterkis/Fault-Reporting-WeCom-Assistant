@@ -4,13 +4,13 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {migrateCurrentBaseline} from '../scripts/migrate-current-baseline.mjs';
-import {migrateYxxSelfService,yxxCatalogInventory,validateYxxCatalog} from '../scripts/yxx-self-service-migrate.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {g2CandidateInventory,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES} from '../src/p2-g2-candidate.mjs';
+import {migrateCurrentBaseline} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {migrateYxxSelfService,yxxCatalogInventory,validateYxxCatalog} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
+import {g2CandidateInventory,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES} from '../app/server/src/p2-g2-candidate.mjs';
 import {randomUUID} from 'node:crypto';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxMemberCommandContext} from '../app/server/src/yxx-self-service-command.mjs';
 
 test('SS-009 catalog rejects weakened CHECK despite preserved names and fragments',async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009schema',run:async({pool,databaseUrl,observeResource})=>{

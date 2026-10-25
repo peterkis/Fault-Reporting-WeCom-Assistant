@@ -1,6 +1,6 @@
 import {withT12Fixture} from './t12-completion-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
 
 /** Additional public HTTP profiles; the original first fixture remains byte frozen. */
 export async function withT12Profile(run:(context:T11Fixture)=>Promise<void>,{

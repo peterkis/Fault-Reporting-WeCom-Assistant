@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
 
 test('deferred history can read a later current binding without rewriting history', async () => {
   const ticketId=randomUUID(), hash='e'.repeat(64);

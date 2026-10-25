@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { withG2Runtime, G2_RULE_FLAGS } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
 
 async function counts(pool) {
   return (await pool.query(`SELECT

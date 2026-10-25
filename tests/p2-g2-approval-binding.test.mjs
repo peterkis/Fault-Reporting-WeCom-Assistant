@@ -4,9 +4,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
-import { verifyG2ApprovalFile, g2ApprovalScopeHash, G2_CANDIDATE_ROOTS, G2_CANDIDATE_FILES, g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { createG2ProviderGate } from '../src/p2-g2-send-guard.mjs';
+import { verifyG2ApprovalFile, g2ApprovalScopeHash, G2_CANDIDATE_ROOTS, G2_CANDIDATE_FILES, g2CandidateInventory } from '../app/server/src/p2-g2-candidate.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { createG2ProviderGate } from '../app/server/src/p2-g2-send-guard.mjs';
 
 test('a file mentioning only run and candidate cannot approve an unbound scope', t => {
   const root = mkdtempSync(path.join(tmpdir(), 'g2-approval-negative-'));

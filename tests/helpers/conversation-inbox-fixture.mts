@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../src/p2-001-conversation-contracts.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../app/server/src/p2-001-conversation-contracts.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {appendT22Item} from './wbint-t22-fixture.mjs';
-import {createContactJourneyStore,MockResolvedDirectory,reporterIdentityHash} from '../../src/p2-015-contact-journey.mjs';
-import {snapshotReporterProfile} from '../../src/p2-015-reporter-profile.mjs';
-import {hmacIdentity,safeHash} from '../../src/p2-015-domain-contracts.mjs';
-import {transactionP2016} from '../../src/p2-016-domain-contracts.mjs';
+import {createContactJourneyStore,MockResolvedDirectory,reporterIdentityHash} from '../../app/server/src/p2-015-contact-journey.mjs';
+import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-profile.mjs';
+import {hmacIdentity,safeHash} from '../../app/server/src/p2-015-domain-contracts.mjs';
+import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
 export const INBOX_IDENTITY_KEY='conversation-inbox-synthetic-key-v1';
 export interface InboxSession {id:string;intakeId:string;ticketId:string;reporter:string;rowVersion:number;threadId:string;bot:string;group:string|null;chatType:'group'|'single'}
 export async function addInboxSession(pool:PostgresPool,{reporter,group,bot='t22-synthetic-bot',text='合成独立服务主题',status='OPEN'}:{reporter:string;group:string|null;bot?:string;text?:string;status?:'OPEN'|'ENDED'}):Promise<InboxSession>{
@@ -26,7 +26,9 @@ export async function addInboxSession(pool:PostgresPool,{reporter,group,bot='t22
 }
 export async function attachInboxJourney(pool:PostgresPool,session:InboxSession,{journeyId,name='同名报修人'}:{journeyId?:string;name?:string}={}):Promise<string>{
   return transactionP2016(pool,async tx=>{
-    const clock=(await tx.query<{at:string;epoch:string;until:string;until_epoch:string}>("SELECT platform.local_now() AS at,platform.physical_epoch_ms()::text AS epoch,platform.local_now()+interval '30 days' AS until,(platform.physical_epoch_ms()+2592000000)::text AS until_epoch")).rows[0];assert.ok(clock);
+    const clock=(await tx.query<{at:string;epoch:string;until:string;until_epoch:string}>(`WITH clock AS MATERIALIZED (SELECT platform.physical_epoch_ms() AS epoch)
+      SELECT platform.local_from_epoch_ms(epoch) AS at,epoch::text,
+        platform.local_from_epoch_ms(epoch+2592000000) AS until,(epoch+2592000000)::text AS until_epoch FROM clock`)).rows[0];assert.ok(clock);
     const reporterHash=reporterIdentityHash({provider:'WECOM_AIBOT',bot_id:session.bot,reporter_external_id:session.reporter,hmac_key:INBOX_IDENTITY_KEY}),store=createContactJourneyStore();
     let id=journeyId;
     if(!id){const resolved=await MockResolvedDirectory({contact:{name},memberships:[{department_ref:'synthetic-dept',name:'合成信息科'}]}).resolve({});assert.equal(resolved.status,'RESOLVED');

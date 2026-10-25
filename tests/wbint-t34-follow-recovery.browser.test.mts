@@ -6,9 +6,9 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Cookie=NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>[number];
 interface Fixture {runtime:P2016EnabledRuntime;principals:{id:string}[];pool:PostgresPool;origin:string;cookies:string[];browserCookies:Cookie[];tickets:{ticket:{id:string}}[];restoreFollowBootstrapResponses:()=>void;followBootstrapFaultState:()=>{committed_responses:number;failed_bootstrap_reads:number}}

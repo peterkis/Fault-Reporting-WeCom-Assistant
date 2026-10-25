@@ -1,5 +1,5 @@
 import { Readable, Writable } from 'node:stream';
-import { encryptBackupStream, decryptBackupStream } from '../../src/p1-011-encrypted-backup.mjs';
+import { encryptBackupStream, decryptBackupStream } from '../../app/server/src/p1-011-encrypted-backup.mjs';
 
 const key = Buffer.alloc(32);
 const input = Readable.from(Buffer.from('synthetic'));

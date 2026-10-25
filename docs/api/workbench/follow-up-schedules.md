@@ -67,7 +67,7 @@ POST维护403需补查当前 Ticket READ：200仅收口本用途；READ401/403/4
 
 ## 数据库与生命周期
 
-[049](../../../database/migrations/049_workbench_follow_up_schedules.sql)和[迁移器](../../../scripts/workbench-follow-up-schedules-migrate.mts)保存原 Ticket 下的当前安排与追加SET/CANCEL修订，关联同一 Ticket/Event，不复制状态或责任。时间与epoch配对，PK/FK约束关联和修订，due索引稳定。迁移要求原031，check/apply显式调用，pool1且finally关闭；旧SQL字节保留。
+[049](../../../database/migrations/049_workbench_follow_up_schedules.sql)和[迁移器](../../../app/server/scripts/workbench-follow-up-schedules-migrate.mts)保存原 Ticket 下的当前安排与追加SET/CANCEL修订，关联同一 Ticket/Event，不复制状态或责任。时间与epoch配对，PK/FK约束关联和修订，due索引稳定。迁移要求原031，check/apply显式调用，pool1且finally关闭；旧SQL字节保留。
 
 SET/CANCEL 在原 ledger 事务内执行 Ticket version+1、同状态 ticket.follow_up_scheduled/ticket.follow_up_cancelled Event、049修订／当前值和内部实时失效；失败回滚业务保存点，原协议可保留终态FAILED收据。它们不改变状态、责任、Intake、轮次或外部 Delivery，不写自由正文。当前049 readiness核原checksum、两表及两个时间配对CHECK的存在、validated/enforced状态；本次删除／恢复真实约束已验证，不宣称完整表达式或catalog等价性检查。
 
@@ -79,7 +79,7 @@ P2016EnabledRuntime.runFollowUpDueBatch({limit}) 为内部系统 Port，无公�
 
 批次按 (due_epoch_ms,ticket_id) 稳定选取，逐项串行、每项独立事务，锁序stream→Ticket→当前安排。重核当前修订、活动状态和到期时间；关闭／改期先提交则跳过旧候选，Worker先提交则保留一次历史提示，由消费者重读当前事实。后项失败不撤销前项。
 
-[053 marker](../../../database/migrations/053_workbench_follow_up_due_signals.sql)以 (ticket_id,schedule_version) 持久去重，与内部realtime同事务提交；重复批次、并发runtime或重启不重复该修订。marker不因7天realtime保留期清理而失效。[053迁移器](../../../scripts/workbench-follow-up-due-migrate.mts)要求049并核原checksum、列、PK/FK及正版本约束。启用时runtime readiness同时要求049和053；普通view/POST依赖049。due故障记录既有projection failure，继续其他Worker任务后重新抛错，不伪装成功。
+[053 marker](../../../database/migrations/053_workbench_follow_up_due_signals.sql)以 (ticket_id,schedule_version) 持久去重，与内部realtime同事务提交；重复批次、并发runtime或重启不重复该修订。marker不因7天realtime保留期清理而失效。[053迁移器](../../../app/server/scripts/workbench-follow-up-due-migrate.mts)要求049并核原checksum、列、PK/FK及正版本约束。启用时runtime readiness同时要求049和053；普通view/POST依赖049。due故障记录既有projection failure，继续其他Worker任务后重新抛错，不伪装成功。
 
 提示仅 ticket.updated / SYSTEM / TICKET，payload为 {ticket_id,follow_up_schedule_version,reason:FOLLOW_UP_DUE}，不含时间、人员或正文。当前Ticket READ决定可见性，Session CONTROL不扩权，SSE沿既有256授权ID总预算。发布不推进Ticket version/Event、安排修订、责任或Delivery；一次提示不清is_due。
 

@@ -4,8 +4,8 @@ import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
-import type {PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
+import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
+import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 
 test('actual target membership linearizes with the T12 authoritative transfer through the same transaction staff end, without partial responsibility or promise',async()=>{
  await withT12Fixture(async f=>{

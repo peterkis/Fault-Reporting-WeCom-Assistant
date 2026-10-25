@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { encodeConversationCursor, decodeConversationCursor, createConversationWorkbenchQueryService, WORKBENCH_ERROR_CODES } from '../src/p2-006-workbench-query.mjs';
-import { createConversationWorkbenchHttpServer, listenConversationWorkbenchServer, closeConversationWorkbenchServer } from '../src/p2-006-workbench-http.mjs';
-import { createConversationWorkbenchCommandFacade } from '../src/p2-006-workbench-command-facade.mjs';
+import { encodeConversationCursor, decodeConversationCursor, createConversationWorkbenchQueryService, WORKBENCH_ERROR_CODES } from '../app/server/src/p2-006-workbench-query.mjs';
+import { createConversationWorkbenchHttpServer, listenConversationWorkbenchServer, closeConversationWorkbenchServer } from '../app/server/src/p2-006-workbench-http.mjs';
+import { createConversationWorkbenchCommandFacade } from '../app/server/src/p2-006-workbench-command-facade.mjs';
 import { initialWorkbenchState, reduceWorkbenchState, loadRefreshState, saveRefreshState } from '../web/p2-workbench/workbench-state.mjs';
 
 const root = process.cwd();
@@ -91,6 +91,17 @@ test('query page limit and state filters fail closed', async () => {
   const service = createConversationWorkbenchQueryService({ enabled: true, pool: { query: async () => ({ rows: [] }) }, authorize: fakeAuthorize() });
   await assert.rejects(service.listConversations({ authContext: {}, limit: 101 }), (error) => error.code === WORKBENCH_ERROR_CODES.pageLimitInvalid);
   await assert.rejects(service.listConversations({ authContext: {}, state: 'ai_processing' }), (error) => error.code === WORKBENCH_ERROR_CODES.requestInvalid);
+});
+
+test('real item query construction preserves normal time ordering and safe sequence ordering in both directions',async()=>{
+  for(const safeTimeline of [false,true])for(const page of [{},{before_sequence:'3'},{after_sequence:'1'}]){
+    const statements=[];const pool={query:async(sql)=>{statements.push(sql);return {rows:statements.length===1?[{session_id:sessionId}]:[],rowCount:statements.length===1?1:0};}};
+    const service=createConversationWorkbenchQueryService({enabled:true,pool,authorize:fakeAuthorize(),safeTimeline});
+    await service.listConversationItems({authContext:{},sessionId,...page});assert.equal(statements.length,2);
+    const direction=page.after_sequence?'ASC':'DESC',order=safeTimeline?`sequence_no ${direction}`:`occurred_at ${direction}, sequence_no ${direction}`;
+    assert.ok(statements[1].includes('ORDER BY '+order+' LIMIT'));
+    assert.equal(statements[1].includes('retention_until>platform.local_now()'),safeTimeline);
+  }
 });
 
 test('HTTP server construction fails when authentication port is absent', () => {

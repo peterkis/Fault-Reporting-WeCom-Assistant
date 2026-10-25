@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {createChannelMessageInbox} from '../../src/p1-003-channel-message-inbox.mjs';
-import {createServiceIntakeProcessor} from '../../src/p1-004-service-intake.mjs';
-import {formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {createChannelMessageInbox} from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import {createServiceIntakeProcessor} from '../../app/server/src/p1-004-service-intake.mjs';
+import {formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
 export async function appendReviewMaterial(pool:PostgresPool,intakeId:string,text:string){
   const source=(await pool.query<{source_bot_id:string;source_chat_type:string;source_chat_id:string|null;reporter_wecom_userid:string;retention_until:string}>(
     'SELECT source_bot_id,source_chat_type,source_chat_id,reporter_wecom_userid,retention_until FROM intake.service_intake WHERE id=$1::uuid',[intakeId])).rows[0];assert.ok(source);

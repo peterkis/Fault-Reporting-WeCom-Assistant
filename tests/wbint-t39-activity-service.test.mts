@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createWorkbenchActivity,activityCommand,WORKBENCH_ACTIVITY_LIMITS} from '../src/workbench-activity.mjs';
+import {createWorkbenchActivity,activityCommand,WORKBENCH_ACTIVITY_LIMITS} from '../app/server/src/workbench-activity.mjs';
 import type {WorkbenchActivityTarget,WorkbenchActivityCommand,WorkbenchActivityField} from '../contracts/workbench_activity_contracts.js';
 function fixture(){
   let now=100000;const denied=new Set<string>(),editingDenied=new Set<string>();

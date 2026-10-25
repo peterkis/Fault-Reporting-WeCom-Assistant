@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withG2Runtime } from './helpers/p2-g2-runtime-harness.mjs';
-import { createReporterDirectoryPort } from '../src/p2-015-contact-journey.mjs';
+import { createReporterDirectoryPort } from '../app/server/src/p2-015-contact-journey.mjs';
 import { g2BusinessCounts,g2CountDelta,g2DecisionObservation } from './helpers/p2-g2-gold-observation.mjs';
 
 const snapshot={source:'WECOM_DIRECTORY',version:'synthetic-directory-v1',valid_at:'2026-09-09 08:00:00',

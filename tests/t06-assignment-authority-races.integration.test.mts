@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import type {PostgresPool,PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool,PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 type Fixture={pool:PostgresPool;origin:string;cookies:string[];tickets:{ticket:{id:string}}[];principals:{id:string}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 const cases=['target-membership','target-role','operator-role','operator-visible-membership'] as const;

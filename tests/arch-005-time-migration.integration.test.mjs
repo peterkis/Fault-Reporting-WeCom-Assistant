@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;

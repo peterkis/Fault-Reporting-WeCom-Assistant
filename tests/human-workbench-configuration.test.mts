@@ -5,16 +5,16 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {readHumanWorkbenchConfiguration,workbenchRoleEnvironment,createWorkbenchNotificationOptions,resolveWorkbenchMention,readWorkbenchRoleSettings,readWorkbenchWorkerSettings} from '../src/human-workbench-configuration.mjs';
-import {readP2016LiveConfiguration} from '../src/p2-016-live-configuration.mjs';
+import {readHumanWorkbenchConfiguration,workbenchRoleEnvironment,createWorkbenchNotificationOptions,resolveWorkbenchMention,readWorkbenchRoleSettings,readWorkbenchWorkerSettings} from '../app/server/src/human-workbench-configuration.mjs';
+import {readP2016LiveConfiguration} from '../app/server/src/p2-016-live-configuration.mjs';
 import {workbenchTestSettings} from './helpers/human-workbench-test-settings.mjs';
 import {createHmac} from 'node:crypto';
-import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
+import {createWorkbenchBotMemberAdmission} from '../app/server/src/human-workbench-bot-member-admission.mjs';
 function fixture(run:(f:ReturnType<typeof workbenchTestSettings>)=>void|Promise<void>){const directory=mkdtempSync(join(tmpdir(),'human-workbench-config-'));return Promise.resolve().then(()=>run(workbenchTestSettings(directory))).finally(()=>rmSync(directory,{recursive:true,force:true}));}
 
 test('profile is opt-in and the compiled check reports disabled without touching dependencies',()=>{
  assert.deepEqual(readHumanWorkbenchConfiguration({}),{enabled:false});
- const r=spawnSync(process.execPath,[fileURLToPath(new URL('../scripts/human-workbench.mjs',import.meta.url)),'--check'],{env:{},encoding:'utf8',windowsHide:true});
+ const r=spawnSync(process.execPath,[fileURLToPath(new URL('../app/server/scripts/human-workbench.mjs',import.meta.url)),'--check'],{env:{},encoding:'utf8',windowsHide:true});
  assert.equal(r.status,0);assert.equal(JSON.parse(r.stdout).enabled,false);assert.equal(JSON.parse(r.stdout).network_started,false);
 });
 test('configuration rejects missing secrets, unverified member configuration, wrong types, scopes and unapproved transport before forking',async()=>fixture(f=>{
@@ -25,7 +25,7 @@ test('configuration rejects missing secrets, unverified member configuration, wr
  invalids.push({...f.settings,memberEntry:{...f.settings.memberEntry,identityMode:'VERIFIED_SAME_NAMESPACE',reporterUserIds:undefined}});
  for(const s of invalids){writeFileSync(f.file,JSON.stringify(s));assert.throws(check,/HUMAN_WORKBENCH_CONFIG_INVALID/u);}f.save();
  f.settings.transportEnabled=true;f.save();assert.throws(check,/WORKBENCH_EXTERNAL_IO_APPROVED/u);
- const r=spawnSync(process.execPath,[fileURLToPath(new URL('../scripts/human-workbench.mjs',import.meta.url)),'--start'],{env:{...f.env,PILOT_LOG_IDENTITY_HASH_KEY:undefined},encoding:'utf8',windowsHide:true});
+ const r=spawnSync(process.execPath,[fileURLToPath(new URL('../app/server/scripts/human-workbench.mjs',import.meta.url)),'--start'],{env:{...f.env,PILOT_LOG_IDENTITY_HASH_KEY:undefined},encoding:'utf8',windowsHide:true});
  assert.equal(r.status,1);assert.match(r.stderr,/PILOT_LOG_IDENTITY_HASH_KEY/u);assert.equal(r.stderr.includes(f.env.APP_SECRET??''),false);
 }));
 test('role mapping preserves key purposes and excludes other roles credentials and optional capabilities',async()=>fixture(f=>{

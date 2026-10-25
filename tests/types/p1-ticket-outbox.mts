@@ -1,5 +1,5 @@
 import type { LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
-import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
 import {
   createPilotTicketCore,
   createPilotTicketProcessor,
@@ -13,7 +13,7 @@ import {
   type PublicPilotTicket,
   type TicketPriority,
   type TicketStatus,
-} from '../../src/p1-005-pilot-ticket-core.mjs';
+} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
   createTicketActionService,
   type AssignmentMetadata,
@@ -23,7 +23,7 @@ import {
   type TicketActor,
   type TicketActionResult,
   type TicketActionService,
-} from '../../src/p1-006-ticket-state-actions.mjs';
+} from '../../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
   createNotificationDeliveryWorker,
   createNotificationOutbox,
@@ -32,9 +32,9 @@ import {
   type NotificationEvent,
   type NotificationSender,
   type NotificationTarget,
-} from '../../src/p1-007-notification-outbox.mjs';
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import { createTicketClosureService } from '../../src/p1-010-ticket-closure.mjs';
+} from '../../app/server/src/p1-007-notification-outbox.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createTicketClosureService } from '../../app/server/src/p1-010-ticket-closure.mjs';
 
 declare const transaction: PostgresPoolClient;
 declare const restrictedTransaction: PostgresTransaction;

@@ -138,8 +138,8 @@ App 保存私有原件；Worker 在既有有限 `runOnce` 周期内串行处理�
 npm.cmd run migration:build
 node .build/tools/gate.mjs types
 node .build/tools/verify-artifact.mjs
-node --env-file=secrets/human-workbench.env .build/runtime/scripts/human-workbench.mjs --check
-node --env-file=secrets/human-workbench.env .build/runtime/scripts/human-workbench.mjs --start
+node --env-file=secrets/human-workbench.env .build/runtime/app/server/scripts/human-workbench.mjs --check
+node --env-file=secrets/human-workbench.env .build/runtime/app/server/scripts/human-workbench.mjs --start
 ```
 
 前台控制台输入 `stop` 再回车，或按 `Ctrl+C`。沿原父进程先停 Worker，再停 App／Gateway，关闭连接池；输出 `event:stopped,process_count:0`。父进程意外断开时角色退出。停止不删除工单、回执、草稿事实、待核对投递或历史证据。`transportEnabled=false` 同时关闭新外部发送入口与 Worker/Sender；已有需核对状态保留。正式 UI 为 `publicOrigin/workbench/app`，原工作台登录入口 `/workbench/login`，成员入口沿原 `/wecom/yixiaoxiu/`。

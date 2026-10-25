@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import type {SharedFollowUpCommand} from '../contracts/workbench_follow_up_schedule_contracts.js';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import {withT37Fixture,object,rows} from './helpers/t37-follow-up-fixture.mjs';
 
 test('an authorized dispatcher sets one shared next action on an unassigned Ticket and reconciles its original UUID without changing lifecycle or responsibility', {timeout:240000},async()=>{

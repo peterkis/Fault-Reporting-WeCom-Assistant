@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
 import {t30Http,record,text} from './helpers/t30-internal-note-fixture.mjs';
-import {createP2012ReporterTimelineAdapter} from '../src/p2-012-reporter-timeline-adapter.mjs';
-import {createP2012IncidentQuery} from '../src/p2-012-incident-query.mjs';
-import {createWeComWorkbenchAuthentication} from '../src/p2-016-workbench-wecom-auth.mjs';
-import {migrateWorkbenchAuth} from '../scripts/p2-016-workbench-auth-migrate.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {ownedHttp} from './helpers/t36-supplement-fixture.mjs';
+import {createP2012ReporterTimelineAdapter} from '../app/server/src/p2-012-reporter-timeline-adapter.mjs';
+import {createP2012IncidentQuery} from '../app/server/src/p2-012-incident-query.mjs';
+import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
+import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import type {PostgresTransaction,PostgresQueryRow} from '../src/platform/postgres-pool.mjs';
+import type {PostgresTransaction,PostgresQueryRow} from '../app/server/src/platform/postgres-pool.mjs';
 const input=(version:string,note='合成内部检查')=>({client_command_id:randomUUID(),expected_row_version:version,reason_code:'WORKBENCH_INTERNAL_DISPOSITION',audience:'INTERNAL',text:note});
 
 for(const scenario of [
@@ -45,12 +46,14 @@ for(const scenario of [
     await runtime.stop();const observed=new Proxy(pool,{get(target,key){if(key==='query')return gated.query;const member:unknown=Reflect.get(target,key);return typeof member==='function'?member.bind(target):member;}});
     const official=createP2012Runtime({pool:observed,publicOrigin:'https://pr99-auth.invalid',listenPort:Number(new URL(origin).port),workbenchAuthentication:auth,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentCandidateWorkspaceEnabled:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});
     let pending:Promise<{status:number;body:Record<string,unknown>}>|undefined,primaryError:unknown;
-    const read=async()=>{const response=await fetch(origin+root+'/commands/'+commandId,{headers:{cookie}});return {status:response.status,body:record(await response.json())};};
+    // This fixture restarts its App on the same port. Each request owns its
+    // connection so it cannot reuse a socket belonging to the stopped App.
+    const read=async()=>{const response=await ownedHttp(origin+root+'/commands/'+commandId,{headers:{cookie}});return {status:response.status,body:record(await response.json())};};
     try{
       await official.start();const initial=await read();assert.equal(initial.status,200,JSON.stringify(initial.body));assert.equal(initial.body.state,['CANDIDATE','CONFIRMATION'].includes(scenario.state)?'COMMITTED':scenario.state);
       armed=true;pending=read();await reached;
       if(scenario.loss==='logout'){
-        const logout=await fetch(origin+'/workbench/logout',{method:'POST',headers:{cookie,origin:'https://pr99-auth.invalid','x-csrf-token':csrf}});assert.equal(logout.status,200);
+        const logout=await ownedHttp(origin+'/workbench/logout',{method:'POST',headers:{cookie,origin:'https://pr99-auth.invalid','x-csrf-token':csrf}});assert.equal(logout.status,200);
         assert.equal((await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND state='REVOKED'",[session.session_id])).rowCount,1);
       }else if(scenario.loss==='idle'){
         await pool.query(`UPDATE pilot_ticket.workbench_auth_session SET created_epoch_ms=$2,created_at=platform.local_from_epoch_ms($2),last_seen_epoch_ms=$3,last_seen_at=platform.local_from_epoch_ms($3) WHERE session_id=$1::uuid`,[session.session_id,Date.now()-3600000,Date.now()-1800001]);
@@ -96,14 +99,14 @@ for(const loss of ['role','scope','session','receipt-role','late-purpose-role'] 
       if(auth){
         await runtime.stop();const observed=new Proxy(pool,{get(target,key){if(key==='query')return gated.query;const member:unknown=Reflect.get(target,key);return typeof member==='function'?member.bind(target):member;}});
         officialRuntime=createP2012Runtime({pool:observed,publicOrigin:'https://pr99-auth.invalid',listenPort:Number(new URL(origin).port),workbenchAuthentication:auth,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentCandidateWorkspaceEnabled:true,incidentInternalNotesEnabled:true,incidentBackgroundMaintenance:false,externalSendEnabled:false});await officialRuntime.start();
-        const read=()=>fetch(origin+'/api/incidents/'+incident+'/internal-notes',{headers:{cookie:sessionCookie}});
+        const read=()=>ownedHttp(origin+'/api/incidents/'+incident+'/internal-notes',{headers:{cookie:sessionCookie}});
         const before=await read();assert.equal(before.status,200);const page=record(await before.json());assert.ok(Array.isArray(page.items));assert.equal(record(page.items[0]).text,command.text);armed=true;
         pending=read().then(async response=>({ok:response.status===200,value:await response.json()}));
       }else{const before=await query.internalNotes({authContext,incidentId:incident});assert.equal(before.items[0]?.text,command.text);armed=true;
         pending=(loss==='receipt-role'?query.incidentCommandReceipt({authContext,id:incident,commandId:command.client_command_id}):query.internalNotes({authContext,incidentId:incident})).then(value=>({ok:true,value}),error=>({ok:false,error}));}
       await reached;
       if(loss==='scope')assert.equal((await post('/api/incidents/'+incident+'/correct-scope',{client_command_id:randomUUID(),expected_row_version:'2',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'})).status,200);
-      else if(loss==='session'){const logout=await fetch(origin+'/workbench/logout',{method:'POST',headers:{cookie:sessionCookie,origin:'https://pr99-auth.invalid','x-csrf-token':sessionCsrf}});assert.equal(logout.status,200);assert.equal((await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND state='REVOKED'",[authContext.session_id])).rowCount,1);}
+      else if(loss==='session'){const logout=await ownedHttp(origin+'/workbench/logout',{method:'POST',headers:{cookie:sessionCookie,origin:'https://pr99-auth.invalid','x-csrf-token':sessionCsrf}});assert.equal(logout.status,200);assert.equal((await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND state='REVOKED'",[authContext.session_id])).rowCount,1);}
       else{await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principalId]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principalId]);}
       resume();const outcome=record(await pending);assert.equal(outcome.ok,false,'the final read must reject instead of returning a prior authorized snapshot');assert.equal(JSON.stringify(outcome).includes(command.text),false);
     }finally{resume();await pending;await officialRuntime?.stop();await auth?.close();}

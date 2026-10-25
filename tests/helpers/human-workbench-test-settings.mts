@@ -2,9 +2,9 @@ import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
-import {yxxIdentityConfigHash} from '../../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
-import type {WorkbenchSettings} from '../../src/human-workbench-configuration.mjs';
-import {validateYxxEntryConfig} from '../../src/p2-g2-yixiaoxiu-contract.mjs';
+import {yxxIdentityConfigHash} from '../../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import type {WorkbenchSettings} from '../../app/server/src/human-workbench-configuration.mjs';
+import {validateYxxEntryConfig} from '../../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
 export const hashTarget=(v:string)=>createHash('sha256').update(v).digest('hex');
 export function workbenchTestSettings(directory:string,listenPort=43166){
  const memberEntry=validateYxxEntryConfig({...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:['synthetic-A']});if(!memberEntry.enabled)throw Error('TEST_MEMBER_DISABLED');

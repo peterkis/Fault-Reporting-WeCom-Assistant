@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 W，P2-012 扩展。调用方 [Incident UI](../../../web/p2-workbench/incidents.js)。`INCIDENT_CORRELATION_ENABLED` 默认 false；对外通知另有发送开关与授权。实现：[HTTP](../../../src/p2-012-workbench-http.mts)、[query](../../../src/p2-012-incident-query.mts)、[commands](../../../src/p2-012-incident-command-service.mts)、[domain guards](../../../src/p2-012-domain-contracts.mts)。Incident 是公共故障聚合，不能替代或删除个人 Intake/Ticket。
+宿主 W，P2-012 扩展。调用方 [Incident UI](../../../web/p2-workbench/incidents.js)。`INCIDENT_CORRELATION_ENABLED` 默认 false；对外通知另有发送开关与授权。实现：[HTTP](../../../app/server/src/p2-012-workbench-http.mts)、[query](../../../app/server/src/p2-012-incident-query.mts)、[commands](../../../app/server/src/p2-012-incident-command-service.mts)、[domain guards](../../../app/server/src/p2-012-domain-contracts.mts)。Incident 是公共故障聚合，不能替代或删除个人 Intake/Ticket。
 
 ## 读取
 

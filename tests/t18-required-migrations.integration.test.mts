@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {migrateWorkbenchVerifiedManualReports} from '../scripts/workbench-verified-manual-reports-migrate.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {migrateWorkbenchVerifiedManualReports} from '../app/server/scripts/workbench-verified-manual-reports-migrate.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
 interface Database {pool:PostgresPool;databaseUrl:string}

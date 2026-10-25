@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {createP2012IncidentCommandService} from '../src/p2-012-incident-command-service.mjs';
+import {createP2012IncidentCommandService} from '../app/server/src/p2-012-incident-command-service.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
 

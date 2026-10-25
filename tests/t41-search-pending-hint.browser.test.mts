@@ -6,11 +6,11 @@ import {tmpdir} from 'node:os';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createP2016TicketCommandFacade} from '../src/p2-016-ticket-command-facade.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createP2016TicketCommandFacade} from '../app/server/src/p2-016-ticket-command-facade.mjs';
 import {object} from './helpers/t41-search-risk-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;backendOrigin:string;certificateSpki:string;
@@ -27,8 +27,18 @@ for(const scenario of ['initial','reset'] as const)test('T41 real hint fences a 
   await f.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('T41_HINT_B','T41 hint target B')");
   for(const [principal,roles,teams]of [[actor,['HANDLER'],['PILOT_IT']],[admin,['ADMIN'],['PILOT_IT']],[target,['HANDLER'],['T41_HINT_B']]] as const)
    await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:[...roles],resolverTeamIds:[...teams]});
+  let projectionSettled=false;
+  for(let attempt=0;attempt<20;attempt++){
+   const projected:{disabled:boolean;processed:number;streams:readonly {failures:readonly unknown[]}[]}=await f.runtime.coordinator.runOnce();
+   assert.equal(projected.disabled,false);assert.ok(projected.streams.every(stream=>stream.failures.length===0),JSON.stringify(projected.streams));
+   if(projected.processed===0&&(await f.runtime.coordinator.backlog()).total===0){projectionSettled=true;break;}
+  }
+  assert.equal(projectionSettled,true,'the original fixture projection must settle before its initial live search');
+  await f.runtime.realtimeProjector.runOnce({limit:100});
   const before=await read(f,'/api/lifecycle/bootstrap');assert.equal(before.status,200);
   const initial=await read(f,'/api/workbench/items/ticket/'+ticket.ticket.id);assert.equal(initial.status,200);
+  const initialSearch=await read(f,'/api/workbench/search?column=all&range=all&scope=team&limit=50');assert.equal(initialSearch.status,200);
+  assert.ok(Array.isArray(initialSearch.body.items)&&initialSearch.body.items.some(value=>object(value).id===ticket.ticket.id),'the original target must occur in the actual initial current search');
   let holdNext=false,release:(()=>void)|undefined,heldContainsTarget=false,hints=0,searches=0,automaticPosts=0;
   const observe=(request:IncomingMessage,response:ServerResponse)=>{
    const path=new URL(request.url??'/',f.origin).pathname;
@@ -50,6 +60,14 @@ for(const scenario of ['initial','reset'] as const)test('T41 real hint fences a 
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:f.browserCookies,certificateSpki:f.certificateSpki});assert.ok(browser);
    await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   await browser.evaluate(`(()=>{const m=globalThis.__t41Search={documentId:crypto.randomUUID(),reads:[]},fetch=globalThis.fetch;
+    globalThis.fetch=async function(input,options){const url=new URL(input instanceof Request?input.url:String(input),location.href);
+     if(url.origin!==location.origin||url.pathname!=='/api/workbench/search')return Reflect.apply(fetch,this,[input,options]);
+     const row={id:m.reads.length+1,started:performance.now(),paged:url.searchParams.has('cursor'),response:null,reject:null,aborted:false};m.reads.push(row);
+     const signal=options?.signal??(input instanceof Request?input.signal:null),abort=()=>{row.aborted=true;};signal?.addEventListener('abort',abort,{once:true});
+     try{const response=await Reflect.apply(fetch,this,[input,options]);row.response={at:performance.now(),status:response.status};return response;}
+     catch(error){row.reject={at:performance.now(),name:error.name};throw error;}finally{signal?.removeEventListener('abort',abort);}
+    };})()`);
    if(scenario==='reset'){
     await browser.evaluate('document.querySelector("a.sidebar-search").click()');
     await browser.waitFor('Boolean(document.querySelector("article[data-item-id=\\"'+ticket.ticket.id+'\\"]"))');
@@ -78,7 +96,8 @@ for(const scenario of ['initial','reset'] as const)test('T41 real hint fences a 
    await browser.waitFor('performance.now()-'+start+'>6000',{timeoutMs:10000,intervalMs:50});
    assert.equal(searches,count,'a hint and periodic T38 reads must not automatically restart search');assert.equal(automaticPosts,0);
    console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_TLS_HTTP_PG',pending_search:scenario,real_hint:true,held_get_fenced:true,automatic_posts:0,screenshots:[]}));
-  }catch(error){primary=error;}
+  }catch(error){primary=error;console.log('T41_PENDING_SEARCH_OBSERVATION '+JSON.stringify({scenario,searches,hints,heldContainsTarget,
+    browser:await browser?.evaluate('({observation:globalThis.__t41Search,href:location.href,searchError:Boolean(document.querySelector("[data-search-state=error]")),searchPending:Boolean(document.querySelector("[data-search-state=loading]")),cards:document.querySelectorAll("article[data-kind=ticket]").length,realtime:document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus})').catch(()=>null)}));}
   finally{release?.();f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);}
- },{realWorkbenchAuthentication:true,workbenchRealtimeEnabled:true,workbenchSearchEnabled:true});
+ },{realWorkbenchAuthentication:true,workbenchRealtimeEnabled:true,workbenchSearchEnabled:true,chronologicalTicketEvents:true});
 });

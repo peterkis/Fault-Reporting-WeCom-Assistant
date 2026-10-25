@@ -38,8 +38,8 @@ test('a checkout without a verified artifact cannot use the preflight command', 
   try {
     copyFileSync(path.join(source, 'package.json'), path.join(scratch, 'package.json'));
     // The source is present, but must never be loaded as a fallback.
-    mkdirSync(path.join(scratch, 'src'));
-    copyFileSync(path.join(source, 'src/p1-001-pilot-foundation.mts'), path.join(scratch, 'src/p1-001-pilot-foundation.mts'));
+    mkdirSync(path.join(scratch, 'app/server/src'),{recursive:true});
+    copyFileSync(path.join(source, 'app/server/src/p1-001-pilot-foundation.mts'), path.join(scratch, 'app/server/src/p1-001-pilot-foundation.mts'));
     const config = JSON.parse(readFileSync(path.join(source, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
     assert.match(config.scripts['p1:preflight'] ?? '', /verify-artifact/u);
     const run = spawnSync(process.execPath, [npmLauncher, 'run', 'p1:preflight'], { cwd: scratch, env, encoding: 'utf8', windowsHide: true, timeout: 30_000 });

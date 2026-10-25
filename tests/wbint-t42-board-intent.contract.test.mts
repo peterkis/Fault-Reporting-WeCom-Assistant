@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {readBoardIntent,planBoardAction} from '../src/workbench-board-action-browser-contracts.mjs';
+import {readBoardIntent,planBoardAction} from '../app/pc-admin/src/contracts/workbench-board-action-browser-contracts.mjs';
 
 test('T42 local intent is closed and immutable, never a state, identity or command authority',()=>{
   const input={kind:'ticket',id:'11111111-1111-4111-8111-111111111111',source_column:'pending',target_column:'active'};

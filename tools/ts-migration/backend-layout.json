@@ -1,0 +1,1534 @@
+{
+  "schema_version": 1,
+  "baseline": "d3b7fda4f2cfb4291f550a9ed0952812dcf9a18f",
+  "files": [
+    {
+      "source": "scripts/arch-005-reproject-time-hashes.mjs",
+      "target": "app/server/scripts/arch-005-reproject-time-hashes.mjs"
+    },
+    {
+      "source": "scripts/bot-reporter-feedback-migrate.mts",
+      "target": "app/server/scripts/bot-reporter-feedback-migrate.mts"
+    },
+    {
+      "source": "scripts/conversation-delivery-commands-migrate.mts",
+      "target": "app/server/scripts/conversation-delivery-commands-migrate.mts"
+    },
+    {
+      "source": "scripts/g0-001-test-wss.ps1",
+      "target": "app/server/scripts/g0-001-test-wss.ps1"
+    },
+    {
+      "source": "scripts/g0-webhook-message-capability-probe.mjs",
+      "target": "app/server/scripts/g0-webhook-message-capability-probe.mjs"
+    },
+    {
+      "source": "scripts/h5-migration-structure.mts",
+      "target": "app/server/scripts/h5-migration-structure.mts"
+    },
+    {
+      "source": "scripts/human-workbench-role.mts",
+      "target": "app/server/scripts/human-workbench-role.mts"
+    },
+    {
+      "source": "scripts/human-workbench.mts",
+      "target": "app/server/scripts/human-workbench.mts"
+    },
+    {
+      "source": "scripts/incident-delivery-control-migrate.mts",
+      "target": "app/server/scripts/incident-delivery-control-migrate.mts"
+    },
+    {
+      "source": "scripts/incident-internal-notes-migrate.mts",
+      "target": "app/server/scripts/incident-internal-notes-migrate.mts"
+    },
+    {
+      "source": "scripts/incident-owner-transfer-migrate.mts",
+      "target": "app/server/scripts/incident-owner-transfer-migrate.mts"
+    },
+    {
+      "source": "scripts/incident-public-progress-migrate.mts",
+      "target": "app/server/scripts/incident-public-progress-migrate.mts"
+    },
+    {
+      "source": "scripts/migrate-current-baseline.mjs",
+      "target": "app/server/scripts/migrate-current-baseline.mjs"
+    },
+    {
+      "source": "scripts/mvp-notifications-migrate.mts",
+      "target": "app/server/scripts/mvp-notifications-migrate.mts"
+    },
+    {
+      "source": "scripts/p1-003-migrate.mjs",
+      "target": "app/server/scripts/p1-003-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-004-migrate.mjs",
+      "target": "app/server/scripts/p1-004-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-004-verify.mjs",
+      "target": "app/server/scripts/p1-004-verify.mjs"
+    },
+    {
+      "source": "scripts/p1-005-migrate.mjs",
+      "target": "app/server/scripts/p1-005-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-006-migrate.mjs",
+      "target": "app/server/scripts/p1-006-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-007-migrate.mjs",
+      "target": "app/server/scripts/p1-007-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-009-migrate.mjs",
+      "target": "app/server/scripts/p1-009-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-010-migrate.mjs",
+      "target": "app/server/scripts/p1-010-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-011-backup-restore.mjs",
+      "target": "app/server/scripts/p1-011-backup-restore.mjs"
+    },
+    {
+      "source": "scripts/p1-011-migrate.mjs",
+      "target": "app/server/scripts/p1-011-migrate.mjs"
+    },
+    {
+      "source": "scripts/p1-012-live-e2e.mjs",
+      "target": "app/server/scripts/p1-012-live-e2e.mjs"
+    },
+    {
+      "source": "scripts/p1-012-wecom-burst-ui.ps1",
+      "target": "app/server/scripts/p1-012-wecom-burst-ui.ps1"
+    },
+    {
+      "source": "scripts/p2-001-migrate.mjs",
+      "target": "app/server/scripts/p2-001-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-002-migrate.mjs",
+      "target": "app/server/scripts/p2-002-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-002-rebuild.mjs",
+      "target": "app/server/scripts/p2-002-rebuild.mjs"
+    },
+    {
+      "source": "scripts/p2-003-migrate.mjs",
+      "target": "app/server/scripts/p2-003-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-003-retention.mjs",
+      "target": "app/server/scripts/p2-003-retention.mjs"
+    },
+    {
+      "source": "scripts/p2-004-migrate.mjs",
+      "target": "app/server/scripts/p2-004-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-005-migrate.mjs",
+      "target": "app/server/scripts/p2-005-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-006-preview.mjs",
+      "target": "app/server/scripts/p2-006-preview.mjs"
+    },
+    {
+      "source": "scripts/p2-007-migrate.mjs",
+      "target": "app/server/scripts/p2-007-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-012-live-check.mjs",
+      "target": "app/server/scripts/p2-012-live-check.mjs"
+    },
+    {
+      "source": "scripts/p2-012-live-e2e.mjs",
+      "target": "app/server/scripts/p2-012-live-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-012-migrate.mjs",
+      "target": "app/server/scripts/p2-012-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-012-process-role.mts",
+      "target": "app/server/scripts/p2-012-process-role.mts"
+    },
+    {
+      "source": "scripts/p2-015-migrate.mjs",
+      "target": "app/server/scripts/p2-015-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-015-reconcile.mjs",
+      "target": "app/server/scripts/p2-015-reconcile.mjs"
+    },
+    {
+      "source": "scripts/p2-016-live-check.mjs",
+      "target": "app/server/scripts/p2-016-live-check.mjs"
+    },
+    {
+      "source": "scripts/p2-016-live-e2e.mjs",
+      "target": "app/server/scripts/p2-016-live-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-016-management-supervisor.mts",
+      "target": "app/server/scripts/p2-016-management-supervisor.mts"
+    },
+    {
+      "source": "scripts/p2-016-migrate.mjs",
+      "target": "app/server/scripts/p2-016-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-016-process-role.mts",
+      "target": "app/server/scripts/p2-016-process-role.mts"
+    },
+    {
+      "source": "scripts/p2-016-workbench-auth-migrate.mjs",
+      "target": "app/server/scripts/p2-016-workbench-auth-migrate.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-check.mjs",
+      "target": "app/server/scripts/p2-g1-check.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-fault-drill.mjs",
+      "target": "app/server/scripts/p2-g1-fault-drill.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-live-e2e.mjs",
+      "target": "app/server/scripts/p2-g1-live-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-process-role.mts",
+      "target": "app/server/scripts/p2-g1-process-role.mts"
+    },
+    {
+      "source": "scripts/p2-g1-replay-gap-e2e.mjs",
+      "target": "app/server/scripts/p2-g1-replay-gap-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-resource-observation.mjs",
+      "target": "app/server/scripts/p2-g1-resource-observation.mjs"
+    },
+    {
+      "source": "scripts/p2-g1-synthetic-e2e.mjs",
+      "target": "app/server/scripts/p2-g1-synthetic-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-case-reporter.mjs",
+      "target": "app/server/scripts/p2-g2-case-reporter.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-check.mjs",
+      "target": "app/server/scripts/p2-g2-check.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-cloud-package.mjs",
+      "target": "app/server/scripts/p2-g2-cloud-package.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-evaluate.mjs",
+      "target": "app/server/scripts/p2-g2-evaluate.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-file-coverage-reporter.mjs",
+      "target": "app/server/scripts/p2-g2-file-coverage-reporter.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-live-e2e.mjs",
+      "target": "app/server/scripts/p2-g2-live-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-postgres-native.sh",
+      "target": "app/server/scripts/p2-g2-postgres-native.sh"
+    },
+    {
+      "source": "scripts/p2-g2-process-role.mts",
+      "target": "app/server/scripts/p2-g2-process-role.mts"
+    },
+    {
+      "source": "scripts/p2-g2-reconcile.mjs",
+      "target": "app/server/scripts/p2-g2-reconcile.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-resource-observation.mjs",
+      "target": "app/server/scripts/p2-g2-resource-observation.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-route-preflight.mjs",
+      "target": "app/server/scripts/p2-g2-route-preflight.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-source-audit.mjs",
+      "target": "app/server/scripts/p2-g2-source-audit.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-synthetic-e2e.mjs",
+      "target": "app/server/scripts/p2-g2-synthetic-e2e.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-wecom-oauth-serve.mts",
+      "target": "app/server/scripts/p2-g2-wecom-oauth-serve.mts"
+    },
+    {
+      "source": "scripts/p2-g2-yixiaoxiu-bind-evidence.mjs",
+      "target": "app/server/scripts/p2-g2-yixiaoxiu-bind-evidence.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-yixiaoxiu-check.mjs",
+      "target": "app/server/scripts/p2-g2-yixiaoxiu-check.mjs"
+    },
+    {
+      "source": "scripts/p2-g2-yixiaoxiu-serve.mts",
+      "target": "app/server/scripts/p2-g2-yixiaoxiu-serve.mts"
+    },
+    {
+      "source": "scripts/p2-g2-yxx-targeted-create.mjs",
+      "target": "app/server/scripts/p2-g2-yxx-targeted-create.mjs"
+    },
+    {
+      "source": "scripts/ticket-reopen-rounds-migrate.mts",
+      "target": "app/server/scripts/ticket-reopen-rounds-migrate.mts"
+    },
+    {
+      "source": "scripts/ticket-return-to-dispatch-migrate.mts",
+      "target": "app/server/scripts/ticket-return-to-dispatch-migrate.mts"
+    },
+    {
+      "source": "scripts/ticket-round-notifications-migrate.mts",
+      "target": "app/server/scripts/ticket-round-notifications-migrate.mts"
+    },
+    {
+      "source": "scripts/ticket-self-handling-migrate.mts",
+      "target": "app/server/scripts/ticket-self-handling-migrate.mts"
+    },
+    {
+      "source": "scripts/ticket-staff-completion-migrate.mts",
+      "target": "app/server/scripts/ticket-staff-completion-migrate.mts"
+    },
+    {
+      "source": "scripts/ticket-unassign-migrate.mts",
+      "target": "app/server/scripts/ticket-unassign-migrate.mts"
+    },
+    {
+      "source": "scripts/validate-arch-005-time-contract.mjs",
+      "target": "app/server/scripts/validate-arch-005-time-contract.mjs"
+    },
+    {
+      "source": "scripts/validate-arch-006-rule-first-service-loop.mjs",
+      "target": "app/server/scripts/validate-arch-006-rule-first-service-loop.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-007-runtime.mjs",
+      "target": "app/server/scripts/validate-p2-007-runtime.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "target": "app/server/scripts/validate-p2-012-human-confirmed-incident.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-015-rule-first-intake.mjs",
+      "target": "app/server/scripts/validate-p2-015-rule-first-intake.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-016-historical.mjs",
+      "target": "app/server/scripts/validate-p2-016-historical.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs",
+      "target": "app/server/scripts/validate-p2-016-ticket-lifecycle-workbench.mjs"
+    },
+    {
+      "source": "scripts/validate-p2-g2-service-loop.mjs",
+      "target": "app/server/scripts/validate-p2-g2-service-loop.mjs"
+    },
+    {
+      "source": "scripts/validate-v1-3-architecture.mjs",
+      "target": "app/server/scripts/validate-v1-3-architecture.mjs"
+    },
+    {
+      "source": "scripts/validate-v1-4-architecture.mjs",
+      "target": "app/server/scripts/validate-v1-4-architecture.mjs"
+    },
+    {
+      "source": "scripts/validate-yxx-self-service.mjs",
+      "target": "app/server/scripts/validate-yxx-self-service.mjs"
+    },
+    {
+      "source": "scripts/workbench-follow-migrate.mts",
+      "target": "app/server/scripts/workbench-follow-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-follow-up-due-migrate.mts",
+      "target": "app/server/scripts/workbench-follow-up-due-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-follow-up-schedules-migrate.mts",
+      "target": "app/server/scripts/workbench-follow-up-schedules-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-manual-reports-migrate.mts",
+      "target": "app/server/scripts/workbench-manual-reports-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-personal-read-migrate.mts",
+      "target": "app/server/scripts/workbench-personal-read-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-source-groups-migrate.mts",
+      "target": "app/server/scripts/workbench-source-groups-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-supplement-follow-up-migrate.mts",
+      "target": "app/server/scripts/workbench-supplement-follow-up-migrate.mts"
+    },
+    {
+      "source": "scripts/workbench-verified-manual-reports-migrate.mts",
+      "target": "app/server/scripts/workbench-verified-manual-reports-migrate.mts"
+    },
+    {
+      "source": "scripts/yxx-h5-migrate.mts",
+      "target": "app/server/scripts/yxx-h5-migrate.mts"
+    },
+    {
+      "source": "scripts/yxx-self-service-bind-evidence.mjs",
+      "target": "app/server/scripts/yxx-self-service-bind-evidence.mjs"
+    },
+    {
+      "source": "scripts/yxx-self-service-evidence-tamper-check.mjs",
+      "target": "app/server/scripts/yxx-self-service-evidence-tamper-check.mjs"
+    },
+    {
+      "source": "scripts/yxx-self-service-finalize.mjs",
+      "target": "app/server/scripts/yxx-self-service-finalize.mjs"
+    },
+    {
+      "source": "scripts/yxx-self-service-limited-role.mts",
+      "target": "app/server/scripts/yxx-self-service-limited-role.mts"
+    },
+    {
+      "source": "scripts/yxx-self-service-live.mjs",
+      "target": "app/server/scripts/yxx-self-service-live.mjs"
+    },
+    {
+      "source": "scripts/yxx-self-service-migrate.mjs",
+      "target": "app/server/scripts/yxx-self-service-migrate.mjs"
+    },
+    {
+      "source": "scripts/yxx-self-service-readiness.mjs",
+      "target": "app/server/scripts/yxx-self-service-readiness.mjs"
+    },
+    {
+      "source": "src/bot-reporter-feedback.mts",
+      "target": "app/server/src/bot-reporter-feedback.mts"
+    },
+    {
+      "source": "src/conversation-rule-admission.mts",
+      "target": "app/server/src/conversation-rule-admission.mts"
+    },
+    {
+      "source": "src/conversation-topic-scope.mts",
+      "target": "app/server/src/conversation-topic-scope.mts"
+    },
+    {
+      "source": "src/g0-002-sdk-lifecycle.mjs",
+      "target": "app/server/src/g0-002-sdk-lifecycle.mjs"
+    },
+    {
+      "source": "src/g0-003-frame-capture.mjs",
+      "target": "app/server/src/g0-003-frame-capture.mjs"
+    },
+    {
+      "source": "src/g0-004-media-capture.mjs",
+      "target": "app/server/src/g0-004-media-capture.mjs"
+    },
+    {
+      "source": "src/g0-005-active-push.mjs",
+      "target": "app/server/src/g0-005-active-push.mjs"
+    },
+    {
+      "source": "src/g0-006-group-reply-mention.mjs",
+      "target": "app/server/src/g0-006-group-reply-mention.mjs"
+    },
+    {
+      "source": "src/g0-006-template-card.mjs",
+      "target": "app/server/src/g0-006-template-card.mjs"
+    },
+    {
+      "source": "src/g0-006a-reply-capability.mjs",
+      "target": "app/server/src/g0-006a-reply-capability.mjs"
+    },
+    {
+      "source": "src/g0-007-stability-soak.mjs",
+      "target": "app/server/src/g0-007-stability-soak.mjs"
+    },
+    {
+      "source": "src/g0-open-003-video-chunk-revalidation.mjs",
+      "target": "app/server/src/g0-open-003-video-chunk-revalidation.mjs"
+    },
+    {
+      "source": "src/g0-webhook-message-capability.mjs",
+      "target": "app/server/src/g0-webhook-message-capability.mjs"
+    },
+    {
+      "source": "src/human-workbench-bot-member-admission.mts",
+      "target": "app/server/src/human-workbench-bot-member-admission.mts"
+    },
+    {
+      "source": "src/human-workbench-cluster.mts",
+      "target": "app/server/src/human-workbench-cluster.mts"
+    },
+    {
+      "source": "src/human-workbench-configuration.mts",
+      "target": "app/server/src/human-workbench-configuration.mts"
+    },
+    {
+      "source": "src/migration-canary.mts",
+      "target": "app/server/src/migration-canary.mts"
+    },
+    {
+      "source": "src/mvp-group-replies.mts",
+      "target": "app/server/src/mvp-group-replies.mts"
+    },
+    {
+      "source": "src/mvp-notification-policy.mts",
+      "target": "app/server/src/mvp-notification-policy.mts"
+    },
+    {
+      "source": "src/p1-001-pilot-foundation.mts",
+      "target": "app/server/src/p1-001-pilot-foundation.mts"
+    },
+    {
+      "source": "src/p1-002-wecom-sdk-adapter.mts",
+      "target": "app/server/src/p1-002-wecom-sdk-adapter.mts"
+    },
+    {
+      "source": "src/p1-003-channel-message-inbox.mts",
+      "target": "app/server/src/p1-003-channel-message-inbox.mts"
+    },
+    {
+      "source": "src/p1-004-service-intake.mts",
+      "target": "app/server/src/p1-004-service-intake.mts"
+    },
+    {
+      "source": "src/p1-005-pilot-ticket-core.mts",
+      "target": "app/server/src/p1-005-pilot-ticket-core.mts"
+    },
+    {
+      "source": "src/p1-006-ticket-state-actions.mts",
+      "target": "app/server/src/p1-006-ticket-state-actions.mts"
+    },
+    {
+      "source": "src/p1-007-notification-outbox.mts",
+      "target": "app/server/src/p1-007-notification-outbox.mts"
+    },
+    {
+      "source": "src/p1-008-first-acknowledgement.mts",
+      "target": "app/server/src/p1-008-first-acknowledgement.mts"
+    },
+    {
+      "source": "src/p1-009-pilot-access-workbench.mts",
+      "target": "app/server/src/p1-009-pilot-access-workbench.mts"
+    },
+    {
+      "source": "src/p1-010-ticket-closure.mts",
+      "target": "app/server/src/p1-010-ticket-closure.mts"
+    },
+    {
+      "source": "src/p1-011-encrypted-backup.mts",
+      "target": "app/server/src/p1-011-encrypted-backup.mts"
+    },
+    {
+      "source": "src/p1-011-pilot-operations-baseline.mts",
+      "target": "app/server/src/p1-011-pilot-operations-baseline.mts"
+    },
+    {
+      "source": "src/p1-012-pilot-e2e.mts",
+      "target": "app/server/src/p1-012-pilot-e2e.mts"
+    },
+    {
+      "source": "src/p2-001-conversation-contracts.mts",
+      "target": "app/server/src/p2-001-conversation-contracts.mts"
+    },
+    {
+      "source": "src/p2-002-timeline-projector.mts",
+      "target": "app/server/src/p2-002-timeline-projector.mts"
+    },
+    {
+      "source": "src/p2-003-realtime-event-log.mts",
+      "target": "app/server/src/p2-003-realtime-event-log.mts"
+    },
+    {
+      "source": "src/p2-003-realtime-sse.mts",
+      "target": "app/server/src/p2-003-realtime-sse.mts"
+    },
+    {
+      "source": "src/p2-004-communication-core.mts",
+      "target": "app/server/src/p2-004-communication-core.mts"
+    },
+    {
+      "source": "src/p2-004-communication-delivery-worker.mts",
+      "target": "app/server/src/p2-004-communication-delivery-worker.mts"
+    },
+    {
+      "source": "src/p2-004-communication-projections.mts",
+      "target": "app/server/src/p2-004-communication-projections.mts"
+    },
+    {
+      "source": "src/p2-004-communication-sender-port.mts",
+      "target": "app/server/src/p2-004-communication-sender-port.mts"
+    },
+    {
+      "source": "src/p2-005-conversation-control-projections.mts",
+      "target": "app/server/src/p2-005-conversation-control-projections.mts"
+    },
+    {
+      "source": "src/p2-005-conversation-control.mts",
+      "target": "app/server/src/p2-005-conversation-control.mts"
+    },
+    {
+      "source": "src/p2-006-delivery-command-port.mts",
+      "target": "app/server/src/p2-006-delivery-command-port.mts"
+    },
+    {
+      "source": "src/p2-006-delivery-command-schema.mts",
+      "target": "app/server/src/p2-006-delivery-command-schema.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-authorization.mts",
+      "target": "app/server/src/p2-006-workbench-authorization.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-command-facade.mts",
+      "target": "app/server/src/p2-006-workbench-command-facade.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-delivery-control.mts",
+      "target": "app/server/src/p2-006-workbench-delivery-control.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-http.mts",
+      "target": "app/server/src/p2-006-workbench-http.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-query.mts",
+      "target": "app/server/src/p2-006-workbench-query.mts"
+    },
+    {
+      "source": "src/p2-006-workbench-static.mts",
+      "target": "app/server/src/p2-006-workbench-static.mts"
+    },
+    {
+      "source": "src/p2-007-alias-resolver.mts",
+      "target": "app/server/src/p2-007-alias-resolver.mts"
+    },
+    {
+      "source": "src/p2-007-clarification-planner.mts",
+      "target": "app/server/src/p2-007-clarification-planner.mts"
+    },
+    {
+      "source": "src/p2-007-conflict-resolver.mts",
+      "target": "app/server/src/p2-007-conflict-resolver.mts"
+    },
+    {
+      "source": "src/p2-007-domain-utils.mts",
+      "target": "app/server/src/p2-007-domain-utils.mts"
+    },
+    {
+      "source": "src/p2-007-fact-provenance.mts",
+      "target": "app/server/src/p2-007-fact-provenance.mts"
+    },
+    {
+      "source": "src/p2-007-fault-taxonomy.mts",
+      "target": "app/server/src/p2-007-fault-taxonomy.mts"
+    },
+    {
+      "source": "src/p2-007-incident-candidate.mts",
+      "target": "app/server/src/p2-007-incident-candidate.mts"
+    },
+    {
+      "source": "src/p2-007-notification-recommendation.mts",
+      "target": "app/server/src/p2-007-notification-recommendation.mts"
+    },
+    {
+      "source": "src/p2-007-rule-engine.mts",
+      "target": "app/server/src/p2-007-rule-engine.mts"
+    },
+    {
+      "source": "src/p2-007-service-catalog.mts",
+      "target": "app/server/src/p2-007-service-catalog.mts"
+    },
+    {
+      "source": "src/p2-007-staff-directory-contracts.mts",
+      "target": "app/server/src/p2-007-staff-directory-contracts.mts"
+    },
+    {
+      "source": "src/p2-007-staff-directory-store.mts",
+      "target": "app/server/src/p2-007-staff-directory-store.mts"
+    },
+    {
+      "source": "src/p2-007-staff-directory-sync.mts",
+      "target": "app/server/src/p2-007-staff-directory-sync.mts"
+    },
+    {
+      "source": "src/p2-007-third-party-reporter-directory.mts",
+      "target": "app/server/src/p2-007-third-party-reporter-directory.mts"
+    },
+    {
+      "source": "src/p2-007-third-party-staff-directory-adapter.mts",
+      "target": "app/server/src/p2-007-third-party-staff-directory-adapter.mts"
+    },
+    {
+      "source": "src/p2-007-third-party-staff-directory.mts",
+      "target": "app/server/src/p2-007-third-party-staff-directory.mts"
+    },
+    {
+      "source": "src/p2-012-candidate-material.mts",
+      "target": "app/server/src/p2-012-candidate-material.mts"
+    },
+    {
+      "source": "src/p2-012-candidate-source-adapter.mts",
+      "target": "app/server/src/p2-012-candidate-source-adapter.mts"
+    },
+    {
+      "source": "src/p2-012-domain-contracts.mts",
+      "target": "app/server/src/p2-012-domain-contracts.mts"
+    },
+    {
+      "source": "src/p2-012-incident-command-service.mts",
+      "target": "app/server/src/p2-012-incident-command-service.mts"
+    },
+    {
+      "source": "src/p2-012-incident-delivery-control.mts",
+      "target": "app/server/src/p2-012-incident-delivery-control.mts"
+    },
+    {
+      "source": "src/p2-012-incident-delivery-schema.mts",
+      "target": "app/server/src/p2-012-incident-delivery-schema.mts"
+    },
+    {
+      "source": "src/p2-012-incident-query.mts",
+      "target": "app/server/src/p2-012-incident-query.mts"
+    },
+    {
+      "source": "src/p2-012-internal-note-schema.mts",
+      "target": "app/server/src/p2-012-internal-note-schema.mts"
+    },
+    {
+      "source": "src/p2-012-live-cluster.mts",
+      "target": "app/server/src/p2-012-live-cluster.mts"
+    },
+    {
+      "source": "src/p2-012-live-configuration.mts",
+      "target": "app/server/src/p2-012-live-configuration.mts"
+    },
+    {
+      "source": "src/p2-012-live-reporter-scope.mts",
+      "target": "app/server/src/p2-012-live-reporter-scope.mts"
+    },
+    {
+      "source": "src/p2-012-notification-policy.mts",
+      "target": "app/server/src/p2-012-notification-policy.mts"
+    },
+    {
+      "source": "src/p2-012-owner-transfer-schema.mts",
+      "target": "app/server/src/p2-012-owner-transfer-schema.mts"
+    },
+    {
+      "source": "src/p2-012-public-progress-admission.mts",
+      "target": "app/server/src/p2-012-public-progress-admission.mts"
+    },
+    {
+      "source": "src/p2-012-public-progress-notifications.mts",
+      "target": "app/server/src/p2-012-public-progress-notifications.mts"
+    },
+    {
+      "source": "src/p2-012-public-progress-schema.mts",
+      "target": "app/server/src/p2-012-public-progress-schema.mts"
+    },
+    {
+      "source": "src/p2-012-realtime-projector.mts",
+      "target": "app/server/src/p2-012-realtime-projector.mts"
+    },
+    {
+      "source": "src/p2-012-reporter-timeline-adapter.mts",
+      "target": "app/server/src/p2-012-reporter-timeline-adapter.mts"
+    },
+    {
+      "source": "src/p2-012-workbench-assembly.mts",
+      "target": "app/server/src/p2-012-workbench-assembly.mts"
+    },
+    {
+      "source": "src/p2-012-workbench-http.mts",
+      "target": "app/server/src/p2-012-workbench-http.mts"
+    },
+    {
+      "source": "src/p2-015-contact-journey.mts",
+      "target": "app/server/src/p2-015-contact-journey.mts"
+    },
+    {
+      "source": "src/p2-015-continuation-ref.mts",
+      "target": "app/server/src/p2-015-continuation-ref.mts"
+    },
+    {
+      "source": "src/p2-015-decision-router.mts",
+      "target": "app/server/src/p2-015-decision-router.mts"
+    },
+    {
+      "source": "src/p2-015-decision-store.mts",
+      "target": "app/server/src/p2-015-decision-store.mts"
+    },
+    {
+      "source": "src/p2-015-domain-contracts.mts",
+      "target": "app/server/src/p2-015-domain-contracts.mts"
+    },
+    {
+      "source": "src/p2-015-explicit-continuation.mts",
+      "target": "app/server/src/p2-015-explicit-continuation.mts"
+    },
+    {
+      "source": "src/p2-015-group-corroboration.mts",
+      "target": "app/server/src/p2-015-group-corroboration.mts"
+    },
+    {
+      "source": "src/p2-015-incident-correlation.mts",
+      "target": "app/server/src/p2-015-incident-correlation.mts"
+    },
+    {
+      "source": "src/p2-015-manual-review.mts",
+      "target": "app/server/src/p2-015-manual-review.mts"
+    },
+    {
+      "source": "src/p2-015-projections.mts",
+      "target": "app/server/src/p2-015-projections.mts"
+    },
+    {
+      "source": "src/p2-015-query.mts",
+      "target": "app/server/src/p2-015-query.mts"
+    },
+    {
+      "source": "src/p2-015-reporter-profile.mts",
+      "target": "app/server/src/p2-015-reporter-profile.mts"
+    },
+    {
+      "source": "src/p2-015-rule-first-orchestrator.mts",
+      "target": "app/server/src/p2-015-rule-first-orchestrator.mts"
+    },
+    {
+      "source": "src/p2-015-safe-action-executor.mts",
+      "target": "app/server/src/p2-015-safe-action-executor.mts"
+    },
+    {
+      "source": "src/p2-015-service-intake-decision-port.mts",
+      "target": "app/server/src/p2-015-service-intake-decision-port.mts"
+    },
+    {
+      "source": "src/p2-015-wecom-member-directory.mts",
+      "target": "app/server/src/p2-015-wecom-member-directory.mts"
+    },
+    {
+      "source": "src/p2-015-worker.mts",
+      "target": "app/server/src/p2-015-worker.mts"
+    },
+    {
+      "source": "src/p2-016-conversation-binding.mts",
+      "target": "app/server/src/p2-016-conversation-binding.mts"
+    },
+    {
+      "source": "src/p2-016-delivery-control.mts",
+      "target": "app/server/src/p2-016-delivery-control.mts"
+    },
+    {
+      "source": "src/p2-016-direct-intake.mts",
+      "target": "app/server/src/p2-016-direct-intake.mts"
+    },
+    {
+      "source": "src/p2-016-domain-contracts.mts",
+      "target": "app/server/src/p2-016-domain-contracts.mts"
+    },
+    {
+      "source": "src/p2-016-group-closure-webhook.mts",
+      "target": "app/server/src/p2-016-group-closure-webhook.mts"
+    },
+    {
+      "source": "src/p2-016-guided-journey.mts",
+      "target": "app/server/src/p2-016-guided-journey.mts"
+    },
+    {
+      "source": "src/p2-016-inbound-scope.mts",
+      "target": "app/server/src/p2-016-inbound-scope.mts"
+    },
+    {
+      "source": "src/p2-016-live-cluster.mts",
+      "target": "app/server/src/p2-016-live-cluster.mts"
+    },
+    {
+      "source": "src/p2-016-live-configuration.mts",
+      "target": "app/server/src/p2-016-live-configuration.mts"
+    },
+    {
+      "source": "src/p2-016-manual-review-facade.mts",
+      "target": "app/server/src/p2-016-manual-review-facade.mts"
+    },
+    {
+      "source": "src/p2-016-orchestration-adapters.mts",
+      "target": "app/server/src/p2-016-orchestration-adapters.mts"
+    },
+    {
+      "source": "src/p2-016-realtime-appender.mts",
+      "target": "app/server/src/p2-016-realtime-appender.mts"
+    },
+    {
+      "source": "src/p2-016-realtime-projector.mts",
+      "target": "app/server/src/p2-016-realtime-projector.mts"
+    },
+    {
+      "source": "src/p2-016-reporter-access.mts",
+      "target": "app/server/src/p2-016-reporter-access.mts"
+    },
+    {
+      "source": "src/p2-016-reporter-http.mts",
+      "target": "app/server/src/p2-016-reporter-http.mts"
+    },
+    {
+      "source": "src/p2-016-reporter-timeline.mts",
+      "target": "app/server/src/p2-016-reporter-timeline.mts"
+    },
+    {
+      "source": "src/p2-016-runtime.mts",
+      "target": "app/server/src/p2-016-runtime.mts"
+    },
+    {
+      "source": "src/p2-016-template-card-builder.mts",
+      "target": "app/server/src/p2-016-template-card-builder.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-assignment.mts",
+      "target": "app/server/src/p2-016-ticket-assignment.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-command-facade.mts",
+      "target": "app/server/src/p2-016-ticket-command-facade.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-command-ledger.mts",
+      "target": "app/server/src/p2-016-ticket-command-ledger.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-notification-policy.mts",
+      "target": "app/server/src/p2-016-ticket-notification-policy.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-notification-projector.mts",
+      "target": "app/server/src/p2-016-ticket-notification-projector.mts"
+    },
+    {
+      "source": "src/p2-016-ticket-query.mts",
+      "target": "app/server/src/p2-016-ticket-query.mts"
+    },
+    {
+      "source": "src/p2-016-wecom-sender.mts",
+      "target": "app/server/src/p2-016-wecom-sender.mts"
+    },
+    {
+      "source": "src/p2-016-workbench-http.mts",
+      "target": "app/server/src/p2-016-workbench-http.mts"
+    },
+    {
+      "source": "src/p2-016-workbench-static.mts",
+      "target": "app/server/src/p2-016-workbench-static.mts"
+    },
+    {
+      "source": "src/p2-016-workbench-wecom-auth.mts",
+      "target": "app/server/src/p2-016-workbench-wecom-auth.mts"
+    },
+    {
+      "source": "src/p2-g1-browser-sessions.mts",
+      "target": "app/server/src/p2-g1-browser-sessions.mts"
+    },
+    {
+      "source": "src/p2-g1-human-only-assembly.mts",
+      "target": "app/server/src/p2-g1-human-only-assembly.mts"
+    },
+    {
+      "source": "src/p2-g1-inbound-projection-coordinator.mts",
+      "target": "app/server/src/p2-g1-inbound-projection-coordinator.mts"
+    },
+    {
+      "source": "src/p2-g1-isolated-postgres.mts",
+      "target": "app/server/src/p2-g1-isolated-postgres.mts"
+    },
+    {
+      "source": "src/p2-g1-migrations.mts",
+      "target": "app/server/src/p2-g1-migrations.mts"
+    },
+    {
+      "source": "src/p2-g1-observability.mts",
+      "target": "app/server/src/p2-g1-observability.mts"
+    },
+    {
+      "source": "src/p2-g1-process-cluster.mts",
+      "target": "app/server/src/p2-g1-process-cluster.mts"
+    },
+    {
+      "source": "src/p2-g1-process-metrics.mts",
+      "target": "app/server/src/p2-g1-process-metrics.mts"
+    },
+    {
+      "source": "src/p2-g1-runtime.mts",
+      "target": "app/server/src/p2-g1-runtime.mts"
+    },
+    {
+      "source": "src/p2-g1-test-authentication.mts",
+      "target": "app/server/src/p2-g1-test-authentication.mts"
+    },
+    {
+      "source": "src/p2-g1-wecom-gateway.mts",
+      "target": "app/server/src/p2-g1-wecom-gateway.mts"
+    },
+    {
+      "source": "src/p2-g1-wecom-sender.mts",
+      "target": "app/server/src/p2-g1-wecom-sender.mts"
+    },
+    {
+      "source": "src/p2-g2-candidate.mts",
+      "target": "app/server/src/p2-g2-candidate.mts"
+    },
+    {
+      "source": "src/p2-g2-communication-append.mts",
+      "target": "app/server/src/p2-g2-communication-append.mts"
+    },
+    {
+      "source": "src/p2-g2-control-evidence.mts",
+      "target": "app/server/src/p2-g2-control-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-corpus-privacy.mts",
+      "target": "app/server/src/p2-g2-corpus-privacy.mts"
+    },
+    {
+      "source": "src/p2-g2-current-evidence.mts",
+      "target": "app/server/src/p2-g2-current-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-database-scope.mts",
+      "target": "app/server/src/p2-g2-database-scope.mts"
+    },
+    {
+      "source": "src/p2-g2-delivery-evidence.mts",
+      "target": "app/server/src/p2-g2-delivery-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-evidence-files.mts",
+      "target": "app/server/src/p2-g2-evidence-files.mts"
+    },
+    {
+      "source": "src/p2-g2-evidence-time.mts",
+      "target": "app/server/src/p2-g2-evidence-time.mts"
+    },
+    {
+      "source": "src/p2-g2-evidence.mts",
+      "target": "app/server/src/p2-g2-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-finalization-evidence.mts",
+      "target": "app/server/src/p2-g2-finalization-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-gate-evaluator.mts",
+      "target": "app/server/src/p2-g2-gate-evaluator.mts"
+    },
+    {
+      "source": "src/p2-g2-live-evidence.mts",
+      "target": "app/server/src/p2-g2-live-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-manual-evidence.mts",
+      "target": "app/server/src/p2-g2-manual-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-network-boundary.mts",
+      "target": "app/server/src/p2-g2-network-boundary.mts"
+    },
+    {
+      "source": "src/p2-g2-predecessor-verification.mts",
+      "target": "app/server/src/p2-g2-predecessor-verification.mts"
+    },
+    {
+      "source": "src/p2-g2-provider-receipts.mts",
+      "target": "app/server/src/p2-g2-provider-receipts.mts"
+    },
+    {
+      "source": "src/p2-g2-reconciliation.mts",
+      "target": "app/server/src/p2-g2-reconciliation.mts"
+    },
+    {
+      "source": "src/p2-g2-resource-sampler.mts",
+      "target": "app/server/src/p2-g2-resource-sampler.mts"
+    },
+    {
+      "source": "src/p2-g2-send-budget.mts",
+      "target": "app/server/src/p2-g2-send-budget.mts"
+    },
+    {
+      "source": "src/p2-g2-send-guard.mts",
+      "target": "app/server/src/p2-g2-send-guard.mts"
+    },
+    {
+      "source": "src/p2-g2-service-loop-assembly.mts",
+      "target": "app/server/src/p2-g2-service-loop-assembly.mts"
+    },
+    {
+      "source": "src/p2-g2-source-audit.mts",
+      "target": "app/server/src/p2-g2-source-audit.mts"
+    },
+    {
+      "source": "src/p2-g2-test-evidence.mts",
+      "target": "app/server/src/p2-g2-test-evidence.mts"
+    },
+    {
+      "source": "src/p2-g2-validation-config.mts",
+      "target": "app/server/src/p2-g2-validation-config.mts"
+    },
+    {
+      "source": "src/p2-g2-webhook-receipts.mts",
+      "target": "app/server/src/p2-g2-webhook-receipts.mts"
+    },
+    {
+      "source": "src/p2-g2-wecom-app-token.mts",
+      "target": "app/server/src/p2-g2-wecom-app-token.mts"
+    },
+    {
+      "source": "src/p2-g2-wecom-oauth-http.mts",
+      "target": "app/server/src/p2-g2-wecom-oauth-http.mts"
+    },
+    {
+      "source": "src/p2-g2-wecom-oauth-provider.mts",
+      "target": "app/server/src/p2-g2-wecom-oauth-provider.mts"
+    },
+    {
+      "source": "src/p2-g2-wecom-oauth-server.mts",
+      "target": "app/server/src/p2-g2-wecom-oauth-server.mts"
+    },
+    {
+      "source": "src/p2-g2-wecom-web-oauth.mts",
+      "target": "app/server/src/p2-g2-wecom-web-oauth.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-authorizer.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-authorizer.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-contract.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-contract.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-delegated-identity.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-delegated-identity.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-g2-config.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-g2-config.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-http.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-http.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-profile.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-profile.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-readiness.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-readiness.mts"
+    },
+    {
+      "source": "src/p2-g2-yixiaoxiu-server.mts",
+      "target": "app/server/src/p2-g2-yixiaoxiu-server.mts"
+    },
+    {
+      "source": "src/p2-g2-yxx-targeted-creation.mts",
+      "target": "app/server/src/p2-g2-yxx-targeted-creation.mts"
+    },
+    {
+      "source": "src/platform/legacy-migration-guard.mts",
+      "target": "app/server/src/platform/legacy-migration-guard.mts"
+    },
+    {
+      "source": "src/platform/postgres-pool.mts",
+      "target": "app/server/src/platform/postgres-pool.mts"
+    },
+    {
+      "source": "src/platform/postgres-types.mts",
+      "target": "app/server/src/platform/postgres-types.mts"
+    },
+    {
+      "source": "src/platform/time-contract.mts",
+      "target": "app/server/src/platform/time-contract.mts"
+    },
+    {
+      "source": "src/ticket-reopen-rounds.mts",
+      "target": "app/server/src/ticket-reopen-rounds.mts"
+    },
+    {
+      "source": "src/web01-workbench-http.mts",
+      "target": "app/server/src/web01-workbench-http.mts"
+    },
+    {
+      "source": "src/web01-workbench-query.mts",
+      "target": "app/server/src/web01-workbench-query.mts"
+    },
+    {
+      "source": "src/web01-workbench-static.mts",
+      "target": "app/server/src/web01-workbench-static.mts"
+    },
+    {
+      "source": "src/wecom-application-member.mts",
+      "target": "app/server/src/wecom-application-member.mts"
+    },
+    {
+      "source": "src/workbench-activity-http.mts",
+      "target": "app/server/src/workbench-activity-http.mts"
+    },
+    {
+      "source": "src/workbench-activity.mts",
+      "target": "app/server/src/workbench-activity.mts"
+    },
+    {
+      "source": "src/workbench-app-notification-sender.mts",
+      "target": "app/server/src/workbench-app-notification-sender.mts"
+    },
+    {
+      "source": "src/workbench-app-notification-target.mts",
+      "target": "app/server/src/workbench-app-notification-target.mts"
+    },
+    {
+      "source": "src/workbench-assignment-history-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-assignment-history-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-assignment-history.mts",
+      "target": "app/server/src/workbench-assignment-history.mts"
+    },
+    {
+      "source": "src/workbench-attachment-store.mts",
+      "target": "app/server/src/workbench-attachment-store.mts"
+    },
+    {
+      "source": "src/workbench-attachments.mts",
+      "target": "app/server/src/workbench-attachments.mts"
+    },
+    {
+      "source": "src/workbench-board-action-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-board-action-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-conversation-inbox.mts",
+      "target": "app/server/src/workbench-conversation-inbox.mts"
+    },
+    {
+      "source": "src/workbench-conversations.mts",
+      "target": "app/server/src/workbench-conversations.mts"
+    },
+    {
+      "source": "src/workbench-follow-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-follow-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-follow-up-schedules.mts",
+      "target": "app/server/src/workbench-follow-up-schedules.mts"
+    },
+    {
+      "source": "src/workbench-follow.mts",
+      "target": "app/server/src/workbench-follow.mts"
+    },
+    {
+      "source": "src/workbench-group-notification-sender.mts",
+      "target": "app/server/src/workbench-group-notification-sender.mts"
+    },
+    {
+      "source": "src/workbench-incident-delivery-authority.mts",
+      "target": "shared/workbench-incident-delivery-authority.mts"
+    },
+    {
+      "source": "src/workbench-incident-delivery-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-incident-delivery-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-manual-report-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-manual-report-policy.mts",
+      "target": "app/server/src/workbench-manual-report-policy.mts"
+    },
+    {
+      "source": "src/workbench-manual-report-source.mts",
+      "target": "app/server/src/workbench-manual-report-source.mts"
+    },
+    {
+      "source": "src/workbench-manual-reports.mts",
+      "target": "app/server/src/workbench-manual-reports.mts"
+    },
+    {
+      "source": "src/workbench-manual-self-handling-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-manual-self-handling-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-notification-exception-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-notification-exception-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-notification-exceptions.mts",
+      "target": "app/server/src/workbench-notification-exceptions.mts"
+    },
+    {
+      "source": "src/workbench-personal-read.mts",
+      "target": "app/server/src/workbench-personal-read.mts"
+    },
+    {
+      "source": "src/workbench-realtime-client.mts",
+      "target": "app/pc-admin/src/realtime/workbench-realtime-client.mts"
+    },
+    {
+      "source": "src/workbench-reminder-browser-contracts.mts",
+      "target": "app/pc-admin/src/contracts/workbench-reminder-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-reminders.mts",
+      "target": "app/server/src/workbench-reminders.mts"
+    },
+    {
+      "source": "src/workbench-reporter-candidates.mts",
+      "target": "app/server/src/workbench-reporter-candidates.mts"
+    },
+    {
+      "source": "src/workbench-reporter-verification.mts",
+      "target": "app/server/src/workbench-reporter-verification.mts"
+    },
+    {
+      "source": "src/workbench-review-start.mts",
+      "target": "app/server/src/workbench-review-start.mts"
+    },
+    {
+      "source": "src/workbench-search-contracts.mts",
+      "target": "shared/workbench-search-contracts.mts"
+    },
+    {
+      "source": "src/workbench-search-http.mts",
+      "target": "app/server/src/workbench-search-http.mts"
+    },
+    {
+      "source": "src/workbench-search-port.mts",
+      "target": "app/server/src/workbench-search-port.mts"
+    },
+    {
+      "source": "src/workbench-search.mts",
+      "target": "app/server/src/workbench-search.mts"
+    },
+    {
+      "source": "src/workbench-source-groups.mts",
+      "target": "app/server/src/workbench-source-groups.mts"
+    },
+    {
+      "source": "src/workbench-supplement-follow-up.mts",
+      "target": "app/server/src/workbench-supplement-follow-up.mts"
+    },
+    {
+      "source": "src/workbench-ticket-assignment.mts",
+      "target": "app/server/src/workbench-ticket-assignment.mts"
+    },
+    {
+      "source": "src/workbench-ticket-completion.mts",
+      "target": "app/server/src/workbench-ticket-completion.mts"
+    },
+    {
+      "source": "src/workbench-ticket-conversation-handling.mts",
+      "target": "app/server/src/workbench-ticket-conversation-handling.mts"
+    },
+    {
+      "source": "src/workbench-ticket-return-to-dispatch.mts",
+      "target": "app/server/src/workbench-ticket-return-to-dispatch.mts"
+    },
+    {
+      "source": "src/workbench-ticket-round-notifications.mts",
+      "target": "app/server/src/workbench-ticket-round-notifications.mts"
+    },
+    {
+      "source": "src/workbench-ticket-self-handling.mts",
+      "target": "app/server/src/workbench-ticket-self-handling.mts"
+    },
+    {
+      "source": "src/workbench-ticket-takeover-completion.mts",
+      "target": "app/server/src/workbench-ticket-takeover-completion.mts"
+    },
+    {
+      "source": "src/workbench-ticket-takeover.mts",
+      "target": "app/server/src/workbench-ticket-takeover.mts"
+    },
+    {
+      "source": "src/workbench-ticket-unassign.mts",
+      "target": "app/server/src/workbench-ticket-unassign.mts"
+    },
+    {
+      "source": "src/workbench-web-report-browser-contracts.mts",
+      "target": "shared/workbench-web-report-browser-contracts.mts"
+    },
+    {
+      "source": "src/workbench-web-report.mts",
+      "target": "app/server/src/workbench-web-report.mts"
+    },
+    {
+      "source": "src/yxx-application-member-auth.mts",
+      "target": "app/server/src/yxx-application-member-auth.mts"
+    },
+    {
+      "source": "src/yxx-current-evidence-history.mts",
+      "target": "app/server/src/yxx-current-evidence-history.mts"
+    },
+    {
+      "source": "src/yxx-current-evidence.mts",
+      "target": "app/server/src/yxx-current-evidence.mts"
+    },
+    {
+      "source": "src/yxx-current-readiness-scope.mts",
+      "target": "app/server/src/yxx-current-readiness-scope.mts"
+    },
+    {
+      "source": "src/yxx-h5-batch-sql.mts",
+      "target": "app/server/src/yxx-h5-batch-sql.mts"
+    },
+    {
+      "source": "src/yxx-h5-entry.mts",
+      "target": "app/server/src/yxx-h5-entry.mts"
+    },
+    {
+      "source": "src/yxx-h5-http.mts",
+      "target": "app/server/src/yxx-h5-http.mts"
+    },
+    {
+      "source": "src/yxx-h5-media-budget.mts",
+      "target": "app/server/src/yxx-h5-media-budget.mts"
+    },
+    {
+      "source": "src/yxx-h5-media-format.mts",
+      "target": "app/server/src/yxx-h5-media-format.mts"
+    },
+    {
+      "source": "src/yxx-h5-media-store.mts",
+      "target": "app/server/src/yxx-h5-media-store.mts"
+    },
+    {
+      "source": "src/yxx-h5-media-transcode.mts",
+      "target": "app/server/src/yxx-h5-media-transcode.mts"
+    },
+    {
+      "source": "src/yxx-h5-media-wecom.mts",
+      "target": "app/server/src/yxx-h5-media-wecom.mts"
+    },
+    {
+      "source": "src/yxx-h5-media.mts",
+      "target": "app/server/src/yxx-h5-media.mts"
+    },
+    {
+      "source": "src/yxx-h5-read-batch.mts",
+      "target": "app/server/src/yxx-h5-read-batch.mts"
+    },
+    {
+      "source": "src/yxx-h5-realtime.mts",
+      "target": "app/server/src/yxx-h5-realtime.mts"
+    },
+    {
+      "source": "src/yxx-h5-runtime.mts",
+      "target": "app/server/src/yxx-h5-runtime.mts"
+    },
+    {
+      "source": "src/yxx-h5-static.mts",
+      "target": "app/server/src/yxx-h5-static.mts"
+    },
+    {
+      "source": "src/yxx-h5-v2-contracts.mts",
+      "target": "app/server/src/yxx-h5-v2-contracts.mts"
+    },
+    {
+      "source": "src/yxx-h5-v2-lifecycle.mts",
+      "target": "app/server/src/yxx-h5-v2-lifecycle.mts"
+    },
+    {
+      "source": "src/yxx-h5-v2-profile-enricher.mts",
+      "target": "app/server/src/yxx-h5-v2-profile-enricher.mts"
+    },
+    {
+      "source": "src/yxx-h5-v2-profile.mts",
+      "target": "app/server/src/yxx-h5-v2-profile.mts"
+    },
+    {
+      "source": "src/yxx-limited-write-contract.mts",
+      "target": "app/server/src/yxx-limited-write-contract.mts"
+    },
+    {
+      "source": "src/yxx-limited-write-guard.mts",
+      "target": "app/server/src/yxx-limited-write-guard.mts"
+    },
+    {
+      "source": "src/yxx-limited-write-runner.mts",
+      "target": "app/server/src/yxx-limited-write-runner.mts"
+    },
+    {
+      "source": "src/yxx-self-service-authorization.mts",
+      "target": "app/server/src/yxx-self-service-authorization.mts"
+    },
+    {
+      "source": "src/yxx-self-service-command.mts",
+      "target": "app/server/src/yxx-self-service-command.mts"
+    },
+    {
+      "source": "src/yxx-self-service-evidence-history.mts",
+      "target": "app/server/src/yxx-self-service-evidence-history.mts"
+    },
+    {
+      "source": "src/yxx-self-service-feedback.mts",
+      "target": "app/server/src/yxx-self-service-feedback.mts"
+    },
+    {
+      "source": "src/yxx-self-service-native-http.mts",
+      "target": "app/server/src/yxx-self-service-native-http.mts"
+    },
+    {
+      "source": "src/yxx-self-service-orchestrator.mts",
+      "target": "app/server/src/yxx-self-service-orchestrator.mts"
+    },
+    {
+      "source": "src/yxx-self-service-query.mts",
+      "target": "app/server/src/yxx-self-service-query.mts"
+    },
+    {
+      "source": "src/yxx-self-service-readiness.mts",
+      "target": "app/server/src/yxx-self-service-readiness.mts"
+    },
+    {
+      "source": "src/yxx-self-service-runtime.mts",
+      "target": "app/server/src/yxx-self-service-runtime.mts"
+    },
+    {
+      "source": "src/yxx-self-service-store.mts",
+      "target": "app/server/src/yxx-self-service-store.mts"
+    },
+    {
+      "source": "src/yxx-self-service-supplement.mts",
+      "target": "app/server/src/yxx-self-service-supplement.mts"
+    },
+    {
+      "source": "src/yxx-self-service-validation-scope.mts",
+      "target": "app/server/src/yxx-self-service-validation-scope.mts"
+    },
+    {
+      "source": "src/yxx-self-service-verification.mts",
+      "target": "app/server/src/yxx-self-service-verification.mts"
+    }
+  ]
+}

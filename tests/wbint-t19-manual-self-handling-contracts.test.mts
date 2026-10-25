@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {decodeManualSelfHandlingCommand,decodeManualSelfHandlingContext,decodeManualSelfHandlingResult,manualSelfHandlingCommand,encodeManualSelfHandlingDraft,decodeManualSelfHandlingDraft} from '../src/workbench-manual-self-handling-browser-contracts.mjs';
-import {emptyManualReportInput} from '../src/workbench-manual-report-browser-contracts.mjs';
+import {decodeManualSelfHandlingCommand,decodeManualSelfHandlingContext,decodeManualSelfHandlingResult,manualSelfHandlingCommand,encodeManualSelfHandlingDraft,decodeManualSelfHandlingDraft} from '../app/pc-admin/src/contracts/workbench-manual-self-handling-browser-contracts.mjs';
+import {emptyManualReportInput} from '../app/pc-admin/src/contracts/workbench-manual-report-browser-contracts.mjs';
 test('T19 the original captured self handling command round trips a full Unicode intent without losing its UUID or selected group',()=>{
   const value={...emptyManualReportInput(),name:'合成报修人',contact:'合成内线19',description:'字'.repeat(4000),unknown:true},id=randomUUID(),command=manualSelfHandlingCommand(value,id,'PILOT_IT');
   const encoded=encodeManualSelfHandlingDraft({value,team:'PILOT_IT',pending:command});assert.ok(Buffer.byteLength(encoded)<16384);assert.deepEqual(decodeManualSelfHandlingDraft(encoded),{value,team:'PILOT_IT',pending:command});assert.equal(command.client_command_id,id);assert.equal(command.description.length,4000);

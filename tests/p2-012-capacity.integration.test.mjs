@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { test } from 'node:test';
-import { generateIncidentCandidate } from '../src/p2-007-incident-candidate.mjs';
-import { createP2012IncidentCommandService } from '../src/p2-012-incident-command-service.mjs';
-import { createP2012IncidentQuery } from '../src/p2-012-incident-query.mjs';
-import { createP2012NotificationPolicy } from '../src/p2-012-notification-policy.mjs';
-import { createP2012Runtime } from '../src/p2-012-workbench-assembly.mjs';
-import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
-import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
-import { migrateP2012 } from '../scripts/p2-012-migrate.mjs';
+import { generateIncidentCandidate } from '../app/server/src/p2-007-incident-candidate.mjs';
+import { createP2012IncidentCommandService } from '../app/server/src/p2-012-incident-command-service.mjs';
+import { createP2012IncidentQuery } from '../app/server/src/p2-012-incident-query.mjs';
+import { createP2012NotificationPolicy } from '../app/server/src/p2-012-notification-policy.mjs';
+import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
+import { createCommunicationDeliveryWorker } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
+import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 const make=(action,id,version,extra={})=>({action,client_command_id:randomUUID(),reason_code:'OPERATOR_REVIEWED',
   ...(['START_REVIEW','CONFIRM_INCIDENT'].includes(action)?{candidate_review_id:id}:{incident_id:id}),

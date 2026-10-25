@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWeComMemberDirectory} from '../src/p2-015-wecom-member-directory.mjs';
-import {createReporterDirectoryPort} from '../src/p2-015-contact-journey.mjs';
+import {createWeComMemberDirectory} from '../app/server/src/p2-015-wecom-member-directory.mjs';
+import {createReporterDirectoryPort} from '../app/server/src/p2-015-contact-journey.mjs';
 
 test('目录失败响应被取消，结束后中止共享请求信号',async()=>{
   let cancelled=false,signal;

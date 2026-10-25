@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeWebReport,decodeWebUrge,decodeWebMedia,decodeMemberProgress,decodeMemberProgressResult,decodeMemberProgressReceipt} from '../src/workbench-web-report-browser-contracts.mjs';
-import {normalizeWorkbenchMemberProgress} from '../src/workbench-web-report.mjs';
-import {decodeReminderPage} from '../src/workbench-reminder-browser-contracts.mjs';
+import {decodeWebReport,decodeWebUrge,decodeWebMedia,decodeMemberProgress,decodeMemberProgressResult,decodeMemberProgressReceipt} from '../shared/workbench-web-report-browser-contracts.mjs';
+import {normalizeWorkbenchMemberProgress} from '../app/server/src/workbench-web-report.mjs';
+import {decodeReminderPage} from '../app/pc-admin/src/contracts/workbench-reminder-browser-contracts.mjs';
 const ticketId='2b1f2c30-a051-4a44-8a2a-dc4b6467d7b1',commandId='1b1f2c30-a051-4a44-8a2a-dc4b6467d7b1';
 const when='2026-10-20 12:30:00',epoch=String(Date.parse(when.replace(' ','T')+'+08:00'));
 const progress={summary:'正在更换网线',estimated_at:null,estimated_epoch_ms:null,version:7,updated_at:when,updated_epoch_ms:epoch};

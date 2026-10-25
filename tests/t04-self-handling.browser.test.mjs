@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 async function handlingBrowser(context,run,{width=1920,page=true}={}){
   const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);

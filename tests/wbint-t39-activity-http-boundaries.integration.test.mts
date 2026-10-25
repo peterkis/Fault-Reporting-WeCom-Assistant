@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {WorkbenchActivityCommand,WorkbenchActivityView} from '../contracts/workbench_activity_contracts.js';
 interface Fixture {origin:string;cookies:string[];tickets:{ticket:{id:string}}[];principals:{id:string}[];pool:PostgresPool;runtime:{observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 const target=(id:string)=>({kind:'ticket' as const,id});

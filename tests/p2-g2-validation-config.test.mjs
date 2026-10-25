@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { configurationFixture, required, forbidden } from './helpers/p2-g2-configuration-fixture.mjs';
-import { readG2Configuration, minimalG2Environment, G2_REQUIRED_FLAGS, G2_LIVE_FUSES } from '../src/p2-g2-validation-config.mjs';
+import { readG2Configuration, minimalG2Environment, G2_REQUIRED_FLAGS, G2_LIVE_FUSES } from '../app/server/src/p2-g2-validation-config.mjs';
 
 
 test('P2-G2 synthetic configuration consumes all actual required flags and no live approval', () => {

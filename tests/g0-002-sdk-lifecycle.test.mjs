@@ -7,7 +7,7 @@ import {
   redact,
   runLifecycleProbe,
   validateRuntimeConfig,
-} from '../src/g0-002-sdk-lifecycle.mjs';
+} from '../app/server/src/g0-002-sdk-lifecycle.mjs';
 
 const baseEnv = {
   ARCHITECTURE_BASELINE: 'V1.2',

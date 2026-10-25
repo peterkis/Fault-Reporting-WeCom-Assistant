@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {t20Object} from './helpers/t20-feedback-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 function errorFacts(value:unknown):unknown{return value instanceof Error?{name:value.name,message:value.message,stack:value.stack,...(value instanceof AggregateError?{errors:value.errors.map(errorFacts)}:{})}:value===null?null:String(value);}

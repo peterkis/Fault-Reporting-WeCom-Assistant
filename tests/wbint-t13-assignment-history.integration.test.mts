@@ -4,7 +4,7 @@ import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {acceptedSetup,acceptedOptions,http,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 
 test('an authorized colleague pages the actual first acceptance and coupled transfer chain without replacing the predecessor by the current owner or final start event',async()=>{

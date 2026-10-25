@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { withG2Runtime,G2_RULE_FLAGS } from './helpers/p2-g2-runtime-harness.mjs';
-import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
-import {resolveDirectJourneyAssociation} from '../src/p2-015-contact-journey.mjs';
+import { createP2016OrchestrationWorker } from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import {resolveDirectJourneyAssociation} from '../app/server/src/p2-015-contact-journey.mjs';
 
 async function receiptRef(f){return (await f.pool.query("SELECT m.content->>'text' AS text FROM communication.ticket_notification_binding b JOIN communication.message m ON m.id=b.message_id WHERE b.destination_type='GROUP' ORDER BY b.id LIMIT 1")).rows[0].text.match(/续接工单 ([A-Za-z0-9_-]{32})：/u)?.[1];}
 

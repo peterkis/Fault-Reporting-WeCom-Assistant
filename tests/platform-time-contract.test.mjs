@@ -13,7 +13,7 @@ import {
   formatEpochMsToShanghaiLocal,
   localDateTimeToDisplay,
   shanghaiLocalToEpochMs,
-} from '../src/platform/time-contract.mjs';
+} from '../app/server/src/platform/time-contract.mjs';
 
 test('LocalDate, LocalTime, and LocalDateTime accept real Asia/Shanghai calendar values', () => {
   assert.equal(assertLocalDate('2024-02-29'), '2024-02-29');
@@ -48,7 +48,7 @@ test('PhysicalEpochMs remains a canonical non-negative decimal string and round-
 });
 
 test('explicit Asia/Shanghai formatter is invariant under UTC, Tokyo, and New York process TZ', () => {
-  const expression = "import('./src/platform/time-contract.mjs').then(m=>process.stdout.write(m.formatEpochMsToShanghaiLocal('1788406496000')))";
+  const expression = "import('./app/server/src/platform/time-contract.mjs').then(m=>process.stdout.write(m.formatEpochMsToShanghaiLocal('1788406496000')))";
   const values = ['UTC', 'Asia/Tokyo', 'America/New_York'].map((TZ) => spawnSync(process.execPath, ['-e', expression], {
     cwd: process.cwd(), encoding: 'utf8', env: { ...process.env, TZ },
   }));

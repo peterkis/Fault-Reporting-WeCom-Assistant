@@ -5,7 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import type {IncomingMessage,ServerResponse} from 'node:http';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withT13Profile} from './helpers/t13-profile-fixture.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';

@@ -1,10 +1,12 @@
 # 正式管理端技术方案（WEB01–WEB05）
 
+2026-10-22 源码布局前向调整：正式包现位于 `app/pc-admin`，沿 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md) 保持原前端与服务端边界。根依赖、统一构建、`/workbench/app/` 与 `.build/runtime/web/admin-workbench` 不变；整体应用目标和分步状态见[目录说明](../../app/README.md)。下文 WEB01 首版的目录及范围描述保留原日期含义。
+
 状态：技术选型已由用户确认；实现与运行验证以 WEB01 PR 实际结果为准。日期：2026-10-07。
 
 后继业务入口：[完整人工工作台实施计划](../../plans/admin-workbench-integration/README.md)。用户已于2026-10-07确认完整人工业务与必要后端补齐，以及当前浏览器草稿恢复（最长24小时）等后续规则；这补齐下文历史待决项，不表示WEB02–WEB05已实现／获准部署。既有WEB01只读边界与独立来源群元数据增量分别保留。
 
-WBINT-T03 已在本地加入默认关闭的独立恢复模块，首个消费者为可靠内部备注。Query只保存服务器事实，Zustand只保存临时UI；原生IDB存密文恢复副本／非导出CryptoKey及有界opaque未核对标识。账号、kind/id、purpose、schema与固定到期绑定；恢复先新bootstrap与真实Ticket授权，不按roles猜测。跨标签清理使用既有浏览器BroadcastChannel和IDB epoch/revision，持久交易核对迟到crypto，不能靠提示文案宣称清理。当前技术合同／限制见[前端README](../../web/admin-workbench/README.md#当前浏览器草稿恢复wbint-t03)，实际对象和证据见[T03执行](../../plans/admin-workbench-integration/execution/t03.md)；下文WEB01只读描述保留其首版历史。
+WBINT-T03 已在本地加入默认关闭的独立恢复模块，首个消费者为可靠内部备注。Query只保存服务器事实，Zustand只保存临时UI；原生IDB存密文恢复副本／非导出CryptoKey及有界opaque未核对标识。账号、kind/id、purpose、schema与固定到期绑定；恢复先新bootstrap与真实Ticket授权，不按roles猜测。跨标签清理使用既有浏览器BroadcastChannel和IDB epoch/revision，持久交易核对迟到crypto，不能靠提示文案宣称清理。当前技术合同／限制见[前端README](../../app/pc-admin/README.md#当前浏览器草稿恢复wbint-t03)，实际对象和证据见[T03执行](../../plans/admin-workbench-integration/execution/t03.md)；下文WEB01只读描述保留其首版历史。
 
 基线：最新远端 main `1948f76a676f9bfd7ebcbecd3af7951da4034e7e`（PR54 merge）。用户本轮要求交付 WEB01 真 HTTP 只读页面；本文件随业务实现 PR 交付，不单独建立盘点 PR，也不批准 WEB02、部署或现场运行。原 181 项迁移、D01/R01 与既有证据保持原对象身份。
 

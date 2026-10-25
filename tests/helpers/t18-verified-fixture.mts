@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {createHash,createHmac} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {hashP2016,transactionP2016} from '../../src/p2-016-domain-contracts.mjs';
-import {WorkbenchError} from '../../src/p2-006-workbench-query.mjs';
-import {formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import {hashP2016,transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
+import {WorkbenchError} from '../../app/server/src/p2-006-workbench-query.mjs';
+import {formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {ManualReporterDirectoryOptions,WorkbenchReporterCandidate} from '../../contracts/workbench_reporter_candidates_contracts.js';
 
 // Isolated configured authority only: no real directory, identity or message transport.

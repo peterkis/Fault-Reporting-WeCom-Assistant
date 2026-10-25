@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { assertEpochMsString, assertLocalDate, addEpochMilliseconds, compareLocalDateTime, nowShanghaiLocal, shanghaiLocalToEpochMs, formatEpochMsToShanghaiLocal, TimeContractError } from '../src/platform/time-contract.mjs';
-import { createStringPreservingPgTypes, postgresTimestampToLocalDateTime, STRING_PRESERVED_POSTGRES_OIDS } from '../src/platform/postgres-types.mjs';
-import { arch005MigrationApplied, stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
-import { assertNoDateQueryParameters, createPostgresClient, createPostgresPool, guardPostgresQueryClient, POSTGRES_TIME_SESSION_OPTIONS } from '../src/platform/postgres-pool.mjs';
+import { assertEpochMsString, assertLocalDate, addEpochMilliseconds, compareLocalDateTime, nowShanghaiLocal, shanghaiLocalToEpochMs, formatEpochMsToShanghaiLocal, TimeContractError } from '../app/server/src/platform/time-contract.mjs';
+import { createStringPreservingPgTypes, postgresTimestampToLocalDateTime, STRING_PRESERVED_POSTGRES_OIDS } from '../app/server/src/platform/postgres-types.mjs';
+import { arch005MigrationApplied, stopLegacyMigrationAfterArch005 } from '../app/server/src/platform/legacy-migration-guard.mjs';
+import { assertNoDateQueryParameters, createPostgresClient, createPostgresPool, guardPostgresQueryClient, POSTGRES_TIME_SESSION_OPTIONS } from '../app/server/src/platform/postgres-pool.mjs';
 
 test('time boundaries retain leap/range errors, string epochs, comparison and enumerable error shape', () => {
   assert.equal(assertLocalDate('2000-02-29'),'2000-02-29');

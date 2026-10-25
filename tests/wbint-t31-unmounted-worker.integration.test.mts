@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {t31Http,record,text} from './helpers/t31-public-progress-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 test('T31 the split-process Worker default cannot send a new purpose without admission, while old lifecycle deliveries retain their default path',async()=>{
   await t31Http({purpose:'t31split',notifications:true},async({pool,confirm,post})=>{

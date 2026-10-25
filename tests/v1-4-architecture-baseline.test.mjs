@@ -11,7 +11,7 @@ const json = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relati
 const text = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 const migrationTargets = new Set(Object.values(json('plans/typescript-migration/scope.json').migration_batches).flat());
 function sourceExists(relativePath) {
-  return fs.existsSync(relativePath.startsWith('src/') && migrationTargets.has(relativePath)
+  return fs.existsSync(relativePath.startsWith('app/server/src/') && migrationTargets.has(relativePath.slice('app/server/'.length))
     ? sourceFile(relativePath) : path.join(root, relativePath));
 }
 
@@ -210,7 +210,7 @@ const profiles = Object.freeze({
 });
 
 test('V1.4 architecture validator passes', () => {
-  const result = spawnSync(process.execPath, ['scripts/validate-v1-4-architecture.mjs'], {
+  const result = spawnSync(process.execPath, ['app/server/scripts/validate-v1-4-architecture.mjs'], {
     cwd: root,
     encoding: 'utf8',
   });
@@ -366,10 +366,10 @@ test('P2-004 completion artifacts preserve P1 notification and Ticket ownership'
     'contracts/communication_message.schema.json',
     'contracts/communication_delivery.schema.json',
     'database/migrations/020_p2_004_unified_communication.sql',
-    'src/p2-004-communication-core.mjs',
-    'src/p2-004-communication-delivery-worker.mjs',
-    'src/p2-004-communication-projections.mjs',
-    'src/p2-004-communication-sender-port.mjs',
+    'app/server/src/p2-004-communication-core.mjs',
+    'app/server/src/p2-004-communication-delivery-worker.mjs',
+    'app/server/src/p2-004-communication-projections.mjs',
+    'app/server/src/p2-004-communication-sender-port.mjs',
     'evidence/p2-004-communication-outbox-delivery-report.md',
   ]) assert.equal(sourceExists(relativePath), true, relativePath);
   const migration = text('database/migrations/020_p2_004_unified_communication.sql');
@@ -389,8 +389,8 @@ test('P2-005 completion artifacts preserve frozen Session and identity ownership
     'contracts/conversation_generation_fence.schema.json',
     'contracts/conversation_control_contracts.d.ts',
     'database/migrations/021_p2_005_conversation_control.sql',
-    'src/p2-005-conversation-control.mjs',
-    'src/p2-005-conversation-control-projections.mjs',
+    'app/server/src/p2-005-conversation-control.mjs',
+    'app/server/src/p2-005-conversation-control-projections.mjs',
     'evidence/p2-005-assignment-handoff-generation-fence-report.md',
   ]) assert.equal(sourceExists(relativePath), true, relativePath);
   const migration = text('database/migrations/021_p2_005_conversation_control.sql');
@@ -405,12 +405,12 @@ test('P2-006 completion has a runnable workbench and no migration 022', () => {
   for (const relativePath of [
     'docs/42_p2_006_realtime_web_workbench.md',
     'evidence/p2-006-realtime-workbench-report.md',
-    'src/p2-006-workbench-query.mjs',
-    'src/p2-006-workbench-authorization.mjs',
-    'src/p2-006-workbench-command-facade.mjs',
-    'src/p2-006-workbench-delivery-control.mjs',
-    'src/p2-006-workbench-http.mjs',
-    'src/p2-006-workbench-static.mjs',
+    'app/server/src/p2-006-workbench-query.mjs',
+    'app/server/src/p2-006-workbench-authorization.mjs',
+    'app/server/src/p2-006-workbench-command-facade.mjs',
+    'app/server/src/p2-006-workbench-delivery-control.mjs',
+    'app/server/src/p2-006-workbench-http.mjs',
+    'app/server/src/p2-006-workbench-static.mjs',
     'web/p2-workbench/index.html',
     'tests/p2-006-workbench.test.mjs',
     'tests/p2-006-workbench.integration.test.mjs',
@@ -429,8 +429,8 @@ test('P2-001 and P2-002 frozen artifacts remain present', () => {
     'contracts/conversation_projection_contracts.d.ts',
     'database/migrations/010_p2_001_conversation_contracts.sql',
     'database/migrations/011_p2_002_timeline_projector.sql',
-    'src/p2-001-conversation-contracts.mjs',
-    'src/p2-002-timeline-projector.mjs',
+    'app/server/src/p2-001-conversation-contracts.mjs',
+    'app/server/src/p2-002-timeline-projector.mjs',
     'evidence/p2-001-conversation-contracts-report.md',
     'evidence/p2-002-timeline-projector-report.md',
   ]) {
@@ -556,7 +556,7 @@ test('architecture validator rejects the historical P2-015 ledger drift', () => 
   assert.notEqual(fixture, normalizedOriginal);
   const errors = [];
   const processView = { cwd: () => root, exitCode: undefined };
-  const source = text('scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
+  const source = text('app/server/scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
   runInNewContext(source, {
     fs: { ...fs, readFileSync: (file, ...args) => file === ledgerPath ? fixture : fs.readFileSync(file, ...args) },
     path, process: processView, console: { log() {}, error: (message) => errors.push(message) },
@@ -570,7 +570,7 @@ test('P2-012 authorization rejects premature completion and next-gate authorizat
   const current = json('plans/current_phase.json');
   if (current.implementation_authorization_status !== 'P2_012_AUTHORIZED') return;
   const target = path.join(root, 'plans/current_phase.json');
-  const source = text('scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
+  const source = text('app/server/scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
   for (const delta of [
     { p2_012_status: 'DONE' },
     { last_completed_task: 'P2-012' },
@@ -591,7 +591,7 @@ test('P2-G2 preparation rejects false PASS, Runtime authorization and missing in
   const current = json('plans/current_phase.json');
   assert.ok(['P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes(current.implementation_authorization_status));
   const target = path.join(root, 'plans/current_phase.json');
-  const source = text('scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
+  const source = text('app/server/scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
   for (const delta of [
     { p2_g2_status: 'PASSED' },
     { last_completed_gate: 'P2-G2' },

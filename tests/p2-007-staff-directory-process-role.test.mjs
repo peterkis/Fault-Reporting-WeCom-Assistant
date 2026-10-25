@@ -3,24 +3,24 @@ import assert from 'node:assert/strict';
 
 const pool = { query: async () => ({ rows: [], rowCount: 1 }), connect: async () => { throw new Error('unexpected database call'); } };
 let appOptions, workerOptions;
-mock.module('../scripts/p2-g1-process-role.mjs', { namedExports: {
+mock.module('../app/server/scripts/p2-g1-process-role.mjs', { namedExports: {
   runApp: options => options.runtimeFactory({ pool, publicOrigin: 'https://example.test' }),
   runWorker: async options => { await options.beforeReady?.({pool}); return options.extensionFactory({ pool }); },
   runGateway: () => 'gateway',
 } });
-mock.module('../src/p2-016-runtime.mjs', { namedExports: {
+mock.module('../app/server/src/p2-016-runtime.mjs', { namedExports: {
   createP2016Runtime: options => { appOptions = options; return {}; },
 } });
-mock.module('../src/p2-012-workbench-assembly.mjs', { namedExports: {
+mock.module('../app/server/src/p2-012-workbench-assembly.mjs', { namedExports: {
   createP2012Runtime: options => { appOptions = options; return {}; },
   createP2012WorkbenchExtension: () => ({ runOnce: async () => ({}) }),
 } });
-mock.module('../src/p2-016-orchestration-adapters.mjs', { namedExports: {
+mock.module('../app/server/src/p2-016-orchestration-adapters.mjs', { namedExports: {
   createP2016OrchestrationWorker: options => { workerOptions = options; return {}; },
 } });
 const launchers = [
-  (await import('../scripts/p2-016-process-role.mjs')).main,
-  (await import('../scripts/p2-012-process-role.mjs')).main,
+  (await import('../app/server/scripts/p2-016-process-role.mjs')).main,
+  (await import('../app/server/scripts/p2-012-process-role.mjs')).main,
 ];
 
 test('both deployed launchers forward enabled directory options only to the owning roles', async t => {

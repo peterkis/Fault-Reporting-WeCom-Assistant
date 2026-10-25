@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {test} from 'node:test';
-import type {PostgresPoolClient} from '../src/platform/postgres-pool.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {withT21DraftFixture,t21Config,t21Mapping,t21OAuthOptions,t21Login,t21FeedbackCommand,t21Send,t21Object} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 import {browser,origin,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 

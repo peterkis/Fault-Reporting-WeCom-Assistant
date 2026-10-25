@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises';
-import { createRuleFirstOrchestrator } from '../../src/p2-015-rule-first-orchestrator.mjs';
-import { createPilotTicketCore } from '../../src/p1-005-pilot-ticket-core.mjs';
-import { createPilotAccessService } from '../../src/p1-009-pilot-access-workbench.mjs';
-import { generateIncidentCandidate } from '../../src/p2-007-incident-candidate.mjs';
-import { createP2012CandidateSourceAdapter,createP2012CandidateReviewStore } from '../../src/p2-012-candidate-source-adapter.mjs';
-import { migrateP2016 } from '../../scripts/p2-016-migrate.mjs';
+import { createRuleFirstOrchestrator } from '../../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import { createPilotTicketCore } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createPilotAccessService } from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { generateIncidentCandidate } from '../../app/server/src/p2-007-incident-candidate.mjs';
+import { createP2012CandidateSourceAdapter,createP2012CandidateReviewStore } from '../../app/server/src/p2-012-candidate-source-adapter.mjs';
+import { migrateP2016 } from '../../app/server/scripts/p2-016-migrate.mjs';
 import { withP2016IsolatedDatabase,applyThrough030,assertNoP2016Residual } from './p2-016-postgres-harness.mjs';
 import { seedPersistedIntake } from './p2-015-postgres-harness.mjs';
 export const withP2012Database=withP2016IsolatedDatabase;

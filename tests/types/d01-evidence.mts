@@ -1,7 +1,7 @@
-import {evidenceHash, verifyYxxReceipts} from '../../src/yxx-self-service-verification.mjs';
-import {readYxxLocalValidationScope} from '../../src/yxx-self-service-validation-scope.mjs';
-import {checkSS010} from '../../src/yxx-self-service-readiness.mjs';
-import {createG2ControlRecorder} from '../../src/p2-g2-control-evidence.mjs';
+import {evidenceHash, verifyYxxReceipts} from '../../app/server/src/yxx-self-service-verification.mjs';
+import {readYxxLocalValidationScope} from '../../app/server/src/yxx-self-service-validation-scope.mjs';
+import {checkSS010} from '../../app/server/src/yxx-self-service-readiness.mjs';
+import {createG2ControlRecorder} from '../../app/server/src/p2-g2-control-evidence.mjs';
 
 export function d01TypeBoundaries(root:string,input:unknown):void {
   evidenceHash('known bytes');

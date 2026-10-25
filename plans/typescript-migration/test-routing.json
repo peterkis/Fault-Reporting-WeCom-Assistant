@@ -1044,7 +1044,7 @@
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
-      "requires_browser": false,
+      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -8742,27 +8742,27 @@
   },
   "subprocess_entries": {
     "tests/yxx-h5-migrate.integration.test.mts": [
-      "scripts/yxx-h5-migrate.mts"
+      "app/server/scripts/yxx-h5-migrate.mts"
     ],
     "tests/p1-foundation-cli.test.mts": [
-      "src/p1-001-pilot-foundation.mts"
+      "app/server/src/p1-001-pilot-foundation.mts"
     ],
     "tests/p2-002-timeline-projector.integration.test.mjs": [
       "tests/helpers/p2-002-worker-child.mjs",
       "tests/helpers/p2-002-migrate-child.mjs",
-      "scripts/p2-002-migrate.mjs"
+      "app/server/scripts/p2-002-migrate.mjs"
     ],
     "tests/p2-003-realtime-event-log.integration.test.mjs": [
-      "scripts/p2-003-migrate.mjs",
-      "scripts/p2-003-retention.mjs",
+      "app/server/scripts/p2-003-migrate.mjs",
+      "app/server/scripts/p2-003-retention.mjs",
       "tests/helpers/p2-003-server-child.mjs"
     ],
     "tests/conversation-rule-admission.integration.test.mts": [
-      "scripts/p2-g1-process-role.mts"
+      "app/server/scripts/p2-g1-process-role.mts"
     ],
     "tests/human-workbench-process.browser.test.mts": [
-      "scripts/human-workbench.mts",
-      "scripts/human-workbench-role.mts",
+      "app/server/scripts/human-workbench.mts",
+      "app/server/scripts/human-workbench-role.mts",
       "tests/helpers/human-workbench-boundaries-role.mts"
     ]
   },

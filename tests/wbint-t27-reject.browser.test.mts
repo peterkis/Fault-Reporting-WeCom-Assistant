@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 test('T27 native START then REJECT preserves personal Tickets and Handler reads escaped facts at 600px',async()=>{
  const marker='<img src=x onerror="globalThis.__t27Xss=1">';
  await candidateBrowser({purpose:'t27reject',setup:async({pool,f})=>{const handler=record(f.handler);await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:text(handler.wecom_user_id),displayName:marker,roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});}},async({pool,candidateId,browser,root,choose,started,f,capture,origin})=>{

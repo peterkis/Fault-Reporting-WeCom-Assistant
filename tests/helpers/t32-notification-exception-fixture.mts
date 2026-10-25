@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
-import {createP2012Runtime} from '../../src/p2-012-workbench-assembly.mjs';
-import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
-import {migrateIncidentInternalNotes} from '../../scripts/incident-internal-notes-migrate.mjs';
-import {migrateIncidentPublicProgress} from '../../scripts/incident-public-progress-migrate.mjs';
+import {createP2012Runtime} from '../../app/server/src/p2-012-workbench-assembly.mjs';
+import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
+import {migrateIncidentInternalNotes} from '../../app/server/scripts/incident-internal-notes-migrate.mjs';
+import {migrateIncidentPublicProgress} from '../../app/server/scripts/incident-public-progress-migrate.mjs';
 import {fixtureP2012} from './p2-012-postgres-harness.mjs';
-import {listenConversationWorkbenchServer} from '../../src/p2-006-workbench-http.mjs';
+import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-workbench-http.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
-import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
-import {createCommunicationSenderPort} from '../../src/p2-004-communication-sender-port.mjs';
+import {createCommunicationDeliveryWorker} from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationSenderPort} from '../../app/server/src/p2-004-communication-sender-port.mjs';
 
 export function t32Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t32Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}

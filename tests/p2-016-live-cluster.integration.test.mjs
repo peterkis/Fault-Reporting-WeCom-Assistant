@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import { test } from 'node:test';
-import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { createP2016LiveCluster } from '../src/p2-016-live-cluster.mjs';
-import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
-import { assertP2016DatabaseScope } from '../scripts/p2-016-live-check.mjs';
+import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { createP2016LiveCluster } from '../app/server/src/p2-016-live-cluster.mjs';
+import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
+import { assertP2016DatabaseScope } from '../app/server/scripts/p2-016-live-check.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 
 test('P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls', {timeout:90000},async t=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016live',run:async({pool,databaseUrl})=>{

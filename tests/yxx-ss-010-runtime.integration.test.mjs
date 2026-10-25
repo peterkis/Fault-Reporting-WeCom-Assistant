@@ -7,15 +7,15 @@ import path from 'node:path';
 import {createServer} from 'node:net';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {runtimeFixture,scopedBrowser} from './helpers/yxx-ss-010-fixture.mjs';
-import {startLimitedRuntime} from '../src/yxx-limited-write-runner.mjs';
-import {createLimitedGuard} from '../src/yxx-limited-write-guard.mjs';
-import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
-import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
+import {startLimitedRuntime} from '../app/server/src/yxx-limited-write-runner.mjs';
+import {createLimitedGuard} from '../app/server/src/yxx-limited-write-guard.mjs';
+import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
+import {createYxxMemberCommandContext} from '../app/server/src/yxx-self-service-command.mjs';
 import {secret,flags,config,browser,login,input,post,eventually,mapping,oauthOptions,origin} from './helpers/yxx-ss-009-http-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
-import {createP2016CommandLedger} from '../src/p2-016-ticket-command-ledger.mjs';
-import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
+import {createP2016CommandLedger} from '../app/server/src/p2-016-ticket-command-ledger.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
 
 test('SS011 single Reporter HTTP flow preserves staff scope replay quotas logout and stop',{timeout:90000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{

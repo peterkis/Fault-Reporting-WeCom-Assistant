@@ -6,7 +6,7 @@ import {
   createGroupMentionCapture,
   parseGroupMentionArgs,
   runGroupMentionProbe,
-} from '../src/g0-006-group-reply-mention.mjs';
+} from '../app/server/src/g0-006-group-reply-mention.mjs';
 
 class FakeClient extends EventEmitter {
   constructor(reply) {

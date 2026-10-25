@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createYxxSelfServiceFeedback} from '../src/yxx-self-service-feedback.mjs';
-import type {YxxMemberScope} from '../src/yxx-self-service-authorization.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createYxxSelfServiceFeedback} from '../app/server/src/yxx-self-service-feedback.mjs';
+import type {YxxMemberScope} from '../app/server/src/yxx-self-service-authorization.mjs';
 import {browser,login,post,origin,secret,config,oauthOptions,mapping} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('same UUID concurrent own-member HTTP feedback commits one shared round and stable replay',async()=>{

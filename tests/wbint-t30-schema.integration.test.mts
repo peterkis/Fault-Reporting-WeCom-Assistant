@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {t30Http} from './helpers/t30-internal-note-fixture.mjs';
-import {internalNoteSchemaReady,internalNoteSchemaInventory,internalNoteSchemaHash} from '../src/p2-012-internal-note-schema.mjs';
+import {internalNoteSchemaReady,internalNoteSchemaInventory,internalNoteSchemaHash} from '../app/server/src/p2-012-internal-note-schema.mjs';
 test('T30 readiness requires the actual additive private-note constraints, including their definitions',async()=>{
   await t30Http({purpose:'t30schema'},async({pool})=>{
     const inventory=await internalNoteSchemaInventory(pool);console.log('T30_055_CATALOG '+JSON.stringify({hash:internalNoteSchemaHash(inventory),inventory}));

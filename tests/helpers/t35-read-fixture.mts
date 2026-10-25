@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import {createPilotAccessService} from '../../src/p1-009-pilot-access-workbench.mjs';
-import {migrateWorkbenchPersonalRead} from '../../scripts/workbench-personal-read-migrate.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 interface Base {origin:string;databaseUrl:string;pool:PostgresPool;runtime:{stop():Promise<unknown>};principals:{id:string}[];outsider:{id:string};tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
 export interface T35Fixture extends Base {firstCookie:string;secondCookie:string;outsiderCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};get:(path:string,reader?:0|1)=>Promise<Response>;post:(path:string,body:Record<string,unknown>,reader?:0|1)=>Promise<Response>}
 export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=true,migrate=true}:{enabled?:boolean;migrate?:boolean}={}){

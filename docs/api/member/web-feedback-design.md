@@ -44,7 +44,7 @@ W既有reopen仍沿自身current principal/对象/action权限和W receipt执行
 
 ## UI、内部提醒、隐私和关闭
 
-既有生产 `web/p2-reporter/self-service.js` 已接入正式H5：只在获准原详情展示“同一故障仍未解决”；普通补充/谢谢沿原supplement语义，关闭补充保持当前拒绝。新故障另报。成功后闭合原结果与fresh GET显示同单待重新承接。409保留原意图并fresh GET，用户明确发起新意图才换UUID；UNKNOWN保留原UUID/body/round/version，只由用户GET原FEEDBACK回执和当前本人事实，不自动POST/换ID。当前授权scope改变或失权清受保护内容，不认领他人命令。
+2026-10-23：旧 `web/p2-reporter/self-service.js` 已退役，原字节仅保留为测试夹具；当前生产展示使用[新 H5](../../../app/h5/src/components/DetailDialogs.tsx)。以下原有反馈合同继续保留：只在获准原详情展示“同一故障仍未解决”；普通补充/谢谢沿原supplement语义，关闭补充保持当前拒绝。新故障另报。成功后闭合原结果与fresh GET显示同单待重新承接。409保留原意图并fresh GET，用户明确发起新意图才换UUID；UNKNOWN保留原UUID/body/round/version，只由用户GET原FEEDBACK回执和当前本人事实，不自动POST/换ID。当前授权scope改变或失权清受保护内容，不认领他人命令。
 
 M独立 `reporterFeedbackDraftRecoveryEnabled=false`、W raw投影 `ticket_reopen_draft_recovery_enabled`均默认关闭。启用时两端复用T03唯一AES-GCM/non-extractable key、first-save24h不续期、scope/purpose AAD、CAS和20份/16KiB限制；M使用principal64摘要/request_ref32/reporter-feedback，W为当前principal/Ticket/staff-reopen，不保存Cookie/CSRF。expiry/corrupt清敏感副本并保原opaque，恢复先当前READ，失去新写或动作不显示原原因。oldopaque在raw关闭后仍可用户GET；终态清理后不能为新输入新建敏感副本。真实POST200之后读取暂时503不变成已知失败，不丢唯一UUID；cleanup未确认保原栅栏。cold rawOFF/no oldrow不读写IDB，不承诺刷新24h，仅挂载页内核对。退出/current授权拒绝清页面与范围内容；原同scope取消回调在rawOFF仍保留，迟到回执不能重新显示旧内容。Member新scope和两端真实consumer/nativeCDP/IDB/privacy/logout/原T03兼容均保各原制品证据，不把decoy store scope称业务授权。
 

@@ -4,9 +4,9 @@ import {randomUUID} from 'node:crypto';
 import {withT12Fixture} from './helpers/t12-completion-fixture.mjs';
 import {t12FreshHttp} from './helpers/t12-fresh-http.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
-import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import {listenConversationWorkbenchServer,closeConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 test('seven actual later write boundaries roll back earlier selected Control and transferred Ticket, waiting resume, closure, cycle and promise, retaining only stable FAILED outer audits',async()=>{
  await withT12Fixture(async f=>{

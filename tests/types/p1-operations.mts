@@ -1,5 +1,5 @@
-import { createCoreIntakeSafetyBoundary, createPilotAlertRegistry, createPilotSecurityLogger, createPilotOperationsService, createPilotOperationalIntake, createPilotTelemetry } from '../../src/p1-011-pilot-operations-baseline.mjs';
-import type { PostgresPool, PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
+import { createCoreIntakeSafetyBoundary, createPilotAlertRegistry, createPilotSecurityLogger, createPilotOperationsService, createPilotOperationalIntake, createPilotTelemetry } from '../../app/server/src/p1-011-pilot-operations-baseline.mjs';
+import type { PostgresPool, PostgresTransaction } from '../../app/server/src/platform/postgres-pool.mjs';
 declare const pool: PostgresPool;
 declare const transaction: PostgresTransaction;
 const boundary = createCoreIntakeSafetyBoundary({ acceptCore: (input: { id: string }) => ({ id: input.id }), optionalEnhancements: { ai: core => ({ ok: core.id.length > 0 }) } });
@@ -35,8 +35,8 @@ const backup: string | null = failed.backup_id;
 const requiredBackup: string = failed.backup_id;
 void [id, backup, requiredBackup];
 
-import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
-import { createTicketLifecycleProcessor } from '../../src/p1-010-ticket-closure.mjs';
+import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
+import { createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
 declare const lifecycleOptions: NonNullable<Parameters<typeof createTicketLifecycleProcessor>[0]>;
 createChannelMessageInbox({ pool }).accept({}, createTicketLifecycleProcessor(lifecycleOptions));
 

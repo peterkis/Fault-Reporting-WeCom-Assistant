@@ -6,13 +6,13 @@ import assert from 'node:assert/strict';
 import {createHash,createHmac,randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {hashP2016,P2016_ERROR_CODES,transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import {WORKBENCH_ERROR_CODES,WorkbenchError} from '../src/p2-006-workbench-query.mjs';
-import {reporterVerificationAuthority,parseReporterVerification} from '../src/workbench-reporter-verification.mjs';
-import {createWorkbenchReporterCandidates} from '../src/workbench-reporter-candidates.mjs';
-import {formatEpochMsToShanghaiLocal} from '../src/platform/time-contract.mjs';
-import {PostgresBoundaryError} from '../src/platform/postgres-pool.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {hashP2016,P2016_ERROR_CODES,transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {WORKBENCH_ERROR_CODES,WorkbenchError} from '../app/server/src/p2-006-workbench-query.mjs';
+import {reporterVerificationAuthority,parseReporterVerification} from '../app/server/src/workbench-reporter-verification.mjs';
+import {createWorkbenchReporterCandidates} from '../app/server/src/workbench-reporter-candidates.mjs';
+import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-contract.mjs';
+import {PostgresBoundaryError} from '../app/server/src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {ManualReporterDirectoryOptions,ManualReporterVerificationInput,VerifiedManualReportCommand} from '../contracts/workbench_reporter_candidates_contracts.js';
 interface Fixture {origin:string;cookies:string[];principals:{id:string}[];pool:PostgresPool}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}

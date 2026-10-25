@@ -4,14 +4,14 @@ import {randomUUID,createHash} from 'node:crypto';
 import {withT26Fixture,t26Deliveries,t26Sender} from './helpers/t26-group-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createContactJourneyStore,reporterIdentityHash} from '../src/p2-015-contact-journey.mjs';
-import type {ContactJourneyInput} from '../src/p2-015-contact-journey.mjs';
-import {createP2016GuidedJourneyStore} from '../src/p2-016-guided-journey.mjs';
-import {transactionP2016} from '../src/p2-016-domain-contracts.mjs';
-import {shanghaiLocalToEpochMs} from '../src/platform/time-contract.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createContactJourneyStore,reporterIdentityHash} from '../app/server/src/p2-015-contact-journey.mjs';
+import type {ContactJourneyInput} from '../app/server/src/p2-015-contact-journey.mjs';
+import {createP2016GuidedJourneyStore} from '../app/server/src/p2-016-guided-journey.mjs';
+import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
+import {shanghaiLocalToEpochMs} from '../app/server/src/platform/time-contract.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 test('an actual explicit Direct continuation preserves the original group across withdrawal, handoff, template replay and two real completed rounds',{timeout:240000},async()=>{
  await withT26Fixture(async context=>{

@@ -44,7 +44,7 @@ stream→App/用途/UUID→source/Ticket→原ledger的锁顺序；同completed 
 
 ## 数据库、资源与关闭
 
-[050迁移](../../../database/migrations/050_bot_reporter_feedback.sql)与[迁移器](../../../scripts/bot-reporter-feedback-migrate.mts)仅在本地owned隔离库应用验证。前向扩已有ticket_command_receipt的BOT_REPORTER_FEEDBACK用途/App scope、安全snapshot及严格NULL actor CHECK，并向043 origin加BOT_REPORTER；既有SQL原字节、Ticket/cycle/ledger权威保持。成员不创建或借内部principal；没有第二Ticket/owner/双写。启用需要050/043就绪，缺schema明确503；默认关闭的原readiness不要求050。
+[050迁移](../../../database/migrations/050_bot_reporter_feedback.sql)与[迁移器](../../../app/server/scripts/bot-reporter-feedback-migrate.mts)仅在本地owned隔离库应用验证。前向扩已有ticket_command_receipt的BOT_REPORTER_FEEDBACK用途/App scope、安全snapshot及严格NULL actor CHECK，并向043 origin加BOT_REPORTER；既有SQL原字节、Ticket/cycle/ledger权威保持。成员不创建或借内部principal；没有第二Ticket/owner/双写。启用需要050/043就绪，缺schema明确503；默认关闭的原readiness不要求050。
 
 同App/API、单Worker/Gateway/PG边界保持；业务pool≤4、总池建议≤8、路径in-flight≤32、锁/语句2s、SSE默认32，浏览器单busy请求及5s进度轮询。证据是软件资源和隔离行为验证，不宣称2C4G负载容量。
 

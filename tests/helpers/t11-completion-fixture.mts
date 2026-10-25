@@ -1,14 +1,14 @@
 import {withWeb01Fixture,seedWeb01NoConversationIntake} from './web01-workbench-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import type {P2016EnabledRuntime} from '../../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {randomUUID} from 'node:crypto';
-import {migrateTicketStaffCompletion} from '../../scripts/ticket-staff-completion-migrate.mjs';
-import {migrateTicketReopenRounds} from '../../scripts/ticket-reopen-rounds-migrate.mjs';
-import {migrateBotReporterFeedback} from '../../scripts/bot-reporter-feedback-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 import type {P2016TicketDetail} from '../../contracts/p2_016_contracts.js';
-import {createPilotTicketCore} from '../../src/p1-005-pilot-ticket-core.mjs';
-import {assertLocalDateTime} from '../../src/platform/time-contract.mjs';
+import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {assertLocalDateTime} from '../../app/server/src/platform/time-contract.mjs';
 
 export async function t11NewTicket(context:T11Fixture){
   const intake=await seedWeb01NoConversationIntake({pool:context.pool,text:'T11 mixed command synthetic fault'});
@@ -38,7 +38,20 @@ export async function t11Http(context:T11Fixture,index=0,{closeConnections=false
   const bootstrap=await (await get('/api/lifecycle/bootstrap')).json() as {csrf_token:string};
   const post=async(id:string,action:string,body:{client_command_id:string;expected_version:unknown}&Record<string,unknown>,headers:Record<string,string>={})=>fetch(context.origin+'/api/tickets/'+id+'/'+action,{method:'POST',headers:{cookie,...transport,origin:context.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"'+body.expected_version+'"','x-csrf-token':bootstrap.csrf_token,...headers},body:JSON.stringify(body)});
   const detail=async(id:string)=>(await (await get('/api/tickets/'+id)).json()) as P2016TicketDetail;
-  const start=async(id:string)=>{const current=await detail(id);const response=await post(id,'take-and-start',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'T11_START',resolver_team_id:current.resolver_team_id});if(response.status!==200)throw Error('T11_START_FAILED:'+response.status);return detail(id);};
+  const start=async(id:string)=>{
+    const current=await detail(id),body={client_command_id:randomUUID(),expected_version:current.version,reason_code:'T11_START',resolver_team_id:current.resolver_team_id};
+    const response=await post(id,'take-and-start',body);
+    if(response.status!==200){
+      const payload:unknown=await response.json().catch(()=>null);
+      const error=payload&&typeof payload==='object'&&'error' in payload?payload.error:null;
+      const code=error&&typeof error==='object'&&'code' in error&&typeof error.code==='string'?error.code:null;
+      const after=await detail(id);
+      throw Error('T11_START_FAILED:'+response.status+':'+JSON.stringify({code,client_command_id:body.client_command_id,
+        expected_version:body.expected_version,before_status:current.status,before_cycle:current.handling_cycle?.cycle_no??null,
+        current_version:after.version,current_status:after.status,current_cycle:after.handling_cycle?.cycle_no??null}));
+    }
+    return detail(id);
+  };
   const command=(current:P2016TicketDetail)=>{if(!current.handling_cycle)throw Error('T11_CYCLE_REQUIRED');return {client_command_id:randomUUID(),expected_version:current.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:current.handling_cycle.id,internal_process:'INTERNAL_T11_CANARY：排查并重启合成设备。',external_summary:'打印服务已恢复，请重新尝试。',external_summary_confirmed:true as const};};
   return {get,post,detail,start,command};
 }

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyYxxRun,verifyYxxCaseTrace,verifyYxxRegressionSummary,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState,validateYxxSelfService } from '../src/yxx-self-service-verification.mjs';
+import { verifyYxxRun,verifyYxxCaseTrace,verifyYxxRegressionSummary,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState,validateYxxSelfService } from '../app/server/src/yxx-self-service-verification.mjs';
 import {tap as tapReporter} from 'node:test/reporters';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync,readFileSync,copyFileSync,unlinkSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
@@ -11,8 +11,8 @@ const G2_ROOT=testRoots().sourceRoot;
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import caseReporter from '../scripts/p2-g2-case-reporter.mjs';
-import {assertG2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import caseReporter from '../app/server/scripts/p2-g2-case-reporter.mjs';
+import {assertG2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 
 function fileExecution(cases,files){return files.map(path=>{const rows=cases.filter(c=>c.file===path&&c.event==='test:pass'&&!c.skip&&!c.todo),identities=rows.map(c=>JSON.stringify([c.nesting,c.name,c.line??null])).sort();return {path,total:rows.length,pass:rows.length,fail:0,skipped:0,todo:0,identity_sha256:evidenceHash(JSON.stringify(identities))};});}
 

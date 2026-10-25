@@ -58,8 +58,8 @@ export function finalizeCurrentRun(root:string,directory:string,containerId:stri
     assert.equal(git(root,['status','--porcelain']),'');
     const manifest=verifyArtifact(root),bytes=readFileSync(safeFile(directory,'tests/summary.json')),summary=record(JSON.parse(bytes.toString('utf8')) as unknown);
     assert.equal(summary.manifest_sha256,manifest);assert.equal(summary.selection,'yxx-current-shard-'+process.env.SHARD+'/4');
-    const timeModule=record(createRequire(import.meta.url)(safeFile(root,'.build/runtime/src/p2-g2-evidence-time.mjs')));
-    const candidateModule=record(createRequire(import.meta.url)(safeFile(root,'.build/runtime/src/p2-g2-candidate.mjs')));
+    const timeModule=record(createRequire(import.meta.url)(safeFile(root,'.build/runtime/app/server/src/p2-g2-evidence-time.mjs')));
+    const candidateModule=record(createRequire(import.meta.url)(safeFile(root,'.build/runtime/app/server/src/p2-g2-candidate.mjs')));
     assert.ok(typeof timeModule.g2EvidenceTime==='function'&&typeof candidateModule.g2CandidateInventory==='function');
     const time:unknown=timeModule.g2EvidenceTime(),inventory:unknown=candidateModule.g2CandidateInventory(root);
     metadata={...record(time),tested_head:head,tested_tree:git(root,['rev-parse','HEAD^{tree}']),

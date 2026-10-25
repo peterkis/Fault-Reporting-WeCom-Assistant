@@ -2,16 +2,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {cpSync,mkdirSync,mkdtempSync,readFileSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
+import {cpSync,mkdirSync,mkdtempSync,readFileSync,readdirSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {checkSS010,SS010_ACCEPTANCE} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from '../src/yxx-current-evidence.mjs';
-import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
-import {verifyCurrentYxxCatalog} from '../src/yxx-current-evidence.mjs';
-import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {copyCurrentApplicationSources,freezeCurrentCandidateFixture} from './helpers/yxx-current-scope-checkout.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {checkSS010,SS010_ACCEPTANCE} from '../app/server/src/yxx-self-service-readiness.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from '../app/server/src/yxx-current-evidence.mjs';
+import {SS009_VALIDATORS} from '../app/server/src/yxx-self-service-verification.mjs';
+import {verifyCurrentYxxCatalog,currentRuntimeFingerprint} from '../app/server/src/yxx-current-evidence.mjs';
+import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 
 function syntheticExecution(root:string){
   const digest=(bytes:Buffer):string=>createHash('sha256').update(bytes).digest('hex');
@@ -29,7 +30,7 @@ function syntheticExecution(root:string){
     source:{head:'a'.repeat(40),tree:'b'.repeat(40),dirty:false,inputs,input_hash:digest(Buffer.from(JSON.stringify(inputs)))},
     outputs:[{source:declared,path:declared,kind:'LEGACY',sha256:output.sha256}]};
   const build=save('evidence/yxx-current-fixture/build-manifest.json',manifest);save('.build/runtime/build-manifest.json',manifest);
-  save('plans/yxx-current-readiness-acceptance.json',{schema_version:1,contract:'ADR-0027',live_authorized:false,current_files:[declared],historical_registered_files:[historical]});
+  save('plans/yxx-current-readiness-acceptance.v2.json',{schema_version:1,contract:'ADR-0045',live_authorized:false,current_files:[declared],historical_registered_files:[historical]});
   save('plans/typescript-migration/test-routing.json',{entries:[{path:declared,mode:'STAGED_RUNTIME'},{path:historical,mode:'SOURCE_HOST'}]});
   const tap=save(directory+'/one.tap','TAP version 13\nok 1 - synthetic consistency case\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n');
   const stderr=save(directory+'/one.stderr','');
@@ -44,7 +45,17 @@ function syntheticExecution(root:string){
       case_trace_path:'one.cases.jsonl',case_trace_sha256:trace.sha256,case_trace_bytes:trace.bytes,
       tap_path:'one.tap',tap_sha256:tap.sha256,tap_bytes:tap.bytes,stderr_path:'one.stderr',stderr_sha256:stderr.sha256,stderr_bytes:stderr.bytes}]};
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
-  return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
+  const commit=()=>{report.current_runs[0]=save(directory+'/summary.json',document);};
+  const sealRuntime=()=>{
+    const runtime=path.join(root,'.build/runtime');const files:string[]=[];
+    const walk=(relative:string):void=>{for(const entry of readdirSync(path.join(runtime,relative),{withFileTypes:true})){
+      const file=relative?relative+'/'+entry.name:entry.name;if(entry.isDirectory())walk(file);else if(file!=='build-manifest.json')files.push(file);
+    }};walk('');
+    manifest.outputs=files.sort().map(file=>({source:file,path:file,kind:file.endsWith('.mjs')?'LEGACY':'RESOURCE',sha256:digest(readFileSync(path.join(runtime,file)))}));
+    const updated=save('evidence/yxx-current-fixture/build-manifest.json',manifest);Object.assign(build,updated);save('.build/runtime/build-manifest.json',manifest);
+    document.manifest_sha256=build.sha256;commit();return currentRuntimeFingerprint(runtime);
+  };
+  return {report,document,save,sealRuntime,tap:path.join(root,tap.path),commit};
 }
 
 test('complete artifact catalog binds all original files without a report hash cycle',()=>{
@@ -115,19 +126,20 @@ test('combined migration proof rejects incomplete SQL scope wrong markers and fa
   try{
     // Synthetic parser fixture. The actual owned-PG characterization is separate.
     const source=testRoots().sourceRoot,fixture=syntheticExecution(root),runtime=path.join(root,'.build/runtime');
-    const scopeText=readFileSync(path.join(source,'plans/yxx-current-readiness-scope.json'),'utf8');
-    fixture.save('plans/yxx-current-readiness-scope.json',scopeText);
+    const scopeText=readFileSync(path.join(source,'plans/yxx-current-readiness-scope.v2.json'),'utf8');
+    fixture.save('plans/yxx-current-readiness-scope.v2.json',scopeText);
     const scope=JSON.parse(scopeText) as {files:Array<{path:string;sha256_utf8_lf:string}>};
     const sql=scope.files.filter(item=>item.path.startsWith('database/migrations/')).map(item=>({path:item.path,sha256_utf8_lf:item.sha256_utf8_lf}));
-    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
+    for(const dir of ['app/server/src','app/server/scripts','shared','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
     for(const name of ['package.json','package-lock.json','.env.example'])fixture.save('.build/runtime/'+name,'{}');
     for(const item of sql)fixture.save('.build/runtime/'+item.path,readFileSync(path.join(source,item.path),'utf8'));
     const digest=(bytes:Buffer|string)=>createHash('sha256').update(bytes).digest('hex');
+    const runtimeFingerprint=fixture.sealRuntime();
     const report={...fixture.report,candidate_fingerprint:'c'.repeat(64),scope_sha256:digest(scopeText.replaceAll('\r\n','\n'))};
-    const receipt={...g2EvidenceTime(),status:'PASS',candidate_fingerprint:g2CandidateInventory(runtime).fingerprint,
+    const receipt={...g2EvidenceTime(),status:'PASS',candidate_fingerprint:runtimeFingerprint,
       scope_sha256:report.scope_sha256,database_scope:'OWNED_ISOLATED_DATABASE',postgres_version_num:180004,migration_files:sql,
       legacy_applied:sql.slice(0,14).map(item=>path.posix.basename(item.path).slice(0,3)),
-      markers:sql.slice(14).map(item=>({migration_id:path.posix.basename(item.path,'.sql'),checksum_sha256:digest(readFileSync(path.join(runtime,item.path)))})),
+      markers:sql.slice(14).map(item=>({migration_id:path.posix.basename(item.path,'.sql'),checksum_sha256:digest(readFileSync(path.join(runtime,item.path))),time_pair:true})),
       initial:{baseline:'APPLIED',yxx:'APPLIED',workbench_auth:'APPLIED',directory:'APPLIED'},replay:'ALL_NOOP_MARKERS_UNCHANGED',catalog_verified:true,
       business_rows:{tickets:0,intakes:0},live_authorized:false};
     const file=fixture.document.files[0];assert.ok(file);file.path='tests/yxx-current-migrations.integration.test.mts';file.mode='MIXED_EXPLICIT_ROOTS';
@@ -140,7 +152,8 @@ test('combined migration proof rejects incomplete SQL scope wrong markers and fa
     };
     verify(receipt);assert.throws(()=>checkSS010({root,requireReady:true}));
     for(const changed of [{...receipt,migration_files:sql.slice(1)},{...receipt,legacy_applied:receipt.legacy_applied.slice(1)},
-      {...receipt,markers:receipt.markers.map(item=>({...item,checksum_sha256:'0'.repeat(64)}))},{...receipt,replay:'NOT_RUN'},
+      {...receipt,markers:receipt.markers.map(item=>({...item,checksum_sha256:'0'.repeat(64)}))},
+      {...receipt,markers:receipt.markers.map(item=>({...item,time_pair:false}))},{...receipt,replay:'NOT_RUN'},
       {...receipt,initial:{...receipt.initial,directory:'NOT_RUN'}},{...receipt,catalog_verified:false},{...receipt,postgres_version_num:170000},
       {...receipt,business_rows:{tickets:1,intakes:0}},{...receipt,candidate_fingerprint:report.candidate_fingerprint},{...receipt,scope_sha256:'0'.repeat(64)}])
       assert.throws(()=>verify(changed),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
@@ -153,7 +166,7 @@ test('combined migration proof rejects incomplete SQL scope wrong markers and fa
 });
 
 test('current evidence artifact guard rejects changed runtime bytes and a missing build',()=>{
-  const {sourceRoot,runtimeRoot}=testRoots(),target=path.join(runtimeRoot,'src/p1-003-channel-message-inbox.mjs'),original=readFileSync(target);
+  const {sourceRoot,runtimeRoot}=testRoots(),target=path.join(runtimeRoot,'app/server/src/p1-003-channel-message-inbox.mjs'),original=readFileSync(target);
   verifyCurrentYxxArtifact(sourceRoot);
   try{
     writeFileSync(target,Buffer.concat([original,Buffer.from('\n// synthetic artifact drift\n')]));
@@ -171,7 +184,7 @@ test('scenario mapping requires unique executed cases and preserves execution li
     // Historical trace replay tests the mapping parser, not current acceptance.
     const source=testRoots().sourceRoot,fixture=syntheticExecution(root),file=fixture.document.files[0];assert.ok(file);
     cpSync(path.join(source,'tests'),path.join(root,'tests'),{recursive:true});
-    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(root,dir),{recursive:true});
+    for(const dir of ['app/server/src','app/server/scripts','shared','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(root,dir),{recursive:true});
     for(const name of ['package.json','package-lock.json','.env.example'])fixture.save(name,'{}');
     for(const name of ['plans/yxx-ss-009-acceptance.json','evidence/p2-g2-yxx-entry-creation-v2-scenario-matrix.json','evidence/p2-g2-yxx-entry-creation-v2-g2-scenario-matrix.json'])
       fixture.save(name,readFileSync(path.join(source,name),'utf8'));
@@ -244,9 +257,9 @@ test('specialized proof binds raw observations and screenshots to the archived r
   try{
     // Historical records/images are parser fixtures only, never current run evidence.
     const source=testRoots().sourceRoot,fixture=syntheticExecution(root),runtime=path.join(root,'.build/runtime');
-    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
+    for(const dir of ['app/server/src','app/server/scripts','shared','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
     for(const file of ['package.json','package-lock.json','.env.example'])fixture.save('.build/runtime/'+file,'{}');
-    const fingerprint=g2CandidateInventory(runtime).fingerprint;
+    const fingerprint=fixture.sealRuntime();
     const identity={tested_head:fixture.report.tested_head,tested_tree:fixture.report.tested_tree,candidate_fingerprint:'c'.repeat(64)};
     const historical=(kind:string)=>JSON.parse(readFileSync(path.join(source,'evidence/yxx-ss-009-r7-'+kind+'.json'),'utf8')) as {records:Record<string,unknown>[];receipts:Record<string,unknown>[]};
     let receipts:Record<string,unknown>[]=['fault','capacity','catalog','browser'].flatMap(kind=>historical(kind).records)
@@ -276,7 +289,7 @@ test('specialized proof binds raw observations and screenshots to the archived r
     // Publishing evidence changes H's manifest identity, not C's already tested runtime.
     const currentManifest=JSON.parse(readFileSync(path.join(runtime,'build-manifest.json'),'utf8')) as {source:{head:string;tree:string}};
     currentManifest.source.head='d'.repeat(40);currentManifest.source.tree='e'.repeat(40);fixture.save('.build/runtime/build-manifest.json',currentManifest);
-    assert.notEqual(g2CandidateInventory(runtime).fingerprint,fingerprint);verify();
+    assert.notEqual(currentRuntimeFingerprint(runtime),fingerprint);verify();
     const originalCode=readFileSync(path.join(runtime,'tests/synthetic.test.mjs'),'utf8');fixture.save('.build/runtime/tests/synthetic.test.mjs',originalCode+'// drift\n');
     assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});fixture.save('.build/runtime/tests/synthetic.test.mjs',originalCode);verify();
     browser.candidate_fingerprint=identity.candidate_fingerprint;capture();assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
@@ -297,8 +310,8 @@ test('historical proof verifies originals and rejects rehashed wrong identity om
   try{
     // Synthetic consistency fixture only; no checkout or actual acceptance is claimed.
     const fixture=syntheticExecution(root),source=testRoots().sourceRoot;
-    for(const file of ['plans/yxx-current-readiness-acceptance.json','evidence/yxx-ss-009-r7-report.json'])fixture.save(file,readFileSync(path.join(source,file),'utf8'));
-    const contract=JSON.parse(readFileSync(path.join(root,'plans/yxx-current-readiness-acceptance.json'),'utf8')) as {historical_head:string;historical_base:string;historical_regression_files:string[]};
+    for(const file of ['plans/yxx-current-readiness-acceptance.v2.json','evidence/yxx-ss-009-r7-report.json'])fixture.save(file,readFileSync(path.join(source,file),'utf8'));
+    const contract=JSON.parse(readFileSync(path.join(root,'plans/yxx-current-readiness-acceptance.v2.json'),'utf8')) as {historical_head:string;historical_base:string;historical_regression_files:string[]};
     const r7=JSON.parse(readFileSync(path.join(root,'evidence/yxx-ss-009-r7-report.json'),'utf8')) as {candidate_fingerprint:string;tested_head:string;tested_tree:string};
     const save=(name:string,value:object|string)=>{const ref=fixture.save('evidence/yxx-current-fixture/historical/'+name,value);return {...ref,path:name};};
     const identity={schema_version:1,head:contract.historical_head,base:contract.historical_base,historical_only:true,production_ready:false};
@@ -478,7 +491,7 @@ test('execution proof rejects consistent hashes with failing counts omitted work
     ['not run',f=>{f.document.not_run.push(row(f).path);f.commit();}],
     ['duplicate shard',f=>{const ref=f.report.current_runs[0];assert.ok(ref);f.report.current_runs.push(ref);}],
     ['wrong execution root',f=>{row(f).execution_cwd='.';f.commit();}],
-    ['source fallback',f=>{row(f).loaded_project_files.push('src/uncompiled.mjs');f.commit();}],
+    ['source fallback',f=>{row(f).loaded_project_files.push('app/server/src/uncompiled.mjs');f.commit();}],
     ['path traversal',f=>{row(f).tap_path='../one.tap';f.commit();}],
     ['stderr bytes',f=>{f.save('evidence/yxx-current-fixture/current/one.stderr','changed');}],
     ['rehashed failing TAP',f=>{
@@ -523,6 +536,8 @@ test('strict current readiness rejects a PASS summary without the complete curre
   let attached=false;
   try{
     execFileSync('git',['worktree','add','--detach',root,'HEAD'],{cwd:source,windowsHide:true,stdio:'pipe'});attached=true;
+    copyCurrentApplicationSources(source,root);
+    freezeCurrentCandidateFixture(root);
     const digest=(bytes:Buffer):string=>createHash('sha256').update(bytes).digest('hex');
     const canonical=(file:string):string=>digest(Buffer.from(readFileSync(path.join(root,file),'utf8').replaceAll('\r\n','\n')));
     const save=(file:string,value:unknown):{path:string;sha256:string;bytes:number}=>{
@@ -534,9 +549,9 @@ test('strict current readiness rejects a PASS summary without the complete curre
       counts:{tests:1,pass:1,fail:0,cancelled:0,skipped:0,todo:0},production_ready:false,
     });
     const header={
-      schema_version:1,contract:'ADR-0027',run_id:'fixture',tested_head:git(['rev-parse','HEAD']),tested_tree:git(['rev-parse','HEAD^{tree}']),
-      candidate_fingerprint:g2CandidateInventory(root).fingerprint,scope_sha256:canonical('plans/yxx-current-readiness-scope.json'),
-      acceptance_sha256:canonical('plans/yxx-current-readiness-acceptance.json'),
+      schema_version:1,contract:'ADR-0045',run_id:'fixture',tested_head:git(['rev-parse','HEAD']),tested_tree:git(['rev-parse','HEAD^{tree}']),
+      candidate_fingerprint:g2CandidateInventory(root).fingerprint,scope_sha256:canonical('plans/yxx-current-readiness-scope.v2.json'),
+      acceptance_sha256:canonical('plans/yxx-current-readiness-acceptance.v2.json'),
     };
     const report=save('evidence/yxx-current-fixture/report.json',{...header,current_runs:[run]});
     save('plans/yxx-current-readiness.json',{schema_version:1,report});

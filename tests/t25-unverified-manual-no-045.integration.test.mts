@@ -6,10 +6,10 @@ import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {t25WebOrigin,t25Deliveries,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {migrateTicketStaffCompletion} from '../scripts/ticket-staff-completion-migrate.mjs';
-import {migrateTicketRoundNotifications} from '../scripts/ticket-round-notifications-migrate.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {migrateTicketStaffCompletion} from '../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketRoundNotifications} from '../app/server/scripts/ticket-round-notifications-migrate.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 test('a genuine hand-entered T17 report without045 stays manual-contact-only and does not block an eligible H5 notification',{timeout:240000},async()=>{
  await withWeb01Fixture(async(f:T11Fixture)=>{

@@ -20,7 +20,7 @@ if (
   process.exitCode = 1;
 } else {
   const migrationScriptPath = fileURLToPath(
-    new URL('../../scripts/p2-002-migrate.mjs', import.meta.url),
+    new URL('../../app/server/scripts/p2-002-migrate.mjs', import.meta.url),
   );
   process.env.PILOT_DATABASE_URL = databaseUrlForP2002Database(
     baseDatabaseUrl,

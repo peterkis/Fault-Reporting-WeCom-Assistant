@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createTicketRoundNotifications} from '../src/workbench-ticket-round-notifications.mjs';
-import {createP2016ReporterAccess} from '../src/p2-016-reporter-access.mjs';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
+import {createP2016ReporterAccess} from '../app/server/src/p2-016-reporter-access.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 
 test('same-round handoffs, command replay and a fresh consumer with a new template preserve both original personal Delivery identities',async()=>{

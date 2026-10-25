@@ -7,11 +7,11 @@ import {
   buildPgConnectionArgs,
   parseBackupRestoreArgs,
   runBackupRestoreDrill,
-} from '../scripts/p1-011-backup-restore.mjs';
-import { createPilotAlertRegistry } from '../src/p1-011-pilot-operations-baseline.mjs';
+} from '../app/server/scripts/p1-011-backup-restore.mjs';
+import { createPilotAlertRegistry } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const script = resolve(root, 'scripts/p1-011-backup-restore.mjs');
+const script = resolve(root, 'app/server/scripts/p1-011-backup-restore.mjs');
 
 test('P1-011 parses only explicit backup drill modes and keeps credentials out of utility arguments', () => {
   assert.deepEqual(parseBackupRestoreArgs([]), { mode: 'check' });

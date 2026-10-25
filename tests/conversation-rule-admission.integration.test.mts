@@ -7,17 +7,17 @@ import {Socket} from 'node:net';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {addInboxSession,attachInboxJourney,conversationPost,freshCommand,INBOX_IDENTITY_KEY} from './helpers/conversation-inbox-fixture.mjs';
 import type {InboxSession} from './helpers/conversation-inbox-fixture.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {T22Fixture} from './helpers/wbint-t22-fixture.mjs';
-import {createP2016OrchestrationWorker} from '../src/p2-016-orchestration-adapters.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
-import {composeConversationRuleAdmission} from '../src/conversation-rule-admission.mjs';
-import {MockResolvedDirectory} from '../src/p2-015-contact-journey.mjs';
-import {createManualReviewStore} from '../src/p2-015-manual-review.mjs';
+import {createP2016OrchestrationWorker} from '../app/server/src/p2-016-orchestration-adapters.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
+import {MockResolvedDirectory} from '../app/server/src/p2-015-contact-journey.mjs';
+import {createManualReviewStore} from '../app/server/src/p2-015-manual-review.mjs';
 import {t31Http} from './helpers/t31-public-progress-fixture.mjs';
 import {randomUUID} from 'node:crypto';
-import type {CommunicationSenderResult} from '../src/p2-004-communication-sender-port.mjs';
+import type {CommunicationSenderResult} from '../app/server/src/p2-004-communication-sender-port.mjs';
 
 async function produce(f:T22Fixture){
   const worker=createP2016OrchestrationWorker({pool:f.pool,identityHmacKey:INBOX_IDENTITY_KEY,notifications:f.runtime.notifications,realtime:f.runtime.realtimeProjector,directoryPort:MockResolvedDirectory({contact:{name:'合成报修人'}})});
@@ -101,7 +101,7 @@ test('a real split-process Worker mounts rule admission; the public no-hook fact
   await withT22Fixture(async f=>{
     const session=await addInboxSession(f.pool,{reporter:'split-a',group:null,text:'系统不行'});await produce(f);const [queued]=await deliveries(f.pool,session);assert.ok(queued);
     assert.equal((await conversationPost(f.origin,f.cookie,session.id,'takeover',freshCommand())).status,200);
-    const child=fork(new URL('../scripts/p2-g1-process-role.mjs',import.meta.url),['--role=WORKER'],{env:{...process.env,PILOT_DATABASE_URL:f.databaseUrl,P2_G1_SENDER_ENABLED:'true'},stdio:['ignore','ignore','pipe','ipc'],windowsHide:true});
+    const child=fork(new URL('../app/server/scripts/p2-g1-process-role.mjs',import.meta.url),['--role=WORKER'],{env:{...process.env,PILOT_DATABASE_URL:f.databaseUrl,P2_G1_SENDER_ENABLED:'true'},stdio:['ignore','ignore','pipe','ipc'],windowsHide:true});
     let calls=0,legacyCalls=0,stderr='';child.stderr?.on('data',(bytes:Buffer)=>{stderr+=bytes.toString();});child.on('message',(raw:unknown)=>{if(raw&&typeof raw==='object'&&'type'in raw&&raw.type==='provider-send-request'&&'request_id'in raw&&typeof raw.request_id==='string'&&'request'in raw&&raw.request&&typeof raw.request==='object'&&'delivery_id'in raw.request){if(raw.request.delivery_id===queued.id)calls++;else legacyCalls++;child.send({type:'provider-send-response',request_id:raw.request_id,ok:true,result:acknowledged});}});
     try{
       const deadline=Date.now()+10000;let state:unknown;while(Date.now()<deadline){state=await saved(f.pool,queued.id);if(state&&typeof state==='object'&&'status'in state&&state.status==='CANCELLED')break;await new Promise(resolve=>setTimeout(resolve,50));}

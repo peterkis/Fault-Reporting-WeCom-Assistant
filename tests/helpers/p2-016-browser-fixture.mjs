@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { createConversationWorkbenchHttpServer,closeConversationWorkbenchServer } from '../../src/p2-006-workbench-http.mjs';
-import { createP2016WorkbenchHttp } from '../../src/p2-016-workbench-http.mjs';
-import { createP2016WorkbenchStatic } from '../../src/p2-016-workbench-static.mjs';
-import { formatEpochMsToShanghaiLocal } from '../../src/platform/time-contract.mjs';
+import { createConversationWorkbenchHttpServer,closeConversationWorkbenchServer } from '../../app/server/src/p2-006-workbench-http.mjs';
+import { createP2016WorkbenchHttp } from '../../app/server/src/p2-016-workbench-http.mjs';
+import { createP2016WorkbenchStatic } from '../../app/server/src/p2-016-workbench-static.mjs';
+import { formatEpochMsToShanghaiLocal } from '../../app/server/src/platform/time-contract.mjs';
 export async function createP2016BrowserFixture(){
   const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
   const origin='http://127.0.0.1:'+port,principalId=randomUUID(),ticketId=randomUUID(),reviewId=randomUUID(),journeyId=randomUUID();

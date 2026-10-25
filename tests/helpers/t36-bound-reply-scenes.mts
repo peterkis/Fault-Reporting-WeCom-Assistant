@@ -4,10 +4,10 @@
 // The HTTP path exists in fixed f941; follow_up_target support and T36 page do not.
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {CommunicationSenderRequest} from '../../contracts/communication_contracts.js';
-import type {CommunicationSenderResult} from '../../src/p2-004-communication-sender-port.mjs';
-import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
+import type {CommunicationSenderResult} from '../../app/server/src/p2-004-communication-sender-port.mjs';
+import {createCommunicationDeliveryWorker} from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 interface Target {source_ref:string;revision:string}
 interface PlannedReplyBody {

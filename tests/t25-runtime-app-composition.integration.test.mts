@@ -5,8 +5,8 @@ import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries,t25Object} from './helpers/t25-web-origin-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {entryConfig,entryKey} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import type {WeComAccessTokenProvider} from '../src/p2-g2-wecom-oauth-provider.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import type {WeComAccessTokenProvider} from '../app/server/src/p2-g2-wecom-oauth-provider.mjs';
 
 test('the existing runtime schedules one app round consumer and Communication Worker behind its send authorization',{timeout:240000},async()=>{
  await withT24Fixture(async original=>{

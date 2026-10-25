@@ -7,7 +7,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t25WebOrigin,t25Deliveries} from './helpers/t25-web-origin-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;

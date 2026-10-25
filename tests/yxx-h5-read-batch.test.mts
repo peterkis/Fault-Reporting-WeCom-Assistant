@@ -3,9 +3,9 @@ import {once} from 'node:events';
 import {IncomingMessage} from 'node:http';
 import {Socket} from 'node:net';
 import {test} from 'node:test';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import {beginH5Read,createH5ReadBatch,createH5ReadBudget,finishH5Read,getH5ReadBatchContext,getH5ReadParticipantId,getH5ReadBatchTiming,H5_READ_BATCH_LIMITS,type H5ReadBudget} from '../src/yxx-h5-read-batch.mjs';
-import {buildH5BatchReadStatement,DEPARTMENT_FRESH_EPOCH_SQL,h5DepartmentPageSql,h5DepartmentSummarySql,h5RecentSql,type H5BatchShape,type H5BatchSqlInput} from '../src/yxx-h5-batch-sql.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {beginH5Read,createH5ReadBatch,createH5ReadBudget,finishH5Read,getH5ReadBatchContext,getH5ReadParticipantId,getH5ReadBatchTiming,H5_READ_BATCH_LIMITS,type H5ReadBudget} from '../app/server/src/yxx-h5-read-batch.mjs';
+import {buildH5BatchReadStatement,DEPARTMENT_FRESH_EPOCH_SQL,h5DepartmentPageSql,h5DepartmentSummarySql,h5RecentSql,type H5BatchShape,type H5BatchSqlInput} from '../app/server/src/yxx-h5-batch-sql.mjs';
 
 function request(){return new IncomingMessage(new Socket());}
 function input(overrides:Partial<H5BatchSqlInput>={}):H5BatchSqlInput{

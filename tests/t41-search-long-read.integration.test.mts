@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {object,rows} from './helpers/t41-search-risk-fixture.mjs';
-import {parseSearchRequest,searchParameters} from '../src/workbench-search-contracts.mjs';
+import {parseSearchRequest,searchParameters} from '../shared/workbench-search-contracts.mjs';
 import type {WorkbenchSearchRequest} from '../contracts/workbench_search_contracts.js';
 interface Fixture {origin:string;cookies:string[];tickets:{ticket:{id:string}}[]}
 test('T41 bounded read POST preserves GET criteria/results and rejects altered, illegal and oversize bodies',async()=>{

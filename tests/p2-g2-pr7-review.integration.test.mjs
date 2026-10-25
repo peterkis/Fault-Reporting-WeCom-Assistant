@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withG2Runtime} from './helpers/p2-g2-runtime-harness.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
-import {collectG2Reconciliation} from '../src/p2-g2-reconciliation.mjs';
-import {g2Hash} from '../src/p2-g2-validation-config.mjs';
+import {collectG2Reconciliation} from '../app/server/src/p2-g2-reconciliation.mjs';
+import {g2Hash} from '../app/server/src/p2-g2-validation-config.mjs';
 
 test('人工确认高风险显式续报复用原工单，重放不重复建单或通知',async()=>{
   await withG2Runtime(async f=>{

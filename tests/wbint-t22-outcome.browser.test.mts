@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import type {ConversationTextCommand} from '../contracts/workbench_conversation_workspace_contracts.js';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const ready="document.querySelectorAll('[data-conversation-draft]').length===2&&Array.from(document.querySelectorAll('[data-conversation-draft]')).every(e=>e.textContent.includes('草稿仅在当前浏览器'))";

@@ -1,7 +1,7 @@
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { migrateP2012,validateP2012Catalog,P2012_RELATIONS } from '../scripts/p2-012-migrate.mjs';
+import { migrateP2012,validateP2012Catalog,P2012_RELATIONS } from '../app/server/scripts/p2-012-migrate.mjs';
 import { withP2012Database,applyThrough031,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 test('P2-012 migration 032 applies atomically, detects catalog drift and preserves seven-table scope',async()=>{
   const databaseUrl=process.env.PILOT_DATABASE_URL;

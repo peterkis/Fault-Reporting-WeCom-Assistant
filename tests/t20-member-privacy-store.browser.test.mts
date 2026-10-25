@@ -1,3 +1,4 @@
+// Retired V1 client fixture: preserves historical API/lifecycle assertions; not new H5 UI acceptance.
 // SOURCE_ONLY_DRAFT / NOT_REGISTERED / NOT_BUILT / NOT_RUN.
 // Intended tests/ placement. Existing staged .mjs imports; two 240s native cases, concurrency1.
 import {test} from 'node:test';
@@ -9,8 +10,9 @@ import {randomUUID} from 'node:crypto';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {withT20FeedbackFixture} from './helpers/t20-feedback-fixture.mjs';
-import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
-import type {WeComOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
+import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
+import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui.mjs';
+import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {mapping} from './helpers/yxx-ss-009-http-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type FeedbackFixture=Parameters<Parameters<typeof withT20FeedbackFixture>[0]>[0];
@@ -24,7 +26,7 @@ async function withMemberStoreBrowser(run:(value:{f:FeedbackFixture;tab:Browser;
   let fixture:Awaited<ReturnType<typeof createYxxBrowserFixture>>|undefined,tab:Browser|undefined,app:ReturnType<typeof createYxxProfile>|undefined,error:unknown;
   try{
    fixture=await createYxxBrowserFixture({pool:f.context.pool,createApp:({oauth,origin:publicOrigin}:{oauth:WeComOAuth;origin:string})=>{
-    const value=createYxxProfile({...f.options,identityMapping,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,yxxSelfService:{featureFlags:f.options.featureFlags,pollMilliseconds:100,reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true}});app=value;return value.server;
+    const value=createYxxProfile({...f.options,identityMapping,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,h5Presentation:createRetiredSelfServiceFixture(),yxxSelfService:{featureFlags:f.options.featureFlags,pollMilliseconds:100,reporterFeedbackEnabled:true,reporterFeedbackDraftRecoveryEnabled:true}});app=value;return value.server;
    }});
    assert.ok(fixture);fixture.setMember('open-a');tab=await fixture.launch({path:'/synthetic-start',width:390,height:844});assert.ok(tab);
    await tab.evaluate("location.assign('/wecom/yixiaoxiu/')",{awaitPromise:false});await tab.waitFor("document.querySelector('#home-view')?.hidden===false");

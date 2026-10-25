@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {withT20FeedbackFixture,t20Object} from './helpers/t20-feedback-fixture.mjs';
-import {parseYxxFeedbackInput} from '../src/yxx-self-service-feedback.mjs';
+import {parseYxxFeedbackInput} from '../app/server/src/yxx-self-service-feedback.mjs';
 import {randomUUID} from 'node:crypto';
 
 test('feedback runtime input rejects identity, incidental thanks and accessor execution before any hook',()=>{

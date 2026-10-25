@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {t32Browser} from './helpers/t32-notification-exception-browser-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {t32Record,t32Text} from './helpers/t32-notification-exception-fixture.mjs';
 import {randomUUID} from 'node:crypto';
 test('T32 production bundle discards a delayed item response and clears only the lost object scope',{timeout:240000},async()=>{

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
 const RUN_TOKEN = randomUUID().replaceAll('-', '_').slice(0, 12);
 const createdDatabases = new Set();

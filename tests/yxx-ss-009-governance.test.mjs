@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {g2TestFiles} from '../scripts/p2-g2-synthetic-e2e.mjs';
-import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {readYxxLocalValidationScope} from '../src/yxx-self-service-validation-scope.mjs';
-import {SS009_BASE,evidenceHash} from '../src/yxx-self-service-verification.mjs';
-import {g2EvidenceTime,assertG2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+import {g2TestFiles} from '../app/server/scripts/p2-g2-synthetic-e2e.mjs';
+import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
+import {readYxxLocalValidationScope} from '../app/server/src/yxx-self-service-validation-scope.mjs';
+import {SS009_BASE,evidenceHash} from '../app/server/src/yxx-self-service-verification.mjs';
+import {g2EvidenceTime,assertG2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 const git=args=>execFileSync('git',args,{encoding:'utf8'}).trim();
 const json=file=>JSON.parse(readFileSync(file,'utf8'));
 

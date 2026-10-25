@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
 interface Fixture {origin:string;cookies:string[];pool:PostgresPool;processReviewIntake:(id:string)=>Promise<unknown>;tickets:{ticket:{id:string}}[];principals:{id:string}[]}
 function http(fixture:Fixture){

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 
 const DATABASE_NAME_PATTERN = /^p2_002_[a-z0-9]+_[a-f0-9_]+$/u;
 

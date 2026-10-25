@@ -10,8 +10,8 @@ import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {withT37Fixture,object,rows,text,type T37Fixture,type T37Http} from './helpers/t37-follow-up-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {createP2016Runtime,type P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Read {path:string;status:number;body:Record<string,unknown>}

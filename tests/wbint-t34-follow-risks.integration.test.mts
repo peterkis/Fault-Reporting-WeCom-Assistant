@@ -2,16 +2,16 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {followSchemaReady,migrateWorkbenchFollow} from '../scripts/workbench-follow-migrate.mjs';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import {followSchemaReady,migrateWorkbenchFollow} from '../app/server/scripts/workbench-follow-migrate.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {WorkbenchFollowCommand} from '../contracts/workbench_item_follow_contracts.js';
-import type {P2016EnabledRuntime} from '../src/p2-016-runtime.mjs';
-import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
-import {migrateTicketStaffCompletion} from '../scripts/ticket-staff-completion-migrate.mjs';
-import {migrateTicketReopenRounds} from '../scripts/ticket-reopen-rounds-migrate.mjs';
-import {migrateBotReporterFeedback} from '../scripts/bot-reporter-feedback-migrate.mjs';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
+import {migrateTicketSelfHandling} from '../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketStaffCompletion} from '../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 interface Fixture {runtime:P2016EnabledRuntime;pool:PostgresPool;databaseUrl:string;origin:string;cookies:string[];principals:{id:string}[];tickets:{ticket:{id:string};intake:{intakeId:string}}[];processReviewIntake:(id:string)=>Promise<unknown>}
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function text(v:unknown):string{assert.equal(typeof v,'string');return v as string;}

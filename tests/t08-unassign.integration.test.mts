@@ -2,18 +2,18 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
 import {test} from 'node:test';
-import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {P2016UnassignCommand} from '../contracts/workbench_unassign_contracts.js';
-import {assertLocalDateTime} from '../src/platform/time-contract.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {migrateP2016} from '../scripts/p2-016-migrate.mjs';
-import {migrateTicketSelfHandling} from '../scripts/ticket-self-handling-migrate.mjs';
-import {migrateTicketUnassign} from '../scripts/ticket-unassign-migrate.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
-import {createPilotTicketCore} from '../src/p1-005-pilot-ticket-core.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
-import {listenConversationWorkbenchServer} from '../src/p2-006-workbench-http.mjs';
+import {migrateP2016} from '../app/server/scripts/p2-016-migrate.mjs';
+import {migrateTicketSelfHandling} from '../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {migrateTicketUnassign} from '../app/server/scripts/ticket-unassign-migrate.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}

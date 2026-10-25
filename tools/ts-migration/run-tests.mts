@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import {ownedSpawnSync} from './owned-process.mjs';
 import { constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -8,6 +9,7 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { loadRoutes, select, testEnvironment, execution, type Selection } from './routing.mjs';
 import { currentAcceptance, currentSelection, currentShardPlan } from './current-acceptance.mjs';
+import {isProductionSource} from './backend-layout.mjs';
 
 export type Counts = { tests: number; pass: number; fail: number; cancelled: number; skipped: number; todo: number };
 export function counts(tap: string): Counts {
@@ -66,7 +68,7 @@ export function archiveScreenshots(tap:string,directory:string,prefix:string):Re
 }
 export function runSelection(root: string, selection: Selection, options: { reference?: boolean; reportDir?: string } = {}): Counts {
   const manifest = verifyArtifact(root), env = testEnvironment(root, selection.entries);
-  if (options.reference && codeFiles(root).some(p => /^(src|scripts)\//u.test(p) && p.endsWith('.mts') && p !== 'src/migration-canary.mts')) throw new Error('MIGRATION_SOURCE_REFERENCE_RETIRED');
+  if (options.reference && codeFiles(root).some(p => (isProductionSource(p)||/^(src|scripts)\//u.test(p)) && p.endsWith('.mts') && !p.endsWith('/migration-canary.mts'))) throw new Error('MIGRATION_SOURCE_REFERENCE_RETIRED');
   const total: Counts = { tests: 0, pass: 0, fail: 0, cancelled: 0, skipped: 0, todo: 0 };
   const log = options.reportDir ?? mkdtempSync(path.join(tmpdir(), 'ts-migration-results-'));
   if (path.relative(root, path.resolve(log)) === '' || !path.relative(root, path.resolve(log)).startsWith('..') && !path.isAbsolute(path.relative(root, path.resolve(log)))) throw new Error('MIGRATION_REPORT_MUST_BE_OUTSIDE_SOURCE');
@@ -96,7 +98,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
     const casePath = prefix + '.cases.jsonl';
     const reporterRoot = options.reference ? root : path.join(root, '.build/runtime');
     const args = [...sourceHook, ...nodeFlags, '--test', '--test-reporter=tap', '--test-reporter-destination=stdout',
-      '--test-reporter=' + pathToFileURL(path.join(reporterRoot, 'scripts/p2-g2-case-reporter.mjs')).href,
+      '--test-reporter=' + pathToFileURL(path.join(reporterRoot, 'app/server/scripts/p2-g2-case-reporter.mjs')).href,
       '--test-reporter-destination=' + path.resolve(log, casePath), target.file];
     const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path),
       executed_path: slash(path.relative(root, target.file)), execution_cwd: slash(path.relative(root, target.cwd)) || '.',
@@ -105,7 +107,8 @@ export function runSelection(root: string, selection: Selection, options: { refe
       case_line_basis: 'EXECUTED_FILE', mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
     files.push(fileResult);
     try {
-      const result = spawnSync(process.execPath, args, { cwd: target.cwd, env: { ...env, NODE_V8_COVERAGE: coverage }, encoding: 'utf8', windowsHide: true, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
+      const result = ownedSpawnSync(process.execPath, args, { cwd: target.cwd, env: { ...env, NODE_V8_COVERAGE: coverage }, encoding: 'utf8', windowsHide: true, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
+      if(result.ownership_receipt)fileResult.ownership_receipt=result.ownership_receipt;
       const redact = (text: string): string => {
         const raw = env.PILOT_DATABASE_URL;
         const secrets = raw ? [raw, new URL(raw).password, decodeURIComponent(new URL(raw).password)].filter(Boolean) : [];
@@ -132,8 +135,8 @@ export function runSelection(root: string, selection: Selection, options: { refe
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
       if (!loaded.some(p => path.relative(p, target.file) === '')) throw new Error('MIGRATION_TEST_NOT_EXECUTED: ' + entry.path);
       const projectLoaded = loaded.filter(p => !path.relative(root, p).startsWith('..') && !path.isAbsolute(path.relative(root,p))).map(p => slash(path.relative(root, p)));
-      if (!options.reference && projectLoaded.some(p => p.startsWith('src/'))) throw new Error('MIGRATION_SOURCE_IMPLEMENTATION_LOADED: ' + entry.path);
-      if (!options.reference && entry.mode !== 'SOURCE_HOST' && projectLoaded.some(p => /^(?:src|scripts|tests)\//u.test(p))) throw new Error('MIGRATION_RUNTIME_LOADED_SOURCE: ' + entry.path);
+      if (!options.reference && projectLoaded.some(p => p.startsWith('src/') || p.startsWith('app/server/src/') || p.startsWith('shared/') || /^app\/pc-admin\/src\/.+\.mts$/u.test(p))) throw new Error('MIGRATION_SOURCE_IMPLEMENTATION_LOADED: ' + entry.path);
+      if (!options.reference && entry.mode !== 'SOURCE_HOST' && projectLoaded.some(p => /^(?:(?:app\/server\/)?(?:src|scripts)|tests)\//u.test(p))) throw new Error('MIGRATION_RUNTIME_LOADED_SOURCE: ' + entry.path);
       fileResult.loaded_project_files = projectLoaded;
       const requiredChildren = strings(routes.subprocesses[entry.path] ?? []).map(p => options.reference ? p : '.build/runtime/' + outputPath(p));
       if (requiredChildren.some(p => !projectLoaded.includes(p))) throw new Error('MIGRATION_SUBPROCESS_NOT_OBSERVED: ' + entry.path);

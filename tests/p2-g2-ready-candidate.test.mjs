@@ -1,14 +1,60 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync,readFileSync,copyFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync,readFileSync,copyFileSync,symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { requirePreparedG2Candidate, g2CandidateInventory, G2_CANDIDATE_ROOTS, G2_CANDIDATE_FILES,G2_ROOT } from '../src/p2-g2-candidate.mjs';
-import {createG2SourceAudit} from '../src/p2-g2-source-audit.mjs';
-import { G2_SCENARIO_IDS } from '../src/p2-g2-gate-evaluator.mjs';
-import { g2Hash } from '../src/p2-g2-validation-config.mjs';
-import { deriveG2TestEvidence } from '../src/p2-g2-test-evidence.mjs';
+import { requirePreparedG2Candidate, g2CandidateInventory,g2CandidateInventoryAsync,verifyG2Candidate,verifyG2CandidateAsync,isG2CandidatePath, G2_CANDIDATE_ROOTS, G2_CANDIDATE_FILES,G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
+import {createG2SourceAudit} from '../app/server/src/p2-g2-source-audit.mjs';
+import { G2_SCENARIO_IDS } from '../app/server/src/p2-g2-gate-evaluator.mjs';
+import { g2Hash } from '../app/server/src/p2-g2-validation-config.mjs';
+import { deriveG2TestEvidence } from '../app/server/src/p2-g2-test-evidence.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
+
+test('candidate binds moved application sources and controls without reading local frontend state or changing legacy roots',async t=>{
+ const root=mkdtempSync(path.join(tmpdir(),'g2-app-inputs-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ for(const dir of G2_CANDIDATE_ROOTS)mkdirSync(path.join(root,dir),{recursive:true});
+ for(const file of G2_CANDIDATE_FILES)writeFileSync(path.join(root,file),'{}');
+ const legacy=g2CandidateInventory(root),put=(file,text)=>{mkdirSync(path.dirname(path.join(root,file)),{recursive:true});writeFileSync(path.join(root,file),text);};
+ const excluded=['app/pc-admin/node_modules/.vite-temp/cache.js','app/pc-admin/.env.local','app/h5/.env.local','app/h5/src/dev/preview.ts','app/h5/design-baseline/private.html','app/h5/docs/prototype/private.html'];
+ for(const file of excluded){put(file,'PRIVATE_LOCAL_ONLY');assert.equal(isG2CandidatePath(file),false);}
+ assert.equal(g2CandidateInventory(root).fingerprint,legacy.fingerprint,'optional frontend state cannot rebind a legacy candidate');
+ const production=['app/pc-admin/src/main.tsx','app/pc-admin/src/features/drafts/encrypted-drafts.ts','app/pc-admin/vite.config.ts','app/pc-admin/index.html','app/h5/src/reporter/controller.ts','app/h5/src/reporter/feedback.ts','app/h5/compile-i18n.ts','app/h5/vite.config.ts','app/h5/public/assets/font.woff2'];
+ for(const file of production){put(file,'PRODUCTION_INPUT');assert.equal(isG2CandidatePath(file),true);}
+ const current=g2CandidateInventory(root);assert.notEqual(current.fingerprint,legacy.fingerprint);
+ assert.deepEqual(await g2CandidateInventoryAsync(root),current);
+ for(const file of production){put(file,'CHANGED_INPUT');assert.throws(()=>verifyG2Candidate(current.fingerprint,root),/CANDIDATE_CHANGED/u,file);put(file,'PRODUCTION_INPUT');assert.equal(g2CandidateInventory(root).fingerprint,current.fingerprint);}
+ assert.ok(current.files.every(file=>!excluded.includes(file.path)));
+ rmSync(path.join(root,'app/pc-admin/src'),{recursive:true,force:true});mkdirSync(path.join(root,'linked-source'));symlinkSync(path.join(root,'linked-source'),path.join(root,'app/pc-admin/src'),process.platform==='win32'?'junction':'dir');
+ assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_SYMLINK_FORBIDDEN/u);
+ await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_SYMLINK_FORBIDDEN/u);
+ rmSync(path.join(root,'app/pc-admin/src'),{recursive:true,force:true});mkdirSync(path.join(root,'app/pc-admin/src'));
+ rmSync(path.join(root,'app/h5'),{recursive:true,force:true});mkdirSync(path.join(root,'linked-h5'));symlinkSync(path.join(root,'linked-h5'),path.join(root,'app/h5'),process.platform==='win32'?'junction':'dir');
+ assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_SYMLINK_FORBIDDEN/u,'the moved H5 root cannot follow a linked project directory');
+ await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_SYMLINK_FORBIDDEN/u);
+ rmSync(path.join(root,'app'),{recursive:true,force:true});put('linked-parent/pc-admin/src/main.tsx','MUST_NOT_FOLLOW_PARENT');symlinkSync(path.join(root,'linked-parent'),path.join(root,'app'),process.platform==='win32'?'junction':'dir');
+ assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_SYMLINK_FORBIDDEN/u,'nested frontend roots reject linked parents before reading their children');
+ await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_SYMLINK_FORBIDDEN/u);
+});
+
+test('bounded async candidate reads preserve the full V2 inventory, event-loop progress and hard admission limits',async t=>{
+ const root=mkdtempSync(path.join(tmpdir(),'g2-async-inventory-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ for(const dir of G2_CANDIDATE_ROOTS)mkdirSync(path.join(root,dir),{recursive:true});
+ for(const file of G2_CANDIDATE_FILES)writeFileSync(path.join(root,file),'{}');
+ for(let index=0;index<1000;index++)writeFileSync(path.join(root,'tests','input-'+index+'.mjs'),'export const value='+index+';\n');
+ const canonical=path.join(root,'tests','canonical.mts');writeFileSync(canonical,'\ufeffexport const value="中文";\r\n');
+ writeFileSync(path.join(root,'web','binary.woff2'),Buffer.from([0xff,0x00,0xfe]));
+ const expected=g2CandidateInventory(root);let ticks=0;const timer=setInterval(()=>ticks++,1);let actual;
+ try{actual=await g2CandidateInventoryAsync(root);}finally{clearInterval(timer);}
+ assert.ok(ticks>0,'complete fresh verification must leave IPC responsive');assert.deepEqual(actual,expected);
+ assert.equal(actual.files.find(file=>file.path==='tests/canonical.mts').sha256,g2Hash(Buffer.from('export const value="中文";\n')));
+ assert.deepEqual(await verifyG2CandidateAsync(expected.fingerprint,root),expected);
+ writeFileSync(canonical,'CHANGED');await assert.rejects(()=>verifyG2CandidateAsync(expected.fingerprint,root),/CANDIDATE_CHANGED/u);
+ writeFileSync(canonical,Buffer.from([0xff]));assert.throws(()=>g2CandidateInventory(root),TypeError);await assert.rejects(()=>g2CandidateInventoryAsync(root),TypeError);
+ writeFileSync(canonical,'VALID');const oversized=path.join(root,'tests','oversized.mjs');writeFileSync(oversized,Buffer.alloc(16*1024*1024+1));
+ assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_INVENTORY_LIMIT/u);await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_INVENTORY_LIMIT/u);rmSync(oversized);
+ for(let index=1000;index<2046;index++)writeFileSync(path.join(root,'tests','input-'+index+'.mjs'),'export {};');
+ assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_INVENTORY_LIMIT/u);await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_INVENTORY_LIMIT/u);
+});
 
 test('prepared-candidate gate rejects missing, changed and incomplete regression evidence', t => {
   const root=mkdtempSync(path.join(tmpdir(),'g2-ready-unit-'));

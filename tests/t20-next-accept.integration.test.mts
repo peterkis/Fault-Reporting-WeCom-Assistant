@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 for(const action of ['take-and-start','accept-for-later'] as const){
  test('an authorized HANDLER explicitly '+action+' on the legitimate unassigned reopened round',async()=>{

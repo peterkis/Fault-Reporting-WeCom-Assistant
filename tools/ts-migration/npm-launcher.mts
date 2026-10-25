@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync, type SpawnSyncOptionsWithStringEncoding, type SpawnSyncReturns } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {ownedSpawnSync} from './owned-process.mjs';
 
 // Execute the discovered launcher. Its directory is not an npm installation contract.
 export function findNpmLauncher(options: SpawnSyncOptionsWithStringEncoding): string {
@@ -18,6 +19,7 @@ export function runNpm(args: string[], options: SpawnSyncOptionsWithStringEncodi
 }
 
 export function runNpmLauncher(launcher: string, args: string[], options: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string> {
+  const run=options.timeout?ownedSpawnSync:spawnSync;
   if (process.platform === 'win32' && /\.(?:cmd|bat)$/iu.test(launcher)) {
     // Escape cmd parsing separately from Windows argv quoting, preserving literal values.
     const meta = (value: string): string => value.replace(/[()\[\]%!^"`<>&|; ,*?]/gu, '^$&');
@@ -28,11 +30,11 @@ export function runNpmLauncher(launcher: string, args: string[], options: SpawnS
       return meta(meta('"' + escaped + '"'));
     };
     const command = '"' + meta(launcher) + ' ' + args.map(quote).join(' ') + '"';
-    return spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/v:off', '/s', '/c', command],
+    return run(process.env.ComSpec ?? 'cmd.exe', ['/d', '/v:off', '/s', '/c', command],
       { ...options, windowsHide: true, windowsVerbatimArguments: true });
   }
-  if (/\.[cm]?js$/iu.test(launcher)) return spawnSync(process.execPath, [launcher, ...args], options);
-  return spawnSync(launcher, args, options);
+  if (/\.[cm]?js$/iu.test(launcher)) return run(process.execPath, [launcher, ...args], options);
+  return run(launcher, args, options);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -4,7 +4,7 @@
 
 唯一产品SSE入口：`GET /api/realtime/events`，宿主W；不是REST JSON列表。query只有可选 `scope=workbench`，不得携带token或自造cursor。恢复Header为 `Last-Event-ID: <十进制event_id>`。浏览器EventSource的原生重连可以发送它，既有前端不手动注入Header。
 
-实现：[SSE](../../../src/p2-003-realtime-sse.mts)、[event log](../../../src/p2-003-realtime-event-log.mts)、[G1装配](../../../src/p2-g1-runtime.mts)。`CONVERSATION_REALTIME_SSE_ENABLED` 默认false；实际handler还需要身份、授权、存储。内部W在认证过期时断流，handler重新核对范围，普通角色与RESTRICTED_ADMIN区分。
+实现：[SSE](../../../app/server/src/p2-003-realtime-sse.mts)、[event log](../../../app/server/src/p2-003-realtime-event-log.mts)、[G1装配](../../../app/server/src/p2-g1-runtime.mts)。`CONVERSATION_REALTIME_SSE_ENABLED` 默认false；实际handler还需要身份、授权、存储。内部W在认证过期时断流，handler重新核对范围，普通角色与RESTRICTED_ADMIN区分。
 
 ## 200流格式
 
@@ -35,7 +35,7 @@ Fallback完整字段：`fallback_required:true,reason,poll_after_ms,strategy,lat
 
 新启用路径以既有256总预算完整表示去重的Session+Thread+SYSTEM Ticket授权范围。合法超预算返回bootstrap200/availablefalse以及SSE503 `TEMPORARY_UNAVAILABLE`，仅做有界授权GET回退；不截断范围、提高预算或把权限403变成503。关闭时保留原SSE授权profile。无数据库变更、第二Ticket事实源、新连接池或进程。
 
-[单适配器](../../../src/workbench-realtime-client.mts) 与 [Query接入](../../../web/admin-workbench/src/realtime/useRealtime.ts) 每个当前主体只有一个原生EventSource、一个5秒timer、一个当前读AbortController和一个pending位。只失效当前主体静态识别且已挂载的活动GET families，不重读后台inactive对象。公开事件unknown解码保留string BIGINT，验证九字段及64KiB/深度6/节点4096等边界，只取安全event_id/event_type作为重读提示；payload不覆盖业务状态，重复/乱序不执行POST。
+[单适配器](../../../app/pc-admin/src/realtime/workbench-realtime-client.mts) 与 [Query接入](../../../app/pc-admin/src/realtime/useRealtime.ts) 每个当前主体只有一个原生EventSource、一个5秒timer、一个当前读AbortController和一个pending位。只失效当前主体静态识别且已挂载的活动GET families，不重读后台inactive对象。公开事件unknown解码保留string BIGINT，验证九字段及64KiB/深度6/节点4096等边界，只取安全event_id/event_type作为重读提示；payload不覆盖业务状态，重复/乱序不执行POST。
 
 CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fresh bootstrap与当前GET，再按有界节奏创建新原生源，清旧cursor。同一timer对长GET提供5秒截止与迟到完成栅栏，不并行轮询。隐藏/离线停止流、读和timer，恢复先完整重验。主体或有效范围变化取消并栅栏旧GET/回调；新主体不能继承旧cursor、事实或草稿。可信401/403/404沿既有范围清理，不能因编辑而保留失权明文。
 
@@ -43,6 +43,6 @@ CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fres
 
 关闭 `workbenchRealtimeEnabled=false` 后正式页不创建新增EventSource/global polling；原已提交事实保留。输入/HTTP/权限/资源与实际分段证据见 [T38执行](../../../plans/admin-workbench-integration/execution/t38.md)。T39 presence、T40音效及真实外部依赖/发送/部署/full/certify/Gate均不在本票。
 
-默认资源：[SSE defaults](../../../src/p2-003-realtime-sse.mts) 32 clients、20秒heartbeat、5秒恢复poll、每批50、64KiB写缓冲、5秒drain截止；event-log默认保留168小时，实际有效窗口以store为准。SSE可清理、可重建，不是业务事实源。
+默认资源：[SSE defaults](../../../app/server/src/p2-003-realtime-sse.mts) 32 clients、20秒heartbeat、5秒恢复poll、每批50、64KiB写缓冲、5秒drain截止；event-log默认保留168小时，实际有效窗口以store为准。SSE可清理、可重建，不是业务事实源。
 
 核对：[event-log unit](../../../tests/p2-003-realtime-event-log.test.mjs)、[integration](../../../tests/p2-003-realtime-event-log.integration.test.mjs)、[说明](../../39_p2_003_realtime_event_log_sse.md)及T38已注册Unit/真实HTTP/正式bundle浏览器入口。实际浏览器流在任务自有合成环境验证，不代表部署或现场授权。

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,writeFileSync,unlinkSync,rmdirSync} from 'node:fs';
-import {verifyG2Predecessor,g2PredecessorScopeValid,isG2SuccessorState} from '../src/p2-g2-predecessor-verification.mjs';
-import {G2_ROOT} from '../src/p2-g2-candidate.mjs';
+import {verifyG2Predecessor,g2PredecessorScopeValid,isG2SuccessorState} from '../app/server/src/p2-g2-predecessor-verification.mjs';
+import {G2_ROOT} from '../app/server/src/p2-g2-candidate.mjs';
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
-import {readG2CurrentEvidence} from '../src/p2-g2-current-evidence.mjs';
+import {readG2CurrentEvidence} from '../app/server/src/p2-g2-current-evidence.mjs';
 
 test('current readiness selects append-only reports and rejects invalid pointers without historical fallback',()=>{
  const root=mkdtempSync('tmp/yxx-report-selection-');mkdirSync(root+'/plans');mkdirSync(root+'/evidence');

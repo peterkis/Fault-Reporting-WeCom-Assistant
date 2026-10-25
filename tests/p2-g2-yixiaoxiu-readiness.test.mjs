@@ -4,13 +4,13 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {requirePreparedYxxCandidate,allowYxxReadinessReportRefresh} from '../src/p2-g2-yixiaoxiu-readiness.mjs';
-import {readYxxG2AppConfiguration} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
-import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-import {validateG2Manifest} from '../src/p2-g2-validation-config.mjs';
+import {requirePreparedYxxCandidate,allowYxxReadinessReportRefresh} from '../app/server/src/p2-g2-yixiaoxiu-readiness.mjs';
+import {readYxxG2AppConfiguration} from '../app/server/src/p2-g2-yixiaoxiu-g2-config.mjs';
+import {validateYxxEntryConfig} from '../app/server/src/p2-g2-yixiaoxiu-contract.mjs';
+import {validateG2Manifest} from '../app/server/src/p2-g2-validation-config.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
-import {installG2NetworkBoundary} from '../src/p2-g2-network-boundary.mjs';
+import {installG2NetworkBoundary} from '../app/server/src/p2-g2-network-boundary.mjs';
 
 const sha=v=>createHash('sha256').update(v).digest('hex');
 test('member readiness refresh permits only authorized modifications with exact preserved baseline bytes',()=>{

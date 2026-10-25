@@ -5,6 +5,7 @@ import {brotliCompressSync,brotliDecompressSync,constants,gunzipSync,gzipSync} f
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
+import {assertBackendLayout,assertSharedBoundary,BACKEND_LAYOUT_BASE,isProductionSource,logicalSource} from './backend-layout.mjs';
 export { sourceRoot, noLinks, cleanGenerated, controlledBuildRoot } from './bootstrap.mjs';
 
 export const CONFIGS = ['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json'] as const;
@@ -33,7 +34,7 @@ export function strings(value: unknown): string[] {
   if (!Array.isArray(value) || !value.every((v: unknown) => typeof v === 'string') || new Set(value).size !== value.length) throw new Error('MIGRATION_STRING_ARRAY_REQUIRED');
   return value;
 }
-export function git(root: string, args: string[]): string { return execFileSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true }).trim(); }
+export function git(root: string, args: string[]): string { return execFileSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, stdio: ['ignore','pipe','pipe'] }).trim(); }
 export function workspaceFiles(root: string): string[] {
   const raw = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8', windowsHide: true });
   return [...new Set(raw.split('\0').filter(Boolean))].filter(p => existsSync(path.join(root, p))).sort();
@@ -47,17 +48,22 @@ export function assertProductionSources(root: string): void {
     ...strings(policy.legacy_g0), ...strings(policy.retained_existing_tooling)]);
   const historicalTools = new Set(git(root, ['ls-tree', '-r', '--name-only', LEGACY_POLICY_BASE, '--', 'tools', '.github/review']).split('\n'));
   if (git(root, ['rev-parse', '--is-shallow-repository']) !== 'false') throw new Error('MIGRATION_FULL_HISTORY_REQUIRED');
-  const retired = new Set(git(root, ['log', '--format=', '--name-only', '--diff-filter=A', '--no-renames', '-z', LEGACY_POLICY_BASE + '..HEAD', '--', 'src', 'scripts', 'tools', '.github/review'])
-    .split('\0').map(p => p.trim()).filter(p => p.endsWith('.mts') && !p.endsWith('.d.mts')).map(p => p.slice(0, -4) + '.mjs'));
-  for (const file of workspaceFiles(root).filter(f => /^(src|scripts|tools|\.github\/review)\//u.test(f) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
+  const retired = new Set(git(root, ['log', '--format=', '--name-only', '--diff-filter=A', '--no-renames', '-z', LEGACY_POLICY_BASE + '..HEAD', '--', 'src', 'scripts', 'app/server', 'shared', 'app/pc-admin/src', 'tools', '.github/review'])
+    .split('\0').map(p => logicalSource(p.trim())).filter(p => p.endsWith('.mts') && !p.endsWith('.d.mts')).map(p => p.slice(0, -4) + '.mjs'));
+  const files=workspaceFiles(root);
+  for (const file of files.filter(f => (isProductionSource(f)||/^(src|scripts|tools|\.github\/review)\//u.test(f)) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
     const tooling = /^(tools|\.github\/review)\//u.test(file);
-    if (retired.has(file)) throw new Error('MIGRATION_RETIRED_LEGACY: ' + file);
+    const logical=logicalSource(file);
+    if (retired.has(logical)) throw new Error('MIGRATION_RETIRED_LEGACY: ' + file);
     if (file.endsWith('.mts') || /\.d\.ts$/u.test(file)) {
       if (tooling && !file.startsWith('tools/ts-migration/')) throw new Error('MIGRATION_UNREGISTERED_TYPED_TOOL: ' + file);
       continue;
     }
-    if (!file.endsWith('.mjs') || !(tooling ? historicalTools : legacy).has(file)) throw new Error(tooling ? 'MIGRATION_NEW_UNTYPED_TOOL: ' + file : 'MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
+    if (!file.endsWith('.mjs') || !(tooling ? historicalTools : legacy).has(logical)) throw new Error(tooling ? 'MIGRATION_NEW_UNTYPED_TOOL: ' + file : 'MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
   }
+  for(const file of files.filter(isProductionSource))safeFile(root,file);
+  assertBackendLayout(root,files,git(root,['ls-tree','-r','--name-only',BACKEND_LAYOUT_BASE,'--','src','scripts']).split('\n'));
+  assertSharedBoundary(root,files);
 }
 function unwrapAssertionOperand(node: ts.Expression): ts.Expression {
   while (ts.isParenthesizedExpression(node) || ts.isSatisfiesExpression(node)) node = node.expression;
@@ -66,7 +72,7 @@ function unwrapAssertionOperand(node: ts.Expression): ts.Expression {
 const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAssertion => ts.isAsExpression(node) || ts.isTypeAssertionExpression(node);
 
 export function codeFiles(root: string): string[] {
-  return workspaceFiles(root).filter(p => /^(src|scripts|tests)\/.+\.(mjs|mts)$/u.test(p) && !p.startsWith('tests/types/') && !p.endsWith('.d.mts'));
+  return workspaceFiles(root).filter(p => (isProductionSource(p)||/^(src|scripts|tests)\//u.test(p)) && /\.(mjs|mts)$/u.test(p) && !p.startsWith('tests/types/') && !p.endsWith('.d.mts'));
 }
 export function resources(root: string): string[] {
   const manifest = record(readJson(safeFile(root, 'tools/ts-migration/resources.json')));
@@ -84,9 +90,9 @@ export function outputPath(source: string): string { return source.endsWith('.mt
 // H5 design originals and development-only fixtures never identify a release.
 // Keep every production source/style/asset and the actual build configuration.
 export function isH5ProductionInput(file: string): boolean {
-  return ['h5/index.html','h5/package.json','h5/tsconfig.json','h5/vite.config.ts','h5/compile-i18n.ts','h5/components.json'].includes(file)
-    || file.startsWith('h5/src/') && !file.startsWith('h5/src/dev/')
-    || file.startsWith('h5/public/assets/');
+  return ['app/h5/index.html','app/h5/package.json','app/h5/tsconfig.json','app/h5/vite.config.ts','app/h5/compile-i18n.ts','app/h5/components.json'].includes(file)
+    || file.startsWith('app/h5/src/') && !file.startsWith('app/h5/src/dev/')
+    || file.startsWith('app/h5/public/assets/');
 }
 // Vite retains module qualifiers (for example wecom.prod) in hashed chunk names.
 const H5_ASSET = /^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2|png|jpe?g|webp|svg)$/u;
@@ -119,7 +125,7 @@ export function h5OutputFiles(root: string, withInventories = true): string[] {
     }
   }
   if (!Object.values(manifest).some(value => record(value).isEntry === true)) throw new Error('H5_MANIFEST_ENTRY_REQUIRED');
-  const publicRoot = path.join(root,'h5/public');
+  const publicRoot = path.join(root,'app/h5/public');
   for (const file of existsSync(publicRoot) ? outputFiles(publicRoot) : []) {
     if (!H5_PUBLIC_ASSET.test(file) || H5_NON_PRODUCTION.test(file) || !files.includes(file)
       || !readFileSync(safeFile(output,file)).equals(readFileSync(safeFile(publicRoot,file)))) throw new Error('H5_PUBLIC_ASSET_INVALID');
@@ -179,9 +185,10 @@ export function h5StartupMetrics(root:string){
     return {files:sorted,raw,gzip,brotli};
   }
   const initial=summary(base),routes=[];
-  for(const [view,page] of Object.entries({home:'Home',report:'Report',reports:'Reports',request:'Detail',department:'Department'})){
-    const key='src/pages/'+page+'.tsx';if(!Object.hasOwn(manifest,key))continue;
+  for(const [view,key] of Object.entries({home:'src/pages/Home.tsx',report:'src/pages/Report.tsx',reports:'src/pages/Reports.tsx',request:'src/pages/Detail.tsx',department:'src/pages/Department.tsx',reporter:'src/reporter/ReporterPage.tsx',reporterFeedback:'src/reporter/feedback.ts'})){
+    if(!Object.hasOwn(manifest,key))continue;
     const files=new Set(base);collect(key,files);routes.push({view,...summary(files)});
+    if(view==='reporterFeedback'&&Object.hasOwn(manifest,'src/reporter/ReporterPage.tsx')){collect('src/reporter/ReporterPage.tsx',files);routes[routes.length-1]={view,...summary(files)};}
   }
   return {schema_version:1,js_budget_gzip:120*1024,prepaint_budget_gzip:2048,initial,routes,assets:[...sizes.values()].sort((a,b)=>a.file<b.file?-1:a.file>b.file?1:0)};
 }
@@ -202,16 +209,16 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
   for (const source of resources(root)) if (!outputs.has(source)) add(source, source, 'RESOURCE');
   const webOutput=path.join(root,'.build/emit/web/admin-workbench');
   if(existsSync(webOutput))for(const file of outputFiles(webOutput)){
-    add('web/admin-workbench/index.html','web/admin-workbench/'+file,'WEB');
+    add('app/pc-admin/index.html','web/admin-workbench/'+file,'WEB');
   }
-  if(existsSync(path.join(root,'.build/emit/h5')))for(const file of h5OutputFiles(root))add('h5/index.html','h5/'+file,'WEB');
+  if(existsSync(path.join(root,'.build/emit/h5')))for(const file of h5OutputFiles(root))add('app/h5/index.html','h5/'+file,'WEB');
   return [...outputs.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 export function inputs(root: string): FileDigest[] {
-  const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|web\/admin-workbench)\//u.test(p)
+  const files = workspaceFiles(root).filter(p => isProductionSource(p) || /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|app\/pc-admin)\//u.test(p)
     || isH5ProductionInput(p) || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
     || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
-    || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
+    || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-current-readiness-scope.v2.json', 'plans/yxx-current-readiness-acceptance.v2.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
       '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs',
       '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs',
       '.github/review/verify-published-history.mjs'].includes(p));
@@ -243,7 +250,7 @@ export function program(root: string, name: string): ts.Program {
   const p = parsedConfig(root, name); const result = ts.createProgram(p.fileNames, p.options);
   const typed = workspaceFiles(root).filter(f => name === 'tsconfig.tools.json' ? /^tools\/ts-migration\/.+\.mts$/u.test(f)
     : name === 'tsconfig.type-tests.json' ? /^tests\/types\/.+\.mts$/u.test(f)
-    : /^(src|scripts|tests)\/.+\.mts$/u.test(f) && !f.startsWith('tests/types/'));
+    : (isProductionSource(f)||/^(src|scripts|tests)\//u.test(f)) && f.endsWith('.mts') && !f.startsWith('tests/types/'));
   if (!typed.length) throw new Error('MIGRATION_EMPTY_PROGRAM: ' + name);
   for (const f of typed) {
     if (!result.getSourceFile(slash(path.join(root, f))) || !p.fileNames.some(input => slash(input) === slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);

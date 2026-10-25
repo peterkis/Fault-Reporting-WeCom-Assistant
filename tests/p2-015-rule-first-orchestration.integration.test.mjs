@@ -2,17 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { createContactJourneyStore } from '../src/p2-015-contact-journey.mjs';
-import { createContinuationRefService } from '../src/p2-015-continuation-ref.mjs';
-import { createDecisionStore } from '../src/p2-015-decision-store.mjs';
-import { createManualReviewStore } from '../src/p2-015-manual-review.mjs';
-import { createRuleFirstOrchestrator } from '../src/p2-015-rule-first-orchestrator.mjs';
-import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../src/p2-015-safe-action-executor.mjs';
-import { createServiceIntakeDecisionPort } from '../src/p2-015-service-intake-decision-port.mjs';
-import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
-import { migrateP2015, validateP2015Catalog } from '../scripts/p2-015-migrate.mjs';
-import { safeHash } from '../src/p2-015-domain-contracts.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createContactJourneyStore } from '../app/server/src/p2-015-contact-journey.mjs';
+import { createContinuationRefService } from '../app/server/src/p2-015-continuation-ref.mjs';
+import { createDecisionStore } from '../app/server/src/p2-015-decision-store.mjs';
+import { createManualReviewStore } from '../app/server/src/p2-015-manual-review.mjs';
+import { createRuleFirstOrchestrator } from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../app/server/src/p2-015-safe-action-executor.mjs';
+import { createServiceIntakeDecisionPort } from '../app/server/src/p2-015-service-intake-decision-port.mjs';
+import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { migrateP2015, validateP2015Catalog } from '../app/server/scripts/p2-015-migrate.mjs';
+import { safeHash } from '../app/server/src/p2-015-domain-contracts.mjs';
 import { applyThrough022, assertNoP2015Residual, seedPersistedIntake, withP2015IsolatedDatabase } from './helpers/p2-015-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -185,13 +185,13 @@ test('frozen migrations and P2-007 modules outside the authorized G2 rule-engine
   // The gold repair may modify only the existing rule engine. ADR-0025
   // authorizes these new modules, not changes/deletions to frozen siblings.
   const additions = new Set([
-    'src/p2-007-staff-directory-contracts.mjs', 'src/p2-007-staff-directory-store.mjs',
-    'src/p2-007-staff-directory-sync.mjs', 'src/p2-007-third-party-reporter-directory.mjs',
-    'src/p2-007-third-party-staff-directory-adapter.mjs', 'src/p2-007-third-party-staff-directory.mjs',
+    'app/server/src/p2-007-staff-directory-contracts.mjs', 'app/server/src/p2-007-staff-directory-store.mjs',
+    'app/server/src/p2-007-staff-directory-sync.mjs', 'app/server/src/p2-007-third-party-reporter-directory.mjs',
+    'app/server/src/p2-007-third-party-staff-directory-adapter.mjs', 'app/server/src/p2-007-third-party-staff-directory.mjs',
   ]);
   const unexpected = names.stdout.trim().split(/\r?\n/u).filter(Boolean).filter(line => {
     const [status, file] = line.split('\t');
-    return !(status === 'M' && file === 'src/p2-007-rule-engine.mjs')
+    return !(status === 'M' && file === 'app/server/src/p2-007-rule-engine.mjs')
       && !(status === 'A' && additions.has(file));
   });
   assert.deepEqual(unexpected, []);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
-import { routeP2007Decision } from '../src/p2-015-decision-router.mjs';
+import { createRuleEngine } from '../app/server/src/p2-007-rule-engine.mjs';
+import { routeP2007Decision } from '../app/server/src/p2-015-decision-router.mjs';
 const engine = createRuleEngine();
 const route = text => {
   const output = engine.evaluate({ text, source_ref: 'synthetic:g2-boundary', observed_at: '2026-09-08 12:00:00' });

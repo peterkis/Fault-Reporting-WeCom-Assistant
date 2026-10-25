@@ -3,8 +3,8 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {performance} from 'node:perf_hooks';
-import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
-import {createYxxH5Runtime} from '../src/yxx-h5-runtime.mjs';
+import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createYxxH5Runtime} from '../app/server/src/yxx-h5-runtime.mjs';
 
 let workerPhase='BOOT';
 let appliedMigrations:string[]=[];

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
-import {followCommand,followItem} from '../src/workbench-follow.mjs';
-import {decodeFollowAttention,decodeFollowCommand,decodeFollowReceipt,decodeFollowResult,matchesFollowResult} from '../src/workbench-follow-browser-contracts.mjs';
+import {followCommand,followItem} from '../app/server/src/workbench-follow.mjs';
+import {decodeFollowAttention,decodeFollowCommand,decodeFollowReceipt,decodeFollowResult,matchesFollowResult} from '../app/pc-admin/src/contracts/workbench-follow-browser-contracts.mjs';
 
 test('T34 explicit personal intent rejects injected ownership, caller and source fields without changing the original UUID or basis',()=>{
  const body={client_command_id:randomUUID(),canonical_item:{kind:'ticket',id:randomUUID()},expected_follow_version:'a'.repeat(64),following:true};

@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { appendTicketEvent,createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
-import { createP2016ReporterAccess } from '../src/p2-016-reporter-access.mjs';
-import { createP2016ReporterTimeline } from '../src/p2-016-reporter-timeline.mjs';
-import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
-import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
-import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../src/p2-004-communication-delivery-worker.mjs';
-import { transactionP2016,textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { appendTicketEvent,createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import { createP2016ReporterAccess } from '../app/server/src/p2-016-reporter-access.mjs';
+import { createP2016ReporterTimeline } from '../app/server/src/p2-016-reporter-timeline.mjs';
+import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016-ticket-notification-projector.mjs';
+import { createP2016WeComSender } from '../app/server/src/p2-016-wecom-sender.mjs';
+import { createCommunicationDeliveryWorker,createCommunicationReconciliationPort } from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import { transactionP2016,textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030,assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 

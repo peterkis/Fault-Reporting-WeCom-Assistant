@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
-import { normalizeCommand,snapshot,hash,flags,version,ERROR_CODES,p2012HttpStatusForErrorCode,p2012HttpStatusForCommandResult } from '../src/p2-012-domain-contracts.mjs';
+import { normalizeCommand,snapshot,hash,flags,version,ERROR_CODES,p2012HttpStatusForErrorCode,p2012HttpStatusForCommandResult } from '../app/server/src/p2-012-domain-contracts.mjs';
 test('P2-012 closes input shapes, rejects hostile values and preserves deterministic command hashes',()=>{
   const c={action:'START_REVIEW',client_command_id:randomUUID(),candidate_review_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'};
   assert.equal(hash(c),hash(Object.fromEntries(Object.entries(c).reverse())));

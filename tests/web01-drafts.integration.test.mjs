@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
 test('an authorized internal-note receipt can be checked without its expired payload and is bound to principal, Ticket and server purpose',async()=>{
   await withWeb01Fixture(async({origin,cookies,tickets,pool})=>{

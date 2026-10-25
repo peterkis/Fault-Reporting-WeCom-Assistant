@@ -1,7 +1,7 @@
-import {createPostgresPool} from '../../src/platform/postgres-pool.mjs';
-import {createCommunicationDeliveryWorker} from '../../src/p2-004-communication-delivery-worker.mjs';
-import {createWorkbenchAppNotificationSender} from '../../src/workbench-app-notification-sender.mjs';
-import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../src/platform/time-contract.mjs';
+import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
+import {createCommunicationDeliveryWorker} from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {createWorkbenchAppNotificationSender} from '../../app/server/src/workbench-app-notification-sender.mjs';
+import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
 import type {TicketAppNotificationAuthority,EligibleTicketAppNotificationTarget} from '../../contracts/workbench_app_notification_contracts.js';
 const connectionString=process.env.T25_CASE_DB,deliveryId=process.env.T25_CASE_DELIVERY,memberId=process.env.T25_CASE_MEMBER,rawAuthority=process.env.T25_CASE_AUTHORITY;
 if(!connectionString||!deliveryId||!memberId||!rawAuthority)throw Error('T25_OWNED_CHILD_INPUT_REQUIRED');

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {request as requestHttp} from 'node:http';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
-import {createP2016Runtime} from '../../src/p2-016-runtime.mjs';
-import type {P2016EnabledRuntime,P2016RuntimeOptions} from '../../src/p2-016-runtime.mjs';
-import type {PostgresPool} from '../../src/platform/postgres-pool.mjs';
+import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import type {P2016EnabledRuntime,P2016RuntimeOptions} from '../../app/server/src/p2-016-runtime.mjs';
+import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 
 interface BaseFixture {
  pool:PostgresPool;origin:string;runtime:P2016EnabledRuntime;

@@ -4,8 +4,8 @@ import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {withScopeCheckout} from './helpers/yxx-current-scope-checkout.mjs';
-import {checkSS010} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxEvidenceHistory} from '../src/yxx-current-evidence-history.mjs';
+import {checkSS010} from '../app/server/src/yxx-self-service-readiness.mjs';
+import {verifyCurrentYxxEvidenceHistory} from '../app/server/src/yxx-current-evidence-history.mjs';
 test('current readiness rejects a later working-tree rewrite of the adjudicated G0 path', () => {
   withScopeCheckout(root => {
     assert.equal(checkSS010({ root }).status, 'STRUCTURE_VALID_NOT_READY');

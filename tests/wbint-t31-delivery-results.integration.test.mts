@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {t31Http,record,text} from './helpers/t31-public-progress-fixture.mjs';
-import {createP2012Runtime} from '../src/p2-012-workbench-assembly.mjs';
+import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import type {CommunicationSenderResult} from '../src/p2-004-communication-sender-port.mjs';
+import type {CommunicationSenderResult} from '../app/server/src/p2-004-communication-sender-port.mjs';
 function assertPublicRequest(request:{target_type:string;json:string;text:unknown},secret:string,summary:string){assert.equal(request.target_type,'PERSON');assert.ok(!request.json.includes(secret));assert.equal(request.text,'【P2-012测试】【IT故障进展】'+summary);}
 
 test('T31 independent UNKNOWN and terminal failure preserve the publication, internal isolation and original UUID without blind retry',async()=>{

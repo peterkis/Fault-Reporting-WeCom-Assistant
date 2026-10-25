@@ -1,6 +1,6 @@
-import { nowShanghaiLocal,shanghaiLocalToEpochMs } from '../../src/platform/time-contract.mjs';
-import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
-import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
+import { nowShanghaiLocal,shanghaiLocalToEpochMs } from '../../app/server/src/platform/time-contract.mjs';
+import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
+import { createCommunicationDeliveryWorker } from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
 const pool=createPostgresPool({connectionString:process.env.PILOT_DATABASE_URL,max:1,application_name:'p2_012_test_worker_child'});
 process.once('message',async input=>{
   let calls=0;

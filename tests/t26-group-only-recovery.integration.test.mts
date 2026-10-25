@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {withT26Fixture,t26Group,t26Deliveries,t26Control,t26Sender,t26Object} from './helpers/t26-group-notification-fixture.mjs';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 
 test('restoring the exact original group route retries only its failed delivery and retains the private acknowledgment',{timeout:240000},async()=>{
  await withT26Fixture(async context=>{

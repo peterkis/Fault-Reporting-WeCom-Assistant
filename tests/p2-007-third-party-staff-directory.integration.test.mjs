@@ -1,28 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
-import { migrateWorkbenchAuth } from '../scripts/p2-016-workbench-auth-migrate.mjs';
-import { migrateThirdPartyStaffDirectory, validateThirdPartyStaffDirectoryCatalog } from '../scripts/p2-007-migrate.mjs';
-import { createThirdPartyStaffDirectoryStore } from '../src/p2-007-staff-directory-store.mjs';
+import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
+import { migrateWorkbenchAuth } from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import { migrateThirdPartyStaffDirectory, validateThirdPartyStaffDirectoryCatalog } from '../app/server/scripts/p2-007-migrate.mjs';
+import { createThirdPartyStaffDirectoryStore } from '../app/server/src/p2-007-staff-directory-store.mjs';
 import { withP2016IsolatedDatabase, applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 
-import { createThirdPartyStaffDirectoryAdapter } from '../src/p2-007-third-party-staff-directory-adapter.mjs';
-import { createThirdPartyStaffDirectorySyncJob } from '../src/p2-007-staff-directory-sync.mjs';
+import { createThirdPartyStaffDirectoryAdapter } from '../app/server/src/p2-007-third-party-staff-directory-adapter.mjs';
+import { createThirdPartyStaffDirectorySyncJob } from '../app/server/src/p2-007-staff-directory-sync.mjs';
 import { syntheticDirectoryTree } from './helpers/p2-007-directory-fixture.mjs';
 
-import { createThirdPartyStaffDirectory } from '../src/p2-007-third-party-staff-directory.mjs';
-import { createBotRawUidResolver } from '../src/p2-007-staff-directory-contracts.mjs';
+import { createThirdPartyStaffDirectory } from '../app/server/src/p2-007-third-party-staff-directory.mjs';
+import { createBotRawUidResolver } from '../app/server/src/p2-007-staff-directory-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
-import { createRuleFirstOrchestrator } from '../src/p2-015-rule-first-orchestrator.mjs';
-import { createP2016GuidedJourneyStore } from '../src/p2-016-guided-journey.mjs';
-import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
-import { createDecisionStore } from '../src/p2-015-decision-store.mjs';
-import { createManualReviewStore } from '../src/p2-015-manual-review.mjs';
-import { createServiceIntakeDecisionPort } from '../src/p2-015-service-intake-decision-port.mjs';
-import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../src/p2-015-safe-action-executor.mjs';
-import { createP2015QueryService } from '../src/p2-015-query.mjs';
-import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
-import { hashReporterProfile } from '../src/p2-015-reporter-profile.mjs';
+import { createRuleFirstOrchestrator } from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
+import { createP2016GuidedJourneyStore } from '../app/server/src/p2-016-guided-journey.mjs';
+import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import { createDecisionStore } from '../app/server/src/p2-015-decision-store.mjs';
+import { createManualReviewStore } from '../app/server/src/p2-015-manual-review.mjs';
+import { createServiceIntakeDecisionPort } from '../app/server/src/p2-015-service-intake-decision-port.mjs';
+import { createExistingTicketCommandPort, createP2004FixedCommunicationPort, createSafeActionExecutor } from '../app/server/src/p2-015-safe-action-executor.mjs';
+import { createP2015QueryService } from '../app/server/src/p2-015-query.mjs';
+import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
+import { hashReporterProfile } from '../app/server/src/p2-015-reporter-profile.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 

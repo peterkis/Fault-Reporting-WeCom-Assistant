@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {createCommunicationDeliveryWorker} from '../src/p2-004-communication-delivery-worker.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {withT22Fixture,appendT22Item} from './helpers/wbint-t22-fixture.mjs';
 import type {ConversationMessageResult,ConversationCommandReceipt} from '../contracts/workbench_conversation_workspace_contracts.js';
 
