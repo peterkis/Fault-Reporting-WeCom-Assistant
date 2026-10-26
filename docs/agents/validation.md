@@ -10,7 +10,7 @@
 
 日常本地顺序沿迁移执行入口：`npm.cmd run migration:build` 一次构建；`node .build/tools/gate.mjs types`；在任务自有 loopback PG18 上执行实际相关的已注册入口及工具回归；`node .build/tools/verify-artifact.mjs`；关闭自有资源。参数、host、flags、超时、隔离及清理沿原注册合同。需要已编译工具时直接调用 `.build/tools/`，避免再调用含 bootstrap/build 的旧别名。
 
-本地只选相关子集时记录完整路径和实际数量，不称其为活动全集；新 head 的远端普通 PR selection 独立完成。源码/SQL/共享宿主/依赖变化按实际影响扩大检查；重复评论本身不构成重跑全部检查的理由。
+本地只选相关子集时记录完整路径和实际数量，不称其为活动全集；新 head 的远端普通 PR selection 独立完成。源码/SQL/共享宿主/依赖变化按实际影响扩大检查；重复评论本身不构成重跑全部检查的理由。长回归开始前在交付清单写明目标、候选、选择、完成条件与停止条件；用户改变目标后先按原批次收口已执行/未执行计数，再绑定新候选的检查范围。具名 full/certify 合同保持，定向 PASS 不补全旧轮次。
 
 ## 指令与复盘文档检查
 

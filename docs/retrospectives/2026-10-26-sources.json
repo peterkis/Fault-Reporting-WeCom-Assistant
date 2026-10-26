@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-26",
+  "repo_head_at_start": "59f52261476e0eaa4670137af2264bfad346a985",
+  "scope": {
+    "discovery_window": "Physical rollout files dated 2026-10-20 through 2026-10-26 in sessions and archived_sessions; metadata first, repository cwd match",
+    "headers_read": 68,
+    "matched_project_files": 38,
+    "main_thread_ids": 4,
+    "selected_main_fragments": 4,
+    "selected_auxiliary_audits": 3,
+    "discovery_errors": [],
+    "active_session_cutoff": "Before the current retro request; S01 prefix is fixed through line 35615",
+    "not_claimed": "Not every historical fragment, subagent, raw tool output, or reasoning record was semantically reviewed."
+  },
+  "privacy": "Metadata, source anchors, safe summaries and hashes only; no raw transcripts, credentials, or business data.",
+  "path_roots": {
+    "<REPO>": "D:/Projects/Fault-Reporting-WeCom-Assistant",
+    "<CODEX_HOME>": "Local read-only Codex session storage"
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "thread_id": "01a163a3-4f25-7261-802e-124423539e13",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/22/rollout-2026-10-22T20-43-29-01a163a3-4f25-7261-802e-124423539e13.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-22T12:43:29.555Z",
+      "read_through_line": 35615,
+      "read_through_timestamp": "2026-10-26T00:26:29.678Z",
+      "read_bytes": 118717756,
+      "read_prefix_sha256": "73a873ee0aaeaa5cc2cab4ead17f6e577ca7e1e16967b62aa249604d1eff71ac",
+      "anchors": [
+        {
+          "topic": "application-layout-plan",
+          "start_line": 17,
+          "end_line": 150
+        },
+        {
+          "topic": "migration-original-outcome",
+          "start_line": 14681,
+          "end_line": 14681
+        },
+        {
+          "topic": "change-delivery-goal",
+          "start_line": 31655,
+          "end_line": 31728
+        },
+        {
+          "topic": "candidate-followup",
+          "start_line": 33463,
+          "end_line": 33463
+        },
+        {
+          "topic": "merged-pr122",
+          "start_line": 34430,
+          "end_line": 34430
+        },
+        {
+          "topic": "archive-queued",
+          "start_line": 34669,
+          "end_line": 34678
+        },
+        {
+          "topic": "recover-tree-refs",
+          "start_line": 34905,
+          "end_line": 34908
+        },
+        {
+          "topic": "archive-completed",
+          "start_line": 34993,
+          "end_line": 34993
+        },
+        {
+          "topic": "simplify-request",
+          "start_line": 35003,
+          "end_line": 35003
+        },
+        {
+          "topic": "bounded-output-failure",
+          "start_line": 35023,
+          "end_line": 35049
+        },
+        {
+          "topic": "encoding-failure",
+          "start_line": 35121,
+          "end_line": 35121
+        },
+        {
+          "topic": "source-scan-first-restart",
+          "start_line": 35313,
+          "end_line": 35317
+        },
+        {
+          "topic": "source-scan-second-restart",
+          "start_line": 35431,
+          "end_line": 35436
+        },
+        {
+          "topic": "slimming-result",
+          "start_line": 35598,
+          "end_line": 35598
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "thread_id": "01a16cec-f92e-7dd3-967f-f8dac4bd19b5",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/24/rollout-2026-10-24T16-00-32-01a16cec-f92e-7dd3-967f-f8dac4bd19b5.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-24T08:00:32.589Z",
+      "read_through_line": 505,
+      "read_through_timestamp": "2026-10-25T13:14:51.816Z",
+      "read_bytes": 1968071,
+      "read_prefix_sha256": "52410922d8df85469a201ea0e3d3694b21ea5640a2aad0f22622db97edbd99f1",
+      "anchors": [
+        {
+          "topic": "cleanup-request",
+          "start_line": 16,
+          "end_line": 16
+        },
+        {
+          "topic": "cleanup-outcome",
+          "start_line": 500,
+          "end_line": 500
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "thread_id": "01a1587b-5dd8-7913-8d27-fb7b1b3b207a",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/22/rollout-2026-10-22T16-39-23-01a1587b-5dd8-7913-8d27-fb7b1b3b207a_01a162c3-d325-7ca3-8187-f0b8d212e6b5.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-22T08:39:23.173Z",
+      "read_through_line": 5394,
+      "read_through_timestamp": "2026-10-22T16:13:43.982Z",
+      "read_bytes": 19670579,
+      "read_prefix_sha256": "a6a2e8f5382513f5e86dc1c73485c2099f30c9bd2b50f13a435936fdeec71e55",
+      "anchors": [
+        {
+          "topic": "experiment-rejected",
+          "start_line": 5039,
+          "end_line": 5039
+        },
+        {
+          "topic": "retirement-outcome",
+          "start_line": 5391,
+          "end_line": 5391
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "thread_id": "01a156b0-82ea-7a20-bc70-733db09acf32",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/20/rollout-2026-10-20T08-22-50-01a156b0-82ea-7a20-bc70-733db09acf32.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-20T00:22:50.990Z",
+      "read_through_line": 384,
+      "read_through_timestamp": "2026-10-20T00:46:48.707Z",
+      "read_bytes": 1473341,
+      "read_prefix_sha256": "182041910a93025473059d57c3ae053bd7daa368a94ee4def7214b0b28e7de3a",
+      "anchors": [
+        {
+          "topic": "size-feedback",
+          "start_line": 15,
+          "end_line": 15
+        },
+        {
+          "topic": "cleanup-outcome",
+          "start_line": 381,
+          "end_line": 381
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "thread_id": "01a16798-b166-76f1-8fe4-6dfb21d35412",
+      "kind": "auxiliary-audit",
+      "parent_thread_id": "01a163a3-4f25-7261-802e-124423539e13",
+      "agent_path": "/root/failure_evidence_audit",
+      "file": "<CODEX_HOME>/sessions/2026/10/23/rollout-2026-10-23T15-10-23-01a16798-b166-76f1-8fe4-6dfb21d35412.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-23T07:10:23.001Z",
+      "read_through_line": 6225,
+      "read_through_timestamp": "2026-10-24T01:08:48.469Z",
+      "read_bytes": 30300426,
+      "read_prefix_sha256": "bbf255b02a0c4c80ba4fc9fa961395bbeddabfbef76bc1e60f2c36b6a349400e",
+      "anchors": [
+        {
+          "topic": "comparison-boundaries",
+          "start_line": 6057,
+          "end_line": 6057
+        },
+        {
+          "topic": "t35-unproven-precondition",
+          "start_line": 6222,
+          "end_line": 6222
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "thread_id": "01a16798-7b4e-7da1-a19c-88d994087a0b",
+      "kind": "auxiliary-audit",
+      "parent_thread_id": "01a163a3-4f25-7261-802e-124423539e13",
+      "agent_path": "/root/delivery_draft",
+      "file": "<CODEX_HOME>/sessions/2026/10/23/rollout-2026-10-23T15-10-08-01a16798-7b4e-7da1-a19c-88d994087a0b.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-23T07:10:08.949Z",
+      "read_through_line": 1334,
+      "read_through_timestamp": "2026-10-24T01:23:12.509Z",
+      "read_bytes": 7208618,
+      "read_prefix_sha256": "9d91b749dc093b15d01790f69112d5463bb40e71f4e6cb33c2ae34e4eec1b99d",
+      "anchors": [
+        {
+          "topic": "preserve-original-counts",
+          "start_line": 999,
+          "end_line": 999
+        },
+        {
+          "topic": "historical-sql-contract",
+          "start_line": 1331,
+          "end_line": 1331
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "thread_id": "01a16798-44b0-7d00-b13c-52388e0b2d07",
+      "kind": "auxiliary-audit",
+      "parent_thread_id": "01a163a3-4f25-7261-802e-124423539e13",
+      "agent_path": "/root/server_migration_audit",
+      "file": "<CODEX_HOME>/sessions/2026/10/23/rollout-2026-10-23T15-09-54-01a16798-44b0-7d00-b13c-52388e0b2d07.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-23T07:09:54.931Z",
+      "read_through_line": 2512,
+      "read_through_timestamp": "2026-10-24T01:08:13.466Z",
+      "read_bytes": 7731460,
+      "read_prefix_sha256": "18f351d74b95072a4c2b272358a76f279aa8c3fb24c99557d8718d4651999cf7",
+      "anchors": [
+        {
+          "topic": "limited-byte-equality",
+          "start_line": 2329,
+          "end_line": 2329
+        },
+        {
+          "topic": "t29-causal-limit",
+          "start_line": 2509,
+          "end_line": 2509
+        }
+      ]
+    }
+  ],
+  "local_artifacts": [
+    {
+      "id": "A01",
+      "file": "D:/fr26/reports/pr122-delivery.json",
+      "bytes": 1555,
+      "sha256": "37364d0df558e2cf500688e29e8e5f7dc05c6944f83e2a4ed2d11c64e5363fa4"
+    },
+    {
+      "id": "A02",
+      "file": "D:/fr27/reports/cleanup-final.json",
+      "bytes": 1724,
+      "sha256": "d5d03510a3e7374dcd1095a65e4eb45dc9540a9bc3a5395d5773054b1106f20d"
+    },
+    {
+      "id": "A03",
+      "file": "D:/fr27/reports/recovery-refs-preserved-final.json",
+      "bytes": 1296,
+      "sha256": "cb381ba3d16acc8a6c1facfe73d50d7c1abd9d4d3c0d065e221f9cc42c585ff5"
+    },
+    {
+      "id": "A04",
+      "file": "D:/cleanup-reports/wecom-evidence-slim-20261025/verification.json",
+      "bytes": 2630,
+      "sha256": "fb770d8df27922b250b1b3e1152ff9c97214c6beb07ade94f2124327e1511fef"
+    },
+    {
+      "id": "A05",
+      "file": "D:/cleanup-reports/wecom-evidence-slim-20261025/source-first-attempt.json",
+      "bytes": 127,
+      "sha256": "a25746acfd2ee33548c7cede9d690f4455f2880cb164e0ee41be643aab3fa900"
+    },
+    {
+      "id": "A06",
+      "file": "D:/cleanup-reports/wecom-evidence-slim-20261025/approval-block.json",
+      "bytes": 549,
+      "sha256": "08c2ae1b789cbb0d9fa2469fe286ac75f15099822c018f9cfebbef2b373daf34"
+    }
+  ],
+  "github_observation": {
+    "provider": "connected GitHub fetch_pr",
+    "date": "2026-10-26",
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/122",
+    "state": "closed",
+    "merged": true,
+    "head_sha": "6828b034c478a21dfa15a71ff4e58fd3b9d3800b",
+    "merge_commit_sha": "59f52261476e0eaa4670137af2264bfad346a985",
+    "merged_at": "2026-10-25T09:53:19Z"
+  },
+  "finding_sources": {
+    "RETRO-01": [
+      "S04:size-feedback",
+      "S04:cleanup-outcome",
+      "S02:cleanup-outcome",
+      "S01:simplify-request",
+      "A04"
+    ],
+    "RETRO-02": [
+      "S01:migration-original-outcome",
+      "S01:change-delivery-goal",
+      "S01:candidate-followup",
+      "S05:comparison-boundaries",
+      "S06:historical-sql-contract"
+    ],
+    "RETRO-03": [
+      "S01:archive-queued",
+      "S01:recover-tree-refs",
+      "S01:archive-completed",
+      "A03"
+    ],
+    "RETRO-04": [
+      "S03:experiment-rejected",
+      "S03:retirement-outcome"
+    ],
+    "RETRO-05": [
+      "S01:merged-pr122",
+      "S01:archive-completed",
+      "A01",
+      "A02"
+    ],
+    "RETRO-06": [
+      "S01:bounded-output-failure",
+      "S01:encoding-failure",
+      "S01:source-scan-first-restart",
+      "S01:source-scan-second-restart",
+      "A05",
+      "A06"
+    ],
+    "RETRO-07": [
+      "S01:merged-pr122",
+      "S05:t35-unproven-precondition",
+      "S07:limited-byte-equality",
+      "S07:t29-causal-limit"
+    ]
+  },
+  "workspace_observation": {
+    "date": "2026-10-26",
+    "branch": "main",
+    "root": "D:/Projects/Fault-Reporting-WeCom-Assistant",
+    "git_common_directory": ".git",
+    "registered_git_worktrees": 1,
+    "old_worktree": "D:/worktrees/pc-admin-app-layout/Fault-Reporting-WeCom-Assistant",
+    "application_attachment_type": "archived_worktree",
+    "application_attachment_id": "01a17375-5639-79c0-b248-86b9461602a6"
+  }
+}

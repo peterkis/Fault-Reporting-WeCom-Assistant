@@ -1,5 +1,13 @@
 # 应用目录整理
 
+## 合并与材料位置
+
+2026-10-26 复盘时已核实：[PR #122](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/122) 于 2026-10-25 合并，最终审查 head 为 `6828b034c478a21dfa15a71ff4e58fd3b9d3800b`，merge commit 为 `59f52261476e0eaa4670137af2264bfad346a985`。应用整理已进入 `main`；工作入口为原项目目录 `D:\Projects\Fault-Reporting-WeCom-Assistant`，旧 `codex/pc-admin-app-layout` 分支和隔离工作树已退役，应用保留归档记录。
+
+合并收据在 `D:\fr26\reports\pr122-delivery.json`；必要构建/验证材料与恢复说明在 `D:\fr27\README.md`，旧路径按 `D:\fr27\reports\historical-reference-relocation.json` 的路径、版本和哈希定位。公共验证目录的后续精简见[清单](../../docs/maintenance/evidence-cleanup-2026-10-25.md)。历史文档中的未提交工作树、候选指纹、失败和未执行项仍对应其原执行时间；合并与归档不提升这些验证结论，也不表示已部署或获得业务 Gate 批准。
+
+## 历史实施记录
+
 2026-10-25 按用户“继续”，完成首批候选中T35/G2两个当前入口收口，更新运行包与可回退增量，见[后继交付](candidate-followup-2026-10-25.md)。旧Source23首批交付及失败保留，最终候选只执行相关选择，不恢复原741完整回归。
 
 2026-10-25 用户将本轮目标调整为“先交付一个通过关键门槛，可回退的小范围上线候选”。旧完整回归按批次正常停止，已完成322/741入口、1517用例通过，419入口未执行；后续仅补齐首批必要验证。该本地交付范围覆盖后文原本轮完整重跑要求，不改写历史结果或正式full/certify合同。当前human-v1候选、G2投递限制及增量回退见[首批候选报告](first-gray-candidate-2026-10-25.md)。
