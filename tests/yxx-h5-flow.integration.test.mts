@@ -30,6 +30,7 @@ import {migrateTicketRoundNotifications} from '../app/server/scripts/ticket-roun
 import {migrateTicketReopenRounds} from '../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
 import {migrateMvpNotifications} from '../app/server/scripts/mvp-notifications-migrate.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
 const ORIGIN='https://127.0.0.1';
 const ACCEPT='application/vnd.yixiaoxiu.v2+json';
@@ -84,7 +85,7 @@ async function verifyDetailMedia(origin:string,ticketId:string,cookie:{name:stri
     await browser.command('Page.enable');await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__mediaUrls=new Set();globalThis.__mediaBlobs=new Map();const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);URL.createObjectURL=blob=>{const url=create(blob);globalThis.__mediaUrls.add(url);globalThis.__mediaBlobs.set(url,blob);return url;};URL.revokeObjectURL=url=>{globalThis.__mediaUrls.delete(url);globalThis.__mediaBlobs.delete(url);revoke(url);};globalThis.__mediaReads=[];globalThis.__metadataFailure=location.pathname.endsWith("+JSON.stringify(ticketId)+");const original=fetch;globalThis.fetch=async(url,options)=>{if(String(url).includes('/web-report/media/'))globalThis.__mediaReads.push(String(url));const response=await original(url,options);if(globalThis.__metadataFailure&&String(url).endsWith('/attachments')){globalThis.__metadataFailure=false;await response.arrayBuffer();return new Response(JSON.stringify({error:{code:'TEMPORARY_TEST_READ_FAILURE',retryable:true}}),{status:503,headers:{'content-type':'application/json'}});}return response;};})()"});
     await browser.command('Page.reload');await browser.waitFor("document.querySelectorAll('.detail-media-card').length===2&&document.querySelector('.detail-voice')!==null");
-    const active=browser,click=async(selector:string)=>{await active.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'})`);const box=await active.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`) as {x:number;y:number};for(const type of ['mousePressed','mouseReleased'])await active.command('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...box});};
+    const active=browser,click=(selector:string)=>clickWorkbenchControl(active,selector);
     await click('.detail-media-card:has(.media-video-play)');await browser.waitFor("document.querySelector('.detail-media-dialog[role=dialog]')?.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})===true&&document.querySelector('.detail-media-dialog video')?.readyState>=2&&document.querySelector('.detail-media-dialog video')?.videoWidth>0");
     const pendingVideoUrl=string(await browser.evaluate("document.querySelector('.detail-media-dialog video').src"));
     const pendingVideoRead=string(await browser.evaluate("globalThis.__mediaReads.filter(value=>new URL(value,location.href).searchParams.get('variant')==='ORIGINAL').at(-1)")),videoPath=new URL(pendingVideoRead,origin).pathname;
@@ -123,7 +124,14 @@ async function verifyDetailMedia(origin:string,ticketId:string,cookie:{name:stri
     await click('[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('#detail-title')&&globalThis.__mediaUrls.size===0&&globalThis.__mediaBlobs.size===0");
     await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+emptyTicketId+'?detail=page'});await browser.waitFor("document.querySelector('.media-empty')?.textContent.includes('没有可读取的已保存附件')");assert.equal(await browser.evaluate("document.querySelector('.detail-attachments').textContent.includes('存储暂不可用')"),false,'a valid empty H5 report does not inherit the disabled legacy store warning');
     console.log('WORKBENCH_DETAIL_MEDIA '+JSON.stringify({pending_original_preview:true,pending_original_download:true,image_preview:true,video_preview:true,voice_play_pause_seek_countdown:true,voice_lazy:true,blob_urls_after_close:0,screenshots:[{file,sha256:createHash('sha256').update(pixels).digest('hex')}]}));
-  }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href,mediaReads:globalThis.__mediaReads})')));}}
+  }catch(error){
+    failure=error;
+    if(browser)try{
+      console.log('H5_FLOW_DETAIL_MEDIA_DIAGNOSTIC '+JSON.stringify(await browser.evaluate("({path:location.pathname,detailPresent:Boolean(document.querySelector('#detail-title')),previewPresent:Boolean(document.querySelector('.detail-media-dialog')),urlCount:globalThis.__mediaUrls?.size,blobCount:globalThis.__mediaBlobs?.size,blobKinds:[...(globalThis.__mediaBlobs?.values()??[])].map(blob=>({type:blob.type,bytes:blob.size}))})")));
+      await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));
+      await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href,mediaReads:globalThis.__mediaReads})')));
+    }catch(diagnostic){failure=new AggregateError([error,diagnostic],'H5_FLOW_MEDIA_FAILURE_OBSERVATION');}
+  }
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }
 
