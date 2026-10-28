@@ -91,3 +91,18 @@ test('production detail shares report materials, uses responsive information and
   }catch(error){failure=error;try{if(browser){await browser.evaluate('globalThis.__releaseMaterials?.()');await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__detailPosts,reads:globalThis.__detailReads})')));}}catch(diagnostic){failure=new AggregateError([error,diagnostic]);}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }));
+
+test('real pointer helper waits for a moving control and an overlapping hit target',async()=>{
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+  try{
+    browser=await launchSystemBrowser({url:'about:blank',width:1280,height:900});assert.ok(browser);
+    await browser.evaluate(`(()=>{document.documentElement.style.overflow='clip';document.body.style.cssText='margin:0;overflow:clip;height:100vh';document.body.innerHTML='<button id="pointer-probe" style="position:fixed;left:40px;top:40px;width:30px;height:30px">选</button>';globalThis.__pointerProbeClicks=[];document.addEventListener('click',event=>globalThis.__pointerProbeClicks.push(event.target instanceof Element?event.target.id:null));document.querySelector('#pointer-probe').animate([{transform:'translateX(1600px)'},{transform:'translateX(0px)'}],{duration:1500,easing:'linear'});})()`);
+    await clickWorkbenchControl(browser,'#pointer-probe');
+    assert.deepEqual(await browser.evaluate('globalThis.__pointerProbeClicks'),['pointer-probe']);
+    await browser.evaluate(`(()=>{const cover=document.createElement('div');cover.id='pointer-cover';cover.style.cssText='position:fixed;left:20px;top:20px;width:100px;height:100px;background:white';document.body.append(cover);cover.animate([{opacity:1},{opacity:.7}],{duration:300}).finished.then(()=>cover.remove());})()`);
+    await clickWorkbenchControl(browser,'#pointer-probe');
+    assert.deepEqual(await browser.evaluate('globalThis.__pointerProbeClicks'),['pointer-probe','pointer-probe']);
+    console.log('HEROUI_POINTER_ACTIONABILITY '+JSON.stringify({real_browser:true,moving_control_waited:true,overlapping_hit_target_waited:true,native_target_clicks:2}));
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+});
