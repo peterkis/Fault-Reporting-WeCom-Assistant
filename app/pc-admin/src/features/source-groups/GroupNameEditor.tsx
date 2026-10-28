@@ -1,3 +1,6 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,Input as HInput,Label as HLabel} from "@heroui/react";
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
@@ -8,7 +11,7 @@ import {clearSourceGroupAuthorization} from './authority';
 type SaveState='idle'|'submitting'|'checking'|'succeeded'|'conflict'|'denied'|'unknown';
 export function GroupNameEditor({group,principal,onSaved,onDenied,onBlockedChange}:{group:SourceGroupDisplay;principal:Principal;onSaved?:(group:SourceGroupDisplay)=>void;onDenied?:(error:ApiError)=>void;onBlockedChange?:(blocked:boolean)=>void}){
   // Only entry, success, or explicit adoption changes the edit basis. Refetch never authorizes overwriting a newer name.
-  const [basis,setBasis]=useState(group),[name,setName]=useState(group.display_name??''),[state,setState]=useState<SaveState>('idle'),[message,setMessage]=useState('');
+  const [basis,setBasis]=useState(group),[name,setName]=useState(group.display_name??''),[state,setState]=useState<SaveState>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
   const [pending,setPending]=useState<SourceGroupNameCommand|null>(null),[denied,setDenied]=useState(false),[reading,setReading]=useState(false);
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
   const refresh=async()=>{await Promise.all([client.invalidateQueries({queryKey:['board',principal.principal_id]}),client.invalidateQueries({queryKey:['detail',principal.principal_id]}),client.invalidateQueries({queryKey:['source-groups',principal.principal_id]})]);};
@@ -40,16 +43,7 @@ export function GroupNameEditor({group,principal,onSaved,onDenied,onBlockedChang
   };
   const value=name.trim(),valid=value.length>0&&[...value].length<=128&&!/[\u0000-\u001f\u007f]/u.test(value),versionAvailable=BigInt(basis.row_version)<9223372036854775807n;
   return <section className="source-group-editor">
-    {!denied?<form className="source-group-form" aria-label="维护来源群名称" onSubmit={event=>{event.preventDefault();if(blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name)return;send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:basis.row_version,display_name:value}),false);}}>
-      <p hidden className="source-group-version">编辑依据版本 {basis.row_version}</p>
-      <label>来源群名称<input name="source-group-name" value={name} required maxLength={256} disabled={blocked} onChange={event=>setName(event.target.value)}/><span>{[...value].length} / 128</span></label>
-      <Button type="submit" data-action="save-source-group-name" variant="secondary" isDisabled={blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name}>{state==='submitting'?'正在保存…':'保存群名称'}</Button>
-      {state==='unknown'&&pending?<button type="button" data-action="check-source-group-name" disabled={mutation.isPending} onClick={()=>send(pending,true)}>核对保存结果</button>:null}
-      {!blocked?<button type="button" data-action="refresh-source-group" onClick={()=>{void adopt();}}>重新读取并采用最新版本</button>:null}
-      <p>群名称由管理员确认，用于该群报修事项的来源展示。</p>
-      {group.row_version!==basis.row_version?<p>目录资料已更新；编辑仍依据版本 {basis.row_version}，不会自动采用新版本。</p>:null}
-      {!versionAvailable?<p role="alert">群资料版本已达到维护上限。</p>:null}
-    </form>:null}
-    {message?<p className="source-group-save-state" role={['conflict','denied','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {!denied?<HForm className="source-group-form" aria-label="维护来源群名称" onSubmit={event=>{event.preventDefault();if(blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name)return;send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:basis.row_version,display_name:value}),false);}}><p hidden className="source-group-version">编辑依据版本 {basis.row_version}</p><HLabel>来源群名称<HInput name="source-group-name" value={name} required maxLength={256} disabled={blocked} onChange={event=>setName(event.target.value)}/><span>{[...value].length} / 128</span></HLabel><Button type="submit" data-action="save-source-group-name" variant="secondary" isDisabled={blocked||state==='conflict'||!valid||!versionAvailable||value===basis.display_name}>{state==='submitting'?'正在保存…':'保存群名称'}</Button>{state==='unknown'&&pending?<HButton type="button" data-action="check-source-group-name" isDisabled={mutation.isPending} onClick={()=>send(pending,true)} variant="secondary">核对保存结果</HButton>:null}{!blocked?<HButton type="button" data-action="refresh-source-group" onClick={()=>{void adopt();}} variant="secondary">重新读取并采用最新版本</HButton>:null}<p>群名称由管理员确认，用于该群报修事项的来源展示。</p>{group.row_version!==basis.row_version?<p>目录资料已更新；编辑仍依据版本 {basis.row_version}，不会自动采用新版本。</p>:null}{!versionAvailable?<p role="alert">群资料版本已达到维护上限。</p>:null}</HForm>:null}
+    {message?<ToastFeedback revision={messageRevision} source="source-groups" state={state} className="source-group-save-state" role={['conflict','denied','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
   </section>;
 }

@@ -43,10 +43,10 @@ test('T33 paused PUBLIC_PROGRESS requeue business refusal retains current author
   const events=async()=>records((await trace()).requests);
   const posts=(rows:readonly Record<string,unknown>[])=>rows.filter(row=>row.controlPost===true);
   const choose=async(label:string,value:string)=>{
-   const selector=root+' select[aria-label="'+label+'"]';
+   const selector=root+' .workbench-select[data-field-label="'+label+'"] select';
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
-  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' select[aria-label="'+label+'"]')+')?.value??null');
+  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+')?.value??null');
   const content=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+')?.textContent??""'));
   const quiet=async()=>{await browser.evaluate('globalThis.__t33PublicPauseControl.quietStart=performance.now()');await browser.waitFor('performance.now()-globalThis.__t33PublicPauseControl.quietStart>=400');};
   const incident=async()=>{const response=await get(parent);assert.equal(response.status,200,JSON.stringify(response.body));return response.body;};
@@ -137,14 +137,14 @@ test('T33 paused PUBLIC_PROGRESS requeue business refusal retains current author
    const publicationList='[aria-label="已发布公开进展"] li';
    await browser.waitFor('Boolean(globalThis.__t33PublicPauseControl&&Array.from(document.querySelectorAll('+JSON.stringify(publicationList)+')).some(row=>row.textContent.includes('+JSON.stringify(publishBody.summary)+')&&Array.from(row.querySelectorAll("button")).some(button=>button.textContent.trim()==="查看本次按路结果"&&!button.disabled)))');
    await browser.evaluate('(()=>{const rows=Array.from(document.querySelectorAll('+JSON.stringify(publicationList)+')).filter(row=>row.textContent.includes('+JSON.stringify(publishBody.summary)+'));if(rows.length!==1)throw new Error("T33_UNIQUE_PUBLISHED_SUMMARY_REQUIRED");const button=Array.from(rows[0].querySelectorAll("button")).find(button=>button.textContent.trim()==="查看本次按路结果");if(!button||button.disabled)throw new Error("T33_REAL_PUBLICATION_ROUTE_BUTTON_UNAVAILABLE");button.click();})()');
-   await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+' [aria-label="选择通知路"] option[value="'+selectedDeliveryId+'"]')+'))');
+   await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="选择通知路"] select option[value="'+selectedDeliveryId+'"]')+'))');
    await browser.waitFor('globalThis.__t33PublicPauseControl.requests.some(row=>row.path==='+JSON.stringify(parent)+'&&row.method==="GET"&&row.response_status===200&&row.client_returned&&row.response?.row_version==='+JSON.stringify(parentVersion)+')');
    const routeSelector='[data-public-progress-routes][data-publication-id="'+publicationId+'"] [data-delivery-id="'+selectedDeliveryId+'"]';
    await browser.waitFor('document.querySelector('+JSON.stringify(routeSelector)+')?.dataset.deliveryStatus==="RECONCILIATION_REQUIRED"');
    await choose('选择通知路',selectedDeliveryId);
    await browser.waitFor('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+')?.disabled===false');
    await choose('投递控制操作','RECONCILE');await choose('投递操作原因','OPERATOR_VERIFIED_DELIVERY');await choose('未知发送核对结论','CONFIRMED_NOT_SENT_REQUEUE');
-   const submit=root+' [data-action="submit-incident-delivery-control"]',confirmation=root+' input[aria-label="确认本路投递操作"]',outcome=root+' [data-incident-delivery-outcome]';
+   const submit=root+' [data-action="submit-incident-delivery-control"]',confirmation=root+' input[aria-label="确认本路投递操作"]',outcome='[data-incident-delivery-outcome]';
    assert.ok((await content()).includes('捕获公共故障版本 '+parentVersion+'；'));assert.ok((await content()).includes('捕获尝试 1，'));
    assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(confirmation)+')?.checked'),false);
    assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(submit)+')?.disabled'),true);
@@ -199,6 +199,7 @@ test('T33 paused PUBLIC_PROGRESS requeue business refusal retains current author
    // Observe the real outcome before asserting it. A successfully cleaned known
    // terminal may release the opaque UUID barrier; no permanent UI UUID display
    // requirement or fabricated ACK is added to this case.
+   await browser.waitFor('document.querySelectorAll('+JSON.stringify(outcome)+').length===1');
    await browser.waitFor('["failed","denied","unknown","committed"].includes(document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState)');
    observedUiState=await browser.evaluate('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState??null');
    const uiSnapshot={state:observedUiState,selected:await input('选择通知路'),action:await input('投递控制操作'),reason:await input('投递操作原因'),resolution:await input('未知发送核对结论'),text:await content()};
@@ -227,7 +228,7 @@ test('T33 paused PUBLIC_PROGRESS requeue business refusal retains current author
    assert.deepEqual(await progressRows(publicationId),beforeRefusal);assert.deepEqual(await getLifecycleRows(),initialLifecycle);assert.deepEqual([...grants].sort(),grantSnapshot);
    phase='ui-known-failure-retained-input-and-explicit-readonly-refresh';
   }finally{
-   const finalUi={state:await browser.evaluate('document.querySelector('+JSON.stringify(root+' [data-incident-delivery-outcome]')+')?.dataset.incidentDeliveryState??null'),selected:await input('选择通知路'),action:await input('投递控制操作'),reason:await input('投递操作原因'),resolution:await input('未知发送核对结论'),text:await content()};
+   const finalUi={state:await browser.evaluate('document.querySelector('+JSON.stringify('[data-incident-delivery-outcome]')+')?.dataset.incidentDeliveryState??null'),selected:await input('选择通知路'),action:await input('投递控制操作'),reason:await input('投递操作原因'),resolution:await input('未知发送核对结论'),text:await content()};
    console.log('T33_PUBLIC_PAUSE_ACTUAL_UI_FINALLY '+JSON.stringify(finalUi));
    const observed=await events();
    console.log('T33_PUBLIC_PAUSE_BROWSER_REQUESTS '+JSON.stringify(observed.filter(row=>row.controlPost===true||row.path===selectedControlPath||text(row.path).startsWith(receiptPrefix)).map(row=>({...row,headers:{...record(row.headers),csrf:record(row.headers).csrf===null?null:'PRESENT'}}))));

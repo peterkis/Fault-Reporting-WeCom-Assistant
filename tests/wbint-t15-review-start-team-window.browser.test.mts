@@ -81,8 +81,8 @@ test('T15 a bounded team-choice window cannot revoke a still-current captured te
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true,'the caller must use the formal production bundle');
       await browser.evaluate(traceWrites);
       await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);
-      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"] [data-review-materials]'))`);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-review-id="${reviewId}"] [data-review-materials]'))`);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-review-materials]')?.textContent.includes('打印机无法打印处方')");
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-review-version]').textContent"),originalReview.row_version);
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),basis.current_hash);
@@ -90,13 +90,13 @@ test('T15 a bounded team-choice window cannot revoke a still-current captured te
       // A human explicitly adopts current material and makes both choices. None is a write command.
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
       await browser.evaluate(`(()=>{
-        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] [aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
+        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] .workbench-select[data-field-label="'+label+'"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
         set('复核结论','CONFIRM_TICKET_ELIGIBLE');set('复核原因','HUMAN_CONFIRMED');
       })()`);
-      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]:not(:disabled)'))`);
-      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice]:checked').length"),0,'no Session may be guessed or automatically selected');
-      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);
-      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]')?.checked===true`);
+      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]:not(:disabled)'))`);
+      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice] input[type=checkbox]:checked').length"),0,'no Session may be guessed or automatically selected');
+      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.checked===true`);
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'material and Session selection must not submit an intermediate command');
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
@@ -112,7 +112,7 @@ test('T15 a bounded team-choice window cannot revoke a still-current captured te
       // A safe close is allowed only after the complete composite intent is durable.
       await browser.waitFor("document.querySelector('[aria-label=\"关闭详情\"]')?.disabled===false");
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
-      await browser.waitFor("!document.querySelector('.detail-dialog[open]')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       assert.equal((await fixture.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) SELECT 'A15_'||lpad(n::text,3,'0'),'T15 bounded group '||n FROM generate_series(0,99) n")).rowCount,100);
       const teams=['PILOT_IT',...Array.from({length:100},(_,n)=>'A15_'+String(n).padStart(3,'0'))];
       const currentActor=await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:teams});
@@ -122,7 +122,7 @@ test('T15 a bounded team-choice window cannot revoke a still-current captured te
       console.log('T15_BOUNDED_TEAM_RECOVERY '+JSON.stringify({current_memberships:currentActor.resolver_team_ids.length,retained_captured_team:true,listed_teams:list(bounded.resolver_teams).length,captured_team_in_window:list(bounded.resolver_teams).some(team=>team.team_id==='PILOT_IT')}));
       assert.ok(list(bounded.resolver_teams).length<=100);
       await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);
-      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"]'))`);
+      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-review-id="${reviewId}"]'))`);
       await browser.waitFor("Boolean(document.querySelector('[data-review-start-controls] [data-action=replay-review-start]'))||document.querySelector('[data-review-start-draft-status]')?.textContent.includes('恢复核验暂未完成')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=replay-review-start]'))"),true,'a capped choice list cannot erase an exact captured team whose current effective membership remains true');
       assert.equal(requests.filter(request=>request.method==='POST').length,1,'restoration must never autoPOST');

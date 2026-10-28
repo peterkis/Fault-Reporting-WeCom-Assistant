@@ -21,7 +21,7 @@ function failureDetails(value:unknown):Record<string,unknown>{
 }
 async function publicGet(http:T08Http,path:string){const result=await http.get(path);assert.equal(result.status,200,path);return result.value;}
 function header(request:IncomingMessage,name:string){const value=request.headers[name];return typeof value==='string'?value:null;}
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
+const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
 const section="document.querySelector('[data-action=unassign]')?.closest('section')";
 const reasonInput=`Array.from((${section})?.querySelectorAll('textarea')??[]).find(input=>Array.from(input.labels??[]).some(label=>label.textContent?.includes('原因')))`;
 const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
@@ -127,7 +127,7 @@ test('production ADMIN withdraws one legacy accepted unstarted Ticket with an in
       await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(timeOrigin)}&&(${queuedDom})`);
       assert.ok(requests.some(row=>row.order>=reloadOrder&&row.method==='GET'&&row.status===200&&[path,webPath].includes(row.path)));
-      assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('.activity-list li')).some(row=>row.querySelector('.record-type')?.textContent==='报修人可见'&&row.querySelector('p')?.textContent?.includes(${JSON.stringify(reason)}))`),false);
+      assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('.activity-list li')).some(row=>row.querySelector('.record-audience')?.textContent==='报修人可见'&&row.querySelector('.record-text')?.textContent?.includes(${JSON.stringify(reason)}))`),false);
       assert.equal(requests.filter(row=>row.method==='POST').length,1,'refresh reads current facts and never submits another command');
       assert.deepEqual((await publicGet(admin,path+'/events?limit=200')).items,afterEvents);
       assert.deepEqual(await publicGet(admin,path+'/deliveries'),beforeDeliveries);

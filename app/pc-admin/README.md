@@ -1,10 +1,14 @@
 # WEB01 正式管理端
 
+2026-10-26 Electron 桌面 MVP 沿用本正式前端，新增 Windows 宿主和后台提醒适配，见[桌面说明](desktop/README.md)与[ADR-0047](../../adr/0047_electron_pc_admin_mvp.md)。历史 WEB01 只读范围保持其日期含义。
+
 2026-10-22 目录迁移：正式源码从 `web/admin-workbench` 整体移至 `app/pc-admin`；公共合同、根依赖和运行制品位置保持。整体目标为 PC、H5、后端三个应用入口，本轮只完成第一步，见[应用目录说明](../README.md)与[迁移记录](../../plans/app-layout/README.md)。下文带日期的业务范围和验收结论继续对应原被测对象。
 
 2026-10-07后继增量：管理员可在群来源事项详情登记或修改群名称，统一更新卡片、列表和详情。Ticket业务仍只读；名称资料与原始来源分离。新宿主选项sourceGroupDirectoryEnabled默认false，须独立037迁移与显式装配后才开放，详见[接口合同](../../docs/api/workbench/source-groups-design.md)和[ADR-0030](../../adr/0030_admin_confirmed_source_group_names.md)。下文WEB01无迁移/无写入描述是首版交付范围。
 
 生产入口为同源 `/workbench/app/`；保留 `/workbench`、`/workbench/lifecycle` 与成员端。复用原型视觉及 React/Vite/HeroUI/Tailwind，新增 Router 7、Query 5、Zustand、Table 和 Morphicons。精确版本、后续切片适配位置与授权边界见[技术方案](../../docs/ui/admin-workbench-architecture.md)和 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md)。
+
+2026-10-28 控件统一：正式 PC 的按钮、输入、多选和分组选择、复选/单选、开关、折叠、表格、日期范围、弹窗和抽屉使用 HeroUI v3；颜色沿现有 Notion 灰阶。业务控制器继续持有草稿、原命令与未知回执；操作提示保留既有 headless Toast。主界面完结列显示“已处理”，通过中文日期控件选择单日或区间并应用，清除后显示全部日期。日期仅筛选普通看板/列表的已处理事项，未完成事项不限日期；搜索沿已有搜索合同，不展示不支持的日期筛选。原 `range=cancelled` 链接明确显示取消筛选提示并可清除；底层 Ticket 状态及 API 参数不改名。详情记录保留姓名颜色，以细线连接每个日期组内的头像，“内部”标签显示纯文字。
 
 ## 构建与检查
 

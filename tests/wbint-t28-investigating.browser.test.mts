@@ -33,9 +33,9 @@ test('T28 an authorized operator starts investigation from the production Incide
     assert.equal(await browser.evaluate(`document.querySelector('[data-incident-id="${incidentId}"]').innerText.includes('CONFIRMED_LOCAL')`),true);
     // This is the first genuine missing user behavior. Source inspection is
     // not RED; preserve this assertion before the first product change.
-    assert.equal(await browser.evaluate('Boolean(document.querySelector(\'select[aria-label="公共故障操作"]\'))'),true,'production Incident detail must offer the currently authorized follow-up action');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector(\'.workbench-select[data-field-label="公共故障操作"] select\'))'),true,'production Incident detail must offer the currently authorized follow-up action');
     for(const [label,value] of [['公共故障操作','START_INVESTIGATING'],['决定原因','OPERATOR_REVIEWED']]){
-      await browser.evaluate(`(()=>{const select=document.querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!select)throw Error('T28_MISSING_ACTION_INPUT');select.value=${JSON.stringify(value)};select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      await browser.evaluate(`(()=>{const select=document.querySelector(${JSON.stringify('.workbench-select[data-field-label="'+label+'"] select')});if(!select)throw Error('T28_MISSING_ACTION_INPUT');select.value=${JSON.stringify(value)};select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     }
     assert.equal(await browser.evaluate('document.querySelector("[data-action=submit-incident]")?.disabled'),false);
     await browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');

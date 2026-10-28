@@ -28,7 +28,7 @@ test('T42 board completion and independent staff reopen each require their origi
    assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true);
    await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t42LifecycleWrites=[];globalThis.__t42LifecycleResponses=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t42LifecycleWrites.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);if(options?.method==='POST')globalThis.__t42LifecycleResponses.push({path:String(path),status:response.status});return response;};})()");
    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).click()`);
-   await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] #completion-process'))");
+   await browser.waitFor("Boolean(document.querySelector('.detail-dialog #completion-process'))");await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");await browser.waitFor("document.querySelector('.detail-dialog #completion-process')?.checkVisibility()===true");
    assert.deepEqual(await browser.evaluate('globalThis.__t42LifecycleWrites'),[]);assert.equal(await browser.evaluate("document.querySelector('[data-action=complete-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'IN_PROGRESS');
    await browser.evaluate("document.querySelector('#completion-process').focus()");await browser.command('Input.insertText',{text:'T42合成内部排查过程，不能作为外发摘要。'});
    await browser.evaluate("document.querySelector('#completion-summary').focus()");await browser.command('Input.insertText',{text:'合成设备服务已恢复。'});await browser.evaluate("document.querySelector('#completion-confirmed').click()");
@@ -40,9 +40,10 @@ test('T42 board completion and independent staff reopen each require their origi
    const completedWrites=await browser.evaluate('globalThis.__t42LifecycleWrites');assert.ok(Array.isArray(completedWrites));assert.equal(completedWrites.length,1);const complete=object(object(completedWrites[0]).body);
    assert.equal(complete.internal_process,'T42合成内部排查过程，不能作为外发摘要。');assert.equal(complete.external_summary,'合成设备服务已恢复。');assert.equal(complete.external_summary_confirmed,true);assert.equal(complete.reason_code,'STAFF_COMPLETED');assert.equal(complete.expected_version,active.version);
    await browser.waitFor("document.querySelector('button[aria-label=关闭详情]')?.disabled===false");await browser.evaluate("document.querySelector('button[aria-label=关闭详情]').click()");
-   await browser.waitFor("!document.querySelector('.detail-dialog[open]')");
+   await browser.waitFor("!document.querySelector('.detail-dialog')");
    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=pending]')}).click()`);
-   await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] #reopen-reason'))");
+   await browser.waitFor("Boolean(document.querySelector('.detail-dialog #reopen-reason'))");
+   await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
    assert.equal(await browser.evaluate('globalThis.__t42LifecycleWrites.length'),1);assert.equal(await browser.evaluate("document.querySelector('[data-action=reopen-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'CLOSED');
    await browser.evaluate("document.querySelector('#reopen-reason').focus()");await browser.command('Input.insertText',{text:'工作人员核实同一故障仍需处理。'});
    await browser.waitFor("document.querySelector('[data-action=reopen-ticket]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");

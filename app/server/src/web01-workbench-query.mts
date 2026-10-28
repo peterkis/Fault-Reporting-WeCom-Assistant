@@ -1,7 +1,8 @@
 import type {FollowProjectionPort} from './workbench-follow.mjs';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
-import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord } from '../../../contracts/web01_workbench_contracts.js';
+import type { BoardColumn, BoardCompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord } from '../../../contracts/web01_workbench_contracts.js';
+import {assertLocalDate} from './platform/time-contract.mjs';
 import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016, uuidP2016, localP2016, limitP2016, cursorP2016, decodeCursorP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
 import {sourceLabel} from './workbench-source-groups.mjs';
@@ -9,9 +10,10 @@ import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import type {createWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules.mjs';
 import type {ReviewReference} from '../../../contracts/workbench_review_contracts.js';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
-import {readManualReportSource} from './workbench-manual-report-source.mjs';
+import {readManualReportSource,readManualReportSources} from './workbench-manual-report-source.mjs';
 import type {WorkbenchWebReportLifecyclePort} from './workbench-web-report.mjs';
 import {decodeWebUrge} from '../../../shared/workbench-web-report-browser-contracts.mjs';
+import {readTicketReporterProfiles} from './ticket-reporter-profiles.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
 const STATUS_COLUMNS = {
@@ -24,10 +26,18 @@ export function boardColumn(status: string): BoardColumn {
   failP2016();
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'|'follow_up_schedule'> { sort_at: string }
-interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; cursor: unknown; limit: unknown }
+interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; closedFrom?:string|null; closedTo?:string|null; cursor: unknown; limit: unknown }
+const REPORTER_PROFILE_SQL=`LEFT JOIN LATERAL (SELECT j.profile_snapshot->'contact'->>'name' AS name,
+   (SELECT string_agg(m->>'name','、' ORDER BY ord) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(j.profile_snapshot->'memberships')='array' THEN j.profile_snapshot->'memberships' ELSE '[]'::jsonb END) WITH ORDINALITY AS members(m,ord)) AS department
+ FROM (SELECT origin.id FROM intake.contact_journey origin WHERE origin.origin_intake_id=i.id
+       UNION SELECT leg.journey_id FROM intake.channel_leg leg WHERE leg.source_intake_id=i.id) candidate
+ JOIN intake.contact_journey j ON j.id=candidate.id
+ WHERE i.id IS NOT NULL AND j.profile_resolution_status='RESOLVED'
+   AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+ ORDER BY (j.origin_intake_id=i.id) DESC,j.reported_at,j.id LIMIT 1) profile ON TRUE`;
 export const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
-   t.title,t.status,t.priority,t.reported_location_text AS location,profile.name AS reporter_name,
+   t.title,t.status,t.priority,t.reported_location_text AS location,profile.name AS reporter_name,profile.department AS reporter_department,
    COALESCE(i.source_channel,'未提供') AS source,p.display_name AS assignee_name,
    review.review_reason_code AS review_reason,
    to_char(t.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
@@ -37,11 +47,7 @@ export const CARD_SQL = `WITH cards AS (
  FROM pilot_ticket.ticket t
  LEFT JOIN intake.service_intake i ON i.id=t.source_intake_id AND i.retention_until>platform.local_now()
  LEFT JOIN pilot_ticket.pilot_principal p ON p.id=t.assignee_id
- LEFT JOIN LATERAL (SELECT j.profile_snapshot->'contact'->>'name' AS name
-   FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
-   WHERE l.source_intake_id=t.source_intake_id AND j.profile_resolution_status='RESOLVED'
-     AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
-     AND i.id IS NOT NULL ORDER BY l.leg_ordinal LIMIT 1) profile ON TRUE
+ ${REPORTER_PROFILE_SQL}
  LEFT JOIN LATERAL (SELECT e.created_at AS at FROM pilot_ticket.ticket_event e
    WHERE e.ticket_id=t.id AND e.new_status=t.status
      AND e.event_type IN ('ticket.closed','ticket.cancelled','ticket.duplicate_linked')
@@ -55,7 +61,8 @@ export const CARD_SQL = `WITH cards AS (
  WHERE ($1::boolean OR t.assignee_id=$2::uuid OR t.resolver_team_id=ANY($3::text[]))
  UNION ALL
  SELECT 'review',r.id::text,r.service_intake_id::text,i.intake_no,
-   COALESCE(NULLIF(i.summary,''),'未提供报修描述'),'PENDING',r.priority,i.reported_location_text,CASE WHEN j.profile_resolution_status='RESOLVED' THEN j.profile_snapshot->'contact'->>'name' END,i.source_channel,
+   COALESCE(NULLIF(i.summary,''),'未提供报修描述'),'PENDING',r.priority,i.reported_location_text,CASE WHEN j.profile_resolution_status='RESOLVED' THEN j.profile_snapshot->'contact'->>'name' END,
+   CASE WHEN j.profile_resolution_status='RESOLVED' THEN (SELECT string_agg(m->>'name','、' ORDER BY ord) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(j.profile_snapshot->'memberships')='array' THEN j.profile_snapshot->'memberships' ELSE '[]'::jsonb END) WITH ORDINALITY AS members(m,ord)) END,i.source_channel,
    NULL,r.review_reason_code,to_char(r.created_at,'YYYY-MM-DD HH24:MI:SS'),
    to_char(r.updated_at,'YYYY-MM-DD HH24:MI:SS'),NULL,to_char(r.updated_at,'YYYY-MM-DD HH24:MI:SS')
  FROM intake.manual_review_item r JOIN intake.service_intake i ON i.id=r.service_intake_id
@@ -70,10 +77,10 @@ export const CARD_SQL = `WITH cards AS (
        AND (earlier.created_at,earlier.id)<(r.created_at,r.id))
  UNION ALL
  SELECT 'intake',i.id::text,i.id::text,i.intake_no,COALESCE(NULLIF(i.summary,''),'未提供报修描述'),
-   i.status,NULL,i.reported_location_text,NULL,i.source_channel,NULL,NULL,
+   i.status,NULL,i.reported_location_text,profile.name,profile.department,i.source_channel,NULL,NULL,
    to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS'),to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS'),
    NULL,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS')
- FROM intake.service_intake i
+ FROM intake.service_intake i ${REPORTER_PROFILE_SQL}
  WHERE $1::boolean AND i.retention_until>platform.local_now()
    AND i.status IN ('RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED')
    AND NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket actual WHERE actual.source_intake_id=i.id OR actual.id=i.pilot_ticket_id)
@@ -82,7 +89,7 @@ export const CARD_SQL = `WITH cards AS (
    AND NOT EXISTS (SELECT 1 FROM intake.manual_review_item r WHERE r.service_intake_id=i.id AND r.status='PENDING')
 )`;
 // Narrow the already authorized canonical card, without multiplying it by Sessions or Legs.
-const HANDLING_CARD_SQL = `kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket handling
+const HANDLING_CARD_SQL = `cards.kind='ticket' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket handling
   WHERE handling.id=cards.id::uuid AND handling.assignee_id=$2::uuid)`;
 const COMMUNICATION_CARD_SQL = `EXISTS(SELECT 1 FROM conversation.session s JOIN conversation.assignment a ON a.session_id=s.id
   JOIN intake.service_intake anchor ON anchor.id=cards.intake_id::uuid AND anchor.retention_until>platform.local_now()
@@ -113,17 +120,17 @@ function card(row: CardRow): WorkbenchCard {
   return { kind: row.kind, id: row.id, intake_id: row.intake_id, number: row.number, title: row.title,
     status: row.status, column: boardColumn(row.status), priority: row.priority, source: row.source,
     source_label:sourceLabel(row.source),source_group:null,
-    location: row.location, reporter_name: row.reporter_name,
+    location: row.location, reporter_name: row.reporter_name,reporter_department:row.reporter_department??null,
     assignee_name: row.assignee_name, review_reason: row.review_reason,
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
 const CLOSED_INTAKE_CARD_SQL=`SELECT 'intake'::text AS kind,i.id::text,i.id::text AS intake_id,i.intake_no AS number,
         COALESCE(NULLIF(i.summary,''),'未提供报修描述') AS title,i.status,NULL::text AS priority,i.reported_location_text AS location,
-        NULL::text AS reporter_name,i.source_channel AS source,NULL::text AS assignee_name,NULL::text AS review_reason,
+        profile.name AS reporter_name,profile.department AS reporter_department,i.source_channel AS source,NULL::text AS assignee_name,NULL::text AS review_reason,
         to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
         NULL::text AS completed_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at
-        FROM intake.service_intake i WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
+        FROM intake.service_intake i ${REPORTER_PROFILE_SQL} WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
           AND i.status IN ('COMPLETED','IGNORED')
           AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id OR t.id=i.pilot_ticket_id)
           AND NOT EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
@@ -132,14 +139,23 @@ export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
   if(!includeClosedIntakes)return CARD_SQL;
   return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean}) {
   async function decorateWebReportUrgency(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     if(!webReports)return items;const ids=[...new Set(items.filter(item=>item.kind==='ticket').map(item=>item.id))];if(!ids.length)return items;
     const active=await webReports.activeForAuthorizedTickets(ids);
     return items.map(item=>{if(item.kind!=='ticket')return item;const value=active.get(item.id)??{active:false,count:0,last_urged_at:null};return {...item,web_report_urge:decodeWebUrge({active:value.active,count:value.count,last_urged_at:value.last_urged_at})};});
   }
-  async function decorate(items:WorkbenchCard[],authContext?:unknown,includeWebReports=true):Promise<WorkbenchCard[]>{
+  async function decorate(items:WorkbenchCard[],authContext?:unknown,includeWebReports=true,page=false):Promise<WorkbenchCard[]>{
     let sourced=sourceGroups?await sourceGroups.decorate(items):items;
+    if(reporterProfilesEnabled){
+      const profiles=await readTicketReporterProfiles(pool,items.filter(item=>item.kind==='ticket').map(item=>item.id));
+      sourced=sourced.map(item=>{
+        const profile=item.kind==='ticket'?profiles.get(item.id):null;
+        if(!profile||profile.source_intake_id!==item.intake_id)return item;
+        return {...item,source:profile.source_channel,source_label:item.source==='未提供'||profile.source_channel==='MANUAL'?profile.source_label:item.source_label,reporter_name:profile.name,reporter_department:profile.department,
+          reporter_profile:{state:profile.state,source:profile.source,captured_at:profile.captured_at}};
+      });
+    }
     if(includeWebReports)sourced=await decorateWebReportUrgency(sourced);
     if(followUpSchedules){
       const ticketIds=[...new Set(sourced.filter(item=>item.kind==='ticket').map(item=>item.id))];
@@ -148,24 +164,48 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         sourced=sourced.map(item=>item.kind==='ticket'?{...item,follow_up_schedule:active.get(item.id)??null}:item);
       }
     }
-    if(follow&&authContext!==undefined){
-      const p=await scope(authContext);const decorated:WorkbenchCard[]=[];
+    if(follow&&authContext!==undefined&&!page){
+      const p=await scope(authContext);const inputs:{item:WorkbenchCard;reasons:('HANDLING'|'COMMUNICATION')[]}[]=[];
       for(const item of sourced){
         const relation=(await pool.query<{handling:boolean;communication:boolean}>(CARD_SQL+` SELECT (${HANDLING_CARD_SQL}) AS handling,(${COMMUNICATION_CARD_SQL}) AS communication FROM cards WHERE kind=$4 AND id=$5`,[...p.values,item.kind,item.id])).rows[0];
         const reasons:('HANDLING'|'COMMUNICATION')[]=[];if(relation?.handling)reasons.push('HANDLING');if(relation?.communication)reasons.push('COMMUNICATION');
-        decorated.push({...item,...{attention:await follow.attention({authContext,kind:item.kind,id:item.id},item,reasons)}});
+        inputs.push({item,reasons});
       }
-      sourced=decorated;
+      const attention:Awaited<ReturnType<FollowProjectionPort['attention']>>[]=[];for(const {item,reasons} of inputs)attention.push(await follow.attention({authContext,kind:item.kind,id:item.id},item,reasons));
+      sourced=inputs.map(({item},index)=>{const value=attention[index];if(!value)failP2016('ACTION_FAILED',503);return {...item,attention:value};});
     }
-    if(supplementFollowUp&&authContext!==undefined){const decorated:WorkbenchCard[]=[];for(const item of sourced)decorated.push(item.kind==='ticket'?{...item,...{supplement_follow_up:await supplementFollowUp.summary({authContext,ticketId:item.id})}}:item);sourced=decorated;}
-    if(!manualReportsEnabled)return sourced;
-    const result:WorkbenchCard[]=[];
-    for(const item of sourced){const manual=item.source==='MANUAL'?await readManualReportSource(pool,item.intake_id):null;
-      result.push(manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+(manual.report.reporter.verification==='VERIFIED'?'（本次已核实）':'（身份未核实）')}:item);}
-    return result;
+    if(supplementFollowUp&&authContext!==undefined){
+      const summaries=await supplementFollowUp.summariesForAuthorizedTickets(authContext,sourced.filter(item=>item.kind==='ticket').map(({id,intake_id})=>({id,intake_id})));
+      sourced=sourced.map(item=>item.kind==='ticket'?{...item,supplement_follow_up:summaries.get(item.id)??{has_pending_supplements:false}}:item);
+    }
+    if(manualReportsEnabled){
+      const reports=await readManualReportSources(pool,sourced.filter(item=>item.source==='MANUAL').map(item=>item.intake_id));
+      sourced=sourced.map(item=>{const manual=reports.get(item.intake_id);return manual?{...item,source_label:manual.report.source==='PHONE'?'电话代录':'现场代录',reporter_name:manual.report.reporter.name+(manual.report.reporter.verification==='VERIFIED'?'（本次已核实）':'（身份未核实）'),reporter_department:manual.report.reporter.verification==='VERIFIED'?(manual.report.reporter.departments.join('、')||null):manual.report.reporter.department}:item;});
+    }
+    if(page&&follow&&authContext!==undefined){
+      const attention=await follow.attentionMany(authContext,sourced);
+      sourced=sourced.map((item,index)=>{const value=attention[index];if(!value)failP2016('ACTION_FAILED',503);return {...item,attention:value};});
+    }else if((page||reporterProfilesEnabled&&sourced.some(item=>item.kind==='ticket'))&&authContext!==undefined&&sourced.length){
+      // The page may have awaited source, manual or supplement projections.
+      // Recheck current READ once for the entire page, including when Follow is OFF.
+      const p=await scope(authContext);
+      const current=await pool.query(CARD_SQL+` SELECT cards.kind,cards.id FROM cards
+        JOIN jsonb_to_recordset($4::jsonb) AS page(kind text,id text,intake_id text)
+          ON cards.kind=page.kind AND cards.id=page.id AND cards.intake_id=page.intake_id`,
+      [...p.values,JSON.stringify(sourced.map(({kind,id,intake_id})=>({kind,id,intake_id})))]);
+      if(current.rows.length!==sourced.length)failP2016('NOT_FOUND',404);
+    }
+    return sourced;
   }
   async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }
-  async function range(mode: CompletionRange): Promise<BoardPage['range']> {
+  async function range(mode: BoardCompletionRange,closedFrom?:string|null,closedTo?:string|null): Promise<BoardPage['range']> {
+    if(mode==='custom'){
+      let from:string,to:string;try{from=assertLocalDate(closedFrom);to=assertLocalDate(closedTo);}catch{failP2016();}
+      if(from>to||to==='9999-12-31')failP2016();
+      const result=await pool.query<{from:string;until:string}>(`SELECT to_char($1::date,'YYYY-MM-DD HH24:MI:SS') AS "from",to_char($2::date+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`,[from,to]);
+      const row=result.rows[0];if(!row)failP2016();return {...row,mode,timezone:'Asia/Shanghai'};
+    }
+    if(closedFrom!=null||closedTo!=null)failP2016();
     const r=await pool.query<{from:string;until:string}>(`SELECT
       to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
       to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`);
@@ -195,13 +235,13 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       const column=input.column??'pending',mode=input.range??'recent';
       const boardScope=input.scope??'team';
       if((boardScope!=='team'&&boardScope!=='related')||(!workbenchFollowEnabled&&input.scope!=null))failP2016();
-      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','cancelled'].includes(mode))failP2016();
-      const selectedColumn=column as BoardColumn,selectedRange=mode as CompletionRange;
-      const window=await range(selectedRange),limit=limitP2016(input.limit??'50');
-      const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from','at','kind','id','order_group']):null;
+      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','cancelled','custom'].includes(mode))failP2016();
+      const selectedColumn=column as BoardColumn,selectedRange=mode as BoardCompletionRange,custom=selectedRange==='custom';
+      const window=await range(selectedRange,input.closedFrom,input.closedTo),limit=limitP2016(input.limit??'50');
+      const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from',...(custom?['until']:[]),'at','kind','id','order_group']):null;
       // Bind cursors to both filters and the current authorized scope, including a changed team/role.
       const scopeKey=JSON.stringify(workbenchFollowEnabled?[authorized.values,boardScope]:authorized.values);
-      if(page&&(page.v!==1||page.principal!==authorized.values[1]||page.scope!==scopeKey||page.column!==column||page.range!==mode||page.from!==window.from))failP2016('CURSOR_INVALID');
+      if(page&&(page.v!==(custom?2:1)||page.principal!==authorized.values[1]||page.scope!==scopeKey||page.column!==column||page.range!==mode||page.from!==window.from||custom&&page.until!==window.until))failP2016('CURSOR_INVALID');
       const at=page?localP2016(page.at):null,id=page?uuidP2016(page.id):null;
       if(page&&(typeof page.kind!=='string'||!['ticket','review','intake'].includes(page.kind)))failP2016('CURSOR_INVALID');
       if(page&&page.order_group!==0&&page.order_group!==1)failP2016('CURSOR_INVALID');
@@ -215,10 +255,10 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         AND ($5::boolean OR status='RESOLVED' OR completed_at::timestamp>=$6::timestamp AND completed_at::timestamp<$7::timestamp)
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
-          selectedColumn!=='closed'||selectedRange!=='recent',window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
-      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card),input.authContext),last=rows.at(-1);
-      return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:1,
-        principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
+          selectedColumn!=='closed'||selectedRange!=='recent'&&!custom,window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
+      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card),input.authContext,true,true),last=rows.at(-1);
+      return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:custom?2:1,
+        principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,...(custom?{until:window.until}:{}),at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },
     async detail({authContext,kind,id,cursor,limit}: {authContext:unknown;kind:string;id:unknown;cursor:unknown;limit:unknown}): Promise<WorkbenchDetail> {
       const selected=await item(authContext,kind,id),n=limitP2016(limit??'50');
@@ -297,7 +337,18 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         if(refs.rows.length>100)failP2016('REVIEW_SCOPE_TOO_LARGE',503);
         reviewRefs=refs.rows;
       }
-      return publicP2016({item:selected,description:report.rows[0]?.summary??null,records:items,
+      const reported=await pool.query<{at:string|null}>(web?`SELECT to_char(s.received_at,'YYYY-MM-DD HH24:MI:SS') AS at
+        FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id
+        JOIN intake.web_submission s ON s.intake_id=i.id AND s.kind='SUBMIT'
+        WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
+          AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND s.retention_until>platform.local_now()
+        ORDER BY s.input_revision LIMIT 1`:`SELECT to_char(CASE WHEN i.source_provider='STAFF_MANUAL_REPORT' THEN i.created_at ELSE m.received_at END,'YYYY-MM-DD HH24:MI:SS') AS at
+        FROM intake.service_intake i LEFT JOIN channel.message_inbox m ON m.id=i.primary_message_id AND m.retention_until>platform.local_now()
+        WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[selected.intake_id]);
+      // Recheck the original requested route after the source and related reads.
+      const currentItem=await item(authContext,kind,id);
+      if(currentItem.kind!==selected.kind||currentItem.id!==selected.id)failP2016('VERSION_CONFLICT',409);
+      return publicP2016({item:selected,description:report.rows[0]?.summary??null,reported_at:reported.rows[0]?.at??null,records:items,
         next_cursor:records.rows.length>n&&last?cursorP2016({kind,id:uuidP2016(id),at:last.at,record_id:last.id}):null,
         responsibility:{ticket_assignee_name:selected.assignee_name,conversation_assignees:[...new Set(names)]},...(reviewRefs?{review_refs:reviewRefs}:{}),
         ...(selected.kind!==kind||selected.id!==id?{requested_item:{kind:kind as WorkbenchCard['kind'],id:uuidP2016(id)}}:{})});

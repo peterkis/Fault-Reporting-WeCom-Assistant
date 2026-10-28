@@ -72,10 +72,10 @@ test('T42 production board drag opens the legal handling form and moves only aft
       await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:geometry.x,y:geometry.y,button:'left',clickCount:1});
       await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:geometry.toX,y:geometry.toY,button:'left',buttons:1});
       await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:geometry.toX,y:geometry.toY,button:'left',clickCount:1});
-      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-action="take-and-start"]:not(:disabled)'))`);
+      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-action="take-and-start"]:not(:disabled)'))`);
       assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),[],'dropping only opens the current legal form; it must not submit or guess responsibility');
       assert.equal(await browser.evaluate(`Boolean(document.querySelector('.board-column.pending '+${JSON.stringify(card)}))`),true,'opening the form must preserve the official position');
-      await browser.evaluate("document.querySelector('.detail-dialog[open] [data-action=take-and-start]').click()");
+      await browser.evaluate("document.querySelector('.detail-dialog [data-action=take-and-start]').click()");
       await browser.waitFor(`globalThis.__t42Responses.some(value=>new URL(value.path,location.origin).pathname===${JSON.stringify(path+'/take-and-start')}&&value.status===200)`);
       await browser.waitFor(`Boolean(document.querySelector('.board-column.active '+${JSON.stringify(card)}))&&!document.querySelector('.board-column.pending '+${JSON.stringify(card)})`);
       const writes=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(writes));assert.equal(writes.length,1);const sent=object(writes[0]),body=object(sent.body),commandId=text(body.client_command_id);

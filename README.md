@@ -1,5 +1,7 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+PC Electron MVP：Windows x64 桌面外壳、固定员工扫码入口及托盘提醒，见[使用与 D 盘开发环境](app/pc-admin/desktop/README.md)和[交付记录](plans/pc-admin-electron/README.md)。服务器业务仍沿原核心与授权；本地安装包不代表现场部署或发送批准。
+
 2026-10-25 首批候选后继已收口T35测试前提和G2当前复现，最终同候选定向验证通过，完整G2连续3轮通过。见[后继交付](plans/app-layout/candidate-followup-2026-10-25.md)；旧失败与未完成全集保持，真实外部/部署/Gate仍需原具名批准。
 
 2026-10-25 按用户修订目标，先交付通过关键门槛、可增量回退的 human-v1 小范围候选；完整回归停止于322/741入口，G2投递失败保留。候选范围、限制和回退见[首批候选报告](plans/app-layout/first-gray-candidate-2026-10-25.md)，不代替完整认证或上线批准。

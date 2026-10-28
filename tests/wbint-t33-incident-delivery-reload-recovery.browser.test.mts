@@ -39,7 +39,7 @@ test('T33 production detail reloads its encrypted original v2 command after real
   const watch=new MutationObserver(()=>{
    const root=document.querySelector('[data-control-purpose="INCIDENT_LIFECYCLE"]');
    if(!root||state.firstFullRestore)return;
-   const selected=label=>root.querySelector('select[aria-label="'+label+'"]')?.value,content=root.textContent??'';
+   const selected=label=>root.querySelector('.workbench-select[data-field-label="'+label+'"] select')?.value,content=root.textContent??'';
    if(selected('选择通知路')!==expected.deliveryId||selected('投递控制操作')!=='RECONCILE'||selected('投递操作原因')!==expected.body.reason_code||selected('未知发送核对结论')!==expected.body.resolution||!content.includes('捕获公共故障版本 '+expected.body.expected_row_version+'；')||!content.includes('捕获尝试 '+expected.body.expected_delivery_attempt_count+'，'))return;
    state.firstFullRestore={reads:state.requests.filter(row=>row.method==='GET'&&row.response_status===200&&row.client_returned),selected:{deliveryId:selected('选择通知路'),action:selected('投递控制操作'),reason:selected('投递操作原因'),resolution:selected('未知发送核对结论')}};
    watch.disconnect();
@@ -77,10 +77,10 @@ test('T33 production detail reloads its encrypted original v2 command after real
   const receipts=(rows:readonly Record<string,unknown>[])=>rows.filter(row=>row.method==='GET'&&text(row.path).startsWith(endpoints.receiptPrefix));
   const quiet=async()=>{await browser.evaluate('globalThis.__t33ReloadRecovery.quietStart=performance.now()');await browser.waitFor('performance.now()-globalThis.__t33ReloadRecovery.quietStart>=400');};
   const choose=async(label:string,value:string)=>{
-   const selector=root+' select[aria-label="'+label+'"]';
+   const selector=root+' .workbench-select[data-field-label="'+label+'"] select';
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
-  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' select[aria-label="'+label+'"]')+').value');
+  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+').value');
   const content=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+').textContent'));
   const status=root+' [data-incident-delivery-draft-status]';
   await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+'[data-incident-delivery-controls]')+'))');
@@ -111,7 +111,8 @@ test('T33 production detail reloads its encrypted original v2 command after real
   await browser.waitFor('document.querySelector('+JSON.stringify(submit)+')?.disabled===false');
   await capture('reload-recovery-existing-post-confirmation');
   await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').click()');
-  const outcome=root+' [data-incident-delivery-outcome]';
+  const outcome='[data-incident-delivery-outcome]';
+   await browser.waitFor('document.querySelectorAll('+JSON.stringify(outcome)+').length===1');
   await browser.waitFor('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState==="unknown"');
   await browser.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="saved"');
   const before=await events(),sent=posts(before);assert.equal(sent.length,1);

@@ -1,7 +1,13 @@
+import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,ListBox} from "@heroui/react";
+import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
+import {WorkbenchSelect} from "../../app/WorkbenchSelect";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {ReviewStartControls} from './ReviewStartControls';
 import {PersonalReadMaterial} from '../personal-read/PersonalReadMaterial';
 import {useEffect,useRef,useState} from 'react';
-import {Link} from 'react-router';
+
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
@@ -28,11 +34,7 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
       <p>代录人：{view.manual_report.actor_principal_id===principal.principal_id?principal.display_name:'其他工作人员'}</p>
     </section>:null}
     {!['UNKNOWN','NONE','LOW'].includes(e.risk)?<p role="alert">报修内容有风险提示。请先核实，再处理。</p>:null}
-    <section data-review-original aria-label="原判断"><details><summary>查看系统核对提示</summary>
-      <p>{e.missing.length?'信息尚不完整。请核对原始报修内容。':'请人工核对原始报修内容。系统建议不能代替您的判断。'}</p>
-      {e.missing.some(field=>fields[field])?<p>需要核对：{e.missing.flatMap(field=>fields[field]?[fields[field]]:[]).join('、')}。</p>:null}
-      {e.conflicts.length?<p>部分信息不一致。请联系报修人核实。</p>:null}
-    </details></section>
+    <section data-review-original aria-label="原判断"><WorkbenchDisclosure title={<>查看系统核对提示</>}><p>{e.missing.length?'信息尚不完整。请核对原始报修内容。':'请人工核对原始报修内容。系统建议不能代替您的判断。'}</p>{e.missing.some(field=>fields[field])?<p>需要核对：{e.missing.flatMap(field=>fields[field]?[fields[field]]:[]).join('、')}。</p>:null}{e.conflicts.length?<p>部分信息不一致。请联系报修人核实。</p>:null}</WorkbenchDisclosure></section>
     <section data-review-materials aria-label="当前来源材料"><h4>本次报修内容</h4>
       {view.material_basis.stale?<p role="alert">报修内容已变化。请取消旧复核，再选择新的待复核记录。</p>:null}
       {view.materials_truncated?<p>以下为本次可查看的材料。部分早期内容未显示。</p>:null}
@@ -47,16 +49,13 @@ export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange}:
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   if(!refs.length&&!selected)return null;
   return <section data-activity-field="manual-review" className="manual-review" data-review-workspace aria-label="材料与人工复核"><h3>材料与人工复核</h3>
-    <label>复核项 <select aria-label="选择复核项" value={selected} disabled={blocked} onChange={event=>setSelected(event.target.value)}><option value="">请选择复核项</option>
-      {refs.map((ref,index)=><option key={ref.id} value={ref.id}>第 {index+1} 次复核 · {reviewStatuses[ref.status]}</option>)}
-      {selected&&!refs.some(ref=>ref.id===selected)?<option value={selected}>已选择的复核记录</option>:null}
-    </select></label>
+    <WorkbenchSelect label={<>复核项 </>} aria-label="选择复核项" value={selected} isDisabled={blocked} onChange={event=>setSelected(event)}><ListBox.Item id="" textValue={"请选择复核项"}>请选择复核项<ListBox.ItemIndicator/></ListBox.Item>{refs.map((ref,index)=><ListBox.Item key={ref.id} id={ref.id} textValue={"第"+String(index+1)+"次复核 ·"+String(reviewStatuses[ref.status])}>第 {index+1}次复核 · {reviewStatuses[ref.status]}<ListBox.ItemIndicator/></ListBox.Item>)}{selected&&!refs.some(ref=>ref.id===selected)?<ListBox.Item id={selected} textValue={"已选择的复核记录"}>已选择的复核记录<ListBox.ItemIndicator/></ListBox.Item>:null}</WorkbenchSelect>
     {selected?<ReviewForm key={principal.principal_id+':'+selected} principal={principal} item={item} reviewId={selected} onBlockedChange={setBlocked}/>:<p>请选择一条复核记录，再核对报修内容。</p>}
   </section>;
 }
 function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Principal;item:CanonicalItem;reviewId:string;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),mounted=useRef(true),generation=useRef(0);
-  const [value,setValue]=useState<ReviewInput>(()=>emptyReviewInput(reviewId)),[pending,setPending]=useState<ReviewCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[startBlocked,setStartBlocked]=useState(false),[startNavigationBlocked,setStartNavigationBlocked]=useState(false);
+  const [value,setValue]=useState<ReviewInput>(()=>emptyReviewInput(reviewId)),[pending,setPending]=useState<ReviewCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[startBlocked,setStartBlocked]=useState(false),[startNavigationBlocked,setStartNavigationBlocked]=useState(false);
   const latest=useRef(value);latest.current=value;
   const key=['manual-review',principal.principal_id,item.kind,item.id,reviewId] as const;
   const context=useQuery({queryKey:key,queryFn:({signal})=>reviewApi.detail(reviewId,signal)});
@@ -109,35 +108,23 @@ function ReviewForm({principal,item,reviewId,onBlockedChange}:{principal:Princip
     },onError:error=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知，尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const check=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');receipt.mutate({commandId:draft.operationId,signal:controller.signal,generation:generation.current});};
   if(context.isPending)return <p role="status">正在独立核对复核权限与材料…</p>;
-  if(context.isError)return <p role="alert">{errorMessage(context.error)} <button type="button" onClick={()=>{void context.refetch();}}>刷新</button></p>;
+  if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton></p>;
   const view=context.data,capture=value.capture,changed=Boolean(capture&&(capture.row_version!==view.row_version||capture.material_basis!==view.material_basis.current_hash||!sameItem(capture.canonical_item,view.canonical_item)));
   const allowed=view.status==='PENDING'&&Boolean(value.choice)&&view.allowed_resolutions.includes(value.choice as keyof typeof resolutions)&&(!view.material_basis.stale||value.choice==='CANCEL_REVIEW');
   const canSubmit=allowed&&!changed&&!busy&&!unresolved&&state!=='succeeded'&&draft.canSubmit&&Boolean(value.reason)&&Boolean(capture)&&sameItem(item,view.canonical_item);
   // The separate review-start purpose must probe old opaque operations even on a terminal review.
   const folded=view.status!=='PENDING'&&!unresolved&&!hasReviewInput(value)&&!principal.manual_review_draft_recovery_enabled&&!startBlocked&&!startNavigationBlocked;
-  return <div data-review-id={reviewId}>{folded?<details className="workflow-history"><summary>{reviewStatuses[view.status]}，查看原始材料与判定</summary><Evidence view={view} principal={principal}/></details>:<><p className="review-instruction">{view.material_basis.stale?'原报修内容已变化，请核对新材料。':'请核对报修内容，再确认需要怎样处理。'}</p><Evidence view={view} principal={principal}/></>}
-    <form hidden={folded} onSubmit={event=>{event.preventDefault();if(!canSubmit||!capture||!value.choice)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:capture.row_version,
-      expected_material_basis:capture.material_basis,resolution_code:value.choice,resolution_reason_code:value.reason}));}}>
-      <label>复核结论 <select aria-label="复核结论" value={value.choice} disabled={busy||unresolved||view.status!=='PENDING'} onChange={event=>{const choice=event.target.value as ReviewInput['choice'];setValue(value=>({...value,choice,reason:choice?usualReasons[choice]:''}));}}><option value="">请选择结论</option>
-        {Object.entries(resolutions).filter(([code])=>code===value.choice||view.allowed_resolutions.includes(code as keyof typeof resolutions)).map(([code,label])=><option key={code} value={code} disabled={!view.allowed_resolutions.includes(code as keyof typeof resolutions)}>{label}{view.allowed_resolutions.includes(code as keyof typeof resolutions)?'':'（当前不可用）'}</option>)}
-        </select></label>
-      {value.reason?<p>复核依据：{reasons[value.reason as keyof typeof reasons]??value.reason}</p>:null}
-      <details className="workflow-history" open={changed||undefined}><summary>修改复核原因</summary><label>复核原因 <select aria-label="复核原因" value={value.reason} disabled={busy||unresolved||view.status!=='PENDING'} onChange={event=>setValue(value=>({...value,reason:event.target.value}))}><option value="">请选择原因</option>{Object.entries(reasons).map(([code,label])=><option key={code} value={code}>{label}</option>)}</select></label>
-      <button type="button" data-action="capture-review" disabled={busy||unresolved||view.status!=='PENDING'||state==='succeeded'} onClick={()=>{setValue(value=>({...value,capture:{row_version:view.row_version,material_basis:view.material_basis.current_hash,canonical_item:view.canonical_item}}));setState('idle');setMessage('已明确使用最新报修内容；原选择和原因保留。');}}>使用最新报修内容</button>
-      <p hidden><span data-captured-review-version>{capture?.row_version??'尚未捕获'}</span><span data-captured-material-basis={capture?.material_basis??''}/></p></details>
-      {changed?<p role="alert">报修内容已变化。您的选择已保留。请核对新内容，再点击“使用最新报修内容”。</p>:null}
-      {draft.enabled?<p data-review-draft-status role="status">{draft.message}</p>:null}
-      <ReviewStartControls principal={principal} reviewId={reviewId} value={value} available={allowed&&!changed} request={request} onBlockedChange={setStartNavigationBlocked} onBusyChange={setStartBlocked}
+  return <div data-review-id={reviewId}>{folded?<WorkbenchDisclosure title={<>{reviewStatuses[view.status]}，查看原始材料与判定</>} className="workflow-history"><Evidence view={view} principal={principal}/></WorkbenchDisclosure>:<><p className="review-instruction">{view.material_basis.stale?'原报修内容已变化，请核对新材料。':'请核对报修内容，再确认需要怎样处理。'}</p><Evidence view={view} principal={principal}/></>}
+    <HForm hidden={folded} onSubmit={event=>{event.preventDefault();if(!canSubmit||!capture||!value.choice)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:capture.row_version,
+      expected_material_basis:capture.material_basis,resolution_code:value.choice,resolution_reason_code:value.reason}));}}><WorkbenchSelect label={<>复核结论 </>} aria-label="复核结论" value={value.choice} isDisabled={busy||unresolved||view.status!=='PENDING'} onChange={event=>{const choice=event as ReviewInput['choice'];setValue(value=>({...value,choice,reason:choice?usualReasons[choice]:''}));}}><ListBox.Item id="" textValue={"请选择结论"}>请选择结论<ListBox.ItemIndicator/></ListBox.Item>{Object.entries(resolutions).filter(([code])=>code===value.choice||view.allowed_resolutions.includes(code as keyof typeof resolutions)).map(([code,label])=><ListBox.Item key={code} id={code} isDisabled={!view.allowed_resolutions.includes(code as keyof typeof resolutions)} textValue={String(label)+String(view.allowed_resolutions.includes(code as keyof typeof resolutions)?'':'（当前不可用）')}>{label}{view.allowed_resolutions.includes(code as keyof typeof resolutions)?'':'（当前不可用）'}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>{value.reason?<p>复核依据：{reasons[value.reason as keyof typeof reasons]??value.reason}</p>:null}<WorkbenchDisclosure title={<>修改复核原因</>} className="workflow-history" forceOpen={changed||undefined}><WorkbenchSelect label={<>复核原因 </>} aria-label="复核原因" value={value.reason} isDisabled={busy||unresolved||view.status!=='PENDING'} onChange={event=>setValue(value=>({...value,reason:event}))}><ListBox.Item id="" textValue={"请选择原因"}>请选择原因<ListBox.ItemIndicator/></ListBox.Item>{Object.entries(reasons).map(([code,label])=><ListBox.Item key={code} id={code} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect><HButton type="button" data-action="capture-review" isDisabled={busy||unresolved||view.status!=='PENDING'||state==='succeeded'} onClick={()=>{setValue(value=>({...value,capture:{row_version:view.row_version,material_basis:view.material_basis.current_hash,canonical_item:view.canonical_item}}));setState('idle');setMessage('已明确使用最新报修内容；原选择和原因保留。');}} variant="secondary">使用最新报修内容</HButton><p hidden><span data-captured-review-version>{capture?.row_version??'尚未捕获'}</span><span data-captured-material-basis={capture?.material_basis??''}/></p></WorkbenchDisclosure>{changed?<p role="alert">报修内容已变化。您的选择已保留。请核对新内容，再点击“使用最新报修内容”。</p>:null}{draft.enabled?<DraftStatus data-review-draft-status role="status">{draft.message}</DraftStatus>:null}<ReviewStartControls principal={principal} reviewId={reviewId} value={value} available={allowed&&!changed} request={request} onBlockedChange={setStartNavigationBlocked} onBusyChange={setStartBlocked}
         onRestoreReview={restored=>{setValue(restored);setState('idle');}} readCurrentReview={async signal=>{const current=await reviewApi.detail(reviewId,signal);client.setQueryData(key,current);return {...latest.current,capture:{row_version:current.row_version,material_basis:current.material_basis.current_hash,canonical_item:current.canonical_item}};}}
-        onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认故障并开始处理。');void draft.discard();refresh();}}/>
-      <div className="review-controls"><button type="submit" data-action="submit-review" disabled={!canSubmit}>记录复核结论</button>
-        <button type="button" data-action="refresh-review" disabled={busy} onClick={()=>{void context.refetch();}}>刷新</button>
-        {state==='unknown'&&pending?<button type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}}>核对上次操作</button>:null}
-        {draft.operationId?<button type="button" data-action="check-review-receipt" disabled={busy} onClick={check}>核对上次操作</button>:null}
-        {draft.enabled&&hasReviewInput(value)?<button type="button" data-action="discard-review-draft" disabled={busy} onClick={()=>{void draft.discard();}}>丢弃草稿内容</button>:null}
-      </div>
-    </form>
-    {message?<p data-review-result role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</p>:null}
+        onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认故障并开始处理。');void draft.discard();refresh();}}/><div className="review-controls"><HButton type="submit" data-action="submit-review" isDisabled={!canSubmit} variant="secondary">记录复核结论</HButton>
+        <HButton type="button" data-action="refresh-review" isDisabled={busy} onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton>
+        {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} variant="secondary">核对上次操作</HButton>:null}
+        {draft.operationId?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} variant="secondary">核对上次操作</HButton>:null}
+        {draft.enabled&&hasReviewInput(value)?<HButton type="button" data-action="discard-review-draft" isDisabled={busy} onClick={()=>{void draft.discard();}} variant="secondary">丢弃草稿内容</HButton>:null}
+      </div></HForm>
+    {message?<ToastFeedback revision={messageRevision} source="manual-review" state={state} data-review-result role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
     {!sameItem(item,view.canonical_item)||view.status!=='PENDING'?<p><Link to={'/items/'+view.canonical_item.kind+'/'+view.canonical_item.id+'?detail=page'} onClick={event=>{if(navigationBlocked)event.preventDefault();}}>查看当前事项</Link></p>:null}
   </div>;
 }

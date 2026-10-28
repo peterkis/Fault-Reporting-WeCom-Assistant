@@ -1,7 +1,11 @@
+import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {ListBox} from "@heroui/react";
+import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ConversationControl} from './ConversationControl';
 import {ConversationInbox} from './ConversationInbox';
 import {useEffect,useState} from 'react';
-import {Link,useParams,useSearchParams} from 'react-router';
+import {useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
 import {errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
@@ -24,13 +28,13 @@ function SelectedConversation({principal,id,onBlockedChange}:{principal:Principa
   },refetchInterval:principal.realtime_sse_enabled?false:5000,placeholderData:previous=>previous});
   const blocked=replyBlocked||noteBlocked||controlBlocked;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
-  if(!result.data)return <section className="conversation-content"><p role={result.isError?'alert':'status'}>{result.isError?errorMessage(result.error):'正在核验服务会话…'}</p><button onClick={()=>void result.refetch()}>重新读取</button></section>;
+  if(!result.data)return <section className="conversation-content"><p role={result.isError?'alert':'status'}>{result.isError?errorMessage(result.error):'正在核验服务会话…'}</p><HButton onClick={()=>void result.refetch()} variant="secondary">重新读取</HButton></section>;
   const {entry,items,delivery,hasMore}=result.data;
   const committed=(r:ConversationMessageResult)=>{setReceipts(value=>[r,...value.filter(v=>v.message_id!==r.message_id)].slice(0,100));void result.refetch();};
   return <article className="conversation-content" data-conversation-ready><header><p>{entry.participant_label} · {entry.channel_label}</p><h2>{entry.topic}</h2><p>{entry.session.status==='ENDED'?'服务会话已结束':'服务会话进行中'} · 最近活动 {entry.session.last_activity_at}（北京时间）</p>{entry.canonical_item?<Link to={'/items/'+entry.canonical_item.kind+'/'+entry.canonical_item.id+'?detail=page'} onClick={e=>{if(blocked)e.preventDefault();}}>查看关联事项 {entry.canonical_item.number}</Link>:<p>关联事项不在当前授权范围内。</p>}</header>
     {result.isError?<p role="alert">读取暂时失败，输入已保留：{errorMessage(result.error)}</p>:null}
     <ConversationControl principal={principal} entry={entry} onBlockedChange={setControlBlocked}/>
-    <section className="conversation-timeline" aria-label="本服务主题材料" data-conversation-timeline><h3>本服务主题材料 <small>{items.length} 条已加载</small></h3>{hasMore?<button disabled={pages>=4||result.isFetching} onClick={()=>setPages(v=>Math.min(4,v+1))}>加载更早材料</button>:null}{pages>=4&&hasMore?<p>已达到本次400条读取上限，请按主题继续核对。</p>:null}<ConversationReadTimeline principal={principal} id={id} items={items}/></section>
+    <section className="conversation-timeline" aria-label="本服务主题材料" data-conversation-timeline><h3>本服务主题材料 <small>{items.length} 条已加载</small></h3>{hasMore?<HButton isDisabled={pages>=4||result.isFetching} onClick={()=>setPages(v=>Math.min(4,v+1))} variant="secondary">加载更早材料</HButton>:null}{pages>=4&&hasMore?<p>已达到本次400条读取上限，请按主题继续核对。</p>:null}<ConversationReadTimeline principal={principal} id={id} items={items}/></section>
     <section aria-label="回复投递" data-conversation-deliveries><h3>回复投递</h3>{[...new Map([...delivery.items.map(d=>d.message_id),...receipts.map(r=>r.message_id)].map(v=>[v,v])).values()].map(messageId=>{const values=delivery.items.filter(d=>d.message_id===messageId);return <div key={messageId} data-delivery-message={messageId}><strong>本条回复</strong>{values.length?values.map(d=><p key={d.delivery_id} data-delivery-id={d.delivery_id}>{d.side_effect_state==='UNKNOWN'||d.status==='UNKNOWN'?'发送结果未知，需核对':d.status==='SENT'?'已发送':d.status==='DEAD_LETTER'?'发送失败':d.status==='SENDING'?'正在发送':'待发送'}{d.last_error_code?' · '+d.last_error_code:''}</p>):<p>已受理，投递记录待读取。</p>}</div>;})}{!delivery.items.length&&!receipts.length?<p>暂无本服务主题的回复投递记录。</p>:null}</section>
     <div className="conversation-editors"><ConversationComposer entry={entry} principal={principal} purpose="messages" onBlockedChange={setReplyBlocked} onCommitted={committed}/><ConversationComposer entry={entry} principal={principal} purpose="internal-notes" onBlockedChange={setNoteBlocked} onCommitted={()=>void result.refetch()}/></div>
   </article>;
@@ -41,8 +45,8 @@ function SessionConversations({principal,onBlockedChange}:{principal:Principal;o
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   if(!principal.conversation_workspace_enabled)return <p className="state-message">会话工作区尚未开放。</p>;
   const items=list.data?.pages.flatMap(page=>page.items).slice(0,200)??[];
-  return <section className="workspace conversation-workspace"><div className="page-title"><div><h1>服务会话</h1><p>按报修人和服务主题核对材料，明确沟通责任。</p></div></div><div className="toolbar"><label>会话范围<select aria-label="会话范围" disabled={blocked} value={state} onChange={e=>setParams({state:e.target.value})}>{states.map(([key,label])=><option value={key} key={key}>{label}</option>)}</select></label><button onClick={()=>void list.refetch()}>刷新列表</button></div>
-    <div className="conversation-layout"><aside className="conversation-list" aria-label="获权服务会话">{list.isError?<p role="alert">{errorMessage(list.error)}</p>:null}{items.map(item=><article key={item.session.session_id} data-conversation-id={item.session.session_id} className={sessionId===item.session.session_id?'is-selected':''}><Link to={'/conversations/'+item.session.session_id+'?state='+state} onClick={e=>{if(blocked)e.preventDefault();}} aria-current={sessionId===item.session.session_id?'page':undefined}><strong>{item.participant_label}</strong><p>{item.topic}</p><small>{item.channel_label} · {item.assignment.assigned_display_name??'待分配沟通人'}</small></Link></article>)}{!list.isPending&&!list.isError&&!items.length?<p>当前范围暂无获权服务会话。</p>:null}{list.hasNextPage?<button disabled={list.isFetchingNextPage||items.length>=200} onClick={()=>void list.fetchNextPage()}>加载下一页</button>:null}</aside>
+  return <section className="workspace conversation-workspace"><div className="page-title"><div><h1>服务会话</h1><p>按报修人和服务主题核对材料，明确沟通责任。</p></div></div><div className="toolbar"><WorkbenchSelect label={<>会话范围</>} aria-label="会话范围" isDisabled={blocked} value={state} onChange={e=>setParams({state:e})}>{states.map(([key,label])=><ListBox.Item id={key} key={key} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect><HButton onClick={()=>void list.refetch()} variant="secondary">刷新列表</HButton></div>
+    <div className="conversation-layout"><aside className="conversation-list" aria-label="获权服务会话">{list.isError?<p role="alert">{errorMessage(list.error)}</p>:null}{items.map(item=><article key={item.session.session_id} data-conversation-id={item.session.session_id} className={sessionId===item.session.session_id?'is-selected':''}><Link to={'/conversations/'+item.session.session_id+'?state='+state} onClick={e=>{if(blocked)e.preventDefault();}} aria-current={sessionId===item.session.session_id?'page':undefined}><strong>{item.participant_label}</strong><p>{item.topic}</p><small>{item.channel_label} · {item.assignment.assigned_display_name??'待分配沟通人'}</small></Link></article>)}{!list.isPending&&!list.isError&&!items.length?<p>当前范围暂无获权服务会话。</p>:null}{list.hasNextPage?<HButton isDisabled={list.isFetchingNextPage||items.length>=200} onClick={()=>void list.fetchNextPage()} variant="secondary">加载下一页</HButton>:null}</aside>
       {sessionId?<SelectedConversation key={principal.principal_id+':'+sessionId} principal={principal} id={sessionId} onBlockedChange={setBlocked}/>:<p className="empty">选择一个服务主题查看材料与沟通操作。</p>}
     </div></section>;
 }

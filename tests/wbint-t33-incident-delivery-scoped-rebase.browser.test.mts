@@ -98,12 +98,12 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
    assert.equal(await evaluate(code),true);
   };
   const choose=async(evaluate:Evaluate,label:string,value:string)=>{
-   const selector=root+' select[aria-label="'+label+'"]';
+   const selector=root+' .workbench-select[data-field-label="'+label+'"] select';
    await evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');if(!field)throw new Error("T33_SELECT_MISSING");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));return true;})()');
   };
   const probe=async(which:string,decrypt:boolean)=>record(await first(vaultSource.replace('__T33_SCOPED_VAULT__',JSON.stringify({scope:which,decrypt}))));
   const trace=async(evaluate:Evaluate)=>record(await evaluate('globalThis.__t33ScopedRebase'));
-  const input=async(evaluate:Evaluate,label:string)=>evaluate('document.querySelector('+JSON.stringify(root+' select[aria-label="'+label+'"]')+')?.value??null');
+  const input=async(evaluate:Evaluate,label:string)=>evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+')?.value??null');
   const saved=root+' [data-incident-delivery-draft-status]';
   try{
    const created=record(await browser.command('Target.createTarget',{url:origin+'/workbench/app/incidents/'+otherId,background:true}));
@@ -146,7 +146,7 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
    const clear=root+' [data-action="clear-incident-delivery-input"]';
    await waitIn(second,'document.querySelector('+JSON.stringify(clear)+')?.disabled===false');
    assert.equal(await second('(()=>{document.querySelector('+JSON.stringify(clear)+').click();return true;})()'),true);
-   await waitIn(second,'document.querySelector('+JSON.stringify(root+' select[aria-label="选择通知路"]')+')?.value===""');
+   await waitIn(second,'document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="选择通知路"] select')+')?.value===""');
    await browser.waitFor('globalThis.__t33ScopedRebase.vaultEvents.some(row=>row.principal==='+JSON.stringify(adminId)+'&&row.kind==="incident"&&row.id==='+JSON.stringify(otherId)+'&&row.purpose==="incident-delivery-lifecycle"&&row.reason==="discard")');
    const afterDiscard=await probe(scope,false),removedOther=await probe(otherScope,false);
    assert.equal(record(afterDiscard.metadata).revision,originalMeta.revision,'real different-scope discard leaves the original target row untouched');
@@ -185,7 +185,8 @@ test('T33 current scoped grant revocation is rechecked at real cross-tab DRAFT_C
    const mark=records((await trace(first)).requests).length;
    await capture('scoped-rebase-real-epoch-change-cached-grant');
    await choose(first,'投递操作原因','OPERATOR_CANCEL_UNKNOWN_DELIVERY');editIssued=true;phase='visible-edit-at-real-stale-epoch';
-   const outcome=root+' [data-incident-delivery-outcome]';
+   const outcome='[data-incident-delivery-outcome]';
+   await browser.waitFor('document.querySelectorAll('+JSON.stringify(outcome)+').length===1');
    await browser.waitFor('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState==="denied"');
    await first('globalThis.__t33ScopedRebase.quietStart=performance.now()');
    await browser.waitFor('performance.now()-globalThis.__t33ScopedRebase.quietStart>=400');

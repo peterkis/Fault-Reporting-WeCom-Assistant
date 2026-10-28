@@ -1,5 +1,10 @@
+import {isWorkbenchForeground} from '../../desktop/host';
 function visiblePortion(node:HTMLElement):{start:number;end:number;height:number;width:number}|null{
-  if(document.visibilityState!=='visible'||!document.hasFocus()||!node.isConnected||!node.textContent?.trim())return null;
+  if(!isWorkbenchForeground()||!node.isConnected||!node.textContent?.trim())return null;
+  // Ellipsis hides source text even when its entire CSS box is visible.
+  if(node.scrollWidth>node.clientWidth+1||node.scrollHeight>node.clientHeight+1)return null;
+  const modal=Array.from(document.querySelectorAll('[role=dialog].detail-action-dialog,[role=dialog].detail-media-dialog')).filter(element=>!element.closest('[data-exiting]')).at(-1);
+  if(modal&&!modal.contains(node))return null;
   let top=0,left=0,right=window.innerWidth,bottom=window.innerHeight;
   for(let ancestor:HTMLElement|null=node;ancestor;ancestor=ancestor.parentElement){
     const style=getComputedStyle(ancestor);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return null;

@@ -41,7 +41,7 @@ WBINT-T03 已在本地加入默认关闭的独立恢复模块，首个消费者�
 | 实时更新 | 现有 SSE，后续接查询失效与补取 | WEB01 不伪装“实时”；WEB04 不另建一套前端事件事实源 |
 | 通信/附件 | 既有 Outbox/Delivery、StoragePort 与受控媒体入口 | WEB01 不发送、不引入浏览器直连 SDK 或公开文件桶 |
 | 检查与 CI | 现有 Node test runner、PG fixture、浏览器 harness、types-migration workflow | 保持 ACTIVE_SELECTION: v3-p09；增加直接前端类型/构建与相关路由测试 |
-| 桌面宿主 | 后续 Tauri 2 / Windows WebView2 | 复用同一 Web 业务边界；宿主登录、通知与升级另行授权设计，本轮不实现 |
+| 桌面宿主 | Electron / Windows x64 | 2026-10-26 按 [ADR-0047](../../adr/0047_electron_pc_admin_mvp.md)前向取代原 Tauri 方向；同源页面、员工扫码、托盘及通知，业务与现场权限沿原边界 |
 
 正式包声明精确版本，由根 package-lock 统一安装开发依赖到根 node_modules。前端编译器使用 typescript-web 别名（TS7），后端 typescript 仍为 TS5.9；构建验证声明、锁文件安装和实际包版本一致。不把 vendor 或生成 dist 放进 web 源候选目录，不改变既有 G2 指纹算法、文件上限或旧证据。原型锁文件保持。
 
@@ -87,6 +87,8 @@ flowchart LR
 
 已关闭默认以 Asia/Shanghai 自然日今天、昨天过滤真实关闭事件时间；没有 closing event 的记录不得拿 updated_at 冒充关闭时间。业务 LocalDateTime 是 `YYYY-MM-DD HH:mm:ss` 字符串，物理 epoch DTO 保留十进制字符串；不能依赖浏览器本地时区解析无 offset 字符串。时间范围由服务端给出，客户端只呈现。
 
+2026-10-27 前向补充：主看板增加自定义开始／结束日期，保留原快捷范围。用户输入是查询条件，服务器验证并计算含结束日的北京时间窗口，按真实完结时间过滤并绑定分页；未完成及待确认语义保持。移除主界面底部接单说明和范围下方的重复说明，日期选择控件呈现当前选择。独立高级搜索暂沿原预设范围。
+
 当前 mine 只有 assignee，WEB01 不提供冒充“处理/沟通/明确关注”的完整“与我有关”。缺失持久关注、presence、SLA、未读、预约跟进时不填假值。全局搜索及后续完整范围查询沿同一服务器投影契约扩展。
 
 同时未完成事项的最大数量尚未知。服务端分页与有界 DOM 作为当前结构，不从每日 <100、同时在线 <=10 推定总积压量。WEB01 对真实合成分页进行验证；虚拟化、索引变更或性能目标须有实际负载问题/验收需求再加入，不预先声称容量证明。
@@ -128,3 +130,7 @@ WEB01 已实际使用 TanStack Table；后续表单、全文搜索、虚拟列�
 
 - [Morphicons 官方用法与减少动效](https://github.com/guillermolg00/morphicons#reduced-motion-all-five-bindings)：使用 Lucide 数据而非 lucide-react 组件；明确启用 reducedMotion=user。
 - [TanStack Table v9 Quick Start](https://github.com/TanStack/table/blob/main/docs/framework/react/quick-start.md)、[Zustand create](https://github.com/pmndrs/zustand/blob/main/docs/apis/create.md)：最小 tableFeatures、类型化局部 UI store。
+
+## 详情原型落地（2026-10-27）
+
+当前详情沿 [ADR-0029 补充](../../adr/0029_admin_workbench_frontend_boundaries.md)展示单列属性、描述、受控媒体、逐日记录和内部备注。完工在工具栏弹窗内使用原表单；关注使用原命令。媒体缩略图读取串行、有界、只留内存；折叠文本不计已读。实现与验证跟踪见 [详情交付清单](../../plans/pc-admin-electron/detail-design-2026-10-27.md)。

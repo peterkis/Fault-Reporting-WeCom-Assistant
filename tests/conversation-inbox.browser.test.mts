@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney} from './helpers/conversation-inbox-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
@@ -22,7 +23,8 @@ test('ticket detail and conversation summary keep independent cache shapes acros
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+session.ticketId+'?detail=page',width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
       for(let round=0;round<2;round++){
         await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
-        await browser.evaluate("[...document.querySelectorAll('summary')].find(e=>e.textContent==='关联会话与报修附件').click()");
+        await browser.evaluate("(()=>{const section=document.querySelector('.detail-workflows');if(!section.hasAttribute('data-expanded'))section.querySelector('.workbench-disclosure-trigger').click();})()");
+        await clickWorkbenchControl(browser,'.workflow-support .workbench-disclosure-trigger');
         await browser.waitFor(`Boolean(document.querySelector('a[href="/workbench/app/conversations/${session.id}"]'))`);
         await browser.evaluate(`document.querySelector('a[href="/workbench/app/conversations/${session.id}"]').click()`);
         await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')");
@@ -53,6 +55,10 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
     const gets=(path:string)=>requests.filter(r=>r.browser&&r.method==='GET'&&r.path===path).length;
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+explicit.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+      await clickWorkbenchControl(browser,'.inbox-topic-picker [data-slot=select-trigger]');
+      await browser.waitFor("Boolean(document.querySelector('[role=listbox] [role=group]'))&&document.querySelectorAll('[role=option]').length>0");
+      await clickWorkbenchControl(browser,'[role=option][data-key="'+explicit.id+'"]');
+      await browser.waitFor(ready);
       await browser.waitFor("document.querySelectorAll('[data-contact-ref]').length>=3");assert.equal((await f.runtime.observability.metrics()).sse_clients,1);
       assert.equal(await browser.evaluate("document.querySelector('[data-conversation-timeline]').querySelectorAll('[data-conversation-item]').length"),50);
       await browser.waitFor("(()=>{const button=document.querySelector('.inbox-history');if(!button||button.disabled)return false;button.click();return true;})()");await browser.waitFor("document.querySelectorAll('[data-conversation-item]').length>=65");

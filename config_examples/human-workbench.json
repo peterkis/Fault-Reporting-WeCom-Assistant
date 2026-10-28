@@ -1,6 +1,9 @@
 {
   "schemaVersion": 1,
   "publicOrigin": "https://workbench.example.invalid",
+  "workbenchRemindersEnabled": false,
+  "workbenchFollowEnabled": false,
+  "workbenchReporterProfilesEnabled": false,
   "reporterOrigin": "https://reporter.example.invalid",
   "listenPort": 43166,
   "transportEnabled": false,

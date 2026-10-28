@@ -390,6 +390,7 @@
     "database/migrations/064_yixiaoxiu_h5_member_service.sql",
     "database/migrations/065_yixiaoxiu_h5_web_media.sql",
     "database/migrations/066_yixiaoxiu_h5_media_previews.sql",
+    "database/migrations/067_ticket_reporter_profiles.sql",
     "package-lock.json",
     "package.json",
     "tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl",

@@ -5,6 +5,8 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {createP2016TicketQuery} from '../app/server/src/p2-016-ticket-query.mjs';
 import {migrateTicketSelfHandling} from '../app/server/scripts/ticket-self-handling-migrate.mjs';
 import {normalizeSelfHandlingCommand} from '../app/server/src/workbench-ticket-self-handling.mjs';
+import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
 
 test('bounded public command normalization rejects private fields and active objects without invoking hooks',()=>{
   const input={action:'take-and-start',ticket_id:randomUUID(),client_command_id:randomUUID(),expected_version:1,reason_code:'TEST',resolver_team_id:'PILOT_IT'};
@@ -216,4 +218,34 @@ test('self-handling HTTP does not silently replace caller-supplied action or Tic
     const detail=await (await fetch(origin+'/api/tickets/'+tickets[0].ticket.id,{headers:{cookie:cookies[0]}})).json();
     assert.equal(detail.version,2);assert.equal(detail.status,'QUEUED');assert.equal(detail.handling_cycle,null);
   },{ticketSelfHandlingEnabled:true});
+});
+
+
+test('verified current employee name is the shared assignee label after real take-and-start HTTP',async()=>{
+const origin='https://synthetic.test';
+const recorder=()=>({status:null,headers:null,writeHead(status,headers){this.status=status;this.headers=headers;},end(){}});
+await withWeb01Fixture(async f=>{
+ await migrateWorkbenchAuth({databaseUrl:f.databaseUrl,mode:'apply'});
+ const principal=f.principals[0],id=f.tickets[0].ticket.id;
+ await f.pool.query("UPDATE pilot_ticket.pilot_principal SET display_name='信息科工作人员' WHERE id=$1",[principal.id]);
+ const others=(await f.pool.query('SELECT id,wecom_user_id,display_name,is_active FROM pilot_ticket.pilot_principal WHERE id<>$1 ORDER BY id',[principal.id])).rows;
+ const raw=(await f.pool.query('SELECT wecom_user_id FROM pilot_ticket.pilot_principal WHERE id=$1',[principal.id])).rows[0].wecom_user_id;
+ const auth=createWeComWorkbenchAuthentication({pool:f.pool,publicOrigin:origin,corpId:'synthetic-corp',agentId:'1000001',identityHashKey:'synthetic-assignee-identity-key',accessTokenProvider:async()=> 'synthetic-token',
+  profileReader:async id=>({openUserId:id,displayName:'合成实际接单人',departmentName:'合成信息科',checkedEpochMs:String(Date.now())}),
+  fetchImpl:async(url,init)=>url.pathname.endsWith('userid_to_openuserid')?Response.json({errcode:0,open_userid_list:JSON.parse(init.body).userid_list.map(userid=>({userid,open_userid:'open-'+userid}))}):Response.json({errcode:0,userid:'open-'+raw})});
+ try{
+  await auth.initialize();const start=recorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{}},response:start,url:new URL(origin+'/workbench/login')});
+  const callback=recorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:start.headers['set-cookie'].map(v=>v.split(';')[0]).join('; ')}},response:callback,url:new URL(origin+'/workbench/callback?code=synthetic&state='+new URL(start.headers.location).searchParams.get('state'))});
+  const context=await auth.authenticate({headers:{cookie:callback.headers['set-cookie'].map(v=>v.split(';')[0]).join('; ')}});assert.equal(context.principal_id,principal.id);
+  const profile=await auth.currentDisplay(context);assert.equal(profile.name,'合成实际接单人');
+  const get=async p=>{const r=await fetch(f.origin+p,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200);return r.json();};
+  const boot=await get('/api/lifecycle/bootstrap'),before=await get('/api/tickets/'+id),command={client_command_id:randomUUID(),expected_version:before.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:'PILOT_IT'};
+  const result=await fetch(f.origin+'/api/tickets/'+id+'/take-and-start',{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"','x-csrf-token':boot.csrf_token},body:JSON.stringify(command)});assert.equal(result.status,200);await result.arrayBuffer();
+  const ticket=await get('/api/tickets/'+id),card=await get('/api/workbench/items/ticket/'+id);
+  assert.equal(ticket.assignee_id,principal.id);assert.equal(card.item.assignee_name,profile.name);
+  assert.deepEqual((await f.pool.query('SELECT id,wecom_user_id,display_name,is_active FROM pilot_ticket.pilot_principal WHERE id<>$1 ORDER BY id',[principal.id])).rows,others);
+  assert.equal((await get('/api/tickets/'+id+'/responsibility')).ticket_assignee_name,profile.name);
+ }finally{await auth.close();}
+},{ticketSelfHandlingEnabled:true});
+
 });

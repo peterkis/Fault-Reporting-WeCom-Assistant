@@ -23,27 +23,28 @@ async function browserScenario(run,options={}){
   },{ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,...options});
 }
 
-test('the production detail names the sole conversation action without an extra selection and retains the 600px shell',async()=>{
+test('the production detail names the sole conversation action without an extra selection and retains the 780px shell',async()=>{
   await browserScenario(async({browser,capture})=>{
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".ticket-conversation-handling"))'),true);
-    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"');
-    assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);
-    await browser.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent==="更多接单选项").click()');
-    await browser.waitFor('document.querySelectorAll("[data-session-choice]").length===1');
-    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),600);
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="接单"');
+    assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);
+    await browser.evaluate('document.querySelector("[aria-label=接单选项]").click()');await browser.waitFor('Boolean(document.querySelector(".detail-accept-dialog"))');
+    await browser.waitFor('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length===1');
+    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),780);
     await capture('new-detail-1920.png');
   });
 });
 
 test('refresh restores the explicit selection with its original Session version from the encrypted purpose copy',async()=>{
   await browserScenario(async({browser})=>{
-    await browser.waitFor('document.querySelectorAll("[data-session-choice]").length===1&&document.querySelector("[data-session-choice]").disabled===false');
-    await browser.evaluate('document.querySelector("[data-session-choice]").click()');
+    await openOptions(browser);
+    await browser.waitFor('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length===1&&document.querySelector("[data-session-choice] input[type=checkbox]").disabled===false');
+    await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-conversation-draft-status]"))'),true);
     await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');
     const original=await browser.evaluate('({id:document.querySelector("[data-session-choice]").dataset.sessionChoice,version:document.querySelector(".conversation-choices").innerText})');
     const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
-    await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector('[data-session-choice]')?.checked===true`);
+    await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector('[data-session-choice] input[type=checkbox]')?.checked===true`);
     assert.deepEqual(await browser.evaluate('({id:document.querySelector("[data-session-choice]").dataset.sessionChoice,version:document.querySelector(".conversation-choices").innerText})'),original);
     await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已恢复")');
   },{workbenchDraftRecoveryEnabled:true});
@@ -51,11 +52,12 @@ test('refresh restores the explicit selection with its original Session version 
 
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t05Posts=[];globalThis.__t05Acks=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t05Posts.push({path:String(path),body:JSON.parse(options.body)});if(String(path).includes('/conversation-handling-commands/'))globalThis.__t05Acks.push(String(path));return original(path,options);};})()";
 async function reload(browser){const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);}
-async function choose(browser){await browser.waitFor('document.querySelector("[data-session-choice]")?.disabled===false');await browser.evaluate('document.querySelector("[data-session-choice]").click()');await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');}
+async function openOptions(browser){await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.evaluate('(()=>{if(document.querySelector(".detail-accept-dialog"))return;const options=document.querySelector("button[aria-label=接单选项]");(options??document.querySelector("[data-action=take-and-start-with-conversations]")).click();})()');await browser.waitFor('Boolean(document.querySelector(".detail-accept-dialog"))');}
+async function choose(browser){await openOptions(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.disabled===false');await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');}
 
 test('the real production selection submits one POST and refreshes both authoritative responsibilities at narrow width',async()=>{
   await browserScenario(async({browser,tickets,principals,capture})=>{
-    await browser.evaluate(instrument);await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
+    await browser.evaluate(instrument);await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="接单"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
     assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")&&document.querySelector(".properties")?.innerText.includes("处理中")');
@@ -63,22 +65,22 @@ test('the real production selection submits one POST and refreshes both authorit
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json())`);assert.equal(current.assignee_id,principals[0].id);assert.equal(current.handling_cycle.cycle_no,1);
     const assignment=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())`);assert.equal(assignment.conversations[0].conversation_principal_id,principals[0].id);
     await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
-    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),600);
+    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),780);
     assert.equal(await browser.evaluate('document.querySelector(".detail-dialog").scrollWidth<=document.querySelector(".detail-dialog").clientWidth'),true);await capture('new-detail-900.png');
   });
 });
 
 test('a true Web Ticket explicitly retains communication without inventing a Session and disabled recovery does not open storage',async()=>{
   await browserScenario(async({browser,tickets})=>{
-    await browser.waitFor('document.querySelector("[data-action=accept-for-later-with-conversations]")?.disabled===false');await browser.evaluate(instrument);
-    assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.evaluate(instrument);
+    assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-conversation-draft-status]"))'),false);
     assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);
-    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=retain-current-communicator]"))'),false);await browser.evaluate('document.querySelector("[data-action=accept-for-later-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".properties")?.innerText.includes("已领取")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=retain-current-communicator]"))'),false);await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+    await browser.waitFor('document.querySelector(".properties")?.innerText.includes("处理中")&&document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.communication_choice,'RETAIN_CURRENT');assert.deepEqual(posts[0].body.sessions,[]);
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())`);assert.deepEqual(current.conversations,[]);
-    assert.equal(await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()).then(value=>value.status)`),'ACCEPTED');
+    assert.equal(await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json()).then(value=>value.status)`),'IN_PROGRESS');
     assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);
   },{ticketSelfHandlingWebSource:true});
 });
@@ -87,9 +89,9 @@ test('the sole-session shortcut preserves its exact selection and UUID when the 
   await browserScenario(async({browser,runtime})=>{
     let malformed=true;runtime.server.on('request',(request,response)=>{if(!request.url?.endsWith('/take-and-start-with-conversations'))return;const end=response.end.bind(response);response.end=(...args)=>response.statusCode===200&&malformed?end('{"ok":true}'):end(...args);});
     await browser.evaluate(instrument);
-    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="接单"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")&&document.querySelector("[data-session-choice]")?.checked===true');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions.length,1);
     malformed=false;await browser.evaluate('document.querySelector("[data-action=check-conversation-handling]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');
@@ -99,20 +101,20 @@ test('the sole-session shortcut preserves its exact selection and UUID when the 
 
 test('a conversation assigned to another colleague still requires explicit selection',async()=>{
   await browserScenario(async({browser,pool,tickets,principals})=>{
-    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="我来处理并回复"');
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="接单"');
     const sessions=await pool.query('SELECT id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[tickets[0].intake.intakeId]);assert.equal(sessions.rows.length,1);
     await pool.query("INSERT INTO conversation.assignment(session_id,assignment_status,assigned_principal_id,assigned_by_principal_id,assigned_at) VALUES($1::uuid,'ASSIGNED',$2::uuid,$3::uuid,platform.local_now()) ON CONFLICT(session_id) DO UPDATE SET assignment_status='ASSIGNED',assigned_principal_id=EXCLUDED.assigned_principal_id",[sessions.rows[0].id,principals[1].id,principals[0].id]);
-    await reload(browser);await browser.waitFor('document.querySelectorAll("[data-session-choice]").length===1');
-    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice]").checked'),false);
-    assert.equal(await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").disabled'),true);
-    assert.equal(await browser.evaluate('document.body.innerText.includes("我来处理并回复")'),false);
+    await reload(browser);await openOptions(browser);await browser.waitFor('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length===1');
+    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").checked'),false);
+    assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").disabled'),true);
+    assert.equal(await browser.evaluate('document.querySelector(".detail-action-hint")?.checkVisibility()??false'),false);
   });
 });
 
 for(const expires of [false,true])test('an UNKNOWN composite keeps its original identified selection through reload and '+(expires?'expires into safe read-only Ack':'replays only on explicit checking'),async()=>{
   await browserScenario(async({browser,runtime,tickets})=>{
     let malformed=true;runtime.server.on('request',(request,response)=>{if(!request.url?.endsWith('/take-and-start-with-conversations'))return;const end=response.end.bind(response);response.end=(...args)=>response.statusCode===200&&malformed?end('{"ok":true}'):end(...args);});
-    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")');const original=(await browser.evaluate('globalThis.__t05Posts'))[0];
     // The harness enables Runtime and Network; future-document scripts also require the Page domain.
     await browser.command('Page.enable');
@@ -122,11 +124,11 @@ for(const expires of [false,true])test('an UNKNOWN composite keeps its original 
     if(expires)assert.ok(await browser.evaluate('Date.now()')>beforeReload+86400000);
     if(expires){
       await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))&&document.body.innerText.includes("草稿已过期")');
-      assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]:checked").length'),0);
+      assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice] input[type=checkbox]:checked").length'),0);
       const metadata=await browser.evaluate("new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.length,operations:operations.result});};};})");assert.equal(metadata.drafts,0);assert.equal(metadata.operations.length,1);assert.equal(metadata.operations[0].commandId,original.body.client_command_id);assert.equal(JSON.stringify(metadata).includes(original.body.sessions[0].session_id),false);
       await browser.evaluate('document.querySelector("[data-action=check-expired-conversation-handling]").click()');await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已核对原操作结果")');assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);assert.equal(await browser.evaluate('globalThis.__t05Acks.length'),1);
     }else{
-      await browser.waitFor('Boolean(document.querySelector("[data-action=check-conversation-handling]"))&&document.querySelector("[data-session-choice]")?.checked===true');assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);malformed=false;
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-conversation-handling]"))&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);malformed=false;
       await browser.evaluate('document.querySelector("[data-action=check-conversation-handling]").click()');await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[original]);
     }
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json())`);assert.equal(current.version,4);assert.equal(current.handling_cycle.cycle_no,1);
@@ -139,12 +141,12 @@ test('a real version conflict preserves the identified selection and its old ver
     await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');
     const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query('UPDATE conversation.session SET row_version=row_version+1 WHERE id=$1::uuid',[id]);
-    await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+    await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("操作冲突")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
-    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
-    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice]")?.checked===true');
+    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
+    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("内容已变化")'));
-    await browser.evaluate('document.querySelector("[data-action=discard-conversation-handling-draft]").click()');await browser.waitFor('document.querySelector("[data-session-choice]")?.checked===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
+    await browser.evaluate('document.querySelector("[data-action=discard-conversation-handling-draft]").click()');await browser.waitFor("!document.querySelector('.detail-accept-dialog')");await openOptions(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
   },{workbenchDraftRecoveryEnabled:true});
 });
 
@@ -152,11 +154,11 @@ test('restore rejects an ended canonical choice and a fresh Ticket rejection cle
   await browserScenario(async({browser,pool,principals,tickets})=>{
     await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query("UPDATE conversation.session SET status='ENDED',ended_at=platform.local_now(),close_reason='T05_SYNTHETIC_ENDED' WHERE id=$1::uuid",[id]);await reload(browser);
-    await browser.waitFor('document.querySelector(".ticket-conversation-handling")?.innerText.includes("当前没有需要接管的在线会话")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
-    assert.equal(await browser.evaluate('document.querySelectorAll("[data-session-choice]").length'),0);assert.equal(await browser.evaluate(`document.querySelector('.ticket-conversation-handling').innerText.includes(${JSON.stringify(id)})`),false);
+    await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
+    assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);assert.equal(await browser.evaluate(`document.querySelector('.ticket-conversation-handling').innerText.includes(${JSON.stringify(id)})`),false);
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=retain-current-communicator]"))'),false);
     await pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[principals[0].id]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[principals[0].id]);await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principals[0].id]);
-    await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');await browser.waitFor('!document.querySelector(".ticket-conversation-handling")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
+    await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');await browser.waitFor('!document.querySelector(".ticket-conversation-handling")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
     assert.equal(await browser.evaluate(`document.body.innerText.includes(${JSON.stringify(tickets[0].ticket.id)})`),false);
   },{workbenchDraftRecoveryEnabled:true});
 });

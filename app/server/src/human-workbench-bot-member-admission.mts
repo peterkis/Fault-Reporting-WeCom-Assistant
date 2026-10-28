@@ -8,6 +8,21 @@ interface ConversionResponse {errcode?:unknown;open_userid_list?:unknown;invalid
 interface AdmissionOptions {botId:string;accessTokenProvider:WeComAccessTokenProvider;fetchImpl?:typeof fetch}
 function record(value:unknown):Record<string,unknown>|null{return value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:null;}
 
+/** Shared exact Bot-ID conversion; callers separately own purpose, Bot scope and deadlines. */
+export async function convertWorkbenchBotUserId({sender,token,accessTokenProvider,fetchImpl=fetch,signal}:{sender:string;token:string;accessTokenProvider:WeComAccessTokenProvider;fetchImpl?:typeof fetch;signal:AbortSignal}):Promise<string|null>{
+ if(!validYxxUserId(sender)||!token||token.length>4096)return null;
+ signal.throwIfAborted();
+ const url=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');url.searchParams.set('access_token',token);
+ const converted=record(await readWeComResponse(await fetchImpl(url,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[sender]})}),signal)) as ConversionResponse|null;
+ signal.throwIfAborted();
+ if(converted?.errcode!==0){if([40014,42001].includes(Number(converted?.errcode)))accessTokenProvider.invalidate?.(token);if([60011,60111].includes(Number(converted?.errcode)))return null;throw new ApplicationMemberUnavailableError();}
+ if(!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1
+  ||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length!==0))return null;
+ const pair=record(converted.open_userid_list[0]);
+ if(!validYxxUserId(pair?.userid)||pair.userid.toLowerCase()!==sender.toLowerCase()||!validYxxUserId(pair.open_userid))return null;
+ return pair.open_userid;
+}
+
 /** Receives only the original Adapter's message from the authenticated SDK leaf.
  * The application member lookup decides current visibility; no staff role or
  * outbound permission is inferred from a successful read. */
@@ -28,19 +43,12 @@ export function createWorkbenchBotMemberAdmission({botId,accessTokenProvider,fet
     signal.throwIfAborted();
     const token=await accessTokenProvider({signal});signal.throwIfAborted();
     if(typeof token!=='string'||!token||token.length>4096)throw new ApplicationMemberUnavailableError();
-    const conversionUrl=new URL('https://qyapi.weixin.qq.com/cgi-bin/batch/userid_to_openuserid');conversionUrl.searchParams.set('access_token',token);
-    const converted=record(await readWeComResponse(await fetchImpl(conversionUrl,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/json'},body:JSON.stringify({userid_list:[sender]})}),signal)) as ConversionResponse|null;
-    signal.throwIfAborted();
-    if(converted?.errcode!==0){if([40014,42001].includes(Number(converted?.errcode)))accessTokenProvider.invalidate?.(token);if([60011,60111].includes(Number(converted?.errcode)))return false;throw new ApplicationMemberUnavailableError();}
-    if(!Array.isArray(converted.open_userid_list)||converted.open_userid_list.length!==1
-     ||converted.invalid_userid_list!==undefined&&(!Array.isArray(converted.invalid_userid_list)||converted.invalid_userid_list.length!==0))return false;
-    const pair=record(converted.open_userid_list[0]);
-    if(!validYxxUserId(pair?.userid)||pair.userid.toLowerCase()!==sender.toLowerCase()||!validYxxUserId(pair.open_userid))return false;
-    const url=new URL('https://qyapi.weixin.qq.com/cgi-bin/user/get');url.searchParams.set('access_token',token);url.searchParams.set('userid',pair.open_userid);
+    const openUserId=await convertWorkbenchBotUserId({sender,token,accessTokenProvider,fetchImpl,signal});if(!openUserId)return false;
+    const url=new URL('https://qyapi.weixin.qq.com/cgi-bin/user/get');url.searchParams.set('access_token',token);url.searchParams.set('userid',openUserId);
     const member=record(await readWeComResponse(await fetchImpl(url,{method:'GET',redirect:'error',signal}),signal)) as MemberResponse|null;
     signal.throwIfAborted();
     if(member?.errcode!==0){if([40014,42001].includes(Number(member?.errcode)))accessTokenProvider.invalidate?.(token);if([60011,60111].includes(Number(member?.errcode)))return false;throw new ApplicationMemberUnavailableError();}
-    return member.userid===pair.open_userid&&member.status===1&&(member.enable===undefined||member.enable===1);
+    return member.userid===openUserId&&member.status===1&&(member.enable===undefined||member.enable===1);
    }catch{throw new ApplicationMemberUnavailableError();}
   });
   // Keep the queue fenced until the underlying operation actually settles,

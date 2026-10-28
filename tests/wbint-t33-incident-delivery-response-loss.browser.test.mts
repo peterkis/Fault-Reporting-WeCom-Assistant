@@ -79,10 +79,10 @@ test('T33 production detail keeps one committed-but-unacknowledged command and r
    await browser.waitFor('performance.now()-globalThis.__t33ResponseLoss.quietStart>=400');
   };
   const choose=async(label:string,value:string)=>{
-   const selector=root+' select[aria-label="'+label+'"]';
+   const selector=root+' .workbench-select[data-field-label="'+label+'"] select';
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
-  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' select[aria-label="'+label+'"]')+').value');
+  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+').value');
   const controlText=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+').textContent'));
 
   await choose('选择通知路',deliveryId);
@@ -97,7 +97,8 @@ test('T33 production detail keeps one committed-but-unacknowledged command and r
   await browser.waitFor('document.querySelector('+JSON.stringify(submit)+')?.disabled===false');
   await capture('response-loss-explicit-confirmation');
   await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').click()');
-  const outcome=root+' [data-incident-delivery-outcome]';
+  const outcome='[data-incident-delivery-outcome]';
+   await browser.waitFor('document.querySelectorAll('+JSON.stringify(outcome)+').length===1');
   await browser.waitFor('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState==="unknown"');
 
   const lostEvents=await trace(),lostPosts=posts(lostEvents);

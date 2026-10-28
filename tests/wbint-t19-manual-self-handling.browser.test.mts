@@ -21,19 +21,19 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
       browser=await launchSystemBrowser({url:origin+'/workbench/app/reports/new',width:900,height:900,cookies:browserCookies,certificateSpki});
       assert.ok(browser);
       await browser.waitFor("Boolean(document.querySelector('[data-manual-report-form]'))");
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=choose-manual-self-handling]'))"),true,'the production manual report form must offer the explicit self handling choice');
-      await browser.evaluate("document.querySelector('[data-action=choose-manual-self-handling]').click()");
-      await browser.waitFor("Boolean(document.querySelector('[aria-label=\"本人处理组\"] option[value=PILOT_IT]'))&&!document.querySelector('[aria-label=\"本人处理组\"]').matches(':disabled')");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"本人处理组\"]').value"),'','one actual group still requires an explicit choice');
-      await browser.evaluate("(()=>{const e=document.querySelector('[aria-label=\"本人处理组\"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,'PILOT_IT');e.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=choose-manual-self-handling] input[type=checkbox]'))"),true,'the production manual report form must offer the explicit self handling choice');
+      await browser.evaluate("document.querySelector('[data-action=choose-manual-self-handling] input[type=checkbox]').click()");
+      await browser.waitFor("Boolean(document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select option[value=PILOT_IT]'))&&!document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select').matches(':disabled')");
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select').value"),'','one actual group still requires an explicit choice');
+      await browser.evaluate("(()=>{const e=document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,'PILOT_IT');e.dispatchEvent(new Event('change',{bubbles:true}));})()");
       await fill(browser,'报修人姓名','T19 合成电话报修人');await fill(browser,'联系方式','合成人工联系内线9919');await fill(browser,'故障描述','T19 browser original intent：打印机无法打印');
       await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').click()");
       await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:trace});
       const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${before}&&document.querySelector('[aria-label="故障描述"]')?.value==='T19 browser original intent：打印机无法打印'`);
-      await browser.waitFor("document.querySelector('[aria-label=\"本人处理组\"]')?.value==='PILOT_IT'&&!document.querySelector('[aria-label=\"本人处理组\"]').matches(':disabled')");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"本人处理组\"]').value"),'PILOT_IT');
+      await browser.waitFor("document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select')?.value==='PILOT_IT'&&!document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select').matches(':disabled')");
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select').value"),'PILOT_IT');
       assert.equal(await browser.evaluate('globalThis.__t19Posts.length'),0);
       const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const screenshots:{file:string;width:number;height:number;sha256:string}[]=[];
       for(const width of [900,1920]){
@@ -42,7 +42,7 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
         const image=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-'+width+'.png');await writeFile(file,image);screenshots.push({file,width:image.readUInt32BE(16),height:image.readUInt32BE(20),sha256:createHash('sha256').update(image).digest('hex')});
       }
       await browser.evaluate("document.querySelector('[data-action=submit-manual-self-handling]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理并开始处理')");
+      await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理并开始处理')");
       const posts=await browser.evaluate('globalThis.__t19Posts');assert.ok(Array.isArray(posts));assert.equal(posts.length,1);const post=object(posts[0]),command=object(post.body);assert.equal(post.path,'/api/workbench/reports/take-and-start');assert.equal(command.resolver_team_id,'PILOT_IT');assert.equal(object(command.reporter).verification,'UNVERIFIED');
       const cookie=cookies[0];assert.ok(cookie);const receiptResponse=await fetch(backendOrigin+'/api/workbench/reports/commands/'+text(command.client_command_id),{headers:{cookie}});assert.equal(receiptResponse.status,200);
       const result=object(object(await receiptResponse.json()).result),ticket=object(result.ticket);assert.equal(ticket.status,'IN_PROGRESS');assert.equal(result.review,null);
@@ -59,15 +59,15 @@ test('MVP preserves an onsite report when immediate handling requires review and
   const counts=async()=>(await f.pool.query('SELECT (SELECT count(*)::int FROM intake.service_intake) AS intakes,(SELECT count(*)::int FROM pilot_ticket.ticket) AS tickets')).rows;
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/reports/new?handling=self',width:1280,height:900,cookies:f.browserCookies,certificateSpki:f.certificateSpki});assert.ok(browser);
-   await browser.waitFor("document.querySelector('[aria-label=\"本人处理组\"] option[value=PILOT_IT]')&&!document.querySelector('[aria-label=\"本人处理组\"]').matches(':disabled')");
-   await browser.evaluate("(()=>{for(const [label,value]of [['本人处理组','PILOT_IT'],['报修来源','ON_SITE']]){const s=document.querySelector('[aria-label=\"'+label+'\"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,value);s.dispatchEvent(new Event('change',{bubbles:true}));}})()");
+   await browser.waitFor("document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select option[value=PILOT_IT]')&&!document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select').matches(':disabled')");
+   await browser.evaluate("(()=>{for(const [label,value]of [['本人处理组','PILOT_IT'],['报修来源','ON_SITE']]){const s=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,value);s.dispatchEvent(new Event('change',{bubbles:true}));}})()");
    const description='【自动化闭环D-现场】诊室电脑无法开机，电源灯不亮。信息科已到场核实，合成验收数据。';
    await fill(browser,'报修人姓名','合成现场报修人');await fill(browser,'联系方式','合成内线9004');await fill(browser,'故障描述',description);await fill(browser,'故障位置','合成诊室103');
    const before=await counts();await browser.evaluate(trace);await browser.evaluate("document.querySelector('[data-action=submit-manual-self-handling]').click()");
-   await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('此报修需要先复核')");assert.deepEqual(await counts(),before);
+   await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('此报修需要先复核')");assert.deepEqual(await counts(),before);
    await browser.evaluate("document.querySelector('[data-action=manual-report-review-fallback]').click()");
    await browser.waitFor("Boolean(document.querySelector('[data-action=submit-manual-report]'))");
-   assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]').value"),description);assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"报修来源\"]').value"),'ON_SITE');assert.equal(await browser.evaluate('globalThis.__t19Posts.length'),1,'fallback preserves input without admitting another report');
+   assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"故障描述\"]').value"),description);assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"报修来源\"] select').value"),'ON_SITE');assert.equal(await browser.evaluate('globalThis.__t19Posts.length'),1,'fallback preserves input without admitting another report');
    await browser.waitFor("document.querySelector('[data-action=submit-manual-report]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
    await browser.waitFor("Boolean(document.querySelector('[data-action=open-admitted-report]'))");assert.equal(await browser.evaluate('globalThis.__t19Posts.length'),2);assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-manual-report-draft-status]'))"),false);
   }catch(error){primary=error;}

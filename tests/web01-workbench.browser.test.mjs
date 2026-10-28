@@ -36,7 +36,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/settings/source-groups','UNKNOWN must not silently lose its original command through the sidebar');
       assert.ok(await browser.evaluate('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")'));
-      await browser.evaluate('document.querySelector("aside [data-action=open-source-groups]").click()');
+      await browser.evaluate('document.querySelector("aside [data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.search'),'?q='+ref,'the settings link must preserve the selected UNKNOWN command and its directory');
       await browser.evaluate('document.querySelector("[data-action=check-source-group-name]").click()');
@@ -89,7 +89,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.evaluate('document.querySelector("aside a[title=工作台]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id,'detail UNKNOWN must survive sidebar navigation attempts');
-      await browser.evaluate('document.querySelector("aside [data-action=open-source-groups]").click()');
+      await browser.evaluate('document.querySelector("aside [data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id);
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
@@ -131,8 +131,8 @@ test('administrator source group settings searches the real directory across pag
     let browser,error;const screenshots=[];
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1920,height:1080,cookies:[browserCookies[0]]});
-      await browser.waitFor('Boolean(document.querySelector("[data-action=open-source-groups]"))');
-      await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=open-settings]"))');
+      await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');await browser.waitFor('Boolean(document.querySelector(".workbench-settings"))');await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
       await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===50');
       assert.ok(await browser.evaluate('document.body.innerText.includes("群名称未登记")'));
       await browser.evaluate('document.querySelector("[data-action=next-source-groups]").click()');
@@ -212,11 +212,12 @@ for(const fault of ['disconnect','invalid-success'])test('Ticket internal note p
       await browser.waitFor("document.querySelector('.ticket-command-version')?.textContent==='工单版本 2'");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))"),true);
       assert.equal(await browser.evaluate("document.querySelector('.ticket-command-version')?.textContent"),'工单版本 2');
-      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t02Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t02Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('[aria-label="内部备注"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 bundle synthetic canary');input.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);
+      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t02Commands=[];const responseGate=new Promise(resolve=>globalThis.__t02ReleaseResponse=resolve);globalThis.fetch=async(path,options)=>{const isNote=String(path).endsWith('/internal-notes');if(isNote)globalThis.__t02Commands.push(JSON.parse(options.body));try{const response=await original(path,options);if(isNote)await responseGate;return response;}catch(error){if(isNote)await responseGate;throw error;}};const input=document.querySelector('[aria-label="内部备注"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 bundle synthetic canary');input.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:250,downloadThroughput:-1,uploadThroughput:-1});
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('正在保存')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=save-internal-note]').disabled"),true);
+      await browser.evaluate("globalThis.__t02ReleaseResponse()");
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"内部备注\"]').disabled"),true);
@@ -300,14 +301,14 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       const id=tickets[5].ticket.id;
       await browser.evaluate(`(()=>{const link=document.querySelector('[data-item-id="${id}"] .card-open');link.focus();link.click();})()`);
       await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
-      assert.equal(await browser.evaluate("document.querySelector('dialog').open"),true);
-      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)"),true);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('dialog').getBoundingClientRect().width)"),600);
-      assert.ok(await browser.evaluate("document.querySelector('dialog').innerText.includes('仅供内部的合成处理记录')"));
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
-      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)&&document.activeElement.getAttribute('aria-label')!=='关闭详情'&&document.activeElement.checkVisibility({checkVisibilityCSS:true})"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)&&document.activeElement.getAttribute('aria-label')!=='关闭详情'&&document.activeElement.checkVisibility({checkVisibilityCSS:true})"),true);
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
       assert.equal(await browser.evaluate("document.activeElement.getAttribute('aria-label')==='关闭详情'"),true);
@@ -317,20 +318,20 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
       await capture('new-detail-1920.png');
       // CDP key/code without the virtual key generates keyCode=0 and does not
-      // invoke Chromium's native dialog cancellation; use an actual Escape key.
+      // invoke the real Escape handler; use an actual Escape key.
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
-      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       assert.equal(await browser.evaluate(`document.activeElement===document.querySelector('[data-item-id="${id}"] .card-open')`),true);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
-      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
       await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:100,y:100,button:'left',clickCount:1});
       await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:100,y:100,button:'left',clickCount:1});
-      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
-      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
       await browser.evaluate("document.querySelector('[aria-label=\"展开完整页面\"]').click()");
-      await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))&&!document.querySelector('dialog')");
+      await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))&&!document.querySelector('.detail-dialog')");
       assert.equal(await browser.evaluate("document.activeElement.id==='detail-title'"),true);
       await capture('new-detail-page-1920.png');
       await reload();await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))");
@@ -338,9 +339,9 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("Boolean(document.querySelector('.board'))");
       await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
-      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
       await reload();await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
-      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('dialog')");
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog')");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
       await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
       await reload();await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
@@ -349,11 +350,12 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await capture('new-list-900.png');
-      await browser.evaluate("document.querySelector('tbody tr a').click()");await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
-      assert.equal(await browser.evaluate("document.querySelector('dialog').getBoundingClientRect().width<=innerWidth"),true);
+      await browser.evaluate("document.querySelector('tbody tr a').click()");await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
+      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').getBoundingClientRect().width<=innerWidth"),true);
       await capture('new-detail-900.png');
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
-      await browser.waitFor("document.querySelector('.connection.offline')?.textContent==='网络已断开'&&getComputedStyle(document.querySelector('.connection.offline')).display!=='none'");
+      await browser.waitFor('navigator.onLine===false');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.topbar .connection'))"),false,'connection state does not reintroduce the removed header label');
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
       await browser.waitFor("document.body.innerText.includes('连接失败')");
@@ -377,7 +379,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
       await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
-      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       const access=createPilotAccessService({pool});
       await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       // Count real requests, without changing their HTTP result or adding retries.
@@ -386,9 +388,9 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&document.querySelectorAll('.ticket-card').length===2");
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.ok(await browser.evaluate('globalThis.__web01DenialReads<=2'),'a denied active query must not recreate and request in a loop');
-      assert.equal(await browser.evaluate("document.querySelector('dialog').innerText.includes('仅供内部的合成处理记录')"),false);
+      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"),false);
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
-      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
@@ -411,13 +413,13 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${id}"] .card-open'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
       await browser.waitFor("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"] input'))");
-      assert.ok(await browser.evaluate("document.querySelector('dialog').innerText.includes('群名称未登记')"));
+      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('群名称未登记')"));
       const change=async name=>{
         // Refreshed names can render while the previous save still awaits its refresh.
         await browser.waitFor("(()=>{const input=document.querySelector('input[name=\"source-group-name\"]');return input instanceof HTMLInputElement&&!input.disabled&&!input.matches(':disabled');})()");
         await browser.evaluate(`(()=>{const input=document.querySelector('input[name="source-group-name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(name)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
         await browser.waitFor(`(()=>{const input=document.querySelector('input[name="source-group-name"]'),button=document.querySelector('[data-action="save-source-group-name"]');if(!(input instanceof HTMLInputElement)||input.disabled||input.value!==${JSON.stringify(name)}||!(button instanceof HTMLButtonElement)||button.disabled||button.matches(':disabled'))return false;button.click();return true;})()`);
-        await browser.waitFor(`document.querySelector('dialog .properties')?.innerText.includes(${JSON.stringify('群聊报修 · '+name)})`);
+        await browser.waitFor(`document.querySelector('.detail-dialog .properties')?.innerText.includes(${JSON.stringify('群聊报修 · '+name)})`);
         await browser.waitFor(`document.querySelector('[data-item-id="${id}"]')?.innerText.includes(${JSON.stringify(name)})`);
       };
       await change('信息科支持群');
@@ -430,11 +432,11 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await change('合成群'.repeat(42));
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       const literal='<img src=x onerror=alert(1)>合成群';await change(literal);
-      assert.equal(await browser.evaluate("document.querySelectorAll('dialog .properties img').length"),0);
+      assert.equal(await browser.evaluate("document.querySelectorAll('.detail-dialog .properties img').length"),0);
       assert.equal((await pool.query('SELECT display_name FROM workbench.source_group_name')).rows[0].display_name,literal);
       await browser.waitFor("(()=>{const button=document.querySelector('[aria-label=\"关闭详情\"]');return button instanceof HTMLButtonElement&&!button.disabled&&!button.matches(':disabled');})()");
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
-      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.waitFor("!document.querySelector('.detail-dialog')");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
       await browser.waitFor(`document.querySelector('.work-table')?.innerText.includes(${JSON.stringify(literal)})`);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);

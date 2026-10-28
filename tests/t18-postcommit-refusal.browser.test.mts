@@ -150,7 +150,7 @@ test('a real post-commit 403 preserves the original verified command for explici
       assert.equal(retained.operations.length,1,'a post-commit refusal cannot erase the original operation UUID as a known failure');
       const operation=object(retained.operations[0]);assert.equal(operation.principal,principal.id);assert.equal(operation.commandId,commandId);
       assert.ok(Array.isArray(retained.drafts));for(const entry of retained.drafts){const draft=object(entry);assert.equal(draft.principal,principal.id);assert.equal(draft.algorithm,'AES-GCM');assert.equal(draft.extractable,false);assert.equal(draft.plaintext,false);}
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-manual-report-receipt]'))&&document.querySelector('[data-manual-report-result]')?.textContent.includes('结果未知')"),true);
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-manual-report-receipt]'))&&document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')"),true);
       assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-manual-report]')?.disabled"),true,'fresh creation permission must not permit a second intent while the original outcome is unresolved');
       await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
       assert.equal(await browser.evaluate("globalThis.__t18PostcommitRows.filter(row=>row.method==='POST'&&row.path==='/api/workbench/reports').length"),1);
@@ -158,7 +158,7 @@ test('a real post-commit 403 preserves the original verified command for explici
       await browser.waitFor("document.querySelector('[data-action=check-manual-report-receipt]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-action=check-manual-report-receipt]').click()");
       const receiptPath='/api/workbench/reports/commands/'+commandId;
-      await browser.waitFor(`document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')&&globalThis.__t18PostcommitRows.some(row=>row.method==='GET'&&row.path===${JSON.stringify(receiptPath)}&&row.status===200&&row.result?.state==='COMMITTED')`);
+      await browser.waitFor(`document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理')&&globalThis.__t18PostcommitRows.some(row=>row.method==='GET'&&row.path===${JSON.stringify(receiptPath)}&&row.status===200&&row.result?.state==='COMMITTED')`);
       await browser.waitFor(`(async()=>{const current=await (${copies});return current.drafts.length===0&&current.operations.length===0;})()`);
       const reads:unknown=await browser.evaluate("globalThis.__t18PostcommitRows.filter(row=>row.path.startsWith('/api/workbench/reports/commands/'))");assert.ok(Array.isArray(reads)&&reads.length>=1);
       for(const read of reads){const row=object(read),result=object(row.result);assert.equal(row.path,receiptPath);assert.equal(row.method,'GET');assert.equal(row.status,200);assert.equal(result.state,'COMMITTED');assert.equal(result.client_command_id,commandId);assert.deepEqual(result.result,{...admitted,replayed:true});}

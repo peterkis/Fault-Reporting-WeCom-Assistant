@@ -36,6 +36,8 @@ W 宿主新增 `GET /api/workbench/reminders`，复用原 Cookie／当前工作�
 
 ## 定位、声音和个人设置
 
+2026-10-26 Electron 增量按 [ADR-0047](../../../adr/0047_electron_pc_admin_mvp.md)：桌面桥只接收临时会话代次、opaque reminder_id、规范 kind/id，不接收正文或凭据。本人主动开启后可在托盘接收通用系统提醒；点击后先显示窗口并沿以下原定位/READ/草稿保护执行。锁屏/挂起/失权清理当前通知，恢复不补发历史。浏览器 Notification 仍沿原无导航行为；默认关闭与现有资源上限不变。
+
 提醒可显式移除或定位，不自动打开／提交／推进个人阅读位置或处置。定位先读原 `/api/workbench/items/:kind/:id`；已加载卡片直接标记，跨页目标复用原 `/workbench/app/items/:kind/:id?locate=1` 规范卡片。无需扫描列表；列表缺项不等于无权。临时技术失败保留同一 URL 目标供重试，真实失权清敏感。进入详情仍须用户另点原详情链接。
 
 每个新页面声音和桌面均需当前用户主动开启，试听使用用户点击。唯一持久偏好键 `wbint-reminder-preferences-v1` 只接受最多128字节的闭合 JSON：`schema_version:1`、布尔 `sound_enabled` 和 `desktop_enabled`。不保存主体、凭据、草稿或提醒队列。账号／权限切换清旧提醒、旧自动资格和本功能偏好；新页面不由旧保存值自动启动播放或申请权限。

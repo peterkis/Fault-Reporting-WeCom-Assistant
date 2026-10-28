@@ -23,7 +23,7 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser,error;const screenshots=[];
     const capture=async()=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
     const root=`article[data-candidate-id="${candidate.id}"]`;
-    const select=async(label,value)=>browser.evaluate(`(()=>{const control=document.querySelector(${JSON.stringify(root)}).querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!control)throw Error('MISSING_SELECT');control.value=${JSON.stringify(value)};control.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    const select=async(label,value)=>browser.evaluate(`(()=>{const control=document.querySelector(${JSON.stringify(root)}).querySelector(${JSON.stringify('.workbench-select[data-field-label="'+label+'"] select')});if(!control)throw Error('MISSING_SELECT');control.value=${JSON.stringify(value)};control.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     try{
       const started=await runtime.start();browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1920,height:1080,cookies:[started.cookie]});
       await browser.waitFor('document.querySelector(".page-title h1")?.textContent==="团队工作台"');
@@ -31,21 +31,21 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
       await browser.waitFor('document.querySelector(".entry-state")?.innerText.includes("页面不存在") || Boolean(document.querySelector("article[data-candidate-id] [data-action=refresh-candidate]"))');
       assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(root)}).length`),1,'the canonical candidate must render independently of a Ticket or Manual Review route');
       await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.innerText.includes(${JSON.stringify(version)})`);
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelectorAll('select[aria-label="人工决定"]').length`),1,'the current permitted decisions require an explicit human control');
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('select[aria-label="人工决定"]').value`),'');
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelectorAll('.workbench-select[data-field-label="人工决定"] select').length`),1,'the current permitted decisions require an explicit human control');
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('.workbench-select[data-field-label="人工决定"] select').value`),'');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').disabled`),true);
-      assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(root+' input[data-report-ref]:checked')}).length`),0);
+      assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(root+' [data-report-ref] input[type=checkbox]:checked')}).length`),0);
       assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).innerText`),/获权来源总数[：:]?\s*3/u);
       await select('人工决定','START_REVIEW');await select('决定原因','OPERATOR_REVIEWED');
       await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').click()`);
-      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.innerText.includes(${JSON.stringify((BigInt(version)+1n).toString())})`);
+      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('.detail-heading > p:last-child')?.textContent.includes(${JSON.stringify('候选依据版本 '+(BigInt(version)+1n).toString()+'；')})&&document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select')?.value===''`);
       assert.equal((await pool.query('SELECT status,row_version::text FROM incident.candidate_review WHERE id=$1::uuid',[candidate.id])).rows[0].status,'UNDER_REVIEW');
       await select('人工决定','CONFIRM_INCIDENT');await select('决定原因','CONFIRMED_SHARED_FAULT');
-      for(const label of ['确认范围','故障负责人','责任组','主工单'])assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('select[aria-label="${label}"]').value`),'');
+      for(const label of ['确认范围','故障负责人','责任组','主工单'])assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('.workbench-select[data-field-label="${label}"] select').value`),'');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').disabled`),true);
       await select('确认范围','LOCAL');await select('故障负责人',f.handler.id);await select('责任组','PILOT_IT');
-      for(const report of f.reports.slice(0,2))await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('input[data-report-ref="${report.decisionId}"]').click()`);
-      assert.equal(await browser.evaluate(`Array.from(document.querySelector(${JSON.stringify(root)}).querySelector('select[aria-label="主工单"]').options).some(option=>option.value===${JSON.stringify(f.reports[2].ticketId)})`),false);
+      for(const report of f.reports.slice(0,2))await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-report-ref="${report.decisionId}"] input[type=checkbox]').click()`);
+      assert.equal(await browser.evaluate(`Array.from(document.querySelector(${JSON.stringify(root)}).querySelector('.workbench-select[data-field-label="主工单"] select').options).some(option=>option.value===${JSON.stringify(f.reports[2].ticketId)})`),false);
       await select('主工单','NONE');await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').click()`);
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('[data-result-ref]'))`);
       const resultId=await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-result-ref]').getAttribute('data-result-ref')`);

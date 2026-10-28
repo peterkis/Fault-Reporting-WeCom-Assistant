@@ -23,7 +23,7 @@ async function handlingBrowser(context,run,{width=1920,page=true}={}){
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t04Posts=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t04Posts.push({path:String(path),body:JSON.parse(options.body)});return original(path,options);};})()";
 
 test('production Ticket-only controls use one POST, GET refresh, and reuse the accept-for-later cycle',async()=>{
-  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,cookies})=>{
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
     const screenshots=[];let browser,error;
     try{
@@ -31,17 +31,20 @@ test('production Ticket-only controls use one POST, GET refresh, and reuse the a
       const capture=async name=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
       await browser.waitFor("Boolean(document.querySelector('[data-action=take-and-start]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]')?.textContent"),'我来处理');
-      assert.equal(await browser.evaluate("document.querySelector('[data-action=accept-for-later]')?.textContent"),'先接单，稍后处理');
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]')?.textContent"),'接单');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later]'))"),false);
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t04Posts=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t04Posts.push({path:String(path),body:JSON.parse(options.body)});return original(path,options);};document.querySelector('[data-action=take-and-start]').click();})()");
       await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('已开始处理')&&document.querySelector('.properties')?.innerText.includes('处理中')&&document.querySelector('.properties')?.innerText.includes('林舟')&&document.querySelector('.ticket-handling-version')?.textContent==='工单版本 4'&&document.querySelector('.ticket-handling-cycle')?.textContent.includes('处理轮次 1')");
       assert.equal(await browser.evaluate('globalThis.__t04Posts.length'),1);
       assert.ok(await browser.evaluate("document.querySelector('.ticket-handling-cycle')?.textContent.includes('处理轮次 1')"));
       await capture('new-detail-1920.png');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+tickets[1].ticket.id+'?detail=page'});
-      await browser.waitFor("Boolean(document.querySelector('[data-action=accept-for-later]'))");
-      await browser.evaluate("document.querySelector('[data-action=accept-for-later]').click()");
-      await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('已接单')&&document.querySelector('.properties')?.innerText.includes('已领取')&&document.querySelector('.ticket-handling-version')?.textContent==='工单版本 4'");
+      // A pre-upgrade command is still accepted by the original API; the new UI only starts its existing cycle.
+      const bootstrap=await (await fetch(origin+'/api/lifecycle/bootstrap',{headers:{cookie:cookies[0]}})).json();
+      const legacy={client_command_id:randomUUID(),expected_version:2,reason_code:'T04_LEGACY_ACCEPT',resolver_team_id:'PILOT_IT'};
+      const legacyReply=await fetch(origin+'/api/tickets/'+tickets[1].ticket.id+'/accept-for-later',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','idempotency-key':legacy.client_command_id,'if-match':'"2"','x-csrf-token':bootstrap.csrf_token},body:JSON.stringify(legacy)});assert.equal(legacyReply.status,200);
+      const beforeReload=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
+      await browser.waitFor(`performance.timeOrigin!==${beforeReload}&&document.querySelector('.properties')?.innerText.includes('已领取')&&document.querySelector('.ticket-handling-version')?.textContent==='工单版本 4'`);
       const accepted=await browser.evaluate(`fetch('/api/tickets/${tickets[1].ticket.id}').then(r=>r.json())`);
       assert.equal(accepted.status,'ACCEPTED');assert.equal(accepted.handling_cycle.cycle_no,1);
       await browser.waitFor("document.querySelector('[data-action=take-and-start]')?.disabled===false");
@@ -61,9 +64,10 @@ for(const fault of ['disconnect','invalid-success'])test('formal self handling k
     await handlingBrowser(context,async(browser,capture)=>{
       await browser.evaluate(instrument);
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:250,downloadThroughput:-1,uploadThroughput:-1});
+      await browser.evaluate("(()=>{const original=fetch;globalThis.fetch=async(url,options)=>{if(options?.method==='POST')await new Promise(resolve=>setTimeout(resolve,600));return original(url,options);};})()");
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
       await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('正在提交')");
-      assert.equal(await browser.evaluate("document.querySelector('[data-action=accept-for-later]').disabled"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]').disabled"),true);assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later]'))"),false);
       await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未知')");
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
       assert.equal(await browser.evaluate('globalThis.__t04Posts.length'),1);
@@ -100,10 +104,10 @@ test('another actor winning causes a refreshed conflict, and later identity loss
   },{ticketSelfHandlingEnabled:true});
 });
 
-test('malformed object denial is authoritative and the original 600px shell stays bounded',async()=>{
+test('malformed object denial is authoritative and the original 780px shell stays bounded',async()=>{
   await withWeb01Fixture(async context=>{
     await handlingBrowser(context,async(browser,capture)=>{
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await capture('new-detail-1920.png');
       await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");

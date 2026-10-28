@@ -209,6 +209,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | --- | --- | --- | --- | --- | --- |
 | S01 | GET | `/api/realtime/events` | W | 已实现：SSE text/event-stream | [实时](platform/realtime.md) |
 | A01 | GET | `/workbench/login` | W，员工auth挂载 | 已实现：302登录 | [认证](platform/auth-health.md) |
+| A01-D | GET | `/workbench/desktop` | W，员工auth挂载 | 固定PC扫码入口；已登录303，无会话沿原state/绑定登录后回PC | [认证](platform/auth-health.md) |
 | A02 | GET | `/workbench/callback` | 同上 | 已实现：code/state→303 | [认证](platform/auth-health.md) |
 | A03 | POST | `/workbench/logout` | 同上 | 已实现：JSON退出 | [认证](platform/auth-health.md) |
 | A04 | GET | `/wecom/yixiaoxiu/login` | O/M/W按profile | 已实现：302成员OAuth；显式 H5 支持白名单 return_to 与一次静默恢复，旧模式无 query | [认证](platform/auth-health.md) |
@@ -361,3 +362,10 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 
 可选 bound reply 复用 `POST /api/workbench/conversations/{sessionId}/messages` 和 `GET /api/workbench/conversations/{sessionId}/messages/commands/{commandId}`；仍202受理，全部必要原 Delivery可靠完成才解除原材料，既有无绑定合同不变。关闭新入口不阻断获权旧 bound Message 的只读核对；已应用062后必需binding表缺失返回503，冷旧宿主原路径兼容。无 Session 不造 Conversation。部署/真实外发仍未授权。
 
+
+## 工作台姓名与部门展示
+
+| 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| GET | /api/workbench/profile | W | 当前登录人员姓名、部门；只读、当前会话及角色终检 | [身份](platform/auth-health.md) |
+| GET | /api/workbench/items/{kind}/{id}/reporter-profile | W | 当前获权 H5 报修人展示资料；历史快照优先 | [H5资料](workbench/web-reports.md) |

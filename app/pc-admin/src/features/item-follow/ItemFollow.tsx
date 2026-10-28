@@ -1,3 +1,6 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
+import {Star} from 'lucide-react';
 import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import type {InfiniteData} from '@tanstack/react-query';
@@ -27,7 +30,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
  const identity=JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision,principal.expires_epoch_ms,principal.roles,principal.workbench_follow_enabled,principal.workbench_follow_draft_recovery_enabled,requested.kind,requested.id]);
  const latestIdentity=useRef(identity);latestIdentity.current=identity;
- const [pending,setPending]=useState<WorkbenchFollowCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[needsRead,setNeedsRead]=useState(false);
+ const [pending,setPending]=useState<WorkbenchFollowCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[needsRead,setNeedsRead]=useState(false);
  const [existing,setExisting]=useState(false),[probing,setProbing]=useState(true);
  const scope={principal:principal.principal_id,kind:requested.kind,id:requested.id,purpose:'item-follow'},attention=item.attention;
  const rawEnabled=principal.workbench_follow_enabled===true&&principal.workbench_follow_draft_recovery_enabled===true&&attention!==undefined;
@@ -145,11 +148,13 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  }
  if(!principal.workbench_follow_enabled&&!commandId&&!existing&&!pending)return null;
  const canStart=principal.workbench_follow_enabled&&attention!==undefined&&readReady&&!needsRead&&!blocked&&!probing&&draft.status!=='loading'&&draft.canSubmit&&Boolean(principal.csrf_token)&&workbenchTransportWritable();
- return <section className="ticket-notes" aria-label="个人关注">
-  {principal.workbench_follow_enabled&&attention?<div className="note-controls"><button type="button" data-action="toggle-item-follow" aria-pressed={attention.following} disabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}}>{attention.following?'取消关注':'关注此事项'}</button><span>个人关注不改变处理或沟通责任。</span></div>:null}
-  {commandId?<div className="note-controls"><button type="button" data-action="follow-ack" disabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}}>只读核对原操作</button>{pending&&principal.workbench_follow_enabled&&attention?<button type="button" data-action="follow-replay" disabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}}>明确重放原操作</button>:null}</div>:null}
-  {needsRead||state==='conflict'||state==='denied'?<button type="button" data-action="follow-refresh" disabled={busy} onClick={()=>{void refreshCurrent();}}>重新读取当前状态</button>:null}
-  {draft.enabled?<p role="status" data-follow-draft-status={draft.status}>{draft.message}</p>:null}
-  {message?<p className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</p>:null}
+ return <section className="compact-follow" aria-label="个人关注">
+  {principal.workbench_follow_enabled&&attention?<div className="note-controls"><HButton type="button" data-action="toggle-item-follow" className="icon-button" aria-label={attention.following?'取消关注':'关注此事项'} title={attention.following?'取消关注此事项':'关注此事项，接收后续动态'} aria-pressed={attention.following} isDisabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}} variant="secondary"><Star size={18} fill={attention.following?'currentColor':'none'}/></HButton><span className="follow-tooltip" role="tooltip">{attention.following?'已关注此事项':'关注此事项'}<small>接收后续动态；不改变处理或沟通责任。</small></span></div>:null}
+  <div className={state==='succeeded'&&!commandId&&!needsRead?'sr-only':'follow-feedback'} hidden={!commandId&&!needsRead&&draft.status!=='failed'&&!message}>
+  {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} variant="secondary">只读核对原操作</HButton>{pending&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}} variant="secondary">明确重放原操作</HButton>:null}</div>:null}
+  {needsRead||state==='conflict'||state==='denied'?<HButton type="button" data-action="follow-refresh" isDisabled={busy} onClick={()=>{void refreshCurrent();}} variant="secondary">重新读取当前状态</HButton>:null}
+  {draft.enabled&&draft.status==='failed'?<DraftStatus role="status" data-follow-draft-status={draft.status}>{draft.message}</DraftStatus>:null}
+  {message?<ToastFeedback revision={messageRevision} source="item-follow" state={state} className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
+  </div>
  </section>;
 }

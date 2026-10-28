@@ -21,7 +21,7 @@ interface OperationMeta {purpose:string;commandId:string;keys:string[]}
 interface Storage {drafts:DraftMeta[];operations:OperationMeta[]}
 interface CaseContext {fixture:T37Fixture;browser:Browser;directory:string;ticketId:string;ticketPath:string;schedulePath:string;stored:string;
   http:(index:number)=>Promise<T37Http>;recompose:(flags:{raw:boolean;view:boolean;notes?:boolean})=>Promise<void>}
-const drawer='dialog.detail-dialog[open]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]',purpose='shared-follow-up-schedule';
+const drawer='.detail-dialog[role=dialog]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]',purpose='shared-follow-up-schedule';
 const firstDue='2030-01-02 09:30:00',updatedDue='2030-01-02 10:00:00',noteCanary='T37_OTHER_PURPOSE_LOCAL_ONLY_CANARY';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
@@ -81,6 +81,7 @@ async function withBrowserCase(name:string,run:(context:CaseContext)=>Promise<vo
    const cookie=runtime.authenticate.browserCookies?.()[1];assert.ok(cookie);if(typeof cookie.url!=='string')throw Error('T37_BOUNDARY_COOKIE_REQUIRED');
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observeWireLoss(ticketPath,schedulePath)});await reload(browser);
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
    await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('草稿仅在当前浏览器')`);
    await run({fixture,browser,directory,ticketId,ticketPath,schedulePath,stored:storedTicket(fixture.handler,ticketId),http,recompose});
    const pixels=Buffer.from(await browser.screenshot(),'base64'),screenshotDirectory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(screenshotDirectory);const file=join(screenshotDirectory,'new-detail-1920.png');await writeFile(file,pixels);
@@ -95,7 +96,7 @@ async function withBrowserCase(name:string,run:(context:CaseContext)=>Promise<vo
 async function commitUnknown(context:CaseContext,due=firstDue,alreadyTyped=false):Promise<Write>{
  const {browser,schedulePath,ticketPath,directory}=context,handler=await context.http(1),before=await current(handler,ticketPath),schedule=await current(handler,schedulePath);
  if(!alreadyTyped)await browser.evaluate(typeDue(due));await browser.waitFor(button('设置共享时间','ready'));await browser.evaluate(button('设置共享时间','click'));
- await browser.waitFor(`globalThis.__t37BoundaryWrites.length===1&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('结果未知')`);
+ await browser.waitFor(`globalThis.__t37BoundaryWrites.length===1&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')`);
  const writes=await browser.evaluate('globalThis.__t37BoundaryWrites') as Write[],original=writes[0];assert.ok(original&&original.request);assert.equal(original.path,schedulePath);assert.equal(original.method,'POST');assert.equal(original.status,200);assert.match(text(original.request.client_command_id),uuid);
  assert.deepEqual(original.request,{client_command_id:original.request.client_command_id,expected_version:version(before.version),expected_schedule_version:text(schedule.schedule_version),reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:due});
  assert.equal(original.ifMatch,'"'+version(before.version)+'"');assert.equal(original.idempotencyKey,original.request.client_command_id);assert.equal(original.csrfPresent,true);assert.equal(original.body.ok,true);assert.equal(original.body.replayed,false);assert.equal(original.body.ticket_version,version(before.version)+1);
@@ -112,7 +113,7 @@ async function retainedOpaque(context:CaseContext,original:Write):Promise<Storag
 }
 async function acknowledge(context:CaseContext,original:Write){
  assert.ok(original.request);const expected=context.schedulePath+'/commands/'+text(original.request.client_command_id);
- await context.browser.evaluate(button('只读核对原操作','click'));await context.browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.textContent.includes('已核对原操作提交成功')&&!(${button('只读核对原操作')})`);
+ await context.browser.evaluate(button('只读核对原操作','click'));await context.browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${button('只读核对原操作')})`);
  const receipts=await context.browser.evaluate(`globalThis.__t37BoundaryReads.filter(value=>value.path.startsWith(${JSON.stringify(context.schedulePath+'/commands/')}))`) as Read[];assert.equal(receipts.length,1);const receipt=receipts[0];assert.ok(receipt);assert.equal(receipt.path,expected);assert.equal(receipt.status,200);assert.deepEqual(receipt.body,{ticket_id:context.ticketId,client_command_id:original.request.client_command_id,state:'COMMITTED',result:{...original.body,replayed:true}});
  await context.browser.waitFor(`(async()=>{const value=await (${context.stored});return !value.drafts.some(row=>row.purpose===${JSON.stringify(purpose)})&&!value.operations.some(row=>row.purpose===${JSON.stringify(purpose)});})()`);
  assert.deepEqual(await context.browser.evaluate('globalThis.__t37BoundaryWrites'),[]);return receipt;

@@ -1,3 +1,6 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,Input as HInput,Label as HLabel} from "@heroui/react";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -12,7 +15,7 @@ import './follow-up.css';
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown'|'invalid';
 export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
- const [input,setInput]=useState(''),[pending,setPending]=useState<SharedFollowUpCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
+ const [input,setInput]=useState(''),[pending,setPending]=useState<SharedFollowUpCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
  const [confirmedResult,setConfirmedResult]=useState<SharedFollowUpResult|null>(null),[confirmedCommandId,setConfirmedCommandId]=useState<string|null>(null);
  const key=['ticket-follow-up-schedule',principal.principal_id,ticketId] as const;
  const query=useQuery({queryKey:key,queryFn:({signal})=>followUpApi.view(ticketId,signal),enabled:principal.follow_up_schedules_enabled,retry:false});
@@ -135,18 +138,15 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   {principal.follow_up_schedules_enabled&&view?<>
    {query.isError||!factsConfirmed?<p role="status">以下为最近已确认资料，最新安排仍需重新读取。</p>:null}
    <p>{view.active?<><time>{view.active.due_at}</time>{view.active.is_due?' · 已到期，请跟进':' · 已安排'}</>:'尚无活动的共享时间'}</p>
-   {canSet?<form onSubmit={event=>{event.preventDefault();submit('SET');}}><label htmlFor={'follow-up-due-'+ticketId}>下次行动时间（北京时间）</label>
-    <input id={'follow-up-due-'+ticketId} name="due_at" type="text" maxLength={19} placeholder="YYYY-MM-DD HH:mm:ss" value={input} disabled={blocked} onChange={event=>setInput(event.target.value)}/>
-    <button type="submit" disabled={blocked||!draft.canSubmit||!readReady||!input.trim()||!principal.csrf_token||!workbenchTransportWritable()}>设置共享时间</button>
-   </form>:<p>当前仅可查看安排与历史。</p>}
-   {canCancel?<button type="button" disabled={blocked||!draft.canSubmit||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>submit('CANCEL')}>取消共享时间</button>:null}
+   {canSet?<HForm onSubmit={event=>{event.preventDefault();submit('SET');}}><HLabel htmlFor={'follow-up-due-'+ticketId}>下次行动时间（北京时间）</HLabel><HInput id={'follow-up-due-'+ticketId} name="due_at" type="text" maxLength={19} placeholder="YYYY-MM-DD HH:mm:ss" value={input} disabled={blocked} onChange={event=>setInput(event.target.value)}/><HButton type="submit" isDisabled={blocked||!draft.canSubmit||!readReady||!input.trim()||!principal.csrf_token||!workbenchTransportWritable()} variant="secondary">设置共享时间</HButton></HForm>:<p>当前仅可查看安排与历史。</p>}
+   {canCancel?<HButton type="button" isDisabled={blocked||!draft.canSubmit||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>submit('CANCEL')} variant="secondary">取消共享时间</HButton>:null}
    {view.history.length?<ol className="shared-follow-up-history">{view.history.map(entry=><li key={entry.ticket_event_id}>{entry.action==='SET'?'已设置':entry.action==='CANCEL'?'已取消':entry.end_reason==='CLOSED'?'关闭后结束':'取消工单后结束'}{entry.due_at?' · '+entry.due_at:''}<span>记录时间 {entry.occurred_at}</span></li>)}</ol>:null}
    {view.history_has_more?<p>显示最近20条记录，仍有更早历史。</p>:null}
   </>:null}
-  {commandId?<button type="button" disabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()}>只读核对原操作</button>:null}
-  {draft.enabled&&(draft.status!=='ready'||!commandId)?<p role="status">{draft.message}</p>:null}
-  {input&&!blocked?<button type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}}>清空未提交输入</button>:null}
-  {principal.follow_up_schedules_enabled&&!blocked?<button type="button" onClick={()=>{void query.refetch();}}>重新读取共享时间</button>:null}
-  {state!=='idle'?<p role={['unknown','denied','conflict','invalid'].includes(state)?'alert':'status'}>{message}</p>:null}
+  {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} variant="secondary">只读核对原操作</HButton>:null}
+  {draft.enabled&&(draft.status!=='ready'||!commandId)?<DraftStatus role="status">{draft.message}</DraftStatus>:null}
+  {input&&!blocked?<HButton type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}} variant="secondary">清空未提交输入</HButton>:null}
+  {principal.follow_up_schedules_enabled&&!blocked?<HButton type="button" onClick={()=>{void query.refetch();}} variant="secondary">重新读取共享时间</HButton>:null}
+  {state!=='idle'?<ToastFeedback revision={messageRevision} source="follow-up" state={state} role={['unknown','denied','conflict','invalid'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
  </section>;
 }

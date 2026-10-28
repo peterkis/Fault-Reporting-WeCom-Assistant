@@ -4,15 +4,12 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {appendReviewMaterial} from './helpers/wbint-t14-review-material.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
-interface Browser {
-  evaluate(expression:string):Promise<unknown>;waitFor(expression:string):Promise<unknown>;
-  command(method:string,params?:Record<string,unknown>):Promise<unknown>;
-  close():Promise<void>;ownedResourceState():{processes:number;profiles:number;commandTimers:number;sockets:number};
-}
+type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;cookies:string[];browserCookies:{name:string;value:string}[];pool:PostgresPool;principals:{id:string}[];processReviewIntake:(id:string)=>Promise<unknown>;tickets:{ticket:{id:string}}[]}
 async function reload(browser:Browser){const previous=await browser.evaluate('performance.timeOrigin');assert.equal(typeof previous,'number');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);}
-async function choose(browser:Browser,choice:string,reason:string){await browser.evaluate(`(()=>{const set=(label,value)=>{const input=document.querySelector('[aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论',${JSON.stringify(choice)});set('复核原因',${JSON.stringify(reason)});})()`);}
+async function choose(browser:Browser,choice:string,reason:string){await browser.evaluate(`(()=>{const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label="'+label+'"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论',${JSON.stringify(choice)});set('复核原因',${JSON.stringify(reason)});})()`);}
 const traceCommands="(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};})()";
 const draftCounts="new Promise(resolve=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.map(row=>({id:row.id,purpose:row.purpose})),operations:operations.result.map(row=>({id:row.id,commandId:row.commandId}))});};};})";
 
@@ -29,22 +26,24 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       assert.ok(launched);browser=launched;
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${first.ticket.id}"] a'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${first.ticket.id}"] a').click()`);
-      await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] .detail-heading h2'))");
+      await browser.waitFor("Boolean(document.querySelector('.detail-dialog .detail-heading h2'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the actual production Item must expose its Review workspace');
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('门诊二楼打印机')");
+      await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+      await browser.waitFor("document.querySelector('[data-review-workspace]')?.checkVisibility()===true");
       const reviewText=String(await browser.evaluate("document.querySelector('[data-review-workspace]').innerText"));
       for(const label of ['本次报修内容','复核结论'])assert.ok(reviewText.includes(label));
       assert.doesNotMatch(reviewText,/原 Decision|规则版本|[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}/iu,'operator copy must show business material without database identifiers');
-      await browser.evaluate("document.querySelector('.full-page-link').click()");
+      await browser.evaluate("document.querySelector('[aria-label=\"展开完整页面\"]').click()");
       await browser.waitFor("Boolean(document.querySelector('.detail-page [data-review-materials]'))");
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=document.documentElement.clientWidth'),true);
-      await browser.evaluate("(()=>{const set=(label,value)=>{const input=document.querySelector('[aria-label=\"'+label+'\"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
+      await browser.evaluate("(()=>{const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
       const storage=await browser.evaluate("new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,read=db.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{const row=read.result[0];db.close();resolve({kind:row.kind,id:row.id,purpose:row.purpose,ttl:row.expiresAt-row.firstSavedAt,extractable:row.key.extractable,plain:JSON.stringify(row).includes('BUSINESS_CONSULTATION_CONFIRMED')});};};})");
       assert.deepEqual(storage,{kind:'review',id:selected.id,purpose:'manual-review',ttl:86400000,extractable:false,plain:false});
       await reload(browser);
-      await browser.waitFor("document.querySelector('[aria-label=\"复核结论\"]')?.value==='CLASSIFY_BUSINESS_CONSULTATION'&&document.querySelector('[aria-label=\"复核原因\"]')?.value==='BUSINESS_CONSULTATION_CONFIRMED'");
+      await browser.waitFor("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select')?.value==='CLASSIFY_BUSINESS_CONSULTATION'&&document.querySelector('.workbench-select[data-field-label=\"复核原因\"] select')?.value==='BUSINESS_CONSULTATION_CONFIRMED'");
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-review-version]').textContent"),original.row_version);
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),original.material_basis.current_hash);
       await browser.evaluate("(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push({body:JSON.parse(options.body),ifMatch:options.headers['if-match'],idempotency:options.headers['idempotency-key']});return original(path,options);};document.querySelector('[data-action=submit-review]').click();})()");
@@ -73,7 +72,7 @@ test('T14 expired UNKNOWN keeps only its original opaque operation and checks a 
       const original=await browser.evaluate('globalThis.__t14Commands[0]') as {client_command_id:string};assert.ok(original.client_command_id);
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:traceCommands+";(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()"});await reload(browser);
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已过期')&&Boolean(document.querySelector('[data-action=check-review-receipt]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核结论\"]').value"),'');assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核原因\"]').value"),'');
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'');assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核原因\"] select').value"),'');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=reconcile-review]'))"),false);assert.equal(await browser.evaluate('globalThis.__t14Commands.length'),0);
       const copies=await browser.evaluate(draftCounts) as {drafts:unknown[];operations:{commandId:string}[]};assert.equal(copies.drafts.length,0);assert.equal(copies.operations.length,1);assert.equal(copies.operations[0]?.commandId,original.client_command_id);
       await browser.evaluate("document.querySelector('[data-action=check-review-receipt]').click()");await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已核对原操作结果')");
@@ -119,12 +118,12 @@ test('T14 real source revision preserves edited input and explicitly selects a n
       const originalBasis=await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')");
       await appendReviewMaterial(pool,selected.intake_id,'后来咨询补充 <img src=x onerror="globalThis.__t14MarkupExecuted=true">');await processReviewIntake(selected.intake_id);
       await browser.evaluate("document.querySelector('[data-action=refresh-review]').click()");await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('后来咨询补充')");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核结论\"]').value"),'CLASSIFY_BUSINESS_CONSULTATION');assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),originalBasis);
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'CLASSIFY_BUSINESS_CONSULTATION');assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),originalBasis);
       assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-review]').disabled"),true);assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-materials] img'))||globalThis.__t14MarkupExecuted===true"),false);
-      await reload(browser);await browser.waitFor("document.querySelector('[aria-label=\"复核结论\"]')?.value==='CLASSIFY_BUSINESS_CONSULTATION'");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"选择复核项\"]').value"),selected.id);
+      await reload(browser);await browser.waitFor("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select')?.value==='CLASSIFY_BUSINESS_CONSULTATION'");
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"选择复核项\"] select').value"),selected.id);
       const refs=await(await get('/api/workbench/items/review/'+selected.id)).json() as {review_refs:{id:string}[]};const next=refs.review_refs.find(ref=>ref.id!==selected.id);assert.ok(next);
-      await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="选择复核项"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(next.id)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      await browser.evaluate(`(()=>{const input=document.querySelector('.workbench-select[data-field-label="选择复核项"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(next.id)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       await browser.waitFor(`Boolean(document.querySelector('[data-review-id="${next.id}"] [data-review-draft-status]'))`);await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-review]').disabled"),false);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已记录人工结论')");
       assert.equal((await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count,13);
@@ -141,7 +140,7 @@ test('T14 linked Review UNKNOWN survives refresh without replacing its captured 
     try{
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-      await browser.evaluate("(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};const set=(label,value)=>{const input=document.querySelector('[aria-label=\"'+label+'\"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
+      await browser.evaluate("(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
       await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
       await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')");
@@ -152,14 +151,14 @@ test('T14 linked Review UNKNOWN survives refresh without replacing its captured 
       await browser.waitFor("Boolean(document.querySelector('.detail-page .detail-heading h2'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the committed associated Review must still locate its original UNKNOWN recovery scope');
       await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')&&Boolean(document.querySelector('[data-action=reconcile-review]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核结论\"]').value"),'CLASSIFY_BUSINESS_CONSULTATION');
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核原因\"]').value"),'BUSINESS_CONSULTATION_CONFIRMED');
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'CLASSIFY_BUSINESS_CONSULTATION');
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核原因\"] select').value"),'BUSINESS_CONSULTATION_CONFIRMED');
       assert.equal(await browser.evaluate('globalThis.__t14Commands.length'),0);
       restoreReviewResponses();
       await browser.evaluate("document.querySelector('[data-action=reconcile-review]').click()");
       await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已记录人工结论')");
       assert.deepEqual(await browser.evaluate('globalThis.__t14Commands'),[original]);
-      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"复核结论\"]').value"),'');
+      assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'');
     }catch(failure){error=failure;try{console.log('T14_UNKNOWN_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t14Commands})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,malformedReviewSuccess:true});

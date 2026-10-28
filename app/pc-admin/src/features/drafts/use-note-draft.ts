@@ -170,8 +170,13 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){
-      if(!enabled||!handle.current)return;cancelTimer();cancelAuthority();generation.current++;
-      try{await removeSensitiveDraft(handle.current,'discard');}
+      if(!enabled||!handle.current)return;cancelTimer();cancelAuthority();const token=++generation.current,target=handle.current;
+      // An encryption already in flight can still commit its revision. Remove
+      // that final local revision after the save settles, without touching a
+      // newer copy written by another tab.
+      const task=queue.current.catch(()=>{}).then(async()=>{if(generation.current!==token||handle.current!==target)return;await removeSensitiveDraft(target,'discard');});
+      queue.current=task;
+      try{await task;}
       catch{setStatus('failed');setMessage('恢复副本清理失败；请保留当前输入。');}
     },
     async prepare(command:C){

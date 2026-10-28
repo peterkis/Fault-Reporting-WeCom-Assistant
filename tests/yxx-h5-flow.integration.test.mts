@@ -2,8 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {request as httpRequest} from 'node:http';
 import type {IncomingHttpHeaders} from 'node:http';
-import {randomBytes,randomUUID} from 'node:crypto';
-import {mkdtemp,readFile,readdir,rm,stat} from 'node:fs/promises';
+import {randomBytes,randomUUID,createHash} from 'node:crypto';
+import {mkdtemp,readFile,readdir,rm,stat,mkdir,writeFile} from 'node:fs/promises';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
 import {dirname,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
@@ -27,6 +29,7 @@ import {migrateTicketStaffCompletion} from '../app/server/scripts/ticket-staff-c
 import {migrateTicketRoundNotifications} from '../app/server/scripts/ticket-round-notifications-migrate.mjs';
 import {migrateTicketReopenRounds} from '../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
 import {migrateMvpNotifications} from '../app/server/scripts/mvp-notifications-migrate.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 const ORIGIN='https://127.0.0.1';
 const ACCEPT='application/vnd.yixiaoxiu.v2+json';
@@ -34,8 +37,8 @@ const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4n
 function record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
 function array(value:unknown):unknown[]{assert.ok(Array.isArray(value));return value;}
-function wave(){
-  const samples=1600,data=Buffer.alloc(samples*2),header=Buffer.alloc(44);
+function wave(samples=1600){
+  const data=Buffer.alloc(samples*2),header=Buffer.alloc(44);
   for(let i=0;i<samples;i++)data.writeInt16LE(Math.round(Math.sin(i*2*Math.PI*440/16000)*2000),i*2);
   header.write('RIFF',0);header.writeUInt32LE(36+data.length,4);header.write('WAVEfmt ',8);header.writeUInt32LE(16,16);header.writeUInt16LE(1,20);header.writeUInt16LE(1,22);header.writeUInt32LE(16000,24);header.writeUInt32LE(32000,28);header.writeUInt16LE(2,32);header.writeUInt16LE(16,34);header.write('data',36);header.writeUInt32LE(data.length,40);
   return Buffer.concat([header,data]);
@@ -72,6 +75,46 @@ function client(base:string,initialCookie?:{name:string;value:string}) {
     const callback=await send('/wecom/yixiaoxiu/callback?code='+encodeURIComponent(code)+'&state='+encodeURIComponent(state));assert.equal(callback.status,303,JSON.stringify(callback.body));
     const bootstrap=await send('/api/yixiaoxiu/bootstrap');assert.equal(bootstrap.status,200,JSON.stringify(bootstrap.body));return bootstrap.body;
   }};
+}
+
+async function verifyDetailMedia(origin:string,ticketId:string,cookie:{name:string;value:string},ready:()=>Promise<void>,voiceRef:string,originalVideo:Buffer,emptyTicketId:string){
+  const directory=join(tmpdir(),'workbench-detail-media-'+randomUUID()),downloads=join(directory,'downloads');await mkdir(downloads,{recursive:true});let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+  try{
+    browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticketId+'?detail=page',width:1280,height:900,cookies:[{name:cookie.name,value:cookie.value,url:origin+'/'}]});assert.ok(browser);
+    await browser.command('Page.enable');await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
+    await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__mediaUrls=new Set();const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);URL.createObjectURL=blob=>{const url=create(blob);globalThis.__mediaUrls.add(url);return url;};URL.revokeObjectURL=url=>{globalThis.__mediaUrls.delete(url);revoke(url);};globalThis.__mediaReads=[];globalThis.__metadataFailure=location.pathname.endsWith("+JSON.stringify(ticketId)+");const original=fetch;globalThis.fetch=async(url,options)=>{if(String(url).includes('/web-report/media/'))globalThis.__mediaReads.push(String(url));const response=await original(url,options);if(globalThis.__metadataFailure&&String(url).endsWith('/attachments')){globalThis.__metadataFailure=false;await response.arrayBuffer();return new Response(JSON.stringify({error:{code:'TEMPORARY_TEST_READ_FAILURE',retryable:true}}),{status:503,headers:{'content-type':'application/json'}});}return response;};})()"});
+    await browser.command('Page.reload');await browser.waitFor("document.querySelectorAll('.detail-media-card').length===2&&document.querySelector('.detail-voice')!==null");
+    const active=browser,click=async(selector:string)=>{await active.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'})`);const box=await active.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`) as {x:number;y:number};for(const type of ['mousePressed','mouseReleased'])await active.command('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...box});};
+    await click('.detail-media-card:has(.media-video-play)');await browser.waitFor("document.querySelector('.detail-media-dialog')?.open===true&&document.querySelector('.detail-media-dialog')?.textContent.includes('暂无可预览副本')");
+    await click('.media-download');await browser.waitFor("document.querySelector('.detail-media-dialog')?.textContent.includes('已交给浏览器下载')");
+    let downloaded:Buffer|undefined;const deadline=Date.now()+5000;while(Date.now()<deadline){try{downloaded=await readFile(join(downloads,'report-material.mp4'));break;}catch{await new Promise(resolve=>setTimeout(resolve,25));}}
+    assert.deepEqual(downloaded,originalVideo,'pending video keeps its exact original download available');
+    await click('[aria-label="关闭附件预览"]');await ready();
+    await browser.waitFor("document.querySelector('.detail-media-card:not(:has(.media-video-play)) img')?.naturalWidth>0&&document.querySelector('.media-retry')?.disabled===false");
+    const imageBefore=await browser.evaluate("document.querySelector('.detail-media-card:not(:has(.media-video-play)) img').src");
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('.media-refresh'))||document.body.innerText.includes('网页报修资料')"),false);
+    assert.equal(await browser.evaluate("document.querySelectorAll('.report-materials').length"),1);
+    await click('.media-retry');
+    assert.equal(await browser.evaluate("document.querySelector('.detail-media-card:not(:has(.media-video-play)) img').src"),imageBefore,'refresh retains the already displayed image URL');
+    await browser.waitFor("[...document.querySelectorAll('.detail-media-card img')].filter(img=>img.naturalWidth>0).length===2");
+    assert.equal(await browser.evaluate(`globalThis.__mediaReads.some(url=>url.includes(${JSON.stringify(voiceRef)}))`),false,'voice is not fetched before user playback');
+    await click('.voice-play');await browser.waitFor("document.querySelector('.detail-voice audio')?.paused===false&&document.querySelector('.detail-voice audio')?.currentTime>0");
+    await click('.voice-play');assert.equal(await browser.evaluate("document.querySelector('.detail-voice audio').paused"),true);
+    await browser.evaluate("(()=>{const input=document.querySelector('.voice-progress');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'2.5');input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await browser.waitFor("document.querySelector('.detail-voice audio').currentTime>=2.4&&document.querySelector('[aria-label=\"语音剩余时长\"]').textContent==='00:02'");
+    await click('.detail-media-card:has(.media-video-play)');await browser.waitFor("document.querySelector('.detail-media-dialog')?.open===true&&document.querySelector('.detail-media-dialog video')?.readyState>=2");
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-voice audio'))"),false,'opening video releases the former voice source');
+    await click('[aria-label="关闭附件预览"]');await browser.waitFor("document.querySelector('.detail-media-dialog')?.open===false");
+    await click('.detail-media-card:not(:has(.media-video-play))');await browser.waitFor("document.querySelector('.detail-media-dialog img')?.naturalWidth>0");
+    await click('[aria-label="关闭附件预览"]');
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
+    assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+    const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'detail-media-390.png');await writeFile(file,pixels);
+    await click('[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('#detail-title')&&globalThis.__mediaUrls.size===0");
+    await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+emptyTicketId+'?detail=page'});await browser.waitFor("document.querySelector('.media-empty')?.textContent.includes('没有可读取的已保存附件')");assert.equal(await browser.evaluate("document.querySelector('.detail-attachments').textContent.includes('存储暂不可用')"),false,'a valid empty H5 report does not inherit the disabled legacy store warning');
+    console.log('WORKBENCH_DETAIL_MEDIA '+JSON.stringify({pending_original_download:true,image_preview:true,video_preview:true,voice_play_pause_seek_countdown:true,voice_lazy:true,blob_urls_after_close:0,screenshots:[{file,sha256:createHash('sha256').update(pixels).digest('hex')}]}));
+  }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href,mediaReads:globalThis.__mediaReads})')));}}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }
 
 test('H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID',{timeout:240000},async()=>{
@@ -182,6 +225,19 @@ test('H5 real HTTP, Core, media Worker and current workbench READ share one isol
       assert.equal((await staff.get(staffPath)).status,200);assert.equal((await foreignStaff.get(staffPath)).status,404);
       const staffOriginal=await staff.get(staffPath+'/media/'+mediaRef+'?variant=ORIGINAL');assert.equal(staffOriginal.status,200,JSON.stringify(staffOriginal.body));assert.deepEqual(staffOriginal.bytes,voiceBytes);
       const staffPlayable=await staff.get(staffPath+'/media/'+mediaRef);assert.equal(staffPlayable.status,200,JSON.stringify(staffPlayable.body));assert.deepEqual(staffPlayable.bytes,playback.bytes);
+      // Exercise the production detail with actual encrypted image, voice and video sources.
+      const videoFile=join(root,'synthetic-detail.mp4');
+      await promisify(execFile)(ffmpegPath,['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=320x180:rate=10','-t','2','-an','-c:v','libx264','-threads','1','-pix_fmt','yuv420p',videoFile],{timeout:20_000,windowsHide:true});
+      const galleryRefs:string[]=[];
+      for(const material of [{kind:'IMAGE',mime:'image/png',bytes:PNG,duration:null},{kind:'VOICE',mime:'audio/wav',bytes:wave(64000),duration:4000},{kind:'VIDEO',mime:'video/mp4',bytes:await readFile(videoFile),duration:2000}]){
+        const reserved=await a.post('/api/yixiaoxiu/media/uploads',{schema_version:1,client_command_id:randomUUID(),kind:material.kind,mime_type:material.mime,byte_size:material.bytes.length,duration_ms:material.duration});assert.equal(reserved.status,201,JSON.stringify(reserved.body));
+        const ref=string(reserved.body.media_ref),uploaded=await a.send('/api/yixiaoxiu/media/uploads/'+ref+'/content',{method:'PUT',commandId:randomUUID(),contentType:material.mime,body:material.bytes});assert.equal(uploaded.status,200,JSON.stringify(uploaded.body));galleryRefs.push(ref);
+      }
+      const gallery=await a.post('/api/yixiaoxiu/requests',{schema_version:2,client_command_id:randomUUID(),intent:'FAULT',description:'合成详情媒体检查：图片、语音和视频来自同一报修。',location:{text:'合成门诊 203',unknown:false},media_refs:galleryRefs});assert.equal(gallery.status,202,JSON.stringify(gallery.body));
+      const galleryRequest=string(record(gallery.body.receipt).request_ref);
+      await worker.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},now_epoch_ms:String(Date.now()+15000),batch_size:5});
+      const galleryTicket=(await pool.query<{id:string}>('SELECT t.id::text FROM pilot_ticket.ticket t JOIN intake.web_request_binding b ON b.intake_id=t.source_intake_id WHERE b.request_ref=$1',[galleryRequest])).rows[0];assert.ok(galleryTicket);
+      const emptyTicket=tickets.rows.find(row=>row.request_ref===contactRef);assert.ok(emptyTicket&&galleryRefs[1]);await verifyDetailMedia(base,galleryTicket.id,staffCookies[0],async()=>{await mediaWorker.runOnce();await mediaWorker.runOnce();},galleryRefs[1],await readFile(videoFile),emptyTicket.id);
       await access.upsertPrincipal({wecomUserId:'h5-flow-outsider',displayName:'合成跨层越权人员',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       assert.equal((await foreignStaff.get(staffPath)).status,200,'READ is evaluated against the current granted team');
       await access.upsertPrincipal({wecomUserId:'h5-flow-outsider',displayName:'合成跨层越权人员',roles:['HANDLER'],resolverTeamIds:[]});
@@ -193,6 +249,9 @@ test('H5 real HTTP, Core, media Worker and current workbench READ share one isol
       assert.equal(record((await staff.get(staffPath)).body.urge).active,true);
       const urgeReceipt=await a.get('/api/yixiaoxiu/requests/'+requestRef+'/member-commands/'+urge.client_command_id+'?purpose=URGE');assert.equal(urgeReceipt.status,200);assert.equal(urgeReceipt.body.state,'COMMITTED');
       assert.equal((await pool.query('SELECT version FROM pilot_ticket.ticket WHERE id=$1::uuid',[ticket.id])).rows[0]?.version,ticket.version);
+      const originalReportTime=(await staff.get('/api/workbench/items/ticket/'+ticket.id)).body.reported_at;assert.equal(typeof originalReportTime,'string');
+      const supplemented=await a.post('/api/yixiaoxiu/requests/'+requestRef+'/supplements',{schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'实际合成补充材料：首次收到报修的时间应保持不变。'});assert.equal(supplemented.status,202,JSON.stringify(supplemented.body));
+      const supplementedDetail=await staff.get('/api/workbench/items/ticket/'+ticket.id);assert.equal(supplementedDetail.status,200);assert.equal(supplementedDetail.body.reported_at,originalReportTime);
       memberUnavailable=true;assert.equal((await a.get('/api/yixiaoxiu/bootstrap')).status,503,'Provider outage must not become revocation');memberUnavailable=false;
       assert.equal((await a.get('/api/yixiaoxiu/bootstrap')).status,200);visible.delete('h5-open-a');assert.equal((await a.get('/api/yixiaoxiu/requests/'+requestRef)).status,403);
       assert.equal((await pool.query<{n:number}>('SELECT count(*)::integer AS n FROM channel.message_inbox')).rows[0]?.n,0);assert.equal((await pool.query<{n:number}>('SELECT count(*)::integer AS n FROM conversation.session')).rows[0]?.n,0);

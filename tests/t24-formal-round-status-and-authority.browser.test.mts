@@ -14,7 +14,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Reply={items:{delivery_id:string;node:string;cycle_no:number;destination_type:string;status:string;attempt_count:number;side_effect_state:string;sent_at:string|null}[]};
 type Read={path:string;status:number;body:Reply};
-const region='[role="region"][aria-label="报修人通知送达"]';
+const region='[role="region"][aria-label="报修人通知"]';
 const instrument=`(()=>{const original=globalThis.fetch;globalThis.__t24PCReads=[];globalThis.__t24PCWrites=[];globalThis.__t24PCBootstrap=[];
   globalThis.fetch=async(input,options)=>{const path=new URL(typeof input==='string'?input:input.url,location.href).pathname;
     const method=(options?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
@@ -23,8 +23,8 @@ const instrument=`(()=>{const original=globalThis.fetch;globalThis.__t24PCReads=
     if(method==='GET'&&path.endsWith('/deliveries'))globalThis.__t24PCReads.push({path,status:response.status,body:await response.clone().json()});
     if(method==='GET'&&path==='/api/lifecycle/bootstrap')globalThis.__t24PCBootstrap.push({status:response.status,body:await response.clone().json()});
     return response;};})()`;
-const render=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return r?.innerText.includes('首次责任')&&r.innerText.includes('工作人员完工')&&(r.innerText.match(/待发送/g)??[]).length===2;})()`;
-const click=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)}),b=[...r.querySelectorAll('button')].find(x=>x.textContent.trim()==='重新读取通知');if(!b)throw Error('T24_REAL_REQUERY_BUTTON_REQUIRED');b.click();})()`;
+const render=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return r?.innerText.includes('首次责任')&&r.innerText.includes('完工通知')&&(r.innerText.match(/待发送/g)??[]).length===2;})()`;
+const click=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)}),b=[...r.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='刷新通知状态');if(!b)throw Error('T24_REAL_REQUERY_BUTTON_REQUIRED');b.click();})()`;
 async function load(browser:Browser){
   await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});
   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
@@ -69,14 +69,13 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
     try{
       browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+id,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       await load(browser);
-        await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)})?.querySelector('li'))`);
-        assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('details').open`),false,'notification diagnostics start folded');
-        await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('summary').click()`);
-        await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('li')?.checkVisibility()===true`);
+        await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)})?.querySelector('.notification-delivery'))`);
+        assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(region)}).querySelector('.workbench-disclosure-trigger'))`),false,'round notifications remain visible without an extra disclosure action');
+        await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('.notification-delivery')?.checkVisibility()===true`);
         await browser.waitFor(render());
       const visible=await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).innerText`) as string;
-      assert.equal(visible.includes('处理轮次 1'),true);assert.equal(visible.includes('原报修人单聊'),true);assert.equal(visible.includes('尝试次数 0'),true);assert.equal(visible.includes('尚未尝试'),true);
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelectorAll('li').length`),2);
+      assert.equal(visible.includes('处理轮次 1'),true);assert.equal(visible.includes('原报修人单聊'),true);assert.equal(visible.includes('0 次尝试'),true);assert.equal(visible.includes('尚未尝试'),true);
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelectorAll('.notification-delivery').length`),2);
       assert.equal(await browser.evaluate('globalThis.__t24PCBootstrap.at(-1).body.ticket_round_notifications_enabled'),true);
       const reads=await browser.evaluate('globalThis.__t24PCReads') as Read[];assert.ok(reads.length);assert.equal(reads.at(-1)?.path,path);assert.equal(reads.at(-1)?.status,200);
       assert.deepEqual(reads.at(-1)?.body.items.map(x=>x.delivery_id).sort(),actual.items.map(x=>x.delivery_id).sort());
@@ -90,7 +89,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
       const updated=await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['HANDLER'],resolverTeamIds:[]});assert.equal(updated.id,readerId);
       const count=await browser.evaluate('globalThis.__t24PCReads.length') as number;await browser.evaluate(click());
       await browser.waitFor(`globalThis.__t24PCReads.length>${count}&&[401,403,404].includes(globalThis.__t24PCReads.at(-1).status)`);
-      await browser.waitFor(`!document.querySelector(${JSON.stringify(region)})?.querySelector('li')`);
+      await browser.waitFor(`!document.querySelector(${JSON.stringify(region)})?.querySelector('.notification-delivery')`);
       const rejected=await browser.evaluate('globalThis.__t24PCReads.at(-1)') as {path:string;status:number};assert.equal(rejected.path,path);assert.ok([401,403,404].includes(rejected.status));
       const negative=await receiptScreenshot(browser);
       assert.deepEqual(await browser.evaluate('globalThis.__t24PCWrites'),[]);assert.deepEqual(await physical(),baseline);

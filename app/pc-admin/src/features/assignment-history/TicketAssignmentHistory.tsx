@@ -1,3 +1,4 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
 import {useEffect} from 'react';
 import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
@@ -25,7 +26,7 @@ export function TicketAssignmentHistory({ticketId,principal}:{ticketId:string;pr
     {row.communication.length?<ul aria-label="实际沟通交接">{row.communication.map(control=><li key={control.control_event_id}><span><small>沟通交接：{label(control.previous)} → {label(control.next)}</small><small>操作者 {label(control.actor)} · {control.occurred_at}（北京时间）</small></span></li>)}</ul>:<small>当前获权范围没有可返回的沟通交接记录。</small>}
    </span></li>)}</ul>}
   </>}
-  {query.hasNextPage&&!query.isError?<button type="button" disabled={query.isFetching} onClick={()=>{void query.fetchNextPage();}}>加载后续记录</button>:null}
-  <button type="button" disabled={query.isFetching} onClick={()=>{void reload();}}>重新读取接单链</button>
+  {query.hasNextPage&&!query.isError?<HButton type="button" isDisabled={query.isFetchingNextPage} onClick={()=>{void query.fetchNextPage({cancelRefetch:false});}} variant="secondary">加载后续记录</HButton>:null}
+  <HButton type="button" isDisabled={query.isPending} onClick={()=>{void reload();}} variant="secondary">重新读取接单链</HButton>
  </section>;
 }

@@ -29,12 +29,77 @@ import {createThirdPartyStaffDirectoryAdapter} from '../app/server/src/p2-007-th
 import {applicationRecipientProof} from '../app/server/src/yxx-application-member-auth.mjs';
 import {migrateWorkbenchFollowUpSchedules} from '../app/server/scripts/workbench-follow-up-schedules-migrate.mjs';
 import {migrateWorkbenchFollowUpDueSignals} from '../app/server/scripts/workbench-follow-up-due-migrate.mjs';
+import {createWorkbenchWebReport} from '../app/server/src/workbench-web-report.mjs';
+import {createWeb01WorkbenchQuery} from '../app/server/src/web01-workbench-query.mjs';
+import {migrateTicketReporterProfiles} from '../app/server/scripts/ticket-reporter-profiles-migrate.mjs';
+import {createTicketReporterProfileWorker,readTicketReporterProfiles} from '../app/server/src/ticket-reporter-profiles.mjs';
+import {createWorkbenchReporterDirectory} from '../app/server/src/workbench-reporter-directory.mjs';
 
 const secret='h5-v2-isolated-synthetic-secret-at-least-32-bytes';
 const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
 function scope():YxxMemberScope{return {scopeHash:createHash('sha256').update(randomUUID()).digest('hex') as YxxMemberScope['scopeHash'],sourceCorpScope:'h5-synthetic-corp',sourceAppScope:'h5-synthetic-app',proofRef:'tests/yxx-h5-v2'};}
 const request=(description:string|null=null)=>({schema_version:2,client_command_id:randomUUID(),intent:'FAULT',description,location:{text:null,unknown:true},media_refs:[randomUUID()]});
 const auth=(s:YxxMemberScope)=>({profile:'MEMBER_SELF_SERVICE',flags,write_flag:true,csrf_token:'h5-synthetic-csrf',canonical_reporter_binding:s.scopeHash,source_corp_scope:s.sourceCorpScope,source_app_scope:s.sourceAppScope,proof_ref:s.proofRef});
+
+test('H5 signed reporter material survives source expiry and closed Ticket aging without changing the original snapshot',{timeout:240000},async()=>{
+ await withT24Fixture(async f=>{
+  await f.pool.query(await readFile(sourceFile('database/migrations/064_yixiaoxiu_h5_member_service.sql'),'utf8'));
+  await migrateTicketReporterProfiles({databaseUrl:f.databaseUrl,expectedDatabase:new URL(f.databaseUrl).pathname.slice(1),mode:'apply'});
+  const s=scope(),memberId='persistent-h5-member',store=createYxxSelfServiceStore({pool:f.pool,scopeSecret:secret,h5Enabled:true});
+  const accepted=await store.accept({scope:s,input:{...request('永久保存合成H5报修'),media_refs:[]},notificationRecipient:{namespace:'APP_OPEN_USERID',member_id:memberId,proof_ref:applicationRecipientProof(secret,s,memberId),verified_epoch_ms:String(Date.now())}});
+  await createYxxSelfServiceOrchestrator({pool:f.pool,profile:'MEMBER_SELF_SERVICE',featureFlags:flags,ruleEngine:{evaluate(){throw Error('NO_RULES_FOR_EXPLICIT_H5');}}}).processOne({requestRef:accepted.receipt.request_ref});
+  const ticket=(await f.pool.query<{id:string;intake_id:string}>('SELECT t.id::text,t.source_intake_id::text AS intake_id FROM pilot_ticket.ticket t JOIN intake.web_request_binding b ON b.intake_id=t.source_intake_id WHERE b.request_ref=$1',[accepted.receipt.request_ref])).rows[0];assert.ok(ticket);
+  const original=(await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1',[ticket.intake_id])).rows[0];
+  const future=Date.UTC(2046,0,1);
+  await f.pool.query(`CREATE OR REPLACE FUNCTION platform.physical_epoch_ms() RETURNS bigint LANGUAGE sql VOLATILE AS 'SELECT ${future}::bigint'`);
+  await f.pool.query(`CREATE OR REPLACE FUNCTION platform.local_now() RETURNS timestamp without time zone LANGUAGE sql STABLE AS 'SELECT platform.local_from_epoch_ms(${future}::bigint)'`);
+  const applicationScope={corpId:s.sourceCorpScope,agentId:s.sourceAppScope,scopeSecret:secret};let calls=0;
+  const directory=createWorkbenchReporterDirectory({botId:'different-bot',identityHmacKey:'isolated-h5-profile-identity-key',applicationScope,accessTokenProvider:async()=> 'synthetic-token',fetchImpl:async(input)=>{
+   const url=new URL(input instanceof Request?input.url:String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');calls++;
+   if(url.pathname==='/cgi-bin/user/get'){assert.equal(url.searchParams.get('userid'),memberId);return Response.json({errcode:0,userid:memberId,status:1,enable:1,name:'永久H5合成报修人',department:[7]});}
+   assert.equal(url.pathname,'/cgi-bin/department/get');return Response.json({errcode:0,department:{id:7,name:'永久H5合成科室'}});
+  }});
+  assert.equal((await directory.resolve({source_provider:'YIXIAOXIU_WEB',source_namespace:'APP_OPEN_USERID',reporter_external_id:memberId,reporter_identity_hash:s.scopeHash,source_corp_scope:s.sourceCorpScope,source_app_scope:s.sourceAppScope,recipient_proof:'wrong-proof'})).status,'NOT_FOUND');assert.equal(calls,0);
+  const profiles=createTicketReporterProfileWorker({pool:f.pool,enabled:true,botId:'different-bot',identityHmacKey:'isolated-h5-profile-identity-key',directoryPort:directory,applicationScope});
+  await profiles.runOnce();assert.equal(calls,2);
+  const retained=(await readTicketReporterProfiles(f.pool,[ticket.id])).get(ticket.id);assert.equal(retained?.name,'永久H5合成报修人');assert.equal(retained?.department,'永久H5合成科室');assert.equal(retained?.source,'LATER_LOOKUP');
+  assert.deepEqual((await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1',[ticket.intake_id])).rows[0],original);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='CLOSED' WHERE id=$1",[ticket.id]);
+  await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1',[ticket.intake_id]);
+  await profiles.runOnce();assert.equal(calls,2);
+  const query=createWeb01WorkbenchQuery({pool:f.pool,query:f.runtime.query,reporterProfilesEnabled:true}),authContext={principal_id:f.principals[0]?.id??'',auth_method:'COOKIE' as const,expires_epoch_ms:String(future+600000)};
+  const detail=await query.detail({authContext,kind:'ticket',id:ticket.id,cursor:null,limit:10});
+  assert.equal(detail.item.reporter_name,'永久H5合成报修人');assert.equal(detail.item.reporter_department,'永久H5合成科室');assert.equal(detail.item.source,'PORTAL');assert.equal(detail.description,null,'expired source body is not restored with the necessary contact fields');
+  const reports=createWorkbenchWebReport({pool:f.pool,query,ticketQuery:f.runtime.query,enabled:true,localTestProfile:true});
+  try{assert.deepEqual(await reports.readReporterProfile(authContext,'ticket',ticket.id),{name:'永久H5合成报修人',department:'永久H5合成科室',source:'RETAINED_PROFILE'});}finally{await reports.close();}
+ },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
+});
+
+test('H5 workbench reporter display uses signed source identity and rechecks READ after profile lookup',{timeout:240000},async()=>{
+ await withT24Fixture(async f=>{
+  await f.pool.query(await readFile(sourceFile('database/migrations/064_yixiaoxiu_h5_member_service.sql'),'utf8'));
+  const s=scope(),memberId='synthetic-reporter',store=createYxxSelfServiceStore({pool:f.pool,scopeSecret:secret,h5Enabled:true});
+  const accepted=await store.accept({scope:s,input:{...request('合成资料展示'),media_refs:[]},notificationRecipient:{namespace:'APP_OPEN_USERID',member_id:memberId,proof_ref:applicationRecipientProof(secret,s,memberId),verified_epoch_ms:String(Date.now())}});
+  const binding=(await f.pool.query<{id:string}>('SELECT intake_id::text AS id FROM intake.web_request_binding WHERE request_ref=$1',[accepted.receipt.request_ref])).rows[0];assert.ok(binding);
+  const query=createWeb01WorkbenchQuery({pool:f.pool,query:f.runtime.query});
+  const staff={principal_id:f.principals[0]?.id??'',auth_method:'COOKIE' as const,expires_epoch_ms:String(Date.now()+600000)};
+  let calls=0,revoke=false;
+  const reporterProfile={secret,corpId:s.sourceCorpScope,agentId:s.sourceAppScope,read:async(id:string)=>{
+   calls++;assert.equal(id,memberId);if(revoke)await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1::uuid',[binding.id]);
+   return {openUserId:id,displayName:'合成李护士',departmentName:'合成内科',checkedEpochMs:String(Date.now())};
+  }};
+  const reports=createWorkbenchWebReport({pool:f.pool,query,ticketQuery:f.runtime.query,enabled:true,localTestProfile:true,reporterProfile});
+  try{
+   const before=(await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[binding.id])).rows;
+   assert.deepEqual(await reports.readReporterProfile(staff,'intake',binding.id),{name:'合成李护士',department:'合成内科',source:'CURRENT_PROFILE'});
+   assert.equal(calls,1);assert.deepEqual((await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[binding.id])).rows,before);
+   reporterProfile.secret='different-synthetic-configuration-secret';
+   assert.deepEqual(await reports.readReporterProfile(staff,'intake',binding.id),{name:null,department:null,source:'UNAVAILABLE'});assert.equal(calls,1);
+   reporterProfile.secret=secret;
+   revoke=true;await assert.rejects(reports.readReporterProfile(staff,'intake',binding.id),{status:404});
+  }finally{await reports.close();}
+ },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
+});
 
 test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public progress and department privacy',{timeout:240000},async()=>{
   assert.ok(process.env.PILOT_DATABASE_URL,'PILOT_DATABASE_URL is required; H5 integration is not a synthetic mock result');
@@ -163,6 +228,9 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     try{
       assert.deepEqual(await enricher.runOnce(),{claimed:1,resolved:1,deferred:0});assert.equal((await profile.resolve(d)).profile.name,'合成同事乙');
       const saved=(await f.pool.query<{profile_resolution_status:string;profile_snapshot:{contact:{name:string}}}>(`SELECT j.profile_resolution_status,j.profile_snapshot FROM intake.contact_journey j JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`,[boundD.receipt.request_ref])).rows[0];assert.equal(saved?.profile_resolution_status,'RESOLVED');assert.equal(saved?.profile_snapshot.contact.name,'合成同事乙');
+      const sourceIntake=(await f.pool.query<{id:string}>('SELECT intake_id::text AS id FROM intake.web_request_binding WHERE request_ref=$1',[boundD.receipt.request_ref])).rows[0];assert.ok(sourceIntake);
+      const card=await createWeb01WorkbenchQuery({pool:f.pool,query:f.runtime.query}).authorizedItem(reminderAuth,'intake',sourceIntake.id);
+      assert.equal(card.reporter_name,'合成同事乙');assert.ok(card.reporter_department,'resolved report departments must reach the canonical card');assert.equal(card.source_label,'H5报修');
       const callsAfterFirst=providerCalls;assert.deepEqual(await enricher.runOnce(),{claimed:0,resolved:0,deferred:0});assert.equal(providerCalls,callsAfterFirst);
       const boundE=await createBound(e,'open-profile-e');revokeDuringProvider=true;
       assert.deepEqual(await enricher.runOnce(),{claimed:1,resolved:0,deferred:1});

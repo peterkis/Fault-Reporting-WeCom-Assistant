@@ -3,6 +3,7 @@ import type {RefObject} from 'react';
 import type {Principal} from '../../api/client';
 import type {WorkbenchActivityField,WorkbenchActivityPerson,WorkbenchActivityTarget} from '../../../../../contracts/workbench_activity_contracts';
 import {registerActivity} from './client';
+import {isWorkbenchVisible} from '../../desktop/host';
 export function ActivityPeople({principal,target,root,readReady}:{principal:Principal;target:WorkbenchActivityTarget;root:RefObject<HTMLDivElement|null>;readReady:boolean}){
   const [people,setPeople]=useState<WorkbenchActivityPerson[]>([]);
   useEffect(()=>{
@@ -10,7 +11,7 @@ export function ActivityPeople({principal,target,root,readReady}:{principal:Prin
     if(!principal.activity_enabled||!readReady||!element||typeof IntersectionObserver==='undefined')return;
     let intersecting=false;
     const own=registerActivity({principal,target,visible:false,people:setPeople});
-    const visibility=()=>own.visible(intersecting&&document.visibilityState!=='hidden'&&navigator.onLine);
+    const visibility=()=>own.visible(intersecting&&isWorkbenchVisible()&&navigator.onLine);
     const observer=new IntersectionObserver(entries=>{intersecting=entries.some(entry=>entry.isIntersecting);visibility();});observer.observe(element);
     const touch=(event:Event)=>{
       if(!event.isTrusted)return;

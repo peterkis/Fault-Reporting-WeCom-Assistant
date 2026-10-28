@@ -1,5 +1,5 @@
 import path from 'node:path';
-import {writeFileSync,readFileSync} from 'node:fs';
+import {writeFileSync,readFileSync,existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {brotliCompressSync,constants,gzipSync} from 'node:zlib';
 import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles,h5StartupMetrics} from './common.mjs';
@@ -22,11 +22,22 @@ function typecheckProject(root:string,relative:WebProject):void {
   const args=[path.join(root,'node_modules/typescript-web/bin/tsc'),'-p',path.join(project,'tsconfig.json')];
   runNode(root,args);
   const checked=new Set(execFileSync(process.execPath,[...args,'--listFilesOnly'],{cwd:root,encoding:'utf8',windowsHide:true}).split(/\r?\n/u).map(slash));
-  const sources=workspaceFiles(root).filter(f=>relative==='app/h5'?isH5ProductionInput(f)&&/\.(mts|ts|tsx)$/u.test(f):/^app\/pc-admin\/.+\.(mts|ts|tsx)$/u.test(f));
+  const sources=workspaceFiles(root).filter(f=>relative==='app/h5'?isH5ProductionInput(f)&&/\.(mts|ts|tsx)$/u.test(f):/^app\/pc-admin\/(?!desktop\/).+\.(mts|ts|tsx)$/u.test(f));
   if(!sources.length||relative==='app/h5'&&!sources.some(f=>f.startsWith('app/h5/src/'))||sources.some(f=>!checked.has(slash(path.join(root,f)))))throw new Error(code+'_UNCHECKED_SOURCE');
 }
 export function typecheckH5(root:string):void { typecheckProject(root,'app/h5'); }
-export function typecheckWeb(root:string):void { typecheckProject(root,'app/pc-admin'); typecheckH5(root); }
+export function typecheckDesktop(root:string):void {
+  const sources=workspaceFiles(root).filter(file=>/^app\/pc-admin\/desktop\/.+\.(?:mts|cts)$/u.test(file));
+  if(!sources.length)return;
+  const config=path.join(root,'app/pc-admin/desktop/tsconfig.json');if(!existsSync(config))throw Error('DESKTOP_TYPES_CONFIG_MISSING');
+  const args=[path.join(root,'node_modules/typescript/bin/tsc'),'-p',config,'--noEmit'];runNode(root,args);
+  const effective=record(record(JSON.parse(execFileSync(process.execPath,[...args,'--showConfig'],{cwd:root,encoding:'utf8',windowsHide:true}))).compilerOptions);
+  for(const key of ['strict','noUncheckedIndexedAccess','exactOptionalPropertyTypes','useUnknownInCatchVariables','noEmitOnError'])if(effective[key]!==true)throw Error('DESKTOP_STRICT_FLAG_REQUIRED:'+key);
+  if(effective.noCheck||effective.skipLibCheck)throw Error('DESKTOP_TYPE_BYPASS');
+  const checked=new Set(execFileSync(process.execPath,[...args,'--listFilesOnly'],{cwd:root,encoding:'utf8',windowsHide:true}).split(/\r?\n/u).map(slash));
+  if(sources.some(file=>!checked.has(slash(path.join(root,file)))))throw Error('DESKTOP_UNCHECKED_SOURCE');
+}
+export function typecheckWeb(root:string):void { typecheckProject(root,'app/pc-admin'); typecheckH5(root); typecheckDesktop(root); }
 export function buildWeb(root:string):void {
   typecheckWeb(root);
   // Source layout is independent of the established runtime asset location.

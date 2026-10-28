@@ -7,6 +7,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {openWorkbenchDialog} from './helpers/heroui-workbench-controls.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 
@@ -24,10 +25,10 @@ async function completionBrowser(context:T11Fixture,run:(browser:Browser,capture
   }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t11Commands})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
 }
-async function type(browser:{evaluate:(expression:string)=>Promise<unknown>},selector:string,value:string){await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+async function type(browser:Browser,selector:string,value:string){if(selector.startsWith('#completion-')){await browser.evaluate("(()=>{if(!document.querySelector('.detail-action-dialog'))document.querySelector('.detail-complete-button')?.click();})()");await browser.waitFor("document.querySelector('#completion-process')?.checkVisibility()===true");}await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t11Commands=[];globalThis.__t11Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t11Commands.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t11Reads.push(String(path));return original(path,options);};})()";
 async function reload(browser:Browser){const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'`);}
-async function ready(browser:Browser,version=4){await browser.waitFor(`document.querySelector('.ticket-completion-version')?.textContent===${JSON.stringify('工单版本 '+version)}&&document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')`);}
+async function ready(browser:Browser,version=4){await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');await browser.waitFor(`document.querySelector('.ticket-completion-version')?.textContent===${JSON.stringify('工单版本 '+version)}&&document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')`);}
 async function saved(browser:Browser){await browser.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('已保存恢复副本')");}
 async function input(browser:Browser,process:string,summary:string){await type(browser,'#completion-process',process);await type(browser,'#completion-summary',summary);await browser.evaluate("document.querySelector('#completion-confirmed').click()");await browser.waitFor("document.querySelector('[data-action=complete-ticket]').disabled===false");}
 const draftState="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.map(row=>({id:row.id,purpose:row.purpose})),operations:operations.result.map(row=>({commandId:row.commandId,id:row.id,purpose:row.purpose,keys:Object.keys(row)}))});};};})";
@@ -47,14 +48,12 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
     await completionBrowser({...context,tickets:[{ticket:{id},intake:{intakeId:context.tickets[0]?.intake.intakeId??''}}]},async(browser,capture)=>{
       const documentStart=await browser.evaluate('performance.timeOrigin');await browser.evaluate(instrument);
       const take="[data-action='take-and-start-with-conversations']";
-      await browser.waitFor("document.querySelector('[data-action=accept-for-later-with-conversations]')?.disabled===false");
-      await browser.evaluate("document.querySelector('[data-action=accept-for-later-with-conversations]').click()");
-      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已领取')&&document.querySelector('[data-action=take-and-start-with-conversations]')?.disabled===false");
-      assert.equal(await browser.evaluate("document.querySelector('.workflow-next')?.textContent.includes('“'+document.querySelector('[data-action=take-and-start-with-conversations]').textContent+'”')"),true,'the next-step instruction names the actual start button after accepting for later');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later-with-conversations]'))"),false,'new UI starts handling directly');
       await browser.waitFor(`document.querySelector(${JSON.stringify(take)})?.disabled===false`);
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-conversation-handling fieldset'))"),false,'no empty communication choice before taking an unlinked ticket');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-conversation-handling [role=radiogroup]'))"),false,'no empty communication choice before taking an unlinked ticket');
       await browser.evaluate(`document.querySelector(${JSON.stringify(take)}).click()`);
-      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('#completion-process'))");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('.detail-complete-button'))");
+      await browser.evaluate("(()=>{const workflow=document.querySelector('.detail-workflows');if(workflow&&!workflow.hasAttribute('data-expanded'))workflow.querySelector('[data-slot=disclosure-heading] button').click();})()");
       await browser.evaluate("document.querySelector('[data-action=request-information]').click()");
       await type(browser,'[data-waiting-purpose=request-information] textarea','请电话补充合成设备的错误提示。');
       await browser.evaluate("document.querySelector('[data-waiting-purpose=request-information] button[type=submit]').click()");
@@ -62,7 +61,7 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
       await browser.evaluate("document.querySelector('[data-action=resume]').click()");
       await type(browser,'[data-waiting-purpose=resume] textarea','已电话收到合成错误提示，继续排查。');
       await browser.evaluate("document.querySelector('[data-waiting-purpose=resume] button[type=submit]').click()");
-      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('#completion-process'))");
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('.detail-complete-button'))");
       await input(browser,'内部合成排查过程，不能给报修人查看。','已恢复合成设备，请重试。');
       await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已关闭')&&Boolean(document.querySelector('#reopen-reason'))");
@@ -76,7 +75,7 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')");
       assert.equal(await browser.evaluate('performance.timeOrigin'),documentStart,'no reload required when the next action becomes available');
       const commands=await browser.evaluate('globalThis.__t11Commands') as {path:string;body:{client_command_id:string}}[];
-      assert.equal(commands.length,7);assert.equal(new Set(commands.map(row=>row.body.client_command_id)).size,7);
+      assert.equal(commands.length,6);assert.equal(new Set(commands.map(row=>row.body.client_command_id)).size,6);
       assert.equal(commands.filter(row=>row.path.endsWith('/complete')).length,1);assert.equal(commands.filter(row=>row.path.endsWith('/reopen')).length,1);
       const visible=String(await browser.evaluate("document.querySelector('.detail-body').innerText"));
       assert.doesNotMatch(visible,/[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}|\bSYSTEM\b|\bUUID\b|工单版本|ticket\.[a-z_]+/iu);
@@ -86,14 +85,15 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
   },{recoveryEnabled:false,conversationHandlingEnabled:true,reopenEnabled:true,waitingEnabled:true});
 });
 
-test('production 600px completion form requires independent confirmed summaries and closes with one POST and current GET facts',async()=>{
+test('production detail completion dialog requires independent confirmed summaries and closes with one POST and current GET facts',async()=>{
   await withT11Fixture(async context=>{
     const ticket=context.tickets[0];assert.ok(ticket);const http=await t11Http(context);await http.start(ticket.ticket.id);
     await completionBrowser(context,async(browser,capture)=>{
-      await browser.waitFor("document.querySelector('.ticket-handling-version')?.textContent==='工单版本 4'");
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('#completion-process'))"),true,'production completion form must exist');
+      await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')");assert.equal((await http.detail(ticket.ticket.id)).version,4);
+      await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('#completion-process'))"),true,'production completion form opens from its action');
       await browser.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await browser.evaluate(instrument);
       await type(browser,'#completion-process','INTERNAL_T11_FORM_CANARY：独立排查过程');
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'');
@@ -126,13 +126,31 @@ test('completion purpose restores its encrypted independent fields with Notes di
       await input(browser,'INTERNAL_T11_REFRESH_CANARY：独立排查过程','可公开的恢复结果。');await saved(browser);
       const cryptography=await browser.evaluate("(async()=>{const row=await new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,read=db.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{db.close();resolve(read.result.find(row=>row.purpose==='staff-completion'));};};});let exportError=null;try{await crypto.subtle.exportKey('raw',row.key);}catch(error){exportError=error.name;}return {extractable:row.key.extractable,algorithm:row.key.algorithm,exportError,ttl:row.expiresAt-row.firstSavedAt,plaintext:JSON.stringify(row).includes('INTERNAL_T11_REFRESH_CANARY'),bytes:row.ciphertext.byteLength};})()") as {extractable:boolean;algorithm:unknown;exportError:string;ttl:number;plaintext:boolean;bytes:number};
       assert.equal(cryptography.extractable,false);assert.deepEqual(cryptography.algorithm,{name:'AES-GCM',length:256});assert.equal(cryptography.exportError,'InvalidAccessError');assert.equal(cryptography.ttl,86400000);assert.equal(cryptography.plaintext,false);assert.ok(cryptography.bytes>16&&cryptography.bytes<=16400);
-      await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});await reload(browser);
+      await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});await reload(browser);await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');
       await browser.waitFor("document.querySelector('#completion-process')?.value==='INTERNAL_T11_REFRESH_CANARY：独立排查过程'&&document.querySelector('#completion-summary')?.value==='可公开的恢复结果。'");
       assert.equal(await browser.evaluate("document.querySelector('#completion-confirmed').checked"),false);assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),0);assert.equal(await browser.evaluate("document.querySelector('[data-action=complete-ticket]').disabled"),true);
       await capture('new-detail-1920.png');await browser.evaluate("document.querySelector('[data-action=discard-completion-draft]').click()");
       await browser.waitFor("document.querySelector('#completion-process')?.value===''&&document.querySelector('#completion-summary')?.value===''");
       await browser.waitFor(`(async()=>{const v=await (${draftState});return v.drafts.length===0&&v.operations.length===0;})()`);
       await reload(browser);await ready(browser);assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'');assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),0);assert.equal(await completionCount(context,id),0);await capture('new-detail-page-1920.png');
+    });
+  },{notesEnabled:false});
+});
+
+test('discard waits for local encryption already in flight and removes the final copy without a command',async()=>{
+  await withT11Fixture(async context=>{
+    const id=context.tickets[0]?.ticket.id;assert.ok(id);const http=await t11Http(context);await http.start(id);
+    await completionBrowser(context,async browser=>{
+      await ready(browser);await browser.evaluate(instrument);
+      await browser.evaluate("(()=>{const encrypt=crypto.subtle.encrypt.bind(crypto.subtle);crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__finishDraftEncryption=()=>{crypto.subtle.encrypt=encrypt;return encrypt(...args).then(resolve,reject);};});})()");
+      await type(browser,'#completion-process','T11_SYNTHETIC_DISCARD_DURING_ENCRYPTION');
+      await browser.waitFor("typeof globalThis.__finishDraftEncryption==='function'");
+      await browser.evaluate("document.querySelector('[data-action=discard-completion-draft]').click()");
+      await browser.evaluate('globalThis.__finishDraftEncryption()');
+      await browser.waitFor("document.querySelector('#completion-process')?.value===''&&document.querySelector('[data-completion-draft-status]')?.textContent.includes('已清理')");
+      await browser.waitFor(`(async()=>{const v=await (${draftState});return v.drafts.length===0&&v.operations.length===0;})()`);
+      assert.equal(await browser.evaluate('globalThis.__t11Commands.length'),0);assert.equal(await completionCount(context,id),0);
+      await reload(browser);await ready(browser);assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'');
     });
   },{notesEnabled:false});
 });
@@ -182,8 +200,11 @@ test('completion conflict preserves independent input and current refetch focus 
     await completionBrowser(context,async(browser,capture)=>{
       let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
       try{
-        await ready(browser);await input(browser,'INTERNAL_T11_LOSS_CANARY：失权清理','失权前安全结果。');await saved(browser);
-        tab=await yxxTab(browser,context.origin+'/workbench/app/items/ticket/'+id);await tab.waitFor("document.querySelector('#completion-process')?.value==='INTERNAL_T11_LOSS_CANARY：失权清理'");
+        await ready(browser);
+        // The peer exercises trusted authority loss. Open it before editing so
+        // this late-ACK test does not also create a conflicting newer draft.
+        tab=await yxxTab(browser,context.origin+'/workbench/app/items/ticket/'+id);await openWorkbenchDialog(tab,'#completion-process','.detail-complete-button');await tab.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+        await input(browser,'INTERNAL_T11_LOSS_CANARY：失权清理','失权前安全结果。');await saved(browser);
         await browser.evaluate(instrument);await browser.evaluate("(()=>{const original=fetch;globalThis.fetch=async(path,options)=>{const result=await original(path,options);if(options?.method==='POST'&&String(path).endsWith('/complete')&&result.status===200)return new Promise(resolve=>{globalThis.__releaseCompletionAck=()=>resolve(result);}).then(value=>{globalThis.__lateCompletionAckReleased=true;return value;});return result;};})()");await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");await browser.waitFor("typeof globalThis.__releaseCompletionAck==='function'");assert.equal(await completionCount(context,id),1);
         await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[0]?.id]);await tab.evaluate("document.querySelector('[data-action=refresh-completion]').click()");
         await tab.waitFor("!document.querySelector('#completion-process')&&document.body.innerText.includes('会话')");await browser.waitFor("!document.querySelector('#completion-process')&&document.body.innerText.includes('会话')");
@@ -201,7 +222,7 @@ test('raw recovery false keeps completion available without IndexedDB or receipt
     const capability=await (await http.get('/api/lifecycle/bootstrap')).json() as Record<string,unknown>;assert.equal(capability.ticket_staff_completion_enabled,true);assert.equal(capability.internal_notes_enabled,false);assert.equal(capability.staff_completion_draft_recovery_enabled,false);
     const fault=droppedCompletion(context);
     try{await completionBrowser(context,async(browser,capture)=>{
-      await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument+";(()=>{const open=indexedDB.open.bind(indexedDB);globalThis.__t11IDBOpens=0;indexedDB.open=(...args)=>{globalThis.__t11IDBOpens++;return open(...args);};})()"});await reload(browser);await browser.waitFor("document.querySelector('.ticket-completion-version')?.textContent==='工单版本 4'");
+      await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument+";(()=>{const open=indexedDB.open.bind(indexedDB);globalThis.__t11IDBOpens=0;indexedDB.open=(...args)=>{globalThis.__t11IDBOpens++;return open(...args);};})()"});await reload(browser);await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');await browser.waitFor("document.querySelector('.ticket-completion-version')?.textContent==='工单版本 4'");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-completion-draft-status]'))"),false);
       await type(browser,'#completion-process','INTERNAL_T11_MEMORY_DISCARD');await browser.evaluate("document.querySelector('[data-action=discard-completion-draft]').click()");assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'');
       await input(browser,'INTERNAL_T11_MEMORY_UNKNOWN：原正文','内存模式安全结果。');await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('结果未知')");

@@ -25,6 +25,8 @@ import {textHashP2016} from '../src/p2-016-domain-contracts.mjs';
 import {createMvpNotificationAdmission} from '../src/mvp-group-replies.mjs';
 import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
 import {createYxxH5Runtime} from '../src/yxx-h5-runtime.mjs';
+import {createWorkbenchReporterDirectory} from '../src/workbench-reporter-directory.mjs';
+import {createTicketReporterProfileWorker,ticketReporterProfilesSchemaReady} from '../src/ticket-reporter-profiles.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -45,7 +47,14 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0]??''))configurationError('role');
  const role=(argv[0] as string).slice(7).toUpperCase() as WorkbenchRole;
  process.once('disconnect',()=>process.exit(1));
- if(role==='WORKER')return runHumanWorkbenchWorker(readWorkbenchWorkerSettings(),process.env.PILOT_LOG_IDENTITY_HASH_KEY as string,process.env.P2_016_REPORTER_HMAC_SECRET as string);
+ if(role==='WORKER'){
+  const worker=readWorkbenchWorkerSettings();
+  if(worker.reporterProfiles?.validationProfile==='ISOLATED_TEST'){
+   const db=new URL(process.env.PILOT_DATABASE_URL??'');
+   if(!['localhost','127.0.0.1'].includes(db.hostname)||!/^p2_015_[a-z0-9_]+$/u.test(db.pathname.slice(1))||!boundaries.fetchImpl)configurationError('isolatedBoundaries');
+  }
+  return runHumanWorkbenchWorker(worker,process.env.PILOT_LOG_IDENTITY_HASH_KEY as string,process.env.P2_016_REPORTER_HMAC_SECRET as string,boundaries.fetchImpl??fetch);
+ }
  const s=readWorkbenchRoleSettings(role);
  if(s.memberEntry.validationProfile==='ISOLATED_TEST'){
   const db=new URL(process.env.PILOT_DATABASE_URL??'');
@@ -64,11 +73,11 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
   const mapping=['VERIFIED_DELEGATED_MAPPING','VERIFIED_APP_OPENID'].includes(s.memberEntry.identityMode)?await createYxxDelegatedIdentityMapping({config:s.memberEntry,accessTokenProvider:tokenProvider,fetchImpl}):null;
   return runApp({publicOrigin:s.publicOrigin,externalSendEnabled:s.transportEnabled,
    authenticationFactory:async({pool,publicOrigin})=>{
-    const auth=createWeComWorkbenchAuthentication({pool,publicOrigin,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,identityHashKey:identityHmacKey,accessTokenProvider:tokenProvider,fetchImpl});
+    const auth=createWeComWorkbenchAuthentication({pool,publicOrigin,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,identityHashKey:identityHmacKey,accessTokenProvider:tokenProvider,...(applicationMemberVerifier.profileRead?{profileReader:applicationMemberVerifier.profileRead}:{}),fetchImpl});
     try{await auth.initialize();return auth;}catch(error){await auth.close();throw error;}
    },
    runtimeFactory:options=>{
-    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
+    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,workbenchRemindersEnabled:s.workbenchRemindersEnabled===true,workbenchFollowEnabled:s.workbenchFollowEnabled===true,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled===true,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
     applicationMemberVerifier,h5EntryMemberVerifier:h5EntryReadEnabled?applicationMemberVerifier.h5EntryRead:null,yxxH5:{...h5Options,accessTokenProvider:tokenProvider,fetchImpl},groupNotificationTargets:s.groupNotificationTargets??[],reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
@@ -108,10 +117,14 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  });
  }
 }
-function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,reporterHmacSecret:string){
+function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,reporterHmacSecret:string,fetchImpl:typeof fetch){
  const h5Options=readWorkbenchH5RuntimeOptions(process.env,{worker:true});
+ const directory=s.reporterProfiles?createWorkbenchReporterDirectory({botId:s.botId,identityHmacKey,
+  accessTokenProvider:createWeComAppTokenProvider({corpId:s.reporterProfiles.corpId,appSecret:process.env.APP_SECRET as string,fetchImpl}),fetchImpl,
+  applicationScope:{corpId:s.reporterProfiles.corpId,agentId:s.reporterProfiles.agentId,scopeSecret:reporterHmacSecret}}):null;
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  return runWorker({deliveryAttemptAdmissionFactory:()=>createMvpNotificationAdmission(),reportCycleHealth:true,beforeReady:async({pool})=>{
+  if(directory&&!await ticketReporterProfilesSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:ticket_reporter_profiles_schema');
   if(!h5Options.enabled)return;
   const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(h5Options.performanceEnabled===true?['066_yixiaoxiu_h5_media_previews']:[])];
   if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
@@ -119,12 +132,14 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
   const h5=createYxxH5Runtime({pool,scopeSecret:reporterHmacSecret,options:h5Options,role:'WORKER'});
-  const orchestration=createP2016OrchestrationWorker({pool,mvpPolicy:true,notifications,realtime,identityHmacKey,yxxSelfService:HUMAN_WORKBENCH_OPTIONS.yxxSelfService});
+  const profiles=directory&&s.reporterProfiles?createTicketReporterProfileWorker({pool,botId:s.botId,identityHmacKey,directoryPort:directory,enabled:true,
+   applicationScope:{corpId:s.reporterProfiles.corpId,agentId:s.reporterProfiles.agentId,scopeSecret:reporterHmacSecret}}):null;
+  const orchestration=createP2016OrchestrationWorker({pool,mvpPolicy:true,notifications,realtime,identityHmacKey,yxxSelfService:HUMAN_WORKBENCH_OPTIONS.yxxSelfService,...(directory?{directoryPort:directory,reuseRecordedProfile:true}:{})});
   const closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async(input:ClosureNotificationInput)=>{
    const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
   const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
-  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();},close:()=>h5.close()};
+  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await profiles?.runOnce();await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();},close:()=>h5.close()};
  }});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(error=>{

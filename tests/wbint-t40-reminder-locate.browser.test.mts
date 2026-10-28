@@ -46,13 +46,14 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       assert.equal((await fixture.runtime.observability.metrics()).sse_clients,1);
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false,'genuine first server page and folded DOM omit the target');
       const facts=await fixture.currentFacts();assert.deepEqual(await fixture.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
+      const targetNumber=text(object(facts['/api/tickets/'+fixture.ticketId]).ticket_no);
       const notice='[data-reminder-id] button[aria-label="定位事项"]';await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(notice)+'))');
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false,'reminder receipt does not fetch all board pages or auto-open the target');
       await browser.evaluate('document.querySelector('+JSON.stringify(notice)+').click()');
       await browser.waitFor('document.querySelector('+JSON.stringify(card)+')?.dataset.reminderLocated==="true"');
       const locatedUrl=text(await browser.evaluate('location.href'));assert.equal(new URL(locatedUrl).pathname,'/workbench/app/items/ticket/'+fixture.ticketId);assert.equal(new URL(locatedUrl).searchParams.get('locate'),'1');
       assert.equal(await browser.evaluate('document.querySelectorAll('+JSON.stringify(card)+').length'),1,'canonical locate is not a second card fact');
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
       const explicitLink=text(await browser.evaluate('document.querySelector('+JSON.stringify(card+' a.card-open')+').href'));assert.equal(new URL(explicitLink).searchParams.has('locate'),false,'only an explicit detail link opens the ordinary detail route');
       assert.deepEqual(await fixture.currentFacts(),facts,'locate is not a command, read-position advancement or follow/disposition');
       assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('new-board');
@@ -71,8 +72,10 @@ test('T40 a real reminder locates a card beyond the first server page, preserves
       await fixture.revokeTargetRead();
       await browser.waitFor('document.body.innerText.includes("该事项当前不可读取，旧定位资料已清除。")');
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(card)+'))'),false);
-      assert.equal(await browser.evaluate('document.body.innerText.includes('+JSON.stringify(fixture.targetTitle)+')'),false);
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
+      // These synthetic Core tickets share the fallback title. The target's
+      // unique number proves its removal even while another board read settles.
+      assert.equal(await browser.evaluate('document.body.innerText.includes('+JSON.stringify(targetNumber)+')'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
       assert.equal(await browser.evaluate('globalThis.__t40Locate.posts'),0);await snapshot('new-detail');
       console.log('WBINT_T40_LOCATE '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',original_first_unchanged:true,
         first_page_limit:50,target_beyond_first_page:true,canonical_ticket:fixture.ticketId,automatic_posts:0,auto_opened:false,

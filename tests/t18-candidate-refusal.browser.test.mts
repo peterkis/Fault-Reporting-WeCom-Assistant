@@ -86,7 +86,7 @@ for(const refusal of ['SEARCH','VERIFY'] as const)test(`a real ${refusal} object
       await fill(browser,'联系方式','人工联系内线7788');await fill(browser,'报修人科室','合成门诊');
       await browser.waitFor("document.querySelector('[data-action=submit-manual-report]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')&&globalThis.__t18CandidateRefusalRows.some(row=>row.method==='POST'&&row.path==='/api/workbench/reports'&&row.status===202&&row.result?.reporter_verification==='UNVERIFIED')");
+      await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理')&&globalThis.__t18CandidateRefusalRows.some(row=>row.method==='POST'&&row.path==='/api/workbench/reports'&&row.status===202&&row.result?.reporter_verification==='UNVERIFIED')");
       stage='HAND_ENTERED_ADMITTED';
       const posts:unknown=await browser.evaluate("globalThis.__t18CandidateRefusalRows.filter(row=>row.method==='POST'&&row.path==='/api/workbench/reports')");assert.ok(Array.isArray(posts));assert.equal(posts.length,refusal==='SEARCH'?1:2);
       const admitted=object(posts[posts.length-1]),body=object(admitted.body),result=object(admitted.result),id=string(body.client_command_id);

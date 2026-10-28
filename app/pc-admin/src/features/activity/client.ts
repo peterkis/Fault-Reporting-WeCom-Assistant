@@ -1,4 +1,5 @@
 import {ApiError,captureWorkbenchRead,readWorkbench} from '../../api/client';
+import {isWorkbenchVisible} from '../../desktop/host';
 import type {Principal} from '../../api/client';
 import type {WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView} from '../../../../../contracts/workbench_activity_contracts';
 function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
@@ -27,7 +28,7 @@ export function activityTransport(principal:Principal|null,isLive:boolean){
   if(live&&(!wasLive||changed))for(const entry of mounted)beginViewing(entry);
 }
 function beginViewing(entry:ActivityRegistration){
-  if(!live||key(entry.principal)!==identity||!entry.visible||!navigator.onLine||document.visibilityState==='hidden')return;
+  if(!live||key(entry.principal)!==identity||!entry.visible||!navigator.onLine||!isWorkbenchVisible())return;
   entry.active=true;entry.lastView=performance.now();
 }
 function release(entry:ActivityRegistration){
@@ -39,7 +40,7 @@ export function registerActivity(registration:Omit<ActivityRegistration,'active'
   mounted.add(entry);browserId??=crypto.randomUUID();beginViewing(entry);
   return {
     visible(visible:boolean){if(entry.visible===visible)return;entry.visible=visible;if(!visible)release(entry);else beginViewing(entry);},
-    touch(field:WorkbenchActivityField|null){if(!live||!entry.visible||!navigator.onLine||document.visibilityState==='hidden')return;entry.active=true;entry.lastView=performance.now();if(field){entry.field=field;entry.lastEdit=entry.lastView;entry.editActive=true;}},
+    touch(field:WorkbenchActivityField|null){if(!live||!entry.visible||!navigator.onLine||!isWorkbenchVisible())return;entry.active=true;entry.lastView=performance.now();if(field){entry.field=field;entry.lastEdit=entry.lastView;entry.editActive=true;}},
     dispose(){mounted.delete(entry);release(entry);},
   };
 }

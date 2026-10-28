@@ -32,7 +32,7 @@ test('the actual production staff form restores an encrypted manual draft and ex
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"报修人姓名\"]').value"),'合成电话报修人');assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').checked"),true);
       assert.equal(await browser.evaluate("globalThis.__t17Requests.filter(row=>row.method==='POST').length"),0);
       assert.equal(await browser.evaluate("document.documentElement.scrollWidth<=document.documentElement.clientWidth"),true);
-      await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')");
+      await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理')");
       const posts=await browser.evaluate("globalThis.__t17Requests.filter(row=>row.method==='POST')");assert.ok(Array.isArray(posts));assert.equal(posts.length,1);
       const post=object(posts[0]),body=object(post.body),commandId=string(body.client_command_id);assert.equal(post.path,'/api/workbench/reports');assert.equal(body.source,'PHONE');assert.equal(object(body.reporter).verification,'UNVERIFIED');assert.ok(!Object.hasOwn(body,'actor_principal_id'));
       assert.equal(await browser.evaluate("globalThis.__t17Requests.some(row=>/yixiaoxiu|wecom/.test(row.path))"),false);

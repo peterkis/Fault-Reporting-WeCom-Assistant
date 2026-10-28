@@ -45,9 +45,12 @@ function port(browser:Browser,sessionId:string|null=null){
   };
   const wait=async(expression:string)=>{const until=performance.now()+30_000;while(performance.now()<until){if(await evaluate(expression))return;await delay(25);}throw Error('T40_BROWSER_CONDITION_TIMEOUT: '+expression);};
   const click=async(selector:string)=>{
-    const point=object(await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)throw Error('T40_NATIVE_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`));
+    await wait(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
+    const point=object(await evaluate(`(()=>{const input=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>node.getClientRects().length>0),e=input?.matches('input[type=checkbox]')?input.closest('label'):input;if(!e)throw Error('T40_NATIVE_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`));
     assert.equal(typeof point.x,'number');assert.equal(typeof point.y,'number');
     for(const type of ['mousePressed','mouseReleased'])await command('Input.dispatchMouseEvent',{type,x:point.x,y:point.y,button:'left',clickCount:1});
+    if(selector.includes('open-settings'))await wait("Boolean(document.querySelector('.workbench-settings input'))");
+    if(selector.includes('关闭设置'))await wait("!document.querySelector('.workbench-settings')");
   };
   const ready=()=>wait('Boolean(document.querySelector(\'[data-realtime-status="live"]\')&&document.querySelector(\'[data-reminders-ready="true"]\'))');
   const install=async(origin:string)=>{await command('Page.enable');await command('Runtime.enable');await command('Page.addScriptToEvaluateOnNewDocument',{source:observe});await command('Page.navigate',{url:origin+'/workbench/app/'});await ready();};
@@ -61,33 +64,33 @@ async function close(browser:Browser|undefined,primary:unknown){await closeBrows
 test('T40 native user audition, audio refusal, chosen notification permissions, bounded settings and actual account change preserve visual work',{timeout:240_000},()=>withT40ReminderRiskFixture(async f=>{
   let browser:Browser|undefined,primary:unknown;
   try{
-    browser=await launch(f);const p=port(browser);await p.install(f.origin);await p.click('button[aria-label="提醒偏好"]');
+    browser=await launch(f);const p=port(browser);await p.install(f.origin);await p.click('[data-action="open-settings"]');
     assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启声音提醒"]\').checked'),false);
     assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked'),false);
     assert.deepEqual(await p.evaluate('({starts:__t40Preferences.starts,permission:__t40Preferences.permissionRequests,notifications:__t40Preferences.notifications})'),{starts:0,permission:0,notifications:0});
-    await p.click('dialog[aria-label="本浏览器提醒偏好"] button:not([aria-label])');
+    await p.click('.settings-test-sound');
     await p.wait('__t40Preferences.starts===1');
     await p.click('input[aria-label="开启声音提醒"]');await p.wait('__t40Preferences.starts===2');await p.baselineAfterLeader();
-    await p.click('button[aria-label="关闭提醒偏好"]');await p.evaluate('__t40Preferences.refuse=true');
+    await p.click('button[aria-label="关闭设置"]');await p.evaluate('__t40Preferences.refuse=true');
     assert.deepEqual(await f.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
     await p.wait('__t40Preferences.refusals>0&&document.querySelector("[data-reminder-id]")&&document.body.innerText.includes("声音暂不可用，视觉提醒继续。")');
     assert.equal(await p.evaluate('__t40Preferences.starts'),2);
     await p.evaluate('__t40Preferences.refuse=false');
     await p.command('Browser.setPermission',{permission:{name:'notifications'},setting:'denied',origin:f.origin});
-    await p.click('button[aria-label="提醒偏好"]');await p.click('input[aria-label="开启桌面通知"]');
+    await p.click('[data-action="open-settings"]');await p.click('input[aria-label="开启桌面通知"]');
     await p.wait('__t40Preferences.permissionRequests===1&&document.body.innerText.includes("桌面通知未开启")');
     assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked'),false);
     assert.equal(await p.evaluate('__t40Preferences.notifications'),0);
     await p.command('Browser.setPermission',{permission:{name:'notifications'},setting:'granted',origin:f.origin});
     await p.click('input[aria-label="开启桌面通知"]');await p.wait('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked&&__t40Preferences.permissionRequests===2&&__t40Preferences.acquired>=2');
-    await p.click('button[aria-label="关闭提醒偏好"]');await p.baselineAfterLeader();await f.nextDue();
+    await p.click('button[aria-label="关闭设置"]');await p.baselineAfterLeader();await f.nextDue();
     await p.wait('__t40Preferences.notifications===1&&document.querySelectorAll("[data-reminder-id]").length>=2');
     const preferences=text(await p.evaluate('localStorage.getItem('+JSON.stringify(key)+')'));assert.ok(Buffer.byteLength(preferences)<=128);
     assert.deepEqual(JSON.parse(preferences),{schema_version:1,sound_enabled:true,desktop_enabled:true});
     const starts=await p.evaluate('__t40Preferences.starts'),url=await p.evaluate('location.href'),facts=await f.currentFacts();
     await p.command('Network.deleteCookies',{name:f.browserCookie.name,url:f.origin});await p.command('Network.setCookies',{cookies:[f.otherBrowserCookie]});
     await p.wait('__t40Preferences.bootstraps.includes('+JSON.stringify(f.otherHandler)+')&&document.querySelectorAll("[data-reminder-id]").length===0');await p.ready();
-    await p.click('button[aria-label="提醒偏好"]');assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启声音提醒"]\').checked'),false);
+    await p.click('[data-action="open-settings"]');assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启声音提醒"]\').checked'),false);
     assert.equal(await p.evaluate('document.querySelector(\'input[aria-label="开启桌面通知"]\').checked'),false);assert.equal(await p.evaluate('__t40Preferences.starts'),starts);
     assert.equal(await p.evaluate('location.href'),url);assert.equal(await p.evaluate('__t40Preferences.posts'),0);assert.deepEqual(await f.currentFacts(),facts);
     assert.equal(await p.evaluate('localStorage.getItem('+JSON.stringify(key)+')'),null);
@@ -105,7 +108,7 @@ test('T40 two actual browser tabs share one native leader, merge a short event c
     const created=object(await main.command('Target.createTarget',{url:'about:blank'}));peerId=text(created.targetId);
     const attached=object(await main.command('Target.attachToTarget',{targetId:peerId,flatten:true}));const peer=port(browser,text(attached.sessionId));documents.push(peer);await peer.install(f.origin);
     assert.equal((await f.runtime.observability.metrics()).sse_clients,2);
-    for(const p of [main,peer]){await p.click('button[aria-label="提醒偏好"]');await p.click('input[aria-label="开启声音提醒"]');await p.click('button[aria-label="关闭提醒偏好"]');}
+    for(const p of [main,peer]){await p.click('[data-action="open-settings"]');await p.click('input[aria-label="开启声音提醒"]');await p.click('button[aria-label="关闭设置"]');}
     await main.wait('(async()=>{const s=await navigator.locks.query();return s.held.filter(x=>x.name.startsWith("wbint-reminders-")).length===1&&s.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length===1;})()');
     await main.baselineAfterLeader();await main.stableBaseline();await peer.stableBaseline();
     const before=Number(await main.evaluate('__t40Preferences.starts'))+Number(await peer.evaluate('__t40Preferences.starts'));
@@ -139,7 +142,7 @@ test('T40 two actual browser tabs share one native leader, merge a short event c
     assert.equal(Number(await main.evaluate('__t40Preferences.starts'))+Number(await peer.evaluate('__t40Preferences.starts'))-before,1,'events committed while disconnected are history at the new baseline');
     for(const p of [main,peer])assert.equal(await p.evaluate('__t40Preferences.reads.some(x=>x.itemIds.includes('+JSON.stringify(duringReconnect)+'))'),false);
     assert.equal(await main.evaluate('__t40Preferences.posts'),0);assert.equal(await peer.evaluate('__t40Preferences.posts'),0);
-    assert.equal(await main.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);assert.equal(await peer.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
+    assert.equal(await main.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);assert.equal(await peer.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',screenshots:[],coordination:'TWO_ACTUAL_CHROME_TARGETS_SAME_PROFILE_NATIVE_WEB_LOCKS_BROADCAST_CHANNEL',visibility:'CONTROLLED_VISIBLE_SENSOR_IN_BOTH_REAL_TABS',same_real_events_in_both_tabs:true,native_merged_tones:1,reconnect:'CONTROLLED_NATIVE_NETWORK_OFFLINE_UNTIL_ORIGINAL_COMMIT_THEN_NEW_SSE_AND_BASELINE_WATERMARKS',automatic_posts:0,physical_sound:'NOT_RUN_NOT_PROVEN'}));
   }catch(error){primary=error;for(let index=0;index<documents.length;index++)console.log('T40_ACTUAL_TAB_FAILURE_OBSERVER '+JSON.stringify({index,state:await documents[index]?.evaluate('globalThis.__t40Preferences').catch(()=>null)}));}finally{await closeBrowserTestResources([async()=>{if(browser&&peerId)await browser.command('Target.closeTarget',{targetId:peerId});},async()=>close(browser,undefined)],primary);}
 }));

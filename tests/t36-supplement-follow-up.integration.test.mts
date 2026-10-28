@@ -89,7 +89,12 @@ test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pendin
     assert.equal(before2.responsibility.ticket_assignee_id,null);assert.deepEqual(before2.responsibility.conversations,[]);
     assert.equal(before2.personalRead.sources.find(source=>source.source_kind==='WEB')?.last_read_position,'0');
     const pending2=await read<SupplementFollowUpPage>(followPath); // Planned first RED: real current route is absent; never run in SOURCE.
+    const boardPending=async()=>{
+      const board=await read<{items:{id:string;supplement_follow_up?:{has_pending_supplements:boolean}}[]}>('/api/workbench/board?column=pending&range=all&limit=100');
+      const card=board.items.find(item=>item.id===ticketId);assert.ok(card);return card.supplement_follow_up?.has_pending_supplements;
+    };
     assert.equal(pending2.ticket_id,ticketId);assert.equal(pending2.has_pending_supplements,true);
+    assert.equal(await boardPending(),true,'the batched page retains the same pending WEB revision');
     assert.deepEqual(pending2.items.map(item=>[item.source_ref,item.revision,item.follow_up_state,item.resolution]),[[r2.source_ref,'2','PENDING',null]]);
     const command:SupplementFollowUpCommand={client_command_id:randomUUID(),action:'RECORD_DISPOSITION',...r2,
       disposition_note:'已确认补充现象，处理记录仅供内部使用',mark_followed_up:true};
@@ -99,6 +104,7 @@ test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pendin
     assert.equal(result.source_ref,r2.source_ref);assert.equal(result.revision,'2');assert.equal(result.follow_up_state,'FOLLOWED_UP');
     assert.equal(result.basis,'RECORDED_DISPOSITION');assert.equal(result.replayed,false);assert.match(result.resolution_id,/^[a-f0-9-]{36}$/u);
     const handled2=await read<SupplementFollowUpPage>(followPath);assert.equal(handled2.has_pending_supplements,false);
+    assert.equal(await boardPending(),false,'the batch requires the same committed disposition proof');
     assert.equal(handled2.items.length,1);assert.equal(handled2.items[0]?.follow_up_state,'FOLLOWED_UP');
     assert.equal(handled2.items[0]?.resolution?.resolution_id,result.resolution_id);
     assert.deepEqual(await independentFacts(),before2);
@@ -107,6 +113,7 @@ test('T36 ADMIN explicitly disposes WEB revision 2 while revision 3 stays pendin
     const r3=await exactMaterial(r3Text,'3');assert.notEqual(r3.source_ref,r2.source_ref);
     const beforeReplay=await independentFacts(),pending3=await read<SupplementFollowUpPage>(followPath);
     assert.equal(pending3.has_pending_supplements,true);
+    assert.equal(await boardPending(),true,'a new revision becomes pending in the page projection');
     assert.deepEqual(pending3.items.map(item=>[item.source_ref,item.revision,item.follow_up_state]),[[r2.source_ref,'2','FOLLOWED_UP'],[r3.source_ref,'3','PENDING']]);
     assert.equal(pending3.items[1]?.resolution,null);
     const replay=await post(followPath,command);assert.equal(replay.status,200);

@@ -18,8 +18,8 @@ function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof va
 function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 function string(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
 function failureDetails(value:unknown):Record<string,unknown>{return value instanceof AggregateError?{name:value.name,message:value.message,errors:Array.from(value.errors,(nested:unknown)=>failureDetails(nested))}:value instanceof Error?{name:value.name,message:value.message,stack:value.stack}:{value:String(value)};}
-function selectExpression(label:string){return `Array.from(document.querySelectorAll('.detail-dialog select')).find(input=>Array.from(input.labels??[]).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;}
-async function choose(browser:Browser,label:string,text:string){
+function selectExpression(label:string){return `Array.from(document.querySelectorAll('.detail-assignment-dialog select')).find(input=>(input.closest('.workbench-select')?[input.closest('.workbench-select').querySelector('[data-slot=label]')]:Array.from(input.labels??[])).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;}
+async function choose(browser:Browser,label:string,text:string){await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");await browser.evaluate("(()=>{if(!document.querySelector('.detail-assignment-dialog'))document.querySelector('[data-action=open-assignment]').click();})()");await browser.waitFor("Boolean(document.querySelector('.detail-assignment-dialog'))");
   const select=selectExpression(label);
   await browser.waitFor(`Boolean((${select})&&Array.from((${select}).options).some(option=>option.textContent?.trim()===${JSON.stringify(text)}))`);
   await browser.evaluate(`(()=>{const input=${select},option=Array.from(input.options).find(option=>option.textContent?.trim()===${JSON.stringify(text)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,option.value);input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
@@ -65,16 +65,17 @@ test('production staff explicitly transfer an assigned queued Ticket with real g
       browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+first.ticket.id,width:1280,height:900,cookies:[browserCookie]});assert.ok(browser);
       const active=browser,capture=async(name:string)=>{const bytes=Buffer.from(string(await active.screenshot()),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&document.querySelector('.properties')?.innerText.includes(${JSON.stringify(originalOwner.display_name)})&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog [data-action=transfer-assignment]'))"),true,'the real production transfer form must exist');
-      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog [data-action=transfer-assignment]').textContent.trim()"),'确认转派');
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=open-assignment]').click()");await browser.waitFor("Boolean(document.querySelector('.detail-assignment-dialog'))");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]'))"),true,'the real production transfer form must exist');
+      assert.equal(await browser.evaluate("document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]').textContent.trim()"),'确认转派');
       assert.equal(await browser.evaluate(`(${selectExpression('处理组')})?.value`),'','multiple effective groups must not be silently selected');
-      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog [data-action=transfer-assignment]').disabled"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]').disabled"),true);
       await choose(browser,'处理组',teamName);await choose(browser,'处理人',target.display_name);
-      await browser.evaluate("(()=>{const input=Array.from(document.querySelectorAll('.detail-dialog input[type=radio]')).find(input=>input.value==='RETAIN_CURRENT'&&Array.from(input.labels??[]).some(label=>label.textContent?.includes('保留当前沟通')));if(!input)throw Error('EXPLICIT_RETAIN_CHOICE_REQUIRED');input.click();})()");
-      await browser.waitFor("document.querySelector('.detail-dialog [data-action=transfer-assignment]')?.disabled===false");
+      await browser.evaluate("(()=>{const input=Array.from(document.querySelectorAll('.detail-assignment-dialog input[type=radio]')).find(input=>input.value==='RETAIN_CURRENT'&&(input.closest('.workbench-select')?[input.closest('.workbench-select').querySelector('[data-slot=label]')]:Array.from(input.labels??[])).some(label=>label.textContent?.includes('保留当前沟通')));if(!input)throw Error('EXPLICIT_RETAIN_CHOICE_REQUIRED');input.click();})()");
+      await browser.waitFor("document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]')?.disabled===false");
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'choosing group/person/communication must not submit a command');
-      await capture('new-detail-1280.png');await browser.evaluate("document.querySelector('.detail-dialog [data-action=transfer-assignment]').click()");
+      await capture('new-detail-1280.png');await browser.evaluate("document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]').click()");
       await browser.waitFor(`!document.querySelector('.activity-list')&&!document.body.innerText.includes(${JSON.stringify(first.ticket.title)})`);
       const posts=requests.filter(request=>request.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);
       assert.equal(post.path,path+'/transfer-assignment');assert.equal(post.status,200);assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);assert.equal(post.if_match,'"3"');

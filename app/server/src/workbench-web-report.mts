@@ -14,6 +14,8 @@ import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
 import {decodeWebMedia} from '../../../shared/workbench-web-report-browser-contracts.mjs';
 import {awaitYxxH5MediaRead} from './yxx-h5-media-budget.mjs';
+import type {ApplicationMemberVerifier,VerifiedApplicationMember} from './wecom-application-member.mjs';
+import {applicationRecipientProof} from './yxx-application-member-auth.mjs';
 
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
@@ -46,12 +48,50 @@ function externalError(error:unknown):never{
 }
 
 /** Web source adapter. Bot manifest authorization remains independent and unchanged. */
-export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,media=null,enabled=false,progressEnabled=false,currentSessionPredicate,localTestProfile=false}:{
+export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,media=null,enabled=false,progressEnabled=false,currentSessionPredicate,localTestProfile=false,reporterProfile=null}:{
  pool:PostgresPool;query:Pick<ReturnType<typeof createWeb01WorkbenchQuery>,'authorizedItem'>;ticketQuery:Pick<P2016TicketQuery,'principal'|'authorizedTicket'>;
  lifecycle?:WorkbenchWebReportLifecyclePort|null;media?:WorkbenchWebReportMediaPort|null;enabled?:boolean;progressEnabled?:boolean;currentSessionPredicate?:SessionPredicate|undefined;localTestProfile?:boolean;
+ reporterProfile?:{read:ApplicationMemberVerifier;secret:string;corpId:string;agentId:string}|null;
 }){
  if(typeof enabled!=='boolean'||typeof progressEnabled!=='boolean')failP2016('FLAG_INVALID',503);
  const active=new Set<AbortController>(),settling=new Set<Promise<void>>();let stopped=false,reading=false;
+ // Display only: no identity, permission or historical snapshot is changed. Coalesce
+ // concurrent cards for one reporter; provider already owns its bounded queue/deadline.
+ const profileReads=new Map<string,Promise<VerifiedApplicationMember|null>>();
+ async function reporterBinding(item:Item){
+  if(!reporterProfile)return null;
+  const row=(await pool.query<{recipient:string;binding:string;proof:string}>(`SELECT b.notify_recipient_id AS recipient,b.canonical_reporter_binding AS binding,b.notify_proof_ref AS proof
+   FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id
+   WHERE i.id=$1::uuid AND i.source_provider='YIXIAOXIU_WEB' AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+    AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
+    AND b.canonical_reporter_binding=i.canonical_reporter_binding AND b.source_app_scope=i.source_app_scope
+    AND b.source_corp_scope=$2 AND b.source_app_scope=$3 AND b.notify_identity_namespace='APP_OPEN_USERID' AND b.notify_recipient_id IS NOT NULL`,[item.intake_id,reporterProfile.corpId,reporterProfile.agentId])).rows[0];
+  if(!row||row.proof!==applicationRecipientProof(reporterProfile.secret,{scopeHash:row.binding,sourceCorpScope:reporterProfile.corpId,sourceAppScope:reporterProfile.agentId},row.recipient))return null;
+  return row;
+ }
+ async function readReporterProfile(auth:WorkbenchHttpAuthContext,kind:string,id:string){
+  const item=await query.authorizedItem(auth,kind,id);
+  const unavailable={name:null,department:null,source:'UNAVAILABLE'} as const;
+  if(item.kind==='ticket'&&item.reporter_profile){
+   await verifyRead(auth,item,true);
+   return item.reporter_name||item.reporter_department?{name:item.reporter_name,department:item.reporter_department??null,source:item.reporter_profile.source==='LATER_LOOKUP'?'RETAINED_PROFILE':'REPORT_SNAPSHOT'}:unavailable;
+  }
+  if(item.reporter_name||item.reporter_department){await verifyRead(auth,item);return {name:item.reporter_name,department:item.reporter_department??null,source:item.reporter_profile?.source==='LATER_LOOKUP'?'RETAINED_PROFILE':'REPORT_SNAPSHOT'};}
+  const binding=await reporterBinding(item);await verifyRead(auth,item);
+  if(!binding||!reporterProfile)return unavailable;
+  let pending=profileReads.get(binding.recipient);
+  if(!pending){
+   if(profileReads.size>=32)failP2016('ACTION_FAILED',503);
+   const controller=new AbortController();active.add(controller);
+   pending=reporterProfile.read(binding.recipient,controller.signal).catch(()=>null).finally(()=>{active.delete(controller);profileReads.delete(binding.recipient);});
+   profileReads.set(binding.recipient,pending);
+  }
+  const member=await pending;
+  const finalBinding=await reporterBinding(item);await verifyRead(auth,item);
+  if(stopped)failP2016('DISABLED',503);
+  if(!finalBinding||finalBinding.binding!==binding.binding||finalBinding.recipient!==binding.recipient||finalBinding.proof!==binding.proof)failP2016('NOT_FOUND',404);
+  return member?.openUserId===binding.recipient?{name:member.displayName,department:member.departmentName??null,source:'CURRENT_PROFILE'}:unavailable;
+ }
  async function verifySession(auth:WorkbenchHttpAuthContext,principalId:string,tx:PostgresTransaction=pool){
   let predicate={sql:'TRUE',values:[] as unknown[]};
   if(currentSessionPredicate)predicate=currentSessionPredicate(auth,principalId,2);
@@ -59,14 +99,14 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
   const current=await tx.query<{current:boolean}>(`SELECT ($1::bigint>platform.physical_epoch_ms() AND ${predicate.sql}) AS current`,[auth.expires_epoch_ms,...predicate.values]);
   if(current.rows[0]?.current!==true)throw new WorkbenchError('WORKBENCH_UNAUTHENTICATED',401);
  }
- async function verifyRead(auth:WorkbenchHttpAuthContext,item:Item){
+ async function verifyRead(auth:WorkbenchHttpAuthContext,item:Item,retainedTicket=false){
   const principal=await ticketQuery.principal(auth),scope=ticketPredicateP2016(principal);
   // Repeat the original canonical READ in the final statement, after any source/store wait.
   let session={sql:'TRUE',values:[] as unknown[]};if(currentSessionPredicate)session=currentSessionPredicate(auth,principal.principal_id,9);else if(!localTestProfile||'session_id' in auth)failP2016('ACTION_FAILED',503);
   const current=await pool.query<{readable:boolean;current:boolean}>(workbenchSearchCardsSql(true)+` SELECT EXISTS(SELECT 1 FROM cards c
-   JOIN intake.service_intake i ON i.id=c.intake_id::uuid JOIN intake.web_request_binding b ON b.intake_id=i.id
-   WHERE c.kind=$4 AND c.id=$5 AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
-    AND i.retention_until_epoch_ms>platform.physical_epoch_ms()) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$2::uuid AND p.is_active
+   ${retainedTicket?'':'JOIN intake.service_intake i ON i.id=c.intake_id::uuid JOIN intake.web_request_binding b ON b.intake_id=i.id'}
+   WHERE c.kind=$4 AND c.id=$5 ${retainedTicket?'':`AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
+    AND i.retention_until_epoch_ms>platform.physical_epoch_ms()`}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$2::uuid AND p.is_active
     AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=p.id ORDER BY role COLLATE "C")=$6::text[]
     AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=p.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
     ($8::bigint>platform.physical_epoch_ms() AND ${session.sql}) AS current`,
@@ -113,12 +153,15 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
  }
  return Object.freeze({
   readView,
+  readReporterProfile,
   async handler(context:Context){
    const {request,response,url,authContext,json,readJson,validateWriteRequest}=context;
    const report=/^\/api\/workbench\/items\/(ticket|review|intake)\/([a-f0-9-]{36})\/web-report(?:\/media\/([a-f0-9-]{36}))?$/iu.exec(url.pathname);
    const progress=/^\/api\/tickets\/([a-f0-9-]{36})\/member-progress(?:\/commands\/([a-f0-9-]{36}))?$/iu.exec(url.pathname);
-   if(!report&&!progress)return false;if(!enabled||stopped)failP2016('DISABLED',503);
+   const profile=/^\/api\/workbench\/items\/(ticket|review|intake)\/([a-f0-9-]{36})\/reporter-profile$/iu.exec(url.pathname);
+   if(!report&&!progress&&!profile)return false;if(!enabled||stopped)failP2016('DISABLED',503);
    try{
+    if(profile){if(request.method!=='GET'||url.searchParams.size)failP2016();json(response,200,await readReporterProfile(authContext,profile[1]??'',uuidP2016(profile[2])));return true;}
     if(progress){
      if(url.searchParams.size)failP2016();const ticketId=uuidP2016(progress[1]);if(!lifecycle)failP2016('DISABLED',503);
      const principal=await ticketQuery.principal(authContext);
@@ -152,6 +195,6 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
     finally{try{outputSignal?.removeEventListener('abort',stopOutput);await lease?.close();}finally{clearTimeout(timer);response.off('close',disconnected);active.delete(controller);reading=false;settling.delete(settled);complete();}}
    }catch(error){return externalError(error);}
   },
-  async close(){stopped=true;for(const controller of active)controller.abort();await Promise.allSettled([...settling]);},
+  async close(){stopped=true;for(const controller of active)controller.abort();await Promise.allSettled([...settling,...profileReads.values()]);profileReads.clear();},
  });
 }

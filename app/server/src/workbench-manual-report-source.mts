@@ -37,10 +37,18 @@ function verifiedManualReportSnapshot(input:unknown,actor:string):VerifiedManual
 }
 // Only callers that have already authorized this Intake/Journey and enabled the
 // MANUAL source may invoke this retained source projection.
-export async function readManualReportSource(transaction:PostgresTransaction,intakeId:string):Promise<{report:ManualReportProjection|VerifiedManualReportProjection;source_hash:string}|null>{
-  const row=(await transaction.query<{snapshot:unknown;actor:string}>(`SELECT manual_report_snapshot AS snapshot,manual_actor_principal_id::text AS actor
-    FROM intake.service_intake WHERE id=$1::uuid AND source_channel='MANUAL' AND source_provider='STAFF_MANUAL_REPORT'
-      AND retention_until>platform.local_now()`,[intakeId])).rows[0];if(!row)return null;
+type ManualSource={report:ManualReportProjection|VerifiedManualReportProjection;source_hash:string};
+export async function readManualReportSource(transaction:PostgresTransaction,intakeId:string):Promise<ManualSource|null>{
+  return (await readManualReportSources(transaction,[intakeId])).get(intakeId)??null;
+}
+export async function readManualReportSources(transaction:PostgresTransaction,intakeIds:readonly string[]):Promise<ReadonlyMap<string,ManualSource>>{
+  if(intakeIds.length>100)failP2016();if(!intakeIds.length)return new Map();
+  const rows=(await transaction.query<{id:string;snapshot:unknown;actor:string}>(`SELECT id::text,manual_report_snapshot AS snapshot,manual_actor_principal_id::text AS actor
+    FROM intake.service_intake WHERE id=ANY($1::uuid[]) AND source_channel='MANUAL' AND source_provider='STAFF_MANUAL_REPORT'
+      AND retention_until>platform.local_now()`,[intakeIds])).rows;
+  return new Map(rows.map(row=>[row.id,manualReportSource(row)]));
+}
+function manualReportSource(row:{snapshot:unknown;actor:string}):ManualSource{
   if(row.snapshot!==null&&typeof row.snapshot==='object'&&!Array.isArray(row.snapshot)
     &&'identity_source' in row.snapshot&&row.snapshot.identity_source==='VERIFIED_DIRECTORY_SELECTION'){
     const report=verifiedManualReportSnapshot(row.snapshot,row.actor);

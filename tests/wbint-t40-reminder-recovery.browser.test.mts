@@ -36,7 +36,7 @@ async function wait(browser:Browser,expression:string,sessionId:string){
   const until=performance.now()+30_000;while(performance.now()<until){if(await evaluate(browser,expression,sessionId))return;await delay(25);}throw Error('T40_PEER_CONDITION_TIMEOUT: '+expression);
 }
 async function click(browser:Browser,selector:string,sessionId:string|null=null){
-  const box=object(await evaluate(browser,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)throw Error('T40_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`,sessionId));
+  const box=object(await evaluate(browser,`(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>node.getClientRects().length>0);if(!e)throw Error('T40_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`,sessionId));
   assert.equal(typeof box.x,'number');assert.equal(typeof box.y,'number');
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:box.x,y:box.y,button:'left',clickCount:1},sessionId);
   await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:box.x,y:box.y,button:'left',clickCount:1},sessionId);
@@ -52,9 +52,9 @@ async function close(browser:Browser|undefined,primary:unknown){await closeBrows
 test('T40 hidden leader cancels its pending cluster, a real queued document takes over, recovery rebaselines and empty refresh expires old visuals',{timeout:240_000},()=>withT40ReminderRiskFixture(async f=>{
   let browser:Browser|undefined,peerId:string|undefined,primary:unknown;
   try{
-    browser=await launch(f);await click(browser,'button[aria-label="提醒偏好"]');
-    await browser.waitFor('Boolean(document.querySelector(\'[role="dialog"][aria-label="本浏览器提醒偏好"][open]\'))');
-    await click(browser,'input[aria-label="开启声音提醒"]');await click(browser,'button[aria-label="关闭提醒偏好"]');
+    browser=await launch(f);await click(browser,'[data-action="open-settings"]');
+    await browser.waitFor('Boolean(document.querySelector(\'.workbench-settings\'))');
+    await click(browser,'input[aria-label="开启声音提醒"]');await click(browser,'button[aria-label="关闭设置"]');
     await browser.waitFor('globalThis.__t40Risk.acquired===1&&globalThis.__t40Risk.reads.slice(globalThis.__t40Risk.acquireReads[0]).some(x=>x.baseline&&x.completed)');
     peerId=text(object(await browser.command('Target.createTarget',{url:'about:blank'})).targetId);
     const peerSession=text(object(await browser.command('Target.attachToTarget',{targetId:peerId,flatten:true})).sessionId);
@@ -63,15 +63,16 @@ test('T40 hidden leader cancels its pending cluster, a real queued document take
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observer+';__t40Visibility("visible");'},peerSession);
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'},peerSession);
     await wait(browser,'Boolean(document.querySelector(\'[data-reminders-ready="true"]\')&&globalThis.__t40Risk)',peerSession);
-    await click(browser,'button[aria-label="提醒偏好"]',peerSession);await click(browser,'input[aria-label="开启声音提醒"]',peerSession);await click(browser,'button[aria-label="关闭提醒偏好"]',peerSession);
+    await click(browser,'[data-action="open-settings"]',peerSession);await wait(browser,'Boolean(document.querySelector(\'input[aria-label="开启声音提醒"]\'))',peerSession);await click(browser,'input[aria-label="开启声音提醒"]',peerSession);
     await wait(browser,'Boolean(document.querySelector(\'input[aria-label="开启声音提醒"]\').checked)',peerSession);
+    await click(browser,'button[aria-label="关闭设置"]',peerSession);
     await browser.waitFor('(async()=>{const state=await navigator.locks.query();return state.held.filter(x=>x.name.startsWith("wbint-reminders-")).length===1&&state.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length===1;})()');
     const waiting=object(await browser.evaluate('(async()=>{const state=await navigator.locks.query();return {held:state.held.filter(x=>x.name.startsWith("wbint-reminders-")).length,pending:state.pending.filter(x=>x.name.startsWith("wbint-reminders-")).length};})()'));
     assert.equal(waiting.held,1);assert.equal(waiting.pending,1,'one native queued request must survive an unavailable leader lock');
     assert.equal(await evaluate(browser,'__t40Risk.acquired',peerSession),0);
-    const prepared=Number(await browser.evaluate('__t40Risk.reads.length'));
-    await browser.evaluate('__t40Visibility("visible")');
-    await browser.waitFor('__t40Risk.reads.slice('+prepared+').some(x=>x.baseline&&x.completed)');
+    // The leader remains visible and its acquired baseline was awaited above.
+    // Repeating the same visibility value does not require another baseline.
+    assert.equal(await browser.evaluate('__t40Risk.visible'),'visible');
     await browser.evaluate('globalThis.__t40BeforeCluster=globalThis.__t40Risk.clusters');
     assert.deepEqual(await f.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
     await browser.waitFor('globalThis.__t40Risk.clusters>globalThis.__t40BeforeCluster');
@@ -104,7 +105,7 @@ test('T40 empty current increment removes an unopened reminder after real READ l
     browser=await launch(f);const url=await browser.evaluate('location.href');assert.deepEqual(await f.runtime.runFollowUpDueBatch({limit:20}),{scanned:1,emitted:1,skipped:0});
     await browser.waitFor('Boolean(document.querySelector("[data-reminder-id]"))');await f.revokeReadWithoutScopeChange();
     await browser.waitFor('document.querySelectorAll("[data-reminder-id]").length===0');assert.equal(await browser.evaluate('location.href'),url);
-    assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);assert.equal(await browser.evaluate('globalThis.__t40Risk.posts'),0);
+    assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);assert.equal(await browser.evaluate('globalThis.__t40Risk.posts'),0);
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_PRODUCTION_BUNDLE',screenshots:[],revocation:'REAL_ASSIGNMENT_TRANSFER_SAME_PRINCIPAL_SCOPE',automatic_posts:0}));
   }catch(error){primary=error;}finally{await close(browser,primary);}
 }));

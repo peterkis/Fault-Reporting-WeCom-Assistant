@@ -45,6 +45,43 @@ test('MVP group reception and response scopes do not require a Webhook for every
  const app=readWorkbenchRoleSettings('APP',workbenchRoleEnvironment(c,'APP'));assert.deepEqual(app.groupNotificationTargets,[]);
  assert.equal(c.settings.bot.groupTargetHashes.length>0,true);
 }));
+test('desktop reminders default off and are passed only to App with closed boolean validation',async()=>fixture(f=>{
+ const read=()=>{const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);return c;};
+ assert.equal(read().settings.workbenchRemindersEnabled,false);
+ f.settings.workbenchRemindersEnabled=true;f.save();const c=read();
+ const app=workbenchRoleEnvironment(c,'APP');assert.equal(readWorkbenchRoleSettings('APP',app).workbenchRemindersEnabled,true);
+ for(const role of ['WORKER','GATEWAY'] as const)assert.equal(JSON.parse(workbenchRoleEnvironment(c,role).WORKBENCH_ROLE_SETTINGS??'').workbenchRemindersEnabled,undefined);
+ const gateway=workbenchRoleEnvironment(c,'GATEWAY');gateway.WORKBENCH_ROLE_SETTINGS=JSON.stringify({...JSON.parse(gateway.WORKBENCH_ROLE_SETTINGS??'{}'),workbenchRemindersEnabled:true});
+ assert.throws(()=>readWorkbenchRoleSettings('GATEWAY',gateway),/workbenchRemindersEnabled/u);
+ writeFileSync(f.file,JSON.stringify({...f.settings,workbenchRemindersEnabled:'true'}));assert.throws(read,/workbenchRemindersEnabled/u);
+}));
+
+test('related scope and explicit follow default off and are admitted only by the App role',async()=>fixture(f=>{
+ const read=()=>{const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);return c;};
+ const defaults=read();assert.equal(defaults.settings.workbenchFollowEnabled,false);
+ assert.equal(readWorkbenchRoleSettings('APP',workbenchRoleEnvironment(defaults,'APP')).workbenchFollowEnabled,false);
+ f.settings.workbenchFollowEnabled=true;f.save();const enabled=read();
+ assert.equal(readWorkbenchRoleSettings('APP',workbenchRoleEnvironment(enabled,'APP')).workbenchFollowEnabled,true);
+ for(const role of ['WORKER','GATEWAY'] as const)assert.equal(JSON.parse(workbenchRoleEnvironment(enabled,role).WORKBENCH_ROLE_SETTINGS??'{}').workbenchFollowEnabled,undefined);
+ const app=workbenchRoleEnvironment(enabled,'APP');app.WORKBENCH_ROLE_SETTINGS=JSON.stringify({...JSON.parse(app.WORKBENCH_ROLE_SETTINGS??'{}'),workbenchFollowEnabled:'true'});
+ assert.throws(()=>readWorkbenchRoleSettings('APP',app),/workbenchFollowEnabled/u);
+ const gateway=workbenchRoleEnvironment(enabled,'GATEWAY');gateway.WORKBENCH_ROLE_SETTINGS=JSON.stringify({...JSON.parse(gateway.WORKBENCH_ROLE_SETTINGS??'{}'),workbenchFollowEnabled:true});
+ assert.throws(()=>readWorkbenchRoleSettings('GATEWAY',gateway),/workbenchFollowEnabled/u);
+ for(const value of ['true',1,null]){writeFileSync(f.file,JSON.stringify({...f.settings,workbenchFollowEnabled:value}));assert.throws(read,/workbenchFollowEnabled/u);}
+}));
+
+test('reporter profiles are default off and only their enabled Worker receives the narrow read capability',async()=>fixture(f=>{
+ const read=()=>{const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);return c;};
+ assert.equal(read().settings.workbenchReporterProfilesEnabled,false);
+ f.settings.workbenchReporterProfilesEnabled=true;f.save();const c=read();
+ const app=workbenchRoleEnvironment(c,'APP'),worker=workbenchRoleEnvironment(c,'WORKER'),gateway=workbenchRoleEnvironment(c,'GATEWAY');
+ assert.equal(readWorkbenchRoleSettings('APP',app).workbenchReporterProfilesEnabled,true);
+ const settings=readWorkbenchWorkerSettings(worker);assert.ok(settings.reporterProfiles);assert.equal(settings.reporterProfiles.corpId,f.settings.memberEntry.corpId);
+ assert.equal(worker.APP_SECRET,f.env.APP_SECRET);assert.equal(worker.WECOM_BOT_SECRET,undefined);assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'{}').notificationBindingsFile,undefined);
+ assert.equal(JSON.parse(gateway.WORKBENCH_ROLE_SETTINGS??'{}').workbenchReporterProfilesEnabled,undefined);
+ assert.throws(()=>readWorkbenchWorkerSettings({...worker,APP_SECRET:undefined}),/APP_SECRET/u);
+ writeFileSync(f.file,JSON.stringify({...f.settings,workbenchReporterProfilesEnabled:'true'}));assert.throws(read,/workbenchReporterProfilesEnabled/u);
+}));
 test('notification authority rereads revocation and expiry without borrowing identity HMAC for reporter scope',async()=>fixture(async f=>{
  const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);
  const app=createWorkbenchNotificationOptions(f.settings,c.reporterHmacSecret);

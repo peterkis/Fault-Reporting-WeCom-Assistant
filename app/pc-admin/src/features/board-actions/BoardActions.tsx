@@ -1,3 +1,5 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {createContext,useContext,useEffect,useRef,useState} from 'react';
 import type {ReactNode} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
@@ -15,7 +17,7 @@ type Entry={intent:WorkbenchBoardActionIntent;selector:string};
 const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void}>({enabled:false,blocked:true,open:()=>{}});
 export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;children:ReactNode}){
   const client=useQueryClient(),enabled=principal.board_actions_enabled===true,request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
-  const [checking,setChecking]=useState(false),[message,setMessage]=useState('');
+  const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
   useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
   const open=async(intent:WorkbenchBoardActionIntent)=>{
     if(!enabled||blocked||request.current)return;
@@ -83,7 +85,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
         if(!original||!boardColumns.some(column=>column===target)){setMessage('请使用合法业务列；当前位置未作本地变更。');return;}
         const intent=readBoardIntent({kind:original.kind,id:original.id,source_column:original.column,target_column:target});if(intent)void open(intent);
       }}>{children}</DragDropProvider>
-    {enabled&&message?<p className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</p>:null}
+    {enabled&&message?<ToastFeedback revision={messageRevision} source="board-actions" state={checking?'checking':undefined} className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</ToastFeedback>:null}
   </BoardActionsContext.Provider>;
 }
 export function BoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
@@ -99,11 +101,11 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
   }}>
     {children}
     {context.enabled?<div className="board-action-tools">
-      <button ref={handleRef} type="button" data-action="board-drag-handle" disabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用右侧业务动作按钮">移动</button>
-      <button type="button" ref={menuButton} data-action="board-action-menu" disabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)}>业务动作</button>
+      <HButton ref={handleRef} type="button" data-action="board-drag-handle" isDisabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用右侧业务动作按钮" variant="secondary">移动</HButton>
+      <HButton type="button" ref={menuButton} data-action="board-action-menu" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} variant="secondary">业务动作</HButton>
       {menu?<div className="board-action-options" role="group" aria-label={item.number+' 的业务列'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setMenu(false);menuButton.current?.focus();}}}>
-        {boardColumns.filter(target=>target!==item.column).map(target=><button key={target} type="button" disabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}}>移至{boardColumnNames[target]}：打开合法表单</button>)}
-        <button type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}}>取消</button>
+        {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" isDisabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}} variant="secondary">移至{boardColumnNames[target]}：打开合法表单</HButton>)}
+        <HButton type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}} variant="secondary">取消</HButton>
       </div>:null}
     </div>:null}
   </div>;
@@ -123,7 +125,7 @@ export function BoardActionNotice({intent,selector,currentColumn,onCancel}:{inte
   return <section ref={container} className="board-action-notice" data-board-intent-panel>
     <h3>{currentTarget?'官方已显示：'+boardColumnNames[intent.target_column]:'移至'+boardColumnNames[intent.target_column]+'：请完成合法表单'}</h3>
     <p>{currentTarget?'已读取的官方位置已到此列；这不代替本次原命令的回执。结果未知或冲突时，仍沿原操作核对，原命令及输入继续保留。':'拖动本身不提交操作。取消此入口会保留本页输入；结果未知或冲突时，沿原操作核对并以官方查询显示真实位置。'}</p>
-    <button type="button" data-action="focus-board-action-form" onClick={()=>{const root=container.current?.closest('.detail-dialog,.detail-page'),form=root?.querySelector<HTMLElement>(selector);if(form){form.tabIndex=-1;form.scrollIntoView({block:'nearest',behavior:'auto'});form.focus({preventScroll:true});}}}>{currentTarget?'查看原操作与回执':'继续填写原表单'}</button>
-    <button type="button" data-action="cancel-board-move" onClick={onCancel}>取消移动，保留本页输入</button>
+    <HButton type="button" data-action="focus-board-action-form" onClick={()=>{const root=container.current?.closest('.detail-dialog,.detail-page'),form=root?.querySelector<HTMLElement>(selector);if(form){form.tabIndex=-1;form.scrollIntoView({block:'nearest',behavior:'auto'});form.focus({preventScroll:true});}}} variant="secondary">{currentTarget?'查看原操作与回执':'继续填写原表单'}</HButton>
+    <HButton type="button" data-action="cancel-board-move" onClick={onCancel} variant="secondary">取消移动，保留本页输入</HButton>
   </section>;
 }

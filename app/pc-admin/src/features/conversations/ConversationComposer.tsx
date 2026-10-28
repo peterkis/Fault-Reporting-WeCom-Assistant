@@ -1,3 +1,6 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -50,7 +53,7 @@ export function ConversationComposer(props:ComposerProps){
 function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpTarget,draftPurpose}:ComposerProps&{draftPurpose:string}){
   const session=entry.session.session_id,action=purpose==='messages'?'REPLY':'INTERNAL_NOTE',client=useQueryClient();
   const [boundOperationId,setBoundOperationId]=useState<string|null>(null);
-  const [value,setValue]=useState(''),[pending,setPending]=useState<SavedCommand|null>(null),[outcome,setOutcome]=useState(''),[busy,setBusy]=useState(false);
+  const [value,setValue]=useState(''),[pending,setPending]=useState<SavedCommand|null>(null),[outcome,setOutcome,outcomeRevision]=useFeedbackState(''),[busy,setBusy]=useState(false);
   const composing=useRef(false),request=useRef<AbortController|null>(null),epoch=useRef(0),latest=useRef(value),alive=useRef(true);latest.current=value;
   const draftAuthority=useRef<AuthorityAttempt|null>(null);
   const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome('');};
@@ -117,15 +120,10 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   }
   const label=purpose==='messages'?'回复报修人':'内部备注';
   return <section className={'conversation-composer '+(purpose==='internal-notes'?'internal-composer':'')} aria-label={label}>
-    <form onSubmit={e=>{e.preventDefault();if(allowed&&!busy&&!unknown&&draft.canSubmit&&value.trim())void send();}}>
-      <label htmlFor={'conversation-'+purpose}>{label}</label><p id={'audience-'+purpose}>{purpose==='messages'?'发给本服务主题的原报修人；群来源通过 Bot 私聊回复。':'仅供获权工作人员协作，不向报修人发送。'}</p>
-      <textarea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} maxLength={2000} value={value} disabled={!allowed||busy||unknown} onChange={e=>setValue(e.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={e=>{if(e.key!=='Enter'||e.shiftKey||composing.current||e.nativeEvent.isComposing||e.keyCode===229)return;e.preventDefault();e.currentTarget.form?.requestSubmit();}}/>
-      {draft.enabled?<p role="status" data-conversation-draft={purpose}>{draft.message}</p>:null}
-      <div className="note-controls"><button type="submit" data-action={purpose==='messages'?'send-conversation-reply':'save-conversation-note'} disabled={!allowed||busy||unknown||!draft.canSubmit||!value.trim()}>{busy?'正在核对…':label}</button>
-        {unknown?<button type="button" data-action={'check-'+purpose} disabled={busy} onClick={()=>void check()}>只读核对原操作</button>:null}
-        {pending&&allowed&&!followUpTarget?<button type="button" disabled={busy} onClick={()=>void send(pending)}>用原命令核对</button>:null}
-        {value&&draft.enabled&&!busy?<button type="button" data-action={'discard-'+purpose} onClick={()=>void draft.discard()}>清理敏感草稿</button>:null}
-      </div><p role="status" {...(purpose==='messages'?{'data-reply-outcome':''}:{'data-note-outcome':''})}>{outcome}</p>
-    </form>
+    <HForm onSubmit={e=>{e.preventDefault();if(allowed&&!busy&&!unknown&&draft.canSubmit&&value.trim())void send();}}><HLabel htmlFor={'conversation-'+purpose}>{label}</HLabel><p id={'audience-'+purpose}>{purpose==='messages'?'发给本服务主题的原报修人；群来源通过 Bot 私聊回复。':'仅供获权工作人员协作，不向报修人发送。'}</p><HTextArea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} maxLength={2000} value={value} disabled={!allowed||busy||unknown} onChange={e=>setValue(e.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={e=>{if(e.key!=='Enter'||e.shiftKey||composing.current||e.nativeEvent.isComposing||e.keyCode===229)return;e.preventDefault();e.currentTarget.form?.requestSubmit();}}/>{draft.enabled?<DraftStatus role="status" data-conversation-draft={purpose}>{draft.message}</DraftStatus>:null}<div className="note-controls"><HButton type="submit" data-action={purpose==='messages'?'send-conversation-reply':'save-conversation-note'} isDisabled={!allowed||busy||unknown||!draft.canSubmit||!value.trim()} variant="secondary">{busy?'正在核对…':label}</HButton>
+        {unknown?<HButton type="button" data-action={'check-'+purpose} isDisabled={busy} onClick={()=>void check()} variant="secondary">只读核对原操作</HButton>:null}
+        {pending&&allowed&&!followUpTarget?<HButton type="button" isDisabled={busy} onClick={()=>void send(pending)} variant="secondary">用原命令核对</HButton>:null}
+        {value&&draft.enabled&&!busy?<HButton type="button" data-action={'discard-'+purpose} onClick={()=>void draft.discard()} variant="secondary">清理敏感草稿</HButton>:null}
+      </div><ToastFeedback revision={outcomeRevision} source="conversations" state={busy?'checking':unknown?'unknown':undefined} role="status" {...(purpose==='messages'?{'data-reply-outcome':''}:{'data-note-outcome':''})}>{outcome}</ToastFeedback></HForm>
   </section>;
 }

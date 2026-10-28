@@ -1,3 +1,5 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -6,9 +8,9 @@ import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction} from '../../
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
+export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode=false,otherBlocked=false}:{ticketId:string;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
-  const [state,setState]=useState<State>('idle'),[message,setMessage]=useState(''),[pending,setPending]=useState<Pending|null>(null);
+  const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[pending,setPending]=useState<Pending|null>(null);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const blocked=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
@@ -18,6 +20,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     void client.invalidateQueries({queryKey:['ticket-command-context',principal.principal_id,ticketId]});
     void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});
     void client.invalidateQueries({queryKey:['board',principal.principal_id]});
+    void client.invalidateQueries({queryKey:['ticket-round-notifications',principal.principal_id,ticketId]});void client.invalidateQueries({queryKey:['web-report',principal.principal_id,'ticket',ticketId]});
   };
   const mutation=useMutation({mutationKey:['ticket-self-handling',principal.principal_id,ticketId],
     mutationFn:({intent,signal}:{intent:Pending;signal:AbortSignal})=>api.selfHandle(ticketId,intent.action,intent.command,principal.csrf_token,signal),
@@ -32,23 +35,21 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     if(request.current)return;const controller=new AbortController();request.current=controller;setPending(intent);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在提交处理操作…');mutation.mutate({intent,signal:controller.signal});
   };
   const submit=(action:SelfHandlingAction)=>{
-    if(blocked||context.isFetching||!context.data?.allowed_actions.includes(action))return;
+    if(blocked||otherBlocked||context.isPending||context.isError||!context.data?.allowed_actions.includes(action))return;
     send(Object.freeze({action,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:context.data.resolver_team_id})}),false);
   };
   const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[];
   // Keep the original request/result controller mounted; only its idle presentation is optional.
-  if(principal.ticket_takeover_enabled&&!allowed.some(action=>action==='take-and-start'||action==='accept-for-later')&&!pending&&state==='idle')return null;
-  return <section data-activity-field="ticket-handling" className="ticket-notes ticket-self-handling" aria-label="本人承接工单">
+  if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&state==='idle')return null;
+  return <section data-activity-field="ticket-handling" className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
     {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
-    {cycle?<p className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
+    {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
-      {allowed.includes('take-and-start')?<button type="button" className="take-and-start" data-action="take-and-start" disabled={blocked||context.isFetching||context.isError} onClick={()=>submit('take-and-start')}>我来处理</button>:null}
-      {allowed.includes('accept-for-later')?<button type="button" data-action="accept-for-later" disabled={blocked||context.isFetching||context.isError} onClick={()=>submit('accept-for-later')}>先接单，稍后处理</button>:null}
-      {state==='unknown'&&pending?<button type="button" data-action="check-self-handling" onClick={()=>send(pending,true)}>核对原操作结果</button>:null}
-      {!blocked?<button type="button" onClick={()=>{void context.refetch();}}>重新读取工单动作</button>:null}
+      {allowed.includes('take-and-start')?<HButton type="button" className="take-and-start" data-action="take-and-start" isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} variant="secondary">接单</HButton>:null}
+      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} variant="secondary">核对原操作结果</HButton>:null}
+      {!blocked&&(context.isError||state==='conflict'||state==='denied')?<HButton type="button" data-action="refresh-self-handling" onClick={()=>{void context.refetch();}} variant="secondary">重试读取操作</HButton>:null}
     </div>
-      {!context.isPending&&!context.isError&&!allowed.some(action=>['take-and-start','accept-for-later'].includes(action))&&!pending?<p>当前没有可用的本人承接动作。</p>:null}
-    {state!=='idle'?<p className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-self-handling" state={state} className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
     {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={()=>{setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}}/>:null}
   </section>;
 }

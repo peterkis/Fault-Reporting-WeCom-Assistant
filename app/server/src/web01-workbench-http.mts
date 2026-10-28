@@ -42,13 +42,13 @@ export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01Wor
       json(response,200,await follow.save({authContext,kind,id,body}));return true;
     }
     if(request.method!=='GET')failP2016('NOT_FOUND',404);
-    const allowed=url.pathname==='/api/workbench/board'?['column','range','cursor','limit',...(workbenchFollowEnabled?['scope']:[])]:['cursor','limit'];
+    const allowed=url.pathname==='/api/workbench/board'?['column','range','closed_from','closed_to','cursor','limit',...(workbenchFollowEnabled?['scope']:[])]:['cursor','limit'];
     if([...url.searchParams.keys()].some(k=>!allowed.includes(k))||allowed.some(k=>url.searchParams.getAll(k).length>1))failP2016();
     const cursor=url.searchParams.get('cursor'),limit=url.searchParams.get('limit');
     if(url.pathname==='/api/workbench/board'){
       const scope=url.searchParams.get('scope');
       if(scope!==null&&scope!=='team'&&scope!=='related')failP2016();
-      json(response,200,await query.list({authContext,column:url.searchParams.get('column'),range:url.searchParams.get('range'),...(workbenchFollowEnabled?{scope}:{}),cursor,limit}));return true;
+      json(response,200,await query.list({authContext,column:url.searchParams.get('column'),range:url.searchParams.get('range'),closedFrom:url.searchParams.get('closed_from'),closedTo:url.searchParams.get('closed_to'),...(workbenchFollowEnabled?{scope}:{}),cursor,limit}));return true;
     }
     const match=/^\/api\/workbench\/items\/(ticket|review|intake)\/([0-9a-f-]{36})$/iu.exec(url.pathname);
     if(!match||!match[1])failP2016('NOT_FOUND',404);

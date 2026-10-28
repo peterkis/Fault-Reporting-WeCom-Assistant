@@ -21,11 +21,11 @@ type Read={path:string;status:number;body:Reply};
 type DomRow={node:string;lines:string[]};
 type Scenario={name:string;senderResult:CommunicationSenderResult;status:'SENT'|'DEAD_LETTER'|'RECONCILIATION_REQUIRED';label:string;effect:'ACKNOWLEDGED'|'NOT_ATTEMPTED'|'UNKNOWN';effectLabel:string};
 const scenarios:readonly Scenario[]=[
-  {name:'sent',senderResult:{outcome:'ACKNOWLEDGED',provider_message_id:'T24_SYNTHETIC_ACK',error_code:null,retryable:false},status:'SENT',label:'已发送',effect:'ACKNOWLEDGED',effectLabel:'已确认'},
+  {name:'sent',senderResult:{outcome:'ACKNOWLEDGED',provider_message_id:'T24_SYNTHETIC_ACK',error_code:null,retryable:false},status:'SENT',label:'已发送',effect:'ACKNOWLEDGED',effectLabel:'发送已确认'},
   {name:'failed',senderResult:{outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'T24_SYNTHETIC_NOT_APPLIED',retryable:false},status:'DEAD_LETTER',label:'发送失败',effect:'NOT_ATTEMPTED',effectLabel:'尚未尝试'},
   {name:'unknown',senderResult:{outcome:'UNKNOWN',provider_message_id:null,error_code:'T24_SYNTHETIC_UNKNOWN',retryable:false},status:'RECONCILIATION_REQUIRED',label:'待核对',effect:'UNKNOWN',effectLabel:'结果未知'},
 ];
-const region='[role="region"][aria-label="报修人通知送达"]';
+const region='[role="region"][aria-label="报修人通知"]';
 const internalCanary='INTERNAL_T24_PC_NONPENDING_CANARY';
 // Pass through the original fetch. Observe actual HTTP replies, never replace a request or response.
 const instrument=`(()=>{const original=globalThis.fetch;globalThis.__t24PCReads=[];globalThis.__t24PCWrites=[];globalThis.__t24PCBootstrap=[];
@@ -36,8 +36,8 @@ const instrument=`(()=>{const original=globalThis.fetch;globalThis.__t24PCReads=
     if(method==='GET'&&path.endsWith('/deliveries'))globalThis.__t24PCReads.push({path,status:response.status,body:await response.clone().json()});
     if(method==='GET'&&path==='/api/lifecycle/bootstrap')globalThis.__t24PCBootstrap.push({status:response.status,body:await response.clone().json()});
     return response;};})()`;
-const domRows=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return [...(r?.querySelectorAll('li')??[])].map(li=>({node:li.querySelector('strong')?.textContent.trim()??'',lines:[...li.querySelectorAll('small')].map(x=>x.textContent.trim().replace(/\\s+/g,' '))})).sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);})()`;
-const click=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)}),b=[...(r?.querySelectorAll('button')??[])].find(x=>x.textContent.trim()==='重新读取通知');if(!b||b.disabled)throw Error('T24_REAL_REQUERY_BUTTON_REQUIRED');b.click();})()`;
+const domRows=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return [...(r?.querySelectorAll('li')??[])].map(li=>({node:li.querySelector('strong')?.textContent.trim()??'',lines:[...li.querySelectorAll('.notification-delivery')].flatMap(d=>[...d.querySelectorAll('p span')].map(x=>x.textContent.trim()).concat([...d.querySelectorAll('small,time')].map(x=>x.textContent.trim().replace(/\\s+/g,' '))))})).sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);})()`;
+const click=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)}),b=[...(r?.querySelectorAll('button')??[])].find(x=>x.getAttribute('aria-label')==='刷新通知状态');if(!b||b.disabled)throw Error('T24_REAL_REQUERY_BUTTON_REQUIRED');b.click();})()`;
 async function load(browser:Browser){
   await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});
   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
@@ -108,8 +108,8 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
       const baseline=await physical();assert.ok(baseline);assert.equal(baseline.grants,0);
       for(const item of actual.items)assert.ok(baseline.deliveries.includes(item.delivery_id));
       const expected:DomRow[]=[
-        {node:'首次责任',lines:['处理轮次 1 · 原报修人单聊 · 待发送','尝试次数 0 · 尚未尝试']},
-        {node:'工作人员完工',lines:['处理轮次 1 · 原报修人单聊 · '+scenario.label,'尝试次数 1 · '+scenario.effectLabel,...(staff.sent_at?['发送时间 '+staff.sent_at+'（北京时间）']:[])]},
+        {node:'首次责任通知',lines:['原报修人单聊','待发送','0 次尝试 · 尚未尝试','产生于 '+actual.items.find(x=>x.node==='FIRST_RESPONSIBILITY')?.created_at]},
+        {node:'完工通知',lines:['原报修人单聊',scenario.label,'1 次尝试 · '+scenario.effectLabel,(staff.sent_at?'发送于 '+staff.sent_at:'产生于 '+staff.created_at)]},
       ].sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);
       const rendered=()=>`JSON.stringify(${domRows()})===JSON.stringify(${JSON.stringify(expected)})`;
       const cookie=context.browserCookies[2];assert.ok(cookie);if(typeof cookie.url!=='string')throw Error('T24_REAL_READER_COOKIE_REQUIRED');
@@ -118,8 +118,7 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
         browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+id,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
         await load(browser);
         await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)})?.querySelector('li'))`);
-        assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('details').open`),false,'notification diagnostics start folded');
-        await browser.evaluate(`document.querySelector(${JSON.stringify(region)}).querySelector('summary').click()`);
+        assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(region)}).querySelector('details'))`),false,'real notification nodes are visible without a disclosure');
         await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('li')?.checkVisibility()===true`);
         await browser.waitFor(rendered());
         assert.deepEqual(await browser.evaluate(domRows()),expected);

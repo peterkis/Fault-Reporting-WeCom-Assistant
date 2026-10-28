@@ -13,11 +13,12 @@
 | 接管、转交、释放、私聊文字、内部备注 | workbenchConversationsEnabled、workbenchInternalNotesEnabled | App；真实 Session、原 Control／Communication／CSRF／个人授权 |
 | 联系人收件箱、来源标签、个人已读、实时更新 | workbenchConversationInboxEnabled、sourceGroupDirectoryEnabled、workbenchPersonalReadEnabled、workbenchRealtimeEnabled | App；两个 conversation 选项同时为 true；identityHmacKey 映射现有身份密钥；唯一实时控制器 |
 | 提交核对、补充跟进 | workbenchSupplementFollowUpEnabled | App；沿各原命令回执，不另建账本；当前页面保留未确认操作，核对后才允许下一次提交 |
+| 团队工作／与我有关、本人明确关注 | workbenchFollowEnabled，运行配置中默认 false | 仅 App；显式开启后核验原044完整schema，沿当前READ下处理／沟通／本人关注并集；关注不改变责任或扩大读取权限 |
 | 节点通知、投递异常、受控恢复 | mvpNotificationsEnabled、ticketRoundNotificationsEnabled、notificationExceptionsEnabled | App 生成／消费原轮次通知意图，Worker 执行 Delivery，Gateway Sender；依赖接单、工作人员完工、模板、时间线、MEMBER_REQUIRED |
 | 报修人查询、仍未解决 | MEMBER_REQUIRED、已证明的成员映射与 OAuth；yxxSelfService 的两个原 flags、reporterFeedbackEnabled；botReporterFeedbackEnabled | App；Web requestRef 与 Bot publicRef 分别原报修人验证；无 H5 映射的单独接收模式不装配自助／反馈 |
 | 新版 H5、多媒体、催单／评价、管理端 Web 材料与催单提醒 | yxxH5.enabled；原成员 flags 保持；公开进度另需 workbenchProgressEnabled | 显式 H5 环境；App 的同源成员／工作人员双权限；Worker 的单并发转码与到期清理，064／065 |
 
-只启用上述组合。H5 显式开启时挂载 Web 材料读取，并复用站内提醒消费本轮催单；不是原通道附件开关的放宽。原附件、核实目录候选、Incident、AI、关注、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。H5 关闭时原提醒默认值保持。原动作仍按当前授权和状态决定是否可用。
+只启用上述组合。H5 显式开启时挂载 Web 材料读取，并复用站内提醒消费本轮催单；不是原通道附件开关的放宽。关注由运行配置的 `workbenchFollowEnabled` 单独显式开启，缺省为 false，不传入 Worker／Gateway；关闭时隐藏相关入口和关注操作，保留已有个人关系。原附件、核实目录候选、Incident、AI、预约、活动、搜索、看板拖动、接管工单、撤派／退回等未列选项保持原默认值。H5 关闭时原提醒默认值保持。原动作仍按当前授权和状态决定是否可用。
 
 首期 MVP 只面向信息科操作人员。2026-10-19 按用户决定，本入口的 `workbenchDraftRecoveryEnabled`、`botReporterFeedbackDraftRecoveryEnabled` 与 `yxxSelfService.reporterFeedbackDraftRecoveryEnabled` 均显式为 `false`。暂不提供跨刷新、离开页面后的草稿恢复。填写内容保留在当前页面。重复提交保护、授权校验、版本校验与提交结果核对继续生效。已有加密草稿、历史证据及其他测试配置保持，不执行批量清理；原未确认操作仍按既有保护只核对一次原操作。未来恢复此功能须单独验证动作变为可用时的初始化与跨刷新流程。
 
@@ -43,6 +44,12 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 
 ## 配置与角色
 
+2026-10-26：[ADR-0048](../../adr/0048_ticket_reporter_profile_lifecycle.md)增加可选`workbenchReporterProfilesEnabled:boolean=false`。开启后App读取随Ticket保存的必要来源、姓名、部门；Worker接入人员读取及有界补全，获得最小corpId/agentId配置和已有APP_SECRET，不获得Bot密钥或通知路由。人工代录只投影原姓名、部门及核实标识，不调用人员Provider；H5只沿原签名应用身份读取。资料随工单持续保存，完结后不按30天清理。原消息、正文、媒体、会话和外发的留存与权限保持。
+
+开启前使用当前编译产物`app/server/scripts/ticket-reporter-profiles-migrate.mjs --check`核验067增量，沿受控`PILOT_DATABASE_URL`并显式提供`WORKBENCH_EXPECTED_DATABASE`；具名授权范围内再执行`--apply`。启动不自动迁移，App和Worker均拒绝缺失结构。每轮最多投影20条缺失记录、执行1个资料补全，持久尝试数最多8，失败间隔保留至重启后；`UNAVAILABLE`为已用尽补全次数或无法核实来源，应保留已有资料并人工核对原因。关闭开关停止新增采集和补全，不删除资料表；回退程序和配置时同样保留新资料及原快照。
+
+2026-10-26：JSON 增加可选 `workbenchRemindersEnabled:boolean=false`，仅 App 角色消费原站内提醒，Worker/Gateway 不接收。H5 原有启用分支保持 OR 关系。桌面扫码入口及安装说明见 [Electron](../../app/pc-admin/desktop/README.md)，不增加迁移或真实外发批准。
+
 样例：[运行配置](../../config_examples/human-workbench.json)、[环境](../../config_examples/human-workbench.env.example)、[当前通知目标](../../config_examples/human-workbench-notification-bindings.json)。全部为占位符，直接运行会失败。真实文件放 `secrets/` 或其他受控目录，不提交。
 
 | 名称 | 默认／要求 | 角色 |
@@ -52,7 +59,7 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 | PILOT_DATABASE_URL | 必需；沿现有数据库权限 | 三角色 |
 | PILOT_LOG_IDENTITY_HASH_KEY | 现有值，至少16字符；不轮换，不替换成 Reporter secret | App Runtime.identityHmacKey／认证、Worker 编排、Gateway 受理 |
 | P2_016_REPORTER_HMAC_SECRET | 现有 Reporter 专用值，至少32字节，与身份密钥不同 | 三角色原 Reporter／通知／绑定用途 |
-| APP_SECRET | 现有成员应用凭据；memberEntry 中复用已核对企业／应用／Bot 作用域 | App OAuth；Gateway 在发送或单独接收时使用；Worker 不接收 |
+| APP_SECRET | 现有成员应用凭据；memberEntry 中复用已核对企业／应用／Bot 作用域 | App OAuth；Gateway 在发送或单独接收时使用；Worker 仅在工单资料开关开启时获得读取能力 |
 | WECOM_BOT_SECRET | transportEnabled=true 或 botInboundEnabled=true 时必需 | 仅 Gateway |
 | WORKBENCH_EXTERNAL_IO_APPROVED／WORKBENCH_EXTERNAL_IO_APPROVAL_REF | 默认无；发送时需 true 和本次具名授权引用；配置本身不授予批准 | 父进程检查，Gateway 接收；不推进任何 Gate |
 | WORKBENCH_INBOUND_IO_APPROVED／WORKBENCH_INBOUND_IO_APPROVAL_REF | 默认无；单独接收需 true 和本次接收授权引用，不代替发送批准 | 父进程检查，Gateway 成员核验 |
@@ -96,7 +103,7 @@ human-v1 显式启用 `mvpNotificationsEnabled=true`；通用 Runtime 默认 fal
 | `YIXIAOXIU_H5_FFMPEG_PATH` | H5 开启时必需，显式绝对程序路径 | 仅 Worker，App／Gateway 不接收 |
 | `YIXIAOXIU_H5_FFPROBE_PATH` | 与 FFmpeg 成对，显式绝对程序路径 | 仅 Worker；既有供应链／程序来源证据单独保留 |
 
-父进程只按角色白名单转交字段。Worker 继续不持有 `APP_SECRET`、`memberEntry`、应用 token Provider 或新增外部发送资格；Gateway 不接收 H5 存储、加密密钥、转码程序或这些新开关。App 复用已有应用 token Provider 生成受控页面签名／下载临时素材，不向浏览器下发凭据，也不运行转码子进程。
+父进程只按角色白名单转交字段。Worker 不持有完整 `memberEntry` 或新增外部发送资格；仅当ADR-0048的 `workbenchReporterProfilesEnabled` 显式开启时，才按前文窄配置获得 `APP_SECRET` 与人员读取用token Provider；Gateway 不接收 H5 存储、加密密钥、转码程序或这些新开关。App 复用已有应用 token Provider 生成受控页面签名／下载临时素材，不向浏览器下发凭据，也不运行转码子进程。
 
 M 的 `MEMBER_SELF_SERVICE` 扩展通过显式 `h5` 选项装配。F 即 `FULL_SERVICE_LOOP` 的 W 成员支路，human-v1 的 P2-016 App 将显式 `yxxH5` 构造成共享运行对象，再分别注入成员 handler 和工作人员 Web 材料／公开进度接口；沿原池和唯一 App 监听。只有 H5 开启才挂载相应支路，原 OAuth-only、成员只读与原成员写开关不被提升。
 

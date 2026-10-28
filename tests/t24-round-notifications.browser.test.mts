@@ -4,6 +4,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {createTicketRoundNotifications} from '../app/server/src/workbench-ticket-round-notifications.mjs';
@@ -41,18 +44,17 @@ test('production Ticket detail reads actual personal round Delivery facts and ex
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});
       const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'&&Boolean(document.querySelector('#detail-title'))`);
-      const selector='[role="region"][aria-label="报修人通知送达"]';
+      const selector='[role="region"][aria-label="报修人通知"]';
       assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`),true,'the formal production detail must expose its actual round Delivery facts');
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).querySelector('details').open`),false,'delivery diagnostics are folded until requested');
-      await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).querySelector('summary').click()`);
-      await browser.waitFor(`(()=>{const region=document.querySelector(${JSON.stringify(selector)});return region?.innerText.includes('首次责任')&&region.innerText.includes('工作人员完工')&&(region.innerText.match(/待发送/g)??[]).length===2;})()`);
+      assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}).querySelector('details'))`),false,'actual delivery nodes are immediately visible');
+      await browser.waitFor(`(()=>{const region=document.querySelector(${JSON.stringify(selector)});return region?.innerText.includes('首次责任')&&region.innerText.includes('完工通知')&&(region.innerText.match(/待发送/g)??[]).length===2;})()`);
       const visible=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).innerText`) as string;
-      assert.equal(visible.includes('处理轮次 1'),true);assert.equal(visible.includes('原报修人单聊'),true);assert.equal(visible.includes('尝试次数 0'),true);
+      assert.equal(visible.includes('处理轮次 1'),true);assert.equal(visible.includes('原报修人单聊'),true);assert.equal(visible.includes('0 次尝试'),true);
       const reads=await browser.evaluate('globalThis.__t24UIReads') as {path:string;status:number;body:DeliveryReply}[];
       assert.ok(reads.length);assert.equal(reads.at(-1)?.path,path);assert.equal(reads.at(-1)?.status,200);
       assert.deepEqual(reads.at(-1)?.body.items.map(row=>row.delivery_id).sort(),actual.items.map(row=>row.delivery_id).sort());
       const count=reads.length;
-      await browser.evaluate(`(()=>{const region=document.querySelector(${JSON.stringify(selector)}),button=[...region.querySelectorAll('button')].find(item=>item.textContent.trim()==='重新读取通知');if(!button)throw Error('T24_REQUERY_BUTTON_MISSING');button.click();})()`);
+      await browser.evaluate(`(()=>{const region=document.querySelector(${JSON.stringify(selector)}),button=[...region.querySelectorAll('button')].find(item=>item.getAttribute('aria-label')==='刷新通知状态');if(!button)throw Error('T24_REQUERY_BUTTON_MISSING');button.click();})()`);
       await browser.waitFor(`globalThis.__t24UIReads.length>${count}`);
       const reread=await browser.evaluate('globalThis.__t24UIReads.at(-1)') as {path:string;status:number;body:DeliveryReply};
       assert.equal(reread.path,path);assert.equal(reread.status,200);assert.deepEqual(reread.body.items.map(row=>row.delivery_id).sort(),actual.items.map(row=>row.delivery_id).sort());
@@ -75,4 +77,32 @@ test('production Ticket detail reads actual personal round Delivery facts and ex
     }
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   });
+});
+
+test('real multiple rounds keep private and group completion results inside their own visible nodes',{timeout:120_000},async()=>{
+  await withT24Fixture(async f=>{
+    const http=await t11Http(f),source=await seedPersistedIntake({pool:f.pool,text:'多轮通知合成报修',chatType:'group',requestType:'INCIDENT',status:'RECEIVED',tag:'detail-timeline'});
+    const created=await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:source.intakeId,occurredAt:source.receivedAt,traceId:'detail-timeline'});assert.ok(created.ticket);const id=created.ticket.id;
+    const reportTime=async()=>{const reply=await http.get('/api/workbench/items/ticket/'+id);assert.equal(reply.status,200);return (await reply.json() as {reported_at:string|null}).reported_at;};const originalReportTime=await reportTime();assert.ok(originalReportTime);
+    const started=await http.start(id);await f.runtime.roundNotifications.runOnce();assert.equal((await http.post(id,'complete',http.command(started))).status,200);await f.runtime.roundNotifications.runOnce();
+    const read=async()=>{const reply=await http.get('/api/tickets/'+id+'/deliveries');assert.equal(reply.status,200);return await reply.json() as DeliveryReply;};
+    const initial=await read(),completion=initial.items.filter(row=>row.node==='STAFF_COMPLETED');assert.equal(completion.length,2);
+    let sends=0;const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:{send:async request=>{sends++;return request.target_type==='GROUP'?{outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'SYNTHETIC_GROUP_FAILURE',retryable:false}:{outcome:'ACKNOWLEDGED',provider_message_id:'SYNTHETIC_PRIVATE_ACK',error_code:null,retryable:false};}}});
+    for(const row of completion){const delivered=await worker.deliver({deliveryId:row.delivery_id});assert.ok(delivered&&'status' in delivered);}assert.equal(sends,2);
+    const closed=await http.detail(id);assert.equal((await http.post(id,'reopen',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'DETAIL_TIMELINE_REOPEN',note:'仅内部合成重开',external_visible:false})).status,200);await http.start(id);await f.runtime.roundNotifications.runOnce();
+    const actual=(await read()).items.filter(row=>['FIRST_HANDLING','STAFF_COMPLETED'].includes(row.node));assert.equal(actual.length,4);assert.equal(await reportTime(),originalReportTime,'completion and actual reopening retain the original report time');
+    const cookie=f.browserCookies[0];assert.ok(cookie?.url);let browser:Browser|undefined,failure:unknown;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page',width:390,height:844,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
+      await browser.waitFor("document.querySelectorAll('.notification-round').length===2&&document.querySelectorAll('.notification-delivery').length===4");
+      const rows=await browser.evaluate("[...document.querySelectorAll('.notification-round')].map(round=>({round:round.querySelector('h4').textContent,nodes:[...round.querySelectorAll('.notification-node')].map(node=>({kind:node.dataset.notificationNode,states:[...node.querySelectorAll('.notification-state')].map(s=>s.textContent),routes:[...node.querySelectorAll('.notification-delivery p span:first-child')].map(s=>s.textContent)}))}))") as {round:string;nodes:{kind:string;states:string[];routes:string[]}[]}[];
+      assert.deepEqual(rows.map(row=>row.round),['处理轮次 2','处理轮次 1']);assert.deepEqual(rows[0]?.nodes.map(node=>node.kind),['FIRST_HANDLING']);
+      const completed=rows[1]?.nodes.find(node=>node.kind==='STAFF_COMPLETED');assert.ok(completed);assert.deepEqual([...completed.states].sort(),['发送失败','已发送'].sort());assert.deepEqual([...completed.routes].sort(),['原报修人单聊','群聊'].sort());
+      assert.equal(await browser.evaluate("document.querySelector('.ticket-round-notifications').innerText.includes('已读')"),false);
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.notification-timeline-scroll')].some(row=>row.scrollWidth>row.clientWidth)"),true);
+      const before=await http.detail(id);await browser.evaluate("document.querySelector('[aria-label=刷新通知状态]').click()");await browser.waitFor("document.querySelector('[aria-label=刷新通知状态]').disabled===false");assert.deepEqual(await http.detail(id),before);assert.equal(sends,2);
+    }catch(error){failure=error;}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+  },{mvpNotificationsEnabled:true,ticketReopenRoundsEnabled:true,groupNotificationTargets:[{botId:'bot-test',groupId:'group-detail-timeline'}],manualRoundConsumption:true});
 });
