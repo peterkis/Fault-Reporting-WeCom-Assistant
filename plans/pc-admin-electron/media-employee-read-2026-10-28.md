@@ -73,3 +73,5 @@ Windows Job共享2个逻辑CPU、hard cap及4GiB提交内存，包含PG、应用
 - 首轮TypeScript CI在T18旧下拉定位处出现`Illegal invocation`。三个T18测试改用现有真实Select交互辅助，并将旧常驻状态/下拉容器断言改为当前Toast与真实select值；业务403、UNKNOWN、原UUID、事实计数及无外发断言保留。三入口最后5项PASS。
 
 本轮修补候选input hash为`00c2c36c38337da5cc0d8fe7f29fc18b3267cf6d78d9ea69ef043fc9f5e37496`，manifest为`48f4db2306e229c04a3f66ca72bf23e3da76bfc4f17b24b68e3e6d1096351214`。构建、strict/负向类型、制品与文档检查通过；以上30项为分批相关检查，不重绑旧208项或早期性能证据。远端新head审查与CI由后继Git收据记录，未据此提前宣称通过或合并。
+
+Codex对后继`f58de4f5692589fb481ad7e24ba4d70c6e24b076`复审完成，未发现新问题，两个原线程已解决。该head的人员目录98项及历史身份/证据检查通过；TypeScript CI随后在另一T18正常流程测试发现同类旧Select定位。后继只修正该测试使用真实Select/Checkbox及实际受理结果区域，保留原实名选择、原始资料、入库和无外发断言；实际注册浏览器入口1项PASS，构建/制品通过。此后继不修改生产代码，仍须等待新head审查与CI。
