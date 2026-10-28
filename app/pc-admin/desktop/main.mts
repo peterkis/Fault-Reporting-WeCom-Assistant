@@ -100,9 +100,10 @@ else{
   ownedSession.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
   ownedSession.setPermissionCheckHandler(()=>false);
   ownedSession.on('will-download',(event)=>event.preventDefault());
-  window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'医小修工作台',icon:path.join(directory,'icon.ico'),backgroundColor:'#f7f7f5',frame:false,
+  window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'医小修工作台',icon:path.join(directory,'icon.ico'),backgroundColor:'#f7f7f5',frame:false,show:false,
     webPreferences:{preload:path.join(directory,'chrome-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,webviewTag:false}});
   window.removeMenu();
+  window.once('ready-to-show',()=>{if(!quitting)window?.show();});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   window.webContents.on('will-attach-webview',event=>event.preventDefault());
   window.webContents.on('will-navigate',(event,url)=>{if(url!==chromeUrl)event.preventDefault();});
@@ -110,19 +111,24 @@ else{
   content=new WebContentsView({webPreferences:{session:ownedSession,preload:path.join(directory,'preload.cjs'),additionalArguments:['--workbench-origin='+config.serverOrigin],sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,backgroundThrottling:false}});
   window.contentView.addChildView(content);
   content.setBackgroundColor('#ffffff');
+  // Keep the local startup surface visible while the first remote document is pending.
+  content.setVisible(false);
   const layout=()=>{if(window&&content){const {width,height}=window.getContentBounds();content.setBounds({x:0,y:TITLEBAR_HEIGHT,width,height:Math.max(0,height-TITLEBAR_HEIGHT)});}};
   layout();window.on('resize',layout);
   const page=content.webContents;
   page.setWindowOpenHandler(()=>({action:'deny'}));page.on('will-attach-webview',event=>event.preventDefault());
   const navigation=(event:Electron.Event,url:string)=>{if(!allowedNavigation(url,config.serverOrigin))event.preventDefault();};
   page.on('will-navigate',navigation);page.on('will-redirect',navigation);
+  let rejectedDocument=false;
   page.on('did-navigate',(_event,url,status)=>{
     const failure=navigationFailure(url,config.serverOrigin,status);
+    rejectedDocument=failure!==null;
     if(failure&&window&&!window.isDestroyed()){
       resetContext();
       void page.loadFile(path.join(directory,'unavailable.html'),{hash:failure}).catch(()=>{});
     }
   });
+  page.on('dom-ready',()=>{if(!rejectedDocument&&page.getURL()!=='about:blank')content?.setVisible(true);});
   page.on('did-start-navigation',(_event,_url,inPlace,mainFrame)=>{if(mainFrame&&!inPlace)resetContext();});
   page.on('did-finish-load',()=>{if(window?.isFocused()&&!menuOpen)page.focus();sendState();});window.webContents.on('did-finish-load',sendState);
   page.on('did-fail-load',(_event,code,_description,_url,mainFrame)=>{if(mainFrame&&code!==-3&&window&&!window.isDestroyed())void page.loadFile(path.join(directory,'unavailable.html')).catch(()=>{});});

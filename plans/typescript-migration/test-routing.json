@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/workbench-startup.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/workbench-toast-feedback.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7736,6 +7745,7 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/workbench-startup.browser.test.mts",
       "tests/yxx-h5-migrate.integration.test.mts",
       "tests/wbint-t13-assignment-history.integration.test.mts",
       "tests/t09-command-contract.test.mts",

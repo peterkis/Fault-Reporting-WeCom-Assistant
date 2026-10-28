@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/* The HTML shell paints before React; the same geometry continues during session loading. */
+.workbench-startup{min-height:100vh;background:#fff;color:#37352f;padding:64px 48px;font-family:ui-sans-serif,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.workbench-startup .startup-heading{max-width:1120px;margin:0 auto 36px}.workbench-startup .startup-heading strong{font-size:26px;font-weight:600}.workbench-startup .startup-heading p{font-size:14px;color:#787774;margin:10px 0 0}
+.startup-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;max-width:1120px;margin:auto}.startup-column{padding:20px;background:#fafaf9;border:1px solid #ececea;border-radius:12px}
+.startup-column .startup-line,.startup-column .startup-card{display:block;height:14px;border-radius:6px;background:#eaeae7;margin-bottom:18px}.startup-column .startup-line:first-child{width:42%}.startup-column .startup-card{height:110px;background:#f0f0ed}.startup-column .startup-short{width:68%;margin-bottom:0}
+@media(max-width:700px){.workbench-startup{padding:40px 24px}.startup-columns{grid-template-columns:1fr}.startup-columns>.startup-column:not(:first-child){display:none}}
+@media(prefers-reduced-motion:reduce){.startup-column .skeleton{animation:none}.startup-column .skeleton:before{animation:none}}
+
 .ticket-notes {padding:16px 24px;border-top:1px solid #ececea;border-bottom:1px solid #ececea;font-size:13px;}
 .ticket-command-version {font-weight:600;}
 .ticket-allowed-actions,.ticket-notes form>p {color:#787774;margin:6px 0 12px;}

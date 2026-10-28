@@ -20,7 +20,8 @@ interface DesktopProcess {child:ChildProcess;command:(action:string,expression?:
 async function launchDesktop(root:string,stage:string,spki:string,name:string):Promise<DesktopProcess>{
  const data=path.join(root,'.local/electron/profiles',name);mkdirSync(data,{recursive:true});
  const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:data,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
- const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[path.join(stage,'process-driver.mjs')],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe','ipc']});
+ // Observe real GUI startup; the driver must not override a hidden-launch flag by showing it itself.
+ const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[path.join(stage,'process-driver.mjs')],{cwd:root,env,windowsHide:false,stdio:['ignore','pipe','pipe','ipc']});
  let nextId=1,ready=false;const pending=new Map<number,{resolve:(v:unknown)=>void;reject:(e:Error)=>void;timer:NodeJS.Timeout}>();
  const log:string[]=[];child.stderr?.on('data',(chunk:Buffer)=>{if(log.length<50)log.push(chunk.toString());});
  child.on('message',value=>{if(!value||typeof value!=='object')return;const r=object(value);if(r.ready===true){ready=true;return;}if(typeof r.id!=='number')return;const slot=pending.get(r.id);if(!slot)return;pending.delete(r.id);clearTimeout(slot.timer);if(r.ok===true)slot.resolve(r.result);else slot.reject(Error(String(r.error)));});

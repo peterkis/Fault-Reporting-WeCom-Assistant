@@ -14,7 +14,10 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
   const cert=readFileSync(path.join(stage,'cert.pem')),key=readFileSync(path.join(stage,'key.pem'));
   const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
   let status=404;
-  const server=createServer({key,cert},(_request,response)=>{
+  let releaseStartup=()=>{};
+  const startup=new Promise<void>(resolve=>{releaseStartup=resolve;});
+  const server=createServer({key,cert},async(_request,response)=>{
+    await startup;
     response.writeHead(status,{'content-type':status===200?'text/html; charset=utf-8':'application/json'});
     response.end(status===200?'<!doctype html><title>管理端</title><main>可用管理端</main>':JSON.stringify({error:{code:status===404?'WORKBENCH_NOT_FOUND':'WORKBENCH_UNAVAILABLE',retryable:false}}));
   });
@@ -24,7 +27,9 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
   const packageInfo=JSON.parse(readFileSync(path.join(stage,'package.json'),'utf8'));packageInfo.main='process-driver.mjs';writeFileSync(path.join(stage,'package.json'),JSON.stringify(packageInfo));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:origin}));
   const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:profile,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
-  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage],{cwd:root,env,windowsHide:true,stdio:['ignore','ignore','pipe','ipc']});
+  // This GUI test observes the app's first show. SW_HIDE would override that first
+  // native ShowWindow call and require the test driver to manufacture visibility.
+  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
   child.stderr?.on('data',(chunk:Buffer)=>writeFileSync(path.join(profile,'process-stderr.log'),chunk,{flag:'a'}));
   let ready=false,next=1;const pending=new Map<number,{resolve:(value:unknown)=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>();
   child.on('message',(value:unknown)=>{if(!value||typeof value!=='object')return;const message=value as Record<string,unknown>;if(message.ready===true){ready=true;return;}if(typeof message.id!=='number')return;const slot=pending.get(message.id);if(!slot)return;clearTimeout(slot.timer);pending.delete(message.id);if(message.ok)slot.resolve(message.result);else slot.reject(Error(String(message.error)));});
@@ -32,7 +37,17 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
   const wait=async(expression:string)=>{const deadline=Date.now()+6000;while(Date.now()<deadline){if(await command('evaluate',expression))return;await delay(50);}throw Error('EXPECTED_FRIENDLY_HTTP_ERROR_NOT_RENDERED');};
   try{
     const deadline=Date.now()+10000;while(!ready&&Date.now()<deadline)await delay(50);assert.ok(ready);
+    assert.equal(await command('chrome-evaluate','document.querySelector(".titlebar")!==null'),true);
+    const showDeadline=Date.now()+5000;
+    while(!(await command('state') as {visible:boolean}).visible&&Date.now()<showDeadline)await delay(50);
+    assert.equal((await command('state') as {visible:boolean}).visible,true,'the local startup window must become visible without waiting for a remote response');
+    assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,false,'the unpainted remote view must not cover local startup content while the server is pending');
+    assert.equal(await command('chrome-evaluate','document.querySelector("[data-startup]")?.getBoundingClientRect().height>0'),true,'local startup content must be visible before the first response');
+    const startupImage=await command('screenshot');assert.ok(typeof startupImage==='string'&&startupImage.startsWith(profile+path.sep));
+    console.log('DESKTOP_STARTUP '+JSON.stringify({local_visible_before_response:true,remote_hidden:true,screenshot:{file:startupImage,sha256:createHash('sha256').update(readFileSync(startupImage)).digest('hex')}}));
+    releaseStartup();
     await wait('document.body?.innerText.includes("服务器尚未提供桌面入口")');
+    assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,true,'the first rendered document replaces startup content');
     assert.equal(await command('evaluate','document.body.innerText.includes("WORKBENCH_NOT_FOUND")'),false);
     for(const [code,expected] of [[503,'服务暂时不可用'],[403,'当前账号无法进入工作台'],[200,'可用管理端']] as const){
       status=code;await command('navigate',origin+'/workbench/desktop');await wait('document.body?.innerText.includes('+JSON.stringify(expected)+')');
@@ -67,6 +82,7 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
     try{assert.equal(await exited,0,'explicit quit closes both titlebar and business renderer');}
     catch(error){console.log('DESKTOP_QUIT_DIAGNOSTIC '+JSON.stringify(await command('lifecycle')));throw error;}
   }finally{
+    releaseStartup();
     for(const slot of pending.values())clearTimeout(slot.timer);pending.clear();
     if(child.connected)child.disconnect();
     if(child.exitCode===null)await new Promise<void>(resolve=>{const timer=setTimeout(()=>{child.kill();resolve();},5000);child.once('exit',()=>{clearTimeout(timer);resolve();});});
