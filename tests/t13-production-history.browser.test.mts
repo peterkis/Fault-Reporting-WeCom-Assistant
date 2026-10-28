@@ -10,6 +10,7 @@ import {acceptedSetup,acceptedOptions,http,rows,text,version} from './helpers/t0
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 interface Fixture extends T07Fixture {browserCookies:{name:string;value:string;url:string}[];runtime:T07Fixture['runtime']&{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 
 test('formal production detail reads the recorded first and coupled transfer through one independent safe history section without a business POST',async()=>{
@@ -29,6 +30,7 @@ test('formal production detail reads the recorded first and coupled transfer thr
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
+   if(!await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"))await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
    assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"接单与交接链\"]'))"),true,'the actual production bundle must mount the safe history consumer');
    await browser.waitFor("document.querySelectorAll('[data-assignment-history-row]').length===2");
    const displayed=text(await browser.evaluate("document.querySelector('[aria-label=\"接单与交接链\"]').innerText"));
