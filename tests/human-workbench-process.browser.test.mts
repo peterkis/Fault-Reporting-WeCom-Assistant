@@ -28,6 +28,7 @@ import {workbenchTestSettings,hashTarget} from './helpers/human-workbench-test-s
 import {yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {addInboxSession,attachInboxJourney,INBOX_IDENTITY_KEY} from './helpers/conversation-inbox-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import type {IncomingHttpHeaders} from 'node:http';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
@@ -193,7 +194,7 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    const beforeFollow=await staff.get('/api/tickets/'+groupTicketId);assert.equal(beforeFollow.status,200);
    await browser.command('Page.navigate',{url:tls.origin+'/workbench/app/items/ticket/'+groupTicketId+'?detail=page'});
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='false'");
-   await browser.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");
+   await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
    assert.equal((await relatedItems()).filter(item=>item.id===groupTicketId).length,1);
    await browser.evaluate("document.querySelector('button[aria-label=关闭详情]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=related-scope]'))");
@@ -201,7 +202,7 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length===1`);
    await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open').click()`);
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
-   await browser.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");
+   await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='false'");
    assert.equal((await relatedItems()).some(item=>item.id===groupTicketId),false);
    const afterFollow=await staff.get('/api/tickets/'+groupTicketId);assert.equal(afterFollow.status,200);
