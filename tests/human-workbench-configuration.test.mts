@@ -12,6 +12,16 @@ import {createHmac} from 'node:crypto';
 import {createWorkbenchBotMemberAdmission} from '../app/server/src/human-workbench-bot-member-admission.mjs';
 function fixture(run:(f:ReturnType<typeof workbenchTestSettings>)=>void|Promise<void>){const directory=mkdtempSync(join(tmpdir(),'human-workbench-config-'));return Promise.resolve().then(()=>run(workbenchTestSettings(directory))).finally(()=>rmSync(directory,{recursive:true,force:true}));}
 
+test('employee media is default-off and its single setting reaches APP/WORKER without reaching Gateway',()=>fixture(f=>{
+ const baseline=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.equal(baseline.enabled,true);if(!baseline.enabled)throw Error('SYNTHETIC_PROFILE_DISABLED');assert.equal(baseline.settings.workbenchMediaEmployeeReadEnabled,false);
+ writeFileSync(f.file,JSON.stringify({...f.settings,workbenchMediaEmployeeReadEnabled:'true'}));assert.throws(()=>readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true}),/workbenchMediaEmployeeReadEnabled/u);
+ writeFileSync(f.file,JSON.stringify({...f.settings,workbenchMediaEmployeeReadEnabled:true}));assert.throws(()=>readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true}),/workbenchMediaEmployeeReadEnabled/u);
+ const config=readHumanWorkbenchConfiguration({...f.env,YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:join(tmpdir(),'synthetic-private-root'),YIXIAOXIU_H5_MEDIA_KEY_HEX:'ab'.repeat(32),YIXIAOXIU_H5_FFMPEG_PATH:join(tmpdir(),'synthetic-ffmpeg.exe'),YIXIAOXIU_H5_FFPROBE_PATH:join(tmpdir(),'synthetic-ffprobe.exe')},{isolatedBoundaries:true});assert.equal(config.enabled,true);if(!config.enabled)throw Error('SYNTHETIC_PROFILE_DISABLED');
+ assert.equal(readWorkbenchRoleSettings('APP',workbenchRoleEnvironment(config,'APP')).workbenchMediaEmployeeReadEnabled,true);
+ assert.equal(readWorkbenchWorkerSettings(workbenchRoleEnvironment(config,'WORKER')).workbenchMediaEmployeeReadEnabled,true);
+ assert.equal(JSON.parse(workbenchRoleEnvironment(config,'GATEWAY').WORKBENCH_ROLE_SETTINGS??'{}').workbenchMediaEmployeeReadEnabled,undefined);
+}));
+
 test('profile is opt-in and the compiled check reports disabled without touching dependencies',()=>{
  assert.deepEqual(readHumanWorkbenchConfiguration({}),{enabled:false});
  const r=spawnSync(process.execPath,[fileURLToPath(new URL('../app/server/scripts/human-workbench.mjs',import.meta.url)),'--check'],{env:{},encoding:'utf8',windowsHide:true});

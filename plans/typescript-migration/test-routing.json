@@ -5,6 +5,25 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/workbench-media-employee-read.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false,
+      "requires_ffmpeg": true
+    },
+    {
+      "path": "tests/workbench-media-employee-read.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/workbench-actor-avatars.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7782,6 +7801,8 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/workbench-media-employee-read.browser.test.mts",
+      "tests/workbench-media-employee-read.integration.test.mts",
       "tests/workbench-actor-avatars.test.mts",
       "tests/workbench-detail-media.browser.test.mts",
       "tests/workbench-media-compression.test.mts",

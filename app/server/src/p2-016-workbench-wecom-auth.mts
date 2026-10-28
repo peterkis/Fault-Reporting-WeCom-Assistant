@@ -329,7 +329,7 @@ export function createWeComWorkbenchAuthentication({
       SET last_seen_epoch_ms=$2,last_seen_at=platform.local_from_epoch_ms($2)
       WHERE session_id=$1::uuid AND state='ACTIVE'`, [row.session_id, currentEpoch]);
     const csrf = readCookie(request, CSRF_COOKIE);
-    return Object.freeze({ principal_id: row.principal_id, auth_method: 'COOKIE', expires_at: row.expires_at,
+    return Object.freeze({ principal_id: row.principal_id, auth_method: 'COOKIE', employee_authenticated:true as const, expires_at: row.expires_at,
       expires_epoch_ms: row.expires_epoch_ms, csrf_token: secureEqual(hash(csrf ?? ''), row.csrf_token_hash) ? csrf : null,
       public_origin: publicOrigin, session_id: row.session_id });
   }

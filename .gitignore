@@ -30,5 +30,5 @@ secrets/
 # Controlled TypeScript migration outputs (never source or evidence)
 /.build/
 
-# Owned Electron development tools, caches, profiles and distributables
-/.local/electron/
+# Local tools, caches, profiles and task materials
+/.local/

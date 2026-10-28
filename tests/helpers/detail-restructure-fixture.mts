@@ -18,20 +18,20 @@ import {migrateYxxH5} from '../../app/server/scripts/yxx-h5-migrate.mjs';
 import {migrateWorkbenchDisplayMedia} from '../../app/server/scripts/workbench-display-media-migrate.mjs';
 
 export type DetailRestructureFixture=T11Fixture&{botTicketId:string;privateRoot:string;key:Buffer};
-export async function withDetailRestructureFixture(run:(context:DetailRestructureFixture)=>Promise<void>,{actorAvatarsEnabled=false,compressionEnabled=false}:{actorAvatarsEnabled?:boolean;compressionEnabled?:boolean}={}){
+export async function withDetailRestructureFixture(run:(context:DetailRestructureFixture)=>Promise<void>,{actorAvatarsEnabled=false,compressionEnabled=false,employeeReadEnabled=false}:{actorAvatarsEnabled?:boolean;compressionEnabled?:boolean;employeeReadEnabled?:boolean}={}){
   await withT24Fixture(async f=>{
     await f.runtime.stop();
     const options={databaseUrl:f.databaseUrl,mode:'apply' as const};
     await migrateWorkbenchAuth(options);await migrateThirdPartyStaffDirectory(options);
     await migrateWorkbenchFollowUpSchedules(options);await migrateWorkbenchFollowUpDueSignals(options);
     await migrateYxxH5({...options,expectedDatabase:new URL(f.databaseUrl).pathname.slice(1),includePreviews:true});
-    for(const target of [...(actorAvatarsEnabled?['avatars' as const]:[]),...(compressionEnabled?['media' as const]:[])])await migrateWorkbenchDisplayMedia({...options,expectedDatabase:new URL(f.databaseUrl).pathname.slice(1),target});
+    for(const target of [...(actorAvatarsEnabled?['avatars' as const]:[]),...(compressionEnabled?['media' as const]:[]),...(employeeReadEnabled?['previews' as const]:[])])await migrateWorkbenchDisplayMedia({...options,expectedDatabase:new URL(f.databaseUrl).pathname.slice(1),target});
     const parent=resolve(tmpdir()),privateRoot=await mkdtemp(join(parent,'detail-restructure-')),key=randomBytes(32);
     assert.equal(dirname(privateRoot),parent);
     const config={...entryConfig,identityMode:'VERIFIED_DELEGATED_MAPPING',reporterUserIds:['user-test']};
     const identityMapping=await createYxxDelegatedIdentityMapping({config,accessTokenProvider:async()=> 'SYNTHETIC_DETAIL_TOKEN',fetchImpl:async()=>new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'user-test',open_userid:'synthetic-open-test'}]}))});
     let runtime:P2016EnabledRuntime|undefined,failure:unknown;
-    try{const created=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.principals[1]?.id??''],workbenchActorAvatarsEnabled:actorAvatarsEnabled,
+    try{const created=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.principals[1]?.id??''],workbenchMediaEmployeeReadEnabled:employeeReadEnabled,workbenchActorAvatarsEnabled:actorAvatarsEnabled,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:false,
       ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketWaitingActionsEnabled:true,ticketAssignmentEnabled:true,ticketRoundNotificationsEnabled:true,ticketReopenRoundsEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,
       reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:config,identityMapping,

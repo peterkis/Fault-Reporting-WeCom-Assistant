@@ -1,5 +1,5 @@
 import {createWorkbenchActorAvatarWorker,actorAvatarSchemaReady} from '../src/workbench-actor-avatars.mjs';
-import {mediaConversionDiagnosticsReady} from '../src/yxx-h5-media.mjs';
+import {mediaConversionDiagnosticsReady,mediaEmployeeReadSchemaReady} from '../src/yxx-h5-media.mjs';
 import {h5ImageCompressionAvailable} from '../src/yxx-h5-media-transcode.mjs';
 import {pathToFileURL} from 'node:url';
 import {runApp,runGateway,runWorker} from './p2-g1-process-role.mjs';
@@ -27,7 +27,7 @@ import {createApplicationMemberVerifier} from '../src/wecom-application-member.m
 import {textHashP2016} from '../src/p2-016-domain-contracts.mjs';
 import {createMvpNotificationAdmission} from '../src/mvp-group-replies.mjs';
 import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-member-admission.mjs';
-import {createYxxH5Runtime} from '../src/yxx-h5-runtime.mjs';
+import {createYxxH5Runtime,mediaVideoToolsReady} from '../src/yxx-h5-runtime.mjs';
 import {createWorkbenchReporterDirectory} from '../src/workbench-reporter-directory.mjs';
 import {createTicketReporterProfileWorker,ticketReporterProfilesSchemaReady} from '../src/ticket-reporter-profiles.mjs';
 
@@ -80,7 +80,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
     try{await auth.initialize();return auth;}catch(error){await auth.close();throw error;}
    },
    runtimeFactory:options=>{
-    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled,workbenchRemindersEnabled:s.workbenchRemindersEnabled===true,workbenchFollowEnabled:s.workbenchFollowEnabled===true,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled===true,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
+    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,workbenchMediaEmployeeReadEnabled:s.workbenchMediaEmployeeReadEnabled,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled,workbenchRemindersEnabled:s.workbenchRemindersEnabled===true,workbenchFollowEnabled:s.workbenchFollowEnabled===true,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled===true,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
     applicationMemberVerifier,h5EntryMemberVerifier:h5EntryReadEnabled?applicationMemberVerifier.h5EntryRead:null,yxxH5:{...h5Options,accessTokenProvider:tokenProvider,fetchImpl},groupNotificationTargets:s.groupNotificationTargets??[],reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
@@ -121,7 +121,8 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  }
 }
 function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,reporterHmacSecret:string,fetchImpl:typeof fetch){
- const h5Options=readWorkbenchH5RuntimeOptions(process.env,{worker:true});
+ const h5Options={...readWorkbenchH5RuntimeOptions(process.env,{worker:true}),employeeReadEnabled:s.workbenchMediaEmployeeReadEnabled===true};
+ if(h5Options.employeeReadEnabled&&!h5Options.enabled)configurationError('workbenchMediaEmployeeReadEnabled');
  const directory=s.reporterProfiles?createWorkbenchReporterDirectory({botId:s.botId,identityHmacKey,
   accessTokenProvider:createWeComAppTokenProvider({corpId:s.reporterProfiles.corpId,appSecret:process.env.APP_SECRET as string,fetchImpl}),fetchImpl,
   applicationScope:{corpId:s.reporterProfiles.corpId,agentId:s.reporterProfiles.agentId,scopeSecret:reporterHmacSecret}}):null;
@@ -130,9 +131,10 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   if(s.actorAvatars?.rootRef&&!await actorAvatarSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:actor_avatar_cache');
   if(directory&&!await ticketReporterProfilesSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:ticket_reporter_profiles_schema');
   if(!h5Options.enabled)return;
+  if(h5Options.employeeReadEnabled&&(!await mediaEmployeeReadSchemaReady(pool)||!await mediaVideoToolsReady(h5Options)))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:employee_media_previews');
   if(h5Options.compressionEnabled&&!await mediaConversionDiagnosticsReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:h5_media_conversion_diagnostics');
   if(h5Options.compressionEnabled&&!await h5ImageCompressionAvailable())configurationError('h5_image_codec');
-  const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(h5Options.performanceEnabled===true?['066_yixiaoxiu_h5_media_previews']:[]),...(h5Options.compressionEnabled===true?['069_h5_media_conversion_diagnostics']:[])];
+  const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(h5Options.performanceEnabled===true||h5Options.employeeReadEnabled?['066_yixiaoxiu_h5_media_previews']:[]),...(h5Options.employeeReadEnabled?['070_workbench_media_video_thumbnails']:[]),...(h5Options.compressionEnabled===true?['069_h5_media_conversion_diagnostics']:[])];
   if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;

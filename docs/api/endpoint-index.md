@@ -274,6 +274,9 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | --- | --- | --- | --- |
 | GET | `/api/workbench/items/{kind}/{id}/attachments` | W扩展，获权元信息；无Store／开关关闭明确不可用 | [附件](workbench/attachments.md) |
 | GET | `/api/attachments/{attachmentRef}?kind={kind}&id={id}` | W扩展，受控PNG/JPEG下载；显式注入受信加密Store | [附件](workbench/attachments.md) |
+| GET | `/api/workbench/media/web/{ref}` | W，默认关闭；本次员工认证、一次对象到期、私有原件/播放/缩略图，单Range | [员工媒体](workbench/employee-media.md) |
+| HEAD | `/api/workbench/media/web/{ref}` | W，员工媒体元数据，不读取文件正文 | [员工媒体](workbench/employee-media.md) |
+| GET | `/api/workbench/media/attachment/{ref}` | W，默认关闭；本次员工认证与受信登记图片 | [员工媒体](workbench/employee-media.md) |
 
 基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
 

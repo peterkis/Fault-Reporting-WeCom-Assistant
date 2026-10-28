@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "publicOrigin": "https://workbench.example.invalid",
   "workbenchRemindersEnabled": false,
+  "workbenchMediaEmployeeReadEnabled": false,
   "workbenchActorAvatarsEnabled": false,
   "workbenchActorAvatarRootRef": null,
   "workbenchFollowEnabled": false,

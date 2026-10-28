@@ -58,16 +58,21 @@ export function createYxxH5MediaFFmpegTranscoder({ffmpegPath,ffprobePath,tempora
    }catch(error){if(error instanceof H5MediaError)throw error;mediaFail('YXX_MEDIA_IMAGE_CONVERSION_FAILED',503);}
    finally{result?.fill(0);clearTimeout(timer);controller.abort();if(directory)await rm(directory,{recursive:true,force:true});temporary_files=0;current=null;active=0;finish();}
   },
-  async thumbnail({bytes,mime_type,signal}:Parameters<NonNullable<H5MediaTranscoder['thumbnail']>>[0]):Promise<H5MediaThumbnailResult>{
-   if(stopped)mediaFail('YXX_MEDIA_CONVERSION_UNAVAILABLE',503);if(active)mediaFail('YXX_MEDIA_BUSY',429);inspectMedia(bytes,'IMAGE',mime_type);
+  async thumbnail({bytes,mime_type,signal,kind='IMAGE'}:Parameters<NonNullable<H5MediaTranscoder['thumbnail']>>[0]):Promise<H5MediaThumbnailResult>{
+   if(stopped)mediaFail('YXX_MEDIA_CONVERSION_UNAVAILABLE',503);if(active)mediaFail('YXX_MEDIA_BUSY',429);inspectMedia(bytes,kind,mime_type);
    active=1;settled=new Promise<void>(r=>{finish=r;});const controller=new AbortController();current=controller;const combined=AbortSignal.any([signal,controller.signal]),timer=setTimeout(()=>controller.abort(),timeoutMs);timer.unref();let directory:string|null=null,result:Buffer|null=null;
    try{
     for(const path of [ffmpeg,ffprobe]){const s=await lstat(path);if(!s.isFile()||s.isSymbolicLink()||!['','.exe'].includes(extname(path).toLowerCase()))mediaFail('YXX_MEDIA_CONVERSION_UNAVAILABLE',503);}
     const parent=await lstat(root);if(!parent.isDirectory()||parent.isSymbolicLink())mediaFail('YXX_MEDIA_CONVERSION_UNAVAILABLE',503);directory=await mkdtemp(join(root,'yxx-transcode-'));temporary_files=1;
     const input=join(directory,'input.media'),output=join(directory,'thumbnail.jpg');await writeFile(input,bytes,{mode:0o600,flag:'wx'});temporary_files=2;combined.throwIfAborted();
+    let seek=0;
+    if(kind==='VIDEO'){
+     const probe=await run(ffprobe,['-v','error','-protocol_whitelist','file,pipe','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',input],combined),duration=Number(probe.toString('utf8').trim());
+     if(!Number.isFinite(duration)||duration<=0||duration*1000>H5_MEDIA_LIMITS.duration)mediaFail('YXX_MEDIA_DURATION_INVALID',422);seek=Math.min(1,duration/2);
+    }
     for(const quality of [8,16,24,31]){
      await unlink(output).catch(error=>{if(!(error&&typeof error==='object'&&'code' in error&&error.code==='ENOENT'))throw error;});
-     await run(ffmpeg,['-nostdin','-v','error','-threads','1','-filter_threads','1','-protocol_whitelist','file,pipe','-i',input,'-map','0:v:0','-map_metadata','-1','-map_chapters','-1','-vf',"scale=w='min(960,iw)':h='min(960,ih)':force_original_aspect_ratio=decrease",'-frames:v','1','-an','-c:v','mjpeg','-pix_fmt','yuvj444p','-q:v',String(quality),'-update','1','-threads','1',output],combined);temporary_files=3;
+     await run(ffmpeg,['-nostdin','-v','error','-threads','1','-filter_threads','1','-protocol_whitelist','file,pipe',...(kind==='VIDEO'?['-ss',String(seek)]:[]),'-i',input,'-map','0:v:0','-map_metadata','-1','-map_chapters','-1','-vf',"scale=w='min(960,iw)':h='min(960,ih)':force_original_aspect_ratio=decrease",'-frames:v','1','-an','-c:v','mjpeg','-pix_fmt','yuvj444p','-q:v',String(quality),'-update','1','-threads','1',output],combined);temporary_files=3;
      const info=await lstat(output);if(!info.isFile()||info.isSymbolicLink()||info.size<1)mediaFail('YXX_MEDIA_CONVERSION_UNAVAILABLE',503);if(info.size>H5_MEDIA_LIMITS.thumbnail)continue;
      result=await readFile(output);inspectMedia(result,'IMAGE','image/jpeg');combined.throwIfAborted();const out=result;result=null;return {bytes:out,mime_type:'image/jpeg'};
     }

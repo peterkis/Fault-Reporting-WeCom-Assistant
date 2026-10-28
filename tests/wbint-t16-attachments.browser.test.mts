@@ -90,7 +90,14 @@ const disabled="document.querySelector('.detail-media-card')?.disabled===true &&
 test('production attachment UI reports disabled storage without reading it',async()=>{
   await withT16Fixture(async f=>withAttachmentBrowser(f,async(browser,directory)=>{
     const shell=await fetch(f.origin+'/workbench/app/',{headers:{cookie:f.cookie}});assert.doesNotMatch(shell.headers.get('content-security-policy')??'',/blob:|unsafe-inline|unsafe-eval/u);await shell.arrayBuffer();
-    await browser.waitFor("document.querySelector('.attachment-section')?.textContent.includes('附件存储暂不可用')");assert.deepEqual(f.reads,{entries:0,opens:0});assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-media-card'))"),false);await shot(browser,directory);
+    const hint='.attachment-unavailable-hint[aria-label="附件暂不可用"]';
+    await browser.waitFor(`document.querySelector(${JSON.stringify(hint)})?.checkVisibility()===true`);
+    await browser.evaluate(`document.querySelector(${JSON.stringify(hint)}).scrollIntoView({block:'center'})`);
+    const point:unknown=await browser.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(hint)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+    assert.ok(point&&typeof point==='object'&&'x' in point&&'y' in point&&typeof point.x==='number'&&typeof point.y==='number');
+    await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1,pointerType:'mouse'});await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x,y:point.y});
+    await browser.waitFor("[...document.querySelectorAll('[role=tooltip]')].some(node=>node.checkVisibility()&&node.textContent.includes('附件存储暂不可用'))");
+    assert.deepEqual(f.reads,{entries:0,opens:0});assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-media-card'))"),false);await shot(browser,directory);
   }),{enabled:false});
 });
 test('real expiry, missing, oversized and HTML attachments stay unavailable and inactive identity clears the page',async()=>{

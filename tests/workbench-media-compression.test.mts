@@ -15,6 +15,18 @@ const signal=()=>new AbortController().signal;
 const hash=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 const codecSkip=!process.env.H5_MEDIA_FFMPEG||!process.env.H5_MEDIA_FFPROBE?'NOT_RUN: explicit controlled FFmpeg pair unavailable':false;
 
+test('video poster uses a real midpoint/one-second frame within the existing JPEG budget',{skip:codecSkip,timeout:90000},()=>fixture(async(converter,root)=>{
+ assert.ok(converter.thumbnail);const ffmpeg=process.env.H5_MEDIA_FFMPEG;assert.ok(ffmpeg);
+ for(const duration of [0.5,2]){
+  const source=join(root,'poster-'+duration+'.mp4'),at=Math.min(1,duration/2);
+  const generated:ReturnType<typeof spawnSync>=spawnSync(ffmpeg,['-nostdin','-v','error','-f','lavfi','-i',`color=c=red:s=1280x720:r=24:d=${duration}`,'-vf',`drawbox=x=0:y=0:w=iw:h=ih:color=blue:t=fill:enable='gte(t,${at/2})'`,'-c:v','libx264','-pix_fmt','yuv420p','-movflags','+faststart','-threads','1',source],{windowsHide:true,timeout:15000});assert.equal(generated.status,0);
+  const bytes=await readFile(source),before=hash(bytes);
+  const result:Awaited<ReturnType<NonNullable<H5MediaTranscoder['thumbnail']>>>=await converter.thumbnail({bytes,mime_type:'video/mp4',kind:'VIDEO',signal:signal()});assert.equal(hash(bytes),before);assert.equal(result.mime_type,'image/jpeg');assert.ok(result.bytes.length<=160*1024);
+  const metadata=await sharp(result.bytes).metadata();assert.ok(metadata.width&&metadata.height&&Math.max(metadata.width,metadata.height)<=960);
+  const pixel=await sharp(result.bytes).resize(1,1).raw().toBuffer();assert.ok((pixel[2]??0)>(pixel[0]??0)+100,'poster is the blue later frame, not the red initial frame');
+ }
+}));
+
 async function fixture(run:(converter:H5MediaTranscoder,root:string,temporaryRoot:string)=>Promise<void>){
   const parent=resolve(tmpdir()),root=await mkdtemp(join(parent,'workbench-media-quality-'));
   assert.equal(dirname(root),parent);

@@ -8,6 +8,7 @@
 
 | 业务能力 | 本入口显式 Runtime 选项 | 必要依赖／角色 |
 | --- | --- | --- |
+| PC员工媒体、小图和原生播放 | workbenchMediaEmployeeReadEnabled，JSON中默认false | APP/WORKER；原H5私有存储、066/070与Worker FFmpeg/FFprobe；规则见[员工媒体](../api/workbench/employee-media.md) |
 | 接单、开始、分派、等待／恢复、完工、同单重开 | ticketSelfHandlingEnabled、ticketConversationSelfHandlingEnabled、ticketAssignmentEnabled、ticketWaitingActionsEnabled、ticketStaffCompletionEnabled、ticketReopenRoundsEnabled | App；原 Core／039／040／043 |
 | 人工复核、明确结论并开始、人工代录 | workbenchManualReviewEnabled、workbenchReviewResolveAndStartEnabled、workbenchManualReportsEnabled | App；原复核／代录合同；手填联系人不自动获得应用发送资格 |
 | 接管、转交、释放、私聊文字、内部备注 | workbenchConversationsEnabled、workbenchInternalNotesEnabled | App；真实 Session、原 Control／Communication／CSRF／个人授权 |
