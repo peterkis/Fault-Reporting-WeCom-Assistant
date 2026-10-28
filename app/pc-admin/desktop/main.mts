@@ -2,7 +2,7 @@ import {app,BrowserWindow,WebContentsView,Menu,Tray,Notification,dialog,ipcMain,
 import {mkdirSync,readFileSync,statSync,lstatSync,existsSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {allowedNavigation,businessDocument,navigationFailure,readConfig,readContext,readReminder,readChromeAction,TITLEBAR_HEIGHT} from './policy.mjs';
+import {allowedNavigation,allowedAttachmentDownload,businessDocument,navigationFailure,readConfig,readContext,readReminder,readChromeAction,TITLEBAR_HEIGHT} from './policy.mjs';
 import type {DesktopContext,DesktopState} from './policy.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url));
@@ -99,7 +99,14 @@ else{
   const ownedSession=session.fromPartition('persist:workbench');
   ownedSession.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
   ownedSession.setPermissionCheckHandler(()=>false);
-  ownedSession.on('will-download',(event)=>event.preventDefault());
+  ownedSession.on('will-download',(event,item,source,frame)=>{
+    const page=content&&!content.webContents.isDestroyed()?content.webContents:null;
+    if(!page||source!==page||!frame||frame!==page.mainFrame||context.epoch===null||!businessDocument(frame.url,config.serverOrigin)||item.getInitiatorOrigin()!==config.serverOrigin
+      ||!allowedAttachmentDownload({url:item.getURL(),filename:item.getFilename(),mime:item.getMimeType(),bytes:item.getTotalBytes()},config.serverOrigin)){event.preventDefault();return;}
+    // Never choose a filesystem destination for the user. Electron opens its
+    // native save dialog; the renderer has neither a path nor a native write API.
+    item.setSaveDialogOptions({title:'保存报修附件',defaultPath:item.getFilename(),filters:[{name:'报修附件',extensions:[path.extname(item.getFilename()).slice(1)]}]});
+  });
   window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'医小修工作台',icon:path.join(directory,'icon.ico'),backgroundColor:'#f7f7f5',frame:false,show:false,
     webPreferences:{preload:path.join(directory,'chrome-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,webviewTag:false}});
   window.removeMenu();

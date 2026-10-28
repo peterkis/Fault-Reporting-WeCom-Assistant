@@ -44,6 +44,17 @@ export function readConfig(value:unknown):{schemaVersion:1;serverOrigin:string}{
 export function businessDocument(value:string,origin:string):boolean {
   try{const url=new URL(value);return url.origin===origin&&!url.username&&!url.password&&(url.pathname==='/workbench/app'||url.pathname.startsWith('/workbench/app/'));}catch{return false;}
 }
+/** Only the fixed attachment names/types produced by the authorized renderer. */
+export function allowedAttachmentDownload(input:{url:string;filename:string;mime:string;bytes:number},origin:string):boolean {
+  const types:Record<string,{extension:string;limit:number}>={
+    'image/png':{extension:'png',limit:10},'image/jpeg':{extension:'jpg',limit:10},'image/webp':{extension:'webp',limit:10},
+    'audio/amr':{extension:'amr',limit:5},'audio/wav':{extension:'wav',limit:5},'audio/x-wav':{extension:'wav',limit:5},'audio/mp4':{extension:'m4a',limit:5},'audio/mpeg':{extension:'mp3',limit:5},'audio/webm':{extension:'webm',limit:5},'audio/ogg':{extension:'ogg',limit:5},
+    'video/mp4':{extension:'mp4',limit:20},'video/webm':{extension:'webm',limit:20},'video/quicktime':{extension:'mov',limit:20},
+  };
+  const format=Object.hasOwn(types,input.mime)?types[input.mime]:undefined,prefix='blob:'+origin+'/';
+  return !!format&&input.url.startsWith(prefix)&&uuid.test(input.url.slice(prefix.length))&&Number.isSafeInteger(input.bytes)&&input.bytes>0&&input.bytes<=format.limit*1024*1024
+    &&(input.filename==='report-material.'+format.extension||['image/png','image/jpeg'].includes(input.mime)&&input.filename==='report-attachment.'+format.extension);
+}
 export function allowedNavigation(value:string,origin:string):boolean {
   try{
     const url=new URL(value);if(url.username||url.password||url.protocol!=='https:')return false;

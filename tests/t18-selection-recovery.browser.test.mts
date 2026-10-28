@@ -9,6 +9,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
 import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
@@ -51,6 +52,7 @@ async function archiveFailureImage(browser:Browser,stage:string){
     screenshots:[{file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
 }
 async function fill(browser:Browser,label:string,value:string){
+  if(label==='报修来源'){await chooseWorkbenchSelect(browser,'[data-field-label="报修来源"]',value);return;}
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify('[aria-label="'+label+'"]')});if(!input)throw Error('T18_RECOVERY_FIELD_MISSING');
     const kind=input instanceof HTMLTextAreaElement?HTMLTextAreaElement:input instanceof HTMLSelectElement?HTMLSelectElement:HTMLInputElement;
     Object.getOwnPropertyDescriptor(kind.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event(kind===HTMLSelectElement?'change':'input',{bubbles:true}));})()`);

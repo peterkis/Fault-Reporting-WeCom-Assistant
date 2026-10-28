@@ -92,7 +92,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
         {draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')?<HButton type="button" data-action="discard-conversation-handling-draft" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void draft.discard();}} variant="secondary">丢弃选择内容</HButton>:null}
         {!blocked?<HButton type="button" data-action="refresh-conversation-handling" onClick={refresh} variant="secondary">刷新</HButton>:null}
       </div>
-      {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={()=>{setPending(null);setState('idle');setMessage('已保留会话选择，请核对当前可选会话和版本后明确新的操作。');refresh();}}/>:null}
+      {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>draft.knownFailure(pending.command.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和会话选择继续保留。');return;}setPending(null);setState('idle');setMessage('已保留会话选择，请核对当前可选会话和版本后明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，原 UUID 和会话选择继续保留。');})}/>:null}
     </DetailDialog>
       {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-conversation-handling" state={state} className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
     <DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>

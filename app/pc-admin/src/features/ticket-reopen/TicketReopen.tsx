@@ -83,6 +83,6 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
   {reason&&!commandId&&draft.enabled?<HButton type="button" isDisabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()} variant="secondary">清空恢复草稿</HButton>:null}
   {!blocked?<HButton type="button" data-action="refresh-reopen" className="workflow-refresh" isDisabled={(context.isPending||context.isError)} onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton>:null}
   {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-reopen" state={state} data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');return;}setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
  </section>;
 }

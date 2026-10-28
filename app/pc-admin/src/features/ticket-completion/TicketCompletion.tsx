@@ -74,7 +74,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
       </div></HForm>:<p>当前没有本轮完工权限。</p>}
     {!blocked?<HButton type="button" className="workflow-refresh" data-action="refresh-completion" onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton>:null}
 
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');return;}setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
   </section>;
   return <>{presentation==='dialog'?<DetailActionDialog blocked={navigationBlocked} attention={state==='unknown'||state==='conflict'||Boolean(draft.operationId)} onOpenChange={onOpenChange}>{form}</DetailActionDialog>:form}{feedback}<DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback></>;
 }

@@ -91,3 +91,25 @@ test('T42 real competing command produces conflict without losing the original c
     assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] pre').textContent"))),original);
   },{realtime:true});
 });
+
+test('T42 conversation conflict adoption clears the original recovery operation before a new explicit command',{timeout:240000},async()=>{
+ await withT42BoardBrowser(async(f,browser,card,get)=>{
+  const first=f.tickets[0],cookie=f.cookies[0];assert.ok(first&&cookie);const path='/api/tickets/'+first.ticket.id,initial=await get(path);
+  await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
+  await browser.waitFor("document.querySelector('[data-action=take-and-start-with-conversations]')?.disabled===false");
+  await browser.waitFor("document.querySelector('[data-realtime-status]')?.getAttribute('data-realtime-status')==='live'");
+  await browser.evaluate(`(()=>{const original=fetch;globalThis.__t42ConversationHeld=null;let first=true;globalThis.fetch=async(path,options)=>{if(first&&options?.method==='POST'&&String(path).endsWith('/take-and-start-with-conversations')){first=false;globalThis.__t42ConversationHeld={path:String(path),body:JSON.parse(options.body)};await new Promise(resolve=>{globalThis.__t42ConversationRelease=resolve;});}return original(path,options);};})()`);
+  await browser.evaluate("document.querySelector('[data-action=take-and-start-with-conversations]').click()");await browser.waitFor('globalThis.__t42ConversationHeld!==null');
+  const held=object(await browser.evaluate('globalThis.__t42ConversationHeld')),original=object(held.body),bootstrap=await get('/api/lifecycle/bootstrap'),id=randomUUID();
+  const competing=await fetch(f.origin+path+'/accept-for-later',{method:'POST',headers:{cookie,origin:f.origin,'content-type':'application/json','x-csrf-token':String(bootstrap.csrf_token),'idempotency-key':id,'if-match':'"'+String(initial.version)+'"'},body:JSON.stringify({client_command_id:id,expected_version:initial.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:initial.resolver_team_id})});assert.equal(competing.status,200,await competing.clone().text());
+  await browser.evaluate('globalThis.__t42ConversationRelease()');await browser.waitFor("Boolean(document.querySelector('.detail-accept-dialog [data-board-original-intent]'))");
+  assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1);
+  await browser.evaluate("document.querySelector('.detail-accept-dialog [data-action=adopt-current-board-facts]').click()");
+  await browser.waitFor("!document.querySelector('.detail-accept-dialog [data-board-original-intent]')&&document.querySelector('[data-action=confirm-conversation-handling]')?.disabled===false",{timeoutMs:10000});
+  const operations=await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('operations'),rows=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve(rows.result.filter(row=>row.kind==='ticket'&&row.id===${JSON.stringify(first.ticket.id)}&&row.purpose==='ticket-conversation-handling').map(row=>row.commandId));};tx.onerror=()=>{db.close();reject(tx.error);};};})`);assert.deepEqual(operations,[],'the old recovery UUID is durably cleared before a new intent');
+  assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1,'adoption does not submit automatically');
+  await browser.evaluate("document.querySelector('[data-action=confirm-conversation-handling]').click()");
+  await browser.waitFor("document.querySelector('.conversation-handling-state')?.textContent.includes('已开始处理')");
+  const posts=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(posts));assert.equal(posts.length,2);const next=object(object(posts[1]).body);assert.notEqual(next.client_command_id,original.client_command_id);assert.equal(next.communication_choice,original.communication_choice);assert.deepEqual(next.sessions,original.sessions);assert.equal((await get(path)).status,'IN_PROGRESS');
+ },{conversationHandling:true,draftRecovery:true,realtime:true});
+});

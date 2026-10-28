@@ -8,6 +8,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
@@ -52,6 +53,7 @@ const copies=`new Promise((resolve,reject)=>{
 })`;
 async function image(browser:Browser,evidence:string,name:string){await writeFile(join(evidence,name),Buffer.from(await browser.screenshot(),'base64'));}
 async function fill(browser:Browser,label:string,value:string){
+  if(label==='报修来源'){await chooseWorkbenchSelect(browser,'[data-field-label="报修来源"]',value);return;}
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify('[aria-label="'+label+'"]')});if(!input)throw Error('T18_POSTCOMMIT_FIELD_MISSING');
     const kind=input instanceof HTMLTextAreaElement?HTMLTextAreaElement:input instanceof HTMLSelectElement?HTMLSelectElement:HTMLInputElement;
     Object.getOwnPropertyDescriptor(kind.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event(kind===HTMLSelectElement?'change':'input',{bubbles:true}));})()`);
@@ -144,7 +146,7 @@ test('a real post-commit 403 preserves the original verified command for explici
       // No private data is seeded or restored while creation is revoked.
       const restored=await restore();assert.equal(restored.id,principal.id);assert.deepEqual(restored.resolver_team_ids,['PILOT_IT']);
       await browser.evaluate(releaseCapabilities);
-      await browser.waitFor("globalThis.__t18PostcommitRows.some(row=>row.path==='/api/workbench/reports/capabilities'&&row.held&&row.status===200&&row.result?.can_create===true)&&Boolean(document.querySelector('[data-manual-report-result]')?.textContent.trim())&&!document.querySelector('[data-manual-report-result]').textContent.includes('正在受理')");
+      await browser.waitFor("globalThis.__t18PostcommitRows.some(row=>row.path==='/api/workbench/reports/capabilities'&&row.held&&row.status===200&&row.result?.can_create===true)&&document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')");
       stage='ACTUAL_CREATION_GRANT_RESTORED';await image(browser,evidence,'02-committed-403-reconciliation-required.png');
       const retained=object(await browser.evaluate(copies));assert.ok(Array.isArray(retained.operations));
       assert.equal(retained.operations.length,1,'a post-commit refusal cannot erase the original operation UUID as a known failure');

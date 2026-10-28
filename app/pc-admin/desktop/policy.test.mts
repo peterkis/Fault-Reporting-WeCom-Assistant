@@ -1,7 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {allowedNavigation,businessDocument,navigationFailure,readConfig,readContext,readReminder,readChromeAction} from './policy.mjs';
+import {allowedNavigation,allowedAttachmentDownload,businessDocument,navigationFailure,readConfig,readContext,readReminder,readChromeAction} from './policy.mjs';
 const origin='https://workbench.test',epoch='11111111-1111-4111-8111-111111111111';
+
+test('only bounded same-origin attachment Blobs can open a native save dialog',()=>{
+ const file={url:'blob:'+origin+'/'+epoch,filename:'report-attachment.png',mime:'image/png',bytes:1024};assert.equal(allowedAttachmentDownload(file,origin),true);
+ assert.equal(allowedAttachmentDownload({...file,filename:'report-material.mp4',mime:'video/mp4',bytes:20*1024*1024},origin),true);
+ for(const change of [{url:origin+'/api/attachments/'+epoch},{url:'blob:https://other.test/'+epoch},{url:'blob:null/'+epoch},{url:file.url+'?x=1'},{filename:'../report-attachment.png'},{filename:'arbitrary.exe'},{mime:'text/html'},{bytes:0},{bytes:10*1024*1024+1}])assert.equal(allowedAttachmentDownload({...file,...change},origin),false);
+});
 test('trusted titlebar exposes only its four fixed window actions',()=>{
   for(const action of ['menu','minimize','maximize','close'])assert.equal(readChromeAction(action),action);
   for(const input of [['close'],{action:'close'},'quit','openExternal',null,0])assert.throws(()=>readChromeAction(input));

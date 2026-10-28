@@ -6,6 +6,8 @@
 
 主进程使用 strict TypeScript `.mts`，沙箱 preload 使用 `.cts` 编译为 `.cjs`，因为 Electron 沙箱不支持 ESM preload；不通过关闭 sandbox 获得兼容。远程页面没有 Node 权限，窄 IPC 逐次核对主窗口、主 frame、origin 和闭合输入；登录站点没有业务桥。安装包仅含经过白名单选取的宿主文件与非敏感 origin。
 
+2026-10-28 PR审查修补：允许当前已建立员工上下文的业务主frame下载本页面生成的同源附件Blob，仅接受既有固定报修文件名、媒体MIME及大小上限。仍拒绝其他来源、子frame、任意URL/文件名及未知大小；主进程仅设置原生保存对话框，由用户选择目的地，不向远程页面开放路径或文件写入IPC。测试驱动的自动选路仅用于隔离下载验收，不进入安装包。
+
 新增固定 `GET /workbench/desktop`，复用现有员工扫码 state、浏览器绑定和 Cookie，回跳固定 `/workbench/app/`。桌面用途前缀参与完整一次性 state 哈希核验，只有成功消费后才映射固定 SPA 返回路径；数据库继续保存原 `/workbench`，保持035的 return_path 约束，篡改前缀不能消费原 intent。普通 API 401/403、现有登录和退出不变。human-v1 增加可选默认 false 的 `workbenchRemindersEnabled`，只传 App；保留 H5 已有提醒装配，不新增数据库或自动迁移。
 
 桌面背景提醒复用同一 SSE/刷新时钟与现有只读提醒。实际窗口显示、焦点、锁屏和挂起与后台传输分开：隐藏不产生已读、查看或编辑续租；断线/睡眠/身份变化后重新建立提醒基线，不补响历史。点击通知是显式定位意图，仍须 READ 与草稿/UNKNOWN 导航保护。普通浏览器保留原可见性规则。

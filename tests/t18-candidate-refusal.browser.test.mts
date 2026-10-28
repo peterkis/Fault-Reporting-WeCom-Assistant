@@ -7,6 +7,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 
@@ -30,6 +31,7 @@ const trace=`(()=>{
 })()`;
 async function image(browser:Browser,evidence:string,name:string){await writeFile(join(evidence,name),Buffer.from(await browser.screenshot(),'base64'));}
 async function fill(browser:Browser,label:string,value:string){
+  if(label==='报修来源'){await chooseWorkbenchSelect(browser,'[data-field-label="报修来源"]',value);return;}
   await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label='+${JSON.stringify(JSON.stringify(label))}+']');if(!input)throw Error('T18_FIELD_MISSING');
     const kind=input instanceof HTMLTextAreaElement?HTMLTextAreaElement:input instanceof HTMLSelectElement?HTMLSelectElement:HTMLInputElement;
     Object.getOwnPropertyDescriptor(kind.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event(kind===HTMLSelectElement?'change':'input',{bubbles:true}));})()`);
@@ -72,9 +74,9 @@ for(const refusal of ['SEARCH','VERIFY'] as const)test(`a real ${refusal} object
       }
       const refusedPath=refusal==='SEARCH'?'/api/workbench/reporter-candidates':'/api/workbench/reports';
       await browser.waitFor(`globalThis.__t18CandidateRefusalRows.some(row=>row.path===${JSON.stringify(refusedPath)}&&row.status===403)
-        &&[...document.querySelectorAll('[data-manual-report-result],[data-manual-report-form] [role=status]')].some(node=>node.textContent.trim()&&!node.textContent.includes('正在'))`);
+        &&[...document.querySelectorAll('[data-toast-source=manual-report],[data-manual-report-form] [role=status]')].some(node=>node.textContent.trim()&&!node.textContent.includes('正在'))`);
       stage='SCOPED_403_OBSERVED';await capabilities(browser);
-      const current=object(await browser.evaluate("({description:document.querySelector('[aria-label=\"故障描述\"]')?.value??null,location:document.querySelector('[aria-label=\"故障位置\"]')?.value??null,source:document.querySelector('[aria-label=\"报修来源\"]')?.value??null,name:document.querySelector('[aria-label=\"报修人姓名\"]')?.value??null})"));
+      const current=object(await browser.evaluate("({description:document.querySelector('[aria-label=\"故障描述\"]')?.value??null,location:document.querySelector('[aria-label=\"故障位置\"]')?.value??null,source:document.querySelector('[data-field-label=\"报修来源\"] select')?.value??null,name:document.querySelector('[aria-label=\"报修人姓名\"]')?.value??null})"));
       assert.equal(current.description,description,'a candidate object refusal must preserve the authorized report description');
       assert.equal(current.location,location,'a candidate object refusal must preserve the authorized report location');assert.equal(current.source,'ON_SITE');
       assert.equal(current.name,refusal==='SEARCH'?'合成':'合成成员甲');assert.ok(authority.calls.search>=1);assert.equal(authority.calls.verify,refusal==='VERIFY'?1:0);

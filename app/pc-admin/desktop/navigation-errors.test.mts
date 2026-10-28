@@ -23,6 +23,7 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
   });
   await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin='https://127.0.0.1:'+address.port;
   for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
+  for(const file of ['main.mjs','policy.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs']){copyFileSync(path.join(root,'.local/electron/compiled',file),path.join(stage,file));assert.deepEqual(readFileSync(path.join(stage,file)),readFileSync(path.join(root,'.local/electron/compiled',file)));}
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   const packageInfo=JSON.parse(readFileSync(path.join(stage,'package.json'),'utf8'));packageInfo.main='process-driver.mjs';writeFileSync(path.join(stage,'package.json'),JSON.stringify(packageInfo));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:origin}));
@@ -53,6 +54,16 @@ test('real Electron main navigation replaces HTTP JSON errors and still opens su
       status=code;await command('navigate',origin+'/workbench/desktop');await wait('document.body?.innerText.includes('+JSON.stringify(expected)+')');
     }
     await command('navigate',origin+'/workbench/app/');await wait('typeof window.workbenchDesktop==="object"');
+    await command('evaluate',`window.workbenchDesktop.updateContext({epoch:'00000000-0000-4000-8000-000000000123',blocked:false,live:true,remindersAvailable:false})`);
+    await command('arm-downloads');
+    const attachment=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==','base64');
+    const download=(name:string,mime:string)=>command('evaluate',`(()=>{const bytes=Uint8Array.from(atob(${JSON.stringify(attachment.toString('base64'))}),c=>c.charCodeAt(0)),url=URL.createObjectURL(new Blob([bytes],{type:${JSON.stringify(mime)}})),link=document.createElement('a');link.href=url;link.download=${JSON.stringify(name)};document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);return true;})()`);
+    await download('report-attachment.png','image/png');
+    let receipt:{allowed:boolean;name:string;state?:string;sha256?:string;dialogTitle?:string}[]=[];
+    const downloadDeadline=Date.now()+6000;while(Date.now()<downloadDeadline){receipt=await command('downloads') as typeof receipt;if(receipt[0]?.state==='completed'||receipt[0]?.allowed===false)break;await delay(50);}
+    assert.equal(receipt[0]?.allowed,true,'explicit authorized attachment Blob must reach the native save path');assert.equal(receipt[0]?.state,'completed');assert.equal(receipt[0]?.sha256,createHash('sha256').update(attachment).digest('hex'));assert.equal(receipt[0]?.dialogTitle,'保存报修附件');
+    await download('arbitrary.exe','application/octet-stream');const rejectedDeadline=Date.now()+3000;while(Date.now()<rejectedDeadline){receipt=await command('downloads') as typeof receipt;if(receipt.length===2)break;await delay(50);}assert.equal(receipt[1]?.allowed,false,'unrelated downloads stay blocked');
+    await command('evaluate','window.workbenchDesktop.updateContext({epoch:null,blocked:true,live:false,remindersAvailable:false})');
     assert.equal(await command('evaluate','typeof window.desktopChrome+":"+typeof require'),'undefined:undefined','remote content cannot control the local titlebar or use Node');
     const chrome=(expression:string)=>command('chrome-evaluate',expression);
     assert.equal(await chrome('document.querySelectorAll(".window-actions button").length'),4);

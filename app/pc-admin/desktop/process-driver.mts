@@ -1,7 +1,7 @@
 // Test-only Electron entry. Explicitly excluded from the staging/package allowlist.
 import {app,BrowserWindow,WebContentsView,Notification,session,powerMonitor,dialog,Menu} from 'electron';
 import {createHash,createPublicKey} from 'node:crypto';
-import {writeFileSync,appendFileSync} from 'node:fs';
+import {writeFileSync,appendFileSync,mkdirSync,readFileSync} from 'node:fs';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import './main.mjs';
@@ -9,6 +9,7 @@ import './main.mjs';
 const stage=process.env.WECOM_DESKTOP_TEST_STAGE,spki=process.env.WECOM_DESKTOP_TEST_SPKI;
 if(!process.send||!stage||!spki||!path.resolve(stage).startsWith(path.resolve('.local/electron')+path.sep))throw Error('DESKTOP_TEST_CONTEXT_REQUIRED');
 const notices:Notification[]=[];
+const downloads:{allowed:boolean;name:string;state?:string;sha256?:string;bytes?:number;dialogTitle?:string}[]=[];let downloadObserver=false;
 let dialogs=0;dialog.showMessageBox=async()=>{dialogs++;return {response:0,checkboxChecked:false};};
 const diagnostics:{event:string;code?:number;path?:string;message?:string}[]=[];
 const trace=(event:string)=>appendFileSync(path.join(process.env.WECOM_DESKTOP_DATA_ROOT!,'lifecycle.jsonl'),JSON.stringify({event,windows:BrowserWindow.getAllWindows().length})+'\n');
@@ -43,6 +44,18 @@ process.on('message',async(value:unknown)=>{
     const page=view?.webContents??window.webContents;
     let result:unknown;
     switch(command.action){
+      case 'arm-downloads':{
+        if(!downloadObserver){downloadObserver=true;page.session.on('will-download',(event,item)=>{
+          const record:{allowed:boolean;name:string;state?:string;sha256?:string;bytes?:number;dialogTitle?:string}={allowed:!event.defaultPrevented,name:item.getFilename()};downloads.push(record);
+          if(event.defaultPrevented)return;
+          record.dialogTitle=item.getSaveDialogOptions().title??'';
+          const downloadRoot=path.join(process.env.WECOM_DESKTOP_DATA_ROOT!,'downloads');mkdirSync(downloadRoot,{recursive:true});
+          // Test-only stand-in for the user's save-dialog selection; never packaged.
+          const target=path.join(downloadRoot,path.basename(record.name));item.setSavePath(target);
+          item.once('done',(_event,state)=>{record.state=state;if(state==='completed'){const bytes=readFileSync(target);record.bytes=bytes.length;record.sha256=createHash('sha256').update(bytes).digest('hex');}});
+        });}result=true;break;
+      }
+      case 'downloads':result=downloads;break;
       case 'evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await page.executeJavaScript(command.expression,true);break;
       case 'chrome-evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await window.webContents.executeJavaScript(command.expression,true);break;
       case 'navigate':if(typeof command.expression!=='string'||!/^https:\/\/127\.0\.0\.1:\d+\/workbench\//u.test(command.expression))throw Error('TEST_LOOPBACK_URL_REQUIRED');void page.loadURL(command.expression).catch(()=>{});result=true;break;

@@ -63,3 +63,13 @@ Windows Job共享2个逻辑CPU、hard cap及4GiB提交内存，包含PG、应用
 ## 后续 Git 交付授权
 
 2026-10-28 用户追加授权：提交并推送、创建PR并请求`@codex review`，修复P1/P2后继续推送复审，全部问题解决且适用CI通过后以精确head合并，再清理自有分支/工作树。当前分支继承三个已推送、未合入main的Electron、启动及头像/压缩提交，PR覆盖完整分支；各阶段原始验证身份保持。上述“未提交/未发布”描述绑定本地交付阶段，不作为后继Git操作状态。Git收据另存证据目录的`git-delivery/`，不自动授予部署、真实业务迁移或Gate权限。
+
+### PR #123 第一轮修补
+
+首个发布head为`bc8e2615b1fa49bc71960cb8b90c6ccd0ba8a958`，与原本地候选输入哈希一致。Codex对该完整head提出两个P2，原审查意见及首轮CI失败均保留。
+
+- [桌面附件下载被全局拒绝](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/123#discussion_r4399369986)：真实Electron进程先复现下载被取消，再限定当前业务主frame、员工上下文、同源Blob、固定文件名/MIME与大小，交给原生保存对话框。桌面6项PASS，包括实际文件落盘与SHA校验、任意下载拒绝；目的地选择由排除于安装包的测试驱动自动提供，不冒充人工操作系统对话框验收。
+- [409新意图未清理旧恢复操作](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/123#discussion_r4399369995)：真实竞争命令产生409，修复前新确认按钮无法使用；修复后等待原UUID清理成功、复核当前视图再释放意图。共用采纳入口等待异步完成并禁止重复点击；相关完工/重开/接管入口也保留清理失败的屏障。看板与关联沟通5入口19项PASS，明确核对IndexedDB旧操作已清除，新操作使用新UUID且不自动提交。
+- 首轮TypeScript CI在T18旧下拉定位处出现`Illegal invocation`。三个T18测试改用现有真实Select交互辅助，并将旧常驻状态/下拉容器断言改为当前Toast与真实select值；业务403、UNKNOWN、原UUID、事实计数及无外发断言保留。三入口最后5项PASS。
+
+本轮修补候选input hash为`00c2c36c38337da5cc0d8fe7f29fc18b3267cf6d78d9ea69ef043fc9f5e37496`，manifest为`48f4db2306e229c04a3f66ca72bf23e3da76bfc4f17b24b68e3e6d1096351214`。构建、strict/负向类型、制品与文档检查通过；以上30项为分批相关检查，不重绑旧208项或早期性能证据。远端新head审查与CI由后继Git收据记录，未据此提前宣称通过或合并。
