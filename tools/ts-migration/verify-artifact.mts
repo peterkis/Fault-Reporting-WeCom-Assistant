@@ -16,7 +16,7 @@ function runtimeOutputs(runtime:string,outputs:Record<string,unknown>[]):Map<str
   return bytes;
 }
 
-/** Physical runtime identity; source candidate admission keeps its separate 2048-file limit. */
+/** Physical runtime identity; ADR-0051 keeps source admission separately bounded at 4096 files. */
 export function runtimeOutputInventory(runtime:string,archivedManifest?:Buffer){
   const text=readFileSync(safeFile(runtime,'build-manifest.json'),'utf8'),manifest=record(JSON.parse(text) as unknown);
   if(manifest.schema_version!==1||manifest.status!=='STAGED_NOT_ACTIVATED'||manifest.node_major!==24||!Array.isArray(manifest.outputs))throw Error('MIGRATION_RUNTIME_MANIFEST_SCHEMA');

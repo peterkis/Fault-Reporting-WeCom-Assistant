@@ -302,6 +302,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.evaluate(`(()=>{const link=document.querySelector('[data-item-id="${id}"] .card-open');link.focus();link.click();})()`);
       await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
+      await browser.waitFor("document.querySelector('.detail-dialog')?.contains(document.activeElement)===true");
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
@@ -322,6 +323,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
       await browser.waitFor("!document.querySelector('.detail-dialog')");
+      await browser.waitFor(`document.activeElement===document.querySelector('[data-item-id="${id}"] .card-open')`);
       assert.equal(await browser.evaluate(`document.activeElement===document.querySelector('[data-item-id="${id}"] .card-open')`),true);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
       await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
@@ -332,6 +334,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("Boolean(document.querySelector('.detail-dialog')&&document.querySelector('#detail-title'))");
       await browser.evaluate("document.querySelector('[aria-label=\"展开完整页面\"]').click()");
       await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))&&!document.querySelector('.detail-dialog')");
+      await browser.waitFor("document.activeElement?.id==='detail-title'");
       assert.equal(await browser.evaluate("document.activeElement.id==='detail-title'"),true);
       await capture('new-detail-page-1920.png');
       await reload();await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))");

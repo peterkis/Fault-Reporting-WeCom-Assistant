@@ -66,7 +66,8 @@ function candidateInputPaths(root:string): string[] {
       for (const child of readdirSync(absolute,{withFileTypes:true}).sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0)) add(relative + '/' + child.name,child);
       return;
     }
-    if (!stat.isFile() || files.length >= 2048) failG2('CANDIDATE_INVENTORY_LIMIT');
+    // ADR-0051: finite current-source capacity; historical checkouts retain their original bound.
+    if (!stat.isFile() || files.length >= 4096) failG2('CANDIDATE_INVENTORY_LIMIT');
     files.push(relative);
   }
   for (const selected of [...G2_CANDIDATE_ROOTS, ...G2_CANDIDATE_FILES]) {

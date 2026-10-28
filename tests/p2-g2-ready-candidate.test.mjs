@@ -52,7 +52,10 @@ test('bounded async candidate reads preserve the full V2 inventory, event-loop p
  writeFileSync(canonical,Buffer.from([0xff]));assert.throws(()=>g2CandidateInventory(root),TypeError);await assert.rejects(()=>g2CandidateInventoryAsync(root),TypeError);
  writeFileSync(canonical,'VALID');const oversized=path.join(root,'tests','oversized.mjs');writeFileSync(oversized,Buffer.alloc(16*1024*1024+1));
  assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_INVENTORY_LIMIT/u);await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_INVENTORY_LIMIT/u);rmSync(oversized);
- for(let index=1000;index<2046;index++)writeFileSync(path.join(root,'tests','input-'+index+'.mjs'),'export {};');
+ for(let index=1000;index<4091;index++)writeFileSync(path.join(root,'tests','input-'+index+'.mjs'),'export {};');
+ const boundary=g2CandidateInventory(root);assert.equal(boundary.file_count,4096,'the authorized finite source boundary is inclusive');
+ assert.deepEqual(await g2CandidateInventoryAsync(root),boundary);
+ writeFileSync(path.join(root,'tests','overflow.mjs'),'export {};');
  assert.throws(()=>g2CandidateInventory(root),/CANDIDATE_INVENTORY_LIMIT/u);await assert.rejects(()=>g2CandidateInventoryAsync(root),/CANDIDATE_INVENTORY_LIMIT/u);
 });
 
