@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "publicOrigin": "https://workbench.example.invalid",
   "workbenchRemindersEnabled": false,
+  "workbenchActorAvatarsEnabled": false,
+  "workbenchActorAvatarRootRef": null,
   "workbenchFollowEnabled": false,
   "workbenchReporterProfilesEnabled": false,
   "reporterOrigin": "https://reporter.example.invalid",

@@ -133,7 +133,7 @@ function decodeRecord(value:unknown):WorkbenchRecord {
   const v=object(value);if(!['REPORT','INTERNAL','EXTERNAL'].includes(text(v.audience)))throw new ApiError(502,'INVALID_RESPONSE');
   const material=Object.hasOwn(v,'read_material')?object(v.read_material):null;
   if(material&&(v.audience!=='REPORT'||Object.keys(material).length!==2||typeof material.source_ref!=='string'||!/^(?:channel:[1-9][0-9]{0,18}|(?:web|manual):[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u.test(material.source_ref)||typeof material.revision!=='string'||!/^[1-9][0-9]{0,18}$/u.test(material.revision)||BigInt(material.revision)>9223372036854775807n))throw new ApiError(502,'INVALID_RESPONSE');
-  return {id:text(v.id),at:datetime(v.at),type:text(v.type),text:nullable(v.text),audience:v.audience as WorkbenchRecord['audience'],actor:nullable(v.actor),old_status:nullable(v.old_status),new_status:nullable(v.new_status),...(material?{read_material:{source_ref:text(material.source_ref),revision:text(material.revision)}}:{})};
+  return {id:text(v.id),at:datetime(v.at),type:text(v.type),text:nullable(v.text),audience:v.audience as WorkbenchRecord['audience'],actor:nullable(v.actor),...(v.actor_ref===undefined?{}:{actor_ref:v.actor_ref===null?null:id(v.actor_ref)}),old_status:nullable(v.old_status),new_status:nullable(v.new_status),...(material?{read_material:{source_ref:text(material.source_ref),revision:text(material.revision)}}:{})};
 }
 function decodeDetail(value:unknown):WorkbenchDetail {
   const v=object(value),r=object(v.responsibility);if(!Array.isArray(v.records)||v.records.length>100)throw new ApiError(502,'INVALID_RESPONSE');

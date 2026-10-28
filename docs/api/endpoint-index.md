@@ -156,6 +156,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | I26 | GET | `/api/incidents/{incidentId}/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/父与原动作用途的安全只读核对；原UUID/当前原动作与子目标权限，沿原ledger | [公共故障](workbench/incidents.md) |
 | B01 | GET | `/api/workbench/board` | W | 已实现：WEB01看板 | [看板](workbench/board.md) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
+| B03 | GET | `/api/workbench/items/ticket/{ticketId}/actor-avatars/{actorRef}` | W | 默认关闭：当前工单 READ 下的操作人头像缓存，200 WebP / 204回退 | [头像与媒体](workbench/actor-avatars-and-media.md) |
 | WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |
 | WB-T41-Q2 | POST | `/api/workbench/search` | W | 已实现、默认关闭；同一授权读取的长条件传输，32KiB／Origin-CSRF／同预算，无命令写 | [只读 POST](workbench/search-source-forward.md#get-与有界只读-post) |
 | H5-W01 | GET | `/api/workbench/items/{kind}/{id}/web-report` | W | 已挂载、H5 默认关闭：当前 READ 下的 Web 来源材料／催单／评价／公开进度，kind=ticket/review/intake | [网页报修资料](workbench/web-reports.md) |

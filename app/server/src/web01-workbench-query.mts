@@ -139,7 +139,7 @@ export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
   if(!includeClosedIntakes)return CARD_SQL;
   return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false,actorAvatarsEnabled=false}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean;actorAvatarsEnabled?:boolean}) {
   async function decorateWebReportUrgency(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     if(!webReports)return items;const ids=[...new Set(items.filter(item=>item.kind==='ticket').map(item=>item.id))];if(!ids.length)return items;
     const active=await webReports.activeForAuthorizedTickets(ids);
@@ -273,13 +273,13 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       const manual=personalReadEnabled&&manualReportsEnabled&&report.rows[0]?.source_provider==='STAFF_MANUAL_REPORT'?await readManualReportSource(pool,selected.intake_id):null;
       const manualRecords=manual?`UNION ALL
         SELECT 'manual:'||i.id::text,to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS'),'报修原文',$7::text,
-          'REPORT',NULL,NULL,NULL,'manual:'||i.id::text,'1'::text FROM intake.service_intake i
+          'REPORT',NULL,NULL,NULL,'manual:'||i.id::text,'1'::text,NULL::text FROM intake.service_intake i
         WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()` : '';
       const webRecords=web?`UNION ALL
         SELECT 'web:'||s.id::text,to_char(s.received_at,'YYYY-MM-DD HH24:MI:SS'),
           CASE WHEN s.kind='SUBMIT' THEN '报修原文' ELSE '报修补充' END,
           CASE WHEN s.kind='SUBMIT' THEN s.safe_content->>'description' ELSE s.safe_content->>'text' END,
-          'REPORT',NULL,NULL,NULL,${personalReadEnabled?"'web:'||s.id::text,s.input_revision::text":"NULL::text,NULL::text"} FROM intake.web_submission s
+          'REPORT',NULL,NULL,NULL,${personalReadEnabled?"'web:'||s.id::text,s.input_revision::text":"NULL::text,NULL::text"},NULL::text FROM intake.web_submission s
         JOIN intake.web_request_binding b ON b.intake_id=s.intake_id
         WHERE s.intake_id=$1::uuid AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
           AND s.retention_until>platform.local_now()` : '';
@@ -293,29 +293,29 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
           CASE WHEN rel.intake_id=$1::uuid AND rel.relation_type='PRIMARY' THEN '报修原文' ELSE '报修补充' END AS type,
           m.clean_text AS text,'REPORT'::text AS audience,NULL::text AS actor,NULL::text AS old_status,NULL::text AS new_status,
           ${personalReadEnabled?"CASE WHEN i.source_provider='WECOM_AIBOT' THEN 'channel:'||m.id::text END":"NULL::text"} AS material_source_ref,
-          ${personalReadEnabled?"CASE WHEN i.source_provider='WECOM_AIBOT' THEN rel.sequence_no::text END":"NULL::text"} AS material_revision
+          ${personalReadEnabled?"CASE WHEN i.source_provider='WECOM_AIBOT' THEN rel.sequence_no::text END":"NULL::text"} AS material_revision,NULL::text AS actor_ref
         FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id
         JOIN intake.service_intake i ON i.id=rel.intake_id
         WHERE rel.intake_id IN (SELECT id FROM readable_intakes) AND i.retention_until>platform.local_now() AND m.retention_until>platform.local_now()
         UNION ALL
         SELECT 'event:'||e.event_id::text,to_char(e.created_at,'YYYY-MM-DD HH24:MI:SS'),e.event_type,
-          e.internal_note,'INTERNAL',COALESCE(p.display_name,e.operator_type),e.old_status,e.new_status,NULL,NULL
+          e.internal_note,'INTERNAL',COALESCE(p.display_name,e.operator_type),e.old_status,e.new_status,NULL,NULL,p.id::text
         FROM pilot_ticket.ticket_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id::text=e.operator_id
         WHERE $2='ticket' AND e.ticket_id=$3::uuid
         UNION ALL
         SELECT 'external:'||e.event_id::text,to_char(e.created_at,'YYYY-MM-DD HH24:MI:SS'),'对外摘要',
-          e.external_note,'EXTERNAL',COALESCE(p.display_name,e.operator_type),NULL,NULL,NULL,NULL
+          e.external_note,'EXTERNAL',COALESCE(p.display_name,e.operator_type),NULL,NULL,NULL,NULL,p.id::text
         FROM pilot_ticket.ticket_event e LEFT JOIN pilot_ticket.pilot_principal p ON p.id::text=e.operator_id
         WHERE $2='ticket' AND e.ticket_id=$3::uuid AND e.external_note IS NOT NULL
         UNION ALL
         SELECT 'intake-event:'||e.event_id::text,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS'),
-          e.event_type,NULL,'INTERNAL','SYSTEM',NULL,NULL,NULL,NULL FROM intake.service_intake_event e
+          e.event_type,NULL,'INTERNAL','SYSTEM',NULL,NULL,NULL,NULL,NULL FROM intake.service_intake_event e
         WHERE $2='intake' AND e.intake_id=$1::uuid
         ${webRecords}
         ${manualRecords}
       ) SELECT * FROM records WHERE ($4::text IS NULL OR (at,id)<($4::text,$5::text))
         ORDER BY at DESC,id DESC LIMIT $6`,[selected.intake_id,selected.kind,selected.id,at,recordId,n+1,...(manual?[manual.report.description]:[])]);
-      const items=records.rows.slice(0,n).map(({material_source_ref,material_revision,...record})=>({...record,...(material_source_ref&&material_revision?{read_material:{source_ref:material_source_ref,revision:material_revision}}:{})})),last=items.at(-1);
+      const items=records.rows.slice(0,n).map(({material_source_ref,material_revision,actor_ref,...record})=>({...record,...(actorAvatarsEnabled?{actor_ref:actor_ref??null}:{}),...(material_source_ref&&material_revision?{read_material:{source_ref:material_source_ref,revision:material_revision}}:{})})),last=items.at(-1);
       // The legacy responsibility view retains history. Filter current ownership
       // before its bounded result, without changing historical assignment facts.
       const responsibility=selected.kind==='ticket'?await query.responsibility({authContext,ticketId:selected.id,currentConversationsOnly:true}):null;

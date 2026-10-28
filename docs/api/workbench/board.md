@@ -1,5 +1,7 @@
 # WEB01 管理端看板
 
+2026-10-28：详情新增可选 actor_ref 与同源操作人头像读取；联系电话独立显示。当前人员缓存与权限终检见[头像与媒体合同](actor-avatars-and-media.md)。
+
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
 T42 [合法动作与原表单路由](board-legal-actions-design.md)已完成本地隔离定向验证，默认关闭、待父原七验收。拖动／按钮／键盘只打开既有合法表单，明确确认后由官方查询显示真实列；本页查询与原详情按钮保留，不提供任意状态 PATCH。UNKNOWN／409保原控制器、UUID和完整命令，成功位置提示不冒充本UUID回执。

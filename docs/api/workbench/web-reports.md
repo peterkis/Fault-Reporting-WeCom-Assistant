@@ -1,5 +1,7 @@
 # 管理端网页报修资料
 
+2026-10-28：启用后台压缩时，media 可带仅工作人员可见的 conversion_error；原件上传成功独立于转换结果。字段、缓存及原件回退见[头像与媒体合同](actor-avatars-and-media.md)。
+
 ADR-0035 的工作人员消费支路，使用原 human-v1／P2-016 App HTTP 宿主、工作人员 Cookie／Bearer、当前 Workbench READ、同源 CSRF。成员 H5 身份不授予本页权限。源码装配入口为 `createWorkbenchWebReport`；运行开关默认关闭，`enabled` 控制读取入口，`progressEnabled` 单独控制新公开进度提交。关闭新写能力后，保持当前获权历史读取与原用途回执核对。
 
 ## GET /api/workbench/items/{kind}/{id}/reporter-profile

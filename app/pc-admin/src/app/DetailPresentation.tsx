@@ -2,7 +2,8 @@ import {WorkbenchButton as HButton} from './WorkbenchButton';
 import {useEffect,useMemo,useState} from 'react';
 import type {ReactNode} from 'react';
 import {Check} from 'lucide-react';
-import {Avatar,Chip} from '@heroui/react';
+import {Chip} from '@heroui/react';
+import {ActorAvatar} from './ActorAvatar';
 import type {Principal,WorkbenchDetail} from '../api/client';
 import {statusLabels} from '../api/client';
 import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMaterial';
@@ -24,7 +25,7 @@ export function ActivityTimeline({records,principal,item,active,now,children}:{r
   const [assigned,setAssigned]=useState<ReadonlyMap<string,ActivityActorColor>>(()=>extendActivityActorColors(new Map(),records));
   const colors=useMemo(()=>extendActivityActorColors(assigned,records),[assigned,records]);
   useEffect(()=>{if(colors!==assigned)setAssigned(colors);},[assigned,colors]);
-  return <section className="detail-main"><h3 className="activity-title">处理记录 <span>{records.length} 条已加载</span></h3>
+  return <section className="detail-main"><h3 className="activity-title">处理记录</h3>
     <div className="activity-list">{groupActivityRecords(records,now).map(group=><section className="activity-group" key={group.label} aria-label={group.label+'的处理记录'}>
       <h4>{group.label}{group.label!==group.date?<span>{group.date}</span>:null}</h4><ol>{group.records.map(record=><ActivityRecord key={record.id} record={record} principal={principal} item={item} active={active&&!modalOpen} color={colors.get(activityActorName(record))}/>)}</ol>
     </section>)}</div>{children}
@@ -34,7 +35,7 @@ function ActivityRecord({record,principal,item,active,color}:{record:WorkbenchDe
   const [expanded,setExpanded]=useState(false),name=activityActorName(record);
   const text=record.text??(record.new_status?(statusLabels[record.old_status??'']??'新建')+' → '+(statusLabels[record.new_status]??'状态已更新'):'已记录处理操作。');
   return <li className={'detail-record'+(expanded?' is-expanded':'')}>
-    <span className="record-actor-rail" aria-hidden="true"><Avatar className="record-avatar" style={color}><Avatar.Fallback>{Array.from(name)[0]}</Avatar.Fallback></Avatar></span>
+    <span className="record-actor-rail" aria-hidden="true"><ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name} color={color}/></span>
     <HButton variant="ghost" className="record-content" aria-expanded={expanded} title={expanded?'收起记录':'展开完整记录'} onPress={()=>setExpanded(value=>!value)}>
       <span className="record-name" style={color}>{name}</span>
       {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{text}</span>}

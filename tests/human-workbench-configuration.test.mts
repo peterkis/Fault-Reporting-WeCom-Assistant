@@ -39,6 +39,20 @@ test('role mapping preserves key purposes and excludes other roles credentials a
  assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'').memberEntry,undefined);assert.equal(JSON.parse(worker.WORKBENCH_ROLE_SETTINGS??'').notificationBindingsFile,undefined);assert.equal(readWorkbenchWorkerSettings(worker).botId,f.settings.bot.id);
  assert.throws(()=>readP2016LiveConfiguration({WORKBENCH_CONVERSATIONS_ENABLED:'true'},{requireApproval:false}),/P2_016_BASE_FLAGS_MUST_REMAIN_FALSE/u);
 }));
+
+test('actor avatars default off and the directory credential is confined to the explicitly enabled Worker',async()=>fixture(f=>{
+ const read=()=>{const value=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(value.enabled);return value;};
+ assert.equal(read().settings.workbenchActorAvatarsEnabled,false);
+ f.settings.workbenchActorAvatarsEnabled=true;f.save();assert.throws(read,/workbenchActorAvatarRootRef/u);
+ f.settings.workbenchActorAvatarRootRef='synthetic-approved-root';f.save();assert.throws(read,/THIRD_STAFF_INFO_SYNC_KEY/u);
+ f.env.THIRD_STAFF_INFO_SYNC_KEY='synthetic-directory-secret';const value=read();
+ const app=workbenchRoleEnvironment(value,'APP'),worker=workbenchRoleEnvironment(value,'WORKER'),gateway=workbenchRoleEnvironment(value,'GATEWAY');
+ assert.equal(readWorkbenchRoleSettings('APP',app).workbenchActorAvatarsEnabled,true);
+ assert.equal(readWorkbenchWorkerSettings(worker).actorAvatars?.rootRef,'synthetic-approved-root');
+ assert.equal(worker.THIRD_STAFF_INFO_SYNC_KEY,f.env.THIRD_STAFF_INFO_SYNC_KEY);assert.equal(app.THIRD_STAFF_INFO_SYNC_KEY,undefined);assert.equal(gateway.THIRD_STAFF_INFO_SYNC_KEY,undefined);
+ assert.equal(JSON.parse(app.WORKBENCH_ROLE_SETTINGS??'{}').workbenchActorAvatarRootRef,undefined);assert.equal(JSON.parse(gateway.WORKBENCH_ROLE_SETTINGS??'{}').workbenchActorAvatarsEnabled,undefined);
+ assert.throws(()=>readWorkbenchWorkerSettings({...worker,THIRD_STAFF_INFO_SYNC_KEY:undefined}),/THIRD_STAFF_INFO_SYNC_KEY/u);
+}));
 test('MVP group reception and response scopes do not require a Webhook for every group',async()=>fixture(f=>{
  f.settings.groupRoutes=[];f.save();
  const c=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(c.enabled);

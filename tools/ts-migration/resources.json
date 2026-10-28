@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/068_workbench_actor_avatar_cache.sql",
+    "database/migrations/069_h5_media_conversion_diagnostics.sql",
     "tests/fixtures/process-ownership/OwnedProcessJob.cs",
     ".env.example",
     "config_examples/conversation_policy.example.json",

@@ -31,6 +31,8 @@ export interface BoardPage {
 export interface WorkbenchRecord {
   id: string; at: string; type: string; text: string | null;
   audience: 'REPORT' | 'INTERNAL' | 'EXTERNAL'; actor: string | null;
+  /** Existing internal principal only; never a Provider or Bot identifier. */
+  actor_ref?: string | null;
   old_status: string | null; new_status: string | null;
   read_material?:{source_ref:string;revision:string};
 }

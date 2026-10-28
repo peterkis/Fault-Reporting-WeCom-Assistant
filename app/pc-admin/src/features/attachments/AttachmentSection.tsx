@@ -1,9 +1,9 @@
 import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
-import {Slider} from '@heroui/react';
+import {Slider,Tooltip} from '@heroui/react';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {Download,Image as ImageIcon,Pause,Play,Volume2} from 'lucide-react';
+import {CloudOff,Download,Image as ImageIcon,Pause,Play,TriangleAlert,Volume2} from 'lucide-react';
 import {ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
@@ -41,7 +41,7 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   const [thumbState,setThumbState]=useState<Record<string,'loading'|'failed'>>({}),[metadataSettled,setMetadataSettled]=useState(false),[lastLegacyError,setLastLegacyError]=useState<unknown>(null);
   useEffect(()=>{if(legacy.isError)setLastLegacyError(legacy.error);else if(legacy.isSuccess)setLastLegacyError(null);},[legacy.error,legacy.isError,legacy.isSuccess]);
   useEffect(()=>{if(!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending))setMetadataSettled(true);},[legacy.isPending,web.isPending,principal.web_reports_enabled]);
-  const materials:Material[]=[...(legacy.data?.items??[]).map((item,index)=>({key:'legacy:'+item.ref,kind:'IMAGE' as const,name:'报修图片 '+(index+1),ready:item.available,duration:null,legacy:item})),...(principal.web_reports_enabled&&web.data?.applicable?web.data.media:[]).map((item,index)=>({key:'web:'+item.media_ref,kind:item.kind,name:({IMAGE:'现场图片',VIDEO:'现场视频',VOICE:'报修语音'})[item.kind]+' '+(index+1),ready:item.playback_status==='READY',duration:item.duration_ms,web:item}))];
+  const materials:Material[]=[...(legacy.data?.items??[]).map((item,index)=>({key:'legacy:'+item.ref,kind:'IMAGE' as const,name:'报修图片 '+(index+1),ready:item.available,duration:null,legacy:item})),...(principal.web_reports_enabled&&web.data?.applicable?web.data.media:[]).map((item,index)=>({key:'web:'+item.media_ref,kind:item.kind,name:({IMAGE:'现场图片',VIDEO:'现场视频',VOICE:'报修语音'})[item.kind]+' '+(index+1),ready:item.kind!=='VOICE'||item.playback_status==='READY',duration:item.duration_ms,web:item}))];
   const keep=(blob:Blob)=>{const url=URL.createObjectURL(blob);urls.current.add(url);return url;};
   const revoke=(url:string)=>{URL.revokeObjectURL(url);urls.current.delete(url);};
   const clear=(abort=true)=>{generation.current++;if(abort)request.current?.abort();for(const url of urls.current)URL.revokeObjectURL(url);urls.current.clear();setThumbs({});setThumbState({});setPreview(null);setBusy(false);};
@@ -58,7 +58,7 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
     const next=queue.current.catch(()=>{}).then(async()=>{if(!alive.current||token!==generation.current)throw new DOMException('Scope changed','AbortError');const controller=new AbortController();request.current=controller;const timer=window.setTimeout(()=>controller.abort(),20_000);try{return await run(controller.signal);}finally{window.clearTimeout(timer);if(request.current===controller)request.current=null;}});
     queue.current=next;return next;
   };
-  const read=async(item:Material,variant:'PLAYABLE'|'ORIGINAL',signal:AbortSignal)=>{const current=captureWorkbenchRead(signal);const blob=item.legacy?await attachmentApi.download(kind,id,item.legacy,signal):item.web?await webReportApi.media(kind,id,item.web,variant,signal):null;current();if(!blob)throw new Error('MEDIA_UNAVAILABLE');return blob;};
+  const read=async(item:Material,variant:'PLAYABLE'|'ORIGINAL',signal:AbortSignal)=>{const current=captureWorkbenchRead(signal);const selected=variant==='PLAYABLE'&&item.web&&item.kind!=='VOICE'&&item.web.playback_status!=='READY'?'ORIGINAL':variant;const blob=item.legacy?await attachmentApi.download(kind,id,item.legacy,signal):item.web?await webReportApi.media(kind,id,item.web,selected,signal):null;current();if(!blob)throw new Error('MEDIA_UNAVAILABLE');return blob;};
   const materialIdentity=materials.map(item=>item.key+':'+item.ready).join('|');
   useEffect(()=>{
     if(!visible||!readReady)return;let disposed=false;const effectGeneration=generation.current;
@@ -87,10 +87,13 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   const initialLoading=!metadataSettled&&(legacy.isPending||principal.web_reports_enabled&&web.isPending);
   const legacyFailure=legacy.error??lastLegacyError;
   const unavailableFiles=materials.some(item=>item.legacy&&!item.ready);
-  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}</h4>
+  const emptySettled=!materials.length&&!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)&&!legacyFailure&&(!principal.web_reports_enabled||!web.error);
+  const storageUnavailable=emptySettled&&!legacy.data?.available&&!web.data?.applicable;
+  const conversionErrors=materials.filter(item=>item.web?.conversion_error||item.web?.playback_status==='UNAVAILABLE');
+  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}{item.web?.conversion_error?' · '+item.web.conversion_error.code+' · '+item.web.conversion_error.at:''}</div>)}</Tooltip.Content></Tooltip>:null}</h4>
     {initialLoading&&!materials.length?<DetailLoading label="正在加载报修资料…"/>:null}
     {legacyFailure?<p role="status">{errorMessage(legacyFailure)}</p>:null}
-    {!materials.length&&!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)&&!legacyFailure&&(!principal.web_reports_enabled||!web.error)?<p className="media-empty">{legacy.data?.available||web.data?.applicable?'当前事项没有可读取的已保存附件。':'附件存储暂不可用，当前无法读取原始文件。'}</p>:null}
+    {emptySettled&&!storageUnavailable?<p className="media-empty">当前事项没有可读取的已保存附件。</p>:null}
     {visual.length?<div className="detail-media-grid">{visual.map(item=><HButton key={item.key} type="button" className="detail-media-card" aria-label={(thumbState[item.key]==='failed'?'重试查看':'查看')+item.name} isDisabled={!readReady||busy||(!item.ready&&!item.web)} onClick={()=>{void open(item);}} variant="secondary">{thumbs[item.key]?<img src={thumbs[item.key]} alt={item.name}/>:!item.ready?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.legacy?.reason?labels[item.legacy.reason]:'播放副本正在准备，可下载原件'}</span></span>:thumbState[item.key]==='failed'?<span className="media-placeholder"><ImageIcon size={24}/><span>缩略图暂不可用，点击重试查看</span></span>:<DetailLoading compact label="加载预览…"/>}{item.kind==='VIDEO'?<><span className="media-video-play"><Play size={24}/></span>{item.duration!==null?<time>{clock(item.duration/1000)}</time>:null}</>:null}</HButton>)}</div>:null}
     {voices.map(item=><Voice key={item.key} item={item} sender={reporterName} url={preview?.item.key===item.key?preview.url:undefined} disabled={!readReady||busy} onPlay={()=>{void open(item);}} onDownload={()=>{void open(item,true);}}/>)}
     {legacy.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}{notice?<ToastFeedback revision={noticeRevision} source="attachments" state={busy?'loading':undefined} role="status" aria-live="polite">{notice}</ToastFeedback>:null}

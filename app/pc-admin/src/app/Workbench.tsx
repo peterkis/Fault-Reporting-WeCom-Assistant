@@ -22,7 +22,7 @@ import type {MouseEvent,ReactNode} from 'react';
 import {useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
-import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,Search,Activity,Headset,UserRound,Building2,MapPin,Radio,Ticket,Clock3} from 'lucide-react';
+import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,Search,Activity,Headset,UserRound,Building2,MapPin,Radio,Ticket,Clock3,Phone} from 'lucide-react';
 import {MorphIcon} from 'morphicons/react';
 import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
@@ -113,10 +113,13 @@ function ReporterDisplay({item,principal,detail=false,requested}:{item:Workbench
   const profile=useQuery({queryKey:['reporter-profile',principal.principal_id,item.kind,item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterProfile(item.kind,item.id,signal),
     enabled:principal.web_reports_enabled===true&&item.source==='PORTAL'&&!item.reporter_name&&!item.reporter_department,staleTime:300_000,gcTime:300_000,retry:false});
   const name=item.reporter_name??profile.data?.name??(item.reporter_profile?'报修人姓名暂不可用':'报修人姓名未提供'),department=item.reporter_department??profile.data?.department??(item.reporter_profile?'部门暂不可用':'部门未提供');
-  const contact=useQuery({queryKey:['reporter-contact',principal.principal_id,requested?.kind??item.kind,requested?.id??item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterContact(item.id,signal),enabled:detail&&item.kind==='ticket',retry:false,gcTime:0});
-  const phone=contact.isError?null:contact.data?.phone,mobile=phone?.replace(/[\s+-]/gu,'').replace(/^86(?=1[3-9]\d{9}$)/u,''),formattedPhone=mobile&&/^1[3-9]\d{9}$/u.test(mobile)?mobile.slice(0,3)+'-'+mobile.slice(3,7)+'-'+mobile.slice(7):phone;
   const title=name+' · '+department+(item.reporter_profile?.source==='LATER_LOOKUP'?'（资料取得于 '+item.reporter_profile.captured_at+'）':profile.data?.current?'（当前企业微信资料）':'');
-  return detail?<><div className="property-field"><dt><UserRound size={17}/>报修人</dt><dd title={title}>{item.reporter_name||profile.data?.name?<Owner name={name}/>:<span>{name}</span>}{formattedPhone?<span className="reporter-phone">/ {formattedPhone}</span>:null}</dd></div><div className="property-field"><dt><Building2 size={17}/>报修部门</dt><dd title={title}>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div></>:<p className="card-meta" title={title}>{name} · {department}</p>;
+  return detail?<><div className="property-field"><dt><UserRound size={17}/>报修人</dt><dd title={title}>{item.reporter_name||profile.data?.name?<Owner name={name}/>:<span>{name}</span>}</dd></div><div className="property-field"><dt><Building2 size={17}/>报修部门</dt><dd title={title}>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div></>:<p className="card-meta" title={title}>{name} · {department}</p>;
+}
+function ReporterContact({item,principal,requested}:{item:WorkbenchCard;principal:Principal;requested:WorkbenchDetail['requested_item']}){
+  const contact=useQuery({queryKey:['reporter-contact',principal.principal_id,requested?.kind??item.kind,requested?.id??item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterContact(item.id,signal),enabled:item.kind==='ticket',retry:false,gcTime:0});
+  const phone=contact.isError?null:contact.data?.phone,mobile=phone?.replace(/[\s+-]/gu,'').replace(/^86(?=1[3-9]\d{9}$)/u,''),formatted=mobile&&/^1[3-9]\d{9}$/u.test(mobile)?mobile.slice(0,3)+'-'+mobile.slice(3,7)+'-'+mobile.slice(7):phone;
+  return <div className="property-field reporter-contact"><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone">{formatted??(item.kind==='ticket'&&contact.isPending?'正在读取…':contact.isError?'暂不可用':'未提供')}</span></dd></div>;
 }
 function Card({item,principal,search,selected,now,located=false}:{item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;located?:boolean}){
   return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id} data-reminder-located={located?'true':undefined}>
@@ -258,7 +261,8 @@ function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Pr
         <div className="property-field"><dt><Activity size={17}/>状态</dt><dd><Status item={detail.item}/></dd></div>
         <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd></div>
         <ReporterDisplay item={detail.item} principal={principal} detail requested={detail.requested_item}/>
-        <div className="property-field property-wide"><dt><MapPin size={17}/>位置</dt><dd>{detail.item.location??'未提供'}</dd></div>
+        <div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{detail.item.location??'未提供'}</dd></div>
+        <ReporterContact item={detail.item} principal={principal} requested={detail.requested_item}/>
         <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{detail.item.source_label}</span></dd></div>
         <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<time dateTime={detail.reported_at.replace(' ','T')+'+08:00'} title="首次收到或登记报修的时间（北京时间）">{detail.reported_at}</time>:<span>未记录</span>}</dd></div>
       </dl></section>
