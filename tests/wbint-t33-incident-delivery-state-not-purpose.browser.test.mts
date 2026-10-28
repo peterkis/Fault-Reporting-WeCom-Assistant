@@ -41,10 +41,10 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
   const attempts=(rows:readonly Record<string,unknown>[])=>rows.filter(row=>row.controlPost===true);
   const receiptReads=(rows:readonly Record<string,unknown>[])=>rows.filter(row=>row.method==='GET'&&text(row.path).startsWith(endpoints.receiptPrefix));
   const choose=async(label:string,value:string)=>{
-   const selector=root+' select[aria-label="'+label+'"]';
+   const selector=root+' .workbench-select[data-field-label="'+label+'"] select';
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
-  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' select[aria-label="'+label+'"]')+')?.value??null');
+  const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+')?.value??null');
   const content=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+').textContent'));
   const quiet=async()=>{await browser.evaluate('globalThis.__t33StateNotPurpose.quietStart=performance.now()');await browser.waitFor('performance.now()-globalThis.__t33StateNotPurpose.quietStart>=400');};
   let phase='initial-real-worker-unknown',refreshMode='not-reached',originalId:string|null=null,originalBodyHash:string|null=null,currentCapability:Record<string,unknown>|null=null,initialPreviousFetchCalled:boolean|null=null,nodeOtherPostAttempted=false,nodeOtherAckObserved=false,uiReplayHttp409Observed=false;
@@ -61,11 +61,12 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    await choose('选择通知路',deliveryId);
    await browser.waitFor('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+')?.disabled===false');
    await choose('投递控制操作','RECONCILE');await choose('投递操作原因','OPERATOR_VERIFIED_DELIVERY');await choose('未知发送核对结论','CONFIRMED_SENT');
-   const submit=root+' [data-action="submit-incident-delivery-control"]',confirmation=root+' input[aria-label="确认本路投递操作"]',outcome=root+' [data-incident-delivery-outcome]';
+   const submit=root+' [data-action="submit-incident-delivery-control"]',confirmation=root+' input[aria-label="确认本路投递操作"]',outcome='[data-incident-delivery-outcome]';
    assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').disabled'),true);
    await browser.evaluate('document.querySelector('+JSON.stringify(confirmation)+').click()');
    await browser.waitFor('document.querySelector('+JSON.stringify(submit)+')?.disabled===false');
    await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').click()');
+   await browser.waitFor('document.querySelectorAll('+JSON.stringify(outcome)+').length===1');
    await browser.waitFor('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState==="unknown"');
    const firstEvents=await events(),firstAttempts=attempts(firstEvents);assert.equal(firstAttempts.length,1);
    const blocked=firstAttempts[0];assert.ok(blocked);

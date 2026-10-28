@@ -1,5 +1,7 @@
 # 已保存报修附件的受控读取（WBINT-T16 / #71）
 
+PC员工读取的可选前向规则见[员工媒体](employee-media.md)与ADR-0050。优化开关开启时，本页列表仅核登记/来源元数据，不预读解密；原下载端点继续下述严格规则，新员工端点单独授权。关闭开关恢复原列表预读。
+
 W 的现有认证宿主；`workbenchAttachmentsEnabled=false` 为默认值，`attachmentStore=null` 为默认装配。不新增上传、注册 HTTP、SDK 下载、模型或 OCR。现有 normalized `wmr_` 只是媒体定位引用；只有受信服务器登记且已私有保存的资产才具备读取前置。
 
 ## HTTP 合同

@@ -23,7 +23,7 @@ test('T19 a real receipt 403 clears sensitive restored input and ciphertext whil
       if(request.method==='GET'&&request.url?.startsWith('/api/workbench/reports/commands/'))response.once('finish',()=>statuses.push(response.statusCode));
     });
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/reports/new?handling=self',width:900,height:900,cookies:f.browserCookies,certificateSpki:f.certificateSpki});assert.ok(browser);await fill(browser);await browser.evaluate("document.querySelector('[data-action=submit-manual-self-handling]').click()");await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('结果未知')");
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/reports/new?handling=self',width:900,height:900,cookies:f.browserCookies,certificateSpki:f.certificateSpki});assert.ok(browser);await fill(browser);await browser.evaluate("document.querySelector('[data-action=submit-manual-self-handling]').click()");await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')");
       const before=await browser.evaluate(copies);assert.ok(before&&typeof before==='object'&&'operations' in before);const operations=before.operations;assert.ok(Array.isArray(operations));assert.equal(operations.length,1);await revoke(f);
       await browser.evaluate("document.querySelector('[data-action=check-manual-report-receipt]').click()");
       for(let n=0;n<100&&!statuses.length;n++)await new Promise(resolve=>setTimeout(resolve,10));assert.deepEqual(statuses,[403]);
@@ -42,7 +42,7 @@ test('T19 a completed native IDB settlement whose notification is delayed cannot
       await browser.evaluate("document.querySelector('[data-action=submit-manual-self-handling]').click()");await browser.waitFor("typeof globalThis.__t19ReleaseCleanup==='function'");await revoke(f);
       tab=await yxxTab(browser,f.origin+'/workbench/app/reports/new?handling=self');await browser.waitFor('globalThis.__t19Revoked===true');
       await browser.evaluate('globalThis.__t19ReleaseCleanup()');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,0))');
-      assert.equal(await browser.evaluate("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理并开始处理')??false"),false,'a late original cleanup result cannot restore the old success after current-authority clearing');
+      assert.equal(await browser.evaluate("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理并开始处理')??false"),false,'a late original cleanup result cannot restore the old success after current-authority clearing');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=open-admitted-report]'))"),false,'current-authority revocation removes the admitted-item link as well');
     }catch(failure){error=failure;try{console.log('T19_LATE_SETTLEMENT '+JSON.stringify(browser?await browser.evaluate('({view:document.body.innerText,revoked:globalThis.__t19Revoked,held:typeof globalThis.__t19ReleaseCleanup})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);

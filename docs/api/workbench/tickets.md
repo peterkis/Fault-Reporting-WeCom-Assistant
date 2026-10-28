@@ -31,6 +31,8 @@ Notification：`notification_type,destination_type,delivery_id,status,side_effec
 
 `reporter-contact` 顶层：`status,contact,departments[],fetched_at`。历史 contact 可含 `name,userid,mobile,telephone`，department 含 `name,department_ref,role`。第三方来源可增加 `sex,current_profile`；current_profile 含 `status,contact:{name,mobile},sex,avatar_url,departments,fetched_at`。缺资料为 DEFERRED/STALE 与 null，不伪造联系方式。这是内部授权接口，不提供给 Reporter/成员 UI。
 
+ADR-0048的工单资料能力显式开启后，可增加`retained_profile:{name,department,source,captured_at}`。它只承载随工单保存的必要资料，source区分原快照与后续补取，不冒充实时人员目录；完结后也不因原消息过期而删除。读取前后均核验当前Ticket READ，不返回原始人员ID、手机号或令牌。原顶层历史快照与第三方`current_profile`语义保持。
+
 完整约束：[detail](../../../contracts/p2_016_ticket_detail.schema.json)、[list](../../../contracts/p2_016_ticket_list.schema.json)、[responsibility](../../../contracts/p2_016_responsibility_view.schema.json)、[types](../../../contracts/p2_016_contracts.d.ts)。联系资料和事件子查询的精确字段以 query 代码为准。
 
 ## 状态、备注与转派命令

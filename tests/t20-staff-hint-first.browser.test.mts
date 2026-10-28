@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
 import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {t20Object} from './helpers/t20-feedback-fixture.mjs';
@@ -27,6 +28,7 @@ test('production PC reminds its currently authorized previous HANDLER after a ge
    // Realtime is intentionally off: a public reload rereads current detail rather than waiting for an unsolicited refresh.
    const previous=await tab.evaluate('performance.timeOrigin');await tab.command('Page.enable');await tab.command('Page.reload');await tab.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
    await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('重新')");
+   if(!await tab.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"))await clickWorkbenchControl(tab,'.detail-workflows .workbench-disclosure-trigger');
    await tab.waitFor("document.querySelector('[data-reopen-follow-up]')?.checkVisibility()===true&&document.querySelector('[data-action=refresh-reopen]')?.disabled===false");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-reopen-follow-up]'))"),true,'current authorized previous-handler fact must be consumed by the production PC');
    assert.equal(await tab.evaluate("document.querySelector('[data-reopen-follow-up]')?.textContent.includes('上轮由您处理')&&document.querySelector('[data-reopen-follow-up]')?.textContent.includes('信息科已重开此工单')&&document.querySelector('[data-reopen-follow-up]')?.textContent.includes('等待重新接单')"),true);

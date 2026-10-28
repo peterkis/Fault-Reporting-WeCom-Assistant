@@ -12,6 +12,8 @@
     "shared/**/*.mts",
     "app/pc-admin/src/contracts/*.mts",
     "app/pc-admin/src/realtime/workbench-realtime-client.mts",
+    "app/pc-admin/src/app/activity-time.mts",
+    "app/pc-admin/src/app/activity-actors.mts",
     "tests/**/*.mts"
   ],
   "exclude": [

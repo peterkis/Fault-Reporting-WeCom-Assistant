@@ -13,7 +13,7 @@ test('T28 follow-up preserves unsubmitted input across parent conflict and retai
     await http.post(path+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
     await context.browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');
     await context.browser.waitFor('document.body.innerText.includes("已捕获公共故障版本 1；当前版本 2")');
-    assert.equal(await context.browser.evaluate('document.querySelector("select[aria-label=确认范围]").value'),'BUILDING');
+    assert.equal(await context.browser.evaluate('document.querySelector(".workbench-select[data-field-label=确认范围] select").value'),'BUILDING');
     assert.equal(await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").disabled'),true);
     assert.equal(rows(await context.browser.evaluate('globalThis.__t28Posts')).filter(value=>value.path===path+'/correct-scope').length,0);
     await context.browser.evaluate('document.querySelector("[data-action=adopt-incident-version]").click()');

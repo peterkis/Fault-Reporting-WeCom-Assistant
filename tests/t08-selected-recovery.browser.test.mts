@@ -16,7 +16,7 @@ type Fact={order:number;method:string;path:string;status:number|null;body:unknow
 type Screenshot={file:string;width:number;height:number;sha256:string};
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const reasonInput="document.querySelector('.ticket-unassign textarea')",targetInput="document.querySelector('.ticket-unassign select')",draftStatus="document.querySelector('[data-unassign-draft-status]')";
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling?.textContent?.trim()`;
+const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
 const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 const edit=(selector:string,value:string)=>`(()=>{const input=${selector};if(!input)throw Error('T08_PUBLIC_INPUT_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 function header(request:IncomingMessage,name:string){const value=request.headers[name];return typeof value==='string'?value:null;}
@@ -69,15 +69,15 @@ for(const temporary of [false,true])test(temporary
     const end=response.end.bind(response);response.end=((...args:Parameters<ServerResponse['end']>)=>{const bytes=args[0];if(typeof bytes==='string'||Buffer.isBuffer(bytes)){try{fact.reply=JSON.parse(bytes.toString());}catch{fact.reply=null;}}return end(...args);}) as ServerResponse['end'];
    }
   };
-  const restored=`(${reasonInput})?.value===${JSON.stringify(reason)}&&(${reasonInput}).disabled===false&&document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]')?.checked&&(${targetInput})?.value===${JSON.stringify(target)}&&(${targetInput}).disabled===false&&document.querySelector('[data-session-choice="${sessionId}"]')?.checked&&document.querySelector('[data-action=unassign]')?.disabled===false`;
+  const restored=`(${reasonInput})?.value===${JSON.stringify(reason)}&&(${reasonInput}).disabled===false&&document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]')?.checked&&(${targetInput})?.value===${JSON.stringify(target)}&&(${targetInput}).disabled===false&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.checked&&document.querySelector('[data-action=unassign]')?.disabled===false`;
   const capture=async()=>{if(!browser)return;await browser.evaluate("document.querySelector('#detail-title')?.scrollIntoView({block:'start'})");const bytes=Buffer.from(text(await browser.screenshot()),'base64'),file=join(directory,'new-detail-600.png');assert.equal(bytes.readUInt32BE(16),600);assert.equal(bytes.readUInt32BE(20),1080);await writeFile(file,bytes);screenshots.push({file:file.replaceAll('\\','/'),width:600,height:1080,sha256:createHash('sha256').update(bytes).digest('hex')});};
   fixture.runtime.server.on('request',observe);
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:600,height:1080,cookies:[{...cookie,url:fixture.origin+'/'}]});assert.ok(browser);
    await browser.waitFor(`Boolean(${reasonInput})&&(${reasonInput}).disabled===false&&(${draftStatus})?.textContent.includes('草稿仅在当前浏览器')`);
    await browser.evaluate(edit(reasonInput,reason));await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,target);
-   await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"]'))&&document.querySelector('[data-session-choice="${sessionId}"]').disabled===false`);
-   await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').click()`);
+   await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
+   await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
    await browser.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${restored})`);
    const original=object(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')));assert.ok(original.revision);assert.equal(original.operation,null);
    let noteCopy:Record<string,unknown>|null=null;
@@ -94,7 +94,7 @@ for(const temporary of [false,true])test(temporary
     await browser.waitFor(`(${draftStatus})?.textContent.includes('恢复核验暂时不可用')&&globalThis.__t08FaultCount>=1`);
     const statuses:unknown=await browser.evaluate('globalThis.__t08RealTargetStatuses');assert.ok(Array.isArray(statuses)&&statuses.length>=1&&statuses.every((status:unknown)=>status===200));
     assert.equal(await browser.evaluate(`(${reasonInput})?.value`),'');assert.equal(await browser.evaluate(`(${targetInput})?.value??null`),null);
-    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice]:checked').length"),0);
+    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice] input[type=checkbox]:checked').length"),0);
     assert.equal(await browser.evaluate(`document.querySelector('.ticket-unassign')?.innerText.includes(${JSON.stringify(reason)})`),false);
     assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')),original);
     await browser.waitFor(`document.querySelector('#internal-note')?.value===${JSON.stringify(otherNote)}`);assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy);
@@ -109,7 +109,7 @@ for(const temporary of [false,true])test(temporary
     await reload(browser);await browser.waitFor(`(async()=>{const copy=await (${stored(fixture.admin,ticketId,'ticket-unassign')});return copy.revision===null&&copy.operation===null;})()`);
     assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy,'target revocation must not purge another purpose record');
     assert.equal(await browser.evaluate(`(${reasonInput})?.value`),'');assert.equal(await browser.evaluate(`(${targetInput})?.value??null`),null);
-    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice]:checked').length"),0);
+    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice] input[type=checkbox]:checked').length"),0);
     // A fresh document after the authorized scoped cleanup uses the new storage epoch; no second business action.
     await reload(browser);await browser.waitFor(`document.querySelector('#internal-note')?.value===${JSON.stringify(otherNote)}&&Boolean(${reasonInput})&&(${reasonInput}).value===''&&(${reasonInput}).disabled===false`);
     assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')),noteCopy);
@@ -120,7 +120,7 @@ for(const temporary of [false,true])test(temporary
    }else{
     await browser.waitFor(restored);assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')),original);
     assert.equal(requests.filter(row=>row.method==='POST').length,0,'current authorized restoration never submits');
-    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li')?.textContent`);assert.ok(typeof renderedVersion==='string'&&renderedVersion.includes('版本 '+sessionVersion));
+    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.closest('li')?.textContent`);assert.ok(typeof renderedVersion==='string'&&renderedVersion.includes('版本 '+sessionVersion));
     await browser.evaluate("document.querySelector('[data-action=unassign]').click()");await browser.waitFor(queuedDom);
     const posts=requests.filter(row=>row.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);assert.equal(post.path,path+'/unassign');assert.equal(post.status,200);
     const body=object(post.body),commandId=text(body.client_command_id);assert.match(commandId,UUID);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"2"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);

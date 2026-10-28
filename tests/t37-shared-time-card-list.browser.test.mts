@@ -12,7 +12,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type ImageReceipt={file:string;width:number;height:number;sha256:string;phase:string};
 const dueAt='2020-01-02 09:30:00',dueEpoch='1577928600000';
-const drawer='dialog.detail-dialog[open]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]';
+const drawer='.detail-dialog[role=dialog]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]';
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
 async function current(http:T37Http,path:string){const response=await http.get(path);assert.equal(response.status,200,JSON.stringify(response.value));return response.value;}
 async function drain(fixture:T37Fixture){
@@ -79,11 +79,12 @@ async function view(browser:Browser,label:'看板'|'列表',node:string){
 }
 async function closeDetail(browser:Browser){
   await browser.evaluate(`(()=>{const button=document.querySelector(${JSON.stringify(drawer+' [aria-label="关闭详情"]')});if(!button||button.disabled)throw Error('T37_NATIVE_DETAIL_CLOSE_REQUIRED');button.click();})()`);
-  await browser.waitFor('!document.querySelector("dialog.detail-dialog")');
+  await browser.waitFor('!document.querySelector(".detail-dialog")');
 }
 async function openDetail(browser:Browser,node:string,linkSelector:string){
   await browser.evaluate(`(()=>{const root=${node},link=root?.querySelector(${JSON.stringify(linkSelector)});if(!link)throw Error('T37_NATIVE_ITEM_LINK_REQUIRED');link.click();})()`);
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)}))`);
+  await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
 }
 async function clickSchedule(browser:Browser,label:string){
   await browser.waitFor(`(()=>{const root=document.querySelector(${JSON.stringify(region)}),button=[...(root?.querySelectorAll('button')??[])].find(node=>node.textContent.trim()===${JSON.stringify(label)});return Boolean(button&&!button.disabled);})()`);

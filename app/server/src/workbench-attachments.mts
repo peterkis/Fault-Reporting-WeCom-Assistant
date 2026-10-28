@@ -15,7 +15,7 @@ const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[
 const LIMIT=20;
 function sameRegistration(first:StoredAttachment,current:Readonly<StoredAttachment>):void {if(JSON.stringify(first)!==JSON.stringify(current))throw new AttachmentError('ATTACHMENT_INTEGRITY_FAILED');}
 function visible(asset:StoredAttachment,reason:AttachmentReason|null):AttachmentMetadata {return {ref:asset.ref,display_name:asset.mime_type==='image/png'?'报修附件.png':asset.mime_type==='image/jpeg'?'报修附件.jpg':'报修附件',mime_type:asset.mime_type,byte_size:asset.byte_size,available:reason===null,reason};}
-export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean}) {
+export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false,metadataOnly=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean;metadataOnly?:boolean}) {
   const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
   const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
   async function requireSession(authContext:Context['authContext'],kind:string,id:string){
@@ -77,7 +77,7 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null,
     for(const asset of selected.slice(0,LIMIT)){
       signal.throwIfAborted();const source=allowed.get(asset.ref);let reason:AttachmentReason|null=source?.fresh===false?'EXPIRED':source?.trusted===false?'UNTRUSTED':attachmentReason(asset);
       // Server-side validation is bounded and serial; no attachment content is sent or prefetched by the browser.
-      if(!reason){try{const lease=await store.open(asset.ref,signal);try{sameRegistration(asset,lease.asset);}finally{await lease.close();}}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
+      if(!reason&&!metadataOnly){try{const lease=await store.open(asset.ref,signal);try{sameRegistration(asset,lease.asset);}finally{await lease.close();}}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
       items.push(visible(asset,reason));
     }
     await requireSession(authContext,kind,id);

@@ -29,3 +29,6 @@ secrets/
 
 # Controlled TypeScript migration outputs (never source or evidence)
 /.build/
+
+# Local tools, caches, profiles and task materials
+/.local/

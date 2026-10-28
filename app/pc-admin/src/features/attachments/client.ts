@@ -36,9 +36,9 @@ export const attachmentApi={
     const items=v.items.map(metadata);if(new Set(items.map(item=>item.ref)).size!==items.length||(!v.available&&(v.reason!=='STORAGE_UNAVAILABLE'||items.length||v.truncated))||(v.available&&v.reason!==null))invalid();
     return {available:v.available,reason:v.reason,items,truncated:v.truncated};
   },
-  async download(kind:string,id:string,item:AttachmentMetadata,signal:AbortSignal):Promise<Blob>{
+  async download(kind:string,id:string,item:AttachmentMetadata,signal:AbortSignal,employeeRead=false):Promise<Blob>{
     if(!item.available||item.byte_size>MAX)invalid();
-    const response=await fetch('/api/attachments/'+encodeURIComponent(item.ref)+'?'+new URLSearchParams({kind,id}),{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:item.mime_type}});
+    const response=await fetch(employeeRead?'/api/workbench/media/attachment/'+encodeURIComponent(item.ref):'/api/attachments/'+encodeURIComponent(item.ref)+'?'+new URLSearchParams({kind,id}),{signal,credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:item.mime_type}});
     if(!response.ok)return reject(response,signal);
     const extension=item.mime_type==='image/png'?'png':'jpg';
     if(response.headers.get('content-type')!==item.mime_type||response.headers.get('content-length')!==String(item.byte_size)||response.headers.get('content-disposition')!=='attachment; filename="report-attachment.'+extension+'"'||response.headers.get('x-content-type-options')!=='nosniff'||response.headers.get('cache-control')!=='no-store'){await response.body?.cancel();invalid();}

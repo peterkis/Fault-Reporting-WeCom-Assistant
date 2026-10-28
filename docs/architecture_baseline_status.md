@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-10-28 PC员工媒体优化按[ADR-0050](../adr/0050_pc_media_employee_read_and_server_previews.md)前向实施：独立默认关闭的员工读取、请求级到期及服务端视频封面；H5原授权保持。实现/验证状态见[交付清单](../plans/pc-admin-electron/media-employee-read-2026-10-28.md)，不表示云端部署或Gate批准。
+
 2026-10-25 首批候选后继修正T35可见材料上界及G2同步核验造成的当前发送截止复现，保持原SDK终检、5秒超时、默认开关与业务边界。精确身份和本地验证见[后继交付](../plans/app-layout/candidate-followup-2026-10-25.md)，不重绑历史或批准Gate。
 
 2026-10-25 本地交付目标修订为关键门槛、可回退的小范围候选；human-v1当前装配已完成定向验证，旧G2首次SENT失败和未完成全集均保留。范围与证据见[首批候选报告](../plans/app-layout/first-gray-candidate-2026-10-25.md)。不改变任何历史tested_head、默认开关、完整readiness合同或业务Gate。

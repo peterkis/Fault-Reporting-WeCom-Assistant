@@ -12,10 +12,15 @@ function response(body, status = 200) {
 }
 
 function fakePool({ identity = 'open-staff' } = {}) {
-  const state = { intent: null, session: null, events: [] };
+  const state = { intent: null, session: null, events: [],displayName:'信息科工作人员' };
   return {
     state,
     async query(sql, values = []) {
+      if(sql.startsWith('UPDATE pilot_ticket.pilot_principal SET display_name=')){
+        if(state.session?.state!=='ACTIVE'||values[0]!==state.session.principal_id||values[2]!=='staff-raw')return {rowCount:0,rows:[]};
+        state.displayName=values[1];return {rowCount:1,rows:[{id:values[0]}]};
+      }
+      if(sql.includes('session_guard')&&sql.includes(' AS current'))return {rowCount:1,rows:[{current:state.session?.state==='ACTIVE'}]};
       if (sql.includes("SELECT 1 FROM platform.schema_migration WHERE migration_id='035_p2_016_workbench_wecom_auth'")) {
         return { rowCount: 1, rows: [{}] };
       }
@@ -80,7 +85,9 @@ function cookieValue(headers, name) {
 
 test('workbench WeCom auth creates QR redirect, consumes state once, and persists a session', async () => {
   const pool = fakePool();
+  let revokeDuringProfile=false;
   const auth = createWeComWorkbenchAuthentication({ pool, publicOrigin: origin, corpId: 'ww-test', agentId: '1000001',
+    profileReader:async id=>{assert.equal(id,'open-staff');if(revokeDuringProfile)pool.state.session.state='REVOKED';return {openUserId:id,displayName:'合成姓名',departmentName:'合成信息科',checkedEpochMs:'1000000'};},
     identityHashKey:'synthetic-identity-key-1234567890',
     accessTokenProvider: async () => 'token', fetchImpl: async url => url.pathname.endsWith('/batch/userid_to_openuserid')
       ? response({ errcode: 0, open_userid_list: [{ userid: 'staff-raw', open_userid: 'open-staff' }] })
@@ -118,6 +125,11 @@ test('workbench WeCom auth creates QR redirect, consumes state once, and persist
   assert.equal(context.principal_id, '11111111-1111-4111-8111-111111111111');
   assert.equal(context.auth_method, 'COOKIE');
   assert.equal(context.csrf_token, csrfCookie);
+  assert.deepEqual(await auth.currentDisplay(context),{name:'合成姓名',department:'合成信息科'});
+  assert.equal(pool.state.displayName,'合成姓名');
+  revokeDuringProfile=true;
+  await assert.rejects(auth.currentDisplay(context),{code:WORKBENCH_ERROR_CODES.unauthenticated});
+  pool.state.session.state='ACTIVE';revokeDuringProfile=false;
 
   const lifecycleStart = responseRecorder();
   await auth.unauthenticatedHandler({ request: { method: 'GET', headers: {} }, response: lifecycleStart, url: new URL(`${origin}/workbench/lifecycle`) });
@@ -150,6 +162,29 @@ test('workbench WeCom auth creates QR redirect, consumes state once, and persist
     }),
     error => error instanceof WorkbenchError && error.code === WORKBENCH_ERROR_CODES.authStateInvalid,
   );
+});
+
+test('desktop entry binds the existing QR intent to the fixed PC route and rejects injected destinations', async () => {
+  const pool = fakePool();
+  const auth = createWeComWorkbenchAuthentication({pool, publicOrigin:origin, corpId:'ww-test',agentId:'1000001',identityHashKey:'synthetic-desktop-identity-key',
+    accessTokenProvider:async()=> 'synthetic',fetchImpl:async url=>url.pathname.endsWith('/batch/userid_to_openuserid')
+      ? response({errcode:0,open_userid_list:[{userid:'staff-raw',open_userid:'open-staff'}]}) : response({errcode:0,userid:'open-staff'})});
+  await auth.initialize();
+  const request={method:'GET',headers:{}}, start=responseRecorder();
+  await auth.unauthenticatedHandler({request,response:start,url:new URL(origin+'/workbench/desktop')});
+  assert.equal(start.status,302);assert.equal(pool.state.intent.return_path,'/workbench');
+  const state=new URL(start.headers.location).searchParams.get('state'),binding=cookieValue(start.headers,'__Host-wecom_workbench_intent');
+  assert.match(state,/^desktop\.[A-Za-z0-9_-]{43}$/u);
+  await assert.rejects(auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_intent='+binding}},response:responseRecorder(),url:new URL(origin+'/workbench/callback?code=desktop-code&state='+state.slice(8))}),{code:WORKBENCH_ERROR_CODES.authStateInvalid});
+  const callback=responseRecorder();
+  await auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_intent='+binding}},response:callback,url:new URL(origin+'/workbench/callback?code=desktop-code&state='+state)});
+  assert.equal(callback.status,303);assert.equal(callback.headers.location,'/workbench/app/');
+  const loggedIn=responseRecorder();
+  await auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_session='+cookieValue(callback.headers,'__Host-wecom_workbench_session')}},response:loggedIn,url:new URL(origin+'/workbench/desktop')});
+  assert.equal(loggedIn.status,303);assert.equal(loggedIn.headers.location,'/workbench/app/');assert.equal(loggedIn.headers['set-cookie'],undefined);
+  for(const suffix of ['?return_to=https://evil.test','?x=1'])await assert.rejects(auth.unauthenticatedHandler({request,response:responseRecorder(),url:new URL(origin+'/workbench/desktop'+suffix)}));
+  await assert.rejects(auth.unauthenticatedHandler({request:{method:'POST',headers:{}},response:responseRecorder(),url:new URL(origin+'/workbench/desktop')}));
+  assert.equal(await auth.unauthenticatedHandler({request,response:responseRecorder(),url:new URL(origin+'/api/lifecycle/bootstrap')}),false);
 });
 
 test('external delivery controls fail closed when public workbench sending is disabled', async () => {

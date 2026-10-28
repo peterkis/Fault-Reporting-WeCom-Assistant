@@ -8,6 +8,7 @@
 
 | 要做什么 | 文档 |
 | --- | --- |
+| PC员工媒体读取、服务端小图与原生播放 | [员工媒体](workbench/employee-media.md) |
 | 搜索所有 HTTP 方法和路径 | [HTTP 索引](endpoint-index.md) |
 | 确定宿主、认证、JSON、错误、时间、幂等、版本 | [公共约定与宿主](conventions.md) |
 | 会话列表、消息、接管、转派、内部备注、通信投递 | [会话工作台](workbench/conversations.md) |

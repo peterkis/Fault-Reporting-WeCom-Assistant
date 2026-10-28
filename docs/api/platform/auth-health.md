@@ -11,12 +11,17 @@
 | METHOD + PATH | 请求 | 响应 |
 | --- | --- | --- |
 | `GET /workbench/login` | 无query | 302 到企业微信员工扫码SSO；设置一次性state/浏览器绑定 |
+| `GET /workbench/desktop` | 无query，仅GET，错误方法／query返回400 | 新桌面入口；有效员工会话303到 `/workbench/app/`，否则沿原扫码 intent 固定返回该路径；无任意return_to |
 | `GET /workbench/callback` | 仅code/state、各一次 | 成功303 return_path，Set-Cookie；失败返回公开认证码 |
 | `POST /workbench/logout` | 无query；同源Origin、非cross-site；有session时需当前Cookie与X-CSRF-Token校验；既有UI不带body | 200 `{logged_out:true}`，清员工session/CSRF Cookie |
 
 Cookie：`__Host-wecom_workbench_session`、`__Host-wecom_workbench_csrf`。code/state不可记录到示例、日志或浏览器业务存储。登录成功仍需数据库活动内部角色与对象权限。[测试](../../../tests/p2-016-workbench-wecom-auth.test.mjs)。
 
+桌面 PC 页面收到认证失效 401 时，先沿既有撤权流程清空旧界面、关闭提醒并完成恢复副本清理，再自动调用原桌面扫码入口。无需点击中间的失效页；清理失败保持关闭，403 权限不足与网络/服务故障不触发自动扫码，业务 POST 不会自动重放。普通浏览器入口和主动退出流程保持原语义。
+
 身份bootstrap为 `/api/workbench/bootstrap` 和 `/api/lifecycle/bootstrap`，见 [会话](../workbench/conversations.md)、[工单](../workbench/tickets.md)。没有公开 `/auth/wecom`、`/auth/bootstrap` 或test-auth HTTP登录；测试身份是注入端口/IPC。
+
+PC当前人员资料：`GET /api/workbench/profile`，只允许现有内部Cookie身份，无query/body，响应 `{name:string|null,department:string|null}`。bootstrap广告 `current_profile_available:boolean`，仅配置原企业微信资料读取Port时为true。读取使用启动时核验的内部principal→应用open_userid映射，经原有有界Provider调度器获取姓名和主部门；等待前后再次核当前会话/内部权限。身份标识、手机号、token、部门ID不返回；核验成功且姓名有效时，仅将该员工的显示姓名同步到既有内部principal，供工单处理人、沟通责任及人员选择统一显示；写入语句再次核验同一会话、当前内部权限及启动时确认的原始人员ID。不会更换principal／企业微信身份、角色、团队或历史操作主体，也不修改目录及报修快照；暂时失败或缺少姓名保留已有名称。未配置返回503，真实会话失效返回401/403，临时资料失败不伪造姓名。前端按当前员工和授权版本使用独立内存Query，staleTime和gcTime均为五分钟，切换标签保留最近成功呈现；权限拒绝和退出仍清空，不加入每5秒业务刷新。
 
 T03 的 lifecycle bootstrap 增加 `logout_enabled:boolean`，默认false；实际员工认证端口声明 `supportsLogout:true`、已完成 initialize，且当前 Cookie 身份有 CSRF 时才广告退出。React 调用上述真实 `/workbench/logout`，只有闭合200 JSON `{logged_out:true}` 才显示已退出；请求结果不确定显示“退出结果尚未确认”，清界面与本应用已知主体恢复副本，并要求重新核验，不能宣称服务器session已撤销。同profile其他标签接收无正文／凭据的退出失效信号；实际服务端撤销、旧Cookie401与合成TLS证据见[T03记录](../../../plans/admin-workbench-integration/execution/t03.md)。test-auth不会广告真实退出。
 

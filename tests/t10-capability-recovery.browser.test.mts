@@ -40,7 +40,7 @@ for(const cleanupMode of ['connected','disconnected','primary-and-cleanup-failed
         assert.equal(await browser.evaluate("Boolean(document.querySelector('#detail-title'))"),true,'purpose-local sensitive removal must not turn current READ into a cached 404');
         await browser.waitFor("Boolean(document.querySelector('[data-action=check-request-information-command]'))");assert.equal(await browser.evaluate("document.querySelector('[data-waiting-purpose=request-information] textarea')?.value??''"),'','raw closure removes the form copy; current authorized event history stays a separate read');
         assert.equal(requests.filter(row=>row.method==='POST').length,1);assert.equal(requests.filter(row=>row.method==='GET').length,0,'capability closure does not automatically ACK');
-        await browser.evaluate("document.querySelector('[data-action=check-request-information-command]').click()");await browser.waitFor("document.querySelector('[data-waiting-purpose=request-information]')?.innerText.includes('原操作已核对为提交')");
+        await browser.evaluate("document.querySelector('[data-action=check-request-information-command]').click()");await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-request-information]')?.innerText.includes('原操作已核对为提交')");
         assert.deepEqual(requests.filter(row=>row.method==='GET').map(row=>row.path),[path+'/commands/'+original.client_command_id]);assert.equal(requests.filter(row=>row.method==='POST').length,1);assert.equal((await closed.get('/api/tickets/'+target.ticket.id)).status,200);
         await capture('new-detail-1920.png');
         if(cleanupMode!=='connected'){await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}

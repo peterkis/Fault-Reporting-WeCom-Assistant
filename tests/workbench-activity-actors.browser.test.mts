@@ -1,0 +1,50 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID,createHash} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+
+test('actual activity actor colors distinguish colliding labels, survive same-page updates and clear on READ loss',{timeout:120_000},()=>withT11Fixture(async context=>{
+  const ticket=context.tickets[0],first=context.principals[0],second=context.principals[1],cookie=context.browserCookies[0];
+  assert.ok(ticket&&first&&second&&cookie&&cookie.url);
+  await context.pool.query("UPDATE pilot_ticket.pilot_principal SET display_name=CASE WHEN id=$1::uuid THEN '张三' ELSE '王五' END WHERE id=ANY($2::uuid[])",[first.id,[first.id,second.id]]);
+  const peerPrincipal=await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-1',displayName:'王五',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
+  assert.equal(peerPrincipal.id,second.id);
+  const http=await t11Http(context);await http.start(ticket.ticket.id);
+  const page=await http.get('/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page');
+  assert.equal(page.status,200);const csp=page.headers.get('content-security-policy')??'';
+  assert.match(csp,/style-src 'self'/u);assert.equal(csp.includes("'unsafe-inline'"),false);await page.arrayBuffer();
+  const directory=join(tmpdir(),'activity-actor-colors-'+randomUUID());await mkdir(directory);
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+  try{
+    browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
+    await browser.waitFor("document.querySelector('.activity-list')?.textContent.includes('张三')&&document.querySelector('.activity-list')?.textContent.includes('报修人')&&document.querySelector('#internal-note')?.disabled===false");
+    const snapshot="JSON.stringify(Object.fromEntries(['张三','报修人'].map(name=>{const label=[...document.querySelectorAll('.record-name')].find(node=>node.textContent===name);return [name,[getComputedStyle(label).backgroundColor,getComputedStyle(label).color]]})))";
+    const before=await browser.evaluate(snapshot),origin=await browser.evaluate('performance.timeOrigin');
+    assert.equal(await browser.evaluate("new Set([...document.querySelectorAll('.record-name')].map(node=>getComputedStyle(node).backgroundColor)).size>=2"),true);
+    const peer=await t11Http(context,2),current=await peer.detail(ticket.ticket.id);
+    const posted=await peer.post(ticket.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'ACTOR_COLOR_SECOND：另一位合成人员补充检查记录。',external_visible:false});
+    assert.equal(posted.status,200);await posted.arrayBuffer();
+    const latest=await http.detail(ticket.ticket.id);
+    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='重新读取工单动作').click()");
+    await browser.waitFor(`document.querySelector('.detail-note-composer .ticket-command-version')?.textContent===${JSON.stringify('工单版本 '+latest.version)}`);
+    await browser.evaluate("(()=>{const input=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'ACTOR_COLOR_BROWSER_REFRESH：合成复核记录。');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await browser.waitFor("document.querySelector('[data-action=save-internal-note]')?.disabled===false");
+    await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
+    await browser.waitFor("document.querySelector('.activity-list')?.textContent.includes('ACTOR_COLOR_BROWSER_REFRESH')&&document.querySelector('.activity-list')?.textContent.includes('王五')");
+    assert.equal(await browser.evaluate('performance.timeOrigin'),origin);
+    assert.equal(await browser.evaluate(snapshot),before,'existing participants retain colors after a new actor and current detail refetch');
+    assert.equal(await browser.evaluate("(()=>{const colors=new Map();for(const node of document.querySelectorAll('.record-name')){const color=getComputedStyle(node).backgroundColor;if(color==='rgba(0, 0, 0, 0)'||(colors.has(node.textContent)&&colors.get(node.textContent)!==color))return false;colors.set(node.textContent,color);}return colors.size>=3&&new Set(colors.values()).size===colors.size;})()"),true);
+    await browser.evaluate("document.querySelector('.detail-main').scrollIntoView({block:'start'})");
+    const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'distinct-actors.png');await writeFile(file,bytes);
+    await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[first.id]);
+    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='重新读取工单动作').click()");
+    await browser.waitFor("document.querySelectorAll('.record-name').length===0");
+    console.log('ACTIVITY_ACTOR_COLORS '+JSON.stringify({real_http:true,distinct_names:true,same_page_stability:true,csp_unchanged:true,read_loss_cleared:true,screenshot:{file,sha256:createHash('sha256').update(bytes).digest('hex')}}));
+  }catch(error){failure=error;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnostic){failure=new AggregateError([error,diagnostic]);}}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+}));

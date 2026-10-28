@@ -27,6 +27,34 @@ async function loginIntent(auth,code='code') {
     response:recorder(),url:new URL(`${origin}/workbench/callback?code=${code}&state=${new URL(start.headers.location).searchParams.get('state')}`)};
 }
 
+test('verified staff name refresh preserves authority and rejects revoked, remapped or mismatched identities',async()=>{
+ await authFixture(async({pool,principal,options,mapped})=>{
+  let name='合成实际处理人',mode='valid';
+  const auth=createWeComWorkbenchAuthentication({...options,fetchImpl:async url=>url.pathname.endsWith('userid_to_openuserid')?mapped():response({errcode:0,userid:'open-staff'}),profileReader:async id=>{
+   if(mode==='failure')throw Error('SYNTHETIC_PROFILE_UNAVAILABLE');
+   if(mode==='revoke')await pool.query("WITH stamp AS(SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=stamp.epoch,revoked_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE principal_id=$1",[principal]);
+   if(mode==='remap')await pool.query("UPDATE pilot_ticket.pilot_principal SET wecom_user_id='different-raw' WHERE id=$1",[principal]);
+   return {openUserId:mode==='mismatch'?'different-open':id,displayName:name,checkedEpochMs:String(Date.now())};
+  }});
+  try{
+   await auth.initialize();const callback=await loginIntent(auth);await auth.unauthenticatedHandler(callback);
+   const context=await auth.authenticate({headers:{cookie:callback.response.headers['set-cookie'].map(v=>v.split(';')[0]).join('; ')}});
+   const authority=async()=> (await pool.query('SELECT p.id,p.wecom_user_id,p.is_active,r.role FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id ORDER BY p.id,r.role')).rows;
+   const original=await authority();await auth.currentDisplay(context);
+   assert.deepEqual(await authority(),original);
+   const saved=async()=> (await pool.query('SELECT display_name FROM pilot_ticket.pilot_principal WHERE id=$1',[principal])).rows[0].display_name;
+   assert.equal(await saved(),'合成实际处理人');
+   for(const invalid of [null,'','x'.repeat(129),'bad\nname']){name=invalid;await auth.currentDisplay(context);assert.equal(await saved(),'合成实际处理人');}
+   name='不应写入';mode='failure';await assert.rejects(auth.currentDisplay(context),{status:503});assert.equal(await saved(),'合成实际处理人');
+   mode='mismatch';await assert.rejects(auth.currentDisplay(context),{status:401});assert.equal(await saved(),'合成实际处理人');
+   mode='remap';await assert.rejects(auth.currentDisplay(context),{status:401});assert.equal(await saved(),'合成实际处理人');
+   await pool.query("UPDATE pilot_ticket.pilot_principal SET wecom_user_id='raw-staff' WHERE id=$1",[principal]);
+   mode='revoke';await assert.rejects(auth.currentDisplay(context),{status:401});assert.equal(await saved(),'合成实际处理人');
+   assert.deepEqual(await authority(),original);
+  }finally{await auth.close();}
+ });
+});
+
 test('busy callback preserves the second login intent and permits retry without consuming its code',async()=>{
   await authFixture(async({pool,options,mapped})=>{
     let release,entered;const held=new Promise(r=>{release=r;}),started=new Promise(r=>{entered=r;});

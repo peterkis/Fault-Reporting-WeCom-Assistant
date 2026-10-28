@@ -7,11 +7,13 @@ import type {WorkbenchRealtimeStatus} from '../../../../contracts/workbench_real
 import {createWorkbenchRealtimeClient} from './workbench-realtime-client.mjs';
 import {clearSessionAuthorization} from '../app/authorization';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
-const families=new Set(['web-report','reminder-locate','reminders','board','detail','personal-read-position','ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','manual-review','source-groups','attachments','conversation-inbox','conversation-chat','conversation-related','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result','incident-children','incident-report-assignee','incident-delivery-control']);
+import {canRunWorkbenchTransport,isWorkbenchVisible,desktopHost} from '../desktop/host';
+const families=new Set(['current-profile','reporter-profile','reporter-contact','web-report','reminder-locate','reminders','board','detail','personal-read-position','ticket-assignment-history','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-follow-up-schedule','ticket-follow-up-ack','ticket-round-notifications','manual-review','source-groups','attachments','conversation-inbox','conversation-chat','conversation-related','conversations','conversation-view','conversation-eligible','item-conversations','manual-report-capabilities','incident-candidates','incident-candidate-detail','incident-result','incident-children','incident-report-assignee','incident-delivery-control']);
 export const isWorkbenchRealtimeQuery=(key:readonly unknown[],principal:string)=>key[1]===principal&&typeof key[0]==='string'&&families.has(key[0]);
 const isSearchQuery=(key:readonly unknown[],principal:string)=>key[0]==='board'&&key[1]===principal&&key[2]==='search';
-const isPeriodicQuery=(key:readonly unknown[],principal:string)=>isWorkbenchRealtimeQuery(key,principal)&&!isSearchQuery(key,principal);
-const isBusinessQuery=(key:readonly unknown[],principal:string)=>key[0]!=='reminders'&&isPeriodicQuery(key,principal);
+const isPeriodicQuery=(key:readonly unknown[],principal:string)=>isWorkbenchRealtimeQuery(key,principal)&&!['current-profile','reporter-profile','reporter-contact'].includes(String(key[0]))&&!isSearchQuery(key,principal);
+const auxiliaryFamilies=new Set(['reminders','ticket-round-notifications','attachments','web-report']);
+const isBusinessQuery=(key:readonly unknown[],principal:string)=>!auxiliaryFamilies.has(String(key[0]))&&isPeriodicQuery(key,principal);
 const identity=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 class IdentityChanged extends Error{}
 export interface RealtimeView {status:WorkbenchRealtimeStatus;lastReadAt:number|null}
@@ -56,8 +58,12 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
           client.setQueryData(['session'],fresh);
           const abort=()=>{void client.cancelQueries({predicate:query=>isBusinessQuery(query.queryKey,principal.principal_id)&&query.isActive()},{revert:false});};
           signal.addEventListener('abort',abort,{once:true});
-          // Auxiliary reminders share this wakeup but never hold business availability or its timeout.
-          void client.invalidateQueries({predicate:query=>query.queryKey[0]==='reminders'&&isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});
+          // Auxiliary views share the wakeup without holding core command availability.
+          void client.invalidateQueries({predicate:query=>auxiliaryFamilies.has(String(query.queryKey[0]))&&isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});
+          if(!isWorkbenchVisible()){
+            signal.removeEventListener('abort',abort);signal.throwIfAborted();
+            setWorkbenchTransportWritable(false);return {available:fresh.realtime_sse_available};
+          }
           try{await client.invalidateQueries({predicate:query=>isBusinessQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});}
           finally{signal.removeEventListener('abort',abort);}
           signal.throwIfAborted();
@@ -67,7 +73,8 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
         }catch(error){if(!signal.aborted&&error instanceof ApiError&&[401,403].includes(error.status))await clearSessionAuthorization(client,principal.principal_id,error.status as 401|403,'revoked');throw error;}
       },
     });
-    const environment=()=>owned.setEnvironment(navigator.onLine,document.visibilityState!=='hidden');
+    let wasVisible=isWorkbenchVisible();
+    const environment=()=>{const visible=isWorkbenchVisible();owned.setEnvironment(navigator.onLine,canRunWorkbenchTransport());if(desktopHost&&visible&&!wasVisible)owned.refresh();wasVisible=visible;};
     environment();window.addEventListener('online',environment);window.addEventListener('offline',environment);document.addEventListener('visibilitychange',environment);
     const unsubscribe=client.getQueryCache().subscribe(event=>{
       if(event.type==='updated'&&event.action.type==='success'&&isBusinessQuery(event.query.queryKey,principal.principal_id)&&event.query.isActive()&&mounted)setView(current=>({...current,lastReadAt:event.query.state.dataUpdatedAt}));

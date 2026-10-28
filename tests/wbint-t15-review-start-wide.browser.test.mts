@@ -79,8 +79,8 @@ test('T15 wide formal production Item confirms in its original context and displ
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true,'the caller must use the formal production bundle');
       await browser.evaluate(traceWrites);
       await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);
-      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"] [data-review-materials]'))`);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-review-id="${reviewId}"] [data-review-materials]'))`);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-review-materials]')?.textContent.includes('打印机无法打印处方')");
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-review-version]').textContent"),originalReview.row_version);
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),basis.current_hash);
@@ -88,19 +88,19 @@ test('T15 wide formal production Item confirms in its original context and displ
       // A human explicitly adopts current material and makes both choices. None is a write command.
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
       await browser.evaluate(`(()=>{
-        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] [aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
+        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] .workbench-select[data-field-label="'+label+'"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
         set('复核结论','CONFIRM_TICKET_ELIGIBLE');set('复核原因','HUMAN_CONFIRMED');
       })()`);
-      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]:not(:disabled)'))`);
-      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice]:checked').length"),0,'no Session may be guessed or automatically selected');
-      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);
-      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]')?.checked===true`);
+      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]:not(:disabled)'))`);
+      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice] input[type=checkbox]:checked').length"),0,'no Session may be guessed or automatically selected');
+      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.checked===true`);
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'material and Session selection must not submit an intermediate command');
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]').click()");
       await browser.waitFor(`globalThis.__t15Responses.some(response=>new URL(response.path,location.origin).pathname===${JSON.stringify(startPath)}&&response.status===200)`);
-      await browser.waitFor("document.querySelector('.detail-dialog[open] .properties')?.textContent.includes('处理中')");
+      await browser.waitFor("document.querySelector('.detail-dialog .properties')?.textContent.includes('处理中')");
       const writes=list(await browser.evaluate('globalThis.__t15Writes'));assert.equal(writes.length,1);
       const sent=writes[0];assert.ok(sent);const body=object(sent.body),commandId=text(body.client_command_id);
       assert.match(commandId,/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu);
@@ -123,7 +123,7 @@ test('T15 wide formal production Item confirms in its original context and displ
       const active=list((await get('/api/workbench/board?column=active')).items),pending=list((await get('/api/workbench/board?column=pending')).items);
       assert.equal(active.filter(value=>value.id===known.ticket.id).length,1);assert.ok(![...active,...pending].some(value=>value.kind==='review'&&value.id===reviewId));
       assert.deepEqual(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'),contextBefore,'the same authorized Item workspace must stay open without navigation or reload');
-      assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog[open] #detail-title'))"),true);
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog #detail-title'))"),true);
       assert.equal(await browser.evaluate(`document.querySelectorAll('[data-kind="ticket"][data-item-id="${known.ticket.id}"]').length`),1);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]:not(:disabled)'))"),false,'a resolved Review must not leave an old-version operation active');
       assert.equal(requests.filter(request=>request.method==='POST').length,1);

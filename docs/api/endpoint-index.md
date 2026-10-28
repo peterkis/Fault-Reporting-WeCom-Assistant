@@ -156,6 +156,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | I26 | GET | `/api/incidents/{incidentId}/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/父与原动作用途的安全只读核对；原UUID/当前原动作与子目标权限，沿原ledger | [公共故障](workbench/incidents.md) |
 | B01 | GET | `/api/workbench/board` | W | 已实现：WEB01看板 | [看板](workbench/board.md) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
+| B03 | GET | `/api/workbench/items/ticket/{ticketId}/actor-avatars/{actorRef}` | W | 默认关闭：当前工单 READ 下的操作人头像缓存，200 WebP / 204回退 | [头像与媒体](workbench/actor-avatars-and-media.md) |
 | WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |
 | WB-T41-Q2 | POST | `/api/workbench/search` | W | 已实现、默认关闭；同一授权读取的长条件传输，32KiB／Origin-CSRF／同预算，无命令写 | [只读 POST](workbench/search-source-forward.md#get-与有界只读-post) |
 | H5-W01 | GET | `/api/workbench/items/{kind}/{id}/web-report` | W | 已挂载、H5 默认关闭：当前 READ 下的 Web 来源材料／催单／评价／公开进度，kind=ticket/review/intake | [网页报修资料](workbench/web-reports.md) |
@@ -209,6 +210,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | --- | --- | --- | --- | --- | --- |
 | S01 | GET | `/api/realtime/events` | W | 已实现：SSE text/event-stream | [实时](platform/realtime.md) |
 | A01 | GET | `/workbench/login` | W，员工auth挂载 | 已实现：302登录 | [认证](platform/auth-health.md) |
+| A01-D | GET | `/workbench/desktop` | W，员工auth挂载 | 固定PC扫码入口；已登录303，无会话沿原state/绑定登录后回PC | [认证](platform/auth-health.md) |
 | A02 | GET | `/workbench/callback` | 同上 | 已实现：code/state→303 | [认证](platform/auth-health.md) |
 | A03 | POST | `/workbench/logout` | 同上 | 已实现：JSON退出 | [认证](platform/auth-health.md) |
 | A04 | GET | `/wecom/yixiaoxiu/login` | O/M/W按profile | 已实现：302成员OAuth；显式 H5 支持白名单 return_to 与一次静默恢复，旧模式无 query | [认证](platform/auth-health.md) |
@@ -272,6 +274,9 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | --- | --- | --- | --- |
 | GET | `/api/workbench/items/{kind}/{id}/attachments` | W扩展，获权元信息；无Store／开关关闭明确不可用 | [附件](workbench/attachments.md) |
 | GET | `/api/attachments/{attachmentRef}?kind={kind}&id={id}` | W扩展，受控PNG/JPEG下载；显式注入受信加密Store | [附件](workbench/attachments.md) |
+| GET | `/api/workbench/media/web/{ref}` | W，默认关闭；本次员工认证、一次对象到期、私有原件/播放/缩略图，单Range | [员工媒体](workbench/employee-media.md) |
+| HEAD | `/api/workbench/media/web/{ref}` | W，员工媒体元数据，不读取文件正文 | [员工媒体](workbench/employee-media.md) |
+| GET | `/api/workbench/media/attachment/{ref}` | W，默认关闭；本次员工认证与受信登记图片 | [员工媒体](workbench/employee-media.md) |
 
 基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
 
@@ -361,3 +366,10 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 
 可选 bound reply 复用 `POST /api/workbench/conversations/{sessionId}/messages` 和 `GET /api/workbench/conversations/{sessionId}/messages/commands/{commandId}`；仍202受理，全部必要原 Delivery可靠完成才解除原材料，既有无绑定合同不变。关闭新入口不阻断获权旧 bound Message 的只读核对；已应用062后必需binding表缺失返回503，冷旧宿主原路径兼容。无 Session 不造 Conversation。部署/真实外发仍未授权。
 
+
+## 工作台姓名与部门展示
+
+| 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| GET | /api/workbench/profile | W | 当前登录人员姓名、部门；只读、当前会话及角色终检 | [身份](platform/auth-health.md) |
+| GET | /api/workbench/items/{kind}/{id}/reporter-profile | W | 当前获权 H5 报修人展示资料；历史快照优先 | [H5资料](workbench/web-reports.md) |

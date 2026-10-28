@@ -17,6 +17,8 @@ export interface OrchestrationJourneyStore { ensureJourney(input: { transaction:
 export interface OrchestrationOptions {mvpGroupReplies?:boolean;afterDecision?:((input:{transaction:PostgresTransaction;intakeId:string;decisionId:string;rulesPaused?:boolean})=>Promise<void>)|null; pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
 export interface ProcessInTransactionInput { transaction: PostgresTransaction; intakeId: string; profile: ReporterDirectoryResult; reporterHash: string; flags: ReturnType<typeof normalizeP2015FeatureFlags>; traceId: string }
 export type RuleFirstOrchestrator = ReturnType<typeof createRuleFirstOrchestrator>;
+export interface OrchestrationOptions {reuseRecordedProfile?:boolean}
+export interface PersistedOrchestrationIntake {recorded_profile_status?:ReporterDirectoryResult['status']|null;recorded_profile_snapshot?:ReporterDirectoryResult['snapshot']|null}
 import {isPureGroupThanks,groupMessageDescription} from './mvp-group-replies.mjs';
 import {conversationTopicRulesPaused} from './conversation-rule-admission.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
@@ -65,7 +67,7 @@ async function loadIntake(transaction: PostgresTransaction, intakeId: string, lo
             CASE WHEN primary_message.provider_create_epoch_ms IS NOT NULL
               AND primary_message.provider_create_epoch_ms<=primary_message.received_epoch_ms
               THEN primary_message.create_time ELSE primary_message.received_at END AS origin_reported_at,
-            journey.entry_mode AS recorded_entry_mode,
+            journey.entry_mode AS recorded_entry_mode,journey.profile_resolution_status AS recorded_profile_status,journey.profile_snapshot AS recorded_profile_snapshot,
             session.id::text AS session_id,thread.id::text AS thread_id,thread.provider AS thread_provider,
             thread.channel_account_id,thread.chat_type AS thread_chat_type,thread.external_thread_key
        FROM intake.service_intake AS intake
@@ -141,12 +143,12 @@ function orchestrationContext({ intake, journey, window, traceId }: { intake: Pe
   return result;
 }
 
-export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(), directorySource = 'WECOM_DIRECTORY',
+export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(), directorySource = 'WECOM_DIRECTORY',reuseRecordedProfile=false,
   ruleEngine = null, journeyStore = createContactJourneyStore(), continuationService = createContinuationRefService(),
   decisionStore = createDecisionStore(), safeActionExecutor, decisionOverride = null,mvpGroupReplies=false,afterDecision=null }: OrchestrationOptions = {} as OrchestrationOptions) {
   if (!pool?.connect || typeof identityHmacKey !== 'string' || identityHmacKey.length < 16
     || !safeActionExecutor || (decisionOverride !== null && typeof decisionOverride !== 'function')) failP2015(P2_015_ERROR_CODES.inputInvalid);
-  if(typeof mvpGroupReplies!=='boolean'||afterDecision!==null&&typeof afterDecision!=='function')failP2015(P2_015_ERROR_CODES.inputInvalid);
+  if(typeof mvpGroupReplies!=='boolean'||typeof reuseRecordedProfile!=='boolean'||afterDecision!==null&&typeof afterDecision!=='function')failP2015(P2_015_ERROR_CODES.inputInvalid);
   const decisionPolicy=mvpGroupReplies?'mvp-safe-route/2':P2_015_DECISION_POLICY_VERSION;
   const engine: OrchestrationRuleEngine = ruleEngine ?? createRuleEngine();
 
@@ -298,7 +300,9 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     const preload = await loadIntake(pool, intakeId, false);
     const reporterHash = reporterIdentityHash({ provider: preload.source_provider, bot_id: preload.source_bot_id,
       reporter_external_id: preload.reporter_wecom_userid, hmac_key: identityHmacKey });
-    const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: directorySource,
+    const prior=reuseRecordedProfile?preload.recorded_profile_status:null;
+    const profile:ReporterDirectoryResult=prior==='RESOLVED'?{status:prior,snapshot:preload.recorded_profile_snapshot??{}}
+      :prior?{status:prior,snapshot:{}}:await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: directorySource,
       source_namespace: preload.source_provider, source_provider: preload.source_provider,
       bot_id:preload.source_bot_id,reporter_external_id:preload.reporter_wecom_userid });
     return Object.freeze({ ...freezePublic({ service_intake_id: preload.id, primary_message_id: preload.primary_message_id,

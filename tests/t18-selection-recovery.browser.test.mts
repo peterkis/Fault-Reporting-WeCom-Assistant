@@ -9,6 +9,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
 import {createT18Directory,applyT18ForwardCheck} from './helpers/t18-verified-fixture.mjs';
 import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
@@ -51,6 +52,7 @@ async function archiveFailureImage(browser:Browser,stage:string){
     screenshots:[{file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
 }
 async function fill(browser:Browser,label:string,value:string){
+  if(label==='报修来源'){await chooseWorkbenchSelect(browser,'[data-field-label="报修来源"]',value);return;}
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify('[aria-label="'+label+'"]')});if(!input)throw Error('T18_RECOVERY_FIELD_MISSING');
     const kind=input instanceof HTMLTextAreaElement?HTMLTextAreaElement:input instanceof HTMLSelectElement?HTMLSelectElement:HTMLInputElement;
     Object.getOwnPropertyDescriptor(kind.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event(kind===HTMLSelectElement?'change':'input',{bubbles:true}));})()`);
@@ -130,7 +132,7 @@ test('a restored explicit reporter selection cannot silently become hand entry a
       await browser.waitFor("Boolean(document.querySelector('[aria-label=\"联系方式\"]'))&&!document.querySelector('[aria-label=\"联系方式\"]').matches(':disabled')");
       await fill(browser,'联系方式',contact);await browser.waitFor("document.querySelector('[data-action=submit-manual-report]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')&&globalThis.__t18RecoveryRows.some(row=>row.method==='POST'&&row.status===202&&row.result?.reporter_verification==='UNVERIFIED')");
+      await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理')&&globalThis.__t18RecoveryRows.some(row=>row.method==='POST'&&row.status===202&&row.result?.reporter_verification==='UNVERIFIED')");
       const posts:unknown=await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.method==='POST')");assert.ok(Array.isArray(posts)&&posts.length===1);
       const body=object(object(posts[0]).body);assert.equal(object(body.reporter).verification,'UNVERIFIED');assert.equal(body.description,description);assert.deepEqual(body.location,{text:location,unknown:false});assert.equal(authority.calls.verify,0);
       stage='EXPLICIT_HAND_ENTRY_ADMITTED';await image(browser,evidence,'03-explicit-hand-entry-result.png');console.log('T18_SELECTION_RECOVERY_EVIDENCE '+JSON.stringify({case:'SELECTION_FLAG_OFF',evidence,stage}));
@@ -159,7 +161,7 @@ test('a committed verified admission with a lost response reloads and settles it
       browser=await launchSystemBrowser({url:origin+'/workbench/app/reports/new',width:900,height:900,cookies:browserCookies,...(certificateSpki?{certificateSpki}:{})});assert.ok(browser);
       await compiledForm(browser);await install(browser,true);await prepare(browser);await saved(browser,principal.id);
       await browser.waitFor("document.querySelector('[data-action=submit-manual-report]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-result]')?.textContent.includes('结果未知')&&globalThis.__t18RecoveryRows.some(row=>row.method==='POST'&&row.status===202&&row.lost)");
+      await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')&&globalThis.__t18RecoveryRows.some(row=>row.method==='POST'&&row.status===202&&row.lost)");
       const posts:unknown=await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.method==='POST')");assert.ok(Array.isArray(posts)&&posts.length===1);
       const post=object(posts[0]),command=object(post.body),result=object(post.result),commandId=string(command.client_command_id),intakeId=string(result.intake_id);
       assert.equal(result.reporter_verification,'VERIFIED');assert.equal(result.external_notification,false);
@@ -170,12 +172,12 @@ test('a committed verified admission with a lost response reloads and settles it
         FROM intake.service_intake i WHERE i.id=$1::uuid AND i.source_provider='STAFF_MANUAL_REPORT'`,[intakeId,'P2_016:'+principal.id,commandId])).rows[0];assert.ok(row);return row;};
       const committed=await retained();assert.equal(committed.receipts,1);assert.deepEqual(committed.selection,command.reporter);
       stage='ACTUAL_COMMIT_RESPONSE_LOST';await image(browser,evidence,'01-committed-result-unknown.png');await reload(browser);
-      await browser.waitFor("Boolean(document.querySelector('[data-action=check-manual-report-receipt]'))&&document.querySelector('[data-manual-report-result]')?.textContent.includes('结果未知')");
+      await browser.waitFor("Boolean(document.querySelector('[data-action=check-manual-report-receipt]'))&&document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')");
       const restored=object(await browser.evaluate(copies));assert.ok(Array.isArray(restored.operations)&&restored.operations.length===1);assert.equal(object(restored.operations[0]).commandId,commandId);
       assert.equal(await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.method==='POST').length"),0);
       await browser.waitFor("document.querySelector('[data-action=check-manual-report-receipt]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=check-manual-report-receipt]').click()");
       const receiptPath='/api/workbench/reports/commands/'+commandId;
-      await browser.waitFor(`document.querySelector('[data-manual-report-result]')?.textContent.includes('已受理')&&globalThis.__t18RecoveryRows.some(row=>row.method==='GET'&&row.path===${JSON.stringify(receiptPath)}&&row.status===200&&row.result?.state==='COMMITTED')`);
+      await browser.waitFor(`document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('已受理')&&globalThis.__t18RecoveryRows.some(row=>row.method==='GET'&&row.path===${JSON.stringify(receiptPath)}&&row.status===200&&row.result?.state==='COMMITTED')`);
       await browser.waitFor(`(async()=>{const current=await (${copies});return current.drafts.length===0&&current.operations.length===0;})()`);
       const reads:unknown=await browser.evaluate("globalThis.__t18RecoveryRows.filter(row=>row.path.startsWith('/api/workbench/reports/commands/'))");assert.ok(Array.isArray(reads)&&reads.length>=1);
       for(const read of reads){const row=object(read);assert.equal(row.path,receiptPath);assert.equal(row.method,'GET');assert.equal(row.status,200);assert.equal(object(row.result).client_command_id,commandId);}

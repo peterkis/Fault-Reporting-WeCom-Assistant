@@ -1,3 +1,5 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Link as HLink} from "@heroui/react";
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router';
 import type {Principal} from '../../api/client';
@@ -9,13 +11,13 @@ import './candidate.css';
 
 export function IncidentResultPage({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
   const {id=''}=useParams();
-  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障</h1><p role="status">候选工作区尚未启用。</p><a href="/workbench">返回现有工作台</a></div>;
+  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障</h1><p role="status">候选工作区尚未启用。</p><HLink href="/workbench">返回现有工作台</HLink></div>;
   return <IncidentFollowup key={principal.principal_id+':'+id} principal={principal} incidentId={id} onBlockedChange={onBlockedChange}/>;
 }
 export function IncidentResultView({principal,incidentId,authorityRevision='standalone'}:{principal:Principal;incidentId:string;authorityRevision?:string}){
   const query=useQuery({queryKey:['incident-result',principal.principal_id,incidentId,authorityRevision],queryFn:({signal})=>candidateApi.incident(incidentId,signal)});
   if(query.isPending)return <p role="status">正在独立读取当前获权的公共故障…</p>;
-  if(query.isError)return <section aria-label="公共故障读取结果"><p role="alert">{errorMessage(query.error)} 已知确认结果仍保留；这里仅显示当前获权事实。</p><button type="button" onClick={()=>{void query.refetch();}}>重新读取公共故障</button></section>;
+  if(query.isError)return <section aria-label="公共故障读取结果"><p role="alert">{errorMessage(query.error)} 已知确认结果仍保留；这里仅显示当前获权事实。</p><HButton type="button" onClick={()=>{void query.refetch();}} variant="secondary">重新读取公共故障</HButton></section>;
   return <IncidentResultFacts result={query.data}/>;
 }
 export function IncidentResultFacts({result}:{result:IncidentResult}){

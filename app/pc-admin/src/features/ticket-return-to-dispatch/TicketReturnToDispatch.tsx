@@ -1,3 +1,8 @@
+import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
+import {WorkbenchSelect} from "../../app/WorkbenchSelect";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 // T09 consumer SOURCE after original55c true FORM_PRESENT RED. Runtime remains NOT_RUN.
 // Local production-bundle validation does not enable the default-off feature or authorize deployment.
 import {useEffect,useRef,useState} from 'react';
@@ -24,7 +29,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const pendingSnapshot=useRef<string|null>(null),[opaque,setOpaque]=useState<string|null>(null),opaqueRef=useRef(opaque);opaqueRef.current=opaque;
   const knownTerminal=useRef<{commandId:string;state:'COMMITTED'|'FAILED'}|null>(null);
   const forgetMutationViews=useRef<(variables?:unknown)=>void>(()=>{});
-  const storedId=useRef<string|null>(null),[cursor,setCursor]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
+  const storedId=useRef<string|null>(null),[cursor,setCursor]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
   const [reviewRequired,setReviewRequired]=useState(false),[cleanupBlocked,setCleanupBlocked]=useState(false);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const allowed=principal.ticket_return_to_dispatch_enabled&&Boolean(context.data?.allowed_actions.includes('return-to-dispatch'));
@@ -183,9 +188,9 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     setValue(input=>Object.freeze({...input,...change,version:input.version??context.data?.version??null}));
   };
   const submit=async()=>{
-    if(blocked||!draft.canSubmit||!allowed||!context.data||context.isFetching||context.isError||reviewRequired||!workbenchTransportWritable()
+    if(blocked||!draft.canSubmit||!allowed||!context.data||context.isPending||context.isError||reviewRequired||!workbenchTransportWritable()
       ||!value.reason.trim()||value.reason.length>500||!value.unfinished.trim()||value.unfinished.length>1400||value.version===null||value.version!==context.data.version
-      ||value.choice==='TRANSFER_SELECTED'&&(!value.target||!value.sessions.length||targets.isFetching||targets.isError||related.isFetching||related.isError
+      ||value.choice==='TRANSFER_SELECTED'&&(!value.target||!value.sessions.length||targets.isPending||targets.isError||related.isPending||related.isError
         ||!targets.data?.items.some(row=>sameId(row.principal_id,value.target))))return;
     const input=latest.current,snapshot=returnInputSnapshot(input);let intent:P2016ReturnToDispatchCommand;
     try{intent=createReturnCommand(input,crypto.randomUUID());}catch{setMessage('当前输入不符合退回合同，尚未发送。');return;}
@@ -232,8 +237,8 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     if(!already&&(!permitted||!boundedVersion(rowVersion)||value.sessions.length>=8))return;
     update({sessions:Object.freeze(already?value.sessions.filter(row=>!sameId(row.session_id,id)):[...value.sessions,Object.freeze({session_id:id,expected_row_version:Number(rowVersion)})])});
   };
-  const selectedReady=value.choice==='RETAIN_CURRENT'||Boolean(value.target&&value.sessions.length&&targets.data?.items.some(row=>sameId(row.principal_id,value.target))&&!targets.isFetching&&!targets.isError&&!related.isFetching&&!related.isError);
-  const canSubmit=!blocked&&draft.canSubmit&&allowed&&!context.isFetching&&!context.isError&&!reviewRequired&&value.reason.length<=500&&Boolean(value.reason.trim())&&value.unfinished.length<=1400&&Boolean(value.unfinished.trim())&&value.version===context.data?.version&&selectedReady&&workbenchTransportWritable();
+  const selectedReady=value.choice==='RETAIN_CURRENT'||Boolean(value.target&&value.sessions.length&&targets.data?.items.some(row=>sameId(row.principal_id,value.target))&&!targets.isPending&&!targets.isError&&!related.isPending&&!related.isError);
+  const canSubmit=!blocked&&draft.canSubmit&&allowed&&!context.isPending&&!context.isError&&!reviewRequired&&value.reason.length<=500&&Boolean(value.reason.trim())&&value.unfinished.length<=1400&&Boolean(value.unfinished.trim())&&value.version===context.data?.version&&selectedReady&&workbenchTransportWritable();
   const nextCursor=related.data?.next_cursor??null;
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
   const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'||role==='HANDLER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
@@ -242,35 +247,28 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     <h3>停止处理并退回待安排</h3>
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
-      <label>停止原因<textarea value={value.reason} maxLength={500} disabled={blocked||context.isFetching} onChange={event=>update({reason:event.target.value})}/></label>
-      <label>未完成工作<textarea value={value.unfinished} maxLength={1400} disabled={blocked||context.isFetching} onChange={event=>update({unfinished:event.target.value})}/></label>
+      <HLabel>停止原因<HTextArea value={value.reason} maxLength={500} disabled={blocked||(context.isPending||context.isError)} onChange={event=>update({reason:event.target.value})}/></HLabel>
+      <HLabel>未完成工作<HTextArea value={value.unfinished} maxLength={1400} disabled={blocked||(context.isPending||context.isError)} onChange={event=>update({unfinished:event.target.value})}/></HLabel>
       <p>两段说明只进入内部记录。退回保留原处理组和本轮，默认保留沟通责任，不会新增对外通知。</p>
-      <fieldset disabled={blocked||context.isFetching}><legend>沟通责任</legend>
-        <label><input type="radio" name={'return-communication-'+ticketId} value="RETAIN_CURRENT" checked={value.choice==='RETAIN_CURRENT'} onChange={()=>update({choice:'RETAIN_CURRENT',target:null,sessions:Object.freeze([])})}/>保留当前沟通责任</label>
-        <label><input type="radio" name={'return-communication-'+ticketId} value="TRANSFER_SELECTED" checked={value.choice==='TRANSFER_SELECTED'} onChange={()=>update({choice:'TRANSFER_SELECTED'})}/>明确选择会话和新的沟通同事</label>
-      </fieldset>
+      <HRadioGroup className="workbench-radio-group" name={'return-communication-'+ticketId} value={value.choice??''} onChange={next=>{if(next==="RETAIN_CURRENT"){update({choice:'RETAIN_CURRENT',target:null,sessions:Object.freeze([])});}if(next==="TRANSFER_SELECTED"){update({choice:'TRANSFER_SELECTED'});}}} isDisabled={blocked||(context.isPending||context.isError)}><HLabel>沟通责任</HLabel><HRadio value={"RETAIN_CURRENT"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通责任</HRadio.Content></HRadio><HRadio value={"TRANSFER_SELECTED"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>明确选择会话和新的沟通同事</HRadio.Content></HRadio></HRadioGroup>
       {value.choice==='TRANSFER_SELECTED'?<>
         {targets.isError||related.isError?<p role="alert">{errorMessage(targets.error??related.error)} 当前选择保留，读取成功后重新核对。</p>:null}
-        <label>沟通同事<select value={displayTarget} disabled={blocked||targets.isFetching||targets.isError} onChange={event=>update({target:event.target.value||null})}>
-          <option value="">请选择沟通同事</option>{value.target&&!targets.data?.items.some(row=>sameId(row.principal_id,value.target))?<option value={value.target}>原选择需重新核验</option>:null}
-          {targets.data?.items.map(row=><option key={row.principal_id} value={row.principal_id}>{row.display_name}</option>)}
-        </select></label>
+        <WorkbenchSelect label={<>沟通同事</>} value={displayTarget} isDisabled={blocked||targets.isPending||targets.isError} onChange={event=>update({target:event||null})}><ListBox.Item id="" textValue={"请选择沟通同事"}>请选择沟通同事<ListBox.ItemIndicator/></ListBox.Item>{value.target&&!targets.data?.items.some(row=>sameId(row.principal_id,value.target))?<ListBox.Item id={value.target} textValue={"原选择需重新核验"}>原选择需重新核验<ListBox.ItemIndicator/></ListBox.Item>:null}{targets.data?.items.map(row=><ListBox.Item key={row.principal_id} id={row.principal_id} textValue={String(row.display_name)}>{row.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
         <p>本次已选 {value.sessions.length} 个会话，最多 8 个。请选择这些会话共同允许的沟通同事；原选择未核验时不能提交。</p>
         <ul className="conversation-choices">{related.data?.items.map(row=>{
           const chosen=value.sessions.find(item=>sameId(item.session_id,row.session_id)),permitted=row.take_allowed&&boundedVersion(row.session_row_version);
-          return <li key={row.session_id}><label><input type="checkbox" data-session-choice={row.session_id} checked={Boolean(chosen)} disabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}/>
-            {row.conversation_principal_name??'尚未分配沟通人'}<small>会话 {row.session_id} · 版本 {row.session_row_version}{!permitted?' · 当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></label></li>;
+          return <li key={row.session_id}><HCheckbox data-session-choice={row.session_id} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>{row.conversation_principal_name??'尚未分配沟通人'}<small>会话 {row.session_id} · 版本 {row.session_row_version}{!permitted?' · 当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
         })}</ul>
-        {value.sessions.length?<ul>{value.sessions.map(row=><li key={row.session_id}>已选会话 {row.session_id}<button type="button" disabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})}>取消选择</button></li>)}</ul>:null}
-        {cursor?<button type="button" disabled={blocked||related.isFetching} onClick={()=>setCursor(null)}>回到首批会话</button>:null}
-        {nextCursor?<button type="button" disabled={blocked||related.isFetching} onClick={()=>setCursor(nextCursor)}>下一批关联会话</button>:null}
+        {value.sessions.length?<ul>{value.sessions.map(row=><li key={row.session_id}>已选会话 {row.session_id}<HButton type="button" isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} variant="secondary">取消选择</HButton></li>)}</ul>:null}
+        {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} variant="secondary">回到首批会话</HButton>:null}
+        {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} variant="secondary">下一批关联会话</HButton>:null}
       </>:null}
-      <button type="button" data-action="return-to-dispatch" disabled={!canSubmit} onClick={()=>{void submit();}}>确认停止处理并退回待安排</button>
+      <HButton type="button" data-action="return-to-dispatch" isDisabled={!canSubmit} onClick={()=>{void submit();}} variant="secondary">确认停止处理并退回待安排</HButton>
     </>:<p>当前没有可提交的退回动作；已存在的原 UUID 仍可按当前工单读权限核对。</p>}
-    {draft.enabled?<p data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</p>:null}
-    {originalId&&!busy?<button type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}}>只读核对原操作</button>:null}
-    {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<button type="button" data-action="review-return-version" disabled={busy||cleanupBlocked} onClick={()=>{void review();}}>重新读取并确认版本</button>:null}
-    {hasReturnInput(value)&&!busy?<button type="button" data-action="discard-return-draft" onClick={discard}>清除敏感填写内容</button>:null}
-    {message?<p role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</p>:null}
+    {draft.enabled?<DraftStatus data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}
+    {originalId&&!busy?<HButton type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}} variant="secondary">只读核对原操作</HButton>:null}
+    {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} variant="secondary">重新读取并确认版本</HButton>:null}
+    {hasReturnInput(value)&&!busy?<HButton type="button" data-action="discard-return-draft" onClick={discard} variant="secondary">清除敏感填写内容</HButton>:null}
+    {message?<ToastFeedback revision={messageRevision} source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
   </section>;
 }

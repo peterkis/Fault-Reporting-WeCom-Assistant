@@ -149,6 +149,10 @@ test('explicit H5 configuration requires a private absolute root, 256-bit key an
   assert.throws(()=>validateYxxH5RuntimeOptions({...worker,key:Buffer.alloc(31)}),/CONFIG_INVALID/u);
   assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PROGRESS_ENABLED:'true'}).workbenchProgressEnabled,true);
   assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'}).performanceEnabled,true);
+  assert.equal(readWorkbenchH5RuntimeOptions(h5Env).compressionEnabled,false);
+  assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_MEDIA_COMPRESSION_ENABLED:'true'}).compressionEnabled,true);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_MEDIA_COMPRESSION_ENABLED:'yes'}),/MEDIA_COMPRESSION_ENABLED/u);
+  assert.throws(()=>readWorkbenchH5RuntimeOptions({YIXIAOXIU_H5_MEDIA_COMPRESSION_ENABLED:'true'}),/MEDIA_COMPRESSION_ENABLED/u);
   assert.equal(readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:privatePath}).previousStaticRoot,privatePath);
   assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'1'}),/PERFORMANCE_ENABLED/u);
   assert.throws(()=>readWorkbenchH5RuntimeOptions({...h5Env,YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT:'relative'}),/PREVIOUS_STATIC_ROOT/u);

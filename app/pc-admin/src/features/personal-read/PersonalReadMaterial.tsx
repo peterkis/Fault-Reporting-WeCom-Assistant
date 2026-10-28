@@ -7,10 +7,10 @@ import {ApiError,captureWorkbenchRead,workbenchTransportWritable} from '../../ap
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {personalReadApi} from './client';
 import {foregroundTextReader,hasForegroundText} from './foreground-text';
-export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{principal:Principal;item:CanonicalItem;sourceRef:string;revision:string;text:string|null}){
-  const node=useRef<HTMLParagraphElement|null>(null),client=useQueryClient();
+export function PersonalReadMaterial({principal,item,sourceRef,revision,text,active=true,inline=false}:{principal:Principal;item:CanonicalItem;sourceRef:string;revision:string;text:string|null;active?:boolean;inline?:boolean}){
+  const node=useRef<HTMLElement|null>(null),client=useQueryClient();
   useEffect(()=>{
-    const element=node.current;if(!element||!text?.trim()||!principal.personal_read_enabled)return;
+    const element=node.current;if(!active||!element||!text?.trim()||!principal.personal_read_enabled)return;
     // Safe coordinates/UUID only. The bounded in-memory family holds no text or credentials.
     client.setQueryDefaults(['personal-read-command'],{gcTime:Infinity});
     let pendingKey:readonly ['personal-read-command',string,CanonicalItem['kind'],string,string,string]=['personal-read-command',principal.principal_id,item.kind,item.id,sourceRef,revision];
@@ -69,9 +69,11 @@ export function PersonalReadMaterial({principal,item,sourceRef,revision,text}:{p
     };
     const onChange=()=>{void observe();};
     const intersection=new IntersectionObserver(onChange,{threshold:[0,1]});intersection.observe(element);
+    const resize=new ResizeObserver(onChange);resize.observe(element);
     document.addEventListener('visibilitychange',onChange);window.addEventListener('focus',onChange);window.addEventListener('blur',onChange);window.addEventListener('scroll',onChange,true);window.addEventListener('resize',onChange);
     onChange();
-    return()=>{disposed=true;controller.abort();intersection.disconnect();document.removeEventListener('visibilitychange',onChange);window.removeEventListener('focus',onChange);window.removeEventListener('blur',onChange);window.removeEventListener('scroll',onChange,true);window.removeEventListener('resize',onChange);};
-  },[client,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,principal.personal_read_enabled,principal.csrf_token,item.kind,item.id,sourceRef,revision,text]);
-  return <p ref={node} data-personal-read-ref={text?.trim()?sourceRef:undefined} data-personal-read-revision={text?.trim()?revision:undefined}>{text??'当前没有可展示的文本内容。'}</p>;
+    return()=>{disposed=true;controller.abort();intersection.disconnect();resize.disconnect();document.removeEventListener('visibilitychange',onChange);window.removeEventListener('focus',onChange);window.removeEventListener('blur',onChange);window.removeEventListener('scroll',onChange,true);window.removeEventListener('resize',onChange);};
+  },[active,client,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,principal.personal_read_enabled,principal.csrf_token,item.kind,item.id,sourceRef,revision,text]);
+  const Tag=inline?'span':'p';
+  return <Tag ref={element=>{node.current=element;}} className={inline?'record-text':undefined} data-personal-read-ref={text?.trim()?sourceRef:undefined} data-personal-read-revision={text?.trim()?revision:undefined}>{text??'当前没有可展示的文本内容。'}</Tag>;
 }

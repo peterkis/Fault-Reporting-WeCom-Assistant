@@ -100,6 +100,7 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
   options.report({status,lastReadAt});
   if(options.capability.realtime_sse_enabled){if(available)openSource();else report('polling');schedule();}
   return {
+    refresh(){if(alive())refresh();},
     dispose(){if(disposed)return;disposed=true;pending=false;cancelTimer();closeSource();request?.abort();},
     setEnvironment(nextOnline:boolean,nextVisible:boolean){
       if(disposed||online===nextOnline&&visible===nextVisible)return;

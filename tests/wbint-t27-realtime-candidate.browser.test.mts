@@ -46,7 +46,7 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       };
     };runtime.server.on('request',observe);
     const root=(id:string)=>`article[data-candidate-id="${id}"]`;
-    const choose=async(id:string,label:string,value:string)=>{assert.ok(browser);await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(root(id))})?.querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!input)throw Error('MISSING_SELECT');input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
+    const choose=async(id:string,label:string,value:string)=>{assert.ok(browser);await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(root(id))})?.querySelector(${JSON.stringify('.workbench-select[data-field-label="'+label+'"] select')});if(!input)throw Error('MISSING_SELECT');input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
     const navigate=async(path:string)=>{assert.ok(browser);await browser.command('Page.navigate',{url:origin+'/workbench/app/'+path});};
     try{
       const started=await runtime.start(),cookie=started.cookie;assert.ok(cookie);assert.ok(typeof cookie.url==='string');
@@ -68,15 +68,15 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       assert.ok((reads.get('/api/incident-candidates?state=CANDIDATE&limit=30')??0)>listReads,'the candidate list must GET current facts instead of injecting an SSE payload');
 
       stage='candidate detail refresh preserves the explicit captured input';await navigate('incidents/candidates/'+candidateId);
-      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('select[aria-label="人工决定"]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
+      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('.workbench-select[data-field-label="人工决定"] select'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
       await choose(candidateId,'人工决定','START_REVIEW');await choose(candidateId,'决定原因','OPERATOR_REVIEWED');
       const captured=await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('[data-captured-basis]').textContent`);
       assert.match(text(captured),/已捕获候选版本 1；当前候选版本 1/u);const detailReads=reads.get('/api/incident-candidates/'+candidateId)??0;
       await post('/api/incident-candidates/'+candidateId+'/start-review',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
       await browser.waitFor(`document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('[data-captured-basis]')?.textContent.includes('已捕获候选版本 1；当前候选版本 2')`);
       assert.ok((reads.get('/api/incident-candidates/'+candidateId)??0)>detailReads);
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('select[aria-label="人工决定"]').value`),'START_REVIEW');
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('select[aria-label="决定原因"]').value`),'OPERATOR_REVIEWED');
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('.workbench-select[data-field-label="人工决定"] select').value`),'START_REVIEW');
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('.workbench-select[data-field-label="决定原因"] select').value`),'OPERATOR_REVIEWED');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('[data-action=submit-candidate]').disabled`),true);
       assert.equal(posts,2,'a refresh cannot submit the preserved human input');
       await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('[data-action=clear-candidate-input]').click()`);
@@ -92,7 +92,7 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       assert.ok((reads.get('/api/incidents/'+incidentId)??0)>resultReads);assert.equal((await runtime.observability.metrics()).sse_clients,1);
 
       stage='late genuine authorized GET cannot restore protected candidate facts after the current epoch loses scope';await navigate('incidents/candidates/'+otherId);
-      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(otherId))})?.querySelector('select[aria-label="人工决定"]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
+      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(otherId))})?.querySelector('.workbench-select[data-field-label="人工决定"] select'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
       await choose(otherId,'人工决定','REJECT_CANDIDATE');await choose(otherId,'决定原因','INCORRECT_ASSOCIATION');
       await browser.evaluate("(()=>{const send=globalThis.fetch;globalThis.__t27BootstrapFacts=[];globalThis.fetch=async(path,options)=>{const response=await send(path,options);if(String(path)==='/api/lifecycle/bootstrap'&&response.ok){const body=await response.clone().json();globalThis.__t27BootstrapFacts.push({roles:body.roles,revision:body.authorization_revision});}return response;};})()");
       assert.equal(await browser.evaluate("fetch('/api/lifecycle/bootstrap').then(response=>response.ok)"),true);
@@ -104,7 +104,7 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       const denied=await get('/api/incident-candidates/'+otherId);assert.equal(denied.status,404,'current public resource authority must genuinely reject the old actor scope');
       release();release=undefined;await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
       await browser.waitFor(`!document.querySelector(${JSON.stringify(root(otherId))})?.querySelector('.detail-body')`);
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(otherId))})?.querySelectorAll('select[aria-label="人工决定"]').length??0`),0);
+      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(otherId))})?.querySelectorAll('.workbench-select[data-field-label="人工决定"] select').length??0`),0);
       await browser.command('Page.reload');await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(otherId))})?.querySelector('[role=alert]'))`);
       assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(root(otherId))})?.querySelector('.detail-body'))`),false);
       assert.equal(posts,4,'only the four explicit fixture commands may POST; authority changes never replay input');

@@ -1,6 +1,9 @@
+import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Link as HLink} from "@heroui/react";
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {Link,useParams} from 'react-router';
+import {useParams} from 'react-router';
 import type {Principal} from '../../api/client';
 import {api,ApiError,errorMessage,advanceWorkbenchAuthorizationEpoch} from '../../api/client';
 import {clearSessionAuthorization} from '../../app/authorization';
@@ -14,7 +17,7 @@ const scopeLabels:Record<string,string>={UNKNOWN:'未知',ROOM:'房间',DEPARTME
 const unavailable='不可用（来源未提供或当前权限不可见）';
 export function CandidateDetailPage({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
   const {id=''}=useParams();
-  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障候选</h1><p role="status">候选工作区尚未启用。</p><a href="/workbench">返回现有工作台</a></div>;
+  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障候选</h1><p role="status">候选工作区尚未启用。</p><HLink href="/workbench">返回现有工作台</HLink></div>;
   return <CandidateDetail key={principal.principal_id+':'+id} principal={principal} candidateId={id} onBlockedChange={onBlockedChange}/>;
 }
 export function CandidateDetail({principal,candidateId,onBlockedChange}:{principal:Principal;candidateId:string;onBlockedChange:(blocked:boolean)=>void}){
@@ -27,7 +30,7 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{if(detail)heading.current?.focus();},[Boolean(detail)]);
   return <article className="detail-page" data-candidate-id={candidateId} aria-labelledby={'candidate-heading-'+candidateId}>
-    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><button type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}}>刷新当前事实</button></div>
+    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><HButton type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}} variant="secondary">刷新当前事实</HButton></div>
     {refreshError?<p role="alert">{refreshError}</p>:null}
     {cleanupError?<p role="alert">{cleanupError}</p>:null}
     {query.isPending?<p role="status">正在读取获权候选…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:detail?<div className="detail-body">

@@ -13,7 +13,7 @@ async function holdIncidentResponses(browser:Context['browser'],path:string){
 
 async function selectOwner({browser,choose,f}:Context){
   const target=text(record(f.dispatcher).id);
-  await browser.waitFor(`Boolean(document.querySelector('select[aria-label="交接负责人"] option[value="${target}"]'))`);
+  await browser.waitFor(`Boolean(document.querySelector('.workbench-select[data-field-label="交接负责人"] select option[value="${target}"]'))`);
   await choose('交接负责人',target);await choose('交接责任组','PILOT_IT');await choose('交接原因','OPERATOR_REVIEWED');
   await browser.waitFor(`globalThis.__t29Transport.filter(row=>row.path.includes('/owner-transfer-targets')&&row.phase==='start').every(start=>globalThis.__t29Transport.some(row=>row.request===start.request&&['response','reject'].includes(row.phase)))`);
   assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);
@@ -29,7 +29,7 @@ async function loseOwnerPurpose({pool,f,get,incidentId}:Context){
 }
 
 async function assertOnlyOwnerPurposeCleared({browser,get,incidentId}:Context){
-  await browser.waitFor('!document.querySelector("select[aria-label=交接负责人]")');
+  await browser.waitFor('!document.querySelector(".workbench-select[data-field-label=交接负责人] select")');
   await browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))`);
   assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);
   assert.equal((await get('/api/lifecycle/bootstrap')).status,200,'purpose loss must retain the valid global Session');

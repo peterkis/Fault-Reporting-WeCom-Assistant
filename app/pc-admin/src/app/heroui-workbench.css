@@ -1,0 +1,67 @@
+/* The existing Notion palette also owns HeroUI controls and portal surfaces. */
+:root {
+  --accent:#37352f;--accent-foreground:#fff;--background:#fff;--foreground:#37352f;
+  --surface:#fff;--surface-foreground:#37352f;--muted:#787774;--border:#e4e4df;
+  --field-background:#fff;--field-foreground:#37352f;--field-placeholder:#8b8a85;
+  --focus:#8a8984;--radius:6px;--field-radius:5px;
+}
+.card-open {width:100%}
+.button {height:auto;min-height:32px;border-radius:5px;font-size:var(--fs-sm);font-weight:500;line-height:1.5;gap:6px}
+.button--secondary {background:var(--bg-neutral);color:var(--text-1)}
+.input,.textarea {font-size:var(--fs-body);border-radius:5px;box-shadow:none}
+.input {height:auto;min-height:32px}
+.label {color:var(--text-1);font-size:var(--fs-sm);font-weight:500}
+.field-group,.form {gap:8px}
+.workbench-select {min-width:0;gap:5px;font-size:var(--fs-sm)}
+.workbench-select [data-slot=select-trigger] {height:auto;min-height:32px;border:1px solid var(--ring-1);border-radius:5px;background:var(--bg);font-size:inherit;padding:5px 9px;box-shadow:none}
+.workbench-select [data-slot=select-value] {min-width:0;text-align:left}
+.workbench-select-popover {min-width:var(--trigger-width);max-width:min(420px,calc(100vw - 24px));font-size:var(--fs-sm);border:1px solid var(--ring-1);border-radius:7px;box-shadow:0 6px 24px #37352f18;background:var(--bg);color:var(--text-1)}
+.workbench-select-popover [data-slot=list-box-item] {border-radius:4px;min-height:32px;padding:6px 8px;font-size:var(--fs-sm)}
+.workbench-radio-group {gap:8px;font-size:var(--fs-sm);margin-top:10px}
+.workbench-radio-group .radio__content,.checkbox__content {gap:8px;align-items:flex-start}
+.ticket-notes .checkbox,.ticket-notes .radio {margin-top:6px;font-weight:400}
+.workbench-disclosure {border:0;background:none;gap:0;border-radius:0}
+.workbench-disclosure>.disclosure__heading {margin:0}
+.workbench-disclosure .workbench-disclosure-trigger {justify-content:flex-start;min-height:32px;padding:5px 0;border:0;background:none;border-radius:3px;color:var(--text-2);font-size:var(--fs-sm);width:100%;text-align:left}
+.workbench-disclosure .disclosure__body {padding:0}
+.workbench-disclosure .disclosure__body-inner {padding:4px 0 0}
+.workbench-disclosure [data-slot=disclosure-indicator] {width:14px;height:14px;flex:none}
+.workbench-modal-backdrop,.workbench-drawer-backdrop {background:var(--scrim);z-index:60}
+.workbench-modal-container {width:auto;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);padding:0;overflow:visible;background:transparent;border-radius:0}
+.workbench-modal-container>.detail-action-dialog,.workbench-modal-container>.detail-media-dialog {position:relative;inset:auto;overflow:auto;max-height:calc(100dvh - 32px)}
+.workbench-drawer-content {width:100%;max-width:none;padding:0;border-radius:0;background:transparent}
+.workbench-drawer-content>.detail-dialog {position:relative;inset:auto;width:min(780px,100vw);padding:0;border-radius:0;max-height:100dvh;overflow-y:auto}
+.workbench-settings {overflow:auto}
+.settings-toggle [data-slot=switch-control] {width:36px;height:21px}
+.settings-toggle [data-slot=switch-thumb] {width:17px;height:17px}
+.processed-date-controls {display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-left:auto}
+.processed-date-picker {display:flex;flex-direction:row;align-items:center;gap:8px;min-width:0}
+.processed-date-picker>.label {white-space:nowrap;font-weight:400;color:var(--text-2)}
+.processed-date-picker [data-slot=date-input-group] {height:32px;min-height:32px;border:1px solid var(--ring-1);border-radius:5px;box-shadow:none;padding:0 6px;background:var(--bg);gap:3px}
+.processed-date-picker [data-slot=date-input-group-input] {padding:0;font-size:var(--fs-xs);min-width:0}
+.processed-date-picker [data-slot=date-range-picker-trigger] {width:26px;min-width:26px;min-height:26px;height:26px;padding:3px;border:0;background:none}
+.processed-date-note {font-size:var(--fs-xs);color:var(--text-2)}
+.processed-date-popover {border:1px solid var(--ring-1);border-radius:8px;background:var(--bg);box-shadow:0 6px 24px #37352f18;font-size:var(--fs-sm)}
+.record-actor-rail {display:flex;align-items:center;padding-top:4px;position:relative;z-index:1}
+.record-avatar {width:22px;height:22px;min-width:22px;border-radius:50%;font-size:9px;font-weight:500}
+.record-avatar [data-slot=avatar-fallback] {font-size:9px}
+.detail-record .record-content {display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:start;justify-content:start;text-align:left;width:100%;height:auto;min-height:30px;padding:3px 0;border:0;box-shadow:none;background:none;white-space:normal}
+.detail-record .record-name {margin:0;line-height:24px;max-width:140px;white-space:normal;overflow-wrap:anywhere}
+.detail-main .activity-list .record-content .record-text {text-align:left}
+.record-content .record-audience {margin-top:3px}
+.detail-record.is-expanded .record-content {grid-template-columns:minmax(0,1fr) max-content}
+.detail-record.is-expanded .record-name {grid-column:1;justify-self:start}
+.detail-record.is-expanded .record-content .record-text {grid-column:1 / -1;grid-row:2}
+.detail-record.is-expanded .record-audience {grid-column:2;grid-row:1}
+.voice-progress.slider {height:24px;min-width:0;padding:0;background:none;accent-color:var(--accent)}
+.voice-progress [data-slot=slider-track] {height:4px;border-radius:2px;background:var(--ring-1)}
+.voice-progress [data-slot=slider-thumb] {width:12px;height:12px;border:2px solid var(--bg);background:var(--text-2);box-shadow:0 0 0 1px var(--ring-1)}
+.table {border:0;border-radius:0;background:none;padding:0;box-shadow:none}
+.table__scroll-container {border:0;border-radius:0}
+.manual-report-entry.button {min-height:32px;background:var(--bg-neutral);color:var(--text-1);border:1px solid var(--ring-1)}
+.manual-report-entry.button:hover {background:var(--bg-hover)}
+.detail-action-dialog .workbench-select+.workbench-select {margin-top:12px}
+@media(max-width:640px){
+  .processed-date-controls{margin-left:0;width:100%}.processed-date-picker{gap:5px}.processed-date-picker>.label{font-size:var(--fs-xs)}
+  .detail-record .record-content{grid-template-columns:minmax(0,1fr) max-content;gap:2px 6px}.detail-record .record-name{grid-column:1;justify-self:start;max-width:none}.detail-record .record-content .record-text{grid-column:1 / -1;grid-row:2}.detail-record .record-audience{grid-column:2;grid-row:1}
+}

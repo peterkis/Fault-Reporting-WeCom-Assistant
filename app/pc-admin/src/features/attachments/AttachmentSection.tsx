@@ -1,26 +1,148 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Slider,Tooltip} from '@heroui/react';
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
-import {useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
-import {ApiError,errorMessage} from '../../api/client';
-import {attachmentApi} from './client';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {CloudOff,Download,Image as ImageIcon,Pause,Play,TriangleAlert,Volume2} from 'lucide-react';
+import {ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
+import type {Principal} from '../../api/client';
+import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
+import {attachmentApi,attachmentParentDenied} from './client';
+import {webReportApi,employeeMediaUrl} from '../web-report/client';
+import {mediaThumbnail} from './thumbnail';
+import {DetailDialog} from '../../app/DetailDialog';
+import {DetailLoading} from '../../app/DetailLoading';
+import type {WebReportQuery} from '../web-report/use-web-report';
 import type {AttachmentMetadata,AttachmentReason} from '../../../../../contracts/workbench_attachment_contracts';
+import type {WorkbenchWebMedia} from '../../../../../contracts/workbench_web_report_contracts';
+
 const labels:Record<AttachmentReason,string>={STORAGE_UNAVAILABLE:'附件存储暂不可用',EXPIRED:'附件已超过保留期限',MISSING:'已保存文件缺失',OVERSIZED:'附件超过10 MiB限制',UNSUPPORTED:'此文件格式不可用',UNTRUSTED:'附件尚未通过可信检查',INTEGRITY_FAILED:'附件完整性校验失败',BUSY:'附件读取正忙，请稍后重新读取'};
+const extensions:Record<string,string>={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','audio/amr':'amr','audio/wav':'wav','audio/x-wav':'wav','audio/mp4':'m4a','audio/mpeg':'mp3','audio/webm':'webm','audio/ogg':'ogg','video/mp4':'mp4','video/webm':'webm','video/quicktime':'mov'};
 function message(error:unknown):string {if(error instanceof ApiError){const reason=error.code.replace('ATTACHMENT_','');if(Object.hasOwn(labels,reason))return labels[reason as AttachmentReason];if(error.code==='ATTACHMENT_NOT_FOUND')return '该附件已不可读取，请重新读取附件列表。';if(error.code==='ATTACHMENT_TIMEOUT')return '附件读取超时，请重新读取。';if(error.code==='INVALID_RESPONSE')return '附件响应无法安全识别。';}return errorMessage(error);}
-export function AttachmentSection({principal,kind,id}:{principal:string;kind:string;id:string}){
-  const client=useQueryClient(),request=useRef<AbortController|null>(null),url=useRef<string|null>(null),alive=useRef(false),[status,setStatus]=useState('');
-  const queryKey=['attachments',principal,kind,id];
-  const result=useQuery({queryKey,queryFn:({signal})=>attachmentApi.list(kind,id,signal)});
-  const revoke=()=>{if(url.current){URL.revokeObjectURL(url.current);url.current=null;}};
-  useEffect(()=>{alive.current=true;return()=>{alive.current=false;request.current?.abort();revoke();};},[]);
-  const mutation=useMutation({mutationKey:['attachment-download',principal,kind,id],mutationFn:async(item:AttachmentMetadata)=>{
-    const controller=new AbortController();request.current=controller;const timer=window.setTimeout(()=>controller.abort(),15_000);
-    try{const blob=await attachmentApi.download(kind,id,item,controller.signal);controller.signal.throwIfAborted();if(!alive.current)return;
-      url.current=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url.current;link.download='report-attachment.'+(item.mime_type==='image/png'?'png':'jpg');link.rel='noopener';document.body.append(link);
-      try{link.click();}finally{link.remove();revoke();}
-    }finally{window.clearTimeout(timer);if(request.current===controller)request.current=null;}
-  },onSuccess:()=>{if(alive.current)setStatus('已交给浏览器下载。');},onError:error=>{if(alive.current){setStatus(message(error));void client.invalidateQueries({queryKey,exact:true});}}});
-  return <section className="attachment-section" aria-label="报修附件"><h3>报修附件</h3>
-    {result.isPending?<p role="status">正在读取附件信息…</p>:result.isError?<p role="status">{message(result.error)}</p>:!result.data.available?<p>{labels.STORAGE_UNAVAILABLE}，当前无法读取原始文件。</p>:!result.data.items.length?<p>当前事项没有可读取的已保存附件。</p>:<ul>{result.data.items.map(item=><li key={item.ref}><span>{item.display_name}<small>{(item.byte_size/1024).toFixed(1)} KiB · {item.mime_type}</small>{item.reason?<small>{labels[item.reason]}</small>:null}</span><button type="button" disabled={!item.available||mutation.isPending} onClick={()=>{if(request.current)return;setStatus('正在安全读取附件…');mutation.mutate(item);}}>下载</button></li>)}</ul>}
-    {result.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}
-    <p role="status" aria-live="polite">{status}</p><button type="button" disabled={result.isFetching||mutation.isPending} onClick={()=>{setStatus('');void result.refetch();}}>重新读取附件</button>
+type Material={key:string;kind:'IMAGE'|'VIDEO'|'VOICE';name:string;ready:boolean;duration:number|null;legacy?:AttachmentMetadata;web?:WorkbenchWebMedia};
+const clock=(seconds:number)=>{const value=Math.max(0,Math.ceil(seconds));return String(Math.floor(value/60)).padStart(2,'0')+':'+String(value%60).padStart(2,'0');};
+function Voice({item,url,sender,disabled,onPlay,onDownload,onError}:{item:Material;url:string|undefined;sender:string|null;disabled:boolean;onPlay:()=>void;onDownload:()=>void;onError:()=>void}){
+  const audio=useRef<HTMLAudioElement>(null),[playing,setPlaying]=useState(false),[position,setPosition]=useState(0),[duration,setDuration]=useState((item.duration??0)/1000);
+  useEffect(()=>{setPlaying(false);setPosition(0);setDuration((item.duration??0)/1000);},[url,item.duration]);
+  useEffect(()=>{const element=audio.current;return()=>{element?.pause();element?.removeAttribute('src');element?.load();};},[url]);
+  return <div className={'detail-voice'+(playing?' is-playing':'')}>
+    <div className="voice-caption"><strong>{sender??'报修人'}</strong><Volume2 size={15} aria-hidden="true"/><span>报修语音</span></div>
+    <div className="voice-controls"><HButton type="button" className="voice-play" isDisabled={disabled||!item.ready} aria-label={playing?'暂停报修语音':'播放报修语音'} onClick={()=>{if(!url){onPlay();return;}if(audio.current?.paused)void audio.current.play().catch(()=>setPlaying(false));else audio.current?.pause();}} variant="secondary">{playing?<Pause size={17}/>:<Play size={17}/>}</HButton>
+      <Slider className="voice-progress" aria-label="语音播放进度" minValue={0} maxValue={duration||1} step={.1} value={Math.min(position,duration)} isDisabled={!url||!duration} onChange={value=>{if(typeof value!=='number')return;if(audio.current)audio.current.currentTime=value;setPosition(value);}}><Slider.Track><Slider.Fill/><Slider.Thumb/></Slider.Track></Slider>
+      <time aria-label="语音剩余时长">{clock(duration-position)}</time><HButton type="button" className="voice-download icon-button" aria-label="下载报修语音" title="下载语音原件" isDisabled={disabled} onClick={onDownload} variant="secondary"><Download size={16}/></HButton>
+    </div>
+    {!item.ready?<small>暂无可播放副本，可下载原件。</small>:null}
+    {url?<audio key={url} ref={audio} src={url} autoPlay preload="none" onError={onError} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>{setPlaying(false);setPosition(duration);}} onTimeUpdate={event=>setPosition(event.currentTarget.currentTime)} onLoadedMetadata={event=>{const value=event.currentTarget.duration;if(Number.isFinite(value))setDuration(value);}}/>:null}
+  </div>;
+}
+function MediaVideo({url,poster,onError}:{url:string;poster:string|undefined;onError:()=>void}){
+  const video=useRef<HTMLVideoElement>(null);
+  useEffect(()=>{const element=video.current;return()=>{element?.pause();element?.removeAttribute('src');element?.load();};},[url]);
+  return <video key={url} ref={video} controls autoPlay playsInline preload="none" src={url} poster={poster} onError={onError}/>;
+}
+export function AttachmentSection({principal,kind,id,requested,readReady,reporterName,onOpenChange,web}:{web:WebReportQuery;principal:Principal;kind:'ticket'|'review'|'intake';id:string;requested:{kind:'ticket'|'review'|'intake';id:string};readReady:boolean;reporterName:string|null;onOpenChange:(open:boolean)=>void}){
+  const employeeRead=principal.media_employee_read_enabled===true;
+  const client=useQueryClient(),root=useRef<HTMLElement>(null),alive=useRef(true),generation=useRef(0),urls=useRef(new Set<string>());
+  const requests=useRef(new Set<AbortController>()),settling=useRef(new Set<Promise<unknown>>()),activeReads=useRef(0),exclusiveRead=useRef(false),maxReads=useRef(1);
+  const queue=useRef<{start:()=>void;reject:(error:Error)=>void;exclusive:boolean;background:boolean}[]>([]);maxReads.current=employeeRead?2:1;
+  function cancelReads(){for(const request of requests.current)request.abort();for(const waiting of queue.current.splice(0))waiting.reject(new DOMException('Scope changed','AbortError'));}
+
+  const [visible,setVisible]=useState(false),[thumbs,setThumbs]=useState<Record<string,string>>({}),[preview,setPreview]=useState<{item:Material;url:string}|null>(null),[busy,setBusy]=useState(false),[notice,setNotice,noticeRevision]=useFeedbackState(''),[refreshSerial,setRefreshSerial]=useState(0);
+  const legacy=useQuery({queryKey:['attachments',principal.principal_id,kind,id],enabled:readReady,retry:false,gcTime:0,queryFn:({signal})=>serialized(async queuedSignal=>{const combined=AbortSignal.any([signal,queuedSignal]),current=captureWorkbenchRead(combined),value=await attachmentApi.list(kind,id,combined);current();return value;})});
+  const [thumbState,setThumbState]=useState<Record<string,'loading'|'failed'>>({}),[metadataSettled,setMetadataSettled]=useState(false),[lastLegacyError,setLastLegacyError]=useState<unknown>(null);
+  useEffect(()=>{if(legacy.isError)setLastLegacyError(legacy.error);else if(legacy.isSuccess)setLastLegacyError(null);},[legacy.error,legacy.isError,legacy.isSuccess]);
+  useEffect(()=>{if(!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending))setMetadataSettled(true);},[legacy.isPending,web.isPending,principal.web_reports_enabled]);
+  const materials:Material[]=[...(legacy.data?.items??[]).map((item,index)=>({key:'legacy:'+item.ref,kind:'IMAGE' as const,name:'报修图片 '+(index+1),ready:item.available,duration:null,legacy:item})),...(principal.web_reports_enabled&&web.data?.applicable?web.data.media:[]).map((item,index)=>({key:'web:'+item.media_ref,kind:item.kind,name:({IMAGE:'现场图片',VIDEO:'现场视频',VOICE:'报修语音'})[item.kind]+' '+(index+1),ready:item.kind!=='VOICE'||item.playback_status==='READY',duration:item.duration_ms,web:item}))];
+  const keep=(blob:Blob)=>{const url=URL.createObjectURL(blob);urls.current.add(url);return url;};
+  const revoke=(url:string)=>{if(urls.current.delete(url))URL.revokeObjectURL(url);};
+  const clear=(abort=true)=>{generation.current++;if(abort)cancelReads();for(const url of urls.current)URL.revokeObjectURL(url);urls.current.clear();setThumbs({});setThumbState({});setPreview(null);setBusy(false);};
+  const denied=(error:unknown)=>{if(!(error instanceof ApiError))return false;if(error.status===401){clear();void clearSessionAuthorization(client,principal.principal_id,401,'revoked');return true;}if(attachmentParentDenied(error)&&!error.code.startsWith('YXX_MEDIA_')){clear();void clearItemAuthorization(client,principal.principal_id,kind,id,error);if(requested.kind!==kind||requested.id!==id)void clearItemAuthorization(client,principal.principal_id,requested.kind,requested.id,error);return true;}return false;};
+  useEffect(()=>{alive.current=true;const element=root.current,observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))setVisible(true);});if(element)observer.observe(element);return()=>{alive.current=false;generation.current++;cancelReads();observer.disconnect();for(const url of urls.current)URL.revokeObjectURL(url);urls.current.clear();};},[]);
+  useEffect(()=>{if(!readReady)clear();},[readReady]);
+  useEffect(()=>{denied(legacy.error);},[legacy.error]);
+  useEffect(()=>{denied(web.error);},[web.error]);
+  useEffect(()=>client.getQueryCache().subscribe(event=>{const q=event.query.queryKey,error=event.query.state.error;if(event.type==='updated'&&q[1]===principal.principal_id&&(q[0]==='detail'||q[0]==='web-report')&&(q[2]===kind&&q[3]===id||q[2]===requested.kind&&q[3]===requested.id)&&error instanceof ApiError&&[401,403,404].includes(error.status))clear();}),[client,principal.principal_id,kind,id,requested.kind,requested.id]);
+  const modal=preview!==null&&preview.item.kind!=='VOICE';
+  const close=()=>{if(preview)revoke(preview.url);setPreview(null);};
+  function pump(){
+    while(alive.current&&!exclusiveRead.current&&activeReads.current<maxReads.current&&queue.current.length){
+      const next=queue.current[0]!;if(next.exclusive&&activeReads.current)return;
+      queue.current.shift();next.start();
+    }
+  }
+  function serialized<T>(run:(signal:AbortSignal)=>Promise<T>,background=false,exclusive=true):Promise<T>{
+    const token=generation.current;
+    const pending=new Promise<T>((resolve,reject)=>{
+      const waiting={background,exclusive,reject,start:()=>{
+        if(!alive.current||token!==generation.current){reject(new DOMException('Scope changed','AbortError'));return;}
+        activeReads.current++;exclusiveRead.current=exclusive;const controller=new AbortController();requests.current.add(controller);
+        const timer=window.setTimeout(()=>controller.abort(),20_000);
+        void Promise.resolve().then(()=>run(controller.signal)).then(resolve,reject).finally(()=>{window.clearTimeout(timer);requests.current.delete(controller);activeReads.current--;if(exclusive)exclusiveRead.current=false;pump();});
+      }};
+      if(background)queue.current.push(waiting);else{const at=queue.current.findIndex(item=>item.background);queue.current.splice(at<0?queue.current.length:at,0,waiting);}pump();
+    });
+    settling.current.add(pending);void pending.then(()=>settling.current.delete(pending),()=>settling.current.delete(pending));return pending;
+  }
+  const read=async(item:Material,variant:'PLAYABLE'|'ORIGINAL',signal:AbortSignal)=>{const current=captureWorkbenchRead(signal);const selected=variant==='PLAYABLE'&&item.web&&item.kind!=='VOICE'&&item.web.playback_status!=='READY'?'ORIGINAL':variant;const blob=item.legacy?await attachmentApi.download(kind,id,item.legacy,signal,employeeRead):item.web?await webReportApi.media(kind,id,item.web,selected,signal,employeeRead):null;current();if(!blob)throw new Error('MEDIA_UNAVAILABLE');return blob;};
+  const materialIdentity=materials.map(item=>item.key+':'+item.ready+':'+(item.web?.thumbnail?.status??'')).join('|');
+  useEffect(()=>{
+    if(!visible||!readReady)return;let disposed=false;const effectGeneration=generation.current;
+    // The new path fetches only small server previews. Legacy images keep their
+    // existing serial decode; no hidden full-video request is used as fallback.
+    const candidates=materials.filter(item=>item.kind!=='VOICE'&&item.ready&&!thumbs[item.key]&&(!employeeRead||!item.web||item.web.thumbnail?.status==='READY'));
+    void Promise.allSettled(candidates.map(async item=>{
+      setThumbState(previous=>({...previous,[item.key]:'loading'}));
+      try{await serialized(async signal=>{
+        if(disposed||effectGeneration!==generation.current)return;
+        const current=captureWorkbenchRead(signal),token=generation.current;
+        const thumbnail=employeeRead&&item.web?await webReportApi.media(kind,id,item.web,'THUMBNAIL',signal,true):await mediaThumbnail(await read(item,'PLAYABLE',signal),item.kind==='VIDEO',signal);
+        current();if(disposed||!alive.current||token!==generation.current)return;
+        const url=keep(thumbnail);setThumbs(previous=>({...previous,[item.key]:url}));
+      },true,!!item.legacy||!employeeRead);}
+      catch(error){if(!disposed&&alive.current&&!denied(error)&&effectGeneration===generation.current)setThumbState(previous=>({...previous,[item.key]:'failed'}));}
+    }));return()=>{disposed=true;};
+  },[visible,readReady,materialIdentity,refreshSerial,employeeRead]);
+  useEffect(()=>{const keys=new Set(materials.filter(item=>item.ready).map(item=>item.key));setThumbs(previous=>{const next={...previous};for(const key of Object.keys(next))if(!keys.has(key)){revoke(next[key]!);delete next[key];}return next;});if(preview&&!keys.has(preview.item.key))close();},[materialIdentity]);
+  async function open(item:Material,download=false){
+    if(!readReady||busy)return;if(!item.ready&&item.web&&!download){close();setPreview({item,url:''});setNotice('');return;}setBusy(true);setNotice('正在安全读取材料…');if(!download)close();const token=generation.current;
+    if(employeeRead&&item.web&&item.kind!=='IMAGE'&&!download){
+      const variant=item.kind!=='VOICE'&&item.web.playback_status!=='READY'?'ORIGINAL':'PLAYABLE';
+      setPreview({item,url:employeeMediaUrl(item.web,variant)});setNotice('');setBusy(false);return;
+    }
+    try{await serialized(async signal=>{const blob=await read(item,download?'ORIGINAL':'PLAYABLE',signal);if(!alive.current||token!==generation.current)return;const url=keep(blob);
+      if(download){const link=document.createElement('a');link.href=url;link.download=(item.legacy?'report-attachment.':'report-material.')+(extensions[blob.type]??'bin');document.body.append(link);try{link.click();}finally{link.remove();revoke(url);}setNotice('已交给浏览器下载。');}
+      else{setPreview({item,url});setNotice('');}
+    },false,!!item.legacy||!employeeRead);}catch(error){if(alive.current&&token===generation.current&&!denied(error)){setNotice(message(error));close();setThumbState(previous=>({...previous,[item.key]:'failed'}));setThumbs(previous=>{const next={...previous},url=next[item.key];if(url)revoke(url);delete next[item.key];return next;});void client.invalidateQueries({queryKey:[item.legacy?'attachments':'web-report',principal.principal_id,kind,id],exact:true});}}
+    finally{if(alive.current&&token===generation.current)setBusy(false);}
+  }
+  async function nativeMediaError(item:Material){
+    if(!alive.current||!employeeRead||!item.web)return;const token=generation.current;
+    try{await serialized(signal=>webReportApi.checkMedia(item.web!,item.kind!=='VOICE'&&item.web?.playback_status!=='READY'?'ORIGINAL':'PLAYABLE',signal),false,false);if(alive.current&&token===generation.current)setNotice('浏览器暂不能播放此格式，可下载原件。');}
+    catch(error){if(alive.current&&token===generation.current&&!denied(error)){setNotice(message(error));close();}}
+  }
+  async function refreshMaterials(){
+    if(!readReady||busy)return;setBusy(true);setNotice('');const token=generation.current;
+    try{await Promise.allSettled([...settling.current]);if(!alive.current||token!==generation.current)return;await Promise.all([legacy.refetch(),...(principal.web_reports_enabled?[web.refetch()]:[])]);if(alive.current&&token===generation.current){setThumbState({});setRefreshSerial(value=>value+1);}}
+    finally{if(alive.current&&token===generation.current)setBusy(false);}
+  }
+  const visual=materials.filter(item=>item.kind!=='VOICE'),voices=materials.filter(item=>item.kind==='VOICE');
+  const initialLoading=!metadataSettled&&(legacy.isPending||principal.web_reports_enabled&&web.isPending);
+  const legacyFailure=legacy.error??lastLegacyError;
+  const unavailableFiles=materials.some(item=>item.legacy&&!item.ready);
+  const emptySettled=!materials.length&&!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)&&!legacyFailure&&(!principal.web_reports_enabled||!web.error);
+  const storageUnavailable=emptySettled&&!legacy.data?.available&&!web.data?.applicable;
+  const conversionErrors=materials.filter(item=>item.web?.conversion_error||item.web?.playback_status==='UNAVAILABLE');
+  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}{item.web?.conversion_error?' · '+item.web.conversion_error.code+' · '+item.web.conversion_error.at:''}</div>)}</Tooltip.Content></Tooltip>:null}</h4>
+    {initialLoading&&!materials.length?<DetailLoading label="正在加载报修资料…"/>:null}
+    {legacyFailure?<p role="status">{errorMessage(legacyFailure)}</p>:null}
+    {emptySettled&&!storageUnavailable?<p className="media-empty">当前事项没有可读取的已保存附件。</p>:null}
+    {visual.length?<div className="detail-media-grid">{visual.map(item=><HButton key={item.key} type="button" className="detail-media-card" aria-label={(thumbState[item.key]==='failed'?'重试查看':'查看')+item.name} isDisabled={!readReady||busy||(!item.ready&&!item.web)} onClick={()=>{void open(item);}} variant="secondary">{thumbs[item.key]?<img src={thumbs[item.key]} alt={item.name}/>:!item.ready?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.legacy?.reason?labels[item.legacy.reason]:'播放副本正在准备，可下载原件'}</span></span>:employeeRead&&item.web&&item.web.thumbnail?.status!=='READY'?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.web.thumbnail?.status==='PENDING'?'预览正在生成，点击查看':'暂无小图，点击查看'}</span></span>:thumbState[item.key]==='failed'?<span className="media-placeholder"><ImageIcon size={24}/><span>缩略图暂不可用，点击重试查看</span></span>:<DetailLoading compact label="加载预览…"/>}{item.kind==='VIDEO'?<><span className="media-video-play"><Play size={24}/></span>{item.duration!==null?<time>{clock(item.duration/1000)}</time>:null}</>:null}</HButton>)}</div>:null}
+    {voices.map(item=><Voice key={item.key} item={item} sender={reporterName} url={preview?.item.key===item.key?preview.url:undefined} disabled={!readReady||busy} onPlay={()=>{void open(item);}} onDownload={()=>{void open(item,true);}} onError={()=>{void nativeMediaError(item);}}/>)}
+    {legacy.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}{notice?<ToastFeedback revision={noticeRevision} source="attachments" state={busy?'loading':undefined} role="status" aria-live="polite">{notice}</ToastFeedback>:null}
+    {legacyFailure||unavailableFiles?<HButton type="button" className="media-retry" isDisabled={!readReady||legacy.isFetching||busy} onClick={()=>{void refreshMaterials();}} variant="secondary">重试读取附件</HButton>:null}
+    <DetailDialog open={modal} onClose={close} title={preview?.item.name??'报修附件预览'} closeLabel="关闭附件预览" accessibleName="报修附件预览" className="detail-media-dialog" onOpenChange={onOpenChange} actions={preview?<HButton type="button" className="media-download" isDisabled={busy||!readReady} onClick={()=>{void open(preview.item,true);}} variant="secondary"><Download size={16}/>下载原件</HButton>:null}>
+      {modal&&preview?(preview.url?(preview.item.kind==='IMAGE'?<img src={preview.url} alt={preview.item.name}/>:<MediaVideo url={preview.url} poster={thumbs[preview.item.key]} onError={()=>{void nativeMediaError(preview.item);}}/>):<p>暂无可预览副本，可下载原件。</p>):null}
+
+    </DetailDialog>
   </section>;
 }

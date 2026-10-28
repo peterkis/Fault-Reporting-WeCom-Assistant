@@ -18,10 +18,11 @@ const fetchImpl:typeof fetch=async(input,init)=>{
  else if(url.pathname==='/cgi-bin/batch/userid_to_openuserid'){const payload=JSON.parse(String(init?.body)) as {userid_list:string[]};body={errcode:0,open_userid_list:payload.userid_list.map(userid=>({userid,open_userid:'open-'+userid}))};}
  else if(url.pathname==='/cgi-bin/user/get'){
   const id=url.searchParams.get('userid');
-  const allowed=['open-new-visible-member','open-new-visible-group-member'].includes(id??'');
+  const allowed=['open-new-visible-member','open-new-visible-group-member','open-runtime-staff','open-runtime-handler'].includes(id??'');
   record({role:settings.role,event:'member-read',allowed});
-  body=allowed?{errcode:0,userid:id,status:1,enable:1}:{errcode:60011};
+  body=allowed?{errcode:0,userid:id,status:1,enable:1,name:id==='open-new-visible-group-member'?'自动采集群报修人':'自动采集私聊报修人',department:[7],main_department:7}:{errcode:60011};
  }
+ else if(url.pathname==='/cgi-bin/department/get'){assert.equal(url.searchParams.get('id'),'7');record({role:settings.role,event:'department-read'});body={errcode:0,department:{id:7,name:'自动采集合成科室'}};}
  else if(url.pathname==='/cgi-bin/auth/getuserinfo'){
   const identities:Record<string,string>={staff:'runtime-staff',handler:'runtime-handler',member:'synthetic-A','member-b':'synthetic-B'};
   const identity=identities[url.searchParams.get('code')??''];assert.ok(identity,'ISOLATED_OAUTH_CODE_REQUIRED');

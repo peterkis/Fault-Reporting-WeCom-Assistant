@@ -6,6 +6,7 @@ import type {PublicPilotTicket} from './p1-005-pilot-ticket-core.mjs';
 import {createTicketActionService} from './p1-006-ticket-state-actions.mjs';
 import {unassignedReopenedRound} from './ticket-reopen-rounds.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
+import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
 export const SELF_HANDLING_MIGRATION_ID='039_ticket_self_handling_cycles';
@@ -92,9 +93,14 @@ export function createTicketSelfHandlingService({pool,query,enabled=false,realti
   return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
     guardP2016(enabled);const command=normalizeSelfHandlingCommand(input);
     if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
-    return ledger.execute({command,authorize:tx=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx}),
+    return ledger.execute({command,authorize:async tx=>{
+      await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx});
+      // Serialize before the receipt FK takes Ticket KEY SHARE; otherwise two commands can each
+      // hold that FK while one waits for the stream and the other upgrades the Ticket to FOR UPDATE.
+      if(realtimeProjector?.lock)await realtimeProjector.lock(tx);else await lockP2016Realtime(tx);
+      return query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx});
+    },
       run:async(tx)=>{
-        await realtimeProjector?.lock?.(tx);
         const {ticket,principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx,lock:true});
         if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
         if(ticket.resolver_team_id!==command.resolver_team_id)failP2016('FORBIDDEN',403);

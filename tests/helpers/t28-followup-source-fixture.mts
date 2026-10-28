@@ -42,7 +42,7 @@ export async function navigateFollowup(context:Context,id:string){
   await context.browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${id}"]'))`);
 }
 export async function chooseFollowup(browser:Browser,label:string,value:string){
-  const selector='select[aria-label="'+label+'"]';
+  const selector='.workbench-select[data-field-label="'+label+'"] select';
   assert.equal(await browser.evaluate(`(()=>{const s=document.querySelector(${JSON.stringify(selector)});return Boolean(s&&[...s.options].some(o=>o.value===${JSON.stringify(value)}&&!o.disabled));})()`),true,'authorized follow-up choice: '+label+'/'+value);
   await browser.evaluate(`(()=>{const s=document.querySelector(${JSON.stringify(selector)});if(!s)throw Error('T28_FOLLOWUP_CONTROL_REQUIRED');s.value=${JSON.stringify(value)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
 }

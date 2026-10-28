@@ -1,3 +1,6 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -10,7 +13,7 @@ import {useReopenDraft} from './use-reopen-draft';
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
- const [reason,setReason]=useState(''),[pending,setPending]=useState<P2016ReopenCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
+ const [reason,setReason]=useState(''),[pending,setPending]=useState<P2016ReopenCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;setReason('');setPending(null);setOpaque(null);setState('idle');setMessage('');};
  const draft=useReopenDraft({ticketId,principal,reason,pending,
   onRestore:copy=>{setReason(copy.value);setPending(copy.pending);if(copy.pending){setOpaque(copy.pending.client_command_id);setState('unknown');setMessage('已恢复原操作；结果仍未知，请只读核对，不会再次发送。');}},
@@ -66,25 +69,20 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
  }
  const allowed=principal.ticket_reopen_rounds_enabled&&context.data?.allowed_actions.includes('reopen')===true,loading=context.isPending||draft.status==='loading'||draft.probing;
  if(!principal.ticket_reopen_rounds_enabled&&!commandId&&!draft.enabled)return null;
- if(!draft.enabled&&!allowed&&!commandId&&!reason&&!loading&&context.isSuccess&&!context.isError&&context.data.reopen_follow_up)return <section className="ticket-notes workflow-result"><p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理。':''}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单。':'报修人反馈仍未解决。'}等待重新接单。</p><button type="button" data-action="refresh-reopen" className="workflow-refresh" disabled={context.isFetching} onClick={()=>{void context.refetch();}}>刷新</button></section>;
+ if(!draft.enabled&&!allowed&&!commandId&&!reason&&!loading&&context.isSuccess&&!context.isError&&context.data.reopen_follow_up)return <section className="ticket-notes workflow-result"><p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理。':''}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单。':'报修人反馈仍未解决。'}等待重新接单。</p><HButton type="button" data-action="refresh-reopen" className="workflow-refresh" isDisabled={(context.isPending||context.isError)} onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton></section>;
  if(!draft.enabled&&!allowed&&!commandId&&!reason&&state==='succeeded'&&context.isSuccess&&!context.isError)return null;
  if(!allowed&&!commandId&&!reason&&!context.data?.reopen_follow_up&&state==='idle'&&context.isSuccess&&!context.isError)return null;
  return <section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
   <h3>重开同一工单</h3>
   {loading?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
   {context.data?<p hidden>工单版本 {context.data.version}</p>:null}
-  {principal.ticket_reopen_rounds_enabled&&!context.isFetching&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>:null}
-  {allowed?<form onSubmit={event=>{event.preventDefault();if(blocked||loading||context.isFetching||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}>
-   <label htmlFor="reopen-reason">重开原因</label><p>请先确认是同一故障。原因仅信息科可见。</p>
-   <textarea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/>
-   <p>保留原工单号和处理组。重开后需要重新接单。</p>
-   <button type="submit" data-action="reopen-ticket" disabled={blocked||loading||context.isFetching||!draft.canSubmit||!reason.trim()}>重开此工单</button>
-  </form>:<p>当前没有重开此工单的权限。</p>}
-  {commandId?<button type="button" data-action="check-reopen-command" disabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()}>核对上次重开</button>:null}
-  {draft.enabled?<p data-reopen-draft-status role="status">{draft.message}</p>:null}
-  {reason&&!commandId&&draft.enabled?<button type="button" disabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()}>清空恢复草稿</button>:null}
-  {!blocked?<button type="button" data-action="refresh-reopen" className="workflow-refresh" disabled={context.isFetching} onClick={()=>{void context.refetch();}}>刷新</button>:null}
-  {state!=='idle'?<p data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</p>:null}
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{void draft.knownFailure(pending.client_command_id).then(()=>{if(!current())return;setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
+  {principal.ticket_reopen_rounds_enabled&&!context.isPending&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>:null}
+  {allowed?<HForm onSubmit={event=>{event.preventDefault();if(blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}><HLabel htmlFor="reopen-reason">重开原因</HLabel><p>请先确认是同一故障。原因仅信息科可见。</p><HTextArea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/><p>保留原工单号和处理组。重开后需要重新接单。</p><HButton type="submit" data-action="reopen-ticket" isDisabled={blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!reason.trim()} variant="secondary">重开此工单</HButton></HForm>:<p>当前没有重开此工单的权限。</p>}
+  {commandId?<HButton type="button" data-action="check-reopen-command" isDisabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()} variant="secondary">核对上次重开</HButton>:null}
+  {draft.enabled?<DraftStatus data-reopen-draft-status role="status">{draft.message}</DraftStatus>:null}
+  {reason&&!commandId&&draft.enabled?<HButton type="button" isDisabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()} variant="secondary">清空恢复草稿</HButton>:null}
+  {!blocked?<HButton type="button" data-action="refresh-reopen" className="workflow-refresh" isDisabled={(context.isPending||context.isError)} onClick={()=>{void context.refetch();}} variant="secondary">刷新</HButton>:null}
+  {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-reopen" state={state} data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');return;}setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
  </section>;
 }

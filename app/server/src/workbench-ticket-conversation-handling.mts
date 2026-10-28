@@ -4,6 +4,7 @@ import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
+import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {guardP2016} from './p2-016-domain-contracts.mjs';
 import {selfHandlingSchemaReady,selfHandlingResponsibilityEligibility,performFirstTicketResponsibilityInTransaction} from './workbench-ticket-self-handling.mjs';
 import type {SelfHandlingHooks} from './workbench-ticket-self-handling.mjs';
@@ -34,11 +35,13 @@ export function createTicketConversationHandlingService({pool,query,controlServi
     guardP2016(enabled);const command=normalizeConversationHandlingCommand(input);
     if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
     return ledger.execute({command,authorize:async transaction=>{
+      await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
+      for(const session of command.sessions)await query.authorizedRelatedConversation({authContext,ticketId:command.ticket_id,sessionId:session.session_id,transaction});
+      if(hooks.realtimeProjector?.lock)await hooks.realtimeProjector.lock(transaction);else await lockP2016Realtime(transaction);
       const context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
       for(const session of command.sessions)await query.authorizedRelatedConversation({authContext,ticketId:command.ticket_id,sessionId:session.session_id,transaction});
       return context;
     },run:async transaction=>{
-      await hooks.realtimeProjector?.lock?.(transaction);
       const {ticket,principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction,lock:true});
       if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
       if(ticket.resolver_team_id!==command.resolver_team_id)failP2016('FORBIDDEN',403);

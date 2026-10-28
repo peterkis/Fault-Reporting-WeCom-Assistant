@@ -5,6 +5,7 @@ import {CommunicationError,COMMUNICATION_ERROR_CODES} from './p2-004-communicati
 import type {WorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
+import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
 import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUpResult,SupplementFollowUpReceipt} from '../../../contracts/workbench_supplement_follow_up_contracts.js';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
@@ -116,6 +117,23 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c);
    return {has_pending_supplements:(await tx.query<{pending:boolean}>(m.sql+` SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${SUPPLEMENT_RESOLUTION_SQL})) AS pending`,m.values)).rows[0]?.pending===true};
   });},
+  async summariesForAuthorizedTickets(authContext:unknown,items:readonly {id:string;intake_id:string}[]):Promise<ReadonlyMap<string,{has_pending_supplements:boolean}>>{
+   if(!enabled)failP2016('NOT_FOUND',404);if(items.length>100)failP2016();
+   if(!items.length)return new Map();
+   if(!await supplementFollowUpSchemaReady(pool))failP2016('DISABLED',503);
+   const p=ticketPredicateP2016(await query.principal(authContext),2);
+   // Reuse the exact retained-material and delivered-reply proof predicates,
+   // correlated to a bounded authorized page instead of issuing one Tx per card.
+   const materialSql=SUPPLEMENT_MATERIALS_SQL.replaceAll('$1::uuid','t.source_intake_id').replaceAll('$2::uuid','t.id');
+   const resolutionSql=SUPPLEMENT_RESOLUTION_SQL.replaceAll('$2::uuid','t.id');
+   const rows=(await pool.query<{id:string;has_pending_supplements:boolean}>(`SELECT t.id::text,summary.pending AS has_pending_supplements
+    FROM jsonb_to_recordset($1::jsonb) AS page(id uuid,intake_id uuid)
+    JOIN pilot_ticket.ticket t ON t.id=page.id AND t.source_intake_id=page.intake_id
+    CROSS JOIN LATERAL (${materialSql} SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${resolutionSql})) AS pending) summary
+    WHERE ${p.sql}`,[JSON.stringify(items),...p.values])).rows;
+   if(rows.length!==items.length)failP2016('NOT_FOUND',404);
+   return new Map(rows.map(row=>[row.id,{has_pending_supplements:row.has_pending_supplements}]));
+  },
   ready:async()=>enabled&&await supplementFollowUpSchemaReady(pool),
   async page(input:Input&{limit?:unknown;cursor?:unknown}):Promise<SupplementFollowUpPage>{return transactionP2016(pool,async tx=>{
    await tx.query('SET TRANSACTION READ ONLY');const c=await authorize(tx,input),m=materials(c),n=limitP2016(input.limit??'50');

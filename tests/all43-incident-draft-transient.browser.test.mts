@@ -40,7 +40,7 @@ test('ALL43 public-summary recovery keeps its independent encrypted original dur
 test('ALL43 owner-transfer recovery keeps its original selection during temporary target GET503',{timeout:180000},async()=>{
  await ownerTransferBrowser(async({browser,incidentId,choose,get})=>{
   await choose('交接原因','OPERATOR_REVIEWED');
-  await transient(browser,incidentId,'owner-transfer-targets','[data-owner-transfer-draft]','select[aria-label="交接原因"]','OPERATOR_REVIEWED');
+  await transient(browser,incidentId,'owner-transfer-targets','[data-owner-transfer-draft]','.workbench-select[data-field-label="交接原因"] select','OPERATOR_REVIEWED');
   assert.equal((await get('/api/incidents/'+incidentId)).status,200);
  },{recovery:true});
 });

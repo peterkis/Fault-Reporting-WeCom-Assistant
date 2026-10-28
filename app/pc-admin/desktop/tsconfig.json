@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../../.local/electron/compiled",
+    "lib": ["ES2022", "DOM"],
+    "verbatimModuleSyntax": false,
+    "sourceMap": false,
+    "inlineSources": false
+  },
+  "include": ["*.mts", "*.cts"]
+}

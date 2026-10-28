@@ -89,8 +89,8 @@ async function runBoundary(mode:Boundary){
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true,'the caller must use the formal production bundle');
       await browser.evaluate(installTrace(mode==='purpose-regrant'?'purpose-denied':mode,reviewId));
       await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);
-      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"] [data-review-materials]'))`);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),600);
+      await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-review-id="${reviewId}"] [data-review-materials]'))`);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-review-materials]')?.textContent.includes('打印机无法打印处方')");
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-review-version]').textContent"),originalReview.row_version);
       assert.equal(await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')"),basis.current_hash);
@@ -98,20 +98,20 @@ async function runBoundary(mode:Boundary){
       // A human explicitly adopts current material and makes both choices. None is a write command.
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
       await browser.evaluate(`(()=>{
-        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] [aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
+        const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] .workbench-select[data-field-label="'+label+'"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};
         set('复核结论','CONFIRM_TICKET_ELIGIBLE');set('复核原因','HUMAN_CONFIRMED');
       })()`);
-      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]:not(:disabled)'))`);
-      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice]:checked').length"),0,'no Session may be guessed or automatically selected');
-      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);
-      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]')?.checked===true`);
+      await browser.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]:not(:disabled)'))`);
+      assert.equal(await browser.evaluate("document.querySelectorAll('[data-review-workspace] [data-session-choice] input[type=checkbox]:checked').length"),0,'no Session may be guessed or automatically selected');
+      await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+      await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.checked===true`);
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'material and Session selection must not submit an intermediate command');
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]')?.disabled===false");
 
-      const close=async()=>{assert.ok(browser);await browser.waitFor("document.querySelector('[aria-label=\"关闭详情\"]')?.disabled===false");await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog[open]')");};
-      const reopen=async()=>{assert.ok(browser);await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] [data-review-workspace]'))");await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="选择复核项"]');if(input){Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(reviewId)});input.dispatchEvent(new Event('change',{bubbles:true}));}})()`);await browser.waitFor(`Boolean(document.querySelector('.detail-dialog[open] [data-review-id="${reviewId}"]'))`);};
+      const close=async()=>{assert.ok(browser);await browser.waitFor("document.querySelector('[aria-label=\"关闭详情\"]')?.disabled===false");await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog')");};
+      const reopen=async()=>{assert.ok(browser);await browser.evaluate(`document.querySelector('[data-kind="ticket"][data-item-id="${known.ticket.id}"] a').click()`);await browser.waitFor("Boolean(document.querySelector('.detail-dialog [data-review-workspace]'))");await browser.evaluate(`(()=>{const input=document.querySelector('.workbench-select[data-field-label="选择复核项"] select');if(input){Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(reviewId)});input.dispatchEvent(new Event('change',{bubbles:true}));}})()`);await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-review-id="${reviewId}"]'))`);};
       if(denying)await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]').click()");
       if(mode==='opaque-failed'){
@@ -133,10 +133,10 @@ async function runBoundary(mode:Boundary){
         if(mode==='purpose-regrant'){
           await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
           await browser.evaluate("Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='重新核对确认并开始权限').click()");
-          await browser.waitFor("Boolean(document.querySelector('[data-review-start-controls] [data-session-choice]'))");
+          await browser.waitFor("Boolean(document.querySelector('[data-review-start-controls] [data-session-choice] input[type=checkbox]'))");
           await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
-          await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]')?.disabled===false`);
-          await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"]').click()`);
+          await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);
+          await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
           await browser.waitFor("document.querySelector('[data-review-start-draft-status]')?.textContent.includes('已保存恢复副本')");
           assert.equal(object(await browser.evaluate(snapshot(reviewId))).sensitive,1);
           await browser.waitFor("document.querySelector('[data-action=resolve-and-start-review]')?.disabled===false");
@@ -232,10 +232,10 @@ test('MVP keeps the original committed review-start opaque receipt reachable on 
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+known.ticket.id+'?detail=page',width:1280,height:1000,cookies:[initialCookie]});assert.ok(browser);
    await browser.command('Page.enable');await browser.evaluate(observe);
-   await browser.waitFor("document.querySelector('[aria-label=\"复核结论\"]')?.disabled===false&&Boolean(document.querySelector('[data-captured-review-version]'))");
-   await browser.evaluate('(()=>{const input=document.querySelector("[aria-label=复核结论]");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(input,"CONFIRM_TICKET_ELIGIBLE");input.dispatchEvent(new Event("change",{bubbles:true}));})()');
-   await browser.waitFor("document.querySelector('[data-review-start-controls] [data-session-choice]')?.disabled===false");
-   await browser.evaluate("document.querySelector('[data-review-start-controls] [data-session-choice]').click()");
+   await browser.waitFor("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select')?.disabled===false&&Boolean(document.querySelector('[data-captured-review-version]'))");
+   await browser.evaluate('(()=>{const input=document.querySelector(".workbench-select[data-field-label=复核结论] select");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(input,"CONFIRM_TICKET_ELIGIBLE");input.dispatchEvent(new Event("change",{bubbles:true}));})()');
+   await browser.waitFor("document.querySelector('[data-review-start-controls] [data-session-choice] input[type=checkbox]')?.disabled===false");
+   await browser.evaluate("document.querySelector('[data-review-start-controls] [data-session-choice] input[type=checkbox]').click()");
    await browser.waitFor("document.querySelector('[data-action=resolve-and-start-review]')?.disabled===false");
    await browser.evaluate("document.querySelector('[data-action=resolve-and-start-review]').click()");
    await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('结果未知')");

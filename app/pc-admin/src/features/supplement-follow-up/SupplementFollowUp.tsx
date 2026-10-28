@@ -1,3 +1,8 @@
+import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Form as HForm,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
+import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
+import {WorkbenchSelect} from "../../app/WorkbenchSelect";
+import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useInfiniteQuery,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage} from '../../api/client';
@@ -19,7 +24,7 @@ export function SupplementFollowUpSummary({pending}:{pending:boolean|undefined})
 }
 export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange}:{ticketId:string;principal:Principal;readReady:boolean;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),original=useRef<string|null>(null),materialRead=useRef<AbortController|null>(null);
- const [value,setValue]=useState<SupplementDispositionInput>(EMPTY_SUPPLEMENT_INPUT),[pending,setPending]=useState<SupplementFollowUpCommand|null>(null),[operationId,setOperationId]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage]=useState('');
+ const [value,setValue]=useState<SupplementDispositionInput>(EMPTY_SUPPLEMENT_INPUT),[pending,setPending]=useState<SupplementFollowUpCommand|null>(null),[operationId,setOperationId]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
  const [bound,setBound]=useState<{target:SupplementFollowUpTarget;entry:ConversationWorkspaceEntry}|null>(null),[replyBlocked,setReplyBlocked]=useState(false),[restoredMaterial,setRestoredMaterial]=useState<SupplementFollowUpItem|null>(null);
  const enabled=principal.supplement_follow_up_enabled===true;
  const sessions=useQuery({queryKey:['supplement-reply-sessions',principal.principal_id,ticketId,principal.authorization_revision,principal.expires_epoch_ms],enabled:enabled&&readReady&&principal.conversation_workspace_enabled,queryFn:({signal})=>conversations.links('ticket',ticketId,signal)});
@@ -126,37 +131,22 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
  if(currentRead&&!unique.length&&!pending&&!operationId&&!value.target&&!bound&&!replyBlocked&&state==='idle')return null;
  const canEdit=currentRead&&staff&&!locked&&!draft.probing&&!draft.restoring&&(!draft.rawEnabled||draft.canSubmit);
  return <section className="ticket-notes supplement-follow-up" aria-label="补充材料跟进" data-supplement-follow-up-state={state}>
-  <details open={Boolean(!currentRead||unique.some(item=>item.follow_up_state==='PENDING')||pending||operationId||value.target||bound||locked)||undefined}><summary>补充跟进</summary><p>请核对补充内容，再记录处理情况。提交后将标记为已跟进。</p>
-  {page.isPending?<p role="status">正在读取当前可访问的补充材料…</p>:page.isError?<p role="alert">{errorMessage(page.error)}</p>:null}
-  <SupplementFollowUpSummary pending={page.data?.pages[0]?.has_pending_supplements}/>
-  <ol className="supplement-follow-up-list">{unique.map(item=>{
+  <WorkbenchDisclosure title={<>补充跟进</>} forceOpen={Boolean(!currentRead||unique.some(item=>item.follow_up_state==='PENDING')||pending||operationId||value.target||bound||locked)||undefined}><p>请核对补充内容，再记录处理情况。提交后将标记为已跟进。</p>{page.isPending?<p role="status">正在读取当前可访问的补充材料…</p>:page.isError?<p role="alert">{errorMessage(page.error)}</p>:null}<SupplementFollowUpSummary pending={page.data?.pages[0]?.has_pending_supplements}/><ol className="supplement-follow-up-list">{unique.map(item=>{
    const selected=value.target!==null&&sameSupplementTarget(value.target,item),fieldId='supplement-note-'+item.source_ref.replace(':','-')+'-'+item.revision;
    const note=selected?value.note:'',editable=canEdit&&(!hasInput||selected),canSubmit=editable&&selected&&Boolean(note.trim())&&Array.from(note).length<=2000;
    return <li key={JSON.stringify([item.source_ref,item.revision])} data-supplement-source-ref={item.source_ref} data-supplement-revision={item.revision} data-follow-up-state={item.follow_up_state}>
     <header><strong>{item.source_kind==='WEB'?'网页补充':'企业微信补充'}</strong><span>{item.follow_up_state==='PENDING'?'待跟进':'已跟进'}</span></header>
-    {item.resolution?<p>跟进依据：{item.resolution.basis==='RECORDED_DISPOSITION'?'明确记录处置':'回复成功已核验'} · {item.resolution.occurred_at}（北京时间）</p>:<form onSubmit={event=>{event.preventDefault();if(canSubmit)void submit(item);}}>
-     <label htmlFor={fieldId}>处理情况（内部）</label><p id={fieldId+'-audience'}>仅信息科可见；提交后明确标记本条补充已跟进。</p>
-     <textarea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/>
-     <button type="submit" data-action="record-supplement-disposition" disabled={!canSubmit}>保存并标记已跟进</button>
-     {replySessions.length&&!bound&&!locked?<button type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}}>通过已有会话回复本条补充</button>:null}
-    </form>}
+    {item.resolution?<p>跟进依据：{item.resolution.basis==='RECORDED_DISPOSITION'?'明确记录处置':'回复成功已核验'} · {item.resolution.occurred_at}（北京时间）</p>:<HForm onSubmit={event=>{event.preventDefault();if(canSubmit)void submit(item);}}><HLabel htmlFor={fieldId}>处理情况（内部）</HLabel><p id={fieldId+'-audience'}>仅信息科可见；提交后明确标记本条补充已跟进。</p><HTextArea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/><HButton type="submit" data-action="record-supplement-disposition" isDisabled={!canSubmit} variant="secondary">保存并标记已跟进</HButton>{replySessions.length&&!bound&&!locked?<HButton type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}} variant="secondary">通过已有会话回复本条补充</HButton>:null}</HForm>}
    </li>;
-  })}</ol>
-  {page.isSuccess&&!unique.length?<p>当前授权范围内没有补充材料。</p>:null}
-  {page.hasNextPage?<button type="button" disabled={page.isFetchingNextPage||busy} onClick={()=>{void page.fetchNextPage();}}>加载更多补充</button>:null}
-  {bound?<section data-supplement-bound-reply="" aria-label="精确补充回复">
+  })}</ol>{page.isSuccess&&!unique.length?<p>当前授权范围内没有补充材料。</p>:null}{page.hasNextPage?<HButton type="button" isDisabled={page.isFetchingNextPage||busy} onClick={()=>{void page.fetchNextPage();}} variant="secondary">加载更多补充</HButton>:null}{bound?<section data-supplement-bound-reply="" aria-label="精确补充回复">
    <p>请单独填写回复。内部处理情况不会自动填入回复。回复送达后，才会标记本条补充已跟进。</p>
-   {replySessions.length>1?<label>已有获权会话<select value={bound.entry.session.session_id} disabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event.target.value);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><option key={entry.session.session_id} value={entry.session.session_id}>{entry.topic} · {entry.channel_label}</option>)}</select></label>:null}
+   {replySessions.length>1?<WorkbenchSelect label={<>已有获权会话</>} value={bound.entry.session.session_id} isDisabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><ListBox.Item key={entry.session.session_id} id={entry.session.session_id} textValue={String(entry.topic)+"·"+String(entry.channel_label)}>{entry.topic}· {entry.channel_label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>:null}
    <ConversationComposer key={JSON.stringify([bound.target,bound.entry.session.session_id])} entry={bound.entry} principal={principal} purpose="messages" followUpTarget={{ticket_id:ticketId,...bound.target}} onBlockedChange={setReplyBlocked} onCommitted={()=>{void refresh();}}/>
-   <button type="button" disabled={replyBlocked} onClick={()=>setBound(null)}>关闭补充回复</button>
-  </section>:null}
-  <div className="note-controls">
-   {originalId?<button type="button" data-action="check-supplement-receipt" disabled={busy} onClick={()=>{void checkReceipt();}}>只读核对原处置</button>:null}
-   <button type="button" data-action="refresh-supplement-follow-up" disabled={busy} onClick={()=>{void refresh();}}>重新读取补充</button>
-   {hasInput&&!locked?<button type="button" data-action="discard-supplement-input" onClick={()=>{if(draft.enabled)void draft.discard();else resetInput();}}>清空内部输入</button>:null}
-  </div>
-  {draft.rawEnabled?<p role="status" data-supplement-draft-status>{draft.message}</p>:<p>输入仅保留在当前页面；离开前请完成提交或清空输入。</p>}
-  {state!=='idle'?<p role={['failed','unknown','denied'].includes(state)?'alert':'status'}>{message}</p>:null}
- </details>
+   <HButton type="button" isDisabled={replyBlocked} onClick={()=>setBound(null)} variant="secondary">关闭补充回复</HButton>
+  </section>:null}<div className="note-controls">
+   {originalId?<HButton type="button" data-action="check-supplement-receipt" isDisabled={busy} onClick={()=>{void checkReceipt();}} variant="secondary">只读核对原处置</HButton>:null}
+   <HButton type="button" data-action="refresh-supplement-follow-up" isDisabled={busy} onClick={()=>{void refresh();}} variant="secondary">重新读取补充</HButton>
+   {hasInput&&!locked?<HButton type="button" data-action="discard-supplement-input" onClick={()=>{if(draft.enabled)void draft.discard();else resetInput();}} variant="secondary">清空内部输入</HButton>:null}
+  </div>{draft.rawEnabled?<DraftStatus role="status" data-supplement-draft-status>{draft.message}</DraftStatus>:<p>输入仅保留在当前页面；离开前请完成提交或清空输入。</p>}{state!=='idle'?<ToastFeedback revision={messageRevision} source="supplement-follow-up" state={state} role={['failed','unknown','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}</WorkbenchDisclosure>
  </section>;
 }

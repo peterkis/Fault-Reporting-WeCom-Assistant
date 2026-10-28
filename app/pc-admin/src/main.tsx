@@ -1,3 +1,4 @@
+import {I18nProvider} from 'react-aria-components/I18nProvider';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {BrowserRouter} from 'react-router';
@@ -8,7 +9,9 @@ import {clearSessionAuthorization,clearItemAuthorization,clearReviewAuthorizatio
 import {attachmentParentDenied} from './features/attachments/client';
 import {clearSourceGroupAuthorization} from './features/source-groups/authority';
 import {App} from './app/App';
+import {WorkbenchToasts} from './app/ToastFeedback';
 import './style.css';
+import './app/heroui-workbench.css';
 let client:QueryClient;
 const sessionPrincipal=()=>client.getQueryData<Principal>(['session'])?.principal_id;
 client=new QueryClient({queryCache:new QueryCache({onError(error,query){
@@ -22,7 +25,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
     else if(query.queryKey[0]==='item-conversations')void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else if(['ticket-assignment-history','ticket-command-context','ticket-related-conversations'].includes(String(query.queryKey[0])))void clearItemAuthorization(client,query.queryKey[1],'ticket',query.queryKey[2],error);
     else if(query.queryKey[0]==='manual-review'&&typeof query.queryKey[1]==='string'&&typeof query.queryKey[3]==='string'&&typeof query.queryKey[4]==='string'&&(query.queryKey[2]==='ticket'||query.queryKey[2]==='review'||query.queryKey[2]==='intake'))void clearReviewAuthorization(client,query.queryKey[1],query.queryKey[4],{kind:query.queryKey[2],id:query.queryKey[3]},error);
-    else if(query.queryKey[0]==='web-report'||query.queryKey[0]==='detail'||(query.queryKey[0]==='attachments'&&attachmentParentDenied(error)))void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
+    else if(query.queryKey[0]==='actor-avatar'||query.queryKey[0]==='reporter-profile'||query.queryKey[0]==='reporter-contact'||query.queryKey[0]==='web-report'||query.queryKey[0]==='detail'||(query.queryKey[0]==='attachments'&&attachmentParentDenied(error)))void clearItemAuthorization(client,query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else {void client.cancelQueries({queryKey:query.queryKey,exact:true});query.setState({data:undefined,dataUpdatedAt:0});if(query.queryKey[0]==='detail')void client.invalidateQueries({queryKey:['board',query.queryKey[1]],refetchType:'active'});}
   }
 }}),mutationCache:new MutationCache({onError(error,_variables,_context,mutation){
@@ -36,4 +39,4 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='source-group-name')return clearSourceGroupAuthorization(client,mutation.options.mutationKey[1],error);
 }}),defaultOptions:{queries:{networkMode:'always',retry:false,staleTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false},mutations:{networkMode:'always',retry:false}}});
 const root=document.getElementById('root');if(!root)throw new Error('WORKBENCH_ROOT_MISSING');
-createRoot(root).render(<StrictMode><QueryClientProvider client={client}><BrowserRouter basename="/workbench/app"><App/></BrowserRouter></QueryClientProvider></StrictMode>);
+createRoot(root).render(<StrictMode><I18nProvider locale="zh-CN"><QueryClientProvider client={client}><BrowserRouter basename="/workbench/app"><WorkbenchToasts/><App/></BrowserRouter></QueryClientProvider></I18nProvider></StrictMode>);

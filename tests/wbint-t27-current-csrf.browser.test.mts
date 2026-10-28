@@ -50,7 +50,7 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
     };
     const root=`article[data-candidate-id="${candidateId}"]`;
     const choose=async(label:string,value:string)=>{
-      assert.ok(browser);await browser.evaluate(`(()=>{const control=document.querySelector(${JSON.stringify(root)})?.querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!control)throw Error('MISSING_SELECT');control.value=${JSON.stringify(value)};control.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      assert.ok(browser);await browser.evaluate(`(()=>{const control=document.querySelector(${JSON.stringify(root)})?.querySelector(${JSON.stringify('.workbench-select[data-field-label="'+label+'"] select')});if(!control)throw Error('MISSING_SELECT');control.value=${JSON.stringify(value)};control.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     };
     try{
       const started=await runtime.start(),originalCookie=started.cookie;assert.ok(originalCookie);assert.ok(typeof originalCookie.url==='string');
@@ -61,7 +61,7 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
       const oldCsrf=stringField(originalBootstrap,'csrf_token');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/incidents/candidates/'+candidateId});
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('[data-action=refresh-candidate]'))`);
-      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('select[aria-label="人工决定"]'))`);
+      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select'))`);
       await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');
       const captured=await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]').textContent`);
       assert.equal(typeof captured,'string');assert.match(String(captured),/已捕获候选版本 1；当前候选版本 1/u);

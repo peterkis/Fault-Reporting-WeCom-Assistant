@@ -31,6 +31,8 @@ Fallback完整字段：`fallback_required:true,reason,poll_after_ms,strategy,lat
 
 ## 正式管理端接入（WBINT-T38）
 
+Electron 前向适配见 [ADR-0047](../../../adr/0047_electron_pc_admin_mvp.md)：用户主动开启桌面提醒且未锁屏/挂起时，隐藏窗口可保留原唯一 SSE/时钟，只核验 bootstrap 和提醒；恢复前台重新读取业务资料。原生窗口状态独立控制个人阅读与活动，普通浏览器隐藏暂停合同不变。无第二流、轮询器或事实源。
+
 宿主 `workbenchRealtimeEnabled:boolean=false`，只向当前 Cookie 身份开放。`GET /api/lifecycle/bootstrap` 的 [类型](../../../contracts/workbench_realtime_contracts.d.ts) 返回 `realtime_sse_enabled:boolean,realtime_sse_available:boolean,sse_endpoint:string|null,polling_interval_ms:number,expires_epoch_ms:string,authorization_revision:string|null`。endpoint只能是同源 `/api/realtime/events?scope=workbench`；关闭时为null、available为false。期限保留十进制BIGINT string。revision是当前有效主体/角色/组的opaque变化标记，不是授权票据；每个对象仍须通过当前GET授权。原 `csrf_token:string|null` 读取合同保留，缺独立CSRF cookie不禁止已授权GET/SSE；写命令仍需原Origin/CSRF。
 
 新启用路径以既有256总预算完整表示去重的Session+Thread+SYSTEM Ticket授权范围。合法超预算返回bootstrap200/availablefalse以及SSE503 `TEMPORARY_UNAVAILABLE`，仅做有界授权GET回退；不截断范围、提高预算或把权限403变成503。关闭时保留原SSE授权profile。无数据库变更、第二Ticket事实源、新连接池或进程。

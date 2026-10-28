@@ -88,6 +88,7 @@ async function fixture(run:(f:Fixture)=>Promise<void>,performanceEnabled=false,d
   supplements:async({request,requestRef})=>{await authorization.authorize({request});if(requestRef!==REF)h5Fail('YXX_NOT_FOUND',404);return {items:[{input_revision:'2',text:'合成补充'}],next_cursor:null};},
  };
  const media:YxxH5Media={
+  prepareEmployeeRead:async()=>{throw new Error('EMPLOYEE_READ_FORBIDDEN_ON_MEMBER_HTTP');},
   reserve:async input=>{await input.verifyCurrentWrite();control.lastScope=input.scope.scopeHash;control.reserved++;return {media_ref:MEDIA,kind:'IMAGE',status:'RESERVED',expires_epoch_ms:String(Date.now()+60000),replayed:false};},
   reservation:async()=>{throw new Error('UNUSED_RESERVATION');},
   upload:async input=>{await input.verifyCurrentWrite();const chunks:Buffer[]=[];for await(const chunk of input.body)chunks.push(Buffer.from(chunk));control.lastBody=Buffer.concat(chunks);control.uploaded++;return META;},

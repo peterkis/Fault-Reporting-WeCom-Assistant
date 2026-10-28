@@ -28,9 +28,9 @@ export async function ownerTransferBrowser(run:(context:Http&{browser:Browser;in
         };
       })()`});
       await browser.command('Page.navigate',{url:context.origin+'/workbench/app/incidents/'+incidentId});
-      await browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))`);await browser.waitFor('Boolean(document.querySelector("select[aria-label=交接负责人]"))');
+      await browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))`);await browser.waitFor('Boolean(document.querySelector(".workbench-select[data-field-label=交接负责人] select"))');
       if(options.recovery)await browser.waitFor('document.querySelector("[data-owner-transfer-draft]")?.textContent.includes("最长24小时")');
-      const active=browser,choose=async(label:string,value:string)=>{await active.evaluate(`(()=>{const select=document.querySelector(${JSON.stringify('select[aria-label="'+label+'"]')});if(!select)throw Error('T29_SELECT_MISSING');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,${JSON.stringify(value)});select.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
+      const active=browser,choose=async(label:string,value:string)=>{await active.evaluate(`(()=>{const select=document.querySelector(${JSON.stringify('.workbench-select[data-field-label="'+label+'"] select')});if(!select)throw Error('T29_SELECT_MISSING');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,${JSON.stringify(value)});select.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
       await run({...context,browser,incidentId,choose,capture});assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);await capture();
       await writeFile(join(directory,'transport.json'),JSON.stringify(await browser.evaluate('({document_id:globalThis.__t29Document,events:globalThis.__t29Transport,post_count:globalThis.__t29Posts.length})')));
       console.log('T29_BROWSER_TRANSPORT '+JSON.stringify({file:join(directory,'transport.json')}));

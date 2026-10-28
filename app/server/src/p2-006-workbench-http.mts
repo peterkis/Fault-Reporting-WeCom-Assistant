@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { createConversationWorkbenchQueryService, WorkbenchAuthContext, WorkbenchListState, WorkbenchListInput, WorkbenchItemsInput } from './p2-006-workbench-query.mjs';
 import type { createConversationWorkbenchCommandFacade } from './p2-006-workbench-command-facade.mjs';
 import type { DeliveryResolution } from './p2-006-workbench-delivery-control.mjs';
-export interface WorkbenchHttpAuthContext extends WorkbenchAuthContext { auth_method: 'COOKIE' | 'BEARER'; expires_epoch_ms: string; public_origin?: string }
+export interface WorkbenchHttpAuthContext extends WorkbenchAuthContext { auth_method: 'COOKIE' | 'BEARER'; expires_epoch_ms: string; public_origin?: string; employee_authenticated?:true }
 export type WorkbenchAuthenticate = (request: IncomingMessage) => WorkbenchHttpAuthContext | null | Promise<WorkbenchHttpAuthContext | null>;
 type QueryService = ReturnType<typeof createConversationWorkbenchQueryService>;
 type CommandFacade = ReturnType<typeof createConversationWorkbenchCommandFacade>;

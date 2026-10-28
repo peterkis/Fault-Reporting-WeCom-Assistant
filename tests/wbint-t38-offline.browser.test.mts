@@ -18,7 +18,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       if(request.method==='POST')posts++;
       const path=new URL(request.url??'/',origin).pathname;
       if(request.method==='GET'&&path==='/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments'){response.once('finish',()=>{if(response.statusCode===200)attachmentReads++;});return;}
-      if(request.method!=='GET'||!(path==='/api/workbench/items/ticket/'+ticket.ticket.id||path==='/api/tickets/'+ticket.ticket.id))return;
+      if(request.method!=='GET'||path!=='/api/tickets/'+ticket.ticket.id)return;
       reads++;const end=response.end;
       response.end=(...args:unknown[])=>{Reflect.apply(end,response,unreadable?['{']:args);return response;};
     });
@@ -36,8 +36,8 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       assert.equal(await browser.evaluate('document.activeElement===document.querySelector("textarea")'),true);
       assert.equal(await browser.evaluate('Boolean(document.querySelector(".activity-list"))'),true,'last confirmed authorized facts remain visible');
       const beforeAttachments=attachmentReads;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取附件").click()');
-      for(let i=0;i<100&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,20));assert.ok(attachmentReads>beforeAttachments,'an unrelated authorized attachment family actually returned200');
+      // The shared five-second refresh supplies a real successful auxiliary GET while command READ still fails.
+      for(let i=0;i<150&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,100));assert.ok(attachmentReads>beforeAttachments,'an unrelated authorized attachment family actually returned200');
       await browser.waitFor('!document.querySelector(".attachment-section button")?.disabled&&!document.querySelector(".attachment-section")?.textContent.includes("附件响应无法安全识别")');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
       await browser.waitFor('(()=>{const text=document.querySelector(".ticket-note-state")?.textContent??"";return ["尚未准备或发送","已保存","结果未知","保存被拒绝"].some(state=>text.includes(state));})()');
@@ -65,38 +65,38 @@ test('the integrated conversation handling new operation waits for the same fres
       if(request.method==='POST')posts++;
       const path=new URL(request.url??'/',origin).pathname;
       if(request.method==='GET'&&path==='/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments'){response.once('finish',()=>{if(response.statusCode===200)attachmentReads++;});return;}
-      if(request.method!=='GET'||!(path==='/api/workbench/items/ticket/'+ticket.ticket.id||path==='/api/tickets/'+ticket.ticket.id))return;
+      if(request.method!=='GET'||path!=='/api/tickets/'+ticket.ticket.id)return;
       reads++;const end=response.end;
       response.end=(...args:unknown[])=>{Reflect.apply(end,response,unreadable?['{']:args);return response;};
     });
     const directory=await mkdtemp(join(tmpdir(),'web01-ui-'));let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
-      await browser.waitFor('Boolean(document.querySelector("[data-session-choice]"))&&document.querySelector("[data-action=retain-current-communicator]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
-      await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]").click()');
-      await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
+      await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');await browser.waitFor('Boolean(document.querySelector(".detail-accept-dialog"))');
+      await browser.waitFor('Boolean(document.querySelector("[data-session-choice] input[type=checkbox]"))&&document.querySelector("[data-action=retain-current-communicator] input[type=radio]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await browser.evaluate('document.querySelector("[data-action=retain-current-communicator] input[type=radio]").click()');
+      await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")&&document.querySelector("[data-action=confirm-conversation-handling]")?.disabled===false');
       const priorReads=reads;unreadable=true;
       await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
       assert.ok(reads>priorReads);assert.equal((await runtime.observability.metrics()).sse_clients,1);
-      assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]")?.checked'),true);
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator] input[type=radio]")?.checked'),true);
       assert.equal(await browser.evaluate('Boolean(document.querySelector(".activity-list"))'),true);
       const beforeAttachments=attachmentReads;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取附件").click()');
-      for(let i=0;i<100&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,20));assert.ok(attachmentReads>beforeAttachments,'the unrelated authorized attachment GET actually returned200');
-      await browser.waitFor('!document.querySelector(".attachment-section button")?.disabled&&!document.querySelector(".attachment-section")?.textContent.includes("附件响应无法安全识别")&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
-      await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
-      await browser.waitFor('(()=>{const text=document.querySelector(".conversation-handling-state")?.textContent??"";return ["尚未准备或发送","已开始处理","结果未知","操作被拒绝","操作冲突"].some(state=>text.includes(state));})()');
+      // The shared five-second refresh supplies a real successful auxiliary GET while command READ still fails.
+      for(let i=0;i<150&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,100));assert.ok(attachmentReads>beforeAttachments,'the unrelated authorized attachment GET actually returned200');
+      await browser.waitFor('!document.querySelector(".attachment-section button")?.disabled&&!document.querySelector(".attachment-section")?.textContent.includes("附件响应无法安全识别")&&document.querySelector("[data-action=confirm-conversation-handling]")?.disabled===true');
+      await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
       assert.equal(posts,0,'an integrated conversation new prepare/POST must also wait for the complete fresh authorized REST cycle');
-      assert.ok(await browser.evaluate('document.querySelector(".conversation-handling-state")?.textContent.includes("尚未准备或发送")'));
-      assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator]")?.checked'),true);
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").disabled'),true,'an unrelated successful read cannot clear the command READ failure');
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=retain-current-communicator] input[type=radio]")?.checked'),true);
       unreadable=false;
       await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
-      await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"&&document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');
-      await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
+      await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"&&document.querySelector("[data-action=confirm-conversation-handling]")?.disabled===false');
+      await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
       await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');assert.equal(posts,1);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_conversation_handling:true,new_write_waits_for_rest:true,automatic_posts:0,screenshots:[]}));
-    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,retain:document.querySelector("[data-action=retain-current-communicator]")?.checked})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,retain:document.querySelector("[data-action=retain-current-communicator] input[type=radio]")?.checked})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);
   },{workbenchRealtimeEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,workbenchDraftRecoveryEnabled:true});

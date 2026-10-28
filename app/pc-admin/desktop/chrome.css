@@ -1,0 +1,20 @@
+:root{color-scheme:light;--chrome-bg:#f7f7f5;--chrome-text:#37352f;--chrome-muted:#6b6965;--chrome-hover:#ebebe9;--chrome-line:rgba(55,53,47,.09)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--chrome-bg);color:var(--chrome-text);font-family:ui-sans-serif,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.titlebar{height:40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--chrome-line);user-select:none;-webkit-app-region:drag;app-region:drag}
+.identity{display:flex;align-items:center;gap:9px;min-width:0;padding-left:14px;white-space:nowrap}
+.brandmark{display:grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--chrome-text);color:var(--chrome-bg)}
+.brandmark svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.product-name{font-size:13px;font-weight:600;line-height:20px}.surface-name{font-size:12px;color:var(--chrome-muted)}
+.divider{width:1px;height:12px;background:rgba(55,53,47,.15);margin:0 2px}
+.window-actions{height:100%;display:flex;align-items:center;flex:none;-webkit-app-region:no-drag;app-region:no-drag}
+button{width:46px;height:39px;display:grid;place-items:center;border:0;background:transparent;color:var(--chrome-text);padding:0;cursor:default;-webkit-app-region:no-drag;app-region:no-drag}
+button:hover{background:var(--chrome-hover)}button:active{background:#dededb}button:focus-visible{outline:2px solid #1d6fbf;outline-offset:-4px;border-radius:3px}
+button svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.15;stroke-linecap:square;pointer-events:none}
+.more{width:36px;height:28px;margin:0 7px;border-radius:5px}.more svg{width:17px;height:17px;fill:currentColor;stroke:none}
+.actions-divider{height:16px;width:1px;background:var(--chrome-line);margin-right:3px}
+.close:hover{background:#c93d36;color:#fff}.close:active{background:#a52e29;color:#fff}
+.restore-symbol{display:none}body[data-maximized=true] .maximize-symbol{display:none}body[data-maximized=true] .restore-symbol{display:block}
+body[data-focused=false] .product-name,body[data-focused=false] button{color:var(--chrome-muted)}body[data-focused=false] .close:hover{color:#fff}
+@media(prefers-reduced-motion:no-preference){button{transition:background-color 100ms ease-out,color 100ms ease-out}}
+.startup{height:calc(100% - 40px);padding:64px 48px;background:#fff}.startup-heading{max-width:1120px;margin:0 auto 36px}.startup-heading strong{font-size:26px;font-weight:600}.startup-heading p{font-size:14px;color:var(--chrome-muted);margin:10px 0 0}.startup-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;max-width:1120px;margin:auto}.startup-columns>div{padding:20px;background:#fafaf9;border:1px solid var(--chrome-line);border-radius:12px}.startup-columns i{display:block;height:14px;border-radius:6px;background:#eaeae7;margin-bottom:18px}.startup-columns i:first-child{width:42%}.startup-columns i:nth-child(2){height:110px;background:#f0f0ed}.startup-columns i:last-child{width:68%;margin-bottom:0}
+@media(prefers-reduced-motion:no-preference){.startup-columns{animation:startup-pulse 2s ease-in-out infinite}@keyframes startup-pulse{50%{opacity:.55}}}

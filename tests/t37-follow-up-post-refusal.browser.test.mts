@@ -12,7 +12,7 @@ import {createP2016Runtime,type P2016EnabledRuntime} from '../app/server/src/p2-
 import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
-const region='dialog.detail-dialog[open] [role="region"][aria-label="共享下次跟进时间"]',due='2030-01-02 09:30:00';
+const region='.detail-dialog[role=dialog] [role="region"][aria-label="共享下次跟进时间"]',due='2030-01-02 09:30:00';
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
 async function current(http:T37Http,path:string){const response=await http.get(path);assert.equal(response.status,200,JSON.stringify(response.value));return response.value;}
 async function drain(fixture:T37Fixture){const initial=await fixture.runtime.coordinator.backlog(),bound=Math.ceil(initial.total/fixture.runtime.coordinator.batchSize)+3;for(let index=0;index<bound;index++){const inbound=await fixture.runtime.coordinator.runOnce(),realtime=await fixture.runtime.realtimeProjector.runOnce({limit:100});assert.ok(inbound.streams.every(stream=>stream.failures.length===0));if(inbound.processed===0&&realtime.processed===0&&(await fixture.runtime.coordinator.backlog()).total===0)return;}assert.fail('actual projection did not settle');}
@@ -30,6 +30,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
   let browser:Browser|undefined,primary:unknown,replacement:P2016EnabledRuntime|undefined;
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('草稿仅在当前浏览器')&&Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))`);
    const modulePath=await publicStorePath();
    // Observe the production store's actual synchronous invalidations. No synthetic invalidation is sent.
@@ -56,7 +57,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
    assert.equal((await current(handler,schedulePath)).active,null,'the held browser command has not reached the server');
    if(mode==='csrf'){
     await browser.evaluate('globalThis.__t37ReleasePost()');await browser.waitFor("globalThis.__t37RefusalPost.status===403&&globalThis.__t37RefusalReads.some(read=>read.afterPost403&&read.status===200)");
-    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('操作被拒绝')||document.querySelector(${JSON.stringify(region)})?.innerText.includes('原操作仍保留')`);
+    await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('操作被拒绝')||document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('原操作仍保留')`);
     const post=object(await browser.evaluate('globalThis.__t37RefusalPost')),retainedCopy=object(await browser.evaluate(`(async()=>{const copy=await globalThis.__t37RefusalStore.openDraft(${JSON.stringify(scope)},{restore:false});return {revision:copy.handle.record?.revision??null,commandId:copy.handle.operation?.commandId??null};})()`));
     const ledgerCount=Number((await fixture.pool.query<{count:string}>('SELECT count(*)::text AS count FROM pilot_ticket.ticket_command_receipt WHERE ticket_id=$1::uuid AND client_command_id=$2::uuid',[ticketId,prepared.commandId])).rows[0]?.count),view=await current(handler,schedulePath),receipt=await current(handler,schedulePath+'/commands/'+text(prepared.commandId));
     await writeFile(join(directory,'csrf-facts.json'),JSON.stringify({prepared,post,ledgerCount,view,receipt,retainedCopy,events:await browser.evaluate('globalThis.__t37RefusalEvents'),reads:await browser.evaluate('globalThis.__t37RefusalReads')},null,2));
@@ -73,7 +74,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
    assert.ok(!rows((await current(handler,path+'/related-conversations?limit=20')).items).some(row=>row.conversation_principal_id===fixture.handler&&row.assignment_status==='ASSIGNED'));
    await browser.evaluate('globalThis.__t37ReleasePost()');await browser.waitFor('globalThis.__t37RefusalPost.status===403');
    if(loseResponse){
-    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('结果未知')`);
+    await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')`);
     const unresolved=object(await browser.evaluate(`(async()=>{const copy=await globalThis.__t37RefusalStore.openDraft(${JSON.stringify(scope)},{restore:false});return {commandId:copy.handle.operation?.commandId??null};})()`));assert.equal(unresolved.commandId,prepared.commandId);
     if(mode==='disabled'){
      const document=await browser.evaluate('performance.timeOrigin'),authentication=fixture.runtime.authenticate;assert.equal(authentication.close,undefined);
@@ -91,7 +92,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
      try{
       await fixture.pool.query('ALTER TABLE pilot_ticket.follow_up_schedule DROP CONSTRAINT follow_up_current_time_pair');dropped=true;await check();
       await browser.waitFor("globalThis.__t37RefusalViews.some(view=>view.status===503&&view.code==='P2_016_FOLLOW_UP_UNAVAILABLE')");
-      await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('只读核对尚未完成')`);
+      await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('只读核对尚未完成')`);
       const retainedCopy=object(await browser.evaluate(`(async()=>{const copy=await globalThis.__t37RefusalStore.openDraft(${JSON.stringify(scope)},{restore:false});return {revision:copy.handle.record?.revision??null,commandId:copy.handle.operation?.commandId??null};})()`));assert.deepEqual(retainedCopy,{revision:prepared.revision,commandId:prepared.commandId});
      }catch(error){faultError=error;}finally{await closeBrowserTestResources([async()=>{if(dropped)await fixture.pool.query('ALTER TABLE pilot_ticket.follow_up_schedule ADD CONSTRAINT follow_up_current_time_pair '+definition);assert.equal(text((await constraint()).rows[0]?.definition),definition);}],faultError);}
     }
@@ -103,7 +104,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
    assert.equal(events.some(event=>event.reason==='revoked'&&event.principal===fixture.handler&&(event.id===undefined||event.id===ticketId)),false,'T37_MAINTENANCE_403_MUST_NOT_REVOKE_TICKET_READ_OR_OTHER_PURPOSES');
    assert.ok(events.some(event=>event.reason==='settled'&&event.purpose==='shared-follow-up-schedule'&&event.id===ticketId));
    await browser.waitFor('globalThis.__t37RefusalReads.some(read=>read.afterPost403&&read.status===200)');
-   assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open] #detail-title"))'),true);
+   assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog] #detail-title"))'),true);
    const post=object(await browser.evaluate('globalThis.__t37RefusalPost'));assert.equal(post.status,403);assert.match(text(object(object(post.body).error).code),/FORBIDDEN/u);
    assert.equal(object(post.command).client_command_id,prepared.commandId);assert.equal(await browser.evaluate('globalThis.__t37RefusalPostCount'),1,'refusal recovery must not issue a second POST or replace the original UUID');
    if(loseResponse){const acks=rows(await browser.evaluate('globalThis.__t37RefusalAcks'));assert.ok(acks.length>0&&acks.every(ack=>ack.commandId===prepared.commandId&&ack.status===200&&ack.state==='FAILED'));if(mode==='temporary')assert.equal(acks.length,2,'only explicit reads of the same FAILED UUID may retry the temporary view failure');}

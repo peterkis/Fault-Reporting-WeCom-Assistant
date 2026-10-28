@@ -5,7 +5,7 @@ import {record,text} from './helpers/t29-owner-transfer-http-fixture.mjs';
 test('T29 production bundle explicitly transfers once, renders responsibility history and reloads authoritative owner facts',{timeout:240000},async()=>{
   await ownerTransferBrowser(async context=>{
     const {browser,incidentId,choose,get,f}=context,path='/api/incidents/'+incidentId,target=text(record(f.dispatcher).id);
-    await browser.waitFor(`Boolean(document.querySelector('select[aria-label="交接负责人"] option[value="${target}"]'))`);
+    await browser.waitFor(`Boolean(document.querySelector('.workbench-select[data-field-label="交接负责人"] select option[value="${target}"]'))`);
     const before=(await get(path)).body,notifications=await get(path+'/notifications?limit=100');
     assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);
     await choose('交接负责人',target);await choose('交接责任组','PILOT_IT');await choose('交接原因','OPERATOR_REVIEWED');

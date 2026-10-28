@@ -9,6 +9,16 @@ import {createWorkbenchAttachmentStore} from '../app/server/src/workbench-attach
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withT16Fixture,T16_PNG} from './helpers/wbint-t16-fixture.mjs';
 import type {AttachmentPage,AttachmentStore,StoredAttachment} from '../contracts/workbench_attachment_contracts.js';
+
+test('employee media lists registration without pre-decryption and reads known registered images outside item scope',()=>withT16Fixture(async f=>{
+ const first=f.tickets[0];assert.ok(first);const list=await fetch(f.origin+'/api/workbench/items/ticket/'+first.ticket.id+'/attachments',{headers:{cookie:f.cookie}});assert.equal(list.status,200);assert.equal((await list.json() as AttachmentPage).items[0]?.available,true);assert.equal(f.reads.opens,0);
+ const path='/api/workbench/media/attachment/'+f.asset.ref;
+ const outside=await fetch(f.origin+path,{headers:{cookie:f.outsiderCookie}});assert.equal(outside.status,200);assert.deepEqual(Buffer.from(await outside.arrayBuffer()),T16_PNG);assert.equal(f.reads.opens,1);
+ const file=join(f.root,f.asset.ref+'.asset');await unlink(file);
+ const metadata=await fetch(f.origin+'/api/workbench/items/ticket/'+first.ticket.id+'/attachments',{headers:{cookie:f.cookie}});assert.equal(metadata.status,200);assert.equal((await metadata.json() as AttachmentPage).items[0]?.available,true,'registration availability does not pre-read the missing file');assert.equal(f.reads.opens,1);
+ const missing=await fetch(f.origin+path,{headers:{cookie:f.cookie}});assert.equal(missing.status,404);assert.equal((await missing.json() as {error:{code:string}}).error.code,'ATTACHMENT_MISSING');
+ await f.save([{...f.asset,classification:'PATIENT_SENSITIVE'}]);const restricted=await fetch(f.origin+path,{headers:{cookie:f.cookie}});assert.equal(restricted.status,422);
+},{employeeReadEnabled:true}));
 test('attachment metadata rechecks parent READ in the final official Session statement after its database wait',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'pr99-final-attachment-')),key=randomBytes(32);let saved:AttachmentStore|undefined,armed=false,entered:()=>void=()=>{},resume:()=>void=()=>{};
   const reached=new Promise<void>(resolve=>{entered=resolve;}),release=new Promise<void>(resolve=>{resume=resolve;});
@@ -19,13 +29,16 @@ test('attachment metadata rechecks parent READ in the final official Session sta
     const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key,iv);cipher.setAAD(Buffer.from(JSON.stringify(asset)));
     const encrypted=Buffer.concat([cipher.update(T16_PNG),cipher.final()]);await writeFile(join(directory,asset.ref+'.asset'),Buffer.concat([iv,cipher.getAuthTag(),encrypted]));await writeFile(join(directory,'manifest.json'),JSON.stringify({version:1,assets:[asset]}));saved=createWorkbenchAttachmentStore({root:directory,key});
     await f.pool.query("UPDATE channel.message_inbox SET msg_type='image',normalized_message=jsonb_build_object('content',jsonb_build_array(jsonb_build_object('kind','media','media',jsonb_build_object('type','image','source_index',0,'download_ref',$2::text)))) WHERE id=$1::bigint",[asset.source_message_id,asset.media_ref]);
+    const employeeRead=()=>fetch(f.backendOrigin+'/api/workbench/media/attachment/'+asset.ref,{headers:{cookie}});const initial=await employeeRead();assert.equal(initial.status,200);assert.deepEqual(Buffer.from(await initial.arrayBuffer()),T16_PNG);
     const read=()=>fetch(f.backendOrigin+'/api/workbench/items/ticket/'+selected.ticket.id+'/attachments',{headers:{cookie}});assert.equal((await read()).status,200);armed=true;
     const pending=read(),blocker=await f.pool.connect();try{await reached;await blocker.query('BEGIN');await blocker.query('LOCK TABLE pilot_ticket.workbench_auth_session IN ACCESS EXCLUSIVE MODE');resume();
       let waiting=false;for(let attempt=0;attempt<200;attempt++){waiting=(await f.pool.query("SELECT 1 FROM pg_locks WHERE relation='pilot_ticket.workbench_auth_session'::regclass AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())")).rowCount!==0;if(waiting)break;await new Promise(resolve=>setTimeout(resolve,10));}assert.ok(waiting,'the real final official Session SQL is blocked');
       await f.pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principal.id]);await f.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[principal.id]);await f.pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principal.id]);await blocker.query('ROLLBACK');
-      const response=await pending;assert.equal(response.status,404);assert.equal((await response.text()).includes(asset.ref),false);
+      const response=await pending;assert.equal(response.status,404);assert.equal((await response.text()).includes(asset.ref),false);armed=false;
+      const retained=await employeeRead();assert.equal(retained.status,200);assert.deepEqual(Buffer.from(await retained.arrayBuffer()),T16_PNG);
+      await f.pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[principal.id]);assert.equal((await employeeRead()).status,401);
     }finally{resume();await blocker.query('ROLLBACK');blocker.release();await pending.catch(()=>{});}
-  },{realWorkbenchAuthentication:true,workbenchAttachmentsEnabled:true,attachmentStore:store});}
+  },{realWorkbenchAuthentication:true,workbenchMediaEmployeeReadEnabled:true,workbenchAttachmentsEnabled:true,attachmentStore:store});}
   finally{resume();await saved?.close();assert.deepEqual(store.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});key.fill(0);await rm(directory,{recursive:true,force:true});}
 });
 for(const seam of ['metadata-entries','metadata-open','content-final-source'] as const)test(`attachment ${seam} refuses disclosure when parent READ is removed during its asynchronous read`,async()=>{

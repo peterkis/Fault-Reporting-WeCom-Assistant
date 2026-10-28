@@ -58,7 +58,7 @@ test('MVP keeps an unknown bound reply mounted when retention makes the suppleme
   for(const material of materials)await f.expire(material);
   assert.deepEqual((await f.page()).items,[],'the original service really returns an empty successful retention-filtered page');
   await browser.evaluate("document.querySelector('[data-action=refresh-supplement-follow-up]').click()");
-  await browser.waitFor("document.querySelector('.supplement-follow-up')?.innerText.includes('没有补充材料')");
+  await browser.waitFor("document.querySelector('[data-toast-source=supplement-follow-up]')?.innerText.includes('没有补充材料')");
   assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] textarea')?.value"),body,'the empty list cannot unmount the independent unknown reply');
   assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=check-messages]')?.checkVisibility()"),true);
   assert.deepEqual(await browser.evaluate('globalThis.__emptyReplyPosts'),posts,'no automatic resend or new command replaces the original target');

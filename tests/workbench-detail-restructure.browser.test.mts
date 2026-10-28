@@ -1,0 +1,108 @@
+import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID,createHash} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
+import {t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+
+test('production detail shares report materials, uses responsive information and purpose-owned action dialogs',{timeout:240_000},()=>withDetailRestructureFixture(async f=>{
+  const first=f.tickets[0],cookie=f.browserCookies[0],target=f.principals[1];assert.ok(first&&cookie&&cookie.url&&target);
+  const http=await t11Http(f),assignId=await t11NewTicket(f),cancelId=await t11NewTicket(f);
+  const detailPath='/api/workbench/items/ticket/'+first.ticket.id;
+  const serverDetail=await http.get(detailPath);assert.equal(serverDetail.status,200);const reported=(await serverDetail.json() as {reported_at:string|null}).reported_at;assert.ok(reported);
+  const directory=join(tmpdir(),'detail-restructure-browser-'+randomUUID());await mkdir(directory);
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+  try{
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const active=browser;
+    const click=(selector:string)=>clickWorkbenchControl(active,selector);
+    const fill=async(selector:string,value:string)=>{await active.waitFor(`document.querySelector(${JSON.stringify(selector)})?.checkVisibility()===true`);await active.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);};
+    const choose=(selector:string,value:string)=>chooseWorkbenchSelect(active,selector,value);
+    await browser.command('Page.enable');
+    await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__detailPosts=[];globalThis.__detailReads=[];globalThis.__droppedProgress=0;globalThis.__webReads=0;globalThis.__holdMaterials=location.pathname.endsWith(${JSON.stringify(first.ticket.id)})&&!location.search.includes('compat_missing_report_time');let release;const gate=new Promise(resolve=>release=resolve);globalThis.__releaseMaterials=()=>{globalThis.__holdMaterials=false;release();};globalThis.fetch=async(url,options)=>{const path=new URL(String(url),location.href).pathname;if(options?.method==='POST')globalThis.__detailPosts.push({path,body:JSON.parse(options.body)});else globalThis.__detailReads.push(path);const response=await original(url,options);if(options?.method==='POST'&&path.endsWith('/member-progress')&&response.ok&&globalThis.__droppedProgress===0){await response.arrayBuffer();globalThis.__droppedProgress++;throw new TypeError('SYNTHETIC_ACTUAL_COMMITTED_PROGRESS_RESPONSE_LOST');}if(path.endsWith('/web-report')){globalThis.__webReads++;if(globalThis.__holdMaterials)await gate;}if(location.search.includes('compat_missing_report_time')&&path===${JSON.stringify(detailPath)}){const body=await response.clone().json();delete body.reported_at;return new Response(JSON.stringify(body),{status:response.status,headers:response.headers});}return response;};})()`});
+    await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});
+    await browser.waitFor("document.querySelector('.report-materials .detail-loading svg')?.checkVisibility()===true");
+    assert.equal(await browser.evaluate("document.querySelectorAll('.report-materials').length"),1);
+    assert.equal(await browser.evaluate("document.body.innerText.includes('重新读取附件')||document.body.innerText.includes('重新读取网页报修资料')||document.body.innerText.includes('查看沟通人与时间')"),false);
+    await browser.evaluate('globalThis.__releaseMaterials()');
+    await browser.waitFor("!document.querySelector('.report-materials .detail-loading')&&document.querySelector('[data-action=take-and-start]')?.disabled===false");
+    assert.equal(await browser.evaluate('globalThis.__webReads'),1,'the fused display has one web-report query owner');
+    assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.detail-properties>dl')).gridTemplateColumns.split(' ').length"),2);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-properties time').textContent"),reported);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later],[data-action=accept-for-later-with-conversations]'))"),false);
+    assert.equal(await browser.evaluate("(()=>{const a=document.querySelector('[data-action=open-assignment]').getBoundingClientRect(),c=document.querySelector('[data-action=cancel]').getBoundingClientRect(),s=document.querySelector('[data-action=take-and-start]').getBoundingClientRect();return a.x<c.x&&c.x<s.x&&s.left-c.right>=15;})()"),true);
+    await click('[data-action=take-and-start]');await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&document.querySelector('[data-action=open-public-progress]')?.disabled===false");
+    assert.equal((await http.detail(first.ticket.id)).status,'IN_PROGRESS');
+    assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/take-and-start')).length"),1);
+    await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
+    assert.equal(await browser.evaluate("document.querySelectorAll('form[aria-label=\"维护公开进度\"]').length"),1);
+    const summary='合成公开进度：正在现场排查，请稍候。';
+    await fill('.detail-progress-dialog textarea',summary);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog button[type=submit]').disabled"),true);
+    await click('[aria-label="关闭公开进度窗口"]');await browser.waitFor("!document.querySelector('.detail-progress-dialog')");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
+    await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog textarea').value"),summary);
+    await click('[aria-label="确认公开进度内容"]');await click('.detail-progress-dialog button[type=submit]');
+    await browser.waitFor("document.querySelector('[data-toast-source=web-report]')?.innerText.includes('提交结果尚未确认')");
+    assert.equal(await browser.evaluate('globalThis.__droppedProgress'),1,'the actual committed success is lost at the browser transport boundary');
+    await click('[aria-label="关闭公开进度窗口"]');await browser.waitFor("!document.querySelector('.detail-progress-dialog')");
+    await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
+    await browser.evaluate("[...document.querySelectorAll('.detail-progress-dialog button')].find(button=>button.textContent==='核对原操作结果').click()");
+    await browser.waitFor("!document.querySelector('.detail-progress-dialog')&&document.querySelector('[aria-label=\"报修人可见进度\"]')?.innerText.includes('合成公开进度')");
+    assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/member-progress')).length"),1,'closing/reopening and acknowledgement never issue another public-progress command');
+    const publicView=await http.get(detailPath+'/web-report');assert.equal(publicView.status,200);assert.equal((await publicView.json() as {public_progress:{summary:string}}).public_progress.summary,summary);
+    // Actual multi-round/multi-route nodes are covered by the dedicated T24 browser entry.
+    // This H5 report has no round Delivery: the shared page must show that real empty state.
+    await browser.waitFor("document.querySelector('[aria-label=\"刷新通知状态\"]')?.disabled===false");
+    await click('[aria-label="刷新通知状态"]');await browser.waitFor("document.querySelector('.notification-empty')?.textContent.includes('暂无轮次通知记录')");
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-round-notifications details'))"),false);
+    assert.equal(await browser.evaluate("document.querySelector('.ticket-round-notifications').checkVisibility()"),true);
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
+    assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.detail-properties>dl')).gridTemplateColumns.split(' ').length"),1);
+    assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+    await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+assignId+'?detail=page'});await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");
+    const beforeAssign=await http.detail(assignId);await click('[data-action=open-assignment]');await browser.waitFor("Boolean(document.querySelector('.detail-assignment-dialog'))");
+    await choose('.detail-assignment-dialog>.workbench-select:nth-of-type(1)','PILOT_IT');
+    await choose('.detail-assignment-dialog>.workbench-select:nth-of-type(2)',target.id);
+    await click('.detail-assignment-dialog input[value=RETAIN_CURRENT]');await click('.detail-assignment-dialog [data-action=assign]');
+    await browser.waitFor("!document.querySelector('.detail-assignment-dialog')");
+    const assigned=await http.detail(assignId);assert.equal(assigned.assignee_id,target.id);assert.equal(assigned.status,beforeAssign.status);
+    await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+cancelId});await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");
+    await browser.waitFor("document.querySelector('.media-empty')?.checkVisibility()===true&&document.querySelector('.notification-empty')?.checkVisibility()===true&&!document.querySelector('.report-materials .detail-loading')");
+    const bodyHeight=await browser.evaluate("document.querySelector('.detail-body').scrollHeight");await click('[data-action=cancel]');await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-body').scrollHeight"),bodyHeight);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog button[type=submit]').disabled"),true);
+    await fill('.detail-cancel-dialog textarea','合成取消原因：重复提出，已核对。');
+    await click('[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");
+    await click('[data-action=cancel]');await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog textarea').value"),'合成取消原因：重复提出，已核对。');
+    await click('[aria-label="确认取消当前工单"]');await click('.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已取消')");
+    assert.equal((await http.detail(cancelId)).status,'CANCELLED');assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/cancel')).length"),1);
+    await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page&compat_missing_report_time=1'});await browser.waitFor("document.querySelector('.detail-properties')?.innerText.includes('未记录')");
+    const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'detail-restructure.png');await writeFile(file,bytes);
+    console.log('DETAIL_RESTRUCTURE '+JSON.stringify({two_column:true,report_time:true,single_material_view:true,delayed_loader:true,atomic_accept:true,public_progress_unknown_recovery:true,assignment_dialog:true,cancel_dialog:true,visible_notifications:true,legacy_detail_compatible:true,screenshot:{file,sha256:createHash('sha256').update(bytes).digest('hex')}}));
+  }catch(error){failure=error;try{if(browser){await browser.evaluate('globalThis.__releaseMaterials?.()');await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,posts:globalThis.__detailPosts,reads:globalThis.__detailReads})')));}}catch(diagnostic){failure=new AggregateError([error,diagnostic]);}}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+}));
+
+test('real pointer helper waits for a moving control and an overlapping hit target',async()=>{
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+  try{
+    browser=await launchSystemBrowser({url:'about:blank',width:1280,height:900});assert.ok(browser);
+    await browser.evaluate(`(()=>{document.documentElement.style.overflow='clip';document.body.style.cssText='margin:0;overflow:clip;height:100vh';document.body.innerHTML='<button id="pointer-probe" style="position:fixed;left:40px;top:40px;width:30px;height:30px">选</button>';globalThis.__pointerProbeClicks=[];document.addEventListener('click',event=>globalThis.__pointerProbeClicks.push(event.target instanceof Element?event.target.id:null));document.querySelector('#pointer-probe').animate([{transform:'translateX(1600px)'},{transform:'translateX(0px)'}],{duration:1500,easing:'linear'});})()`);
+    await clickWorkbenchControl(browser,'#pointer-probe');
+    assert.deepEqual(await browser.evaluate('globalThis.__pointerProbeClicks'),['pointer-probe']);
+    await browser.evaluate(`(()=>{const cover=document.createElement('div');cover.id='pointer-cover';cover.style.cssText='position:fixed;left:20px;top:20px;width:100px;height:100px;background:white';document.body.append(cover);cover.animate([{opacity:1},{opacity:.7}],{duration:300}).finished.then(()=>cover.remove());})()`);
+    await clickWorkbenchControl(browser,'#pointer-probe');
+    assert.deepEqual(await browser.evaluate('globalThis.__pointerProbeClicks'),['pointer-probe','pointer-probe']);
+    console.log('HEROUI_POINTER_ACTIONABILITY '+JSON.stringify({real_browser:true,moving_control_waited:true,overlapping_hit_target_waited:true,native_target_clicks:2}));
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+});

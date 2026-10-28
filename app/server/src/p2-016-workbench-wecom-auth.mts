@@ -1,9 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+import type {ApplicationMemberVerifier} from './wecom-application-member.mjs';
 type AuthRequest = Pick<IncomingMessage, 'headers' | 'method'>;
 interface AuthHttpInput { request: AuthRequest; response: ServerResponse; url: URL }
 type TokenProvider = ((input?: { signal?: AbortSignal }) => Promise<string>) & { invalidate?: (token: string) => void };
-interface AuthOptions { pool: PostgresTransaction; publicOrigin: string; corpId: string; agentId: string; appSecret?: string; identityHashKey: string; accessTokenProvider?: TokenProvider | null; fetchImpl?: typeof fetch; now?: () => number; absoluteTtlMs?: number; idleTtlMs?: number; maxAllowlist?: number; loginRequestsPerMinute?: number }
+interface AuthOptions { pool: PostgresTransaction; publicOrigin: string; corpId: string; agentId: string; appSecret?: string; identityHashKey: string; accessTokenProvider?: TokenProvider | null; profileReader?:ApplicationMemberVerifier; fetchImpl?: typeof fetch; now?: () => number; absoluteTtlMs?: number; idleTtlMs?: number; maxAllowlist?: number; loginRequestsPerMinute?: number }
 interface AuthSessionRow { session_id: string; principal_id: string; csrf_token_hash: string; last_seen_epoch_ms: string; expires_epoch_ms: string; expires_at: string; is_active: boolean; can_work: boolean }
 interface MappingResponse { errcode?: unknown; open_userid_list?: { userid?: unknown; open_userid?: unknown }[]; invalid_userid_list?: unknown }
 interface AuditInput { sessionId?: string | null; principalId?: string | null; identityHash?: string | null; eventType: string; reasonCode: string; providerErrcode?: number | null }
@@ -19,6 +20,8 @@ import { WorkbenchError, WORKBENCH_ERROR_CODES } from './p2-006-workbench-query.
 const STAFF_ROLES = Object.freeze(['HANDLER', 'DISPATCHER', 'ADMIN']);
 const ROOT = '/workbench';
 const LOGIN_PATH = `${ROOT}/login`;
+const DESKTOP_PATH = `${ROOT}/desktop`;
+const DESKTOP_RETURN_PATH = `${ROOT}/app/`;
 const CALLBACK_PATH = `${ROOT}/callback`;
 const LOGOUT_PATH = `${ROOT}/logout`;
 const SESSION_COOKIE = '__Host-wecom_workbench_session';
@@ -93,6 +96,7 @@ export function createWeComWorkbenchAuthentication({
   appSecret,
   identityHashKey,
   accessTokenProvider = null,
+  profileReader,
   fetchImpl = fetch,
   now = Date.now,
   absoluteTtlMs = DEFAULT_ABSOLUTE_TTL_MS,
@@ -103,7 +107,7 @@ export function createWeComWorkbenchAuthentication({
   requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idleTtlMs });
   if (!Number.isSafeInteger(loginRequestsPerMinute) || loginRequestsPerMinute<1 || loginRequestsPerMinute>60
     || typeof identityHashKey !== 'string' || Buffer.byteLength(identityHashKey)<16
-    || typeof fetchImpl !== 'function' || !Number.isSafeInteger(maxAllowlist) || maxAllowlist < 1 || maxAllowlist > 256) {
+    || typeof fetchImpl !== 'function' || (profileReader!==undefined&&typeof profileReader!=='function') || !Number.isSafeInteger(maxAllowlist) || maxAllowlist < 1 || maxAllowlist > 256) {
     throw new TypeError('WORKBENCH_AUTH_CONFIGURATION_INVALID');
   }
   const tokenProvider: TokenProvider = accessTokenProvider ?? (createWeComAppTokenProvider as (options: { corpId: string; appSecret: string | undefined; fetchImpl: typeof fetch }) => TokenProvider)({ corpId, appSecret, fetchImpl });
@@ -140,6 +144,7 @@ export function createWeComWorkbenchAuthentication({
     budget.count++;
   }
   const principalByUserId = new Map<string, string>();
+  const rawUserIdByPrincipal = new Map<string, string>();
 
   async function audit({ sessionId = null, principalId = null, identityHash = null, eventType, reasonCode, providerErrcode = null }: AuditInput) {
     await pool.query(`INSERT INTO pilot_ticket.workbench_auth_event
@@ -153,6 +158,7 @@ export function createWeComWorkbenchAuthentication({
     initialized = false;
     mappingDigest = null;
     principalByUserId.clear();
+    rawUserIdByPrincipal.clear();
     const schema = await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='035_p2_016_workbench_wecom_auth'");
     if (schema.rowCount !== 1) throw new Error('WORKBENCH_AUTH_SCHEMA_NOT_READY');
     const result = await pool.query<{ principal_id: string; wecom_user_id: string }>(`SELECT DISTINCT p.id::text AS principal_id,p.wecom_user_id
@@ -185,6 +191,7 @@ export function createWeComWorkbenchAuthentication({
     }
     principalByUserId.clear();
     for (const [key, value] of next) principalByUserId.set(key, value);
+    for (const row of rows) rawUserIdByPrincipal.set(row.principal_id,row.wecom_user_id);
     mappingDigest = hash(JSON.stringify([...principalByUserId.entries()].sort(([a], [b]) => a.localeCompare(b))));
     initialized = true;
     if(!maintenanceTimer){
@@ -200,11 +207,13 @@ export function createWeComWorkbenchAuthentication({
     if (closed || !initialized || !mappingDigest) fail(WORKBENCH_ERROR_CODES.authNotReady, 503);
   }
 
-  async function begin({ request, response, returnPath = ROOT }: Omit<AuthHttpInput, 'url'> & { returnPath?: string } = {} as AuthHttpInput) {
+  async function begin({ request, response, returnPath = ROOT, desktop = false }: Omit<AuthHttpInput, 'url'> & { returnPath?: string; desktop?: boolean } = {} as AuthHttpInput) {
     ensureReady();
-    if (!validPath(returnPath)) fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
+    if (!validPath(returnPath) || desktop && returnPath !== ROOT) fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
     admit('start');
-    const state = random();
+    // Purpose is part of the one-use state hash, not an untrusted return URL. Keep migration 035's
+    // existing return_path vocabulary; only a successfully consumed desktop intent returns to the SPA.
+    const state = (desktop ? 'desktop.' : '') + random();
     const browserBinding = random();
     const created = Number(now());
     const expires = created + STATE_TTL_MS;
@@ -266,7 +275,9 @@ export function createWeComWorkbenchAuthentication({
     [hash(sessionToken), hash(csrfToken), principalId, identityHash, issued, expires]);
     await audit({ sessionId: (session.rows[0] as (typeof session.rows)[number]).session_id, principalId, identityHash,
       eventType: 'LOGIN_SUCCEEDED', reasonCode: 'OAUTH_LOGIN' });
-    response.writeHead(303, { location: (consumed.rows[0] as (typeof consumed.rows)[number]).return_path, 'cache-control': 'no-store', 'set-cookie': [
+    const savedReturnPath = (consumed.rows[0] as (typeof consumed.rows)[number]).return_path;
+    const returnPath = state.startsWith('desktop.') && savedReturnPath === ROOT ? DESKTOP_RETURN_PATH : savedReturnPath;
+    response.writeHead(303, { location: returnPath, 'cache-control': 'no-store', 'set-cookie': [
       clearCookie(INTENT_COOKIE), cookie(SESSION_COOKIE, sessionToken, Math.floor(absoluteTtlMs / 1000)),
       cookie(CSRF_COOKIE, csrfToken, Math.floor(absoluteTtlMs / 1000), { httpOnly: false }),
     ] });
@@ -318,7 +329,7 @@ export function createWeComWorkbenchAuthentication({
       SET last_seen_epoch_ms=$2,last_seen_at=platform.local_from_epoch_ms($2)
       WHERE session_id=$1::uuid AND state='ACTIVE'`, [row.session_id, currentEpoch]);
     const csrf = readCookie(request, CSRF_COOKIE);
-    return Object.freeze({ principal_id: row.principal_id, auth_method: 'COOKIE', expires_at: row.expires_at,
+    return Object.freeze({ principal_id: row.principal_id, auth_method: 'COOKIE', employee_authenticated:true as const, expires_at: row.expires_at,
       expires_epoch_ms: row.expires_epoch_ms, csrf_token: secureEqual(hash(csrf ?? ''), row.csrf_token_hash) ? csrf : null,
       public_origin: publicOrigin, session_id: row.session_id });
   }
@@ -372,6 +383,14 @@ export function createWeComWorkbenchAuthentication({
   }
 
   async function handler({ request, response, url }: AuthHttpInput) {
+    if (url.pathname === DESKTOP_PATH) {
+      if (request.method !== 'GET' || url.search) fail(WORKBENCH_ERROR_CODES.requestInvalid, 400);
+      if (await authenticate(request)) {
+        response.writeHead(303, { location: DESKTOP_RETURN_PATH, 'cache-control': 'no-store' });
+        response.end();
+      } else await begin({ request, response, desktop: true });
+      return true;
+    }
     if (url.pathname === LOGIN_PATH && request.method === 'GET' && !url.search) { await begin({ request, response }); return true; }
     if (url.pathname === CALLBACK_PATH && request.method === 'GET') {
       admit('callback');
@@ -390,7 +409,33 @@ export function createWeComWorkbenchAuthentication({
     return false;
   }
 
+  async function currentDisplay(authContext:unknown){
+    ensureReady();
+    if(!profileReader)fail(WORKBENCH_ERROR_CODES.authNotReady,503);
+    const principalId=authContext&&typeof authContext==='object'?Reflect.get(authContext,'principal_id'):null;
+    if(typeof principalId!=='string')fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    const current=async()=>{const guard=currentSessionPredicate(authContext,principalId);const row=(await pool.query<{current:boolean}>('SELECT '+guard.sql+' AS current',guard.values)).rows[0];if(row?.current!==true)fail(WORKBENCH_ERROR_CODES.unauthenticated,401);};
+    await current();
+    const entry=[...principalByUserId].find(([,id])=>id===principalId);
+    const rawUserId=rawUserIdByPrincipal.get(principalId);
+    if(!entry||!rawUserId)fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    const member=await profileReader(entry[0]).catch(()=>fail(WORKBENCH_ERROR_CODES.authNotReady,503));
+    await current();ensureReady();
+    if(principalByUserId.get(entry[0])!==principalId||rawUserIdByPrincipal.get(principalId)!==rawUserId||!member||member.openUserId!==entry[0])fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    const name=member.displayName;
+    if(typeof name==='string'&&name.trim()&&[...name].length<=128&&!/[\x00-\x1f\x7f<>]/u.test(name)){
+      // Refresh display metadata for this verified employee only. Assignment and authorization stay ID-based.
+      const guard=currentSessionPredicate(authContext,principalId,4);
+      const updated=await pool.query(`UPDATE pilot_ticket.pilot_principal SET display_name=$2,
+        updated_at=CASE WHEN display_name IS DISTINCT FROM $2 THEN platform.local_now() ELSE updated_at END
+        WHERE id=$1::uuid AND wecom_user_id=$3 AND ${guard.sql} RETURNING id`,[principalId,name.trim(),rawUserId,...guard.values]);
+      if(updated.rowCount!==1)fail(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    }
+    return {name:member.displayName,department:member.departmentName??null};
+  }
+
   return Object.freeze({
+    ...(profileReader?{currentDisplay}:{}),
     supportsLogout:true,
     initialize: refreshIdentityMapping,
     mappingDigest: () => mappingDigest,
@@ -398,6 +443,6 @@ export function createWeComWorkbenchAuthentication({
     currentSessionPredicate,
     runMaintenance,
     unauthenticatedHandler: handler,
-    close: async () => { closed = true; clearInterval(maintenanceTimer as ReturnType<typeof setInterval>); principalByUserId.clear(); await maintenanceTask?.catch(()=>{}); },
+    close: async () => { closed = true; clearInterval(maintenanceTimer as ReturnType<typeof setInterval>); principalByUserId.clear();rawUserIdByPrincipal.clear(); await maintenanceTask?.catch(()=>{}); },
   });
 }

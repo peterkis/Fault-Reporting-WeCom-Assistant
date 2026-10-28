@@ -8,6 +8,8 @@ interface QueryOptions { workbenchAssignmentHistoryEnabled?:boolean; ticketRound
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
+interface QueryOptions {workbenchReporterProfilesEnabled?:boolean}
+import {readTicketReporterProfiles} from './ticket-reporter-profiles.mjs';
 
 import {assignmentHistoryPage} from './workbench-assignment-history.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
@@ -82,7 +84,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHistoryEnabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHistoryEnabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',workbenchReporterProfilesEnabled=false,ticketSelfHandlingEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketStaffCompletionEnabled=false,ticketAssignmentEnabled=false,ticketTakeoverEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReturnToDispatchEnabled=false,ticketUnassignEnabled=false,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false}: QueryOptions) {
   if(typeof workbenchAssignmentHistoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketWaitingActionsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const conversationAuthorization=createPilotWorkbenchAuthorizationAdapter({pool});
@@ -192,10 +194,18 @@ export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHi
         departments:(Array.isArray(snapshot.memberships)?snapshot.memberships:[]).slice(0,20).map(m=>({
           name:string(m?.name),department_ref:snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?null:string(m?.department_ref),role:historicalMembershipRole((snapshot.source as string),m?.role)})),
         ...(snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?{sex:string(snapshot.sex)}:{}),fetched_at:string(snapshot.fetched_at)};
-      if(!directoryStore||!row?.reporter_identity_hash||(resolved&&snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY'))return publicP2016(historical);
+      if(workbenchReporterProfilesEnabled){
+        const profile=(await readTicketReporterProfiles(pool,[ticket.id])).get(ticket.id);
+        await authorizedTicket(input);
+        if(profile&&(profile.name!==null||profile.department!==null)){
+          return publicP2016({...historical,retained_profile:{name:profile.name,department:profile.department,captured_at:profile.captured_at,source:profile.source}});
+        }
+      }
+      if(!directoryStore||!row?.reporter_identity_hash||(resolved&&snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY')){await authorizedTicket(input);return publicP2016(historical);}
       let current: StoredDirectoryMember | null=null;
       try { current=await directoryStore.findByReporterHash({source_scope:directorySourceScope,reporter_identity_hash:row.reporter_identity_hash}); }
       catch { current=null; }
+      await authorizedTicket(input);
       return publicP2016({...historical,current_profile:current?{
         status:'RESOLVED',contact:{name:string(current.nickname),mobile:string(current.phone)},sex:string(current.sex),
         avatar_url:url(current.avatar_url),departments:(Array.isArray(current.memberships)?current.memberships:[]).slice(0,20).map(m=>({
@@ -283,7 +293,9 @@ export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHi
       const q=await pool.query(`SELECT ${ticketRoundNotificationsEnabled?'r.node,c.cycle_no,':''}d.provider,b.notification_type,b.destination_type,d.id::text AS delivery_id,d.status,
         d.side_effect_state,d.attempt_count,d.sent_at,b.created_at FROM communication.ticket_notification_binding b
         JOIN communication.delivery d ON d.id=b.delivery_id ${ticketRoundNotificationsEnabled?'LEFT JOIN communication.ticket_round_notification_binding r ON r.notification_binding_id=b.id LEFT JOIN pilot_ticket.ticket_handling_cycle c ON c.id=r.cycle_id AND c.ticket_id=r.ticket_id':''} WHERE b.ticket_id=$1::uuid
-        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);return publicP2016({items:q.rows.map(({provider,...item})=>provider==='WECOM_APP'?{...item,route_kind:'YIXIAOXIU_APP'}:item)});
+        ORDER BY b.created_at DESC,b.id DESC LIMIT 100`,[ticket.id]);
+      await authorizedTicket(input);
+      return publicP2016({items:q.rows.map(({provider,...item})=>provider==='WECOM_APP'?{...item,route_kind:'YIXIAOXIU_APP'}:item)});
     },
   });
 }

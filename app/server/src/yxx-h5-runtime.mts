@@ -9,10 +9,11 @@ import {isAbsolute} from 'node:path';
 import {createYxxH5Lifecycle} from './yxx-h5-v2-lifecycle.mjs';
 import {createYxxH5Profile} from './yxx-h5-v2-profile.mjs';
 import {createYxxH5ProfileEnricher} from './yxx-h5-v2-profile-enricher.mjs';
-import {createYxxH5Media} from './yxx-h5-media.mjs';
+import {createYxxH5Media,mediaConversionDiagnosticsReady,mediaEmployeeReadSchemaReady} from './yxx-h5-media.mjs';
+import {lstat} from 'node:fs/promises';
 import {createYxxH5MediaPrivateStore} from './yxx-h5-media-store.mjs';
 import {createYxxH5MediaWeCom} from './yxx-h5-media-wecom.mjs';
-import {createYxxH5MediaFFmpegTranscoder} from './yxx-h5-media-transcode.mjs';
+import {createYxxH5MediaFFmpegTranscoder,h5ImageCompressionAvailable} from './yxx-h5-media-transcode.mjs';
 import {failYxx} from './p2-g2-yixiaoxiu-contract.mjs';
 
 /** Explicit resource injection. This option never changes the existing member write flags. */
@@ -26,6 +27,9 @@ export interface YxxH5RuntimeOptions {
   fetchImpl?:typeof fetch;
   workbenchProgressEnabled?:boolean;
   performanceEnabled?:boolean;
+  compressionEnabled?:boolean;
+  /** Derived from the single workbenchMediaEmployeeReadEnabled setting. */
+  employeeReadEnabled?:boolean;
   previousStaticRoot?:string;
 }
 interface RuntimeBase {
@@ -40,13 +44,18 @@ interface RuntimeBase {
 }
 type RuntimeInput=RuntimeBase&({role?:'APP';publicOrigin:string;corpId:string;agentId:string}|{role:'WORKER';publicOrigin?:never;corpId?:never;agentId?:never});
 const absolutePath=(value:unknown)=>typeof value==='string'&&isAbsolute(value)&&!/[\x00-\x1f\x7f]/u.test(value);
+export async function mediaVideoToolsReady(options:YxxH5RuntimeOptions){
+ try{for(const path of [options.ffmpegPath,options.ffprobePath]){if(!path||!absolutePath(path))return false;const info=await lstat(path);if(!info.isFile()||info.isSymbolicLink())return false;}return true;}catch{return false;}
+}
 export function validateYxxH5RuntimeOptions(options:YxxH5RuntimeOptions|null|undefined,role:'APP'|'WORKER'='APP') {
   if(options===null||options===undefined)return false;
   if(!options||typeof options!=='object'||Array.isArray(options)||options.enabled!==undefined&&typeof options.enabled!=='boolean'
     ||options.workbenchProgressEnabled!==undefined&&typeof options.workbenchProgressEnabled!=='boolean'
     ||options.performanceEnabled!==undefined&&typeof options.performanceEnabled!=='boolean'
+    ||options.compressionEnabled!==undefined&&typeof options.compressionEnabled!=='boolean'
+    ||options.employeeReadEnabled!==undefined&&typeof options.employeeReadEnabled!=='boolean'
     ||options.previousStaticRoot!==undefined&&!absolutePath(options.previousStaticRoot))failYxx('CONFIG_INVALID');
-  if(options.enabled!==true){if(options.workbenchProgressEnabled===true||options.performanceEnabled===true||options.previousStaticRoot!==undefined)failYxx('CONFIG_INVALID');return false;}
+  if(options.enabled!==true){if(options.workbenchProgressEnabled===true||options.performanceEnabled===true||options.compressionEnabled===true||options.employeeReadEnabled===true||options.previousStaticRoot!==undefined)failYxx('CONFIG_INVALID');return false;}
   if(!absolutePath(options.privateRoot)||!(options.key instanceof Uint8Array)||options.key.byteLength!==32
     ||options.accessTokenProvider!==undefined&&typeof options.accessTokenProvider!=='function'
     ||options.fetchImpl!==undefined&&typeof options.fetchImpl!=='function'
@@ -58,7 +67,7 @@ export function validateYxxH5RuntimeOptions(options:YxxH5RuntimeOptions|null|und
 /** Reuses the supplied pool and the role's existing runOnce; creates no timer or directory. */
 export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId,options=null,role='APP',sourceScope='FORMAL',directoryPort=null,verifyCurrentMember=null,onUrge=null,onPublicProgress=null}:RuntimeInput) {
   const enabled=validateYxxH5RuntimeOptions(options,role);
-  const performanceEnabled=enabled&&options?.performanceEnabled===true;
+  const performanceEnabled=enabled&&options?.performanceEnabled===true,compressionEnabled=enabled&&options?.compressionEnabled===true,employeeReadEnabled=enabled&&options?.employeeReadEnabled===true;
   if(enabled&&role==='APP'&&(typeof publicOrigin!=='string'||typeof corpId!=='string'||!corpId||typeof agentId!=='string'||!agentId))failYxx('CONFIG_INVALID');
   const lifecycle=enabled?createYxxH5Lifecycle({pool,scopeSecret,enabled:true,onUrge,onPublicProgress}):null;
   const profile=enabled?createYxxH5Profile({pool,scopeSecret,enabled:true,sourceScope}):null;
@@ -72,7 +81,7 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
   const transcoder=selected&&role==='WORKER'?createYxxH5MediaFFmpegTranscoder({
     ffmpegPath:selected.ffmpegPath as string,ffprobePath:selected.ffprobePath as string,temporaryRoot:selected.privateRoot as string,
   }):null;
-  const media=store?createYxxH5Media({pool,store,wecom,transcoder,enabled:true,performanceEnabled}):null;
+  const media=store?createYxxH5Media({pool,store,wecom,transcoder,enabled:true,performanceEnabled,compressionEnabled,employeeReadEnabled}):null;
   const sdk=Object.freeze({enabled:wecom!==null,corp_id:wecom?corpId as string:null,agent_id:wecom?agentId as string:null});
   let stopped=false;
   let running:Promise<void>|null=null;
@@ -100,7 +109,11 @@ export function createYxxH5Runtime({pool,scopeSecret,publicOrigin,corpId,agentId
     async ready() {
       if(!enabled)return true;
       try{
-        const migrations=[...(role==='APP'?['036_p2_007_third_party_staff_directory']:[]),'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(performanceEnabled?['043_ticket_reopen_rounds','066_yixiaoxiu_h5_media_previews']:[])];
+        if(employeeReadEnabled&&!await mediaEmployeeReadSchemaReady(pool))return false;
+        if(employeeReadEnabled&&role==='WORKER'&&(!selected||!await mediaVideoToolsReady(selected)))return false;
+        if(compressionEnabled&&!await mediaConversionDiagnosticsReady(pool))return false;
+        if(compressionEnabled&&role==='WORKER'&&!await h5ImageCompressionAvailable())return false;
+        const migrations=[...(role==='APP'?['036_p2_007_third_party_staff_directory']:[]),'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(performanceEnabled?['043_ticket_reopen_rounds']:[]),...(performanceEnabled||employeeReadEnabled?['066_yixiaoxiu_h5_media_previews']:[]),...(employeeReadEnabled?['070_workbench_media_video_thumbnails']:[]),...(compressionEnabled?['069_h5_media_conversion_diagnostics']:[])];
         return (await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount===migrations.length;
       }
       catch{return false;}

@@ -18,7 +18,7 @@ test('T42 full-page expansion preserves the original completion intent through a
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       const card='[data-kind="ticket"][data-item-id="'+ticket.ticket.id+'"]';await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)}))`);
       await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).click()`);
-      await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open] [data-board-intent-panel]'))");
+      await browser.waitFor("Boolean(document.querySelector('.detail-dialog [data-board-intent-panel]'))");
       await browser.evaluate("document.querySelector('.detail-dialog a[aria-label=展开完整页面]').click()");
       await browser.waitFor("Boolean(document.querySelector('.detail-page #completion-process'))");
       await browser.evaluate("document.querySelector('#completion-process').focus()");await browser.command('Input.insertText',{text:'T42原独立内部过程：展开完整页后仍保留原操作。'});
@@ -48,7 +48,7 @@ test('T42 preflight real object404 after official assignment clears cached facts
     const first=f.tickets[0],actor=f.principals[1],admin=f.cookies[0],actorCookie=f.cookies[2];assert.ok(first&&actor&&admin&&actorCookie);const path='/api/tickets/'+first.ticket.id;
     const before=await get('/api/lifecycle/bootstrap');assert.equal(before.realtime_sse_enabled,false);assert.deepEqual(before.roles,['HANDLER']);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
-    await browser.waitFor("Boolean(document.querySelector('.detail-dialog[open]'))");await browser.evaluate("document.querySelector('[aria-label=关闭详情]').click()");await browser.waitFor("!document.querySelector('.detail-dialog[open]')");
+    await browser.waitFor("Boolean(document.querySelector('.detail-dialog'))");await browser.evaluate("document.querySelector('[aria-label=关闭详情]').click()");await browser.waitFor("!document.querySelector('.detail-dialog')");
     await f.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('T42_OTHER','T42其他合法团队')");
     const target=await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'t42-read-loss-'+randomUUID(),displayName:'T42接单同事',roles:['HANDLER'],resolverTeamIds:['T42_OTHER']});
     const bootstrap=await fetch(f.origin+'/api/lifecycle/bootstrap',{headers:{cookie:admin}});assert.equal(bootstrap.status,200);const csrf=object(await bootstrap.json()).csrf_token,current=await get(path),command={client_command_id:randomUUID(),expected_version:current.version,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target.id,resolver_team_id:'T42_OTHER',communication_choice:'RETAIN_CURRENT',sessions:[]};
@@ -59,7 +59,7 @@ test('T42 preflight real object404 after official assignment clears cached facts
     await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t42ObjectDenied=0;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/items/')&&response.status===404)globalThis.__t42ObjectDenied++;return response;};})()");
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
     await browser.waitFor(`globalThis.__t42ObjectDenied>0&&!document.querySelector(${JSON.stringify(card)})`);
-    assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog[open]'))"),false);assert.equal(await browser.evaluate("Boolean(document.querySelector('.workspace'))"),true,'object loss must preserve the valid session and other current work');
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),false);assert.equal(await browser.evaluate("Boolean(document.querySelector('.workspace'))"),true,'object loss must preserve the valid session and other current work');
     assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),[]);
   },{principalIndex:2,assignment:true});
 });

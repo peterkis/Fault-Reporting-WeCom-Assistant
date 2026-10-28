@@ -14,7 +14,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Read={path:string;status:number;body:Record<string,unknown>};
 type Write=Read&{method:string;request:Record<string,unknown>;ifMatch:string|null;idempotencyKey:string|null;csrfPresent:boolean};
-const drawer='dialog.detail-dialog[open]';
+const drawer='.detail-dialog[role=dialog]';
 const region=drawer+' [role="region"][aria-label="共享下次跟进时间"]';
 const dueAt='2030-01-02 09:30:00';
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
@@ -44,6 +44,9 @@ function observeActualHttp(path:string){return `(()=>{const original=globalThis.
 async function reload(browser:Browser){
   const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
   await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'&&Boolean(document.querySelector(${JSON.stringify(drawer+' #detail-title')}))`);
+  // The current detail deliberately keeps secondary workflows collapsed after navigation.
+  await browser.evaluate("(()=>{const group=document.querySelector('.detail-workflows');if(group&&!group.hasAttribute('data-expanded'))group.querySelector('[data-slot=disclosure-heading] button').click();})()");
+  await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.checkVisibility()===true`);
 }
 async function capture(browser:Browser,directory:string,name:string){
   const folder=['actual-refresh-preserved-drawer','actual-cancel-history-drawer'].includes(name)?join(tmpdir(),'web01-ui-'+randomUUID()):directory;

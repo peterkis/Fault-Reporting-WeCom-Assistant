@@ -15,7 +15,7 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Read={path:string;status:number;body:Record<string,unknown>};
 type Write=Read&{method:string;request:Record<string,unknown>;ifMatch:string|null;idempotencyKey:string|null;csrfPresent:boolean};
 interface StorageFacts {databaseExists:boolean;drafts:number;operations:number;commandId:string|null;operationKeys:string[];firstSavedAt:number|null;expiresAt:number|null;extractable:boolean|null;plainDuePresent:boolean}
-const drawer='dialog.detail-dialog[open]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]';
+const drawer='.detail-dialog[role=dialog]',region=drawer+' [role="region"][aria-label="共享下次跟进时间"]';
 const dueAt='2030-01-02 09:30:00';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
@@ -73,10 +73,11 @@ test('production T37 raw recovery retains the original shared follow-up UUID acr
     try{
       browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observeActualResponseLoss(schedulePath)});await reload(browser,schedulePath);
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))`);
       await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(region+' input[name="due_at"]')});if(!(input instanceof HTMLInputElement)||input.type!=='text')throw Error('T37_REAL_DUE_INPUT_REQUIRED');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;if(!setter)throw Error('T37_NATIVE_INPUT_REQUIRED');setter.call(input,${JSON.stringify(dueAt)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       await browser.waitFor(readyButton('设置共享时间'));await browser.evaluate(clickButton('设置共享时间'));
-      await browser.waitFor(`globalThis.__t37RecoveryWrites.length===1&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('结果未知')`);
+      await browser.waitFor(`globalThis.__t37RecoveryWrites.length===1&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')`);
       const writes=await browser.evaluate('globalThis.__t37RecoveryWrites') as Write[],original=writes[0];assert.ok(original);
       assert.equal(original.path,schedulePath);assert.equal(original.method,'POST');assert.equal(original.status,200);assert.match(text(original.request.client_command_id),uuid);
       assert.deepEqual(original.request,{client_command_id:original.request.client_command_id,expected_version:version(beforeTicket.version),expected_schedule_version:'0',reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:dueAt});
@@ -102,7 +103,7 @@ test('production T37 raw recovery retains the original shared follow-up UUID acr
       assert.equal(await browser.evaluate(`globalThis.__t37RecoveryReads.some(value=>value.path.startsWith(${JSON.stringify(schedulePath+'/commands/')}))`),false,'reload preserves UNKNOWN until an explicit read-only acknowledgement');
       await writeFile(join(directory,'restored-storage-observation.json'),JSON.stringify(restored,null,2));
       await browser.evaluate(clickButton('只读核对原操作'));
-      await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.textContent.includes('已核对原操作提交成功')&&!(${hasButton('只读核对原操作')})`);
+      await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${hasButton('只读核对原操作')})`);
       const reads=await browser.evaluate(`globalThis.__t37RecoveryReads.filter(value=>value.path.startsWith(${JSON.stringify(schedulePath+'/commands/')}))`) as Read[];
       assert.equal(reads.length,1,'exactly one explicit purpose GET is sufficient');const acknowledgement=reads[0];assert.ok(acknowledgement);assert.equal(acknowledgement.path,ackPath);assert.equal(acknowledgement.status,200);
       assert.deepEqual(acknowledgement.body,{ticket_id:ticketId,client_command_id:originalId,state:'COMMITTED',result:{...original.body,replayed:true}});

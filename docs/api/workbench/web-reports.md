@@ -1,6 +1,14 @@
 # 管理端网页报修资料
 
+2026-10-28：可选的[PC员工媒体入口](employee-media.md)使用独立请求级权限；开启时media元数据增thumbnail描述，详情及列表权限仍沿本页。旧媒体HTTP入口的工单关联与逐块检查不变，关闭新开关可回退。
+
+2026-10-28：启用后台压缩时，media 可带仅工作人员可见的 conversion_error；原件上传成功独立于转换结果。字段、缓存及原件回退见[头像与媒体合同](actor-avatars-and-media.md)。
+
 ADR-0035 的工作人员消费支路，使用原 human-v1／P2-016 App HTTP 宿主、工作人员 Cookie／Bearer、当前 Workbench READ、同源 CSRF。成员 H5 身份不授予本页权限。源码装配入口为 `createWorkbenchWebReport`；运行开关默认关闭，`enabled` 控制读取入口，`progressEnabled` 单独控制新公开进度提交。关闭新写能力后，保持当前获权历史读取与原用途回执核对。
+
+## GET /api/workbench/items/{kind}/{id}/reporter-profile
+
+工作人员只读展示资料，无 query。ADR-0048的Ticket持久资料沿当前工单READ、会话与角色读取，并在返回前复核；不再依赖已过期或撤销的原Web入口。未进入该持久资料分支的原入口资料／实时目录回退，仍要求真实Web绑定及原留存。返回闭合 `{name,department,source}`；`source` 为 `REPORT_SNAPSHOT`、`CURRENT_PROFILE`、`RETAINED_PROFILE` 或 `UNAVAILABLE`。ADR-0048已持久保留的后续资料返回`RETAINED_PROFILE`，取得时间见卡片的`reporter_profile`，不声称是报修时或刚刚读取的当前资料。已有姓名或部门原快照时保持整份报修时资料；两项均缺失时，才允许通过原绑定的 `APP_OPEN_USERID`、相同应用/企业范围及 `applicationRecipientProof` 读取当前企业微信姓名和部门。等待目录读取后，再核验当前 READ 和原绑定。响应不含原始身份、手机号、证明或目录映射，不回写历史快照。未装配资料读取或缺少有效证明时返回空资料。前端注明当前资料，使用按当前员工、工单和授权版本隔离的独立内存 Query，staleTime 与 gcTime 均为五分钟，切换标签保留已读取资料，权限拒绝或退出仍清空；不阻塞看板，也不进入五秒业务轮询。并发相同报修人合并读取，最多32个待处理身份，provider保留既有超时和队列上限。
 
 ## GET /api/workbench/items/{kind}/{id}/web-report
 

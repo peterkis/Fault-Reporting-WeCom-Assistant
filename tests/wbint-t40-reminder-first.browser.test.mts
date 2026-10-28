@@ -10,7 +10,7 @@ import {withT40ReminderFirstFixture,object,text} from './helpers/t40-reminder-fi
 /** Frozen SOURCE_ONLY original tracer. No execution, RED or PASS is claimed here. */
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface ImageReceipt {file:string;width:number;height:number;sha256:string;phase:string}
-const settings='button[aria-label="提醒偏好"]';
+const settings='[data-action="open-settings"]';
 const observer=`(()=>{
   globalThis.__t40Platform={audio:0,desktopPermission:0,desktopCreate:0,posts:0};
   for(const [owner,name] of [
@@ -77,15 +77,15 @@ test('T40 a genuinely assigned due Ticket yields a muted locatable production no
       await browser.waitFor("document.querySelectorAll('article.ticket-card').length>0");
       assert.equal((await fixture.runtime.observability.metrics()).sse_clients,1,'production bundle must own the real authorized stream');
       const beforeUrl=await browser.evaluate('location.href'),beforeFacts=await fixture.currentFacts();
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
       // First product assertion only after actual assignment, due SET, authorized GET, mounted bundle and SSE.
       assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(settings)+'))'),true,
         'T40_PRODUCTION_REMINDER_SETTINGS_REQUIRED');
       await browser.evaluate('document.querySelector('+JSON.stringify(settings)+').click()');
-      await browser.waitFor('Boolean(document.querySelector(\'[role="dialog"][aria-label="本浏览器提醒偏好"]\'))');
+      await browser.waitFor('Boolean(document.querySelector(\'.workbench-settings\'))');
       assert.equal(await browser.evaluate('document.querySelector(\'input[aria-label="开启声音提醒"]\')?.checked'),false);
       assert.equal(await browser.evaluate('document.querySelector(\'input[aria-label="开启桌面通知"]\')?.checked'),false);
-      await browser.evaluate('document.querySelector(\'[role="dialog"][aria-label="本浏览器提醒偏好"] button[aria-label="关闭提醒偏好"]\').click()');
+      await browser.evaluate('document.querySelector(\'.workbench-settings button[aria-label="关闭设置"]\').click()');
       const baselineResponse=await fixture.http.get('/api/workbench/reminders?limit=50');
       assert.equal(baselineResponse.status,200,JSON.stringify(baselineResponse.value));
       const baseline=page(baselineResponse.value);
@@ -104,14 +104,14 @@ test('T40 a genuinely assigned due Ticket yields a muted locatable production no
       const shown='[data-reminder-id="'+reminderId+'"]';
       await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(shown)+'))');
       assert.equal(await browser.evaluate('location.href'),beforeUrl,'fresh events cannot navigate the operator');
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
       assert.equal(await browser.evaluate('document.querySelectorAll('+JSON.stringify(shown)+').length'),1);
       assert.deepEqual(await browser.evaluate('globalThis.__t40Platform'),{audio:0,desktopPermission:0,desktopCreate:0,posts:0},
         'default mute performs no audio attempt, desktop permission request/construction or business POST');
       await snapshot('reminder-muted');
       await browser.evaluate('document.querySelector('+JSON.stringify(shown+' button[aria-label="定位事项"]')+').click()');
       await browser.waitFor('document.querySelector(\'article.ticket-card[data-item-id="'+fixture.ticketId+'"]\')?.dataset.reminderLocated==="true"');
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("dialog.detail-dialog[open]"))'),false,'locating is not opening details');
+      assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false,'locating is not opening details');
       assert.deepEqual(await fixture.currentFacts(),beforeFacts,'visual/locate is not read advancement, follow, disposition, assignment or a Ticket action');
       assert.deepEqual(await fixture.runtime.runFollowUpDueBatch({limit:20}),{scanned:0,emitted:0,skipped:0});
       const repeated=await fixture.http.get('/api/workbench/reminders?after_event_id='+baseline.watermark+'&limit=50&baseline_token='+encodeURIComponent(baseline.baselineToken));

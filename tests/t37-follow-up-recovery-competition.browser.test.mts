@@ -14,7 +14,7 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Tab=Awaited<ReturnType<typeof yxxTab>>;
 type Surface=Pick<Browser,'evaluate'|'waitFor'>;
 type RequestFact={method:string;path:string;status:number|null};
-const region='dialog.detail-dialog[open] [role="region"][aria-label="共享下次跟进时间"]';
+const region='.detail-dialog[role=dialog] [role="region"][aria-label="共享下次跟进时间"]';
 const dueX='2030-01-02 09:30:00',dueY='2030-01-02 10:00:00';
 const regionNode=`document.querySelector(${JSON.stringify(region)})`;
 const inputNode=`document.querySelector(${JSON.stringify(region+' input[name="due_at"]')})`;
@@ -22,7 +22,7 @@ function button(label:string){return `[...(${regionNode}?.querySelectorAll('butt
 function readyButton(label:string){return `Boolean(${button(label)})&&!(${button(label)}).disabled`;}
 async function click(surface:Surface,label:string){await surface.waitFor(readyButton(label));await surface.evaluate(`(()=>{const button=${button(label)};if(!button||button.disabled)throw Error('T37_NATIVE_CONTROL_UNAVAILABLE');button.click();})()`);}
 async function fill(surface:Surface,due:string){await surface.evaluate(`(()=>{const input=${inputNode};if(!(input instanceof HTMLInputElement)||input.type!=='text'||input.disabled)throw Error('T37_NATIVE_INPUT_UNAVAILABLE');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;if(!setter)throw Error('T37_NATIVE_INPUT_SETTER_REQUIRED');setter.call(input,${JSON.stringify(due)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
-async function ready(surface:Surface){await surface.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled&&${regionNode}?.innerText.includes('草稿仅在当前浏览器')`);}
+async function ready(surface:Surface){await surface.waitFor('Boolean(document.querySelector(".detail-workflows"))');await surface.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");await surface.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled&&${regionNode}?.innerText.includes('草稿仅在当前浏览器')`);}
 async function current(http:T37Http,path:string){const response=await http.get(path);assert.equal(response.status,200,JSON.stringify(response.value));return response.value;}
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
 async function drain(fixture:T37Fixture){
@@ -102,8 +102,8 @@ test('prepare capacity failure leaves zero POST and zero phantom operation while
   const full=object(await browser.evaluate(stored(fixture.handler,ticketId)));assert.deepEqual(full,{drafts:20,operations:0,revision:null,commandId:null});
   // Hold real encryption until submit has entered prepare; no capacity, row or success result is replaced.
   await browser.evaluate(`(()=>{const original=crypto.subtle.encrypt.bind(crypto.subtle),held=[];globalThis.__t37EncryptionHeld=0;crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__t37EncryptionHeld++;held.push(()=>original(...args).then(resolve,reject));});globalThis.__t37ReleaseEncryption=()=>{crypto.subtle.encrypt=original;for(const release of held.splice(0))release();};})()`);
-  await fill(browser,dueX);await click(browser,'设置共享时间');await browser.waitFor(`globalThis.__t37EncryptionHeld>0&&${regionNode}?.innerText.includes('正在保存共享时间')`);
-  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`${regionNode}?.innerText.includes('操作尚未发送')`);
+  await fill(browser,dueX);await click(browser,'设置共享时间');await browser.waitFor(`globalThis.__t37EncryptionHeld>0&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('正在保存共享时间')`);
+  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('操作尚未发送')`);
   assert.equal(requests.filter(request=>request.method==='POST').length,0);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),full);
   assert.equal(await browser.evaluate(`Boolean(${button('只读核对原操作')})`),false,'a failed prepare must not create an ACK target which the server never received');
   assert.equal(await browser.evaluate(`${inputNode}.value`),dueX);await click(browser,'清空未提交输入');await browser.waitFor(`${inputNode}?.value===''`);
@@ -116,7 +116,7 @@ test('prepare capacity failure leaves zero POST and zero phantom operation while
 test('a delayed real ACK for X cannot replace another tab Y operation or send X again',{timeout:240000},async()=>{
  await withBrowserCase('LATE_ACK',0,async({fixture,handler,ticketId,schedulePath,browser,requests,peer})=>{
   await browser.evaluate('globalThis.__t37Transport.dropPost=true');await fill(browser,dueX);await click(browser,'设置共享时间');
-  await browser.waitFor(`${regionNode}?.innerText.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
+  await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
   const x=object(await browser.evaluate('globalThis.__t37Transport.posts[0]'));assert.equal(x.status,200);const xId=text(object(x.command).client_command_id);
   assert.equal(object(await browser.evaluate(stored(fixture.handler,ticketId))).commandId,xId);
   await browser.evaluate(`globalThis.__t37Transport.holdAckId=${JSON.stringify(xId)}`);await click(browser,'只读核对原操作');
@@ -132,21 +132,21 @@ test('a delayed real ACK for X cannot replace another tab Y operation or send X 
   assert.equal(await other.evaluate(`${inputNode}.disabled`),true,'the previous ACK current-view read must keep the form busy');
   assert.equal(await other.evaluate(readyButton('设置共享时间')),false,'Y must not be offered while the old ACK still owns the request');
   assert.equal(requests.filter(request=>request.method==='POST').length,1);await other.evaluate('globalThis.__t37ReleaseView()');
-  await other.waitFor(`${regionNode}?.innerText.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})&&globalThis.__t37Transport.views.length>${beforeOtherAckViews}`);
+  await other.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})&&globalThis.__t37Transport.views.length>${beforeOtherAckViews}`);
   await tick(other);await other.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled`);
   await other.evaluate('globalThis.__t37Transport.dropPost=true');await fill(other,dueY);await click(other,'设置共享时间');
-  await other.waitFor(`${regionNode}?.innerText.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
+  await other.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
   const y=object(await other.evaluate('globalThis.__t37Transport.posts[0]'));assert.equal(y.status,200);const yId=text(object(y.command).client_command_id);assert.notEqual(yId,xId);
   const retained=object(await other.evaluate(stored(fixture.handler,ticketId)));assert.equal(retained.commandId,yId);assert.ok(retained.revision);
   const arranged=await current(handler,schedulePath);assert.equal(arranged.schedule_version,'2');assert.equal(object(arranged.active).due_at,dueY);
   await browser.command('Page.bringToFront');await browser.evaluate('globalThis.__t37ReleaseAck()');await browser.waitFor('globalThis.__t37Transport.ackState==="RELEASED"||globalThis.__t37Transport.ackState==="ABORTED"');await tick(browser);
-  await browser.waitFor(`!${regionNode}?.innerText.includes('正在只读核对')`);
+  await browser.waitFor(`!document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('正在只读核对')`);
   assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),retained,'old X cleanup must preserve actual Y recovery and its CAS revision');
   assert.equal(requests.filter(request=>request.method==='POST').length,2,'only the two deliberate SETs reached the server');
   // A settled broadcast may clear A before Y exists. Normal reload may discover Y; no new-save broadcast is required.
   if(!await browser.evaluate(`Boolean(${button('只读核对原操作')})`))await reload(browser);
   await click(browser,'只读核对原操作');
-  await browser.waitFor(`${regionNode}?.innerText.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})`);
+  await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})`);
   const ackRequests=requests.filter(request=>request.method==='GET'&&request.path.startsWith(schedulePath+'/commands/'));
   assert.equal(ackRequests.at(-1)?.path,schedulePath+'/commands/'+yId,'A must acknowledge the actual current Y operation, never remain pinned to old X');
   assert.equal(ackRequests.filter(request=>request.path===schedulePath+'/commands/'+xId).length,2,'one original held X GET plus B deliberate X GET, no third X GET');
@@ -158,9 +158,9 @@ test('a delayed real ACK for X cannot replace another tab Y operation or send X 
 test('a confirmed production POST remains submitted when delivery of the subsequent current-view response fails',{timeout:240000},async()=>{
  await withBrowserCase('CONFIRMED_VIEW_FAILURE',0,async({fixture,handler,ticketId,schedulePath,browser,requests})=>{
   await browser.evaluate('globalThis.__t37Transport.failAfterPost=true');await fill(browser,dueX);await click(browser,'设置共享时间');
-  await browser.waitFor(`${regionNode}?.innerText.includes('原操作已确认提交')&&${regionNode}?.innerText.includes('最新安排暂未读回')`);
+  await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('原操作已确认提交')&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('最新安排暂未读回')`);
   const transport=object(await browser.evaluate('globalThis.__t37Transport')),post=rows(transport.posts)[0];assert.ok(post);assert.equal(post.status,200);assert.equal(object(post.body).ok,true);
-  assert.equal(requests.filter(request=>request.method==='POST').length,1);assert.equal(await browser.evaluate(`${regionNode}.innerText.includes('结果未知')`),false);
+  assert.equal(requests.filter(request=>request.method==='POST').length,1);assert.equal(await browser.evaluate(`Boolean(document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知'))`),false);
   assert.equal(await browser.evaluate(`Boolean(${button('只读核对原操作')})`),false);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),{drafts:0,operations:0,revision:null,commandId:null});
   const arranged=await current(handler,schedulePath);assert.equal(arranged.schedule_version,'1');assert.equal(object(arranged.active).due_at,dueX);
   await browser.evaluate('globalThis.__t37Transport.failViews=false;globalThis.__t37Transport.failAfterPost=false');await click(browser,'重新读取共享时间');

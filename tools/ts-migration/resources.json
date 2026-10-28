@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/068_workbench_actor_avatar_cache.sql",
+    "database/migrations/069_h5_media_conversion_diagnostics.sql",
+    "database/migrations/070_workbench_media_video_thumbnails.sql",
     "tests/fixtures/process-ownership/OwnedProcessJob.cs",
     ".env.example",
     "config_examples/conversation_policy.example.json",
@@ -390,6 +393,7 @@
     "database/migrations/064_yixiaoxiu_h5_member_service.sql",
     "database/migrations/065_yixiaoxiu_h5_web_media.sql",
     "database/migrations/066_yixiaoxiu_h5_media_previews.sql",
+    "database/migrations/067_ticket_reporter_profiles.sql",
     "package-lock.json",
     "package.json",
     "tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl",

@@ -81,13 +81,13 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    writer=await launchSystemBrowser({url:page,width:600,height:1080,cookies:[{...cookie,url:fixture.origin+'/'}]});assert.ok(writer);
    await writer.waitFor(ready);await writer.evaluate(input(reasonR1));
    await writer.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(writer,oldTarget);
-   await writer.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"]'))&&document.querySelector('[data-session-choice="${sessionId}"]').disabled===false`);
-   await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').click()`);
-   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"]').checked`);
+   await writer.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
+   await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').checked`);
    r1=object(await writer.evaluate(snapshot(fixture.admin,ticketId)));assert.ok(r1.revision);assert.equal(r1.operation,null);
    // Writer B itself completes a real authorized R1 restore while X is still valid.
    const timeOrigin=await writer.evaluate('performance.timeOrigin');await writer.command('Page.reload');
-   await writer.waitFor(`performance.timeOrigin!==${timeOrigin}&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&(${reasonInput}).disabled===false&&(${targetInput})?.value===${JSON.stringify(oldTarget)}&&(${targetInput}).disabled===false&&document.querySelector('[data-session-choice="${sessionId}"]')?.checked&&document.querySelector('[data-action=unassign]')?.disabled===false`);
+   await writer.waitFor(`performance.timeOrigin!==${timeOrigin}&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&(${reasonInput}).disabled===false&&(${targetInput})?.value===${JSON.stringify(oldTarget)}&&(${targetInput}).disabled===false&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.checked&&document.querySelector('[data-action=unassign]')?.disabled===false`);
    assert.deepEqual(await writer.evaluate(snapshot(fixture.admin,ticketId)),r1);
    await writer.evaluate(`(()=>{globalThis.__t08Revocations=0;globalThis.__t08RaceBarrier=null;const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.onmessage=event=>{const value=event.data;if(typeof value?.t08RaceBarrier==='string')globalThis.__t08RaceBarrier=value.t08RaceBarrier;if(value?.principal===${JSON.stringify(fixture.admin)}&&value.kind==='ticket'&&value.id===${JSON.stringify(ticketId)}&&value.purpose==='ticket-unassign'&&value.reason==='revoked')globalThis.__t08Revocations++;};globalThis.__t08CloseObserver=()=>channel.close();})()`);
    // Synthetic directory identity readback, followed by its existing public Access Port; no SQL role/ownership write.
@@ -120,7 +120,7 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    assert.equal(requests.filter(row=>row.method==='POST'&&row.path===path+'/unassign').length,0);
    assert.deepEqual(await writer.evaluate(snapshot(fixture.admin,ticketId)),r2,'R1 CAS must not delete or change the current R2 encrypted revision');
    assert.equal(await writer.evaluate(`(${reasonInput})?.value`),unsaved,'a stale R1 refusal must not erase valid Y input typed after R2 was saved');
-   assert.equal(await writer.evaluate(`(${targetInput})?.value`),newTarget);assert.equal(await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]')?.checked`),true);
+   assert.equal(await writer.evaluate(`(${targetInput})?.value`),newTarget);assert.equal(await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.checked`),true);
    assert.deepEqual((await admin.get(path)).value,before.value);assert.deepEqual((await admin.get(path+'/events?limit=200')).value,events);
    assert.deepEqual((await admin.get(path+'/deliveries')).value,delivery);assert.deepEqual((await admin.get(path+'/responsibility')).value,responsibility);
   }catch(error){primary=error;}
