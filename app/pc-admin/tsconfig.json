@@ -7,5 +7,5 @@
     "verbatimModuleSyntax": true, "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts", "vite.login.config.ts"]
+  "include": ["src", "vite.config.ts", "vite.login.config.ts", "shaders.config.ts"]
 }

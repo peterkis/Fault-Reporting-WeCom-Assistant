@@ -30,6 +30,18 @@ let panel:ReturnType<typeof ww.createWWLoginPanel>|null=null;
 let timer:number|undefined;
 let readyTimer:number|undefined;
 let scene:ReturnType<typeof createRoot>|null=null;
+let backdrop:ReturnType<typeof createRoot>|null=null,backdropRequested=false;
+const mountBackdrop=()=>{
+  const host=document.getElementById('login-backdrop');
+  if(backdropRequested||!host||!('gpu' in navigator)||!navigator.gpu||!active||completing)return;
+  backdropRequested=true;
+  // The QR panel is mounted and the opening physical motion has finished.
+  void import('./LoginBackdrop').then(({default:LoginBackdrop})=>{
+    if(!active||completing)return;
+    backdrop=createRoot(host,{onUncaughtError:()=>{host.hidden=true;}});
+    backdrop.render(createElement(LoginBackdrop));
+  }).catch(()=>{host.hidden=true;});
+};
 let appVersion='',renderScene:(()=>void)|null=null;
 const nativeLogin=window.workbenchLogin?.version===1?window.workbenchLogin:undefined;
 if(nativeLogin){
@@ -61,7 +73,7 @@ root.dataset.pageHidden=String(document.hidden);
 if(temporaryFallback)root.dataset.fallbackReason=temporaryFallback;
 viewButton.textContent=view==='flat'?'使用工牌视图':'使用平面扫码';
 if(!supportedScale()){viewButton.hidden=true;status.textContent='当前缩放使用平面扫码。';}
-const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);panel?.unmount();panel=null;scene?.unmount();scene=null;icon?.unmount();icon=null;};
+const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);panel?.unmount();panel=null;scene?.unmount();scene=null;backdrop?.unmount();backdrop=null;icon?.unmount();icon=null;};
 const restart=()=>{if(!active||completing)return;active=false;dispose();location.replace('/workbench/desktop/embedded');};
 const changeView=(next:'flat'|'lanyard',automaticReason?:FallbackReason)=>{
   if(!active||completing)return;
@@ -94,6 +106,7 @@ try{
     onLoginFail(){if(active&&!completing)status.textContent='二维码暂不可用，请重新获取，或使用官方登录页。';},
   });
   status.textContent='';
+  if(view==='flat')mountBackdrop();
 }catch{status.textContent='二维码加载失败，请从右下角更多选项重试。';}
 };
 if(view==='flat')mountPanel();
@@ -103,7 +116,7 @@ else{
     if(!active||completing)return;
     const fallback=(reason:FallbackReason)=>queueMicrotask(()=>changeView('flat',reason));
     scene=createRoot(stage,{onUncaughtError:()=>fallback('scene-error')});
-    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,viewportFrame:stage,onFrontReady:mountPanel,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
+    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,viewportFrame:stage,onFrontReady:mountPanel,onRest:mountBackdrop,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
     renderScene();
   }).catch(()=>changeView('flat','asset-failed'));
 }

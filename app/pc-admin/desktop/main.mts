@@ -146,7 +146,7 @@ else{
   // Keep the local startup surface visible while the first remote document is pending.
   content.setVisible(false);
   let loginPresentation=false;
-  const layout=()=>{if(window&&content){const {width,height}=window.getContentBounds(),top=loginPresentation?0:TITLEBAR_HEIGHT;content.setBounds({x:0,y:top,width,height:Math.max(0,height-top)});loginChrome?.setBounds({x:0,y:0,width,height:TITLEBAR_HEIGHT});loginChrome?.setVisible(loginPresentation&&content.getVisible());}};
+  const layout=()=>{if(window&&content){const {width,height}=window.getContentBounds(),top=loginPresentation?0:TITLEBAR_HEIGHT;content.webContents.setBackgroundThrottling(loginPresentation);content.setBounds({x:0,y:top,width,height:Math.max(0,height-top)});loginChrome?.setBounds({x:0,y:0,width,height:TITLEBAR_HEIGHT});loginChrome?.setVisible(loginPresentation&&content.getVisible());}};
   layout();window.on('resize',layout);
   const page=content.webContents;
   let loginTimer:ReturnType<typeof setTimeout>|null=null,loginRefreshAt=0,pendingLogin=false;

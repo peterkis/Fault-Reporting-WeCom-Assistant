@@ -46,13 +46,15 @@ export interface LanyardProps {
   /** Keep this layout slot's framing while drawing over the whole viewport. */
   viewportFrame?: HTMLElement;
   onFrontReady?: () => void;
+  /** Start optional decoration only once the physical opening motion has settled. */
+  onRest?: () => void;
   /** Parent chooses a fresh flat-page login; no loaded iframe is moved for fallback. */
   onFallback?: (reason: 'webgl-unavailable' | 'context-lost') => void;
 }
 
 type Settings = Required<Omit<LanyardProps,
   'frontImage' | 'backImage' | 'strapImage' | 'className' | 'style' |
-  'frontElement' | 'viewportFrame' | 'onFrontReady' | 'onFallback'>> & {
+  'frontElement' | 'viewportFrame' | 'onFrontReady' | 'onRest' | 'onFallback'>> & {
   frontImage: string | undefined;
   backImage: string | undefined;
   strapImage: string | undefined;
@@ -862,14 +864,15 @@ const Lanyard = ({
   frontElement,
   viewportFrame,
   onFrontReady,
+  onRest,
   onFallback,
   paused = false
 }: LanyardProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<Settings | null>(null);
   const applyRef = useRef<(() => void) | null>(null);
-  const callbacksRef = useRef({onFrontReady, onFallback});
-  callbacksRef.current = {onFrontReady, onFallback};
+  const callbacksRef = useRef({onFrontReady, onRest, onFallback});
+  callbacksRef.current = {onFrontReady, onRest, onFallback};
 
   settingsRef.current = {
     frontImage,
@@ -1351,7 +1354,7 @@ const Lanyard = ({
             introStarted = performance.now();
             sim.body.velocity.x += 0.8;
             start();
-          }
+          } else callbacksRef.current.onRest?.();
         });
       }
     };
@@ -1405,6 +1408,7 @@ const Lanyard = ({
       render();
       const resting = sim.calm > 1.2 && !sim.grab && current.breeze === 0;
       if (visible && !resting && !settingsRef.current?.paused) raf = requestAnimationFrame(tick);
+      else if (resting) callbacksRef.current.onRest?.();
     };
 
     const start = () => {

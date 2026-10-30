@@ -19,3 +19,8 @@ button,a{font:inherit;font-size:12px;color:#656f7d}button{border:0;border-radius
 [data-view=flat] #lanyard-stage,[data-view=flat] .login-gesture{display:none}[data-view=flat] .login-panel-parking{display:flex;justify-content:center;margin:38px 0 26px;padding:22px 0;background:#fff;border-radius:18px;box-shadow:0 12px 50px #20304808}[data-view=flat] .login-copy{padding-bottom:50px}
 @media(max-width:800px){.login-shell{grid-template-columns:1fr;width:min(580px,calc(100vw - 36px));gap:0;padding-top:24px}.login-copy{padding:0 18px}.login-brand{margin:0 0 20px}.login-copy h1{font-size:30px}.login-content{margin-top:-18px}.login-footer{position:static;max-width:calc(100vw - 128px);margin:24px auto 32px}[data-view=flat] .login-copy{padding-bottom:0}[data-view=flat] .login-content{margin-top:0}}
 @media(max-width:380px){.login-shell{width:calc(100vw - 20px)}.login-copy{padding:0 8px}.login-options{right:16px;bottom:16px}.login-options-menu{right:16px;bottom:62px}}
+/* Keep the GPU surface between the copy and badge, below every login interaction. */
+#login-backdrop{position:fixed;left:calc(50% - 74px);top:50%;width:min(560px,52vw);height:min(640px,80vh);transform:translate(-50%,-50%);z-index:0;pointer-events:none;contain:layout paint;isolation:isolate}
+.login-blob{width:100%;height:100%;transition:opacity 600ms ease-out}
+.login-shell,.login-footer{z-index:1}
+@media(max-width:800px){#login-backdrop{display:none}}

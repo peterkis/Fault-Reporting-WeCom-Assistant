@@ -21,6 +21,7 @@
     "motion": "13.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "shaders": "4.0.5",
     "three": "0.186.1",
     "react-aria-components": "1.21.1",
     "react-router": "7.18.4",

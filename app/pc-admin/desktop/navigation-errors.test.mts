@@ -111,6 +111,8 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     assert.equal(await command('evaluate','window.workbenchLogin.getAppVersion()'),packageInfo.version,'login metadata is the actual package version');
     assert.equal(await command('evaluate','matchMedia("(prefers-reduced-motion: reduce)").matches'),false,'the content window defaults to full motion');
     assert.equal(await command('evaluate','typeof document.querySelector("iframe").contentWindow.workbenchLogin'),'undefined','child frames do not receive the login bridge');
+    await command('hide');await wait('document.hidden===true');
+    await command('show');await wait('document.hidden===false');
     await command('suspend');await command('resume-after-idle','360000');await wait('document.querySelector("#embedded")?.textContent==="内嵌二维码 2"');
     assert.equal(embeddedGeneration,2,'resume notifies the page to renew one whole embedded attempt');
     await command('offline');

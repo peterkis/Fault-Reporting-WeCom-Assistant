@@ -44,6 +44,18 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
   await browser.waitFor('document.querySelector(".lanyard-front #wecom-panel iframe")&&document.querySelector("#desktop-login")?.dataset.view==="lanyard"');
   assert.equal(generation,1);assert.equal(await browser.evaluate('document.querySelectorAll("#wecom-panel iframe").length'),1);
+  assert.equal(await browser.evaluate('(()=>{const e=document.getElementById("login-backdrop"),r=e.getBoundingClientRect();return e.inert&&e.getAttribute("aria-hidden")==="true"&&getComputedStyle(e).pointerEvents==="none"&&r.width<=560&&r.height<=640;})()'),true,'optional shader stays bounded and cannot intercept badge or login controls');
+  if(await browser.evaluate('!!navigator.gpu')){
+    await browser.waitFor('["ready","fallback"].includes(document.querySelector("[data-blob-state]")?.dataset.blobState)');
+    if(await browser.evaluate('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"')){
+      await browser.evaluate('window.__blobPanel=document.querySelector("#wecom-panel iframe");Object.defineProperty(navigator,"onLine",{configurable:true,value:false});window.dispatchEvent(new Event("offline"))');
+      await browser.waitFor('document.querySelector("[data-blob-state]")?.dataset.blobState==="paused"');
+      assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".login-blob")).display'),'none','offline stops the optional GPU surface');
+      await browser.evaluate('delete navigator.onLine;window.dispatchEvent(new Event("online"))');
+      await browser.waitFor('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"');
+      assert.equal(await browser.evaluate('window.__blobPanel===document.querySelector("#wecom-panel iframe")'),true,'pausing/resuming the background never replaces the login attempt');
+    }
+  }
   assert.equal(await browser.evaluate('typeof window.workbenchDesktop+":"+typeof require'),'undefined:undefined');
   await browser.waitFor('window.__paintedVersions.includes("v0.1.10-synthetic")');
   assert.equal(await browser.evaluate('document.getElementById("desktop-login").dataset.appVersion'),'0.1.10-synthetic','the back label comes from the host rather than a hard-coded release');
@@ -147,6 +159,10 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:loginHostScript.identifier});await browser.command('Page.reload');
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("quit-desktop").hidden'),true,'a plain browser does not display an unusable native quit action');
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(navigator,"gpu",{configurable:true,value:undefined})'});
+  await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
+  assert.equal(await browser.evaluate('document.getElementById("login-backdrop").childElementCount'),0,'missing WebGPU leaves the static background while the QR panel remains usable');
+  assert.equal(await browser.evaluate('performance.getEntriesByType("resource").some(e=>e.name.includes("LoginBackdrop-"))'),false,'unsupported GPUs do not download the optional shader engine');
  }catch(error){failure=error;if(browser)console.log('EMBEDDED_LOGIN_UI_DIAGNOSTIC',JSON.stringify(await browser.evaluate('({view:document.getElementById("desktop-login")?.dataset.view,frames:document.querySelectorAll("#wecom-panel iframe").length,canvas:document.querySelectorAll(".lanyard-canvas").length,status:document.getElementById("login-status")?.textContent})')));}
  finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });
