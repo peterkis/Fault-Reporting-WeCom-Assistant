@@ -6,7 +6,8 @@ import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import type {IncomingMessage,ServerResponse} from 'node:http';
-import {createServer} from 'node:http';
+import {createServer,request as nativeRequest} from 'node:http';
+import {brotliDecompressSync,gunzipSync} from 'node:zlib';
 import {renderEmbeddedLogin,embeddedLoginHeaders,serveEmbeddedLoginAsset} from '../app/server/src/workbench-embedded-login.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -29,6 +30,20 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
  let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
  try{
+  const shell=await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.encoding-check',issuedEpochMs:0,expiresEpochMs:300_000,publicOrigin:origin});
+  const script=/<script type="module" src="([^"]+)"/u.exec(shell)?.[1];assert.ok(script);
+  const raw=(file:string,encoding?:string,method='GET')=>new Promise<{status:number;headers:import('node:http').IncomingHttpHeaders;body:Buffer}>((resolve,reject)=>{
+   const request=nativeRequest(origin+file,{method,headers:encoding===undefined?{}:{'accept-encoding':encoding}},response=>{const chunks:Buffer[]=[];response.on('data',(part:Buffer)=>chunks.push(part));response.once('error',reject);response.once('end',()=>resolve({status:response.statusCode??0,headers:response.headers,body:Buffer.concat(chunks)}));});request.once('error',reject);request.end();
+  });
+  const identity=await raw(script);assert.equal(identity.status,200);assert.equal(identity.headers['content-encoding'],undefined);
+  for(const [header,expected]of [['br,gzip','br'],['gzip','gzip'],['gzip;q=1,br;q=0.5','gzip'],['BR;q=0.7,gzip;q=0.8,identity;q=0','gzip'],['br;q=0,gzip;q=0','identity'],['*;q=0.5,identity;q=0','br']] as const){
+   const response=await raw(script,header);assert.equal(response.status,200);assert.equal(response.headers['content-encoding'],expected==='identity'?undefined:expected);assert.equal(response.headers.vary,'Accept-Encoding');assert.equal(response.headers['content-length'],String(response.body.length));assert.equal(response.headers['cache-control'],'public, max-age=31536000, immutable');
+   const decoded=expected==='br'?brotliDecompressSync(response.body):expected==='gzip'?gunzipSync(response.body):response.body;assert.deepEqual(decoded,identity.body,'all negotiated representations decode to the exact same module');
+   const head=await raw(script,header,'HEAD');assert.equal(head.status,200);assert.equal(head.body.length,0);assert.equal(head.headers['content-length'],response.headers['content-length']);assert.equal(head.headers['content-encoding'],response.headers['content-encoding']);
+  }
+  for(const header of ['*;q=0','identity;q=0,br;q=0,gzip;q=0','identity;q=0,gzip;q=2,br;q=0'])assert.equal((await raw(script,header)).status,406);
+  for(const suffix of ['.gz','.br','?raw=1'])assert.equal((await raw(script+suffix,'br,gzip')).status,400,'encoding sidecars and queries never become new public paths');
+  assert.equal((await raw('/workbench/desktop/assets/unmanifested.js','br,gzip')).status,404);
   browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');
@@ -43,6 +58,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   const loginHostScript=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__quitRequests=0;window.__paintedVersions=[];window.workbenchLogin={version:1,getAppVersion:async()=>"0.1.10-synthetic",quit:async()=>{window.__quitRequests++}};const originalFillText=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){if(String(text).startsWith("v0.1."))window.__paintedVersions.push(String(text));return originalFillText.call(this,text,...args);};'}) as {identifier:string};
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__backgroundSubmits=0;if(window.GPUQueue){const submit=GPUQueue.prototype.submit;GPUQueue.prototype.submit=function(...args){window.__backgroundSubmits++;return submit.apply(this,args);};}'});
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__preparingLoader=null;window.__sceneAppearance=null;const sceneObserver=new MutationObserver(()=>{const loader=document.querySelector(".login-preparing .loader");if(!window.__preparingLoader&&loader&&document.body?.dataset.loginScene==="loading"){const r=loader.getBoundingClientRect(),s=getComputedStyle(loader);if(s.animationName==="l8")window.__preparingLoader={width:r.width,height:r.height,centered:Math.abs(r.x+r.width/2-innerWidth/2)<1&&Math.abs(r.y+r.height/2-innerHeight/2)<1,duration:s.animationDuration,animation:s.animationName,label:loader.parentElement.getAttribute("aria-label"),text:loader.parentElement.textContent};}if(window.__sceneAppearance||document.body?.dataset.loginScene!=="ready")return;window.__sceneAppearance={mode:document.body.dataset.backdrop,visibility:[".login-copy","#login-backdrop",".lanyard-front",".login-footer"].map(s=>{const e=document.querySelector(s);return e?getComputedStyle(e).visibility:null})};});sceneObserver.observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:["data-login-scene"]});'});
   await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
   await browser.waitFor('document.querySelector(".lanyard-front #wecom-panel iframe")&&document.querySelector("#desktop-login")?.dataset.view==="lanyard"');
@@ -56,6 +72,8 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   if(await browser.evaluate('!!navigator.gpu')){
     await waitScene();
     if(await browser.evaluate('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"')){
+      const frequency=await browser.evaluate('new Promise(resolve=>{const before=window.__backgroundSubmits,start=performance.now();setTimeout(()=>resolve((window.__backgroundSubmits-before)*1000/(performance.now()-start)),2200)})') as number;
+      assert.ok(frequency>=20&&frequency<=35,'only the background renders near 30fps: '+frequency);
       assert.equal(await browser.evaluate('(()=>{const c=document.querySelector(".login-blob");return c.width*c.height<=1100000&&getComputedStyle(c).transitionDuration==="0s"})()'),true,'full-screen display uses a bounded render buffer without a late fade');
       await browser.evaluate('window.__blobPanel=document.querySelector("#wecom-panel iframe");Object.defineProperty(navigator,"onLine",{configurable:true,value:false});window.dispatchEvent(new Event("offline"))');
       await browser.waitFor('document.querySelector("[data-blob-state]")?.dataset.blobState==="paused"');

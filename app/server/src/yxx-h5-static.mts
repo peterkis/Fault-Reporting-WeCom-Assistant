@@ -4,6 +4,7 @@ import type {ServerResponse} from 'node:http';
 import {brotliDecompressSync,gunzipSync} from 'node:zlib';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {negotiateStaticEncoding as negotiate} from './static-encoding.mjs';
 
 export const YXX_H5_SECURITY_HEADERS=Object.freeze({
  'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
@@ -21,25 +22,6 @@ export type H5ReporterPresentation={identityMode:'MEMBER_REQUIRED'|'BOUND_ACCESS
 function unavailable():never{const e=new Error('YXX_UNAVAILABLE') as Error&{code:string;status:number};e.code='YXX_UNAVAILABLE';e.status=503;throw e;}
 function object(v:unknown):Record<string,unknown>{if(v===null||typeof v!=='object'||Array.isArray(v))return unavailable();return v as Record<string,unknown>;}
 const digest=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
-
-/** Prefer an available representation only when its quality permits it. */
-function negotiate(header:string|undefined,available:ReadonlyMap<Encoding,Representation>):Representation|undefined{
- if(header===undefined)return available.get('identity');
- if(header.length>8192)return undefined;
- const qualities=new Map<string,number>();
- for(const token of header.split(',')){
-  const [raw,...parameters]=token.trim().toLowerCase().split(';');if(!raw)continue;
-  let quality=1;
-  for(const parameter of parameters){const match=/^\s*q\s*=\s*(.*?)\s*$/u.exec(parameter);if(match){const value=match[1]??'';quality=/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/u.test(value)?Number(value):0;}}
-  qualities.set(raw,Math.max(qualities.get(raw)??0,quality));
- }
- let selected:Representation|undefined,best=0;
- for(const encoding of ['br','gzip','identity'] as const){
-  const quality=qualities.get(encoding)??(encoding==='identity'?(qualities.get('*')===0?0:1):(qualities.get('*')??0));
-  const candidate=available.get(encoding);if(candidate&&quality>best){best=quality;selected=candidate;}
- }
- return selected;
-}
 
 /** Only compiled, manifest-declared H5 bytes are public. A previous generation is
  * opt-in and contributes assets only; its HTML can never replace the current page. */
