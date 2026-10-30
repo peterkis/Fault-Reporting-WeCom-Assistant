@@ -97,8 +97,9 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.equal(await browser.evaluate('window.__originalPanel===document.querySelector("#wecom-panel iframe")'),true);assert.equal(generation,1);
   await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x-360,y:point.y,button:'left',clickCount:1});
   await browser.waitFor('(()=>{const r=document.querySelector(".lanyard-front").getBoundingClientRect();return Math.abs(r.x+r.width/2-'+point.x+')<8;})()');
-  await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
-  await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',clickCount:1});
+  const flipPoint=await browser.evaluate('(()=>{const r=document.querySelector(".lanyard-front").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()') as {x:number;y:number};
+  await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...flipPoint,button:'left',clickCount:1});
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',...flipPoint,button:'left',clickCount:1});
   await browser.waitFor('document.querySelector(".lanyard-front")?.getAttribute("aria-hidden")==="true"');
   assert.equal(await browser.evaluate('window.__originalPanel===document.querySelector("#wecom-panel iframe")'),true,'flipping preserves the same live iframe');assert.equal(generation,1);
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
