@@ -124,6 +124,15 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.ok(introMotion.range>=6,'the initial physical swing is visible: '+JSON.stringify(introMotion));
   assert.ok(introMotion.lateRange<1,'the one-shot swing settles after about three seconds: '+JSON.stringify(introMotion));
   assert.equal(introMotion.samePanel,true,'the intro preserves the mounted QR iframe');
+  if(await browser.evaluate('!!navigator.gpu')){
+    await browser.waitFor('["ready","fallback"].includes(document.querySelector("[data-blob-state]")?.dataset.blobState)');
+    assert.equal(await browser.evaluate('document.querySelectorAll("#wecom-panel iframe").length'),1,'full-motion opening must start the background without renewing the QR attempt');
+    await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
+    const early=await browser.evaluate('(()=>{window.__interruptedPanel=document.querySelector("#wecom-panel iframe");const r=document.querySelector(".lanyard-front").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()') as {x:number;y:number};
+    for(const type of ['mousePressed','mouseReleased'])await browser.command('Input.dispatchMouseEvent',{type,x:early.x,y:early.y,button:'left',clickCount:1});
+    await browser.waitFor('["ready","fallback"].includes(document.querySelector("[data-blob-state]")?.dataset.blobState)');
+    assert.equal(await browser.evaluate('window.__interruptedPanel===document.querySelector("#wecom-panel iframe")'),true,'interrupting the opening still starts decoration and retains the same QR');
+  }
   const paletteCycle=await browser.evaluate('(()=>{const capsule=document.querySelector(".login-response"),animations=document.getAnimations();for(const animation of animations)animation.pause();const samples=[0,3000,6000,9000,12000].map(time=>{for(const animation of animations)animation.currentTime=time;return {capsule:getComputedStyle(capsule).backgroundColor,dot:getComputedStyle(capsule,"::before").backgroundColor};});for(const animation of animations)animation.play();return samples;})()') as {capsule:string;dot:string}[];
   assert.equal(new Set(paletteCycle.slice(0,4).map(stage=>stage.capsule)).size,4,'the capsule visibly changes through four color stages');
   assert.equal(new Set(paletteCycle.slice(0,4).map(stage=>stage.dot)).size,4,'the dot changes on the same four stages');
@@ -156,6 +165,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.evaluate('window.__hiddenStartup=false;document.dispatchEvent(new Event("visibilitychange"))');
   await browser.waitFor('document.getElementById("desktop-login").dataset.pageHidden==="false"');
   assert.equal(await browser.evaluate('window.__hiddenPanel===document.querySelector(".lanyard-front iframe")'),true,'returning to the page keeps the mounted official panel');
+  if(await browser.evaluate('!!navigator.gpu'))await browser.waitFor('["ready","fallback"].includes(document.querySelector("[data-blob-state]")?.dataset.blobState)');
   await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:loginHostScript.identifier});await browser.command('Page.reload');
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("quit-desktop").hidden'),true,'a plain browser does not display an unusable native quit action');

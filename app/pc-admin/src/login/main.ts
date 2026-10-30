@@ -33,7 +33,7 @@ let scene:ReturnType<typeof createRoot>|null=null;
 let backdrop:ReturnType<typeof createRoot>|null=null,backdropRequested=false;
 const mountBackdrop=()=>{
   const host=document.getElementById('login-backdrop');
-  if(backdropRequested||!host||!('gpu' in navigator)||!navigator.gpu||!active||completing)return;
+  if(backdropRequested||!panel||!host||!('gpu' in navigator)||!navigator.gpu||!active||completing)return;
   backdropRequested=true;
   // The QR panel is mounted and the opening physical motion has finished.
   void import('./LoginBackdrop').then(({default:LoginBackdrop})=>{
@@ -42,6 +42,8 @@ const mountBackdrop=()=>{
     backdrop.render(createElement(LoginBackdrop));
   }).catch(()=>{host.hidden=true;});
 };
+// A deliberate gesture may interrupt the opening before its completion callback.
+stage.addEventListener('pointerup',mountBackdrop,{once:true});
 let appVersion='',renderScene:(()=>void)|null=null;
 const nativeLogin=window.workbenchLogin?.version===1?window.workbenchLogin:undefined;
 if(nativeLogin){
@@ -73,7 +75,7 @@ root.dataset.pageHidden=String(document.hidden);
 if(temporaryFallback)root.dataset.fallbackReason=temporaryFallback;
 viewButton.textContent=view==='flat'?'使用工牌视图':'使用平面扫码';
 if(!supportedScale()){viewButton.hidden=true;status.textContent='当前缩放使用平面扫码。';}
-const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);panel?.unmount();panel=null;scene?.unmount();scene=null;backdrop?.unmount();backdrop=null;icon?.unmount();icon=null;};
+const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);stage.removeEventListener('pointerup',mountBackdrop);panel?.unmount();panel=null;scene?.unmount();scene=null;backdrop?.unmount();backdrop=null;icon?.unmount();icon=null;};
 const restart=()=>{if(!active||completing)return;active=false;dispose();location.replace('/workbench/desktop/embedded');};
 const changeView=(next:'flat'|'lanyard',automaticReason?:FallbackReason)=>{
   if(!active||completing)return;
@@ -130,5 +132,5 @@ window.addEventListener('resize',checkScale);
 window.visualViewport?.addEventListener('resize',checkScale);
 // Native resume checks the trusted main response's Cookie lifetime. Page guards coalesce this with its own timer.
 window.addEventListener('workbench-login-expired',restart);
-document.addEventListener('visibilitychange',()=>{root.dataset.pageHidden=String(document.hidden);clearTimeout(readyTimer);if(document.visibilityState==='visible'){resume();armReadyTimer();}});
+document.addEventListener('visibilitychange',()=>{root.dataset.pageHidden=String(document.hidden);clearTimeout(readyTimer);if(document.visibilityState==='visible'){resume();armReadyTimer();mountBackdrop();}});
 window.addEventListener('pagehide',()=>{active=false;dispose();},{once:true});

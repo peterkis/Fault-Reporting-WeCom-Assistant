@@ -1394,13 +1394,29 @@ const Lanyard = ({
       last = now;
       time += dt;
       const current = physics();
+      const body = sim.body;
+      let introFinished = false;
       if (introStarted !== null) {
         current.linearDrag *= 5;
         current.angularDrag *= 2.5;
-        if (now - introStarted >= 2600) introStarted = null;
+        if (now - introStarted >= 2600) {
+          introStarted = null;
+          introFinished = true;
+          // End the authored opening in its current pose. Constraint jitter must not
+          // keep optional page content waiting forever for the generic rest threshold.
+          body.previous.copy(body.position);
+          body.previousQuaternion.copy(body.quaternion);
+          body.velocity.set(0, 0, 0);
+          body.angular.set(0, 0, 0);
+          for (let i = 0; i <= JOINTS; i++) {
+            at(sim.previous, i).copy(at(sim.nodes, i));
+            at(sim.velocities, i).set(0, 0, 0);
+          }
+          sim.impulses.fill(0);
+          sim.calm = 2;
+        }
       }
-      stepSimulation(sim, dt, current, time);
-      const body = sim.body;
+      if (!introFinished) stepSimulation(sim, dt, current, time);
       if (!Number.isFinite(body.position.x + body.position.y + body.position.z + body.quaternion.w)) {
         sim.grab = null;
         placeHanging(sim, layout, false);
@@ -1408,7 +1424,7 @@ const Lanyard = ({
       render();
       const resting = sim.calm > 1.2 && !sim.grab && current.breeze === 0;
       if (visible && !resting && !settingsRef.current?.paused) raf = requestAnimationFrame(tick);
-      else if (resting) callbacksRef.current.onRest?.();
+      if (resting || introFinished) callbacksRef.current.onRest?.();
     };
 
     const start = () => {
