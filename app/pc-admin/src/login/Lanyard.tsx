@@ -39,6 +39,7 @@ export interface LanyardProps {
   interactive?: boolean;
   intro?: boolean;
   paused?: boolean;
+  presentationReady?: boolean;
   className?: string;
   style?: CSSProperties;
   /** An empty, parent-owned host. Mount the SDK only after onFrontReady. */
@@ -46,15 +47,13 @@ export interface LanyardProps {
   /** Keep this layout slot's framing while drawing over the whole viewport. */
   viewportFrame?: HTMLElement;
   onFrontReady?: () => void;
-  /** Start optional decoration only once the physical opening motion has settled. */
-  onRest?: () => void;
   /** Parent chooses a fresh flat-page login; no loaded iframe is moved for fallback. */
   onFallback?: (reason: 'webgl-unavailable' | 'context-lost') => void;
 }
 
 type Settings = Required<Omit<LanyardProps,
   'frontImage' | 'backImage' | 'strapImage' | 'className' | 'style' |
-  'frontElement' | 'viewportFrame' | 'onFrontReady' | 'onRest' | 'onFallback'>> & {
+  'frontElement' | 'viewportFrame' | 'onFrontReady' | 'onFallback'>> & {
   frontImage: string | undefined;
   backImage: string | undefined;
   strapImage: string | undefined;
@@ -864,15 +863,15 @@ const Lanyard = ({
   frontElement,
   viewportFrame,
   onFrontReady,
-  onRest,
   onFallback,
-  paused = false
+  paused = false,
+  presentationReady = true
 }: LanyardProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<Settings | null>(null);
   const applyRef = useRef<(() => void) | null>(null);
-  const callbacksRef = useRef({onFrontReady, onRest, onFallback});
-  callbacksRef.current = {onFrontReady, onRest, onFallback};
+  const callbacksRef = useRef({onFrontReady, onFallback});
+  callbacksRef.current = {onFrontReady, onFallback};
 
   settingsRef.current = {
     frontImage,
@@ -896,7 +895,8 @@ const Lanyard = ({
     breeze,
     interactive,
     intro,
-    paused
+    paused,
+    presentationReady
   };
 
   useEffect(() => {
@@ -1060,6 +1060,7 @@ const Lanyard = ({
     let readyPending = false;
     let frontReady = false;
     let introStarted: number | null = null;
+    let openingStarted = false;
     let failed = false;
     let capturedPointer: number | null = null;
     let last = performance.now();
@@ -1350,13 +1351,15 @@ const Lanyard = ({
           if (!alive || failed || frontReady || !frontElement.isConnected || frontElement.parentNode !== panelHost) return;
           frontReady = true;
           callbacksRef.current.onFrontReady?.();
-          if (visible && settingsRef.current?.intro && !reducedMotion) {
-            introStarted = performance.now();
-            sim.body.velocity.x += 0.8;
-            start();
-          } else callbacksRef.current.onRest?.();
+          beginOpening();
         });
       }
+    };
+
+    const beginOpening = (): void => {
+      if(openingStarted||!frontReady||!visible||!settingsRef.current?.presentationReady)return;
+      openingStarted=true;
+      if(settingsRef.current.intro&&!reducedMotion){introStarted=performance.now();sim.body.velocity.x+=0.8;start();}
     };
 
     const physics = (): Physics => {
@@ -1389,7 +1392,7 @@ const Lanyard = ({
 
     const tick = (now: number): void => {
       raf = 0;
-      if (!alive || !visible || failed || settingsRef.current?.paused) return;
+      if (!alive || !visible || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
       const dt = Math.min(1 / 30, Math.max(1 / 240, (now - last) / 1000));
       last = now;
       time += dt;
@@ -1402,8 +1405,7 @@ const Lanyard = ({
         if (now - introStarted >= 2600) {
           introStarted = null;
           introFinished = true;
-          // End the authored opening in its current pose. Constraint jitter must not
-          // keep optional page content waiting forever for the generic rest threshold.
+          // Preserve the final opening pose and stop residual constraint jitter.
           body.previous.copy(body.position);
           body.previousQuaternion.copy(body.quaternion);
           body.velocity.set(0, 0, 0);
@@ -1424,11 +1426,10 @@ const Lanyard = ({
       render();
       const resting = sim.calm > 1.2 && !sim.grab && current.breeze === 0;
       if (visible && !resting && !settingsRef.current?.paused) raf = requestAnimationFrame(tick);
-      if (resting || introFinished) callbacksRef.current.onRest?.();
     };
 
     const start = () => {
-      if (raf || !visible || !alive || failed || settingsRef.current?.paused) return;
+      if (raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
       sim.calm = 0;
       last = performance.now();
       raf = requestAnimationFrame(tick);
@@ -1538,7 +1539,7 @@ const Lanyard = ({
         cancelAnimationFrame(raf);
         raf = 0;
         stopInteraction();
-      } else start();
+      } else {start();beginOpening();}
     };
     const onContextLost = (event: Event): void => {
       event.preventDefault();
@@ -1595,7 +1596,7 @@ const Lanyard = ({
     const onVisibility = syncVisibility;
     document.addEventListener('visibilitychange', onVisibility);
 
-    applyRef.current = apply;
+    applyRef.current = () => {apply();beginOpening();};
     resize();
 
     return () => {

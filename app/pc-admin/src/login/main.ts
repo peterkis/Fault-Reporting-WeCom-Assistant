@@ -31,19 +31,39 @@ let timer:number|undefined;
 let readyTimer:number|undefined;
 let scene:ReturnType<typeof createRoot>|null=null;
 let backdrop:ReturnType<typeof createRoot>|null=null,backdropRequested=false;
+let backgroundMode:'pending'|'shader'|'fallback'='pending',presentationStarted=false;
+let cardPrepared=false,sceneReleased=false;
+let backgroundTimer:number|undefined;
+const revealScene=()=>{
+  if(sceneReleased||!cardPrepared||backgroundMode==='pending'||!active||completing)return;
+  sceneReleased=true;document.body.dataset.loginScene='ready';renderScene?.();
+};
+const finishBackdrop=(mode:'shader'|'fallback',reason?:string)=>{
+  if(!active||completing)return;
+  if(reason)document.body.dataset.backdropReason=reason;
+  if(backgroundMode!=='pending'){
+    if(mode==='fallback'){document.body.dataset.backdrop='fallback';queueMicrotask(()=>{backdrop?.unmount();backdrop=null;});}
+    return;
+  }
+  backgroundMode=mode;clearTimeout(backgroundTimer);document.body.dataset.backdrop=mode;
+  if(mode==='fallback')queueMicrotask(()=>{backdrop?.unmount();backdrop=null;});
+  startPresentation();
+  revealScene();
+};
+const armBackgroundTimer=()=>{clearTimeout(backgroundTimer);if(backgroundMode==='pending'&&!document.hidden)backgroundTimer=window.setTimeout(()=>finishBackdrop('fallback','timeout'),8000);};
 const mountBackdrop=()=>{
   const host=document.getElementById('login-backdrop');
-  if(backdropRequested||!panel||!host||!('gpu' in navigator)||!navigator.gpu||!active||completing)return;
+  if(backdropRequested||!active||completing||document.hidden||innerWidth===0)return;
   backdropRequested=true;
-  // The QR panel is mounted and the opening physical motion has finished.
+  if(!host||!('gpu' in navigator)||!navigator.gpu){finishBackdrop('fallback','unsupported');return;}
+  if(!matchMedia('(min-width: 801px)').matches){finishBackdrop('fallback','narrow');return;}
+  armBackgroundTimer();
   void import('./LoginBackdrop').then(({default:LoginBackdrop})=>{
-    if(!active||completing)return;
-    backdrop=createRoot(host,{onUncaughtError:()=>{host.hidden=true;}});
-    backdrop.render(createElement(LoginBackdrop));
-  }).catch(()=>{host.hidden=true;});
+    if(!active||completing||backgroundMode!=='pending')return;
+    backdrop=createRoot(host,{onUncaughtError:()=>finishBackdrop('fallback','component-error')});
+    backdrop.render(createElement(LoginBackdrop,{onReady:()=>finishBackdrop('shader'),onUnavailable:(reason:string)=>finishBackdrop('fallback',reason)}));
+  }).catch(()=>finishBackdrop('fallback','import-failed'));
 };
-// A deliberate gesture may interrupt the opening before its completion callback.
-stage.addEventListener('pointerup',mountBackdrop,{once:true});
 let appVersion='',renderScene:(()=>void)|null=null;
 const nativeLogin=window.workbenchLogin?.version===1?window.workbenchLogin:undefined;
 if(nativeLogin){
@@ -75,7 +95,7 @@ root.dataset.pageHidden=String(document.hidden);
 if(temporaryFallback)root.dataset.fallbackReason=temporaryFallback;
 viewButton.textContent=view==='flat'?'使用工牌视图':'使用平面扫码';
 if(!supportedScale()){viewButton.hidden=true;status.textContent='当前缩放使用平面扫码。';}
-const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);stage.removeEventListener('pointerup',mountBackdrop);panel?.unmount();panel=null;scene?.unmount();scene=null;backdrop?.unmount();backdrop=null;icon?.unmount();icon=null;};
+const dispose=()=>{clearTimeout(timer);clearTimeout(readyTimer);clearTimeout(backgroundTimer);panel?.unmount();panel=null;scene?.unmount();scene=null;backdrop?.unmount();backdrop=null;icon?.unmount();icon=null;};
 const restart=()=>{if(!active||completing)return;active=false;dispose();location.replace('/workbench/desktop/embedded');};
 const changeView=(next:'flat'|'lanyard',automaticReason?:FallbackReason)=>{
   if(!active||completing)return;
@@ -108,29 +128,36 @@ try{
     onLoginFail(){if(active&&!completing)status.textContent='二维码暂不可用，请重新获取，或使用官方登录页。';},
   });
   status.textContent='';
-  if(view==='flat')mountBackdrop();
 }catch{status.textContent='二维码加载失败，请从右下角更多选项重试。';}
+finally{cardPrepared=true;revealScene();}
 };
-if(view==='flat')mountPanel();
-else{
+const lanyardModule=view==='lanyard'?import('./Lanyard'):null;
+void lanyardModule?.catch(()=>{});
+function startPresentation(){
+  if(!stage||!panelHost)return;
+  if(presentationStarted||!active||completing)return;presentationStarted=true;
+  if(view==='flat'){mountPanel();return;}
   armReadyTimer();
-  void import('./Lanyard').then(({default:Lanyard})=>{
+  void lanyardModule?.then(({default:Lanyard})=>{
     if(!active||completing)return;
     const fallback=(reason:FallbackReason)=>queueMicrotask(()=>changeView('flat',reason));
     scene=createRoot(stage,{onUncaughtError:()=>fallback('scene-error')});
-    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,viewportFrame:stage,onFrontReady:mountPanel,onRest:mountBackdrop,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
+    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,viewportFrame:stage,presentationReady:sceneReleased,onFrontReady:mountPanel,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
     renderScene();
   }).catch(()=>changeView('flat','asset-failed'));
 }
+startPresentation();requestAnimationFrame(mountBackdrop);
 // The public page is also usable outside Electron. Each refresh renews the full server intent.
 timer=window.setTimeout(restart,Math.max(1,ttl-elapsed()-60_000));
 const resume=()=>{if(elapsed()>=ttl-60_000)restart();};
 window.addEventListener('focus',resume);window.addEventListener('online',resume);
+const networkState=()=>{document.body.dataset.offline=String(!navigator.onLine);};
+networkState();window.addEventListener('offline',networkState);window.addEventListener('online',networkState);
 // CSS3D supports only 100% browser/display zoom. Preserve desktop zoom and use the flat view.
 const checkScale=()=>{viewButton.hidden=!supportedScale();if(view==='lanyard'&&!supportedScale())changeView('flat','scale');};
 window.addEventListener('resize',checkScale);
 window.visualViewport?.addEventListener('resize',checkScale);
 // Native resume checks the trusted main response's Cookie lifetime. Page guards coalesce this with its own timer.
 window.addEventListener('workbench-login-expired',restart);
-document.addEventListener('visibilitychange',()=>{root.dataset.pageHidden=String(document.hidden);clearTimeout(readyTimer);if(document.visibilityState==='visible'){resume();armReadyTimer();mountBackdrop();}});
+document.addEventListener('visibilitychange',()=>{root.dataset.pageHidden=String(document.hidden);clearTimeout(readyTimer);clearTimeout(backgroundTimer);if(document.visibilityState==='visible'){resume();armReadyTimer();mountBackdrop();armBackgroundTimer();}});
 window.addEventListener('pagehide',()=>{active=false;dispose();},{once:true});

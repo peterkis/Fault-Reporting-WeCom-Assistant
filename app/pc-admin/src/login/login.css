@@ -19,8 +19,20 @@ button,a{font:inherit;font-size:12px;color:#656f7d}button{border:0;border-radius
 [data-view=flat] #lanyard-stage,[data-view=flat] .login-gesture{display:none}[data-view=flat] .login-panel-parking{display:flex;justify-content:center;margin:38px 0 26px;padding:22px 0;background:#fff;border-radius:18px;box-shadow:0 12px 50px #20304808}[data-view=flat] .login-copy{padding-bottom:50px}
 @media(max-width:800px){.login-shell{grid-template-columns:1fr;width:min(580px,calc(100vw - 36px));gap:0;padding-top:24px}.login-copy{padding:0 18px}.login-brand{margin:0 0 20px}.login-copy h1{font-size:30px}.login-content{margin-top:-18px}.login-footer{position:static;max-width:calc(100vw - 128px);margin:24px auto 32px}[data-view=flat] .login-copy{padding-bottom:0}[data-view=flat] .login-content{margin-top:0}}
 @media(max-width:380px){.login-shell{width:calc(100vw - 20px)}.login-copy{padding:0 8px}.login-options{right:16px;bottom:16px}.login-options-menu{right:16px;bottom:62px}}
-/* Keep the GPU surface between the copy and badge, below every login interaction. */
-#login-backdrop{position:fixed;left:calc(50% - 74px);top:50%;width:min(560px,52vw);height:min(640px,80vh);transform:translate(-50%,-50%);z-index:0;pointer-events:none;contain:layout paint;isolation:isolate}
-.login-blob{width:100%;height:100%;transition:opacity 600ms ease-out}
+body::before{display:none}
+#login-backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;contain:layout paint;isolation:isolate;overflow:hidden}
+#login-backdrop::before{content:"";position:absolute;inset:-10%;background:radial-gradient(ellipse at 64% 40%,#3971e9 0%,#8997ed 36%,transparent 62%),radial-gradient(ellipse at 22% 86%,#7899ed 0%,#b4b6ed 34%,transparent 60%);animation:login-hero-breathe 18s ease-in-out infinite alternate}
+[data-backdrop=shader] #login-backdrop::before{display:none}
+#login-backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#f5f5f2ed 0%,#f5f5f2b8 21%,#f5f5f24d 43%,transparent 66%),linear-gradient(0deg,#f5f5f2ed 0%,transparent 18%);pointer-events:none}
+.login-atmosphere{position:absolute;inset:-10%;animation:login-hero-breathe 18s ease-in-out infinite alternate}
+.login-blob{width:100%;height:100%;display:block}
+@keyframes login-hero-breathe{from{transform:translate(-1.5%,-1%) scale(1)}to{transform:translate(1.5%,1%) scale(1.07)}}
+[data-page-hidden=true] .login-atmosphere,.login-atmosphere[data-blob-state=paused]{animation-play-state:paused}
+body:has([data-page-hidden=true]) #login-backdrop::before{animation-play-state:paused}
+body[data-offline=true] .login-atmosphere,body[data-offline=true] #login-backdrop::before{animation-play-state:paused}
 .login-shell,.login-footer{z-index:1}
-@media(max-width:800px){#login-backdrop{display:none}}
+.login-preparing{position:fixed;inset:0;display:grid;place-items:center;background:#f5f5f2;z-index:2;pointer-events:none;text-align:center}
+.login-preparing strong{display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:650}.login-preparing p{font-size:12px;color:#656f7d;margin:16px 0 0}
+body[data-login-scene=loading] .login-shell,body[data-login-scene=loading] #login-backdrop,body[data-login-scene=loading] .login-footer,body[data-login-scene=loading] .login-options{visibility:hidden}
+body[data-login-scene=ready] .login-preparing{display:none}
+.login-noscript{position:fixed;bottom:20px;z-index:3;font-size:14px;color:#252c36}
