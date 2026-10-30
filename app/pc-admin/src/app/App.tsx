@@ -41,11 +41,26 @@ function ExpiredDesktopSession(){
   },[client]);
   return <div className="entry-state" role="status">正在打开企业微信扫码登录…</div>;
 }
-function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),reset=useUiStore(s=>s.reset);
+function LoggedOutLogin(){
+  const requested=useRef(false);
+  useEffect(()=>{
+    let active=true;
+    void (async()=>{
+      if(desktopHost)await desktopHost.updateContext({epoch:null,blocked:false,live:false,remindersAvailable:false});
+      if(!active||requested.current||!useUiStore.getState().loginAfterLogout)return;
+      requested.current=true;
+      if(desktopHost)await desktopHost.requestLogin();else location.replace('/workbench/desktop');
+    })().catch(()=>{if(active)useUiStore.getState().closeSession('扫码登录暂未打开，请重新进入。');});
+    return()=>{active=false;};
+  },[]);
+  return <div className="entry-state" role="status">正在打开企业微信扫码登录…</div>;
+}
+function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),loginAfterLogout=useUiStore(s=>s.loginAfterLogout),reset=useUiStore(s=>s.reset);
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null&&closedNotice===null});
   const realtime=useWorkbenchRealtime(failure===null&&closedNotice===null?bootstrap.data:undefined);
   useManualReportAuthority(failure===null&&closedNotice===null?bootstrap.data:undefined);
+  if(closedNotice&&loginAfterLogout)return <LoggedOutLogin/>;
   if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;
   if(desktopHost&&failure===401)return <ExpiredDesktopSession/>;
   if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;

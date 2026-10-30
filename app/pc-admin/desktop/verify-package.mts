@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 import path from 'node:path';
 import {readConfig} from './policy.mjs';
 const root=process.cwd(),release=path.join(root,'.local/electron/releases'),archive=path.join(release,'win-unpacked/resources/app.asar');
-const allowed=['desktop.config.json','icon.ico','icon.png','main.mjs','package.json','policy.mjs','preload.cjs','unavailable.html','chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'];
+const allowed=['desktop.config.json','icon.ico','icon.png','main.mjs','package.json','policy.mjs','preload.cjs','unavailable.html','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'];
 const actual=listPackage(archive,{isPack:false}).map(file=>file.replaceAll('\\','/').replace(/^\//u,'')).sort();
 if(JSON.stringify(actual)!==JSON.stringify([...allowed].sort()))throw Error('DESKTOP_PACKAGE_ALLOWLIST_MISMATCH:'+actual.filter(file=>!allowed.includes(file)).slice(0,5).join(','));
 const config=readConfig(JSON.parse(extractFile(archive,'desktop.config.json').toString('utf8').replace(/^\uFEFF/u,'')) as unknown);

@@ -45,6 +45,8 @@ function port(browser:Browser,sessionId:string|null=null){
   };
   const wait=async(expression:string)=>{const until=performance.now()+30_000;while(performance.now()<until){if(await evaluate(expression))return;await delay(25);}throw Error('T40_BROWSER_CONDITION_TIMEOUT: '+expression);};
   const click=async(selector:string)=>{
+    if(selector.includes('open-settings')){const where=await evaluate('[...document.querySelectorAll("[data-action=open-user-menu]")].find(node=>node.checkVisibility()).dataset.menuLocation');await click('[data-action="open-user-menu"][data-menu-location="'+where+'"]');await wait('document.querySelector("[role=menu][aria-label=用户操作]")?.checkVisibility()===true');}
+
     await wait(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
     const point=object(await evaluate(`(()=>{const input=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>node.getClientRects().length>0),e=input?.matches('input[type=checkbox]')?input.closest('label'):input;if(!e)throw Error('T40_NATIVE_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`));
     assert.equal(typeof point.x,'number');assert.equal(typeof point.y,'number');

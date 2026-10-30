@@ -48,6 +48,15 @@ export function buildWeb(root:string):void {
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');
   const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
   writeFileSync(path.join(output,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+  const loginConfig=path.join(project,'vite.login.config.ts');
+  if(existsSync(loginConfig)){
+    const loginOutput=path.join(controlledBuildRoot(root),'emit/web/desktop-login');
+    runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--config',loginConfig,'--outDir',loginOutput,'--emptyOutDir']);
+    const loginFiles=outputFiles(loginOutput);
+    if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)$/u.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
+    writeFileSync(path.join(loginOutput,'asset-inventory.json'),JSON.stringify(loginFiles)+'\n');
+    writeFileSync(path.join(loginOutput,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+  }
   emitH5(root);
 }
 function emitH5(root:string):void {

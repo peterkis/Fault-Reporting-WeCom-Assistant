@@ -1,5 +1,5 @@
 import {WorkbenchLink as Link} from './WorkbenchLink';
-import {Avatar,Chip,Drawer} from '@heroui/react';
+import {Avatar,Chip,Drawer,Dropdown} from '@heroui/react';
 import {Table as HTable} from "@heroui/react";
 import {ProcessedDatePicker} from './ProcessedDatePicker';
 import {WorkbenchButton as HButton} from './WorkbenchButton';
@@ -22,7 +22,7 @@ import type {MouseEvent,ReactNode} from 'react';
 import {useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
-import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,Search,Activity,Headset,UserRound,Building2,MapPin,Radio,Ticket,Clock3,Phone} from 'lucide-react';
+import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,LogOut,ChevronsUpDown,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,Search,Activity,Headset,UserRound,Building2,MapPin,Radio,Ticket,Clock3,Phone} from 'lucide-react';
 import {MorphIcon} from 'morphicons/react';
 import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
@@ -185,14 +185,20 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
       }
     });}catch{return;}
   },[client,principal.principal_id,principal.draft_recovery_enabled,principal.manual_review_draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.staff_completion_draft_recovery_enabled,principal.conversation_draft_recovery_enabled,principal.manual_report_draft_recovery_enabled,principal.ticket_unassign_draft_recovery_enabled,principal.ticket_takeover_draft_recovery_enabled,principal.ticket_return_to_dispatch_enabled,principal.supplement_follow_up_draft_recovery_enabled,principal.logout_enabled]);
+  const userMenu=(compact=false)=><Dropdown><Dropdown.Trigger className={compact?'compact-account':'account account-menu-trigger'} data-action="open-user-menu" data-menu-location={compact?'compact':'sidebar'} aria-label="用户菜单" isDisabled={logout.isPending}>
+    <TeamAvatar name={displayName}/>{compact?null:<><div className="account-copy"><strong>{displayName}</strong><small>{department??(profile.isPending&&principal.current_profile_available?'正在读取部门…':'部门资料未提供')}</small></div><ChevronsUpDown className="account-menu-chevron" size={15}/></>}
+  </Dropdown.Trigger><Dropdown.Popover className="user-account-menu" placement={compact?'bottom end':'top start'}><Dropdown.Menu aria-label="用户操作">
+    <Dropdown.Item id="settings" data-action="open-settings" textValue="设置" isDisabled={navigationBlocked} onAction={openSettings}><Settings size={16}/><HLabel>设置</HLabel></Dropdown.Item>
+    {principal.logout_enabled?<Dropdown.Item id="logout" data-action="logout-workbench" textValue="退出工作台" isDisabled={logout.isPending} onAction={()=>logout.mutate()}><LogOut size={16}/><HLabel>{logout.isPending?'正在退出…':'退出工作台'}</HLabel></Dropdown.Item>:null}
+  </Dropdown.Menu></Dropdown.Popover></Dropdown>;
   const currentPath=useLocation().pathname,exceptionPage=currentPath.startsWith('/notification-exceptions'),conversationPage=currentPath.startsWith('/conversations'),settings=currentPath.startsWith('/settings/');
   const guardNavigation=(event:MouseEvent<HTMLAnchorElement>)=>{if(navigationBlocked)event.preventDefault();};
   return <div className={'app '+(collapsed?'sidebar-collapsed':'')} data-realtime-status={realtime.status}><aside className="sidebar" aria-label="主导航">
     {principal.workbench_search_enabled?<Link className="sidebar-search" to="/?search=1" aria-disabled={navigationBlocked} onClick={guardNavigation}><Search size={16}/><span>搜索工作区</span></Link>:null}
     <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings&&!conversationPage&&!exceptionPage?'current':'')} to="/" aria-current={!settings&&!conversationPage&&!exceptionPage?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
     <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:null}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:null}<>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:null}</>
-    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom"><HButton type="button" className="nav-item" data-action="open-settings" aria-haspopup="dialog" isDisabled={navigationBlocked} onClick={openSettings} variant="secondary"><Settings/><span>设置</span></HButton><div className="account"><TeamAvatar name={displayName}/><div><strong>{displayName}</strong><small>{department??(profile.isPending&&principal.current_profile_available?'正在读取部门…':'部门资料未提供')}</small></div></div></div></aside>
-    <main><header className="topbar"><HButton className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle} variant="secondary"><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></HButton><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':conversationPage?'服务会话':exceptionPage?'通知异常':'工作台'}</strong></span><div className="topbar-actions"><HButton type="button" className="compact-settings icon-button" data-action="open-settings" aria-label="设置" isDisabled={navigationBlocked} onClick={openSettings} variant="secondary"><Settings size={16}/></HButton>{principal.logout_enabled?<HButton type="button" data-action="logout-workbench" isDisabled={logout.isPending} onClick={()=>logout.mutate()} variant="secondary">{logout.isPending?'正在退出…':'退出工作台'}</HButton>:null}</div></header><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked} desktopEpoch={desktopEpoch}/>{children}</main></div>;
+    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{userMenu()}</div></aside>
+    <main><header className="topbar"><HButton className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle} variant="secondary"><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></HButton><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':conversationPage?'服务会话':exceptionPage?'通知异常':'工作台'}</strong></span><div className="topbar-actions"><div className="compact-user-menu">{userMenu(true)}</div></div></header><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked} desktopEpoch={desktopEpoch}/>{children}</main></div>;
 }
 function TicketNextStep({status}:{status:string}){
   const steps:Record<string,[string,string]>={

@@ -1,3 +1,5 @@
+import {launchWithHeldLoginCommit} from './helpers/workbench-login-commit-fixture.mjs';
+import {openWorkbenchLogoutBoundary} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
@@ -10,7 +12,7 @@ import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {WorkbenchActivityView} from '../contracts/workbench_activity_contracts.js';
 
 type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
-interface Fixture {origin:string;backendOrigin:string;certificateSpki:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string}[];pool:PostgresPool;runtime:{observability:{metrics:()=>Promise<{sse_clients:number}>}}}
+interface Fixture {origin:string;backendOrigin:string;certificateSpki:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string}[];pool:PostgresPool;runtime:{server:import('node:http').Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}}
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function people(origin:string,cookie:string,id:string){const response=await fetch(origin+'/api/workbench/items/ticket/'+id+'/activity',{headers:{cookie}});assert.equal(response.status,200);return (await response.json() as WorkbenchActivityView).people;}
 async function waitPeople(origin:string,cookie:string,id:string,present:boolean){const until=Date.now()+20000;do{if((await people(origin,cookie,id)).some(person=>person.display_name==='林舟')===present)return;await delay(100);}while(Date.now()<until);assert.fail('current colleague presence did not reach '+present);}
@@ -61,7 +63,7 @@ test('production list preloads do not view; safe detail peers and controlled vis
 });
 
 test('current READ revocation clears production activity and cannot restore the prior colleague lease',async()=>{
-  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,principals,pool}:Fixture)=>{
+  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,principals,pool,runtime}:Fixture)=>{
     const ticket=tickets[5]?.ticket,actor=browserCookies[0],viewer=cookies[2],principal=principals[0];assert.ok(ticket&&actor&&viewer&&principal);let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:[actor]});assert.ok(browser);
@@ -77,14 +79,14 @@ test('current READ revocation clears production activity and cannot restore the 
 });
 
 test('successful real session logout removes the production activity view and makes old credentials unusable',async()=>{
-  await withWeb01Fixture(async({origin,backendOrigin,certificateSpki,browserCookies,cookies,tickets}:Fixture)=>{
+  await withWeb01Fixture(async({origin,backendOrigin,certificateSpki,browserCookies,cookies,tickets,runtime}:Fixture)=>{
     const ticket=tickets[5]?.ticket,oldCookie=cookies[0];assert.ok(ticket&&oldCookie);let browser:Browser|undefined,error:unknown;
     try{
-      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:browserCookies,certificateSpki});assert.ok(browser);
+      browser=await launchWithHeldLoginCommit({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:browserCookies,certificateSpki});assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector(".detail-body"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
-      await browser.waitFor('Boolean(document.querySelector("[data-action=logout-workbench]"))');
-      await browser.evaluate('document.querySelector("[data-action=logout-workbench]").click()');
-      await browser.waitFor('!document.querySelector(".detail-body")&&!document.querySelector("[data-workbench-activity]")&&document.body.innerText.includes("已退出")');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=open-user-menu]"))');
+      await openWorkbenchLogoutBoundary(browser);await browser.evaluate('document.querySelector("[data-action=logout-workbench]").click()');
+      await browser.waitFor('!document.querySelector(".detail-body")&&!document.querySelector("[data-workbench-activity]")&&document.body.innerText.includes("正在打开企业微信扫码登录")');
       const denied=await fetch(backendOrigin+'/api/lifecycle/bootstrap',{headers:{cookie:oldCookie}});assert.equal(denied.status,401);await denied.arrayBuffer();
     }catch(failure){error=failure;try{console.log('T39_LOGOUT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnostic){error=new AggregateError([failure,diagnostic],"T39_BROWSER_FAILURE_AND_DIAGNOSTIC_FAILED");}}finally{
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}

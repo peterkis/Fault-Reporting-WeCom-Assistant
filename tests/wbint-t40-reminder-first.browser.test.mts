@@ -1,3 +1,4 @@
+import {openWorkbenchUserMenu} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
@@ -79,7 +80,7 @@ test('T40 a genuinely assigned due Ticket yields a muted locatable production no
       const beforeUrl=await browser.evaluate('location.href'),beforeFacts=await fixture.currentFacts();
       assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-dialog[role=dialog]"))'),false);
       // First product assertion only after actual assignment, due SET, authorized GET, mounted bundle and SSE.
-      assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(settings)+'))'),true,
+      await openWorkbenchUserMenu(browser);assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(settings)+'))'),true,
         'T40_PRODUCTION_REMINDER_SETTINGS_REQUIRED');
       await browser.evaluate('document.querySelector('+JSON.stringify(settings)+').click()');
       await browser.waitFor('Boolean(document.querySelector(\'.workbench-settings\'))');

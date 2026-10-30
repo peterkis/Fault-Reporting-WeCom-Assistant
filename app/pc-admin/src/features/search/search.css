@@ -4,7 +4,6 @@
 .search-main>label{flex:1;min-width:min(100%,260px)}
 .workbench-search label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text-secondary,#555b65)}
 .workbench-search input,.workbench-search select{min-width:0;max-width:100%;border:1px solid var(--border-color,#d8dce1);border-radius:8px;padding:8px;background:var(--surface,#fff);color:var(--text-primary,#20252d);font:inherit}
-.workbench-search input:focus-visible,.workbench-search select:focus-visible,.workbench-search button:focus-visible,.workbench-search summary:focus-visible{outline:2px solid #4169d8;outline-offset:2px}
 .workbench-search button{padding:8px 14px;border:1px solid #d8dce1;border-radius:8px;background:#f5f7fb;font:inherit;cursor:pointer}
 .workbench-search button:disabled{cursor:default;opacity:.6}
 .workbench-search details{margin-top:12px}
