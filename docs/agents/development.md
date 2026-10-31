@@ -2,6 +2,8 @@
 
 修改业务代码、Schema、跨层装配、AI/集成或资源配置前读取本页及[领域入口](domain.md)。本页承接重构前 AGENTS 的第1至10节；只有位置与重复交接段的路由改变，规则效力不变。
 
+桌面扫码、准备态、工牌/背景、原生恢复或安装包任务，另读[桌面登录与验证导航](desktop-login.md)。
+
 ## 1. 唯一有效基线
 
 `AGENTS.md`、`README.md`、`docs/architecture_baseline_status.md` 和 Accepted ADR 共同构成 V1.4 执行基线。冲突时必须先修正文档或新增 ADR，再实现代码。

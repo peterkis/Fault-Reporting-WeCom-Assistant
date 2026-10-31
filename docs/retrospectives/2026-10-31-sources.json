@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "session": {
+    "id": "01a175d5-0e8f-7470-86e5-557a4f11de6e",
+    "relative_file": "sessions/2026/10/26/rollout-2026-10-26T09-30-59-01a175d5-0e8f-7470-86e5-557a4f11de6e.jsonl",
+    "metadata_cwd_kind": "original primary project checkout",
+    "active_worktree_kind": "desktop-login-expiry, resolved through child parent_thread_id and turn context",
+    "prefix_bytes": 253836944,
+    "prefix_lines": 46877,
+    "prefix_sha256": "aab4e22f9a5a41b508ede097f45f46cdcc6b3595d6fc5db198d6921045b2915d",
+    "scope_from_line": 27732,
+    "scope": "desktop login branch and PR124 closeout; observable user/tool records only"
+  },
+  "observations": [
+    {
+      "id": "LOGIN-01",
+      "session_lines": [
+        45688,
+        45695
+      ],
+      "observation": "release frozen, source restore OSError22; hash-verified restoration and artifact check later passed",
+      "receipts": [
+        "retired-worktree/.local/electron/spinner-loader-20261031/deploy/freeze.log",
+        "retired-worktree/.local/electron/spinner-loader-20261031/deploy/restore-recovery.json"
+      ]
+    },
+    {
+      "id": "LOGIN-02",
+      "observation": "ten pre-existing dirty documents protected; active primary checkout removal refused; branch removed after detach; shared Junction target preserved",
+      "receipts": [
+        "initial-snapshot.json",
+        "main-dirty-stash.json",
+        "archive-preservation.json",
+        "cleanup-receipt.json"
+      ]
+    },
+    {
+      "id": "LOGIN-03",
+      "session_lines": [
+        44927,
+        44934
+      ],
+      "observation": "deferred-module inspection timeout and unusable native remote viewport; final host-specific tests and real-domain normal ready reported separately",
+      "receipts": [
+        "retired-worktree/.local/electron/word-loader-20261031/visual-check.log",
+        "retired-worktree/.local/electron/word-loader-20261031/visual-check-en.log"
+      ]
+    },
+    {
+      "id": "LOGIN-04",
+      "session_lines": [
+        45522
+      ],
+      "observation": "transformed bounds near70px are not logical50px; corrected maintained geometry assertions and retained original failure",
+      "receipts": [
+        "retired-worktree/.local/electron/spinner-loader-20261031/native-tests.log",
+        "retired-worktree/.local/electron/spinner-loader-20261031/native-tests-02.log",
+        "retired-worktree/.local/electron/spinner-loader-20261031/visual-check.json"
+      ]
+    },
+    {
+      "id": "LOGIN-05",
+      "session_lines": [
+        45813
+      ],
+      "observation": "summary fields differ from complete producer; this release physical files8/originals4, not earlier10; preservation checks passed",
+      "receipts": [
+        "retired-worktree/.local/electron/spinner-loader-20261031/deploy/media-preservation.json",
+        "retired-worktree/.local/electron/spinner-loader-20261031/deploy/postflight.json"
+      ]
+    },
+    {
+      "id": "LOGIN-06",
+      "user_lines": [
+        42390,
+        43028,
+        44539,
+        44910,
+        45163,
+        45475
+      ],
+      "observation": "legitimate design steering rebinds candidate; source freezing and separate background/window fps required",
+      "receipts": [
+        "retired-worktree/.local/electron/spinner-loader-20261031/build.log",
+        "retired-worktree/.local/electron/spinner-loader-20261031/build-final.log",
+        "retired-worktree/.local/electron/spinner-loader-20261031/deploy/actual-public-ready.json"
+      ]
+    },
+    {
+      "id": "LOGIN-07",
+      "observation": "initial exact-current-cwd metadata search found only children; parent id resolved root whose original cwd was main; root user records use response_item representation",
+      "receipts": [
+        "session-candidates.json",
+        "current-session-index.json",
+        "primary-observations.json"
+      ]
+    }
+  ],
+  "local_evidence_root": "D:\\wecom-workbench-evidence\\desktop-login-review-20261031",
+  "receipt_files": [
+    {
+      "id": "LOGIN-01",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/deploy/freeze.log",
+      "bytes": 1455,
+      "sha256": "c0c69006dbb7184e80f3a0457bf6006ea3230373999e0fb1ed326c2ae7f0e81a"
+    },
+    {
+      "id": "LOGIN-01",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/deploy/restore-recovery.json",
+      "bytes": 628,
+      "sha256": "ba38055f2a3d18b584e9feb9e274928543e9e0e22f4f8f954e6afa5790d0faa5"
+    },
+    {
+      "id": "LOGIN-02",
+      "relative_path": "initial-snapshot.json",
+      "bytes": 15203,
+      "sha256": "05d7845abf6d10739649095acae5b7355ead70218b3e47205281d1360519cd6d"
+    },
+    {
+      "id": "LOGIN-02",
+      "relative_path": "main-dirty-stash.json",
+      "bytes": 2154,
+      "sha256": "57af5a91debf6623a1b3e4a2c3ac171040c16268d645c50cfe0e7c57cf0dcf2e"
+    },
+    {
+      "id": "LOGIN-02",
+      "relative_path": "archive-preservation.json",
+      "bytes": 570,
+      "sha256": "ab385e4e98d6cc8b9ef489d062df331d4d13211036a0604f0499810e1a2ebbb8"
+    },
+    {
+      "id": "LOGIN-02",
+      "relative_path": "cleanup-receipt.json",
+      "bytes": 1377,
+      "sha256": "e59cca8770bd4c0a2298c975fbd8ec78d3883f2d4588f70986b5010cade6f52b"
+    },
+    {
+      "id": "LOGIN-03",
+      "relative_path": "retired-worktree/.local/electron/word-loader-20261031/visual-check.log",
+      "bytes": 995,
+      "sha256": "18ccfd29f6482f18fd0061d63104499de7b3dfefb5d18e6d964f4bc83c92b84c"
+    },
+    {
+      "id": "LOGIN-03",
+      "relative_path": "retired-worktree/.local/electron/word-loader-20261031/visual-check-en.log",
+      "bytes": 702,
+      "sha256": "20d4b5e9a2be46123b8318a2d80cf8a6e773d197464e5670415db083d97d38bb"
+    },
+    {
+      "id": "LOGIN-04",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/native-tests.log",
+      "bytes": 3398,
+      "sha256": "b9d8d98af052950cf7ad5128dc3b2fc9d8edc9f57d905bac449336ea011eb77b"
+    },
+    {
+      "id": "LOGIN-04",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/native-tests-02.log",
+      "bytes": 2942,
+      "sha256": "01390b00da6d3cea6deb2a885c5fb09d1f9dc36303cbca668138f7cbfaa55069"
+    },
+    {
+      "id": "LOGIN-04",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/visual-check.json",
+      "bytes": 2695,
+      "sha256": "407c5ecfcf7f2860bfafb1ac92f8550ee4d128ee98e768737838f5ef92187290"
+    },
+    {
+      "id": "LOGIN-05",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/deploy/media-preservation.json",
+      "bytes": 380,
+      "sha256": "251ffa70474d15eb4db7155453d31325824b3facd84f19924442f630b856320e"
+    },
+    {
+      "id": "LOGIN-05",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/deploy/postflight.json",
+      "bytes": 3241,
+      "sha256": "bd99dced281e3867373d1a0e8794db204842c39606a8fca119313b17c98f71a6"
+    },
+    {
+      "id": "LOGIN-06",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/build.log",
+      "bytes": 1514,
+      "sha256": "ed6bac00944d91333014c758c896486bfd596049b04f6239347cb5b1c73e195f"
+    },
+    {
+      "id": "LOGIN-06",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/build-final.log",
+      "bytes": 7751,
+      "sha256": "b9378fefa742ded83b700da07e01798d231c0827804a82d6138da7e88fc14d1e"
+    },
+    {
+      "id": "LOGIN-06",
+      "relative_path": "retired-worktree/.local/electron/spinner-loader-20261031/deploy/actual-public-ready.json",
+      "bytes": 969,
+      "sha256": "0332ffbdc49ba56ccc00ae92eebee6186d5592c17238986f86ce72f4290a0fee"
+    },
+    {
+      "id": "LOGIN-07",
+      "relative_path": "session-candidates.json",
+      "bytes": 1372,
+      "sha256": "6fc60517bb1e0db8514eff1f90a7b01e9d5896070811db47bf9815c5d6ed5eed"
+    },
+    {
+      "id": "LOGIN-07",
+      "relative_path": "current-session-index.json",
+      "bytes": 82128,
+      "sha256": "3462378783e4ff4cbb4266ef2aa583e66c23c2dd305014a2169d3e4d4f99e288"
+    },
+    {
+      "id": "LOGIN-07",
+      "relative_path": "primary-observations.json",
+      "bytes": 3678,
+      "sha256": "9b5e4a63143004b2a138ef2820b1078e91d5446f40e8308b61676a6fcddd6852"
+    }
+  ],
+  "pr124": {
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/124",
+    "reviewed_head": "da6a80401d37cac079d06699bdf9166aa8be3d90",
+    "review_summary_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/124#issuecomment-6539957837",
+    "review_receipt_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/124#issuecomment-6539983790",
+    "merge": "ded24e232e5930fe77f74783c9f02b3ac5277bef",
+    "ci_run": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41175710168",
+    "entries": 244,
+    "counts": {
+      "tests": 753,
+      "pass": 753,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "not_run": 0,
+    "manifest_sha256": "5f96c45356800c6f4b3dee928e95673391b7dac3e57ca2acb39ce89cb66ad318"
+  },
+  "preservation": {
+    "archived_ignored_root": "D:\\wecom-workbench-evidence\\desktop-login-review-20261031\\retired-worktree\\.local",
+    "critical_files_verified": 1719,
+    "same_ntfs_directory_object": true,
+    "shared_junction_target_preserved": true,
+    "user_dirty_files": 10,
+    "user_dirty_raw_content_published": false,
+    "current_primary_checkout": "D:\\worktrees\\desktop-login-expiry\\Fault-Reporting-WeCom-Assistant",
+    "current_primary_disposition": "retained detached, removal refused by managed tool",
+    "protected_original_nonbranch_refs": 92,
+    "source_tree_recovery_ref": "refs/archive/desktop-login-expiry-pr124-20261031-recovery-tree-d78233be"
+  },
+  "privacy": "No raw transcript, hidden reasoning, credential-bearing URL, configuration values or real QR image published; line anchors identify observable messages/tool results only. Later session appends do not change this frozen prefix."
+}

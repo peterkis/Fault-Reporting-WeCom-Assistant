@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "status": "LOCAL_DOCUMENT_CHECKS_PASS",
+  "date": "2026-10-31",
+  "scope": "project retrospective/navigation only; no runtime/config/schema change",
+  "functional_pr": 124,
+  "functional_merge": "ded24e232e5930fe77f74783c9f02b3ac5277bef",
+  "functional_ci": {
+    "entries": 244,
+    "pass": 753,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "not_run": 0
+  },
+  "documentation_checks": {
+    "links_and_budget": "PASS",
+    "parser_regression": {
+      "tests": 19,
+      "pass": 19,
+      "fail": 0
+    },
+    "check_command": "node .build/tools/check-agent-docs.mjs",
+    "regression_command": "node --test .build/tools/check-agent-docs.test.mjs",
+    "logs": [
+      {
+        "name": "retro-doc-check.log",
+        "sha256": "0d671ee3843342dfc3257580ab23c0646bdcb311e071e7e7c9b7eb1e684defbb"
+      },
+      {
+        "name": "retro-doc-tests.log",
+        "sha256": "9e9d9fdeeee7a0102ad059f51fef5090c78a54e510738a8ef2702ed897f67d95"
+      }
+    ]
+  },
+  "preservation": {
+    "preexisting_dirty_documents": 10,
+    "included_in_this_commit": false,
+    "original_stash_and_backup_retained": true,
+    "ignored_material_hashes_verified": 1719,
+    "current_chat_checkout": "retained detached due managed primary protection",
+    "forced_directory_deletion": false
+  },
+  "manual_full_certify": "NOT_RUN",
+  "real_phone_and_lid": "NOT_RUN",
+  "user_acceptance": "NOT_RECORDED",
+  "current_primary_disposition": "retained detached; not forcibly deleted; local and remote feature branches removed",
+  "user_documents_restore_receipt": "project-external final restoration receipt after retrospective integration; original backup and named stash retained"
+}
