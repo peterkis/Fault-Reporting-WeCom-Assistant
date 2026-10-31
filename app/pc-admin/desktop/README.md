@@ -87,4 +87,4 @@ npm run desktop:integration
 
 0.1.14按用户提供的CSS，用居中的80×40西瓜loader替换客户端启动连接及网页准备登录时的品牌/说明，两处同底色、同尺寸、3秒循环；登录场景就绪后移除loader并整体呈现。离线、重试及会话过期等必要故障提示保持。启动壳更新需要升级客户端，网页准备态通过服务器发布生效，见[加载动画记录](../../../plans/pc-admin-electron/watermelon-loader-2026-10-30.md)。
 
-0.1.15将上述两处西瓜loader替换为Uiverse kennyotsu的纵向滚动文字效果：固定“loading”，循环“login / QR code / badge / WeCom”，使用宣传文案小圆点相同的蓝、红、黄、绿，4秒无缝循环、上下淡出及轻微回弹。准备完成立即交接，不为播放动画延迟登录。网页准备态通过服务器更新生效；本地首屏需要升级0.1.15，见[滚动文字加载记录](../../../plans/pc-admin-electron/word-loader-2026-10-31.md)。
+0.1.15将上述两处西瓜loader替换为Uiverse kennyotsu的纵向滚动文字效果：固定“loading”，循环“login / QR code / badge / WeCom”，Arial优先且固定/滚动文字均为400常规字重，使用宣传文案小圆点相同的蓝、红、黄、绿，4秒无缝循环、上下淡出及轻微回弹。准备完成立即交接，不为播放动画延迟登录。网页准备态通过服务器更新生效；本地首屏需要升级0.1.15，见[滚动文字加载记录](../../../plans/pc-admin-electron/word-loader-2026-10-31.md)（含本轮既有原生窗口恢复回归测试失败的验证限制）。
