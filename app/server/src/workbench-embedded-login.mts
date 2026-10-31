@@ -10,6 +10,24 @@ const ENTRY='src/login/main.ts';
 const ASSET=/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)$/u;
 const ROOT=new URL('../../../web/desktop-login/',import.meta.url);
 const CSP="default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-src https://login.work.weixin.qq.com; img-src 'self' data:; font-src 'self'";
+// CSS minification removes comments, so the distributed document retains this notice.
+const CAPTION_LICENSE=`<!-- Shine effect adapted from https://uiverse.io/neerajbaniwal/hungry-mule-59
+Copyright (c) neerajbaniwal. MIT License.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->`;
 interface LoginRepresentation {encoding:StaticEncoding;body:Buffer}
 interface LoginAssets {entry:string;styles:string[];representations:ReadonlyMap<string,ReadonlyMap<StaticEncoding,LoginRepresentation>>}
 const MAX_ASSET_BYTES=4*1024*1024,MAX_PUBLIC_BYTES=16*1024*1024;
@@ -74,7 +92,7 @@ const publicAsset=(file:string)=>ASSET_PREFIX+file.slice('assets/'.length);
 export interface EmbeddedLoginInput {corpId:string;agentId:string;state:string;issuedEpochMs:number;expiresEpochMs:number;publicOrigin:string}
 export async function renderEmbeddedLogin(input:EmbeddedLoginInput):Promise<string>{
   const files=await assets();
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>医小修 · 扫码登录</title>${files.styles.map(file=>'<link rel="stylesheet" href="'+escape(publicAsset(file))+'">').join('')}</head>
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>医小修 · 扫码登录</title>${CAPTION_LICENSE}${files.styles.map(file=>'<link rel="stylesheet" href="'+escape(publicAsset(file))+'">').join('')}</head>
 <body data-login-scene="loading" data-backdrop="pending"><div class="login-preparing" role="status" aria-label="正在加载"><div class="loader" aria-hidden="true"></div></div><div id="login-backdrop" aria-hidden="true" inert></div><main id="desktop-login" class="login-shell" data-corp-id="${escape(input.corpId)}" data-agent-id="${escape(input.agentId)}" data-state="${escape(input.state)}" data-issued="${String(input.issuedEpochMs)}" data-expires="${String(input.expiresEpochMs)}" data-callback="${escape(new URL('/workbench/callback',input.publicOrigin).href)}">
 <header class="login-copy"><p class="login-brand"><span class="login-brand-mark" aria-hidden="true">+</span>医小修</p><h1>让每一次报修<span class="login-heading-line"><span>都有</span><span class="login-response">回应</span></span></h1></header>
 <section class="login-content" aria-label="扫码进入工作台"><div id="lanyard-stage"></div><div class="login-panel-parking"><div id="wecom-panel" aria-label="企业微信扫码登录"></div><p id="login-gesture" class="login-gesture">试试拖动工牌</p></div><p id="login-status" role="status">正在准备二维码…</p></section></main>
