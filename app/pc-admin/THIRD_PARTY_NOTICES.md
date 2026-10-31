@@ -30,7 +30,7 @@ THE SOFTWARE.
 
 The local startup and remote login preparation adapt the vertical word roller by **kennyotsu**:
 [fresh-lizard-20](https://uiverse.io/kennyotsu/fresh-lizard-20).
-Chinese copy, the light page surface, typography and the blue/red/yellow/green login palette are adapted.
+English login copy, the light page surface, typography and the blue/red/yellow/green login palette are adapted.
 
 Copyright (c) kennyotsu
 
