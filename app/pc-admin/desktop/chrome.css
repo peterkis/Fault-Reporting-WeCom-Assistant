@@ -41,11 +41,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 /* Keep both preparation surfaces identical; only the clipped word track moves. */
-.loader{display:flex;align-items:center;gap:8px;width:max-content;height:40px;color:#656f7d;font:500 25px/40px "Segoe UI","Microsoft YaHei UI",sans-serif;white-space:nowrap;pointer-events:none;user-select:none}
+.loader{display:flex;align-items:center;gap:8px;width:max-content;height:40px;color:#656f7d;font:400 25px/40px Arial,"Helvetica Neue",Helvetica,sans-serif;white-space:nowrap;pointer-events:none;user-select:none}
 .loader-words{position:relative;overflow:hidden;width:4em;height:40px;contain:layout paint}
 .loader-words::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(#f5f5f2 10%,transparent 30%,transparent 70%,#f5f5f2 90%)}
 .loader-track{height:100%;animation:loader-word-roll 4s infinite}
-.loader-word{display:block;height:100%;color:#0784ef;font-weight:600}
+.loader-word{display:block;height:100%;color:#0784ef;font-weight:400}
 .loader-word:nth-child(2){color:#e5484d}.loader-word:nth-child(3){color:#dca900}.loader-word:nth-child(4){color:#23a566}
 @keyframes loader-word-roll{10%{transform:translateY(-102%)}25%{transform:translateY(-100%)}35%{transform:translateY(-202%)}50%{transform:translateY(-200%)}60%{transform:translateY(-302%)}75%{transform:translateY(-300%)}85%{transform:translateY(-402%)}100%{transform:translateY(-400%)}}
 .startup[hidden] .loader-track{animation:none}
