@@ -1,0 +1,598 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "repo_head_at_start": "ff040732de9f1769acdefc8feecce0557055c3c4",
+  "scope": {
+    "discovery_window": "Physical rollout files dated 2026-10-20 through 2026-10-29, including compressed archives; exact normalized session_meta cwd match before content selection",
+    "headers_read": 81,
+    "matched_project_files": 51,
+    "selected_main_fragments": 3,
+    "selected_auxiliary_fragments": 3,
+    "discovery_errors": [],
+    "active_session_cutoff": "S01 stops before this retro request at line 5794; subsequent retrospective actions are excluded. S03 is only the 2026-10-26 follow-up after the previous source index cutoff.",
+    "not_claimed": "Semantic review covers selected user/assistant messages and corroborating receipts, not all historical messages, every tool output or every auxiliary session."
+  },
+  "privacy": "Only source anchors, hashes, safe summaries and result metadata; no copied transcripts, credentials, real names, raw business content, private keys or database backups.",
+  "path_roots": {
+    "<REPO>": "D:/Projects/Fault-Reporting-WeCom-Assistant",
+    "<CODEX_HOME>": "Local read-only Codex session storage",
+    "<EVIDENCE>": "D:/wecom-workbench-evidence"
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "thread_id": "01a180dd-7748-7f13-8e40-6f762e6bd1c8",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/28/rollout-2026-10-28T12-56-00-01a180dd-7748-7f13-8e40-6f762e6bd1c8.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-28T04:56:00.324Z",
+      "read_start_line": 1,
+      "read_through_line": 5794,
+      "read_through_timestamp": "2026-10-29T02:27:59.250Z",
+      "read_bytes": 21125439,
+      "read_prefix_sha256": "eb7e757c590013584196a32f106e8b07ef308170758842afabab9fb87eeccfc1",
+      "anchors": [
+        {
+          "topic": "storage-fit",
+          "start_line": 118,
+          "end_line": 118
+        },
+        {
+          "topic": "employee-media-approved-plan",
+          "start_line": 243,
+          "end_line": 243
+        },
+        {
+          "topic": "local-media-delivery",
+          "start_line": 1164,
+          "end_line": 1164
+        },
+        {
+          "topic": "two-p2-findings",
+          "start_line": 1306,
+          "end_line": 1306
+        },
+        {
+          "topic": "first-repairs",
+          "start_line": 1741,
+          "end_line": 1741
+        },
+        {
+          "topic": "collapsed-controls",
+          "start_line": 2215,
+          "end_line": 2215
+        },
+        {
+          "topic": "source-capacity-cause",
+          "start_line": 2620,
+          "end_line": 2620
+        },
+        {
+          "topic": "unreproduced-503",
+          "start_line": 2871,
+          "end_line": 2871
+        },
+        {
+          "topic": "capacity-owner-approval",
+          "start_line": 2968,
+          "end_line": 2968
+        },
+        {
+          "topic": "pointer-negative-and-positive",
+          "start_line": 3783,
+          "end_line": 3783
+        },
+        {
+          "topic": "remaining-coordinate-helper",
+          "start_line": 4139,
+          "end_line": 4139
+        },
+        {
+          "topic": "ci-751-pass-one-fail",
+          "start_line": 4191,
+          "end_line": 4191
+        },
+        {
+          "topic": "pr123-closure",
+          "start_line": 4796,
+          "end_line": 4796
+        },
+        {
+          "topic": "pg-deletion-rejection",
+          "start_line": 4910,
+          "end_line": 4910
+        },
+        {
+          "topic": "historical-sql-bytes",
+          "start_line": 5087,
+          "end_line": 5087
+        },
+        {
+          "topic": "generated-script-escaping",
+          "start_line": 5305,
+          "end_line": 5305
+        },
+        {
+          "topic": "failed-activation-rollback",
+          "start_line": 5411,
+          "end_line": 5411
+        },
+        {
+          "topic": "expired-certificate",
+          "start_line": 5449,
+          "end_line": 5449
+        },
+        {
+          "topic": "tls-maintenance-handoff",
+          "start_line": 5541,
+          "end_line": 5541
+        },
+        {
+          "topic": "activated-and-verified",
+          "start_line": 5763,
+          "end_line": 5763
+        },
+        {
+          "topic": "manual-cleanup-command",
+          "start_line": 5788,
+          "end_line": 5788
+        }
+      ],
+      "parse_errors": []
+    },
+    {
+      "id": "S02",
+      "thread_id": "01a175d5-0e8f-7470-86e5-557a4f11de6e",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/26/rollout-2026-10-26T09-30-59-01a175d5-0e8f-7470-86e5-557a4f11de6e.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-26T01:30:59.719Z",
+      "read_start_line": 1,
+      "read_through_line": 27718,
+      "read_through_timestamp": "2026-10-28T07:00:23.732Z",
+      "read_bytes": 162525815,
+      "read_prefix_sha256": "35cb4741430c99f07d221a8176f5fe4d70fb64a4ab48a791944b944285ff9836",
+      "anchors": [
+        {
+          "topic": "electron-mvp-request",
+          "start_line": 16,
+          "end_line": 16
+        },
+        {
+          "topic": "electron-implementation-plan",
+          "start_line": 194,
+          "end_line": 194
+        },
+        {
+          "topic": "bounded-deployment-authorization",
+          "start_line": 1479,
+          "end_line": 1479
+        },
+        {
+          "topic": "partial-query-improvement",
+          "start_line": 4774,
+          "end_line": 4774
+        },
+        {
+          "topic": "user-rejects-n-plus-one-result",
+          "start_line": 4850,
+          "end_line": 4850
+        },
+        {
+          "topic": "constant-query-counts",
+          "start_line": 5720,
+          "end_line": 5720
+        },
+        {
+          "topic": "initial-expiry-diagnosis",
+          "start_line": 6246,
+          "end_line": 6246
+        },
+        {
+          "topic": "compiled-worker-and-lifecycle-causes",
+          "start_line": 6413,
+          "end_line": 6413
+        },
+        {
+          "topic": "persistent-ticket-profile-requirement",
+          "start_line": 6493,
+          "end_line": 6493
+        },
+        {
+          "topic": "profile-repair-result",
+          "start_line": 7545,
+          "end_line": 7545
+        },
+        {
+          "topic": "continuing-ui-release-authorization",
+          "start_line": 15102,
+          "end_line": 15102
+        },
+        {
+          "topic": "projection-maintenance-blocker",
+          "start_line": 23623,
+          "end_line": 23623
+        },
+        {
+          "topic": "bounded-projection-repair-result",
+          "start_line": 24370,
+          "end_line": 24370
+        },
+        {
+          "topic": "startup-result",
+          "start_line": 25323,
+          "end_line": 25323
+        },
+        {
+          "topic": "keep-upload-original-on-conversion-failure",
+          "start_line": 25460,
+          "end_line": 25460
+        },
+        {
+          "topic": "media-deployment-and-avatar-gap",
+          "start_line": 27641,
+          "end_line": 27641
+        },
+        {
+          "topic": "c38f746b-pushed",
+          "start_line": 27715,
+          "end_line": 27715
+        }
+      ],
+      "parse_errors": []
+    },
+    {
+      "id": "S03",
+      "thread_id": "01a163a3-4f25-7261-802e-124423539e13",
+      "kind": "main",
+      "parent_thread_id": null,
+      "agent_path": null,
+      "file": "<CODEX_HOME>/sessions/2026/10/22/rollout-2026-10-22T20-43-29-01a163a3-4f25-7261-802e-124423539e13.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-22T12:43:29.555Z",
+      "read_start_line": 35616,
+      "read_through_line": 35864,
+      "read_through_timestamp": "2026-10-27T07:55:34.538Z",
+      "read_bytes": 120051912,
+      "read_prefix_sha256": "4129ebcb1f06397176eede1c28b2b96a688ffdbed1a12a760cc4183cd0c9e066",
+      "anchors": [
+        {
+          "topic": "previous-retrospective-request",
+          "start_line": 35616,
+          "end_line": 35616
+        },
+        {
+          "topic": "previous-retrospective-closure",
+          "start_line": 35828,
+          "end_line": 35828
+        },
+        {
+          "topic": "explicit-push-authorization",
+          "start_line": 35835,
+          "end_line": 35835
+        },
+        {
+          "topic": "preserved-user-diff-and-remote-equality",
+          "start_line": 35860,
+          "end_line": 35860
+        }
+      ],
+      "parse_errors": []
+    },
+    {
+      "id": "A01",
+      "thread_id": "01a180a3-50dc-7091-b003-c6e0edc3bd77",
+      "kind": "auxiliary",
+      "parent_thread_id": "01a175d5-0e8f-7470-86e5-557a4f11de6e",
+      "agent_path": "/root/avatar_boundary_review",
+      "file": "<CODEX_HOME>/sessions/2026/10/28/rollout-2026-10-28T11-52-29-01a180a3-50dc-7091-b003-c6e0edc3bd77.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-28T03:52:29.329Z",
+      "read_start_line": 1,
+      "read_through_line": 536,
+      "read_through_timestamp": "2026-10-28T06:37:47.381Z",
+      "read_bytes": 2606676,
+      "read_prefix_sha256": "155c3d7ff8f7c84dc6c4332fcb73e2cbe646693da6fb3e393bc337fe58c61570",
+      "anchors": [
+        {
+          "topic": "avatar-boundaries-not-run",
+          "start_line": 316,
+          "end_line": 316
+        },
+        {
+          "topic": "late-identity-change-test-not-run",
+          "start_line": 351,
+          "end_line": 351
+        },
+        {
+          "topic": "real-pg-text-uuid-cast-cause",
+          "start_line": 383,
+          "end_line": 383
+        }
+      ],
+      "parse_errors": []
+    },
+    {
+      "id": "A02",
+      "thread_id": "01a180a3-af81-7fe0-8988-13c5509495c1",
+      "kind": "auxiliary",
+      "parent_thread_id": "01a175d5-0e8f-7470-86e5-557a4f11de6e",
+      "agent_path": "/root/media_quality_tests",
+      "file": "<CODEX_HOME>/sessions/2026/10/28/rollout-2026-10-28T11-52-53-01a180a3-af81-7fe0-8988-13c5509495c1.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-28T03:52:53.692Z",
+      "read_start_line": 1,
+      "read_through_line": 739,
+      "read_through_timestamp": "2026-10-28T06:40:34.929Z",
+      "read_bytes": 2965938,
+      "read_prefix_sha256": "d3691ba0e96ec3a28782311ba165dd0879c945750d045026930f8519dccf2765",
+      "anchors": [
+        {
+          "topic": "codec-test-proposal-not-run",
+          "start_line": 221,
+          "end_line": 221
+        }
+      ],
+      "parse_errors": []
+    },
+    {
+      "id": "A03",
+      "thread_id": "01a180a4-0558-7382-94d5-f1c38e1d2985",
+      "kind": "auxiliary",
+      "parent_thread_id": "01a175d5-0e8f-7470-86e5-557a4f11de6e",
+      "agent_path": "/root/detail_ui_tests",
+      "file": "<CODEX_HOME>/sessions/2026/10/28/rollout-2026-10-28T11-53-15-01a180a4-0558-7382-94d5-f1c38e1d2985.jsonl",
+      "cwd": "<REPO>",
+      "session_meta_timestamp": "2026-10-28T03:53:15.519Z",
+      "read_start_line": 1,
+      "read_through_line": 326,
+      "read_through_timestamp": "2026-10-28T05:23:24.732Z",
+      "read_bytes": 1889456,
+      "read_prefix_sha256": "13955185205fa1ea0db1d5c783ddf83ef4a29daa2551182172c2b74aef026a24",
+      "anchors": [
+        {
+          "topic": "browser-proposal-static-only",
+          "start_line": 210,
+          "end_line": 210
+        },
+        {
+          "topic": "h5-flow-static-only",
+          "start_line": 323,
+          "end_line": 323
+        }
+      ],
+      "parse_errors": []
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E01",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/git-delivery/delivery-closure.json",
+      "bytes": 4153,
+      "sha256": "24f26b1ed8b7ff5a24552d4621c0f6f2c7d97973bc91d60ab3c3ae27ac6078aa",
+      "purpose": "pr123-review-merge-and-cleanup"
+    },
+    {
+      "id": "E02",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/git-delivery/final-ci-verification.json",
+      "bytes": 720,
+      "sha256": "ed51133dd539cf52b8d1735f3e706750846ba5e4c395ef5384a0ed7c838ddf64",
+      "purpose": "244-entries-752-pass"
+    },
+    {
+      "id": "E03",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/git-delivery/pointer-actionability-old-helper-receipt.json",
+      "bytes": 250,
+      "sha256": "b0790eb33502f43db880e977e3b930d141962cc1492dcf57e33d19e7a26662e1",
+      "purpose": "old-helper-real-negative"
+    },
+    {
+      "id": "E04",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/verification-summary.json",
+      "bytes": 12194,
+      "sha256": "88732eefed68ed4fd1822c92ab87d219c8f4361e00ed4d1ae226670585e6ba15",
+      "purpose": "local-media-subsets"
+    },
+    {
+      "id": "E05",
+      "file": "<EVIDENCE>/media-performance-enable-20261029/operations/migration-checkout-receipt.json",
+      "bytes": 1379,
+      "sha256": "f09a6c28382fd7b85cc378b1029cb807590520e872cf66ff004f99725854e176",
+      "purpose": "raw-sql-byte-profile"
+    },
+    {
+      "id": "E06",
+      "file": "<EVIDENCE>/media-performance-enable-20261029/server/activation/result.json",
+      "bytes": 2304,
+      "sha256": "0bac600b888801ad2440e1828f3f646f93d88bf030a835c4b72b362efe0e0405",
+      "purpose": "first-activation-failed-and-rolled-back"
+    },
+    {
+      "id": "E07",
+      "file": "<EVIDENCE>/media-performance-enable-20261029/server/attempt-02/activation/result.json",
+      "bytes": 14707,
+      "sha256": "a36518acbefef5b4d964bfcb17e72a3b4adbeba80c7ad0b0c2d692529c9062bf",
+      "purpose": "second-activation-pass"
+    },
+    {
+      "id": "E08",
+      "file": "<EVIDENCE>/media-performance-enable-20261029/server/attempt-02/postflight.json",
+      "bytes": 2665,
+      "sha256": "5e378681c8b6cff8ba7c6b3aa26b254aa100c63276e567dab5c45be720fb12b5",
+      "purpose": "actual-role-flags-and-anonymous-boundary"
+    },
+    {
+      "id": "E09",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/pg-retirement-20261029/preflight.json",
+      "bytes": 1488,
+      "sha256": "d0478ab418638babc88564c0b83bd418d7c417fc0c54e1d4e4e8062e5c42be66",
+      "purpose": "pg-retirement-and-protected-receipt-hashes"
+    },
+    {
+      "id": "E10",
+      "file": "<EVIDENCE>/pc-media-employee-read-20261028/pg-retirement-20261029/result.json",
+      "bytes": 584,
+      "sha256": "bf1b6217c2429ca086c58134582b97d3ebe37da3d5fd713e835301383ed6f308",
+      "purpose": "historical-automatic-rejection"
+    },
+    {
+      "id": "E11",
+      "file": "<EVIDENCE>/tls-cd3120-20261029-side/report.md",
+      "bytes": 3926,
+      "sha256": "1eb8e9a5975dcb3712216bf4c56c7a4c8cf1f1495ef716b7ad9ed725f703c1ca",
+      "purpose": "separate-tls-maintenance-handoff"
+    },
+    {
+      "id": "E12",
+      "file": "<EVIDENCE>/media-performance-enable-20261029/server/prepare.json",
+      "bytes": 29855,
+      "sha256": "c35600f9fd1c741590d64b4d3e14709c9f0326b178350d32dfb1e7fe3688fbf5",
+      "purpose": "47-components-and-synthetic-poster"
+    }
+  ],
+  "github_observation": {
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/123",
+    "head_sha": "06520b89574e2c5bdf903c3b13e9ead779b66327",
+    "base_sha": "3bd9f037af6933f3717a95e173cacfcd0ea4bd4e",
+    "merge_commit_sha": "ff040732de9f1769acdefc8feecce0557055c3c4",
+    "merged": true,
+    "merged_at": "2026-10-28T17:32:41Z"
+  },
+  "retirement_observation": {
+    "observed_utc": "2026-10-29T02:38:49.095117+00:00",
+    "pg_directory_present": false,
+    "pg_delete_executed_in_this_retro": false,
+    "prior_automatic_rejection_preserved": true,
+    "manual_deletion_execution_not_observed": true,
+    "retained_validation_receipts_verified": 6
+  },
+  "findings": [
+    {
+      "id": "R29-01",
+      "priority": "high",
+      "category": "diagnosis-and-assembly",
+      "sources": [
+        "S02:initial-expiry-diagnosis",
+        "S02:compiled-worker-and-lifecycle-causes",
+        "S02:persistent-ticket-profile-requirement",
+        "S02:profile-repair-result"
+      ],
+      "status": "existing-fix-and-process-guidance"
+    },
+    {
+      "id": "R29-02",
+      "priority": "high",
+      "category": "performance-and-checks",
+      "sources": [
+        "S02:partial-query-improvement",
+        "S02:user-rejects-n-plus-one-result",
+        "S02:constant-query-counts",
+        "S01:local-media-delivery",
+        "E04"
+      ],
+      "status": "reuse-existing-regressions"
+    },
+    {
+      "id": "R29-03",
+      "priority": "high",
+      "category": "browser-and-native-boundaries",
+      "sources": [
+        "S01:two-p2-findings",
+        "S01:first-repairs",
+        "S01:collapsed-controls",
+        "S01:pointer-negative-and-positive",
+        "S01:remaining-coordinate-helper",
+        "E03"
+      ],
+      "status": "existing-fixes-and-validation-navigation"
+    },
+    {
+      "id": "R29-04",
+      "priority": "high",
+      "category": "release-preflight-and-resume",
+      "sources": [
+        "S01:historical-sql-bytes",
+        "S01:failed-activation-rollback",
+        "S01:expired-certificate",
+        "S01:tls-maintenance-handoff",
+        "S01:activated-and-verified",
+        "E05",
+        "E06",
+        "E07",
+        "E08",
+        "E11",
+        "E12"
+      ],
+      "status": "runbook-preflight-order-and-current-release-entry"
+    },
+    {
+      "id": "R29-05",
+      "priority": "medium",
+      "category": "capacity-and-historical-identity",
+      "sources": [
+        "S01:source-capacity-cause",
+        "S01:capacity-owner-approval",
+        "S01:pr123-closure",
+        "E01",
+        "E02"
+      ],
+      "status": "reuse-adr0051-and-existing-boundary-tests"
+    },
+    {
+      "id": "R29-06",
+      "priority": "medium",
+      "category": "authority-and-maintenance",
+      "sources": [
+        "S02:continuing-ui-release-authorization",
+        "S02:projection-maintenance-blocker",
+        "S02:bounded-projection-repair-result",
+        "S01:tls-maintenance-handoff"
+      ],
+      "status": "preserve-separate-maintenance-scope"
+    },
+    {
+      "id": "R29-07",
+      "priority": "medium",
+      "category": "tool-economy-and-handoffs",
+      "sources": [
+        "S01:generated-script-escaping",
+        "A01:avatar-boundaries-not-run",
+        "A01:real-pg-text-uuid-cast-cause",
+        "A02:codec-test-proposal-not-run",
+        "A03:browser-proposal-static-only",
+        "A03:h5-flow-static-only",
+        "S03:previous-retrospective-closure"
+      ],
+      "status": "strengthen-existing-exit-gates-and-bounded-reading"
+    },
+    {
+      "id": "R29-08",
+      "priority": "medium",
+      "category": "cleanup-and-status-navigation",
+      "sources": [
+        "S01:pg-deletion-rejection",
+        "S01:manual-cleanup-command",
+        "S01:activated-and-verified",
+        "S03:preserved-user-diff-and-remote-equality",
+        "E09",
+        "E10"
+      ],
+      "status": "current-navigation-updated-and-read-only-path-observed"
+    },
+    {
+      "id": "R29-09",
+      "priority": "medium",
+      "category": "unresolved-observations",
+      "sources": [
+        "S01:unreproduced-503",
+        "S02:media-deployment-and-avatar-gap",
+        "E08"
+      ],
+      "status": "retain-not-reproduced-upstream-gap-and-user-acceptance-not-run"
+    }
+  ]
+}

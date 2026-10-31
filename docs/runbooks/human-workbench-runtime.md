@@ -158,6 +158,26 @@ HTTPS 反向代理须转发到本机指定端口，保留原 Host/Origin、Cooki
 
 部署验收须检查脚本、样式及其引用资源的真实 HTTP 200、正确内容类型和制品字节，再验证登录、进度读取及本人“仍未解决”反馈。页面文字出现不代表访问验证已完成。未认证的成员 API 仍须拒绝访问，健康检查和本地测试登录不得公开。代理日志不记录 OAuth 查询或卡片访问凭据。此处说明必要路由，不授予新的成员、发送或部署权限。
 
+## 发布前只读预检与失败后续作
+
+本节适用于本次已获授权的目标与变更范围；历史发布记录不授予新的部署、业务维护或证书变更权限。按以下顺序完成检查后，再进入原发布脚本的停服、备份和切换阶段。
+
+1. 记录当前唯一活动 owner、实际运行 manifest、Schema marker、supervisor、Nginx 和私有配置哈希，明确将启用的单项设置及回退版本。读取既有回执只能作线索，最终绑定本次读回身份。
+2. 从客户端和反向代理所在环境，使用正常 CA 信任链检查公共 HTTPS、H5 静态入口及匿名 API 拒绝。TLS 失败先保存失败与原因；旧版与新版同样失败时，单独处理证书/代理问题，恢复后重读配置身份。内部 `/health/ready` 成功不能代替公网入口检查。
+3. 将已应用 `platform.schema_migration.checksum_sha256` 与冻结候选中对应 SQL 的原始字节哈希逐项比较，再检查本次增量的结构与 marker。CRLF/LF 规范化相同只能证明文本等价；兼容包若需沿已部署原件字节冻结，应保留原件来源和真实 dirty/input/manifest，主目录改动保全与恢复另记。保持数据库历史校验值与原 SQL 语义。
+4. 沿现有编译迁移器执行相关 `--check`，核目标库与必要依赖。员工媒体读取的 070 使用 `workbench-display-media-migrate.mjs --target=previews --check`，获批后才 apply。开启后从实际 APP/WORKER 角色进程白名单回读目标开关，确认 GATEWAY 的角色隔离；容器 `Config.Env` 可能没有 env-file 或角色设置，不能单独用它判断开关生效。
+5. 原发布流程继续核验数据库备份格式、目录和哈希，以及旧版本的 Schema/配置兼容性。备份可列出不等于实际演练过恢复；停止旧 owner 后再次核迁移、来源事实和媒体文件，再执行已授权的增量与切换。验收覆盖正常 TLS、静态资源字节、匿名边界和健康检查，用户会话体验单列。
+6. 失败先保留本次 OUT 和回退结果。恢复后使用独立 attempt/owner/输出目录，以当前迁移和配置重新预检；已应用前向迁移按 NOOP 处理，不直接重跑要求全新目录的旧激活脚本。原迁移和派生文件的保留按既有回退合同执行，首次失败不会被后续 PASS 覆盖。
+
+Windows 上可用下面的只读命令检查已从本次授权/配置取得的 `$authorizedOrigin`，在停服前执行；服务器使用 `curl` 并将输出文件换成 `/dev/null`：
+
+```powershell
+curl.exe --fail --silent --show-error --connect-timeout 5 --max-time 15 --output NUL --write-out 'http=%{http_code} tls=%{ssl_verify_result}\n' "$authorizedOrigin/wecom/yixiaoxiu/"
+if ($LASTEXITCODE -ne 0) { throw 'PUBLIC_TLS_OR_H5_PREFLIGHT_FAILED' }
+```
+
+该检查不携带员工 Cookie 或认证查询。后续读取实际进程环境只输出所需布尔值，保持凭据白名单规则。2026-10-29 的 TLS 回退、SQL 字节兼容包和第二次启用依据见[复盘](../retrospectives/2026-10-29.md#r29-04)。
+
 ## 验证与交接
 
 活动 selection 为 `v3-p09`；本任务相关集合 `human-workbench-wiring` 注册两个新入口。进程用例经过编译后的配置解析／父进程／三个角色入口，外部 HTTP/SDK 在专用测试子入口替换；无 runtimeFactory 替代，真实业务、数据库、OAuth Session、HTTP、React 和 Sender 保留。SYNTHETIC／ISOLATED_TEST 配置只能配显式外部测试边界和隔离 loopback 库，正式角色默认拒绝。

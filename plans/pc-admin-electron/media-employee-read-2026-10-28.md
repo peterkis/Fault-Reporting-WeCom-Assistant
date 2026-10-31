@@ -1,5 +1,7 @@
 # PC 员工媒体读取与预览优化
 
+后继状态：PR #123 已合并，2026-10-29 独立授权的媒体优化已启用；最终 Git/发布身份与限制见[合并与启用记录](#2026-10-29-独立授权启用与清理观察)。以下本地候选、失败和 NOT_RUN 均绑定其原阶段，不改写为后继验收结果。
+
 来源：用户确认的方案及 2026-10-28 PLEASE IMPLEMENT 授权。合同：[ADR-0050](../../adr/0050_pc_media_employee_read_and_server_previews.md)。仅本地实现、合成数据及浏览器验证；无云端部署、现场迁移、真实发送或 Gate 推进。
 
 起始 HEAD：`c38f746b4b2f8c28ea759162bd7fad95f8540070`。头像与媒体压缩工作已提交；起始 tracked diff 为空，既有 `.local/` 原位保全。当前会话为唯一写者。
@@ -119,3 +121,41 @@ Codex对后继`f58de4f5692589fb481ad7e24ba4d70c6e24b076`复审完成，未发现
 该PC媒体子场景仍使用独立的“滚动后立即取得坐标并点击”函数，未经过共享辅助的可用性、稳定及遮挡检查。现删除重复实现，复用已获原生事件负向/正向证明的共享辅助；关闭详情、全部Blob/URL清零、播放、下载原件哈希及同一来源/原UUID断言全部保留。失败时新增路径、界面存在性、Blob/URL数量及MIME/大小白名单诊断，观察失败与原错误通过AggregateError共同保留。
 
 本地H5全链路、详情重组/辅助回归和媒体详情3个注册入口共4项通过，实际关闭后Blob及URL均为0。最终候选input hash为`4e76e1a7e68adcebf2be8d68050c62b63fc4599c2061da5e4e136820be4ad012`，manifest为`d8a2239f72d831350fdb1aa25f4b98d72b9a1f03e1cc2734be10dca9d3be3ccd`；908编译语法、strict/负向类型、制品与文档检查通过，自有PG已停止。本轮仍只有测试及记录修订，后继远端完整回归/工具检查、精确head合并和清理以Git交付收据为准。
+
+## 2026-10-29 独立授权启用与清理观察
+
+本节追加最终 Git 交付与后继发布，保留上文各次未提交、未部署、失败和 NOT_RUN 的历史含义。
+
+### PR #123 收口
+
+最终审查及 CI head 为 `06520b89574e2c5bdf903c3b13e9ead779b66327`，两个原 P2 线程已解决，复审无新问题。活动 selection `v3-p09` 实际执行 244/244 入口、752 PASS，FAIL/SKIP/NOT_RUN 均为 0；人员目录 98 项、历史证据及相关工具检查通过。手动 full/certify 未运行。
+
+PR 于 2026-10-29 01:32:41（Asia/Shanghai）合并为 `ff040732de9f1769acdefc8feecce0557055c3c4`；合并树与被测 PR 树均为 `3ba934fe7ee7762c3f9e29f5a82e95d9cfe28f4d`，两个父提交及被测祖先保留。本地、tracking、实时远端当时核验一致，任务本地/远端分支及临时工作树已清理。原件为证据目录 `git-delivery/delivery-closure.json`、`final-ci-verification.json` 和 `git-merge-verification.json`。
+
+### 独立媒体启用
+
+用户随后明确要求打开媒体优化与性能开关。旧云端版本不支持员工媒体开关，需更新已合并代码并执行 070；原性能及压缩开关此前已经开启，配置候选只增加 `workbenchMediaEmployeeReadEnabled=true`。
+
+已应用的 067–069 与 Windows 检出仅有 LF/CRLF 差异，但迁移按原始字节校验。沿已部署冻结原件的字节生成兼容包，如实记录 `source_dirty=true`，Git 逻辑内容和历史数据库校验值保持；主目录原字节随后恢复、重建并核验干净。该发布 manifest 为 `3115c8e0b60f6327b59398df416357ee699e2cefd835ae61eae31f6323eb204a`，包 SHA-256 为 `59df8722099047b146f6bf3f408a5bb5ab6b71fcb60e445d33ba5a89a910a402`；不把它重写为上述 CI manifest。
+
+首次切换已应用 070，但正常公网 TLS 校验发现证书过期，激活失败并自动恢复旧实例；32 项后端检查通过，历史业务事实与媒体保全。070 前向保留，首次失败回执保留。证书经独立授权维护恢复后，重新核对证书、Nginx、旧 owner/config 和当前 30 条迁移，以独立 `attempt-02` 继续；070 check/apply/check 均为 `NOOP_ALREADY_APPLIED`。
+
+第二次切换于 2026-10-29 10:19 激活通过，10:22 后检通过（Asia/Shanghai）：
+
+| 项目 | 实际结果 |
+| --- | --- |
+| 活动 owner | `human-workbench-20261029-pc-media-employee-read-02`；唯一活动业务实例，无重启/OOM |
+| APP/WORKER | 从实际子进程回读员工媒体、H5 性能、媒体压缩均开启；GATEWAY 三项均关闭 |
+| 健康与入口 | 32 项 ready 通过；正常公共 TLS、H5 200、既有 PC 扫码入口与资源身份通过 |
+| 匿名权限 | 员工媒体 GET/HEAD 和业务入口返回预期 401 |
+| 保全 | 旧 42 份配置及 8 份媒体文件保持，其中 4 份原件；切换期间业务事实摘要未变 |
+| 回退与清理 | 旧实例、首轮失败 owner、runtime/config、数据库备份保留；8 份操作文件归档后精确清理 9 份临时上传文件，共 8,732,642 字节 |
+| 限制 | 未新增试单、测试业务 POST 或测试发送；登录后媒体体验 NOT_RUN；已有业务媒体无视频样本，合成封面检查不代替真实视频验收 |
+
+发布根为 `/opt/fault-reporting-wecom/p2-g2/pc-media-employee-read-20261029-01`，新尝试、只读复核与回退入口在 `attempt-02/`。完整回执在 `D:/wecom-workbench-evidence/media-performance-enable-20261029/report.md`，30 份选定收据的大小/哈希索引在同目录 `receipt-index.json`。实际发布范围不改变持久默认值、P2-G2-LIVE、P2-008 或后继 Gate。
+
+### 测试 PG 退役观察
+
+原数据目录自动删除曾被审批以 `blocked by policy` 拒绝；实例当时已停止，没有绕过，原拒绝及配置/关闭快照在原证据目录 `pg-retirement-20261029/`。随后按用户请求只提供了精确手动命令。
+
+2026-10-29 本次复盘只读观察 `D:/wecom-workbench-runtime/pc-media-employee-read-20261028-pg` 已不存在，6 份被保护验证日志/验收收据的 SHA-256 与退役前记录全部一致。未观察删除执行者或具体执行时间，本次复盘未执行删除；原拒绝收据不改写。[复盘来源与状态](../../docs/retrospectives/2026-10-29-sources.json)保留这两次观察。

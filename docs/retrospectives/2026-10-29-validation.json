@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "completed_utc": "2026-10-29T02:48:03.811747+00:00",
+  "status": "PASS_DOCUMENTATION_AND_SOURCE_INDEX",
+  "scope": "Documentation and retrospective source index only; historical business results retain their original candidate/environment.",
+  "head": "ff040732de9f1769acdefc8feecce0557055c3c4",
+  "branch": "main",
+  "workspace": "D:/Projects/Fault-Reporting-WeCom-Assistant",
+  "changed_files": [
+    "docs/agents/README.md",
+    "docs/agents/session-operations.md",
+    "docs/agents/validation.md",
+    "docs/retrospectives/2026-10-29-sources.json",
+    "docs/retrospectives/2026-10-29-validation.json",
+    "docs/retrospectives/2026-10-29.md",
+    "docs/retrospectives/README.md",
+    "docs/runbooks/human-workbench-runtime.md",
+    "plans/pc-admin-electron/README.md",
+    "plans/pc-admin-electron/media-employee-read-2026-10-28.md"
+  ],
+  "commands": [
+    {
+      "command": "npm.cmd run docs:agents:check",
+      "exit_code": 0,
+      "status": "PASS",
+      "log": "<REPO>/.local/retro-20261029/docs-check.log",
+      "sha256": "96177cf295b89ff3ca4f10b0d17ee7f08ef59d93def6e2f9918a0fd8c8874c86"
+    },
+    {
+      "command": "node --test --test-reporter=tap .build/tools/check-agent-docs.test.mjs",
+      "exit_code": 0,
+      "status": "PASS",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "skipped": 0,
+      "log": "<REPO>/.local/retro-20261029/docs-tests.tap",
+      "sha256": "0967fcaa2b4d425d2378520d41480fcc6aaa53e25c56ed2511f81db4c9fc6bf6"
+    },
+    {
+      "command": "python -X utf8 .local/retro-20261029/verify-sources.py",
+      "exit_code": 0,
+      "status": "PASS",
+      "log": "<REPO>/.local/retro-20261029/source-verification.json",
+      "sha256": "3d2572e644afd055359333b82c043dc6db3349be589b6430e8a874e383619c12"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  ],
+  "source_and_preservation": {
+    "status": "PASS_SOURCES_AND_PRESERVATION",
+    "verified_utc": "2026-10-29T02:48:03.447850+00:00",
+    "sessions": 6,
+    "anchors": 48,
+    "receipts": 12,
+    "findings": 9,
+    "protected_files": 56,
+    "protected_pg_receipts": 6,
+    "pg_directory_present": false,
+    "pg_delete_executed_in_retro": false,
+    "merge_tree_matches_pr": true,
+    "raw_transcripts_added_to_repository": false
+  },
+  "root_agents_bytes": 4035,
+  "scope_limits": {
+    "business_source_changed": false,
+    "business_build_or_regression_run": false,
+    "live_server_connection_or_mutation": false,
+    "github_pr_metadata_read_only": true,
+    "real_business_posts_or_test_sends": false,
+    "personal_memory_or_global_instructions_modified": false,
+    "git_commit_or_push_performed": false
+  },
+  "auxiliary_observations": [
+    "A repository-path guess and a PowerShell wildcard-shaped rg path failed read-only; corrected through rg --files.",
+    "Some initial broad reads truncated; final source index uses bounded fields and fixed anchors. Neither auxiliary failure is a business RED."
+  ],
+  "files": [
+    {
+      "file": "docs/agents/README.md",
+      "bytes": 1764,
+      "sha256": "5e610b5687917b10c2b623bf24fc72bb2e82abc7730741b34c5dffc2431eebfd"
+    },
+    {
+      "file": "docs/agents/session-operations.md",
+      "bytes": 10439,
+      "sha256": "9edce7da8123eabd161e7723c8fee86a421df6e7f9c806ddce0d81a622dc7627"
+    },
+    {
+      "file": "docs/agents/validation.md",
+      "bytes": 6312,
+      "sha256": "071a3bf06a6e97ede33c49d9ff4d0b7c04615aa4f735a1766468041aa2e15eda"
+    },
+    {
+      "file": "docs/retrospectives/2026-10-29-sources.json",
+      "bytes": 19757,
+      "sha256": "591880281357f84f8041733e71f7420db1fc84f18df334a454d8d0d89b727161"
+    },
+    {
+      "file": "docs/retrospectives/2026-10-29.md",
+      "bytes": 13919,
+      "sha256": "36b578bac66ed05034782c56fb9f590fa362c7df07b9158d698ee51a6a2d48ae"
+    },
+    {
+      "file": "docs/retrospectives/README.md",
+      "bytes": 2886,
+      "sha256": "38c4bc8c584b62253157a9fd347e1aa79e129cbd1df298167999dd7b2a5ca28a"
+    },
+    {
+      "file": "docs/runbooks/human-workbench-runtime.md",
+      "bytes": 30402,
+      "sha256": "c7a64cc8583062fe957dc6431b8053a78429be8bcd5ca8d4e17e204f5e269f7e"
+    },
+    {
+      "file": "plans/pc-admin-electron/README.md",
+      "bytes": 20911,
+      "sha256": "d3795b3de1e66c90b1fbd5aa0ef4fdbb343e19dc7e4d34a212a2e107091c71f3"
+    },
+    {
+      "file": "plans/pc-admin-electron/media-employee-read-2026-10-28.md",
+      "bytes": 22650,
+      "sha256": "20e87266962a637d2ce1fc48a02c2c192018b10f0c91b6f70a8ba2012055037c"
+    }
+  ]
+}
