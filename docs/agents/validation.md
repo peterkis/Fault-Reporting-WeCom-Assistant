@@ -12,6 +12,14 @@
 
 本地只选相关子集时记录完整路径和实际数量，不称其为活动全集；新 head 的远端普通 PR selection 独立完成。源码/SQL/共享宿主/依赖变化按实际影响扩大检查；重复评论本身不构成重跑全部检查的理由。长回归开始前在交付清单写明目标、候选、选择、完成条件与停止条件；用户改变目标后先按原批次收口已执行/未执行计数，再绑定新候选的检查范围。具名 full/certify 合同保持，定向 PASS 不补全旧轮次。
 
+## 按风险选择已有验证入口
+
+查询或媒体性能改动，复用相关真实 PG/HTTP 测试，在相同装配下比较不同卡片数或文件大小的实际 SQL 次数与耗时；数量断言、端到端时延及资源采样分别记录。夹具准备后的首次请求、预热请求与云端测量各按实际口径报告；数据和既有入口见[性能复盘](../retrospectives/2026-10-29.md#r29-02)。
+
+工作台控件变更沿[共享真实交互辅助](../../tests/helpers/heroui-workbench-controls.mts)，相关入口覆盖可用性、稳定/遮挡、焦点及折叠区域；[已注册回归](../../tests/workbench-detail-restructure.browser.test.mts)提供移动/遮挡的负向与正向证明。修复共用辅助后搜索全部调用方，包括[完整 H5 流程](../../tests/yxx-h5-flow.integration.test.mts)，保留原业务、权限、原 UUID 和资源清理断言。
+
+Electron 下载、认证跳转或窗口边界改动还运行 `package.json` 的实际桌面验证入口，沿[进程驱动](../../app/pc-admin/desktop/process-driver.mts)核文件字节、导航与原生事件。浏览器/接口结果和实际 Electron 结果分别报告；辅助任务的静态检查不替代整合后的编译与进程运行。两类缺口见[复盘](../retrospectives/2026-10-29.md#r29-03)。
+
 ## 指令与复盘文档检查
 
 若尚未准备工具且不需要完整构建，先用 `npm.cmd run migration:tools` 准备既有严格工具。已经构建则直接运行 `npm.cmd run docs:agents:check` 和 `node --test .build/tools/check-agent-docs.test.mjs`，同一批检查不再次 bootstrap。普通 PR 在现有构建与类型步骤后运行这两项，不新增工作流，不改变手动 full/certify。
