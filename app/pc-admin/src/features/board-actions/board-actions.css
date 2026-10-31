@@ -1,13 +1,12 @@
 .board-drop-column { min-width: 0; border-radius: var(--r-xl); }
-.board-drop-column.is-drop-target { outline: 2px solid var(--accent,#2563eb); outline-offset: 3px; }
+.board-drop-column.is-drop-target { background:var(--bg-active); }
 .board-action-card { min-width: 0; }
 .board-action-card .card-open,.board-action-card .card-open h3 { user-select: text; -webkit-user-select: text; }
-.board-action-card.is-dragging { outline: 2px dashed var(--accent,#2563eb); border-radius: var(--r-lg); }
+.board-action-card.is-dragging { opacity:.65; border-radius: var(--r-lg); }
 .board-action-tools { position: relative; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 var(--s-7) var(--s-5); }
 .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border,#d5dce5); border-radius: 7px; background: var(--bg,#fff); color: var(--text-1,#243044); }
 .board-action-tools [data-action=board-drag-handle] { touch-action: none; user-select: none; cursor: grab; }
 .board-action-tools [data-action=board-drag-handle]:active { cursor: grabbing; }
-.board-action-tools button:focus-visible,.board-action-notice button:focus-visible,.board-conflict-intent button:focus-visible { outline: 2px solid var(--accent,#2563eb); outline-offset: 2px; }
 .board-action-tools button:disabled { cursor: default; opacity: .55; }
 .board-action-options { display: grid; gap: 6px; position: absolute; top: 100%; left: 0; max-width: min(320px,80vw); width: max-content; padding: 10px; border: 1px solid var(--border,#d5dce5); border-radius: 9px; background: var(--bg,#fff); box-shadow: var(--sh-card); z-index: 8; }
 .board-action-options button { white-space: normal; text-align: start; }

@@ -87,7 +87,7 @@ try{
   $stage=Assert-DesktopPath (Join-Path $desktopLocal 'stage')
   # The staging allowlist prevents root dependencies, private settings and server code entering the package.
   foreach($file in @('main.mjs','policy.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs')){Copy-Item -LiteralPath (Join-Path $desktopLocal ('compiled/'+$file)) -Destination (Join-Path $stage $file) -Force}
-  foreach($file in @('unavailable.html','chrome.html','chrome.css')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
+  foreach($file in @('unavailable.html','chrome.html','login-chrome.html','chrome.css')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
   @{schemaVersion=1;serverOrigin=$ServerOrigin}|ConvertTo-Json -Compress|Set-Content -LiteralPath (Join-Path $stage 'desktop.config.json') -Encoding utf8
   @{name='wecom-it-workbench';productName='医小修工作台';version=$versions.application;private=$true;type='module';main='main.mjs';description='信息科工单工作台';author='Hospital IT';license='UNLICENSED';dependencies=@{}}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $stage 'package.json') -Encoding utf8
   Add-Type -AssemblyName System.Drawing
@@ -103,7 +103,7 @@ try{
   }finally{$graphics.Dispose();$bitmap.Dispose()}
   if($Action -eq 'Dev'){& (Join-Path $desktopRoot 'node_modules/electron/dist/electron.exe') $stage;return}
   if($Action -eq 'Package'){
-    $config=@{appId='cn.mobimedical.yixiaoxiu.workbench';productName='医小修工作台';electronVersion=$versions.electron;electronDist=(Join-Path $desktopRoot 'node_modules/electron/dist');electronDownload=@{cache=$env:electron_config_cache};asar=$true;directories=@{app=$stage;output=(Join-Path $desktopLocal 'releases')};files=@('!node_modules/**/*','main.mjs','policy.mjs','preload.cjs','unavailable.html','chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','desktop.config.json','icon.ico','icon.png','package.json');win=@{target=@(@{target='nsis';arch=@('x64')});icon=(Join-Path $stage 'icon.ico')};nsis=@{oneClick=$false;perMachine=$false;allowToChangeInstallationDirectory=$true;createDesktopShortcut=$true;createStartMenuShortcut=$true;include=(Join-Path $PSScriptRoot 'installer.nsh')};artifactName='Yixiaoxiu-Workbench-${version}-${arch}-Setup.${ext}'}
+    $config=@{appId='cn.mobimedical.yixiaoxiu.workbench';productName='医小修工作台';electronVersion=$versions.electron;electronDist=(Join-Path $desktopRoot 'node_modules/electron/dist');electronDownload=@{cache=$env:electron_config_cache};asar=$true;directories=@{app=$stage;output=(Join-Path $desktopLocal 'releases')};files=@('!node_modules/**/*','main.mjs','policy.mjs','preload.cjs','unavailable.html','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','desktop.config.json','icon.ico','icon.png','package.json');win=@{target=@(@{target='nsis';arch=@('x64')});icon=(Join-Path $stage 'icon.ico')};nsis=@{oneClick=$false;perMachine=$false;allowToChangeInstallationDirectory=$true;createDesktopShortcut=$true;createStartMenuShortcut=$true;include=(Join-Path $PSScriptRoot 'installer.nsh')};artifactName='Yixiaoxiu-Workbench-${version}-${arch}-Setup.${ext}'}
     $configFile=Join-Path $desktopLocal 'builder.json';$config|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configFile -Encoding utf8
     Invoke-DesktopNode @((Join-Path $desktopRoot 'node_modules/electron-builder/cli.js'),'--config',$configFile,'--win','--x64','--publish','never')
     Invoke-DesktopNode @((Join-Path $desktopLocal 'compiled/verify-package.mjs'))

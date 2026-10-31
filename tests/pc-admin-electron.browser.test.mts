@@ -21,7 +21,8 @@ async function launchDesktop(root:string,stage:string,spki:string,name:string):P
  const data=path.join(root,'.local/electron/profiles',name);mkdirSync(data,{recursive:true});
  const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:data,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
  // Observe real GUI startup; the driver must not override a hidden-launch flag by showing it itself.
- const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[path.join(stage,'process-driver.mjs')],{cwd:root,env,windowsHide:false,stdio:['ignore','pipe','pipe','ipc']});
+ // This business regression retains the standard provider boundary and explicitly exercises the official fallback.
+ const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[path.join(stage,'process-driver.mjs'),'--wecom-login=official'],{cwd:root,env,windowsHide:false,stdio:['ignore','pipe','pipe','ipc']});
  let nextId=1,ready=false;const pending=new Map<number,{resolve:(v:unknown)=>void;reject:(e:Error)=>void;timer:NodeJS.Timeout}>();
  const log:string[]=[];child.stderr?.on('data',(chunk:Buffer)=>{if(log.length<50)log.push(chunk.toString());});
  child.on('message',value=>{if(!value||typeof value!=='object')return;const r=object(value);if(r.ready===true){ready=true;return;}if(typeof r.id!=='number')return;const slot=pending.get(r.id);if(!slot)return;pending.delete(r.id);clearTimeout(slot.timer);if(r.ok===true)slot.resolve(r.result);else slot.reject(Error(String(r.error)));});
@@ -34,7 +35,7 @@ async function launchDesktop(root:string,stage:string,spki:string,name:string):P
 }
 const jsonPost=(route:string,body:Record<string,unknown>)=>`(async()=>{const bootstrap=await (await fetch('/api/lifecycle/bootstrap')).json();const body=${JSON.stringify(body)};const response=await fetch(${JSON.stringify(route)},{method:'POST',headers:{'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':body.client_command_id,'if-match':'"'+body.expected_version+'"'},body:JSON.stringify(body)});return {status:response.status,body:await response.json()};})()`;
 
-test('Windows Electron uses real staff sessions and formal bundle for three-person closure, hidden reminders and authority loss',{
+test('Windows Electron official fallback uses real staff sessions and formal bundle for three-person closure, hidden reminders and authority loss',{
  timeout:240_000,skip:process.platform!=='win32'||process.env.WECOM_DESKTOP_INTEGRATION!=='true'?'Explicit Windows Electron integration entry required':false,
 },()=>withT43Fixture(async f=>{
  const root=path.resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd());
@@ -44,12 +45,12 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
  const access=createPilotAccessService({pool:f.pool}),principals:string[]=[];
  for(let i=0;i<3;i++)principals.push((await access.upsertPrincipal({wecomUserId:'desktop-staff-'+i,displayName:'桌面合成人员'+i,roles:['DISPATCHER','HANDLER'],resolverTeamIds:['PILOT_IT']})).id);
  let actor=0,auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined,runtime:P2016EnabledRuntime|undefined;
- let ready:Promise<unknown>=Promise.resolve();const codes=new Map<string,string>();let readWrites=0,activityWrites=0,holdQr=false,heldQrRequests=0;
+ let ready:Promise<unknown>=Promise.resolve();const codes=new Map<string,string>();let readWrites=0,activityWrites=0,holdQr=true,heldQrRequests=0,authOffset=-6*60_000,shortFirstIntent=true,confirmations=0;
  const tls=await createYxxBrowserFixture({pool:f.pool,createApp:({origin}:{origin:string})=>{
-  auth=createWeComWorkbenchAuthentication({pool:f.pool,publicOrigin:origin,corpId:'desktop-test',agentId:'1000001',identityHashKey:'desktop-synthetic-identity-secret',accessTokenProvider:async()=> 'synthetic-only',fetchImpl:async(input,init)=>{
+  auth=createWeComWorkbenchAuthentication({pool:f.pool,publicOrigin:origin,corpId:'desktop-test',agentId:'1000001',identityHashKey:'desktop-synthetic-identity-secret',now:()=>Date.now()+authOffset,accessTokenProvider:async()=> 'synthetic-only',fetchImpl:async(input,init)=>{
    const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');
    if(url.pathname.endsWith('/batch/userid_to_openuserid')){const body=object(JSON.parse(String(init?.body)));assert.ok(Array.isArray(body.userid_list));return new Response(JSON.stringify({errcode:0,open_userid_list:body.userid_list.map(userid=>({userid,open_userid:'open-'+String(userid)}))}));}
-   const code=url.searchParams.get('code')??'',userid=codes.get(code);codes.delete(code);return new Response(JSON.stringify(userid?{errcode:0,userid}:{errcode:40029}));
+   confirmations++;const code=url.searchParams.get('code')??'',userid=codes.get(code);codes.delete(code);return new Response(JSON.stringify(userid?{errcode:0,userid}:{errcode:40029}));
   },profileReader:async id=>({openUserId:id,displayName:'企业微信合成姓名'+id.slice(-1),departmentName:'合成信息科',checkedEpochMs:String(Date.now())})});ready=auth.initialize();
   const created=createP2016Runtime({pool:f.pool,publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,
    flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},gatewayEnabled:false,senderEnabled:false,externalSendEnabled:false,
@@ -68,6 +69,7 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
    response.writeHead=((status:number,...args:unknown[])=>{
     const headers=args[0];if(headers&&typeof headers==='object'&&!Array.isArray(headers)){
      const value=headers as Record<string,unknown>;
+     if(url.pathname==='/workbench/desktop'&&status===302){const cookies=value['set-cookie'];assert.ok(Array.isArray(cookies));assert.ok(cookies.some(cookie=>String(cookie).includes('Max-Age=300')));if(shortFirstIntent){value['set-cookie']=cookies.map(cookie=>String(cookie).replace('Max-Age=300','Max-Age=2'));shortFirstIntent=false;}}
      if(typeof value.location==='string'&&value.location.startsWith('https://login.work.weixin.qq.com/'))value.location=origin+'/workbench/synthetic-provider?state='+new URL(value.location).searchParams.get('state');
     }
     return Reflect.apply(original,response,[status,...args]);
@@ -79,12 +81,21 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
  const processes:DesktopProcess[]=[],runId=randomUUID();
  try{
   const stage=path.join(root,'.local/electron/temp','process-stage-'+runId);mkdirSync(stage,{recursive:true});
-  for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
+  for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:tls.origin}));
   for(actor=0;actor<3;actor++){
    const desktop=await launchDesktop(root,stage,tls.certificateSpki,'integration-'+runId+'-'+actor);processes.push(desktop);
+   if(actor===0){
+    await desktop.wait('document.body?.innerText.includes("合成企业微信二维码登录")');
+    assert.equal(heldQrRequests,1);authOffset=0;
+    const renewed=Date.now()+8000;while(heldQrRequests<2&&Date.now()<renewed)await delay(50);
+    assert.equal(heldQrRequests,2,'an expired waiting intent must be replaced before the first phone confirmation');
+    assert.equal(confirmations,0);holdQr=false;
+    await desktop.evaluate('location.reload();true');
+   }
    await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   if(actor===0){assert.equal(confirmations,1,'the real PG/OAuth path accepts the first confirmation after renewal');heldQrRequests=0;}
    assert.equal(await desktop.evaluate('(async()=> (await (await fetch("/api/lifecycle/bootstrap")).json()).principal_id)()'),principals[actor]);
    await desktop.wait('document.querySelector(".account")?.textContent.includes("企业微信合成姓名'+actor+'")&&document.querySelector(".account")?.textContent.includes("合成信息科")');
    assert.equal(await desktop.evaluate('Boolean(document.querySelector("aside .brand"))||document.querySelector(".topbar").innerText.includes("旧管理端")||document.querySelector(".topbar").innerText.includes("实时更新")'),false);
@@ -108,6 +119,8 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
   const finished=object(await c.evaluate(jsonPost(route+'/complete',{client_command_id:randomUUID(),expected_version:version(assigned.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(object(assigned.handling_cycle).id),internal_process:'合成检查打印连接并修复',external_summary:'合成设备已恢复',external_summary_confirmed:true})));
   assert.equal(finished.status,200);assert.equal((await get(admin,route)).status,'CLOSED');
   await a.evaluate(`(()=>{const original=window.fetch;window.__desktopReminderReads=[];window.fetch=async function(input,init){const url=new URL(input instanceof Request?input.url:String(input),location.href);const response=await original.call(this,input,init);if(url.pathname==='/api/workbench/reminders'){await response.clone().json();window.__desktopReminderReads.push({after:url.searchParams.has('after_event_id'),status:response.status});}return response;};})()`);
+  await a.evaluate('document.querySelector("[data-action=open-user-menu][data-menu-location=sidebar]").click()');
+  await a.wait('document.querySelector("[data-action=open-settings]")?.checkVisibility()===true');
   await a.evaluate('document.querySelector("[data-action=open-settings]").click()');
   await a.wait('document.querySelector(".workbench-settings input[aria-label=开启桌面通知]")?.disabled===false');
   await a.evaluate('document.querySelector(".workbench-settings input[aria-label=开启桌面通知]").click()');
@@ -123,7 +136,7 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
   await a.command('notification-click');await a.wait('document.querySelector("[data-reminder-located=true]")!==null||location.search.includes("locate=1")');
   assert.equal(object(await a.command('state')).visible,true);
   await a.command('lock');await a.wait('(async()=> (await window.workbenchDesktop.getState()).locked)()');await a.command('unlock');
-  assert.equal(await b.evaluate('(async()=>{await window.workbenchDesktop.updateContext({epoch:crypto.randomUUID(),blocked:false,live:true,remindersAvailable:false});return window.workbenchDesktop.setReminders(true);})()'),false,'server-disabled capability cannot arm native notifications');
+  assert.equal(await b.evaluate('(async()=>{await window.workbenchDesktop.updateContext({epoch:crypto.randomUUID(),blocked:false,live:true,remindersAvailable:false});return window.workbenchDesktop.setReminders(true);})()'),true,'a current user may choose native notifications while the server feed is unavailable');
   await a.evaluate("(async()=>{const save=state=>sessionStorage.setItem('synthetic-expiry-native-state',JSON.stringify({remindersEnabled:state.remindersEnabled}));window.workbenchDesktop.onState(save);save(await window.workbenchDesktop.getState());})()");
   // A staff permission rejection may legitimately be 403. Exercise actual session
   // invalidation here; the separate desktop-session browser cases retain the 403 boundary.
@@ -134,6 +147,12 @@ test('Windows Electron uses real staff sessions and formal bundle for three-pers
   await f.pool.query("WITH stamp AS (SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=stamp.epoch,revoked_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE principal_id=$1::uuid AND state='ACTIVE'",[principals[1]]);
   await b.wait("location.pathname==='/workbench/synthetic-provider'&&document.body.innerText.includes('合成企业微信二维码登录')");
   assert.equal(heldQrRequests,2,'each affected native window opens one QR login after real staff session revocation');assert.equal(await b.evaluate('typeof window.workbenchDesktop'),'undefined','the QR page has no business IPC bridge');assert.equal(object(await b.command('state')).dialogs,dialogsBefore,'expired identity must not require an extra leave confirmation');
+  await c.evaluate('document.querySelector("[data-action=open-user-menu][data-menu-location=sidebar]").click()');
+  await c.wait('document.querySelector("[data-action=logout-workbench]")?.checkVisibility()===true');
+  await c.evaluate('document.querySelector("[data-action=logout-workbench]").click()');
+  await c.wait('document.body.innerText.includes("合成企业微信二维码登录")');
+  assert.equal(heldQrRequests,3,'confirmed native logout immediately opens one QR page');
+  assert.equal(await c.evaluate('typeof window.workbenchDesktop'),'undefined','the logged-out QR page has no business bridge');
   console.log('ELECTRON_MVP '+JSON.stringify({actors:3,real_staff_sessions:true,compiled_frontend:true,competing_statuses:[200,409],closed:true,hidden_notification:true,hidden_read_activity_writes:0,notification_click_automated:true,revoked_sessions_blocked:true,physical_toast_confirmation:'NOT_RUN',live_wecom:'NOT_RUN'}));
  }finally{
   for(const desktop of processes)await desktop.close();await tls.close();await runtime?.stop();await auth?.close();

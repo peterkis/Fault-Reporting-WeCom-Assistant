@@ -15,6 +15,7 @@ import { createWeComAppTokenProvider } from './p2-g2-wecom-app-token.mjs';
 import { createWeComOAuthCodeResolver } from './p2-g2-wecom-oauth-provider.mjs';
 import { readWeComResponse } from './p2-g2-wecom-oauth-provider.mjs';
 import { validYxxUserId } from './p2-g2-yixiaoxiu-contract.mjs';
+import {EMBEDDED_LOGIN_PATH,embeddedLoginHeaders,renderEmbeddedLogin,serveEmbeddedLoginAsset} from './workbench-embedded-login.mjs';
 import { WorkbenchError, WORKBENCH_ERROR_CODES } from './p2-006-workbench-query.mjs';
 
 const STAFF_ROLES = Object.freeze(['HANDLER', 'DISPATCHER', 'ADMIN']);
@@ -207,7 +208,7 @@ export function createWeComWorkbenchAuthentication({
     if (closed || !initialized || !mappingDigest) fail(WORKBENCH_ERROR_CODES.authNotReady, 503);
   }
 
-  async function begin({ request, response, returnPath = ROOT, desktop = false }: Omit<AuthHttpInput, 'url'> & { returnPath?: string; desktop?: boolean } = {} as AuthHttpInput) {
+  async function begin({ request, response, returnPath = ROOT, desktop = false, embedded = false }: Omit<AuthHttpInput, 'url'> & { returnPath?: string; desktop?: boolean; embedded?:boolean } = {} as AuthHttpInput) {
     ensureReady();
     if (!validPath(returnPath) || desktop && returnPath !== ROOT) fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
     admit('start');
@@ -222,6 +223,10 @@ export function createWeComWorkbenchAuthentication({
       VALUES ($1,$2,$3,$4,platform.local_from_epoch_ms($4),$5,platform.local_from_epoch_ms($5))`,
     [hash(state), hash(browserBinding), returnPath, created, expires]);
     await audit({ eventType: 'LOGIN_STARTED', reasonCode: 'LOGIN_REDIRECT' });
+    if(embedded){
+      const html=await renderEmbeddedLogin({corpId,agentId,state,issuedEpochMs:created,expiresEpochMs:expires,publicOrigin});
+      response.writeHead(200,{...embeddedLoginHeaders(),'set-cookie':[cookie(INTENT_COOKIE,browserBinding,300)]});response.end(html);return;
+    }
     const location = new URL('https://login.work.weixin.qq.com/wwlogin/sso/login');
     for (const [key, value] of Object.entries({ login_type: 'CorpApp', appid: corpId, agentid: agentId,
       redirect_uri: `${publicOrigin}${CALLBACK_PATH}`, state, lang: 'zh' })) location.searchParams.set(key, value);
@@ -383,12 +388,13 @@ export function createWeComWorkbenchAuthentication({
   }
 
   async function handler({ request, response, url }: AuthHttpInput) {
-    if (url.pathname === DESKTOP_PATH) {
+    if(url.pathname.startsWith('/workbench/desktop/assets/')){ensureReady();return serveEmbeddedLoginAsset(request,response,url);}
+    if (url.pathname === DESKTOP_PATH || url.pathname === EMBEDDED_LOGIN_PATH) {
       if (request.method !== 'GET' || url.search) fail(WORKBENCH_ERROR_CODES.requestInvalid, 400);
       if (await authenticate(request)) {
         response.writeHead(303, { location: DESKTOP_RETURN_PATH, 'cache-control': 'no-store' });
         response.end();
-      } else await begin({ request, response, desktop: true });
+      } else await begin({ request, response, desktop: true, embedded:url.pathname===EMBEDDED_LOGIN_PATH });
       return true;
     }
     if (url.pathname === LOGIN_PATH && request.method === 'GET' && !url.search) { await begin({ request, response }); return true; }

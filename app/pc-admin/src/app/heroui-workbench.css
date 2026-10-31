@@ -3,7 +3,8 @@
   --accent:#37352f;--accent-foreground:#fff;--background:#fff;--foreground:#37352f;
   --surface:#fff;--surface-foreground:#37352f;--muted:#787774;--border:#e4e4df;
   --field-background:#fff;--field-foreground:#37352f;--field-placeholder:#8b8a85;
-  --focus:#8a8984;--radius:6px;--field-radius:5px;
+  --focus:transparent;--ring-offset-width:0px;--radius:6px;--field-radius:5px;
+  --field-focus:var(--bg-row-hover);--field-border-focus:var(--ring-2);
 }
 .card-open {width:100%}
 .button {height:auto;min-height:32px;border-radius:5px;font-size:var(--fs-sm);font-weight:500;line-height:1.5;gap:6px}
@@ -65,3 +66,13 @@
   .processed-date-controls{margin-left:0;width:100%}.processed-date-picker{gap:5px}.processed-date-picker>.label{font-size:var(--fs-xs)}
   .detail-record .record-content{grid-template-columns:minmax(0,1fr) max-content;gap:2px 6px}.detail-record .record-name{grid-column:1;justify-self:start;max-width:none}.detail-record .record-content .record-text{grid-column:1 / -1;grid-row:2}.detail-record .record-audience{grid-column:2;grid-row:1}
 }
+
+/* PC focus policy: neutral surfaces, no outer outline or HeroUI focus halo.
+   Preserve layer shadows, selected fills, validation, and focus restoration.
+   docs/ui/admin-workbench-design.md section 10.1 owns the visual contract. */
+:where(:focus,:focus-visible,[data-focus-visible="true"]):not([aria-invalid="true"]):not([data-invalid="true"]) {outline:none;outline-offset:0}
+:where(a,summary,button:not(.button),.record-content,.workbench-disclosure-trigger):is(:focus-visible,[data-focus-visible="true"]):not(:disabled):not([aria-disabled="true"]) {background-color:var(--bg-hover)}
+.button:is(:focus-visible,[data-focus-visible="true"]):not(:disabled):not([aria-disabled="true"]) {filter:brightness(.96)}
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),textarea,select,.date-input-group):is(:focus,:focus-within,[data-focused="true"],[data-focus-within="true"]):not([aria-invalid="true"]):not([data-invalid="true"]) {background-color:var(--bg-row-hover);border-color:var(--ring-2)}
+:where([role="menuitem"],[role="option"],.calendar__cell):is(:focus-visible,[data-focus-visible="true"]):not([aria-selected="true"]):not([data-selected="true"]) {background-color:var(--bg-hover)}
+:where([data-slot="checkbox-content"],[data-slot="radio-content"],[data-slot="switch-content"])[data-focus-visible="true"] {background:var(--bg-hover);border-radius:var(--r-md)}

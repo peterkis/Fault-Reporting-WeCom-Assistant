@@ -1,0 +1,63 @@
+.lanyard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.lanyard-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lanyard--viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.lanyard--viewport .lanyard-interaction {
+  pointer-events: auto;
+  clip-path: polygon(0 0, 0 0, 0 0);
+}
+
+.lanyard-css3d {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lanyard-front {
+  background: #fff;
+  pointer-events: none;
+}
+
+.lanyard-hint-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lanyard-hint {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+
+/* Phone scanning remains available. Use the caller's flat view for iframe clicks. */
+.lanyard-interaction {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: transparent;
+}

@@ -12,12 +12,14 @@
 | --- | --- | --- |
 | `GET /workbench/login` | 无query | 302 到企业微信员工扫码SSO；设置一次性state/浏览器绑定 |
 | `GET /workbench/desktop` | 无query，仅GET，错误方法／query返回400 | 新桌面入口；有效员工会话303到 `/workbench/app/`，否则沿原扫码 intent 固定返回该路径；无任意return_to |
+| `GET /workbench/desktop/embedded` | 无query，仅GET，错误方法/query返回400 | 已认证303工作台，否则200独立公开登录壳；同一5分钟intent/state及HttpOnly绑定，官方面板回调仍走原callback |
+| `GET/HEAD /workbench/desktop/assets/{hashAsset}` | 仅本次登录构建清单的JS/CSS，无query | 独立公开登录资源；未知404、非法400，不放开业务SPA资产 |
 | `GET /workbench/callback` | 仅code/state、各一次 | 成功303 return_path，Set-Cookie；失败返回公开认证码 |
 | `POST /workbench/logout` | 无query；同源Origin、非cross-site；有session时需当前Cookie与X-CSRF-Token校验；既有UI不带body | 200 `{logged_out:true}`，清员工session/CSRF Cookie |
 
 Cookie：`__Host-wecom_workbench_session`、`__Host-wecom_workbench_csrf`。code/state不可记录到示例、日志或浏览器业务存储。登录成功仍需数据库活动内部角色与对象权限。[测试](../../../tests/p2-016-workbench-wecom-auth.test.mjs)。
 
-桌面 PC 页面收到认证失效 401 时，先沿既有撤权流程清空旧界面、关闭提醒并完成恢复副本清理，再自动调用原桌面扫码入口。无需点击中间的失效页；清理失败保持关闭，403 权限不足与网络/服务故障不触发自动扫码，业务 POST 不会自动重放。普通浏览器入口和主动退出流程保持原语义。
+桌面 PC 页面收到认证失效 401 时，先沿既有撤权流程清空旧界面、关闭提醒并完成恢复副本清理，再自动调用原桌面扫码入口。无需点击中间的失效页；清理失败保持关闭，403 权限不足与网络/服务故障不触发自动扫码，业务 POST 不会自动重放。普通浏览器的被动认证失效保持原语义。显式退出收到成功回执且恢复副本清理确认后，PC直接进入固定 `/workbench/desktop` 扫码入口；退出结果未知或清理失败保持关闭并提供核对入口，不自动重放退出或业务命令。
 
 身份bootstrap为 `/api/workbench/bootstrap` 和 `/api/lifecycle/bootstrap`，见 [会话](../workbench/conversations.md)、[工单](../workbench/tickets.md)。没有公开 `/auth/wecom`、`/auth/bootstrap` 或test-auth HTTP登录；测试身份是注入端口/IPC。
 
@@ -91,3 +93,7 @@ action允许 `queue|accept|start|request-information|resume|wait-vendor|resolve|
 旧错误外壳 `{ok:false,error:{code,retryable:false}}`；UNAUTHORIZED401、FORBIDDEN403、NOT_FOUND404、VALIDATION_FAILED400等。合成示例 `GET /api/pilot/work` 可返回 `{"ok":true,"items":[]}`；不会创建第二套Ticket事实源。
 
 核对：[P1 unit](../../../tests/p1-009-pilot-access-workbench.test.mjs)、[foundation](../../../tests/p1-001-pilot-foundation.test.mjs)、[operations](../../../tests/p1-011-pilot-operations-baseline.test.mjs)。本轮未启动历史试点或真实OAuth。
+
+2026-10-29内嵌登录实施：新增入口保留原 `/workbench/desktop` 官方302回退；仅登录HTML以窄frame-src允许官方面板，同源打包SDK，Referrer-Policy为origin以供官方来源核验，不发送路径或state。原回调、Cookie、员工准入及session协议不变。先完成原生/真实扫码与等待恢复最小验证，再接入已确认的Lanyard工牌正面官方面板；阶段与实机结果见[实施记录](../../../plans/pc-admin-electron/embedded-login-2026-10-29.md)。
+
+工牌页保留完整官方面板、平面视图和原官方入口。翻面/拖动只改变呈现；切换视图或三维环境失败时换一轮服务端intent，不移动并复用活iframe，不保存认证参数到展示偏好。100%以外的浏览器/显示缩放使用平面面板。公开资源仍严格受本次构建清单约束，动态资源也不放开业务SPA命名空间。

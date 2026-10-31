@@ -211,6 +211,8 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
   if(existsSync(webOutput))for(const file of outputFiles(webOutput)){
     add('app/pc-admin/index.html','web/admin-workbench/'+file,'WEB');
   }
+  const loginOutput=path.join(root,'.build/emit/web/desktop-login');
+  if(existsSync(loginOutput))for(const file of outputFiles(loginOutput))add('app/pc-admin/src/login/main.ts','web/desktop-login/'+file,'WEB');
   if(existsSync(path.join(root,'.build/emit/h5')))for(const file of h5OutputFiles(root))add('app/h5/index.html','h5/'+file,'WEB');
   return [...outputs.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }

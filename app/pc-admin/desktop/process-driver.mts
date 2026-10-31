@@ -1,14 +1,17 @@
 // Test-only Electron entry. Explicitly excluded from the staging/package allowlist.
-import {app,BrowserWindow,WebContentsView,Notification,session,powerMonitor,dialog,Menu} from 'electron';
+import {app,BrowserWindow,WebContentsView,Notification,session,powerMonitor,dialog,Menu,net} from 'electron';
 import {createHash,createPublicKey} from 'node:crypto';
 import {writeFileSync,appendFileSync,mkdirSync,readFileSync} from 'node:fs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {spawn} from 'node:child_process';
 import './main.mjs';
 
 const stage=process.env.WECOM_DESKTOP_TEST_STAGE,spki=process.env.WECOM_DESKTOP_TEST_SPKI;
 if(!process.send||!stage||!spki||!path.resolve(stage).startsWith(path.resolve('.local/electron')+path.sep))throw Error('DESKTOP_TEST_CONTEXT_REQUIRED');
+const loginControlsUrl=pathToFileURL(path.join(stage,'login-chrome.html')).href;
 const notices:Notification[]=[];
+const actualIsOnline=net.isOnline.bind(net);
 const downloads:{allowed:boolean;name:string;state?:string;sha256?:string;bytes?:number;dialogTitle?:string}[]=[];let downloadObserver=false;
 let dialogs=0;dialog.showMessageBox=async()=>{dialogs++;return {response:0,checkboxChecked:false};};
 const diagnostics:{event:string;code?:number;path?:string;message?:string}[]=[];
@@ -42,6 +45,7 @@ process.on('message',async(value:unknown)=>{
     const window=BrowserWindow.getAllWindows()[0];if(!window)throw Error('TEST_WINDOW_MISSING');
     const view=window.contentView.children.find((child):child is WebContentsView=>child instanceof WebContentsView&&child.webContents!==window.webContents);
     const page=view?.webContents??window.webContents;
+    const loginControls=window.contentView.children.find((child):child is WebContentsView=>child instanceof WebContentsView&&child.webContents.getURL()===loginControlsUrl);
     let result:unknown;
     switch(command.action){
       case 'arm-downloads':{
@@ -58,6 +62,7 @@ process.on('message',async(value:unknown)=>{
       case 'downloads':result=downloads;break;
       case 'evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await page.executeJavaScript(command.expression,true);break;
       case 'chrome-evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await window.webContents.executeJavaScript(command.expression,true);break;
+      case 'login-chrome-evaluate':if(typeof command.expression!=='string'||!loginControls)throw Error('TEST_LOGIN_CHROME_REQUIRED');result=await loginControls.webContents.executeJavaScript(command.expression,true);break;
       case 'navigate':if(typeof command.expression!=='string'||!/^https:\/\/127\.0\.0\.1:\d+\/workbench\//u.test(command.expression))throw Error('TEST_LOOPBACK_URL_REQUIRED');void page.loadURL(command.expression).catch(()=>{});result=true;break;
       case 'hide':window.hide();result=true;break;
       case 'show':window.show();window.focus();page.focus();result=true;break;
@@ -65,10 +70,21 @@ process.on('message',async(value:unknown)=>{
       case 'attempt-quit':app.quit();result=true;break;
       case 'lock':powerMonitor.emit('lock-screen');result=true;break;
       case 'unlock':powerMonitor.emit('unlock-screen');result=true;break;
+      case 'suspend':powerMonitor.emit('suspend');result=true;break;
+      case 'offline':await page.debugger.sendCommand('Network.enable');await page.debugger.sendCommand('Network.setCacheDisabled',{cacheDisabled:true});await page.debugger.sendCommand('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});result=true;break;
+      case 'online':await page.debugger.sendCommand('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});result=true;break;
+      case 'crash-renderer':page.forcefullyCrashRenderer();result=true;break;
+      case 'adapter-offline':net.isOnline=()=>false;result=true;break;
+      case 'adapter-online':net.isOnline=actualIsOnline;result=true;break;
+      case 'network-failure':{const code=Number(command.expression);if(![-105,-106,-21,-200].includes(code))throw Error('TEST_NETWORK_CODE_INVALID');page.emit('did-fail-load',{},code,'SYNTHETIC_NETWORK',page.getURL(),true,0,0);result=true;break;}
+      case 'resume-after-idle':{
+        const elapsed=Number(command.expression);if(!Number.isSafeInteger(elapsed)||elapsed<0||elapsed>86400000)throw Error('TEST_IDLE_INVALID');
+        const now=Date.now;try{Date.now=()=>now()+elapsed;powerMonitor.emit('resume');}finally{Date.now=now;}result=true;break;
+      }
       case 'notification-click':notices.at(-1)?.emit('click');result=notices.length;break;
       case 'second-instance':result=await new Promise<number|null>((resolve,reject)=>{const child=spawn(process.execPath,[path.join(stage,'main.mjs')],{env:process.env,windowsHide:true,stdio:'ignore'});const timer=setTimeout(()=>{child.kill();reject(Error('SECOND_INSTANCE_TIMEOUT'));},10000);child.once('exit',code=>{clearTimeout(timer);resolve(code);});child.once('error',error=>{clearTimeout(timer);reject(error);});});break;
       case 'screenshot':{window.show();window.focus();const image=await window.capturePage(undefined,{stayAwake:true});const target=path.join(process.env.WECOM_DESKTOP_DATA_ROOT!,'formal-workbench.png');writeFileSync(target,image.toPNG());result=target;break;}
-      case 'state':result={url:page.getURL().split('?')[0],chromeUrl:window.webContents.getURL(),windows:BrowserWindow.getAllWindows().length,visible:window.isVisible(),minimized:window.isMinimized(),maximized:window.isMaximized(),windowBounds:window.getBounds(),contentSize:window.getContentSize(),viewBounds:view?.getBounds(),viewVisible:view?.getVisible(),nativeMenuRemoved:Menu.getApplicationMenu()===null&&!window.isMenuBarVisible(),dialogs,notifications:notices.length,paths:{userData:app.getPath('userData'),sessionData:app.getPath('sessionData'),temp:app.getPath('temp')}};break;
+      case 'state':result={url:page.getURL().split('?')[0],chromeUrl:window.webContents.getURL(),windows:BrowserWindow.getAllWindows().length,visible:window.isVisible(),minimized:window.isMinimized(),maximized:window.isMaximized(),windowBounds:window.getBounds(),contentSize:window.getContentSize(),viewBounds:view?.getBounds(),viewVisible:view?.getVisible(),loginControlsVisible:loginControls?.getVisible()??false,loginControlsBounds:loginControls?.getBounds(),nativeMenuRemoved:Menu.getApplicationMenu()===null&&!window.isMenuBarVisible(),dialogs,notifications:notices.length,paths:{userData:app.getPath('userData'),sessionData:app.getPath('sessionData'),temp:app.getPath('temp')}};break;
       case 'quit':page.close({waitForBeforeUnload:true});result=true;break;
       default:throw Error('TEST_ACTION_UNKNOWN');
     }

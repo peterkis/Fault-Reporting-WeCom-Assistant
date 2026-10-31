@@ -1,0 +1,86 @@
+:root{font-family:"Segoe UI","Microsoft YaHei UI",sans-serif;color:#252c36;background:#f5f5f2;color-scheme:light;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;-webkit-user-select:none;user-select:none}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 75% 35%,#dce8fa88,transparent 52%)}
+.login-shell{position:relative;display:grid;grid-template-columns:minmax(240px,350px) minmax(400px,580px);align-items:center;gap:28px;width:min(1040px,calc(100vw - 72px));padding:24px 0}
+.login-copy{align-self:center;padding-bottom:80px}.login-brand{display:flex;align-items:center;gap:10px;margin:0 0 38px;font-size:18px;font-weight:650;letter-spacing:.08em}.login-brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;color:#fff;background:#3b82f6;font-weight:400;font-size:25px;line-height:1}
+.login-copy h1{font-size:clamp(34px,calc(3.3vw + 4px),48px);font-weight:600;letter-spacing:-.04em;line-height:1.4;margin:0}
+.login-heading-line{display:flex;align-items:center;gap:.22em;margin-top:.28em;padding-left:1.6em}.login-response{display:inline-flex;align-items:center;gap:.2em;padding:0 .6em 0 .22em;border-radius:999px;background:#e5f3ff;line-height:inherit;white-space:nowrap;animation:login-capsule-colors 12s ease-in-out infinite}.login-response::before{content:"";flex:none;width:.4em;height:.4em;border-radius:50%;background:#0784ef;animation:login-dot-colors 12s ease-in-out infinite}
+@keyframes login-capsule-colors{0%,10%,100%{background-color:#e5f3ff}25%,35%{background-color:#ffebec}50%,60%{background-color:#fff6d6}75%,85%{background-color:#e6f6ec}}
+@keyframes login-dot-colors{0%,10%,100%{background-color:#0784ef}25%,35%{background-color:#e5484d}50%,60%{background-color:#dca900}75%,85%{background-color:#23a566}}
+[data-page-hidden=true] .login-response,[data-page-hidden=true] .login-response::before{animation-play-state:paused}@media(prefers-reduced-motion:reduce){.login-response,.login-response::before{animation-duration:24s}}
+.login-content{text-align:center;min-width:0}#lanyard-stage{width:100%;height:600px}.login-panel-parking{display:none}#wecom-panel{width:320px;height:380px;flex:none}#wecom-panel iframe{display:block;border:0;width:320px;height:380px;backface-visibility:hidden}
+/* Keep the existing hero framing after moving its caption onto the card. */
+[data-view=lanyard] .login-content{padding-bottom:28px}
+/*! Shine effect adapted from https://uiverse.io/neerajbaniwal/hungry-mule-59.
+ * Copyright (c) neerajbaniwal. MIT License:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+.login-gesture{margin:0;padding:0 48px;color:#656f7d;font-size:16px;font-weight:600;line-height:1;white-space:nowrap;text-align:center;pointer-events:none}
+@supports(background-clip:text){.login-gesture{background:linear-gradient(to right,#656f7d 0,#fff 10%,#656f7d 20%);background-position:0;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:login-gesture-shine 3s linear infinite;animation-fill-mode:forwards}}
+@keyframes login-gesture-shine{0%{background-position:0}60%,100%{background-position:180px}}
+[data-page-hidden=true] .login-gesture,body[data-offline=true] .login-gesture{animation-play-state:paused}
+.login-footer{position:fixed;right:76px;bottom:32px;left:76px;text-align:center;color:#656f7d;font-size:12px;line-height:1.7;pointer-events:none}
+.login-footer-dot{display:inline-block;width:3px;height:3px;margin:0 6px;border-radius:50%;background:#969da5;vertical-align:middle}
+.login-footer-department{display:inline-block;padding:2px 10px;border-radius:999px;background:#e5f3ff;color:#49617d}.login-footer-research{display:inline-block;margin-left:8px}
+#login-status{color:#656f7d;font-size:13px;line-height:1.7;margin:10px 0 0}#login-status:empty{display:none}
+button,a{font:inherit;font-size:12px;color:#656f7d}button{border:0;border-radius:7px;padding:9px 11px;background:transparent;cursor:pointer}a{padding:9px 11px;text-decoration:none;border-radius:7px}button:hover,a:hover{background:#e7ebef;color:#27364a}button:focus,a:focus{outline:none}button:focus-visible,a:focus-visible{background:#e7ebef;color:#27364a}button:disabled{opacity:.55;cursor:default}
+.login-options{position:fixed;right:24px;bottom:24px;z-index:20}#login-more{display:grid;place-items:center;width:40px;height:40px;padding:0;color:#656f7d}#login-more-icon{display:grid;place-items:center}#login-more-icon svg{display:block}
+.login-options-menu{position:fixed;inset:auto 24px 70px auto;min-width:200px;margin:0;padding:6px;border:1px solid #e0e3e5;border-radius:9px;background:#fff;box-shadow:0 8px 28px #27364a14;color:#656f7d}.login-options-menu:popover-open{display:grid;gap:2px}.login-options-menu button,.login-options-menu a{text-align:left}.login-options-menu a{border-top:1px solid #eef0f1;border-radius:0 0 5px 5px;margin-top:3px;padding-top:11px}
+#quit-desktop{border-top:1px solid #eef0f1;margin-top:3px;padding-top:11px;border-radius:0 0 5px 5px}
+[data-view=flat] #lanyard-stage,[data-view=flat] .login-gesture{display:none}[data-view=flat] .login-panel-parking{display:flex;justify-content:center;margin:38px 0 26px;padding:22px 0;background:#fff;border-radius:18px;box-shadow:0 12px 50px #20304808}[data-view=flat] .login-copy{padding-bottom:50px}
+@media(max-width:800px){.login-shell{grid-template-columns:1fr;width:min(580px,calc(100vw - 36px));gap:0;padding-top:24px}.login-copy{padding:0 18px}.login-brand{margin:0 0 20px}.login-copy h1{font-size:34px}.login-content{margin-top:-18px}.login-footer{position:static;max-width:calc(100vw - 128px);margin:24px auto 32px}[data-view=flat] .login-copy{padding-bottom:0}[data-view=flat] .login-content{margin-top:0}}
+@media(max-width:380px){.login-shell{width:calc(100vw - 20px)}.login-copy{padding:0 8px}.login-options{right:16px;bottom:16px}.login-options-menu{right:16px;bottom:62px}}
+body::before{display:none}
+#login-backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;contain:layout paint;isolation:isolate;overflow:hidden}
+#login-backdrop::before{content:"";position:absolute;inset:-10%;background:radial-gradient(ellipse at 64% 40%,#3971e9 0%,#8997ed 36%,transparent 62%),radial-gradient(ellipse at 22% 86%,#7899ed 0%,#b4b6ed 34%,transparent 60%);animation:login-hero-breathe 18s ease-in-out infinite alternate}
+[data-backdrop=shader] #login-backdrop::before{display:none}
+#login-backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#f5f5f2ed 0%,#f5f5f2b8 21%,#f5f5f24d 43%,transparent 66%),linear-gradient(0deg,#f5f5f2ed 0%,transparent 18%);pointer-events:none}
+.login-atmosphere{position:absolute;inset:-10%;animation:login-hero-breathe 18s ease-in-out infinite alternate}
+.login-blob{width:100%;height:100%;display:block}
+@keyframes login-hero-breathe{from{transform:translate(-1.5%,-1%) scale(1)}to{transform:translate(1.5%,1%) scale(1.07)}}
+[data-page-hidden=true] .login-atmosphere,.login-atmosphere[data-blob-state=paused]{animation-play-state:paused}
+body:has([data-page-hidden=true]) #login-backdrop::before{animation-play-state:paused}
+body[data-offline=true] .login-atmosphere,body[data-offline=true] #login-backdrop::before{animation-play-state:paused}
+.login-shell,.login-footer{z-index:1}
+.login-preparing{position:fixed;inset:0;display:grid;place-items:center;background:#f5f5f2;z-index:2;pointer-events:none;text-align:center}
+body[data-login-scene=loading] .login-shell,body[data-login-scene=loading] #login-backdrop,body[data-login-scene=loading] .login-footer,body[data-login-scene=loading] .login-options{visibility:hidden}
+body[data-login-scene=ready] .login-preparing{display:none}
+.login-noscript{position:fixed;bottom:20px;z-index:3;font-size:14px;color:#252c36}
+/* User-supplied spinner, shared by native startup and remote preparation. */
+.loader {
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 8px solid #514b82;
+  animation:
+    l20-1 0.8s infinite linear alternate,
+    l20-2 1.6s infinite linear;
+}
+@keyframes l20-1{
+   0%    {clip-path: polygon(50% 50%,0       0,  50%   0%,  50%    0%, 50%    0%, 50%    0%, 50%    0% )}
+   12.5% {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100%   0%, 100%   0%, 100%   0% )}
+   25%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 100% 100%, 100% 100% )}
+   50%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   62.5% {clip-path: polygon(50% 50%,100%    0, 100%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   75%   {clip-path: polygon(50% 50%,100% 100%, 100% 100%,  100% 100%, 100% 100%, 50%  100%, 0%   100% )}
+   100%  {clip-path: polygon(50% 50%,50%  100%,  50% 100%,   50% 100%,  50%  100%, 50%  100%, 0%   100% )}
+}
+@keyframes l20-2{
+  0%    {transform:scaleY(1)  rotate(0deg)}
+  49.99%{transform:scaleY(1)  rotate(135deg)}
+  50%   {transform:scaleY(-1) rotate(0deg)}
+  100%  {transform:scaleY(-1) rotate(-135deg)}
+}
+body[data-login-scene=ready] .loader,body:has([data-page-hidden=true]) .loader,body[data-offline=true] .loader{animation:none}

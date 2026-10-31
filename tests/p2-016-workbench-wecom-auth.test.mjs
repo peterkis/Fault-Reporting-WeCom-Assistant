@@ -187,6 +187,30 @@ test('desktop entry binds the existing QR intent to the fixed PC route and rejec
   assert.equal(await auth.unauthenticatedHandler({request,response:responseRecorder(),url:new URL(origin+'/api/lifecycle/bootstrap')}),false);
 });
 
+test('embedded login shares the one-use desktop intent and exposes only dedicated public assets',async()=>{
+  const pool=fakePool();
+  const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:origin,corpId:'ww-test',agentId:'1000001',identityHashKey:'synthetic-embedded-identity-key',accessTokenProvider:async()=>'token',fetchImpl:async url=>url.pathname.endsWith('/batch/userid_to_openuserid')?response({errcode:0,open_userid_list:[{userid:'staff-raw',open_userid:'open-staff'}]}):response({errcode:0,userid:'open-staff'}),now:()=>1_000_000});
+  await auth.initialize();
+  try{
+    const start=responseRecorder();
+    assert.equal(await auth.unauthenticatedHandler({request:{method:'GET',headers:{}},response:start,url:new URL(origin+'/workbench/desktop/embedded')}),true);
+    assert.equal(start.status,200);assert.match(start.headers['content-type'],/^text\/html/u);
+    assert.match(start.headers['content-security-policy'],/frame-src https:\/\/login\.work\.weixin\.qq\.com/u);
+    assert.match(start.headers['content-security-policy'],/frame-ancestors 'none'/u);assert.equal(start.headers['referrer-policy'],'origin');
+    assert.equal(start.headers['cache-control'],'no-store');assert.doesNotMatch(start.body,/synthetic-embedded-identity-key|__Host-wecom_workbench_intent=/u);
+    const state=start.body.match(/data-state="(desktop\.[A-Za-z0-9_-]{43})"/u)?.[1],binding=cookieValue(start.headers,'__Host-wecom_workbench_intent');assert.ok(state&&binding);
+    assert.match(start.body,/data-issued="1000000" data-expires="1300000"/u);assert.equal(pool.state.intent.return_path,'/workbench');
+    const script=start.body.match(/<script type="module" src="([^"]+)"/u)?.[1];assert.ok(script?.startsWith('/workbench/desktop/assets/'));
+    const asset=responseRecorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{}},response:asset,url:new URL(script,origin)});assert.equal(asset.status,200);assert.match(asset.headers['content-type'],/javascript/u);assert.ok(Buffer.isBuffer(asset.body));
+    const unknown=responseRecorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{}},response:unknown,url:new URL(origin+'/workbench/desktop/assets/unknown.js')});assert.equal(unknown.status,404);
+    assert.equal(await auth.unauthenticatedHandler({request:{method:'GET',headers:{}},response:responseRecorder(),url:new URL(origin+'/workbench/app/assets/unknown.js')}),false);
+    const callback=responseRecorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_intent='+binding}},response:callback,url:new URL(origin+'/workbench/callback?code=embedded-code&state='+state)});assert.equal(callback.status,303);assert.equal(callback.headers.location,'/workbench/app/');
+    await assert.rejects(auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_intent='+binding}},response:responseRecorder(),url:new URL(origin+'/workbench/callback?code=embedded-code&state='+state)}),{code:WORKBENCH_ERROR_CODES.authStateInvalid});
+    const existing=responseRecorder();await auth.unauthenticatedHandler({request:{method:'GET',headers:{cookie:'__Host-wecom_workbench_session='+cookieValue(callback.headers,'__Host-wecom_workbench_session')}},response:existing,url:new URL(origin+'/workbench/desktop/embedded')});assert.equal(existing.status,303);assert.equal(existing.headers.location,'/workbench/app/');
+    for(const [method,suffix] of [['GET','?return_to=x'],['POST','']])await assert.rejects(auth.unauthenticatedHandler({request:{method,headers:{}},response:responseRecorder(),url:new URL(origin+'/workbench/desktop/embedded'+suffix)}));
+  }finally{await auth.close();}
+});
+
 test('external delivery controls fail closed when public workbench sending is disabled', async () => {
   const control = createWorkbenchDeliveryControl({
     pool: { query: async () => ({ rowCount: 0, rows: [] }) }, authorize: {}, enabled: true, externalSendEnabled: false,

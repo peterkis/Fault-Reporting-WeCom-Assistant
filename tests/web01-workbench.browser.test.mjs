@@ -1,3 +1,4 @@
+import {openWorkbenchUserMenu} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -36,7 +37,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/settings/source-groups','UNKNOWN must not silently lose its original command through the sidebar');
       assert.ok(await browser.evaluate('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")'));
-      await browser.evaluate('document.querySelector("aside [data-action=open-settings]").click()');
+      await openWorkbenchUserMenu(browser);await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.search'),'?q='+ref,'the settings link must preserve the selected UNKNOWN command and its directory');
       await browser.evaluate('document.querySelector("[data-action=check-source-group-name]").click()');
@@ -89,12 +90,13 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.evaluate('document.querySelector("aside a[title=工作台]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id,'detail UNKNOWN must survive sidebar navigation attempts');
-      await browser.evaluate('document.querySelector("aside [data-action=open-settings]").click()');
+      await openWorkbenchUserMenu(browser);await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id);
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
-      await browser.waitFor('document.querySelector(".compact-settings")?.getClientRects().length>0');
-      await browser.evaluate('document.querySelector(".compact-settings").click()');
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+      await openWorkbenchUserMenu(browser);
+      await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id,'compact settings must preserve detail UNKNOWN');
       await browser.evaluate('document.querySelector("[data-action=check-source-group-name]").click()');await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已保存")');
@@ -131,7 +133,7 @@ test('administrator source group settings searches the real directory across pag
     let browser,error;const screenshots=[];
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1920,height:1080,cookies:[browserCookies[0]]});
-      await browser.waitFor('Boolean(document.querySelector("[data-action=open-settings]"))');
+      await openWorkbenchUserMenu(browser);
       await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');await browser.waitFor('Boolean(document.querySelector(".workbench-settings"))');await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
       await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===50');
       assert.ok(await browser.evaluate('document.body.innerText.includes("群名称未登记")'));

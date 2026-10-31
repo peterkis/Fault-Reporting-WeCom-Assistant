@@ -48,7 +48,30 @@ export function buildWeb(root:string):void {
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');
   const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
   writeFileSync(path.join(output,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+  const loginConfig=path.join(project,'vite.login.config.ts');
+  if(existsSync(loginConfig)){
+    const loginOutput=path.join(controlledBuildRoot(root),'emit/web/desktop-login');
+    runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--config',loginConfig,'--outDir',loginOutput,'--emptyOutDir']);
+    const loginFiles=outputFiles(loginOutput);
+    if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)$/u.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
+    const manifest=record(JSON.parse(readFileSync(safeFile(loginOutput,'.vite/manifest.json'),'utf8')) as unknown);
+    record(manifest['src/login/main.ts']).loginRepresentations=emitRepresentations(loginOutput,loginFiles.filter(file=>file.startsWith('assets/')));
+    writeFileSync(path.join(loginOutput,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+    writeFileSync(path.join(loginOutput,'asset-inventory.json'),JSON.stringify(outputFiles(loginOutput))+'\n');
+    writeFileSync(path.join(loginOutput,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+  }
   emitH5(root);
+}
+function emitRepresentations(output:string,sources:string[]){
+  const representations=[];
+  for(const source of sources){
+    const bytes=readFileSync(safeFile(output,source));representations.push({file:source,source,encoding:'identity',bytes:bytes.length,sha256:hash(bytes)});
+    if(!/\.(?:js|css)$/u.test(source))continue;
+    for(const [encoding,suffix,encoded] of [['gzip','.gz',gzipSync(bytes,{level:9})],['br','.br',brotliCompressSync(bytes,{params:{[constants.BROTLI_PARAM_QUALITY]:11}})]] as const){
+      const file=source+suffix;writeFileSync(path.join(output,file),encoded);representations.push({file,source,encoding,bytes:encoded.length,sha256:hash(encoded)});
+    }
+  }
+  return representations;
 }
 function emitH5(root:string):void {
   const output=path.join(controlledBuildRoot(root),'emit/h5');
@@ -57,15 +80,7 @@ function emitH5(root:string):void {
   // Public files are already compared against source bytes by h5OutputFiles.
   // Register them in the reachable graph as well as the artifact inventory.
   main.assets=[...new Set([...(Array.isArray(main.assets)?main.assets:[]),...original.filter(file=>/^assets\//u.test(file)&&!file.endsWith('.js')&&!file.endsWith('.css'))])];
-  const representations=[];
-  for(const source of original.filter(file=>file.startsWith('assets/'))){
-    const bytes=readFileSync(safeFile(output,source));representations.push({file:source,source,encoding:'identity',bytes:bytes.length,sha256:hash(bytes)});
-    if(!/\.(?:js|css)$/u.test(source))continue;
-    for(const [encoding,suffix,encoded] of [['gzip','.gz',gzipSync(bytes,{level:9})],['br','.br',brotliCompressSync(bytes,{params:{[constants.BROTLI_PARAM_QUALITY]:11}})]] as const){
-      const file=source+suffix;writeFileSync(path.join(output,file),encoded);representations.push({file,source,encoding,bytes:encoded.length,sha256:hash(encoded)});
-    }
-  }
-  main.h5Representations=representations;writeFileSync(path.join(output,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+  main.h5Representations=emitRepresentations(output,original.filter(file=>file.startsWith('assets/')));writeFileSync(path.join(output,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
   const startup=h5StartupMetrics(root);writeFileSync(path.join(output,'startup-metrics.json'),JSON.stringify(startup)+'\n');
   const files=h5OutputFiles(root,false);
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');

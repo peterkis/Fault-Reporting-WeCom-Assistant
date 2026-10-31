@@ -1,7 +1,11 @@
 import {contextBridge,ipcRenderer} from 'electron';
-import type {DesktopBridge,DesktopState,DesktopReminder} from './policy.mjs';
+import type {DesktopBridge,DesktopState,DesktopReminder,LoginBridge} from './policy.mjs';
 
 const origin=process.argv.find(value=>value.startsWith('--workbench-origin='))?.slice('--workbench-origin='.length);
+if(process.isMainFrame&&origin===location.origin&&location.pathname==='/workbench/desktop/embedded'&&!location.search&&!location.hash){
+  const bridge:LoginBridge={version:1,getAppVersion:()=>ipcRenderer.invoke('desktop-login:version'),quit:()=>ipcRenderer.invoke('desktop-login:quit')};
+  contextBridge.exposeInMainWorld('workbenchLogin',Object.freeze(bridge));
+}
 if(process.isMainFrame&&origin===location.origin&&(location.pathname==='/workbench/app'||location.pathname.startsWith('/workbench/app/'))){
   const stateEvent=(callback:(state:DesktopState)=>void)=>{
     const listener=(_event:Electron.IpcRendererEvent,value:DesktopState)=>callback(value);

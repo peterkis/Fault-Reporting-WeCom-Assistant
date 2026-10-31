@@ -3,15 +3,18 @@ export interface DesktopState {
   remindersEnabled:boolean; revision:number;
 }
 export const TITLEBAR_HEIGHT=40;
-export type ChromeAction='menu'|'minimize'|'maximize'|'close';
-export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean}
+export type ChromeAction='menu'|'minimize'|'maximize'|'close'|'reconnect';
+export type RecoveryState='offline'|'unavailable'|'reconnecting'|'failed'|null;
+export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean;appVersion:string;booting:boolean;recovery:RecoveryState;loginExpired:boolean}
 export interface ChromeBridge {state():Promise<ChromeState>;command(action:ChromeAction):Promise<void>;onState(callback:(state:ChromeState)=>void):()=>void}
 export function readChromeAction(value:unknown):ChromeAction {
-  if(value==='menu'||value==='minimize'||value==='maximize'||value==='close')return value;
+  if(value==='menu'||value==='minimize'||value==='maximize'||value==='close'||value==='reconnect')return value;
   throw Error('DESKTOP_CHROME_ACTION_INVALID');
 }
 export interface DesktopContext {epoch:string|null;blocked:boolean;live:boolean;remindersAvailable:boolean}
 export interface DesktopReminder {epoch:string;id:string;kind:'ticket'|'review'|'intake';itemId:string}
+export interface LoginBridge {version:1;getAppVersion():Promise<string>;quit():Promise<void>}
+export function motionPreference(args:readonly string[]):'reduce'|'no-preference'{return args.includes('--wecom-reduced-motion')?'reduce':'no-preference';}
 export interface DesktopBridge {
   version:1;
   getState():Promise<DesktopState>;
@@ -44,6 +47,25 @@ export function readConfig(value:unknown):{schemaVersion:1;serverOrigin:string}{
 export function businessDocument(value:string,origin:string):boolean {
   try{const url=new URL(value);return url.origin===origin&&!url.username&&!url.password&&(url.pathname==='/workbench/app'||url.pathname.startsWith('/workbench/app/'));}catch{return false;}
 }
+export const OFFICIAL_LOGIN_PATH='/workbench/desktop';
+export const EMBEDDED_LOGIN_PATH='/workbench/desktop/embedded';
+export type LoginEntryPath=typeof OFFICIAL_LOGIN_PATH|typeof EMBEDDED_LOGIN_PATH;
+export function loginEntryPath(value:string,origin:string):LoginEntryPath|null {
+  try{const url=new URL(value);if(url.protocol!=='https:'||url.origin!==origin||url.username||url.password||url.search||url.hash)return null;return url.pathname===OFFICIAL_LOGIN_PATH?OFFICIAL_LOGIN_PATH:url.pathname===EMBEDDED_LOGIN_PATH?EMBEDDED_LOGIN_PATH:null;}catch{return null;}
+}
+export function embeddedLoginDocument(value:string,origin:string):boolean {
+  return loginEntryPath(value,origin)===EMBEDDED_LOGIN_PATH;
+}
+/** Only reconstruct safe GET documents. Never retain OAuth queries or replay a callback. */
+export function recoveryTarget(value:string,origin:string,method:string,entry:LoginEntryPath):string|null {
+  if(method!=='GET'||!allowedNavigation(value,origin))return null;
+  const url=new URL(value);
+  if(businessDocument(value,origin)&&!url.pathname.startsWith('/workbench/app/assets/'))return origin+url.pathname;
+  return origin+(loginEntryPath(value,origin)??entry);
+}
+export function connectionFailure(code:number):boolean {
+  return [-2,-7,-21,-100,-101,-102,-103,-104,-105,-106,-109,-118,-130,-137,-138].includes(code);
+}
 /** Only the fixed attachment names/types produced by the authorized renderer. */
 export function allowedAttachmentDownload(input:{url:string;filename:string;mime:string;bytes:number},origin:string):boolean {
   const types:Record<string,{extension:string;limit:number}>={
@@ -59,7 +81,7 @@ export function allowedNavigation(value:string,origin:string):boolean {
   try{
     const url=new URL(value);if(url.username||url.password||url.protocol!=='https:')return false;
     if(url.origin===origin)return url.pathname==='/workbench'||url.pathname.startsWith('/workbench/');
-    return url.origin==='https://login.work.weixin.qq.com'&&url.pathname==='/wwlogin/sso/login';
+    return url.origin==='https://login.work.weixin.qq.com'&&(url.pathname==='/wwlogin/sso/login'||url.pathname==='/wwlogin/sso/login/');
   }catch{return false;}
 }
 export function readContext(value:unknown):DesktopContext {
@@ -70,9 +92,22 @@ export function readContext(value:unknown):DesktopContext {
 export function navigationFailure(value:string,origin:string,status:number):'server'|'access'|'service'|'page'|null {
   if(!Number.isInteger(status)||status<400||status>599||!allowedNavigation(value,origin))return null;
   const url=new URL(value);
-  if(status===404&&url.origin===origin&&url.pathname==='/workbench/desktop')return 'server';
+  if(status===404&&url.origin===origin&&[OFFICIAL_LOGIN_PATH,EMBEDDED_LOGIN_PATH].includes(url.pathname))return 'server';
   if(status===401||status===403)return 'access';
   return status>=500?'service':'page';
+}
+/** A trusted desktop intent expires after five minutes; renew before its cookie does. */
+export function loginRefreshDelay(value:string,origin:string,status:number,headers:Record<string,string[]>):number|null {
+  try{
+    const url=new URL(value);
+    if(url.origin!==origin||url.username||url.password||url.search||url.hash||!((url.pathname===OFFICIAL_LOGIN_PATH&&status===302)||(url.pathname===EMBEDDED_LOGIN_PATH&&status===200)))return null;
+    const values=Object.entries(headers).filter(([key])=>key.toLowerCase()==='set-cookie').flatMap(([,cookies])=>cookies).filter(cookie=>cookie.startsWith('__Host-wecom_workbench_intent='));
+    if(values.length!==1)return null;
+    const ages=values[0]!.split(';').map(part=>part.trim()).filter(part=>/^max-age=/iu.test(part));
+    if(ages.length!==1)return null;
+    const raw=ages[0]!.slice(8);if(!/^[1-9][0-9]{0,2}$/u.test(raw))return null;
+    const age=Number(raw);return age<=300?Math.max(1,age-60)*1000:null;
+  }catch{return null;}
 }
 export function readReminder(value:unknown):DesktopReminder {
   const r=object(value,['epoch','id','kind','itemId']);

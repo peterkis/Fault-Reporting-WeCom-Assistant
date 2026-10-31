@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'"><title>医小修工作台</title><link rel="stylesheet" href="chrome.css"></head>
-<body>
+<body class="app-chrome" data-booting="true">
   <header class="titlebar" aria-label="应用标题栏">
     <div class="identity" aria-label="医小修工作台">
       <span class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6m0-12.8-3.6 3.6m-5.6 5.6-3.6 3.6"/></svg></span>
-      <span class="product-name">医小修</span><span class="divider" aria-hidden="true"></span><span class="surface-name">工单工作台</span>
+      <span class="product-name">医小修</span><span class="divider" aria-hidden="true"></span><span class="surface-name" aria-label="应用版本"></span>
     </div>
     <div class="window-actions" aria-label="窗口操作">
       <button id="menu" class="more" type="button" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false" aria-keyshortcuts="Alt+M" title="更多操作 (Alt+M)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="1.3"/><circle cx="10" cy="10" r="1.3"/><circle cx="16" cy="10" r="1.3"/></svg></button>
@@ -14,9 +14,18 @@
       <button id="close" class="close" type="button" aria-label="收起到托盘" title="收起到托盘"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 3.5 9 9m0-9-9 9"/></svg></button>
     </div>
   </header>
-  <main class="startup" data-startup role="status" aria-live="polite">
-    <div class="startup-heading"><strong>医小修 · 工作台</strong><p>正在连接工作台…</p></div>
-    <div class="startup-columns" aria-hidden="true"><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div></div>
+  <main class="startup" data-startup role="status" aria-label="Loading login page" aria-live="polite">
+    <div class="loader" aria-hidden="true"></div>
+  </main>
+  <main class="connection-state" data-recovery hidden>
+    <div class="connection-copy" role="status" aria-live="polite">
+      <span class="connection-brand"><span class="startup-mark" aria-hidden="true">+</span>医小修</span>
+      <svg class="connection-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 2 20 20M8.5 16.5a5 5 0 0 1 7 0M12 20h.01M5 12.5a10 10 0 0 1 3-1.8m4-1.2a10 10 0 0 1 7 3M2 8.8a16 16 0 0 1 2.1-1.5M7 5.4a16 16 0 0 1 15 3.4"/></svg>
+      <h1 data-connection-title>应用已离线</h1>
+      <p data-connection-description>请检查网络连接。连接恢复后，将自动重新打开刚才的页面。</p>
+      <button id="reconnect" type="button">重新连接</button>
+      <p class="connection-note">未完成的工单操作不会自动提交。</p>
+    </div>
   </main>
   <script type="module" src="chrome.mjs"></script>
 </body></html>

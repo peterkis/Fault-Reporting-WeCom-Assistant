@@ -3,6 +3,31 @@ import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 
+export async function openWorkbenchUserMenu(browser:Browser){
+  // A real account-menu interaction first activates its tab; background rAF is suspended.
+  await browser.command('Page.bringToFront');
+  if(await browser.evaluate('document.querySelector("[role=menu][aria-label=用户操作]")?.checkVisibility()===true'))return;
+  await browser.waitFor('[...document.querySelectorAll("[data-action=open-user-menu]")].some(node=>node.checkVisibility())');
+  const location=await browser.evaluate('[...document.querySelectorAll("[data-action=open-user-menu]")].find(node=>node.checkVisibility())?.dataset.menuLocation');
+  assert.ok(location==='sidebar'||location==='compact');
+  await clickWorkbenchControl(browser,'[data-action="open-user-menu"][data-menu-location="'+location+'"]');
+  await browser.waitFor('document.querySelector("[role=menu][aria-label=用户操作]")?.checkVisibility()===true');
+}
+export async function openWorkbenchSettings(browser:Browser){
+  await openWorkbenchUserMenu(browser);await clickWorkbenchControl(browser,'[data-action="open-settings"]');
+  await browser.waitFor('document.querySelector(".workbench-settings")?.checkVisibility()===true');
+}
+
+/** Authentication/privacy boundary tests may revoke their current session while
+ * a protected business modal is open. This preserves their original virtual
+ * logout activation; pointer/keyboard menu reachability is tested separately.
+ */
+export async function openWorkbenchLogoutBoundary(browser:Pick<Browser,'evaluate'|'waitFor'>){
+  await browser.waitFor('[...document.querySelectorAll("[data-action=open-user-menu]")].some(node=>node.checkVisibility())');
+  await browser.evaluate('[...document.querySelectorAll("[data-action=open-user-menu]")].find(node=>node.checkVisibility()).click()');
+  await browser.waitFor('Boolean(document.querySelector("[data-action=logout-workbench]"))');
+}
+
 /** Click the actual visible control, including HeroUI's checkbox/radio label. */
 export async function clickWorkbenchControl(browser:Browser,selector:string){
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;

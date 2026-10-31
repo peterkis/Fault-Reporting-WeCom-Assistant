@@ -32,10 +32,12 @@ async function evaluate(browser:Browser,expression:string,sessionId:string|null=
   const response=object(await browser.command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true},sessionId));
   assert.equal(response.exceptionDetails,undefined,JSON.stringify(response.exceptionDetails));return object(response.result).value;
 }
-async function wait(browser:Browser,expression:string,sessionId:string){
+async function wait(browser:Browser,expression:string,sessionId:string|null=null){
   const until=performance.now()+30_000;while(performance.now()<until){if(await evaluate(browser,expression,sessionId))return;await delay(25);}throw Error('T40_PEER_CONDITION_TIMEOUT: '+expression);
 }
 async function click(browser:Browser,selector:string,sessionId:string|null=null){
+  if(selector.includes('open-settings')){await wait(browser,'[...document.querySelectorAll("[data-action=open-user-menu]")].some(node=>node.checkVisibility())',sessionId);const where=await evaluate(browser,'[...document.querySelectorAll("[data-action=open-user-menu]")].find(node=>node.checkVisibility()).dataset.menuLocation',sessionId);await click(browser,'[data-action="open-user-menu"][data-menu-location="'+where+'"]',sessionId);await wait(browser,'document.querySelector("[role=menu][aria-label=用户操作]")?.checkVisibility()===true',sessionId);}
+
   const box=object(await evaluate(browser,`(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>node.getClientRects().length>0);if(!e)throw Error('T40_CLICK_TARGET_MISSING');const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`,sessionId));
   assert.equal(typeof box.x,'number');assert.equal(typeof box.y,'number');
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:box.x,y:box.y,button:'left',clickCount:1},sessionId);
