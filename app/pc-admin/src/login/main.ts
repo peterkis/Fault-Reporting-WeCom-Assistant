@@ -10,13 +10,14 @@ const root=document.getElementById('desktop-login');
 const status=document.getElementById('login-status');
 const button=document.getElementById('restart-login');
 const panelHost=document.getElementById('wecom-panel');
+const frontHint=document.getElementById('login-gesture');
 const stage=document.getElementById('lanyard-stage');
 const viewButton=document.getElementById('switch-login-view');
 const moreButton=document.getElementById('login-more');
 const moreIcon=document.getElementById('login-more-icon');
 const options=document.getElementById('login-options-menu');
 const quitButton=document.getElementById('quit-desktop');
-if(!root||!status||!button||!panelHost||!stage||!viewButton||!moreButton||!moreIcon||!options||!quitButton)throw Error('LOGIN_DOCUMENT_INVALID');
+if(!root||!status||!button||!panelHost||!frontHint||!stage||!viewButton||!moreButton||!moreIcon||!options||!quitButton)throw Error('LOGIN_DOCUMENT_INVALID');
 const {corpId,agentId,state,issued,expires,callback}=root.dataset;
 const expiry=Number(expires),issuance=Number(issued),ttl=expiry-issuance;
 if(!corpId||!agentId||!/^\d{1,20}$/u.test(agentId)||!state?.startsWith('desktop.')||!Number.isSafeInteger(expiry)||!Number.isSafeInteger(issuance)||ttl!==300_000||!callback)throw Error('LOGIN_PARAMETERS_INVALID');
@@ -134,7 +135,7 @@ finally{cardPrepared=true;revealScene();}
 const lanyardModule=view==='lanyard'?import('./Lanyard'):null;
 void lanyardModule?.catch(()=>{});
 function startPresentation(){
-  if(!stage||!panelHost)return;
+  if(!stage||!panelHost||!frontHint)return;
   if(presentationStarted||!active||completing)return;presentationStarted=true;
   if(view==='flat'){mountPanel();return;}
   armReadyTimer();
@@ -142,7 +143,7 @@ function startPresentation(){
     if(!active||completing)return;
     const fallback=(reason:FallbackReason)=>queueMicrotask(()=>changeView('flat',reason));
     scene=createRoot(stage,{onUncaughtError:()=>fallback('scene-error')});
-    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,viewportFrame:stage,presentationReady:sceneReleased,onFrontReady:mountPanel,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
+    renderScene=()=>{if(active&&!completing)scene?.render(createElement(Lanyard,{frontElement:panelHost,frontHint,viewportFrame:stage,presentationReady:sceneReleased,onFrontReady:mountPanel,onFallback:fallback,cornerRadius:0.35,strapLength:0.6,strapColor:'#3b82f6',strapWidth:0.85,breeze:0,backLabel:appVersion?'v'+appVersion:''}));};
     renderScene();
   }).catch(()=>changeView('flat','asset-failed'));
 }

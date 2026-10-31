@@ -69,6 +69,9 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.equal(await browser.evaluate('(()=>{const e=document.getElementById("login-backdrop"),r=e.getBoundingClientRect();return e.inert&&e.getAttribute("aria-hidden")==="true"&&getComputedStyle(e).pointerEvents==="none"&&r.width>=innerWidth&&r.height>=innerHeight;})()'),true,'the hero covers the viewport without intercepting login controls');
   assert.deepEqual(await browser.evaluate('window.__sceneAppearance.visibility'),['visible','visible','visible','visible'],'title, background, card and footer first appear in one scene');
   assert.notEqual(await browser.evaluate('window.__sceneAppearance.mode'),'pending');
+  assert.equal(await browser.evaluate('(()=>{const text=document.getElementById("login-gesture"),host=text?.closest(".lanyard-hint"),panel=document.querySelector(".lanyard-front"),r=document.createRange();if(!text||!host||!panel||!text.closest(".lanyard-hint-layer"))return false;r.selectNodeContents(text);const t=r.getBoundingClientRect(),h=host.getBoundingClientRect(),p=panel.getBoundingClientRect();return document.querySelectorAll("#login-gesture").length===1&&!document.querySelector(".login-content>.login-gesture")&&Math.abs(t.x+t.width/2-h.x-h.width/2)<1.5&&Math.abs(t.y+t.height/2-h.y-h.height/2)<1.5&&Math.abs(h.x+h.width/2-p.x-p.width/2)<1.5&&Math.abs(h.y-p.bottom)<1.5&&h.height>0&&h.height<p.height*.2&&document.querySelector("#wecom-panel").clientWidth===320&&document.querySelector("#wecom-panel").clientHeight===380;})()'),true,'the caption is centered in the bottom card border, below the unchanged full login panel');
+  const shine=await browser.evaluate('(()=>{const text=document.getElementById("login-gesture"),animation=text.getAnimations().find(a=>a.animationName==="login-gesture-shine");if(!animation)return null;animation.pause();const positions=[0,900,1800,2700].map(time=>{animation.currentTime=time;return getComputedStyle(text).backgroundPositionX});animation.play();return {positions,duration:getComputedStyle(text).animationDuration,pointerEvents:getComputedStyle(text).pointerEvents};})()');
+  assert.deepEqual(shine,{positions:['0px','90px','180px','180px'],duration:'3s',pointerEvents:'none'},'the reference shine sweeps during the first 60 percent and holds without intercepting drag input');
   if(await browser.evaluate('!!navigator.gpu')){
     await waitScene();
     if(await browser.evaluate('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"')){
@@ -104,7 +107,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await clickLogin('#login-more');await browser.waitFor('document.getElementById("login-options-menu").matches(":popover-open")');
   await clickLogin('#quit-desktop');assert.equal(await browser.evaluate('window.__quitRequests'),1,'the bottom menu action invokes the dedicated application quit capability');
   await browser.waitFor('!document.getElementById("login-options-menu").matches(":popover-open")');
-  await browser.evaluate('window.__originalPanel=document.querySelector("#wecom-panel iframe")');
+  await browser.evaluate('window.__originalPanel=document.querySelector("#wecom-panel iframe");window.__originalHint=document.getElementById("login-gesture")');
   const point=await browser.evaluate('(()=>{const r=document.querySelector(".lanyard-front").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()') as {x:number;y:number};
   const oldSlotLeft=Number(await browser.evaluate('document.getElementById("lanyard-stage").getBoundingClientRect().left'));
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
@@ -121,6 +124,8 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...flipPoint,button:'left',clickCount:1});
   await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',...flipPoint,button:'left',clickCount:1});
   await browser.waitFor('document.querySelector(".lanyard-front")?.getAttribute("aria-hidden")==="true"');
+  assert.equal(await browser.evaluate('document.querySelector(".lanyard-hint").getAttribute("aria-hidden")'), 'true','the front caption disappears on the back side');
+  assert.equal(await browser.evaluate('window.__originalHint===document.getElementById("login-gesture")'),true,'dragging and flipping preserve the same caption element');
   assert.equal(await browser.evaluate('window.__originalPanel===document.querySelector("#wecom-panel iframe")'),true,'flipping preserves the same live iframe');assert.equal(generation,1);
   await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
   await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x+70,y:point.y+35,button:'left',buttons:1});

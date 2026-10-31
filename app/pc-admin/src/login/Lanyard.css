@@ -39,10 +39,25 @@
   pointer-events: none;
 }
 
+.lanyard-hint-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lanyard-hint {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+
 /* Phone scanning remains available. Use the caller's flat view for iframe clicks. */
 .lanyard-interaction {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   background: transparent;
 }

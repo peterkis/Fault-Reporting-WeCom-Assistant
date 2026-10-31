@@ -44,6 +44,8 @@ export interface LanyardProps {
   style?: CSSProperties;
   /** An empty, parent-owned host. Mount the SDK only after onFrontReady. */
   frontElement?: HTMLElement;
+  /** Optional front-side caption, projected over the opaque card border. */
+  frontHint?: HTMLElement;
   /** Keep this layout slot's framing while drawing over the whole viewport. */
   viewportFrame?: HTMLElement;
   onFrontReady?: () => void;
@@ -53,7 +55,7 @@ export interface LanyardProps {
 
 type Settings = Required<Omit<LanyardProps,
   'frontImage' | 'backImage' | 'strapImage' | 'className' | 'style' |
-  'frontElement' | 'viewportFrame' | 'onFrontReady' | 'onFallback'>> & {
+  'frontElement' | 'frontHint' | 'viewportFrame' | 'onFrontReady' | 'onFallback'>> & {
   frontImage: string | undefined;
   backImage: string | undefined;
   strapImage: string | undefined;
@@ -861,6 +863,7 @@ const Lanyard = ({
   className = '',
   style,
   frontElement,
+  frontHint,
   viewportFrame,
   onFrontReady,
   onFallback,
@@ -941,6 +944,24 @@ const Lanyard = ({
       panelHost.style.pointerEvents = 'none';
       cssRenderer.domElement.className = 'lanyard-css3d';
       container.prepend(cssRenderer.domElement);
+    }
+    // The QR stays behind its existing WebGL cutout. Only this transparent caption
+    // projects over the opaque bottom border, so the live iframe is never moved.
+    const hintRenderer = frontObject && frontHint ? new CSS3DRenderer() : null;
+    const hintScene = hintRenderer ? new THREE.Scene() : null;
+    const hintParent = frontHint?.parentNode ?? null;
+    const hintNextSibling = frontHint?.nextSibling ?? null;
+    const hintHost = document.createElement('div');
+    hintHost.className = 'lanyard-hint';
+    hintHost.style.width = '320px';
+    const hintObject = hintRenderer ? new CSS3DObject(hintHost) : null;
+    const hintPosition = new THREE.Vector3();
+    if (hintRenderer && hintScene && hintObject && frontHint) {
+      hintHost.appendChild(frontHint);
+      hintHost.style.pointerEvents = 'none';
+      hintRenderer.domElement.className = 'lanyard-hint-layer';
+      container.appendChild(hintRenderer.domElement);
+      hintScene.add(hintObject);
     }
 
     const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -1167,6 +1188,13 @@ const Lanyard = ({
           frontObject.position.set(0, -0.11, frontMesh.position.z + 0.0008);
           cutout.position.copy(frontObject.position);
           cutout.scale.set(320 * scale, 380 * scale, 1);
+          if (hintObject) {
+            const panelBottom = -0.11 - 190 * scale;
+            const cardBottom = -layout.height / 2;
+            hintHost.style.height = `${Math.max(0, panelBottom - cardBottom) / scale}px`;
+            hintPosition.set(0, (panelBottom + cardBottom) / 2, frontObject.position.z);
+            hintObject.scale.copy(frontObject.scale);
+          }
         }
         applied.framingKey = '';
       }
@@ -1339,9 +1367,17 @@ const Lanyard = ({
         cutout.visible = facing;
         panelHost.inert = !facing;
         panelHost.setAttribute('aria-hidden', String(!facing));
+        if (hintObject) {
+          hintObject.visible = facing;
+          hintObject.position.copy(hintPosition).applyMatrix4(cardGroup.matrixWorld);
+          cardGroup.getWorldQuaternion(hintObject.quaternion);
+          hintHost.inert = !facing;
+          hintHost.setAttribute('aria-hidden', String(!facing));
+        }
       }
       renderer.render(scene, camera);
       cssRenderer?.render(scene, camera);
+      if (hintRenderer && hintScene) hintRenderer.render(hintScene, camera);
       if (frontElement && frontObject && !frontReady && !readyPending && frontElement.isConnected) {
         // CSS3D render connects the host synchronously. A hidden page may never receive a rAF.
         // StrictMode cleanup invalidates this microtask through alive and host ownership checks.
@@ -1576,6 +1612,7 @@ const Lanyard = ({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(view.width, view.height, false);
       cssRenderer?.setSize(view.width, view.height);
+      hintRenderer?.setSize(view.width, view.height);
       apply();
       render();
     };
@@ -1625,6 +1662,14 @@ const Lanyard = ({
         } else frontElement.remove();
       }
       if (frontObject) cardGroup.remove(frontObject);
+      if (frontHint?.parentNode === hintHost) {
+        if (hintParent) {
+          const next = hintNextSibling?.parentNode === hintParent ? hintNextSibling : null;
+          hintParent.insertBefore(frontHint, next);
+        } else frontHint.remove();
+      }
+      if (hintObject) hintScene?.remove(hintObject);
+      hintRenderer?.domElement.remove();
       cutout?.geometry.dispose();
       cutout?.material.dispose();
       cssRenderer?.domElement.remove();
@@ -1636,7 +1681,7 @@ const Lanyard = ({
       renderer.dispose();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
-  }, [frontElement, viewportFrame]);
+  }, [frontElement, frontHint, viewportFrame]);
 
   return <div ref={containerRef} className={`lanyard ${viewportFrame ? 'lanyard--viewport' : ''} ${className}`.trim()} style={style} />;
 };
