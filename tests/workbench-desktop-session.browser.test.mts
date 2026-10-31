@@ -74,7 +74,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
     if(await browser.evaluate('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"')){
       const frequency=await browser.evaluate('new Promise(resolve=>{const before=window.__backgroundSubmits,start=performance.now();setTimeout(()=>resolve((window.__backgroundSubmits-before)*1000/(performance.now()-start)),2200)})') as number;
       assert.ok(frequency>=20&&frequency<=35,'only the background renders near 30fps: '+frequency);
-      assert.equal(await browser.evaluate('(()=>{const c=document.querySelector(".login-blob");return c.width*c.height<=1100000&&getComputedStyle(c).transitionDuration==="0s"})()'),true,'full-screen display uses a bounded render buffer without a late fade');
+      assert.equal(await browser.evaluate('(()=>{const c=document.querySelector(".login-blob");return c.width*c.height<=550000&&getComputedStyle(c).transitionDuration==="0s"})()'),true,'full-screen display uses the 550k render budget without a late fade');
       await browser.evaluate('window.__blobPanel=document.querySelector("#wecom-panel iframe");Object.defineProperty(navigator,"onLine",{configurable:true,value:false});window.dispatchEvent(new Event("offline"))');
       await browser.waitFor('document.querySelector("[data-blob-state]")?.dataset.blobState==="paused"');
       assert.equal(await browser.evaluate('getComputedStyle(document.querySelector("[data-blob-state]")).animationPlayState'),'paused','offline pauses the breathing motion while retaining the last frame');

@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {createBackdropRenderer} from './backdrop-renderer';
 
-const PIXEL_BUDGET=1_100_000;
+const PIXEL_BUDGET=550_000;
 
 export default function LoginBackdrop({onReady,onUnavailable}:{onReady:()=>void;onUnavailable:(reason:string)=>void}){
   const canvasRef=useRef<HTMLCanvasElement>(null),callbacks=useRef({onReady,onUnavailable});
