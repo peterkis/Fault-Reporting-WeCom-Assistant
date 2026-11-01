@@ -30,7 +30,7 @@ test('v2 activity names stay neutral, avatars retain stable identity colors and 
     const posted=await peer.post(ticket.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'ACTOR_COLOR_SECOND：另一位合成人员补充检查记录。',external_visible:false});
     assert.equal(posted.status,200);await posted.arrayBuffer();
     const latest=await http.detail(ticket.ticket.id);
-    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='重新读取工单动作').click()");
+    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='刷新可用操作').click()");
     await browser.waitFor(`document.querySelector('.detail-note-composer .ticket-command-version')?.textContent===${JSON.stringify('工单版本 '+latest.version)}`);
     await browser.evaluate("(()=>{const input=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'ACTOR_COLOR_BROWSER_REFRESH：合成复核记录。');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
     await browser.waitFor("document.querySelector('[data-action=save-internal-note]')?.disabled===false");
@@ -42,7 +42,7 @@ test('v2 activity names stay neutral, avatars retain stable identity colors and 
     await browser.evaluate("document.querySelector('.detail-main').scrollIntoView({block:'start'})");
     const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'distinct-actors.png');await writeFile(file,bytes);
     await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[first.id]);
-    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='重新读取工单动作').click()");
+    await browser.evaluate("[...document.querySelectorAll('.detail-note-composer button')].find(button=>button.textContent==='刷新可用操作').click()");
     await browser.waitFor("document.querySelectorAll('.record-name').length===0");
     console.log('ACTIVITY_ACTOR_COLORS '+JSON.stringify({real_http:true,distinct_names:true,same_page_stability:true,csp_unchanged:true,read_loss_cleared:true,screenshot:{file,sha256:createHash('sha256').update(bytes).digest('hex')}}));
   }catch(error){failure=error;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnostic){failure=new AggregateError([error,diagnostic]);}}

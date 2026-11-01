@@ -65,7 +65,7 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     // Revoke the actual actor's current read authority while success feedback is still visible.
     const identity=(await f.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[actor.id])).rows[0];assert.ok(identity);
     await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['HANDLER'],resolverTeamIds:[]});
-    await browser.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='重新读取工单动作').click()");
+    await browser.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='刷新可用操作').click()");
     await browser.waitFor("!document.querySelector('#detail-title')&&!document.querySelector('[data-toast-source=ticket-assignment]')");
     assert.deepEqual(await browser.evaluate('globalThis.__toastCsp'),cspBaseline,'toast lifecycle must not add CSP violations to the settled page baseline');
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',purpose:'toast-feedback',screenshots}));

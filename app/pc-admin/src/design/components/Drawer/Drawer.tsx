@@ -19,8 +19,12 @@ export function DrawerMoreActions({children}:{children:ReactNode}){
     const owner=menu.closest('[role=dialog]');
     if([...document.querySelectorAll('[role=dialog]')].some(dialog=>dialog!==owner&&dialog.checkVisibility()))return;
     menu.open=false;
-  };document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close);},[]);
-  return <details className="ds-drawer-more" ref={root} onKeyDown={event=>{if(event.key==='Escape'&&root.current?.open&&event.target instanceof Node&&root.current.contains(event.target)){event.preventDefault();event.stopPropagation();root.current.open=false;root.current.querySelector('summary')?.focus();}}}>
+  };
+  // Capture before a portalled button's React event layer stops DOM bubbling.
+  const menu=root.current,escape=(event:KeyboardEvent)=>{if(event.key==='Escape'&&menu?.open&&event.target instanceof Node&&menu.contains(event.target)){event.preventDefault();event.stopPropagation();menu.open=false;menu.querySelector('summary')?.focus();}};
+  document.addEventListener('pointerdown',close);menu?.addEventListener('keydown',escape,true);
+  return()=>{document.removeEventListener('pointerdown',close);menu?.removeEventListener('keydown',escape,true);};},[]);
+  return <details className="ds-drawer-more" ref={root}>
     <summary data-action="open-detail-actions" aria-label="更多工单操作" title="更多工单操作"><MoreHorizontal aria-hidden="true"/></summary>
     <div className="ds-drawer-more-panel" aria-label="更多工单操作">{children}</div>
   </details>;

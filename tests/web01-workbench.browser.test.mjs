@@ -398,7 +398,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // The existing test-auth port issues a distinct cookie name per principal.
       await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
-      await browser.waitFor("document.body.innerText.includes('当前没有可见的事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.waitFor("document.body.innerText.includes('这里暂时没有工单')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('看板')).click()");
       await browser.waitFor("Boolean(document.querySelector('.board-column.closed [data-action=view-earlier]'))");
       await browser.evaluate("document.querySelector('.board-column.closed [data-action=view-earlier]').click()");
