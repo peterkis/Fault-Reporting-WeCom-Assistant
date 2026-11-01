@@ -76,6 +76,14 @@ head `cba774a1b71f18a7f745cb4aff703be7eafe0db6` 的 TypeScript CI `41291589818` 
 
 该测试现复用仓库的真实交互辅助，等待 URL、已选中页签和当前可见链接同时就绪；关注/取消关注、责任不变、OAuth、三编译角色、发送适配器隔离和原业务断言保持。固定本地候选 `fe7e167bbe24cdffb2b153704872fa3bacf19e578ad53b851d2eda17e37c4489` 已通过构建、完整 types、制品及 3 个注册入口 / 10 项检查（无 SKIP / NOT_RUN）。没有修改应用代码或增加等待上限，后继 head 的远端 CI/审查仍独立等待。
 
+## 第五轮筛选面板边界修补
+
+head `1ac0022fa2434898283d1ab0e09b3886cc29b2db` 的审查提出 [P2 窄屏筛选浮层越界](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/127#discussion_r4435116678)。390px 实际复现为左边界 108px、右边界 466px；现让浮层相对整条工具栏定位，宽度不超过工具栏内容区。≤900px 的高级筛选改为单列，并复用已有 4px / 8px 间距 Token 收紧工具栏；开启“与我有关”时，390px 仍保留全部范围/视图按钮和单行布局，没有新增字号、颜色、圆角或阴影。
+
+原注册 `web01-workbench` 入口增加 7 个宽度 × 展开/折叠侧栏 × 普通/搜索模式，共 28 组真实 UI 检查：面板与页面均无水平溢出、末尾筛选/日期操作可见且无遮挡、打开与浏览筛选零业务 POST。四个验收宽度以及 600/390px 前后图、SHA-256 与全样本见 [manifest](design-system-v2-evidence/filter-viewport-manifest.json)；可直接对照 [390px 前](design-system-v2-evidence/toolbar-filters-before-390.png) / [390px 后](design-system-v2-evidence/toolbar-filters-board-390.png)。
+
+固定本地输入 `56826063a5be82c5868152e2e7a775b659c65d084bf1b83e8a9dd093c1eea048` 已通过构建、完整 types、制品和 4 个注册相关入口 / 16 项检查（无 SKIP / NOT_RUN）。Stylelint 仍为 0 违规；旧业务断言保持。第一次修补后，新增测试还发现开启“与我有关”的工具栏自身溢出，真实失败与诊断原样保留，再修复间距后通过。原始记录位于 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review5/`，本地结果不替代后继发布 head 的远端 CI/复审。
+
 ## 合并与回退
 
 合并前要求最终完整 PR head 的审查完成、P1/P2 收口、适用 CI 成功且未解决线程核对完成。合并使用保留祖先的 merge commit；回退为后继 revert，不改写历史证据。没有部署、真实发送、业务写库或 Gate 推进授权。

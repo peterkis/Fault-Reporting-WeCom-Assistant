@@ -1,4 +1,4 @@
-import {openWorkbenchUserMenu,assertWorkbenchPrimaryActions} from './helpers/heroui-workbench-controls.mjs';
+import {openWorkbenchUserMenu,assertWorkbenchPrimaryActions,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -10,6 +10,29 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+
+test('open workbench filters stay inside content bounds with reachable search and date controls',{timeout:120000},()=>withWeb01Fixture(async f=>{
+  const directory=join(tmpdir(),'toolbar-filter-'+randomUUID());await mkdir(directory);const samples=[],screenshots=[],writes=[];
+  const observe=request=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);let browser,error;
+  try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:900,cookies:[{...cookie,url:f.origin}]});assert.ok(browser);
+    for(const collapsed of [false,true])for(const mode of ['board','search']){
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:900,deviceScaleFactor:1,mobile:false});await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'+(mode==='search'?'?search=1':'')});await browser.waitFor('Boolean(document.querySelector(".ds-toolbar-filters>summary"))');
+      if((await browser.evaluate("document.querySelector('.app').classList.contains('sidebar-collapsed')"))!==collapsed)await clickWorkbenchControl(browser,'.topbar button[aria-label="收起侧栏"]');
+      await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
+      if(await browser.evaluate("Boolean(document.querySelector('.workbench-search .workbench-disclosure-trigger[aria-expanded=false]'))"))await clickWorkbenchControl(browser,'.workbench-search .workbench-disclosure-trigger');
+      for(const width of [1920,1440,1280,1000,900,600,390]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        const sample=await browser.evaluate(`(()=>{const n=document.querySelector('.ds-toolbar-filter-content'),r=n.getBoundingClientRect(),t=document.querySelector('.ds-toolbar').getBoundingClientRect();return {width:${width},mode:${JSON.stringify(mode)},collapsed:${collapsed},left:r.left,right:r.right,toolbarLeft:t.left,toolbarRight:t.right,panelOverflow:n.scrollWidth>n.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>${width}+1};})()`);
+        assert.ok(sample.left>=0&&sample.right<=width+1);assert.ok(Math.abs(sample.left-sample.toolbarLeft)<=1&&sample.right<=sample.toolbarRight+1);assert.equal(sample.panelOverflow,false);assert.equal(sample.pageOverflow,false);samples.push(sample);
+        const reachable=await browser.evaluate(`(()=>{const panel=document.querySelector('.ds-toolbar-filter-content'),items=[...panel.querySelectorAll('input:not([type=hidden]):not(:disabled),button:not(:disabled),[role=spinbutton]')].filter(n=>{const r=n.getBoundingClientRect();return n.checkVisibility()&&r.width>8&&r.height>8;});return items.length>0;})()`);assert.equal(reachable,true);
+        await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),a=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility());a.at(-1)?.scrollIntoView({block:'nearest',inline:'nearest'});})()");
+        assert.equal(await browser.evaluate(`(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect();return Boolean(r&&r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)));})()`),true,'last filter/date action is visible and unobstructed at '+width);
+        if(!collapsed&&[1920,1440,1280,900,600,390].includes(width)){const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'filters-'+mode+'-'+width+'.png');await writeFile(file,bytes);screenshots.push({file,width,height:900,sha256:createHash('sha256').update(bytes).digest('hex')});}
+      }
+    }
+    assert.deepEqual(writes,[],'opening and navigating filter controls never posts business commands');console.log('WORKBENCH_FILTER_VIEWPORTS '+JSON.stringify({samples,screenshots}));
+  }catch(failure){error=failure;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+},{workbenchSearchEnabled:true,workbenchFollowEnabled:true,sourceGroupDirectoryEnabled:true}));
 
 test('source group name editing keeps an exact version basis, reconciles the original unknown command, and fences revoked ADMIN authority',async()=>{
   await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,pool})=>{

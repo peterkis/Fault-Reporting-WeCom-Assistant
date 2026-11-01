@@ -1,0 +1,412 @@
+{
+  "environment": "local loopback HTTP/PG18 synthetic browser; not live acceptance",
+  "source_head": "1ac0022fa2434898283d1ab0e09b3886cc29b2db",
+  "candidate_input": "56826063a5be82c5868152e2e7a775b659c65d084bf1b83e8a9dd093c1eea048",
+  "before": {
+    "viewport": 390,
+    "left": 108,
+    "right": 466,
+    "width": 358,
+    "toolbarLeft": 16,
+    "toolbarRight": 359,
+    "pageOverflow": true,
+    "file": "toolbar-filters-before-390.png",
+    "sha256": "3e9a09eb0b61d3806aa6e961b6ce63e3256f184fa981f47b164ebc939ed07eff"
+  },
+  "samples": [
+    {
+      "width": 1920,
+      "mode": "board",
+      "collapsed": false,
+      "left": 272,
+      "right": 912,
+      "toolbarLeft": 272,
+      "toolbarRight": 1648,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1440,
+      "mode": "board",
+      "collapsed": false,
+      "left": 272,
+      "right": 912,
+      "toolbarLeft": 272,
+      "toolbarRight": 1408,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1280,
+      "mode": "board",
+      "collapsed": false,
+      "left": 264,
+      "right": 904,
+      "toolbarLeft": 264,
+      "toolbarRight": 1256,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1000,
+      "mode": "board",
+      "collapsed": false,
+      "left": 264,
+      "right": 904,
+      "toolbarLeft": 264,
+      "toolbarRight": 976,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 900,
+      "mode": "board",
+      "collapsed": false,
+      "left": 16,
+      "right": 656,
+      "toolbarLeft": 16,
+      "toolbarRight": 884,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 600,
+      "mode": "board",
+      "collapsed": false,
+      "left": 16,
+      "right": 584,
+      "toolbarLeft": 16,
+      "toolbarRight": 584,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "mode": "board",
+      "collapsed": false,
+      "left": 16,
+      "right": 374,
+      "toolbarLeft": 16,
+      "toolbarRight": 374,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1920,
+      "mode": "search",
+      "collapsed": false,
+      "left": 272,
+      "right": 912,
+      "toolbarLeft": 272,
+      "toolbarRight": 1648,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1440,
+      "mode": "search",
+      "collapsed": false,
+      "left": 272,
+      "right": 912,
+      "toolbarLeft": 272,
+      "toolbarRight": 1408,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1280,
+      "mode": "search",
+      "collapsed": false,
+      "left": 264,
+      "right": 904,
+      "toolbarLeft": 264,
+      "toolbarRight": 1256,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1000,
+      "mode": "search",
+      "collapsed": false,
+      "left": 264,
+      "right": 904,
+      "toolbarLeft": 264,
+      "toolbarRight": 976,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 900,
+      "mode": "search",
+      "collapsed": false,
+      "left": 16,
+      "right": 656,
+      "toolbarLeft": 16,
+      "toolbarRight": 884,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 600,
+      "mode": "search",
+      "collapsed": false,
+      "left": 16,
+      "right": 584,
+      "toolbarLeft": 16,
+      "toolbarRight": 584,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "mode": "search",
+      "collapsed": false,
+      "left": 16,
+      "right": 374,
+      "toolbarLeft": 16,
+      "toolbarRight": 374,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1920,
+      "mode": "board",
+      "collapsed": true,
+      "left": 88,
+      "right": 728,
+      "toolbarLeft": 88,
+      "toolbarRight": 1464,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1440,
+      "mode": "board",
+      "collapsed": true,
+      "left": 88,
+      "right": 728,
+      "toolbarLeft": 88,
+      "toolbarRight": 1408,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1280,
+      "mode": "board",
+      "collapsed": true,
+      "left": 80,
+      "right": 720,
+      "toolbarLeft": 80,
+      "toolbarRight": 1256,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1000,
+      "mode": "board",
+      "collapsed": true,
+      "left": 80,
+      "right": 720,
+      "toolbarLeft": 80,
+      "toolbarRight": 976,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 900,
+      "mode": "board",
+      "collapsed": true,
+      "left": 16,
+      "right": 656,
+      "toolbarLeft": 16,
+      "toolbarRight": 884,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 600,
+      "mode": "board",
+      "collapsed": true,
+      "left": 16,
+      "right": 584,
+      "toolbarLeft": 16,
+      "toolbarRight": 584,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "mode": "board",
+      "collapsed": true,
+      "left": 16,
+      "right": 374,
+      "toolbarLeft": 16,
+      "toolbarRight": 374,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1920,
+      "mode": "search",
+      "collapsed": true,
+      "left": 88,
+      "right": 728,
+      "toolbarLeft": 88,
+      "toolbarRight": 1464,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1440,
+      "mode": "search",
+      "collapsed": true,
+      "left": 88,
+      "right": 728,
+      "toolbarLeft": 88,
+      "toolbarRight": 1408,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1280,
+      "mode": "search",
+      "collapsed": true,
+      "left": 80,
+      "right": 720,
+      "toolbarLeft": 80,
+      "toolbarRight": 1256,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 1000,
+      "mode": "search",
+      "collapsed": true,
+      "left": 80,
+      "right": 720,
+      "toolbarLeft": 80,
+      "toolbarRight": 976,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 900,
+      "mode": "search",
+      "collapsed": true,
+      "left": 16,
+      "right": 656,
+      "toolbarLeft": 16,
+      "toolbarRight": 884,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 600,
+      "mode": "search",
+      "collapsed": true,
+      "left": 16,
+      "right": 584,
+      "toolbarLeft": 16,
+      "toolbarRight": 584,
+      "panelOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "mode": "search",
+      "collapsed": true,
+      "left": 16,
+      "right": 374,
+      "toolbarLeft": 16,
+      "toolbarRight": 374,
+      "panelOverflow": false,
+      "pageOverflow": false
+    }
+  ],
+  "images": [
+    {
+      "file": "toolbar-filters-board-1920.png",
+      "width": 1920,
+      "height": 900,
+      "sha256": "b8634ef829b58827b8936a22309c02520f447a56255e3d49844352ad71cea1fb",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-1920.png"
+    },
+    {
+      "file": "toolbar-filters-board-1440.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b16e45bbed3c0c53506a2ebc0746ebdf9b8b480172bd15410dea3dcd13fd5027",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-1440.png"
+    },
+    {
+      "file": "toolbar-filters-board-1280.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "85c027f3eb863987ced5f5782819af42d7666803bd63f62d5669d8269d7c85f6",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-1280.png"
+    },
+    {
+      "file": "toolbar-filters-board-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "4da4ed6cbd3f1a7e787cf7b74a901bd2fa4f4e39f9d905666a67dbd921d2bae7",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-900.png"
+    },
+    {
+      "file": "toolbar-filters-board-600.png",
+      "width": 600,
+      "height": 900,
+      "sha256": "caaee5319940111a52ae9d701bfd0dac7795baf3ef4fc1cd4e393ebe278ffbc3",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-600.png"
+    },
+    {
+      "file": "toolbar-filters-board-390.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "bd81bd23e88f19832791c959ad65ba41466fe3da00b61beff3a7617a6f065ac2",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-board-390.png"
+    },
+    {
+      "file": "toolbar-filters-search-1920.png",
+      "width": 1920,
+      "height": 900,
+      "sha256": "09a9811fe740414ee516d120ad572cf000f130bba7e247630435e195512e4521",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-1920.png"
+    },
+    {
+      "file": "toolbar-filters-search-1440.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "58482e58f13f56f1e894ec6ba2ee008decd9452e82be80207e2618c3fbf9af43",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-1440.png"
+    },
+    {
+      "file": "toolbar-filters-search-1280.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "5c9af1e81d424347df03b535894046f974ed7d088ac808c150cf30d5fabe50b7",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-1280.png"
+    },
+    {
+      "file": "toolbar-filters-search-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "312a46d5fabcb1d623da978a0b44c510e26cf28dfb0e48c07548a49410848eea",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-900.png"
+    },
+    {
+      "file": "toolbar-filters-search-600.png",
+      "width": 600,
+      "height": 900,
+      "sha256": "bd4dab09921f6a8ea68e173c03b04e0dc57ee51464e77ec353cf0483d50b9c68",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-600.png"
+    },
+    {
+      "file": "toolbar-filters-search-390.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "a1bb2ea66e408e5bc3707f7ed8293f735de7345887f972db3507230a2ea3cb1f",
+      "source_file": "D:\\\\CodexEvidence\\\\pc-admin-design-v2-delivery-20261101\\\\temp\\\\toolbar-filter-14b22b68-dfe5-4f0f-a2f1-b07aa882d8e0\\\\filters-search-390.png"
+    }
+  ]
+}
