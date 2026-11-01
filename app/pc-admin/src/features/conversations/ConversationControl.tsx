@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Input as HInput,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
@@ -28,13 +28,13 @@ export function ConversationControl({entry,principal,onBlockedChange,chat=false,
   const disabled=busy||Boolean(pending);
   return <section className="conversation-controls" aria-label="沟通责任"><h3>沟通责任</h3><p>{entry.assignment.assigned_display_name??'暂未分配沟通人'}{entry.assignment.assigned_to_me?'（我负责沟通）':''} · {entry.session.control_mode==='HUMAN'?'人工沟通':entry.session.control_mode}</p>
     <div className="note-controls">
-      {entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" variant="secondary">{chat?takeoverLabel:'接管沟通'}</HButton>:null}
-      {entry.capabilities.includes('RELEASE')?<HButton isDisabled={disabled} onClick={()=>void act('release')} variant="secondary">释放沟通责任</HButton>:null}
-      {entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} variant="secondary">请求人工接管</HButton>:null}
-      {entry.capabilities.includes('CANCEL_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/cancel')} variant="secondary">取消人工接管请求</HButton>:null}
+      {entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" tone="secondary">{chat?takeoverLabel:'接管沟通'}</HButton>:null}
+      {entry.capabilities.includes('RELEASE')?<HButton isDisabled={disabled} onClick={()=>void act('release')} tone="secondary">释放沟通责任</HButton>:null}
+      {entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} tone="secondary">请求人工接管</HButton>:null}
+      {entry.capabilities.includes('CANCEL_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/cancel')} tone="secondary">取消人工接管请求</HButton>:null}
     </div>{canTransfer?<div className="transfer-controls"><WorkbenchSelect label={<>转派给</>} aria-label="沟通转派对象" isDisabled={disabled||eligible.isError} value={target} onChange={e=>setTarget(e)}><ListBox.Item id="" textValue={"选择当前获权工作人员"}>选择当前获权工作人员<ListBox.ItemIndicator/></ListBox.Item>{eligible.data?.items.filter(p=>p.principal_id!==principal.principal_id).map(p=><ListBox.Item id={p.principal_id} key={p.principal_id} textValue={String(p.display_name)}>{p.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
-      {entry.capabilities.includes('TRANSFER')?<HButton isDisabled={disabled||!target} onClick={()=>void act('transfer')} variant="secondary">转派沟通</HButton>:null}
-      {entry.capabilities.includes('FORCE_TRANSFER')?<><HLabel>强制转派原因码<HInput aria-label="强制转派原因码" maxLength={64} value={reason} onChange={e=>setReason(e.target.value)}/></HLabel><HButton isDisabled={disabled||!target||! /^[A-Z][A-Z0-9_]{0,63}$/u.test(reason)} onClick={()=>void act('transfer',true)} variant="secondary">强制转派沟通</HButton></>:null}{eligible.isError?<p role="alert">{errorMessage(eligible.error)}</p>:null}</div>:null}
-    {pending?<HButton isDisabled={busy} onClick={()=>void act(pending.action,false,pending)} variant="secondary">用保留的原命令核对</HButton>:null}<ToastFeedback revision={noticeRevision} source="conversations" state={busy?'checking':pending?'unknown':undefined} role="status">{notice}</ToastFeedback>
+      {entry.capabilities.includes('TRANSFER')?<HButton isDisabled={disabled||!target} onClick={()=>void act('transfer')} tone="secondary">转派沟通</HButton>:null}
+      {entry.capabilities.includes('FORCE_TRANSFER')?<><HLabel>强制转派原因码<HInput aria-label="强制转派原因码" maxLength={64} value={reason} onChange={e=>setReason(e.target.value)}/></HLabel><HButton isDisabled={disabled||!target||! /^[A-Z][A-Z0-9_]{0,63}$/u.test(reason)} onClick={()=>void act('transfer',true)} tone="secondary">强制转派沟通</HButton></>:null}{eligible.isError?<p role="alert">{errorMessage(eligible.error)}</p>:null}</div>:null}
+    {pending?<HButton isDisabled={busy} onClick={()=>void act(pending.action,false,pending)} tone="secondary">用保留的原命令核对</HButton>:null}<ToastFeedback revision={noticeRevision} source="conversations" state={busy?'checking':pending?'unknown':undefined} role="status">{notice}</ToastFeedback>
   </section>;
 }

@@ -68,7 +68,7 @@ async function assertNoFanout(browser:Browser,mark:number){
 }
 async function refreshWithoutFanout(browser:Browser,node:string){
   await settle(browser);const mark=await browser.evaluate('globalThis.__t37CardHttp.length');assert.ok(typeof mark==='number');
-  await browser.evaluate(`(()=>{const button=[...document.querySelectorAll('.toolbar .tools button')].find(node=>node.textContent.trim()==='刷新');if(!button||button.disabled)throw Error('T37_NATIVE_REFRESH_REQUIRED');button.click();})()`);
+  await browser.evaluate(`(()=>{const button=[...document.querySelectorAll('.ds-page-header .tools button')].find(node=>node.textContent.trim()==='刷新');if(!button||button.disabled)throw Error('T37_NATIVE_REFRESH_REQUIRED');button.click();})()`);
   await browser.waitFor(`globalThis.__t37CardHttp.slice(${mark}).filter(fact=>fact.method==='GET'&&fact.path==='/api/workbench/board'&&fact.status===200).length===3&&Boolean(${node})`);
   await assertNoFanout(browser,mark);
 }

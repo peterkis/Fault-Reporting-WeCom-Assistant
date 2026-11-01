@@ -1,4 +1,4 @@
-import {openWorkbenchUserMenu} from './helpers/heroui-workbench-controls.mjs';
+import {openWorkbenchUserMenu,assertWorkbenchPrimaryActions} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -193,7 +193,7 @@ test('a real object denial clears cached note actions even when the rejection bo
       await browser.evaluate("(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 denied synthetic note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&!document.querySelector('[aria-label=\"内部备注\"]')");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('[aria-label=\"内部备注\"]')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
@@ -257,7 +257,7 @@ test('Ticket note conflict retains input without resending and a later identity 
       await browser.waitFor("globalThis.__t02InFlight===0&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 4'");
       await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
       await browser.evaluate("(async()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 rejected after expiry');input.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(resolve=>requestAnimationFrame(resolve));document.querySelector('[data-action=save-internal-note]').click();})()");
-      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前身份没有查看权限'))&&!document.querySelector('textarea')&&!document.querySelector('.sidebar')");
+      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前账号无法查看工作台'))&&!document.querySelector('textarea')&&!document.querySelector('.sidebar')");
       const statuses=await browser.evaluate('globalThis.__t02PostStatuses');assert.equal(statuses.length,3);assert.deepEqual(statuses.slice(0,2),[409,200]);assert.ok([401,403].includes(statuses[2]));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions')||document.querySelector('#detail-title'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
@@ -277,6 +277,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
         // with the unchanged helper deadline, without retries or a longer timeout.
         await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
         await browser.evaluate("Promise.all((document.querySelector('.detail-dialog')?.getAnimations()??[]).map(animation=>animation.finished)).then(()=>true)");
+        await assertWorkbenchPrimaryActions(browser);
         const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);
         await writeFile(file,bytes);
         screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
@@ -292,21 +293,25 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       };
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelectorAll('.board-column').length"),3);
-      assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'36px',text:'rgb(55, 53, 47)',columns:3});
+      assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'24px',text:'rgb(55, 53, 47)',columns:3});
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>card.querySelector('.ds-ticket-body')?.children.length===4&&card.querySelector('.card-meta .ds-source-label')&&!card.querySelector('.card-tags .ds-source-label'))"),true,'four rows and neutral source metadata');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>[...card.querySelectorAll('.card-tags .ds-tag[data-tone]')].filter(tag=>tag.dataset.tone!=='neutral').length<=2)"),true,'at most two colored action tags');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags')].some(tags=>['待接单','处理中','已关闭'].some(label=>[...tags.querySelectorAll('.ds-tag')].some(tag=>tag.textContent===label)))"),false,'card does not repeat its column stage');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column')].every(column=>getComputedStyle(column).backgroundColor==='rgb(247, 247, 245)'&&column.querySelector('.column-heading .ds-status-dot')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')"),true,'neutral columns with dot status headings');
       await capture('new-board-1920.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await capture('new-board-1280.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
       await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
-      assert.ok(await browser.evaluate("document.body.innerText.includes('已解决待确认')"));
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags .ds-tag')].some(tag=>tag.textContent==='待确认'&&tag.title==='已解决待确认')"),true,'resolved remains a distinct substatus after regrouping');
       const id=tickets[5].ticket.id;
       await browser.evaluate(`(()=>{const link=document.querySelector('[data-item-id="${id}"] .card-open');link.focus();link.click();})()`);
       await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
       await browser.waitFor("document.querySelector('.detail-dialog')?.contains(document.activeElement)===true");
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
@@ -369,14 +374,19 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // The existing test-auth port issues a distinct cookie name per principal.
       await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
-      await browser.waitFor("document.body.innerText.includes('当前授权范围内暂无事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.waitFor("document.body.innerText.includes('当前没有可见的事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('看板')).click()");
+      await browser.waitFor("Boolean(document.querySelector('.board-column.closed [data-action=view-earlier]'))");
+      await browser.evaluate("document.querySelector('.board-column.closed [data-action=view-earlier]').click()");
+      await browser.waitFor("new URLSearchParams(location.search).get('range')==='all'&&document.querySelector('.range-bar')?.textContent.includes('已加载 0 项')");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0,'earlier shortcut reuses the existing all-date filter without widening READ');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+id});
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')");
       await browser.command('Network.deleteCookies',{name:browserCookies[1].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[0]]});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelector('.board').getBoundingClientRect().width<=innerWidth"),true);
-      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.sidebar')).display==='none'&&getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length===1"),true);
+      assert.equal(await browser.evaluate("(()=>{const board=document.querySelector('.board'),style=getComputedStyle(board),columns=style.gridTemplateColumns.split(' ').map(Number.parseFloat);return getComputedStyle(document.querySelector('.sidebar')).display==='none'&&columns.length===3&&columns.every(width=>width>=300)&&style.overflowX==='auto'&&board.scrollWidth>board.clientWidth;})()"),true,'v2 narrow board keeps three readable columns inside a horizontal scroller');
       await capture('new-board-900.png');
       await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
       assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.ticket-card')).transitionDuration==='0s'"),true);
@@ -390,7 +400,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // Count real requests, without changing their HTTP result or adding retries.
       await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__web01DenialReads=0;globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/api/workbench/items/ticket/${id}'))globalThis.__web01DenialReads++;return original(...args);};return true})()`);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&document.querySelectorAll('.ticket-card').length===2");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&document.querySelectorAll('.ticket-card').length===2");
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.ok(await browser.evaluate('globalThis.__web01DenialReads<=2'),'a denied active query must not recreate and request in a loop');
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"),false);

@@ -1,0 +1,31 @@
+.ds-button.button[data-tone] {
+  position: relative; display: inline-flex; flex: none; align-items: center; justify-content: center;
+  height: var(--control-h-md); min-height: var(--control-h-md); max-width: 100%; padding: 0 var(--space-3);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm); box-shadow: none;
+  background: var(--bg-canvas); color: var(--text-primary); font-size: var(--fs-md); font-weight: var(--fw-medium);
+  line-height: var(--lh-md); opacity: 1; transform: none;
+  transition: background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.ds-button-label {display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1-5); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-button-label>svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75;}
+.ds-button.button[data-tone=primary] {background: var(--brand); border-color: var(--brand); color: var(--on-brand);}
+.ds-button.button[data-tone=ghost] {background: transparent; border-color: transparent; color: var(--text-secondary);}
+.ds-button.button[data-tone=danger] {color: var(--tone-danger-fg); border-color: var(--tone-danger-fg);}
+.ds-button.button:hover:not(:disabled):not([aria-disabled=true]) {background: var(--bg-subtle); border-color: var(--border-strong);}
+.ds-button.button[data-tone=primary]:hover:not(:disabled):not([aria-disabled=true]) {background: var(--brand-hover); border-color: var(--brand-hover);}
+.ds-button.button[data-tone=ghost]:hover:not(:disabled):not([aria-disabled=true]) {background: var(--bg-hover); border-color: transparent;}
+.ds-button.button[data-tone=danger]:hover:not(:disabled):not([aria-disabled=true]) {background: var(--tone-danger-bg); border-color: var(--tone-danger-fg);}
+.ds-button.button:is(:active,[data-pressed=true]):not(:disabled):not([aria-disabled=true]) {background: var(--bg-active);}
+.ds-button.button[data-tone=primary]:is(:active,[data-pressed=true]):not(:disabled):not([aria-disabled=true]) {background: var(--brand-hover);}
+.ds-button.button:is(:focus-visible,[data-focus-visible=true]) {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-button.button:is(:disabled,[aria-disabled=true]) {background: var(--bg-subtle); border-color: var(--border-hair); color: var(--text-tertiary); opacity: 1; cursor: not-allowed;}
+.ds-button.button[data-size=sm] {height: var(--control-h-sm); min-height: var(--control-h-sm);}
+.ds-button.button[data-size=lg] {height: var(--control-h-lg); min-height: var(--control-h-lg);}
+.ds-button.button[data-icon-only=true] {width: var(--control-h-md); min-width: var(--control-h-md); padding: 0;}
+.ds-button.button[data-icon-only=true][data-size=sm] {width: var(--control-h-sm); min-width: var(--control-h-sm);}
+.ds-button.button[data-icon-only=true][data-size=lg] {width: var(--control-h-lg); min-width: var(--control-h-lg);}
+/* Keep the accessible name and layout while the spinner replaces the visible text. */
+.ds-button[data-pending=true] .ds-button-label {opacity: 0;}
+.ds-button-spinner {position: absolute; width: var(--icon-sm); height: var(--icon-sm); border: 2px solid currentColor; border-right-color: transparent; border-radius: var(--radius-full); animation: ds-button-spin var(--dur-slow) linear infinite;}
+@keyframes ds-button-spin {to {transform: rotate(360deg);}}
+@media(prefers-reduced-motion:reduce) {.ds-button.button {transition: none;} .ds-button-spinner {animation: none;}}

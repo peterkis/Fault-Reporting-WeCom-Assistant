@@ -1,3 +1,4 @@
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -57,7 +58,9 @@ test('T35 an open cancellation dialog pauses otherwise visible source reading un
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__visible=false;globalThis.__readPosts=[];Object.defineProperty(document,'visibilityState',{get:()=>globalThis.__visible?'visible':'hidden',configurable:true});const original=fetch;globalThis.fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/read-position'))globalThis.__readPosts.push(JSON.parse(options.body));return original(path,options);};})()"});
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+selected.ticket.id+'?detail=page'});
     await browser.waitFor(`document.querySelector('.activity-list')?.textContent.includes(${JSON.stringify(text)})&&document.querySelector('[data-action=cancel]')?.disabled===false`);
-    await browser.evaluate("document.querySelector('[data-action=cancel]').focus();document.querySelector('[data-action=cancel]').click()");await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
+    await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
+    await clickWorkbenchControl(browser,'.detail-cancel-dialog textarea');
+    assert.equal(await browser.evaluate("document.querySelector('.ds-drawer-more').open"),true,'child dialog pointer interaction preserves its visible menu trigger');
     await browser.evaluate(`(()=>{globalThis.__material=[...document.querySelectorAll('.activity-list .record-text')].find(p=>p.textContent===${JSON.stringify(text)});globalThis.__material.closest('.record-content').click();globalThis.__material.scrollIntoView({block:'center'});globalThis.__visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('scroll'));})()`);
     await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     assert.deepEqual(await browser.evaluate('globalThis.__readPosts'),[]);assert.equal(await position(),'0','visible source behind the modal remains unread');

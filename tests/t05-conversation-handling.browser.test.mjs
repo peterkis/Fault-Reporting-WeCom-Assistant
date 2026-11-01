@@ -23,14 +23,14 @@ async function browserScenario(run,options={}){
   },{ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,ticketConversationSelfHandlingEnabled:true,...options});
 }
 
-test('the production detail names the sole conversation action without an extra selection and retains the 780px shell',async()=>{
+test('the production detail names the sole conversation action without an extra selection and retains the 720px shell',async()=>{
   await browserScenario(async({browser,capture})=>{
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".ticket-conversation-handling"))'),true);
     await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="接单"');
     assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);
     await browser.evaluate('document.querySelector("[aria-label=接单选项]").click()');await browser.waitFor('Boolean(document.querySelector(".detail-accept-dialog"))');
     await browser.waitFor('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length===1');
-    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),780);
+    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),720);
     await capture('new-detail-1920.png');
   });
 });
@@ -65,7 +65,7 @@ test('the real production selection submits one POST and refreshes both authorit
     const current=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}').then(r=>r.json())`);assert.equal(current.assignee_id,principals[0].id);assert.equal(current.handling_cycle.cycle_no,1);
     const assignment=await browser.evaluate(`fetch('/api/tickets/${tickets[0].ticket.id}/responsibility').then(r=>r.json())`);assert.equal(assignment.conversations[0].conversation_principal_id,principals[0].id);
     await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
-    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),780);
+    assert.equal(await browser.evaluate('Math.round(document.querySelector(".detail-dialog").getBoundingClientRect().width)'),720);
     assert.equal(await browser.evaluate('document.querySelector(".detail-dialog").scrollWidth<=document.querySelector(".detail-dialog").clientWidth'),true);await capture('new-detail-900.png');
   });
 });

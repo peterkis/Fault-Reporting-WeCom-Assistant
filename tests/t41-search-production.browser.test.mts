@@ -34,7 +34,7 @@ test('T41 production search keeps URL, board/list identity, independent input an
    assert.equal(await browser.evaluate('new URL(location.href).searchParams.get("q")'),query);await capture(browser,directory,'new-list-1920.png');
    await input(browser,'T41没有匹配的全新合成检索词');
    await browser.evaluate('document.querySelector("form[aria-label=\\"搜索全部获权事项\\"]").requestSubmit()');
-   await browser.waitFor('document.querySelector("[data-search-state=empty]")?.textContent.includes("没有匹配")');
+   await browser.waitFor('document.querySelector("[data-search-state=empty]")?.textContent.includes("没有符合这些条件的可见事项")');
    assert.equal(await browser.evaluate('new URL(location.href).searchParams.get("q")'),'T41没有匹配的全新合成检索词');
    await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
    await browser.evaluate('Array.from(document.querySelectorAll(".tools button")).find(button=>button.textContent.includes("刷新")).click()');

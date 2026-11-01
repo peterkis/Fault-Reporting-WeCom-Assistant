@@ -10,6 +10,7 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 import type {T08Http} from './helpers/t08-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type RequestFact={order:number;method:string;path:string;status:number|null;body:unknown;idempotency_key:string|null;if_match:string|null;csrf_present:boolean;origin_same:boolean};
@@ -21,7 +22,7 @@ function failureDetails(value:unknown):Record<string,unknown>{
 }
 async function publicGet(http:T08Http,path:string){const result=await http.get(path);assert.equal(result.status,200,path);return result.value;}
 function header(request:IncomingMessage,name:string){const value=request.headers[name];return typeof value==='string'?value:null;}
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
+const property=(label:string)=>label==='状态'?`document.querySelector('.ds-drawer-status .ds-status-badge')?.textContent?.trim()`:`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
 const section="document.querySelector('[data-action=unassign]')?.closest('section')";
 const reasonInput=`Array.from((${section})?.querySelectorAll('textarea')??[]).find(input=>Array.from(input.labels??[]).some(label=>label.textContent?.includes('原因')))`;
 const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
@@ -89,6 +90,7 @@ test('production ADMIN withdraws one legacy accepted unstarted Ticket with an in
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='已领取'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);
       assert.equal(await browser.evaluate('innerWidth'),600);
+      await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
       await browser.waitFor(`Boolean(document.querySelector('[data-action=unassign]'))&&Boolean(${reasonInput})`);
       assert.equal(await browser.evaluate(`(${section})?.querySelector('input[type=radio][value=RETAIN_CURRENT]')?.checked`),true,'retaining communication is the actual default, not a test-selected replacement');
       assert.equal(await browser.evaluate(`(${section})?.querySelector('input[type=radio][value=TRANSFER_SELECTED]')?.checked`),false);

@@ -8,7 +8,7 @@ import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
-test('actual activity actor colors distinguish colliding labels, survive same-page updates and clear on READ loss',{timeout:120_000},()=>withT11Fixture(async context=>{
+test('v2 activity names stay neutral, avatars retain stable identity colors and clear on READ loss',{timeout:120_000},()=>withT11Fixture(async context=>{
   const ticket=context.tickets[0],first=context.principals[0],second=context.principals[1],cookie=context.browserCookies[0];
   assert.ok(ticket&&first&&second&&cookie&&cookie.url);
   await context.pool.query("UPDATE pilot_ticket.pilot_principal SET display_name=CASE WHEN id=$1::uuid THEN '张三' ELSE '王五' END WHERE id=ANY($2::uuid[])",[first.id,[first.id,second.id]]);
@@ -23,9 +23,9 @@ test('actual activity actor colors distinguish colliding labels, survive same-pa
   try{
     browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
     await browser.waitFor("document.querySelector('.activity-list')?.textContent.includes('张三')&&document.querySelector('.activity-list')?.textContent.includes('报修人')&&document.querySelector('#internal-note')?.disabled===false");
-    const snapshot="JSON.stringify(Object.fromEntries(['张三','报修人'].map(name=>{const label=[...document.querySelectorAll('.record-name')].find(node=>node.textContent===name);return [name,[getComputedStyle(label).backgroundColor,getComputedStyle(label).color]]})))";
+    const snapshot="JSON.stringify(Object.fromEntries(['张三','报修人'].map(name=>{const label=[...document.querySelectorAll('.record-name')].find(node=>node.textContent===name);return [name,[getComputedStyle(label.closest('.detail-record').querySelector('.record-avatar')).backgroundColor,getComputedStyle(label.closest('.detail-record').querySelector('.record-avatar')).color]]})))";
     const before=await browser.evaluate(snapshot),origin=await browser.evaluate('performance.timeOrigin');
-    assert.equal(await browser.evaluate("new Set([...document.querySelectorAll('.record-name')].map(node=>getComputedStyle(node).backgroundColor)).size>=2"),true);
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.record-name')].every(node=>{const s=getComputedStyle(node);return s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.fontSize==='13px'&&s.fontWeight==='500';})"),true);
     const peer=await t11Http(context,2),current=await peer.detail(ticket.ticket.id);
     const posted=await peer.post(ticket.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'ACTOR_COLOR_SECOND：另一位合成人员补充检查记录。',external_visible:false});
     assert.equal(posted.status,200);await posted.arrayBuffer();
@@ -38,7 +38,7 @@ test('actual activity actor colors distinguish colliding labels, survive same-pa
     await browser.waitFor("document.querySelector('.activity-list')?.textContent.includes('ACTOR_COLOR_BROWSER_REFRESH')&&document.querySelector('.activity-list')?.textContent.includes('王五')");
     assert.equal(await browser.evaluate('performance.timeOrigin'),origin);
     assert.equal(await browser.evaluate(snapshot),before,'existing participants retain colors after a new actor and current detail refetch');
-    assert.equal(await browser.evaluate("(()=>{const colors=new Map();for(const node of document.querySelectorAll('.record-name')){const color=getComputedStyle(node).backgroundColor;if(color==='rgba(0, 0, 0, 0)'||(colors.has(node.textContent)&&colors.get(node.textContent)!==color))return false;colors.set(node.textContent,color);}return colors.size>=3&&new Set(colors.values()).size===colors.size;})()"),true);
+    assert.equal(await browser.evaluate("(()=>{const colors=new Map();for(const row of document.querySelectorAll('.detail-record')){const name=row.querySelector('.record-name').textContent,avatar=row.querySelector('.record-avatar'),color=getComputedStyle(avatar).backgroundColor;if(color==='rgba(0, 0, 0, 0)'||(colors.has(name)&&colors.get(name)!==color))return false;colors.set(name,color);}return colors.size>=3&&new Set(colors.values()).size<=4&&[...document.querySelectorAll('.record-avatar')].every(avatar=>/^av[1-4]$/.test([...avatar.classList].find(name=>/^av[1-4]$/.test(name))??'')&&avatar.getBoundingClientRect().width===20&&avatar.getBoundingClientRect().height===20);})()"),true,'three real actor labels use four stable avatar tones; hash collisions are valid');
     await browser.evaluate("document.querySelector('.detail-main').scrollIntoView({block:'start'})");
     const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'distinct-actors.png');await writeFile(file,bytes);
     await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[first.id]);

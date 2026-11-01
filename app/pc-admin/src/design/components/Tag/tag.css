@@ -1,0 +1,14 @@
+.ds-tag.ds-tag {display: inline-flex; align-items: center; gap: var(--space-1); flex: none; min-width: 0; max-width: 100%; height: var(--space-5); padding: 0 var(--space-1-5); border: 0; border-radius: var(--radius-xs); background: var(--tone-neutral-bg); color: var(--tone-neutral-fg); font-size: var(--fs-xs); font-weight: var(--fw-medium); line-height: var(--lh-xs); white-space: nowrap; vertical-align: middle;}
+.ds-tag[data-tone=warning] {background: var(--tone-warning-bg); color: var(--tone-warning-fg);}
+.ds-tag[data-tone=info] {background: var(--tone-info-bg); color: var(--tone-info-fg);}
+.ds-tag[data-tone=success] {background: var(--tone-success-bg); color: var(--tone-success-fg);}
+.ds-tag[data-tone=attention] {background: var(--tone-attention-bg); color: var(--tone-attention-fg);}
+.ds-tag[data-tone=danger] {background: var(--tone-danger-bg); color: var(--tone-danger-fg);}
+.ds-tag[data-tone=review] {background: var(--tone-review-bg); color: var(--tone-review-fg);}
+.ds-tag[data-tone=brand] {background: var(--tone-brand-bg); color: var(--tone-brand-fg);}
+.ds-tag-content {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-tag-content>svg {display: inline-block; width: var(--icon-sm); height: var(--icon-sm); margin-right: var(--space-1); vertical-align: text-bottom;}
+.ds-tag[aria-disabled=true] {color: var(--text-tertiary); background: var(--bg-muted);}
+.ds-tag:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+
+.ds-tag-content>svg {stroke-width: 1.75;}

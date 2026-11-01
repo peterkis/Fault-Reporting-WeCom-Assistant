@@ -1,0 +1,16 @@
+.ds-property-list.detail-properties {container-type: inline-size; container-name: detail-info; min-width: 0;}
+.detail-body .ds-property-list.detail-properties>dl {display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 var(--space-6); margin: 0;}
+.ds-property-list.detail-properties .property-field {display: grid; grid-template-columns: calc(var(--space-16) + var(--space-12)) minmax(0,1fr); align-items: start; gap: 0; min-width: 0; min-height: var(--control-h-md);}
+.ds-property-list .property-field dt {display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; color: var(--text-secondary); font-size: var(--fs-sm); font-weight: var(--fw-regular); line-height: var(--lh-lg);}
+.ds-property-list .property-field dt svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75; flex: none;}
+.ds-property-list .property-field dd {margin: 0; padding: var(--space-1) 0; min-width: 0; border-radius: var(--radius-sm); color: var(--text-primary); font-size: var(--fs-md); line-height: var(--lh-lg); overflow-wrap: anywhere;}
+.ds-property-list .property-field dd:hover {background: var(--bg-subtle);}
+.ds-property-list .property-field dd:active {background: var(--bg-active);}
+.ds-property-list .owner {min-width: 0; max-width: 100%;}
+.ds-property-list .owner-name {overflow-wrap: anywhere; min-width: 0;}
+.ds-property-list .ds-property-missing,.ds-property-list [data-empty=true] {color: var(--text-tertiary);}
+.ds-property-list .detail-source-tag {padding: 0; background: transparent; border: 0; color: var(--text-secondary); border-radius: 0; font-size: var(--fs-md);}
+.ds-property-list time {font-size: var(--fs-md); white-space: normal; font-variant-numeric: tabular-nums;}
+.ds-property-list:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-property-list [aria-disabled=true] {color: var(--text-tertiary);}
+@container detail-info (max-width:639px) {.detail-body .ds-property-list.detail-properties>dl {grid-template-columns: minmax(0,1fr);}}

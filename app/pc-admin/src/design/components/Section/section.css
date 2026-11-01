@@ -1,0 +1,14 @@
+.ds-section.ds-section {margin: var(--space-6) 0 0; padding: 0; border: 0; background: none; min-width: 0;}
+.ds-section>.ds-section-heading {display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-width: 0; margin: 0 0 var(--space-2); padding: 0; border: 0; box-shadow: none;}
+.ds-section>.ds-section-heading>h3 {margin: 0; padding: 0; color: var(--text-primary); font-size: var(--fs-md); font-weight: var(--fw-semibold); line-height: var(--lh-md); box-shadow: none; overflow-wrap: anywhere;}
+.ds-section.workbench-disclosure>.disclosure__heading {margin: 0 0 var(--space-2);}
+.ds-section.workbench-disclosure .ds-section-trigger.button {display: flex; justify-content: flex-start; width: 100%; height: auto; min-height: var(--lh-md); padding: 0; border: 0; color: var(--text-primary); font-size: var(--fs-md); font-weight: var(--fw-semibold); line-height: var(--lh-md); text-align: left; background: transparent;}
+.ds-section .ds-section-trigger .ds-button-label {justify-content: flex-start; white-space: normal; text-align: left; overflow-wrap: anywhere;}
+.ds-section .ds-section-trigger [data-slot=disclosure-indicator] {width: var(--icon-sm); height: var(--icon-sm); color: var(--text-secondary);}
+.ds-section .ds-section-trigger:hover:not(:disabled) {background: var(--bg-subtle);}
+.ds-section .ds-section-trigger:active:not(:disabled) {background: var(--bg-active);}
+.ds-section .ds-section-trigger:disabled {color: var(--text-tertiary);}
+.ds-section.workbench-disclosure .disclosure__body-inner {padding: 0;}
+.ds-section:empty {display: none;}
+.ds-section [data-section-empty] {font-size: var(--fs-sm); color: var(--text-secondary); margin: 0; overflow-wrap: anywhere;}
+.ds-section .detail-report-description {margin: 0; color: var(--text-primary); font-size: var(--fs-md); line-height: var(--lh-md); white-space: pre-wrap; overflow-wrap: anywhere;}

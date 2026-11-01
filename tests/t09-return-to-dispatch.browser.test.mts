@@ -10,6 +10,7 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT09Fixture,object,rows,text,version} from './helpers/t09-fixture.mjs';
 import type {T09Http} from './helpers/t09-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type RequestFact={order:number;method:string;path:string;status:number|null;body:unknown;idempotency_key:string|null;if_match:string|null;csrf_present:boolean;origin_same:boolean};
@@ -21,7 +22,7 @@ const root="document.querySelector('.ticket-return-to-dispatch')";
 const input=(label:string)=>`Array.from((${root})?.querySelectorAll('textarea')??[]).find(row=>Array.from(row.labels??[]).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;
 const reasonInput=input('停止原因'),unfinishedInput=input('未完成工作');
 const action="document.querySelector('[data-action=return-to-dispatch]')",check="document.querySelector('[data-action=check-return-to-dispatch-command]')";
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
+const property=(label:string)=>label==='状态'?`document.querySelector('.ds-drawer-status .ds-status-badge')?.textContent?.trim()`:`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
 const queued=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 const fill=(selector:string,value:string)=>`(()=>{const row=${selector};if(!(row instanceof HTMLTextAreaElement))throw Error('T09_REQUIRED_TEXTAREA_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(row,${JSON.stringify(value)});row.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 function copies(principal:string,ticket:string){
@@ -85,7 +86,7 @@ test('production PC current handler restores two required inputs and returns a r
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='等待厂商'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);assert.equal(await browser.evaluate('innerWidth'),1280);assert.equal(await browser.evaluate('innerHeight'),900);completed.push(activeStage);
       // First T09 boundary: missing actual production form is a future RED, not a preflight capability assumption.
-      activeStage='FORM_PRESENT';await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false`);await captureReadiness('BEFORE_INPUT');completed.push(activeStage);
+      activeStage='FORM_PRESENT';await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false`);await captureReadiness('BEFORE_INPUT');completed.push(activeStage);
       activeStage='DUAL_REQUIRED';assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=RETAIN_CURRENT]')?.checked`),true);assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=TRANSFER_SELECTED]')?.checked`),false);
       assert.equal(await browser.evaluate(`(${reasonInput}).maxLength`),500);assert.equal(await browser.evaluate(`(${unfinishedInput}).maxLength`),1400);assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);
       await browser.evaluate(fill(reasonInput,reason));assert.equal(await browser.evaluate(`(${action}).disabled`),true);await browser.evaluate(fill(unfinishedInput,'   '));assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);

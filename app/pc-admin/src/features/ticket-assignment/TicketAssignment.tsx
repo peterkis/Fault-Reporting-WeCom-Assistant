@@ -1,5 +1,5 @@
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
@@ -38,8 +38,8 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   const toggle=(sessionId:string,version:string,permitted:boolean)=>{if(blocked)return;setSelected(previous=>previous.some(row=>row.session_id===sessionId)?previous.filter(row=>row.session_id!==sessionId):permitted&&previous.length<8?[...previous,{session_id:sessionId,expected_row_version:Number(version)}]:previous);};
   if(!allowed.includes(action)&&!pending&&!draft.operationId&&!team&&!person&&!choice&&!selected.length&&state==='idle'&&context.isSuccess&&!context.isError)return null;
   return <section className="ticket-notes ticket-assignment detail-action-controller" aria-label="工单派单与转派">
-    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} variant="secondary">{pending||draft.operationId?'核对派单':'派单'}</HButton>:null}
-    {context.isError&&!open?<HButton type="button" onClick={()=>{void context.refetch();}} variant="secondary">重试读取派单权限</HButton>:null}
+    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone="secondary">{pending||draft.operationId?'核对派单':'派单'}</HButton>:null}
+    {context.isError&&!open?<HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重试读取派单权限</HButton>:null}
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'} title="派单" closeLabel="关闭派单窗口" className="detail-action-dialog detail-assignment-dialog">
     <p className="detail-operation-context">{itemLabel}</p>
     {context.isError||targets.isError?<p role="alert">{errorMessage(context.error??targets.error)}</p>:null}
@@ -50,14 +50,14 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
       {related.isError?<p role="alert">{errorMessage(related.error)}</p>:null}
       <p>已选择 {selected.length} 个会话（最多 8 个）。</p>
       <ul className="conversation-choices">{related.data?.items.map((row,index)=><li key={row.session_id}><HCheckbox data-session-choice={row.session_id} isSelected={selected.some(item=>item.session_id===row.session_id)} isDisabled={blocked||(!selected.some(item=>item.session_id===row.session_id)&&(!row.take_allowed||selected.length>=8))} onChange={()=>toggle(row.session_id,row.session_row_version,row.take_allowed)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>关联会话 {index+1}· {row.conversation_principal_name??'尚未分配沟通人'}<small>{!row.take_allowed?'当前不能转交。':''}{selected.some(item=>item.session_id===row.session_id&&String(item.expected_row_version)!==row.session_row_version)?'内容已变化，请重新选择。':''}</small></HCheckbox.Content></HCheckbox></li>)}</ul>
-      {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} variant="secondary">回到首批会话</HButton>:null}
-      {related.data?.next_cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(related.data.next_cursor)} variant="secondary">下一批关联会话</HButton>:null}
+      {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}
+      {related.data?.next_cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(related.data.next_cursor)} tone="secondary">下一批关联会话</HButton>:null}
     </>:null}
     <p>责任交接不会接单或开始处理；沟通责任按明确选择处理。</p>
     {draft.enabled?<DraftStatus notify={false} data-assignment-draft-status role="status">{draft.message}</DraftStatus>:null}
-    <HButton type="button" data-action={action} isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||targets.isPending||targets.isError||!allowed.includes(action)||!team||!person||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))} onClick={submit} variant="secondary">{action==='assign'?'确认派单':'确认转派'}</HButton>
-    {state==='unknown'&&(pending||draft.operationId)?<HButton type="button" data-action="check-assignment-command" onClick={check} variant="secondary">{draft.enabled?'核对上次操作':'核对原操作结果'}</HButton>:null}
-    {draft.enabled&&Boolean(team||person||choice||selected.length)&&!blocked?<HButton type="button" data-action="discard-assignment-draft" onClick={()=>{void draft.discard();}} variant="secondary">丢弃选择内容</HButton>:null}
+    <HButton type="button" data-action={action} isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||targets.isPending||targets.isError||!allowed.includes(action)||!team||!person||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))} onClick={submit} tone="primary">{action==='assign'?'确认派单':'确认转派'}</HButton>
+    {state==='unknown'&&(pending||draft.operationId)?<HButton type="button" data-action="check-assignment-command" onClick={check} tone="secondary">{draft.enabled?'核对上次操作':'核对原操作结果'}</HButton>:null}
+    {draft.enabled&&Boolean(team||person||choice||selected.length)&&!blocked?<HButton type="button" data-action="discard-assignment-draft" onClick={()=>{void draft.discard();}} tone="secondary">丢弃选择内容</HButton>:null}
 
     </DetailDialog><DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>{message?<ToastFeedback revision={messageRevision} source="ticket-assignment" state={state} role={['unknown','denied','conflict'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
 

@@ -96,7 +96,7 @@ test('T34 current object READ loss clears the personal projection while its sess
    await browser.evaluate('for(const release of window.__t34Release.splice(0))release()');await browser.waitFor('window.__t34Returned===1');
    await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=toggle-item-follow], [data-action=follow-ack]"))'),false);
-   assert.equal(await browser.evaluate('document.body.textContent.includes("当前身份没有查看权限。")'),false,'an object denial cannot become a global session denial');
+   assert.equal(await browser.evaluate('document.body.textContent.includes("当前账号无法查看工作台。")'),false,'an object denial cannot become a global session denial');
    assert.equal(await browser.evaluate('window.__t34Posts'),1);
    assert.equal((await f.pool.query('SELECT following FROM pilot_ticket.workbench_item_follow')).rows[0]?.following,true,'loss of READ hides the personal fact without silently cancelling it');
    await screenshot(browser,directory,'new-detail-page-1920.png');

@@ -1,0 +1,38 @@
+.ds-data-table.ds-data-table {width:100%;min-width:0;border:0;padding:0;border-radius:0;box-shadow:none;background:transparent;}
+.ds-data-table.ds-data-table .table__scroll-container {max-width:100%;border:0;border-radius:0;}
+.ds-data-table.ds-data-table table {border-collapse:collapse;width:100%;font-size:var(--fs-sm);table-layout:fixed;}
+.ds-data-table.ds-data-table .work-table {min-width:0;}
+.ds-data-table.ds-data-table .work-table th {width:auto;}
+.ds-data-table.ds-data-table .work-table :is(th,td):first-child {width:160px;font-family:var(--font-sans);font-size:var(--fs-sm);color:var(--text-primary);border-radius:0;}
+.ds-data-table.ds-data-table .work-table th.ds-table-state {width:180px;}
+.ds-data-table.ds-data-table .work-table th.ds-table-count {width:64px;}
+.ds-data-table.ds-data-table .work-table th.ds-table-action {width:160px;}
+.ds-data-table.ds-data-table :is(th,td) {padding:var(--space-2) var(--space-3);text-align:left;border:0;border-bottom:1px solid var(--border-hair);vertical-align:middle;overflow-wrap:anywhere;white-space:normal;}
+.ds-data-table.ds-data-table th {height:32px;padding-block:var(--space-0-5);font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--text-secondary);position:sticky;top:0;z-index:var(--z-sticky);background:var(--bg-canvas);}
+.ds-data-table.ds-data-table td {height:40px;padding-block:var(--space-0-5);color:var(--text-primary);font-size:var(--fs-sm);font-weight:var(--fw-regular);}
+.ds-data-table.ds-data-table tbody tr:hover {background:var(--bg-subtle);}
+.ds-data-table.ds-data-table tbody tr[aria-selected=true] {background:var(--bg-selected);}
+.ds-data-table.ds-data-table :is(tr,td):focus-visible {outline:2px solid var(--border-focus);outline-offset:-2px;}
+.ds-data-table.ds-data-table small {display:block;font-size:var(--fs-xs);color:var(--text-secondary);}
+.ds-data-table.ds-data-table code {font-size:var(--fs-xs);font-family:var(--font-mono);overflow-wrap:anywhere;}
+.ds-data-table.ds-data-table .source-group-rows code {display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ds-data-table.ds-data-table .ds-table-number {text-align:right;font-variant-numeric:tabular-nums;}
+.ds-data-table.ds-data-table .ds-table-action {width:160px;}
+.ds-data-table.ds-data-table .ds-table-reference {width:240px;}
+.ds-data-table.ds-data-table .ds-table-state {width:180px;}
+.ds-data-table.ds-data-table .ds-table-count {width:64px;text-align:right;font-variant-numeric:tabular-nums;}
+.ds-data-table.ds-data-table .ds-button {max-width:100%;white-space:normal;}
+.ds-data-table.ds-data-table .ds-button-label {overflow-wrap:anywhere;}
+.source-group-directory .ds-data-table.ds-data-table .source-group-rows {display:table-row-group;}
+.source-group-directory .ds-data-table.ds-data-table .source-group-rows tr {padding:0;background:transparent;border:0;border-radius:0;}
+.source-group-directory .source-group-selected {max-width:640px;margin-top:var(--space-8);padding:0;border:0;background:transparent;}
+.source-group-selected>h2 {font-size:var(--fs-lg);font-weight:var(--fw-semibold);margin-bottom:var(--space-2);overflow-wrap:anywhere;}
+.source-group-directory .source-group-selected .source-group-form {display:flex;flex-direction:column;gap:var(--space-4);padding:0;border:0;background:transparent;}
+.source-group-selected .source-group-form>label {display:flex;flex-direction:column;gap:var(--space-1-5);margin:var(--space-4) 0 0;}
+.source-group-directory .source-group-pagination {display:flex;justify-content:flex-end;gap:var(--space-2);margin-top:var(--space-3);}
+.ds-table-footer {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-3);font-size:var(--fs-xs);color:var(--text-secondary);}
+.ds-table-detail {margin-top:var(--space-8);max-width:var(--reading-max);}
+.ds-table-detail h2 {font-size:var(--fs-lg);font-weight:var(--fw-semibold);margin-bottom:var(--space-2);}
+.ds-table-detail p {margin:var(--space-2) 0;overflow-wrap:anywhere;font-size:var(--fs-sm);}
+.ds-preserve-lines {white-space:pre-wrap;overflow-wrap:anywhere;}
+@media(max-width:900px){.ds-data-table.ds-data-table .ds-table-reference {width:160px;}.ds-data-table.ds-data-table .ds-table-state {width:128px;}.ds-data-table.ds-data-table .work-table th.ds-table-state {width:180px;}.ds-data-table.ds-data-table .ds-table-action,.ds-data-table.ds-data-table .work-table th.ds-table-action {width:128px;}}

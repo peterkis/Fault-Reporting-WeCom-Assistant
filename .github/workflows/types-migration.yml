@@ -97,7 +97,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/h5.test.mjs
+        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/design-system.test.mjs .build/tools/hosts.test.mjs .build/tools/h5.test.mjs
         node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs
     - name: Verify the owned database and exact artifact
       if: always()
@@ -248,7 +248,7 @@ jobs:
         mkdir -p "$OUT"
         npm run migration:build 2>&1 | tee "$OUT/build.txt"
         node .build/tools/gate.mjs types 2>&1 | tee "$OUT/types.txt"
-        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/design-system.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
         node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/current-scheduling.txt"
         node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
         node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"

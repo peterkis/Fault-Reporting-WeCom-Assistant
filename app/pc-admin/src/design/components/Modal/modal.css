@@ -1,0 +1,28 @@
+.ds-modal-container[data-size=sm] {width:var(--modal-w-sm);}
+.ds-modal-container[data-size=md] {width:var(--modal-w-md);}
+.ds-modal-container[data-size=lg] {width:var(--modal-w-lg);}
+.workbench-modal-container.ds-modal-container {flex:none;height:auto;align-self:center;max-width:calc(100vw - var(--space-8));max-height:calc(100dvh - var(--space-8));padding:0;}
+.ds-modal-container:is(:focus,:focus-visible) {outline:none;}
+.ds-modal-container>.ds-modal {position:relative;inset:auto;width:100%;max-width:100%;max-height:calc(100dvh - var(--space-8));margin:0;padding:var(--space-6);border:0;border-radius:var(--radius-xl);box-shadow:var(--shadow-4);background:var(--bg-canvas);color:var(--text-primary);overflow:auto;}
+.ds-modal.ds-modal>header,.ds-modal.ds-modal>.settings-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-3);margin:0 0 var(--space-4);padding:0;border:0;}
+.ds-modal.ds-modal>header h2,.ds-modal.ds-modal>.settings-heading h2 {font-size:var(--fs-xl);font-weight:var(--fw-semibold);line-height:var(--lh-xl);margin:0;overflow-wrap:anywhere;}
+.ds-modal.ds-modal>.settings-heading p {font-size:var(--fs-sm);margin:var(--space-1) 0 0;color:var(--text-secondary);}
+.ds-modal.ds-modal>header h2:focus,.ds-modal.ds-modal[role=dialog]:is(:focus,:focus-visible) {outline:none;}
+.ds-modal :is(input,textarea) {caret-color:var(--brand);}
+.ds-modal :is(input,textarea):focus-visible {outline:2px solid var(--border-focus);outline-offset:var(--space-0-5);}
+.ds-modal.ds-modal .note-controls:last-child,.ds-modal.ds-modal .settings-footer {position:sticky;bottom:calc(0px - var(--space-6));z-index:var(--z-sticky);display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:var(--space-2);padding:var(--space-4) var(--space-6);margin:var(--space-6) calc(0px - var(--space-6)) calc(0px - var(--space-6));border-top:1px solid var(--border-hair);background:var(--bg-subtle);}
+.ds-modal.ds-modal .settings-footer>span {margin-right:auto;}
+.ds-modal.ds-modal .settings-footer .ds-button-label {color:inherit;}
+.ds-modal.ds-modal .ds-button[data-tone=primary] {order:2;}
+.ds-modal.ds-modal .ds-button[data-tone=ghost] {order:0;}
+.ds-modal.ds-modal .settings-content {padding:0;max-width:640px;}
+.ds-modal.ds-modal .settings-section+.settings-section {margin-top:var(--space-8);padding:0;border:0;}
+.ds-modal.ds-modal .settings-section h3 {font-size:var(--fs-md);font-weight:var(--fw-semibold);margin-bottom:var(--space-2);}
+.ds-modal.ds-modal .settings-row {padding:var(--space-4) 0;gap:var(--space-3);}
+.ds-modal.ds-modal .settings-row+.settings-row {border:0;}
+.ds-modal.ds-modal .settings-copy strong {font-weight:var(--fw-medium);font-size:var(--fs-sm);}
+.ds-modal.ds-modal .settings-copy p {font-size:var(--fs-sm);line-height:var(--lh-sm);}
+.ds-modal.ds-modal .settings-footer .ds-button {white-space:nowrap;}
+.ds-modal.ds-modal .settings-test-sound {font-size:var(--fs-sm);}
+.ds-modal img,.ds-modal video {max-width:100%;object-fit:contain;}
+@media(prefers-reduced-motion:reduce){.ds-modal,.ds-modal-container {animation:none;transition:none;}}

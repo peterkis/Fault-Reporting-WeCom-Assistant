@@ -1,5 +1,5 @@
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
@@ -105,7 +105,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
   if(!principal.manual_review_resolve_and_start_enabled)return null;
   if(value.choice!=='CONFIRM_TICKET_ELIGIBLE'&&!originalId&&!touched&&state==='idle')return null;
   if(context.isPending)return <p role="status">正在核对确认并开始用途及真实责任选择…</p>;
-  if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} variant="secondary">重新核对确认并开始权限</HButton></p>;
+  if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重新核对确认并开始权限</HButton></p>;
   return <section data-review-start-controls aria-label="确认明确故障并开始处理">
     <h4>由我接单并开始处理</h4><p>确认后一次完成复核、建单和本人接单。若只登记待接单工单，可选择下方“记录复核结论”。</p>
     {draft.enabled?<DraftStatus data-review-start-draft-status role="status">{draft.message}</DraftStatus>:null}
@@ -115,11 +115,11 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     {context.data.sessions.items.map(session=><HCheckbox data-session-choice={session.session_id} isSelected={selected.some(s=>s.session_id===session.session_id)} isDisabled={!session.take_allowed||choice!=='TAKE_SELECTED'||busy||Boolean(originalId)||state==='succeeded'||selected.length>=8&&!selected.some(s=>s.session_id===session.session_id)} onChange={event=>{setTouched(true);setSelected(previous=>event?[...previous,{session_id:session.session_id,expected_row_version:Number(session.session_row_version)}]:previous.filter(s=>s.session_id!==session.session_id));}} key={session.session_id}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>{session.conversation_principal_name??'尚未分配沟通人'}</HCheckbox.Content></HCheckbox>)}
     {context.data.sessions.next_cursor?<p>只展示当前有权会话的第一页；此页未选择的会话不会被更改。</p>:null}
     <HButton type="button" data-action="resolve-and-start-review" isDisabled={!canSubmit} onClick={()=>{if(!canSubmit||!value.capture||!capture)return;if(noSessions)setChoice('RETAIN_CURRENT');void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:value.capture.row_version,
-      expected_material_basis:value.capture.material_basis,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:value.reason,expected_ticket:capture.ticket?Object.freeze({...capture.ticket}):null,resolver_team_id:capture.team,communication_choice:communicationChoice,sessions:Object.freeze(selected.map(session=>Object.freeze({...session})))}));}} variant="secondary">确认故障并由我处理</HButton>
-    <HButton type="button" data-action="refresh-review-start" isDisabled={busy} onClick={()=>{void context.refetch();}} variant="secondary">重新读取处理与沟通选择</HButton>
-    {(state==='unknown'||state==='failed')&&pending&&!knownCommit.current?<HButton type="button" data-action="replay-review-start" isDisabled={busy} onClick={()=>{void send(pending);}} variant="secondary">重试上次操作</HButton>:null}
-    {originalId?<HButton type="button" data-action="check-review-start-receipt" isDisabled={busy} onClick={()=>{void check();}} variant="secondary">只读核对原确认并开始操作</HButton>:null}
-    {state==='failed'&&!knownCommit.current?<HButton type="button" data-action="new-review-start-intent" isDisabled={busy||cleanupBlocked||!context.data.allowed} onClick={()=>{void adoptNewIntent();}} variant="secondary">核对后重新操作</HButton>:null}
+      expected_material_basis:value.capture.material_basis,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:value.reason,expected_ticket:capture.ticket?Object.freeze({...capture.ticket}):null,resolver_team_id:capture.team,communication_choice:communicationChoice,sessions:Object.freeze(selected.map(session=>Object.freeze({...session})))}));}} tone="secondary">确认故障并由我处理</HButton>
+    <HButton type="button" data-action="refresh-review-start" isDisabled={busy} onClick={()=>{void context.refetch();}} tone="secondary">重新读取处理与沟通选择</HButton>
+    {(state==='unknown'||state==='failed')&&pending&&!knownCommit.current?<HButton type="button" data-action="replay-review-start" isDisabled={busy} onClick={()=>{void send(pending);}} tone="secondary">重试上次操作</HButton>:null}
+    {originalId?<HButton type="button" data-action="check-review-start-receipt" isDisabled={busy} onClick={()=>{void check();}} tone="secondary">只读核对原确认并开始操作</HButton>:null}
+    {state==='failed'&&!knownCommit.current?<HButton type="button" data-action="new-review-start-intent" isDisabled={busy||cleanupBlocked||!context.data.allowed} onClick={()=>{void adoptNewIntent();}} tone="secondary">核对后重新操作</HButton>:null}
     {message?<ToastFeedback revision={messageRevision} source="manual-review" state={state} data-review-start-result role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
     {result?<p>本次处理事件已记录；当前状态以重新读取的事项为准。</p>:null}
   </section>;

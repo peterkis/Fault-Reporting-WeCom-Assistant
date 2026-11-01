@@ -1,0 +1,7 @@
+.ds-empty-state,.ds-page .ds-empty-state {display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-8) var(--space-4); min-width: 0; text-align: center; color: var(--text-secondary);}
+.ds-empty-icon {display: inline-flex; color: var(--text-tertiary); margin-bottom: var(--space-1);}
+.ds-empty-icon>svg {width: var(--space-10); height: var(--space-10); stroke-width: 1.75;}
+.ds-empty-state h2 {font-size: var(--fs-md); line-height: var(--lh-md); font-weight: var(--fw-semibold); color: var(--text-primary); overflow-wrap: anywhere;}
+.ds-empty-state p,.ds-page .ds-empty-state p {font-size: var(--fs-sm); line-height: var(--lh-sm); max-width: calc(var(--fs-sm) * 32); margin: 0; overflow-wrap: anywhere; text-wrap: pretty;}
+.ds-empty-state:empty {display: none;}
+.ds-empty-action {margin-top: var(--space-1); max-width: 100%;}

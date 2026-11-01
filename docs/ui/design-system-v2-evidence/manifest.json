@@ -1,0 +1,58 @@
+{
+  "scope": "PC admin workbench, synthetic loopback HTTP/PG18 data; not live acceptance",
+  "visual_input_hash": "329aa70271d13a0de84353bd3db944342bc8464b9fa97c880b0bb4abbf0c11a8",
+  "final_local_input_hash": "90da27946cdd80379218f056dae74a064facf6d47d98fb9b34b3a91a16335923",
+  "artifact_equivalence": "Only two test files and their source maps differ; every production output is byte-identical",
+  "images": [
+    {
+      "path": "board-after-1280.png",
+      "bytes": 77548,
+      "sha256": "660fcb61f84a8d34a1844ba36845983d55a03806d2e78623a1da1fb1df0b56e9",
+      "source_card": 7
+    },
+    {
+      "path": "board-after-1440.png",
+      "bytes": 80111,
+      "sha256": "d74e58c338380035f7fb865bebbc393769b6eee58a9519ba67b17372214443c5",
+      "source_card": 7
+    },
+    {
+      "path": "board-after-1920.png",
+      "bytes": 82886,
+      "sha256": "9dc06fed9183607a6da59eab7420d1d125e5863e56bb84712bf39b5347a92b5e",
+      "source_card": 7
+    },
+    {
+      "path": "board-after-900.png",
+      "bytes": 75223,
+      "sha256": "80a00f9b4d187e5253c7d234ad19d13ea5275bdf93cf7735a482a6c106e1562d",
+      "source_card": 7
+    },
+    {
+      "path": "board-before-1280.png",
+      "bytes": 115523,
+      "sha256": "4fc57b189770f9d4728f2e1e9c44336e8bba1fd98118fe982edb60d3ad40c060",
+      "source_card": 0
+    },
+    {
+      "path": "board-before-1440.png",
+      "bytes": 125326,
+      "sha256": "3b4fe92007e29216b238d9ef4b7d46464ce960fb6515f9d234a5131f4691a161",
+      "source_card": 0
+    },
+    {
+      "path": "board-before-1920.png",
+      "bytes": 129066,
+      "sha256": "23a2970207a74fa214ef04aa42923904a02b3eb47a8c7166b52ba4403eb5c2f0",
+      "source_card": 0
+    },
+    {
+      "path": "board-before-900.png",
+      "bytes": 73483,
+      "sha256": "0c5e3ff33c91a4bcaab494e493dc3bb7396dfc1c2567e7eff13ae44833263467",
+      "source_card": 0
+    }
+  ],
+  "before": "Card 0 original production bundle; its no-visual-change proof is in design-system-v2-card0-baseline.md",
+  "after": "Card 7 final visual candidate; later test-only successor verified production-byte-identical"
+}

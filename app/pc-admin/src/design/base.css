@@ -1,0 +1,38 @@
+/* v2 page templates. Legacy classes remain semantic hooks. */
+.checkbox__control,.checkbox__control::before {border-radius:var(--radius-xs);}
+.link {border-radius:var(--radius-sm);}
+.switch__control {border-radius:var(--radius-full);}
+small {font-size:var(--fs-xs);}
+.workspace.ds-page {width: 100%; max-width: var(--page-max); margin: 0; padding: 0 var(--page-pad-x) var(--space-12);}
+.ds-page>.ds-page-content {margin-top: var(--space-4);}
+.ds-page .ds-column-footer {display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) 0; color: var(--text-secondary); font-size: var(--fs-xs);}
+.ds-page .range-bar {margin: var(--space-4) 0 0; padding: 0; font-size: var(--fs-xs);}
+.ds-page .inbox-layout {
+  grid-template-columns: 320px minmax(0,1fr); border-top: 0; margin-top: 0;
+  /* Remaining viewport after the shared header, toolbar, content gap and page padding. */
+  height: calc(100dvh - var(--topbar-h) - (var(--lh-2xl) + var(--lh-sm) + var(--space-1) + var(--space-5) + var(--space-4)) - var(--space-10) - var(--space-4) - var(--space-12));
+}
+.ds-page .conversation-layout {grid-template-columns: 320px minmax(0,1fr); border-top: 0;}
+.ds-page .inbox-contacts {display: flex; flex-direction: column; min-width: 0;}
+.ds-page .inbox-contacts>.ds-empty-state {flex: 1;}
+.ds-page .inbox-layout>.ds-empty-state {align-self: stretch;}
+.ds-page .inbox-list-state {margin: var(--space-3) 0;}
+.ds-page .inbox-empty.ds-empty-state h2 {font-size: var(--fs-md);}
+.ds-page .inbox-empty.ds-empty-state p {line-height: var(--lh-sm);}
+.ds-page .inbox-contact-rows:empty {display: none;}
+.ds-page .inbox-pagination {margin-top: auto;}
+.ds-page .source-group-search {display: flex; flex-direction: row; align-items: center; gap: var(--space-2); margin: 0; min-width: 0; flex: 1;}
+.ds-page .source-group-search>.ds-search-field {flex: 1; max-width: 320px;}
+.workspace.ds-page.manual-report-page>form {max-width: 640px; padding: 0; border: 0; border-radius: 0;}
+.ds-page .board {overflow-x: auto; grid-template-columns: repeat(3,minmax(300px,1fr));}
+.app .topbar {padding-left: var(--page-pad-x); padding-right: var(--page-pad-x);}
+@media(min-width:1360px) {.ds-page .inbox-layout:has(.inbox-business) {grid-template-columns: 320px minmax(0,1fr) 320px;}}
+@media(max-width:900px) {
+  .ds-page .inbox-layout {display: flex; flex-direction: column; min-height: 0; height: auto;}
+  .ds-page .inbox-contacts {width: 100%; min-height: 400px; border: 0; padding-right: 0;}
+  .ds-page .inbox-has-selection>.inbox-contacts {display: none;}
+  .ds-page .inbox-layout>.ds-empty-state {display: none;}
+  .ds-page .inbox-business {display: none;}
+  .ds-page .inbox-business-compact {display: block;}
+  .ds-page .inbox-has-selection .inbox-back {display: flex;}
+}

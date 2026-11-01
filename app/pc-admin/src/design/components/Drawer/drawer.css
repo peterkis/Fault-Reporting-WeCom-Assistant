@@ -1,0 +1,46 @@
+.ds-drawer-backdrop.workbench-drawer-backdrop {padding: var(--space-2); background: var(--bg-overlay); z-index: var(--z-drawer);}
+.ds-drawer-content.workbench-drawer-content {inset: var(--space-2); width: auto; max-width: none; height: calc(100dvh - var(--space-4)); margin: 0; padding: 0; background: transparent; border-radius: var(--radius-lg);}
+.ds-drawer-content>.ds-drawer.detail-dialog {position: relative; inset: auto; width: min(var(--drawer-w),calc(100vw - var(--space-4))); max-width: 100%; height: calc(100dvh - var(--space-4)); max-height: calc(100dvh - var(--space-4)); padding: 0; border: 0; border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-4); overflow: auto; overscroll-behavior: contain;}
+.ds-drawer-content[data-entering] {animation: ds-drawer-enter var(--dur-slow) var(--ease-standard);}
+.ds-drawer-content[data-exiting] {animation: ds-drawer-enter var(--dur-slow) var(--ease-exit) reverse;}
+.ds-drawer-content>.ds-drawer {translate: none; transition: none;}
+.ds-drawer-content>.ds-detail.ds-drawer[role=dialog]:focus-visible {outline: none;}
+.ds-drawer-content[data-entering]>.ds-drawer,.ds-drawer-content[data-exiting]>.ds-drawer {translate: none;}
+.ds-drawer-backdrop {transition: opacity var(--dur-slow) var(--ease-standard);}
+@keyframes ds-drawer-enter {from {opacity: 0; transform: translateX(var(--space-4));} to {opacity: 1; transform: translateX(0);}}
+.ds-detail .detail-navigation {min-width: 0; padding: var(--space-1-5) var(--space-4); gap: var(--space-2);}
+.ds-detail .detail-breadcrumb {min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
+.ds-detail .detail-toolbar-actions {margin-left: auto; flex: none; gap: var(--space-1);}
+.ds-detail .detail-toolbar-actions .icon-button {width: var(--control-h-md); min-height: var(--control-h-md); padding: 0; border-color: transparent; background: transparent; color: var(--text-secondary);}
+.ds-detail .detail-toolbar-actions .icon-button:hover:not(:disabled) {background: var(--bg-hover);}
+.ds-detail .detail-toolbar-actions .icon-button:active:not(:disabled) {background: var(--bg-active);}
+.ds-detail .detail-toolbar-actions .icon-button:disabled {color: var(--text-tertiary);}
+.ds-detail .detail-body {padding: var(--space-6); min-width: 0;}
+.ds-detail .detail-heading h2 {margin: 0 0 var(--space-3); font-size: var(--fs-lg); line-height: var(--lh-lg); font-weight: var(--fw-semibold); letter-spacing: normal; overflow-wrap: anywhere;}
+.ds-detail.detail-page .detail-body {max-width: var(--reading-max); padding-top: var(--space-6);}
+.ds-detail .ds-drawer-actions.detail-common-actions {display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: 0 0 var(--space-4); margin: 0;}
+.ds-drawer-status {display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); min-width: 0; min-height: var(--control-h-md);}
+.ds-drawer-status .ds-status-badge {font-size: var(--fs-sm);}
+.ds-drawer-urgency:empty {display: none;}
+.ds-drawer-command-buttons {display: flex; align-items: flex-start; justify-content: flex-end; gap: var(--space-2); flex: none; max-width: 100%;}
+.ds-drawer-command-buttons>.detail-action-controller {padding: 0; border: 0; margin: 0; max-width: 100%;}
+.ds-drawer-command-buttons>.detail-action-controller:not(:has(button,p:not([hidden]))) {display: none;}
+.ds-drawer-command-buttons .note-controls {margin: 0; gap: var(--space-1);}
+.ds-detail .ds-drawer-command-buttons .take-and-start[data-tone=primary] {background: var(--brand); border-color: var(--brand); color: var(--on-brand);}
+.ds-detail .ds-drawer-command-buttons .take-and-start[data-tone=primary]:hover:not(:disabled) {background: var(--brand-hover); border-color: var(--brand-hover);}
+.ds-drawer-more {position: relative; flex: none;}
+.ds-drawer-more:not(:has(.ds-drawer-more-panel button,.ds-drawer-more-panel p:not([hidden]))) {display: none;}
+.ds-drawer-more>summary {display: grid; place-items: center; list-style: none; width: var(--control-h-md); height: var(--control-h-md); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-standard);}
+.ds-drawer-more>summary::-webkit-details-marker {display: none;}
+.ds-drawer-more>summary svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75;}
+.ds-drawer-more>summary:hover {background: var(--bg-hover);}
+.ds-drawer-more>summary:active,.ds-drawer-more[open]>summary {background: var(--bg-active);}
+.ds-drawer-more>summary:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-drawer-more-panel {position: absolute; top: calc(100% + var(--space-1)); right: 0; z-index: var(--z-dropdown); min-width: calc(var(--space-16) * 3); max-width: calc(100vw - var(--space-8)); padding: var(--space-2); border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
+.ds-drawer-more-panel>.detail-action-controller {padding: 0; border: 0; margin: 0;}
+.ds-drawer-more-panel button {width: 100%; justify-content: flex-start; text-align: left;}
+.ds-detail .detail-note-composer {position: sticky; bottom: 0; z-index: var(--z-sticky); margin-top: var(--space-6); padding: var(--space-3) 0 0; background: var(--bg-canvas); border: 0;}
+.ds-detail .report-materials.ds-section .detail-attachments {padding: 0;}
+.ds-detail .detail-voice {padding: var(--space-2) var(--space-3); background: var(--bg-subtle); border-radius: var(--radius-md);}
+@media(max-width:640px) {.ds-detail .detail-body {padding: var(--space-4);} .ds-detail .ds-drawer-actions {flex-wrap: wrap;} .ds-drawer-command-buttons {margin-left: auto; flex-wrap: wrap;} .ds-detail .detail-breadcrumb {flex: 1;} }
+@media(prefers-reduced-motion:reduce) {.ds-drawer-content[data-entering],.ds-drawer-content[data-exiting] {animation: none;} .ds-drawer-more>summary,.ds-drawer-backdrop {transition: none;}}

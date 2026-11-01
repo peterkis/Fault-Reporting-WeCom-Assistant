@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync,spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -11,8 +11,31 @@ import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFile
 import {checkCompiledSyntax} from './syntax-check.mjs';
 import {typecheckWeb} from './web.mjs';
 import {ownedSpawnSync} from './owned-process.mjs';
+import {cssGate} from './gate.mjs';
 
 const original = sourceRoot();
+
+test('CSS gate accepts semantic tokens and rejects forbidden visual values',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'migration-css-gate-'));
+  const project=path.join(root,'app/pc-admin');
+  try{
+    mkdirSync(path.join(project,'src'),{recursive:true});
+    copyFileSync(path.join(original,'app/pc-admin/.stylelintrc.json'),path.join(project,'.stylelintrc.json'));
+    symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
+    const file=path.join(project,'src/probe.css');
+    writeFileSync(file,'.probe {color:var(--text-primary);font-size:var(--fs-md);border-radius:var(--radius-sm);box-shadow:var(--shadow-1);z-index:var(--z-modal)}');
+    cssGate(root);
+    for(const declaration of ['color:#315fed','font-size:15px','border-radius:5px','box-shadow:0 1px 4px #000','z-index:2000','padding:1rem','color:inherit!important']){
+      writeFileSync(file,'.probe {'+declaration+'}');
+      assert.throws(()=>cssGate(root),declaration);
+    }
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-css-gate-'));
+    // Remove the junction itself before deleting only this owned scratch tree.
+    if(existsSync(path.join(root,'node_modules')))unlinkSync(path.join(root,'node_modules'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 if(process.platform==='win32')test('owned Windows subprocesses reclaim descendants on exit and timeout while a separate process survives',async t=>{
   const root=mkdtempSync(path.join(tmpdir(),'migration-owned-process-'));

@@ -63,7 +63,7 @@ function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useU
   if(closedNotice&&loginAfterLogout)return <LoggedOutLogin/>;
   if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;
   if(desktopHost&&failure===401)return <ExpiredDesktopSession/>;
-  if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;
+  if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入工作台。':'当前账号无法查看工作台。'} retry={reset}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;
   if(bootstrap.isPending)return <WorkbenchLoading/>;
   if(bootstrap.isError&&!bootstrap.data)return <div className="entry-state"><h1>医小修工作台</h1><Message text={errorMessage(bootstrap.error)} retry={()=>{void bootstrap.refetch();}}/><HLink href={desktopHost?"/workbench/desktop":"/workbench"}>{desktopHost?"重新扫码登录":"返回现有工作台入口"}</HLink></div>;
   return <WorkbenchLoadBoundary><Suspense fallback={<WorkbenchLoading/>}><WorkbenchPage principal={bootstrap.data} realtime={realtime} navigationBlocked={navigationBlocked} setNavigationBlocked={setNavigationBlocked}/></Suspense></WorkbenchLoadBoundary>;

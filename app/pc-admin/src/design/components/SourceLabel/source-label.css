@@ -1,0 +1,7 @@
+.ds-source-label.ds-source-label {display: inline-flex; align-items: center; gap: var(--space-1); min-width: 0; max-width: 100%; padding: 0; border: 0; border-radius: 0; background: none; color: var(--text-secondary); font-size: var(--fs-xs); font-weight: var(--fw-regular); line-height: var(--lh-xs); vertical-align: middle;}
+.ds-source-label>svg {flex: none; width: var(--icon-sm); height: var(--icon-sm);}
+.ds-source-label>span {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-source-label[aria-disabled=true] {color: var(--text-tertiary);}
+.ds-source-label:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+
+.ds-source-label>svg {stroke-width: 1.75;}

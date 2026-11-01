@@ -1,12 +1,21 @@
+import {Split} from '../../design/components/Split/Split';
+import {ConversationListItem} from '../../design/components/ConversationListItem/ConversationListItem';
+import {MessageBubble} from '../../design/components/MessageBubble/MessageBubble';
+import {TimelineEvent} from '../../design/components/Timeline/Timeline';
+import {PageHeader} from '../../design/components/PageHeader/PageHeader';
+import {Toolbar} from '../../design/components/Toolbar/Toolbar';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
-import {Form as HForm,Input as HInput,Label as HLabel,Header,ListBox} from "@heroui/react";
+import {Button as HButton} from '../../design/components/Button/Button';
+import {Form as HForm,Header,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
+import {FilterSelect} from '../../design/components/FilterSelect/FilterSelect';
+import {SearchField} from '../../design/components/SearchField/SearchField';
+import {EmptyState} from '../../design/components/EmptyState/EmptyState';
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {useNavigate,useParams,useSearchParams} from 'react-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {MessageSquare,Search,ArrowLeft,ChevronRight,Paperclip} from 'lucide-react';
+import {MessageSquare,ArrowLeft,ChevronRight,Paperclip} from 'lucide-react';
 import {api,ApiError,errorMessage,statusLabels} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization} from '../../app/authorization';
@@ -44,8 +53,8 @@ function TopicPicker({entry,principal,blocked}:{entry:ConversationChatEntry;prin
   if(![...groups.values()].some(rows=>rows.some(row=>row.session.session_id===entry.session.session_id)))groups.set(entry.topic_ref,[entry,...(groups.get(entry.topic_ref)??[])]);
   const direct=(related.data?.items??[]).find(row=>row.topic_ref===entry.topic_ref&&row.session.session_id!==entry.session.session_id&&row.current_contact_channel==='direct'&&row.session.status!=='ENDED');
   const change=(id:string)=>{if(!blocked)navigate('/conversations/'+id+'?'+params.toString());};
-  return <div className="inbox-topic-picker"><WorkbenchSelect label={<>服务主题与沟通窗口</>} aria-label="服务主题与沟通窗口" value={entry.session.session_id} isDisabled={blocked||related.isPending} onChange={e=>change(e)}>{[...groups].map(([ref,rows])=><ListBox.Section key={ref} id={ref}><Header>{rows[0]?.topic??'服务主题'}</Header>{rows.map(row=><ListBox.Item key={row.session.session_id} id={row.session.session_id} textValue={String(row.topic)+"·"+String(row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊')+String(row.session.status==='ENDED'?' · 历史':'')}>{row.topic}· {row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊'}{row.session.status==='ENDED'?' · 历史':''}<ListBox.ItemIndicator/></ListBox.Item>)}</ListBox.Section>)}</WorkbenchSelect><div className="inbox-topic-pages">{cursor?<HButton isDisabled={blocked} onClick={()=>setCursor(null)} variant="secondary">返回最新主题</HButton>:null}{related.data?.next_cursor?<HButton isDisabled={blocked||related.isFetching} onClick={()=>setCursor(related.data?.next_cursor??null)} variant="secondary">更多主题与窗口</HButton>:null}</div>
-    {direct?<HButton className="inbox-new-direct" isDisabled={blocked} onClick={()=>change(direct.session.session_id)} variant="secondary">本主题有私聊补充，查看并继续接待</HButton>:null}
+  return <div className="inbox-topic-picker"><WorkbenchSelect label={<>服务主题与沟通窗口</>} aria-label="服务主题与沟通窗口" value={entry.session.session_id} isDisabled={blocked||related.isPending} onChange={e=>change(e)}>{[...groups].map(([ref,rows])=><ListBox.Section key={ref} id={ref}><Header>{rows[0]?.topic??'服务主题'}</Header>{rows.map(row=><ListBox.Item key={row.session.session_id} id={row.session.session_id} textValue={String(row.topic)+"·"+String(row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊')+String(row.session.status==='ENDED'?' · 历史':'')}>{row.topic}· {row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊'}{row.session.status==='ENDED'?' · 历史':''}<ListBox.ItemIndicator/></ListBox.Item>)}</ListBox.Section>)}</WorkbenchSelect><div className="inbox-topic-pages">{cursor?<HButton isDisabled={blocked} onClick={()=>setCursor(null)} tone="secondary">返回最新主题</HButton>:null}{related.data?.next_cursor?<HButton isDisabled={blocked||related.isFetching} onClick={()=>setCursor(related.data?.next_cursor??null)} tone="secondary">更多主题与窗口</HButton>:null}</div>
+    {direct?<HButton className="inbox-new-direct" isDisabled={blocked} onClick={()=>change(direct.session.session_id)} tone="secondary">本主题有私聊补充，查看并继续接待</HButton>:null}
     {related.isError?<p role="alert">{errorMessage(related.error)}</p>:null}
   </div>;
 }
@@ -76,15 +85,16 @@ function ChatConversation({principal,id,onBlockedChange,onContactChange}:{princi
     latestSequence.current=result.data?.items.at(-1)?.sequence_no??null;
   },[signature]);
   function rememberScroll(){const node=scroller.current;if(!node)return;atBottom.current=node.scrollHeight-node.scrollTop-node.clientHeight<48;if(atBottom.current){anchor.current=null;setNewMessages(false);return;}const top=node.getBoundingClientRect().top,first=[...node.querySelectorAll<HTMLElement>('[data-conversation-item]')].find(item=>item.getBoundingClientRect().bottom>top);if(first)anchor.current={id:first.dataset.conversationItem??'',offset:first.getBoundingClientRect().top-top};}
-  if(!result.data||result.error instanceof ApiError&&[403,404].includes(result.error.status))return <section className="inbox-empty" role={result.isError?'alert':'status'}><MessageSquare size={28}/><p>{result.isError?errorMessage(result.error):'正在读取当前获权沟通…'}</p><HButton onClick={()=>void result.refetch()} variant="secondary">重新读取</HButton></section>;
+  if(!result.data||result.error instanceof ApiError&&[403,404].includes(result.error.status))return <section className="inbox-empty" role={result.isError?'alert':'status'}><MessageSquare size={28}/><p>{result.isError?errorMessage(result.error):'正在读取当前会话…'}</p><HButton onClick={()=>void result.refetch()} tone="secondary">重新读取</HButton></section>;
   const {entry,items,deliveries,hasMore}=result.data;
   const committed=(r:ConversationMessageResult)=>{setReceipts(rows=>[r,...rows.filter(row=>row.message_id!==r.message_id)].slice(0,100));void result.refetch();void client.invalidateQueries({queryKey:['conversation-inbox',principal.principal_id]});};
   const visibleIds=new Set(items.map(item=>item.communication_message_id));
   const renderItem=(item:ConversationChatItem)=>{
     const values=item.communication_message_id?deliveries.filter(delivery=>delivery.message_id===item.communication_message_id):[];
-    return <><header><strong>{item.sender_label}</strong>{item.visibility!=='EXTERNAL'?<span className="inbox-internal-label">仅内部可见</span>:null}<time dateTime={item.occurred_at.replace(' ','T')+'+08:00'}>{item.occurred_at.slice(5,16)}</time></header>
-      <div className="inbox-bubble"><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条消息暂无可展示的文本。'}</p>{item.media_availability!=='NOT_MEDIA'?<p className="inbox-media"><Paperclip size={14}/> 媒体暂不可用；已保存附件请从关联事项受控下载。</p>:null}</div>
+    const content=<><header><strong>{item.sender_label}</strong>{item.visibility!=='EXTERNAL'?<span className="inbox-internal-label">仅内部可见</span>:null}<time dateTime={item.occurred_at.replace(' ','T')+'+08:00'}>{item.occurred_at.slice(5,16)}</time></header>
+      <MessageBubble side={item.sender_category==='SYSTEM'?'system':item.sender_category==='HUMAN'||item.sender_category==='AUTOMATED_RULE'?'outgoing':'incoming'} internal={item.sender_category!=='SYSTEM'&&item.visibility!=='EXTERNAL'}><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条消息暂无可展示的文本。'}</p>{item.media_availability!=='NOT_MEDIA'?<p className="inbox-media"><Paperclip size={14}/> 媒体暂不可用；已保存附件请从关联事项受控下载。</p>:null}</MessageBubble>
       <footer>{item.source_label}{item.sender_category==='HUMAN'||item.sender_category==='AUTOMATED_RULE'?<span data-message-delivery={item.communication_message_id??undefined}>{values.length?values.map(d=><span key={d.delivery_id} data-delivery-id={d.delivery_id}>{deliveryLabel(d)}{d.last_error_code?' · '+d.last_error_code:''}</span>):'投递状态尚未读取'}</span>:null}</footer></>;
+    return item.sender_category==='SYSTEM'?<TimelineEvent>{content}</TimelineEvent>:content;
   };
   return <><article className="inbox-chat" data-conversation-ready><header className="inbox-chat-header"><div><h2>{entry.participant_label}</h2><p>{entry.department_label??'部门资料未提供'} · {entry.assignment.assigned_display_name??'待接待'}</p></div><span className="inbox-reply-target">{entry.reply_channel_label}</span>
       <h3>{entry.topic}</h3><p className="inbox-source-line">原始来源：{entry.original_source.label} · 当前：{entry.current_contact_channel==='group'?'群内原始消息':'Bot 私聊'}</p>
@@ -92,13 +102,13 @@ function ChatConversation({principal,id,onBlockedChange,onContactChange}:{princi
       {result.isError?<p role="alert">当前重读失败，输入已保留：{errorMessage(result.error)}</p>:null}
     </header>
     <div className="inbox-timeline" ref={scroller} onScroll={rememberScroll} data-conversation-timeline aria-label="当前主题消息">
-      {hasMore?<HButton className="inbox-history" isDisabled={pages>=8||result.isFetching} onClick={()=>{rememberScroll();setPages(value=>Math.min(8,value+1));}} variant="secondary">加载更早消息</HButton>:null}{pages>=8&&hasMore?<p>已达本次400条读取上限。</p>:null}
+      {hasMore?<HButton className="inbox-history" isDisabled={pages>=8||result.isFetching} onClick={()=>{rememberScroll();setPages(value=>Math.min(8,value+1));}} tone="secondary">加载更早消息</HButton>:null}{pages>=8&&hasMore?<p>已达本次400条读取上限。</p>:null}
       <ConversationReadTimeline principal={principal} id={id} items={items} renderItem={renderItem} itemClassName={item=>'inbox-message inbox-message-'+item.sender_category.toLowerCase()}/>
       {!items.length?<p className="inbox-empty-copy">当前主题暂无可展示消息。可以先核对来源与接待责任。</p>:null}
       {receipts.filter(r=>!visibleIds.has(r.message_id)).map(r=><p className="inbox-committed" key={r.message_id} data-pending-message={r.message_id}>已提交，等待发送与时间线同步。</p>)}
     </div>
-    {newMessages?<HButton className="inbox-new-messages" onClick={()=>{if(scroller.current)scroller.current.scrollTop=scroller.current.scrollHeight;atBottom.current=true;setNewMessages(false);}} variant="secondary">查看最新消息</HButton>:null}
-    <div className="inbox-composer"><div role="tablist" aria-label="消息用途"><HButton role="tab" id="conversation-reply-tab" aria-controls="conversation-reply-panel" aria-selected={tab==='messages'} onClick={()=>setTab('messages')} variant="secondary">回复用户</HButton><HButton role="tab" id="conversation-note-tab" aria-controls="conversation-note-panel" aria-selected={tab==='internal-notes'} onClick={()=>setTab('internal-notes')} variant="secondary">内部备注</HButton></div>
+    {newMessages?<HButton className="inbox-new-messages" onClick={()=>{if(scroller.current)scroller.current.scrollTop=scroller.current.scrollHeight;atBottom.current=true;setNewMessages(false);}} tone="secondary">查看最新消息</HButton>:null}
+    <div className="inbox-composer"><div role="tablist" aria-label="消息用途"><HButton role="tab" id="conversation-reply-tab" aria-controls="conversation-reply-panel" aria-selected={tab==='messages'} onClick={()=>setTab('messages')} tone="secondary">回复用户</HButton><HButton role="tab" id="conversation-note-tab" aria-controls="conversation-note-panel" aria-selected={tab==='internal-notes'} onClick={()=>setTab('internal-notes')} tone="secondary">内部备注</HButton></div>
       {entry.session.status==='ENDED'?<p className="inbox-ended">历史主题只读；新沟通请明确续接后继续接待。</p>:null}
       <div role="tabpanel" id="conversation-reply-panel" aria-labelledby="conversation-reply-tab" hidden={tab!=='messages'}><ConversationComposer entry={entry} principal={principal} purpose="messages" onBlockedChange={setReplyBlocked} onCommitted={committed}/></div>
       <div role="tabpanel" id="conversation-note-panel" aria-labelledby="conversation-note-tab" hidden={tab!=='internal-notes'}><ConversationComposer entry={entry} principal={principal} purpose="internal-notes" onBlockedChange={setNoteBlocked} onCommitted={()=>void result.refetch()}/></div>
@@ -114,21 +124,21 @@ export function ConversationInbox({principal,onBlockedChange}:{principal:Princip
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{if(cursor&&list.error instanceof ApiError&&list.error.code==='WORKBENCH_CURSOR_INVALID')setPage({scope,cursor:null});},[cursor,list.error,scope]);
   const change=(name:string,value:string)=>{const next=new URLSearchParams(params);if(value)next.set(name,value);else next.delete(name);if(name==='source')next.delete('source_group_ref');setParams(next);};
-  return <section className="workspace conversation-inbox-workspace"><div className="page-title"><div><h1>会话</h1><p>按人查看，按问题接待。</p></div></div><div className={'inbox-layout'+(sessionId?' inbox-has-selection':'')}>
-    <aside className="inbox-contacts" aria-label="联系人收件箱"><HForm className="inbox-search" onSubmit={e=>{e.preventDefault();change('q',search.trim());}}><HLabel htmlFor="conversation-inbox-search"><Search size={16}/>搜索联系人、主题或工单号</HLabel><div><HInput id="conversation-inbox-search" value={search} maxLength={128} disabled={blocked} onChange={e=>setSearch(e.target.value)}/><HButton isDisabled={blocked} type="submit" variant="secondary">搜索</HButton></div></HForm>
-      <div className="inbox-filters"><WorkbenchSelect label={<>队列</>} aria-label="收件箱队列" value={state} isDisabled={blocked} onChange={e=>change('state',e)}>{states.map(([key,label])=><ListBox.Item key={key} id={key} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect><WorkbenchSelect label={<>原始来源</>} aria-label="收件箱来源" value={source} isDisabled={blocked} onChange={e=>change('source',e)}>{Object.entries(sourceNames).map(([key,label])=><ListBox.Item key={key} id={key} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect></div>
-      {group?<HButton isDisabled={blocked} className="inbox-filter-clear" onClick={()=>change('source_group_ref','')} variant="secondary">清除具体来源群筛选</HButton>:null}
-      {list.isPending?<p role="status" className="inbox-list-state">正在读取获权联系人…</p>:null}{list.isError?<div className="inbox-list-state" role="alert"><p>{errorMessage(list.error)}</p><HButton onClick={()=>{setPage({scope,cursor:null});void list.refetch();}} variant="secondary">重新读取联系人</HButton></div>:null}
-      <div className="inbox-contact-rows">{list.data?.items.map(contact=><article key={contact.contact_ref} data-contact-ref={contact.contact_ref} className={contact.contact_ref===selectedContact?'is-selected':''}>
+  return <section className="workspace ds-page conversation-inbox-workspace"><PageHeader title="会话" icon={<MessageSquare/>} description="按人查看，按问题接待。"/><Toolbar><HForm className="inbox-search" onSubmit={e=>{e.preventDefault();change('q',search.trim());}}><SearchField id="conversation-inbox-search" aria-label="搜索联系人、主题或工单号" placeholder="搜索联系人、主题或工单号" value={search} maxLength={128} disabled={blocked} onChange={e=>setSearch(e.target.value)} onClear={()=>setSearch('')}/></HForm>
+      <div className="inbox-filters"><FilterSelect label={<>队列</>} aria-label="收件箱队列" value={state} isDisabled={blocked} onChange={e=>change('state',e)}>{states.map(([key,label])=><ListBox.Item key={key} id={key} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterSelect><FilterSelect label={<>原始来源</>} aria-label="收件箱来源" value={source} isDisabled={blocked} onChange={e=>change('source',e)}>{Object.entries(sourceNames).map(([key,label])=><ListBox.Item key={key} id={key} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterSelect></div>
+      {group?<HButton isDisabled={blocked} className="inbox-filter-clear" onClick={()=>change('source_group_ref','')} tone="secondary">清除具体来源群筛选</HButton>:null}
+      </Toolbar><Split className={'inbox-layout'+(sessionId?' inbox-has-selection':'')}><aside className="inbox-contacts" aria-label="联系人收件箱">
+      {list.isPending?<p role="status" className="inbox-list-state">正在读取可见的联系人…</p>:null}{list.isError?<div className="inbox-list-state" role="alert"><p>{errorMessage(list.error)}</p><HButton onClick={()=>{setPage({scope,cursor:null});void list.refetch();}} tone="secondary">重新读取联系人</HButton></div>:null}
+      <div className="inbox-contact-rows">{list.data?.items.map(contact=><ConversationListItem name={contact.participant_label} personId={contact.contact_ref} key={contact.contact_ref} data-contact-ref={contact.contact_ref} className={contact.contact_ref===selectedContact?'is-selected':''}>
         <Link to={'/conversations/'+contact.anchor_session_id+'?'+params.toString()} onClick={e=>{if(blocked)e.preventDefault();}} aria-current={contact.contact_ref===selectedContact?'page':undefined}><div className="inbox-contact-title"><strong>{contact.participant_label}</strong><time>{contact.latest_activity_at.slice(5,16)}</time></div>
           <p className="inbox-contact-preview">{contact.last_item_preview?.visibility!=='EXTERNAL'&&contact.last_item_preview?'[内部] ':''}{contact.last_item_preview?.text??'暂无可展示的文字消息'}</p>
           <div className="inbox-contact-bottom"><span>{contact.matching_topic_count}个匹配主题 · {contact.assignment_summary.label}</span>{contact.unread_count?<span className="inbox-unread" aria-label={contact.unread_count+'条本人未读'}>{contact.unread_count>99?'99+':contact.unread_count}</span>:null}</div>
           {contact.has_delivery_exception?<span className="inbox-delivery-exception">有投递待处理</span>:null}</Link>
-          <div className="inbox-source-badges">{contact.source_badges.map((badge,index)=>badge.ref?<HButton key={badge.ref} isDisabled={blocked} onClick={()=>change('source_group_ref',badge.ref??'')} variant="secondary">{badge.label}</HButton>:<span key={index}>{badge.label}</span>)}{contact.additional_source_count?<span>另{contact.additional_source_count}个来源</span>:null}</div>
-        </article>)}</div>
-      {list.data&&!list.data.items.length?<p className="inbox-list-state">当前筛选没有获权联系人，可调整队列或搜索条件。</p>:null}
-      <div className="inbox-pagination"><HButton isDisabled={!cursor||blocked} onClick={()=>setPage({scope,cursor:null})} variant="secondary">返回最新</HButton><HButton isDisabled={!list.data?.next_cursor||list.isFetching||blocked} onClick={()=>setPage({scope,cursor:list.data?.next_cursor??null})} variant="secondary">下一页</HButton></div>
+          <div className="inbox-source-badges">{contact.source_badges.map((badge,index)=>badge.ref?<HButton key={badge.ref} isDisabled={blocked} onClick={()=>change('source_group_ref',badge.ref??'')} tone="secondary">{badge.label}</HButton>:<span key={index}>{badge.label}</span>)}{contact.additional_source_count?<span>另{contact.additional_source_count}个来源</span>:null}</div>
+        </ConversationListItem>)}</div>
+      {list.data&&!list.data.items.length?<EmptyState className="inbox-list-state" title="当前筛选没有可见的联系人" description="可调整队列或搜索条件。" icon={<MessageSquare/>}/>:null}
+      {list.data?.items.length?<div className="inbox-pagination"><HButton isDisabled={!cursor||blocked} onClick={()=>setPage({scope,cursor:null})} tone="secondary">返回最新</HButton><HButton isDisabled={!list.data?.next_cursor||list.isFetching||blocked} onClick={()=>setPage({scope,cursor:list.data?.next_cursor??null})} tone="secondary">下一页</HButton></div>:null}
     </aside>
-    {sessionId?<><Link className="inbox-back" to={'/conversations?'+params.toString()} onClick={e=>{if(blocked)e.preventDefault();}}><ArrowLeft size={15}/>联系人</Link><ChatConversation key={principal.principal_id+':'+sessionId} principal={principal} id={sessionId} onBlockedChange={setBlocked} onContactChange={setSelectedContact}/></>:<section className="inbox-empty"><MessageSquare size={32}/><h2>选择一位报修人</h2><p>查看具体问题和沟通窗口，再领取接待责任。</p></section>}
-  </div></section>;
+    {sessionId?<><Link className="inbox-back" to={'/conversations?'+params.toString()} onClick={e=>{if(blocked)e.preventDefault();}}><ArrowLeft size={15}/>联系人</Link><ChatConversation key={principal.principal_id+':'+sessionId} principal={principal} id={sessionId} onBlockedChange={setBlocked} onContactChange={setSelectedContact}/></>:list.data?.items.length?<EmptyState className="inbox-empty" icon={<MessageSquare/>} title="选择一位报修人" description="查看具体问题和沟通窗口，领取后可回复。"/>:null}
+  </Split></section>;
 }

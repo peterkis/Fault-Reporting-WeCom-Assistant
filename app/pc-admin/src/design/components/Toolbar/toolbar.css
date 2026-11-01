@@ -1,0 +1,22 @@
+.ds-page>.ds-toolbar {display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-3); height: var(--space-10); min-width: 0; margin: 0 0 var(--space-4); padding: 0 0 var(--space-2); box-shadow: inset 0 -1px 0 var(--border-hair);}
+.ds-toolbar>:not(.ds-toolbar-filters) {min-width: 0;}
+.ds-toolbar .view-tabs {margin-left: auto; flex: none;}
+.ds-toolbar-filters {position: relative; flex: none; font-size: var(--fs-sm);}
+.ds-toolbar-filters>summary {display: flex; align-items: center; gap: var(--space-1-5); height: var(--control-h-md); padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; list-style: none; white-space: nowrap;}
+.ds-toolbar-filters>summary::-webkit-details-marker {display: none;}
+.ds-toolbar-filters>summary>svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75;}
+.ds-toolbar-filters>summary:hover {background: var(--bg-hover);}
+.ds-toolbar-filters>summary:active {background: var(--bg-active);}
+.ds-toolbar-filters>summary:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-toolbar-filters>summary[aria-disabled=true] {color: var(--text-tertiary); cursor: not-allowed;}
+.ds-toolbar-filter-content {position: absolute; left: 0; top: calc(100% + var(--space-2)); z-index: var(--z-dropdown); width: min(640px,calc(100vw - var(--sidebar-w) - var(--page-pad-x) * 2)); max-height: calc(100dvh - var(--space-16) * 3); overflow: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
+.ds-toolbar-filter-content:empty {display: none;}
+.ds-toolbar-filter-content .processed-date-controls {margin: 0; flex-wrap: wrap;}
+.ds-toolbar-filter-content .workbench-search {margin: 0 0 var(--space-4);}
+.ds-toolbar-filter-content .search-main {flex-wrap: wrap;}
+.ds-toolbar-filter-content .search-filters {grid-template-columns: repeat(2,minmax(0,1fr));}
+.ds-toolbar-filter-content .processed-date-picker {flex-wrap: wrap;}
+.ds-toolbar .inbox-filters {display: flex; gap: var(--space-2); min-width: 0; margin: 0;}
+.ds-toolbar .inbox-search {flex: 1; min-width: 0; max-width: 320px; margin: 0;}
+@media(max-width:900px) {.ds-toolbar-filter-content {width: min(640px,calc(100vw - var(--page-pad-x) * 2));} .ds-toolbar .inbox-search {max-width: none;} .ds-toolbar {gap: var(--space-2);} }
+@media(prefers-reduced-motion:reduce) {.ds-toolbar-filters * {transition: none; animation: none;}}

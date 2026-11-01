@@ -65,7 +65,7 @@ test('production staff explicitly transfer an assigned queued Ticket with real g
       browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+first.ticket.id,width:1280,height:900,cookies:[browserCookie]});assert.ok(browser);
       const active=browser,capture=async(name:string)=>{const bytes=Buffer.from(string(await active.screenshot()),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&document.querySelector('.properties')?.innerText.includes(${JSON.stringify(originalOwner.display_name)})&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=open-assignment]').click()");await browser.waitFor("Boolean(document.querySelector('.detail-assignment-dialog'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]'))"),true,'the real production transfer form must exist');
       assert.equal(await browser.evaluate("document.querySelector('.detail-assignment-dialog [data-action=transfer-assignment]').textContent.trim()"),'确认转派');

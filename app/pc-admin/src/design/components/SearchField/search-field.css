@@ -1,0 +1,10 @@
+.ds-search-field {display: flex; align-items: center; gap: var(--space-1-5); min-width: 0; height: var(--control-h-md); padding: 0 calc(var(--space-2) + var(--space-0-5)); border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas);}
+.ds-search-field>svg {width: var(--icon-md); height: var(--icon-md); color: var(--text-secondary); stroke-width: 1.75;}
+.ds-page .ds-search-field .input {flex: 1; width: 100%; min-width: 0; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--text-primary);}
+.ds-search-field .input::placeholder {color: var(--text-tertiary);}
+.ds-search-field:hover {border-color: var(--border-strong);}
+.ds-search-field:focus-within {border-color: var(--border-focus);}
+.ds-search-field:has(input:disabled) {background: var(--bg-subtle); color: var(--text-tertiary);}
+.ds-search-field:has([aria-invalid=true]) {border-color: var(--tone-danger-fg);}
+.ds-search-field>.ds-button.button {flex: none; padding: 0;}
+.ds-search-field:empty {min-width: var(--control-h-md);}

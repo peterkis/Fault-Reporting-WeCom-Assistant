@@ -30,6 +30,9 @@ export async function openWorkbenchLogoutBoundary(browser:Pick<Browser,'evaluate
 
 /** Click the actual visible control, including HeroUI's checkbox/radio label. */
 export async function clickWorkbenchControl(browser:Browser,selector:string){
+  // v2 filters retain their controls in a native disclosure; use its real trigger first.
+  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-toolbar-filters');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
+  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-drawer-more>summary');
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;
   await browser.waitFor(`(()=>{const node=${target};return node?.checkVisibility()===true&&node.disabled!==true&&!node.closest('[data-disabled=true]');})()`);
   await browser.evaluate(`(()=>{const node=${target};node.scrollIntoView({block:'nearest',inline:'nearest'});})()`);
@@ -55,6 +58,7 @@ export async function openWorkbenchDialog(browser:Pick<Browser,'evaluate'|'waitF
 }
 
 export async function typeWorkbenchDates(browser:Browser,start:string,end:string){
+  if(await browser.evaluate("Boolean(document.querySelector('.processed-date-picker')?.closest('details.ds-toolbar-filters:not([open])'))"))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
   for(const [index,date] of [start,end].entries()){
     const pieces=date.split('-');assert.equal(pieces.length,3);
     for(const [part,value] of [['year',pieces[0]],['month',pieces[1]],['day',pieces[2]]]){
@@ -68,4 +72,11 @@ export async function typeWorkbenchDates(browser:Browser,start:string,end:string
     const actual=await browser.evaluate(`(()=>{const input=document.querySelectorAll('.processed-date-picker [data-slot=date-input-group-input]')[${index}];return ['year','month','day'].map(part=>Number(input.querySelector('[data-type='+part+']').getAttribute('aria-valuenow')));})()`);
     assert.deepEqual(actual,pieces.map(Number),'keyboard entry must reach the requested calendar date');
   }
+}
+
+/** Page, drawer and modal each own at most one primary action; nested regions count separately. */
+export async function assertWorkbenchPrimaryActions(browser:Browser){
+  const regions:unknown=await browser.evaluate(`(()=>{const roots=[...document.querySelectorAll('.ds-page,.ds-detail,[role=dialog]')].filter(node=>node.checkVisibility());return roots.map(root=>({region:root.getAttribute('aria-label')??root.className,count:[...root.querySelectorAll('[data-tone=primary]')].filter(button=>button.checkVisibility()&&button.closest('.ds-page,.ds-detail,[role=dialog]')===root).length}));})()`);
+  assert.ok(Array.isArray(regions));
+  for(const region of regions){assert.ok(region&&typeof region==='object'&&'count' in region&&typeof region.count==='number');assert.ok(region.count<=1,'one primary action per visible region: '+JSON.stringify(region));}
 }

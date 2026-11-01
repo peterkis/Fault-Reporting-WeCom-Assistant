@@ -1,3 +1,4 @@
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -45,10 +46,10 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
    seen.length=0;
    await browser.evaluate('(()=>{const input=document.querySelector("form[aria-label=\\"搜索全部获权事项\\"] input[name=q]");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(input,'+JSON.stringify(q)+');input.dispatchEvent(new Event("input",{bubbles:true}));})()');
    await browser.evaluate('document.querySelector("form[aria-label=\\"搜索全部获权事项\\"]").requestSubmit()');
-   await browser.waitFor('new URL(location.href).searchParams.get("q")==='+JSON.stringify(q)+'&&document.querySelector(".board-column.pending .column-heading")?.textContent.includes("50 已加载")');
-   await browser.evaluate('document.querySelector("button[data-action=expand-column][aria-controls=cards-pending]").click()');
+   await browser.waitFor('new URL(location.href).searchParams.get("q")==='+JSON.stringify(q)+'&&document.querySelector(".board-column.pending .ds-column-footer")?.textContent.includes("已加载 50 项")');
+   await clickWorkbenchControl(browser,'button[data-action=expand-column][aria-controls=cards-pending]');
    await browser.waitFor('document.querySelectorAll("article[data-kind=ticket]").length===50');
-   await browser.evaluate('document.querySelector("button.load-more:not(:disabled)").click()');
+   await clickWorkbenchControl(browser,'button.load-more:not(:disabled)');
    await browser.waitFor('document.querySelectorAll("article[data-kind=ticket]").length===51');
    assert.equal(seen.filter(value=>value.status===200).length,2);assert.ok(seen.every(value=>value.bytes<=2048));
    if(scenario==='unicode128')assert.deepEqual(seen.map(value=>value.method),['GET','POST']);

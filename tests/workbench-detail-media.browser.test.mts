@@ -12,7 +12,7 @@ import sharp from 'sharp';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import type {DetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,assertWorkbenchPrimaryActions} from './helpers/heroui-workbench-controls.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createYxxH5Media} from '../app/server/src/yxx-h5-media.mjs';
 import {createYxxH5MediaPrivateStore} from '../app/server/src/yxx-h5-media-store.mjs';
@@ -43,7 +43,7 @@ async function tooltipByPointerAndKeyboard(browser:Browser,selector:string,text:
   await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
   await browser.waitFor('!('+visibleTooltip(text)+')');
   // Put focus immediately before the trigger, then use a real keyboard Tab.
-  await browser.evaluate(`(()=>{const target=document.querySelector(${JSON.stringify(selector)}),controls=[...document.querySelectorAll('button,a[href],input,select,textarea,[tabindex="0"]')].filter(node=>node.checkVisibility()&&!node.disabled&&node.tabIndex>=0),index=controls.indexOf(target);if(index<1)throw Error('TOOLTIP_KEYBOARD_PREDECESSOR_MISSING');controls[index-1].focus();})()`);
+  await browser.evaluate(`(()=>{const target=document.querySelector(${JSON.stringify(selector)}),controls=[...document.querySelectorAll('button,a[href],summary,input,select,textarea,[tabindex="0"]')].filter(node=>node.checkVisibility()&&!node.disabled&&node.tabIndex>=0),index=controls.indexOf(target);if(index<1)throw Error('TOOLTIP_KEYBOARD_PREDECESSOR_MISSING');controls[index-1].focus();})()`);
   await browser.pressTab();
   await browser.waitFor(`document.activeElement===document.querySelector(${JSON.stringify(selector)})&&(${visibleTooltip(text)})`);
   for(const detail of details)assert.equal(await browser.evaluate(visibleTooltip(detail)),true,'the keyboard tooltip includes the actual conversion diagnostic');
@@ -56,7 +56,7 @@ async function assertGeometry(browser:Browser,width:number){
     const fields=[...document.querySelectorAll('.detail-properties .property-field')],field=label=>fields.find(node=>node.querySelector('dt').textContent.trim()===label),box=label=>field(label).getBoundingClientRect();
     const location=box('位置'),phone=box('联系电话'),time=box('报修时间'),name=field('报修人');
     const noOverflow=document.documentElement.scrollWidth<=innerWidth&&fields.every(node=>{const r=node.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&node.scrollWidth<=node.clientWidth+1;});
-    const placement=${width}>=960?phone.left>=location.right&&Math.abs(phone.top-location.top)<=1&&Math.abs(phone.left-time.left)<=1&&phone.bottom<=time.top+1:location.bottom<=phone.top+1&&phone.bottom<=time.top+1;
+    const placement=${width}>=960?phone.left>=location.right&&Math.abs(phone.top-location.top)<=1&&time.top>=phone.bottom-1:location.bottom<=phone.top+1&&phone.bottom<=time.top+1;
     return noOverflow&&placement&&!name.querySelector('.reporter-phone')&&document.querySelectorAll('.reporter-phone').length===1;
   })()`),true,`actual location/phone/report-time geometry and overflow at ${width}px`);
   assert.equal(await browser.evaluate("document.querySelector('.activity-title').textContent.trim()"),'处理记录','the detail heading has no loaded-count suffix');
@@ -94,13 +94,14 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     const navigate=async(id:string)=>{await active.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page'});await active.waitFor(`location.pathname.endsWith(${JSON.stringify(id)})&&globalThis.__detailMediaDocument===location.pathname&&document.querySelector('.reporter-phone')?.textContent==='138-0000-0000'&&!document.querySelector('.report-materials .detail-loading')&&Boolean(document.querySelector('.activity-title'))`);};
     await navigate(first.ticket.id);
     await browser.waitFor("[...document.querySelectorAll('.record-avatar img')].some(img=>img.checkVisibility({checkOpacity:true})&&img.complete&&img.naturalWidth===64)");
+    await assertWorkbenchPrimaryActions(browser);
     assert.equal(await browser.evaluate(`globalThis.__detailMediaReads.filter(row=>row.path.endsWith('/actor-avatars/'+${JSON.stringify(principal.id)})).length`),1,'multiple records for the same actor share one avatar read');
     assert.equal(await browser.evaluate("[...document.querySelectorAll('.record-avatar img')].filter(img=>img.complete&&img.naturalWidth>0).every(img=>img.src.startsWith('blob:'))"),true,'the browser consumes the authenticated same-origin image bytes');
     for(const width of [1280,960,390]){await assertGeometry(browser,width);const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'detail-media-'+width+'.png');await writeFile(file,pixels);screenshots.push({width,file,sha256:hash(pixels)});}
     await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
     await navigate(missing.ticket.id);
     await browser.waitFor("globalThis.__detailMediaReads.some(row=>row.path.includes('/actor-avatars/')&&row.status===204)");
-    assert.equal(await browser.evaluate("[...document.querySelectorAll('.detail-record')].some(row=>{const fallback=row.querySelector('.record-avatar [data-slot=avatar-fallback]'),name=row.querySelector('.record-name');return fallback?.checkVisibility({checkOpacity:true})&&fallback.textContent===Array.from(name.textContent)[0]&&!row.querySelector('.record-avatar img');})"),true,'missing cached image visibly falls back to the actor initial');
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.detail-record')].some(row=>{const fallback=row.querySelector('.record-avatar [data-slot=avatar-fallback]'),name=row.querySelector('.record-name');return fallback?.checkVisibility({checkOpacity:true})&&fallback.textContent===Array.from(name.textContent).at(-1)&&!row.querySelector('.record-avatar img');})"),true,'missing cached image visibly falls back to the last character of the actor name');
     await navigate(f.botTicketId);await browser.waitFor(`document.querySelector(${JSON.stringify(storageHint)})?.checkVisibility()===true`);
     assert.equal(await browser.evaluate("document.querySelector('.detail-attachments h4>span').textContent"),'0');
     assert.equal(await browser.evaluate(`(()=>{const hint=document.querySelector(${JSON.stringify(storageHint)}),count=hint.closest('h4').querySelector(':scope>span'),h=hint.getBoundingClientRect(),c=count.getBoundingClientRect();return !!hint.querySelector('svg.lucide-cloud-off')&&h.left>=c.right&&h.left-c.right<=20&&Math.abs((h.top+h.height/2)-(c.top+c.height/2))<=4;})()`),true,'CloudOff is immediately right of the zero count');
@@ -112,6 +113,7 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     await tooltipByPointerAndKeyboard(browser,conversionHint,'原始文件已保存',[failed.error.code,failed.error.at]);
     await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
     await clickWorkbenchControl(browser,'.detail-media-card');await browser.waitFor("document.querySelector('.detail-media-dialog img')?.naturalWidth>0");
+    await assertWorkbenchPrimaryActions(browser);
     await clickWorkbenchControl(browser,'.detail-media-dialog .media-download');
     const file=join(downloads,'report-material.png');let downloaded:Buffer|undefined;const deadline=Date.now()+5000;
     while(Date.now()<deadline){try{downloaded=await readFile(file);break;}catch{await delay(50);}}
