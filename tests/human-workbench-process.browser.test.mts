@@ -197,10 +197,10 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
    assert.equal((await relatedItems()).filter(item=>item.id===groupTicketId).length,1);
-   await browser.evaluate("document.querySelector('button[aria-label=关闭详情]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=related-scope]'))");
-   await browser.evaluate("document.querySelector('[data-action=related-scope]').click()");
-   await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length===1`);
-   await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open').click()`);
+   await clickWorkbenchControl(browser,'button[aria-label=关闭详情]');await browser.waitFor("Boolean(document.querySelector('[data-action=related-scope]'))");
+   await clickWorkbenchControl(browser,'[data-action=related-scope]');
+   await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelector('[data-action=related-scope]')?.getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length===1&&document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open')?.checkVisibility()===true`);
+   await clickWorkbenchControl(browser,`.ticket-card[data-item-id="${groupTicketId}"] .card-open`);
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
    await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='false'");
