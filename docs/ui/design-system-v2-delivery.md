@@ -60,6 +60,16 @@
 
 固定本地候选输入 `f9586107d6cac44e2a15c3b40a674784d356d9414f480d1ef1219d77d9d58b07` 的构建、完整 types、制品及 9 个注册相关入口 / 14 项检查全部通过（无 SKIP / NOT_RUN），包括实际成功/失败/UNKNOWN 通知、双路状态和权限。5 份调整测试的 182 个原 assert 表达式逐项一致；旧 FAIL、原 ZIP、164 项 NOT_RUN、复现与后继结果均保留在 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review2/`。这些记录仍不替代下一发布 head 的远端 CI 与审查。
 
+## 第三轮 Split 断点修补
+
+第三轮审查在 head `a736baed75a6450d6380da742f536374c05e6931` 提出 [P2 Split 断点冲突](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/127#discussion_r4434934819)。1000px、侧栏展开时真实内容区为 712px，旧容器查询把联系人隐藏、返回入口显示，而更强的 v2 规则仍保持两列。现删除三组旧收件箱容器查询，统一使用既有 v2 视口断点：≤900px 列表/详情导航、>900px 双列、≥1360px 关联事项栏。未新增断点值或修改路由、草稿、权限、实时与命令代码。
+
+活动收件箱原注册入口增加真实 UI 矩阵：12 个宽度 × 侧栏展开/折叠 × 选中会话/联系人列表，共 48 组几何断言；验证返回联系人不重载文档、窄屏占满内容宽度、桌面联系人始终可见、第三栏断点、无页面水平溢出及零业务 POST。关键图与全部样本见 [断点 manifest](design-system-v2-evidence/split-viewport-manifest.json)，其中 [1000px 前](design-system-v2-evidence/split-before-1000.png) / [展开后](design-system-v2-evidence/inbox-split-1000-expanded-selected.png) / [折叠后](design-system-v2-evidence/inbox-split-1000-collapsed-selected.png) / [900px](design-system-v2-evidence/inbox-split-900-expanded-selected.png) 可直接对照。
+
+固定本地候选 `49e84015492e4861dec271e2a66c4e9df7b3a590d7168ca7ca6d05b9e3e6059c` 已通过构建、完整 types、制品与 4 个注册相关入口 / 8 项检查。首次 UI 矩阵的 5 项断言通过后，截图归档器因新文件名不符合冻结白名单拒绝收集；未放宽该保护，改用收件箱既有的独立诊断日志通道并重新通过注册入口。原拒绝记录、前后图及摘要保留在 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review3/`。
+
+该发布 head 的远端 CI 另在未改动的身份切换用例出现等待超时；原 `wbint-t38-authority` 四项本地复跑通过，包括真实 Cookie 主体切换、旧在途 GET 隔离、草稿不继承和零自动写入。未修改认证实现、测试断言或超时，只记录未再次复现；后继 head 的完整远端 CI 仍独立等待。
+
 ## 合并与回退
 
 合并前要求最终完整 PR head 的审查完成、P1/P2 收口、适用 CI 成功且未解决线程核对完成。合并使用保留祖先的 merge commit；回退为后继 revert，不改写历史证据。没有部署、真实发送、业务写库或 Gate 推进授权。
