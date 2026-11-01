@@ -1,4 +1,4 @@
-import {clickWorkbenchControl,chooseWorkbenchSelect,assertWorkbenchPrimaryActions} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,chooseWorkbenchSelect,assertWorkbenchPrimaryActions,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -52,7 +52,7 @@ test('production detail shares report materials, uses responsive information and
     assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
     await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
     assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog textarea').value"),summary);
-    await click('[aria-label="确认公开进度内容"]');await click('.detail-progress-dialog button[type=submit]');
+    await click('[aria-label="确认公开进度内容"]');await assertWorkbenchPrimaryLabelContrast(browser,'.detail-progress-dialog button[type=submit]');await click('.detail-progress-dialog button[type=submit]');
     await browser.waitFor("document.querySelector('[data-toast-source=web-report]')?.innerText.includes('提交结果尚未确认')");
     assert.equal(await browser.evaluate('globalThis.__droppedProgress'),1,'the actual committed success is lost at the browser transport boundary');
     await click('[aria-label="关闭公开进度窗口"]');await browser.waitFor("!document.querySelector('.detail-progress-dialog')");

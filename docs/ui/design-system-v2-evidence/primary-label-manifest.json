@@ -1,0 +1,33 @@
+{
+  "scope": "PR127 second P2, actual enabled public progress button; synthetic loopback HTTP/PG fixture",
+  "before": {
+    "tone": "primary",
+    "transition": "background-color 0.12s cubic-bezier(0.2, 0, 0, 1), border-color 0.12s cubic-bezier(0.2, 0, 0, 1)",
+    "enabled": true,
+    "foreground": "rgb(255, 255, 255)",
+    "label": "rgb(107, 105, 101)",
+    "background": "rgb(247, 247, 245)"
+  },
+  "after": {
+    "tone": "primary",
+    "transition": "none",
+    "enabled": true,
+    "foreground": "rgb(255, 255, 255)",
+    "label": "rgb(255, 255, 255)",
+    "background": "rgb(37, 99, 201)"
+  },
+  "before_note": "Original reduced-motion rule lost to the more specific base selector; before capture still observes the enable background transition. The grey label does not inherit the white foreground.",
+  "after_note": "White label on brand blue; reduced-motion transition is none. Enabled-primary contrast is separately asserted in public progress, ordinary/bound replies and the active inbox test.",
+  "images": [
+    {
+      "path": "primary-label-before-1280.png",
+      "sha256": "6568f1707ecb75cf91846c36641174deb0e57b19a63d59d69a931e3047793a52",
+      "bytes": 111930
+    },
+    {
+      "path": "primary-label-after-1280.png",
+      "sha256": "056e3d7bfa5e459a796050f9ee8126f3bd8db208f33d4b95c54873753bdadf0e",
+      "bytes": 112012
+    }
+  ]
+}

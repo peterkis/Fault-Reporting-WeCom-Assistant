@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -29,6 +30,7 @@ test('the production workspace reads real scoped topics, keeps input and selecti
       await appendT22LiveItem(pool,session.id,'T22 arrived while writing',10);await pool.query('UPDATE conversation.session SET row_version=row_version+1,generation_version=generation_version+1 WHERE id=$1::uuid',[session.id]);
       await browser.waitFor("document.querySelector('[data-conversation-timeline]').textContent.includes('T22 arrived while writing')");
       assert.deepEqual(await browser.evaluate("(()=>{const input=document.querySelector('textarea[data-purpose=messages]');return {value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input};})()"),{value:'T22 browser preserved reply',start:4,end:11,focused:true});
+      await assertWorkbenchPrimaryLabelContrast(browser,'[data-action=send-conversation-reply]');
       await browser.evaluate("document.querySelector('[data-action=send-conversation-reply]').click()");
       await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");
       assert.equal(await browser.evaluate("document.querySelector('[data-reply-outcome]').textContent.includes('发送成功')"),false);

@@ -29,4 +29,4 @@
 .ds-button[data-pending=true] .ds-button-label {opacity: 0;}
 .ds-button-spinner {position: absolute; width: var(--icon-sm); height: var(--icon-sm); border: 2px solid currentColor; border-right-color: transparent; border-radius: var(--radius-full); animation: ds-button-spin var(--dur-slow) linear infinite;}
 @keyframes ds-button-spin {to {transform: rotate(360deg);}}
-@media(prefers-reduced-motion:reduce) {.ds-button.button {transition: none;} .ds-button-spinner {animation: none;}}
+@media(prefers-reduced-motion:reduce) {.ds-button.button[data-tone] {transition: none;} .ds-button-spinner {animation: none;}}

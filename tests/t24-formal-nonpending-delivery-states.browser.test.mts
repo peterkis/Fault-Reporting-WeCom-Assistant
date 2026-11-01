@@ -36,7 +36,8 @@ const instrument=`(()=>{const original=globalThis.fetch;globalThis.__t24PCReads=
     if(method==='GET'&&path.endsWith('/deliveries'))globalThis.__t24PCReads.push({path,status:response.status,body:await response.clone().json()});
     if(method==='GET'&&path==='/api/lifecycle/bootstrap')globalThis.__t24PCBootstrap.push({status:response.status,body:await response.clone().json()});
     return response;};})()`;
-const domRows=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return [...(r?.querySelectorAll('li')??[])].map(li=>({node:li.querySelector('strong')?.textContent.trim()??'',lines:[...li.querySelectorAll('.notification-delivery')].flatMap(d=>[...d.querySelectorAll('p span')].map(x=>x.textContent.trim()).concat([...d.querySelectorAll('small,time')].map(x=>x.textContent.trim().replace(/\\s+/g,' '))))})).sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);})()`;
+// Read the route and Tag once; the Tag's content span is not a second status.
+const domRows=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)});return [...(r?.querySelectorAll('li')??[])].map(li=>({node:li.querySelector('strong')?.textContent.trim()??'',lines:[...li.querySelectorAll('.notification-delivery')].flatMap(d=>[...d.querySelectorAll('p>span')].map(x=>x.textContent.trim()).concat([...d.querySelectorAll('small,time')].map(x=>x.textContent.trim().replace(/\\s+/g,' '))))})).sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);})()`;
 const click=()=>`(()=>{const r=document.querySelector(${JSON.stringify(region)}),b=[...(r?.querySelectorAll('button')??[])].find(x=>x.getAttribute('aria-label')==='刷新通知状态');if(!b||b.disabled)throw Error('T24_REAL_REQUERY_BUTTON_REQUIRED');b.click();})()`;
 async function load(browser:Browser){
   await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});

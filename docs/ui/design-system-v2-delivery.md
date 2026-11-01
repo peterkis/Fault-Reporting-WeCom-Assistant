@@ -50,6 +50,16 @@
 
 首轮远端 TypeScript 运行 `41284216094` 在上述旧 T09 状态定位失败：244 个选择入口中执行 14 个，57 项检查为 55 PASS / 2 FAIL，230 入口 NOT_RUN，原 ZIP 与摘要已保留。修补的本地输入 `a6060a30d28a8c59c792d638c78d78d86265877a9cbd74d1e9bfb3383e6fe63f` 已通过构建、完整 types、制品与 8 个注册相关入口 / 13 项检查（无 SKIP / NOT_RUN）；它不是后继发布 head 的远端 CI 通过证明。新增图片摘要见 [审查修补 manifest](design-system-v2-evidence/media-review-manifest.json)，原始诊断和 TAP 位于 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review1/`。
 
+## 第二轮审查与通知定位收口
+
+第二轮审查在 head `eb7ac71f72153357197a9af03659f5727b9e284a` 提出 [P2 主按钮标签颜色问题](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/127#discussion_r4434840424)。实际启用的公开进度按钮前景为白色，但 label 被 `.note-controls span` 改成灰色；现仅让操作栏直接提示 span 使用该灰度，按钮内部正常继承自身前景。同步补齐 reduced-motion 选择器优先级，使弹窗按钮在该偏好下实际为 `transition: none`。
+
+新增可提交状态的实际对比度检查：公开进度、普通会话、补充材料绑定回复及活动 selection 的收件箱入口均检查白色标签与蓝底至少 4.5:1。检查等待原 CSS 状态完成，不增加业务超时或任意 sleep。修补前后图及原始计算样式见 [前](design-system-v2-evidence/primary-label-before-1280.png) / [后](design-system-v2-evidence/primary-label-after-1280.png) / [manifest](design-system-v2-evidence/primary-label-manifest.json)；前图同时保留当时未生效的 reduced-motion 转场观察，不把转场底色当作稳态蓝底。
+
+该 head 的远端 TypeScript 运行 `41286792920` 已执行 80/244 入口，171 项检查为 170 PASS / 1 FAIL，164 入口 NOT_RUN；停在通知状态的旧 DOM 提取。真实运行复现了 Tag 外层与内部 span 被 `p span` 重复收集，同一“已发送/待发送”各出现两次。测试现读取直接子项，原 Sender 场景、精确状态、次数、发送时间、权限、零写入和物理快照断言保持。
+
+固定本地候选输入 `f9586107d6cac44e2a15c3b40a674784d356d9414f480d1ef1219d77d9d58b07` 的构建、完整 types、制品及 9 个注册相关入口 / 14 项检查全部通过（无 SKIP / NOT_RUN），包括实际成功/失败/UNKNOWN 通知、双路状态和权限。5 份调整测试的 182 个原 assert 表达式逐项一致；旧 FAIL、原 ZIP、164 项 NOT_RUN、复现与后继结果均保留在 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review2/`。这些记录仍不替代下一发布 head 的远端 CI 与审查。
+
 ## 合并与回退
 
 合并前要求最终完整 PR head 的审查完成、P1/P2 收口、适用 CI 成功且未解决线程核对完成。合并使用保留祖先的 merge commit；回退为后继 revert，不改写历史证据。没有部署、真实发送、业务写库或 Gate 推进授权。

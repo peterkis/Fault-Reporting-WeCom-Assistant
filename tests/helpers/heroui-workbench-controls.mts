@@ -87,3 +87,11 @@ export async function assertWorkbenchMediaPreviewGeometry(browser:Browser,width:
   assert.ok(Array.isArray(cards));assert.ok(cards.length>0,'media geometry must observe actual preview cards');
   for(const card of cards){assert.ok(card&&typeof card==='object'&&'height' in card&&'unpadded' in card&&'labelFills' in card&&'imageFills' in card);assert.equal(card.height,width<=640?145:170);assert.equal(card.unpadded,true);assert.equal(card.labelFills,true);assert.equal(card.imageFills,true);}
 }
+
+/** Observe an enabled primary action after its normal CSS transition, never a disabled placeholder. */
+export async function assertWorkbenchPrimaryLabelContrast(browser:Browser,selector:string){
+  await browser.waitFor(`(()=>{const n=document.querySelector(${JSON.stringify(selector)});return n?.checkVisibility()&&!n.disabled&&n.getAttribute('aria-disabled')!=='true'&&n.dataset.disabled!=='true'&&n.dataset.tone==='primary'&&['rgb(37, 99, 201)','rgb(29, 79, 163)'].includes(getComputedStyle(n).backgroundColor);})()`);
+  const colors:unknown=await browser.evaluate(`(()=>{const n=document.querySelector(${JSON.stringify(selector)}),label=n.querySelector('.ds-button-label'),foreground=getComputedStyle(n).color,text=getComputedStyle(label).color,background=getComputedStyle(n).backgroundColor,lum=color=>color.match(/[\\d.]+/g).slice(0,3).map(x=>{const v=Number(x)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0),a=lum(text),b=lum(background);return {foreground,text,background,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};})()`);
+  assert.ok(colors&&typeof colors==='object'&&'foreground' in colors&&'text' in colors&&'ratio' in colors&&typeof colors.ratio==='number');
+  assert.equal(colors.foreground,'rgb(255, 255, 255)');assert.equal(colors.text,colors.foreground,'primary label inherits the button foreground');assert.ok(colors.ratio>=4.5,'enabled primary text contrast is at least 4.5:1');
+}

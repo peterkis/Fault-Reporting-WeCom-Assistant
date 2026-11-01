@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney} from './helpers/conversation-inbox-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
@@ -81,6 +81,7 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
       await browser.evaluate("document.querySelector('.inbox-new-messages').click()");
       await browser.evaluate("(()=>{globalThis.__inboxCommands=[];const original=fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/messages')&&options?.method==='POST')globalThis.__inboxCommands.push(JSON.parse(options.body));return original(path,options);};})()");
       await browser.evaluate(input('messages','合成原UUID回复'));dropReply=true;
+      await assertWorkbenchPrimaryLabelContrast(browser,'[data-action=send-conversation-reply]');
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
       await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('结果未知')");const command=await browser.evaluate('globalThis.__inboxCommands[0]') as ConversationTextCommand;assert.equal(command.text,'合成原UUID回复');
       await browser.evaluate("document.querySelector('[data-action=check-messages]').click()");await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");assert.equal(await browser.evaluate('globalThis.__inboxCommands.length'),1);
