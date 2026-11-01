@@ -10,7 +10,7 @@ export function BoardColumn({column,label,count,className='',children,...props}:
 
 /** Format only the server's confirmed half-open Shanghai window. */
 export function boardEmptyMessage(column:keyof typeof stagePresentation,range?:{mode:string;from:string;until:string}){
-  if(column!=='closed')return '当前没有可见的事项';
+  if(column!=='closed')return '这里暂时没有工单';
   if(!range||range.mode==='all')return '当前没有已处理的工单';
   if(range.mode==='cancelled')return '当前没有已取消的工单';
   // Calendar arithmetic on the server's civil fields; historical DST must not move a date.

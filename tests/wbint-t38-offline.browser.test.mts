@@ -29,7 +29,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T38 draft during temporary read failure');input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.setSelectionRange(4,8);})()`);
       await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
       const priorReads=reads;unreadable=true;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取工单动作").click()');
+      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="刷新可用操作").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
       assert.ok(reads>priorReads);assert.equal((await runtime.observability.metrics()).sse_clients,1,'a readable REST failure must not be guessed from SSE connection health');
       assert.equal(await browser.evaluate('document.querySelector("textarea")?.value??null'),'T38 draft during temporary read failure','ordinary failed refetch must not replace the current editor with an error-only view');
@@ -45,7 +45,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("尚未准备或发送")'));
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'T38 draft during temporary read failure');
       unreadable=false;
-      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="重新读取工单动作").click()');
+      await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="刷新可用操作").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
       await browser.waitFor('document.querySelector(".ticket-note-state")?.textContent.includes("已保存内部备注")');assert.equal(posts,1);

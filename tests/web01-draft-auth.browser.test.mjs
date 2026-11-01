@@ -40,7 +40,7 @@ test('trusted object rejection clears that encrypted copy and leaves a different
       await browser.command('Page.navigate',{url:path(tickets[5].ticket.id)});await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'T03 revoked item draft');
       await pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[principals[0].id]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[principals[0].id]);
       await pool.query("DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid",[principals[0].id]);await pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$2::uuid WHERE id=$1::uuid',[tickets[4].ticket.id,principals[0].id]);
-      await browser.evaluate("Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='重新读取工单动作').click()");await browser.waitFor("!document.querySelector('textarea')");
+      await browser.evaluate("Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='刷新可用操作').click()");await browser.waitFor("!document.querySelector('textarea')");
       const readKeys="new Promise(resolve=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onsuccess=()=>{const db=request.result,read=db.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{db.close();resolve(read.result.map(row=>row.id));};};})";
       await browser.waitFor(`(async()=>!(await (${readKeys})).includes(${JSON.stringify(tickets[5].ticket.id)}))()`);
       const keys=await browser.evaluate(readKeys);
