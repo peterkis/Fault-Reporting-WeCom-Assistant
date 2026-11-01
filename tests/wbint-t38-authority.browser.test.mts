@@ -33,7 +33,7 @@ test('effective scope changes revoke facts and draft authority without relying o
     const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,error:unknown;
     const observe=async()=>{
       if(!browser)return;
-      const state=await browser.evaluate('({editor:Boolean(document.querySelector("textarea")),activity:Boolean(document.querySelector(".activity-list")),realtime:document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus??null,session_recheck:document.body.innerText.includes("会话需要重新核验"),expired:document.body.innerText.includes("会话已失效"),denied:document.body.innerText.includes("当前身份没有查看权限"),retry:[...document.querySelectorAll("button")].some(button=>button.textContent==="重新读取"),hidden:document.visibilityState==="hidden"})');
+      const state=await browser.evaluate('({editor:Boolean(document.querySelector("textarea")),activity:Boolean(document.querySelector(".activity-list")),realtime:document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus??null,session_recheck:document.body.innerText.includes("会话需要重新核验"),expired:document.body.innerText.includes("会话已失效"),denied:document.body.innerText.includes("当前账号无法查看工作台"),retry:[...document.querySelectorAll("button")].some(button=>button.textContent==="重新读取"),hidden:document.visibilityState==="hidden"})');
       t.diagnostic('T38_AUTHORITY_STATE '+JSON.stringify({phase,at_ms:Math.round(performance.now()-started),state,posts,denials}));
     };
     try{

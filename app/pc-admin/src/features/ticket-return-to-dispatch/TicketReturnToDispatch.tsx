@@ -1,5 +1,5 @@
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
@@ -259,16 +259,16 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
           const chosen=value.sessions.find(item=>sameId(item.session_id,row.session_id)),permitted=row.take_allowed&&boundedVersion(row.session_row_version);
           return <li key={row.session_id}><HCheckbox data-session-choice={row.session_id} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>{row.conversation_principal_name??'尚未分配沟通人'}<small>会话 {row.session_id} · 版本 {row.session_row_version}{!permitted?' · 当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
         })}</ul>
-        {value.sessions.length?<ul>{value.sessions.map(row=><li key={row.session_id}>已选会话 {row.session_id}<HButton type="button" isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} variant="secondary">取消选择</HButton></li>)}</ul>:null}
-        {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} variant="secondary">回到首批会话</HButton>:null}
-        {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} variant="secondary">下一批关联会话</HButton>:null}
+        {value.sessions.length?<ul>{value.sessions.map(row=><li key={row.session_id}>已选会话 {row.session_id}<HButton type="button" isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>)}</ul>:null}
+        {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}
+        {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} tone="secondary">下一批关联会话</HButton>:null}
       </>:null}
-      <HButton type="button" data-action="return-to-dispatch" isDisabled={!canSubmit} onClick={()=>{void submit();}} variant="secondary">确认停止处理并退回待安排</HButton>
+      <HButton type="button" data-action="return-to-dispatch" isDisabled={!canSubmit} onClick={()=>{void submit();}} tone="secondary">确认停止处理并退回待安排</HButton>
     </>:<p>当前没有可提交的退回动作；已存在的原 UUID 仍可按当前工单读权限核对。</p>}
     {draft.enabled?<DraftStatus data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}
-    {originalId&&!busy?<HButton type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}} variant="secondary">只读核对原操作</HButton>:null}
-    {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} variant="secondary">重新读取并确认版本</HButton>:null}
-    {hasReturnInput(value)&&!busy?<HButton type="button" data-action="discard-return-draft" onClick={discard} variant="secondary">清除敏感填写内容</HButton>:null}
+    {originalId&&!busy?<HButton type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}} tone="secondary">只读核对原操作</HButton>:null}
+    {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
+    {hasReturnInput(value)&&!busy?<HButton type="button" data-action="discard-return-draft" onClick={discard} tone="secondary">清除敏感填写内容</HButton>:null}
     {message?<ToastFeedback revision={messageRevision} source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
   </section>;
 }

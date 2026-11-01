@@ -26,7 +26,8 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});
     await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false&&document.querySelector('.media-empty')&&document.querySelector('.notification-empty')&&!document.querySelector('.report-materials .detail-loading')");
     const cspBaseline=await browser.evaluate('globalThis.__toastCsp');
-    const actionGeometry=await browser.evaluate("[...document.querySelectorAll('.detail-common-actions>section>button')].map(button=>({text:button.textContent,y:button.getBoundingClientRect().y,height:button.getBoundingClientRect().height}))");
+    const actionGeometry=await browser.evaluate("[...document.querySelectorAll('.ds-drawer-command-buttons>.detail-action-controller>button,.ds-drawer-command-buttons>.detail-action-controller>.note-controls>button')].filter(button=>button.checkVisibility()).map(button=>({text:button.textContent,y:button.getBoundingClientRect().y,height:button.getBoundingClientRect().height}))");
+    assert.ok(actionGeometry.length>=1,'geometry check includes visible command buttons');
     await click('[data-action=open-assignment]');await choose(group,'PILOT_IT');await choose(person,target.id);await click(dialog+' input[value=RETAIN_CURRENT]');
     await browser.waitFor("document.querySelector('[data-action=assign]')?.disabled===false");
     const geometry=await browser.evaluate(`(()=>{const r=document.querySelector('${dialog}').getBoundingClientRect();return {width:r.width,height:r.height};})()`);
@@ -45,7 +46,7 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     await capture('new-detail-600.png');await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
     await closeToast();await browser.waitFor(`!document.querySelector('${toast}')`);assert.equal((await http.detail(first.ticket.id)).version,before.version+1);
     await click('[aria-label="关闭派单窗口"]');await browser.waitFor(`!document.querySelector('${dialog}')`);
-    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.detail-common-actions>section>button')].map(button=>({text:button.textContent,y:button.getBoundingClientRect().y,height:button.getBoundingClientRect().height}))"),actionGeometry);
+    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.ds-drawer-command-buttons>.detail-action-controller>button,.ds-drawer-command-buttons>.detail-action-controller>.note-controls>button')].filter(button=>button.checkVisibility()).map(button=>({text:button.textContent,y:button.getBoundingClientRect().y,height:button.getBoundingClientRect().height}))"),actionGeometry);
     await click('[data-action=open-assignment]');await browser.waitFor(`Boolean(document.querySelector('${person} select'))`);assert.equal(await browser.evaluate(`document.querySelector('${person} select').value`),target.id);
     const repeated=await http.post(first.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:before.version+1,reason_code:'TOAST_REPEAT_CONFLICT',note:'Synthetic second concurrent change.',external_visible:false});assert.equal(repeated.status,200);
     await click('[data-action=assign]');await browser.waitFor(`document.querySelector('${toast}')?.textContent.includes('操作冲突')`);assert.equal(await browser.evaluate(`document.querySelectorAll('${toast}').length`),1,'identical feedback reappears after a distinct explicit attempt');await closeToast();await browser.waitFor(`!document.querySelector('${toast}')`);await click('[data-action=assign]');

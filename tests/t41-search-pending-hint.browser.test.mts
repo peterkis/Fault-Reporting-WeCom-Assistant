@@ -73,7 +73,7 @@ for(const scenario of ['initial','reset'] as const)test('T41 real hint fences a 
     await browser.waitFor('Boolean(document.querySelector("article[data-item-id=\\"'+ticket.ticket.id+'\\"]"))');
    }
    holdNext=true;
-   await browser.evaluate(scenario==='initial'?'document.querySelector("a.sidebar-search").click()':'[...document.querySelectorAll(".toolbar button")].find(button=>button.textContent.trim()==="刷新").click()');
+   await browser.evaluate(scenario==='initial'?'document.querySelector("a.sidebar-search").click()':'[...document.querySelectorAll(".ds-page-header button")].find(button=>button.textContent.trim()==="刷新").click()');
    await waitFor(()=>release!==undefined,'the real successful search response must be held after its final server checks');assert.equal(heldContainsTarget,true);
    await browser.waitFor('new URL(location.href).searchParams.get("search")==="1"&&!document.querySelector("article[data-kind=ticket]")');
    const commands=createP2016TicketCommandFacade({pool:f.pool,enabled:true,realtimeProjector:f.runtime.realtimeProjector.ticket});

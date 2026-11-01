@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {DetailDialog} from '../../app/DetailDialog';
@@ -97,23 +97,23 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange,item
   const discard=async()=>{if(request.current||busy)return;const copy={value:latest.current,pending:pendingRef.current},job=begin('privacy');if(!job)return;try{await freshRead(job);job.requireCurrent();const cleaned=await draft.dropSensitive(copy,job);if(!cleaned){setCleanupBlocked(true);setMessage('存在不同恢复修订，未删除其内容；当前输入保留。');}}catch(error){if(current(job)&&!readDenied(error))setMessage('敏感副本清理暂未确认，当前输入保留。');}finally{end(job);}};
   if(!allowed&&!originalId&&!note&&!busy&&!draft.restoring&&!message)return null;
   const noteLabel=action==='cancel'?'取消原因':action==='resume'?'恢复原因':'等待原因';
-  const form=(allowed||note||originalId)?<HForm aria-label={labels[action]} onSubmit={event=>{event.preventDefault();void submit();}}><HLabel>{noteLabel}<HTextArea aria-label={noteLabel} maxLength={2000} value={note} disabled={blocked||!allowed} onChange={event=>setNote(event.target.value)}/></HLabel><p>{action==='cancel'?'取消原因仅作内部记录，请先核实当前工单。':action==='resume'?'记录已收到的信息或恢复处理的原因；仍由当前处理人继续本轮。':action==='request-information'?'请另行联系报修人，说明需要补充什么。此处仅记录内部等待原因，不会自动发送。':'记录厂商待办及联系情况；保留当前处理人和处理轮次。'}</p>{action==='cancel'?<HCheckbox aria-label="确认取消当前工单" isSelected={confirmed} isDisabled={blocked||!allowed} onChange={event=>setConfirmed(event)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>我已核对当前工单并确认取消</HCheckbox.Content></HCheckbox>:null}<div className="note-controls"><HButton type="button" isDisabled={busy} onClick={()=>setOpen(false)} variant="secondary">{action==='cancel'?'暂不取消':'关闭表单'}</HButton>
-    <HButton type="submit" className={action==='cancel'?'danger-action':undefined} isDisabled={blocked||otherBlocked||!allowed||!draft.canSubmit||!note.trim()||note.length>2000||(context.isPending||context.isError)||action==='cancel'&&!confirmed} variant="secondary">{action==='cancel'?'确认取消工单':action==='resume'?'确认恢复':'确认等待'}</HButton></div></HForm>:null;
+  const form=(allowed||note||originalId)?<HForm aria-label={labels[action]} onSubmit={event=>{event.preventDefault();void submit();}}><HLabel>{noteLabel}<HTextArea aria-label={noteLabel} maxLength={2000} value={note} disabled={blocked||!allowed} onChange={event=>setNote(event.target.value)}/></HLabel><p>{action==='cancel'?'取消原因仅作内部记录，请先核实当前工单。':action==='resume'?'记录已收到的信息或恢复处理的原因；仍由当前处理人继续本轮。':action==='request-information'?'请另行联系报修人，说明需要补充什么。此处仅记录内部等待原因，不会自动发送。':'记录厂商待办及联系情况；保留当前处理人和处理轮次。'}</p>{action==='cancel'?<HCheckbox aria-label="确认取消当前工单" isSelected={confirmed} isDisabled={blocked||!allowed} onChange={event=>setConfirmed(event)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>我已核对当前工单并确认取消</HCheckbox.Content></HCheckbox>:null}<div className="note-controls"><HButton type="button" isDisabled={busy} onClick={()=>setOpen(false)} tone="secondary">{action==='cancel'?'暂不取消':'关闭表单'}</HButton>
+    <HButton type="submit" className={action==='cancel'?'danger-action':undefined} isDisabled={blocked||otherBlocked||!allowed||!draft.canSubmit||!note.trim()||note.length>2000||(context.isPending||context.isError)||action==='cancel'&&!confirmed} tone={action==='cancel'?'danger':'secondary'}>{action==='cancel'?'确认取消工单':action==='resume'?'确认恢复':'确认等待'}</HButton></div></HForm>:null;
   const recovery=<>
     {draft.enabled?<DraftStatus notify={false} data-waiting-draft-status role="status">{draft.message}</DraftStatus>:null}
-    {originalId&&!busy?<HButton type="button" data-action={'check-'+action+'-command'} isDisabled={draft.restoring} onClick={()=>{void check();}} variant="secondary">核对上次操作</HButton>:null}
-    {note&&!busy?<HButton type="button" data-action={'discard-'+action+'-draft'} onClick={()=>{void discard();}} variant="secondary">清空填写内容</HButton>:null}
+    {originalId&&!busy?<HButton type="button" data-action={'check-'+action+'-command'} isDisabled={draft.restoring} onClick={()=>{void check();}} tone="secondary">核对上次操作</HButton>:null}
+    {note&&!busy?<HButton type="button" data-action={'discard-'+action+'-draft'} onClick={()=>{void discard();}} tone="secondary">清空填写内容</HButton>:null}
 
   </>;
   return <section className={'ticket-notes ticket-waiting-actions'+(action==='cancel'?' detail-action-controller detail-cancel-controller':'')} data-waiting-purpose={action} aria-label={labels[action]}>
     {action==='cancel'?<>
-      {allowed||originalId||note?<HButton type="button" data-action="cancel" className="cancel-ticket-trigger" isDisabled={busy||otherBlocked&&!originalId} onClick={()=>setOpen(true)} variant="secondary">{originalId?'核对取消':'取消工单'}</HButton>:null}
+      {allowed||originalId||note?<HButton type="button" data-action="cancel" className="cancel-ticket-trigger" isDisabled={busy||otherBlocked&&!originalId} onClick={()=>setOpen(true)} tone="secondary">{originalId?'核对取消':'取消工单'}</HButton>:null}
       <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={busy} title="取消工单" closeLabel="关闭取消窗口" className="detail-action-dialog detail-cancel-dialog">
         <p className="detail-operation-context">{itemLabel}</p>{form}{recovery}
       </DetailDialog>
 
     </>:<>
-      {allowed?<HButton type="button" data-action={action} isDisabled={blocked||otherBlocked} onClick={()=>setOpen(true)} variant="secondary">{labels[action]}</HButton>:null}
+      {allowed?<HButton type="button" data-action={action} isDisabled={blocked||otherBlocked} onClick={()=>setOpen(true)} tone="secondary">{labels[action]}</HButton>:null}
       {open?form:null}{recovery}
     </>}
     <DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>

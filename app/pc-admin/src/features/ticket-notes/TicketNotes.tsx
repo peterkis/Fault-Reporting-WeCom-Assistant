@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
@@ -50,18 +50,18 @@ export function TicketNotes({ticketId,principal,onBlockedChange}:{ticketId:strin
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const checkReceipt=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId:draft.operationId,signal:controller.signal});};
   if(context.isPending)return <p role="status">正在读取工单动作与版本…</p>;
-  if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><HButton type="button" onClick={()=>{void context.refetch();}} variant="secondary">重新读取工单动作</HButton></section>;
+  if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p><HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重新读取工单动作</HButton></section>;
   if(!context.data)return <p role="status">正在重新核验工单动作…</p>;
   const allowed=context.data.allowed_actions.includes('add-note');
   return <section data-activity-field="internal-note" className="ticket-notes detail-note-composer" aria-label="工单操作">
     <div className="note-composer-body">
     {context.isError?<p role="status">动作读取失败；最近确认资料和输入已保留，请重新读取后提交新的操作。</p>:null}
     <p hidden className="ticket-command-version">工单版本 {context.data.version}</p>
-    {allowed||pending||draft.operationId?<HForm onSubmit={event=>{event.preventDefault();if(!allowed||blocked||!draft.canSubmit||!note.trim()||note.length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:note.trim(),external_visible:false}),false);}}><HLabel htmlFor="internal-note"><Lock size={19}/>内部备注</HLabel><p id="internal-note-audience">仅信息科可见，不向报修人发送。</p><div className="note-entry"><HTextArea id="internal-note" aria-label="内部备注" aria-describedby="internal-note-audience" placeholder="记录处理进展或需要同事知道的信息…" rows={2} maxLength={2000} value={note} disabled={blocked||!allowed} onChange={event=>setNote(event.target.value)}/><HButton type="submit" data-action="save-internal-note" isDisabled={blocked||!allowed||!draft.canSubmit||!note.trim()||note.length>2000} variant="secondary">保存内部备注</HButton></div>{draft.enabled?<DraftStatus data-draft-status role="status">{draft.message}</DraftStatus>:null}<div className="note-controls">
-      {state==='unknown'&&pending?<HButton type="button" data-action="check-internal-note" onClick={()=>send(pending,true)} variant="secondary">核对保存结果</HButton>:null}
-      {!pending&&draft.operationId?<HButton type="button" data-action="check-expired-note" isDisabled={state==='submitting'||state==='checking'} onClick={checkReceipt} variant="secondary">核对上次操作</HButton>:null}
-      {draft.enabled&&Boolean(note)?<HButton type="button" data-action="discard-note-draft" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void draft.discard();}} variant="secondary">丢弃草稿内容</HButton>:null}
-      {!blocked?<HButton type="button" onClick={()=>{void context.refetch();}} variant="secondary">重新读取工单动作</HButton>:null}<span>{note.length} / 2000</span></div></HForm>:<p>当前没有内部备注写入权限。</p>}
+    {allowed||pending||draft.operationId?<HForm onSubmit={event=>{event.preventDefault();if(!allowed||blocked||!draft.canSubmit||!note.trim()||note.length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:note.trim(),external_visible:false}),false);}}><HLabel htmlFor="internal-note"><Lock size={19}/>内部备注</HLabel><p id="internal-note-audience">仅信息科可见，不向报修人发送。</p><div className="note-entry"><HTextArea id="internal-note" aria-label="内部备注" aria-describedby="internal-note-audience" placeholder="记录处理进展或需要同事知道的信息…" rows={2} maxLength={2000} value={note} disabled={blocked||!allowed} onChange={event=>setNote(event.target.value)}/><HButton type="submit" data-action="save-internal-note" isDisabled={blocked||!allowed||!draft.canSubmit||!note.trim()||note.length>2000} tone="secondary">保存内部备注</HButton></div>{draft.enabled?<DraftStatus data-draft-status role="status">{draft.message}</DraftStatus>:null}<div className="note-controls">
+      {state==='unknown'&&pending?<HButton type="button" data-action="check-internal-note" onClick={()=>send(pending,true)} tone="secondary">核对保存结果</HButton>:null}
+      {!pending&&draft.operationId?<HButton type="button" data-action="check-expired-note" isDisabled={state==='submitting'||state==='checking'} onClick={checkReceipt} tone="secondary">核对上次操作</HButton>:null}
+      {draft.enabled&&Boolean(note)?<HButton type="button" data-action="discard-note-draft" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void draft.discard();}} tone="secondary">丢弃草稿内容</HButton>:null}
+      {!blocked?<HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重新读取工单动作</HButton>:null}<span>{note.length} / 2000</span></div></HForm>:<p>当前没有内部备注写入权限。</p>}
     {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-notes" state={state} className="ticket-note-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
   </div></section>;
 }

@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Input as HInput,Label as HLabel} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
@@ -138,15 +138,15 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   {principal.follow_up_schedules_enabled&&view?<>
    {query.isError||!factsConfirmed?<p role="status">以下为最近已确认资料，最新安排仍需重新读取。</p>:null}
    <p>{view.active?<><time>{view.active.due_at}</time>{view.active.is_due?' · 已到期，请跟进':' · 已安排'}</>:'尚无活动的共享时间'}</p>
-   {canSet?<HForm onSubmit={event=>{event.preventDefault();submit('SET');}}><HLabel htmlFor={'follow-up-due-'+ticketId}>下次行动时间（北京时间）</HLabel><HInput id={'follow-up-due-'+ticketId} name="due_at" type="text" maxLength={19} placeholder="YYYY-MM-DD HH:mm:ss" value={input} disabled={blocked} onChange={event=>setInput(event.target.value)}/><HButton type="submit" isDisabled={blocked||!draft.canSubmit||!readReady||!input.trim()||!principal.csrf_token||!workbenchTransportWritable()} variant="secondary">设置共享时间</HButton></HForm>:<p>当前仅可查看安排与历史。</p>}
-   {canCancel?<HButton type="button" isDisabled={blocked||!draft.canSubmit||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>submit('CANCEL')} variant="secondary">取消共享时间</HButton>:null}
+   {canSet?<HForm onSubmit={event=>{event.preventDefault();submit('SET');}}><HLabel htmlFor={'follow-up-due-'+ticketId}>下次行动时间（北京时间）</HLabel><HInput id={'follow-up-due-'+ticketId} name="due_at" type="text" maxLength={19} placeholder="YYYY-MM-DD HH:mm:ss" value={input} disabled={blocked} onChange={event=>setInput(event.target.value)}/><HButton type="submit" isDisabled={blocked||!draft.canSubmit||!readReady||!input.trim()||!principal.csrf_token||!workbenchTransportWritable()} tone="secondary">设置共享时间</HButton></HForm>:<p>当前仅可查看安排与历史。</p>}
+   {canCancel?<HButton type="button" isDisabled={blocked||!draft.canSubmit||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>submit('CANCEL')} tone="secondary">取消共享时间</HButton>:null}
    {view.history.length?<ol className="shared-follow-up-history">{view.history.map(entry=><li key={entry.ticket_event_id}>{entry.action==='SET'?'已设置':entry.action==='CANCEL'?'已取消':entry.end_reason==='CLOSED'?'关闭后结束':'取消工单后结束'}{entry.due_at?' · '+entry.due_at:''}<span>记录时间 {entry.occurred_at}</span></li>)}</ol>:null}
    {view.history_has_more?<p>显示最近20条记录，仍有更早历史。</p>:null}
   </>:null}
-  {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} variant="secondary">只读核对原操作</HButton>:null}
+  {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} tone="secondary">只读核对原操作</HButton>:null}
   {draft.enabled&&(draft.status!=='ready'||!commandId)?<DraftStatus role="status">{draft.message}</DraftStatus>:null}
-  {input&&!blocked?<HButton type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}} variant="secondary">清空未提交输入</HButton>:null}
-  {principal.follow_up_schedules_enabled&&!blocked?<HButton type="button" onClick={()=>{void query.refetch();}} variant="secondary">重新读取共享时间</HButton>:null}
+  {input&&!blocked?<HButton type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}} tone="secondary">清空未提交输入</HButton>:null}
+  {principal.follow_up_schedules_enabled&&!blocked?<HButton type="button" onClick={()=>{void query.refetch();}} tone="secondary">重新读取共享时间</HButton>:null}
   {state!=='idle'?<ToastFeedback revision={messageRevision} source="follow-up" state={state} role={['unknown','denied','conflict','invalid'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
  </section>;
 }

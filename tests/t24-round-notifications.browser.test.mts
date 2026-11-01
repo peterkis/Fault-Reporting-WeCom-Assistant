@@ -95,12 +95,13 @@ test('real multiple rounds keep private and group completion results inside thei
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page',width:390,height:844,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       await browser.waitFor("document.querySelectorAll('.notification-round').length===2&&document.querySelectorAll('.notification-delivery').length===4");
-      const rows=await browser.evaluate("[...document.querySelectorAll('.notification-round')].map(round=>({round:round.querySelector('h4').textContent,nodes:[...round.querySelectorAll('.notification-node')].map(node=>({kind:node.dataset.notificationNode,states:[...node.querySelectorAll('.notification-state')].map(s=>s.textContent),routes:[...node.querySelectorAll('.notification-delivery p span:first-child')].map(s=>s.textContent)}))}))") as {round:string;nodes:{kind:string;states:string[];routes:string[]}[]}[];
+      const rows=await browser.evaluate("[...document.querySelectorAll('.notification-round')].map(round=>({round:round.querySelector('h4').textContent,nodes:[...round.querySelectorAll('.notification-node')].map(node=>({kind:node.dataset.notificationNode,states:[...node.querySelectorAll('.notification-state')].map(s=>s.textContent),routes:[...node.querySelectorAll('.notification-delivery p>span:first-child')].map(s=>s.textContent)}))}))") as {round:string;nodes:{kind:string;states:string[];routes:string[]}[]}[];
       assert.deepEqual(rows.map(row=>row.round),['处理轮次 2','处理轮次 1']);assert.deepEqual(rows[0]?.nodes.map(node=>node.kind),['FIRST_HANDLING']);
       const completed=rows[1]?.nodes.find(node=>node.kind==='STAFF_COMPLETED');assert.ok(completed);assert.deepEqual([...completed.states].sort(),['发送失败','已发送'].sort());assert.deepEqual([...completed.routes].sort(),['原报修人单聊','群聊'].sort());
       assert.equal(await browser.evaluate("document.querySelector('.ticket-round-notifications').innerText.includes('已读')"),false);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
-      assert.equal(await browser.evaluate("[...document.querySelectorAll('.notification-timeline-scroll')].some(row=>row.scrollWidth>row.clientWidth)"),true);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.notification-timeline-scroll')].every(row=>row.scrollWidth<=row.clientWidth)"),true,'v2 notification summaries wrap within the drawer');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.notification-node')].every(row=>Boolean(row.querySelector('svg.lucide-bell')))"),true);
       const before=await http.detail(id);await browser.evaluate("document.querySelector('[aria-label=刷新通知状态]').click()");await browser.waitFor("document.querySelector('[aria-label=刷新通知状态]').disabled===false");assert.deepEqual(await http.detail(id),before);assert.equal(sends,2);
     }catch(error){failure=error;}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);

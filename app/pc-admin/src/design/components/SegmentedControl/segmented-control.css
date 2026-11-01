@@ -1,0 +1,8 @@
+.ds-segmented[role] {display: inline-flex; align-items: center; gap: var(--space-0-5); padding: var(--space-0-5); border-radius: var(--radius-sm); background: var(--bg-muted); min-width: 0; flex: none;}
+.ds-segmented:empty {display: none;}
+.ds-segmented>.ds-button.button,.ds-segmented>span {height: var(--control-h-sm); min-height: var(--control-h-sm); padding: 0 var(--space-3); border: 0; background: transparent; color: var(--text-secondary); font-size: var(--fs-sm); box-shadow: none;}
+.ds-segmented>.ds-button.button[aria-pressed=true],.ds-segmented>.selected {background: var(--bg-canvas); color: var(--text-primary); font-weight: var(--fw-medium); box-shadow: var(--shadow-2);}
+.ds-segmented>.ds-button.button:hover:not(:disabled) {background: var(--bg-hover);}
+.ds-segmented>.ds-button.button:active:not(:disabled) {background: var(--bg-active);}
+.ds-segmented>.ds-button.button:disabled {color: var(--text-tertiary);}
+.ds-segmented>span {display: inline-flex; align-items: center; white-space: nowrap;}

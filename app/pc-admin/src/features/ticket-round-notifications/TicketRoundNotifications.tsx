@@ -1,4 +1,8 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
+import {Section} from '../../design/components/Section/Section';
+import {NotificationSummary} from '../../design/components/Timeline/Timeline';
+import {Tag} from '../../design/components/Tag/Tag';
+import {notificationTones} from '../../design/status-map';
 import {useEffect,useMemo} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {RefreshCw} from 'lucide-react';
@@ -28,22 +32,20 @@ export function TicketRoundNotifications({ticketId,principalId,readReady=true,re
     }
     return [...groups.values()].sort((a,b)=>(b.cycle??-1)-(a.cycle??-1));
   },[result.data]);
-  return <section className="ticket-round-notifications" role="region" aria-label="报修人通知">
-    <header className="detail-section-heading"><h3>报修人通知</h3><HButton type="button" className="icon-button notification-refresh" aria-label="刷新通知状态" title="刷新通知状态" isDisabled={result.isFetching||!readReady} onClick={()=>{void result.refetch();}} variant="secondary"><RefreshCw size={15}/></HButton></header>
+  return <Section className="ticket-round-notifications ds-notification-summaries" title="报修人通知" headingClassName="detail-section-heading" role="region" aria-label="报修人通知" actions={<HButton type="button" className="icon-button notification-refresh" aria-label="刷新通知状态" title="刷新通知状态" isIconOnly isDisabled={result.isFetching||!readReady} onClick={()=>{void result.refetch();}} tone="ghost"><RefreshCw size={15}/></HButton>}>
     {result.isPending&&!result.data?<DetailLoading label="正在加载通知状态…"/>:null}
     {result.isError?<p role="status">{result.data?'通知状态暂未更新，保留最近已确认内容。':errorMessage(result.error)}</p>:null}
     {result.isSuccess&&!rounds.length?<p className="notification-empty">暂无轮次通知记录。</p>:null}
     {rounds.map(round=><div className="notification-round" key={round.cycle??'unassigned'}>
       <h4>{round.cycle===null?'未标注轮次':'处理轮次 '+round.cycle}</h4>
-      <div className="notification-timeline-scroll" tabIndex={0} aria-label={(round.cycle===null?'历史':'第'+round.cycle+'轮')+'通知时间线'}><ol className="notification-timeline">{round.nodes.map(node=><li className="notification-node" key={node.kind} data-notification-node={node.kind}>
-        <strong>{nodeLabels[node.kind]}</strong>
+      <div className="notification-timeline-scroll" tabIndex={0} aria-label={(round.cycle===null?'历史':'第'+round.cycle+'轮')+'通知时间线'}><ol className="notification-timeline">{round.nodes.map(node=><NotificationSummary key={node.kind} data-notification-node={node.kind} title={nodeLabels[node.kind]}>
         {node.deliveries.map(item=><div className="notification-delivery" key={item.delivery_id}>
-          <p><span>{item.route_kind==='YIXIAOXIU_APP'?'医小修应用':item.destination_type==='PERSON'?'原报修人单聊':'群聊'}</span><span className={'notification-state state-'+item.status}>{deliveryLabels[item.status]}</span></p>
+          <p><span>{item.route_kind==='YIXIAOXIU_APP'?'医小修应用':item.destination_type==='PERSON'?'原报修人单聊':'群聊'}</span><Tag className={'notification-state state-'+item.status} tone={notificationTones[item.status]??'neutral'}>{deliveryLabels[item.status]}</Tag></p>
           <small>{item.attempt_count} 次尝试 · {effectLabels[item.side_effect_state]}</small>
           <time dateTime={(item.sent_at??item.created_at).replace(' ','T')+'+08:00'} title="北京时间">{item.sent_at?'发送于 ':'产生于 '}{item.sent_at??item.created_at}</time>
         </div>)}
-      </li>)}</ol></div>
+      </NotificationSummary>)}</ol></div>
     </div>)}
     {result.data?.items.length===100?<small>显示最近 100 条通知记录。</small>:null}
-  </section>;
+  </Section>;
 }

@@ -574,6 +574,6 @@ export const api={
 export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',CLOSED:'已关闭',CANCELLED:'已取消',DUPLICATE_LINKED:'已关联重复单'};
 export const sourceLabels:Record<string,string>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'Bot 私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修'};
 export function errorMessage(error:unknown):string {
-  if(error instanceof ApiError){if(error.code==='SEARCH_REFRESH_REQUIRED')return '事项资料已变化，请重新提交搜索或点击刷新。';if(error.status===401)return '会话已失效，请重新进入已授权工作台。';if(error.status===403)return '当前身份没有操作权限。';if(error.status===404)return '事项不存在，或不在当前授权范围内。';if(error.status===409)return '资料已被其他人修改，请重新读取后再保存。';return '服务请求失败（'+error.status+'），请重试。';}
+  if(error instanceof ApiError){if(error.code==='SEARCH_REFRESH_REQUIRED')return '事项资料已变化，请重新提交搜索或点击刷新。';if(error.status===401)return '会话已失效，请重新进入工作台。';if(error.status===403)return '当前账号无法执行此操作。';if(error.status===404)return '找不到这条事项，或您目前无法查看。';if(error.status===409)return '资料已被其他人修改，请重新读取后再保存。';return '服务请求失败（'+error.status+'），请重试。';}
   return '连接失败，暂时无法读取服务端数据。';
 }

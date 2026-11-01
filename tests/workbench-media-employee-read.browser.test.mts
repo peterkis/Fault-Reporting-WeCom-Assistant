@@ -9,7 +9,7 @@ import sharp from 'sharp';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import {seedEmployeeMedia,paddedEmployeePng,observeEmployeeMediaHttp} from './helpers/employee-media-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,assertWorkbenchMediaPreviewGeometry} from './helpers/heroui-workbench-controls.mjs';
 import {createYxxH5MediaFFmpegTranscoder} from '../app/server/src/yxx-h5-media-transcode.mjs';
 import {migrateWorkbenchDisplayMedia} from '../app/server/scripts/workbench-display-media-migrate.mjs';
 
@@ -17,6 +17,14 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Sample {first_ms:number;all_ms:number;frame_ms:number;preview_bytes:number;preview_sql:number;preview_requests:number}
 const percentile=(values:number[],fraction:number)=>[...values].sort((a,b)=>a-b)[Math.ceil(values.length*fraction)-1]??0;
 const skip=!process.env.PILOT_DATABASE_URL||!process.env.H5_MEDIA_FFMPEG||!process.env.H5_MEDIA_FFPROBE?'NOT_RUN: own PG18 and controlled FFmpeg required':false;
+
+test('voice action buttons preserve complete icons at v2 control sizes',{timeout:60000},()=>withDetailRestructureFixture(async f=>{
+ const bytes=Buffer.alloc(8044,128);bytes.write('RIFF',0);bytes.writeUInt32LE(8036,4);bytes.write('WAVEfmt ',8);bytes.writeUInt32LE(16,16);bytes.writeUInt16LE(1,20);bytes.writeUInt16LE(1,22);bytes.writeUInt32LE(8000,24);bytes.writeUInt32LE(8000,28);bytes.writeUInt16LE(1,32);bytes.writeUInt16LE(8,34);bytes.write('data',36);bytes.writeUInt32LE(8000,40);
+ const seeded=await seedEmployeeMedia(f,[{bytes,kind:'VOICE',mime:'audio/wav',duration:1000}]);let browser:Browser|undefined,failure:unknown;
+ try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+seeded.ticketId,width:1280,height:900,cookies:[{...cookie,url:f.origin}]});assert.ok(browser);await browser.waitFor('document.querySelectorAll(".voice-controls button svg").length===2');
+  for(const width of [1280,600,390]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');assert.equal(await browser.evaluate(`(()=>{const root=document.querySelector('.voice-controls'),columns=getComputedStyle(root).gridTemplateColumns.split(' '),buttons=[...root.querySelectorAll('button')];return columns[0]==='32px'&&columns.at(-1)==='32px'&&buttons.length===2&&buttons.every(n=>{const label=n.querySelector('.ds-button-label'),icon=label?.querySelector('svg');return n.dataset.iconOnly==='true'&&n.getBoundingClientRect().width===32&&getComputedStyle(n).padding==='0px'&&label&&icon&&label.getBoundingClientRect().width>=icon.getBoundingClientRect().width;});})()`),true,'voice icons remain fully visible at '+width);}
+ }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await seeded.media.close();}],failure);}
+},{employeeReadEnabled:true}));
 
 test('PC server posters and native media reduce same-data preview cost with old-route rollback',{skip,timeout:240000},async()=>{
  const ffmpeg=process.env.H5_MEDIA_FFMPEG,ffprobe=process.env.H5_MEDIA_FFPROBE;assert.ok(ffmpeg&&ffprobe);
@@ -40,6 +48,7 @@ test('PC server posters and native media reduce same-data preview cost with old-
     await active.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+seeded.ticketId+'?detail=page'});
     await active.waitFor('Boolean(document.querySelector(".detail-media-grid"))');await active.evaluate('document.querySelector(".detail-media-grid").scrollIntoView({block:"center"})');
     await active.waitFor('globalThis.__pcMediaTiming?.all!==null&&document.querySelectorAll(".detail-media-card img").length===7');
+    if(round===0)await assertWorkbenchMediaPreviewGeometry(active,1280);
     const preview=observation.records.slice(offset).filter(record=>record.path.includes('/media/'));
     assert.equal(preview.length,7);assert.ok(preview.every(record=>record.status===200));
     if(enabled){assert.ok(preview.every(record=>record.path.includes('variant=THUMBNAIL')&&record.bytes<=160*1024));assert.ok(preview.every(record=>record.sqlAfterHeaders===0));}

@@ -18,6 +18,7 @@
 | 领取、发布或收口任务 | [Issue tracker](docs/agents/issue-tracker.md)、[标签词汇](docs/agents/triage-labels.md) |
 | 修改代码、Schema、跨层装配、AI/集成或资源配置 | [开发边界与完成标准](docs/agents/development.md)；含领域绝对规则、2C4G、Lane 和 Gate 顺序 |
 | TypeScript、测试范围、构建或认证 | [验证规则](docs/agents/validation.md)、[迁移执行入口](plans/typescript-migration/README.md)、[ADR-0026](adr/0026_typescript_strict_incremental_migration.md) |
+| 修改 PC 管理端 UI | [设计系统 v2.0](docs/ui/design-system.md)；UI 只组合 `app/pc-admin/src/design/components/`，新增视觉模式先改规范 |
 | 历史身份、祖先链、重复审查意见或证据减量 | [.github/review/README.md](.github/review/README.md)；先取得 GitHub 本次权威完整 SHA，再核验对象 |
 | 调试长任务、并行写入、发布或清理 | [会话运行与交付](docs/agents/session-operations.md)；先确认唯一写者、资源所有者和交接点 |
 | 阶段交接、旧计数或现场批准 | [基线与历史交接](docs/agents/baseline-history.md)及其原始证据，不重绑旧 tested_head |

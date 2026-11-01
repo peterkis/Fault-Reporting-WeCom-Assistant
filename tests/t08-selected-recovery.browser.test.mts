@@ -10,13 +10,14 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Fact={order:number;method:string;path:string;status:number|null;body:unknown;reply:unknown;idempotency_key:string|null;if_match:string|null;csrf_present:boolean;origin_same:boolean};
 type Screenshot={file:string;width:number;height:number;sha256:string};
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const reasonInput="document.querySelector('.ticket-unassign textarea')",targetInput="document.querySelector('.ticket-unassign select')",draftStatus="document.querySelector('[data-unassign-draft-status]')";
-const property=(label:string)=>`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
+const property=(label:string)=>label==='状态'?`document.querySelector('.ds-drawer-status .ds-status-badge')?.textContent?.trim()`:`Array.from(document.querySelectorAll('.properties dt')).find(row=>row.textContent?.trim()===${JSON.stringify(label)})?.nextElementSibling${label==='处理人'?'?.querySelector(".owner-name")':''}?.textContent?.trim()`;
 const queuedDom=`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='待接单'&&(${property('处理人')})==='等待领取'`;
 const edit=(selector:string,value:string)=>`(()=>{const input=${selector};if(!input)throw Error('T08_PUBLIC_INPUT_MISSING');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`;
 function header(request:IncomingMessage,name:string){const value=request.headers[name];return typeof value==='string'?value:null;}
@@ -74,6 +75,7 @@ for(const temporary of [false,true])test(temporary
   fixture.runtime.server.on('request',observe);
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:600,height:1080,cookies:[{...cookie,url:fixture.origin+'/'}]});assert.ok(browser);
+   await browser.waitFor("document.querySelector('.detail-workflows .workbench-disclosure-trigger')?.checkVisibility()===true");await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
    await browser.waitFor(`Boolean(${reasonInput})&&(${reasonInput}).disabled===false&&(${draftStatus})?.textContent.includes('草稿仅在当前浏览器')`);
    await browser.evaluate(edit(reasonInput,reason));await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,target);
    await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);

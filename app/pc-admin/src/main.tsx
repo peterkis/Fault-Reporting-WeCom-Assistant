@@ -1,3 +1,4 @@
+import './design/foundation.css';
 import {I18nProvider} from 'react-aria-components/I18nProvider';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';

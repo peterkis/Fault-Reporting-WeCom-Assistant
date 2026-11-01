@@ -1,0 +1,14 @@
+.ds-split .inbox-message {max-width:72%;margin-bottom:var(--space-5);}
+.ds-message-bubble.inbox-bubble {background:var(--bg-muted);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);color:var(--text-primary);font-size:var(--fs-md);line-height:var(--lh-md);overflow-wrap:anywhere;}
+.ds-message-bubble.inbox-bubble[data-side=outgoing] {background:var(--brand-subtle);}
+.ds-message-bubble.inbox-bubble[data-internal=true] {background:var(--tone-warning-bg);color:var(--tone-warning-fg);}
+.ds-message-prefix {display:block;font-size:var(--fs-xs);font-weight:var(--fw-medium);margin-bottom:var(--space-1);}
+.ds-message-bubble p {margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.ds-split .inbox-internal-label {padding:0;border-radius:0;background:transparent;color:var(--text-secondary);}
+.ds-split .inbox-message-system {max-width:100%;}
+.ds-split .inbox-message-system .ds-message-bubble[data-side=system]:not([data-internal]) {background:transparent;padding:0;color:var(--text-secondary);font-size:var(--fs-sm);}
+.ds-split .inbox-message-system .ds-timeline-item {padding-bottom:var(--space-2);}
+.ds-split .conversation-timeline li {border:0;padding:0;margin-bottom:var(--space-4);max-width:72%;}
+.ds-split .conversation-timeline li:has([data-side=outgoing]) {margin-left:auto;}
+.ds-split .conversation-timeline li header {font-size:var(--fs-xs);display:flex;flex-wrap:wrap;gap:var(--space-2);color:var(--text-secondary);margin-bottom:var(--space-1);}
+.ds-split .conversation-timeline li header strong {font-weight:var(--fw-medium);}

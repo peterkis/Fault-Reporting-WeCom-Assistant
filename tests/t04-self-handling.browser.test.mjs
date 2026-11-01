@@ -98,20 +98,20 @@ test('another actor winning causes a refreshed conflict, and later identity loss
       await browser.waitFor("document.querySelector('.ticket-handling-version')?.textContent==='工单版本 2'&&document.querySelector('[data-action=take-and-start]')?.disabled===false");
       await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[context.principals[0].id]);
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
-      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前身份没有查看权限'))&&!document.querySelector('.sidebar')&&!document.querySelector('.ticket-self-handling')");
+      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前账号无法查看工作台'))&&!document.querySelector('.sidebar')&&!document.querySelector('.ticket-self-handling')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('#detail-title'))"),false);
     },{width:900});
   },{ticketSelfHandlingEnabled:true});
 });
 
-test('malformed object denial is authoritative and the original 780px shell stays bounded',async()=>{
+test('malformed object denial is authoritative and the original 720px shell stays bounded',async()=>{
   await withWeb01Fixture(async context=>{
     await handlingBrowser(context,async(browser,capture)=>{
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       await capture('new-detail-1920.png');
       await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&!document.querySelector('.ticket-self-handling')");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('.ticket-self-handling')");
       assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
     },{page:false});

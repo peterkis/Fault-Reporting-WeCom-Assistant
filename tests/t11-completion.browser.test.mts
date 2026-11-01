@@ -93,7 +93,7 @@ test('production detail completion dialog requires independent confirmed summari
       await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('#completion-process'))"),true,'production completion form opens from its action');
       await browser.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       await browser.evaluate(instrument);
       await type(browser,'#completion-process','INTERNAL_T11_FORM_CANARY：独立排查过程');
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'');

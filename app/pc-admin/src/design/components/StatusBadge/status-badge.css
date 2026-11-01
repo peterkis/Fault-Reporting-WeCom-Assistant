@@ -1,0 +1,12 @@
+.ds-status-badge.ds-status-badge {display: inline-flex; align-items: center; gap: var(--space-1-5); min-width: 0; max-width: 100%; padding: 0; border: 0; border-radius: 0; background: none; color: var(--text-primary); font-size: var(--fs-xs); font-weight: var(--fw-medium); line-height: var(--lh-xs);}
+.ds-status-dot {flex: none; width: var(--space-1-5); height: var(--space-1-5); border-radius: var(--radius-full); background: var(--tone-neutral-dot);}
+.ds-status-badge[data-tone=warning]>.ds-status-dot {background: var(--tone-warning-dot);}
+.ds-status-badge[data-tone=info]>.ds-status-dot {background: var(--tone-info-dot);}
+.ds-status-badge[data-tone=success]>.ds-status-dot {background: var(--tone-success-dot);}
+.ds-status-badge[data-tone=attention]>.ds-status-dot {background: var(--tone-attention-dot);}
+.ds-status-badge[data-tone=danger]>.ds-status-dot {background: var(--tone-danger-dot);}
+.ds-status-badge[data-tone=review]>.ds-status-dot {background: var(--tone-review-dot);}
+.ds-status-badge[data-tone=brand]>.ds-status-dot {background: var(--tone-brand-dot);}
+.ds-status-text {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-status-badge[aria-disabled=true] {color: var(--text-tertiary);}
+.ds-status-badge:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}

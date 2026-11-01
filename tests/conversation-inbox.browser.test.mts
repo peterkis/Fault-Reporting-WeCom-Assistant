@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney} from './helpers/conversation-inbox-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
@@ -37,6 +37,28 @@ test('ticket detail and conversation summary keep independent cache shapes acros
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   },{inbox:true,realtime:true,recovery:false});
 });
+
+test('production inbox Split uses one viewport breakpoint with expanded and collapsed sidebars',{timeout:120000},()=>withT22Fixture(async f=>{
+  const session=f.sessions[0];assert.ok(session);assert.equal((await conversationPost(f.origin,f.cookie,session.id,'takeover',freshCommand())).status,200);
+  const directory=await mkdtemp(join(tmpdir(),'inbox-split-boundaries-')),samples:Record<string,unknown>[]=[],screenshots:Record<string,unknown>[]=[],writes:string[]=[];
+  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+  let browser:Browser|undefined,failure:unknown;
+  try{browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:900,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);const active=browser;
+    for(const collapsed of [false,true])for(const selected of [true,false]){
+      await active.command('Emulation.setDeviceMetricsOverride',{width:1920,height:900,deviceScaleFactor:1,mobile:false});await active.command('Page.navigate',{url:f.origin+'/workbench/app/conversations'+(selected?'/'+session.id:'')});
+      await active.waitFor(selected?'Boolean(document.querySelector("[data-conversation-ready]"))':'document.querySelectorAll("[data-contact-ref]").length>0');
+      const current=await active.evaluate("document.querySelector('.app').classList.contains('sidebar-collapsed')");if(current!==collapsed)await clickWorkbenchControl(active,'.topbar button[aria-label="收起侧栏"]');
+      for(const width of [1920,1440,1360,1280,1100,1000,950,901,900,899,600,390]){
+        await active.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await active.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        const sample:unknown=await active.evaluate(`(()=>{const root=document.querySelector('.inbox-layout'),contacts=root.querySelector('.inbox-contacts'),chat=root.querySelector('.inbox-chat'),back=root.querySelector('.inbox-back'),business=root.querySelector('.inbox-business'),visible=n=>Boolean(n?.checkVisibility()),r=root.getBoundingClientRect(),c=contacts.getBoundingClientRect(),h=chat?.getBoundingClientRect(),mobile=innerWidth<=900,selected=${selected},display=getComputedStyle(root).display,overflow=document.documentElement.scrollWidth>innerWidth+1;const valid=display===(mobile?'flex':'grid')&&visible(contacts)===(!selected||!mobile)&&visible(back)===(selected&&mobile)&&visible(chat)===selected&&!overflow&&(mobile?(selected?Math.abs(h.width-r.width)<=1:Math.abs(c.width-r.width)<=1):(Math.abs(c.width-320)<=1&&(!selected||(h.width>200&&h.left>=c.right-1&&h.right<=r.right+1))))&&visible(business)===(selected&&innerWidth>=1360)&&document.querySelector('.app').classList.contains('sidebar-collapsed')===${collapsed};return {valid,width:innerWidth,collapsed:${collapsed},selected,display,layout:r.width,contacts:visible(contacts),back:visible(back),chatWidth:h?.width??null,business:visible(business),overflow};})()`);
+        assert.ok(sample&&typeof sample==='object'&&'valid' in sample);assert.equal(sample.valid,true,JSON.stringify(sample));samples.push(sample);
+        if((!collapsed&&selected&&[1920,1440,1360,1280,1000,900,390].includes(width))||(width===1000&&collapsed)||(width===900&&!selected&&!collapsed)){const bytes=Buffer.from(await active.screenshot(),'base64'),file=join(directory,'split-'+width+'-'+(collapsed?'collapsed':'expanded')+'-'+(selected?'selected':'contacts')+'.png');await writeFile(file,bytes);screenshots.push({file,width,height:900,sha256:createHash('sha256').update(bytes).digest('hex')});}
+      }
+      if(selected){const origin=await active.evaluate('performance.timeOrigin');await clickWorkbenchControl(active,'.inbox-back');await active.waitFor("location.pathname==='/workbench/app/conversations'&&document.querySelector('.inbox-contacts')?.checkVisibility()===true");assert.equal(await active.evaluate('performance.timeOrigin'),origin,'return to contacts keeps the same client document');assert.equal(await active.evaluate("Math.abs(document.querySelector('.inbox-contacts').getBoundingClientRect().width-document.querySelector('.inbox-layout').getBoundingClientRect().width)<=1"),true);}
+    }
+    assert.deepEqual(writes,[],'responsive navigation and sidebar changes never post business commands');console.log('CONVERSATION_SPLIT_VIEWPORTS '+JSON.stringify({scope:'INBOX_SPLIT_VIEWPORT_BOUNDARIES',samples,screenshots}));
+  }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+},{inbox:true,personalRead:false,recovery:false}));
 
 test('production inbox keeps one real SSE stream, exact delivery and draft scopes, IME, scrolling, responsive layouts and current authority',async()=>{
   await withT22Fixture(async f=>{
@@ -81,6 +103,7 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
       await browser.evaluate("document.querySelector('.inbox-new-messages').click()");
       await browser.evaluate("(()=>{globalThis.__inboxCommands=[];const original=fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/messages')&&options?.method==='POST')globalThis.__inboxCommands.push(JSON.parse(options.body));return original(path,options);};})()");
       await browser.evaluate(input('messages','合成原UUID回复'));dropReply=true;
+      await assertWorkbenchPrimaryLabelContrast(browser,'[data-action=send-conversation-reply]');
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
       await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('结果未知')");const command=await browser.evaluate('globalThis.__inboxCommands[0]') as ConversationTextCommand;assert.equal(command.text,'合成原UUID回复');
       await browser.evaluate("document.querySelector('[data-action=check-messages]').click()");await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");assert.equal(await browser.evaluate('globalThis.__inboxCommands.length'),1);

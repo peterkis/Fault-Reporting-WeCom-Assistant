@@ -243,7 +243,7 @@ for(const mode of ['initial-401','draft-401','cleanup-failure','permission-403',
    const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+target.ticket.id});
    await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
    if(mode==='permission-403'||mode==='service-503'){
-    await browser.waitFor(mode==='permission-403'?"document.body.innerText.includes('没有查看权限')":"document.body.innerText.includes('503')");
+    await browser.waitFor(mode==='permission-403'?"document.body.innerText.includes('无法查看工作台')":"document.body.innerText.includes('503')");
     assert.equal(qrRequests,0);assert.equal(await browser.evaluate('window.__loginRequests'),0);assert.equal(posts,0);return;
    }
    if(mode!=='initial-401'){
@@ -314,7 +314,8 @@ for(const mode of ['browser','desktop','logout-unknown','logout-cleanup-failure'
      await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:outside.x,y:outside.y});
      await browser.waitFor('!document.querySelector("[role=menu][aria-label=用户操作]")');
      assert.equal(await browser.evaluate('getComputedStyle([...document.querySelectorAll("[data-action=open-user-menu]")].find(node=>node.checkVisibility())).outlineStyle'),'none','pointer dismissal must not leave an account outline');
-     assert.equal(await browser.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--focus").trim()'),'transparent','HeroUI portal and control rings share the app policy');
+     assert.equal(await browser.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--focus").trim()'),await browser.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--border-focus").trim()'),'HeroUI portals and controls use the v2 semantic focus token');
+     assert.notEqual(await browser.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--focus").trim()'),'transparent','v2 keyboard focus must remain visible');
      await writeFile(join(directory,'account-closed-'+width+'.png'),Buffer.from(await browser.screenshot(),'base64'));
      await openWorkbenchUserMenu(browser);
      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});

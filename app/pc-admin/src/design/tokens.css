@@ -1,0 +1,177 @@
+/* ==========================================================================
+   医小修 PC 管理端 · Design Tokens v2.0
+   放置位置建议：app/pc-admin/src/design/tokens.css
+   导入顺序：tailwindcss → @heroui/styles → tokens.css → heroui-bridge.css → components/*.css → features/*.css
+   规则：features/*.css 只允许使用第 2、3 层（语义 / 组件）Token，禁止裸 hex、裸 px 字号、裸圆角。
+   ========================================================================== */
+
+/* ---------- 第 1 层：原始色板（只允许在本文件内被引用） ---------- */
+:root {
+  /* 暖灰（Notion 系），全站唯一中性色 */
+  --gray-0:   #FFFFFF;
+  --gray-25:  #FBFBFA;
+  --gray-50:  #F7F7F5;
+  --gray-100: #F1F1EF;
+  --gray-150: #EBEBE9;
+  --gray-200: #E3E2DF;
+  --gray-300: #D3D1CB;
+  --gray-400: #A5A29A;
+  --gray-500: #8C8A84;
+  --gray-600: #6B6965;   /* 白底 5.48:1 */
+  --gray-700: #4A4844;
+  --gray-900: #37352F;   /* 白底 12.26:1 */
+
+  /* 品牌蓝：全站唯一强调色 */
+  --blue-50:  #EEF4FD;
+  --blue-100: #DCE8FB;
+  --blue-500: #2F6FDB;
+  --blue-600: #2563C9;   /* 白字 5.67:1 */
+  --blue-700: #1D4FA3;   /* 白字 7.78:1 */
+
+  /* 语义色（柔和底 + 深字，均 ≥ 5.3:1） */
+  --yellow-50: #FBF3DB;  --yellow-700: #7F5F01;  --yellow-500: #D9A400;
+  --sky-50:    #E7F3F8;  --sky-700:    #1B6A8F;  --sky-500:    #2E8AB8;
+  --green-50:  #EDF3EC;  --green-700:  #2F6B4A;  --green-500:  #448361;
+  --orange-50: #FAEBDD;  --orange-700: #9A4A0A;  --orange-500: #D9730D;
+  --red-50:    #FDEBEC;  --red-700:    #B4332B;  --red-500:    #D44C47;
+  --purple-50: #F3EEF8;  --purple-700: #6940A5;  --purple-500: #9065B0;
+}
+
+/* ---------- 第 2 层：语义 Token（业务 CSS 只用这一层和第 3 层） ---------- */
+:root {
+  /* 字体 */
+  --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+
+  /* 文字 */
+  --text-primary:   var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary:  var(--gray-500);   /* 仅用于禁用、占位、装饰性图标；不得承载必读信息 */
+  --text-inverse:   var(--gray-0);
+  --text-link:      var(--blue-600);
+  --text-danger:    var(--red-700);
+
+  /* 背景 */
+  --bg-canvas:   var(--gray-0);    /* 主工作区 */
+  --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
+  --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
+  --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
+  --bg-active:   var(--gray-200);  /* 按下、导航当前项 */
+  --bg-selected: var(--blue-50);   /* 选中行 / 选中卡片 */
+  --bg-overlay:  rgba(55, 53, 47, .16);
+
+  /* 线 */
+  --border-hair:    rgba(55, 53, 47, .09);  /* 分隔线 */
+  --border-default: rgba(55, 53, 47, .16);  /* 输入框、次按钮描边 */
+  --border-strong:  rgba(55, 53, 47, .28);  /* 输入框悬停 */
+  --border-focus:   var(--blue-500);
+
+  /* 品牌 */
+  --brand:        var(--blue-600);
+  --brand-hover:  var(--blue-700);
+  --brand-subtle: var(--blue-50);
+  --on-brand:     var(--gray-0);
+
+  /* 语气（tone）：用于标签、状态点、提示条。每个 tone = bg / fg / dot */
+  --tone-neutral-bg: var(--gray-100);  --tone-neutral-fg: #5F5E5B;            --tone-neutral-dot: var(--gray-400);
+  --tone-brand-bg:   var(--blue-50);   --tone-brand-fg:   var(--blue-700);    --tone-brand-dot:   var(--blue-500);
+  --tone-info-bg:    var(--sky-50);    --tone-info-fg:    var(--sky-700);     --tone-info-dot:    var(--sky-500);
+  --tone-success-bg: var(--green-50);  --tone-success-fg: var(--green-700);   --tone-success-dot: var(--green-500);
+  --tone-warning-bg: var(--yellow-50); --tone-warning-fg: var(--yellow-700);  --tone-warning-dot: var(--yellow-500);
+  --tone-attention-bg: var(--orange-50); --tone-attention-fg: var(--orange-700); --tone-attention-dot: var(--orange-500);
+  --tone-danger-bg:  var(--red-50);    --tone-danger-fg:  var(--red-700);     --tone-danger-dot:  var(--red-500);
+  --tone-review-bg:  var(--purple-50); --tone-review-fg:  var(--purple-700);  --tone-review-dot:  var(--purple-500);
+
+  /* 字号阶梯：6 档，禁止其它值 */
+  --fs-xs:  12px;  --lh-xs:  18px;   /* 元信息、时间、标签、编号 */
+  --fs-sm:  13px;  --lh-sm:  20px;   /* 次级正文、表头、工具栏、属性名 */
+  --fs-md:  14px;  --lh-md:  22px;   /* 正文、卡片标题、按钮、输入 */
+  --fs-lg:  16px;  --lh-lg:  24px;   /* 抽屉标题、弹窗内分节标题 */
+  --fs-xl:  20px;  --lh-xl:  28px;   /* 弹窗标题、独立详情页标题 */
+  --fs-2xl: 24px;  --lh-2xl: 32px;   /* 一级页面标题（每页 1 个） */
+
+  /* 字重：3 档，名称与数值一致 */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+
+  /* 间距：4px 栅格 */
+  --space-0: 0;     --space-0-5: 2px; --space-1: 4px;  --space-1-5: 6px;
+  --space-2: 8px;   --space-3: 12px;  --space-4: 16px; --space-5: 20px;
+  --space-6: 24px;  --space-8: 32px;  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* 圆角：5 档 + 全圆 */
+  --radius-xs: 4px;    /* 标签、徽标、小芯片 */
+  --radius-sm: 6px;    /* 按钮、输入、导航项、表格行、分段控件 */
+  --radius-md: 8px;    /* 卡片、媒体缩略图、提示条 */
+  --radius-lg: 12px;   /* 看板列、下拉/日期弹层、浮动抽屉 */
+  --radius-xl: 16px;   /* 居中弹窗 */
+  --radius-full: 9999px;
+
+  /* 阴影：4 档 */
+  --shadow-1: 0 1px 2px rgba(15,15,15,.06), 0 0 0 1px rgba(15,15,15,.04);           /* 静态卡片 */
+  --shadow-2: 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);          /* 卡片悬停、分段选中 */
+  --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
+  --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */
+
+  /* 尺寸 */
+  --control-h-sm: 28px;
+  --control-h-md: 32px;    /* 默认 */
+  --control-h-lg: 36px;
+  --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px;
+  --avatar-sm: 20px; --avatar-md: 24px; --avatar-lg: 32px;
+  --fs-avatar-sm: calc(var(--avatar-sm) / 2); /* §6.13: avatar glyph = 50% of size. */
+
+  /* 布局 */
+  --sidebar-w: 240px;
+  --sidebar-collapsed-w: 56px;
+  --topbar-h: 44px;
+  --page-pad-x: var(--space-8);    /* ≤1280 时 24px，≤900 时 16px */
+  --page-max: 1440px;              /* 工作区上限，左对齐，不居中 */
+  --reading-max: 760px;            /* 详情正文阅读列 */
+  --drawer-w: 720px;
+  --modal-w-sm: 440px; --modal-w-md: 560px; --modal-w-lg: 720px;
+
+  /* 层级 */
+  --z-sticky: 10; --z-dropdown: 40; --z-drawer: 50; --z-modal: 60; --z-toast: 70; --z-tooltip: 80;
+
+  /* 动效 */
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(.4, 0, 1, 1);
+
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-md);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  color-scheme: light;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 1280px) { :root { --page-pad-x: var(--space-6); } }
+@media (max-width: 900px)  { :root { --page-pad-x: var(--space-4); } }
+@media (pointer: coarse)   { :root { --control-h-md: 40px; } }
+
+/* ---------- 第 3 层：HeroUI 桥接（HeroUI 变量全部从语义 Token 派生） ---------- */
+:root {
+  --accent: var(--brand);
+  --accent-foreground: var(--on-brand);
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  --surface: var(--bg-canvas);
+  --surface-foreground: var(--text-primary);
+  --muted: var(--text-secondary);
+  --border: var(--border-default);
+  --field-background: var(--bg-canvas);
+  --field-foreground: var(--text-primary);
+  --field-placeholder: var(--text-tertiary);
+  --field-focus: var(--bg-subtle);
+  --field-border-focus: var(--border-focus);
+  --radius: var(--radius-sm);
+  --field-radius: var(--radius-sm);
+  --focus: var(--border-focus);
+  --ring-offset-width: 0px;
+}

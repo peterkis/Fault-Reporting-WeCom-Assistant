@@ -1,5 +1,5 @@
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Link as HLink} from "@heroui/react";
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -30,7 +30,7 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{if(detail)heading.current?.focus();},[Boolean(detail)]);
   return <article className="detail-page" data-candidate-id={candidateId} aria-labelledby={'candidate-heading-'+candidateId}>
-    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><HButton type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}} variant="secondary">刷新当前事实</HButton></div>
+    <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><HButton type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}} tone="secondary">刷新当前事实</HButton></div>
     {refreshError?<p role="alert">{refreshError}</p>:null}
     {cleanupError?<p role="alert">{cleanupError}</p>:null}
     {query.isPending?<p role="status">正在读取获权候选…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:detail?<div className="detail-body">

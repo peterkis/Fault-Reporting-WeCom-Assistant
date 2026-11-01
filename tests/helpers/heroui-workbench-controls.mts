@@ -30,6 +30,9 @@ export async function openWorkbenchLogoutBoundary(browser:Pick<Browser,'evaluate
 
 /** Click the actual visible control, including HeroUI's checkbox/radio label. */
 export async function clickWorkbenchControl(browser:Browser,selector:string){
+  // v2 filters retain their controls in a native disclosure; use its real trigger first.
+  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-toolbar-filters');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
+  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-drawer-more>summary');
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;
   await browser.waitFor(`(()=>{const node=${target};return node?.checkVisibility()===true&&node.disabled!==true&&!node.closest('[data-disabled=true]');})()`);
   await browser.evaluate(`(()=>{const node=${target};node.scrollIntoView({block:'nearest',inline:'nearest'});})()`);
@@ -55,6 +58,7 @@ export async function openWorkbenchDialog(browser:Pick<Browser,'evaluate'|'waitF
 }
 
 export async function typeWorkbenchDates(browser:Browser,start:string,end:string){
+  if(await browser.evaluate("Boolean(document.querySelector('.processed-date-picker')?.closest('details.ds-toolbar-filters:not([open])'))"))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
   for(const [index,date] of [start,end].entries()){
     const pieces=date.split('-');assert.equal(pieces.length,3);
     for(const [part,value] of [['year',pieces[0]],['month',pieces[1]],['day',pieces[2]]]){
@@ -68,4 +72,26 @@ export async function typeWorkbenchDates(browser:Browser,start:string,end:string
     const actual=await browser.evaluate(`(()=>{const input=document.querySelectorAll('.processed-date-picker [data-slot=date-input-group-input]')[${index}];return ['year','month','day'].map(part=>Number(input.querySelector('[data-type='+part+']').getAttribute('aria-valuenow')));})()`);
     assert.deepEqual(actual,pieces.map(Number),'keyboard entry must reach the requested calendar date');
   }
+}
+
+/** Page, drawer and modal each own at most one primary action; nested regions count separately. */
+export async function assertWorkbenchPrimaryActions(browser:Browser){
+  const regions:unknown=await browser.evaluate(`(()=>{const roots=[...document.querySelectorAll('.ds-page,.ds-detail,[role=dialog]')].filter(node=>node.checkVisibility());return roots.map(root=>({region:root.getAttribute('aria-label')??root.className,count:[...root.querySelectorAll('[data-tone=primary]')].filter(button=>button.checkVisibility()&&button.closest('.ds-page,.ds-detail,[role=dialog]')===root).length}));})()`);
+  assert.ok(Array.isArray(regions));
+  for(const region of regions){assert.ok(region&&typeof region==='object'&&'count' in region&&typeof region.count==='number');assert.ok(region.count<=1,'one primary action per visible region: '+JSON.stringify(region));}
+}
+
+/** Media cards retain their preview frame instead of ordinary button dimensions. */
+export async function assertWorkbenchMediaPreviewGeometry(browser:Browser,width:number){
+  const cards:unknown=await browser.evaluate(`(()=>{const close=(a,b)=>Math.abs(a-b)<=1;return [...document.querySelectorAll('.detail-media-card')].filter(n=>n.checkVisibility()).map(n=>{const r=n.getBoundingClientRect(),c=getComputedStyle(n),label=n.querySelector('.ds-button-label'),l=label?.getBoundingClientRect(),image=n.querySelector('img'),i=image?.getBoundingClientRect();return {height:r.height,unpadded:c.padding==='0px',labelFills:Boolean(l&&close(l.width,n.clientWidth)&&close(l.height,n.clientHeight)),imageFills:!image||Boolean(i&&l&&close(i.width,l.width)&&close(i.height,l.height)&&getComputedStyle(image).objectFit==='cover')};});})()`);
+  assert.ok(Array.isArray(cards));assert.ok(cards.length>0,'media geometry must observe actual preview cards');
+  for(const card of cards){assert.ok(card&&typeof card==='object'&&'height' in card&&'unpadded' in card&&'labelFills' in card&&'imageFills' in card);assert.equal(card.height,width<=640?145:170);assert.equal(card.unpadded,true);assert.equal(card.labelFills,true);assert.equal(card.imageFills,true);}
+}
+
+/** Observe an enabled primary action after its normal CSS transition, never a disabled placeholder. */
+export async function assertWorkbenchPrimaryLabelContrast(browser:Browser,selector:string){
+  await browser.waitFor(`(()=>{const n=document.querySelector(${JSON.stringify(selector)});return n?.checkVisibility()&&!n.disabled&&n.getAttribute('aria-disabled')!=='true'&&n.dataset.disabled!=='true'&&n.dataset.tone==='primary'&&['rgb(37, 99, 201)','rgb(29, 79, 163)'].includes(getComputedStyle(n).backgroundColor);})()`);
+  const colors:unknown=await browser.evaluate(`(()=>{const n=document.querySelector(${JSON.stringify(selector)}),label=n.querySelector('.ds-button-label'),foreground=getComputedStyle(n).color,text=getComputedStyle(label).color,background=getComputedStyle(n).backgroundColor,lum=color=>color.match(/[\\d.]+/g).slice(0,3).map(x=>{const v=Number(x)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0),a=lum(text),b=lum(background);return {foreground,text,background,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};})()`);
+  assert.ok(colors&&typeof colors==='object'&&'foreground' in colors&&'text' in colors&&'ratio' in colors&&typeof colors.ratio==='number');
+  assert.equal(colors.foreground,'rgb(255, 255, 255)');assert.equal(colors.text,colors.foreground,'primary label inherits the button foreground');assert.ok(colors.ratio>=4.5,'enabled primary text contrast is at least 4.5:1');
 }

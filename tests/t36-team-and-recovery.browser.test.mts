@@ -9,7 +9,7 @@ test('T36 unassigned team board and list both show pending supplements without c
   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?view=board'});
   const card=`article[data-kind="ticket"][data-item-id="${f.ticketId}"]`;
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)})?.querySelector('[data-supplement-follow-up-pending="true"]'))`);
-  assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent`),/补充待跟进/u);await capture('new-board-1920.png');
+  assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent`),/待补充/u);await capture('new-board-1920.png');
   await browser.evaluate(`Array.from(document.querySelectorAll('[aria-label="展示方式"] button')).find(b=>b.textContent.includes('列表')).click()`);
   await browser.waitFor(`new URL(location.href).searchParams.get('view')==='list'&&Array.from(document.querySelectorAll('tr')).some(row=>Array.from(row.querySelectorAll('a')).some(a=>a.getAttribute('href')?.includes(${JSON.stringify('/items/ticket/'+f.ticketId)}))&&row.querySelector('[data-supplement-follow-up-pending="true"]'))`);
   assert.equal(await browser.evaluate(`Array.from(document.querySelectorAll('tr')).filter(row=>Array.from(row.querySelectorAll('a')).some(a=>a.getAttribute('href')?.includes(${JSON.stringify('/items/ticket/'+f.ticketId)}))).length`),1);
@@ -25,7 +25,7 @@ test('T36 a real bound Message committed before lost ACK recovers the same encry
   await openReply(browser,f.r2);const text='T36原精确补充回复丢响应后的敏感正文';await input(browser,'[data-supplement-bound-reply] textarea',text);
   await browser.waitFor('Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]:not(:disabled)"))');
   await browser.evaluate('document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]").click()');
-  await browser.waitFor('document.querySelector("[data-supplement-bound-reply] [data-reply-outcome]")?.textContent.includes("结果未知")&&Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))');
+  await browser.waitFor('document.querySelector("[data-toast-source=conversations][data-reply-outcome]")?.textContent.includes("结果未知")&&Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))');
   const observed=await browser.evaluate('globalThis.__t36Recovery') as {method:string;status:number;id:string;version:number;target:unknown}[];
   assert.equal(observed.length,1);const accepted=observed[0];assert.ok(accepted);assert.equal(accepted.status,202);assert.deepEqual(accepted.target,{ticket_id:f.ticketId,...f.r2});
   console.log('T36_COMMITTED_LOST_ACK '+JSON.stringify({status:accepted.status,uuid:accepted.id,version:accepted.version,exact_target:accepted.target,restore:'EXPLICIT_RELOAD_NOT_PANEL_LEAVE'}));await capture('new-detail-1920.png');
@@ -34,7 +34,7 @@ test('T36 a real bound Message committed before lost ACK recovers the same encry
   assert.equal(await browser.evaluate('document.querySelector("[data-supplement-bound-reply] textarea").value'),text);
   assert.equal(await browser.evaluate('globalThis.__t36Recovery.filter(row=>row.method==="POST").length'),0,'restoring pending state never resends a POST');
   await browser.evaluate('document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]").click()');
-  await browser.waitFor('document.querySelector("[data-supplement-bound-reply] [data-reply-outcome]")?.textContent.includes("已受理发送")');
+  await browser.waitFor('document.querySelector("[data-toast-source=conversations][data-reply-outcome]")?.textContent.includes("已受理发送")');
   const reads=await browser.evaluate('globalThis.__t36Recovery') as {method:string;status:number;path:string}[];
   assert.deepEqual(reads,[{method:'GET',status:200,path:messagePath+'/commands/'+accepted.id}]);
   const fact=await f.pool.query<{n:number;client_command_id:string}>('SELECT count(*)::integer AS n,min(m.client_command_id::text) AS client_command_id FROM pilot_ticket.workbench_supplement_reply_binding b JOIN communication.message m ON m.id=b.message_id WHERE b.ticket_id=$1::uuid',[f.ticketId]);
@@ -51,14 +51,14 @@ test('MVP keeps an unknown bound reply mounted when retention makes the suppleme
   await openReply(browser,f.r2);const body='合成未确认回复：请补充原设备的错误提示。';await input(browser,'[data-supplement-bound-reply] textarea',body);
   await browser.waitFor("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]')?.disabled===false");
   await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]').click()");
-  await browser.waitFor("document.querySelector('[data-supplement-bound-reply] [data-reply-outcome]')?.textContent.includes('结果未知')");
+  await browser.waitFor("document.querySelector('[data-toast-source=conversations][data-reply-outcome]')?.textContent.includes('结果未知')");
   const posts=await browser.evaluate('globalThis.__emptyReplyPosts') as {body:{client_command_id:string;follow_up_target:unknown;text:string};status:number}[];
   assert.equal(posts.length,1);const original=posts[0];assert.ok(original);assert.equal(original.status,202);assert.deepEqual(original.body.follow_up_target,{ticket_id:f.ticketId,...f.r2});
   const materials=(await f.page()).items;assert.ok(materials.length);
   for(const material of materials)await f.expire(material);
   assert.deepEqual((await f.page()).items,[],'the original service really returns an empty successful retention-filtered page');
   await browser.evaluate("document.querySelector('[data-action=refresh-supplement-follow-up]').click()");
-  await browser.waitFor("document.querySelector('[data-toast-source=supplement-follow-up]')?.innerText.includes('没有补充材料')");
+  await browser.waitFor("document.querySelector('[data-supplement-follow-up-state]')?.innerText.includes('没有可见的补充材料')");
   assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] textarea')?.value"),body,'the empty list cannot unmount the independent unknown reply');
   assert.equal(await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=check-messages]')?.checkVisibility()"),true);
   assert.deepEqual(await browser.evaluate('globalThis.__emptyReplyPosts'),posts,'no automatic resend or new command replaces the original target');

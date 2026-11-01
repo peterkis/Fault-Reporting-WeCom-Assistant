@@ -1,4 +1,4 @@
-import {openWorkbenchUserMenu} from './helpers/heroui-workbench-controls.mjs';
+import {openWorkbenchUserMenu,assertWorkbenchPrimaryActions,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -10,6 +10,30 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+
+test('open workbench filters stay inside content bounds with reachable search and date controls',{timeout:120000},()=>withWeb01Fixture(async f=>{
+  const directory=join(tmpdir(),'toolbar-filter-'+randomUUID());await mkdir(directory);const samples=[],screenshots=[],writes=[];
+  const observe=request=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);let browser,error;
+  try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:900,cookies:[{...cookie,url:f.origin}]});assert.ok(browser);await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+    for(const collapsed of [false,true])for(const mode of ['board','search']){
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:900,deviceScaleFactor:1,mobile:false});await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'+(mode==='search'?'?search=1':'')});await browser.waitFor('Boolean(document.querySelector(".ds-toolbar-filters>summary"))');
+      if((await browser.evaluate("document.querySelector('.app').classList.contains('sidebar-collapsed')"))!==collapsed)await clickWorkbenchControl(browser,'.topbar button[aria-label="收起侧栏"]');
+      await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
+      if(await browser.evaluate("Boolean(document.querySelector('.workbench-search .workbench-disclosure-trigger[aria-expanded=false]'))"))await clickWorkbenchControl(browser,'.workbench-search .workbench-disclosure-trigger');
+      for(const width of [1920,1440,1280,1000,900,600,390]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        const sample=await browser.evaluate(`(()=>{const n=document.querySelector('.ds-toolbar-filter-content'),r=n.getBoundingClientRect(),t=document.querySelector('.ds-toolbar').getBoundingClientRect();return {width:${width},mode:${JSON.stringify(mode)},collapsed:${collapsed},left:r.left,right:r.right,toolbarLeft:t.left,toolbarRight:t.right,panelOverflow:n.scrollWidth>n.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>${width}+1};})()`);
+        assert.ok(sample.left>=0&&sample.right<=width+1);assert.ok(Math.abs(sample.left-sample.toolbarLeft)<=1&&sample.right<=sample.toolbarRight+1);assert.equal(sample.panelOverflow,false);assert.equal(sample.pageOverflow,false);samples.push(sample);
+        const reachable=await browser.evaluate(`(()=>{const panel=document.querySelector('.ds-toolbar-filter-content'),items=[...panel.querySelectorAll('input:not([type=hidden]):not(:disabled),button:not(:disabled),[role=spinbutton]')].filter(n=>{const r=n.getBoundingClientRect();return n.checkVisibility()&&r.width>8&&r.height>8;});return items.length>0;})()`);assert.equal(reachable,true);
+        await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),a=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility());a.at(-1)?.scrollIntoView({block:'nearest',inline:'nearest'});})()");
+        try{await browser.waitFor(`(async()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1);if(!n)return false;n.scrollIntoView({block:'nearest',inline:'nearest'});const before=n.getBoundingClientRect();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));if(!n.isConnected)return false;const r=n.getBoundingClientRect();if(['x','y','width','height'].some(key=>before[key]!==r[key]))return false;return r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()`);}catch(failure){console.log('WORKBENCH_FILTER_HIT_FAILURE '+JSON.stringify({width,mode,collapsed,geometry:await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect(),h=r?document.elementFromPoint(r.x+r.width/2,r.y+r.height/2):null;return {panel:p.getBoundingClientRect().toJSON(),scrollTop:p.scrollTop,scrollHeight:p.scrollHeight,button:r?.toJSON(),hitTag:h?.tagName,hitClass:h?.className,innerWidth,innerHeight};})()")}));throw failure;}
+        assert.equal(await browser.evaluate(`(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect();return Boolean(r&&r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)));})()`),true,'last filter/date action is visible and unobstructed at '+width);
+        if(!collapsed&&[1920,1440,1280,900,600,390].includes(width)){const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'filters-'+mode+'-'+width+'.png');await writeFile(file,bytes);screenshots.push({file,width,height:900,sha256:createHash('sha256').update(bytes).digest('hex')});}
+      }
+    }
+    assert.deepEqual(writes,[],'opening and navigating filter controls never posts business commands');console.log('WORKBENCH_FILTER_VIEWPORTS '+JSON.stringify({samples,screenshots}));
+  }catch(failure){error=failure;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+},{workbenchSearchEnabled:true,workbenchFollowEnabled:true,sourceGroupDirectoryEnabled:true}));
 
 test('source group name editing keeps an exact version basis, reconciles the original unknown command, and fences revoked ADMIN authority',async()=>{
   await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,pool})=>{
@@ -193,7 +217,7 @@ test('a real object denial clears cached note actions even when the rejection bo
       await browser.evaluate("(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 denied synthetic note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&!document.querySelector('[aria-label=\"内部备注\"]')");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('[aria-label=\"内部备注\"]')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
@@ -257,7 +281,7 @@ test('Ticket note conflict retains input without resending and a later identity 
       await browser.waitFor("globalThis.__t02InFlight===0&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 4'");
       await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
       await browser.evaluate("(async()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 rejected after expiry');input.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(resolve=>requestAnimationFrame(resolve));document.querySelector('[data-action=save-internal-note]').click();})()");
-      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前身份没有查看权限'))&&!document.querySelector('textarea')&&!document.querySelector('.sidebar')");
+      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前账号无法查看工作台'))&&!document.querySelector('textarea')&&!document.querySelector('.sidebar')");
       const statuses=await browser.evaluate('globalThis.__t02PostStatuses');assert.equal(statuses.length,3);assert.deepEqual(statuses.slice(0,2),[409,200]);assert.ok([401,403].includes(statuses[2]));
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions')||document.querySelector('#detail-title'))"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
@@ -277,6 +301,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
         // with the unchanged helper deadline, without retries or a longer timeout.
         await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
         await browser.evaluate("Promise.all((document.querySelector('.detail-dialog')?.getAnimations()??[]).map(animation=>animation.finished)).then(()=>true)");
+        await assertWorkbenchPrimaryActions(browser);
         const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);
         await writeFile(file,bytes);
         screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
@@ -292,21 +317,25 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       };
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelectorAll('.board-column').length"),3);
-      assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'36px',text:'rgb(55, 53, 47)',columns:3});
+      assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'24px',text:'rgb(55, 53, 47)',columns:3});
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>card.querySelector('.ds-ticket-body')?.children.length===4&&card.querySelector('.card-meta .ds-source-label')&&!card.querySelector('.card-tags .ds-source-label'))"),true,'four rows and neutral source metadata');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>[...card.querySelectorAll('.card-tags .ds-tag[data-tone]')].filter(tag=>tag.dataset.tone!=='neutral').length<=2)"),true,'at most two colored action tags');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags')].some(tags=>['待接单','处理中','已关闭'].some(label=>[...tags.querySelectorAll('.ds-tag')].some(tag=>tag.textContent===label)))"),false,'card does not repeat its column stage');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column')].every(column=>getComputedStyle(column).backgroundColor==='rgb(247, 247, 245)'&&column.querySelector('.column-heading .ds-status-dot')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')"),true,'neutral columns with dot status headings');
       await capture('new-board-1920.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await capture('new-board-1280.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
       await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
-      assert.ok(await browser.evaluate("document.body.innerText.includes('已解决待确认')"));
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags .ds-tag')].some(tag=>tag.textContent==='待确认'&&tag.title==='已解决待确认')"),true,'resolved remains a distinct substatus after regrouping');
       const id=tickets[5].ticket.id;
       await browser.evaluate(`(()=>{const link=document.querySelector('[data-item-id="${id}"] .card-open');link.focus();link.click();})()`);
       await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
       await browser.waitFor("document.querySelector('.detail-dialog')?.contains(document.activeElement)===true");
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
@@ -369,14 +398,19 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // The existing test-auth port issues a distinct cookie name per principal.
       await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
-      await browser.waitFor("document.body.innerText.includes('当前授权范围内暂无事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.waitFor("document.body.innerText.includes('当前没有可见的事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('看板')).click()");
+      await browser.waitFor("Boolean(document.querySelector('.board-column.closed [data-action=view-earlier]'))");
+      await browser.evaluate("document.querySelector('.board-column.closed [data-action=view-earlier]').click()");
+      await browser.waitFor("new URLSearchParams(location.search).get('range')==='all'&&document.querySelector('.range-bar')?.textContent.includes('已加载 0 项')");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0,'earlier shortcut reuses the existing all-date filter without widening READ');
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+id});
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')");
       await browser.command('Network.deleteCookies',{name:browserCookies[1].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[0]]});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelector('.board').getBoundingClientRect().width<=innerWidth"),true);
-      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.sidebar')).display==='none'&&getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length===1"),true);
+      assert.equal(await browser.evaluate("(()=>{const board=document.querySelector('.board'),style=getComputedStyle(board),columns=style.gridTemplateColumns.split(' ').map(Number.parseFloat);return getComputedStyle(document.querySelector('.sidebar')).display==='none'&&columns.length===3&&columns.every(width=>width>=300)&&style.overflowX==='auto'&&board.scrollWidth>board.clientWidth;})()"),true,'v2 narrow board keeps three readable columns inside a horizontal scroller');
       await capture('new-board-900.png');
       await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
       assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.ticket-card')).transitionDuration==='0s'"),true);
@@ -390,7 +424,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // Count real requests, without changing their HTTP result or adding retries.
       await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__web01DenialReads=0;globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/api/workbench/items/ticket/${id}'))globalThis.__web01DenialReads++;return original(...args);};return true})()`);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
-      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&document.querySelectorAll('.ticket-card').length===2");
+      await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&document.querySelectorAll('.ticket-card').length===2");
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.ok(await browser.evaluate('globalThis.__web01DenialReads<=2'),'a denied active query must not recreate and request in a loop');
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"),false);

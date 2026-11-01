@@ -28,7 +28,7 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       await browser.evaluate(`document.querySelector('[data-item-id="${first.ticket.id}"] a').click()`);
       await browser.waitFor("Boolean(document.querySelector('.detail-dialog .detail-heading h2'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the actual production Item must expose its Review workspace');
-      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),780);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('门诊二楼打印机')");
       await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
       await browser.waitFor("document.querySelector('[data-review-workspace]')?.checkVisibility()===true");

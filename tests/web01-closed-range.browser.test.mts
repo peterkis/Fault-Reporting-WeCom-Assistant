@@ -73,6 +73,8 @@ test('formal board applies a selected date range, preserves it across view, scop
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("列表")).click()');
     await browser.waitFor('new URLSearchParams(location.search).get("view")==="list"&&document.querySelectorAll(".list-group[aria-label=已处理] tbody tr").length===3');
     const priorDocument=await browser.evaluate('performance.timeOrigin');assert.equal(typeof priorDocument,'number');await browser.command('Page.reload');
+    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&Boolean(document.querySelector('.processed-date-picker'))`);
+    await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
     await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('closed_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tbody tr').length===3`);
     await browser.evaluate('document.querySelector("[data-action=related-scope]").click()');
     await browser.waitFor('new URLSearchParams(location.search).get("scope")==="related"&&document.querySelector(".scope-tabs [data-action=related-scope]").getAttribute("aria-pressed")==="true"');
@@ -86,8 +88,20 @@ test('formal board applies a selected date range, preserves it across view, scop
     await typeWorkbenchDates(browser,'2024-03-02','2024-03-01');
     assert.equal(await browser.evaluate('document.querySelector("[aria-label=应用已处理日期]").disabled'),true);
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("closed_from")'),'2024-02-29');
-    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.closed .column-heading").textContent.includes("4 已加载")');
+    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.closed .ds-column-footer").textContent.includes("已加载 4 项")');
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).has("closed_from")||Boolean(document.querySelector("input[type=date]"))'),false);
+    const emptyCookie=f.cookies[1];assert.ok(emptyCookie);const emptySeparator=emptyCookie.indexOf('=');assert.ok(emptySeparator>0);
+    await browser.command('Network.deleteCookies',{name:cookieHeader.slice(0,separator),url:f.origin});
+    await browser.command('Network.setCookies',{cookies:[{name:emptyCookie.slice(0,emptySeparator),value:emptyCookie.slice(emptySeparator+1),url:f.origin+'/',httpOnly:true,secure:f.origin.startsWith('https:'),sameSite:'Lax'}]});
+    for(const [from,to,expected] of [
+      ['1987-06-01','1987-06-01','06/01–06/01 没有已处理的工单'],
+      ['2024-02-29','2024-02-29','02/29–02/29 没有已处理的工单'],
+      ['2023-12-31','2024-01-01','12/31–01/01 没有已处理的工单'],
+    ] as const){
+      await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?range=custom&closed_from='+from+'&closed_to='+to});
+      await browser.waitFor(`document.querySelector('.board-column.closed .empty p')?.textContent===${JSON.stringify(expected)}`);
+      assert.equal(await browser.evaluate('document.querySelectorAll(".ticket-card").length'),0,'empty date presentation cannot widen current READ');
+    }
     assert.equal(writes,0);console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',custom_range:true,read_only:true,dates_survive_scope_view_reload:true,screenshots}));
   }catch(error){failure=error;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnostic){failure=new AggregateError([error,diagnostic],'CLOSED_RANGE_DIAGNOSTICS_FAILED');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);

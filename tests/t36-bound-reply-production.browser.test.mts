@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -26,6 +27,7 @@ test('T36 production exact supplement reply uses an existing authorized Session 
   const text='T36独立人工回复：已收到本次补充。';
   await browser.evaluate(`(()=>{const field=document.querySelector('[data-supplement-bound-reply] textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(field,${JSON.stringify(text)});field.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await browser.waitFor('Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]:not(:disabled)"))');
+  await assertWorkbenchPrimaryLabelContrast(browser,'[data-supplement-bound-reply] [data-action=send-conversation-reply]');
   await browser.evaluate('document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]").click()');await browser.waitFor('globalThis.__t36Bound.some(row=>row.status===202)');
   const records=await browser.evaluate('globalThis.__t36Bound') as {status:number;body:{client_command_id:string;text:string;follow_up_target:{ticket_id:string;source_ref:string;revision:string}};result:{message_id:string;delivery_ids:string[]}}[];assert.equal(records.length,1);const accepted=records[0];assert.ok(accepted);assert.equal(accepted.body.text,text);assert.deepEqual(accepted.body.follow_up_target,{ticket_id:f.ticketId,...f.r2});assert.equal(JSON.stringify(accepted.body).includes(f.internalCanary),false);assert.equal(accepted.result.delivery_ids.length,1);
   assert.equal((await f.page()).items.find(x=>x.source_ref===f.r2.source_ref)?.follow_up_state,'PENDING','202 is not verified follow-up');const r3=await f.appendR3();

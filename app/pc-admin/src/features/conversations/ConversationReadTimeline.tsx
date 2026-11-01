@@ -1,3 +1,5 @@
+import {MessageBubble} from '../../design/components/MessageBubble/MessageBubble';
+import {Timeline} from '../../design/components/Timeline/Timeline';
 import type {ReactNode} from 'react';
 import {useEffect,useRef} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
@@ -52,5 +54,5 @@ export function ConversationReadTimeline<T extends ConversationWorkspaceItem>({p
     document.addEventListener('visibilitychange',changed);window.addEventListener('focus',changed);window.addEventListener('scroll',changed,true);window.addEventListener('resize',changed);changed();
     return()=>{disposed=true;controller.abort();observer.disconnect();document.removeEventListener('visibilitychange',changed);window.removeEventListener('focus',changed);window.removeEventListener('scroll',changed,true);window.removeEventListener('resize',changed);};
   },[client,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,principal.csrf_token,principal.personal_read_enabled,id,signature]);
-  return <ol ref={root}>{items.map(item=><li key={item.item_id} className={itemClassName?.(item)} data-conversation-item={item.item_id}>{renderItem?renderItem(item):<><header><strong>{item.visibility==='INTERNAL'?'内部协作':item.sender_kind==='USER'?'报修人':'工作人员'}</strong><time>{item.occurred_at}</time><span>{item.visibility==='INTERNAL'?'内部备注':'服务材料'}</span></header><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条材料没有可展示的文本。'}</p></>}</li>)}</ol>;
+  return <Timeline><ol ref={root}>{items.map(item=><li key={item.item_id} className={itemClassName?.(item)} data-conversation-item={item.item_id}>{renderItem?renderItem(item):<><header><strong>{item.visibility==='INTERNAL'?'内部协作':item.sender_kind==='USER'?'报修人':'工作人员'}</strong><time>{item.occurred_at}</time><span>{item.visibility==='INTERNAL'?'内部备注':'服务材料'}</span></header><MessageBubble side={item.sender_kind==='USER'?'incoming':'outgoing'} internal={item.visibility==='INTERNAL'}><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条材料没有可展示的文本。'}</p></MessageBubble></>}</li>)}</ol></Timeline>;
 }

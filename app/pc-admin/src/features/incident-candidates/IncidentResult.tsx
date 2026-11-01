@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Link as HLink} from "@heroui/react";
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router';
@@ -17,7 +17,7 @@ export function IncidentResultPage({principal,onBlockedChange}:{principal:Princi
 export function IncidentResultView({principal,incidentId,authorityRevision='standalone'}:{principal:Principal;incidentId:string;authorityRevision?:string}){
   const query=useQuery({queryKey:['incident-result',principal.principal_id,incidentId,authorityRevision],queryFn:({signal})=>candidateApi.incident(incidentId,signal)});
   if(query.isPending)return <p role="status">正在独立读取当前获权的公共故障…</p>;
-  if(query.isError)return <section aria-label="公共故障读取结果"><p role="alert">{errorMessage(query.error)} 已知确认结果仍保留；这里仅显示当前获权事实。</p><HButton type="button" onClick={()=>{void query.refetch();}} variant="secondary">重新读取公共故障</HButton></section>;
+  if(query.isError)return <section aria-label="公共故障读取结果"><p role="alert">{errorMessage(query.error)} 已知确认结果仍保留；这里仅显示当前获权事实。</p><HButton type="button" onClick={()=>{void query.refetch();}} tone="secondary">重新读取公共故障</HButton></section>;
   return <IncidentResultFacts result={query.data}/>;
 }
 export function IncidentResultFacts({result}:{result:IncidentResult}){

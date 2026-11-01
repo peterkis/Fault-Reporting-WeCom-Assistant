@@ -1,4 +1,4 @@
-import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,chooseWorkbenchSelect,assertWorkbenchPrimaryActions,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -27,6 +27,7 @@ test('production detail shares report materials, uses responsive information and
     await browser.waitFor("document.querySelector('.report-materials .detail-loading svg')?.checkVisibility()===true");
     assert.equal(await browser.evaluate("document.querySelectorAll('.report-materials').length"),1);
     assert.equal(await browser.evaluate("document.body.innerText.includes('重新读取附件')||document.body.innerText.includes('重新读取网页报修资料')||document.body.innerText.includes('查看沟通人与时间')"),false);
+    await assertWorkbenchPrimaryActions(browser);
     await browser.evaluate('globalThis.__releaseMaterials()');
     await browser.waitFor("!document.querySelector('.report-materials .detail-loading')&&document.querySelector('[data-action=take-and-start]')?.disabled===false");
     assert.equal(await browser.evaluate('globalThis.__webReads'),1,'the fused display has one web-report query owner');
@@ -34,11 +35,15 @@ test('production detail shares report materials, uses responsive information and
     assert.equal(await browser.evaluate("document.querySelector('.detail-properties time').textContent"),reported);
     assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
     assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later],[data-action=accept-for-later-with-conversations]'))"),false);
-    assert.equal(await browser.evaluate("(()=>{const a=document.querySelector('[data-action=open-assignment]').getBoundingClientRect(),c=document.querySelector('[data-action=cancel]').getBoundingClientRect(),s=document.querySelector('[data-action=take-and-start]').getBoundingClientRect();return a.x<c.x&&c.x<s.x&&s.left-c.right>=15;})()"),true);
+    assert.equal(await browser.evaluate("(()=>{const a=document.querySelector('[data-action=open-assignment]').getBoundingClientRect(),s=document.querySelector('[data-action=take-and-start]').getBoundingClientRect(),h=document.querySelector('.detail-heading').getBoundingClientRect();return a.y>=h.bottom&&Math.abs(a.y-s.y)<=1&&s.left>=a.right&&document.querySelector('[data-action=take-and-start]').dataset.tone==='primary'&&!document.querySelector('[data-action=cancel]').checkVisibility();})()"),true);
+    assert.equal(await browser.evaluate("Boolean(globalThis.__cancelOwner=document.querySelector('.detail-cancel-controller'))"),true);
+    await click('[data-action=open-detail-actions]');await browser.waitFor("document.querySelector('[data-action=cancel]')?.checkVisibility()===true");
+    await click('[data-action=open-detail-actions]');assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-controller')===globalThis.__cancelOwner"),true,'overflow disclosure retains its command owner');
     await click('[data-action=take-and-start]');await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&document.querySelector('[data-action=open-public-progress]')?.disabled===false");
     assert.equal((await http.detail(first.ticket.id)).status,'IN_PROGRESS');
     assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/take-and-start')).length"),1);
     await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
+    await assertWorkbenchPrimaryActions(browser);
     assert.equal(await browser.evaluate("document.querySelectorAll('form[aria-label=\"维护公开进度\"]').length"),1);
     const summary='合成公开进度：正在现场排查，请稍候。';
     await fill('.detail-progress-dialog textarea',summary);
@@ -47,7 +52,7 @@ test('production detail shares report materials, uses responsive information and
     assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
     await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
     assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog textarea').value"),summary);
-    await click('[aria-label="确认公开进度内容"]');await click('.detail-progress-dialog button[type=submit]');
+    await click('[aria-label="确认公开进度内容"]');await assertWorkbenchPrimaryLabelContrast(browser,'.detail-progress-dialog button[type=submit]');await click('.detail-progress-dialog button[type=submit]');
     await browser.waitFor("document.querySelector('[data-toast-source=web-report]')?.innerText.includes('提交结果尚未确认')");
     assert.equal(await browser.evaluate('globalThis.__droppedProgress'),1,'the actual committed success is lost at the browser transport boundary');
     await click('[aria-label="关闭公开进度窗口"]');await browser.waitFor("!document.querySelector('.detail-progress-dialog')");

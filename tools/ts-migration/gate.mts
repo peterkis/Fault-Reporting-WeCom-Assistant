@@ -10,6 +10,7 @@ import { runTests, runSelection } from './run-tests.mjs';
 import { batchSelection } from './batches.mjs';
 import { testEnvironment } from './routing.mjs';
 import {typecheckWeb} from './web.mjs';
+import {designVariables,featureSyntax} from './design-system.mjs';
 
 function measured<T>(phase:string,operation:()=>T):T{
   const started=performance.now(),before=process.memoryUsage();let completed=false;
@@ -17,9 +18,16 @@ function measured<T>(phase:string,operation:()=>T):T{
   finally{const after=process.memoryUsage();console.log(JSON.stringify({event:'MIGRATION_GATE_PHASE',phase,status:completed?'PASS':'FAIL',elapsed_ms:Math.round(performance.now()-started),rss_before:before.rss,rss_after:after.rss,heap_used_after:after.heapUsed}));}
 }
 export function typeGate(root: string): void {
+  measured('css',()=>cssGate(root));
+  measured('design-variables',()=>designVariables(root));
+  measured('feature-syntax',()=>featureSyntax(root));
   // Keep every original strict program; release all backend ASTs before Go.
   runNode(root,[fileURLToPath(new URL('./emit.mjs',import.meta.url)),'--root',root,'--types']);
   typecheckWeb(root);
+}
+export function cssGate(root: string): void {
+  // Same locked CLI, cwd and glob as app/pc-admin's lint:css script.
+  runNode(path.join(root,'app/pc-admin'),[path.join(root,'node_modules/stylelint/bin/stylelint.mjs'),'src/**/*.css']);
 }
 export function negativeTypes(root: string): void {
   const options = { ...parsedConfig(root, 'tsconfig.type-tests.json').options, noEmit: true };

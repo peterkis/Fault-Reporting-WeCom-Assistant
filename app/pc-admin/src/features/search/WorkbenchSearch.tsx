@@ -1,4 +1,4 @@
-import {WorkbenchButton as HButton} from '../../app/WorkbenchButton';
+import {Button as HButton} from '../../design/components/Button/Button';
 import {Fieldset as HFieldset,Form as HForm,Input as HInput,Label as HLabel,ListBox,ComboBox} from "@heroui/react";
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
@@ -57,7 +57,7 @@ export function SearchControls({principal,criteria,blocked,active,loaded,onApply
  const groups=[...new Map(loaded.flatMap(item=>item.source_group?[[item.source_group.ref,item.source_group] as const]:[])).values()];
  return <HForm className="workbench-search" aria-label="搜索全部获权事项" onSubmit={submit}><HFieldset disabled={blocked}><div className="search-main"><HLabel>编号、描述、报修时资料或位置
    <HInput name="q" value={draft.get('q')??''} maxLength={256} onChange={event=>set('q',event.target.value)} placeholder="搜索全部当前可读事项" autoComplete="off"/></HLabel>
-   <HButton type="submit" variant="secondary">搜索全部</HButton>{active?<HButton type="button" onClick={onLeave} variant="secondary">结束搜索</HButton>:null}</div><WorkbenchDisclosure title={<>组合筛选</>}><div className="search-filters">
+   <HButton type="submit" tone="secondary">搜索全部</HButton>{active?<HButton type="button" onClick={onLeave} tone="secondary">结束搜索</HButton>:null}</div><WorkbenchDisclosure title={<>组合筛选</>}><div className="search-filters">
     <WorkbenchSelect label={<>事项阶段</>} name="column" value={draft.get('column')??'all'} onChange={event=>set('column',event)} isDisabled={(blocked)}><ListBox.Item id="all" textValue={"全部阶段"}>全部阶段<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="pending" textValue={"待受理"}>待受理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="active" textValue={"处理中"}>处理中<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="closed" textValue={"已处理"}>已处理<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <WorkbenchSelect label={<>责任关系</>} name="responsibility" value={draft.get('responsibility')??'any'} onChange={event=>set('responsibility',event)} isDisabled={(blocked)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="handling" textValue={"由我处理"}>由我处理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="communication" textValue={"由我沟通"}>由我沟通<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="following" isDisabled={!principal.workbench_follow_enabled} textValue={"我已关注"}>我已关注<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue={"尚无处理人"}>尚无处理人<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <HLabel>处理组标识<HInput name="resolver_team_id" value={draft.get('resolver_team_id')??''} onChange={event=>set('resolver_team_id',event.target.value)} placeholder="已知处理组标识" autoComplete="off"/></HLabel>
@@ -69,8 +69,8 @@ export function SearchControls({principal,criteria,blocked,active,loaded,onApply
     <WorkbenchSelect label={<>细分状态</>} name="statuses" multiple value={(draft.get('statuses')??'').split(',').filter(Boolean)} onChange={event=>set('statuses',event.join(','))} isDisabled={(blocked)}>{SEARCH_STATUSES.map(status=><ListBox.Item key={status} id={status} textValue={String(statusLabels[status]??status)}>{statusLabels[status]??status}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
     <WorkbenchSelect label={<>补充跟进</>} name="supplement" isDisabled={blocked||!principal.supplement_follow_up_enabled} value={draft.get('supplement')??'any'} onChange={event=>set('supplement',event)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="pending" textValue={"仍待跟进"}>仍待跟进<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="followed" textValue={"均已跟进"}>均已跟进<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="none" textValue={"没有可读补充"}>没有可读补充<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <WorkbenchSelect label={<>共享跟进时间</>} name="schedule" isDisabled={blocked||!principal.follow_up_schedules_enabled} value={draft.get('schedule')??'any'} onChange={event=>set('schedule',event)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="active" textValue={"已有安排"}>已有安排<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="due" textValue={"当前已到期"}>当前已到期<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="none" textValue={"没有活动安排"}>没有活动安排<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
-   </div></WorkbenchDisclosure></HFieldset>{error?<p role="alert">{error}</p>:<p className="search-caption">{active?'当前显示全部获权范围中的匹配分页；已加载条数不是总数。':'提交条件后检索全部当前可读事项；空条件可查询全部。搜索不改变报修或回复草稿。'}</p>}</HForm>;
+   </div></WorkbenchDisclosure></HFieldset>{error?<p role="alert">{error}</p>:<p className="search-caption">{active?'当前显示可见事项中符合条件的分页结果；已加载条数不是总数。':'提交条件后检索全部当前可读事项；空条件可查询全部。搜索不改变报修或回复草稿。'}</p>}</HForm>;
 }
 export function searchEmptyMessage(criteria:WorkbenchSearchCriteria|null){
- return criteria&&hasSearchCriteria(criteria)?'当前授权范围内没有匹配这些条件的事项。':'当前授权范围内暂无事项。';
+ return criteria&&hasSearchCriteria(criteria)?'当前没有符合这些条件的可见事项。':'当前没有可见的事项。';
 }
