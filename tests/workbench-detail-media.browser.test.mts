@@ -12,7 +12,7 @@ import sharp from 'sharp';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import type {DetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
-import {clickWorkbenchControl,assertWorkbenchPrimaryActions} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,assertWorkbenchPrimaryActions,assertWorkbenchMediaPreviewGeometry} from './helpers/heroui-workbench-controls.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createYxxH5Media} from '../app/server/src/yxx-h5-media.mjs';
 import {createYxxH5MediaPrivateStore} from '../app/server/src/yxx-h5-media-store.mjs';
@@ -109,6 +109,14 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     await tooltipByPointerAndKeyboard(browser,storageHint,storageMessage);
     const failed=await failedOriginal(f,first.intake.intakeId);await navigate(first.ticket.id);
     await browser.waitFor("document.querySelector('.detail-media-card img')?.naturalWidth>0&&document.querySelector('[aria-label=\"附件转换异常\"]')?.checkVisibility()===true");
+    for(const width of [1920,1440,1280,900,600,390]){
+      await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
+      await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+      await assertWorkbenchMediaPreviewGeometry(browser,width);
+      await browser.evaluate("document.querySelector('.detail-media-card').scrollIntoView({block:'center'})");
+      const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'preview-frame-'+width+'.png');await writeFile(file,pixels);screenshots.push({width,file,sha256:hash(pixels)});
+    }
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
     assert.equal(await browser.evaluate("document.querySelector('.detail-attachments h4>span').textContent"),'1');
     await tooltipByPointerAndKeyboard(browser,conversionHint,'原始文件已保存',[failed.error.code,failed.error.at]);
     await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});

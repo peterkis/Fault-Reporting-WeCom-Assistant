@@ -32,6 +32,24 @@
 
 本卡受众文字采用已有 secondary 满足必读文字对比度，与规范 §6.9 的 tertiary 写法存在已记录差异；没有新增视觉值。自有 PG 与浏览器已关闭，中间可再生副本已清理。各卡详细证据与自检见 [卡 0](design-system-v2-card0-baseline.md)、[卡 1](design-system-v2-card1-token-foundation.md)、[卡 2](design-system-v2-card2-literal-convergence.md)、[卡 3](design-system-v2-card3-page-skeleton.md)、[卡 4](design-system-v2-card4-information-components.md)、[卡 5](design-system-v2-card5-ticket-drawer.md)、[卡 6](design-system-v2-card6-conversations-and-pages.md)、[卡 7](design-system-v2-card7-cleanup-and-enforcement.md)。
 
+## PR #127 审查修补
+
+首轮 `@codex review` 对发布 head `2623fd0d41d0b341d687ae8a44a4d325f1be8728` 提出一个 [P2 附件预览尺寸问题](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/127#discussion_r4434748018)。实际生产 bundle 复现高度 32px、水平内边距 12px；专用媒体卡片选择器恢复原 170px / 窄屏 145px，内容容器填满预览区，普通操作按钮仍使用原组件规格。
+
+同类真实 VOICE 夹具发现原 30px 按钮中图标容器只剩 4px；改用现有图标按钮与控制尺寸 Token，并固定图标内容盒，最终按钮 32px、图标及容器均为 16px。播放/下载/进度、请求及失权清除逻辑没有变化。
+
+新增几何断言覆盖图片/视频、转换失败后原件和语音图标：媒体六宽 1920/1440/1280/900/600/390，语音三宽 1280/600/390。实测图片/视频与原件字节、旧路由回退、缓存头像和存储提示的原断言保留。
+
+| 媒体场景 | 审查前 | 修补后 |
+| --- | --- | --- |
+| 1280px | [32px 复现](design-system-v2-evidence/media-before-1280.png) | [170px](design-system-v2-evidence/media-after-1280.png) |
+| 1920 / 1440 / 900px | 同一普通按钮覆盖规则 | [1920](design-system-v2-evidence/media-after-1920.png) / [1440](design-system-v2-evidence/media-after-1440.png) / [900](design-system-v2-evidence/media-after-900.png) |
+| 600 / 390px | 同一普通按钮覆盖规则 | [600](design-system-v2-evidence/media-after-600.png) / [390](design-system-v2-evidence/media-after-390.png) |
+
+此外补齐四份仍读取旧“属性表状态”的 T08/T09 恢复测试，改为标题状态并真实展开原协作区；T08 的反馈读取改到实际 Toast。预期状态、精确请求、会话版本、责任、事件、原 UUID、只读 ACK、敏感清除和受众断言保持。
+
+首轮远端 TypeScript 运行 `41284216094` 在上述旧 T09 状态定位失败：244 个选择入口中执行 14 个，57 项检查为 55 PASS / 2 FAIL，230 入口 NOT_RUN，原 ZIP 与摘要已保留。修补的本地输入 `a6060a30d28a8c59c792d638c78d78d86265877a9cbd74d1e9bfb3383e6fe63f` 已通过构建、完整 types、制品与 8 个注册相关入口 / 13 项检查（无 SKIP / NOT_RUN）；它不是后继发布 head 的远端 CI 通过证明。新增图片摘要见 [审查修补 manifest](design-system-v2-evidence/media-review-manifest.json)，原始诊断和 TAP 位于 `D:/CodexEvidence/pc-admin-design-v2-delivery-20261101/review1/`。
+
 ## 合并与回退
 
 合并前要求最终完整 PR head 的审查完成、P1/P2 收口、适用 CI 成功且未解决线程核对完成。合并使用保留祖先的 merge commit；回退为后继 revert，不改写历史证据。没有部署、真实发送、业务写库或 Gate 推进授权。

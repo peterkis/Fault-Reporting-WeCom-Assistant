@@ -1,0 +1,58 @@
+{
+  "scope": "PR127 P2 real loopback HTTP/PG media frame, synthetic original with conversion failure",
+  "input_hash": "a6060a30d28a8c59c792d638c78d78d86265877a9cbd74d1e9bfb3383e6fe63f",
+  "before": {
+    "path": "media-before-1280.png",
+    "height": 32,
+    "padding": "0px 12px",
+    "sha256": "62b0cea9d0f2254e621f586a115dc9ec3663068810c3c1ba4dc01d8045b88512"
+  },
+  "after": [
+    {
+      "path": "media-after-1920.png",
+      "viewport": 1920,
+      "bytes": 57279,
+      "sha256": "6044ca6ea7235e3052bccafba5c461671c8335a4785f64074c7fc76e14841d3a",
+      "preview_height": 170
+    },
+    {
+      "path": "media-after-1440.png",
+      "viewport": 1440,
+      "bytes": 55171,
+      "sha256": "ec8d3bb078b6cdbe25d3e943f86a648005bf3e0e3c5e1ec2f8747261cec3b842",
+      "preview_height": 170
+    },
+    {
+      "path": "media-after-1280.png",
+      "viewport": 1280,
+      "bytes": 53740,
+      "sha256": "6c21469a03f8cb0438dd49f16496a44bd6e9b4e2864f1658fb1e5b9a2c0bd4b3",
+      "preview_height": 170
+    },
+    {
+      "path": "media-after-900.png",
+      "viewport": 900,
+      "bytes": 45246,
+      "sha256": "fdaa84628260441835389c090c4f41b1426c47e9450fa5c0aae7ac21c2b15f35",
+      "preview_height": 170
+    },
+    {
+      "path": "media-after-600.png",
+      "viewport": 600,
+      "bytes": 37951,
+      "sha256": "02bfc49e13a47ae1bc6670a144021918c3f003b383bf5a731329daec0cdb22ea",
+      "preview_height": 145
+    },
+    {
+      "path": "media-after-390.png",
+      "viewport": 390,
+      "bytes": 35657,
+      "sha256": "9b4bace551cc46d7a964fe4a89ceb1c5ed0a1b9a1bd59bad0837a202387c9bd9",
+      "preview_height": 145
+    }
+  ],
+  "related_browser_entries": 8,
+  "related_tests": 13,
+  "result": "PASS",
+  "voice": "real VOICE upload: control32, complete glyph; original file/download and authorization assertions retained"
+}

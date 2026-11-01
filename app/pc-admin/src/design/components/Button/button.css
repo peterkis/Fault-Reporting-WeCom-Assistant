@@ -22,6 +22,7 @@
 .ds-button.button[data-size=sm] {height: var(--control-h-sm); min-height: var(--control-h-sm);}
 .ds-button.button[data-size=lg] {height: var(--control-h-lg); min-height: var(--control-h-lg);}
 .ds-button.button[data-icon-only=true] {width: var(--control-h-md); min-width: var(--control-h-md); padding: 0;}
+.ds-button.button[data-icon-only=true]>.ds-button-label {width: var(--icon-md); height: var(--icon-md); flex: none;}
 .ds-button.button[data-icon-only=true][data-size=sm] {width: var(--control-h-sm); min-width: var(--control-h-sm);}
 .ds-button.button[data-icon-only=true][data-size=lg] {width: var(--control-h-lg); min-width: var(--control-h-lg);}
 /* Keep the accessible name and layout while the spinner replaces the visible text. */
