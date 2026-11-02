@@ -266,6 +266,35 @@ test('returning to an inactive revoked chat cannot render cached messages while 
     await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate('globalThis.__releaseRevoked?.()');await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}}],failure);
   },{inbox:true,realtime:true});
 });
+test('summary drawer blocks covered conversation cursor writes and closing re-observes visible text',async()=>{
+  await withT22Fixture(async f=>{
+    const session=f.sessions[0];assert.ok(session);const cursor=async()=>Number((await f.pool.query<{last:string}>('SELECT last_read_sequence::text AS last FROM conversation.read_cursor WHERE session_id=$1::uuid AND principal_id=$2::uuid',[session.id,f.principals[0]?.id])).rows[0]?.last??'0');
+    let browser:Browser|undefined,failure:unknown;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});
+      await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      await browser.evaluate(`(()=>{globalThis.__summaryReads={armed:false,gets:0,posts:0};const original=fetch;globalThis.fetch=(path,options)=>{const name=new URL(String(path),location.origin).pathname,t=globalThis.__summaryReads;if(t.armed){if(name===${JSON.stringify('/api/conversations/'+session.id)})t.gets++;if(options?.method==='POST'&&name===${JSON.stringify('/api/conversations/'+session.id+'/read-cursor')})t.posts++;}return original(path,options);};window.dispatchEvent(new Event('focus'));})()`);
+      const initial=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(Number.isSafeInteger(initial)&&initial>0);
+      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${initial};})()`);
+      await clickWorkbenchControl(browser,'.inbox-business .inbox-mini-ticket a');await browser.waitFor("document.querySelector('[role=dialog].detail-dialog.ds-drawer')?.checkVisibility()===true");
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      const before=await cursor();await browser.evaluate('globalThis.__summaryReads.armed=true');
+      const entry=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
+      assert.equal((await conversationPost(f.origin,f.cookie,session.id,'internal-notes',{...freshCommand(entry.session.row_version),text:'合成摘要遮挡期间的新正文'})).status,201);await f.runtime.coordinator.runOnce();
+      await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes('合成摘要遮挡期间的新正文')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      const newest=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(newest>before);
+      const covered=await browser.evaluate("(()=>{window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('resize'));const node=document.querySelector('.inbox-timeline');node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));return {gets:globalThis.__summaryReads.gets,posts:globalThis.__summaryReads.posts};})()") as {gets:number;posts:number};
+      assert.deepEqual(covered,{gets:0,posts:0},'covered material does not start a Cursor intent or its authority GET');assert.equal(await cursor(),before,'unseen text never advances the durable cursor');
+      await browser.evaluate('globalThis.__summaryReads.armed=false');
+      await clickWorkbenchControl(browser,'[role=dialog].ds-drawer button[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('.inbox-associated-detail')");
+      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${newest};})()`);
+      assert.ok(await cursor()>=newest,'closing the drawer re-observes actually visible text without a synthetic scroll');
+      console.log('CONVERSATION_SUMMARY_FOREGROUND '+JSON.stringify({before,covered,after:await cursor(),newest,real_http_pg:true}));
+    }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  },{inbox:true,realtime:true,personalRead:true,recovery:false});
+});
+
 test('an uncertain personal Cursor remains GET-only across foreground observations and new projected material',async()=>{
   await withT22Fixture(async f=>{
     const session=f.sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;

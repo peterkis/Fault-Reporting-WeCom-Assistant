@@ -168,3 +168,13 @@ R3 clean head `5944612e84a450f077c16cb11420646df43bed61` 本地两 lint、PC typ
 新增原 Inbox 浏览器文件内的历史场景：真实 ENDED 详情 capabilities=[]；历史标签中性、没有“领取后可回复”提示；选中后接待横幅隐藏、两种输入禁用、可见 primary=0，导航 POST=0。原会话 70 条 assert 仍全保留，当前 110 条。
 
 仅重拍受影响历史队列四宽：[1920](../../docs/ui/evidence/v21-card14/ended-1920.jpg) / [1440](../../docs/ui/evidence/v21-card14/ended-1440.jpg) / [1280](../../docs/ui/evidence/v21-card14/ended-1280.jpg) / [900](../../docs/ui/evidence/v21-card14/ended-900.jpg)。原 normal/topic 图片保留旧采集身份。补充文件责任为 `tests/workbench-media-employee-read.browser.test.mts` 的计时纠错、`tests/t11-completion.browser.test.mts` 的控件准备及上述四图；其它卡文件不改。
+
+## 摘要模态的前台阅读修补 R5
+
+R4 clean head `956259c22448bfa6807d043bcf1a93fbeca07be0` 的本地四个原入口 36/36 和全部门禁 PASS，远端 [41442118600](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41442118600) 普通 CI 显示 SUCCESS；原件执行数在 PR 收口核对。Codex 另报 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/132#discussion_r4442209846)：摘要 Drawer 并未被原前台文字排除规则识别，后台时间线的新消息可能在被遮挡时误推进已读。
+
+在原制品上以真实 PG/HTTP 和首帧可见资料复现：摘要打开后追加正文，主动触发前台/滚动观测，原实现发生 covered GET=1、POST=2，预期 0/0，诊断 FAIL（`summary-read-red.log`）。修补后的同场景 covered GET=0、POST=0；关闭后不注入滚动，模态生命周期自动重新观察，游标从 1 前进到实际可见的 4（`summary-read-green.log`）。诊断副本独立，原制品未被编辑。
+
+共享 foreground-text 将现有 Drawer 注册为模态，继续沿用“模态包含当前文字则允许阅读”的规则，因此正常工单抽屉内部的阅读不被全局禁止。ConversationReadTimeline 订阅当前模态身份切换，只在实际切换时重新观察，卸载时断开；原 READ/身份/留存、等待后终检、未知游标只读核对、命令 UUID 和写入载荷均保持。该修补纠正可见性，不改变服务端权限或消息事实。
+
+永久浏览器回归覆盖遮挡期间没有游标 GET/POST、耐久游标不变及关闭后真实可见资料推进；同时扩展原正常工单/会话阅读入口检查自身抽屉、长文滚动和既有取消弹窗。新增文件责任为 `app/pc-admin/src/features/personal-read/foreground-text.ts` 的模态识别与 `ConversationReadTimeline.tsx` 的观察生命周期；无产品像素变化，不重拍图片。原会话 70 条 assert 全保留（当前 119）。
