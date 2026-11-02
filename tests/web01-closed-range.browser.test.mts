@@ -55,6 +55,9 @@ test('formal board applies a selected date range, preserves it across view, scop
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?scope=team',width:1920,height:1080,cookies:[{name:cookieHeader.slice(0,separator),value:cookieHeader.slice(separator+1),url:f.origin+'/',httpOnly:true,secure:f.origin.startsWith('https:'),sameSite:'Lax'}]});assert.ok(browser);
     await browser.waitFor('Boolean(document.querySelector(".processed-date-picker"))&&document.querySelectorAll(".board-column.closed .ticket-card").length===1');
+    // Card 10 defaults to oldest-first; this date-boundary assertion retains its explicit newest-first sequence.
+    await clickWorkbenchControl(browser,'.board-column.closed .ds-column-sort');
+    await clickWorkbenchControl(browser,'[data-key=newest]');
     const capture=async(name:string)=>{assert.ok(browser);assert.equal(await browser.evaluate("(()=>{const card=document.querySelector('.board-column.pending .ticket-card'),link=card?.querySelector('.card-open'),time=card?.querySelector('.activity-time');if(!card||!link||!time)return false;const c=card.getBoundingClientRect(),l=link.getBoundingClientRect(),t=time.getBoundingClientRect();return Math.abs(c.width-l.width)<1&&Math.abs(l.right-parseFloat(getComputedStyle(link).paddingRight)-t.right)<1&&document.elementFromPoint(l.right-3,l.top+40)?.closest('.card-open')===link;})()"),true,'the complete card stays clickable and its timestamp stays right aligned at each viewport');const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name+'.png');await writeFile(file,pixels);screenshots.push({file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')});};
     assert.equal(await browser.evaluate('Boolean(document.querySelector("select[aria-label=已关闭范围]"))'),false);
     await typeWorkbenchDates(browser,'2024-02-29','2024-02-29');
@@ -88,7 +91,7 @@ test('formal board applies a selected date range, preserves it across view, scop
     await typeWorkbenchDates(browser,'2024-03-02','2024-03-01');
     assert.equal(await browser.evaluate('document.querySelector("[aria-label=应用已处理日期]").disabled'),true);
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("closed_from")'),'2024-02-29');
-    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.closed .ds-column-footer").textContent.includes("已加载 4 项")');
+    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.closed .ds-column-footer")?.title==="已加载 4 项"');
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).has("closed_from")||Boolean(document.querySelector("input[type=date]"))'),false);
     const emptyCookie=f.cookies[1];assert.ok(emptyCookie);const emptySeparator=emptyCookie.indexOf('=');assert.ok(emptySeparator>0);
     await browser.command('Network.deleteCookies',{name:cookieHeader.slice(0,separator),url:f.origin});

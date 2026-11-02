@@ -15,7 +15,7 @@ export function BoardColumn({column,label,count,sort='oldest',onSort,blocked=fal
         <Dropdown.Item id="oldest" textValue="等待最久"><Dropdown.ItemIndicator/><Label>等待最久</Label></Dropdown.Item>
         <Dropdown.Item id="newest" textValue="最新到达"><Dropdown.ItemIndicator/><Label>最新到达</Label></Dropdown.Item>
       </Dropdown.Menu></Dropdown.Popover></Dropdown>:null}
-    </div>{column==='active'&&onSort?<p className="ds-column-sort-note">暂按原顺序 · 等待时间待补齐</p>:null}{children}</section>;
+    </div>{column==='active'&&onSort?<p className="ds-column-sort-note">按查询顺序排列</p>:null}{children}</section>;
 }
 
 export function BoardGroup({label,count,children}: {label:string;count:number;children:React.ReactNode}){

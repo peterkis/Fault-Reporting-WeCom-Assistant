@@ -1,7 +1,11 @@
 .ds-board-summary {display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: var(--space-3); margin: 0 0 var(--space-5);}
 .ds-board-summary .ds-summary-card.button[data-tone] {width: 100%; height: auto; padding: var(--space-4); background: var(--bg-canvas); border: 1px solid var(--border-hair); border-radius: var(--radius-md); color: var(--text-primary);}
+.ds-board-summary .ds-summary-card.button[data-summary-tone=warning] {background: var(--stage-intake-bg); color: var(--stage-intake-fg);}
+.ds-board-summary .ds-summary-card.button[data-summary-tone=danger] {background: var(--tone-danger-bg); color: var(--tone-danger-fg);}
+.ds-board-summary .ds-summary-card.button[data-summary-tone=brand] {background: var(--tone-brand-bg); color: var(--tone-brand-fg);}
+.ds-board-summary .ds-summary-card.button[data-summary-tone=success] {background: var(--stage-done-bg); color: var(--stage-done-fg);}
 .ds-summary-card>.ds-button-label {display: flex; align-items: center; gap: var(--space-3); width: 100%;}
-.ds-board-summary .ds-summary-card.button[data-tone][aria-pressed=true] {border-color: var(--brand); background: var(--bg-selected);}
+.ds-board-summary .ds-summary-card.button[data-tone][aria-pressed=true] {border-color: var(--brand); background: var(--bg-selected); color: var(--tone-brand-fg);}
 .ds-board-summary .ds-summary-card.button[data-tone][aria-pressed=true][data-summary-filter]:is(:hover,:active,:focus-visible,[data-pressed=true]) {border-color: var(--brand); background: var(--bg-selected);}
 .ds-summary-card[aria-disabled=true] {cursor: default;}
 .ds-summary-label {font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap;}
@@ -13,5 +17,8 @@
 .ds-summary-card[data-summary-tone=brand] .ds-summary-icon {background: var(--tone-brand-bg); color: var(--tone-brand-fg);}
 .ds-summary-card[data-summary-tone=success] .ds-summary-icon {background: var(--tone-success-bg); color: var(--tone-success-fg);}
 .ds-summary-tooltip {max-width: 320px; font-size: var(--fs-xs); line-height: var(--lh-xs);}
-@media(max-width:1100px) {.ds-board-summary {grid-template-columns: repeat(2,minmax(0,1fr));}}
+@media(max-width:1100px) {
+  .ds-board-summary {grid-template-columns: repeat(2,minmax(0,1fr));}
+  .ds-board-summary .ds-summary-card.button[data-summary-tone=brand],.ds-board-summary .ds-summary-card.button[data-summary-tone=success] {background: var(--bg-canvas); color: var(--text-primary);}
+}
 @media(max-width:600px) {.ds-board-summary {gap: var(--space-2);} .ds-board-summary .ds-summary-card.button[data-tone] {padding: var(--space-2);} .ds-summary-card>.ds-button-label {gap: var(--space-2);} .ds-summary-value {font-size: var(--fs-lg);}}

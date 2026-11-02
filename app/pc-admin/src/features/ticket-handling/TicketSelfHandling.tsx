@@ -2,13 +2,14 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction} from '../../api/client';
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode=false,otherBlocked=false}:{ticketId:string;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
+export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode=false,otherBlocked=false,cardActionTarget}:{ticketId:string;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void;cardActionTarget?:HTMLElement|null}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
   const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[pending,setPending]=useState<Pending|null>(null);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
@@ -38,14 +39,15 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     if(blocked||otherBlocked||context.isPending||context.isError||!context.data?.allowed_actions.includes(action))return;
     send(Object.freeze({action,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:context.data.resolver_team_id})}),false);
   };
-  const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[];
+  const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[],cardMode=cardActionTarget!==undefined;
   // Keep the original request/result controller mounted; only its idle presentation is optional.
   if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&state==='idle')return null;
-  return <section data-activity-field="ticket-handling" className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
+  const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={cardMode?'secondary':'primary'}>{cardMode?'领取 E':'接单'}</HButton>:null;
+  return <section data-activity-field="ticket-handling" data-board-claim-state={cardMode?state:undefined} className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
     {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
-      {allowed.includes('take-and-start')?<HButton type="button" className="take-and-start" data-action="take-and-start" isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone="primary">接单</HButton>:null}
+      {cardMode?(cardActionTarget?createPortal(action,cardActionTarget):null):action}
       {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">核对原操作结果</HButton>:null}
       {!blocked&&(context.isError||state==='conflict'||state==='denied')?<HButton type="button" data-action="refresh-self-handling" onClick={()=>{void context.refetch();}} tone="secondary">重试读取操作</HButton>:null}
     </div>
