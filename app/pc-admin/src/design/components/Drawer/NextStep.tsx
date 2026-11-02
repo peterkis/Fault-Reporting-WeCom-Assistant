@@ -1,4 +1,4 @@
-import {createContext,useCallback,useContext,useEffect,useId,useMemo,useState} from 'react';
+import {createContext,useCallback,useContext,useId,useLayoutEffect,useMemo,useState} from 'react';
 import type {ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {Button} from '../Button/Button';
@@ -35,7 +35,7 @@ export function NextStep({status,stage,summary,readState,children}:{status:strin
 /** Moves the original button, never its command state, draft, or recovery owner. */
 export function StepEntry({action,label,children,fallbackTone='secondary'}:{action:string;label:string;fallbackTone?:'primary'|'secondary';children:(tone:'primary'|'secondary',label:string)=>ReactNode}){
   const scope=useContext(Context),id=useId(),register=scope?.register;
-  useEffect(()=>register?.({id,action}),[register,id,action]);
+  useLayoutEffect(()=>register?.({id,action}),[register,id,action]);
   if(!scope)return children(fallbackTone,label);
   const index=scope.entries.findIndex(entry=>entry.id===id),target=scope.targets[index===0?0:index<=2?1:2];
   return target?createPortal(children(scope.primary===id?'primary':'secondary',scope.label(action,label)),target):null;

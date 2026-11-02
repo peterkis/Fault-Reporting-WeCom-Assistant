@@ -63,7 +63,7 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
 
 test('Card 13 clears a mounted conversation count when the same principal loses the capability',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
   await f.runtime.stop();
-  const runtime=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:f.principals.map(principal=>principal.id),flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},externalSendEnabled:false,workbenchConversationsEnabled:true,workbenchRealtimeEnabled:true});
+  const runtime=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:f.principals.map((principal:{id:string})=>principal.id),flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},externalSendEnabled:false,workbenchConversationsEnabled:true,workbenchRealtimeEnabled:true});
   if('disabled' in runtime)throw Error('CARD13_RUNTIME_DISABLED');
   let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown,writes=0;
   runtime.server.on('request',request=>{if(request.method==='POST')writes++;});
