@@ -25,7 +25,7 @@ const domains={TICKET:'工单',SESSION:'会话',INCIDENT:'公共故障'};
 const sources={TICKET_NOTIFICATION:'工单通知',SESSION_MESSAGE:'会话消息',INCIDENT_LIFECYCLE:'故障进展通知',INCIDENT_PUBLIC_PROGRESS:'公开进展通知'};
 function decode<T>(run:()=>T):T{try{return run();}catch{throw new ApiError(502,'INVALID_RESPONSE');}}
 export function NotificationExceptions({principal}:{principal:Principal}){
- const detailRef=useRef<HTMLElement>(null),openerRef=useRef<HTMLButtonElement|null>(null);
+ const detailRef=useRef<HTMLElement>(null),openerRef=useRef<Pick<HTMLElement,'focus'>|null>(null);
  const client=useQueryClient(),[domain,setDomain]=useState<NonNullable<NotificationExceptionQuery['domain']>>('ALL'),[route,setRoute]=useState<NonNullable<NotificationExceptionQuery['route']>>('ALL'),[state,setState]=useState<NonNullable<NotificationExceptionQuery['state']>>('ALL'),[cursor,setCursor]=useState<string|null>(null),[selected,setSelected]=useState<NotificationExceptionItem|null>(null),[blocked,setBlocked]=useState(false),[message,setMessage]=useState('');
  const enabled=principal.notification_exceptions_enabled===true&&!blocked,authority=principal.authorization_revision??[...principal.roles].sort().join('|'),prefix=['notification-exceptions',principal.principal_id],key=[...prefix,authority,domain,route,state,cursor];
  const page=useQuery({queryKey:key,enabled,queryFn:({signal})=>readWorkbench('/api/notification-exceptions?'+new URLSearchParams({domain,route,state,limit:'10',...(cursor?{cursor}:{})}),signal,value=>decode(()=>decodeNotificationExceptionPage(value,{domain,route,state}))),gcTime:0,retry:false});

@@ -56,3 +56,5 @@ T32 闭合 DTO 见 `contracts/workbench_notification_exception_contracts.d.ts`�
 首轮实际 UI 检查 `ui-round1.json`：四宽度均无页面溢出、3 行数据、1 个 primary；摘要正确为 2 条失败 + 1 条待核对。切换待核对筛选后为 warning，不把未知写成失败。逐条切换读取的是不同精确 delivery。四宽度空页均无分页、1 个 primary、成功圆直径实算 64px。
 
 发现并集中修正：关闭核对区后焦点落 BODY，改为返回原入口按钮；筛选可见「投递路由 / 全部路由 / 未知待核对」改为「渠道 / 全部渠道 / 结果待核对」。原 aria-label 和 API 参数不改。后继候选的检查待实际执行，旧结果仍绑定上述提交。
+
+焦点修正首次类型检查 FAIL（`frontend-types-final.log`、`final-build-2.log`）：HeroUI 事件的 currentTarget 是 FocusableElement，不能赋给 HTMLButtonElement。按实际只消费的 `focus` 能力收窄 ref 类型，不增加断言或逃逸；原失败保留，随后重新类型检查和构建。
