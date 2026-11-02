@@ -130,3 +130,15 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 后继完整 build、strict types、artifact PASS；12 个相关注册入口 **61/61 PASS**，0 FAIL/SKIP/NOT_RUN。其中 T14 边界 5 项包含两个新 GREEN，其它范围覆盖原人工结论与安全动作、T14 材料/回执、T15 原子性/回执/等待中 Web 到期，以及原卡 10 相关 38 项，不称活动全集或 full/certify。结果绑定 `27a229d8c1480568e86ae78112dd86fa5cfd484f` 上的未提交工作区，输入指纹 `327d69913c11ae5c1450ad5ac115ceac03a87bafc22f86914a11f8d69d991e5b`、manifest SHA-256 `c82f24b5c7a14b2c0e161f5e60723ef1627e4dd9d49c3686a09cad3a701554f1`；原件为 build-lock-fix / types-lock-fix / artifact-lock-fix / registered-tests-lock-fix，不重绑上一候选的 38/38。
 
 第四轮自有 pgdata-diagnostic 停止前仍只有三默认库、其他客户端 0；停止后 status=3、监听 0，核验绝对路径与无重解析点后删除合成集群，回执 cleanup-diagnostic.json。原 CI 死锁、自然未复现、确定性 RED 与最终 GREEN 分开保留。最终发布 head 的远端审查/CI 仍须独立通过后才合并，不因本地修补推进现场、部署或 Gate。
+
+## 浏览器动画就绪条件
+
+后端修补 head `c64fbe9749cc412454e3b6ce03c4f8377d615f12` 的审查无新增 major、无未解决线程，人员目录工作流通过。普通 CI [41378864094](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41378864094) 已通过两个新锁回归与原竞争复核，随后在 WEB01 的选中描边检查读到过渡前颜色；日志保存为 ci-fourth-head-failure.log。
+
+按钮原有 120ms border-color 过渡；仅等待 aria-pressed 更新不能证明计算样式已经到终值。用当前正式 bundle、显式完整动效和 0.1 倍动画速率，旧断言真实 RED，读到中间色 rgba(47,73,113,0.15)；仅增加真实计算色/折叠不可见状态的等待后 GREEN，原精确蓝色与可见性断言保留，无固定 sleep、无 CSS 或业务代码变更。正式测试同时显式设置 prefers-reduced-motion=no-preference，覆盖 Linux 的实际动效路径。放慢动画只用于仓库外诊断。
+
+motion-red-valid / motion-green-slow-final 保留有效 RED/GREEN。更早的 motion-red 是一次未复现 PASS；两个带早读 DOM 探针的失败属于无效复现，未算成产品 RED，原日志也保留。后继验证只重跑该实际相关浏览器入口，不把祖先候选的 61/61 重绑到新 head。
+
+中间一次只补描边等待后，还观察到折叠退出动画尚未结束的可见性断言失败，随后补上真实不可见条件；两个原断言均未改。正式 WEB01 注册入口 **13/13 PASS**，0 FAIL/SKIP/NOT_RUN；重建、strict types、artifact 全部 PASS。结果绑定 `c64fbe9749cc412454e3b6ce03c4f8377d615f12` 上未提交工作区，输入指纹 `1df66448b0f53acac1699a819f95afb8173196e6bce5ef70abd41b5a2c2c46d7`、manifest SHA-256 `fab49feb26a9fd58a89e1bc54f09f773e8a172f236858c0286118b681e1843ec`，原件为 build-motion-fix / types-motion-fix / artifact-motion-fix / registered-tests-motion-fix。
+
+与 local-lock-fix-build-manifest.json 逐项比较，app/server、shared、web/admin-workbench 的 693 个生产制品 SHA-256 完全相同，回执 motion-production-unchanged.json；只改变测试的动效模式与就绪等待。第五轮自有 pgdata-motion 在默认三库、其他客户端 0 后停止，status=3、监听 0，白名单/无重解析点检查后删除，回执 cleanup-motion.json。原始失败和全部前后证据仍保留。

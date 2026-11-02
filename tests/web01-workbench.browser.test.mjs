@@ -20,6 +20,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
       await browser.command('Page.bringToFront');
+      await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('[data-summary-filter=mine]')?.getAttribute('aria-disabled')==='false'");
       const pages=await Promise.all(['pending','active','closed'].map(async column=>{const response=await fetch(f.origin+'/api/workbench/board?column='+column+'&range=recent',{headers:{cookie:f.cookies[0]}});assert.equal(response.status,200);return response.json();}));
       const loaded=pages.flatMap(page=>page.items),mine=loaded.filter(item=>item.attention.related_reasons.includes('HANDLING'));
@@ -33,12 +34,14 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       assert.equal(await browser.evaluate("document.querySelectorAll('[data-board-group=待接单] .ticket-card').length"),1,'three-or-more intakes cannot starve the nonempty Ticket group');
       await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
       await browser.waitFor("document.querySelector('[data-summary-filter=pending]').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.board-column.active .ticket-card,.board-column.closed .ticket-card').length===0");
+      await browser.waitFor("getComputedStyle(document.querySelector('[data-summary-filter=pending]')).borderColor==='rgb(37, 99, 201)'");
       assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-summary-filter=pending]')).borderColor"),'rgb(37, 99, 201)','selected border survives the pointer hover after a real click');
       assert.equal(await browser.evaluate("location.search"),'','local summary does not replace server query criteria');
       await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9");
       await clickWorkbenchControl(browser,'[data-board-group=待判断] .ds-board-group-trigger');
       await browser.waitFor("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').getAttribute('aria-expanded')==='false'");
+      await browser.waitFor("[...document.querySelectorAll('[data-board-group=待判断] .ticket-card')].every(n=>!n.checkVisibility())");
       assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-board-group=待判断] .ticket-card')].every(n=>!n.checkVisibility())"),true);
       await browser.evaluate("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').focus()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter'});
