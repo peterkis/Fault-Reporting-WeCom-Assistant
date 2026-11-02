@@ -178,3 +178,13 @@ R4 clean head `956259c22448bfa6807d043bcf1a93fbeca07be0` 的本地四个原入�
 共享 foreground-text 将现有 Drawer 注册为模态，继续沿用“模态包含当前文字则允许阅读”的规则，因此正常工单抽屉内部的阅读不被全局禁止。ConversationReadTimeline 订阅当前模态身份切换，只在实际切换时重新观察，卸载时断开；原 READ/身份/留存、等待后终检、未知游标只读核对、命令 UUID 和写入载荷均保持。该修补纠正可见性，不改变服务端权限或消息事实。
 
 永久浏览器回归覆盖遮挡期间没有游标 GET/POST、耐久游标不变及关闭后真实可见资料推进；同时扩展原正常工单/会话阅读入口检查自身抽屉、长文滚动和既有取消弹窗。新增文件责任为 `app/pc-admin/src/features/personal-read/foreground-text.ts` 的模态识别与 `ConversationReadTimeline.tsx` 的观察生命周期；无产品像素变化，不重拍图片。原会话 70 条 assert 全保留（当前 119）。
+
+## T38 测试调度修补 R6
+
+R5 clean head `6db4840bcdfa6c3d13b2711e259a682f3ff4e687` 两 lint、PC types、build、strict/负向 types、7 个原注册文件 41/41、artifact 全 PASS，Codex 对该完整 head 复审没有 major。远端 [41449405889](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41449405889) 在既有 T38 第一例失败：159/245 文件，442 项中 441 PASS / 1 FAIL，86 文件 NOT_RUN。原日志 `ci-seventh-failed-complete.log`、源 SHA 和 `ci-seventh-artifact` 保留；不以 R4 的 798/798 或本地结果替代本轮 CI。
+
+失败日志显示撤权后页面已清除编辑器和资料，但对象 GET 拒绝次数为 0；该用例要求先观测到实际对象拒绝，才进入重新授予。用户明确只授权测试准备/调度修补，未授权修改生产认证或权限逻辑。
+
+仅在 `tests/wbint-t38-authority.browser.test.mts` 第一例增加确定的准备顺序：通过现有刷新控件发起真实当前对象 GET，暂存尚未调度的浏览器 GET，等待之前已授权的短 GET 完成；按原 roles/teams 撤权后，优先将该对象请求交给原 HTTP handler 执行真实授权检查；原拒绝/清除断言完成、原权限重新授予后，再放行其它 GET。没有制造 HTTP 状态或授权结果，原不可解析拒绝体注入、角色、团队、Cookie、flags、POST 计数、UUID、草稿隔离和原等待预算保持。结束时放行请求并执行原浏览器/PG 清理。
+
+原 T38 的 39 条 assert 调用全部保留，新增准备断言后 40 条（同一准备 helper 调用两次）。独立诊断四例 4/4 PASS，再单独确认首例 1/1；两次都实际得到对象 404 后完成重新读取，POST=0。原件 `t38-scheduled-diagnostic.log`、`t38-scheduled-order-confirmation.log`、`t38-assertion-preservation.json`；这些诊断不替代后继 clean head 的原注册执行。产品文件保持 R5，无像素变化，不重拍截图。最终完整 head 的门禁、8 个相关原入口、CI、复审与合并状态在 PR 收口记录。
