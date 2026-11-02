@@ -7,7 +7,8 @@ import {Avatar} from '../design/components/Avatar/Avatar';
 import {Tag} from '../design/components/Tag/Tag';
 import {StatusBadge} from '../design/components/StatusBadge/StatusBadge';
 import {SourceLabel} from '../design/components/SourceLabel/SourceLabel';
-import {TicketCard,TicketCardBody} from '../design/components/TicketCard/TicketCard';
+import {TicketCard,TicketCardBody,TicketCategoryTile} from '../design/components/TicketCard/TicketCard';
+import {heatOf} from '../design/heat';
 import {BoardColumn as BoardColumnView,BoardGroup,boardEmptyMessage} from '../design/components/BoardColumn/BoardColumn';
 import {BoardSummary} from '../design/components/BoardSummary/BoardSummary';
 import {matchesBoardSummary,sortBoardItems} from '../design/board-presentation';
@@ -19,6 +20,9 @@ import {Button as HButton} from '../design/components/Button/Button';
 import {PageHeader} from '../design/components/PageHeader/PageHeader';
 import {Toolbar,ToolbarFilters} from '../design/components/Toolbar/Toolbar';
 import {SegmentedControl} from '../design/components/SegmentedControl/SegmentedControl';
+import {FilterSelect} from '../design/components/FilterSelect/FilterSelect';
+import {readServiceCatalog} from '../features/board-filters/client';
+import {useBoardCardMotion} from '../design/use-board-card-motion';
 import {Form as HForm,Input as HInput,Label as HLabel,Link as HLink,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "./WorkbenchSelect";
 import {WorkbenchDisclosure} from "./WorkbenchDisclosure";
@@ -124,9 +128,12 @@ function SharedFollowUpSummary({value,compact=false}:{value:WorkbenchCard['follo
     <time dateTime={value.due_at.replace(' ','T')+'+08:00'}>{value.due_at}（北京时间）</time>
   </p>;
 }
-function ReporterDisplay({item,principal,detail=false,requested}:{item:WorkbenchCard;principal:Principal;detail?:boolean;requested?:WorkbenchDetail['requested_item']}){
-  const profile=useQuery({queryKey:['reporter-profile',principal.principal_id,item.kind,item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterProfile(item.kind,item.id,signal),
+function useReporterProfile(item:WorkbenchCard,principal:Principal){
+  return useQuery({queryKey:['reporter-profile',principal.principal_id,item.kind,item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterProfile(item.kind,item.id,signal),
     enabled:principal.web_reports_enabled===true&&item.source==='PORTAL'&&!item.reporter_name&&!item.reporter_department,staleTime:300_000,gcTime:300_000,retry:false});
+}
+function ReporterDisplay({item,principal,detail=false,requested}:{item:WorkbenchCard;principal:Principal;detail?:boolean;requested?:WorkbenchDetail['requested_item']}){
+  const profile=useReporterProfile(item,principal);
   const name=item.reporter_name??profile.data?.name??(item.reporter_profile?'报修人姓名暂不可用':'报修人姓名未提供'),department=item.reporter_department??profile.data?.department??(item.reporter_profile?'部门暂不可用':'部门未提供');
   const title=name+' · '+department+(item.reporter_profile?.source==='LATER_LOOKUP'?'（资料取得于 '+item.reporter_profile.captured_at+'）':profile.data?.current?'（当前企业微信资料）':'');
   return detail?<><div className="property-field"><dt><UserRound size={17}/>报修人</dt><dd title={title}>{item.reporter_name||profile.data?.name?<Owner name={name}/>:<span>{name}</span>}</dd></div><div className="property-field"><dt><Building2 size={17}/>报修部门</dt><dd title={title}>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div></>:<p className="card-meta" title={title+' · '+item.source_label}><span className="ds-reporter-text">{name} · {department}</span><span aria-hidden="true">·</span><SourceLabel className="neutral-chip" source={item.source} label={item.source_label}/></p>;
@@ -137,11 +144,19 @@ function ReporterContact({item,principal,requested}:{item:WorkbenchCard;principa
   return <div className="property-field reporter-contact"><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contact.isPending&&!contact.isError}>{formatted??(item.kind==='ticket'&&contact.isPending?'正在读取…':contact.isError?'暂不可用':'未提供')}</span></dd></div>;
 }
 function Card({item,principal,search,selected,now,located=false}:{item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;located?:boolean}){
-  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-reminder-located={located?'true':undefined}>
+  const profile=useReporterProfile(item,principal),name=item.reporter_name??profile.data?.name,department=item.reporter_department??profile.data?.department;
+  const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
+  const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
+  const incomplete=4-fields.length-(sourceLabel?1:0)>=2,tags=[...cardTags(item),...(incomplete?[{key:'incomplete',label:'资料不全',tone:'neutral' as const}]:[])];
+  const start=item.column==='pending'?item.created_at:item.stage_entered_at??item.created_at;
+  const heat=item.column==='closed'?null:heatOf(start.replace(' ','T')+'+08:00',now);
+  const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
+  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-ring={ring} data-reminder-located={located?'true':undefined}>
     <BoardActionCard item={item}><Link draggable={false} className="card-open" to={itemLink(item,search)} state={{fromBoard:true}}>
-      <TicketCardBody number={item.number} title={item.title} metadata={<ReporterDisplay item={item} principal={principal}/>} tags={cardTags(item)}
+      <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} completedAt={item.column==='closed'?item.completed_at:null}
+        metadata={<p className="card-meta" title={[...fields,sourceLabel].filter(Boolean).join(' · ')}>{fields.length?<span className="ds-reporter-text">{fields.join(' · ')}</span>:null}{fields.length&&sourceLabel?<span aria-hidden="true">·</span>:null}{sourceLabel?<SourceLabel className="neutral-chip" source={item.source} label={sourceLabel}/>:null}</p>} tags={tags}
         followUp={<SharedFollowUpSummary value={item.follow_up_schedule} compact/>}
-        owner={<span className="owner" title={item.assignee_name??'未派单'}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/><span className={'owner-name'+(item.assignee_name&&item.assignee_name===item.reporter_name?' sr-only':'')}>{item.assignee_name??'未派单'}</span></span>}
+        owner={<span className="owner" title={item.assignee_name??'等待领取'}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/>{item.assignee_name?<span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span>:null}</span>}
         activity={<time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time>}/>
       <span className="sr-only">查看详情</span>
     </Link></BoardActionCard>
@@ -328,6 +343,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const [navigationBlocked,setNavigationBlocked]=useState(false);
   const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',closed:'oldest'});
   const [summarySelection,setSummarySelection]=useState<{scope:string;filter:BoardSummaryFilter|null}>({scope:'',filter:null});
+  const [boardFilters,setBoardFilters]=useState({scope:'',category:'all',handler:'all'});
   const order=useRef<{scope:string;keys:string[]}>({scope:'',keys:[]});
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock(),navigate=useNavigate();
   const locationMode=Boolean(selected.id&&params.get('locate')==='1');
@@ -351,6 +367,8 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   },[locationMode,locatedItem?.kind,locatedItem?.id]);
   const scope: 'team'|'related'|undefined=principal.workbench_follow_enabled?(params.get('scope')==='related'?'related':'team'):undefined;
   const searchRequested=params.get('search')==='1',searchMode=principal.workbench_search_enabled===true&&searchRequested;
+  const catalog=useQuery({queryKey:['workbench-service-catalog',principal.principal_id,principal.authorization_revision],queryFn:({signal})=>readServiceCatalog(signal),enabled:!fullPage&&!searchMode,retry:false,staleTime:300_000});
+  useEffect(()=>{const error=catalog.error;if(error instanceof ApiError&&error.status===403)void clearSessionAuthorization(client,principal.principal_id,403,'revoked');},[catalog.error,client,principal.principal_id]);
   const parsed=criteriaFromUrl(params,params.has('range')&&range!=='custom'?range:'all',scope??'team'),searchKey=parsed.criteria?searchCriteriaKey(parsed.criteria):'invalid';
   const searched=useWorkbenchSearch(principal,parsed.criteria,searchMode);
   const basePending=useColumn(principal,'pending',range,scope,!searchMode,closedDates),baseActive=useColumn(principal,'active',range,scope,!searchMode,closedDates),baseClosed=useColumn(principal,'closed',range,scope,!searchMode,closedDates);
@@ -360,6 +378,11 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const pending:ColumnQuery=searchMode?searchedColumn('pending'):basePending,active:ColumnQuery=searchMode?searchedColumn('active'):baseActive,closed:ColumnQuery=searchMode?searchedColumn('closed'):baseClosed;
   const queries=[pending,active,closed],items=queries.flatMap(query=>query.data?.pages.flatMap(page=>page.items)??[]),fresh=[...new Map(items.map(item=>[item.kind+':'+item.id,item])).values()];
   const summaryScope=JSON.stringify([rangeKey,scope,searchMode,searchKey,principal.authorization_revision]);
+  const filterScope=principal.principal_id+':'+summaryScope;
+  const categoryFilter=!searchMode&&catalog.isSuccess&&!catalog.isError&&boardFilters.scope===filterScope?boardFilters.category:'all';
+  const handlerFilter=!searchMode&&boardFilters.scope===filterScope?boardFilters.handler:'all';
+  const handlers=[...new Set(fresh.flatMap(item=>item.assignee_name?[item.assignee_name]:[]))];
+  const setBoardFilter=(key:'category'|'handler',value:string)=>setBoardFilters(current=>({scope:filterScope,category:current.scope===filterScope?current.category:'all',handler:current.scope===filterScope?current.handler:'all',[key]:value}));
   const mineAvailable=principal.workbench_follow_enabled===true&&fresh.every(item=>item.attention!==undefined);
   const summaryFilter=summarySelection.scope===summaryScope&&(summarySelection.filter!=='mine'||mineAvailable)?summarySelection.filter:null;
   // One presentation sequence drives columns, filtered results and detail navigation.
@@ -369,7 +392,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   }):fresh;
   let unique=ordered;
   const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage&&!locationMode;
-  const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,summaryFilter,sorts,searchMode?searchKey:null]),keys=ordered.map(item=>item.kind+':'+item.id),present=new Set(keys);
+  const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,summaryFilter,categoryFilter,handlerFilter,sorts,searchMode?searchKey:null]),keys=ordered.map(item=>item.kind+':'+item.id),present=new Set(keys);
   if(!holdOrder||order.current.scope!==orderingScope)order.current={scope:orderingScope,keys};
   if(holdOrder){
     const retained=order.current.keys.filter(key=>present.has(key)),known=new Set(retained);order.current.keys=[...retained,...keys.filter(key=>!known.has(key))];
@@ -395,16 +418,22 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   };
   const leaveSearch=()=>{const next=new URLSearchParams(params);for(const key of SEARCH_KEYS)if(key!=='range'&&key!=='scope')next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');setParams(next);};
   const label=(column:BoardColumn)=>names[column];
-  const visibleItems=(loaded:WorkbenchCard[])=>loaded.filter(item=>(!locatedItem||item.kind!==locatedItem.kind||item.id!==locatedItem.id)&&(!summaryFilter||matchesBoardSummary(item,summaryFilter,now)));
+  const visibleItems=(loaded:WorkbenchCard[])=>loaded.filter(item=>(!locatedItem||item.kind!==locatedItem.kind||item.id!==locatedItem.id)&&(!summaryFilter||matchesBoardSummary(item,summaryFilter,now))&&(categoryFilter==='all'||(categoryFilter==='unclassified'?!item.service:item.service?.category===categoryFilter))&&(handlerFilter==='all'||(handlerFilter==='unassigned'?!item.assignee_name:handlerFilter==='name:'+item.assignee_name)));
   const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
-  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
+  useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching,principal.principal_id+':'+principal.authorization_revision);
+  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked}/>
     <Toolbar><SegmentedControl className="scope-tabs" aria-label="工作范围">{principal.workbench_follow_enabled?<><HButton type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} isDisabled={navigationBlocked} onClick={()=>update('scope','team')} tone="ghost">团队工作</HButton><HButton type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} isDisabled={navigationBlocked} onClick={()=>update('scope','related')} tone="ghost">与我有关</HButton></>:<span className="selected">团队工作</span>}</SegmentedControl>
       <ToolbarFilters disabled={navigationBlocked}>
         {principal.workbench_search_enabled?<SearchControls principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} onApply={applySearch} onLeave={leaveSearch}/>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
-        <p className="processed-date-note">未完成事项不限日期</p>{!searchMode?<ProcessedDatePicker key={rangeKey} range={range} dates={closedDates} now={now} blocked={navigationBlocked} onApply={applyClosedRange}/>:range==='cancelled'?<span>仅显示已取消事项 <HButton tone="ghost" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>清除</HButton></span>:null}
+        <p className="processed-date-note">未完成事项不限日期；类别和处理人仅筛选已加载事项。</p>{!searchMode?<ProcessedDatePicker key={rangeKey} range={range} dates={closedDates} now={now} blocked={navigationBlocked} onApply={applyClosedRange}/>:range==='cancelled'?<span>仅显示已取消事项 <HButton tone="ghost" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>清除</HButton></span>:null}
       </ToolbarFilters>
+      <div className="ds-board-filter-row" role="group" aria-label="筛选已加载事项">
+        {catalog.data||searchMode?<FilterSelect aria-label="类别" label="类别" value={categoryFilter} isDisabled={navigationBlocked||searchMode||catalog.isError} onChange={value=>setBoardFilter('category',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item>{(catalog.data?.categories??[]).map(category=><ListBox.Item key={category.category} id={category.category} textValue={category.category_name_zh}>{category.category_name_zh}<ListBox.ItemIndicator/></ListBox.Item>)}<ListBox.Item id="unclassified" textValue="未分类">未分类<ListBox.ItemIndicator/></ListBox.Item></FilterSelect>:null}
+        <FilterSelect aria-label="处理人" label="处理人" value={handlerFilter} isDisabled={navigationBlocked||searchMode} onChange={value=>setBoardFilter('handler',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue="未领取">未领取<ListBox.ItemIndicator/></ListBox.Item>{handlers.map(name=><ListBox.Item key={name} id={'name:'+name} textValue={name}>{name}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterSelect>
+        {!searchMode?<HButton type="button" className="ds-toolbar-date-filter" data-action="open-closed-date-filter" aria-label="筛选已处理日期" isDisabled={navigationBlocked} tone="secondary" onClick={event=>{const panel=event.currentTarget.closest('.ds-toolbar')?.querySelector<HTMLDetailsElement>('details.ds-toolbar-filters');if(panel){panel.open=!panel.open;if(panel.open)panel.querySelector<HTMLElement>('.processed-date-picker [role=spinbutton]')?.focus();}}}><span className="ds-filter-prefix">已处理：</span><span>{range==='all'?'全部日期':range==='cancelled'?'已取消':closedDates?closedDates.from.slice(5)+'–'+closedDates.to.slice(5):'最近两天'}</span><ChevronDown aria-hidden="true"/></HButton>:<span className="processed-date-note">类别筛选暂不适用于高级搜索；处理人请使用搜索条件。</span>}
+      </div>
       <SegmentedControl className="view-tabs" aria-label="展示方式"><HButton aria-pressed={view==='board'} onClick={()=>update('view','board')} tone="ghost"><LayoutGrid size={16}/>看板</HButton><HButton aria-pressed={view==='list'} onClick={()=>update('view','list')} tone="ghost"><List size={16}/>列表</HButton></SegmentedControl>
     </Toolbar>
     {searchMode&&searched.isError?<p role="alert" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</p>:null}
@@ -412,7 +441,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
-    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter)} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter||categoryFilter!=='all'||handlerFilter!=='all')} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
       {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(unique.filter(item=>item.column===column))} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}

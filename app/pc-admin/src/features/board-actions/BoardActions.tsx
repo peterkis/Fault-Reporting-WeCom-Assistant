@@ -1,8 +1,11 @@
 import {Button as HButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
-import {createContext,useContext,useEffect,useRef,useState} from 'react';
+import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
 import type {ReactNode} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {createPortal} from 'react-dom';
+import {TicketSelfHandling} from '../ticket-handling/TicketSelfHandling';
+import {Ellipsis,GripVertical} from 'lucide-react';
 import {DragDropProvider,useDraggable,useDroppable} from '@dnd-kit/react';
 import {Feedback} from '@dnd-kit/dom';
 import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
@@ -14,13 +17,20 @@ import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './i
 import './board-actions.css';
 
 type Entry={intent:WorkbenchBoardActionIntent;selector:string};
-const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void}>({enabled:false,blocked:true,open:()=>{}});
-export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;children:ReactNode}){
+type Claim={item:Pick<WorkbenchCard,'kind'|'id'|'column'>;target:HTMLElement|null};
+const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
+export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlocked,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;onClaimBlocked:(blocked:boolean)=>void;children:ReactNode}){
   const client=useQueryClient(),enabled=principal.board_actions_enabled===true,request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
   const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
+  const [claim,setClaim]=useState<Claim|null>(null),[claimBlocked,setClaimBlocked]=useState(false);
+  const claimScope=principal.principal_id+':'+principal.authorization_revision;
+  const [preparedScope,setPreparedScope]=useState(claimScope);
+  const activeClaim=preparedScope===claimScope&&enabled?claim:null;
+  const changeClaimBlocked=useCallback((value:boolean)=>{setClaimBlocked(value);onClaimBlocked(value);},[onClaimBlocked]);
+  const releaseClaim=useCallback((target:HTMLElement)=>{setClaim(current=>current?.target===target?{...current,target:null}:current);},[]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
   const open=async(intent:WorkbenchBoardActionIntent)=>{
-    if(!enabled||blocked||request.current)return;
+    if(!enabled||blocked||claimBlocked||request.current)return;
     const plan=planBoardAction(intent);
     if(plan.state==='NO_CHANGE'){setMessage('列内顺序由官方查询决定，未保存手工排序。');return;}
     if(plan.state==='UNAVAILABLE'){setMessage('此落点不能执行合法业务动作，当前位置未作本地变更。');return;}
@@ -68,10 +78,13 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
     }
     finally{if(request.current===controller){request.current=null;setChecking(false);}}
   };
-  const disabled=blocked||checking||!enabled;
+  const disabled=blocked||claimBlocked||checking||!enabled;
   // Keep original business controllers at the same React tree position. Only
   // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
-  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);}}}>
+  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);},releaseClaim,prepareClaim:(item,target)=>{
+    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
+    setPreparedScope(claimScope);setClaim(current=>current?.item.id===item.id&&current.target===target?current:{item:{kind:item.kind,id:item.id,column:item.column},target});
+  }}}>
     <DragDropProvider {...(!enabled?{sensors:[],plugins:[],modifiers:[]}:{})}
       onDragStart={({operation})=>{
         const data:unknown=operation.source?.data;
@@ -85,24 +98,38 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,children}:{p
         if(!original||!boardColumns.some(column=>column===target)){setMessage('请使用合法业务列；当前位置未作本地变更。');return;}
         const intent=readBoardIntent({kind:original.kind,id:original.id,source_column:original.column,target_column:target});if(intent)void open(intent);
       }}>{children}</DragDropProvider>
+    {activeClaim?<div className="board-claim-controller" key={claimScope+':'+activeClaim.item.id}>{principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?<BoardClaimForm principal={principal} claim={activeClaim} blocked={disabled} open={intent=>{void open(intent);}}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling ticketId={activeClaim.item.id} principal={principal} boardMode otherBlocked={checking} onBlockedChange={changeClaimBlocked} cardActionTarget={activeClaim.target}/>:null}</div>:null}
     {enabled&&message?<ToastFeedback revision={messageRevision} source="board-actions" state={checking?'checking':undefined} className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</ToastFeedback>:null}
   </BoardActionsContext.Provider>;
+}
+function BoardClaimForm({principal,claim,blocked,open}:{principal:Principal;claim:Claim;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void}){
+  const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,claim.item.id],queryFn:({signal})=>api.ticketCommandContext(claim.item.id,signal)});
+  const allowed=context.data?.allowed_actions??[],available=context.isSuccess&&!context.isFetching&&!context.isError&&(principal.ticket_conversation_self_handling_enabled&&allowed.includes('take-and-start-with-conversations')||principal.ticket_self_handling_enabled&&allowed.includes('take-and-start')||principal.ticket_takeover_enabled&&allowed.includes('takeover-and-start'));
+  return available&&claim.target?createPortal(<HButton type="button" data-board-claim-action data-action="board-claim-options" size="sm" tone="secondary" isDisabled={blocked||context.isPending} title="打开原领取选项，确认沟通责任或处理组后提交" onClick={()=>open({kind:claim.item.kind,id:claim.item.id,source_column:claim.item.column,target_column:'active'})}>领取 E</HButton>,claim.target):null;
 }
 export function BoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext);
   return context.enabled?<EnabledBoardActionCard item={item}>{children}</EnabledBoardActionCard>:<>{children}</>;
 }
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
-  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null);
+  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null);
+  const releaseClaim=context.releaseClaim;
+  useEffect(()=>{const target=claimTarget.current;return()=>{if(target)releaseClaim(target);};},[releaseClaim]);
   const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
-  return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')} onClickCapture={event=>{
+  const prepareClaim=()=>{if(claimTarget.current)context.prepareClaim(item,claimTarget.current);};
+  return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
+    if(event.key.toLowerCase()!=='e'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!(event.target instanceof Element)||!event.target.closest('.card-open')||event.target.closest('input,textarea,[contenteditable=true]'))return;
+    const button=claimTarget.current?.querySelector<HTMLButtonElement>('button:not(:disabled)');if(button&&!context.blocked){event.preventDefault();event.stopPropagation();button.click();}
+  }} onClickCapture={event=>{
     const link=event.target instanceof Element?event.target.closest('.card-open'):null,selection=window.getSelection();
+    if(link&&context.blocked){event.preventDefault();event.stopPropagation();return;}
     if(event.detail>0&&link&&selection&&!selection.isCollapsed&&link.contains(selection.anchorNode)&&link.contains(selection.focusNode))event.preventDefault();
   }}>
     {children}
+    <span ref={claimTarget} className="ds-board-claim-slot"/>
     {context.enabled?<div className="board-action-tools">
-      <HButton ref={handleRef} type="button" data-action="board-drag-handle" isDisabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用右侧业务动作按钮" tone="secondary">移动</HButton>
-      <HButton type="button" ref={menuButton} data-action="board-action-menu" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="secondary">业务动作</HButton>
+      <HButton ref={handleRef} type="button" data-action="board-drag-handle" isIconOnly size="sm" isDisabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用业务动作按钮" tone="ghost"><GripVertical aria-hidden="true"/><span className="sr-only">移动</span></HButton>
+      <HButton type="button" ref={menuButton} data-action="board-action-menu" isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></HButton>
       {menu?<div className="board-action-options" role="group" aria-label={item.number+' 的业务列'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setMenu(false);menuButton.current?.focus();}}}>
         {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" isDisabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}} tone="secondary">移至{boardColumnNames[target]}：打开合法表单</HButton>)}
         <HButton type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}} tone="secondary">取消</HButton>

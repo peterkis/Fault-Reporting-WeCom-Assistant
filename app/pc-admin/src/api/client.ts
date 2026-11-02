@@ -89,6 +89,13 @@ export function decodeSharedFollowUpActive(value:unknown):SharedFollowUpActive {
 function decodeAttention(value:unknown):WorkbenchFollowAttention {
   try{return decodeFollowAttention(value);}catch{throw new ApiError(502,'INVALID_RESPONSE');}
 }
+function decodeCardService(value:unknown):NonNullable<WorkbenchCard['service']> {
+  const v=object(value),keys=['code','name_zh','category','category_name_zh','source'];
+  if(Object.keys(v).length!==keys.length||keys.some(key=>!Object.hasOwn(v,key))
+    ||!['MANUAL_CONFIRMED','REPORTER_EXPLICIT','RULE_DETERMINISTIC'].includes(text(v.source)))throw new ApiError(502,'INVALID_RESPONSE');
+  const bounded=(value:unknown,maximum:number)=>{const result=text(value);if(!result.trim()||result.length>maximum)throw new ApiError(502,'INVALID_RESPONSE');return result;};
+  return {code:bounded(v.code,64),name_zh:bounded(v.name_zh,80),category:bounded(v.category,64),category_name_zh:bounded(v.category_name_zh,80),source:v.source as NonNullable<WorkbenchCard['service']>['source']};
+}
 function decodeCard(value:unknown):WorkbenchCard {
   const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
   let reporterProfile:WorkbenchCard['reporter_profile'];
@@ -101,6 +108,8 @@ function decodeCard(value:unknown):WorkbenchCard {
   return {kind:v.kind as WorkbenchCard['kind'],id:id(v.id),intake_id:id(v.intake_id),column:v.column as BoardColumn,
     number:text(v.number),title:text(v.title),status:text(v.status),priority:nullable(v.priority),source:text(v.source),
     source_label:text(v.source_label),source_group:v.source_group===null?null:decodeGroup(v.source_group),
+    ...(Object.hasOwn(v,'service')?{service:v.service===null?null:decodeCardService(v.service)}:{}),
+    ...(Object.hasOwn(v,'stage_entered_at')?{stage_entered_at:v.stage_entered_at===null?null:notificationDatetime(v.stage_entered_at)}:{}),
     ...(Object.hasOwn(v,'follow_up_schedule')?{follow_up_schedule:v.follow_up_schedule===null?null:decodeSharedFollowUpActive(v.follow_up_schedule)}:{}),
     ...(Object.hasOwn(v,'attention')?{attention:decodeAttention(v.attention)}:{}),
     ...(Object.hasOwn(v,'web_report_urge')?{web_report_urge:(()=>{if(v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');try{return decodeWebUrge(v.web_report_urge);}catch{throw new ApiError(502,'INVALID_RESPONSE');}})()}:{}),
