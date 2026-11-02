@@ -73,6 +73,8 @@ test('HeroUI search selectors keep multiple filters and a chosen or typed source
    await browser.evaluate("(()=>{const input=document.querySelector('.workbench-source-group input[role=combobox]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,"+JSON.stringify(known)+");input.dispatchEvent(new Event('input',{bubbles:true}));})()");
    await browser.evaluate("document.querySelector('.workbench-search').requestSubmit()");
    await browser.waitFor('new URLSearchParams(location.search).get("source_group_ref")==='+JSON.stringify(known));
+   // History commits before React's transition; assert against the committed search view.
+   await browser.waitFor("!document.querySelector('.processed-date-picker')&&Boolean(document.querySelector('.workbench-search'))");
    assert.equal(await browser.evaluate("Boolean(document.querySelector('.processed-date-picker'))"),false,'search exposes only supported search filters');
    assert.deepEqual(await browser.evaluate('globalThis.__heroSearchWrites'),[]);
   }catch(error){primary=error;}

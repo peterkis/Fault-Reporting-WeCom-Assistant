@@ -92,3 +92,6 @@ WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:strin
 - 返回 `{schema_version:1,catalog_version,categories:[{category,category_name_zh,services:[{service_code,name_zh}]}]}`，见 [Schema](../../../contracts/workbench_service_catalog.schema.json)。只包含启用服务及非空大类，不返回别名、责任组、规则或哈希。
 - 版本/代码最多64字符，名称最多80字符，启用服务总数/大类数组各最多200项，超限或目录不可用为503 `P2_016_ACTION_FAILED`，不截断；无目录时卡片 service 为 null，状态时间仍可读取。身份错误不降级为503。
 - 前端筛选接入留给后续卡；503时可不显示筛选，401/403仍按原身份处理。只读，无命令、回执、Provider请求或发送，不改变 Ticket 事实和责任。
+
+
+卡11审查终检：看板/详情材料读取及详情规范路由等待结束后，最后一条只读 SQL 将当前有效人员、完整角色/处理组快照、既有真实 Cookie 会话谓词、当前 canonical READ 与来源有效性放在同一快照。退出/物理或空闲到期401，人员/范围失效403，事项READ丢失404，规范对象/状态变更409；拒绝不携带旧卡片。来源撤销、保留期或当前判定在等待期间变化时，service为null，内部指纹不对外暴露。目录同样在最后一个只读权限证明通过后同步生成白名单；不重新认证或更新last_seen。来源与授权检查保持集合查询，不增加业务写入、回执或外部请求。

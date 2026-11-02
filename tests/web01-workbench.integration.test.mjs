@@ -244,6 +244,33 @@ test('Card 11 HTTP catalog, source projections, state events and legacy search s
     try{await assert.rejects(revoked.list(input),{code:'P2_016_FORBIDDEN',status:403});}
     finally{await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principals[0].id]);}
 
+    const expiredAfterProjection=createWeb01WorkbenchQuery({pool:{query:async(...args)=>{
+      const result=await pool.query(...args);
+      if(args[0].includes('SELECT * FROM projected_sources'))await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+      return result;
+    }},query:runtime.query,serviceCatalog:catalog});
+    try{await assert.rejects(expiredAfterProjection.list(input),{code:'P2_016_FORBIDDEN',status:403});}
+    finally{await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principals[0].id]);}
+    const handlerContext={principal_id:principals[1].id};
+    const handlerPage=await cards.list({...input,authContext:handlerContext,limit:'1'});assert.equal(handlerPage.items[0].id,tickets[0].ticket.id);
+    let removeTeam=true;
+    const lostRead=createWeb01WorkbenchQuery({pool:{query:async(...args)=>{
+      const result=await pool.query(...args);
+      if(removeTeam&&args[0].includes('SELECT * FROM projected_sources')){removeTeam=false;await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principals[1].id]);}
+      return result;
+    }},query:runtime.query,serviceCatalog:catalog});
+    try{await assert.rejects(lostRead.list({...input,authContext:handlerContext,limit:'1'}),{code:'P2_016_NOT_FOUND',status:404});}
+    finally{await pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES($1::uuid,'PILOT_IT') ON CONFLICT DO NOTHING",[principals[1].id]);}
+    await pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('CARD11_OTHER','合成其他处理组')");
+    await pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES($1::uuid,'CARD11_OTHER')",[principals[2].id]);
+    let moveTicket=true;
+    const movedOut=createWeb01WorkbenchQuery({pool:{query:async(...args)=>{
+      const result=await pool.query(...args);
+      if(moveTicket&&args[0].includes('SELECT * FROM projected_sources')){moveTicket=false;await pool.query("UPDATE pilot_ticket.ticket SET resolver_team_id='CARD11_OTHER' WHERE id=$1::uuid",[tickets[0].ticket.id]);}
+      return result;
+    }},query:runtime.query,serviceCatalog:catalog});
+    try{await assert.rejects(movedOut.list({...input,authContext:handlerContext,limit:'1'}),{code:'P2_016_NOT_FOUND',status:404});}
+    finally{await pool.query("UPDATE pilot_ticket.ticket SET resolver_team_id='PILOT_IT' WHERE id=$1::uuid",[tickets[0].ticket.id]);}
     const raw=await cards.authorizedItem(authContext,'ticket',tickets[0].ticket.id);
     assert.equal(Object.hasOwn(raw,'service'),false);assert.equal(Object.hasOwn(raw,'stage_entered_at'),false,'search uses the original authorizedItem shape');
     const read=async()=>{const res=await get('/api/workbench/items/ticket/'+tickets[0].ticket.id);assert.equal(res.status,200);return (await res.json()).item;};
@@ -290,6 +317,16 @@ test('Card 11 Web explicit selection respects source revocation; unavailable cat
     await pool.query("UPDATE intake.web_submission SET safe_content=jsonb_set(safe_content,'{service_code}',to_jsonb($2::text)) WHERE intake_id=$1::uuid AND kind='SUBMIT'",[tickets[0].intake.intakeId,service.service_code]);
     const read=async()=>{const response=await fetch(origin+'/api/workbench/items/ticket/'+tickets[0].ticket.id,{headers:{cookie:cookies[0]}});assert.equal(response.status,200);return (await response.json()).item;};
     assert.deepEqual((await read()).service,{code:service.service_code,name_zh:service.name_zh,category:service.category,category_name_zh:service.category_name_zh,source:'REPORTER_EXPLICIT'});
+    const original=pool.query,execute=original.bind(pool);let revokeDuringMaterial=true;
+    pool.query=async(sql,values)=>{
+      const result=await execute(sql,values);
+      if(revokeDuringMaterial&&sql.includes('SELECT * FROM projected_sources')){
+        revokeDuringMaterial=false;await execute('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1::uuid',[tickets[0].intake.intakeId]);
+      }
+      return result;
+    };
+    try{const item=await read();assert.equal(item.service,null,'final source fingerprint rejects a binding revoked during the material wait');assert.equal(Object.hasOwn(item,'safety_signature'),false);}
+    finally{pool.query=original;}
     await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1::uuid',[tickets[0].intake.intakeId]);
     assert.equal((await read()).service,null);
   },{ticketSelfHandlingEnabled:true});
@@ -315,4 +352,62 @@ test('Card 11 preserves terminal Intake detail and resolved Review aliases',asyn
       }
     }
   },{workbenchManualReviewEnabled:true});
+});
+
+
+test('Card 11 final statement rejects a revoked Principal after source, route or postflight waits',async()=>{
+  const {readWorkbenchCardProjections}=await import('../app/server/src/workbench-card-projections.mjs');
+  for(const phase of ['source-read','postflight','route-check']){
+    let active=true,checks=0;
+    const item={kind:'ticket',id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',intake_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',status:'IN_PROGRESS'};
+    const authority=async()=>{checks++;if(!active)throw Object.assign(new Error('revoked'),{code:'P2_016_FORBIDDEN',status:403});return {values:[true,'cccccccc-cccc-4ccc-8ccc-cccccccccccc',[]],roles:['ADMIN'],teams:[]};};
+    const pool={query:async sql=>{
+      if(sql.startsWith('SELECT to_regclass'))return {rows:[{web:false}]};
+      if(sql.includes('SELECT * FROM projected_sources')){
+        if(phase==='source-read')active=false;
+        return {rows:[{kind:item.kind,id:item.id,status:item.status,evidence:[],safety_signature:'same'}]};
+      }
+      if(phase==='postflight')active=false;
+      return {rows:[{principal_valid:active,scope_valid:active,session_valid:true,items:[{kind:item.kind,id:item.id,status:item.status,stage_entered_at:null,safety_signature:'same'}]}]};
+    }};
+    await assert.rejects(readWorkbenchCardProjections(pool,'WITH cards AS (SELECT 1)',{authority,finalRouteCheck:async()=>{if(phase==='route-check')active=false;}},[item],null,false),{code:'P2_016_FORBIDDEN',status:403},phase);
+    assert.ok(checks>=2,'current authority is obtained after material waits');
+  }
+});
+
+for(const endpoint of ['board','detail','catalog'])for(const invalidation of ['logout','physical-expiry'])test('Card 11 real Cookie '+endpoint+' rejects '+invalidation+' during its read wait',async()=>{
+  const {setTimeout:delay}=await import('node:timers/promises');
+  await withWeb01Fixture(async f=>{
+    assert.ok(f.sessionId);
+    const request=(path,init={})=>fetch((f.backendOrigin??f.origin)+path,{...init,headers:{cookie:f.cookies[0],...(init.headers??{})},signal:AbortSignal.timeout(20000)});
+    const bootstrapResponse=await request('/api/lifecycle/bootstrap');assert.equal(bootstrapResponse.status,200);const bootstrap=await bootstrapResponse.json();
+    const original=f.pool.query,execute=original.bind(f.pool);let entered=false;
+    if(invalidation==='physical-expiry')await execute(`WITH deadline AS (SELECT platform.physical_epoch_ms()+3000 AS epoch)
+      UPDATE pilot_ticket.workbench_auth_session SET expires_epoch_ms=deadline.epoch,expires_at=platform.local_from_epoch_ms(deadline.epoch) FROM deadline WHERE session_id=$1::uuid`,[f.sessionId]);
+    f.pool.query=async(sql,values)=>{
+      const result=await execute(sql,values);
+      const boundary=typeof sql==='string'&&(endpoint==='catalog'?sql.includes('array_agg(DISTINCT r.role)'):sql.includes('SELECT * FROM projected_sources'));
+      if(!entered&&boundary){
+        entered=true;
+        if(invalidation==='logout'){
+          const logout=await request('/workbench/logout',{method:'POST',headers:{origin:f.origin,'x-csrf-token':bootstrap.csrf_token}});assert.equal(logout.status,200);
+        }else{
+          let expired=false;const bound=performance.now()+6000;
+          while(performance.now()<bound){
+            expired=(await execute('SELECT expires_epoch_ms<=platform.physical_epoch_ms() AS expired FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[f.sessionId])).rows[0].expired;
+            if(expired)break;await delay(10);
+          }
+          assert.equal(expired,true,'session must actually expire during this wait');
+        }
+      }
+      return result;
+    };
+    try{
+      const path=endpoint==='board'?'/api/workbench/board':endpoint==='detail'?'/api/workbench/items/ticket/'+f.tickets[0].ticket.id:'/api/workbench/service-catalog';
+      const response=await request(path);assert.equal(entered,true,'authenticated request must reach the intended wait');
+      assert.equal(response.status,401,await response.clone().text());const denied=await response.json();
+      assert.equal(denied.error.code,'WORKBENCH_UNAUTHENTICATED');
+      for(const key of ['items','item','categories','next_cursor'])assert.equal(Object.hasOwn(denied,key),false);
+    }finally{f.pool.query=original;}
+  },{realWorkbenchAuthentication:true});
 });

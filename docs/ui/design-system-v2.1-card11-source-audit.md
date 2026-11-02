@@ -180,3 +180,20 @@
 - `tests/web01-workbench.integration.test.mjs`
 - `tests/web01-workbench.test.mts`
 - `tools/ts-migration/resources.json`
+
+
+## 11. PR #131 审查后继（2026-11-02 本地收口快照）
+
+首轮 GitHub 审查对象为 `c25a4593d292583a44eb46f30ed7884687f9c03e`，指出投影等待后缺少当前授权终检的 P1。人员停用、人员权限不变而 Ticket 转出 READ，以及来源在等待期间失效均已取得独立 RED→GREEN 探针。后继仅增加只读终检：最后一条 SQL 同一快照核验当前有效人员、原 Port 的完整角色/团队快照、真实 Cookie 的 ACTIVE/绝对和空闲到期、规范事项 READ、当前状态事件，以及来源指纹。目录复用同一只读会话证明，不重新 authenticate，不刷新 last_seen。详情原请求规范路由终检保留在材料读取之后、最终证明之前；最终证明后没有异步操作。
+
+来源证明复用同一规范事项/来源 CTE，指纹包含白名单证据、Intake/Decision/Web 修订/初始提交身份。撤销、到期或当前事实变化时公开 service 为 null；指纹仅存在于内部证明，未加入 DTO。材料与证明查询仍按整页执行，测量包装中的1卡/整页查询数均为6（Principal 查询由原 Port 另计），没有逐卡附加查询。
+
+最终本地构建输入 `74fcf55f587b043951fe8c7c7d57798c9b87c29fd2b48e96376c6fceb7b48bd5`，manifest `ca2f8899224971d0d6960af3e97ac1b541ca5cc81c558cc2e171ba0181a21987`，绑定首轮提交加未提交修补（dirty=true），不将其冒称首轮提交的无差异 tested_head。build、types、artifact 均 PASS；9个相关已登记入口47/47 PASS、0 fail/cancelled/skipped/todo，增加了真实 Cookie 在看板/详情/目录读取等待期间退出与物理到期、人员停用、工单移出 READ、来源撤销、终态 Intake 和旧客户端验证。
+
+冻结原树的 Windows 工具回归99/99 PASS，明确只绑定早期输入 `d5bf8fbd...` 的工具/资源平面；修补后当前 head 的正式工具和业务 CI 以 GitHub 为准。没有把它称为后继业务全集通过。
+
+测试边界修复：T41 的 history URL 比 React 搜索视图提交早，CPU 降速证明原断言会先看到日期控件、随后自行卸载；现等待实际提交视图，再执行原断言。T21 Reporter 控制器与反馈读取器的重验证可取消一个已有200头的重复GET；受控 BroadcastChannel 重验证证明 AbortError + 原请求信号已取消，后续完整读取提供版本5。测试保留所有记录、要求准确路径下完成成功的GET，并逐一拒绝未证明取消的正文错误。新增反例拒绝 SyntaxError、未取消 AbortError 和 JSON null；原工单号/公开引用/版本/轮次/资格/UUID/If-Match/CSRF/POST次数断言保持。没有改 Reporter 生产行为。
+
+早期失败（认证预期、D-temp 前提、选择包装器、c25 CI 的 T21 观察边界、本地 T41 渲染边界）及 NOT_RUN 均保留在独立目录。受控故障注入只位于外部诊断脚本，未写入生产代码。首轮 CI 原件与后继 CI 依各自 SHA/运行 URL 记账；full/certify、现场、部署仍未运行。
+
+审查修补额外涉及 `tests/t21-bot-feedback-pc-happy.browser.test.mts`、`tests/t41-search-production.browser.test.mts`；整卡最终差异20个文件。后继 PR 审查/CI、合并和自有资源清理状态由 GitHub 与最终交付说明报告。

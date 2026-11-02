@@ -1,5 +1,7 @@
+import type {WorkbenchSessionPredicate,createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
+import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
-import {projectWorkbenchCatalog,readWorkbenchCardProjections} from './workbench-card-projections.mjs';
+import {projectWorkbenchCatalog,readWorkbenchCardProjections,verifyWorkbenchReadAccess} from './workbench-card-projections.mjs';
 import type {FollowProjectionPort} from './workbench-follow.mjs';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
@@ -141,7 +143,7 @@ export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
   if(!includeClosedIntakes)return CARD_SQL;
   return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false,actorAvatarsEnabled=false,serviceCatalog=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean;actorAvatarsEnabled?:boolean;serviceCatalog?:ServiceCatalog|null}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false,actorAvatarsEnabled=false,serviceCatalog=null,currentSessionPredicate}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean;actorAvatarsEnabled?:boolean;serviceCatalog?:ServiceCatalog|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']}) {
   async function decorateWebReportUrgency(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     if(!webReports)return items;const ids=[...new Set(items.filter(item=>item.kind==='ticket').map(item=>item.id))];if(!ids.length)return items;
     const active=await webReports.activeForAuthorizedTickets(ids);
@@ -199,7 +201,18 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     }
     return sourced;
   }
-  async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }
+  async function scope(authContext:unknown){
+    const principal=await query.principal(authContext);
+    return {...ticketPredicateP2016(principal),roles:principal.roles,teams:principal.team_ids};
+  }
+  function sessionProof(authContext:unknown,start:number):WorkbenchSessionPredicate{
+    const auth=authContext&&typeof authContext==='object'&&!Array.isArray(authContext)?authContext as Record<string,unknown>:{};
+    if(currentSessionPredicate)return currentSessionPredicate(authContext,uuidP2016(auth.principal_id),start);
+    const expiry=auth.expires_epoch_ms;
+    if(expiry===undefined)return {sql:'TRUE',values:[]}; // Internal/direct and synthetic profiles have no persistent Cookie session.
+    if(typeof expiry!=='string'||!/^[1-9][0-9]{0,15}$/u.test(expiry))throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+    return {sql:`platform.physical_epoch_ms()<$${start}::bigint`,values:[expiry]};
+  }
   async function range(mode: BoardCompletionRange,closedFrom?:string|null,closedTo?:string|null): Promise<BoardPage['range']> {
     if(mode==='custom'){
       let from:string,to:string;try{from=assertLocalDate(closedFrom);to=assertLocalDate(closedTo);}catch{failP2016();}
@@ -233,10 +246,10 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     authorizedItem:item,
     decorateWebReportUrgency,
     async serviceCatalog(authContext:unknown){
-      await scope(authContext);
+      await verifyWorkbenchReadAccess(pool,{authority:()=>scope(authContext),session:start=>sessionProof(authContext,start)});
       let catalog;
       try{catalog=projectWorkbenchCatalog(serviceCatalog);}catch{failP2016('ACTION_FAILED',503);}
-      await scope(authContext);return publicP2016(catalog);
+      return publicP2016(catalog);
     },
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
@@ -265,7 +278,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
           selectedColumn!=='closed'||selectedRange!=='recent'&&!custom,window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
       const rows=r.rows.slice(0,limit),decorated=await decorate(rows.map(card),input.authContext,true,true),last=rows.at(-1);
-      const items=await readWorkbenchCardProjections(pool,CARD_SQL,async()=>(await scope(input.authContext)).values,decorated,serviceCatalog,manualReportsEnabled);
+      const items=await readWorkbenchCardProjections(pool,CARD_SQL,{authority:()=>scope(input.authContext),session:start=>sessionProof(input.authContext,start)},decorated,serviceCatalog,manualReportsEnabled);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:custom?2:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,...(custom?{until:window.until}:{}),at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },
@@ -354,10 +367,11 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         ORDER BY s.input_revision LIMIT 1`:`SELECT to_char(CASE WHEN i.source_provider='STAFF_MANUAL_REPORT' THEN i.created_at ELSE m.received_at END,'YYYY-MM-DD HH24:MI:SS') AS at
         FROM intake.service_intake i LEFT JOIN channel.message_inbox m ON m.id=i.primary_message_id AND m.retention_until>platform.local_now()
         WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[selected.intake_id]);
-      // Recheck the original requested route after the source and related reads.
-      const currentItem=await item(authContext,kind,id);
-      if(currentItem.kind!==selected.kind||currentItem.id!==selected.id)failP2016('VERSION_CONFLICT',409);
-      const projected=(await readWorkbenchCardProjections(pool,workbenchSearchCardsSql(manualReviewEnabled),async()=>(await scope(authContext)).values,[selected],serviceCatalog,manualReportsEnabled))[0];
+      const projected=(await readWorkbenchCardProjections(pool,workbenchSearchCardsSql(manualReviewEnabled),{authority:()=>scope(authContext),session:start=>sessionProof(authContext,start),finalRouteCheck:async()=>{
+        // Preserve the original requested route check after the projection wait.
+        const currentItem=await item(authContext,kind,id);
+        if(currentItem.kind!==selected.kind||currentItem.id!==selected.id)failP2016('VERSION_CONFLICT',409);
+      }},[selected],serviceCatalog,manualReportsEnabled))[0];
       if(!projected)failP2016('NOT_FOUND',404);
       return publicP2016({item:projected,description:report.rows[0]?.summary??null,reported_at:reported.rows[0]?.at??null,records:items,
         next_cursor:records.rows.length>n&&last?cursorP2016({kind,id:uuidP2016(id),at:last.at,record_id:last.id}):null,

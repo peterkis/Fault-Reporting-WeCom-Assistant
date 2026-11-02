@@ -13,3 +13,6 @@ Status: **Accepted for local implementation — 用户于 2026-11-02 明确确�
 这是独立的内部读边界，故新建 ADR，引用 [ADR-0021](0021_yixiaoxiu_self_service_contracts.md) 中已有 Web 显式选择事实，沿用 [ADR-0029](0029_admin_workbench_frontend_boundaries.md) 的服务端事实边界。代价是部分事项仍可能未分类；这比把候选当已确认事实更可靠，也避免新增写入流程和持久化结构。旧搜索解析器拒绝未知卡片字段，因此本卡只扩展 board/detail，搜索响应保持原形状。
 
 完整事实来源、尚不存在的人工服务确认写入、已确认合同预算、兼容方式及验证要求见[卡 11 核查方案](../docs/ui/design-system-v2.1-card11-source-audit.md)。先改正式合同/Schema/API 文档，再实现只读查询。无数据库迁移、Ticket 写命令/状态机、规则引擎、责任路由或默认 Flag 变化；不授权部署、现场写库、真实发送、后续阶段或 Gate。
+
+
+审查澄清：最终只读证明在同一 SQL 快照核验当前会话、角色/团队集合、规范事项 READ 及来源指纹，证明后不再异步等待。会话证明复用既有 currentSessionPredicate，不能通过重新认证刷新登录时间。等待期间来源失效使 service 为 null；技术指纹不成为业务事实或公开字段。

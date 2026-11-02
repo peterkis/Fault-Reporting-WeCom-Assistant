@@ -1,3 +1,5 @@
+import type {WorkbenchSessionPredicate} from './p2-016-workbench-wecom-auth.mjs';
+import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {WorkbenchCard, WorkbenchService, WorkbenchServiceCatalog} from '../../../contracts/web01_workbench_contracts.js';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
@@ -83,34 +85,58 @@ export function projectWorkbenchService(evidence: readonly ServiceEvidence[], ca
   }catch{return null;}
 }
 
-interface ProjectionRow {
-  kind: string; id: string; status: string; stage_entered_at: string | null; evidence: ServiceEvidence[];
+interface ProjectionRow {kind:string;id:string;status:string;evidence:ServiceEvidence[];safety_signature:string}
+export interface WorkbenchReadAuthority {values:unknown[];roles:readonly string[];teams:readonly string[]}
+export interface WorkbenchReadAccess {
+  authority:()=>Promise<WorkbenchReadAuthority>;
+  session?:(start:number)=>WorkbenchSessionPredicate;
+  finalRouteCheck?:()=>Promise<void>;
+}
+interface ReadProof {principal_valid:boolean;scope_valid:boolean;session_valid:boolean}
+function proofColumns(roles:number,teams:number,session:string,principal=2):string {
+  return `EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$${principal}::uuid AND p.is_active) AS principal_valid,
+    EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p
+      CROSS JOIN LATERAL (SELECT
+        ARRAY(SELECT DISTINCT r.role::text FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id) AS roles,
+        ARRAY(SELECT DISTINCT m.team_id::text FROM pilot_ticket.pilot_team_member m WHERE m.principal_id=p.id) AS teams) current_scope
+      WHERE p.id=$${principal}::uuid AND p.is_active
+        AND current_scope.roles @> $${roles}::text[] AND current_scope.roles <@ $${roles}::text[]
+        AND current_scope.teams @> $${teams}::text[] AND current_scope.teams <@ $${teams}::text[]) AS scope_valid,
+    (${session}) AS session_valid`;
+}
+function checkReadProof(proof:ReadProof|undefined):asserts proof is ReadProof {
+  if(!proof)failP2016('ACTION_FAILED',503);
+  if(proof.principal_valid!==true)failP2016('FORBIDDEN',403);
+  if(proof.session_valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+  if(proof.scope_valid!==true)failP2016('FORBIDDEN',403);
+}
+/** Final read-only snapshot; never authenticate again or refresh last_seen. */
+export async function verifyWorkbenchReadAccess(pool:PostgresTransaction,access:WorkbenchReadAccess):Promise<void>{
+  const scope=await access.authority(),session=access.session?.(4)??{sql:'TRUE',values:[]};
+  const proof=(await pool.query<ReadProof>('SELECT '+proofColumns(2,3,session.sql,1),[scope.values[1],[...scope.roles],[...scope.teams],...session.values])).rows[0];
+  checkReadProof(proof);
 }
 /** One page-wide source read, joined to the current authorized canonical relation. */
-export async function readWorkbenchCardProjections(pool:PostgresTransaction,authorizedCardsSql:string,authority:()=>Promise<unknown[]>,items:WorkbenchCard[],catalog:ServiceCatalog|null,manualReportsEnabled:boolean):Promise<WorkbenchCard[]> {
-  if(!items.length)return items;
+export async function readWorkbenchCardProjections(pool:PostgresTransaction,authorizedCardsSql:string,access:WorkbenchReadAccess,items:WorkbenchCard[],catalog:ServiceCatalog|null,manualReportsEnabled:boolean,finalRouteCheck?:()=>Promise<void>):Promise<WorkbenchCard[]> {
+  if(!items.length){await verifyWorkbenchReadAccess(pool,access);return items;}
   const schema=await pool.query<{web:boolean}>("SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web");
   const web=schema.rows[0]?.web===true;
   const webJoins=web?`LEFT JOIN intake.web_request_binding b ON b.intake_id=i.id AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
-    LEFT JOIN LATERAL (SELECT s.safe_content->>'service_code' AS code FROM intake.web_submission s
+    LEFT JOIN LATERAL (SELECT s.id::text AS submission_id,s.safe_content->>'service_code' AS code FROM intake.web_submission s
       WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE`:'';
   const webCurrent=web?`b.intake_id IS NOT NULL AND to_jsonb(d)->>'basis_input_revision'=b.input_revision::text`:'false';
-  const currentAuthority=await authority();
-  const result=await pool.query<ProjectionRow>(authorizedCardsSql+`, selected AS (
+  const currentAuthority=await access.authority();
+  const projectionSql=authorizedCardsSql+`, selected AS (
     SELECT c.* FROM cards c JOIN jsonb_to_recordset($4::jsonb) AS requested(kind text,id text,intake_id text)
       ON c.kind=requested.kind AND c.id=requested.id AND c.intake_id=requested.intake_id
-  ) SELECT c.kind,c.id,c.status,
-    CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END AS stage_entered_at,
-    COALESCE(material.evidence,'[]'::jsonb) AS evidence
+  ), projected_sources AS (SELECT c.kind,c.id,c.status,
+    COALESCE(material.evidence,'[]'::jsonb) AS evidence,encode(sha256(convert_to(COALESCE(material.evidence,'[]'::jsonb)::text,'UTF8')),'hex') AS safety_signature
   FROM selected c
-  LEFT JOIN LATERAL (SELECT e.new_status,e.created_at FROM pilot_ticket.ticket_event e
-    WHERE c.kind='ticket' AND e.ticket_id=c.id::uuid AND e.old_status IS DISTINCT FROM e.new_status
-    ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE
   LEFT JOIN LATERAL (
-    SELECT jsonb_agg(jsonb_build_object('explicit_code',source.explicit_code,'safe_result',source.safe_result,
+    SELECT jsonb_agg(jsonb_build_object('source_intake_id',source.source_intake_id,'decision_id',source.decision_id,'web_revision',source.web_revision,'submission_id',source.submission_id,'explicit_code',source.explicit_code,'safe_result',source.safe_result,
       'current',source.current,'journey_id',source.journey_id,'decision_status',source.decision_status,'resolved_by',source.resolved_by)) AS evidence
     FROM (
-      SELECT ${web?"CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN initial.code END":'NULL::text'} AS explicit_code,
+      SELECT i.id::text AS source_intake_id,d.id::text AS decision_id,${web?'b.input_revision::text':'NULL::text'} AS web_revision,${web?'initial.submission_id':'NULL::text'} AS submission_id,${web?"CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN initial.code END":'NULL::text'} AS explicit_code,
         CASE WHEN d.id IS NOT NULL THEN jsonb_build_object(
           'known_fields',jsonb_build_object('selected_service_code',d.safe_result->'known_fields'->'selected_service_code'),
           'human_override',jsonb_build_object('principal_id',d.safe_result->'human_override'->'principal_id'),
@@ -150,13 +176,31 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
           WHERE c.kind='ticket' AND j.linked_ticket_id=c.id::uuid
             AND l.reporter_identity_hash=j.reporter_identity_hash AND j.retention_until_epoch_ms>platform.physical_epoch_ms())
         AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket other WHERE other.source_intake_id=i.id AND (c.kind<>'ticket' OR other.id<>c.id::uuid))
-      ORDER BY i.id LIMIT 101
+      ORDER BY i.id,d.journey_id,d.id LIMIT 101
     ) source
-  ) material ON TRUE`,[...currentAuthority,JSON.stringify(items.map(({kind,id,intake_id})=>({kind,id,intake_id}))),manualReportsEnabled]);
+  ) material ON TRUE)`;
+  const requested=JSON.stringify(items.map(({kind,id,intake_id})=>({kind,id,intake_id})));
+  const result=await pool.query<ProjectionRow>(projectionSql+' SELECT * FROM projected_sources',[...currentAuthority.values,requested,manualReportsEnabled]);
+  await access.finalRouteCheck?.();
+  const current=await access.authority(),session=access.session?.(8)??{sql:'TRUE',values:[]};
+  // Current session, role/team snapshot and canonical item READ share the last
+  // statement, after all source and detail-route waits. Nothing async follows.
+  const proof=(await pool.query<ReadProof&{items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string}[]}>(projectionSql+`
+    SELECT ${proofColumns(6,7,session.sql)},COALESCE((SELECT jsonb_agg(jsonb_build_object(
+      'kind',c.kind,'id',c.id,'status',c.status,'safety_signature',c.safety_signature,'stage_entered_at',
+      CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END))
+      FROM projected_sources c
+      LEFT JOIN LATERAL(SELECT e.new_status,e.created_at FROM pilot_ticket.ticket_event e
+        WHERE c.kind='ticket' AND e.ticket_id=c.id::uuid AND e.old_status IS DISTINCT FROM e.new_status
+        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items`,
+  [...current.values,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values])).rows[0];
+  checkReadProof(proof);
+  const visible=new Map(proof.items.map(row=>[row.kind+':'+row.id,row]));
   const byId=new Map(result.rows.map(row=>[row.kind+':'+row.id,row]));
   return items.map(item=>{
-    const row=byId.get(item.kind+':'+item.id);if(!row)failP2016('NOT_FOUND',404);
-    if(row.status!==item.status)failP2016('VERSION_CONFLICT',409);
-    return {...item,service:projectWorkbenchService(row.evidence,catalog),stage_entered_at:row.stage_entered_at===null?null:localP2016(row.stage_entered_at)};
+    const row=byId.get(item.kind+':'+item.id),live=visible.get(item.kind+':'+item.id);
+    if(!row||!live)failP2016('NOT_FOUND',404);
+    if(row.status!==item.status||live.status!==item.status)failP2016('VERSION_CONFLICT',409);
+    return {...item,service:row.safety_signature===live.safety_signature?projectWorkbenchService(row.evidence,catalog):null,stage_entered_at:live.stage_entered_at===null?null:localP2016(live.stage_entered_at)};
   });
 }
