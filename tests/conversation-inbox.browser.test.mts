@@ -10,7 +10,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
+import type {ConversationChatEntry,ConversationRelatedPage} from '../contracts/workbench_conversation_inbox_contracts.js';
 import type {ConversationCommandReceipt,ConversationTextCommand} from '../contracts/workbench_conversation_workspace_contracts.js';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const input=(purpose:string,text:string)=>`(()=>{const input=document.querySelector('textarea[data-purpose="${purpose}"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();})()`;
@@ -46,6 +46,35 @@ test('v2.1 reception uses the original command and keeps message space, purpose 
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.inbox-chat [data-tone=primary]')].filter(node=>node.checkVisibility()).length"),1);
     }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
   },{inbox:true,realtime:true,personalRead:false,recovery:true});
+});
+
+test('topic history and same-topic direct navigation remain separate, readable and reachable together',async()=>{
+  await withT22Fixture(async f=>{
+    for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
+    const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
+    const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
+    const related=await (await fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})).json() as ConversationRelatedPage;
+    assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
+    const writes:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};
+    f.runtime.server.on('request',observe);let browser:Browser|undefined,failure:unknown;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))&&Boolean(document.querySelector('.inbox-topic-pages button'))");
+      await clickWorkbenchControl(browser,'.inbox-more-actions [data-action=open-detail-actions]');
+      for(const width of [1920,1440,1280,900]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        const sample=await browser.evaluate("(()=>{const a=document.querySelector('.inbox-topic-pages button'),b=document.querySelector('.inbox-new-direct'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect(),label=b.querySelector('.ds-button-label');const hit=node=>{const r=node.getBoundingClientRect();return node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));};return {overlap:Math.min(x.right,y.right)>Math.max(x.left,y.left)&&Math.min(x.bottom,y.bottom)>Math.max(x.top,y.top),clipped:b.scrollWidth>b.clientWidth||label.scrollWidth>label.clientWidth,reachable:hit(a)&&hit(b)};})()") as {overlap:boolean;clipped:boolean;reachable:boolean};
+        assert.equal(sample.overlap,false,'navigation overlap at '+width);assert.equal(sample.clipped,false,'direct navigation text clipping at '+width);assert.equal(sample.reachable,true,'both navigation targets at '+width);
+      }
+      await clickWorkbenchControl(browser,'.inbox-topic-pages button');
+      await browser.waitFor("document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
+      assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+group.id,'history paging keeps the current Session');
+      await clickWorkbenchControl(browser,'.inbox-topic-pages button');await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))");
+      await clickWorkbenchControl(browser,'.inbox-new-direct');await browser.waitFor(`location.pathname==='/workbench/app/conversations/${direct.id}'&&Boolean(document.querySelector('[data-conversation-ready]'))`);
+      assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+direct.id);
+      assert.deepEqual(writes,[],'topic history and direct-window navigation remain read-only');
+    }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  },{inbox:true,personalRead:false,recovery:false});
 });
 
 test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{

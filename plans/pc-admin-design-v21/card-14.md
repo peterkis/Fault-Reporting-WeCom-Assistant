@@ -40,7 +40,7 @@
 
 `tokens.css`、`heat.ts`、`category-map.ts`、`design-system.md`、`Workbench.tsx`、后端、contracts、API 文档、根索引与 CHANGELOG 均未修改。此卡重构联系人收件箱；关闭原 inbox flag 后的旧服务主题入口保留，只消费共享输入器的键盘/占位符调整。
 
-## 本地验证（最终源输入指纹）
+## 首候选本地验证
 
 本地构建在上述基线上未提交的工作区执行，不能改称最终提交或 merge commit 的新执行。最终输入指纹：`e6b9d2f93df5e713cb788f34ec608fb2b2989c0e5ac3a88b5be6e2459e549916`；manifest SHA-256：`60c5d0a6f470fa9c0f937ed9c099b092c73f30682f3d05ecf626200e897efce8`。
 
@@ -97,3 +97,19 @@ Electron 原生集成、手动 full/certify、真实企业微信发送、现场�
 另一个实现边界：当前页抽屉是只读事项摘要，保留“打开完整事项”。完整事项抽屉仍归卡 13；本卡未复制其命令/事实或越界修改 Workbench.tsx。
 
 下一卡前提：卡 15 的卡 8/9 前置已满足；卡 12/13 的卡 10/11 依赖也已合并，但本轮均未启动。卡 16 仍须卡 12 合并；卡 14 的完成不代替该条件。
+
+## 审查修补 R1
+
+发布首候选为 `f699ed9459b83b4ffd475aee225cd68940dd7014`。Codex 对同一完整 head 返回一项 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/132#discussion_r4440484558)：同主题私聊与历史翻页分别定位可能遮挡。
+
+使用现有 fixture 创建 53 个同联系人相关窗口，其中群/私聊两条属于同一 Journey；真实 related GET 返回首 50 项和 next_cursor，确认私聊窗口也在这一页。实测四宽未出现矩形重叠（私聊按钮被当前样式级联覆盖为 relative），但文字均被裁切。保留 `topic-navigation-red.json` 的未复现重叠结果及 `topic-navigation-red-geometry.json` 的文字裁切 FAIL，不把自然通过冒充 RED。
+
+修补采用同一原 TopicPicker 控制器，通过稳定 portal 将“更多主题 / 返回最新 / 私聊窗口 / 读取错误”收进既有「更多会话操作」，在同一容器纵向排列；默认关闭，消息区不被常驻导航覆盖。原查询、cursor、导航目标、blocked 判断均保持；未引入第二个控制器。
+
+新增现有注册浏览器文件内的真实场景：四宽无重叠、无文字裁切、两个入口 hit-test 均可达；实际翻页、返回最新、切入同主题私聊，路径正确且 POST=0。原 70 条 assert 全保留，当前为 97 条。临时探针与永久回归均通过，未在源码留下调试注入。
+
+R1 本地输入指纹 `cb7296b6b5ff0e168772c2aa1c76c9667fb2c17b9529eb403207729b2e91a1cc`，manifest `fd05ddd56485d97c2a4851d36265c5ca3a3ad185043a08edc197b60719006ef8`，绑定 `f699ed9` 上未提交修补工作区。`build-review-02.log`、`types-review-02.log`、`artifact-review-02.log` 均 PASS；相关 Foundation + Inbox 两个原注册文件 26/26 PASS、0 FAIL/SKIP/NOT_RUN（`registered-review-02/summary.json`）。此前首候选 46/46 保留原身份，不混计为 R1 的新执行。
+
+仅补受影响导航状态的四宽截图：[1920](../../docs/ui/evidence/v21-card14/topic-navigation-1920.jpg) / [1440](../../docs/ui/evidence/v21-card14/topic-navigation-1440.jpg) / [1280](../../docs/ui/evidence/v21-card14/topic-navigation-1280.jpg) / [900](../../docs/ui/evidence/v21-card14/topic-navigation-900.jpg)。正常消息状态的八张对照未改称 R1 新采图。
+
+按用户追加同步规则：先提交保存 R1，再 fetch/rebase origin/main，按归属保留主线改动；同步后的基线、冲突处理、完整门禁/相关测试、force-with-lease 与复审结果记录在 PR。该流程不改写上述各候选执行身份。

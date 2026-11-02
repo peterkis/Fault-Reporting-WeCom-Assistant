@@ -18,6 +18,7 @@ import {SearchField} from '../../design/components/SearchField/SearchField';
 import {EmptyState} from '../../design/components/EmptyState/EmptyState';
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {useNavigate,useParams,useSearchParams} from 'react-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {MessageSquare,ArrowLeft,Paperclip} from 'lucide-react';
@@ -38,7 +39,7 @@ export function deliveryLabel(d:ConversationWorkspaceDelivery){
   if(d.status==='SENT')return '渠道已确认发送';if(d.status==='CANCELLED')return '已取消';
   if(d.status==='DEAD_LETTER')return '发送失败';if(d.status==='SENDING')return '发送中';return '排队中';
 }
-function TopicPicker({entry,principal,blocked}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean}){
+function TopicPicker({entry,principal,blocked,navigationTarget}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean;navigationTarget:HTMLElement|null}){
   const navigate=useNavigate(),[params]=useSearchParams(),[cursor,setCursor]=useState<string|null>(null);
   const related=useQuery({queryKey:['conversation-related',principal.principal_id,entry.session.session_id,cursor],queryFn:({signal})=>conversationInbox.related(entry.session.session_id,cursor,signal),gcTime:0});
   const client=useQueryClient();
@@ -48,13 +49,13 @@ function TopicPicker({entry,principal,blocked}:{entry:ConversationChatEntry;prin
   if(![...groups.values()].some(rows=>rows.some(row=>row.session.session_id===entry.session.session_id)))groups.set(entry.topic_ref,[entry,...(groups.get(entry.topic_ref)??[])]);
   const direct=(related.data?.items??[]).find(row=>row.topic_ref===entry.topic_ref&&row.session.session_id!==entry.session.session_id&&row.current_contact_channel==='direct'&&row.session.status!=='ENDED');
   const change=(id:string)=>{if(!blocked)navigate('/conversations/'+id+'?'+params.toString());};
-  return <div className="inbox-topic-picker"><WorkbenchSelect label={<>服务主题与沟通窗口</>} aria-label="服务主题与沟通窗口" value={entry.session.session_id} isDisabled={blocked||related.isPending} onChange={e=>change(e)}>{[...groups].map(([ref,rows])=><ListBox.Section key={ref} id={ref}><Header>{rows[0]?.topic??'服务主题'}</Header>{rows.map(row=><ListBox.Item key={row.session.session_id} id={row.session.session_id} textValue={String(row.topic)+"·"+String(row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊')+String(row.session.status==='ENDED'?' · 历史':'')}>{row.topic}· {row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊'}{row.session.status==='ENDED'?' · 历史':''}<ListBox.ItemIndicator/></ListBox.Item>)}</ListBox.Section>)}</WorkbenchSelect><div className="inbox-topic-pages">{cursor?<HButton isDisabled={blocked} onClick={()=>setCursor(null)} tone="secondary">返回最新主题</HButton>:null}{related.data?.next_cursor?<HButton isDisabled={blocked||related.isFetching} onClick={()=>setCursor(related.data?.next_cursor??null)} tone="secondary">更多主题与窗口</HButton>:null}</div>
+  return <div className="inbox-topic-picker"><WorkbenchSelect label={<>服务主题与沟通窗口</>} aria-label="服务主题与沟通窗口" value={entry.session.session_id} isDisabled={blocked||related.isPending} onChange={e=>change(e)}>{[...groups].map(([ref,rows])=><ListBox.Section key={ref} id={ref}><Header>{rows[0]?.topic??'服务主题'}</Header>{rows.map(row=><ListBox.Item key={row.session.session_id} id={row.session.session_id} textValue={String(row.topic)+"·"+String(row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊')+String(row.session.status==='ENDED'?' · 历史':'')}>{row.topic}· {row.current_contact_channel==='group'?'群内原始消息':'Bot 私聊'}{row.session.status==='ENDED'?' · 历史':''}<ListBox.ItemIndicator/></ListBox.Item>)}</ListBox.Section>)}</WorkbenchSelect>{navigationTarget&&(cursor||related.data?.next_cursor||direct||related.isError)?createPortal(<div className="inbox-topic-navigation"><div className="inbox-topic-pages">{cursor?<HButton isDisabled={blocked} onClick={()=>setCursor(null)} tone="secondary">返回最新主题</HButton>:null}{related.data?.next_cursor?<HButton isDisabled={blocked||related.isFetching} onClick={()=>setCursor(related.data?.next_cursor??null)} tone="secondary">更多主题与窗口</HButton>:null}</div>
     {direct?<HButton className="inbox-new-direct" isDisabled={blocked} onClick={()=>change(direct.session.session_id)} tone="secondary">本主题有私聊补充，查看并继续接待</HButton>:null}
-    {related.isError?<p role="alert">{errorMessage(related.error)}</p>:null}
+    {related.isError?<p role="alert">{errorMessage(related.error)}</p>:null}</div>,navigationTarget):null}
   </div>;
 }
 function ChatConversation({principal,id,onBlockedChange,onContactChange}:{principal:Principal;id:string;onBlockedChange:(value:boolean)=>void;onContactChange:(value:string|null)=>void}){
-  const client=useQueryClient(),[pages,setPages]=useState(1),[tab,setTab]=useState<'messages'|'internal-notes'>('messages'),[receptionTarget,setReceptionTarget]=useState<HTMLDivElement|null>(null);
+  const client=useQueryClient(),[pages,setPages]=useState(1),[tab,setTab]=useState<'messages'|'internal-notes'>('messages'),[receptionTarget,setReceptionTarget]=useState<HTMLDivElement|null>(null),[navigationTarget,setNavigationTarget]=useState<HTMLDivElement|null>(null);
   const [replyBlocked,setReplyBlocked]=useState(false),[noteBlocked,setNoteBlocked]=useState(false),[controlBlocked,setControlBlocked]=useState(false),[receipts,setReceipts]=useState<ConversationMessageResult[]>([]),[newMessages,setNewMessages]=useState(false);
   const scroller=useRef<HTMLDivElement|null>(null),atBottom=useRef(true),anchor=useRef<{id:string;offset:number}|null>(null),initial=useRef(true);
   const latestSequence=useRef<string|null>(null);
@@ -93,7 +94,7 @@ function ChatConversation({principal,id,onBlockedChange,onContactChange}:{princi
     return item.sender_category==='SYSTEM'?<TimelineEvent>{content}</TimelineEvent>:content;
   };
   return <><article className="inbox-chat" data-conversation-ready><header className="inbox-chat-header"><div className="inbox-chat-person"><Avatar name={entry.participant_label.replace(/（[^）]*）/gu,'')} personId={entry.contact_ref} size={32}/><div><h2>{entry.participant_label.replace(/（资料未提供）$/u,'')}</h2><p>{[entry.department_label,entry.channel_label].filter(Boolean).join(' · ')}</p></div><Tag tone={waiting?'warning':'neutral'}>{entry.session.status==='ENDED'?'已结束':entry.assignment.assigned_display_name??'待接待'}</Tag></div>
-      <TopicPicker entry={entry} principal={principal} blocked={blocked}/><div className="inbox-more-actions"><DrawerMoreActions label="更多会话操作"><WorkbenchDisclosure title={<>查看关联事项与来源</>} className="inbox-business-compact"><AssociatedItem entry={entry} principal={principal} blocked={blocked}/></WorkbenchDisclosure><div className="inbox-control-panel"><ConversationControl entry={entry} principal={principal} onBlockedChange={setControlBlocked} chat receptionTarget={waiting?receptionTarget:null}/></div></DrawerMoreActions></div>
+      <TopicPicker entry={entry} principal={principal} blocked={blocked} navigationTarget={navigationTarget}/><div className="inbox-more-actions"><DrawerMoreActions label="更多会话操作"><div className="inbox-topic-navigation-host" ref={setNavigationTarget}/><WorkbenchDisclosure title={<>查看关联事项与来源</>} className="inbox-business-compact"><AssociatedItem entry={entry} principal={principal} blocked={blocked}/></WorkbenchDisclosure><div className="inbox-control-panel"><ConversationControl entry={entry} principal={principal} onBlockedChange={setControlBlocked} chat receptionTarget={waiting?receptionTarget:null}/></div></DrawerMoreActions></div>
     </header>{result.isError?<p className="inbox-read-error" role="alert">当前重读失败，输入已保留：{errorMessage(result.error)}</p>:null}
     <div className="inbox-timeline" ref={scroller} onScroll={rememberScroll} data-conversation-timeline aria-label="当前主题消息">
       {hasMore?<HButton className="inbox-history" isDisabled={pages>=8||result.isFetching} onClick={()=>{rememberScroll();setPages(value=>Math.min(8,value+1));}} tone="secondary">加载更早消息</HButton>:null}{pages>=8&&hasMore?<p>已达本次400条读取上限。</p>:null}
