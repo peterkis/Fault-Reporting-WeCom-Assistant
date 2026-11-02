@@ -375,7 +375,12 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     const retained=order.current.keys.filter(key=>present.has(key)),known=new Set(retained);order.current.keys=[...retained,...keys.filter(key=>!known.has(key))];
     // Keep only presentation IDs. Every displayed object still comes from the current authorized GET.
     const rank=new Map(order.current.keys.map((key,index)=>[key,index]));
-    unique=[...ordered].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
+    const ranked=[...ordered].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
+    // Freeze within the visible hierarchy; new keys must not sit behind unrelated groups in navigation.
+    unique=columns.flatMap(column=>{
+      const stage=ranked.filter(item=>item.column===column);
+      return view==='board'&&column==='pending'?[...stage.filter(item=>item.kind!=='ticket'),...stage.filter(item=>item.kind==='ticket')]:stage;
+    });
   }
   const update=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
   const applyClosedRange=(value:BoardCompletionRange,dates?:{from:string;to:string})=>{

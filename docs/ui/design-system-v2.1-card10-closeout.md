@@ -142,3 +142,15 @@ motion-red-valid / motion-green-slow-final 保留有效 RED/GREEN。更早的 mo
 中间一次只补描边等待后，还观察到折叠退出动画尚未结束的可见性断言失败，随后补上真实不可见条件；两个原断言均未改。正式 WEB01 注册入口 **13/13 PASS**，0 FAIL/SKIP/NOT_RUN；重建、strict types、artifact 全部 PASS。结果绑定 `c64fbe9749cc412454e3b6ce03c4f8377d615f12` 上未提交工作区，输入指纹 `1df66448b0f53acac1699a819f95afb8173196e6bce5ef70abd41b5a2c2c46d7`、manifest SHA-256 `fab49feb26a9fd58a89e1bc54f09f773e8a172f236858c0286118b681e1843ec`，原件为 build-motion-fix / types-motion-fix / artifact-motion-fix / registered-tests-motion-fix。
 
 与 local-lock-fix-build-manifest.json 逐项比较，app/server、shared、web/admin-workbench 的 693 个生产制品 SHA-256 完全相同，回执 motion-production-unchanged.json；只改变测试的动效模式与就绪等待。第五轮自有 pgdata-motion 在默认三库、其他客户端 0 后停止，status=3、监听 0，白名单/无重解析点检查后删除，回执 cleanup-motion.json。原始失败和全部前后证据仍保留。
+
+## 持续冻结期间的 SSE 新受理分组
+
+`39f73d9e25facc3117153c437d35e8e60c9ec266` 的审查新增 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/130#discussion_r4438592781)：旧键加新键的全局冻结序列可能为 `[受理 A, Ticket B, 新受理 C]`，而画面固定分组为 `[A,C,B]`，导航会跳过 C。一次普通后台 profile 的探针 PASS 只是不充分的未复现，不能关闭问题。
+
+最终复现采用已有 manualProjection profile：先发布原实时水位，打开抽屉并断言冻结生效，再保存新受理、显式发布一次真实 realtimeProjector 批次，通过实际 HTTP/SSE 等待卡片进入画面，确认原目标和冻结仍保持，最后核对下一项精确 ID。旧正式 bundle 得到 Ticket 而非新受理，真实 RED 为 sse-group-manual-red.log。早期未受控夹具/探针失败均保留，未记作此 P2 的有效复现。
+
+修补将冻结后的当前获权对象按固定列和受理组再次组合，保持每组内旧键顺序和新键追加规则；BoardSection 与 Detail 消费同一最终集合。没有新的请求、状态或权限语义，后端代码不变。正式注册 WEB01 **14/14 PASS**，0 FAIL/SKIP/NOT_RUN；build、strict types、artifact 均 PASS，不重绑上一候选的 13/13。
+
+本轮绑定 `39f73d9e25facc3117153c437d35e8e60c9ec266` 上未提交工作区，输入指纹 `b299d07b9bdb5f652f255326e358cde878b70434247afde6dfe0c9391a5ef7a6`、manifest SHA-256 `52a80328fb08cc99c9f7f1a19315551c4079cdbcb1dbf9c10c1b903676a5a08b`，原件为 build-sse-fix / types-sse-fix / artifact-sse-fix / registered-tests-sse-fix。681 个后端/共享制品与 61 项候选逐字相同（sse-backend-unchanged.json），不虚构新一轮 61 项运行。
+
+补充 SSE 探针的两次独立自有集群均已在仅余默认三库、其他客户端 0 时停止，status=3、监听 0；绝对路径与无重解析点检查后删除，回执 cleanup-sse.json / cleanup-sse-check.json。最初未受控探针的 PASS、夹具失败、最终有效 RED 与注册 GREEN 均保留；本轮不扩展编排/其它后端范围。最终 head 的审查与全部适用 CI 独立核对后才合并。

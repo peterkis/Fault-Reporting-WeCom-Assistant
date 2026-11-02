@@ -11,6 +11,34 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 
+test('v2.1 SSE arrival keeps the frozen detail navigation inside the rendered intake group',{timeout:120000},()=>withWeb01Fixture(async f=>{
+  let browser,error;
+  try{
+    await f.runtime.realtimeProjector.runOnce();
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
+    await browser.command('Page.bringToFront');
+    await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+    await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
+    const initial=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(initial.length,7);
+    await clickWorkbenchControl(browser,'.board-column.pending [data-item-id="'+initial[1]+'"] .card-open');
+    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    assert.equal(await browser.evaluate("document.querySelector('.board-column.pending .ds-column-sort').disabled"),true,'order freeze must be active');
+    const source=await seedPersistedIntake({pool:f.pool,text:'SSE新增待判断分组的合成报修。'});await f.processReviewIntake(source.intakeId);
+    const review=(await f.pool.query('SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid',[source.intakeId])).rows[0];assert.ok(review);
+    await f.runtime.realtimeProjector.runOnce();
+    await browser.waitFor("document.querySelector('.range-bar')?.textContent.includes('已加载 16 项')&&Boolean(document.querySelector('.board-column.pending [data-item-id=\""+review.id+"\"]'))");
+    const current=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(current[current.indexOf(initial[1])+1],review.id);
+    assert.equal(await browser.evaluate("document.querySelector('.board-column.pending .ds-column-sort').disabled"),true,'freeze must remain active after the real SSE reread');
+    assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),initial[1]);
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
+    await browser.waitFor("location.pathname.split('/').at(-1)!=="+JSON.stringify(initial[1]));
+    assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),review.id,'next follows the new rendered group member');
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
+    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(initial[1]));
+    assert.deepEqual(current.filter(id=>id!==review.id),initial,'the original group order stays stable');
+  }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+},{workbenchRealtimeEnabled:true,manualProjection:true}));
+
 test('v2.1 board summary, sorting and intake groups only filter loaded authorized HTTP data',{timeout:120000},async()=>{
   await withWeb01Fixture(async f=>{
     const extra=await seedPersistedIntake({pool:f.pool,text:'卡10分组边界的全新合成材料，请判断。'});await f.processReviewIntake(extra.intakeId);
