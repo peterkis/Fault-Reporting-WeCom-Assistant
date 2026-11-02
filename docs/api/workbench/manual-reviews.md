@@ -38,6 +38,8 @@ resolution_code：`CONFIRM_TICKET_ELIGIBLE|CLASSIFY_SERVICE_REQUEST|REQUEST_DESC
 
 执行在同一 ledger 事务内追加人工结论和安全动作；结果可能创建 Ticket、请求补充或保留候选。已解决/版本冲突不得直接重复写入新结论。通知仍走统一 Communication；内部备注不外发。
 
+2026-11-02 锁顺序修补：当前 READ/材料预检后，先取得既有实时流事务锁，再次核验当前身份、Review 范围及材料，之后才由 ledger 创建/核对命令回执并执行原业务。避免回执的 Review 外键 KeyShare 锁与复核终检的行锁形成循环等待。锁等待期间失权仍拒绝，不以等待前的上下文提交；相同 UUID、原版本/材料围栏、回执和通知语义不变。确定性并发及失权回归见 [T14 边界测试](../../../tests/wbint-t14-review-boundaries.integration.test.mts)。
+
 合成已受理人工结论响应：
 
 ```json

@@ -127,7 +127,13 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
       return {command,v};
   }
   async function authorizeResolution(authContext:unknown,reviewId:unknown,transaction:PostgresTransaction){
-        const c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);return {...c,ticket:null};
+        let c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);
+        // Match the stream-before-receipt-FK order; recheck current authority after waiting.
+        if(realtimeProjector?.lock){
+          await realtimeProjector.lock(transaction);
+          c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);
+        }
+        return {...c,ticket:null};
   }
   async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>,creationResolverTeamId?:string):Promise<ManualReviewCurrentResult>{
         await realtimeProjector?.lock?.(transaction);

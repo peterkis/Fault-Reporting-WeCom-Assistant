@@ -2,6 +2,8 @@
 
 本卡对应 [v2.1 方案](design-system-v2.1.md) §3.1、§4.1、[设计系统](design-system.md) §6.6 与原型 01。基线为已合并卡 9 的 `main@f1b7592e893b2aebc70a185cd82c28a9870a4bb1`（PR #129）。本次用户明确授权本地实施、提交/推送、PR、`@codex review` 修复循环、merge commit、main 快进及本次自有资源清理；卡 11–16 未启动。
 
+2026-11-02 补充授权：CI 暴露既有复核事务死锁后，用户明确选择「授权最小后端修复」，允许本 PR 例外附带取锁顺序、等待后权限/材料终检及确定性回归。该例外不实施卡 11，不新增接口/状态/路由/投递事实；具体范围与证据见文末。
+
 ## 改动与文件
 
 | 路径 | 责任 |
@@ -17,9 +19,10 @@
 | `tests/pc-admin-design-foundation.test.mts` | 增加四小时边界、处理中不推算、本人 HANDLING、北京时间跨日及不可变排序检查 |
 | `tests/web01-workbench.browser.test.mjs` | 新增概况/折叠/排序/键盘/无写请求与 SSE 冻结回归；一条旧视觉断言更新为本卡获准的列底色 |
 | `tests/wbint-t17-manual-form.browser.test.mts`、`tests/wbint-t18-normal-verified-form.browser.test.mts` | 返回看板后通过原列尾按钮展开新卡；两份原测试的 38 / 70 条 assert 调用逐字保留 |
+| `app/server/src/p2-016-manual-review-facade.mts`、`tests/wbint-t14-review-boundaries.integration.test.mts`、`docs/api/workbench/manual-reviews.md` | 用户追加授权的最小后端锁顺序修补、确定性 FK/流锁回归及等待后失权拒绝 |
 | `docs/ui/design-system.md`、`design-system-v2.1.md`、本文与 `evidence/v21-card10/compare-*.jpg` | 规范先行、确认口径、交付与四宽证据 |
 
-无数据库、后端、接口、业务命令、Ticket 状态值、权限判断、请求参数/语义、依赖、默认 Feature Flag 或部署变更。统计不新建责任事实；服务目录与类别映射没有改动。
+卡 10 视觉部分无后端改动；本 PR 另含上述追加授权的后端锁顺序及等待后终检修复。无数据库/接口/业务命令字段、Ticket 状态值、责任路由、请求参数、依赖、默认 Feature Flag 或部署变更。统计不新建责任事实；服务目录与类别映射没有改动。
 
 ## 已确认的补充与过渡口径
 
@@ -68,7 +71,7 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 
 | 自检 | 是 / 否 + 证据 |
 | --- | --- |
-| 前端未改业务命令、状态值、权限判断 | 是。后端/合同/依赖差异 0；原 ManualReportEntry 可用性与 BoardActions 沿用 |
+| 前端未改业务命令、状态值、权限判断 | 是（卡 10 视觉部分）。原 ManualReportEntry 与 BoardActions 沿用；本 PR 另有用户追加授权的后台取锁/等待后终检例外，不宣称整个 PR 仅有前端差异 |
 | 测试选择器只增不删；改过的测试只改文案期望 | 否（“只改文案”这一项）。原 class/data 选择器保留；新增统计与组选择器和回归。按本卡要求同步更新一条旧列底色视觉期望，既有状态/权限/请求/回执/次数等业务断言原样，未放宽 |
 | 新增颜色经 Token，Stylelint / ESLint 为 0 | 是。阶段/tone 复用卡 9，计数半透明值在 tokens.css；0 / 0 |
 | 新增彩色对应阶段 / 紧急 / 类别 / 人 | 是。列头=阶段、超时=紧急、本人负责=人；既有品牌操作/选中语义保留，无装饰性新增色 |
@@ -115,3 +118,15 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 两用例在修补候选中分别 PASS；T17 的 38 条、T18 的 70 条 assert AST 调用文本与 `c84da438…` 逐字相同，核对回执为 `test-assertions-preserved.json`。最终相关检查为 6 个注册入口、38/38 PASS，0 FAIL/SKIP/NOT_RUN；build、strict types、artifact 均 PASS。样式及工具实现未改，Stylelint/ESLint 0/0 和工具 21/21 的适用范围保持。
 
 最终本地候选绑定 `c84da43822f92063608edb2b17a475edea9cf7cc` 上未提交工作区，输入指纹 `d158a6e74f73b0ae3da3007b663e73a0cd4ed22e822ae761d6b007f7e8b48028`、manifest SHA-256 `537d9211fe9a1ecc1574da26eaf440683e7211fef62e12949e8cf93a35104767`；原件为 `build-ci-fix`、`types-ci-fix`、`artifact-ci-fix`、`registered-tests-ci-fix`，不重绑前一候选的 36/36。第三轮自有 pgdata-ci 清理前只余默认三库、其他客户端 0；停止后 status=3、监听 0，验证绝对路径和无重解析点后删除集群，回执 cleanup-ci.json。最终发布 head 的远端审查及 CI 沿 PR 读回。
+
+## 追加授权：复核回执外键与实时流锁
+
+`27a229d8c1480568e86ae78112dd86fa5cfd484f` 第三轮审查 completed、无发现；普通 CI [41376373237](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41376373237) 越过代录后，在原 T14 并发用例得到 `[200,503]` 而非 `[200,409]`。PostgreSQL 原日志明确记录 Review 行锁与 `P2_003_REALTIME_STREAM:CONVERSATION_WORKBENCH` advisory lock 的死锁环，日志保存在 ci-third-head-failure.log。原后端/原 T14 用例在本 PR 此前均未改；本地原样 3/3 PASS 只是一次未复现，不记为修复。
+
+用户明确授权本 PR 最小后端例外后，增加两个有界、无后台 Worker 的真实 PG/HTTP 回归：外部事务先持有现有流锁，观察两个 HTTP 命令真实进入 pg_locks 等待，要求它们此时尚未持有 Review 回执外键的 RowShare 锁；释放后仍恰好一个成功、一个 409、仅一个人工决议/Ticket/Event、无通信或通知增加。第二例在真实流锁等待期间撤销当前主体，要求原命令拒绝且无回执/业务事实新增。观察基于实际锁状态，不依靠固定 sleep 猜测时序。
+
+两个新用例对原正式后端均 RED（2 个前置 Review FK 锁、等待期间失权仍可继续），原件为 t14-lock-order-red.log。修补只在原 authorizeResolution 中将实时流锁移到 ledger 回执外键之前，并在等待后重新读取原权限/材料；沿现有 Ticket 命令的取锁顺序，不改命令形状、事实源或状态机。
+
+后继完整 build、strict types、artifact PASS；12 个相关注册入口 **61/61 PASS**，0 FAIL/SKIP/NOT_RUN。其中 T14 边界 5 项包含两个新 GREEN，其它范围覆盖原人工结论与安全动作、T14 材料/回执、T15 原子性/回执/等待中 Web 到期，以及原卡 10 相关 38 项，不称活动全集或 full/certify。结果绑定 `27a229d8c1480568e86ae78112dd86fa5cfd484f` 上的未提交工作区，输入指纹 `327d69913c11ae5c1450ad5ac115ceac03a87bafc22f86914a11f8d69d991e5b`、manifest SHA-256 `c82f24b5c7a14b2c0e161f5e60723ef1627e4dd9d49c3686a09cad3a701554f1`；原件为 build-lock-fix / types-lock-fix / artifact-lock-fix / registered-tests-lock-fix，不重绑上一候选的 38/38。
+
+第四轮自有 pgdata-diagnostic 停止前仍只有三默认库、其他客户端 0；停止后 status=3、监听 0，核验绝对路径与无重解析点后删除合成集群，回执 cleanup-diagnostic.json。原 CI 死锁、自然未复现、确定性 RED 与最终 GREEN 分开保留。最终发布 head 的远端审查/CI 仍须独立通过后才合并，不因本地修补推进现场、部署或 Gate。
