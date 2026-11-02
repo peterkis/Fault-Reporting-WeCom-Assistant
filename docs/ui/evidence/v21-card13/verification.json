@@ -280,6 +280,127 @@
       ],
       "screenshot_posts": 0,
       "remote_status": "以 PR 当前 head 的实际复审为准，不将本地定向 PASS 冒充远端审查。"
+    },
+    {
+      "reviewed_head": "300b3e059d1cc8b6498c472126aedd4c0147e1bb",
+      "finding": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135#discussion_r4448510261",
+      "severity": "P2",
+      "tested_head": "d6e18a83ba4a50428dde6536901f195697905cca",
+      "source_input_hash": "1226e5c11c5f41f766d62418b051942992b4f02bb425cab1ec60a45852aa39c2",
+      "change": "呈现 readState 与 available 独立；失败读显露原错误/重试，disabled query 不以 isPending 假定加载；显式 open 与 attention 分开，helper 保留目标存在且实际可见的后置条件。",
+      "validation": {
+        "build": "PASS",
+        "types": "PASS",
+        "artifact": "PASS",
+        "stylelint": 0,
+        "eslint": 0,
+        "entries": 17,
+        "tests": 49,
+        "pass": 49,
+        "fail": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "reports": [
+          {
+            "label": "remote-r2-ci-boundaries",
+            "entries": [
+              "tests/t09-selected-ui-boundaries.browser.test.mts",
+              "tests/t09-selected-ui-status-scope.browser.test.mts",
+              "tests/t08-selected-recovery.browser.test.mts",
+              "tests/t08-command-recovery.browser.test.mts",
+              "tests/t09-return-to-dispatch.browser.test.mts",
+              "tests/t08-unassign.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 10,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "ac8ae3a59f470d7e42622c328f953f76c18d3c86c41a008222d7d7b11c7cf84b",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r2-ci-boundaries"
+          },
+          {
+            "label": "remote-r2-permissions",
+            "entries": [
+              "tests/pc-admin-card13.browser.test.mts",
+              "tests/t12-production-form.browser.test.mts",
+              "tests/t07-atomic-start.browser.test.mts",
+              "tests/t07-draft-recovery.browser.test.mts",
+              "tests/t07-legacy-recovery.browser.test.mts",
+              "tests/t07-late-recovery.browser.test.mts",
+              "tests/t07-restoration-boundaries.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 23,
+              "pass": 23,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "ac8ae3a59f470d7e42622c328f953f76c18d3c86c41a008222d7d7b11c7cf84b",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r2-permissions"
+          },
+          {
+            "label": "remote-r2-regression",
+            "entries": [
+              "tests/t11-completion.browser.test.mts",
+              "tests/t37-shared-follow-up-drawer.browser.test.mts",
+              "tests/wbint-t14-review.browser.test.mts",
+              "tests/t12-targets-read-loss.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "ac8ae3a59f470d7e42622c328f953f76c18d3c86c41a008222d7d7b11c7cf84b",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r2-regression"
+          }
+        ]
+      },
+      "screenshots": [
+        {
+          "width": 1920,
+          "path": "docs/ui/evidence/v21-card13/r2-read-1920.png",
+          "sha256": "0b09b87ed966bec7d3a9ac6083297a231473fc015716bbe0de5c443a860cb0de"
+        },
+        {
+          "width": 1440,
+          "path": "docs/ui/evidence/v21-card13/r2-read-1440.png",
+          "sha256": "64373821d271cd1deb3bac9c574983fc18b60594eb13c62a9d12d2a753db40b3"
+        },
+        {
+          "width": 1280,
+          "path": "docs/ui/evidence/v21-card13/r2-read-1280.png",
+          "sha256": "e45b8f3afe3359f878d22f1bf7859f758310737278bc69fc363120755600c7a5"
+        },
+        {
+          "width": 900,
+          "path": "docs/ui/evidence/v21-card13/r2-read-900.png",
+          "sha256": "2358a36e065c65147bf24fa8a18977c5a9bdfb9a10b80b38ba2d508d33375f5d"
+        }
+      ],
+      "screenshot_posts": 0,
+      "ci_failure_preserved": {
+        "run": 41535839318,
+        "head": "300b3e059d1cc8b6498c472126aedd4c0147e1bb",
+        "entries_selected": 249,
+        "entries_executed": 21,
+        "tests": 99,
+        "pass": 98,
+        "fail": 1,
+        "entries_not_run": 228,
+        "failed_entry": "tests/t09-selected-ui-boundaries.browser.test.mts",
+        "artifact_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r1-artifacts"
+      },
+      "remote_status": "以 PR 当前 head 复审和 CI 的实际结果为准。"
     }
   ]
 }

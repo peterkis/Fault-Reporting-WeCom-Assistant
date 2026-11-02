@@ -127,6 +127,78 @@ docs/ui/evidence/v21-card13/r1-takeover-1280.png
 docs/ui/evidence/v21-card13/r1-takeover-1440.png
 docs/ui/evidence/v21-card13/r1-takeover-1920.png
 docs/ui/evidence/v21-card13/r1-takeover-900.png
+docs/ui/evidence/v21-card13/r2-read-1280.png
+docs/ui/evidence/v21-card13/r2-read-1440.png
+docs/ui/evidence/v21-card13/r2-read-1920.png
+docs/ui/evidence/v21-card13/r2-read-900.png
+docs/ui/evidence/v21-card13/verification.json
+plans/pc-admin-design-v21/card-13.md
+plans/typescript-migration/test-routing.json
+tests/conversation-inbox.browser.test.mts
+tests/helpers/heroui-workbench-controls.mts
+tests/helpers/t10-browser-fixture.mts
+tests/pc-admin-card13.browser.test.mts
+tests/t04-self-handling.browser.test.mjs
+tests/t05-conversation-handling.browser.test.mjs
+tests/t07-atomic-start.browser.test.mts
+tests/t08-command-recovery.browser.test.mts
+tests/t08-selected-recovery.browser.test.mts
+tests/t08-unassign.browser.test.mts
+tests/t09-return-to-dispatch.browser.test.mts
+tests/t09-selected-ui-boundaries.browser.test.mts
+tests/t09-selected-ui-status-scope.browser.test.mts
+tests/t11-completion.browser.test.mts
+tests/t12-production-form.browser.test.mts
+tests/t13-history-window.browser.test.mts
+tests/t13-production-history.browser.test.mts
+tests/t20-member-origin-hint.browser.test.mts
+tests/t20-staff-hint-first.browser.test.mts
+tests/t37-follow-up-post-refusal.browser.test.mts
+tests/t37-follow-up-recovery-boundaries.browser.test.mts
+tests/t37-follow-up-recovery-competition.browser.test.mts
+tests/t37-follow-up-recovery-first.browser.test.mts
+tests/t37-shared-follow-up-drawer.browser.test.mts
+tests/t37-shared-time-card-list.browser.test.mts
+tests/wbint-t14-review.browser.test.mts
+tests/wbint-t42-board-complete-reopen.browser.test.mts
+tests/workbench-detail-media.browser.test.mts
+tests/workbench-detail-restructure.browser.test.mts
+tests/workbench-media-employee-read.browser.test.mts
+```text
+app/pc-admin/src/app/DetailDialog.tsx
+app/pc-admin/src/app/DetailPresentation.tsx
+app/pc-admin/src/app/Workbench.tsx
+app/pc-admin/src/app/WorkbenchDetail.tsx
+app/pc-admin/src/app/WorkbenchItemPresentation.tsx
+app/pc-admin/src/design/components/Drawer/Drawer.tsx
+app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx
+app/pc-admin/src/design/components/Drawer/NextStep.tsx
+app/pc-admin/src/design/components/Drawer/drawer-v21.css
+app/pc-admin/src/features/attachments/AttachmentSection.tsx
+app/pc-admin/src/features/attachments/ReportMaterialsSection.tsx
+app/pc-admin/src/features/conversations/Conversations.tsx
+app/pc-admin/src/features/follow-up/SharedFollowUp.tsx
+app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx
+app/pc-admin/src/features/source-groups/GroupNameEditor.tsx
+app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx
+app/pc-admin/src/features/ticket-completion/TicketCompletion.tsx
+app/pc-admin/src/features/ticket-handling/TicketConversationHandling.tsx
+app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx
+app/pc-admin/src/features/ticket-notes/TicketNotes.tsx
+app/pc-admin/src/features/ticket-reopen/TicketReopen.tsx
+app/pc-admin/src/features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx
+app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx
+app/pc-admin/src/features/ticket-takeover/TicketTakeover.tsx
+app/pc-admin/src/features/ticket-unassign/TicketUnassign.tsx
+app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx
+docs/ui/evidence/v21-card13/compare-1280.png
+docs/ui/evidence/v21-card13/compare-1440.png
+docs/ui/evidence/v21-card13/compare-1920.png
+docs/ui/evidence/v21-card13/compare-900.png
+docs/ui/evidence/v21-card13/r1-takeover-1280.png
+docs/ui/evidence/v21-card13/r1-takeover-1440.png
+docs/ui/evidence/v21-card13/r1-takeover-1920.png
+docs/ui/evidence/v21-card13/r1-takeover-900.png
 docs/ui/evidence/v21-card13/verification.json
 plans/pc-admin-design-v21/card-13.md
 plans/typescript-migration/test-routing.json
@@ -244,3 +316,27 @@ tests/workbench-media-employee-read.browser.test.mts
 | 900 | [R1 对照](../../docs/ui/evidence/v21-card13/r1-takeover-900.png) |
 
 后继提交只补充本记录与证据；远端线程、复审、普通 PR CI 及最终合并结果以 PR 当前对象为准，不作为现场或 Gate 批准。
+
+
+## PR #135 远端审查 R2 与 CI 边界
+
+发布 head `300b3e059d1cc8b6498c472126aedd4c0147e1bb` 收到第二条 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135#discussion_r4448510261)：未触碰的接管完工初次 targets 读取失败时，原错误和刷新被折叠层隐藏且没有入口。独立复查也覆盖了标准完工、重开、撤销派工及退回的同类错误可达性。
+
+本轮最终被测提交 `d6e18a83ba4a50428dde6536901f195697905cca`：
+
+- `StepWorkflow.readState` 仅表示原查询的呈现状态，与 available/permitted/canSubmit 分离；unknown 显露现存错误区域，不生成获权动作。isLoading 避免 disabled query 假 pending。Provider 按 useId/layout effect 汇总、更新、卸载清理。
+- 原读取/刷新控件保留；Takeover 在原错误段旁复用已有 `refresh()` 增加只读重试，未新增 API 或写命令。标准完工初次失败也可查看原错误及 refresh-completion。
+- CI 同时在退回成功场景发现 helper 把暂时 attention 可见误作明确打开。新增 data-step-open/read-state 区分，只通过实际入口锁定 open；缺目标继续等，无入口的只读恢复须在该流程自身状态稳定且实际可见时才返回。原可达性、输入、版本、UUID、次数、回执断言均保留。
+- 17 个注册入口 49/49 PASS，0 FAIL/cancel/SKIP/todo/NOT_RUN；包含 CI 失败入口、退回/撤销双 Session 与失权/原 UUID、普通完工、接管与接管完工、共享跟进/复核等。新增初次 context/targets 掉响应→原重试恢复的用例均断言 UI POST=0。build、strict/negative types、artifact、两项 lint PASS。原件 `remote-r2-*`，详细路径/计数见验证索引；此前 37/37 与 R1 20/20 不重绑本轮。
+- 原 CI [41535839318](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41535839318) 失败保留：249 项选择中执行21项，99用例为98 PASS/1 FAIL，228入口 NOT_RUN；失败为 `t09-selected-ui-boundaries.browser.test.mts` 的 STEP_ENTRY_REQUIRED。完整原件在 `ci-r1-artifacts/`，不把已执行 PASS 当全批通过。
+
+下列截图来自本轮正式 bundle / HTTP / PG 合成 fixture：首次权限读取失败时错误与原重试可见，原只读重试恢复后界面重新显示允许入口；过程 POST=0。未修改 backend/contracts/API/SQL/默认 Flag/依赖。
+
+| 宽度 | 失败可见 / 原只读重试恢复 |
+| --- | --- |
+| 1920 | [R2 对照](../../docs/ui/evidence/v21-card13/r2-read-1920.png) |
+| 1440 | [R2 对照](../../docs/ui/evidence/v21-card13/r2-read-1440.png) |
+| 1280 | [R2 对照](../../docs/ui/evidence/v21-card13/r2-read-1280.png) |
+| 900 | [R2 对照](../../docs/ui/evidence/v21-card13/r2-read-900.png) |
+
+源码两轴复查未发现本轮新增确证业务 P1/P2；远端线程、下一轮复审、普通 CI 与合并仍以 PR 当前权威 head 为准。full/certify、现场及 Gate 不因这些结果推进。
