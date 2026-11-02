@@ -58,3 +58,62 @@ T32 闭合 DTO 见 `contracts/workbench_notification_exception_contracts.d.ts`�
 发现并集中修正：关闭核对区后焦点落 BODY，改为返回原入口按钮；筛选可见「投递路由 / 全部路由 / 未知待核对」改为「渠道 / 全部渠道 / 结果待核对」。原 aria-label 和 API 参数不改。后继候选的检查待实际执行，旧结果仍绑定上述提交。
 
 焦点修正首次类型检查 FAIL（`frontend-types-final.log`、`final-build-2.log`）：HeroUI 事件的 currentTarget 是 FocusableElement，不能赋给 HTMLButtonElement。按实际只消费的 `focus` 能力收窄 ref 类型，不增加断言或逃逸；原失败保留，随后重新类型检查和构建。
+
+
+## 最终本地交付（2026-11-02）
+
+最终功能候选：`21183c1428e2489e6cf3cdab682168f6512bf6e3`。后续截图/记录提交不改本候选代码，保留其真实祖先身份；PR head 的远端普通检查和审查另行记录于 PR。
+
+| 验证 | 实际结果与证据根内文件 |
+| --- | --- |
+| Stylelint / ESLint | 0 / 0，`lint-css-final.log`、`lint-features-final.log`；最终 strict gate 同时复核规则 |
+| 前端严格类型 | PASS，`frontend-types-final-2.log` |
+| `npm run migration:build` | PASS，`final-build-3.log`，913 编译模块 / 2747 输出 |
+| `node .build/tools/gate.mjs types` | PASS，`types-gate-final.log`，CSS、Token、功能规则、strict、负向类型均 PASS |
+| T32 首轮完整相关子集 | 8 个注册入口，12/12 PASS，绑定 `8aa0beee`，详见上节 |
+| 最终受影响子集 | 3 个既有 T32 browser 入口，3/3 PASS，`t32-browser-final/summary.json`；分页、精确 GET、失权、迟到响应、尾斜杠与零 POST/原 Sender 次数保留 |
+| 制品 | PASS，`artifact-final.log`；manifest SHA-256 `b387f89681289c0d79b965db52930bf054a387d0ca0c3a66f6acd1059f8ccc02`，STAGED_NOT_ACTIVATED |
+| 指令文档及工具 | PASS；`docs-check.log`，19/19 原工具测试 `docs-test.log` |
+| 真实 UI | `ui-final.json`：四宽度无页面溢出、每页恰好 1 个 primary、空页无分页、成功图标 64px；键盘关闭回到 `review-exceptions`，focus-visible=true；控制台 error=[] |
+
+### 文件清单
+
+- `app/pc-admin/src/features/notification-exceptions/NotificationExceptions.tsx`：布局、文案、逐条只读核对、焦点。
+- 同目录 `notification-exceptions.css`：本页布局，颜色/字号/字重/圆角均使用既有 Token。
+- `app/pc-admin/src/design/components/EmptyState/{EmptyState.tsx,empty-state.css}`：opt-in success 视觉，默认状态沿原样。
+- `tests/wbint-t32-exception-authorization.browser.test.mts`：仅同步空页文字期望。
+- 本记录与 `docs/ui/evidence/v21-card15/` 的 9 张合成截图。
+
+### 四宽度前后 / 原型并排
+
+左 Before、中 After、右原型固定尺寸参考；各面板等比缩放，原型不假装响应式。数据均为合成 fixture，失败与未知结果独立。空页前后均为工单筛选，未筛选的标题另见 [通知都已送达](../../docs/ui/evidence/v21-card15/delivered-900.png)。
+
+| 宽度 | 有数据 / 原型 04 | 空页 / 原型 04b |
+| --- | --- | --- |
+| 1920 | [对照](../../docs/ui/evidence/v21-card15/compare-data-1920.jpg) | [对照](../../docs/ui/evidence/v21-card15/compare-empty-1920.jpg) |
+| 1440 | [对照](../../docs/ui/evidence/v21-card15/compare-data-1440.jpg) | [对照](../../docs/ui/evidence/v21-card15/compare-empty-1440.jpg) |
+| 1280 | [对照](../../docs/ui/evidence/v21-card15/compare-data-1280.jpg) | [对照](../../docs/ui/evidence/v21-card15/compare-empty-1280.jpg) |
+| 900 | [对照](../../docs/ui/evidence/v21-card15/compare-data-900.jpg) | [对照](../../docs/ui/evidence/v21-card15/compare-empty-900.jpg) |
+
+### 规范偏差、后续项与限制
+
+- 经本轮用户确认的过渡：工单编号/标题、接收人姓名等待后续只读投影；当前显示关联来源 + 安全摘要、群聊/个人类型。没有解析摘要或逐行读取父对象来补造字段。
+- 无轻量计数接口，侧栏不显示数字。概括仅为本页，确定失败/未知分开；不是全域异常总数。
+- 原型唯一动作按任务改为 primary；筛选空页使用范围化标题，避免局部空页宣称全域送达。首屏彩色面积估算仅卡 10/12 要求，本卡不适用。
+- 后续卡 16 仍要求卡 12 合并；本卡完成不启动它，也不补做其他卡。上述字段与计数是独立后续工作，不是扩大本卡后端范围。
+- full / current certify / 历史 certify、Electron 原生集成、真实发送/企业微信客户端、部署和 Gate 均 NOT_RUN。本卡没有改 Electron、业务或认证；原生集成不作为本 UI 卡的完成替代。
+
+### 自检（是 / 否与证据）
+
+| 项目 | 回答与证据 |
+| --- | --- |
+| 前端未改业务命令、状态值、权限判断 | 是：query/reload/clear/authority/allowed_actions 原判断保持；无 server/contracts/API diff；T32 12/12 与最终 browser 3/3 |
+| 选择器只增不删，测试只改文案期望 | 是：原 class、data-action、data-exception-* 与 aria-label 保留；测试 diff 仅一个等待文字，所有业务断言原样 |
+| 新增颜色经 Token，lint=0 | 是：Stylelint/ESLint 0，strict gate 变量未定义/原始色泄漏均 0 |
+| 彩色对应阶段/紧急/类别/人 | 是：失败 danger、未知 warning 属紧急；绿色成功空态属完成阶段；蓝色主动作/链接/选中沿既有交互规范 |
+| 卡片无「未提供 / 未登记」 | 是：本页无此类占位文案，源摘要原样按合同展示 |
+| 有权限时区域恰好一个 primary | 是：有数据「逐条核对」、空页「刷新」；四宽度实算 1；行操作与核对区导航为 secondary/ghost |
+| 热度使用统一常量，无硬编码阈值 | 是：本卡不计算热度，没有新增阈值，heat.ts 未改 |
+| 四宽度与原型并排核对 | 是：上表 8 张对照与 `ui-final.json`，无页面横向溢出 |
+
+本地自有合成库已由 fixture 收回，PG 非模板库仅剩 postgres 后停止；预览 HTTP、浏览器标签均关闭，viewport 已恢复。失败原件和 NOT_RUN 保留。PR、审查、合并与最终分支/worktree 清理状态以本次 GitHub 实际记录和证据根 cleanup 回执为准。
