@@ -7,9 +7,9 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor'>,selector:string){
   // Latch the real disclosure; attention can legitimately end while a query settles.
   await browser.waitFor(`(()=>{
-    const node=document.querySelector(${JSON.stringify(selector)}),state=document.querySelector('.ds-next-step')?.getAttribute('data-read-state');
-    if(!node)return state==='ready'||state==='unknown';
-    const workflow=node.closest('.ds-step-workflow');if(!workflow)return true;
+    const node=document.querySelector(${JSON.stringify(selector)});
+    if(!node)return false;
+    const workflow=node.closest('.ds-step-workflow');if(!workflow)return node.checkVisibility();
     const trigger=[...document.querySelectorAll('[aria-controls]')].find(control=>control.getAttribute('aria-controls')===workflow.id);
     if(trigger){
       if(trigger.getAttribute('data-step-open')!=='true'){
@@ -18,7 +18,8 @@ export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor
       }
       return node.checkVisibility();
     }
-    return state==='ready'||state==='unknown';
+    const state=workflow.getAttribute('data-step-read-state');
+    return node.checkVisibility()&&(state==='ready'||state==='unknown');
   })()`);
 }
 
