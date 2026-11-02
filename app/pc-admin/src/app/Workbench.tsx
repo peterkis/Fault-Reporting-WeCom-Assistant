@@ -148,8 +148,8 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
   const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
   const incomplete=4-fields.length-(sourceLabel?1:0)>=2,tags=[...cardTags(item),...(incomplete?[{key:'incomplete',label:'资料不全',tone:'neutral' as const}]:[])];
-  const start=item.column==='pending'?item.created_at:item.stage_entered_at??item.created_at;
-  const heat=item.column==='closed'?null:heatOf(start.replace(' ','T')+'+08:00',now);
+  const start=item.column==='pending'?item.created_at:item.stage_entered_at;
+  const heat=item.column==='closed'?null:heatOf(start?start.replace(' ','T')+'+08:00':null,now);
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
   return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-ring={ring} data-reminder-located={located?'true':undefined}>
     <BoardActionCard item={item}><Link draggable={false} className="card-open" to={itemLink(item,search)} state={{fromBoard:true}}>
@@ -340,7 +340,8 @@ function BoardSection({principal,query,column,label,search,selected,now,loaded,e
   </BoardColumnView></BoardDropColumn>;
 }
 function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeView}){
-  const [navigationBlocked,setNavigationBlocked]=useState(false);
+  const [detailNavigationBlocked,setNavigationBlocked]=useState(false),[claimNavigationBlocked,setClaimNavigationBlocked]=useState(false);
+  const navigationBlocked=detailNavigationBlocked||claimNavigationBlocked;
   const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',closed:'oldest'});
   const [summarySelection,setSummarySelection]=useState<{scope:string;filter:BoardSummaryFilter|null}>({scope:'',filter:null});
   const [boardFilters,setBoardFilters]=useState({scope:'',category:'all',handler:'all'});
@@ -422,7 +423,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
   useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching,principal.principal_id+':'+principal.authorization_revision);
-  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
+  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked}/>
     <Toolbar><SegmentedControl className="scope-tabs" aria-label="工作范围">{principal.workbench_follow_enabled?<><HButton type="button" className={scope==='team'?'selected':''} aria-pressed={scope==='team'} isDisabled={navigationBlocked} onClick={()=>update('scope','team')} tone="ghost">团队工作</HButton><HButton type="button" data-action="related-scope" className={scope==='related'?'selected':''} aria-pressed={scope==='related'} isDisabled={navigationBlocked} onClick={()=>update('scope','related')} tone="ghost">与我有关</HButton></>:<span className="selected">团队工作</span>}</SegmentedControl>
       <ToolbarFilters disabled={navigationBlocked}>

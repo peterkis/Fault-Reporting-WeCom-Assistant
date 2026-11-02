@@ -12,7 +12,7 @@
 - Node 24.18.0；自有 loopback PG18：55472，fixture 每次新建 UUID 合成数据库；不连接真实 Sender。证据根 `D:/CodexEvidence/pc-admin-v21-card12-20261102`。
 - 原始基线构建 PASS：913 个语法校验、2747 输出。基线四宽 1920/1440/1280/900 截图 PASS，页面无溢出，POST=0；基线采图浏览器与 fixture 数据库已清理。
 - 最终源码冻结后：Stylelint/ESLint → migration:build → strict types → 相关活动 v3-p09 注册入口与工具 → artifact → 自有资源释放。四宽真实 bundle/HTTP/PG 合成截图与原型并排，记录彩色面积口径。
-- 正式语义底色候选本地验证：10 个注册入口 65/65 PASS，四宽采图 PASS；整屏面积 8.36% / 9.25% / 9.12% / 11.67%，全部进入 8–12%。远端发布、审查与 CI 在 PR 中独立记录。full/certify、Electron、现场、部署与 Gate 为 NOT_RUN，不以本地或 CI 结果替代。下文逐候选失败保持原身份。
+- R1 正式候选本地验证：11 个注册入口 68/68 PASS，四宽采图 PASS；整屏面积 8.36% / 9.25% / 9.12% / 11.67%，全部进入 8–12%。远端发布、审查与 CI 在 PR 中独立记录。full/certify、Electron、现场、部署与 Gate 为 NOT_RUN，不以本地或 CI 结果替代。下文逐候选失败保持原身份。
 
 ## 2026-11-02 动效范围更正
 
@@ -46,6 +46,16 @@
 
 同一真实 fixture 的临时 CSS 覆盖预览（明确非最终制品）四宽估算为 8.36% / 9.25% / 9.12% / 11.67%；页面无横向溢出、primary=1、POST=0、资源回收。原件 `screenshots-color-preview/`、`color-estimate-preview.json`；原基础候选记录为 `color-estimate-initial.json` / `comparisons-initial/`。后续重新构建正式制品并重验，不把预览当作正式通过证据。
 
+## PR #134 首轮审查与 R1
+
+发布 head `28477d460261e1e144224a90587f7bd224afb43e` 已推送并请求 Codex 审查。首轮返回 P1（入口关闭/同账号授权版本更新卸载 UNKNOWN 控制器）与 P2（处理中缺少状态时间时错误回退创建时间）。原正式制品上独立诊断三项均 RED：关闭 board capability、实际新增同账号角色导致真实 authorization_revision 更新时，原控制器均被卸载；缺席状态时间的旧工单显示虚假 danger 热度。原件 `review-red-probe-2.log`；首探针因返回 DOM 对象触发序列化错误的日志另保留，不作为产品 RED。
+
+R1 将入口可见性与原操作生命周期分开：原控制器按 principal_id + Ticket 身份保持稳定，固定原控制器种类；当前入口能力或授权版本变化只撤下新入口。主体变化仍卸载，可信 READ/权限拒绝继续沿原清理与原终检。入口关闭后保留导航栅栏，详情/领取阻塞分别持有并合并，不覆盖彼此。P2 按 §3.2 澄清，处理中缺少 stage_entered_at 时不显示热度，催单/复核等真实语义描边保留。原 command/send/submit/API 序列化及业务状态机不改。新增三项注册浏览器回归，待本候选实际重验后记录 GREEN。
+
+R1 首构建 / strict / artifact / lint PASS。新增入口 2 PASS / 1 FAIL，关闭入口及缺失状态时间场景 GREEN；授权版本变化场景的原控制器、核对入口与无自动重放断言均通过，后续导航测试读取授权重读期间的空 DOM 报错。后继仅等待新的获权卡片真实可见后继续原导航/UUID/版本断言，不改生产代码或业务期望。原日志 `registered-r1/` 保留；后续十个入口按该批次停止状态为 NOT_RUN。
+
+首轮证据保护 CI [41434073536](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41434073536) 的发布身份预检 PASS，差异检查因 main `cdf4803a…` 不是当前 head 祖先而 FAIL；未修改保护检查。该同步动作按用户明确要求等待“同步 main”命令。首轮业务 CI 与各后继发布 head 独立核验，原 FAIL/CANCEL/NOT_RUN 保留。
+
 ## main 同步触发条件
 
 2026-11-02 用户重申：完整同步流程等待其明确的「同步 main」命令；不因其它 PR 合并自行启动。收到命令后先保全当前改动（本分支提交或 stash），再 `git fetch origin`、`git rebase origin/main`。本卡文件冲突保留本卡改动及 main 新内容；其它卡文件以 origin/main 为准，所需例外写入 PR；前置组件/Token 改名后沿用新名称。
@@ -71,20 +81,20 @@
 | `app/pc-admin/src/features/board-filters/client.ts` | 只读目录白名单与预算解码 |
 | `app/pc-admin/src/features/board-actions/BoardActions.tsx`、`board-actions.css` | 获权悬停/E 入口、原表单、原手柄/更多操作 |
 | `app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx` | 原提交/核对控制器的可选 portal 展示 |
-| `tests/pc-admin-card12.browser.test.mts` | 六项正式 HTTP/PG/制品浏览器回归 |
+| `tests/pc-admin-card12.browser.test.mts`、`pc-admin-card12-review.browser.test.mts` | 六项基础及三项审查修补正式 HTTP/PG/制品浏览器回归 |
 | `tests/web01-closed-range.browser.test.mts` | 旧排序交互前提及卡 8 tooltip 文案位置适配，原业务断言保留 |
 | `plans/typescript-migration/test-routing.json` | 新入口登记；补日期回归进入活动 selection |
 | `docs/ui/design-system-v2.1.md` | 用户要求的动效范围更正 |
-| `docs/ui/evidence/v21-card12/compare-{1920,1440,1280,900}.jpg`、`hover-*.jpg` | 四宽前后/原型及获权悬停截图 |
+| `docs/ui/evidence/v21-card12/r1/compare-{1920,1440,1280,900}.jpg`、`hover-*.jpg` | 四宽前后/原型及获权悬停截图 |
 | 本文件 | 独立范围、验证、偏差、失败与收口记录 |
 
 ### 验证与来源
 
-- 本地正式语义底色冻结输入：`c3e7f330a8203f7199e2dc1e03d7043d902b59192b26c471380f8063223d15f4`，基于 bf5073db 上的未提交工作区；后续仅追加本记录和截图，不把本地运行重绑为将来发布 SHA。
+- 本地 R1 冻结输入：`438b02a9092bf7c923c364d9ad5307c27a8f7ce92cae77a1f322a440f29c54bb`，基于发布祖先 28477d46 上的未提交修补工作区；后续仅追加本记录和截图，不把本地运行重绑为将来发布 SHA。
 - `npm --prefix app/pc-admin run lint:css` / `lint:features`：0 / 0；Token gate：0 未定义变量。设计机械检查为空数组。
-- `npm run migration:build`：914 个实际 Node 语法检查 / 2749 输出，STAGED_NOT_ACTIVATED。`node .build/tools/gate.mjs types`：strict / negative types PASS。
-- `node .build/tools/verify-artifact.mjs`：ARTIFACT_VERIFIED_NOT_ACTIVATED；manifest SHA-256 `1956036d184f5c9a06d0170d451603ee3fd134111df7c580f846e3da055bfc70`。
-- 活动 v3-p09 的 10 个相关注册入口，同一 manifest：日期 2/2、既有工作台/合同/合法动作等 8 文件 57/57、卡 12 新入口 6/6，合计 **65/65 PASS，0 FAIL / CANCELLED / SKIP / TODO / NOT_RUN**。不是活动全集或 full/certify。正式底色原件：`registered-color-final/`、`local-color-final-audit.json`；基础候选的三份原报告另保留，不混用 manifest。
+- `npm run migration:build`：915 个实际 Node 语法检查 / 2751 输出，STAGED_NOT_ACTIVATED。`node .build/tools/gate.mjs types`：strict / negative types PASS。
+- `node .build/tools/verify-artifact.mjs`：ARTIFACT_VERIFIED_NOT_ACTIVATED；manifest SHA-256 `1f7dbc8182b8993f10cbf624eeffa122041ac77fe7ede47d6cc010f452aa4e5f`。
+- 活动 v3-p09 的 11 个相关注册入口，同一 manifest：日期 2/2、既有工作台/合同/合法动作等 8 文件 57/57、卡 12 入口 6/6、审查新增 3/3，合计 **68/68 PASS，0 FAIL / CANCELLED / SKIP / TODO / NOT_RUN**。不是活动全集或 full/certify。R1 原件：`registered-r1b/`、`local-build-manifest-r1b.json`、`local-artifact-proof-r1b.json`；此前各候选原报告另保留，不混用 manifest。
 - `docs:agents:check` PASS，指令工具 19/19 PASS；历史工具 22/22 PASS。原业务 API 对象（含请求序列化）、TicketSelfHandling mutation/send/submit、BoardActions 终检主体与基线逐字哈希相同；无 server / contracts / config_examples / package / lock 改动，见 `unchanged-commands.json`。
 - 原始 manifest、artifact proof、所有 FAIL / NOT_RUN、日志和 PNG 在本任务证据根保留。PR 完整发布 head 的审查与 CI 必须独立记录。
 
@@ -94,12 +104,12 @@
 
 | 宽度 | 前后与原型 | 悬停入口 | Before 彩色面积估算 | After |
 | --- | --- | --- | ---: | ---: |
-| 1920 | [对照](../../docs/ui/evidence/v21-card12/compare-1920.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/hover-1920.jpg) | 4.00% | 8.36% |
-| 1440 | [对照](../../docs/ui/evidence/v21-card12/compare-1440.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/hover-1440.jpg) | 4.45% | 9.25% |
-| 1280 | [对照](../../docs/ui/evidence/v21-card12/compare-1280.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/hover-1280.jpg) | 4.42% | 9.12% |
-| 900 | [对照](../../docs/ui/evidence/v21-card12/compare-900.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/hover-900.jpg) | 5.46% | 11.67% |
+| 1920 | [对照](../../docs/ui/evidence/v21-card12/r1/compare-1920.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/r1/hover-1920.jpg) | 4.00% | 8.36% |
+| 1440 | [对照](../../docs/ui/evidence/v21-card12/r1/compare-1440.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/r1/hover-1440.jpg) | 4.45% | 9.25% |
+| 1280 | [对照](../../docs/ui/evidence/v21-card12/r1/compare-1280.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/r1/hover-1280.jpg) | 4.42% | 9.12% |
+| 900 | [对照](../../docs/ui/evidence/v21-card12/r1/compare-900.jpg) | [领取 E](../../docs/ui/evidence/v21-card12/r1/hover-900.jpg) | 5.46% | 11.67% |
 
-方法：原始 1080px 高 PNG 中与阶段、紧急描边、有彩类别、非中性 tone、品牌 Token RGB 各通道相差最多 1 的像素占整幅视口比例；不计未分类/中性类别底。包含留白，属于可复算的近似值，不是感知色彩验收。正式原件 `color-estimate-final.json` / `screenshots-manifest-final.json`；原始不足目标的版本另保留。四宽新增浅底文字对比度均 ≥5.29:1，实际选中背景/品牌描边与 Token 一致，点击筛选再取消恢复原九张卡，POST=0。
+方法：原始 1080px 高 PNG 中与阶段、紧急描边、有彩类别、非中性 tone、品牌 Token RGB 各通道相差最多 1 的像素占整幅视口比例；不计未分类/中性类别底。包含留白，属于可复算的近似值，不是感知色彩验收。R1 正式原件 `color-estimate-r1.json` / `screenshots-manifest-r1.json`；原始不足目标的版本另保留。四宽新增浅底文字对比度均 ≥5.29:1，实际选中背景/品牌描边与 Token 一致，点击筛选再取消恢复原九张卡，POST=0。
 
 ### 规范偏差与后续
 
@@ -122,3 +132,8 @@
 | 四宽与原型并排核对 | 是；四份对照、四份悬停、原始 PNG 与哈希 manifest；正式面积均为 8–12% |
 
 自有合成数据库已全部清理，PG18 已停止（status=3，55472 监听=0），浏览器/HTTP/命令计时器/套接字均回收。停止的可再生环境与 worktree 暂保留；报告、失败、NOT_RUN、原图与用户原型保留。分支/工作树/main 同步遵循上文用户命令触发条件。
+
+
+R1b 正式重验完成：新增三项 3/3 GREEN，11 注册入口合计 68/68 PASS（FAIL/CANCEL/SKIP/TODO/NOT_RUN=0），strict/negative types、artifact、Stylelint/ESLint 0/0、文档与19项工具 PASS。R1与R1b的1255个非测试输出逐字一致，仅补正确的获权DOM就绪等待。R1四宽面积仍为8.36% / 9.25% / 9.12% / 11.67%，对比度/选中态/0 POST及资源回收通过；新图片放r1子目录，原图片保留。发布后复审与CI独立核验。
+
+原发布祖先28477d46的业务CI [41434073553](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41434073553)成功：247入口/803 tests全PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN；下载归档SHA-256及CRC通过，741份回执与149张截图哈希/尺寸、当前runtime加载记录47447项哈希、manifest/proof/源码head均核验，剩余合成库为空。其它加载记录仅归档，不将其称为当前runtime哈希核验。此结论只属于原祖先，不替代R1的独立CI或消除待同步的证据保护失败。

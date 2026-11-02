@@ -17,15 +17,17 @@ import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './i
 import './board-actions.css';
 
 type Entry={intent:WorkbenchBoardActionIntent;selector:string};
-type Claim={item:Pick<WorkbenchCard,'kind'|'id'|'column'>;target:HTMLElement|null};
-const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
+type Claim={principalId:string;mode:'self'|'form';item:Pick<WorkbenchCard,'kind'|'id'|'column'>;target:HTMLElement|null};
+const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;navigationBlocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,navigationBlocked:false,open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
 export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlocked,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;onClaimBlocked:(blocked:boolean)=>void;children:ReactNode}){
   const client=useQueryClient(),enabled=principal.board_actions_enabled===true,request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
   const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
   const [claim,setClaim]=useState<Claim|null>(null),[claimBlocked,setClaimBlocked]=useState(false);
   const claimScope=principal.principal_id+':'+principal.authorization_revision;
   const [preparedScope,setPreparedScope]=useState(claimScope);
-  const activeClaim=preparedScope===claimScope&&enabled?claim:null;
+  // Entry capabilities may close or refresh. They never own an unresolved command.
+  const activeClaim=claim?.principalId===principal.principal_id?claim:null;
+  const claimEntryEnabled=enabled&&preparedScope===claimScope&&(activeClaim?.mode!=='self'||principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled);
   const changeClaimBlocked=useCallback((value:boolean)=>{setClaimBlocked(value);onClaimBlocked(value);},[onClaimBlocked]);
   const releaseClaim=useCallback((target:HTMLElement)=>{setClaim(current=>current?.target===target?{...current,target:null}:current);},[]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
@@ -81,9 +83,10 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
   const disabled=blocked||claimBlocked||checking||!enabled;
   // Keep original business controllers at the same React tree position. Only
   // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
-  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,open:intent=>{void open(intent);},releaseClaim,prepareClaim:(item,target)=>{
+  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,navigationBlocked:blocked||claimBlocked||checking,open:intent=>{void open(intent);},releaseClaim,prepareClaim:(item,target)=>{
     if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
-    setPreparedScope(claimScope);setClaim(current=>current?.item.id===item.id&&current.target===target?current:{item:{kind:item.kind,id:item.id,column:item.column},target});
+    const mode=principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?'form':'self';
+    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item:{kind:item.kind,id:item.id,column:item.column},target});
   }}}>
     <DragDropProvider {...(!enabled?{sensors:[],plugins:[],modifiers:[]}:{})}
       onDragStart={({operation})=>{
@@ -98,7 +101,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
         if(!original||!boardColumns.some(column=>column===target)){setMessage('请使用合法业务列；当前位置未作本地变更。');return;}
         const intent=readBoardIntent({kind:original.kind,id:original.id,source_column:original.column,target_column:target});if(intent)void open(intent);
       }}>{children}</DragDropProvider>
-    {activeClaim?<div className="board-claim-controller" key={claimScope+':'+activeClaim.item.id}>{principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?<BoardClaimForm principal={principal} claim={activeClaim} blocked={disabled} open={intent=>{void open(intent);}}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling ticketId={activeClaim.item.id} principal={principal} boardMode otherBlocked={checking} onBlockedChange={changeClaimBlocked} cardActionTarget={activeClaim.target}/>:null}</div>:null}
+    {activeClaim?<div className="board-claim-controller" key={activeClaim.principalId+':'+activeClaim.item.id}>{activeClaim.mode==='form'?<BoardClaimForm principal={principal} claim={{...activeClaim,target:claimEntryEnabled?activeClaim.target:null}} blocked={disabled} open={intent=>{void open(intent);}}/>:<TicketSelfHandling ticketId={activeClaim.item.id} principal={principal} boardMode otherBlocked={checking} onBlockedChange={changeClaimBlocked} cardActionTarget={claimEntryEnabled?activeClaim.target:null}/>}</div>:null}
     {enabled&&message?<ToastFeedback revision={messageRevision} source="board-actions" state={checking?'checking':undefined} className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</ToastFeedback>:null}
   </BoardActionsContext.Provider>;
 }
@@ -109,7 +112,7 @@ function BoardClaimForm({principal,claim,blocked,open}:{principal:Principal;clai
 }
 export function BoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext);
-  return context.enabled?<EnabledBoardActionCard item={item}>{children}</EnabledBoardActionCard>:<>{children}</>;
+  return context.enabled?<EnabledBoardActionCard item={item}>{children}</EnabledBoardActionCard>:context.navigationBlocked?<div className="board-action-passive" onClickCapture={event=>{if(event.target instanceof Element&&event.target.closest('.card-open')){event.preventDefault();event.stopPropagation();}}}>{children}</div>:<>{children}</>;
 }
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null);
