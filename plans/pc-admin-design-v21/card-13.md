@@ -24,4 +24,135 @@
 
 ## 自检与收口
 
-实施中；最终逐条证据、文件清单、四宽截图、偏差、相关卡前置、PR 审查/CI/合并与资源清理在本卡补齐。GitHub 未检索到独立的 v2.1 卡 13 Issue，执行状态沿本卡与本次 PR，不修改已关闭的旧 WBINT 票。
+本地实现和相关验证已完成；远端发布、审查、CI 与合并以本分支在 GitHub 的实际 PR 为准，不将本地结果写成现场批准。GitHub 未检索到独立的 v2.1 卡 13 Issue，执行状态沿本卡与本次 PR，不修改已关闭的旧 WBINT 票。
+
+
+## 最终本地交付（2026-11-03）
+
+源码被测提交：`9cc1137f6cd1c30003ac22ac1cf9ea9140d84068`，输入指纹 `a3ff73b7aeb13ce7287a9ad4a7561fdc08a1cd053bf7120e590bd3b9f54232a0`。后继交付提交只增加本记录及合成截图/索引。原验证工作树继续冻结，文档/图片在 `D:/worktrees/pc-admin-v21-card13-delivery` 整理；两处 `.build` 没有共享或改写。
+
+| 检查 | 实际结果与原件 |
+| --- | --- |
+| `npm.cmd --prefix app/pc-admin run lint:css` | PASS，Stylelint 0；`lint-css-13.log` |
+| `npm.cmd --prefix app/pc-admin run lint:features` | PASS，ESLint 0；`lint-features-13.log` |
+| `npm.cmd run migration:build` | PASS，916 个 Node 语法检查，2753 输出；`build-13.log` |
+| `node .build/tools/gate.mjs types` | PASS，strict/negative types；`types-13.log` |
+| 14 个相关已注册入口 | 37/37 PASS，0 FAIL/cancel/SKIP/todo/NOT_RUN；三份 `final-*/summary.json` |
+| 指令工具与链接 | `check-agent-docs.test.mjs` 19/19、`docs:agents:check` PASS；`docs-tools-final.log` / `docs-check-final.log` |
+| `node .build/tools/verify-artifact.mjs` | PASS，STAGED_NOT_ACTIVATED；`artifact-verified-13.log`，不表示部署 |
+| Impeccable 机械检查 | 一次 scoped detect 返回 `[]`，不代替实际截图/交互检查；`impeccable-detect.json` |
+| 独立两轴源码审查 | Standards / Spec 在最终源码增量均无未解决 P1/P2；原发现与修补如下 |
+
+相关入口覆盖就地表单、四宽尺寸、延迟权限、同主体能力关闭计数、缓存只读复核重开、非 Ticket 电话、备注 Ctrl+Enter 丢失成功响应后原 UUID 核对；同时覆盖原完工/等待/恢复/重开、共享跟进、撤销派工、退回待安排、责任历史、会话个人游标、媒体原件/头像与既有完整详情。精确路径与计数见 [验证索引](../../docs/ui/evidence/v21-card13/verification.json)。这是注册子集，不是活动全集或 full/certify。
+
+FFmpeg/FFprobe 环境未配置，本地依赖这两项的 employee-media 注册入口为 NOT_RUN；普通 PR CI 的独立执行结果另记，不以其他媒体 PASS 补它。Electron 原生、现场、真实发送、部署与 Gate 仍为 NOT_RUN。附加 `hosts.test/batches.test` 是额外历史 CLI 全回归，在原冻结候选继续独立执行；未完成时不计 PASS，也不混入本卡 37/37。
+
+## 四宽与原型并排
+
+截图来自真实正式 bundle / HTTP / 新建 UUID 合成 PG 库；使用相同夹具及显式打印服务代码，created_at 特意设为 95 分钟前展示热度。原型是结构参考，状态和人员示意不改写实际 DTO。截图原件在证据根，仓库交付并排图；哈希见验证索引。最终图绑定 `5a3caa39`，最终源码重验四宽几何；后继保留 hidden hook 与来源 title 不改变可见场景。
+
+| 宽度 | 并排图 | 抽屉 / 外距 | 缺失资料行 | 横向溢出 / primary / 采图 POST |
+| --- | --- | --- | --- | --- |
+| 1920 | [前 / 后 / 原型 02](../../docs/ui/evidence/v21-card13/compare-1920.png) | 720 / 8 px | 40 px | 无 / 1 / 0 |
+| 1440 | [前 / 后 / 原型 02](../../docs/ui/evidence/v21-card13/compare-1440.png) | 720 / 8 px | 40 px | 无 / 1 / 0 |
+| 1280 | [前 / 后 / 原型 02](../../docs/ui/evidence/v21-card13/compare-1280.png) | 720 / 8 px | 40 px | 无 / 1 / 0 |
+| 900 | [前 / 后 / 原型 02](../../docs/ui/evidence/v21-card13/compare-900.png) | 720 / 8 px | 40 px | 无 / 1 / 0 |
+
+14px 圆角由现有 `--radius-lg + --space-0-5` 组合；未修改卡 9 独占文件。首屏彩色面积的专门估算属于卡 10/12，本卡不重绑或复用其旧百分比作为本次抽屉验收。
+
+## 原失败与修补
+
+- `build-before.log` 的源码变化守卫、构建 1 的新测试类型缺口、构建 3 的测试辅助结构类型错误均保留，后继通过不覆盖它们。
+- 两轴发现并修复：inline 表单继承旧 fixed 浮窗样式；权限 pending/error 误称只读；能力关闭后旧会话数量残留；缓存只读 Review 的父 reset 覆盖 ready；非 Ticket 电话把 disabled query 当永久 pending；媒体测试在看板/隐藏页签提前等待。原命令/权限/UUID/回执守卫未改。
+- 正式边界另修：完工外壳在原权限未到时过早注册入口。恢复入口仍按原 attention/UNKNOWN 保留。
+- `tests-new-1` 的夹具版本增量与 DOM 布尔等待错误、`tests-new-3` 的注入脚本转义及权限入口边界失败、T37 helper 的真实入口挂载等待、T42 卡 12 已加载列折叠假设均保留。T42 曾误改展示文案，诊断确认当前合同仍用“已关闭”后恢复原期望，并仅展开真实列尾再核对官方移动。
+- 第二轮坏布局截图保存在 `screenshots-layout-failure/`：PropertyList 的高优先级 grid 把缺失行挤窄，最终局部修正并增加四宽高度断言。
+- 媒体诊断保留 `diagnostic-media*.log`：隐藏页签的缩略图等待、1440px 下既有 hover 1.025 影响静态几何。最终先选页签、移开指针并等待原动画结束；原尺寸/cover/原件/权限断言全部保留。外部诊断 PASS 不冒充注册入口；最终注册媒体入口已通过。
+
+## 规范边界与十项完成标准
+
+输入为当前内部主体及既有 WorkbenchDetail / 原权限查询；输出为同一事项的呈现与原操作入口。没有新增业务事实、Contract/API/SQL 或数据库迁移。原权限、幂等、恢复、隐私与资源上限保持；新按钮只安排原当前获权入口。默认 Flag 保持 false。可整体 revert 回退；本地合成库/浏览器沿原 fixture 释放，PG 与验证 checkout 的最终释放在 PR/交付消息如实记录。GitHub 未找到独立卡 13 Issue，Backlog 以本卡执行记录和本次 PR 收口，不改已关闭旧 WBINT 票。
+
+## 自检
+
+| 项 | 是 / 否与证据 |
+| --- | --- |
+| 前端未改业务命令、状态或权限判断 | 是；无 server/contracts/api/SQL/持久开关/依赖差异；原控制器的提交与回执代码保留 |
+| 选择器只增不删、业务断言未放宽 | 是；原 hook 保留（缺失资料行用 hidden 兼容），旧断言只同步授权文案；新 UI 所需的页签/展开准备和新增视觉断言独立补上 |
+| 新颜色来自 Token，Stylelint/ESLint 0 | 是；两项实际命令 PASS，Token/heat/category-map 与桥接未修改 |
+| 彩色对应四层及明确场景语义 | 是；阶段、热度、类别、人物沿原 Token；内部备注按本卡明确指定的浅黄安全提示 |
+| 卡片没有未提供/未登记占位 | 是；原卡 12 卡片呈现保留；抽屉只在统一缺失行说明 |
+| 当前有动作时恰好一个 primary | 是；下一步按原允许入口排列，四宽实测 1；只读 0，pending/unknown 不伪称无权限 |
+| 热度沿唯一常量 | 是；调用 heatOf，pending 用 created_at、active 用 stage_entered_at、closed 不计；不以 updated_at 补值 |
+| 四宽与原型并排核对 | 是；上表四图及真实几何/滚动测试；原坏图与失败单独保留 |
+
+## 后续卡前置
+
+卡 14 已在基线通过 PR #132 合并；卡 16 所需的卡 12 实现前置已由 #134 满足。本次没有启动卡 16、部署或推进业务 Gate。
+
+## 文件清单
+
+```text
+app/pc-admin/src/app/DetailDialog.tsx
+app/pc-admin/src/app/DetailPresentation.tsx
+app/pc-admin/src/app/Workbench.tsx
+app/pc-admin/src/app/WorkbenchDetail.tsx
+app/pc-admin/src/app/WorkbenchItemPresentation.tsx
+app/pc-admin/src/design/components/Drawer/Drawer.tsx
+app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx
+app/pc-admin/src/design/components/Drawer/NextStep.tsx
+app/pc-admin/src/design/components/Drawer/drawer-v21.css
+app/pc-admin/src/features/attachments/AttachmentSection.tsx
+app/pc-admin/src/features/attachments/ReportMaterialsSection.tsx
+app/pc-admin/src/features/conversations/Conversations.tsx
+app/pc-admin/src/features/follow-up/SharedFollowUp.tsx
+app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx
+app/pc-admin/src/features/source-groups/GroupNameEditor.tsx
+app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx
+app/pc-admin/src/features/ticket-completion/TicketCompletion.tsx
+app/pc-admin/src/features/ticket-handling/TicketConversationHandling.tsx
+app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx
+app/pc-admin/src/features/ticket-notes/TicketNotes.tsx
+app/pc-admin/src/features/ticket-reopen/TicketReopen.tsx
+app/pc-admin/src/features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx
+app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx
+app/pc-admin/src/features/ticket-takeover/TicketTakeover.tsx
+app/pc-admin/src/features/ticket-unassign/TicketUnassign.tsx
+app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx
+docs/ui/evidence/v21-card13/compare-1280.png
+docs/ui/evidence/v21-card13/compare-1440.png
+docs/ui/evidence/v21-card13/compare-1920.png
+docs/ui/evidence/v21-card13/compare-900.png
+docs/ui/evidence/v21-card13/verification.json
+plans/pc-admin-design-v21/card-13.md
+plans/typescript-migration/test-routing.json
+tests/conversation-inbox.browser.test.mts
+tests/helpers/heroui-workbench-controls.mts
+tests/helpers/t10-browser-fixture.mts
+tests/pc-admin-card13.browser.test.mts
+tests/t04-self-handling.browser.test.mjs
+tests/t05-conversation-handling.browser.test.mjs
+tests/t08-command-recovery.browser.test.mts
+tests/t08-selected-recovery.browser.test.mts
+tests/t08-unassign.browser.test.mts
+tests/t09-return-to-dispatch.browser.test.mts
+tests/t09-selected-ui-boundaries.browser.test.mts
+tests/t09-selected-ui-status-scope.browser.test.mts
+tests/t11-completion.browser.test.mts
+tests/t12-production-form.browser.test.mts
+tests/t13-history-window.browser.test.mts
+tests/t13-production-history.browser.test.mts
+tests/t20-member-origin-hint.browser.test.mts
+tests/t20-staff-hint-first.browser.test.mts
+tests/t37-follow-up-post-refusal.browser.test.mts
+tests/t37-follow-up-recovery-boundaries.browser.test.mts
+tests/t37-follow-up-recovery-competition.browser.test.mts
+tests/t37-follow-up-recovery-first.browser.test.mts
+tests/t37-shared-follow-up-drawer.browser.test.mts
+tests/t37-shared-time-card-list.browser.test.mts
+tests/wbint-t14-review.browser.test.mts
+tests/wbint-t42-board-complete-reopen.browser.test.mts
+tests/workbench-detail-media.browser.test.mts
+tests/workbench-detail-restructure.browser.test.mts
+tests/workbench-media-employee-read.browser.test.mts
+```
