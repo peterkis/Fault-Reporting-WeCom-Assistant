@@ -1,4 +1,4 @@
-import {StepEntry} from '../design/components/Drawer/NextStep';
+import {StepEntry,useNextStep} from '../design/components/Drawer/NextStep';
 import {Button as HButton} from '../design/components/Button/Button';
 import {useEffect,useState} from 'react';
 import type {ReactNode} from 'react';
@@ -16,11 +16,12 @@ import {groupActivityRecords} from './activity-time.mjs';
 import {activityActorName} from './activity-actors.mjs';
 import {DetailDialog,useDetailModalOpen} from './DetailDialog';
 
-export function DetailActionDialog({children,blocked,attention,onOpenChange}:{children:ReactNode;blocked:boolean;attention:boolean;onOpenChange?:((open:boolean)=>void)|undefined}){
+export function DetailActionDialog({children,blocked,attention,available=true,onOpenChange}:{children:ReactNode;blocked:boolean;attention:boolean;available?:boolean;onOpenChange?:((open:boolean)=>void)|undefined}){
   const [open,setOpen]=useState(false);
+  const step=useNextStep();
   useEffect(()=>{if(attention)setOpen(true);},[attention]);
   const close=()=>{if(!blocked)setOpen(false);};
-  return <><StepEntry action="complete" label={attention?'核对完工操作':'登记完工'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="detail-complete-button" onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>
+  return <>{!step||available||attention?<StepEntry action="complete" label={attention?'核对完工操作':'登记完工'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="detail-complete-button" onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
     <DetailDialog open={open} onClose={close} closeBlocked={blocked} title="登记完工" closeLabel="关闭完工窗口" onOpenChange={onOpenChange}>{children}</DetailDialog></>;
 }
 

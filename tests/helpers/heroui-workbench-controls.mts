@@ -6,6 +6,7 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 /** Open the current presentation of a purpose, retaining its original form and guards. */
 export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor'>,selector:string){
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
+  await browser.waitFor(`(()=>{const workflow=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]');return !workflow||[...document.querySelectorAll('[aria-controls]')].some(node=>node.getAttribute('aria-controls')===workflow.id);})()`);
   await browser.evaluate(`(()=>{const workflow=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]');if(!workflow)return;const trigger=[...document.querySelectorAll('[aria-controls]')].find(node=>node.getAttribute('aria-controls')===workflow.id);if(!trigger)throw Error('STEP_ENTRY_REQUIRED');const more=trigger.closest('details.ds-drawer-more');if(more&&!more.open)more.querySelector('summary').click();trigger.click();})()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(selector)})?.checkVisibility()===true`);
 }

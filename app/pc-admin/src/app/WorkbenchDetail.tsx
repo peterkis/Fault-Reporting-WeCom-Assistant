@@ -60,7 +60,7 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
     <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd></div>
     <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{item.source_label}</span></dd></div>
     {item.location?<div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{item.location}</dd></div>:null}
-    {formatted||contact.isPending||contact.isError?<div className="property-field reporter-contact"><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={false}>{formatted??(contact.isPending?'正在读取…':'暂不可用')}</span></dd></div>:null}
+    <div className="property-field reporter-contact" hidden={!formatted&&!contact.isPending&&!contact.isError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contact.isPending&&!contact.isError}>{formatted??(contact.isPending?'正在读取…':contact.isError?'暂不可用':'未提供')}</span></dd></div>
     <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<time dateTime={detail.reported_at.replace(' ','T')+'+08:00'} title="首次收到或登记报修的时间（北京时间）">{detail.reported_at}</time>:<span>未记录</span>}</dd></div>
     {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span><span className="ds-detail-ask">向报修人补问</span></dd></div>:null}
   </PropertyList>;
