@@ -53,11 +53,11 @@ async function assertGeometry(browser:Browser,width:number){
   await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
   await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
   assert.equal(await browser.evaluate(`(()=>{
-    const fields=[...document.querySelectorAll('.detail-properties .property-field')],field=label=>fields.find(node=>node.querySelector('dt')?.textContent.trim()===label),box=label=>field(label).getBoundingClientRect();
+    const fields=[...document.querySelectorAll('.detail-properties .property-field')],field=label=>fields.find(node=>node.querySelector('dt').textContent.trim()===label),box=label=>field(label).getBoundingClientRect();
     const location=box('位置'),phone=box('联系电话'),time=box('报修时间'),name=field('报修人');
     const noOverflow=document.documentElement.scrollWidth<=innerWidth&&fields.every(node=>{const r=node.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&node.scrollWidth<=node.clientWidth+1;});
     const placement=${width}>=960?phone.left>=location.right&&Math.abs(phone.top-location.top)<=1&&time.top>=phone.bottom-1:location.bottom<=phone.top+1&&phone.bottom<=time.top+1;
-    return noOverflow&&placement&&!name?.querySelector('.reporter-phone')&&document.querySelectorAll('.reporter-phone').length===1;
+    return noOverflow&&placement&&!name.querySelector('.reporter-phone')&&document.querySelectorAll('.reporter-phone').length===1;
   })()`),true,`actual location/phone/report-time geometry and overflow at ${width}px`);
   assert.equal(await browser.evaluate("document.querySelector('.activity-title').textContent.trim()"),'处理记录','the detail heading has no loaded-count suffix');
 }
@@ -91,7 +91,7 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const active=browser;
     await browser.command('Page.enable');await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__detailMediaDocument=location.pathname;globalThis.__detailMediaReads=[];globalThis.fetch=async(url,options)=>{const parsed=new URL(String(url),location.href);if((options?.method??'GET')==='GET'&&/^\\/api\\/tickets\\/[0-9a-f-]+\\/reporter-contact$/.test(parsed.pathname))return new Response(JSON.stringify({contact:{mobile:'13800000000'}}),{headers:{'content-type':'application/json'}});const response=await original(url,options);if(parsed.pathname.includes('/actor-avatars/')||parsed.pathname.includes('/web-report/media/'))globalThis.__detailMediaReads.push({path:parsed.pathname,variant:parsed.searchParams.get('variant'),status:response.status});return response;};})()`});
-    const navigate=async(id:string)=>{await active.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page'});await active.waitFor(`location.pathname.endsWith(${JSON.stringify(id)})&&globalThis.__detailMediaDocument===location.pathname&&document.querySelector('.reporter-phone')?.textContent==='138-0000-0000'&&!document.querySelector('.report-materials .detail-loading')&&Boolean(document.querySelector('.activity-title'))`);};
+    const navigate=async(id:string,tab:'activity'|'attachments'='activity')=>{await active.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page'});if(tab==='attachments')await clickWorkbenchControl(active,'#detail-tab-trigger-attachments');await active.waitFor(`location.pathname.endsWith(${JSON.stringify(id)})&&globalThis.__detailMediaDocument===location.pathname&&document.querySelector('.reporter-phone')?.textContent==='138-0000-0000'&&!document.querySelector('.report-materials .detail-loading')&&Boolean(document.querySelector('.activity-title'))`);};
     await navigate(first.ticket.id);
     await browser.waitFor("[...document.querySelectorAll('.record-avatar img')].some(img=>img.checkVisibility({checkOpacity:true})&&img.complete&&img.naturalWidth===64)");
     await assertWorkbenchPrimaryActions(browser);
@@ -103,12 +103,12 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     await navigate(missing.ticket.id);
     await browser.waitFor("globalThis.__detailMediaReads.some(row=>row.path.includes('/actor-avatars/')&&row.status===204)");
     assert.equal(await browser.evaluate("[...document.querySelectorAll('.detail-record')].some(row=>{const fallback=row.querySelector('.record-avatar [data-slot=avatar-fallback]'),name=row.querySelector('.record-name');return fallback?.checkVisibility({checkOpacity:true})&&fallback.textContent===Array.from(name.textContent).at(-1)&&!row.querySelector('.record-avatar img');})"),true,'missing cached image visibly falls back to the last character of the actor name');
-    await navigate(f.botTicketId);await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await browser.waitFor(`document.querySelector(${JSON.stringify(storageHint)})?.checkVisibility()===true`);
+    await navigate(f.botTicketId,'attachments');await browser.waitFor(`document.querySelector(${JSON.stringify(storageHint)})?.checkVisibility()===true`);
     assert.equal(await browser.evaluate("document.querySelector('.detail-attachments h4>span').textContent"),'0');
     assert.equal(await browser.evaluate(`(()=>{const hint=document.querySelector(${JSON.stringify(storageHint)}),count=hint.closest('h4').querySelector(':scope>span'),h=hint.getBoundingClientRect(),c=count.getBoundingClientRect();return !!hint.querySelector('svg.lucide-cloud-off')&&h.left>=c.right&&h.left-c.right<=20&&Math.abs((h.top+h.height/2)-(c.top+c.height/2))<=4;})()`),true,'CloudOff is immediately right of the zero count');
     assert.equal(await browser.evaluate(`!!document.querySelector('.detail-attachments .media-empty')||document.querySelector('.detail-attachments').innerText.includes(${JSON.stringify(storageMessage)})`),false,'no permanent storage-error paragraph remains');
     await tooltipByPointerAndKeyboard(browser,storageHint,storageMessage);
-    const failed=await failedOriginal(f,first.intake.intakeId);await navigate(first.ticket.id);await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');
+    const failed=await failedOriginal(f,first.intake.intakeId);await navigate(first.ticket.id,'attachments');
     await browser.waitFor("document.querySelector('.detail-media-card img')?.naturalWidth>0&&document.querySelector('[aria-label=\"附件转换异常\"]')?.checkVisibility()===true");
     for(const width of [1920,1440,1280,900,600,390]){
       await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});

@@ -96,6 +96,9 @@ export async function assertWorkbenchPrimaryActions(browser:Browser){
 
 /** Media cards retain their preview frame instead of ordinary button dimensions. */
 export async function assertWorkbenchMediaPreviewGeometry(browser:Browser,width:number){
+  // Tab activation and resizing can place a card under the pointer; measure its resting frame.
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
+  await browser.waitFor("[...document.querySelectorAll('.detail-media-card img')].every(img=>getComputedStyle(img).transform==='none')");
   const cards:unknown=await browser.evaluate(`(()=>{const close=(a,b)=>Math.abs(a-b)<=1;return [...document.querySelectorAll('.detail-media-card')].filter(n=>n.checkVisibility()).map(n=>{const r=n.getBoundingClientRect(),c=getComputedStyle(n),label=n.querySelector('.ds-button-label'),l=label?.getBoundingClientRect(),image=n.querySelector('img'),i=image?.getBoundingClientRect();return {height:r.height,unpadded:c.padding==='0px',labelFills:Boolean(l&&close(l.width,n.clientWidth)&&close(l.height,n.clientHeight)),imageFills:!image||Boolean(i&&l&&close(i.width,l.width)&&close(i.height,l.height)&&getComputedStyle(image).objectFit==='cover')};});})()`);
   assert.ok(Array.isArray(cards));assert.ok(cards.length>0,'media geometry must observe actual preview cards');
   for(const card of cards){assert.ok(card&&typeof card==='object'&&'height' in card&&'unpadded' in card&&'labelFills' in card&&'imageFills' in card);assert.equal(card.height,width<=640?145:170);assert.equal(card.unpadded,true);assert.equal(card.labelFills,true);assert.equal(card.imageFills,true);}
