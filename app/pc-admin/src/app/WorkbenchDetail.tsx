@@ -22,6 +22,7 @@ import { BoardActionNotice } from '../features/board-actions/BoardActions';
 import { readBoardIntent } from '../features/board-actions/intent';
 import { ItemConversations } from '../features/conversations/Conversations';
 import { SharedFollowUp } from '../features/follow-up/SharedFollowUp';
+import {followUpApi} from '../features/follow-up/client';
 import { ItemFollow } from '../features/item-follow/ItemFollow';
 import { ReviewWorkspace } from '../features/manual-review/ReviewWorkspace';
 import { GroupNameEditor } from '../features/source-groups/GroupNameEditor';
@@ -82,7 +83,6 @@ export function WorkbenchDetailDrawer({principal,items,now,fullPage,onNavigation
   const otherCommandsBlocked=blockedByOther('webReport'),commandsBlocked=Object.values(blockers).some(Boolean);
   useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),pageHeading=useRef<HTMLHeadingElement>(null);
-  useEffect(()=>{setCopied(false);setTab('activity');setAttachmentCount(null);setConversationCount(null);setReviewReadState('pending');},[kind,id,principal.principal_id]);
   const routeState:unknown=location.state;
   const route=routeState&&typeof routeState==='object'?routeState as Record<string,unknown>:null;
   const parsedBoardIntent=readBoardIntent(route?.boardActionIntent);
@@ -99,7 +99,7 @@ export function WorkbenchDetailDrawer({principal,items,now,fullPage,onNavigation
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
   // Observe the original permission queries; these do not infer action eligibility.
   const commandRead=useQuery({queryKey:['ticket-command-context',principal.principal_id,detail?.item.id??id],queryFn:({signal})=>api.ticketCommandContext(detail?.item.id??id,signal),enabled:detail?.item.kind==='ticket'});
-  const scheduleRead=useQuery({queryKey:['ticket-follow-up-schedule',principal.principal_id,detail?.item.id??id],enabled:false});
+  const scheduleRead=useQuery({queryKey:['ticket-follow-up-schedule',principal.principal_id,detail?.item.id??id],queryFn:({signal})=>followUpApi.view(detail?.item.id??id,signal),enabled:false});
   const states:StepReadState[]=[];
   if(detail?.item.kind==='ticket')states.push(commandRead.isPending?'pending':commandRead.isError?'unknown':'ready');
   if(detail?.item.kind==='ticket'&&principal.follow_up_schedules_enabled)states.push(scheduleRead.isPending?'pending':scheduleRead.isError?'unknown':'ready');

@@ -95,3 +95,25 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }));
+
+test('Card 13 reopening a cached read-only Review settles its permission read without a parent reset',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+  const first=f.tickets[0],cookie=f.browserCookies[0];assert.ok(first&&cookie&&cookie.url);
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown,writes=0;
+  f.runtime.server.on('request',request=>{if(request.method==='POST')writes++;});
+  try{
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
+    await b.command('Page.enable');await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__card13ReviewReads=0;globalThis.fetch=async(url,options)=>{const response=await original(url,options),path=new URL(String(url),location.href).pathname;if(/^\/api\/manual-reviews\/[0-9a-f-]+$/.test(path)&&response.ok){const body=await response.clone().json();body.allowed_resolutions=[];globalThis.__card13ReviewReads++;return new Response(JSON.stringify(body),{status:response.status,headers:response.headers});}return response;};})()`});
+    await b.command('Page.navigate',{url:f.origin+'/workbench/app/'});await b.command('Page.bringToFront');
+    const card='.ticket-card[data-item-id="'+first.ticket.id+'"] .card-open';
+    await b.waitFor("Boolean(document.querySelector('.board-column.pending'))");
+    await b.evaluate("[...document.querySelectorAll('.board-column.pending button')].find(button=>button.textContent.includes('显示剩余'))?.click()");
+    await clickWorkbenchControl(b,card);await b.waitFor("document.querySelector('.ds-next-step')?.textContent.includes('你当前为只读')&&globalThis.__card13ReviewReads>0");
+    await clickWorkbenchControl(b,'[aria-label="关闭详情"]');await b.waitFor("!document.querySelector('.ds-drawer')");
+    await clickWorkbenchControl(b,card);await b.waitFor("globalThis.__card13ReviewReads>=2&&Boolean(document.querySelector('[data-review-id]'))");
+    await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('你当前为只读')"),true);
+    assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('正在核对可用操作')"),false);
+    assert.equal(writes,0);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+},{workbenchManualReviewEnabled:true}));

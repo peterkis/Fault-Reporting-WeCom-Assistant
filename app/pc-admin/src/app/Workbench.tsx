@@ -296,7 +296,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(unique.filter(item=>item.column===column))} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail key={principal.principal_id+':'+selected.kind+':'+selected.id} principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){
