@@ -32,6 +32,7 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
       await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
       assert.deepEqual(await b.evaluate("(()=>{const r=document.querySelector('.ds-drawer').getBoundingClientRect();return {width:r.width,top:r.top,right:innerWidth-r.right,radius:getComputedStyle(document.querySelector('.ds-drawer')).borderRadius,overflow:document.documentElement.scrollWidth>innerWidth};})()"),{width:720,top:8,right:8,radius:'14px',overflow:false});
       assert.equal(await b.evaluate("document.querySelector('[data-action=save-internal-note]').getBoundingClientRect().bottom<=innerHeight"),true);
+      assert.equal(await b.evaluate("document.querySelector('.ds-detail-missing').getBoundingClientRect().height<=64"),true,'missing fields occupy one compact row at '+width);
     }
     assert.equal(await b.evaluate('globalThis.__card13Writes.length'),0);
     await click('[data-action=take-and-start]');await b.waitFor("document.querySelector('.ds-next-step [data-tone=primary]')?.textContent==='登记完工'");
