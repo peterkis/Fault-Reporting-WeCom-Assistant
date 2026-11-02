@@ -1,5 +1,5 @@
 /* ==========================================================================
-   医小修 PC 管理端 · Design Tokens v2.0
+   医小修 PC 管理端 · Design Tokens v2.1
    放置位置建议：app/pc-admin/src/design/tokens.css
    导入顺序：tailwindcss → @heroui/styles → tokens.css → heroui-bridge.css → components/*.css → features/*.css
    规则：features/*.css 只允许使用第 2、3 层（语义 / 组件）Token，禁止裸 hex、裸 px 字号、裸圆角。
@@ -11,6 +11,9 @@
   --gray-0:   #FFFFFF;
   --gray-25:  #FBFBFA;
   --gray-50:  #F7F7F5;
+  --gray-board: #F7F6F3;
+  --gray-column: #F4F3EF;
+  --gray-unclassified-ring: #C9C7C1;
   --gray-100: #F1F1EF;
   --gray-150: #EBEBE9;
   --gray-200: #E3E2DF;
@@ -23,6 +26,7 @@
 
   /* 品牌蓝：全站唯一强调色 */
   --blue-50:  #EEF4FD;
+  --blue-stage-50: #E8F0FC;
   --blue-100: #DCE8FB;
   --blue-500: #2F6FDB;
   --blue-600: #2563C9;   /* 白字 5.67:1 */
@@ -35,6 +39,19 @@
   --orange-50: #FAEBDD;  --orange-700: #9A4A0A;  --orange-500: #D9730D;
   --red-50:    #FDEBEC;  --red-700:    #B4332B;  --red-500:    #D44C47;
   --purple-50: #F3EEF8;  --purple-700: #6940A5;  --purple-500: #9065B0;
+
+  /* v2.1：紧急描边与服务目录类别专用浅色 */
+  --orange-ring: #F2D2B4; --red-ring: #F0C2BF; --purple-ring: #DCCDEE;
+  --clinical-bg: #EFE9F8;
+  --access-bg: #FBF0D9; --access-fg: #8A6100;
+  --diag-bg: #E1F3EF; --diag-fg: #1F6B5C;
+  --pharm-bg: #E8F3E8;
+  --billing-bg: #F6EDE3; --billing-fg: #7A5230;
+  --online-bg: #E8EBFA; --online-fg: #3B4BA8;
+  --endpoint-bg: #ECEEF2; --endpoint-fg: #46505E;
+  --network-bg: #E3F1F8;
+  --identity-bg: #FBE8EE; --identity-fg: #A3365C;
+  --config-bg: #EFEDE8; --config-fg: #5C5548;
 }
 
 /* ---------- 第 2 层：语义 Token（业务 CSS 只用这一层和第 3 层） ---------- */
@@ -54,6 +71,8 @@
   /* 背景 */
   --bg-canvas:   var(--gray-0);    /* 主工作区 */
   --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
+  --bg-board:    var(--gray-board);
+  --bg-column:   var(--gray-column);
   --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
   --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
   --bg-active:   var(--gray-200);  /* 按下、导航当前项 */
@@ -81,6 +100,39 @@
   --tone-attention-bg: var(--orange-50); --tone-attention-fg: var(--orange-700); --tone-attention-dot: var(--orange-500);
   --tone-danger-bg:  var(--red-50);    --tone-danger-fg:  var(--red-700);     --tone-danger-dot:  var(--red-500);
   --tone-review-bg:  var(--purple-50); --tone-review-fg:  var(--purple-700);  --tone-review-dot:  var(--purple-500);
+
+  /* 实心小徽标：白字使用 --text-inverse，全部 ≥ 4.5:1 */
+  --tone-neutral-solid: var(--tone-neutral-fg);
+  --tone-brand-solid: var(--tone-brand-fg);
+  --tone-info-solid: var(--tone-info-fg);
+  --tone-success-solid: var(--tone-success-fg);
+  --tone-warning-solid: var(--tone-warning-fg);
+  --tone-attention-solid: var(--tone-attention-fg);
+  --tone-danger-solid: var(--tone-danger-fg);
+  --tone-review-solid: var(--tone-review-fg);
+
+  /* 阶段：与子状态 tone 分开，不改变状态值或列归属 */
+  --stage-intake-accent: var(--yellow-500); --stage-intake-bg: var(--yellow-50); --stage-intake-fg: var(--yellow-700);
+  --stage-active-accent: var(--blue-500); --stage-active-bg: var(--blue-stage-50); --stage-active-fg: var(--blue-700);
+  --stage-done-accent: var(--green-500); --stage-done-bg: var(--green-50); --stage-done-fg: var(--green-700);
+  --ring-attention: var(--orange-ring);
+  --ring-danger: var(--red-ring);
+  --ring-review: var(--purple-ring);
+
+  /* 类别：只由 category-map.ts 映射，未知类别显示中性虚线 */
+  --cat-clinical-bg: var(--clinical-bg); --cat-clinical-fg: var(--purple-700);
+  --cat-access-bg: var(--access-bg); --cat-access-fg: var(--access-fg);
+  --cat-diag-bg: var(--diag-bg); --cat-diag-fg: var(--diag-fg);
+  --cat-pharm-bg: var(--pharm-bg); --cat-pharm-fg: var(--green-700);
+  --cat-billing-bg: var(--billing-bg); --cat-billing-fg: var(--billing-fg);
+  --cat-online-bg: var(--online-bg); --cat-online-fg: var(--online-fg);
+  --cat-endpoint-bg: var(--endpoint-bg); --cat-endpoint-fg: var(--endpoint-fg);
+  --cat-network-bg: var(--network-bg); --cat-network-fg: var(--sky-700);
+  --cat-identity-bg: var(--identity-bg); --cat-identity-fg: var(--identity-fg);
+  --cat-config-bg: var(--config-bg); --cat-config-fg: var(--config-fg);
+  --cat-route-bg: var(--tone-neutral-bg); --cat-route-fg: var(--tone-neutral-fg);
+  --cat-unclassified-bg: var(--bg-canvas); --cat-unclassified-fg: var(--text-secondary);
+  --cat-unclassified-border: 1.5px dashed var(--gray-unclassified-ring);
 
   /* 字号阶梯：6 档，禁止其它值 */
   --fs-xs:  12px;  --lh-xs:  18px;   /* 元信息、时间、标签、编号 */

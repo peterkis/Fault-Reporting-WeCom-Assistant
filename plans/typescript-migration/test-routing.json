@@ -5,6 +5,15 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/workbench-media-employee-read.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7801,6 +7810,7 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/pc-admin-design-foundation.test.mts",
       "tests/workbench-media-employee-read.browser.test.mts",
       "tests/workbench-media-employee-read.integration.test.mts",
       "tests/workbench-actor-avatars.test.mts",
