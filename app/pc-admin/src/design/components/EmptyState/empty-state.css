@@ -5,3 +5,5 @@
 .ds-empty-state p,.ds-page .ds-empty-state p {font-size: var(--fs-sm); line-height: var(--lh-sm); max-width: calc(var(--fs-sm) * 32); margin: 0; overflow-wrap: anywhere; text-wrap: pretty;}
 .ds-empty-state:empty {display: none;}
 .ds-empty-action {margin-top: var(--space-1); max-width: 100%;}
+.ds-empty-state[data-tone=success] .ds-empty-icon {align-items: center; justify-content: center; width: var(--space-16); height: var(--space-16); border-radius: var(--radius-full); background: var(--tone-success-bg); color: var(--tone-success-fg); margin-bottom: var(--space-3);}
+.ds-empty-state[data-tone=success] .ds-empty-icon>svg {width: var(--space-8); height: var(--space-8); stroke-width: 2;}
