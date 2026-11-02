@@ -144,3 +144,15 @@ Codex 第二轮对完整 `3421180c…` 返回没有 major issues；首轮 P2 已
 R2 只修改该测试的导航准备步骤与本文，产品实现保持 R1。后继完整 head 的构建、types、相关注册测试、制品、复审和远端 CI 继续分别记录于 PR，历史三次失败保持原对象与 NOT_RUN。
 
 R2 保存后 fetch 检测到卡 15 [PR #133](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/133) 已合并。再次 rebase 到 `origin/main@cdf4803a3c2018ea41cf4aec2a70bb8503e9a9ef`，四个本卡提交重放成功，冲突列表为空，卡 15 的通知/EmptyState 内容原样保留。重基前对象保存在本地 `refs/archive/pc-admin-v21-card14-pre-card15-sync`；旧测试和失败不改绑到重基后的 head。此次产品界面没有调整，不重写原截图。新基线的干净完整 head 验证与 force-with-lease 更新见 PR 续记。
+
+## 既有媒体回归的计时修补 R3
+
+R2 重基后的 clean head 为 `9eb175363e3313f552da38066a6b02bb8600cbee`。两项 lint、PC typecheck、build、strict types、原注册 Foundation/Inbox 26/26 和 artifact 全 PASS，Codex 复审无 major issues。远端 [41428046099](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41428046099) 再次停在既有媒体首帧 p95：2/245 文件、20 PASS / 1 FAIL，余 243 文件 NOT_RUN；旧路径 263.40ms、原生 287.70ms，原件保存在 `ci-fourth-failed.log` / `ci-fourth-artifact`。
+
+原[媒体验收](../pc-admin-electron/media-employee-read-2026-10-28.md)定义“点击到视频首帧”，但脚本在 clickWorkbenchControl 之前启动时钟，混入该辅助的滚动、可见性、两帧位置稳定、遮挡和 CDP 检查。附件产品用 onClick 开始 open；document 捕获阶段可在产品处理之前准确记录真实点击，权限、网络和渲染工作仍全部计入。
+
+先在独立诊断副本中对同一 20 个样本记录两个时钟，正式源码/制品未被注入：旧路径/原生辅助开销 p95 38.1/75.7ms；真实点击到首帧 p95 260.5/212.8ms；原窗口 p95 297.3/287.4ms。20 次均为可信点击，且每样本“原窗口 = 辅助开销 + 点击到首帧”误差为 0。该本地原窗口自然通过，不冒充 CI 失败已在本地 RED；两次 CI 原失败仍保留。诊断记录为 `media-dual-clock-run.log` / `media-dual-clock-summary.json`，不是已注册入口的正式执行。
+
+正式修补仅将测试时钟放到目标卡片真实 click 的捕获阶段，并在首帧观察后断言 isTrusted；原 24 条 assert 调用逐字保留，新增可信点击断言后为 25 条。1 次预热、10 次正式样本、所有 p95 改善断言、素材、7 次预览请求、授权/Range/字节/SQL/回退断言和等待预算保持。没有修改媒体产品实现、接口、权限、样本筛选、阈值或默认开关；复用现有受控 FFmpeg 工具，无新依赖。这是按既有定义纠正计时点，历史媒体报告不回写。
+
+R3 的完整 head 检查将额外包含原媒体浏览器入口，并继续执行会话/Foundation 原入口；最终执行数、完整 head 和 CI 结果见 PR。

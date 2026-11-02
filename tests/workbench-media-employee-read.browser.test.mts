@@ -54,9 +54,11 @@ test('PC server posters and native media reduce same-data preview cost with old-
     if(enabled){assert.ok(preview.every(record=>record.path.includes('variant=THUMBNAIL')&&record.bytes<=160*1024));assert.ok(preview.every(record=>record.sqlAfterHeaders===0));}
     else assert.ok(preview.every(record=>record.path.includes('variant=PLAYABLE')));
     const beforeVideo=observation.records.length;
-    await active.evaluate(`globalThis.__pcMediaClick=performance.now();document.addEventListener('playing',event=>{if(event.target?.tagName==='VIDEO')event.target.requestVideoFrameCallback(()=>{globalThis.__pcMediaTiming.frame=performance.now()-globalThis.__pcMediaClick;});},{once:true,capture:true});`);
+    // Measure the existing click-to-frame contract; scroll/hit-test preconditions belong to the driver.
+    await active.evaluate(`globalThis.__pcMediaClick=null;document.addEventListener('click',event=>{if(event.target instanceof Element&&event.target.closest('.detail-media-card:has(.media-video-play)')){globalThis.__pcMediaClick=performance.now();globalThis.__pcMediaTiming.trusted_click=event.isTrusted;}},{once:true,capture:true});document.addEventListener('playing',event=>{if(event.target?.tagName==='VIDEO')event.target.requestVideoFrameCallback(()=>{if(typeof globalThis.__pcMediaClick==='number')globalThis.__pcMediaTiming.frame=performance.now()-globalThis.__pcMediaClick;});},{once:true,capture:true});`);
     await clickWorkbenchControl(active,'.detail-media-card:has(.media-video-play)');
     await active.waitFor('globalThis.__pcMediaTiming?.frame!==null');
+    assert.equal(await active.evaluate('globalThis.__pcMediaTiming.trusted_click===true'),true,'first-frame timing starts at the trusted video-card click');
     if(enabled){assert.equal(await active.evaluate('document.querySelector("video").preload'),'none');assert.equal(await active.evaluate('new URL(document.querySelector("video").src).pathname.startsWith("/api/workbench/media/web/")'),true);assert.ok(observation.records.slice(beforeVideo).some(record=>record.path.includes('variant=PLAYABLE')&&record.range!==null));}
     else assert.equal(await active.evaluate('document.querySelector("video").src.startsWith("blob:")'),true);
     const timing:unknown=await active.evaluate('globalThis.__pcMediaTiming');assert.ok(timing&&typeof timing==='object'&&'first' in timing&&typeof timing.first==='number'&&'all' in timing&&typeof timing.all==='number'&&'frame' in timing&&typeof timing.frame==='number');
