@@ -35,8 +35,9 @@ test('T42 board completion and independent staff reopen each require their origi
    await browser.evaluate("document.querySelector('#completion-summary').focus()");await browser.command('Input.insertText',{text:'合成设备服务已恢复。'});await browser.evaluate("document.querySelector('#completion-confirmed').click()");
    await browser.waitFor("document.querySelector('[data-action=complete-ticket]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");
    await browser.waitFor("globalThis.__t42LifecycleResponses.some(row=>row.path.endsWith('/complete')&&row.status===200)");
+   await browser.evaluate("[...document.querySelectorAll('.board-column.closed button')].find(button=>button.textContent.includes('显示剩余'))?.click()");
    await browser.waitFor(`Boolean(document.querySelector('.board-column.closed '+${JSON.stringify(card)}))&&!document.querySelector('.board-column.active '+${JSON.stringify(card)})`);
-   await browser.waitFor("document.querySelector('[data-board-intent-panel] h3')?.textContent==='官方已显示：已处理'");
+   await browser.waitFor("document.querySelector('[data-board-intent-panel] h3')?.textContent==='官方已显示：已关闭'");
    const closed=await http.detail(known.ticket.id);assert.equal(closed.status,'CLOSED');assert.equal(closed.assignee_id,f.principals[1]?.id);
    const completedWrites=await browser.evaluate('globalThis.__t42LifecycleWrites');assert.ok(Array.isArray(completedWrites));assert.equal(completedWrites.length,1);const complete=object(object(completedWrites[0]).body);
    assert.equal(complete.internal_process,'T42合成内部排查过程，不能作为外发摘要。');assert.equal(complete.external_summary,'合成设备服务已恢复。');assert.equal(complete.external_summary_confirmed,true);assert.equal(complete.reason_code,'STAFF_COMPLETED');assert.equal(complete.expected_version,active.version);
@@ -49,6 +50,7 @@ test('T42 board completion and independent staff reopen each require their origi
    await browser.evaluate("document.querySelector('#reopen-reason').focus()");await browser.command('Input.insertText',{text:'工作人员核实同一故障仍需处理。'});
    await browser.waitFor("document.querySelector('[data-action=reopen-ticket]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
    await browser.waitFor("globalThis.__t42LifecycleResponses.some(row=>row.path.endsWith('/reopen')&&row.status===200)");
+   await browser.evaluate("[...document.querySelectorAll('.board-column.pending button')].find(button=>button.textContent.includes('显示剩余'))?.click()");
    await browser.waitFor(`Boolean(document.querySelector('.board-column.pending '+${JSON.stringify(card)}))&&!document.querySelector('.board-column.closed '+${JSON.stringify(card)})`);
    await browser.waitFor("document.querySelector('[data-board-intent-panel] h3')?.textContent==='官方已显示：待受理'");
    assert.equal(await browser.evaluate("document.querySelector('[data-board-intent-panel]').textContent.includes('请完成合法表单')"),false);
