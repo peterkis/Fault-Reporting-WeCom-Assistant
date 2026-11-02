@@ -7,7 +7,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {openWorkbenchDialog} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,openWorkbenchDialog} from './helpers/heroui-workbench-controls.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 
@@ -25,7 +25,11 @@ async function completionBrowser(context:T11Fixture,run:(browser:Browser,capture
   }catch(failure){error=failure;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t11Commands})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
 }
-async function type(browser:Browser,selector:string,value:string){if(selector.startsWith('#completion-')){await browser.evaluate("(()=>{if(!document.querySelector('.detail-action-dialog'))document.querySelector('.detail-complete-button')?.click();})()");await browser.waitFor("document.querySelector('#completion-process')?.checkVisibility()===true");}await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+async function type(browser:Browser,selector:string,value:string){
+  if(selector.startsWith('#completion-'))await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');
+  await browser.waitFor(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});return input instanceof HTMLTextAreaElement&&input.checkVisibility()&&!input.disabled;})()`);
+  await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+}
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t11Commands=[];globalThis.__t11Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t11Commands.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t11Reads.push(String(path));return original(path,options);};})()";
 async function reload(browser:Browser){const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'`);}
 async function ready(browser:Browser,version=4){await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');await browser.waitFor(`document.querySelector('.ticket-completion-version')?.textContent===${JSON.stringify('工单版本 '+version)}&&document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')`);}
@@ -54,13 +58,13 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
       await browser.evaluate(`document.querySelector(${JSON.stringify(take)}).click()`);
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('.detail-complete-button'))");
       await browser.evaluate("(()=>{const workflow=document.querySelector('.detail-workflows');if(workflow&&!workflow.hasAttribute('data-expanded'))workflow.querySelector('[data-slot=disclosure-heading] button').click();})()");
-      await browser.evaluate("document.querySelector('[data-action=request-information]').click()");
+      await clickWorkbenchControl(browser,'[data-action=request-information]');
       await type(browser,'[data-waiting-purpose=request-information] textarea','请电话补充合成设备的错误提示。');
-      await browser.evaluate("document.querySelector('[data-waiting-purpose=request-information] button[type=submit]').click()");
+      await clickWorkbenchControl(browser,'[data-waiting-purpose=request-information] button[type=submit]');
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('等待补充')&&Boolean(document.querySelector('[data-action=resume]'))");
-      await browser.evaluate("document.querySelector('[data-action=resume]').click()");
+      await clickWorkbenchControl(browser,'[data-action=resume]');
       await type(browser,'[data-waiting-purpose=resume] textarea','已电话收到合成错误提示，继续排查。');
-      await browser.evaluate("document.querySelector('[data-waiting-purpose=resume] button[type=submit]').click()");
+      await clickWorkbenchControl(browser,'[data-waiting-purpose=resume] button[type=submit]');
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('.detail-complete-button'))");
       await input(browser,'内部合成排查过程，不能给报修人查看。','已恢复合成设备，请重试。');
       await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");

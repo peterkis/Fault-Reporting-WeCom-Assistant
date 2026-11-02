@@ -156,3 +156,15 @@ R2 重基后的 clean head 为 `9eb175363e3313f552da38066a6b02bb8600cbee`。两�
 正式修补仅将测试时钟放到目标卡片真实 click 的捕获阶段，并在首帧观察后断言 isTrusted；原 24 条 assert 调用逐字保留，新增可信点击断言后为 25 条。1 次预热、10 次正式样本、所有 p95 改善断言、素材、7 次预览请求、授权/Range/字节/SQL/回退断言和等待预算保持。没有修改媒体产品实现、接口、权限、样本筛选、阈值或默认开关；复用现有受控 FFmpeg 工具，无新依赖。这是按既有定义纠正计时点，历史媒体报告不回写。
 
 R3 的完整 head 检查将额外包含原媒体浏览器入口，并继续执行会话/Foundation 原入口；最终执行数、完整 head 和 CI 结果见 PR。
+
+## 历史队列与控件准备修补 R4
+
+R3 clean head `5944612e84a450f077c16cb11420646df43bed61` 本地两 lint、PC typecheck、build、types、原注册 Foundation/媒体/Inbox 共 28/28、artifact 均 PASS；媒体正式点击到首帧 p95 为旧 273.0ms / 原生 185.8ms，24 条原断言保留并新增可信点击检查。产品输出相对 R2 逐字相同，只有媒体测试及其 map 改变。
+
+该 head 的 [CI 41434625080](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41434625080) 已通过修正后的媒体原入口，随后在既有 `t11-completion.browser` 第一例失败：152/245 文件，423 项中 422 PASS / 1 FAIL，余 93 文件 NOT_RUN。错误为补问表单尚未出现时调用 textarea setter 的 Illegal invocation；原件为 `ci-fifth-failed.log` / `ci-fifth-artifact`。该 helper 仅为完工字段等待弹窗，未等待其它 textarea。修补统一等待真实、可见、未禁用的 textarea，补问/恢复的打开和提交使用既有 clickWorkbenchControl。原 110 条 assert 全部保留；版本、6 次命令/UUID、处理轮次、回执、权限、隐私断言及预算不变。
+
+同一 head 的 Codex 另报 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/132#discussion_r4441676048)：历史队列的服务端接待聚合排除了 ENDED，kind 为 UNASSIGNED，但 label 特意为“历史主题”；前端的统一短标签映射错误显示黄色“待接待”。历史队列现直接保留后端 label 并用 neutral；未选中的说明也只提示查看历史沟通。没有更改状态值、capabilities 或接待判断。
+
+新增原 Inbox 浏览器文件内的历史场景：真实 ENDED 详情 capabilities=[]；历史标签中性、没有“领取后可回复”提示；选中后接待横幅隐藏、两种输入禁用、可见 primary=0，导航 POST=0。原会话 70 条 assert 仍全保留，当前 110 条。
+
+仅重拍受影响历史队列四宽：[1920](../../docs/ui/evidence/v21-card14/ended-1920.jpg) / [1440](../../docs/ui/evidence/v21-card14/ended-1440.jpg) / [1280](../../docs/ui/evidence/v21-card14/ended-1280.jpg) / [900](../../docs/ui/evidence/v21-card14/ended-900.jpg)。原 normal/topic 图片保留旧采集身份。补充文件责任为 `tests/workbench-media-employee-read.browser.test.mts` 的计时纠错、`tests/t11-completion.browser.test.mts` 的控件准备及上述四图；其它卡文件不改。

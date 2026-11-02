@@ -48,6 +48,29 @@ test('v2.1 reception uses the original command and keeps message space, purpose 
   },{inbox:true,realtime:true,personalRead:false,recovery:true});
 });
 
+test('ended inbox preserves historical neutral labels and the selected Session remains read-only',async()=>{
+  await withT22Fixture(async f=>{
+    const ended=f.sessions[2];assert.ok(ended);
+    const entry=await (await fetch(f.origin+'/api/workbench/conversations/'+ended.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
+    assert.equal(entry.session.status,'ENDED');assert.equal(entry.capabilities.length,0);
+    const writes:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};
+    f.runtime.server.on('request',observe);let browser:Browser|undefined,failure:unknown;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations?state=ended',width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      await browser.waitFor("document.querySelectorAll('[data-contact-ref]').length>0");
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.inbox-contact-bottom .ds-status-badge')].every(node=>node.textContent==='历史主题'&&node.dataset.tone==='neutral')"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.inbox-empty')?.textContent.includes('历史沟通记录')"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.inbox-empty')?.textContent.includes('领取后可回复')"),false);
+      await clickWorkbenchControl(browser,'[data-contact-ref] a');await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&Boolean(document.querySelector('textarea[data-purpose=messages]'))");
+      assert.equal(await browser.evaluate("document.querySelector('.inbox-reception').checkVisibility()"),false);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('textarea[data-purpose]')].every(node=>node.disabled)"),true);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.inbox-chat [data-tone=primary]')].filter(node=>node.checkVisibility()).length"),0);
+      assert.equal(await browser.evaluate("document.querySelector('.inbox-ended')?.textContent.includes('历史主题只读')"),true);
+      assert.deepEqual(writes,[],'historical navigation and presentation never POST');
+    }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  },{inbox:true,personalRead:false,recovery:false});
+});
+
 test('topic history and same-topic direct navigation remain separate, readable and reachable together',async()=>{
   await withT22Fixture(async f=>{
     for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
