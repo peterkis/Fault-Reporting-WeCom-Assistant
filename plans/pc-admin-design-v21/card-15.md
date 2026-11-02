@@ -46,3 +46,13 @@ T32 闭合 DTO 见 `contracts/workbench_notification_exception_contracts.d.ts`�
 - 前端 `npm --prefix app/pc-admin run typecheck` PASS。设计机械检查 `design-detect.json` 为空数组。
 - 既有测试只把空状态文字期望同步为「通知都已送达」；原分页、原精确对象、迟到响应、失权清理、合法 Session 保留、零 POST、Sender 次数与隐私断言逐字保留。
 - 最终构建、strict gate、T32 相关 selection、四宽度渲染、制品和远端审查待本候选实际执行；此处不预写 PASS。
+
+## 第一轮实际验证与集中修正
+
+功能提交 `8aa0beee21445399f3012e7c400395821eb16d62`：`final-build.log` PASS（913 编译模块、2747 输出）；`types-gate.log` PASS（未定义 Token / primitive leak 均 0）；`artifact.log` PASS，manifest SHA-256 `53cc41a6156064294ec0bb862f7b7844e51258a183f52b1fe5b7f0c60033c19e`。指令文档检查 PASS，原工具测试 19/19 PASS。
+
+活动 `v3-p09` 内 T32 直接子集 8 个已注册入口，实际 12/12 PASS、FAIL/SKIP/CANCELLED 均 0。使用既有 `runSelection`，保留原 STAGED_RUNTIME、flags、超时、数据库及浏览器合同，未修改 routing。完整路径/逐例/回执/截图归档见证据根 `t32-results/summary.json`、`t32.log`；不称为活动全集或 full/certify。
+
+首轮实际 UI 检查 `ui-round1.json`：四宽度均无页面溢出、3 行数据、1 个 primary；摘要正确为 2 条失败 + 1 条待核对。切换待核对筛选后为 warning，不把未知写成失败。逐条切换读取的是不同精确 delivery。四宽度空页均无分页、1 个 primary、成功圆直径实算 64px。
+
+发现并集中修正：关闭核对区后焦点落 BODY，改为返回原入口按钮；筛选可见「投递路由 / 全部路由 / 未知待核对」改为「渠道 / 全部渠道 / 结果待核对」。原 aria-label 和 API 参数不改。后继候选的检查待实际执行，旧结果仍绑定上述提交。
