@@ -1,9 +1,17 @@
 import {isWorkbenchForeground} from '../../desktop/host';
+function foregroundModal(){return Array.from(document.querySelectorAll('[role=dialog].detail-action-dialog,[role=dialog].detail-media-dialog,[role=dialog].detail-dialog.ds-drawer')).filter(element=>!element.closest('[data-exiting]')).at(-1);}
+/** Re-observe foreground material when modal ownership changes, including a drawer closing. */
+export function observeForegroundOverlays(onChange:()=>void):()=>void{
+  let current=foregroundModal();
+  const observer=new MutationObserver(()=>{const next=foregroundModal();if(next!==current){current=next;onChange();}});
+  observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['role','class','data-exiting']});
+  return()=>observer.disconnect();
+}
 function visiblePortion(node:HTMLElement):{start:number;end:number;height:number;width:number}|null{
   if(!isWorkbenchForeground()||!node.isConnected||!node.textContent?.trim())return null;
   // Ellipsis hides source text even when its entire CSS box is visible.
   if(node.scrollWidth>node.clientWidth+1||node.scrollHeight>node.clientHeight+1)return null;
-  const modal=Array.from(document.querySelectorAll('[role=dialog].detail-action-dialog,[role=dialog].detail-media-dialog')).filter(element=>!element.closest('[data-exiting]')).at(-1);
+  const modal=foregroundModal();
   if(modal&&!modal.contains(node))return null;
   let top=0,left=0,right=window.innerWidth,bottom=window.innerHeight;
   for(let ancestor:HTMLElement|null=node;ancestor;ancestor=ancestor.parentElement){

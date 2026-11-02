@@ -4,7 +4,8 @@ import {createHash,randomUUID} from 'node:crypto';
 import {mkdir,mkdtemp,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import type {Server} from 'node:http';
+import type {IncomingMessage,ServerResponse,Server} from 'node:http';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -17,6 +18,19 @@ test('effective scope changes revoke facts and draft authority without relying o
   await withWeb01Fixture(async({pool,origin,browserCookies,tickets,principals,runtime}:Fixture)=>{
     const ticket=tickets[5],principal=principals[0],cookie=browserCookies[0];assert.ok(ticket&&principal&&cookie);
     let deniedBodies=false,posts=0,denials=0,phase='initial';const started=performance.now();
+    // Order an actual object READ rejection before unrelated refreshes can clear the whole view.
+    const handlers=runtime.server.listeners('request'),activeReads=new Set<ServerResponse>();
+    let holdReads=false;
+    const held:{request:IncomingMessage;response:ServerResponse}[]=[];
+    const dispatch=(request:IncomingMessage,response:ServerResponse)=>{
+      if(response.destroyed)return;
+      if(request.method==='GET'&&typeof request.headers['sec-fetch-site']==='string'&&!request.url?.startsWith('/api/realtime/events')){activeReads.add(response);const done=()=>activeReads.delete(response);response.once('finish',done);response.once('close',done);}
+      for(const handler of handlers)Reflect.apply(handler,runtime.server,[request,response]);
+    };
+    runtime.server.removeAllListeners('request');
+    runtime.server.on('request',(request,response)=>{if(holdReads&&request.method==='GET'&&typeof request.headers['sec-fetch-site']==='string'){held.push({request,response});return;}dispatch(request,response);});
+    const releaseHeld=(objectOnly=false)=>{for(let index=held.length-1;index>=0;index--){const item=held[index];if(!item||objectOnly&&(item.request.url??'').split('?')[0]!=='/api/tickets/'+ticket.ticket.id)continue;held.splice(index,1);dispatch(item.request,item.response);}};
+    const prepared=async(condition:()=>boolean,label:string)=>{const until=performance.now()+5000;while(!condition()&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,10));assert.ok(condition(),label);};
     const reads:{kind:'bootstrap'|'item'|'command-context'|'realtime';phase:string;started_ms:number;status:number|null;finished_ms:number|null;closed_ms:number|null}[]=[];
     runtime.server.on('request',(request,response)=>{
       if(request.method==='POST')posts++;
@@ -43,8 +57,13 @@ test('effective scope changes revoke facts and draft authority without relying o
       phase='saving-draft';
       await browser.evaluate(inputExpression('T38 authorized draft revoked with its scope'));
       await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      phase='preparing-current-read';holdReads=true;
+      await clickWorkbenchControl(browser,'.ds-note-actions button');
+      await prepared(()=>held.some(item=>!item.response.destroyed&&(item.request.url??'').split('?')[0]==='/api/tickets/'+ticket.ticket.id),'the browser must start the original current-object READ');
+      await prepared(()=>activeReads.size===0,'earlier authorized GETs must settle before changing their scope');
       phase='revoking';const access=createPilotAccessService({pool});deniedBodies=true;
       await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['HANDLER'],resolverTeamIds:[]});
+      releaseHeld(true);
       await browser.waitFor('!document.querySelector("textarea")&&!document.querySelector(".activity-list")');
       for(let i=0;i<100&&denials===0;i++)await new Promise(resolve=>setTimeout(resolve,50));assert.ok(denials>0,'current object GET must actually reject the changed scope before the later grant');
       phase='revoked-bootstrap';
@@ -52,6 +71,7 @@ test('effective scope changes revoke facts and draft authority without relying o
       assert.equal(posts,0);
       const bootstrap=await fetch(origin+'/api/lifecycle/bootstrap',{headers:{cookie:cookie.name+'='+cookie.value}});assert.equal(bootstrap.status,200);
       phase='regranting';deniedBodies=false;await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      holdReads=false;releaseHeld();
       phase='regrant-wait';
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'','lost authorization must not restore revoked plaintext after a new grant');
@@ -62,7 +82,7 @@ test('effective scope changes revoke facts and draft authority without relying o
       await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,draft:document.querySelector("textarea")?.value})')));
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',failed_stage:phase,screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));
     }}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
-    t.diagnostic('T38_AUTHORITY_READS '+JSON.stringify(reads));
+    holdReads=false;releaseHeld();t.diagnostic('T38_AUTHORITY_READS '+JSON.stringify(reads));
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});

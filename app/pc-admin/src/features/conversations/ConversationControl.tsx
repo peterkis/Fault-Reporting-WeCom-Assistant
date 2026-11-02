@@ -3,13 +3,14 @@ import {Input as HInput,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization} from '../../app/authorization';
 import {conversations} from './client';
 import type {ConversationControlCommand,ConversationWorkspaceEntry} from './client';
-export function ConversationControl({entry,principal,onBlockedChange,chat=false,takeoverLabel='我来接待'}:{entry:ConversationWorkspaceEntry;principal:Principal;onBlockedChange:(value:boolean)=>void;chat?:boolean;takeoverLabel?:string}){
+export function ConversationControl({entry,principal,onBlockedChange,chat=false,takeoverLabel='我来接待',receptionTarget}:{entry:ConversationWorkspaceEntry;principal:Principal;onBlockedChange:(value:boolean)=>void;chat?:boolean;takeoverLabel?:string;receptionTarget?:HTMLElement|null}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0);
   const [target,setTarget]=useState(''),[reason,setReason]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice,noticeRevision]=useFeedbackState(''),[pending,setPending]=useState<{action:string;command:ConversationControlCommand}|null>(null);
   const id=entry.session.session_id,canTransfer=entry.capabilities.some(v=>['TRANSFER','FORCE_TRANSFER'].includes(v));
@@ -26,11 +27,11 @@ export function ConversationControl({entry,principal,onBlockedChange,chat=false,
     finally{if(request.current===controller){request.current=null;setBusy(false);void client.invalidateQueries({predicate:q=>q.queryKey[1]===principal.principal_id&&['conversation-view','conversation-chat','conversation-related','conversation-inbox'].includes(String(q.queryKey[0]))});}}
   }
   const disabled=busy||Boolean(pending);
+  const reception=<>{entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} tone={chat?'ghost':'secondary'}>请求人工接管</HButton>:null}{entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" tone={receptionTarget?'primary':'secondary'}>{chat?takeoverLabel:'接管沟通'}</HButton>:null}</>;
   return <section className="conversation-controls" aria-label="沟通责任"><h3>沟通责任</h3><p>{entry.assignment.assigned_display_name??'暂未分配沟通人'}{entry.assignment.assigned_to_me?'（我负责沟通）':''} · {entry.session.control_mode==='HUMAN'?'人工沟通':entry.session.control_mode}</p>
     <div className="note-controls">
-      {entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" tone="secondary">{chat?takeoverLabel:'接管沟通'}</HButton>:null}
+      {receptionTarget?createPortal(reception,receptionTarget):reception}
       {entry.capabilities.includes('RELEASE')?<HButton isDisabled={disabled} onClick={()=>void act('release')} tone="secondary">释放沟通责任</HButton>:null}
-      {entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} tone="secondary">请求人工接管</HButton>:null}
       {entry.capabilities.includes('CANCEL_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/cancel')} tone="secondary">取消人工接管请求</HButton>:null}
     </div>{canTransfer?<div className="transfer-controls"><WorkbenchSelect label={<>转派给</>} aria-label="沟通转派对象" isDisabled={disabled||eligible.isError} value={target} onChange={e=>setTarget(e)}><ListBox.Item id="" textValue={"选择当前获权工作人员"}>选择当前获权工作人员<ListBox.ItemIndicator/></ListBox.Item>{eligible.data?.items.filter(p=>p.principal_id!==principal.principal_id).map(p=><ListBox.Item id={p.principal_id} key={p.principal_id} textValue={String(p.display_name)}>{p.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
       {entry.capabilities.includes('TRANSFER')?<HButton isDisabled={disabled||!target} onClick={()=>void act('transfer')} tone="secondary">转派沟通</HButton>:null}
