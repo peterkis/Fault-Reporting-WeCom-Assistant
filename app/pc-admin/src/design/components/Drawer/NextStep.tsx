@@ -29,7 +29,7 @@ export function NextStep({status,stage,summary,readState,children}:{status:strin
   return <Context.Provider value={scope}>
     <section className="ds-next-step" data-stage={stage} data-read-state={currentRead} aria-label="下一步">
       <div className="ds-next-step-copy"><h3>下一步</h3><p>{summary}</p>{!entries.length?<small>{currentRead==='pending'?'正在核对可用操作…':currentRead==='unknown'?'可用操作暂未确认，请刷新或选择复核项':'你当前为只读'}</small>:null}</div>
-      <div className="ds-next-step-actions"><div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
+      <div className="ds-next-step-actions ds-drawer-command-buttons"><div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
     </section>
     <div className="ds-step-controllers">{children}</div>
   </Context.Provider>;
