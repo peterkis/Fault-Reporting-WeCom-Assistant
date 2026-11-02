@@ -4,13 +4,17 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {transpileModule, ModuleKind, ScriptTarget} from 'typescript';
 import {CircleHelp, Monitor, Printer, ScanLine} from 'lucide-react';
+import type {WorkbenchCard as CoreWorkbenchCard,BoardColumn} from '../contracts/web01_workbench_contracts.js';
+import type {WorkbenchFollowAttention} from '../contracts/workbench_item_follow_contracts.js';
+type WorkbenchCard=CoreWorkbenchCard&{attention?:WorkbenchFollowAttention};
 
 const root = process.env.TS_MIGRATION_TEST_SOURCE_ROOT ?? process.cwd();
 // Like the H5 pure-module tests, execute the actual browser source without importing its DOM application.
 async function designModule(name: string): Promise<string> {
   const source = await readFile(resolve(root, 'app/pc-admin/src/design', name + '.ts'), 'utf8');
   const output = transpileModule(source, {compilerOptions: {module: ModuleKind.ESNext, target: ScriptTarget.ES2022, verbatimModuleSyntax: true}}).outputText;
-  return 'data:text/javascript;base64,' + Buffer.from(output.replaceAll("'lucide-react'", JSON.stringify(import.meta.resolve('lucide-react')))).toString('base64');
+  const resolved=output.replaceAll("'lucide-react'", JSON.stringify(import.meta.resolve('lucide-react')));
+  return 'data:text/javascript;base64,' + Buffer.from(name==='board-presentation'?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
 }
 interface Heat {tone: string; label: string; ring: string | null}
 const {heatOf, HEAT_THRESHOLDS_MINUTES}: {
@@ -112,4 +116,42 @@ test('solid badges meet white-text AA and every category meets its specified con
     const bg = category.bg.slice(4, -1), fg = category.fg.slice(4, -1);
     assert.ok(contrast(color(bg), color(fg)) >= 4.5, category.label);
   }
+});
+
+const {matchesBoardSummary,sortBoardItems}: {
+  matchesBoardSummary:(item:WorkbenchCard,filter:'pending'|'overdue'|'mine'|'today',now:number)=>boolean;
+  sortBoardItems:(items:readonly WorkbenchCard[],column:BoardColumn,sort:'oldest'|'newest')=>WorkbenchCard[];
+}=await import(await designModule('board-presentation'));
+function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
+  return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,...overrides};
+}
+test('board overdue uses the shared exact four-hour boundary, only for pending Tickets',()=>{
+  assert.equal(matchesBoardSummary(boardCard(),'overdue',now),true);
+  assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 06:00:01'}),'overdue',now),false);
+  for(const item of [boardCard({kind:'intake'}),boardCard({kind:'review'}),boardCard({column:'active'}),boardCard({column:'closed'})])assert.equal(matchesBoardSummary(item,'overdue',now),false);
+  assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 09:59:00',updated_at:'2020-01-01 00:00:00'}),'overdue',now),false);
+});
+test('board mine requires the caller-only HANDLING relation, never names, follow or conversation responsibility',()=>{
+  assert.equal(matchesBoardSummary(boardCard({assignee_name:'当前用户'}),'mine',now),false);
+  const groups:WorkbenchFollowAttention['related_reasons'][]=[['FOLLOW'],['COMMUNICATION'],['HANDLING']];
+  for(const reasons of groups){
+    const item=boardCard({attention:{following:reasons.includes('FOLLOW'),follow_version:'a'.repeat(64),related_reasons:reasons}});
+    assert.equal(matchesBoardSummary(item,'mine',now),reasons.includes('HANDLING'));
+  }
+});
+test('board today follows Shanghai midnight and completion time rather than activity time',()=>{
+  for(const [completed,expected] of [['2026-11-01 23:59:59',false],['2026-11-02 00:00:00',true],['2026-11-02 10:00:00',true],['2026-11-02 10:00:01',false]] as const){
+    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed}),'today',now),expected);
+  }
+  assert.equal(matchesBoardSummary(boardCard({column:'active',completed_at:'2026-11-02 00:00:00'}),'today',now),false);
+  assert.equal(matchesBoardSummary(boardCard({column:'closed'}),'today',now),false);
+});
+test('board sorting leaves active order intact, uses completion for closed, and does not mutate DTOs',()=>{
+  const older=boardCard({id:'older',created_at:'2026-11-01 00:00:00',completed_at:'2026-11-02 09:00:00'}),newer=boardCard({id:'newer',completed_at:'2026-11-01 09:00:00'}),items=[newer,older];
+  assert.deepEqual(sortBoardItems(items,'pending','oldest'),[older,newer]);
+  assert.deepEqual(sortBoardItems(items,'pending','newest'),[newer,older]);
+  assert.deepEqual(sortBoardItems(items,'closed','oldest'),[newer,older]);
+  assert.deepEqual(sortBoardItems(items,'active','oldest'),items);
+  assert.deepEqual(sortBoardItems(items,'active','newest'),items);
+  assert.deepEqual(items,[newer,older]);
 });

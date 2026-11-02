@@ -11,6 +11,93 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 
+test('v2.1 board summary, sorting and intake groups only filter loaded authorized HTTP data',{timeout:120000},async()=>{
+  await withWeb01Fixture(async f=>{
+    const extra=await seedPersistedIntake({pool:f.pool,text:'卡10分组边界的全新合成材料，请判断。'});await f.processReviewIntake(extra.intakeId);
+    const posts=[],reads=[];
+    const observe=req=>{const path=new URL(req.url??'/',f.origin).pathname;if(req.method==='POST')posts.push(path);if(path==='/api/workbench/board')reads.push(path);};
+    f.runtime.server.on('request',observe);let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
+      await browser.command('Page.bringToFront');
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('[data-summary-filter=mine]')?.getAttribute('aria-disabled')==='false'");
+      const pages=await Promise.all(['pending','active','closed'].map(async column=>{const response=await fetch(f.origin+'/api/workbench/board?column='+column+'&range=recent',{headers:{cookie:f.cookies[0]}});assert.equal(response.status,200);return response.json();}));
+      const loaded=pages.flatMap(page=>page.items),mine=loaded.filter(item=>item.attention.related_reasons.includes('HANDLING'));
+      const initialReads=reads.length;
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=pending] .ds-summary-value').textContent"),String(pages[0].items.length));
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value').textContent"),String(mine.length));
+      assert.ok(mine.length>0);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-summary-filter]')].every(n=>n.title.includes('基于已加载的 '+"+loaded.length+"+' 项'))"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=overdue]').title.includes('处理中暂未计入')"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=pending]').getAttribute('aria-label')"),'待受理 '+pages[0].items.length);
+      assert.equal(await browser.evaluate("document.querySelectorAll('[data-board-group=待接单] .ticket-card').length"),1,'three-or-more intakes cannot starve the nonempty Ticket group');
+      await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
+      await browser.waitFor("document.querySelector('[data-summary-filter=pending]').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.board-column.active .ticket-card,.board-column.closed .ticket-card').length===0");
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-summary-filter=pending]')).borderColor"),'rgb(37, 99, 201)','selected border survives the pointer hover after a real click');
+      assert.equal(await browser.evaluate("location.search"),'','local summary does not replace server query criteria');
+      await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9");
+      await clickWorkbenchControl(browser,'[data-board-group=待判断] .ds-board-group-trigger');
+      await browser.waitFor("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').getAttribute('aria-expanded')==='false'");
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-board-group=待判断] .ticket-card')].every(n=>!n.checkVisibility())"),true);
+      await browser.evaluate("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').focus()");
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter'});
+      await browser.waitFor("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').getAttribute('aria-expanded')==='true'");
+      await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-board-group=待判断] .ticket-card')].every(n=>n.dataset.kind!=='ticket')&&[...document.querySelectorAll('[data-board-group=待接单] .ticket-card')].every(n=>n.dataset.kind==='ticket')"),true);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.card-tags .ds-tag')].some(n=>['待判断','待接单'].includes(n.textContent))"),false);
+      await clickWorkbenchControl(browser,'.board-column.closed .ds-column-sort');
+      await browser.waitFor("Boolean(document.querySelector('[role=menu][aria-label=已处理排序方式]'))");
+      await clickWorkbenchControl(browser,'[role=menu] [data-key=newest]');
+      await browser.waitFor("document.querySelector('.board-column.closed .ds-column-sort').textContent.includes('最新到达')");
+      const expected=pages[2].items.toSorted((a,b)=>a.completed_at===null?1:b.completed_at===null?-1:b.completed_at.localeCompare(a.completed_at)).slice(0,3).map(item=>item.id);
+      assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),expected);
+      await clickWorkbenchControl(browser,'[data-summary-filter=mine]');
+      await browser.waitFor("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-pressed')==='true'");
+      assert.deepEqual((await browser.evaluate("[...document.querySelectorAll('.ticket-card')].map(n=>n.dataset.itemId)")).sort(),mine.map(item=>item.id).sort());
+      await clickWorkbenchControl(browser,'.view-tabs button[aria-pressed=false]');
+      await browser.waitFor("Boolean(document.querySelector('.work-table'))");
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-pressed')"),'true');
+      assert.equal(await browser.evaluate("document.querySelectorAll('.work-table tbody tr').length"),mine.length);
+      assert.equal(reads.length,initialReads,'summary, sorting, grouping and view changes reuse loaded queries');
+      assert.deepEqual(posts,[],'presentation controls never POST a business command');
+    }catch(failure){error=failure;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+  },{workbenchFollowEnabled:true});
+  await withWeb01Fixture(async f=>{
+    let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:900,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
+      await browser.waitFor("Boolean(document.querySelector('[data-action=new-report] kbd'))&&document.querySelectorAll('.ticket-card').length===9");
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=new-report] kbd').textContent"),'N');
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-disabled')"),'true');
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value').textContent"),'—');
+      await assertWorkbenchPrimaryActions(browser);
+      assert.equal(await browser.evaluate("document.querySelectorAll('[data-tone=primary]').length"),1);
+      assert.equal(await browser.evaluate("document.documentElement.scrollWidth>innerWidth"),false);
+    }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+  },{workbenchManualReportsEnabled:true});
+});
+
+test('v2.1 front-end sort stays in place when SSE detail freezes the board',{timeout:120000},()=>withWeb01Fixture(async f=>{
+  let browser,error;
+  try{
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
+    await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+    const before=await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(before.length,3);
+    const card='.board-column.closed [data-item-id="'+before[1]+'"] .card-open';
+    await clickWorkbenchControl(browser,card);await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    assert.equal(await browser.evaluate("document.querySelector('.board-column.closed .ds-column-sort').disabled"),true,'SSE detail actually activates the existing order freeze');
+    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before,'opening a detail freezes the displayed sort, not server order');
+    const previousTitle=await browser.evaluate("document.querySelector('.detail-dialog #detail-title').textContent");
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
+    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title')?.textContent)&&document.querySelector('.detail-dialog #detail-title').textContent!=="+JSON.stringify(previousTitle));
+    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before);
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=关闭详情]');
+    await browser.waitFor("!document.querySelector('.detail-dialog')");
+    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before);
+  }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+},{workbenchRealtimeEnabled:true}));
+
 test('open workbench filters stay inside content bounds with reachable search and date controls',{timeout:120000},()=>withWeb01Fixture(async f=>{
   const directory=join(tmpdir(),'toolbar-filter-'+randomUUID());await mkdir(directory);const samples=[],screenshots=[],writes=[];
   const observe=request=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);let browser,error;
@@ -321,7 +408,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>card.querySelector('.ds-ticket-body')?.children.length===4&&card.querySelector('.card-meta .ds-source-label')&&!card.querySelector('.card-tags .ds-source-label'))"),true,'four rows and neutral source metadata');
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>[...card.querySelectorAll('.card-tags .ds-tag[data-tone]')].filter(tag=>tag.dataset.tone!=='neutral').length<=2)"),true,'at most two colored action tags');
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags')].some(tags=>['待接单','处理中','已关闭'].some(label=>[...tags.querySelectorAll('.ds-tag')].some(tag=>tag.textContent===label)))"),false,'card does not repeat its column stage');
-      assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column')].every(column=>getComputedStyle(column).backgroundColor==='rgb(247, 247, 245)'&&column.querySelector('.column-heading .ds-status-dot')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')"),true,'neutral columns with dot status headings');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column')].every(column=>getComputedStyle(column).backgroundColor==='rgb(244, 243, 239)'&&column.querySelector('.column-heading .ds-status-dot')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')"),true,'v2.1 warm neutral columns with dot status headings');
       await capture('new-board-1920.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);

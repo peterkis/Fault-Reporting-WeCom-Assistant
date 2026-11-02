@@ -1,0 +1,17 @@
+.ds-board-summary {display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: var(--space-3); margin: 0 0 var(--space-5);}
+.ds-board-summary .ds-summary-card.button[data-tone] {width: 100%; height: auto; padding: var(--space-4); background: var(--bg-canvas); border: 1px solid var(--border-hair); border-radius: var(--radius-md); color: var(--text-primary);}
+.ds-summary-card>.ds-button-label {display: flex; align-items: center; gap: var(--space-3); width: 100%;}
+.ds-board-summary .ds-summary-card.button[data-tone][aria-pressed=true] {border-color: var(--brand); background: var(--bg-selected);}
+.ds-board-summary .ds-summary-card.button[data-tone][aria-pressed=true][data-summary-filter]:is(:hover,:active,:focus-visible,[data-pressed=true]) {border-color: var(--brand); background: var(--bg-selected);}
+.ds-summary-card[aria-disabled=true] {cursor: default;}
+.ds-summary-label {font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap;}
+.ds-summary-value {margin-left: auto; font-size: var(--fs-xl); line-height: var(--lh-xl); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums;}
+.ds-summary-icon {display: grid; place-items: center; flex: none; width: var(--space-8); height: var(--space-8); border-radius: var(--radius-sm);}
+.ds-summary-icon>svg {width: var(--icon-lg); height: var(--icon-lg); stroke-width: 1.75;}
+.ds-summary-card[data-summary-tone=warning] .ds-summary-icon {background: var(--tone-warning-bg); color: var(--tone-warning-fg);}
+.ds-summary-card[data-summary-tone=danger] .ds-summary-icon {background: var(--tone-danger-bg); color: var(--tone-danger-fg);}
+.ds-summary-card[data-summary-tone=brand] .ds-summary-icon {background: var(--tone-brand-bg); color: var(--tone-brand-fg);}
+.ds-summary-card[data-summary-tone=success] .ds-summary-icon {background: var(--tone-success-bg); color: var(--tone-success-fg);}
+.ds-summary-tooltip {max-width: 320px; font-size: var(--fs-xs); line-height: var(--lh-xs);}
+@media(max-width:1100px) {.ds-board-summary {grid-template-columns: repeat(2,minmax(0,1fr));}}
+@media(max-width:600px) {.ds-board-summary {gap: var(--space-2);} .ds-board-summary .ds-summary-card.button[data-tone] {padding: var(--space-2);} .ds-summary-card>.ds-button-label {gap: var(--space-2);} .ds-summary-value {font-size: var(--fs-lg);}}
