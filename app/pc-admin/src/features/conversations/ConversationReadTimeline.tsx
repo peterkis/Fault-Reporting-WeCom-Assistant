@@ -1,7 +1,7 @@
 import {MessageBubble} from '../../design/components/MessageBubble/MessageBubble';
 import {Timeline} from '../../design/components/Timeline/Timeline';
 import type {ReactNode} from 'react';
-import {useEffect,useRef} from 'react';
+import {Fragment,useEffect,useRef} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import type {Principal} from '../../api/client';
 import {ApiError,captureWorkbenchRead,readWorkbench,workbenchTransportWritable,rejectAuthorization} from '../../api/client';
@@ -10,7 +10,7 @@ import {foregroundTextReader,hasForegroundText} from '../personal-read/foregroun
 import type {ConversationWorkspaceItem} from './client';
 function object(value:unknown):Record<string,unknown>{if(value===null||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function cursor(value:unknown){const v=object(object(value).read_cursor);if(typeof v.last_read_sequence!=='string'||!/^(0|[1-9][0-9]{0,15})$/u.test(v.last_read_sequence)||!Number.isSafeInteger(Number(v.last_read_sequence))||typeof v.row_version!=='number'||!Number.isSafeInteger(v.row_version)||v.row_version<0)throw new ApiError(502,'INVALID_RESPONSE');return {last:Number(v.last_read_sequence),version:v.row_version};}
-export function ConversationReadTimeline<T extends ConversationWorkspaceItem>({principal,id,items,renderItem,itemClassName}:{principal:Principal;id:string;items:T[];renderItem?:(item:T)=>ReactNode;itemClassName?:(item:T)=>string}){
+export function ConversationReadTimeline<T extends ConversationWorkspaceItem>({principal,id,items,renderItem,renderBeforeItem,itemClassName}:{principal:Principal;id:string;items:T[];renderItem?:(item:T)=>ReactNode;renderBeforeItem?:(item:T,index:number)=>ReactNode;itemClassName?:(item:T)=>string}){
   const root=useRef<HTMLOListElement|null>(null),client=useQueryClient(),signature=JSON.stringify(items.map(item=>[item.item_id,item.sequence_no,item.text]));
   const uncertain=useRef<{principal:string;session:string;sequence:number}|null>(null);
   useEffect(()=>{
@@ -54,5 +54,5 @@ export function ConversationReadTimeline<T extends ConversationWorkspaceItem>({p
     document.addEventListener('visibilitychange',changed);window.addEventListener('focus',changed);window.addEventListener('scroll',changed,true);window.addEventListener('resize',changed);changed();
     return()=>{disposed=true;controller.abort();observer.disconnect();document.removeEventListener('visibilitychange',changed);window.removeEventListener('focus',changed);window.removeEventListener('scroll',changed,true);window.removeEventListener('resize',changed);};
   },[client,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,principal.csrf_token,principal.personal_read_enabled,id,signature]);
-  return <Timeline><ol ref={root}>{items.map(item=><li key={item.item_id} className={itemClassName?.(item)} data-conversation-item={item.item_id}>{renderItem?renderItem(item):<><header><strong>{item.visibility==='INTERNAL'?'内部协作':item.sender_kind==='USER'?'报修人':'工作人员'}</strong><time>{item.occurred_at}</time><span>{item.visibility==='INTERNAL'?'内部备注':'服务材料'}</span></header><MessageBubble side={item.sender_kind==='USER'?'incoming':'outgoing'} internal={item.visibility==='INTERNAL'}><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条材料没有可展示的文本。'}</p></MessageBubble></>}</li>)}</ol></Timeline>;
+  return <Timeline><ol ref={root}>{items.map((item,index)=><Fragment key={item.item_id}>{renderBeforeItem?.(item,index)}<li className={itemClassName?.(item)} data-conversation-item={item.item_id}>{renderItem?renderItem(item):<><header><strong>{item.visibility==='INTERNAL'?'内部协作':item.sender_kind==='USER'?'报修人':'工作人员'}</strong><time>{item.occurred_at}</time><span>{item.visibility==='INTERNAL'?'内部备注':'服务材料'}</span></header><MessageBubble side={item.sender_kind==='USER'?'incoming':'outgoing'} internal={item.visibility==='INTERNAL'}><p data-session-read-sequence={item.text?.trim()?item.sequence_no:undefined}>{item.text??'本条材料没有可展示的文本。'}</p></MessageBubble></>}</li></Fragment>)}</ol></Timeline>;
 }

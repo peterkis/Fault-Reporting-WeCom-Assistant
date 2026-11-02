@@ -16,6 +16,38 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const input=(purpose:string,text:string)=>`(()=>{const input=document.querySelector('textarea[data-purpose="${purpose}"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();})()`;
 const ready="Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-conversation-draft=messages]')?.textContent.includes('草稿')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'";
 
+test('v2.1 reception uses the original command and keeps message space, purpose and newline boundaries',async()=>{
+  await withT22Fixture(async f=>{
+    const session=f.sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
+    const posts:string[]=[];
+    const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+      for(const width of [1920,1440,1280,900]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+        await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        assert.equal(await browser.evaluate("document.querySelector('.inbox-chat-header').getBoundingClientRect().height"),60);
+        assert.equal(await browser.evaluate("document.querySelector('.inbox-timeline').getBoundingClientRect().height>=innerHeight/2"),true,'waiting message height at '+width);
+        assert.equal(await browser.evaluate("document.querySelector('.inbox-reception').checkVisibility()&&document.querySelector('textarea[data-purpose=messages]').disabled"),true);
+        assert.equal(await browser.evaluate("[...document.querySelectorAll('.inbox-chat [data-tone=primary]')].filter(node=>node.checkVisibility()).length"),1);
+        assert.equal(await browser.evaluate("document.documentElement.scrollWidth>innerWidth+1"),false);
+      }
+      assert.deepEqual([...posts],[],'resizing and presentation produce no commands');
+      await clickWorkbenchControl(browser,'[data-action=takeover-conversation]');
+      await browser.waitFor("document.querySelector('.inbox-reception').hidden&&!document.querySelector('textarea[data-purpose=messages]').disabled");
+      assert.deepEqual([...posts],['/api/workbench/conversations/'+session.id+'/takeover']);
+      await browser.evaluate(input('messages','第一行'));
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=messages]').value.includes('\\n')"),true);
+      assert.equal(posts.filter(path=>path.endsWith('/messages')).length,0,'plain Enter never sends');
+      await clickWorkbenchControl(browser,'#conversation-note-tab');
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.inbox-composer')).backgroundColor===getComputedStyle(document.querySelector('.inbox-timeline')).backgroundColor"),false,'note mode colors the whole composer');
+      assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'','reply is never copied to the note');
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.inbox-chat [data-tone=primary]')].filter(node=>node.checkVisibility()).length"),1);
+    }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  },{inbox:true,realtime:true,personalRead:false,recovery:true});
+});
+
 test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{
   await withT22Fixture(async f=>{
     const session=f.sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
@@ -29,6 +61,8 @@ test('ticket detail and conversation summary keep independent cache shapes acros
         await browser.evaluate(`document.querySelector('a[href="/workbench/app/conversations/${session.id}"]').click()`);
         await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')");
         await browser.evaluate("document.querySelector('.inbox-associated a').click()");
+        await browser.waitFor("Boolean(document.querySelector('.inbox-associated-detail'))");
+        await clickWorkbenchControl(browser,'.inbox-full-item');
       }
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))&&Boolean(document.querySelector('.properties'))");
       assert.equal(await browser.evaluate('location.pathname.endsWith('+JSON.stringify(session.ticketId)+')'),true);
@@ -104,7 +138,7 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
       await browser.evaluate("(()=>{globalThis.__inboxCommands=[];const original=fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/messages')&&options?.method==='POST')globalThis.__inboxCommands.push(JSON.parse(options.body));return original(path,options);};})()");
       await browser.evaluate(input('messages','合成原UUID回复'));dropReply=true;
       await assertWorkbenchPrimaryLabelContrast(browser,'[data-action=send-conversation-reply]');
-      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',modifiers:2,windowsVirtualKeyCode:13});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',modifiers:2,windowsVirtualKeyCode:13});
       await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('结果未知')");const command=await browser.evaluate('globalThis.__inboxCommands[0]') as ConversationTextCommand;assert.equal(command.text,'合成原UUID回复');
       await browser.evaluate("document.querySelector('[data-action=check-messages]').click()");await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");assert.equal(await browser.evaluate('globalThis.__inboxCommands.length'),1);
       const receipt=await (await fetch(f.origin+path+'/messages/commands/'+command.client_command_id,{headers:{cookie:f.cookie}})).json() as ConversationCommandReceipt;assert.ok(receipt.state==='COMMITTED');const messageId=receipt.result.message_id,deliveryId=receipt.result.delivery_ids[0];assert.ok(deliveryId);
@@ -114,6 +148,7 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
       for(const width of [1920,1440,1280,900,390]){
         await browser.command('Emulation.setDeviceMetricsOverride',{width,height:width<600?844:1080,deviceScaleFactor:1,mobile:width<600});
         const layout=await browser.evaluate("(()=>{const r=document.querySelector('.inbox-chat').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth+1,chatWidth:r.width,chatVisible:r.width>0};})()") as {overflow:boolean;chatWidth:number;chatVisible:boolean};assert.equal(layout.overflow,false,'horizontal overflow at '+width);assert.ok(layout.chatVisible&&layout.chatWidth>200);
+        if(width>=900){assert.equal(await browser.evaluate("document.querySelector('.inbox-chat-header').getBoundingClientRect().height"),60);assert.equal(await browser.evaluate("document.querySelector('.inbox-timeline').getBoundingClientRect().height>=innerHeight/2"),true,'1080p message space at '+width);}
         const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'inbox-'+width+'.png');await writeFile(file,bytes);screenshots.push({file,width,height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
       }
       // A failed complete REST reread makes the existing controller unavailable;

@@ -11,7 +11,7 @@ export function Drawer({children,dismissBlocked,onClose}:{children:ReactNode;dis
 }
 
 /** A disclosure keeps command owners mounted while their entry points are tucked away. */
-export function DrawerMoreActions({children}:{children:ReactNode}){
+export function DrawerMoreActions({children,label='更多工单操作'}:{children:ReactNode;label?:string}){
   const root=useRef<HTMLDetailsElement>(null);
   useEffect(()=>{const close=(event:PointerEvent)=>{
     const menu=root.current;if(!menu||!(event.target instanceof Node)||menu.contains(event.target))return;
@@ -25,8 +25,8 @@ export function DrawerMoreActions({children}:{children:ReactNode}){
   document.addEventListener('pointerdown',close);menu?.addEventListener('keydown',escape,true);
   return()=>{document.removeEventListener('pointerdown',close);menu?.removeEventListener('keydown',escape,true);};},[]);
   return <details className="ds-drawer-more" ref={root}>
-    <summary data-action="open-detail-actions" aria-label="更多工单操作" title="更多工单操作"><MoreHorizontal aria-hidden="true"/></summary>
-    <div className="ds-drawer-more-panel" aria-label="更多工单操作">{children}</div>
+    <summary data-action="open-detail-actions" aria-label={label} title={label}><MoreHorizontal aria-hidden="true"/></summary>
+    <div className="ds-drawer-more-panel" aria-label={label}>{children}</div>
   </details>;
 }
 
