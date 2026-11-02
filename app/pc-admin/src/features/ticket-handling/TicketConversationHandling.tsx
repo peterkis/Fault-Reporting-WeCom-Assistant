@@ -1,3 +1,4 @@
+import {StepEntry} from '../../design/components/Drawer/NextStep';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel} from "@heroui/react";
@@ -73,7 +74,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
     <div className="note-controls">
       {originalId?<HButton type="button" data-action="open-conversation-handling-recovery" isDisabled={state==='submitting'||state==='checking'} onClick={()=>setOpen(true)} tone="secondary">核对接单</HButton>:canStart?<>
         {simpleSession?<HButton type="button" className="icon-button" aria-label="接单选项" title="接单选项" isDisabled={blocked||otherBlocked} onClick={openOptions} tone="secondary"><ChevronDown size={16}/></HButton>:null}
-        <HButton type="button" className="take-and-start" data-action="take-and-start-with-conversations" isDisabled={blocked||otherBlocked||context.isPending||context.isError||related.isPending||related.isError||draft.status==='loading'} onClick={()=>{if(direct)submit('take-and-start-with-conversations');else setOpen(true);}} tone="primary">接单</HButton>
+        <StepEntry action="take" label={'接单'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start-with-conversations" isDisabled={blocked||otherBlocked||context.isPending||context.isError||related.isPending||related.isError||draft.status==='loading'} onClick={()=>{if(direct)submit('take-and-start-with-conversations');else setOpen(true);}} tone={tone}>{text}</HButton>}</StepEntry>
       </>:null}
     </div>
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||state==='checking'} title="接单选项" closeLabel="关闭接单选项" className="detail-action-dialog detail-accept-dialog">

@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // Original production PC tracer. Only SOURCE prepared: the actual form must fail before consumer implementation.
 // One current HANDLER/default-retain workflow; real HTTP preconditions and real commit, no success handler.
 import {test} from 'node:test';
@@ -86,7 +87,7 @@ test('production PC current handler restores two required inputs and returns a r
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='等待厂商'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);assert.equal(await browser.evaluate('innerWidth'),1280);assert.equal(await browser.evaluate('innerHeight'),900);completed.push(activeStage);
       // First T09 boundary: missing actual production form is a future RED, not a preflight capability assumption.
-      activeStage='FORM_PRESENT';await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false`);await captureReadiness('BEFORE_INPUT');completed.push(activeStage);
+      activeStage='FORM_PRESENT';await openWorkbenchStep(browser,'.ticket-return-to-dispatch');await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false`);await captureReadiness('BEFORE_INPUT');completed.push(activeStage);
       activeStage='DUAL_REQUIRED';assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=RETAIN_CURRENT]')?.checked`),true);assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=TRANSFER_SELECTED]')?.checked`),false);
       assert.equal(await browser.evaluate(`(${reasonInput}).maxLength`),500);assert.equal(await browser.evaluate(`(${unfinishedInput}).maxLength`),1400);assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);
       await browser.evaluate(fill(reasonInput,reason));assert.equal(await browser.evaluate(`(${action}).disabled`),true);await browser.evaluate(fill(unfinishedInput,'   '));assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);

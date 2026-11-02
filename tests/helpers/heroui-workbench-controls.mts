@@ -3,6 +3,13 @@ import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 
+/** Open the current presentation of a purpose, retaining its original form and guards. */
+export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor'>,selector:string){
+  await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
+  await browser.evaluate(`(()=>{const workflow=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]');if(!workflow)return;const trigger=[...document.querySelectorAll('[aria-controls]')].find(node=>node.getAttribute('aria-controls')===workflow.id);if(!trigger)throw Error('STEP_ENTRY_REQUIRED');const more=trigger.closest('details.ds-drawer-more');if(more&&!more.open)more.querySelector('summary').click();trigger.click();})()`);
+  await browser.waitFor(`document.querySelector(${JSON.stringify(selector)})?.checkVisibility()===true`);
+}
+
 export async function openWorkbenchUserMenu(browser:Browser){
   // A real account-menu interaction first activates its tab; background rAF is suspended.
   await browser.command('Page.bringToFront');
@@ -30,9 +37,14 @@ export async function openWorkbenchLogoutBoundary(browser:Pick<Browser,'evaluate
 
 /** Click the actual visible control, including HeroUI's checkbox/radio label. */
 export async function clickWorkbenchControl(browser:Browser,selector:string){
+  const tab=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('[role=tabpanel][hidden]')?.getAttribute('aria-labelledby')??null`);
+  if(typeof tab==='string')await clickWorkbenchControl(browser,'#'+tab);
   // v2 filters retain their controls in a native disclosure; use its real trigger first.
   if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-toolbar-filters');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
-  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-drawer-more>summary');
+  const moreLabel=await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return panel&&!panel.open&&!node?.matches('summary')?panel.querySelector('summary')?.getAttribute('aria-label'):null;})()`);
+  if(typeof moreLabel==='string')await clickWorkbenchControl(browser,'details.ds-drawer-more>summary[aria-label='+JSON.stringify(moreLabel)+']');
+  const workflow=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]')?.id??null`);
+  if(typeof workflow==='string')await clickWorkbenchControl(browser,'[aria-controls='+JSON.stringify(workflow)+']');
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;
   await browser.waitFor(`(()=>{const node=${target};return node?.checkVisibility()===true&&node.disabled!==true&&!node.closest('[data-disabled=true]');})()`);
   await browser.evaluate(`(()=>{const node=${target};node.scrollIntoView({block:'nearest',inline:'nearest'});})()`);

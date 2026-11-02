@@ -1,3 +1,4 @@
+import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
@@ -243,7 +244,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
   const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'||role==='HANDLER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
   if(!principal.ticket_return_to_dispatch_enabled&&!originalId&&!hasReturnInput(value)&&!busy&&!draft.restoring)return null;
-  return <section className="ticket-notes ticket-return-to-dispatch" aria-label="停止当前已开始的处理责任">
+  return <StepWorkflow action="return" label="退回待安排" available={allowed} attention={Boolean(originalId||blocked||hasReturnInput(value)||message)}><section className="ticket-notes ticket-return-to-dispatch" aria-label="停止当前已开始的处理责任">
     <h3>停止处理并退回待安排</h3>
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
@@ -270,5 +271,5 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
     {hasReturnInput(value)&&!busy?<HButton type="button" data-action="discard-return-draft" onClick={discard} tone="secondary">清除敏感填写内容</HButton>:null}
     {message?<ToastFeedback revision={messageRevision} source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
-  </section>;
+  </section></StepWorkflow>;
 }

@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // First real production-bundle tracer, initially run before the consumer exists.
 // Only the first default-retain public production-bundle tracer; no test-owned success handler.
 import {test} from 'node:test';
@@ -90,7 +91,7 @@ test('production ADMIN withdraws one legacy accepted unstarted Ticket with an in
       await browser.waitFor(`Boolean(document.querySelector('#detail-title'))&&(${property('状态')})==='已领取'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);
       assert.equal(await browser.evaluate('location.origin'),fixture.origin);
       assert.equal(await browser.evaluate('innerWidth'),600);
-      await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+      await openWorkbenchStep(browser,'.ticket-unassign');
       await browser.waitFor(`Boolean(document.querySelector('[data-action=unassign]'))&&Boolean(${reasonInput})`);
       assert.equal(await browser.evaluate(`(${section})?.querySelector('input[type=radio][value=RETAIN_CURRENT]')?.checked`),true,'retaining communication is the actual default, not a test-selected replacement');
       assert.equal(await browser.evaluate(`(${section})?.querySelector('input[type=radio][value=TRANSFER_SELECTED]')?.checked`),false);

@@ -40,7 +40,7 @@ function MediaVideo({url,poster,onError}:{url:string;poster:string|undefined;onE
   useEffect(()=>{const element=video.current;return()=>{element?.pause();element?.removeAttribute('src');element?.load();};},[url]);
   return <video key={url} ref={video} controls autoPlay playsInline preload="none" src={url} poster={poster} onError={onError}/>;
 }
-export function AttachmentSection({principal,kind,id,requested,readReady,reporterName,onOpenChange,web}:{web:WebReportQuery;principal:Principal;kind:'ticket'|'review'|'intake';id:string;requested:{kind:'ticket'|'review'|'intake';id:string};readReady:boolean;reporterName:string|null;onOpenChange:(open:boolean)=>void}){
+export function AttachmentSection({principal,kind,id,requested,readReady,reporterName,onOpenChange,web,onCountChange}:{web:WebReportQuery;principal:Principal;kind:'ticket'|'review'|'intake';id:string;requested:{kind:'ticket'|'review'|'intake';id:string};readReady:boolean;reporterName:string|null;onOpenChange:(open:boolean)=>void;onCountChange?:((count:number|null)=>void)|undefined}){
   const employeeRead=principal.media_employee_read_enabled===true;
   const client=useQueryClient(),root=useRef<HTMLElement>(null),alive=useRef(true),generation=useRef(0),urls=useRef(new Set<string>());
   const requests=useRef(new Set<AbortController>()),settling=useRef(new Set<Promise<unknown>>()),activeReads=useRef(0),exclusiveRead=useRef(false),maxReads=useRef(1);
@@ -53,6 +53,7 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   useEffect(()=>{if(legacy.isError)setLastLegacyError(legacy.error);else if(legacy.isSuccess)setLastLegacyError(null);},[legacy.error,legacy.isError,legacy.isSuccess]);
   useEffect(()=>{if(!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending))setMetadataSettled(true);},[legacy.isPending,web.isPending,principal.web_reports_enabled]);
   const materials:Material[]=[...(legacy.data?.items??[]).map((item,index)=>({key:'legacy:'+item.ref,kind:'IMAGE' as const,name:'报修图片 '+(index+1),ready:item.available,duration:null,legacy:item})),...(principal.web_reports_enabled&&web.data?.applicable?web.data.media:[]).map((item,index)=>({key:'web:'+item.media_ref,kind:item.kind,name:({IMAGE:'现场图片',VIDEO:'现场视频',VOICE:'报修语音'})[item.kind]+' '+(index+1),ready:item.kind!=='VOICE'||item.playback_status==='READY',duration:item.duration_ms,web:item}))];
+  useEffect(()=>{onCountChange?.(metadataSettled&&!legacy.isError&&!web.isError?materials.length:null);},[onCountChange,metadataSettled,legacy.isError,web.isError,materials.length]);
   const keep=(blob:Blob)=>{const url=URL.createObjectURL(blob);urls.current.add(url);return url;};
   const revoke=(url:string)=>{if(urls.current.delete(url))URL.revokeObjectURL(url);};
   const clear=(abort=true)=>{generation.current++;if(abort)cancelReads();for(const url of urls.current)URL.revokeObjectURL(url);urls.current.clear();setThumbs({});setThumbState({});setPreview(null);setBusy(false);};

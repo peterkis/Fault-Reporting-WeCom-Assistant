@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // STAGED_RUNTIME / first stale-view POST403 browser execution pending.
 // No claim that a transferred-away HANDLER retains internal-note write permission.
 import {test} from 'node:test';
@@ -30,7 +31,7 @@ for(const mode of ['direct','lost','disabled','temporary','csrf'])test(mode==='d
   let browser:Browser|undefined,primary:unknown,replacement:P2016EnabledRuntime|undefined;
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
-await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await openWorkbenchStep(browser,'.shared-follow-up');
    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('草稿仅在当前浏览器')&&Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))`);
    const modulePath=await publicStorePath();
    // Observe the production store's actual synchronous invalidations. No synthetic invalidation is sent.

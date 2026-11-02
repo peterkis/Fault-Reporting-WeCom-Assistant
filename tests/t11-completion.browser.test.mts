@@ -7,7 +7,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {withT11Fixture,t11Http,t11NewTicket} from './helpers/t11-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {clickWorkbenchControl,openWorkbenchDialog} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,openWorkbenchDialog,openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 
@@ -27,6 +27,7 @@ async function completionBrowser(context:T11Fixture,run:(browser:Browser,capture
 }
 async function type(browser:Browser,selector:string,value:string){
   if(selector.startsWith('#completion-'))await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');
+  await openWorkbenchStep(browser,selector);
   await browser.waitFor(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});return input instanceof HTMLTextAreaElement&&input.checkVisibility()&&!input.disabled;})()`);
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
 }
@@ -57,7 +58,7 @@ test('MVP without drafts completes take, wait, resume, completion, reopen and re
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-conversation-handling [role=radiogroup]'))"),false,'no empty communication choice before taking an unlinked ticket');
       await browser.evaluate(`document.querySelector(${JSON.stringify(take)}).click()`);
       await browser.waitFor("document.querySelector('.properties')?.innerText.includes('处理中')&&Boolean(document.querySelector('.detail-complete-button'))");
-      await browser.evaluate("(()=>{const workflow=document.querySelector('.detail-workflows');if(workflow&&!workflow.hasAttribute('data-expanded'))workflow.querySelector('[data-slot=disclosure-heading] button').click();})()");
+
       await clickWorkbenchControl(browser,'[data-action=request-information]');
       await type(browser,'[data-waiting-purpose=request-information] textarea','请电话补充合成设备的错误提示。');
       await clickWorkbenchControl(browser,'[data-waiting-purpose=request-information] button[type=submit]');

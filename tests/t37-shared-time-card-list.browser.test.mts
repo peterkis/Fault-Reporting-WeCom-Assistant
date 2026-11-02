@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // Existing card, row-link, drawer and controls are read from the production bundle.
 // A visible read-only schedule does not mean draft discovery has enabled its input.
 import {test} from 'node:test';
@@ -84,7 +85,7 @@ async function closeDetail(browser:Browser){
 async function openDetail(browser:Browser,node:string,linkSelector:string){
   await browser.evaluate(`(()=>{const root=${node},link=root?.querySelector(${JSON.stringify(linkSelector)});if(!link)throw Error('T37_NATIVE_ITEM_LINK_REQUIRED');link.click();})()`);
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region)}))`);
-  await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
+  await openWorkbenchStep(browser,'.shared-follow-up');
 }
 async function clickSchedule(browser:Browser,label:string){
   await browser.waitFor(`(()=>{const root=document.querySelector(${JSON.stringify(region)}),button=[...(root?.querySelectorAll('button')??[])].find(node=>node.textContent.trim()===${JSON.stringify(label)});return Boolean(button&&!button.disabled);})()`);

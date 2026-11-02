@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {mkdir,writeFile,rmdir} from 'node:fs/promises';
@@ -28,7 +29,7 @@ test('T42 board completion and independent staff reopen each require their origi
    assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true);
    await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t42LifecycleWrites=[];globalThis.__t42LifecycleResponses=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t42LifecycleWrites.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);if(options?.method==='POST')globalThis.__t42LifecycleResponses.push({path:String(path),status:response.status});return response;};})()");
    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).click()`);
-   await browser.waitFor("Boolean(document.querySelector('.detail-dialog #completion-process'))");await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");await browser.waitFor("document.querySelector('.detail-dialog #completion-process')?.checkVisibility()===true");
+   await browser.waitFor("Boolean(document.querySelector('.detail-dialog #completion-process'))");await openWorkbenchStep(browser,'.ticket-completion');await browser.waitFor("document.querySelector('.detail-dialog #completion-process')?.checkVisibility()===true");
    assert.deepEqual(await browser.evaluate('globalThis.__t42LifecycleWrites'),[]);assert.equal(await browser.evaluate("document.querySelector('[data-action=complete-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'IN_PROGRESS');
    await browser.evaluate("document.querySelector('#completion-process').focus()");await browser.command('Input.insertText',{text:'T42合成内部排查过程，不能作为外发摘要。'});
    await browser.evaluate("document.querySelector('#completion-summary').focus()");await browser.command('Input.insertText',{text:'合成设备服务已恢复。'});await browser.evaluate("document.querySelector('#completion-confirmed').click()");
@@ -43,7 +44,7 @@ test('T42 board completion and independent staff reopen each require their origi
    await browser.waitFor("!document.querySelector('.detail-dialog')");
    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=pending]')}).click()`);
    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #reopen-reason'))");
-   await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(panel&&!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
+   await openWorkbenchStep(browser,'.ticket-reopen');
    assert.equal(await browser.evaluate('globalThis.__t42LifecycleWrites.length'),1);assert.equal(await browser.evaluate("document.querySelector('[data-action=reopen-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'CLOSED');
    await browser.evaluate("document.querySelector('#reopen-reason').focus()");await browser.command('Input.insertText',{text:'工作人员核实同一故障仍需处理。'});
    await browser.waitFor("document.querySelector('[data-action=reopen-ticket]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");

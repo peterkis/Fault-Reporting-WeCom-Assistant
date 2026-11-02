@@ -30,7 +30,7 @@ test('formal production detail reads the recorded first and coupled transfer thr
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
-   if(!await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"))await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+
    assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"接单与交接链\"]'))"),true,'the actual production bundle must mount the safe history consumer');
    await browser.waitFor("document.querySelectorAll('[data-assignment-history-row]').length===2");
    const displayed=text(await browser.evaluate("document.querySelector('[aria-label=\"接单与交接链\"]').innerText"));

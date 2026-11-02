@@ -1,3 +1,4 @@
+import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Input as HInput,Label as HLabel} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
@@ -132,7 +133,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
  if(!principal.follow_up_schedules_enabled&&!commandId&&!input&&state==='idle'&&!draft.enabled)return null;
  const canSet=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('SET')===true;
  const canCancel=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('CANCEL')===true;
- return <section role="region" aria-label="共享下次跟进时间" className="ticket-notes shared-follow-up">
+ return <StepWorkflow action="follow-up" label={canSet?'设置跟进':'查看跟进'} available={canSet||canCancel} attention={Boolean(input||commandId||message||!canSet&&!canCancel&&(view||query.isError))}><section role="region" aria-label="共享下次跟进时间" className="ticket-notes shared-follow-up">
   <h3>共享下次跟进时间</h3><p>北京时间（Asia/Shanghai），由当前处理和沟通责任共同跟进。</p>
   {!principal.follow_up_schedules_enabled?<p>共享时间维护已关闭；仍可核对原操作。</p>:query.isPending?<p role="status">正在读取当前共享时间…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:null}
   {principal.follow_up_schedules_enabled&&view?<>
@@ -148,5 +149,5 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   {input&&!blocked?<HButton type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}} tone="secondary">清空未提交输入</HButton>:null}
   {principal.follow_up_schedules_enabled&&!blocked?<HButton type="button" onClick={()=>{void query.refetch();}} tone="secondary">重新读取共享时间</HButton>:null}
   {state!=='idle'?<ToastFeedback revision={messageRevision} source="follow-up" state={state} role={['unknown','denied','conflict','invalid'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
- </section>;
+ </section></StepWorkflow>;
 }

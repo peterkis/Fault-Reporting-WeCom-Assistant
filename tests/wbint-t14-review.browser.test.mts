@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -30,7 +31,7 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the actual production Item must expose its Review workspace');
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('门诊二楼打印机')");
-      await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+      await openWorkbenchStep(browser,'[data-review-id]');
       await browser.waitFor("document.querySelector('[data-review-workspace]')?.checkVisibility()===true");
       const reviewText=String(await browser.evaluate("document.querySelector('[data-review-workspace]').innerText"));
       for(const label of ['本次报修内容','复核结论'])assert.ok(reviewText.includes(label));

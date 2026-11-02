@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -34,7 +35,7 @@ async function productionForm(cleanupFailure=false){
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);
    await browser.waitFor("Boolean(document.querySelector('#detail-title'))");if(cleanupFailure)throw primaryFault;assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-takeover-completion'))"),true,'the formal production bundle must expose the independent composite form');
-   await browser.evaluate("(()=>{const section=document.querySelector('.detail-workflows');if(!section.hasAttribute('data-expanded'))section.querySelector('.workbench-disclosure-trigger').click();})()");await browser.waitFor("document.querySelector('.ticket-takeover-completion').checkVisibility()===true");
+   await openWorkbenchStep(browser,'.ticket-takeover-completion');await browser.waitFor("document.querySelector('.ticket-takeover-completion').checkVisibility()===true");
    await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
    assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover-completion select').value"),'');assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=TAKE_SELECTED]').checked"),true);
    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-takeover-completion [data-session-choice] input[type=checkbox]:checked').length"),0);
