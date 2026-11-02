@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;pool:PostgresPool;principals:{id:string}[];certificateSpki:string;browserCookies:{name:string;value:string;url:string}[]}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -41,7 +42,9 @@ test('the actual production staff form restores an encrypted manual draft and ex
         WHERE r.command_scope=$1 AND r.client_command_id=$2::uuid AND r.command_type='WORKBENCH_MANUAL_REPORT'`,['P2_016:'+principal.id,commandId])).rows[0];assert.ok(row);
       assert.equal(row.actor,principal.id);assert.equal(object(row.reporter).name,'合成电话报修人');assert.equal(object(row.reporter).verification,'UNVERIFIED');assert.equal(row.status,'QUEUED');assert.equal(row.assignee,null);
       await browser.waitFor(`(async()=>{const value=await (${copies});return value.drafts.length===0&&value.operations.length===0;})()`);
-      await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${row.id}"]'))`);
+      await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");
+      await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
+      await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${row.id}"]'))`);
       const cardText=string(await browser.evaluate(`document.querySelector('[data-item-id="${row.id}"]').textContent`));assert.ok(cardText.includes('电话代录'));assert.ok(cardText.includes('合成电话报修人'));assert.ok(cardText.includes('未核实'));
     }catch(failure){error=failure;try{console.log('T17_FORM_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,requests:globalThis.__t17Requests})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);

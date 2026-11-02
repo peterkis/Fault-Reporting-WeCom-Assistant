@@ -158,6 +158,8 @@ test('the actual production form explicitly selects an authorized reporter and a
       assert.equal(await browser.evaluate("document.querySelector('[data-action=open-admitted-report]')?.getAttribute('href')"),'/workbench/app/items/review/'+reviewId,'the direct next-step link names the actual admitted Review');
       assert.equal(await browser.evaluate("/已通知|已送达/.test(document.querySelector('[data-manual-report-result]').textContent)"),false,'qualification cannot promise message delivery');
       await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");
+      // Card 10 keeps the oldest loaded items first; reveal the new Review in the folded group.
+      await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${reviewId}"] .card-open'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${reviewId}"] .card-open').click()`);
       await browser.waitFor(`globalThis.__t18NormalRequests.some(row=>row.method==='GET'&&row.path==='/api/manual-reviews/${reviewId}'&&row.status!==null&&row.result!==null)`);

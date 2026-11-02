@@ -16,6 +16,7 @@
 | `app/pc-admin/src/features/manual-report/ManualReportForm.tsx`、`design/components/Button/button.css` | 原获权「新报修」primary 内增加 N 提示，不改许可或导航命令 |
 | `tests/pc-admin-design-foundation.test.mts` | 增加四小时边界、处理中不推算、本人 HANDLING、北京时间跨日及不可变排序检查 |
 | `tests/web01-workbench.browser.test.mjs` | 新增概况/折叠/排序/键盘/无写请求与 SSE 冻结回归；一条旧视觉断言更新为本卡获准的列底色 |
+| `tests/wbint-t17-manual-form.browser.test.mts`、`tests/wbint-t18-normal-verified-form.browser.test.mts` | 返回看板后通过原列尾按钮展开新卡；两份原测试的 38 / 70 条 assert 调用逐字保留 |
 | `docs/ui/design-system.md`、`design-system-v2.1.md`、本文与 `evidence/v21-card10/compare-*.jpg` | 规范先行、确认口径、交付与四宽证据 |
 
 无数据库、后端、接口、业务命令、Ticket 状态值、权限判断、请求参数/语义、依赖、默认 Feature Flag 或部署变更。统计不新建责任事实；服务目录与类别映射没有改动。
@@ -104,3 +105,13 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 后继本地结果绑定 `b3b7e2edac7d7cc29b27cb2b84651094098995eb` 上未提交工作区，输入指纹 `e293894533428b02f362af7d9852b32bd94699cd75049f0209dfbfe6b262c368`、manifest SHA-256 `b0c77fc4eb2ab40f3ccffe0243ffdb3de85b6fda17698f1b34a642efdfb6bfc8`；原件为 `build-review`、`types-review`、`artifact-review` 与 `registered-tests-review`。工具与文档检查沿未改实现，不重复工具回归。复验使用独立自有 pgdata-review；停止前仅余三默认库、其他客户端 0，停止后 status=3、监听 0，按绝对路径/无重解析点检查删除该合成集群及开发 bundle，回执为 cleanup-review.json。
 
 后继没有 CSS、Token 或 DOM 结构变更，不重复四宽视觉采样；上面的最终四宽图及色彩估算绑定首候选外观，后继验证专注于导航目标和冻结语义。远端结果与完整发布 head 沿 PR 读回，不重绑原 35/35 运行。
+
+## CI 折叠前提修补
+
+第二轮对 `c84da43822f92063608edb2b17a475edea9cf7cc` 的 Codex 审查 completed、has_any_findings=false、has_unresolved_findings=false；首轮 P2 线程已解决。该 head 与先前 `b3b7e2ed…` 的普通 CI 分别在 [41375125905](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41375125905) / [41374152962](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41374152962) 停于 T18 返回看板等待新受理卡片，两个 FAIL 原日志均保留。
+
+实际 POST 已为 202，原受理状态/身份/回执断言都通过；超时点是默认「等待最久」和列内三项预算使新受理位于折叠内容。当前正式 bundle 的原 T18 在本地同样 RED。只增加通过已有 `clickWorkbenchControl` 点击原待受理列展开按钮的步骤，原卡片等待、原 Review 读取与资料断言继续执行；同类 T17 电话代录返回路径同步适配。没有生产源码改动，不改变三项预算、排序、请求、权限或任何业务断言。
+
+两用例在修补候选中分别 PASS；T17 的 38 条、T18 的 70 条 assert AST 调用文本与 `c84da438…` 逐字相同，核对回执为 `test-assertions-preserved.json`。最终相关检查为 6 个注册入口、38/38 PASS，0 FAIL/SKIP/NOT_RUN；build、strict types、artifact 均 PASS。样式及工具实现未改，Stylelint/ESLint 0/0 和工具 21/21 的适用范围保持。
+
+最终本地候选绑定 `c84da43822f92063608edb2b17a475edea9cf7cc` 上未提交工作区，输入指纹 `d158a6e74f73b0ae3da3007b663e73a0cd4ed22e822ae761d6b007f7e8b48028`、manifest SHA-256 `537d9211fe9a1ecc1574da26eaf440683e7211fef62e12949e8cf93a35104767`；原件为 `build-ci-fix`、`types-ci-fix`、`artifact-ci-fix`、`registered-tests-ci-fix`，不重绑前一候选的 36/36。第三轮自有 pgdata-ci 清理前只余默认三库、其他客户端 0；停止后 status=3、监听 0，验证绝对路径和无重解析点后删除集群，回执 cleanup-ci.json。最终发布 head 的远端审查及 CI 沿 PR 读回。
