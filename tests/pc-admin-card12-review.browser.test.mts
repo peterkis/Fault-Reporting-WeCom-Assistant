@@ -77,3 +77,28 @@ for(const status of [403,404])test('Card 12 credible Ticket READ '+status+' clea
   assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'a credible READ denial must not replay the old command');
   assert.equal((await get(path)).version,committed.version);
 },{dropSelfHandlingResponses:true,realtime:true}));
+
+for(const status of [403,404])test('Card 12 related profile READ '+status+' clears UNKNOWN with realtime disabled',{timeout:120000},()=>withT42BoardBrowser(async(f,browser,card,get)=>{
+  const first=f.tickets[0];assert.ok(first);const ticketPath='/api/tickets/'+first.ticket.id,profilePath='/api/workbench/items/ticket/'+first.ticket.id+'/reporter-profile';
+  const bootstrap=await get('/api/lifecycle/bootstrap');assert.equal(bootstrap.realtime_sse_enabled,false);
+  // Enable the profile read in this synthetic browser only, then hold its HTTP rejection until UNKNOWN.
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=globalThis.fetch;globalThis.__t42Writes=[];globalThis.__card12ProfileReads=0;globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t42Writes.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);if(String(path)==='/api/lifecycle/bootstrap'&&response.status===200){const body=await response.json(),headers=new Headers(response.headers);headers.delete('content-length');return new Response(JSON.stringify({...body,web_reports_enabled:true}),{status:200,headers});}if(String(path).startsWith('/api/workbench/board?')&&response.status===200){const body=await response.json(),headers=new Headers(response.headers);for(const item of body.items)if(item.id===${JSON.stringify(first.ticket.id)}){item.source='PORTAL';item.reporter_name=null;item.reporter_department=null;}headers.delete('content-length');return new Response(JSON.stringify(body),{status:200,headers});}if(String(path)===${JSON.stringify(profilePath)}&&(!options?.method||options.method==='GET')){await response.text();globalThis.__card12ProfileReads++;await new Promise(resolve=>{globalThis.__card12ReleaseProfile=resolve;});return new Response('{"error":{"code":"P2_016_NOT_FOUND"}}',{status:${status},headers:{'content-type':'application/json','cache-control':'no-store'}});}return response;};})()`});
+  await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});
+  await browser.command('Page.bringToFront');
+  try{await browser.waitFor(`globalThis.__card12ProfileReads>=1&&Boolean(document.querySelector(${JSON.stringify(card+' .card-open')}))`);}catch(error){console.log('CARD12_PROFILE_PRECONDITION '+JSON.stringify(await browser.evaluate('({reads:globalThis.__card12ProfileReads,release:typeof globalThis.__card12ReleaseProfile,writes:globalThis.__t42Writes})')));throw error;}
+  await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
+  await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
+  await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
+  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
+  const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
+  const committed=await get(ticketPath);assert.equal(committed.status,'IN_PROGRESS');
+  await browser.evaluate("(()=>{globalThis.__card12DeniedController=document.querySelector('.board-claim-controller .ticket-self-handling');globalThis.__card12ReleaseProfile();return true;})()");
+  await browser.waitFor("!document.querySelector('.board-claim-controller')");
+  assert.equal(await browser.evaluate('globalThis.__card12DeniedController.isConnected'),false);
+  assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-self-handling]'))"),false);
+  assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'related READ rejection must not replay the old command');
+  assert.equal((await get(ticketPath)).version,committed.version);
+  await browser.waitFor("document.querySelector('.board .card-open')?.checkVisibility()===true");
+  await clickWorkbenchControl(browser,'.board .card-open');await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+  assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'the navigation fence clears without a second POST');
+},{dropSelfHandlingResponses:true,realtime:false}));

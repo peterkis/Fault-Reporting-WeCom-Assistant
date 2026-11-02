@@ -34,10 +34,10 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
     const owner=activeClaim?.principalId,ticketId=activeClaim?.item.id;
     if(!owner||!ticketId)return;
     return client.getQueryCache().subscribe(event=>{
-      if(event.type!=='updated'||event.action.type!=='error')return;
-      const key=event.query.queryKey,error=event.action.error;
-      // Only a fresh failure of this object's READ query ends the controller.
-      // Entry flags, revision refreshes, write denials and transient failures do not.
+      if(event.type!=='updated')return;
+      const key=event.query.queryKey,error=event.action.type==='error'?event.action.error:event.action.type==='setState'?event.action.state.error:undefined;
+      // Accept fresh READ failures and the existing unified object-clear notice.
+      // Resets, entry flags, revision refreshes and transient failures do not qualify.
       if(key[0]==='ticket-command-context'&&key[1]===owner&&key[2]===ticketId&&error instanceof ApiError&&[401,403,404].includes(error.status)){
         setClaim(current=>current?.principalId===owner&&current.item.id===ticketId?null:current);
       }

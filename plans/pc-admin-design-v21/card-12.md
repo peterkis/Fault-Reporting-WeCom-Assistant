@@ -1,5 +1,11 @@
 # 卡 12 · 工单卡片 v2.1
 
+## 同步后复审 R3：统一对象拒绝通知
+
+同步 head `b99ab5622e073f057273addf942aae520c55c04d` 的复审发现：其它对象级 READ（如 reporter-profile）经原 `clearItemAuthorization/clearItemView` 传播拒绝时，命令上下文的通知为 `setState`，原直接领取订阅只接受 `error`，因此 UNKNOWN 及导航栅栏可能遗留。保留原统一清理判断，只在本卡订阅中同时接收显式携带拒绝错误的 `setState`；普通重置没有该错误，不将缓存重置、入口关闭、revision 更新或暂时失败当作对象拒绝。不新增授权事件总线、不改原命令/终检/状态机。
+
+新增两个注册回归：实时刷新关闭，在合成浏览器中开启资料查询场景并保持原服务端命令、UUID、版本及事实；独立资料 HTTP 403/404 在 UNKNOWN 后释放，要求原控制器/核对入口卸载、无自动重放、工单版本不变，并以实际打开工单验证导航栅栏释放。旧正式 bundle 的 403 场景在控制器清理等待处 RED（`profile-red-5.log`）；前四次夹具/前台焦点准备失败原件保留，不当作产品 RED。源码修补后的 build/types/相关注册入口/artifact 与新发布 head CI/复审另记 PR，不借旧通过覆盖本轮。
+
 ## 2026-11-02 用户命令触发的 main 同步
 
 - 已收到用户明确「同步main」命令。同步前工作区干净，发布 head 为 `c9f9976628bcb2e0e99c8e5a877754ecf9d6ddd3`，建立恢复引用 `refs/recovery/pc-admin-v21-card12-pre-sync-20261102-c9f99766` 保留原三次提交及其测试/审查身份。
