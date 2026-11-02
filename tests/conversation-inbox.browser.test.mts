@@ -82,8 +82,9 @@ test('ticket detail and conversation summary keep independent cache shapes acros
     const session=f.sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+session.ticketId+'?detail=page',width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      const fullPageReady=`location.pathname===${JSON.stringify('/workbench/app/items/ticket/'+session.ticketId)}&&Boolean(document.querySelector('#detail-title'))&&Boolean(document.querySelector('.detail-workflows'))`;
       for(let round=0;round<2;round++){
-        await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
+        await browser.waitFor(fullPageReady);
         await browser.evaluate("(()=>{const section=document.querySelector('.detail-workflows');if(!section.hasAttribute('data-expanded'))section.querySelector('.workbench-disclosure-trigger').click();})()");
         await clickWorkbenchControl(browser,'.workflow-support .workbench-disclosure-trigger');
         await browser.waitFor(`Boolean(document.querySelector('a[href="/workbench/app/conversations/${session.id}"]'))`);
@@ -92,6 +93,7 @@ test('ticket detail and conversation summary keep independent cache shapes acros
         await browser.evaluate("document.querySelector('.inbox-associated a').click()");
         await browser.waitFor("Boolean(document.querySelector('.inbox-associated-detail'))");
         await clickWorkbenchControl(browser,'.inbox-full-item');
+        await browser.waitFor(fullPageReady);
       }
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))&&Boolean(document.querySelector('.properties'))");
       assert.equal(await browser.evaluate('location.pathname.endsWith('+JSON.stringify(session.ticketId)+')'),true);

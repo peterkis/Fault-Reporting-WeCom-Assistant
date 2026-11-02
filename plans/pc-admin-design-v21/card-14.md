@@ -132,3 +132,15 @@ Codex 第二轮对完整 `3421180c…` 返回没有 major issues；首轮 P2 已
 第二轮失败为原 `workbench-media-employee-read.browser` 的原生首帧 p95 比较。每模式十样本：旧路径 frame p95 242.70ms，原生 255.20ms，原断言 FAIL；对应中位数 225.60ms / 171.10ms。图片首张/全部 p95、预览字节和 SQL 的改善不能替代首帧 p95 断言。保留 `ci-second-failed.log` / `ci-second-artifact` 的全部指标、源 SHA 和 NOT_RUN。本卡未修改该媒体测试或媒体实现，也未改变阈值、超时、次数或样本。
 
 后继文档提交追加上述实际结果，运行代码保持 R1。继续执行原 245 项入口选择并等待最终 head 的普通 CI；不以本地通过、文档更新或复审替代 CI，不运行手动 full/certify。
+
+## CI 导航等待修补 R2
+
+文档后继 `073a5cf7b20dccae346c777584b96a8f42ccb188` 的 Codex 审查无 major issues；本地重新 build/types/artifact PASS（manifest `b4c3ec484cbb49496f681c139c8e2ae37a461bb3b2b0722c6a678de86d91bae7`）。其全部 2,747 个运行输出与已测 clean R1 逐字节相同；该相等性不冒充新的测试执行。
+
+该 head 的 [CI 41422028496](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41422028496) 执行到 228/245 文件，586 项中 585 PASS / 1 FAIL，余 17 文件 NOT_RUN。此前媒体和 T38 失败点本轮通过；本轮实际失败在本卡 `conversation-inbox.browser` 的“事项详情 ↔ 会话摘要”往返用例。原日志和 CI 原件保存在 `ci-third-failed.log` / `ci-third-artifact`。
+
+故障为旧 DOM 提前满足等待：摘要抽屉也含 #detail-title；点击“打开完整事项”后，单独等待该 ID 可在路由/完整页尚未完成时返回，下一步访问 .detail-workflows 得到 null。修补在往返开始和每次进入完整事项后，同时等待目标事项 URL、标题及完整页工作流出现。原业务 assert、ID/class/data 选择器和既有等待预算全部保留；不加入固定 sleep、自动重试、跳过或放宽断言。
+
+R2 只修改该测试的导航准备步骤与本文，产品实现保持 R1。后继完整 head 的构建、types、相关注册测试、制品、复审和远端 CI 继续分别记录于 PR，历史三次失败保持原对象与 NOT_RUN。
+
+R2 保存后 fetch 检测到卡 15 [PR #133](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/133) 已合并。再次 rebase 到 `origin/main@cdf4803a3c2018ea41cf4aec2a70bb8503e9a9ef`，四个本卡提交重放成功，冲突列表为空，卡 15 的通知/EmptyState 内容原样保留。重基前对象保存在本地 `refs/archive/pc-admin-v21-card14-pre-card15-sync`；旧测试和失败不改绑到重基后的 head。此次产品界面没有调整，不重写原截图。新基线的干净完整 head 验证与 force-with-lease 更新见 PR 续记。
