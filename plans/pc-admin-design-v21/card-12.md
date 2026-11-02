@@ -1,5 +1,13 @@
 # 卡 12 · 工单卡片 v2.1
 
+## 2026-11-02 用户命令触发的 main 同步
+
+- 已收到用户明确「同步main」命令。同步前工作区干净，发布 head 为 `c9f9976628bcb2e0e99c8e5a877754ecf9d6ddd3`，建立恢复引用 `refs/recovery/pc-admin-v21-card12-pre-sync-20261102-c9f99766` 保留原三次提交及其测试/审查身份。
+- 执行 `git fetch origin`、`git rebase origin/main`，新基线 `deb85af9a5da7fa7b27c21c743936191cd017207`（卡 14 #132 与卡 15 #133 已合入）。三个本卡提交无冲突重放；`range-diff` 三项均为 `=`，未修改其它卡归属文件，也未恢复任何旧组件/Token 名。
+- 重放映射：`28477d46 → c1286726`、`a3354b15 → 108e89d0`、`c9f99766 → 545f837a`。旧 head 不重绑为新运行；其完整提交链与历史 FAIL/NOT_RUN 保留。
+- 重验计划：Stylelint/feature ESLint → 一次 migration:build → strict/negative types → 本卡 11 个注册入口及主线新使用共享 TicketCard 的 conversation-inbox 浏览器入口 → artifact / 文档工具 / 自有资源释放。使用本任务 loopback PG18、每例新 UUID 合成库及模拟发送；不执行 full/certify、Electron 原生、现场、部署或 Gate。
+- 只有全部适用检查与新 head 审查/CI完成后才合并。重验后使用 force-with-lease 更新本分支，并在 PR 记录新基线、无冲突清单与实际结果。主线正常场景无像素变化，按影响核对工作台及新主线会话迷你卡，不重写旧截图身份。
+
 - 基线：`origin/main@bf5073db934348046155e006873b50075e7a1ac2`；前置卡 9 #129、卡 10 #130、卡 11 #131 已合并。
 - 唯一写者：本会话；worktree `D:/worktrees/pc-admin-v21-card12`，分支 `codex/pc-admin-v21-card12`。卡 14/15 属于其它活动会话，保留其资源。
 - 范围：[设计方案 §4.1](../../docs/ui/design-system-v2.1.md#41-团队工作台现在最该先处理哪一张)、原型 01；卡片类别、热度、缺失收纳、领取入口、已加载数据筛选及领取成功动效。
