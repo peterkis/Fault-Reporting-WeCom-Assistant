@@ -188,7 +188,9 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    await until(async()=>{const trace=await readFile(join(directory,'boundaries.jsonl'),'utf8');return trace.split('\n').filter(Boolean).map(v=>object(JSON.parse(v))).some(v=>v.event==='bot-send'&&v.target==='runtime-group'&&JSON.stringify(v.body).includes(groupReceipt));});
    const inbox=await staff.get('/api/workbench/conversation-inbox');assert.equal(inbox.status,200,inbox.raw);assert.ok(Array.isArray(inbox.body.items));assert.ok(inbox.body.items.length>0);
    const detail=await staff.get('/api/workbench/conversations/'+session.id+'?view=chat');assert.equal(detail.status,200,detail.raw);assert.ok(detail.body.contact_ref);
-   browser=await tls.launch();assert.ok(browser);await browser.command('Network.setCookies',{cookies:[...staff.cookies].map(([name,value])=>({name,value,url:tls.origin,secure:true}))});
+   browser=await tls.launch();assert.ok(browser);await browser.command('Page.bringToFront');
+   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+   await browser.command('Network.setCookies',{cookies:[...staff.cookies].map(([name,value])=>({name,value,url:tls.origin,secure:true}))});
    const relatedItems=async()=>{const result=await staff.get('/api/workbench/board?column=pending&scope=related');assert.equal(result.status,200,result.raw);assert.ok(Array.isArray(result.body.items));return result.body.items.map(object);};
    assert.equal((await relatedItems()).some(item=>item.id===groupTicketId),false,'team visibility alone is not a personal relationship');
    const beforeFollow=await staff.get('/api/tickets/'+groupTicketId);assert.equal(beforeFollow.status,200);
@@ -199,7 +201,15 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    assert.equal((await relatedItems()).filter(item=>item.id===groupTicketId).length,1);
    await clickWorkbenchControl(browser,'button[aria-label=关闭详情]');await browser.waitFor("Boolean(document.querySelector('[data-action=related-scope]'))");
    await clickWorkbenchControl(browser,'[data-action=related-scope]');
-   await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelector('[data-action=related-scope]')?.getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length===1&&document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open')?.checkVisibility()===true`);
+   await browser.command('Page.bringToFront');
+   const relatedCount=(await relatedItems()).length;
+   try{
+    await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelector('[data-action=related-scope]')?.getAttribute('aria-pressed')==='true'&&document.querySelector('.board-column.pending .ds-stage-count')?.textContent===${JSON.stringify(String(relatedCount))}`);
+    if(await browser.evaluate("Boolean(document.querySelector('.board-column.pending [data-action=expand-column][aria-expanded=false]'))"))await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
+    await browser.waitFor(`new URLSearchParams(location.search).get('scope')==='related'&&document.querySelector('[data-action=related-scope]')?.getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length===1&&document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open')?.checkVisibility()===true`);
+   }catch(error){
+    console.log('HUMAN_RELATED_SCOPE_DIAGNOSTIC '+JSON.stringify(await browser.evaluate(`({scope:new URLSearchParams(location.search).get('scope'),pressed:document.querySelector('[data-action=related-scope]')?.getAttribute('aria-pressed'),visibility:document.visibilityState,realtime:document.querySelector('[data-realtime-status]')?.getAttribute('data-realtime-status'),pendingCount:document.querySelector('.board-column.pending .ds-stage-count')?.textContent,targetCount:document.querySelectorAll('.ticket-card[data-item-id="${groupTicketId}"]').length,targetVisible:document.querySelector('.ticket-card[data-item-id="${groupTicketId}"] .card-open')?.checkVisibility(),groups:[...document.querySelectorAll('[data-board-group]')].map(group=>({expanded:group.querySelector('button')?.getAttribute('aria-expanded'),cards:group.querySelectorAll('.ticket-card').length}))})`)));throw error;
+   }
    await clickWorkbenchControl(browser,`.ticket-card[data-item-id="${groupTicketId}"] .card-open`);
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
    await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');

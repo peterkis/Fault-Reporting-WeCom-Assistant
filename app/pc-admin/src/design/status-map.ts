@@ -26,7 +26,6 @@ const substatus:Readonly<Record<string,{label:string;tone:Tone;icon?:'clock';tit
   ACCEPTED:{label:'已领取',tone:'neutral'},
   REOPENED:{label:'重新报障',tone:'neutral'},
   RECEIVED:{label:'已受理待建单',tone:'neutral'},
-  WAITING_TRIAGE:{label:'待判断',tone:'neutral'},
   DUPLICATE_LINKED:{label:'已关联重复单',tone:'neutral'},
   WAITING_REQUESTER:{label:'等待中',tone:'neutral',icon:'clock',title:'等待补充'},
   WAITING_VENDOR:{label:'等待中',tone:'neutral',icon:'clock',title:'等待厂商'},

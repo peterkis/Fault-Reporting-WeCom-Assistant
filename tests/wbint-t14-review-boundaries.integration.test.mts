@@ -5,6 +5,7 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {lockP2016Realtime} from '../app/server/src/p2-016-realtime-appender.mjs';
 
 interface Fixture {origin:string;cookies:string[];pool:PostgresPool;processReviewIntake:(id:string)=>Promise<unknown>;tickets:{ticket:{id:string}}[];principals:{id:string}[]}
 function http(fixture:Fixture){
@@ -20,6 +21,58 @@ async function facts(pool:PostgresPool){return (await pool.query<{tickets:number
   (SELECT count(*)::integer FROM pilot_ticket.ticket_event) AS events,
   (SELECT count(*)::integer FROM communication.outbox) AS communication,
   (SELECT count(*)::integer FROM notification.outbox) AS notifications`)).rows[0];}
+
+async function streamWaiters(pool:PostgresPool,count:number){
+  const until=Date.now()+5000;
+  while(Date.now()<until){
+    const rows=(await pool.query<{pid:number;review_fk:boolean}>(`SELECT w.pid,
+      EXISTS(SELECT 1 FROM pg_locks r WHERE r.pid=w.pid AND r.relation='intake.manual_review_item'::regclass
+        AND r.mode='RowShareLock' AND r.granted) AS review_fk
+      FROM pg_locks w WHERE w.locktype='advisory' AND NOT w.granted
+        AND w.database=(SELECT oid FROM pg_database WHERE datname=current_database())`)).rows;
+    if(rows.length>=count)return rows;
+    await new Promise(resolve=>setTimeout(resolve,10));
+  }
+  assert.fail('commands did not reach the observed stream lock wait');
+}
+
+test('T14 stream wait precedes Review receipt foreign-key locks and preserves one winner',{timeout:30000},async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const {read,post}=http(fixture);
+    await createPilotAccessService({pool:fixture.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-1',displayName:'第二合成复核员',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+    const source=await seedPersistedIntake({pool:fixture.pool,chatType:'single',text:'流锁与回执外键锁顺序的合成材料。'});await fixture.processReviewIntake(source.intakeId);
+    const review=(await fixture.pool.query<{id:string}>('SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid',[source.intakeId])).rows[0];assert.ok(review);
+    const original=await read('/api/manual-reviews/'+review.id),first=await read('/api/lifecycle/bootstrap'),second=await read('/api/lifecycle/bootstrap',2),before=await facts(fixture.pool);assert.ok(before);
+    const command={client_command_id:randomUUID(),expected_row_version:original.row_version,expected_material_basis:(original.material_basis as {current_hash:string}).current_hash,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'EXPLICIT_HUMAN_CHOICE'};
+    const mutex=await fixture.pool.connect();await mutex.query('BEGIN');await lockP2016Realtime(mutex);
+    const pending=Promise.all([post(review.id,command,first.csrf_token),post(review.id,{...command,client_command_id:randomUUID()},second.csrf_token,2)]);
+    let lockError:unknown;
+    try{const waiting=await streamWaiters(fixture.pool,2);assert.equal(waiting.filter(row=>row.review_fk).length,0,'waiting commands cannot pin Review through a receipt FK before the stream mutex');}
+    catch(error){lockError=error;}finally{await mutex.query('ROLLBACK');mutex.release();}
+    const responses=await pending;if(lockError)throw lockError;
+    assert.deepEqual(responses.map(response=>response.status).sort(),[200,409]);
+    const after=await facts(fixture.pool);assert.ok(after);assert.equal(after.human-before.human,1);assert.equal(after.tickets-before.tickets,1);assert.equal(after.events-before.events,1);
+    assert.equal(after.communication,before.communication);assert.equal(after.notifications,before.notifications);
+  },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,manualProjection:true});
+});
+
+test('T14 stream wait rechecks current authority before creating a receipt',{timeout:30000},async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    const {read,post}=http(fixture),principal=fixture.principals[0];assert.ok(principal);
+    const source=await seedPersistedIntake({pool:fixture.pool,chatType:'single',text:'等待流锁后撤销身份的合成材料。'});await fixture.processReviewIntake(source.intakeId);
+    const review=(await fixture.pool.query<{id:string}>('SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid',[source.intakeId])).rows[0];assert.ok(review);
+    const original=await read('/api/manual-reviews/'+review.id),bootstrap=await read('/api/lifecycle/bootstrap'),before=await facts(fixture.pool);
+    const command={client_command_id:randomUUID(),expected_row_version:original.row_version,expected_material_basis:(original.material_basis as {current_hash:string}).current_hash,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'EXPLICIT_HUMAN_CHOICE'};
+    const mutex=await fixture.pool.connect();await mutex.query('BEGIN');await lockP2016Realtime(mutex);
+    const pending=post(review.id,command,bootstrap.csrf_token);let waitError:unknown;
+    try{await streamWaiters(fixture.pool,1);await fixture.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principal.id]);}
+    catch(error){waitError=error;}finally{await mutex.query('ROLLBACK');mutex.release();}
+    const response=await pending;if(waitError)throw waitError;
+    assert.ok([401,403].includes(response.status),'authority revoked during the stream wait must reject the original command');
+    assert.deepEqual(await facts(fixture.pool),before);
+    assert.equal((await fixture.pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket_command_receipt WHERE client_command_id=$1::uuid',[command.client_command_id])).rows[0]?.count,0);
+  },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true,manualProjection:true});
+});
 
 test('T14 competing authorized reviewers commit one conclusion and reject mismatched HTTP intent before writes',async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{

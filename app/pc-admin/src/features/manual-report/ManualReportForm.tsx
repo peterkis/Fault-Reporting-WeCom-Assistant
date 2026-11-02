@@ -28,7 +28,7 @@ export function ManualReportEntry({principal,blocked}:{principal:Principal;block
   const navigate=useNavigate();
   const context=useQuery({queryKey:manualReportCapabilitiesKey(principal.principal_id),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal.manual_reports_enabled});
   if(!principal.manual_reports_enabled||context.isError||!context.data?.can_create)return null;
-  return <Button tone="primary" className="manual-report-entry" data-action="new-report" isDisabled={blocked} onPress={()=>{if(!blocked)void navigate("/reports/new");}}><Plus aria-hidden="true"/>新报修</Button>;
+  return <Button tone="primary" className="manual-report-entry" data-action="new-report" isDisabled={blocked} onPress={()=>{if(!blocked)void navigate("/reports/new");}}><Plus aria-hidden="true"/>新报修<kbd className="ds-button-shortcut" aria-hidden="true" title="快捷键由效率层提供">N</kbd></Button>;
 }
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'denied';
 export function ManualReportForm({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(value:boolean)=>void}){

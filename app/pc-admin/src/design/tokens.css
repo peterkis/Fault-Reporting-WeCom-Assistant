@@ -73,6 +73,7 @@
   --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
   --bg-board:    var(--gray-board);
   --bg-column:   var(--gray-column);
+  --bg-stage-count: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
   --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
   --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
   --bg-active:   var(--gray-200);  /* 按下、导航当前项 */
