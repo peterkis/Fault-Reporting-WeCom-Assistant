@@ -113,3 +113,22 @@ R1 本地输入指纹 `cb7296b6b5ff0e168772c2aa1c76c9667fb2c17b9529eb403207729b2
 仅补受影响导航状态的四宽截图：[1920](../../docs/ui/evidence/v21-card14/topic-navigation-1920.jpg) / [1440](../../docs/ui/evidence/v21-card14/topic-navigation-1440.jpg) / [1280](../../docs/ui/evidence/v21-card14/topic-navigation-1280.jpg) / [900](../../docs/ui/evidence/v21-card14/topic-navigation-900.jpg)。正常消息状态的八张对照未改称 R1 新采图。
 
 按用户追加同步规则：先提交保存 R1，再 fetch/rebase origin/main，按归属保留主线改动；同步后的基线、冲突处理、完整门禁/相关测试、force-with-lease 与复审结果记录在 PR。该流程不改写上述各候选执行身份。
+
+## 同步 main 与 CI 记录
+
+R1 保存为 `3421180ca503e3eeb4ec4e5d6edf0c347ad7f370` 后，执行 fetch/rebase。origin/main 仍为 `bf5073db934348046155e006873b50075e7a1ac2`，rebase 返回已是最新，冲突文件为空。未覆盖其它卡归属的文件。使用 force-with-lease 更新分支并在 PR 留下基线、冲突列表与结果。
+
+随后在干净的 `3421180c…` 上重新执行两项 lint、migration:build、gate types、原注册 Foundation/Inbox 两文件 26/26 与 verify-artifact，全部 PASS，0 FAIL/SKIP/NOT_RUN。输入指纹仍为 `cb7296b6b5ff0e168772c2aa1c76c9667fb2c17b9529eb403207729b2e91a1cc`；clean-head manifest 为 `7ca3f043edddf84dceb0eaa2c4e15f1cb2859db3ee3050798d96efeba5c453ed`。原件：`sync-state.json`、`registered-sync/summary.json`、`build-manifest-sync.json`。
+
+Codex 第二轮对完整 `3421180c…` 返回没有 major issues；首轮 P2 已回复并解决。最终文档后继的完整 head 与远端结果以 PR 收口记录为准。
+
+| 远端执行 | 对象 | 实际结果 |
+| --- | --- | --- |
+| [41416760580](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41416760580) | 首候选 f699ed9459b83b4ffd475aee225cd68940dd7014 | FAIL；已记录 159/245 文件，442 项中 441 PASS / 1 FAIL，余 86 文件 NOT_RUN |
+| [41420809740](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41420809740) | R1 3421180ca503e3eeb4ec4e5d6edf0c347ad7f370 | FAIL；已记录 2/245 文件，21 项中 20 PASS / 1 FAIL，余 243 文件 NOT_RUN |
+
+第一轮失败为原 `wbint-t38-authority.browser` 的撤权后重新授予恢复等待。日志明确停在 regrant-wait，全局 denied 页且无恢复请求；原日志、失败截图和 CI 原件保存在 `ci-first-failed.log` / `ci-first-artifact`。同一原入口在当前干净 R1 本地追加执行 4/4 PASS（`registered-t38-sync`），仅说明本次未复现；本卡未修改认证/权限判断，不能称已修复该历史失败。
+
+第二轮失败为原 `workbench-media-employee-read.browser` 的原生首帧 p95 比较。每模式十样本：旧路径 frame p95 242.70ms，原生 255.20ms，原断言 FAIL；对应中位数 225.60ms / 171.10ms。图片首张/全部 p95、预览字节和 SQL 的改善不能替代首帧 p95 断言。保留 `ci-second-failed.log` / `ci-second-artifact` 的全部指标、源 SHA 和 NOT_RUN。本卡未修改该媒体测试或媒体实现，也未改变阈值、超时、次数或样本。
+
+后继文档提交追加上述实际结果，运行代码保持 R1。继续执行原 245 项入口选择并等待最终 head 的普通 CI；不以本地通过、文档更新或复审替代 CI，不运行手动 full/certify。
