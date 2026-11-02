@@ -58,3 +58,22 @@ test('Card 12 absent or null active-state start never borrows old creation time'
   assert.ok(Number(await browser.evaluate("document.querySelectorAll('.board-column.pending .ds-ticket-heat[data-heat-tone=danger]').length"))>0,'pending work still uses its real creation time');
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
 }));
+
+for(const status of [403,404])test('Card 12 credible Ticket READ '+status+' clears the pending card controller without replay',{timeout:120000},()=>withT42BoardBrowser(async(f,browser,card,get)=>{
+  const first=f.tickets[0];assert.ok(first);const path='/api/tickets/'+first.ticket.id;
+  await browser.command('Page.bringToFront');
+  await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+  await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
+  await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
+  await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
+  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
+  const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
+  const committed=await get(path);assert.equal(committed.status,'IN_PROGRESS');
+  // Controlled credible HTTP denial after a real read; command responses and server facts stay unchanged.
+  await browser.evaluate(`(()=>{globalThis.__card12DeniedReads=0;globalThis.__card12DeniedController=document.querySelector('.board-claim-controller .ticket-self-handling');const original=globalThis.fetch;globalThis.fetch=async(url,options)=>{const response=await original(url,options);if(String(url)===${JSON.stringify(path)}&&(!options?.method||options.method==='GET')){await response.text();globalThis.__card12DeniedReads++;return new Response('{"error":{"code":"P2_016_NOT_FOUND"}}',{status:${status},headers:{'content-type':'application/json','cache-control':'no-store'}});}return response;};})()`);
+  await browser.waitFor("globalThis.__card12DeniedReads>0&&!document.querySelector('.board-claim-controller')");
+  assert.equal(await browser.evaluate('globalThis.__card12DeniedController.isConnected'),false);
+  assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-self-handling]'))"),false);
+  assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'a credible READ denial must not replay the old command');
+  assert.equal((await get(path)).version,committed.version);
+},{dropSelfHandlingResponses:true,realtime:true}));

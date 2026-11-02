@@ -12,7 +12,7 @@
 - Node 24.18.0；自有 loopback PG18：55472，fixture 每次新建 UUID 合成数据库；不连接真实 Sender。证据根 `D:/CodexEvidence/pc-admin-v21-card12-20261102`。
 - 原始基线构建 PASS：913 个语法校验、2747 输出。基线四宽 1920/1440/1280/900 截图 PASS，页面无溢出，POST=0；基线采图浏览器与 fixture 数据库已清理。
 - 最终源码冻结后：Stylelint/ESLint → migration:build → strict types → 相关活动 v3-p09 注册入口与工具 → artifact → 自有资源释放。四宽真实 bundle/HTTP/PG 合成截图与原型并排，记录彩色面积口径。
-- R1 正式候选本地验证：11 个注册入口 68/68 PASS，四宽采图 PASS；整屏面积 8.36% / 9.25% / 9.12% / 11.67%，全部进入 8–12%。远端发布、审查与 CI 在 PR 中独立记录。full/certify、Electron、现场、部署与 Gate 为 NOT_RUN，不以本地或 CI 结果替代。下文逐候选失败保持原身份。
+- R2 正式候选本地验证：11 个注册入口 70/70 PASS，四宽采图 PASS；整屏面积 8.36% / 9.25% / 9.12% / 11.67%，全部进入 8–12%。远端发布、审查与 CI 在 PR 中独立记录。full/certify、Electron、现场、部署与 Gate 为 NOT_RUN，不以本地或 CI 结果替代。下文逐候选失败保持原身份。
 
 ## 2026-11-02 动效范围更正
 
@@ -90,11 +90,11 @@ R1 首构建 / strict / artifact / lint PASS。新增入口 2 PASS / 1 FAIL，�
 
 ### 验证与来源
 
-- 本地 R1 冻结输入：`438b02a9092bf7c923c364d9ad5307c27a8f7ce92cae77a1f322a440f29c54bb`，基于发布祖先 28477d46 上的未提交修补工作区；后续仅追加本记录和截图，不把本地运行重绑为将来发布 SHA。
+- 本地 R2 冻结输入：`68f1b1cd70cc865aaa08da67a08adae4f5b90c47c2182a0738ee5ec85c6c27a3`，基于发布祖先 a3354b15 上的未提交修补工作区；后续仅追加本记录和截图，不把本地运行重绑为将来发布 SHA。
 - `npm --prefix app/pc-admin run lint:css` / `lint:features`：0 / 0；Token gate：0 未定义变量。设计机械检查为空数组。
 - `npm run migration:build`：915 个实际 Node 语法检查 / 2751 输出，STAGED_NOT_ACTIVATED。`node .build/tools/gate.mjs types`：strict / negative types PASS。
-- `node .build/tools/verify-artifact.mjs`：ARTIFACT_VERIFIED_NOT_ACTIVATED；manifest SHA-256 `1f7dbc8182b8993f10cbf624eeffa122041ac77fe7ede47d6cc010f452aa4e5f`。
-- 活动 v3-p09 的 11 个相关注册入口，同一 manifest：日期 2/2、既有工作台/合同/合法动作等 8 文件 57/57、卡 12 入口 6/6、审查新增 3/3，合计 **68/68 PASS，0 FAIL / CANCELLED / SKIP / TODO / NOT_RUN**。不是活动全集或 full/certify。R1 原件：`registered-r1b/`、`local-build-manifest-r1b.json`、`local-artifact-proof-r1b.json`；此前各候选原报告另保留，不混用 manifest。
+- `node .build/tools/verify-artifact.mjs`：ARTIFACT_VERIFIED_NOT_ACTIVATED；manifest SHA-256 `41b4c098ba992f5f4fd94988139dc51d2741d9d3b9a092fa1cf363150ee4ef27`。
+- 活动 v3-p09 的 11 个相关注册入口，同一 manifest：日期 2/2、既有工作台/合同/合法动作等 8 文件 57/57、卡 12 入口 6/6、审查新增 5/5，合计 **70/70 PASS，0 FAIL / CANCELLED / SKIP / TODO / NOT_RUN**。不是活动全集或 full/certify。R2 原件：`registered-r2b/`、`local-build-manifest-r2b.json`、`local-artifact-proof-r2b.json`；此前各候选原报告另保留，不混用 manifest。
 - `docs:agents:check` PASS，指令工具 19/19 PASS；历史工具 22/22 PASS。原业务 API 对象（含请求序列化）、TicketSelfHandling mutation/send/submit、BoardActions 终检主体与基线逐字哈希相同；无 server / contracts / config_examples / package / lock 改动，见 `unchanged-commands.json`。
 - 原始 manifest、artifact proof、所有 FAIL / NOT_RUN、日志和 PNG 在本任务证据根保留。PR 完整发布 head 的审查与 CI 必须独立记录。
 
@@ -136,4 +136,9 @@ R1 首构建 / strict / artifact / lint PASS。新增入口 2 PASS / 1 FAIL，�
 
 R1b 正式重验完成：新增三项 3/3 GREEN，11 注册入口合计 68/68 PASS（FAIL/CANCEL/SKIP/TODO/NOT_RUN=0），strict/negative types、artifact、Stylelint/ESLint 0/0、文档与19项工具 PASS。R1与R1b的1255个非测试输出逐字一致，仅补正确的获权DOM就绪等待。R1四宽面积仍为8.36% / 9.25% / 9.12% / 11.67%，对比度/选中态/0 POST及资源回收通过；新图片放r1子目录，原图片保留。发布后复审与CI独立核验。
 
+R1 发布 head `a3354b15b8d84747157d88118932dd7af192b488` 的复审新增对象 READ 拒绝清理 P1。可信 ticket-command-context 403/404 清缓存后，独立控制器仍持有 UNKNOWN；受控真实 HTTP 后的 404 拒绝边界探针已 RED（`read-denial-red-2.log`），首次探针因本任务 PG 已停止而启动失败的日志另留，不作为产品 RED。R2 只订阅当前主体/当前 Ticket READ 查询的新 error 事件：可信 401/403/404 卸载原控制器并释放 pending/导航栅栏；入口关闭、授权版本重读、写权限拒绝及网络/503 不作为对象 READ 拒绝。新增精确 403/404 回归，原两项能力/版本保留与原 UUID 核对继续验证。未改业务权限、请求或回执实现。
+
 原发布祖先28477d46的业务CI [41434073553](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41434073553)成功：247入口/803 tests全PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN；下载归档SHA-256及CRC通过，741份回执与149张截图哈希/尺寸、当前runtime加载记录47447项哈希、manifest/proof/源码head均核验，剩余合成库为空。其它加载记录仅归档，不将其称为当前runtime哈希核验。此结论只属于原祖先，不替代R1的独立CI或消除待同步的证据保护失败。
+
+
+R2b 正式结果：11注册入口70/70 PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN；五项审查回归含原两项保留、缺失时间及可信HTTP 403/404 READ拒绝清理全部GREEN。strict/negative types、artifact、Stylelint/ESLint 0/0、19项工具与文档检查PASS。新的清理只观察该主体/该Ticket READ查询的fresh error.action，忽略缓存重置、入口变化、写拒绝及临时失败。正常场景CSS/四宽布局未改；`screenshots-r2/`再次验证四宽对比度/选中态/0 POST，面积仍8.36% / 9.25% / 9.12% / 11.67%，复算结果`color-estimate-r2.json`。R1原PNG及脚本另存，未覆写；READ拒绝首探针的PG停止启动失败保留，第二次真正RED单列。当前发布后复审和CI仍独立核验，main同步继续等用户命令。

@@ -30,6 +30,19 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
   const claimEntryEnabled=enabled&&preparedScope===claimScope&&(activeClaim?.mode!=='self'||principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled);
   const changeClaimBlocked=useCallback((value:boolean)=>{setClaimBlocked(value);onClaimBlocked(value);},[onClaimBlocked]);
   const releaseClaim=useCallback((target:HTMLElement)=>{setClaim(current=>current?.target===target?{...current,target:null}:current);},[]);
+  useEffect(()=>{
+    const owner=activeClaim?.principalId,ticketId=activeClaim?.item.id;
+    if(!owner||!ticketId)return;
+    return client.getQueryCache().subscribe(event=>{
+      if(event.type!=='updated'||event.action.type!=='error')return;
+      const key=event.query.queryKey,error=event.action.error;
+      // Only a fresh failure of this object's READ query ends the controller.
+      // Entry flags, revision refreshes, write denials and transient failures do not.
+      if(key[0]==='ticket-command-context'&&key[1]===owner&&key[2]===ticketId&&error instanceof ApiError&&[401,403,404].includes(error.status)){
+        setClaim(current=>current?.principalId===owner&&current.item.id===ticketId?null:current);
+      }
+    });
+  },[client,activeClaim?.principalId,activeClaim?.item.id]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
   const open=async(intent:WorkbenchBoardActionIntent)=>{
     if(!enabled||blocked||claimBlocked||request.current)return;
