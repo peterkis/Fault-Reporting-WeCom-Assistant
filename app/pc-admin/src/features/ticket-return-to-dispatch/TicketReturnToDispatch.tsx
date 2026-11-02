@@ -244,7 +244,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
   const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'||role==='HANDLER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
   if(!principal.ticket_return_to_dispatch_enabled&&!originalId&&!hasReturnInput(value)&&!busy&&!draft.restoring)return null;
-  return <StepWorkflow action="return" label="退回待安排" available={allowed} attention={Boolean(originalId||blocked||hasReturnInput(value)||message)}><section className="ticket-notes ticket-return-to-dispatch" aria-label="停止当前已开始的处理责任">
+  return <StepWorkflow readState={context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready'} action="return" label="退回待安排" available={allowed} attention={Boolean(originalId||blocked||hasReturnInput(value)||message)}><section className="ticket-notes ticket-return-to-dispatch" aria-label="停止当前已开始的处理责任">
     <h3>停止处理并退回待安排</h3>
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>

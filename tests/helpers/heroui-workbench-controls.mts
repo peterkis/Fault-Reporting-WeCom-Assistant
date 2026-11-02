@@ -5,10 +5,21 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 
 /** Open the current presentation of a purpose, retaining its original form and guards. */
 export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor'>,selector:string){
-  await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
-  await browser.waitFor(`(()=>{const workflow=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]');return !workflow||[...document.querySelectorAll('[aria-controls]')].some(node=>node.getAttribute('aria-controls')===workflow.id);})()`);
-  await browser.evaluate(`(()=>{const workflow=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]');if(!workflow)return;const trigger=[...document.querySelectorAll('[aria-controls]')].find(node=>node.getAttribute('aria-controls')===workflow.id);if(!trigger)throw Error('STEP_ENTRY_REQUIRED');const more=trigger.closest('details.ds-drawer-more');if(more&&!more.open)more.querySelector('summary').click();trigger.click();})()`);
-  await browser.waitFor(`document.querySelector(${JSON.stringify(selector)})?.checkVisibility()===true`);
+  // Latch the real disclosure; attention can legitimately end while a query settles.
+  await browser.waitFor(`(()=>{
+    const node=document.querySelector(${JSON.stringify(selector)}),state=document.querySelector('.ds-next-step')?.getAttribute('data-read-state');
+    if(!node)return state==='ready'||state==='unknown';
+    const workflow=node.closest('.ds-step-workflow');if(!workflow)return true;
+    const trigger=[...document.querySelectorAll('[aria-controls]')].find(control=>control.getAttribute('aria-controls')===workflow.id);
+    if(trigger){
+      if(trigger.getAttribute('data-step-open')!=='true'){
+        const more=trigger.closest('details.ds-drawer-more');if(more&&!more.open)more.querySelector('summary').click();
+        trigger.click();return false;
+      }
+      return node.checkVisibility();
+    }
+    return state==='ready'||state==='unknown';
+  })()`);
 }
 
 export async function openWorkbenchUserMenu(browser:Browser){
@@ -44,8 +55,8 @@ export async function clickWorkbenchControl(browser:Browser,selector:string){
   if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-toolbar-filters');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
   const moreLabel=await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return panel&&!panel.open&&!node?.matches('summary')?panel.querySelector('summary')?.getAttribute('aria-label'):null;})()`);
   if(typeof moreLabel==='string')await clickWorkbenchControl(browser,'details.ds-drawer-more>summary[aria-label='+JSON.stringify(moreLabel)+']');
-  const workflow=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow[hidden]')?.id??null`);
-  if(typeof workflow==='string')await clickWorkbenchControl(browser,'[aria-controls='+JSON.stringify(workflow)+']');
+  const workflow=await browser.evaluate(`(()=>{const panel=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow');return Boolean(panel&&panel.getAttribute('data-step-read-state')!=='unknown');})()`);
+  if(workflow)await openWorkbenchStep(browser,selector);
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;
   await browser.waitFor(`(()=>{const node=${target};return node?.checkVisibility()===true&&node.disabled!==true&&!node.closest('[data-disabled=true]');})()`);
   await browser.evaluate(`(()=>{const node=${target};node.scrollIntoView({block:'nearest',inline:'nearest'});})()`);

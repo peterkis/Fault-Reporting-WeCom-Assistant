@@ -73,10 +73,10 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
         {state==='unknown'&&pending?<HButton type="button" data-action="check-completion" onClick={()=>{void send(pending,true);}} tone="secondary">核对原完工结果</HButton>:null}
         {!pending&&draft.operationId?<HButton type="button" data-action="check-completion-receipt" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void checkReceipt();}} tone="secondary">核对上次操作</HButton>:null}
         {hasInput&&state!=='submitting'&&state!=='checking'&&(draft.enabled||!pending)?<HButton type="button" data-action="discard-completion-draft" onClick={()=>{if(draft.enabled)void draft.discard();else clear();}} tone="secondary">清空填写内容</HButton>:null}
-      </div></HForm>:<p>当前没有本轮完工权限。</p>}
+      </div></HForm>:<p>{context.isSuccess&&!context.isError?'当前可查看工单进展。':'可用操作尚未读到，请重试。'}</p>}
     {!blocked?<HButton type="button" className="workflow-refresh" data-action="refresh-completion" onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton>:null}
 
     {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');return;}setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
   </section>;
-  return <>{presentation==='dialog'?<DetailActionDialog available={allowed} blocked={navigationBlocked} attention={state==='unknown'||state==='conflict'||Boolean(draft.operationId)} onOpenChange={onOpenChange}>{form}</DetailActionDialog>:<StepWorkflow action="complete" label="登记完工" available={allowed} attention={Boolean(boardMode||pending||draft.operationId||hasInput)}>{form}</StepWorkflow>}{feedback}<DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback></>;
+  return <>{presentation==='dialog'?<DetailActionDialog readError={context.isError} available={allowed} blocked={navigationBlocked} attention={state==='unknown'||state==='conflict'||Boolean(draft.operationId)} onOpenChange={onOpenChange}>{form}</DetailActionDialog>:<StepWorkflow action="complete" label="登记完工" available={allowed} attention={Boolean(boardMode||pending||draft.operationId||hasInput)}>{form}</StepWorkflow>}{feedback}<DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback></>;
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
-import {t11Http} from './helpers/t11-completion-fixture.mjs';
+import {t11Http,withT11Fixture} from './helpers/t11-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
@@ -123,3 +123,20 @@ test('Card 13 reopening a cached read-only Review settles its permission read wi
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 },{workbenchManualReviewEnabled:true}));
+
+
+test('Card 13 ordinary completion initial permission failure keeps its original retry reachable',{timeout:240000},()=>withT11Fixture(async f=>{
+ const first=f.tickets[0],cookie=f.browserCookies[0];assert.ok(first&&cookie?.url);const http=await t11Http(f);await http.start(first.ticket.id);const before=await http.detail(first.ticket.id);
+ let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
+  await b.command('Page.enable');await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__card13ReadLost=false;globalThis.__card13RetryPosts=0;globalThis.fetch=async(url,options)=>{if(options?.method==='POST')globalThis.__card13RetryPosts++;const response=await original(url,options);if(new URL(String(url),location.href).pathname===${JSON.stringify('/api/tickets/'+first.ticket.id)}&&!globalThis.__card13ReadLost){globalThis.__card13ReadLost=true;await response.arrayBuffer();throw new TypeError('SYNTHETIC_INITIAL_COMPLETION_CONTEXT_LOST');}return response;};})()`});
+  await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});await b.command('Page.bringToFront');
+  await b.waitFor("document.querySelector('.ticket-completion [role=alert]')?.checkVisibility()===true&&document.querySelector('[data-action=refresh-completion]')?.checkVisibility()===true");
+  assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('你当前为只读')"),false);
+  await clickWorkbenchControl(b,'[data-action=refresh-completion]');await b.waitFor("document.querySelector('.ds-next-step .detail-complete-button')?.checkVisibility()===true");
+  const after=await http.detail(first.ticket.id);assert.equal(after.status,before.status);assert.equal(after.version,before.version);assert.equal(after.assignee_id,before.assignee_id);assert.deepEqual(after.handling_cycle,before.handling_cycle);
+  assert.equal(await b.evaluate('globalThis.__card13RetryPosts'),0);
+ }catch(error){failure=error;}
+ await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+},{recoveryEnabled:false,notesEnabled:false}));

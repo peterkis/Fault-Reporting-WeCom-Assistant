@@ -73,7 +73,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
  if(!draft.enabled&&!allowed&&!commandId&&!reason&&!loading&&context.isSuccess&&!context.isError&&context.data.reopen_follow_up)return <section className="ticket-notes workflow-result"><p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理。':''}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单。':'报修人反馈仍未解决。'}等待重新接单。</p><HButton type="button" data-action="refresh-reopen" className="workflow-refresh" isDisabled={(context.isPending||context.isError)} onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton></section>;
  if(!draft.enabled&&!allowed&&!commandId&&!reason&&state==='succeeded'&&context.isSuccess&&!context.isError)return null;
  if(!allowed&&!commandId&&!reason&&!context.data?.reopen_follow_up&&state==='idle'&&context.isSuccess&&!context.isError)return null;
- return <StepWorkflow action="reopen" label="重新打开" available={allowed} attention={Boolean(boardMode||reason||commandId||blocked||message||context.data?.reopen_follow_up)}><section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
+ return <StepWorkflow readState={context.isError?'unknown':context.isLoading?'pending':'ready'} action="reopen" label="重新打开" available={allowed} attention={Boolean(boardMode||reason||commandId||blocked||message||context.data?.reopen_follow_up)}><section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
   <h3>重开同一工单</h3>
   {loading?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
   {context.data?<p hidden>工单版本 {context.data.version}</p>:null}

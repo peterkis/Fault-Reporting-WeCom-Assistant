@@ -242,7 +242,7 @@ export function TicketUnassign({ticketId,principal,onBlockedChange}:{ticketId:st
   const nextCursor=related.data?.next_cursor??null;
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
   const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
-  return <StepWorkflow action="unassign" label="撤销派工" available={allowed} attention={Boolean(originalId||blocked||hasUnassignInput(value)||message)}><section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
+  return <StepWorkflow readState={context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready'} action="unassign" label="撤销派工" available={allowed} attention={Boolean(originalId||blocked||hasUnassignInput(value)||message)}><section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
     <h3>撤销派工</h3>
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
