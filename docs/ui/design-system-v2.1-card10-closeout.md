@@ -19,6 +19,7 @@
 | `tests/pc-admin-design-foundation.test.mts` | 增加四小时边界、处理中不推算、本人 HANDLING、北京时间跨日及不可变排序检查 |
 | `tests/web01-workbench.browser.test.mjs` | 新增概况/折叠/排序/键盘/无写请求与 SSE 冻结回归；一条旧视觉断言更新为本卡获准的列底色 |
 | `tests/wbint-t17-manual-form.browser.test.mts`、`tests/wbint-t18-normal-verified-form.browser.test.mts` | 返回看板后通过原列尾按钮展开新卡；两份原测试的 38 / 70 条 assert 调用逐字保留 |
+| `tests/human-workbench-process.browser.test.mts` | 真实三角色测试补前台、完整动效、当前相关范围加载/折叠前提与失败诊断；189 条原 assert 逐字保留 |
 | `app/server/src/p2-016-manual-review-facade.mts`、`tests/wbint-t14-review-boundaries.integration.test.mts`、`docs/api/workbench/manual-reviews.md` | 用户追加授权的最小后端锁顺序修补、确定性 FK/流锁回归及等待后失权拒绝 |
 | `docs/ui/design-system.md`、`design-system-v2.1.md`、本文与 `evidence/v21-card10/compare-*.jpg` | 规范先行、确认口径、交付与四宽证据 |
 
@@ -154,3 +155,13 @@ motion-red-valid / motion-green-slow-final 保留有效 RED/GREEN。更早的 mo
 本轮绑定 `39f73d9e25facc3117153c437d35e8e60c9ec266` 上未提交工作区，输入指纹 `b299d07b9bdb5f652f255326e358cde878b70434247afde6dfe0c9391a5ef7a6`、manifest SHA-256 `52a80328fb08cc99c9f7f1a19315551c4079cdbcb1dbf9c10c1b903676a5a08b`，原件为 build-sse-fix / types-sse-fix / artifact-sse-fix / registered-tests-sse-fix。681 个后端/共享制品与 61 项候选逐字相同（sse-backend-unchanged.json），不虚构新一轮 61 项运行。
 
 补充 SSE 探针的两次独立自有集群均已在仅余默认三库、其他客户端 0 时停止，status=3、监听 0；绝对路径与无重解析点检查后删除，回执 cleanup-sse.json / cleanup-sse-check.json。最初未受控探针的 PASS、夹具失败、最终有效 RED 与注册 GREEN 均保留；本轮不扩展编排/其它后端范围。最终 head 的审查与全部适用 CI 独立核对后才合并。
+
+## 三角色装配的真实交互前提
+
+`cf563d4504283b2e2b27d132d7a6c1d9b552d518` 审查无发现、人员目录回归通过；普通 CI [41383190767](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41383190767) 在更晚的 human-workbench-process 第三例“与我有关”卡片可见性等待超时，后续四来源业务闭环仍通过。原日志 ci-cf563d45-failure.log 保留。
+
+本地单例、完整文件、显式完整动效均自然 PASS，未重现 CI 原位置，不能据此声称修复。补充测试前提：真实 UI 页置前台、保持完整动效，等待当前 pending 计数与同主体原 API 的相关范围一致；有列尾折叠时通过原按钮展开，再执行原唯一卡片/可见性检查。原 OAuth、关注/取消、责任/状态/版本、Sender 等 **189 条 assert AST 调用文本与 cf563d45… 完全相同**（process-assertions-preserved.json），没有提高原超时。失败时只记录 UI 范围、计数、可见性与连接状态，保留原异常。
+
+本地首次注册复验与 type gate 并行时在更早的角色 READY 超时（3 PASS/1 FAIL），不是 CI 原 UI 超时；原结果完整保留。按仓库/CI 的顺序在 type gate 完成后串行复跑，正式注册入口 **4/4 PASS**，0 FAIL/SKIP/NOT_RUN；build、strict、artifact PASS。串行通过不作为就绪超时原因的证明；远端同 head 仍必须独立通过。
+
+本轮绑定 cf563d4504283b2e2b27d132d7a6c1d9b552d518 上未提交工作区，输入指纹 `161562f4ac99eaf895ed4a4aef4e75c39f5cebbd004ec87182e212bf08728513`、manifest SHA-256 `5cdf0b09f086cc3963871a30432b324e6b12fbde0fae9bba84ff904df946adb9`；原件 build-process-fix / types-process-fix / artifact-process-fix / registered-tests-process-serial。693 个生产制品逐字不变（process-production-unchanged.json），没有新的业务源码改动。自有 pgdata-process 在默认三库、其他客户端 0 后停止，status=3、监听 0，核验绝对路径及无重解析点后删除，回执 cleanup-process.json。
