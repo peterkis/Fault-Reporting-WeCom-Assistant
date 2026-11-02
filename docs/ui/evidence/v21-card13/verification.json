@@ -197,5 +197,89 @@
     "Gate",
     "local FFmpeg-dependent employee-media entry (FFmpeg/FFprobe env absent; ordinary PR CI remains independent)"
   ],
-  "supplementary_tools": "hosts.test/batches.test 额外历史 CLI 工具回归在原 9cc1137f 隔离候选单独运行；结果不纳入上列 37/37。"
+  "supplementary_tools": "已在原 9cc1137f 隔离候选完成 61/61（含指令工具19），独立于37/37业务子集；原件 tools-13.log。",
+  "review_fixes": [
+    {
+      "reviewed_head": "efb7b3e8790c274c54d1889f59188b4d7f4eccba",
+      "finding": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135#discussion_r4448235594",
+      "severity": "P2",
+      "tested_head": "624358b1a7e6b4b9975e71063e3bc67e143e036e",
+      "source_input_hash": "f4dabef75778d4fe21756b9bedbf51dedb615e68a5727c795458b324604affab",
+      "change": "attention 与原草稿输入检测一致，仅 RETAIN_CURRENT 算非默认沟通输入；默认仍 TAKE_SELECTED，原命令及恢复不变。",
+      "validation": {
+        "build": "PASS",
+        "types": "PASS",
+        "artifact": "PASS",
+        "entries": 7,
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "reports": [
+          {
+            "label": "remote-r1-takeover",
+            "entries": [
+              "tests/t07-atomic-start.browser.test.mts",
+              "tests/t07-draft-recovery.browser.test.mts",
+              "tests/t07-legacy-recovery.browser.test.mts",
+              "tests/t07-late-recovery.browser.test.mts",
+              "tests/t07-restoration-boundaries.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 14,
+              "pass": 14,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "f84ac5061b7ba41187cf702de57c6b9772ab95bcc35df3d8843bc9a083c8d2fc",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r1-takeover"
+          },
+          {
+            "label": "remote-r1-core",
+            "entries": [
+              "tests/pc-admin-card13.browser.test.mts",
+              "tests/t12-production-form.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 6,
+              "pass": 6,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "f84ac5061b7ba41187cf702de57c6b9772ab95bcc35df3d8843bc9a083c8d2fc",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r1-core"
+          }
+        ]
+      },
+      "screenshots": [
+        {
+          "width": 1920,
+          "path": "docs/ui/evidence/v21-card13/r1-takeover-1920.png",
+          "sha256": "740da1b7800b63239333aff49e9390042f198663c1bd10c4f9b0c0a0b71fc46c"
+        },
+        {
+          "width": 1440,
+          "path": "docs/ui/evidence/v21-card13/r1-takeover-1440.png",
+          "sha256": "987154fa28c817f41abcb46339f88b77c0ae5ec053bb06452f96a6ebb8797af8"
+        },
+        {
+          "width": 1280,
+          "path": "docs/ui/evidence/v21-card13/r1-takeover-1280.png",
+          "sha256": "92086d604ed8ac00ee518b3f2035c6b83d9b7a5582799cd705c9d73d667b94b1"
+        },
+        {
+          "width": 900,
+          "path": "docs/ui/evidence/v21-card13/r1-takeover-900.png",
+          "sha256": "c427870631818eda8854ed987dd6db317e665fb746c970e8da844d1c0e6b1f16"
+        }
+      ],
+      "screenshot_posts": 0,
+      "remote_status": "以 PR 当前 head 的实际复审为准，不将本地定向 PASS 冒充远端审查。"
+    }
+  ]
 }

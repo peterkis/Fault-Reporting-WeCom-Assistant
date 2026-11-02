@@ -29,7 +29,7 @@
 
 ## 最终本地交付（2026-11-03）
 
-源码被测提交：`9cc1137f6cd1c30003ac22ac1cf9ea9140d84068`，输入指纹 `a3ff73b7aeb13ce7287a9ad4a7561fdc08a1cd053bf7120e590bd3b9f54232a0`。后继交付提交只增加本记录及合成截图/索引。原验证工作树继续冻结，文档/图片在 `D:/worktrees/pc-admin-v21-card13-delivery` 整理；两处 `.build` 没有共享或改写。
+源码被测提交：`9cc1137f6cd1c30003ac22ac1cf9ea9140d84068`，输入指纹 `a3ff73b7aeb13ce7287a9ad4a7561fdc08a1cd053bf7120e590bd3b9f54232a0`。其后 `efb7b3e8` 交付提交只增加本记录及合成截图/索引；远端 R1 的实质修补和新被测身份另列。原验证工作树继续冻结，文档/图片在 `D:/worktrees/pc-admin-v21-card13-delivery` 整理；交付工作树初期不建立构建输出；远端 R1 修补后建立其自己的 `.build`，没有共享或改写原验证输出。
 
 | 检查 | 实际结果与原件 |
 | --- | --- |
@@ -45,7 +45,7 @@
 
 相关入口覆盖就地表单、四宽尺寸、延迟权限、同主体能力关闭计数、缓存只读复核重开、非 Ticket 电话、备注 Ctrl+Enter 丢失成功响应后原 UUID 核对；同时覆盖原完工/等待/恢复/重开、共享跟进、撤销派工、退回待安排、责任历史、会话个人游标、媒体原件/头像与既有完整详情。精确路径与计数见 [验证索引](../../docs/ui/evidence/v21-card13/verification.json)。这是注册子集，不是活动全集或 full/certify。
 
-FFmpeg/FFprobe 环境未配置，本地依赖这两项的 employee-media 注册入口为 NOT_RUN；普通 PR CI 的独立执行结果另记，不以其他媒体 PASS 补它。Electron 原生、现场、真实发送、部署与 Gate 仍为 NOT_RUN。附加 `hosts.test/batches.test` 是额外历史 CLI 全回归，在原冻结候选继续独立执行；未完成时不计 PASS，也不混入本卡 37/37。
+FFmpeg/FFprobe 环境未配置，本地依赖这两项的 employee-media 注册入口为 NOT_RUN；普通 PR CI 的独立执行结果另记，不以其他媒体 PASS 补它。Electron 原生、现场、真实发送、部署与 Gate 仍为 NOT_RUN。附加 `hosts.test/batches.test` 历史 CLI 工具回归随后在原冻结候选 `9cc1137f` 完成：与指令工具合计 61/61 PASS，0 fail/cancel/SKIP/todo；原件 `tools-13.log`，不混入本卡 37/37。
 
 ## 四宽与原型并排
 
@@ -123,6 +123,74 @@ docs/ui/evidence/v21-card13/compare-1280.png
 docs/ui/evidence/v21-card13/compare-1440.png
 docs/ui/evidence/v21-card13/compare-1920.png
 docs/ui/evidence/v21-card13/compare-900.png
+docs/ui/evidence/v21-card13/r1-takeover-1280.png
+docs/ui/evidence/v21-card13/r1-takeover-1440.png
+docs/ui/evidence/v21-card13/r1-takeover-1920.png
+docs/ui/evidence/v21-card13/r1-takeover-900.png
+docs/ui/evidence/v21-card13/verification.json
+plans/pc-admin-design-v21/card-13.md
+plans/typescript-migration/test-routing.json
+tests/conversation-inbox.browser.test.mts
+tests/helpers/heroui-workbench-controls.mts
+tests/helpers/t10-browser-fixture.mts
+tests/pc-admin-card13.browser.test.mts
+tests/t04-self-handling.browser.test.mjs
+tests/t05-conversation-handling.browser.test.mjs
+tests/t07-atomic-start.browser.test.mts
+tests/t08-command-recovery.browser.test.mts
+tests/t08-selected-recovery.browser.test.mts
+tests/t08-unassign.browser.test.mts
+tests/t09-return-to-dispatch.browser.test.mts
+tests/t09-selected-ui-boundaries.browser.test.mts
+tests/t09-selected-ui-status-scope.browser.test.mts
+tests/t11-completion.browser.test.mts
+tests/t12-production-form.browser.test.mts
+tests/t13-history-window.browser.test.mts
+tests/t13-production-history.browser.test.mts
+tests/t20-member-origin-hint.browser.test.mts
+tests/t20-staff-hint-first.browser.test.mts
+tests/t37-follow-up-post-refusal.browser.test.mts
+tests/t37-follow-up-recovery-boundaries.browser.test.mts
+tests/t37-follow-up-recovery-competition.browser.test.mts
+tests/t37-follow-up-recovery-first.browser.test.mts
+tests/t37-shared-follow-up-drawer.browser.test.mts
+tests/t37-shared-time-card-list.browser.test.mts
+tests/wbint-t14-review.browser.test.mts
+tests/wbint-t42-board-complete-reopen.browser.test.mts
+tests/workbench-detail-media.browser.test.mts
+tests/workbench-detail-restructure.browser.test.mts
+tests/workbench-media-employee-read.browser.test.mts
+```text
+app/pc-admin/src/app/DetailDialog.tsx
+app/pc-admin/src/app/DetailPresentation.tsx
+app/pc-admin/src/app/Workbench.tsx
+app/pc-admin/src/app/WorkbenchDetail.tsx
+app/pc-admin/src/app/WorkbenchItemPresentation.tsx
+app/pc-admin/src/design/components/Drawer/Drawer.tsx
+app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx
+app/pc-admin/src/design/components/Drawer/NextStep.tsx
+app/pc-admin/src/design/components/Drawer/drawer-v21.css
+app/pc-admin/src/features/attachments/AttachmentSection.tsx
+app/pc-admin/src/features/attachments/ReportMaterialsSection.tsx
+app/pc-admin/src/features/conversations/Conversations.tsx
+app/pc-admin/src/features/follow-up/SharedFollowUp.tsx
+app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx
+app/pc-admin/src/features/source-groups/GroupNameEditor.tsx
+app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx
+app/pc-admin/src/features/ticket-completion/TicketCompletion.tsx
+app/pc-admin/src/features/ticket-handling/TicketConversationHandling.tsx
+app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx
+app/pc-admin/src/features/ticket-notes/TicketNotes.tsx
+app/pc-admin/src/features/ticket-reopen/TicketReopen.tsx
+app/pc-admin/src/features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx
+app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx
+app/pc-admin/src/features/ticket-takeover/TicketTakeover.tsx
+app/pc-admin/src/features/ticket-unassign/TicketUnassign.tsx
+app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx
+docs/ui/evidence/v21-card13/compare-1280.png
+docs/ui/evidence/v21-card13/compare-1440.png
+docs/ui/evidence/v21-card13/compare-1920.png
+docs/ui/evidence/v21-card13/compare-900.png
 docs/ui/evidence/v21-card13/verification.json
 plans/pc-admin-design-v21/card-13.md
 plans/typescript-migration/test-routing.json
@@ -156,3 +224,23 @@ tests/workbench-detail-media.browser.test.mts
 tests/workbench-detail-restructure.browser.test.mts
 tests/workbench-media-employee-read.browser.test.mts
 ```
+
+
+## PR #135 远端审查 R1
+
+[权威发布对象](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135) `efb7b3e8790c274c54d1889f59188b4d7f4eccba` 收到 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135#discussion_r4448235594)：接管表单把默认 `TAKE_SELECTED` 当作真实输入，导致未触碰也展开且不能收起。
+
+修补被测提交为 `624358b1a7e6b4b9975e71063e3bc67e143e036e`。仅将 attention 的沟通输入项改为 `choice==='RETAIN_CURRENT'`，与原草稿检测一致；默认值仍为 TAKE_SELECTED。board 意图、真实输入、UNKNOWN/恢复的自动关注均保留。原 allowed、命令正文、版本、UUID、原子接管、终检、回执与沟通责任断言未改。
+
+- 本候选 Stylelint/ESLint 0、一次 build、strict/negative types、artifact PASS；原件 `remote-r1-*.log`。
+- 7 个注册入口 20/20 PASS，0 FAIL/cancel/SKIP/todo/NOT_RUN：原子接管起步、草稿/原 UUID/晚到/失权恢复，加卡13核心和接管完工兄弟表单。新断言证明默认未触碰时折叠、可明确打开/收起、打开/收起 POST=0，随后仍使用原完整业务断言验证唯一原子命令。
+- 下列四宽补图来自本候选正式 bundle/真实 HTTP/PG 合成 fixture，默认沟通选择不变，采图 POST=0。初始 37/37 及原四宽图继续绑定原候选，不重绑 R1；原图示的普通待接单场景不受本次接管专属修补影响。
+
+| 宽度 | 未触碰折叠 / 明确展开 |
+| --- | --- |
+| 1920 | [R1 对照](../../docs/ui/evidence/v21-card13/r1-takeover-1920.png) |
+| 1440 | [R1 对照](../../docs/ui/evidence/v21-card13/r1-takeover-1440.png) |
+| 1280 | [R1 对照](../../docs/ui/evidence/v21-card13/r1-takeover-1280.png) |
+| 900 | [R1 对照](../../docs/ui/evidence/v21-card13/r1-takeover-900.png) |
+
+后继提交只补充本记录与证据；远端线程、复审、普通 PR CI 及最终合并结果以 PR 当前对象为准，不作为现场或 Gate 批准。
