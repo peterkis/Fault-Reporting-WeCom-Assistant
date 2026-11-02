@@ -113,6 +113,11 @@ test('Card 13 reopening a cached read-only Review settles its permission read wi
     await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('你当前为只读')"),true);
     assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('正在核对可用操作')"),false);
+    await clickWorkbenchControl(b,'[aria-label="关闭详情"]');await b.waitFor("!document.querySelector('.ds-drawer')");
+    await clickWorkbenchControl(b,'.board-column.pending .ticket-card:is([data-kind=review],[data-kind=intake]) .card-open');
+    await b.waitFor("document.querySelector('.detail-breadcrumb')?.textContent.includes('事项')&&Boolean(document.querySelector('.detail-properties'))");
+    assert.equal(await b.evaluate("document.querySelector('.reporter-contact').checkVisibility()"),false,'non-Ticket contact reads are disabled and never appear pending');
+    assert.equal(await b.evaluate("document.querySelector('.ds-detail-missing').textContent.includes('联系电话')"),true);
     assert.equal(writes,0);
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);

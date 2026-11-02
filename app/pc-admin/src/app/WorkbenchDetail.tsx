@@ -51,16 +51,17 @@ function Message({text,retry}:{text:string;retry?:()=>void}){
 function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:Principal}){
   const item=detail.item,profile=useReporterProfile(item,principal),requested=detail.requested_item;
   const contact=useQuery({queryKey:['reporter-contact',principal.principal_id,requested?.kind??item.kind,requested?.id??item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterContact(item.id,signal),enabled:item.kind==='ticket',retry:false,gcTime:0});
-  const phone=contact.isError?null:contact.data?.phone,mobile=phone?.replace(/[\s+-]/gu,'').replace(/^86(?=1[3-9]\d{9}$)/u,''),formatted=mobile&&/^1[3-9]\d{9}$/u.test(mobile)?mobile.slice(0,3)+'-'+mobile.slice(3,7)+'-'+mobile.slice(7):phone;
+  const contactPending=item.kind==='ticket'&&contact.isPending,contactError=item.kind==='ticket'&&contact.isError;
+  const phone=contactError?null:contact.data?.phone,mobile=phone?.replace(/[\s+-]/gu,'').replace(/^86(?=1[3-9]\d{9}$)/u,''),formatted=mobile&&/^1[3-9]\d{9}$/u.test(mobile)?mobile.slice(0,3)+'-'+mobile.slice(3,7)+'-'+mobile.slice(7):phone;
   const name=item.reporter_name??profile.data?.name,department=item.reporter_department??profile.data?.department;
-  const missing=[!name?'报修人姓名':null,!department?'报修部门':null,!item.location?'位置':null,!formatted&&!contact.isPending&&!contact.isError?'联系电话':null].filter(Boolean);
+  const missing=[!name?'报修人姓名':null,!department?'报修部门':null,!item.location?'位置':null,!formatted&&!contactPending&&!contactError?'联系电话':null].filter(Boolean);
   return <PropertyList aria-label="事项信息" header={<span className="sr-only"><Status item={item}/></span>}>
     {name?<div className="property-field"><dt><UserRound size={17}/>报修人</dt><dd><Owner name={name}/></dd></div>:null}
     {department?<div className="property-field"><dt><Building2 size={17}/>报修部门</dt><dd>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div>:null}
     <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd></div>
     <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{item.source_label}</span></dd></div>
     {item.location?<div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{item.location}</dd></div>:null}
-    <div className="property-field reporter-contact" hidden={!formatted&&!contact.isPending&&!contact.isError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contact.isPending&&!contact.isError}>{formatted??(contact.isPending?'正在读取…':contact.isError?'暂不可用':'未提供')}</span></dd></div>
+    <div className="property-field reporter-contact" hidden={!formatted&&!contactPending&&!contactError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contactPending&&!contactError}>{formatted??(contactPending?'正在读取…':contactError?'暂不可用':'未提供')}</span></dd></div>
     <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<time dateTime={detail.reported_at.replace(' ','T')+'+08:00'} title="首次收到或登记报修的时间（北京时间）">{detail.reported_at}</time>:<span>未记录</span>}</dd></div>
     {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span><span className="ds-detail-ask">向报修人补问</span></dd></div>:null}
   </PropertyList>;
