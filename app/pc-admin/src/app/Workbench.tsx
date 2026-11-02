@@ -311,28 +311,22 @@ interface ColumnQuery {
  data:{pages:{items:WorkbenchCard[];range:{mode:BoardCompletionRange;from:string;until:string;timezone:'Asia/Shanghai'}}[]}|undefined;
  refetch:()=>Promise<unknown>;fetchNextPage:()=>Promise<unknown>;
 }
-function BoardSection({principal,query,column,label,search,selected,now,loaded,earlierAction,filtered,blocked,preserveOrder}:{principal:Principal;query:ColumnQuery;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[];earlierAction:ReactNode;filtered:boolean;blocked:boolean;preserveOrder:boolean}){
-  const [expanded,setExpanded]=useState(false),[sort,setSort]=useState<BoardSort>('oldest');
-  const displayOrder=useRef<string[]>([]),sorted=sortBoardItems(loaded,column,sort);
-  if(preserveOrder){
-    const present=new Set(sorted.map(item=>item.kind+':'+item.id)),retained=displayOrder.current.filter(key=>present.has(key)),known=new Set(retained);
-    displayOrder.current=[...retained,...sorted.map(item=>item.kind+':'+item.id).filter(key=>!known.has(key))];
-    const rank=new Map(displayOrder.current.map((key,index)=>[key,index]));
-    sorted.sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
-  }else displayOrder.current=sorted.map(item=>item.kind+':'+item.id);
-  const intakes=sorted.filter(item=>item.kind!=='ticket'),tickets=sorted.filter(item=>item.kind==='ticket');
-  const grouped=column==='pending'?[...intakes,...tickets]:sorted;
+function BoardSection({principal,query,column,label,search,selected,now,loaded,earlierAction,filtered,blocked,preserveOrder,sort,onSort}:{principal:Principal;query:ColumnQuery;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[];earlierAction:ReactNode;filtered:boolean;blocked:boolean;preserveOrder:boolean;sort:BoardSort;onSort:(value:BoardSort)=>void}){
+  const [expanded,setExpanded]=useState(false);
+  const intakes=loaded.filter(item=>item.kind!=='ticket'),tickets=loaded.filter(item=>item.kind==='ticket');
+  const grouped=loaded;
   // Keep the three-card contract while giving both nonempty groups a visible item.
   const visible=expanded?grouped:column==='pending'&&intakes.length&&tickets.length
     ?[...intakes.slice(0,2),...tickets.slice(0,3-Math.min(intakes.length,2))]:grouped.slice(0,3);
   const renderCard=(item:WorkbenchCard)=><Card key={item.kind+item.id} item={item} principal={principal} search={search} selected={item.id===selected} now={now}/>;
-  return <BoardDropColumn column={column}><BoardColumnView column={column} label={label} count={query.isError?'—':loaded.length} sort={sort} onSort={setSort} blocked={blocked||preserveOrder}>
+  return <BoardDropColumn column={column}><BoardColumnView column={column} label={label} count={query.isError?'—':loaded.length} sort={sort} onSort={onSort} blocked={blocked||preserveOrder}>
     {query.isPending?<BoardColumnLoading/>:query.isError&&!query.data?<Message text={errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">连接中断，显示最近已确认资料。</p>:null}<div className="column-cards" id={'cards-'+column}>{column==='pending'&&loaded.length?<><BoardGroup label="待判断" count={loaded.filter(item=>item.kind!=='ticket').length}>{visible.filter(item=>item.kind!=='ticket').map(renderCard)}</BoardGroup><BoardGroup label="待接单" count={loaded.filter(item=>item.kind==='ticket').length}>{visible.filter(item=>item.kind==='ticket').map(renderCard)}</BoardGroup></>:visible.map(renderCard)}{!loaded.length?<div className="empty"><p>{filtered?'已加载的事项中暂无匹配结果':boardEmptyMessage(column,query.data?.pages[0]?.range)}</p>{query.isError||filtered?null:earlierAction}</div>:null}</div><More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)} error={query.isError}/></>}
     {!query.isError&&!query.isPending?(query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null):null}
   </BoardColumnView></BoardDropColumn>;
 }
 function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeView}){
   const [navigationBlocked,setNavigationBlocked]=useState(false);
+  const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',closed:'oldest'});
   const [summarySelection,setSummarySelection]=useState<{scope:string;filter:BoardSummaryFilter|null}>({scope:'',filter:null});
   const order=useRef<{scope:string;keys:string[]}>({scope:'',keys:[]});
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock(),navigate=useNavigate();
@@ -368,16 +362,21 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const summaryScope=JSON.stringify([rangeKey,scope,searchMode,searchKey,principal.authorization_revision]);
   const mineAvailable=principal.workbench_follow_enabled===true&&fresh.every(item=>item.attention!==undefined);
   const summaryFilter=summarySelection.scope===summaryScope&&(summarySelection.filter!=='mine'||mineAvailable)?summarySelection.filter:null;
-  let unique=fresh;
+  // One presentation sequence drives columns, filtered results and detail navigation.
+  const ordered=view==='board'?columns.flatMap(column=>{
+    const sorted=sortBoardItems(fresh.filter(item=>item.column===column),column,sorts[column]);
+    return column==='pending'?[...sorted.filter(item=>item.kind!=='ticket'),...sorted.filter(item=>item.kind==='ticket')]:sorted;
+  }):fresh;
+  let unique=ordered;
   const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage&&!locationMode;
+  const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,summaryFilter,sorts,searchMode?searchKey:null]),keys=ordered.map(item=>item.kind+':'+item.id),present=new Set(keys);
+  if(!holdOrder||order.current.scope!==orderingScope)order.current={scope:orderingScope,keys};
   if(holdOrder){
-    const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,selected.kind,selected.id,searchMode?searchKey:null]),keys=fresh.map(item=>item.kind+':'+item.id),present=new Set(keys);
-    if(order.current.scope!==orderingScope)order.current={scope:orderingScope,keys};
-    else {const retained=order.current.keys.filter(key=>present.has(key)),known=new Set(retained);order.current.keys=[...retained,...keys.filter(key=>!known.has(key))];}
+    const retained=order.current.keys.filter(key=>present.has(key)),known=new Set(retained);order.current.keys=[...retained,...keys.filter(key=>!known.has(key))];
     // Keep only presentation IDs. Every displayed object still comes from the current authorized GET.
     const rank=new Map(order.current.keys.map((key,index)=>[key,index]));
-    unique=[...fresh].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
-  }else order.current={scope:'',keys:[]};
+    unique=[...ordered].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
+  }
   const update=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
   const applyClosedRange=(value:BoardCompletionRange,dates?:{from:string;to:string})=>{
     if(navigationBlocked)return;
@@ -408,11 +407,11 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
-    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter)} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)}/>:null;})}</div>:<>
-      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(holdOrder?unique.filter(item=>item.column===column):query.data?.pages.flatMap(page=>page.items)??[])} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter)} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
+      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(unique.filter(item=>item.column===column))} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){

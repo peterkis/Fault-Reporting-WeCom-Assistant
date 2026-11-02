@@ -33,7 +33,7 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 
 ## 验证
 
-原始检查、失败、截图和资源回执位于 `D:/CodexEvidence/pc-admin-v21-card10-20261102`。最终本地构建绑定基线上的未提交工作区，输入指纹 `732ac2fff4244dcbab1eee1cf1dd1afe73d748f80cf52d05ca9c80be21e9deb1`，manifest SHA-256 `d0cfe464d23103a2b82f7ef6a68636537dcde6acae91ce97e39c14b556706129`。提交后完整 head 由普通 PR CI 独立验证；不把 dirty 工作区结果重绑为 merge commit 的新运行。
+原始检查、失败、截图和资源回执位于 `D:/CodexEvidence/pc-admin-v21-card10-20261102`。首候选本地构建绑定基线上的未提交工作区，输入指纹 `732ac2fff4244dcbab1eee1cf1dd1afe73d748f80cf52d05ca9c80be21e9deb1`，manifest SHA-256 `d0cfe464d23103a2b82f7ef6a68636537dcde6acae91ce97e39c14b556706129`，随后提交为 `b3b7e2edac7d7cc29b27cb2b84651094098995eb`。下表为该首候选结果；后继审查修补见文末。提交后完整 head 由普通 PR CI 独立验证；不把 dirty 工作区结果重绑为 merge commit 的新运行。
 
 | 检查 | 结果 |
 | --- | --- |
@@ -92,3 +92,15 @@ N 本卡只显示提示，实际快捷键绑定由卡 16 统一实施。卡片�
 唯一源码/Git/runtime 写者为当前会话；布局子任务只读。自有 PG18 只监听 `127.0.0.1:58450`，max_connections=8，fixture 创建全新 UUID 合成库并沿 finally 清理；浏览器、profile、HTTP 宿主与 SQL 连接按原测试合同关闭。停止前只余 postgres/template0/template1，其他客户端 0；停止后 pg_ctl status=3、监听 0。已按绝对路径白名单与无重解析点检查删除自有 pgdata、before-bundle、development-bundle；回执为仓库外 cleanup-local.json。采图浏览器 processes/profiles/commandTimers/sockets 全为 0，注册测试按原资源合同通过清理核验。用户原型、历史 Evidence、失败、NOT_RUN、原始截图、恢复引用、共享 `.build` 和依赖保留。
 
 回退为 revert 本 PR；无数据库回滚，无新持久开关。Backlog：卡 10 本地实施与验证完成，授权发布、远端 CI/审查、合并与 Git 清理沿 PR 及最终交付读回。GitHub 未发现对应卡 10 的既存 Issue，不修改无关 Issue。卡 11 可以按其独立只读投影任务执行，但本次未授权实施；卡 12/13 仍被卡 11 的 service / stage_entered_at 投影阻塞。
+
+## PR #130 首轮 P2：展示排序与抽屉导航一致
+
+机器人在发布 `b3b7e2edac7d7cc29b27cb2b84651094098995eb` 上发现 [P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/130#discussion_r4438272700)：列内排序与冻结由子组件拥有，Detail 仍收到服务器顺序。因此中间卡的「下一项」会反向跳转。加强目标断言后，在原正式 bundle 上 SSE 关闭/开启两例均 RED，原件为 `review-navigation-red.log`。
+
+修补将三列排序状态上提到 Workbench，由同一个按阶段、受理分组、列排序及概况筛选后的已加载集合供卡片、列表与 Detail 导航使用；SSE 冻结同一集合的事项键，切换抽屉目标不重置冻结，任何 DTO 仍来自当前获权 GET。BoardSection 只负责分组折叠和前三项预算，不再私藏排序。无请求、权限、业务命令或回执变更。
+
+新回归在 SSE 关闭/开启两种装配下均核对：已处理列中间项 → 下方精确 ID → 原中间精确 ID；概况筛选后的待判断 → 待接单跨组精确 ID；冻结期间背景卡片顺序保持。开发验证 3/3 PASS；后继实际构建、strict types、artifact 全部 PASS，相关注册 36/36 PASS（foundation 19 + WEB01 13 + T42 4，0 FAIL/SKIP/NOT_RUN），Stylelint/ESLint 0/0。
+
+后继本地结果绑定 `b3b7e2edac7d7cc29b27cb2b84651094098995eb` 上未提交工作区，输入指纹 `e293894533428b02f362af7d9852b32bd94699cd75049f0209dfbfe6b262c368`、manifest SHA-256 `b0c77fc4eb2ab40f3ccffe0243ffdb3de85b6fda17698f1b34a642efdfb6bfc8`；原件为 `build-review`、`types-review`、`artifact-review` 与 `registered-tests-review`。工具与文档检查沿未改实现，不重复工具回归。复验使用独立自有 pgdata-review；停止前仅余三默认库、其他客户端 0，停止后 status=3、监听 0，按绝对路径/无重解析点检查删除该合成集群及开发 bundle，回执为 cleanup-review.json。
+
+后继没有 CSS、Token 或 DOM 结构变更，不重复四宽视觉采样；上面的最终四宽图及色彩估算绑定首候选外观，后继验证专注于导航目标和冻结语义。远端结果与完整发布 head 沿 PR 读回，不重绑原 35/35 运行。

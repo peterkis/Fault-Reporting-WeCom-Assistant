@@ -78,7 +78,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
   },{workbenchManualReportsEnabled:true});
 });
 
-test('v2.1 front-end sort stays in place when SSE detail freezes the board',{timeout:120000},()=>withWeb01Fixture(async f=>{
+for(const realtime of [false,true])test('v2.1 displayed order drives detail navigation; SSE='+realtime,{timeout:120000},()=>withWeb01Fixture(async f=>{
   let browser,error;
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
@@ -86,17 +86,28 @@ test('v2.1 front-end sort stays in place when SSE detail freezes the board',{tim
     const before=await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(before.length,3);
     const card='.board-column.closed [data-item-id="'+before[1]+'"] .card-open';
     await clickWorkbenchControl(browser,card);await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
-    assert.equal(await browser.evaluate("document.querySelector('.board-column.closed .ds-column-sort').disabled"),true,'SSE detail actually activates the existing order freeze');
+    assert.equal(await browser.evaluate("document.querySelector('.board-column.closed .ds-column-sort').disabled"),realtime,'only SSE detail activates the existing order freeze');
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before,'opening a detail freezes the displayed sort, not server order');
     const previousTitle=await browser.evaluate("document.querySelector('.detail-dialog #detail-title').textContent");
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
     await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title')?.textContent)&&document.querySelector('.detail-dialog #detail-title').textContent!=="+JSON.stringify(previousTitle));
+    assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),before[2],'next opens the item below the selected card');
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
+    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(before[1]));
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=关闭详情]');
     await browser.waitFor("!document.querySelector('.detail-dialog')");
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),before);
+    await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
+    const pending=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(pending.length,3);
+    await clickWorkbenchControl(browser,'.board-column.pending [data-item-id="'+pending[1]+'"] .card-open');
+    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
+    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(pending[2]));
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
+    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(pending[1]));
   }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
-},{workbenchRealtimeEnabled:true}));
+},{workbenchRealtimeEnabled:realtime}));
 
 test('open workbench filters stay inside content bounds with reachable search and date controls',{timeout:120000},()=>withWeb01Fixture(async f=>{
   const directory=join(tmpdir(),'toolbar-filter-'+randomUUID());await mkdir(directory);const samples=[],screenshots=[],writes=[];
