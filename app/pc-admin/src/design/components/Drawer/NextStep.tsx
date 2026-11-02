@@ -5,6 +5,7 @@ import {Button} from '../Button/Button';
 import {DrawerMoreActions} from './Drawer';
 
 type Entry={id:string;action:string};
+export type StepReadState='pending'|'unknown'|'ready';
 type Scope={entries:Entry[];register:(entry:Entry)=>()=>void;targets:(HTMLDivElement|null)[];primary:string|undefined;label:(action:string,fallback:string)=>string};
 const Context=createContext<Scope|null>(null);
 const orders:Record<string,string[]>={
@@ -15,7 +16,7 @@ const orders:Record<string,string[]>={
 };
 
 /** Only arranges entries already admitted by their original command owners. */
-export function NextStep({status,stage,summary,loading,children}:{status:string;stage:string;summary:string;loading:boolean;children:ReactNode}){
+export function NextStep({status,stage,summary,readState,children}:{status:string;stage:string;summary:string;readState:StepReadState;children:ReactNode}){
   const [entries,setEntries]=useState<Entry[]>([]),[main,setMain]=useState<HTMLDivElement|null>(null),[secondary,setSecondary]=useState<HTMLDivElement|null>(null),[more,setMore]=useState<HTMLDivElement|null>(null);
   const register=useCallback((entry:Entry)=>{setEntries(previous=>[...previous.filter(row=>row.id!==entry.id),entry]);return()=>setEntries(previous=>previous.filter(row=>row.id!==entry.id));},[]);
   const order=orders[status]??[],rank=(entry:Entry)=>{const index=order.indexOf(entry.action);return index<0?order.length:index;};
@@ -24,7 +25,7 @@ export function NextStep({status,stage,summary,loading,children}:{status:string;
   const scope=useMemo(()=>({entries:sorted,register,targets:[main,secondary,more],primary,label}),[entries,register,main,secondary,more,primary,label,status]);
   return <Context.Provider value={scope}>
     <section className="ds-next-step" data-stage={stage} aria-label="下一步">
-      <div className="ds-next-step-copy"><h3>下一步</h3><p>{summary}</p>{!entries.length?<small>{loading?'正在核对可用操作…':'你当前为只读'}</small>:null}</div>
+      <div className="ds-next-step-copy"><h3>下一步</h3><p>{summary}</p>{!entries.length?<small>{readState==='pending'?'正在核对可用操作…':readState==='unknown'?'可用操作暂未确认，请刷新或选择复核项':'你当前为只读'}</small>:null}</div>
       <div className="ds-next-step-actions"><div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
     </section>
     <div className="ds-step-controllers">{children}</div>

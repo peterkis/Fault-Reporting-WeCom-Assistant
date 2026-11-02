@@ -1,3 +1,4 @@
+import type {StepReadState} from '../../design/components/Drawer/NextStep';
 import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
 import {Button as HButton} from '../../design/components/Button/Button';
@@ -44,22 +45,24 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
     </section>
   </>;
 }
-export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange,expanded=false}:{principal:Principal;item:CanonicalItem;requested:CanonicalItem;refs:ReviewReference[];expanded?:boolean;onBlockedChange:(blocked:boolean)=>void}){
+export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange,expanded=false,onReadStateChange}:{principal:Principal;item:CanonicalItem;requested:CanonicalItem;refs:ReviewReference[];expanded?:boolean;onReadStateChange?:((state:StepReadState)=>void)|undefined;onBlockedChange:(blocked:boolean)=>void}){
   const [selected,setSelected]=useState(()=>requested.kind==='review'?requested.id:refs.length===1?refs[0]?.id??'':'');
   const [blocked,setBlocked]=useState(false);
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
+  useEffect(()=>{if(!selected)onReadStateChange?.(refs.length?'unknown':'ready');},[onReadStateChange,selected,refs.length]);
   if(!refs.length&&!selected)return null;
   return <section data-activity-field="manual-review" className="manual-review" data-review-workspace aria-label="材料与人工复核"><h3>材料与人工复核</h3>
     <WorkbenchSelect label={<>复核项 </>} aria-label="选择复核项" value={selected} isDisabled={blocked} onChange={event=>setSelected(event)}><ListBox.Item id="" textValue={"请选择复核项"}>请选择复核项<ListBox.ItemIndicator/></ListBox.Item>{refs.map((ref,index)=><ListBox.Item key={ref.id} id={ref.id} textValue={"第"+String(index+1)+"次复核 ·"+String(reviewStatuses[ref.status])}>第 {index+1}次复核 · {reviewStatuses[ref.status]}<ListBox.ItemIndicator/></ListBox.Item>)}{selected&&!refs.some(ref=>ref.id===selected)?<ListBox.Item id={selected} textValue={"已选择的复核记录"}>已选择的复核记录<ListBox.ItemIndicator/></ListBox.Item>:null}</WorkbenchSelect>
-    {selected?<ReviewForm expanded={expanded} key={principal.principal_id+':'+selected} principal={principal} item={item} reviewId={selected} onBlockedChange={setBlocked}/>:<p>请选择一条复核记录，再核对报修内容。</p>}
+    {selected?<ReviewForm onReadStateChange={onReadStateChange} expanded={expanded} key={principal.principal_id+':'+selected} principal={principal} item={item} reviewId={selected} onBlockedChange={setBlocked}/>:<p>请选择一条复核记录，再核对报修内容。</p>}
   </section>;
 }
-function ReviewForm({principal,item,reviewId,onBlockedChange,expanded}:{principal:Principal;item:CanonicalItem;reviewId:string;expanded:boolean;onBlockedChange:(blocked:boolean)=>void}){
+function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStateChange}:{principal:Principal;item:CanonicalItem;reviewId:string;expanded:boolean;onReadStateChange?:((state:StepReadState)=>void)|undefined;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null),mounted=useRef(true),generation=useRef(0);
   const [value,setValue]=useState<ReviewInput>(()=>emptyReviewInput(reviewId)),[pending,setPending]=useState<ReviewCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[startBlocked,setStartBlocked]=useState(false),[startNavigationBlocked,setStartNavigationBlocked]=useState(false);
   const latest=useRef(value);latest.current=value;
   const key=['manual-review',principal.principal_id,item.kind,item.id,reviewId] as const;
   const context=useQuery({queryKey:key,queryFn:({signal})=>reviewApi.detail(reviewId,signal)});
+  useEffect(()=>{onReadStateChange?.(context.isPending?'pending':context.isError?'unknown':'ready');},[onReadStateChange,context.isPending,context.isError]);
   const draft=useReviewDraft({principal,item,reviewId,value,pending,
     onRestore:restored=>{setValue(restored.value);setPending(restored.pending);if(restored.pending){setState('unknown');setMessage('结果未知：已恢复原命令，结论、原因、版本和材料摘要保持不变。');}},
     onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容不可用，只能核对上次操作。');},

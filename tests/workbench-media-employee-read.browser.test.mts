@@ -40,7 +40,7 @@ test('PC server posters and native media reduce same-data preview cost with old-
   try{
    for(let attempt=0;attempt<12;attempt++){if(!(await seeded.media.processNextTranscode()).processed)break;}
    const ready=await seeded.media.listForIntake({intakeId:seeded.intakeId,verifyCurrentRead:async()=>{}});assert.equal(ready.length,7);assert.ok(ready.every(item=>item.thumbnail?.status==='READY'));assert.equal(ready.at(-1)?.playback_status,'READY');
-   const cookie=f.browserCookies[0];assert.ok(cookie?.url);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');const active=browser;
+   const cookie=f.browserCookies[0];assert.ok(cookie?.url);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const active=browser;
    await active.command('Page.enable');
    await active.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__pcMediaTiming={start:performance.now(),first:null,all:null,frame:null};document.addEventListener('load',event=>{if(event.target?.matches?.('.detail-media-card img')){const t=globalThis.__pcMediaTiming;if(t.first===null)t.first=performance.now()-t.start;}},true);const check=()=>{const cards=[...document.querySelectorAll('.detail-media-card')];if(cards.length===7&&cards.every(card=>{const img=card.querySelector('img');return img?.complete&&img.naturalWidth>0;})){globalThis.__pcMediaTiming.all=performance.now()-globalThis.__pcMediaTiming.start;}else requestAnimationFrame(check);};requestAnimationFrame(check);})()`});
    for(let round=0;round<11;round++){

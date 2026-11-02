@@ -29,6 +29,7 @@
 .ds-step-controllers:empty,.ds-detail .ds-step-controllers .note-controls:empty {display:none;}
 .ds-detail .ds-step-controllers .detail-action-controller {padding:0;border:0;margin:0;}
 .ds-step-workflow:not([hidden]),.ds-step-inline-form {margin:0 0 var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--border-hair);}
+.ds-detail .ds-step-inline-form {position:static;inset:auto;width:auto;max-width:none;height:auto;max-height:none;transform:none;border:0;border-bottom:1px solid var(--border-hair);border-radius:0;background:transparent;box-shadow:none;overflow:visible;}
 .ds-step-inline-form>header {display:flex;align-items:center;justify-content:space-between;}
 .ds-step-inline-form>header h3 {margin:0;font-size:var(--fs-md);font-weight:var(--fw-semibold);}
 .ds-step-workflow>.ticket-notes {margin:0;}

@@ -6,6 +6,7 @@ import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 test('Card 13 next step preserves original commands, inline wait/resume, note UUID recovery and four-width drawer',{timeout:240000},()=>withDetailRestructureFixture(async f=>{
   const first=f.tickets[0],cookie=f.browserCookies[0];assert.ok(first&&cookie&&cookie.url);
@@ -14,8 +15,11 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
     await b.command('Page.enable');await b.command('Page.bringToFront');
-    await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__card13Writes=[];globalThis.__card13LostNote=false;globalThis.fetch=async(url,options)=>{const path=new URL(String(url),location.href).pathname;if(options?.method==='POST')globalThis.__card13Writes.push({path,body:JSON.parse(options.body)});const response=await original(url,options);if(options?.method==='POST'&&path.endsWith('/internal-notes')&&response.ok&&!globalThis.__card13LostNote){await response.arrayBuffer();globalThis.__card13LostNote=true;throw new TypeError('SYNTHETIC_COMMITTED_NOTE_RESPONSE_LOST');}return response;};})()`});
+    await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__card13Writes=[];globalThis.__card13LostNote=false;globalThis.__card13HoldContext=true;let release;const gate=new Promise(resolve=>release=resolve);globalThis.__card13ReleaseContext=()=>{globalThis.__card13HoldContext=false;release();};globalThis.fetch=async(url,options)=>{const path=new URL(String(url),location.href).pathname;if(options?.method==='POST')globalThis.__card13Writes.push({path,body:JSON.parse(options.body)});const response=await original(url,options);if((options?.method??'GET')==='GET'&&path===${JSON.stringify('/api/tickets/'+first.ticket.id)}&&globalThis.__card13HoldContext)await gate;if(options?.method==='POST'&&path.endsWith('/internal-notes')&&response.ok&&!globalThis.__card13LostNote){await response.arrayBuffer();globalThis.__card13LostNote=true;throw new TypeError('SYNTHETIC_COMMITTED_NOTE_RESPONSE_LOST');}return response;};})()`});
     await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});
+    await b.waitFor("document.querySelector('.ds-next-step')?.textContent.includes('正在核对可用操作')");
+    assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('你当前为只读')"),false);
+    await b.evaluate('globalThis.__card13ReleaseContext()');
     await b.waitFor("document.querySelector('.ds-next-step [data-action=take-and-start]')?.disabled===false");
     assert.equal(await b.evaluate("document.querySelector('.ds-next-step [data-tone=primary]').textContent"),'领取并开始');
     assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-next-step [data-tone=secondary]')].filter(n=>n.checkVisibility()).length<=2"),true);
@@ -51,9 +55,32 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     assert.equal(await b.evaluate("document.querySelector('.detail-complete-button').closest('.ds-next-step')!==null"),true);
     assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-detail [data-tone=primary]')].filter(n=>n.checkVisibility()).length"),1);
     assert.equal(await b.evaluate("document.querySelector('.detail-complete-button').closest('[role=dialog]')===document.querySelector('.ds-drawer')"),true);
+    assert.equal(await b.evaluate("(()=>{const form=document.querySelector('.ds-step-inline-form'),step=document.querySelector('.ds-next-step'),body=document.querySelector('.detail-body'),f=form.getBoundingClientRect(),s=step.getBoundingClientRect();return getComputedStyle(form).position==='static'&&f.top>=s.bottom&&f.left>=body.getBoundingClientRect().left&&f.right<=body.getBoundingClientRect().right;})()"),true,'the form follows the next-step card inside the drawer');
+    assert.equal(await b.evaluate("(()=>{const form=document.querySelector('.ds-step-inline-form'),body=document.querySelector('.detail-body'),before=form.getBoundingClientRect().top,old=body.scrollTop;body.scrollTop+=32;const delta=body.scrollTop-old;return delta>0&&Math.abs(form.getBoundingClientRect().top-before+delta)<=1;})()"),true,'inline form moves with the content scroll');
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 }));
+
+test('Card 13 clears a mounted conversation count when the same principal loses the capability',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+  await f.runtime.stop();
+  const runtime=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:f.principals.map(principal=>principal.id),flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},externalSendEnabled:false,workbenchConversationsEnabled:true,workbenchRealtimeEnabled:true});
+  if('disabled' in runtime)throw Error('CARD13_RUNTIME_DISABLED');
+  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown,writes=0;
+  runtime.server.on('request',request=>{if(request.method==='POST')writes++;});
+  try{
+    const started=await runtime.start(),cookie=started.cookies?.[0],first=f.tickets[0];assert.ok(cookie&&cookie.url&&first);
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
+    // A lower capability snapshot from the normal bootstrap refresh, with the same identity.
+    await b.command('Page.enable');await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const Source=EventSource;globalThis.__card13Sources=[];globalThis.__card13ConversationsOff=false;globalThis.EventSource=class extends Source{constructor(...args){super(...args);globalThis.__card13Sources.push(this);}};const original=fetch;globalThis.fetch=async(url,options)=>{const response=await original(url,options);if(new URL(String(url),location.href).pathname==='/api/lifecycle/bootstrap'&&response.ok&&globalThis.__card13ConversationsOff){const body=await response.clone().json();body.conversation_workspace_enabled=false;return new Response(JSON.stringify(body),{status:response.status,headers:response.headers});}return response;};})()`});
+    await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});await b.command('Page.bringToFront');
+    await b.waitFor("/^会话 \\d+$/.test(document.querySelector('#detail-tab-trigger-conversations')?.textContent)&&globalThis.__card13Sources.some(source=>source.readyState===1)");
+    await b.evaluate("(()=>{globalThis.__card13Title=document.querySelector('#detail-title');globalThis.__card13ConversationsOff=true;globalThis.__card13Sources.find(source=>source.readyState===1).dispatchEvent(new MessageEvent('message',{data:'{}'}));return true;})()");
+    await b.waitFor("document.querySelector('#detail-tab-trigger-conversations')?.textContent==='会话'&&!document.querySelector('.item-conversations')");
+    assert.equal(await b.evaluate("document.querySelector('#detail-title')===globalThis.__card13Title"),true,'capability-only refresh leaves the detail mounted');
+    assert.equal(writes,0);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],failure);
+},{workbenchRealtimeEnabled:true}));
 
 test('Card 13 read-only drawer has no primary workflow action and tab navigation does not write',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
   const first=f.tickets[0],cookie=f.browserCookies[0];assert.ok(first&&cookie&&cookie.url);
