@@ -155,6 +155,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | I24 | POST | `/api/incidents/{incidentId}/close` | W | 已实现：关闭 | [公共故障](workbench/incidents.md) |
 | I26 | GET | `/api/incidents/{incidentId}/commands/{commandId}` | W | 已挂载、默认关闭：当前主体/父与原动作用途的安全只读核对；原UUID/当前原动作与子目标权限，沿原ledger | [公共故障](workbench/incidents.md) |
 | B01 | GET | `/api/workbench/board` | W | 已实现：WEB01看板 | [看板](workbench/board.md) |
+| B04 | GET | `/api/workbench/service-catalog` | W | 已实现：当前内部身份，只读；生命周期工作台默认关闭 | [只读服务目录](workbench/board.md#工作台只读服务目录) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
 | B03 | GET | `/api/workbench/items/ticket/{ticketId}/actor-avatars/{actorRef}` | W | 默认关闭：当前工单 READ 下的操作人头像缓存，200 WebP / 204回退 | [头像与媒体](workbench/actor-avatars-and-media.md) |
 | WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |

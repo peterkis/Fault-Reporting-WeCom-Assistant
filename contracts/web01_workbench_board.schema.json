@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web01_workbench_board.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "next_cursor",
+    "column",
+    "range"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "web01_workbench_card.schema.json"
+      }
+    },
+    "next_cursor": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      ]
+    },
+    "column": {
+      "enum": [
+        "pending",
+        "active",
+        "closed"
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "from",
+        "until",
+        "timezone"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "recent",
+            "all",
+            "cancelled",
+            "custom"
+          ]
+        },
+        "from": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "until": {
+          "$ref": "local_datetime.schema.json"
+        },
+        "timezone": {
+          "const": "Asia/Shanghai"
+        }
+      }
+    }
+  }
+}

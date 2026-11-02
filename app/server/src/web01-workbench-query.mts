@@ -1,3 +1,5 @@
+import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
+import {projectWorkbenchCatalog,readWorkbenchCardProjections} from './workbench-card-projections.mjs';
 import type {FollowProjectionPort} from './workbench-follow.mjs';
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
@@ -139,7 +141,7 @@ export function workbenchSearchCardsSql(includeClosedIntakes:boolean):string {
   if(!includeClosedIntakes)return CARD_SQL;
   return CARD_SQL.slice(0,-1)+" UNION ALL "+CLOSED_INTAKE_CARD_SQL.replace("i.id=$1::uuid AND","$1::boolean AND")+")";
 }
-export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false,actorAvatarsEnabled=false}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean;actorAvatarsEnabled?:boolean}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenchFollowEnabled=false,follow=null,followUpSchedules=null,manualReviewEnabled=false,manualReportsEnabled=false,personalReadEnabled=false,reviews=null,supplementFollowUp=null,webReports=null,reporterProfilesEnabled=false,actorAvatarsEnabled=false,serviceCatalog=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null;workbenchFollowEnabled?:boolean;follow?:FollowProjectionPort|null;followUpSchedules?:Pick<ReturnType<typeof createWorkbenchFollowUpSchedules>,'activeForAuthorizedTickets'>|null;manualReviewEnabled?:boolean;manualReportsEnabled?:boolean;personalReadEnabled?:boolean;reviews?:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'canonicalItem'>|null;supplementFollowUp?:Pick<ReturnType<typeof import('./workbench-supplement-follow-up.mjs').createWorkbenchSupplementFollowUp>,'summary'|'summariesForAuthorizedTickets'>|null;webReports?:Pick<WorkbenchWebReportLifecyclePort,'activeForAuthorizedTickets'>|null;reporterProfilesEnabled?:boolean;actorAvatarsEnabled?:boolean;serviceCatalog?:ServiceCatalog|null}) {
   async function decorateWebReportUrgency(items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
     if(!webReports)return items;const ids=[...new Set(items.filter(item=>item.kind==='ticket').map(item=>item.id))];if(!ids.length)return items;
     const active=await webReports.activeForAuthorizedTickets(ids);
@@ -230,6 +232,12 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
   return Object.freeze({
     authorizedItem:item,
     decorateWebReportUrgency,
+    async serviceCatalog(authContext:unknown){
+      await scope(authContext);
+      let catalog;
+      try{catalog=projectWorkbenchCatalog(serviceCatalog);}catch{failP2016('ACTION_FAILED',503);}
+      await scope(authContext);return publicP2016(catalog);
+    },
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';
@@ -256,7 +264,8 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
           selectedColumn!=='closed'||selectedRange!=='recent'&&!custom,window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
-      const rows=r.rows.slice(0,limit),items=await decorate(rows.map(card),input.authContext,true,true),last=rows.at(-1);
+      const rows=r.rows.slice(0,limit),decorated=await decorate(rows.map(card),input.authContext,true,true),last=rows.at(-1);
+      const items=await readWorkbenchCardProjections(pool,CARD_SQL,async()=>(await scope(input.authContext)).values,decorated,serviceCatalog,manualReportsEnabled);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:custom?2:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,...(custom?{until:window.until}:{}),at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },
@@ -348,7 +357,9 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       // Recheck the original requested route after the source and related reads.
       const currentItem=await item(authContext,kind,id);
       if(currentItem.kind!==selected.kind||currentItem.id!==selected.id)failP2016('VERSION_CONFLICT',409);
-      return publicP2016({item:selected,description:report.rows[0]?.summary??null,reported_at:reported.rows[0]?.at??null,records:items,
+      const projected=(await readWorkbenchCardProjections(pool,workbenchSearchCardsSql(manualReviewEnabled),async()=>(await scope(authContext)).values,[selected],serviceCatalog,manualReportsEnabled))[0];
+      if(!projected)failP2016('NOT_FOUND',404);
+      return publicP2016({item:projected,description:report.rows[0]?.summary??null,reported_at:reported.rows[0]?.at??null,records:items,
         next_cursor:records.rows.length>n&&last?cursorP2016({kind,id:uuidP2016(id),at:last.at,record_id:last.id}):null,
         responsibility:{ticket_assignee_name:selected.assignee_name,conversation_assignees:[...new Set(names)]},...(reviewRefs?{review_refs:reviewRefs}:{}),
         ...(selected.kind!==kind||selected.id!==id?{requested_item:{kind:kind as WorkbenchCard['kind'],id:uuidP2016(id)}}:{})});

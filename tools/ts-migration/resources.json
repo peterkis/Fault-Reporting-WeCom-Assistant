@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "files": [
+    "contracts/web01_workbench_card.schema.json",
+    "contracts/web01_workbench_board.schema.json",
+    "contracts/web01_workbench_detail.schema.json",
+    "contracts/workbench_service_catalog.schema.json",
     "database/migrations/068_workbench_actor_avatar_cache.sql",
     "database/migrations/069_h5_media_conversion_diagnostics.sql",
     "database/migrations/070_workbench_media_video_thumbnails.sql",

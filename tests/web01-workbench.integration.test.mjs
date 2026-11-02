@@ -193,3 +193,126 @@ test('source group HTTP: ADMIN metadata, scoped group identity, replay, conflict
     assert.ok([401,403].includes((await get('/api/workbench/source-groups')).status));
   },{sourceGroupDirectoryEnabled:true});
 });
+
+
+test('Card 11 HTTP catalog, source projections, state events and legacy search shape',async()=>{
+  const {createWeb01WorkbenchQuery}=await import('../app/server/src/web01-workbench-query.mjs');
+  const {loadServiceCatalog}=await import('../app/server/src/p2-007-service-catalog.mjs');
+  const {createTicketActionService}=await import('../app/server/src/p1-006-ticket-state-actions.mjs');
+  const {createDecisionStore}=await import('../app/server/src/p2-015-decision-store.mjs');
+  const {safeHash}=await import('../app/server/src/p2-015-domain-contracts.mjs');
+  await withWeb01Fixture(async({origin,cookies,tickets,pool,principals,runtime})=>{
+    const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
+    const path='/api/workbench/service-catalog';
+    assert.equal((await fetch(origin+path)).status,401);
+    assert.equal((await fetch(origin+path,{headers:{cookie:'yxx_member_session=synthetic-member'}})).status,401);
+    const response=await get(path);assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+    const directory=await response.json();assert.equal(directory.schema_version,1);assert.equal(directory.categories.length,11);
+    assert.equal(JSON.stringify(directory).includes('default_owner_team'),false);assert.equal(JSON.stringify(directory).includes('aliases'),false);assert.equal(JSON.stringify(directory).includes('hash'),false);
+    assert.equal((await get(path+'?unknown=1')).status,400);
+    assert.equal((await fetch(origin+path,{method:'POST',headers:{cookie:cookies[0]}})).status,404);
+    await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+    assert.equal((await get(path)).status,401,'the existing test authenticator rejects a disabled identity');
+    await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principals[0].id]);
+    assert.equal((await get(path,1)).status,200,'valid internal handler may read without a visible Ticket');
+    const nativeQuery=pool.query.bind(pool);let revokeAfterAuthentication=true;
+    pool.query=async(sql,values)=>{
+      const result=await nativeQuery(sql,values);
+      if(revokeAfterAuthentication&&typeof sql==='string'&&sql.includes('array_agg(r.role ORDER BY r.role)')&&values?.[0]===principals[0].id){
+        revokeAfterAuthentication=false;await nativeQuery('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+      }
+      return result;
+    };
+    try{assert.equal((await get(path)).status,403,'authorization rechecks the identity accepted by authentication');}
+    finally{pool.query=nativeQuery;await nativeQuery('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principals[0].id]);}
+
+    const authContext={principal_id:principals[0].id};const catalog=loadServiceCatalog();
+    const cards=createWeb01WorkbenchQuery({pool,query:runtime.query,serviceCatalog:catalog});
+    await assert.rejects(createWeb01WorkbenchQuery({pool,query:runtime.query}).serviceCatalog(authContext),{code:'P2_016_ACTION_FAILED',status:503});
+    const input={authContext,column:'pending',range:'all',cursor:null,limit:'50'};
+    const page=await cards.list(input);assert.ok(page.items.every(i=>Object.hasOwn(i,'service')&&Object.hasOwn(i,'stage_entered_at')));
+    let sqlCount=0;
+    const measured=createWeb01WorkbenchQuery({pool:{query:(...args)=>{sqlCount++;return pool.query(...args);}},query:runtime.query,serviceCatalog:catalog});
+    await measured.list({...input,limit:'1'});const one=sqlCount;sqlCount=0;
+    await measured.list(input);assert.equal(sqlCount,one,'projection SQL count stays constant as page size grows');
+    console.log(JSON.stringify({card11_projection_queries:{one_card:one,full_page:sqlCount}}));
+    const revoked=createWeb01WorkbenchQuery({pool:{query:async(...args)=>{
+      const result=await pool.query(...args);
+      if(args[0].startsWith("SELECT to_regclass('intake.web_submission')"))await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+      return result;
+    }},query:runtime.query,serviceCatalog:catalog});
+    try{await assert.rejects(revoked.list(input),{code:'P2_016_FORBIDDEN',status:403});}
+    finally{await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[principals[0].id]);}
+
+    const raw=await cards.authorizedItem(authContext,'ticket',tickets[0].ticket.id);
+    assert.equal(Object.hasOwn(raw,'service'),false);assert.equal(Object.hasOwn(raw,'stage_entered_at'),false,'search uses the original authorizedItem shape');
+    const read=async()=>{const res=await get('/api/workbench/items/ticket/'+tickets[0].ticket.id);assert.equal(res.status,200);return (await res.json()).item;};
+    const actions=createTicketActionService({pool,authorize:async()=>true});
+    let eventIndex=0,expectedStage=null;
+    for(const action of ['accept','start','request-information','resume','wait-vendor','resume','add-note']){
+      const ticket=(await pool.query('SELECT version FROM pilot_ticket.ticket WHERE id=$1::uuid',[tickets[0].ticket.id])).rows[0];
+      const outcome=await actions.perform({ticketId:tickets[0].ticket.id,action,actor:{type:action==='resume'&&eventIndex===5?'SYSTEM':'PILOT_USER',id:principals[0].id},expectedVersion:ticket.version,internalNote:'synthetic event verification',traceId:'card11-events'});
+      assert.equal(outcome.ok,true,JSON.stringify(outcome));
+      const stamp='2026-11-02 01:00:'+String(50-eventIndex++).padStart(2,'0');
+      await pool.query('UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp without time zone WHERE event_id=$1::uuid',[outcome.event.event_id,stamp]);
+      if(action!=='add-note')expectedStage=stamp;
+      assert.equal((await read()).stage_entered_at,expectedStage,action);
+    }
+    const original=(await pool.query('SELECT * FROM intake.deterministic_decision WHERE service_intake_id=$1::uuid ORDER BY decision_ordinal DESC LIMIT 1',[tickets[0].intake.intakeId])).rows[0];
+    const service=catalog.listServices()[0];assert.ok(service);
+    const result={...original.safe_result,known_fields:{selected_service_code:service.service_code},fact_provenance:[{field_path:'service.selected_service_code',normalized_value:service.service_code,status:'ACTIVE',assertion:'AFFIRMED',source_kind:'DETERMINISTIC_RULE'}],conflicts:[]};
+    const record=async safe_result=>createDecisionStore().record({transaction:pool,input:{...original,decision_policy_version:'CARD11_'+randomUUID(),safe_result,result_hash:safeHash(safe_result),input_hash:safeHash({fixture:randomUUID()}),safe_action_suggestions:[]}});
+    await record(result);assert.equal((await read()).service?.source,'RULE_DETERMINISTIC');
+    await record({...result,known_fields:{selected_service_code:null},fact_provenance:[]});assert.equal((await read()).service,null,'new unknown result must not resurrect the old code');
+    await record({...result,conflicts:[{field_path:'service.selected_service_code'}]});assert.equal((await read()).service,null);
+    await record(result);
+    const continuation=await seedPersistedIntake({pool,text:'同一 Journey 后继未知合成材料'});
+    const leg=(await pool.query(`INSERT INTO intake.channel_leg(journey_id,leg_ordinal,leg_type,source_intake_id,provider_context_hash,channel_identity_hash,reporter_identity_hash,opened_at)
+      SELECT journey_id,2,'GROUP_CONTINUATION',$2::uuid,provider_context_hash,channel_identity_hash,reporter_identity_hash,platform.local_now()
+      FROM intake.channel_leg WHERE id=$1::uuid RETURNING id::text`,[original.channel_leg_id,continuation.intakeId])).rows[0];
+    const window=(await pool.query('SELECT rel.sequence_no,m.id::text AS message_id,m.clean_text,m.msg_type FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id WHERE rel.intake_id=$1::uuid ORDER BY rel.sequence_no',[continuation.intakeId])).rows;
+    const unknown={...result,known_fields:{selected_service_code:null},fact_provenance:[]};
+    await createDecisionStore().record({transaction:pool,input:{...original,service_intake_id:continuation.intakeId,channel_leg_id:leg.id,
+      decision_policy_version:'CARD11_CONTINUATION',safe_result:unknown,result_hash:safeHash(unknown),input_hash:safeHash({fixture:randomUUID()}),
+      source_hash:safeHash(window.map(row=>({sequence_no:row.sequence_no,message_id:row.message_id,clean_text_hash:safeHash({text:row.clean_text??'',type:row.msg_type})}))),safe_action_suggestions:[]}});
+    assert.equal((await read()).service,null,'latest Journey decision wins even when it belongs to another Intake');
+    await record(result);
+    await pool.query("UPDATE intake.service_intake SET retention_until=platform.local_now()-interval '1 second' WHERE id=$1::uuid",[tickets[0].intake.intakeId]);
+    assert.equal((await read()).service,null,'expired source facts do not survive the read projection');
+  });
+});
+
+
+test('Card 11 Web explicit selection respects source revocation; unavailable catalog is HTTP 503',async()=>{
+  const {loadServiceCatalog}=await import('../app/server/src/p2-007-service-catalog.mjs');
+  await withWeb01Fixture(async({pool,tickets,origin,cookies})=>{
+    const service=loadServiceCatalog().listServices()[0];assert.ok(service);
+    await pool.query("UPDATE intake.web_submission SET safe_content=jsonb_set(safe_content,'{service_code}',to_jsonb($2::text)) WHERE intake_id=$1::uuid AND kind='SUBMIT'",[tickets[0].intake.intakeId,service.service_code]);
+    const read=async()=>{const response=await fetch(origin+'/api/workbench/items/ticket/'+tickets[0].ticket.id,{headers:{cookie:cookies[0]}});assert.equal(response.status,200);return (await response.json()).item;};
+    assert.deepEqual((await read()).service,{code:service.service_code,name_zh:service.name_zh,category:service.category,category_name_zh:service.category_name_zh,source:'REPORTER_EXPLICIT'});
+    await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1::uuid',[tickets[0].intake.intakeId]);
+    assert.equal((await read()).service,null);
+  },{ticketSelfHandlingEnabled:true});
+  await withWeb01Fixture(async({origin,cookies})=>{
+    const response=await fetch(origin+'/api/workbench/service-catalog',{headers:{cookie:cookies[0]}});
+    assert.equal(response.status,503);assert.equal(response.headers.get('cache-control'),'no-store');
+    assert.equal((await response.json()).error.code,'P2_016_ACTION_FAILED');
+    const board=await fetch(origin+'/api/workbench/board',{headers:{cookie:cookies[0]}});assert.equal(board.status,200);
+    assert.ok((await board.json()).items.every(item=>item.service===null),'catalog failure does not disable board or state projections');
+  },{serviceCatalog:null});
+});
+
+test('Card 11 preserves terminal Intake detail and resolved Review aliases',async()=>{
+  await withWeb01Fixture(async({origin,cookies,pool,waiting,runtime,principals,processReviewIntake})=>{
+    await processReviewIntake(waiting.intakeId);
+    const review=(await pool.query("SELECT id::text,row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING'",[waiting.intakeId])).rows[0];assert.ok(review);
+    const result=await runtime.reviews.resolveManualReview({authContext:{principal_id:principals[0].id},reviewId:review.id,body:{client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code:'CANCEL_REVIEW',resolution_reason_code:'CARD11_FIXTURE'}});assert.equal(result.ok,true);
+    for(const status of ['COMPLETED','IGNORED']){
+      await pool.query('UPDATE intake.service_intake SET status=$2 WHERE id=$1::uuid',[waiting.intakeId,status]);
+      for(const route of ['intake/'+waiting.intakeId,'review/'+review.id]){
+        const response=await fetch(origin+'/api/workbench/items/'+route,{headers:{cookie:cookies[0]}});assert.equal(response.status,200,route+' '+status);
+        const detail=await response.json();assert.equal(detail.item.kind,'intake');assert.equal(detail.item.id,waiting.intakeId);assert.equal(detail.item.stage_entered_at,null);
+      }
+    }
+  },{workbenchManualReviewEnabled:true});
+});
