@@ -9,6 +9,14 @@ export interface SourceGroupDisplay {
 export interface SourceGroupPage { items: SourceGroupDisplay[]; next_cursor: string | null }
 export interface SourceGroupNameCommand { client_command_id: string; expected_row_version: string; display_name: string }
 export interface SourceGroupNameResult { ok: true; group: SourceGroupDisplay; replayed: boolean }
+export interface WorkbenchService {
+  code: string; name_zh: string; category: string; category_name_zh: string;
+  source: 'MANUAL_CONFIRMED' | 'REPORTER_EXPLICIT' | 'RULE_DETERMINISTIC';
+}
+export interface WorkbenchServiceCatalog {
+  schema_version: 1; catalog_version: string;
+  categories: {category: string; category_name_zh: string; services: {service_code: string; name_zh: string}[]}[];
+}
 export interface WorkbenchCard {
   kind: WorkbenchKind; id: string; intake_id: string; number: string; title: string;
   status: string; column: BoardColumn; priority: string | null; source: string;
@@ -19,6 +27,9 @@ export interface WorkbenchCard {
   reporter_profile?: {state:'PENDING'|'PARTIAL'|'RESOLVED'|'UNAVAILABLE';source:'REPORT_SNAPSHOT'|'LATER_LOOKUP'|null;captured_at:string|null};
   assignee_name: string | null; review_reason: string | null;
   created_at: string; updated_at: string; completed_at: string | null;
+  /** Board/detail read projections. Older responses and search omit these fields. */
+  service?: WorkbenchService | null;
+  stage_entered_at?: string | null;
   /** Present only on authorized Ticket cards while shared-time viewing is enabled. */
   follow_up_schedule?:import('./workbench_follow_up_schedule_contracts.js').SharedFollowUpActive|null;
   /** Current-round Web urge; projection only, never priority or responsibility. */

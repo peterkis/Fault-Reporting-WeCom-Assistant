@@ -16,7 +16,7 @@ export interface WorkbenchSearchCriteria {
  readonly schedule:'any'|'active'|'due'|'none';
 }
 export interface WorkbenchSearchRequest {readonly criteria:WorkbenchSearchCriteria;readonly cursor:string|null;readonly limit:number}
-export type WorkbenchSearchCard=WorkbenchCard&{
+export type WorkbenchSearchCard=Omit<WorkbenchCard,'service'|'stage_entered_at'>&{
  readonly attention?:WorkbenchFollowAttention;
  readonly supplement_follow_up?:Readonly<{has_pending_supplements:boolean}>;
  readonly follow_up_schedule?:SharedFollowUpActive|null;

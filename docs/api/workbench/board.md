@@ -74,3 +74,24 @@ WBINT-T14启用时 Detail另含有界 `review_refs:[{id,status,row_version:strin
 2026-10-26 展示调整：卡片以报修人姓名和部门替代位置信息；位置字段保留用于详情及原查询合同。部门来自原报修资料快照；人工代录使用其已核实部门列表或手填部门。缺少旧 H5 快照时通过[独立只读资料接口](web-reports.md)补充当前资料，不回写历史。来源 PORTAL 的显示标签为 H5报修。
 
 2026-10-26 查询后继：关系、关注、人工来源资料和补充材料提示按整页读取。分页前沿原 READ 过滤；异步投影完成后按整页重新核验当前 principal 和规范事项 READ，包括 Follow 关闭的入口。等待期间 principal 失效返回403，页面事项失去 READ 返回404；拒绝响应不携带旧卡片，客户端可按当前身份重新加载。请求字段、DTO、游标、默认开关及命令／回执语义不变。测量口径与检查见[性能修复记录](../../../plans/pc-admin-electron/board-performance-2026-10-26.md)。
+
+
+## v2.1 卡 11：服务与状态起始时间（2026-11-02）
+
+合同按用户确认的 [ADR-0052](../../../adr/0052_workbench_service_and_stage_read_projections.md) 扩展。board/detail 卡片总是返回 `service` 与 `stage_entered_at`，二者可为 null；旧响应可缺席，基础 TypeScript DTO 使用可选字段。高级搜索不输出两字段，保持旧闭合客户端兼容。对应 [card Schema](../../../contracts/web01_workbench_card.schema.json)、[board Schema](../../../contracts/web01_workbench_board.schema.json)。
+
+`service={code,name_zh,category,category_name_zh,source}`。代码/类别最长64字符，名称最长80字符；source 为 `MANUAL_CONFIRMED / REPORTER_EXPLICIT / RULE_DETERMINISTIC`。只读当前获权且保留有效的事实；明确人工服务确认优先于初始 Web 显式选择，再取当前确定性事实。普通人工分类不确认服务代码；未解决冲突、失效或禁用/不存在的代码返回 null，不复活旧判定或改用相反建议。目录名称只取当前装配的同一 ServiceCatalog。无事实补写或数据库迁移。详细 [事实表与确认规则](../../ui/design-system-v2.1-card11-source-audit.md)。
+
+`stage_entered_at` 使用原北京时间 `YYYY-MM-DD HH:mm:ss`，取最近一次真正进入当前 Ticket 状态的事件，按 aggregate_version/event_ordinal 排序。挂起、恢复分别重新起算；备注和同状态转交不重置；非 Ticket 或无法证明为 null，不以 updated_at 补值。前端待受理仍从 created_at 计算、已处理不计热度，本卡不修改前端。
+
+### 工作台只读服务目录
+
+- `GET /api/workbench/service-catalog`；宿主 W，沿现有默认关闭的生命周期工作台启用条件，无新增 Flag。
+- 当前有效内部 Principal 可读，包括只读角色；不要求写权限或 ADMIN，成员 Cookie/Reporter Grant 不适用。匿名/过期401，非有效内部主体403。
+- 无 query/body；未知/重复 query 或 body 拒绝400，其他方法404。成功和错误使用 no-store。
+- 返回 `{schema_version:1,catalog_version,categories:[{category,category_name_zh,services:[{service_code,name_zh}]}]}`，见 [Schema](../../../contracts/workbench_service_catalog.schema.json)。只包含启用服务及非空大类，不返回别名、责任组、规则或哈希。
+- 版本/代码最多64字符，名称最多80字符，启用服务总数/大类数组各最多200项，超限或目录不可用为503 `P2_016_ACTION_FAILED`，不截断；无目录时卡片 service 为 null，状态时间仍可读取。身份错误不降级为503。
+- 前端筛选接入留给后续卡；503时可不显示筛选，401/403仍按原身份处理。只读，无命令、回执、Provider请求或发送，不改变 Ticket 事实和责任。
+
+
+卡11审查终检：看板/详情材料读取及详情规范路由等待结束后，最后一条只读 SQL 将当前有效人员、完整角色/处理组快照、既有真实 Cookie 会话谓词、当前 canonical READ 与来源有效性放在同一快照。退出/物理或空闲到期401，人员/范围失效403，事项READ丢失404，规范对象/状态变更409；拒绝不携带旧卡片。来源撤销、保留期或当前判定在等待期间变化时，service为null，内部指纹不对外暴露。目录同样在最后一个只读权限证明通过后同步生成白名单；不重新认证或更新last_seen。来源与授权检查保持集合查询，不增加业务写入、回执或外部请求。

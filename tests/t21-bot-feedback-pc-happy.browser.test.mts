@@ -21,17 +21,18 @@ import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
-interface Wire{path:string;method:string;status:number;body:unknown;response_keys:string[];body_error:boolean;command:unknown;headers:{idempotency_key:string|null;if_match:string|null;csrf_present:boolean}}
+interface Wire{path:string;method:string;status:number;body:unknown;response_keys:string[];body_error:boolean;body_error_name:string|null;request_aborted:boolean;command:unknown;headers:{idempotency_key:string|null;if_match:string|null;csrf_present:boolean}}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function records(value:unknown):Wire[]{
   assert.ok(Array.isArray(value));
   return value.map((item:unknown)=>{
-    const row=object(item),path=row.path,method=row.method,status=row.status,keys=row.response_keys,bodyError=row.body_error,headers=object(row.headers);
+    const row=object(item),path=row.path,method=row.method,status=row.status,keys=row.response_keys,bodyError=row.body_error,headers=object(row.headers),bodyErrorName=row.body_error_name,aborted=row.request_aborted;
     assert.ok(typeof path==='string'&&typeof method==='string'&&typeof status==='number'&&typeof bodyError==='boolean');
     assert.ok(Array.isArray(keys)&&keys.every((key:unknown)=>typeof key==='string'));
+    assert.ok(bodyErrorName===null||typeof bodyErrorName==='string');assert.ok(typeof aborted==='boolean');
     const idempotency=headers.idempotency_key,ifMatch=headers.if_match,csrf=headers.csrf_present;
     assert.ok(idempotency===null||typeof idempotency==='string');assert.ok(ifMatch===null||typeof ifMatch==='string');assert.ok(typeof csrf==='boolean');
-    return {path,method,status,body:row.body,response_keys:keys.map((key:unknown)=>String(key)),body_error:bodyError,command:row.command,headers:{idempotency_key:idempotency,if_match:ifMatch,csrf_present:csrf}};
+    return {path,method,status,body:row.body,response_keys:keys.map((key:unknown)=>String(key)),body_error:bodyError,body_error_name:bodyErrorName,request_aborted:aborted,command:row.command,headers:{idempotency_key:idempotency,if_match:ifMatch,csrf_present:csrf}};
   });
 }
 function errorFacts(value:unknown):unknown{return value instanceof Error?{name:value.name,message:value.message,stack:value.stack,...(value instanceof AggregateError?{errors:value.errors.map(errorFacts)}:{})}:value===null?null:String(value);}
@@ -40,12 +41,32 @@ const feedbackControl="[...document.querySelectorAll('button')].find(button=>!bu
 // business value or synthesize a DOM control. CSRF/Cookie values are not stored.
 const observe=`(()=>{const send=globalThis.fetch;globalThis.__t21Wire=[];globalThis.fetch=async(input,options)=>{
  const response=await send(input,options),path=new URL(typeof input==='string'?input:input.url,location.origin).pathname;
- if(path.startsWith('/api/reporter/')){let body=null,body_error=false,response_keys=[];
-  try{body=await response.clone().json();response_keys=Object.keys(body);if(path==='/api/reporter/feedback/bootstrap')body={schema_version:body.schema_version,write_enabled:body.write_enabled,csrf_token_shape:typeof body.csrf_token==='string'&&/^[a-f0-9]{64}$/.test(body.csrf_token)};}catch{body_error=response.status!==304;}
+ if(path.startsWith('/api/reporter/')){let body=null,body_error=false,response_keys=[],body_error_name=null,request_aborted=false;
+  try{body=await response.clone().json();response_keys=Object.keys(body);if(path==='/api/reporter/feedback/bootstrap')body={schema_version:body.schema_version,write_enabled:body.write_enabled,csrf_token_shape:typeof body.csrf_token==='string'&&/^[a-f0-9]{64}$/.test(body.csrf_token)};}catch(error){body_error=response.status!==304;body_error_name=typeof error?.name==='string'?error.name:null;request_aborted=Boolean((options?.signal??(typeof input==='object'?input.signal:null))?.aborted);}
   const headers=new Headers(options?.headers),method=options?.method??'GET';let command=null;
   if(method==='POST'&&path.endsWith('/feedback')){try{command=JSON.parse(options.body);}catch{body_error=true;}}
-  globalThis.__t21Wire.push({path,method,status:response.status,body,response_keys,body_error,command,headers:{idempotency_key:headers.get('idempotency-key'),if_match:headers.get('if-match'),csrf_present:/^[a-f0-9]{64}$/.test(headers.get('x-csrf-token')??'')}});
+  globalThis.__t21Wire.push({path,method,status:response.status,body,response_keys,body_error,body_error_name,request_aborted,command,headers:{idempotency_key:headers.get('idempotency-key'),if_match:headers.get('if-match'),csrf_present:/^[a-f0-9]{64}$/.test(headers.get('x-csrf-token')??'')}});
  }return response;};})()`;
+
+function verifiedDetail(wire:Wire[],path:string):Wire {
+  const reads=wire.filter(row=>row.method==='GET'&&row.path===path&&row.status===200);
+  for(const row of reads){
+    if(row.body_error){assert.equal(row.body_error_name,'AbortError','a 200 body failure must be a proven cancellation');assert.equal(row.request_aborted,true,'the original request must actually be aborted');}
+    else object(row.body);
+  }
+  const successful=reads.find(row=>!row.body_error);assert.ok(successful,'the actual browser must complete its public detail read');return successful;
+}
+async function waitDetail(browser:Browser,path:string){
+  await browser.waitFor('globalThis.__t21Wire.some(row=>row.method==="GET"&&row.path==='+JSON.stringify(path)+'&&row.status===200&&row.body_error===false&&row.body!==null&&typeof row.body==="object"&&!Array.isArray(row.body))');
+}
+test('T21 observer accepts only proven canceled duplicate GETs and rejects malformed 200 bodies',()=>{
+  const base:Wire={path:'/api/reporter/tickets/synthetic',method:'GET',status:200,body:null,response_keys:[],body_error:true,body_error_name:'AbortError',request_aborted:true,command:null,headers:{idempotency_key:null,if_match:null,csrf_present:false}};
+  const good:Wire={...base,body:{version:5},body_error:false,body_error_name:null,request_aborted:false};
+  assert.equal(verifiedDetail([base,good],base.path),good);
+  assert.throws(()=>verifiedDetail([{...base,body_error_name:'SyntaxError'},good],base.path));
+  assert.throws(()=>verifiedDetail([{...base,request_aborted:false},good],base.path));
+  assert.throws(()=>verifiedDetail([{...good,body:null},good],base.path));
+});
 
 test('staged production Bot Reporter PC explicitly reopens its own completed Ticket and reloads the actual new round',async()=>{
   // Future registration must use the existing STAGED_RUNTIME route and an owned
@@ -84,7 +105,8 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       // insertion, Grant, fixed historical App ownership, fabricated Delivery.
       await tab.evaluate('location.assign('+JSON.stringify(pagePath)+')',{awaitPromise:false});
       await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='已关闭'");
-      const firstWire=records(await tab.evaluate('globalThis.__t21Wire')),detail=firstWire.find(row=>row.path===detailPath&&row.method==='GET'&&row.status===200);
+      await waitDetail(tab,detailPath);
+      const firstWire=records(await tab.evaluate('globalThis.__t21Wire')),detail=verifiedDetail(firstWire,detailPath);
       assert.ok(detail,'the production page must obtain its own actual Bot detail');
       const detailBody=object(detail.body),eligibility=object(detailBody.feedback_context);
       assert.equal(detailBody.public_ref,original.public_ref);assert.equal(detailBody.ticket_no,completed.ticket_no);assert.equal(detailBody.version,completed.version);
@@ -100,6 +122,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       await capture('closed-own-ticket-1440.png');
       // Future actual RED: current 8cc production DOM has only refresh/more/logout,
       // never an unresolved-feedback control. Do not call POST from the test.
+      await tab.waitFor('Boolean('+feedbackControl+')');
       assert.equal(await tab.evaluate('Boolean('+feedbackControl+')'),true,'the production Bot owner page must offer explicit same-fault unresolved feedback');
       await tab.waitFor('Boolean('+feedbackControl+')&&('+feedbackControl+').disabled===false');
       const bootstrap=records(await tab.evaluate('globalThis.__t21Wire')).find(row=>row.path==='/api/reporter/feedback/bootstrap'&&row.method==='GET'&&row.status===200);
@@ -124,7 +147,8 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       await capture('same-ticket-reopened-1440.png');
       const previousTime=await tab.evaluate('performance.timeOrigin');await tab.command('Page.reload');await tab.waitFor('performance.timeOrigin!=='+String(previousTime)+'&&document.readyState==="complete"');
       await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='重新处理中'");
-      const after=records(await tab.evaluate('globalThis.__t21Wire')),fresh=after.find(row=>row.method==='GET'&&row.path===detailPath&&row.status===200);assert.ok(fresh);
+      await waitDetail(tab,detailPath);
+      const after=records(await tab.evaluate('globalThis.__t21Wire')),fresh=verifiedDetail(after,detailPath);assert.ok(fresh);
       const freshBody=object(fresh.body);assert.equal(freshBody.public_ref,original.public_ref);assert.equal(freshBody.ticket_no,completed.ticket_no);assert.equal(freshBody.version,completed.version+1);assert.equal(object(freshBody.feedback_context).can_feedback,false);
       assert.equal(after.some(row=>row.method==='POST'&&row.path.endsWith('/feedback')),false,'reload cannot manufacture another feedback command');
       assert.equal(await tab.evaluate('Boolean('+feedbackControl+')&&('+feedbackControl+').disabled===false'),false);

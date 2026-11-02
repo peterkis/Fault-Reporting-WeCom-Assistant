@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web01_workbench_detail.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "item",
+    "description",
+    "records",
+    "next_cursor",
+    "responsibility"
+  ],
+  "properties": {
+    "item": {
+      "$ref": "web01_workbench_card.schema.json"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reported_at": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "local_datetime.schema.json"
+        }
+      ]
+    },
+    "records": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "at",
+          "type",
+          "text",
+          "audience",
+          "actor",
+          "old_status",
+          "new_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "at": {
+            "$ref": "local_datetime.schema.json"
+          },
+          "type": {
+            "type": "string"
+          },
+          "audience": {
+            "enum": [
+              "REPORT",
+              "INTERNAL",
+              "EXTERNAL"
+            ]
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "old_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "new_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "read_material": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_ref",
+              "revision"
+            ],
+            "properties": {
+              "source_ref": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "responsibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticket_assignee_name",
+        "conversation_assignees"
+      ],
+      "properties": {
+        "ticket_assignee_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "conversation_assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "requested_item": {
+      "$ref": "workbench_canonical_item.schema.json"
+    },
+    "review_refs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "row_version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "RESOLVED",
+              "CANCELLED"
+            ]
+          },
+          "row_version": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

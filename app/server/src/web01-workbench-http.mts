@@ -9,6 +9,11 @@ import {sourceGroupNameCommand} from './workbench-source-groups.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 export function createWeb01WorkbenchHttp(query: ReturnType<typeof createWeb01WorkbenchQuery>,sourceGroups:ReturnType<typeof createWorkbenchSourceGroups>|null=null,workbenchFollowEnabled=false,follow:ReturnType<typeof createWorkbenchFollow>|null=null,reminders:ReturnType<typeof createWorkbenchReminders>|null=null) {
   return async({request,response,url,authContext,json,readJson,validateWriteRequest}: Context)=>{
+    if(url.pathname==='/api/workbench/service-catalog'){
+      if(request.method!=='GET')failP2016('NOT_FOUND',404);
+      if(url.searchParams.size||request.headers['transfer-encoding']||Number(request.headers['content-length']??0)>0)failP2016();
+      json(response,200,await query.serviceCatalog(authContext));return true;
+    }
     if(url.pathname==='/api/workbench/reminders'){
       if(!reminders)failP2016('DISABLED',503);
       if(request.method!=='GET')failP2016('NOT_FOUND',404);
