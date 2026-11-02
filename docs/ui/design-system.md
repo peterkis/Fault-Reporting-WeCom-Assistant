@@ -11,7 +11,7 @@ Oct 31, 2026 · @peter evans
 1. **一个底层语法**：以 Notion 的「工具型密度 + 中性灰阶 + 发丝线」为骨架；Airbnb 只贡献「温度、单一品牌色、浮层质感、友好文案」四样东西，且只出现在规定位置。
 2. **一套 Token、三层结构**：原始值 → 语义 Token → 组件 Token；HeroUI 的 `--accent / --border / --surface` 全部由语义 Token 派生，功能 CSS 禁止写裸值。
 3. **一套页面模板**：所有一级页面共用同一个 PageHeader + Toolbar + Content 骨架，宽度、标题、间距不再按页面各写一份。
-4. **一张状态语义表**：状态只在一个地方用颜色，来源/渠道/分类一律中性灰，人名永远不做成彩色标签。
+4. **一张状态语义表**：状态只在一个地方定义颜色，来源/渠道一律中性灰，人名永远不做成彩色标签。v2.1 类别瓷砖按第四章采用服务目录大类色。
 5. **用 lint 守住**：Stylelint 禁裸 hex / 裸 px 字号 / 未定义变量，CI 卡死，否则三个月后会再次漂移。
 
 ## 一、诊断：为什么看起来「各是各的」
@@ -88,7 +88,7 @@ Oct 31, 2026 · @peter evans
 用词：**MUST** 必须；**SHOULD** 默认应当，偏离需写理由；**MUST NOT** 禁止。
 
 1. **一屏一个主操作**（MUST）：品牌蓝实心按钮每个可见区域（页面、抽屉、弹窗）最多 1 个。工作台是「新报修」，抽屉是当前状态下的下一步（领取 / 开始处理 / 登记完工）。
-2. **颜色只表达需要行动的信息**（MUST）：状态、超时、催办、异常可以有色；来源、渠道、科室、分类、人名一律中性。
+2. **颜色承载明确的信息**（MUST）：v2.1 分为阶段 / 紧急 / 类别 / 人四层，颜色面积与信息重要程度成正比；来源、渠道、科室、人名文字保持中性。类别只用统一瓷砖，人物色只用于已有稳定哈希头像；品牌操作色沿既有规范。
 3. **同一信息只表达一次**（MUST）：看板列已表明阶段，卡片内不再重复阶段标签，只显示「阶段内子状态」（如已领取）。
 4. **层级靠字重与灰度，不靠字号堆叠**（MUST）：字重只有 400/500/600 三档；字号只有 6 档（见 Token）。
 5. **容器隐形**（SHOULD）：分区优先用间距，其次发丝线，最后才是背景色块；禁止嵌套盒子（框内再加框）。
@@ -121,11 +121,11 @@ Token 分三层：**原始色板**（`--gray-*`、`--blue-*`，只在 tokens.css
 | `--border-default` | rgba(55,53,47,.16) | 输入框、次按钮描边 | — |
 | `--border-focus` | #2F6FDB | 键盘焦点环（2px，只在 `:focus-visible`） | 4.75 |
 
-**语气（tone）**：每个 tone 提供 bg / fg / dot 三个变量，标签、状态点、提示条全部从这里取色。
+**语气（tone）**：每个 tone 提供 bg / fg / dot 三个变量，标签、状态点、提示条全部从这里取色。v2.1 增加 solid，见 §4.1.1。
 
 | tone | 底 / 字 | 对比度 | 语义（见第七章） |
 | --- | --- | --- | --- |
-| neutral | #F1F1EF / #5F5E5B | 5.73 | 来源、渠道、分类、已关闭 |
+| neutral | #F1F1EF / #5F5E5B | 5.73 | 来源、渠道、未分类、已关闭 |
 | warning | #FBF3DB / #7F5F01 | 5.35 | 待受理（等人接） |
 | info | #E7F3F8 / #1B6A8F | 5.30 | 处理中 |
 | success | #EDF3EC / #2F6B4A | 5.61 | 已处理、发送成功 |
@@ -133,6 +133,51 @@ Token 分三层：**原始色板**（`--gray-*`、`--blue-*`，只在 tokens.css
 | danger | #FDEBEC / #B4332B | 5.30 | 已超时、发送失败、异常 |
 | review | #F3EEF8 / #6940A5 | 6.39 | 待人工复核 |
 | brand | #EEF4FD / #1D4FA3 | 7.04 | 「与我有关」、我负责的 |
+
+### 4.1.1 v2.1 扩展（卡 9）
+
+依据 [v2.1 方案](design-system-v2.1.md) §3 和原型 05。本卡只建立 Token、纯函数和映射，页面接入按后续卡执行；HeroUI 桥接保持原样。
+
+| 阶段 Token 前缀 | accent / bg / fg | 用途 |
+| --- | --- | --- |
+| `--stage-intake-*` | #D9A400 / #FBF3DB / #7F5F01 | 待受理列头与状态胶囊 |
+| `--stage-active-*` | #2F6FDB / #E8F0FC / #1D4FA3 | 处理中列头与状态胶囊 |
+| `--stage-done-*` | #448361 / #EDF3EC / #2F6B4A | 已处理列头与状态胶囊 |
+
+暖灰底：`--bg-board: #F7F6F3`、`--bg-column: #F4F3EF`。紧急描边：`--ring-attention: #F2D2B4`、`--ring-danger: #F0C2BF`、`--ring-review: #DCCDEE`。紧急卡使用整卡 1px 描边，禁止左侧色条。
+
+| ServiceCatalog domain_code | Token 前缀（bg / fg） | 值（bg / fg） | 默认 lucide 图标 |
+| --- | --- | --- | --- |
+| CLINICAL_CORE | `--cat-clinical-*` | #EFE9F8 / #6940A5 | stethoscope |
+| PATIENT_ACCESS | `--cat-access-*` | #FBF0D9 / #8A6100 | ticket |
+| DIAGNOSTIC | `--cat-diag-*` | #E1F3EF / #1F6B5C | scan-line |
+| PHARMACY_MEDICATION | `--cat-pharm-*` | #E8F3E8 / #2F6B4A | pill |
+| BILLING_INSURANCE | `--cat-billing-*` | #F6EDE3 / #7A5230 | receipt |
+| INTERNET_HOSPITAL | `--cat-online-*` | #E8EBFA / #3B4BA8 | globe |
+| ENDPOINT_PRINT | `--cat-endpoint-*` | #ECEEF2 / #46505E | monitor |
+| NETWORK_INFRASTRUCTURE | `--cat-network-*` | #E3F1F8 / #1B6A8F | wifi |
+| IDENTITY_SECURITY | `--cat-identity-*` | #FBE8EE / #A3365C | key-round |
+| CONFIG_DATA | `--cat-config-*` | #EFEDE8 / #5C5548 | sliders-horizontal |
+| CROSS_DEPARTMENT_ROUTING | `--cat-route-*` | #F1F1EF / #5F5E5B | route |
+| 未分类（含未知 code） | `--cat-unclassified-*` | #FFFFFF / #6B6965 | circle-help |
+
+未分类的 `--cat-unclassified-border` 为 `1.5px dashed #C9C7C1`；已分类无此描边。domain → Token / 图标只定义在 `src/design/category-map.ts`。`categoryOf(domainCode, serviceCode?)` 返回只读的 label / bg / fg / icon / border；bg、fg、border 为 CSS Token 引用。打印设备、打印渲染及检验报告打印服务使用 printer，保留所属大类颜色；没有专用图标时回退大类图标。未知大类优先回退未分类，不根据服务 code 猜测大类。映射仅供展示，不拥有服务事实或责任路由。
+
+**对比度精度补充（2026-11-02 用户确认）**：表格对比度保留两位小数，验收采用 WCAG AA ≥ 4.5:1。挂号类别指定色对的精确值为 4.898476:1（显示 4.90），保留指定色值；不能把舍入后的 4.90 当成严格 ≥ 4.9 的证明。其它十个大类均超过 5.19:1。
+
+**2026-11-02 用户确认的补充**：八种 `--tone-*-solid` 复用对应 `--tone-*-fg` 的深色，前景使用 `--text-inverse` 白字，WCAG 白字对比均 ≥ 4.5。避免用较浅的 dot 色承载白字。
+
+`src/design/heat.ts` 唯一导出阈值常量 `HEAT_THRESHOLDS_MINUTES = [5, 20, 60, 240]`。`heatOf(startIso, nowMs)` 为纯函数，不读取系统时钟：
+
+| 时长区间 | tone / label | ring |
+| --- | --- | --- |
+| < 5 分钟 | null | — |
+| 5–20 分钟（不含 20） | neutral / N 分钟 | null |
+| 20–60 分钟（不含 60） | warning / N 分钟 | null |
+| 60–240 分钟（不含 240） | attention / N 小时 | attention |
+| ≥ 240 分钟 | danger / 超时 N 小时 | danger |
+
+分钟与小时均向下取整；缺失、无效或未来起点、非有限 nowMs 返回 null。ring 是语义键 `null / 'attention' / 'danger'`，由共享组件引用对应 `--ring-*`。输入必须为带时区的 ISO 时间，避免浏览器本地时区改变热度。待受理计时取 created_at，处理中取进入当前状态时间（挂起取挂起时间），已处理不计；消费方选择起点，不得用 updated_at 代替。当前 API 的状态起点由卡 11 补齐，卡 9 不修改 API 或页面状态。
 
 ### 4.2 字体
 
