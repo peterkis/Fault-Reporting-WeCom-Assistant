@@ -131,6 +131,85 @@ docs/ui/evidence/v21-card13/r2-read-1280.png
 docs/ui/evidence/v21-card13/r2-read-1440.png
 docs/ui/evidence/v21-card13/r2-read-1920.png
 docs/ui/evidence/v21-card13/r2-read-900.png
+docs/ui/evidence/v21-card13/r4-compare-1280.png
+docs/ui/evidence/v21-card13/r4-compare-1440.png
+docs/ui/evidence/v21-card13/r4-compare-1920.png
+docs/ui/evidence/v21-card13/r4-compare-900.png
+docs/ui/evidence/v21-card13/verification.json
+plans/pc-admin-design-v21/card-13.md
+plans/typescript-migration/test-routing.json
+tests/conversation-inbox.browser.test.mts
+tests/helpers/heroui-workbench-controls.mts
+tests/helpers/t10-browser-fixture.mts
+tests/pc-admin-card13.browser.test.mts
+tests/t04-self-handling.browser.test.mjs
+tests/t05-conversation-handling.browser.test.mjs
+tests/t07-atomic-start.browser.test.mts
+tests/t08-command-recovery.browser.test.mts
+tests/t08-selected-recovery.browser.test.mts
+tests/t08-unassign.browser.test.mts
+tests/t09-return-to-dispatch.browser.test.mts
+tests/t09-selected-ui-boundaries.browser.test.mts
+tests/t09-selected-ui-status-scope.browser.test.mts
+tests/t11-completion.browser.test.mts
+tests/t12-production-form.browser.test.mts
+tests/t13-history-window.browser.test.mts
+tests/t13-production-history.browser.test.mts
+tests/t20-member-origin-hint.browser.test.mts
+tests/t20-staff-hint-first.browser.test.mts
+tests/t37-follow-up-post-refusal.browser.test.mts
+tests/t37-follow-up-recovery-boundaries.browser.test.mts
+tests/t37-follow-up-recovery-competition.browser.test.mts
+tests/t37-follow-up-recovery-first.browser.test.mts
+tests/t37-shared-follow-up-drawer.browser.test.mts
+tests/t37-shared-time-card-list.browser.test.mts
+tests/wbint-t14-review.browser.test.mts
+tests/wbint-t16-attachments.browser.test.mts
+tests/wbint-t42-board-complete-reopen.browser.test.mts
+tests/web01-workbench.browser.test.mjs
+tests/workbench-detail-media.browser.test.mts
+tests/workbench-detail-restructure.browser.test.mts
+tests/workbench-media-employee-read.browser.test.mts
+tests/workbench-toast-feedback.browser.test.mts
+```text
+app/pc-admin/src/app/DetailDialog.tsx
+app/pc-admin/src/app/DetailPresentation.tsx
+app/pc-admin/src/app/Workbench.tsx
+app/pc-admin/src/app/WorkbenchDetail.tsx
+app/pc-admin/src/app/WorkbenchItemPresentation.tsx
+app/pc-admin/src/design/components/Drawer/Drawer.tsx
+app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx
+app/pc-admin/src/design/components/Drawer/NextStep.tsx
+app/pc-admin/src/design/components/Drawer/drawer-v21.css
+app/pc-admin/src/features/attachments/AttachmentSection.tsx
+app/pc-admin/src/features/attachments/ReportMaterialsSection.tsx
+app/pc-admin/src/features/conversations/Conversations.tsx
+app/pc-admin/src/features/follow-up/SharedFollowUp.tsx
+app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx
+app/pc-admin/src/features/source-groups/GroupNameEditor.tsx
+app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx
+app/pc-admin/src/features/ticket-completion/TicketCompletion.tsx
+app/pc-admin/src/features/ticket-handling/TicketConversationHandling.tsx
+app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx
+app/pc-admin/src/features/ticket-notes/TicketNotes.tsx
+app/pc-admin/src/features/ticket-reopen/TicketReopen.tsx
+app/pc-admin/src/features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx
+app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx
+app/pc-admin/src/features/ticket-takeover/TicketTakeover.tsx
+app/pc-admin/src/features/ticket-unassign/TicketUnassign.tsx
+app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx
+docs/ui/evidence/v21-card13/compare-1280.png
+docs/ui/evidence/v21-card13/compare-1440.png
+docs/ui/evidence/v21-card13/compare-1920.png
+docs/ui/evidence/v21-card13/compare-900.png
+docs/ui/evidence/v21-card13/r1-takeover-1280.png
+docs/ui/evidence/v21-card13/r1-takeover-1440.png
+docs/ui/evidence/v21-card13/r1-takeover-1920.png
+docs/ui/evidence/v21-card13/r1-takeover-900.png
+docs/ui/evidence/v21-card13/r2-read-1280.png
+docs/ui/evidence/v21-card13/r2-read-1440.png
+docs/ui/evidence/v21-card13/r2-read-1920.png
+docs/ui/evidence/v21-card13/r2-read-900.png
 docs/ui/evidence/v21-card13/verification.json
 plans/pc-admin-design-v21/card-13.md
 plans/typescript-migration/test-routing.json
@@ -351,3 +430,37 @@ tests/workbench-media-employee-read.browser.test.mts
 6 个注册入口 16/16 PASS、0 FAIL/cancel/SKIP/todo/NOT_RUN；build、strict/negative types、artifact 和两项 lint PASS。先前本地 `62288749` 的附件组8/8及核心组7/8不重绑新候选，核心1次失败、截图和诊断保存在 `ci-r3-core/`；另有根目录调用不存在 lint script、误写 T38 入口导致注册预检拒绝的失败命令原件，随后使用正确 app/pc-admin lint 范围和已注册 `wbint-t38-offline.browser.test.mts` 通过。详细被测身份和原始报告路径见验证索引。
 
 本轮源改动仅恢复 class 别名，视觉沿用已核对的四宽截图。前述37/37、R1的20/20、R2的49/49分别保留各自 tested_head。最终复审、CI与合并状态以当前远端完整 SHA 为准；full/certify、Electron、现场、真实发送、部署与 Gate 仍 NOT_RUN。
+
+
+## PR #135 CI 回归修补 R4 与范围收敛
+
+已发布 head `78856382cabe63c3ee201f5654fa303967722702` 的 Codex 复审无新发现、两条 P2 均已关闭；普通 CI [41551675881](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41551675881) 仍失败：249项选择中执行142项，383用例为380 PASS / 3 FAIL，107入口 NOT_RUN。失败集中在旧 WEB01 的两个备注恢复等待和一个 Escape/焦点用例，原制品在 `ci-r3-artifacts/`。
+
+真实回归保留以下修补：
+
+- 外层 Drawer 仅按主体保持，不因前后项导航重建；内部 `WorkbenchDetailContent` 仍按主体和请求事项重建。外层同步阻塞 ref 与原 onNavigationBlocked，内层保留原 commandsBlocked；原命令、权限、UUID、草稿和 UNKNOWN 恢复不变。新增实际 Drawer DOM 身份断言，原 Escape 和返回原卡片焦点断言保留。
+- 动态只有一个旧 `.activity-list` 根，同时包含首条描述和后续记录，保留原选择器及备注版本/次数/回执断言。
+- `PersonalReadMaterial` 自带 `.record-text`，移除本卡新增的重复 span，恢复原实际正文的截断及前台已读观测。该原截断用例曾失败，修补后在候选 `7555f024` 的正式附加检查中2/2通过，不改已读算法。
+
+最终本地被测提交 `7b06d090540ce441b75067c5e1b958ba6a884697`，输入指纹 `d66ae229a6d62d8c92ba1489bfbb14425c400e9d37e9a3a3a19eb320c77c128e`：build、strict/negative types、artifact、Stylelint/ESLint 0均通过；当前 CI 失败入口 WEB01、卡13专用入口、详情重构入口共3项21/21 PASS，0失败/跳过/NOT_RUN。早先同树候选 `7555f024` 的5入口23/23独立保留，不与21相加。两者 Git tree 同为 `cf25b9246ba3915996f74672338352bf667c3459`。
+
+### 用户要求的范围收敛与独立维护
+
+用户明确要求“保留已经发现并修好的真实回归，停止继续扩大旧用例适配范围；把过时场景的整理作为一项有边界的测试维护工作”。据此，未纳入当前249项活动 selection 的 T35/T39 旧场景试改 `2f5742ed` 已整体回退；当前相对 main 对四个移交文件无差异，shared helper 回到本卡原先状态。原提交、可恢复补丁、失败 TAP、截图、诊断和 NOT_RUN 均保留，不将试改称为已完成修补。
+
+独立后续票：[测试维护 #137](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/137)，OPEN、未领取，本卡不继续执行或关闭。范围限定四个旧入口及必要 helper；不改产品规则、不扩大活动 selection、不跳过/放宽原业务断言、不延长超时。仓库没有 `needs-triage` 标签，创建时未另造标签词汇。
+
+附加失败原件包括 `remote-r4-ui`、`remote-r4-recovery`、`remote-r4b-recovery`、`remote-r4b-recovery-tail`、`remote-r4c-boundaries`；详细执行/未运行计数见验证索引。另保留输入漂移预检、专用 PG 端口误配诊断及临时脚本预检错误；它们没有进入真实业务验收。临时 runtime 诊断副本已移至仓库外 DEBUG 证据，原字节哈希已核验，产品和测试源码没有诊断探针。
+
+### 更新后的四宽视觉核验
+
+以下截图来自 `2f5742ed` 正式 bundle，该提交与最终候选的产品源码一致，仅含已回退的旧测试试改；截图身份不重绑。1920/1440/1280/900均为抽屉720px、外距8px、缺失行40px、一个动态根、一个 primary、无横向溢出，采图 POST=0。1280与900已再次目视核对；每图仍与基线、原型02并排。
+
+| 宽度 | 基线 / 当前视觉 / 原型02 |
+| --- | --- |
+| 1920 | [R4对照](../../docs/ui/evidence/v21-card13/r4-compare-1920.png) |
+| 1440 | [R4对照](../../docs/ui/evidence/v21-card13/r4-compare-1440.png) |
+| 1280 | [R4对照](../../docs/ui/evidence/v21-card13/r4-compare-1280.png) |
+| 900 | [R4对照](../../docs/ui/evidence/v21-card13/r4-compare-900.png) |
+
+本卡仍未运行 full/certify、Electron原生、现场、真实发送、部署或 Gate。最终发布、审查和普通CI仍按当前远端完整SHA核验后合并，不以本地PASS替代。
