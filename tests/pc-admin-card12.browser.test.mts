@@ -75,9 +75,26 @@ test('Card 17 combined long filters stay inside the toolbar while date segments 
     if(width<=1100)assert.equal(await browser.evaluate("document.querySelector('.ds-board-dates').getBoundingClientRect().top>document.querySelector('.ds-board-filter-row').getBoundingClientRect().bottom"),true);
     if(width>=1280)assert.equal(await browser.evaluate("Math.abs(document.querySelector('.ds-board-dates').getBoundingClientRect().top-document.querySelector('.ds-board-search').getBoundingClientRect().top)<=1"),true);
     assert.equal(await browser.evaluate("[...document.querySelectorAll('.ds-board-filter-pill [data-slot=select-value]')].every(n=>n.clientWidth>=24)"),true);
-    assert.equal(await browser.evaluate("document.querySelector('.ds-board-filter-pill:last-child [data-slot=select-value]').clientWidth>=39"),true);
+    assert.equal(await browser.evaluate("(()=>{const value=document.querySelector('.ds-board-filter-pill:last-child [data-slot=select-value]');return value.clientWidth>=value.scrollWidth;})()"),true,'the short assignee value must fit in the current platform font at '+width);
   }
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+},{search:true}));
+
+test('Card 17 advanced search keeps a visible pointer submit and applies the original read criteria',{timeout:240000},()=>withT42BoardBrowser(async(f,browser)=>{
+  await clickWorkbenchControl(browser,'.workbench-search .workbench-disclosure-trigger');
+  await chooseWorkbenchSelect(browser,'.workbench-select:has(select[name=column])','pending');
+  await chooseWorkbenchSelect(browser,'.workbench-select:has(select[name=responsibility])','unassigned');
+  for(const width of [1920,1440,1280,900]){
+    await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+    assert.equal(await browser.evaluate("(()=>{const b=document.querySelector('.workbench-search button[type=submit]'),r=b.getBoundingClientRect();return getComputedStyle(b).clipPath==='none'&&r.width>40&&r.height>=24&&b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()"),true,'advanced search must retain a visible, unoccluded pointer submit at '+width);
+  }
+  const reads:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='GET'&&request.url?.startsWith('/api/workbench/search?'))reads.push(request.url);};f.runtime.server.on('request',observe);
+  try{
+    await clickWorkbenchControl(browser,'.workbench-search button[type=submit]');
+    await browser.waitFor("new URLSearchParams(location.search).get('column')==='pending'&&new URLSearchParams(location.search).get('responsibility')==='unassigned'&&!document.querySelector('.ds-board-dates')");
+    assert.ok(reads.some(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='pending'&&p.get('responsibility')==='unassigned';}));
+    assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+  }finally{f.runtime.server.off('request',observe);}
 },{search:true}));
 
 test('Card 17 location hint requires both location and all reporter fields missing, and never appears in done',{timeout:240000},()=>withT42BoardBrowser(async(_f,browser,card)=>{

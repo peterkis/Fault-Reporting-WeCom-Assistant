@@ -170,3 +170,16 @@ Evidence 根：`D:/CodexEvidence/pc-admin-v211-card17-20261103`。自有 loopbac
 中间 `tests-1`、`tests-final` 各有8 PASS / 1 FAIL、后19入口NOT_RUN：新增等待只看URL和旧选中标记，仍可能命中旧caption。已改为等待新范围的实际可见caption，再作同一断言，没有增加超时或固定sleep；原FAIL/TAP/截图与其它中间构建均保留。预览首次不受支持的fixture组合产生 `P2_012_SCHEMA_DRIFT`，改用既有已验证的合成组合完成审查，没有修改后端或迁移。
 
 本轮 `cleanup.json`：合成库0、其它客户端连接0、自有浏览器进程0，PG status退出3，55477/5197监听均0；所有审查预览页和临时HTTP host已关闭，原浏览器页保留。两工作树、旧/新编译产物、停止的PG目录、报告和失败原件保留供复现。full/certify、Electron、真实发送/现场写库/部署/Gate仍NOT_RUN。最新状态为 **LOCAL_REVIEWED_AND_VALIDATED / UNCOMMITTED / STOP**。
+
+## PR #139 · 第一轮 GitHub Codex 修复（2026-11-03）
+
+用户另行明确授权提交、推送、创建PR、循环 `@codex review`、修复P1/P2、保留历史合并及本地main快进后的本票资源清理。初始发布提交为 `6fa605e645bb68890286bfe010c8c205fd1d6225`，[PR #139](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/139) 的第一轮审查绑定该完整提交。
+
+- Codex发现1项P2：本卡CSS把原搜索提交按钮裁切，展开组合筛选后指针用户没有可见提交动作。仅调整本卡 `board-summary.css`：组合筛选展开或原按钮键盘聚焦时，在搜索框右端显示同一个原生提交按钮，并为文字留位；默认原型布局及所有提交/查询代码保持原样。未编辑 `features/search`。
+- 新增原浏览器入口中的实际指针回归：四宽检查按钮可见且无遮挡，在900宽点击，核实际GET搜索请求中的阶段/责任条件、URL和零POST；既有业务断言均保留。[900合成截图](../../docs/ui/evidence/v211-card17/astra-review/github-review-search-900.png)。
+- 第一轮CI的 `pr-database` 失败于新增布局断言要求处理人值宽度固定≥39px，累计15 PASS / 1 FAIL、后16入口NOT_RUN。失败截图显示Linux无中文字体、字形为方框，固定Windows文字宽度不能证明实际裁切。改为检查该短值 `clientWidth >= scrollWidth`，保留原来所有边界/最小可读区断言；不改变任何业务状态、权限、请求、回执或次数断言。原日志、原截图及summary完整保存于外部 `D:/CodexEvidence/pc-admin-v211-card17-publish-20261103/ci-round1-artifact/`。
+- 验证树以不改工作文件的mixed reset前进至已发布6fa605e，旧执行记录先另存；51份文件逐字节复制。最终运行输入 `47bd9f63883eb0226db6f6ba93fda5ab14970331ffc4538d7c2b768e5419e204` 与交付树相同（`source-equivalence-fix.json`）。
+- `build-fix-final.log` PASS（918语法检查/2757输出）、`types-fix.log` PASS、Stylelint/ESLint 0、`artifact-fix.log` PASS（manifest `02a272977204a84c359dba00c283aca0287774a0414d2792f7800cfc45936bcc`）。相关2入口 **12/12 PASS**（卡12/17浏览器10项及既有生产搜索2项），无FAIL/CANCEL/SKIP/TODO/NOT_RUN。新发布head的CI独立验证，不把该提交前manifest重绑到后继提交。
+- PG启动首次漏传本票端口，启动了同一自有目录的IPv6默认监听；确认PID/目录后立即停止，以127.0.0.1:55477重新启动再测试，未连接其它PG。结束后合成库0、其它客户端0，已停止该PG。首次启动日志及被后继测试源码更新取代的构建日志均保留。原FAIL/NOT_RUN及旧manifest不改写。
+
+本节仅记录本轮修复；审查线程关闭、后继CI、合并和资源清理最终身份以PR及外部发布收口记录为准。没有执行full/certify、Electron、真实发送、现场写库、部署或Gate。

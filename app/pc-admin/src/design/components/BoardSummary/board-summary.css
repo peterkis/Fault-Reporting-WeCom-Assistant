@@ -44,7 +44,9 @@
 .ds-board-search .search-main label {position: relative; display: block; width: 100%; height: var(--control-h-md); overflow: hidden; color: transparent;}
 .ds-board-search .search-main input {position: absolute; inset: 0; width: 100%; height: var(--control-h-md); min-height: var(--control-h-md); padding: 0 var(--space-6) 0 var(--space-8); border: 0; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); box-shadow: none; font-size: var(--fs-sm);}
 .ds-board-search .search-main button[type=submit] {position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; clip-path: inset(50%); overflow: hidden;}
-.ds-board-search .search-main button[type=submit]:focus-visible {position: relative; width: auto; height: var(--control-h-sm); clip-path: none; padding: 0 var(--space-2);}
+.ds-board-search .search-main button[type=submit]:focus-visible,.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true]) .search-main button[type=submit] {position: absolute; top: var(--space-1); right: calc(var(--space-8) + var(--space-1)); width: auto; height: var(--space-6); min-height: var(--space-6); clip-path: none; padding: 0 var(--space-2); font-size: var(--fs-xs);}
+.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true],button[type=submit]:focus-visible)>kbd {display: none;}
+.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true],button[type=submit]:focus-visible) .search-main input {padding-right: calc(var(--space-16) + var(--space-4));}
 .ds-board-search .workbench-disclosure {position: static; margin: 0;}
 .ds-board-search .workbench-disclosure>[data-slot=disclosure-heading] {position: absolute; right: 0; top: 0;}
 .ds-board-search .workbench-disclosure-trigger {width: var(--control-h-sm); height: var(--control-h-md); min-height: var(--control-h-md); padding: 0; overflow: hidden; color: var(--text-secondary); white-space: nowrap; font-size: var(--fs-xs);}
