@@ -1,15 +1,17 @@
 import type {HTMLAttributes} from 'react';
 import {useState} from 'react';
 import {Disclosure,Button,Dropdown,Label} from '@heroui/react';
-import {ArrowDownWideNarrow,ChevronDown} from 'lucide-react';
+import {ArrowDownWideNarrow,ArrowUp,ChevronDown} from 'lucide-react';
+import {Button as ActionButton} from '../Button/Button';
 import type {BoardSort} from '../../board-presentation';
 import {StatusBadge} from '../StatusBadge/StatusBadge';
 import {stagePresentation} from '../../status-map';
 import './board-column.css';
 
-type Props=HTMLAttributes<HTMLElement> & {column:keyof typeof stagePresentation;label:string;count:number|string;sort?:BoardSort;onSort?:(value:BoardSort)=>void;blocked?:boolean};
-export function BoardColumn({column,label,count,sort='oldest',onSort,blocked=false,className='',children,...props}:Props){
-  return <section {...props} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading"><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count" title="当前筛选后已加载的事项">{count}</span>
+type Props=HTMLAttributes<HTMLElement> & {column:keyof typeof stagePresentation;label:string;count:number|string;sort?:BoardSort;onSort?:(value:BoardSort)=>void;blocked?:boolean;newCount?:number;onReveal?:()=>void};
+export function BoardColumn({column,label,count,sort='oldest',onSort,blocked=false,newCount=0,onReveal,className='',children,...props}:Props){
+  return <section {...props} data-has-arrivals={newCount>0?'true':undefined} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading"><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count" title="当前筛选后已加载的事项">{count}</span>
+    {newCount>0?<ActionButton className="ds-column-arrivals" tone="ghost" size="sm" isDisabled={blocked} onPress={()=>onReveal?.()} aria-label={'显示 '+newCount+' 条新报修'}><ArrowUp aria-hidden="true"/>{newCount} 条新报修</ActionButton>:null}
     {onSort?<Dropdown><Dropdown.Trigger className="ds-column-sort" aria-label={label+'排序'} isDisabled={blocked}><ArrowDownWideNarrow aria-hidden="true"/><span>{sort==='oldest'?'等待最久':'最新到达'}</span><ChevronDown aria-hidden="true"/></Dropdown.Trigger>
       <Dropdown.Popover><Dropdown.Menu aria-label={label+'排序方式'} selectionMode="single" disallowEmptySelection selectedKeys={new Set([sort])} onSelectionChange={keys=>{if(keys!=='all'){const key=[...keys][0];if(key==='oldest'||key==='newest')onSort(key);}}}>
         <Dropdown.Item id="oldest" textValue="等待最久"><Dropdown.ItemIndicator/><Label>等待最久</Label></Dropdown.Item>

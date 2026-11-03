@@ -41,12 +41,18 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',
     width:1920,height:1080,cookies:f.browserCookies,certificateSpki:f.certificateSpki});assert.ok(browser);
    await browser.waitFor('Boolean(document.querySelector("[data-realtime-status=live],[data-realtime-status=polling]"))');
-   await browser.evaluate('document.querySelector("a.sidebar-search").click()');
+   // Card 16 replaces the sidebar link with the command palette. The existing
+   // advanced-search form remains reachable through its documented / shortcut.
+   await browser.command('Page.bringToFront');await browser.evaluate('document.activeElement.blur()');
+   await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'/',code:'Slash',windowsVirtualKeyCode:191});
+   await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'/',code:'Slash',windowsVirtualKeyCode:191});
+   await browser.waitFor('document.activeElement.matches(".workbench-search input[name=q]")');
+   await clickWorkbenchControl(browser,'.workbench-search button[type=submit]');
    await browser.waitFor('Boolean(document.querySelector("form[aria-label=\\"搜索全部获权事项\\"] input[name=q]"))&&document.querySelector(".range-bar")?.textContent.includes("已加载 50 项")');
    seen.length=0;
    await browser.evaluate('(()=>{const input=document.querySelector("form[aria-label=\\"搜索全部获权事项\\"] input[name=q]");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(input,'+JSON.stringify(q)+');input.dispatchEvent(new Event("input",{bubbles:true}));})()');
    await browser.evaluate('document.querySelector("form[aria-label=\\"搜索全部获权事项\\"]").requestSubmit()');
-   await browser.waitFor('new URL(location.href).searchParams.get("q")==='+JSON.stringify(q)+'&&document.querySelector(".board-column.pending .ds-column-footer")?.textContent.includes("已加载 50 项")');
+   await browser.waitFor('new URL(location.href).searchParams.get("q")==='+JSON.stringify(q)+'&&document.querySelector(".board-column.pending .ds-column-footer")?.title==="已加载 50 项"');
    await clickWorkbenchControl(browser,'button[data-action=expand-column][aria-controls=cards-pending]');
    await browser.waitFor('document.querySelectorAll("article[data-kind=ticket]").length===50');
    await clickWorkbenchControl(browser,'button.load-more:not(:disabled)');
