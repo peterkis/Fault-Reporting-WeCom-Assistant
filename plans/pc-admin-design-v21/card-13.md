@@ -340,3 +340,14 @@ tests/workbench-media-employee-read.browser.test.mts
 | 900 | [R2 对照](../../docs/ui/evidence/v21-card13/r2-read-900.png) |
 
 源码两轴复查未发现本轮新增确证业务 P1/P2；远端线程、下一轮复审、普通 CI 与合并仍以 PR 当前权威 head 为准。full/certify、现场及 Gate 不因这些结果推进。
+
+
+## PR #135 CI 页签准备修补 R3
+
+已发布 `24baa573648ac76c3795870654350e30f8dc6a1b` 的 Codex 复审完成且无新发现，两个 P2 线程已逐项回复并解决。普通 CI [41543579230](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41543579230) 仍失败：249 个选择入口中执行139个，350个用例为347 PASS / 3 FAIL，110入口 NOT_RUN。三项失败都在 T16 附件用例，仍按旧布局等待默认可见附件；完整制品原件保存在仓库外 `ci-r2-preserved/`。
+
+本轮被测提交 `8c41768afc1ee8911c5ad1966212d2b098789f8e`：T16 明确选择附件页签，reload 确认新文档；toast 几何观测对应新的动作槽，并以区域内相对位置比较，原字节、附件下载/URL回收、隐私、命令、UUID/次数、回执断言均保留。NextStep 补回旧 `ds-drawer-command-buttons` class 别名。跨工单测试也等待 timeOrigin 变化、目标完整 URL 与详情后再操作新文档，未增加任意 sleep。
+
+6 个注册入口 16/16 PASS、0 FAIL/cancel/SKIP/todo/NOT_RUN；build、strict/negative types、artifact 和两项 lint PASS。先前本地 `62288749` 的附件组8/8及核心组7/8不重绑新候选，核心1次失败、截图和诊断保存在 `ci-r3-core/`；另有根目录调用不存在 lint script、误写 T38 入口导致注册预检拒绝的失败命令原件，随后使用正确 app/pc-admin lint 范围和已注册 `wbint-t38-offline.browser.test.mts` 通过。详细被测身份和原始报告路径见验证索引。
+
+本轮源改动仅恢复 class 别名，视觉沿用已核对的四宽截图。前述37/37、R1的20/20、R2的49/49分别保留各自 tested_head。最终复审、CI与合并状态以当前远端完整 SHA 为准；full/certify、Electron、现场、真实发送、部署与 Gate 仍 NOT_RUN。

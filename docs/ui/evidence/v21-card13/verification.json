@@ -402,5 +402,84 @@
       },
       "remote_status": "以 PR 当前 head 复审和 CI 的实际结果为准。"
     }
+  ],
+  "ci_followups": [
+    {
+      "tested_head": "8c41768afc1ee8911c5ad1966212d2b098789f8e",
+      "source_input_hash": "39eade9f1f1b0f08f184390ab013e5a625ce481630099bcbcae2afb44923e644",
+      "change": "T16 打开附件页签后保留原断言；toast 读取新动作槽且按区域内位置比较；保留旧 class hook；跨工单 Page.navigate 等待新 document/timeOrigin、目标 URL 与详情后再点击页签。",
+      "validation": {
+        "build": "PASS",
+        "types": "PASS",
+        "artifact": "PASS",
+        "stylelint": 0,
+        "eslint": 0,
+        "entries": 6,
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "reports": [
+          {
+            "label": "ci-r3b-attachments",
+            "entries": [
+              "tests/wbint-t16-attachments.browser.test.mts",
+              "tests/workbench-toast-feedback.browser.test.mts",
+              "tests/wbint-t38-offline.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 8,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "44bb2af5bf72ae7f8884b00f82f656798f348b1d6e663602aef7f8307cccde7e",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r3b-attachments"
+          },
+          {
+            "label": "ci-r3b-core",
+            "entries": [
+              "tests/pc-admin-card13.browser.test.mts",
+              "tests/workbench-detail-media.browser.test.mts",
+              "tests/workbench-detail-restructure.browser.test.mts"
+            ],
+            "counts": {
+              "tests": 8,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "manifest_sha256": "44bb2af5bf72ae7f8884b00f82f656798f348b1d6e663602aef7f8307cccde7e",
+            "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r3b-core"
+          }
+        ]
+      },
+      "ci_failure_preserved": {
+        "run": 41543579230,
+        "head": "24baa573648ac76c3795870654350e30f8dc6a1b",
+        "entries_selected": 249,
+        "entries_executed": 139,
+        "tests": 350,
+        "pass": 347,
+        "fail": 3,
+        "entries_not_run": 110,
+        "failed_entry": "tests/wbint-t16-attachments.browser.test.mts",
+        "artifact_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r2-preserved"
+      },
+      "local_failure_preserved": {
+        "head": "622887498fdbfbe6cc6d6091b52778193b29d4b7",
+        "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r3-core",
+        "tests": 8,
+        "pass": 7,
+        "fail": 1,
+        "cause": "新文档导航前点击旧 DOM 页签；新文档恢复默认动态后等待附件超时。"
+      },
+      "remote_status": "以 PR 当前 head 完成审查及实际 CI 制品为准。"
+    }
   ]
 }
