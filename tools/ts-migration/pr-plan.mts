@@ -52,7 +52,7 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
   };
   // Validate all profiles, including dormant ones, so policy drift cannot hide behind a path filter.
   for(const [name,p] of Object.entries(policy.profiles)){
-    if(!p.build&&(p.selections.length||p.tools.length||p.windows))throw Error('PR_SELECTION_REQUIRES_BUILD');
+    if(!p.build&&(p.selections.length||p.tools.length||p.windows||p.pyyaml))throw Error('PR_SELECTION_REQUIRES_BUILD');
     if(p.build&&!p.selections.length)throw Error('PR_EMPTY_PROFILE: '+name);
     for(const selection of p.selections)for(const e of resolve(selection))if(historyPaths.has(e.path))throw Error('PR_HISTORY_IN_DEFAULT: '+e.path);
   }
@@ -71,6 +71,7 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
     for(const s of p.selections){selections.add(s);for(const e of resolve(s))entries.set(e.path,e);}}
   const sorted=[...entries.values()].sort((a,b)=>a.path.localeCompare(b.path,'en'));
   for(const e of sorted){requirements.database ||= e.requires_database;requirements.browser ||= e.requires_browser;requirements.pyyaml ||= e.requires_pyyaml;requirements.ffmpeg ||= e.requires_ffmpeg===true;requirements.windows ||= e.requires_powershell;}
+  if(sorted.some(e=>e.path==='tests/pc-admin-electron.browser.test.mts')&&!requirements.windows)throw Error('PR_NATIVE_RESOURCE_REQUIRED');
   if(sorted.length&&!build)throw Error('PR_ENTRIES_REQUIRE_BUILD');
   if(build&&!sorted.length)throw Error('PR_EMPTY_EXECUTION');
   return {base,head,changes,profiles:[...selected].sort(),reasons,selection:{entries:sorted,flags:[],label:'pr-impact'},selections:[...selections].sort(),tools:[...tools].sort(),build,requirements,lane:!build?'docs':requirements.database?'database':'no-database',
@@ -80,6 +81,8 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
 export async function createPlan(root:string,base:string,head='HEAD'):Promise<Plan>{
   const {loadRoutes}=await import('./routing.mjs');
   const delta=diff(root,base,head),policy=parsePolicy(JSON.parse(readFileSync(path.join(root,'plans/testing-policy.json'),'utf8')) as unknown);
+  const checkout=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+  if(delta.head!==checkout)throw Error('PR_HEAD_CHECKOUT_MISMATCH');
   const plan=planChanges(policy,loadRoutes(root),delta.changes,delta.base,delta.head);
   for(const tool of plan.tools)readFileSync(path.join(root,tool));
   return plan;
@@ -89,12 +92,13 @@ async function run(root:string,plan:Plan,reportDir:string):Promise<void>{
   // The caller has built once; runSelection retains exact artifact/host/flags/cleanup checks.
   const entries=plan.selection.entries.filter(e=>e.path!=='tests/pc-admin-electron.browser.test.mts');
   if(entries.length)runSelection(root,{...plan.selection,entries},{reportDir});
-  if(plan.tools.length){const result=spawnSync(process.execPath,['--test','--test-concurrency=1',...plan.tools.map(p=>path.join(root,'.build/tools',path.basename(p).replace(/\.mts$/u,'.mjs')))],{cwd:root,stdio:'inherit',windowsHide:true});if(result.error||result.status!==0)throw Error('PR_TOOL_TESTS_FAILED');}
+  if(plan.tools.length){const result=spawnSync(process.execPath,['--test','--test-reporter=tap','--test-concurrency=1',...plan.tools.map(p=>path.join(root,'.build/tools',path.basename(p).replace(/\.mts$/u,'.mjs')))],{cwd:root,stdio:'inherit',windowsHide:true});if(result.error||result.status!==0)throw Error('PR_TOOL_TESTS_FAILED');}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const args=process.argv.slice(2),options=new Map<string,string>();let execute=false,docs=false;
   while(args.length){const key=args.shift();if(key==='--run'){if(execute)throw Error('PR_ARGUMENTS');execute=true;continue;}if(key==='--check-docs'){if(docs)throw Error('PR_ARGUMENTS');docs=true;continue;}if(!key||!['--base','--head','--out','--report-dir'].includes(key)||options.has(key))throw Error('PR_ARGUMENTS');const value=args.shift();if(!value||value.startsWith('--'))throw Error('PR_ARGUMENTS');options.set(key,value);}
   const base=options.get('--base');if(!base)throw Error('PR_BASE_REQUIRED');
+  if(execute&&execFileSync('git',['status','--porcelain','-z'],{cwd:process.cwd(),encoding:'utf8',windowsHide:true}).length)throw Error('PR_EXECUTION_REQUIRES_CLEAN_HEAD');
   const plan=await createPlan(process.cwd(),base,options.get('--head'));
   if(docs){const {checkAgentDocs}=await import('./check-agent-docs.mjs');const issues=checkAgentDocs(process.cwd(),plan.changes.flatMap(c=>c.paths));if(issues.length)throw Error('PR_DOCUMENT_LINKS: '+JSON.stringify(issues));}
   const json=JSON.stringify(plan,null,2)+'\n';const out=options.get('--out');if(out)writeFileSync(out,json);else process.stdout.write(json);

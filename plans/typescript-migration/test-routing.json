@@ -8972,7 +8972,8 @@
       "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
       "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
       "tests/wbint-t30-internal-note.browser.test.mts",
-      "tests/wbint-t32-exception-authorization.browser.test.mts"
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/wbint-t22-realtime-tracer.browser.test.mts"
     ],
     "pr-core": [
       "tests/p2-016-ticket-lifecycle.integration.test.mjs",
@@ -8984,7 +8985,8 @@
       "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
       "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
       "tests/wbint-t30-internal-note-risks.integration.test.mts",
-      "tests/wbint-t17-manual-receipts.integration.test.mts"
+      "tests/wbint-t17-manual-receipts.integration.test.mts",
+      "tests/wbint-t22-realtime-tracer.browser.test.mts"
     ],
     "pr-notification": [
       "tests/mvp-notification-policy.integration.test.mts",

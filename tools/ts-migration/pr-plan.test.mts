@@ -14,7 +14,7 @@ const policy=()=>parsePolicy(raw());
 const plan=(...paths:string[])=>planChanges(policy(),routes,paths.map(p=>({status:'M',paths:[p]})));
 const paths=(p:ReturnType<typeof plan>)=>p.selection.entries.map(e=>e.path);
 test('documentation never prepares application resources or application build',()=>{
-  const p=plan('docs/api/new-guide.md','plans/example/执行记录.md','docs/ui/evidence/new.png','.github/review/README.md','app/pc-admin/README.md','app/h5/README.md');
+  const p=plan('docs/api/new-guide.md','plans/example/执行记录.md','docs/ui/evidence/new.png','.github/review/README.md','app/pc-admin/README.md','app/h5/README.md','docs/agents/baseline-history.md','app/pc-admin/docs/screenshot.png');
   assert.equal(p.lane,'docs');assert.equal(p.build,false);assert.deepEqual(p.selection.entries,[]);
   assert.deepEqual(p.requirements,{database:false,browser:false,pyyaml:false,ffmpeg:false,windows:false});
   assert.ok(p.not_selected.every(e=>e.reason.startsWith('NOT_SELECTED')));
@@ -23,6 +23,7 @@ test('PC covers current commands, authorization and UNKNOWN without unrelated H5
   const p=plan('app/pc-admin/src/features/tickets/Ticket.tsx');
   assert.ok(p.build&&p.requirements.database&&p.requirements.browser);
   assert.ok(paths(p).some(s=>s.includes('unknown'))&&paths(p).some(s=>s.includes('authority')));
+  assert.ok(paths(p).some(s=>s.includes('realtime-tracer')),'SSE identity and scoped recovery remain covered');
   assert.ok(paths(p).every(s=>!s.includes('h5')&&!s.includes('incident')));assert.equal(p.requirements.ffmpeg,false);
 });
 test('H5 flow requests its media dependency and never native desktop',()=>{
@@ -71,6 +72,8 @@ test('real Git NUL differences preserve rename origins, deletes, additions and C
     assert.ok(planChanges(policy(),routes,result.changes).build,'rename into docs cannot hide production origin');
     for(const bad of ['', '--all', 'missing-base'])assert.throws(()=>diff(dir,bad));
     assert.throws(()=>diff(dir,base,'missing-head'));
+    writeFileSync(path.join(dir,'app/pc-admin/src/dirty.tsx'),'uncommitted production change');
+    const execution=spawnSync(process.execPath,[path.join(root,'.build/tools/pr-plan.mjs'),'--base',base,'--run','--report-dir',path.join(dir,'report')],{cwd:dir,encoding:'utf8',windowsHide:true});assert.notEqual(execution.status,0);assert.match(execution.stderr,/PR_EXECUTION_REQUIRES_CLEAN_HEAD/u);
   }finally{rmSync(dir,{recursive:true,force:true});}
 });
 test('invalid profiles, missing entries and empty business execution fail before running',()=>{
@@ -81,6 +84,7 @@ test('invalid profiles, missing entries and empty business execution fail before
   const fallback=policy();fallback.fallback=['docs'];assert.throws(()=>planChanges(fallback,routes,[]),/FALLBACK_MUST_EXECUTE/u);
   assert.throws(()=>parseDiff('M\0unterminated'));assert.throws(()=>parseDiff('R100\0only-one\0'));
   const cli=spawnSync(process.execPath,[path.join(root,'.build/tools/pr-plan.mjs')],{cwd:root,encoding:'utf8',windowsHide:true});assert.notEqual(cli.status,0);assert.match(cli.stderr,/PR_BASE_REQUIRED/u);
+  const mismatch=spawnSync(process.execPath,[path.join(root,'.build/tools/pr-plan.mjs'),'--base','HEAD^','--head','HEAD^'],{cwd:root,encoding:'utf8',windowsHide:true});assert.notEqual(mismatch.status,0);assert.match(mismatch.stderr,/PR_HEAD_CHECKOUT_MISMATCH/u);
 });
 test('historical-only checks cannot silently enter defaults, but a direct edit selects them explicitly',()=>{
   const p=policy(),h=p.history[0];assert.ok(h);
@@ -113,7 +117,11 @@ test('resource preparation and builds stay on mutually exclusive actual workflow
   assert.equal(record(jobs['pr-docs']).services,undefined);assert.equal(record(jobs['pr-no-database']).services,undefined);
   assert.match(String(record(jobs['pr-no-database']).if),/lane == 'no-database'/u);assert.match(String(record(jobs['pr-database']).if),/lane == 'database'/u);
   const steps=record(action.runs).steps;assert.ok(Array.isArray(steps));const code=steps.map(s=>String(record(s).run??'')).join('\n');
+  for(const input of Object.values(record(action.inputs)))assert.equal(typeof record(input).description,'string','GitHub requires descriptions for every composite action input');
   assert.equal([...code.matchAll(/npm run migration:build/gu)].length,1);assert.doesNotMatch(code,/run-tests\.mjs|--require-ready/u);assert.match(code,/pr-plan\.mjs.*--run/u);assert.match(code,/verify-artifact\.mjs/u);
   for(const resource of ['browser','pyyaml','ffmpeg'])assert.ok(steps.some(s=>String(record(s).if??'').includes('inputs.'+resource+" == 'true'")));
   const native=plan('app/pc-admin/desktop/policy.mts');assert.equal(native.requirements.windows,true);
+  const unsafe=policy(),desktop=unsafe.profiles['desktop'];assert.ok(desktop);desktop.windows=false;assert.throws(()=>planChanges(unsafe,routes,[{status:'M',paths:['app/pc-admin/desktop/policy.mts']}]),/NATIVE_RESOURCE_REQUIRED/u);
+  const nativeSteps=record(jobs['pr-windows']).steps;assert.ok(Array.isArray(nativeSteps));
+  const cleanup=nativeSteps.map(record).find(s=>s.name==='Stop and remove only the owned native test cluster');assert.ok(cleanup);assert.equal(cleanup.if,"${{ always() && steps.native-pg.outputs.owned == 'true' }}");
 });

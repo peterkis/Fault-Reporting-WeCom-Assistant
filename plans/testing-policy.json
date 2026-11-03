@@ -14,10 +14,6 @@
       ],
       "tools": [
         "tools/ts-migration/pr-plan.test.mts",
-        "tools/ts-migration/tooling.test.mts",
-        "tools/ts-migration/hosts.test.mts",
-        "tools/ts-migration/design-system.test.mts",
-        "tools/ts-migration/h5.test.mts",
         "tools/ts-migration/check-agent-docs.test.mts"
       ],
       "build": true,
@@ -104,18 +100,49 @@
       "build": true,
       "pyyaml": false,
       "windows": false
+    },
+    "toolchain": {
+      "selections": [
+        "canary"
+      ],
+      "tools": [
+        "tools/ts-migration/pr-plan.test.mts",
+        "tools/ts-migration/tooling.test.mts",
+        "tools/ts-migration/hosts.test.mts",
+        "tools/ts-migration/design-system.test.mts",
+        "tools/ts-migration/h5.test.mts",
+        "tools/ts-migration/check-agent-docs.test.mts"
+      ],
+      "build": true,
+      "pyyaml": true,
+      "windows": false
     }
   },
   "rules": [
     {
-      "pattern": "^(AGENTS\\.md$|docs/agents/|plans/testing-policy\\.json$|plans/typescript-migration/(?:scope|test-routing)\\.json$|tools/|\\.github/(?:workflows|actions)/)",
+      "pattern": "^tools/ts-migration/(?:pr-plan|check-agent-docs|t02-expiry)(?:\\.test)?\\.mts$",
+      "profiles": [
+        "policy"
+      ],
+      "reason": "Planner, documentation or scheduling contract: targeted policy/tool checks"
+    },
+    {
+      "pattern": "^(tools/|plans/typescript-migration/(?:scope|test-routing)\\.json$)",
+      "profiles": [
+        "policy",
+        "toolchain"
+      ],
+      "reason": "Build/artifact/routing tool impact: existing toolchain regression, including source and artifact drift rejection"
+    },
+    {
+      "pattern": "^(AGENTS\\.md$|docs/agents/validation\\.md$|plans/testing-policy\\.json$|\\.github/(?:workflows|actions)/)",
       "profiles": [
         "policy"
       ],
       "reason": "Execution policy, routing or tooling: tools, strict, one build and compiled canary"
     },
     {
-      "pattern": "\\.md$",
+      "pattern": "\\.md$|(?:^|/)(?:docs|evidence|screenshots)/.*\\.(?:png|jpe?g|webp|svg|pdf)$",
       "profiles": [
         "docs"
       ],

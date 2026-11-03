@@ -135,6 +135,7 @@ jobs:
         node-version: '24'
     - run: npm ci --ignore-scripts --no-audit --no-fund
     - name: Prepare isolated native PostgreSQL 18
+      id: native-pg
       shell: pwsh
       run: |
         $pgBin = 'C:/Program Files/PostgreSQL/18/bin'
@@ -144,6 +145,7 @@ jobs:
         }
         $nativeData = Join-Path $env:RUNNER_TEMP 'pr-native-pg'
         if (Test-Path -LiteralPath $nativeData) { throw 'NATIVE_DATABASE_NOT_OWNED' }
+        'owned=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         & "$pgBin/initdb.exe" -U postgres -A trust -D $nativeData
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_INIT_FAILED' }
         & "$pgBin/pg_ctl.exe" -D $nativeData -l "$env:RUNNER_TEMP/pr-native-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
@@ -183,7 +185,7 @@ jobs:
         git diff --exit-code
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_SOURCE_DRIFT' }
     - name: Stop and remove only the owned native test cluster
-      if: always()
+      if: ${{ always() && steps.native-pg.outputs.owned == 'true' }}
       shell: pwsh
       run: |
         $nativeParent = [IO.Path]::GetFullPath($env:RUNNER_TEMP)

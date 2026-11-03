@@ -2,16 +2,22 @@ name: Execute the planned PR checks
 description: One candidate build, existing routed tests and conditional resource preparation
 inputs:
   base:
+    description: Full PR base commit
     required: true
   head:
+    description: Full checked-out PR head commit
     required: true
   database:
+    description: Whether the selected entries require the isolated database
     required: true
   browser:
+    description: Whether the selected entries require a system browser
     required: true
   pyyaml:
+    description: Whether the selected entries or tool checks require PyYAML
     required: true
   ffmpeg:
+    description: Whether the selected entries require ffmpeg and ffprobe
     required: true
 runs:
   using: composite
