@@ -48,7 +48,7 @@ function ActivityRecord({record,principal,item,active,now}:{record:WorkbenchDeta
     <HButton tone="ghost" className="record-content" aria-expanded={expanded} title={expanded?'收起记录':'展开完整记录'} onPress={()=>setExpanded(value=>!value)}>
       {bubble?<span className="record-heading"><span className="record-name">{name}</span><span className="record-action">{kind==='report'?'提交报修':record.audience==='INTERNAL'?'添加内部备注':'对外说明'}</span>{audience}{time}</span>:<span className="record-name">{name}</span>}
       {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{text}</span>}
-      {kind==='status'?<span className="record-status-change"><StatusBadge data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge></span>:null}
+      {kind==='status'?<span className="record-status-change"><StatusBadge showStageGlyph={false} data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge showStageGlyph={false} data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge></span>:null}
     </HButton>
   </TimelineItem>;
 }

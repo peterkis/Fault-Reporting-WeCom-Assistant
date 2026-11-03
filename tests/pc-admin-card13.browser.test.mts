@@ -120,7 +120,7 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id,width:900,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
     await browser.waitFor("Boolean(document.querySelector('.ds-next-step')?.textContent.includes('你当前为只读')&&document.querySelector('.detail-properties'))");
     assert.equal(await browser.evaluate("document.querySelectorAll('.ds-next-step [data-tone=primary]').length"),0);
-    assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('[data-drawer-stage-glyph=pending]');return glyph?.querySelector('circle')?.getAttribute('stroke-dasharray')==='2.4 2.1'&&glyph.getBoundingClientRect().width===13&&!document.querySelector('.ds-stage-pill>.ds-status-dot').checkVisibility();})()"),true);
+    assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('.ds-stage-pill [data-stage-glyph=pending]');return glyph?.querySelector('circle')?.getAttribute('stroke-dasharray')==='2.4 2.1'&&glyph.getBoundingClientRect().width===13&&!document.querySelector('.ds-stage-pill>.ds-status-dot')?.checkVisibility();})()"),true);
 
     await browser.command('Page.bringToFront');await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await clickWorkbenchControl(browser,'#detail-tab-trigger-conversations');
     const reader=await t11Http(f);let activeId='',closedId='';
@@ -128,8 +128,8 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
     assert.ok(activeId&&closedId);
     for(const target of [{stage:'active',id:activeId},{stage:'closed',id:closedId}]){
       await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+target.id});
-      await browser.waitFor("Boolean(document.querySelector('[data-drawer-stage-glyph="+target.stage+"]'))");
-      assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('[data-drawer-stage-glyph="+target.stage+"]');return glyph.getBoundingClientRect().width===13&&glyph.getBoundingClientRect().height===13&&glyph.getAttribute('viewBox')==='0 0 16 16'&&glyph.querySelector('path')!==null&&!document.querySelector('.ds-stage-pill>.ds-status-dot').checkVisibility();})()"),true,'drawer stage geometry '+target.stage);
+      await browser.waitFor("Boolean(document.querySelector('.ds-stage-pill [data-stage-glyph="+target.stage+"]'))");
+      assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('.ds-stage-pill [data-stage-glyph="+target.stage+"]');return glyph.getBoundingClientRect().width===13&&glyph.getBoundingClientRect().height===13&&glyph.getAttribute('viewBox')==='0 0 16 16'&&glyph.querySelector('path')!==null&&!document.querySelector('.ds-stage-pill>.ds-status-dot')?.checkVisibility();})()"),true,'drawer stage geometry '+target.stage);
       assert.equal(await browser.evaluate("document.querySelectorAll('.ds-next-step [data-tone=primary]').length"),0);
     }
     assert.equal(writes,0);

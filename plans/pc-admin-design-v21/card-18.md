@@ -249,3 +249,14 @@
 另更新设计规范§6.4、本记录和证据。当前应用/测试累计22文件哈希记录于最新索引；本轮无后端/合同/数据库源码/持久开关/依赖变化，所有自检仍满足。停止线仍为本地未提交交付；无CI/full/certify/Electron/现场/真实发送/部署/Gate。资源读回将写入最新索引cleanup，继续保留停止后的自有PG数据目录。
 
 P3本轮最终读回：所有UUID夹具库已清理，仅剩postgres；自有PG已停止，status=3、PID不存在、55478监听0，数据目录保留。制品与文档检查均再次通过；工作区未提交，未推送，未创建PR。
+
+
+## 发布授权与卡17同步（2026-11-03）
+
+用户追加授权提交、推送、创建PR，发起@codex review，修复P1/P2后继续复核，当前head无major且CI通过后合并；之后本地main快进并清理本任务已合并分支/worktree。此前“仅本地/未提交”段落继续作为对应候选的历史记录，不限制本次新授权。
+
+GitHub PR API确认卡17 #139已合并为`56ccf94895856b57bd8026d9d56c1e6716557ef4`。卡18未发布的本地提交重基到该main；原本地提交由`refs/recovery/pc-admin-v211-card18-pre-main-sync-20261103`保全。基础展示测试冲突保留双方用例，Token与规范自动合并保留卡17字段及卡18三个专用色。
+
+同步后DrawerStageGlyph变为共享StatusBadge/StageGlyph的抽屉适配，不再重复绘制SVG；Header仍13px。StatusBadge新增默认true的showStageGlyph展示选项，仅历史Timeline两端传false，以保留原6px状态点和无气泡语义；看板/列表默认行为不变。布局断言改用卡17既有的data-stage-glyph，并保持原业务/权限/请求/UUID/回执/次数断言。
+
+109项20入口的结果仍绑定合并前ae1c281d候选；新增上游基础用例后将重新验证同步候选，不能把旧109项当作新SHA通过。Astra报告同样保持各自原source指纹。同步/发布原件位于`D:/CodexEvidence/pc-admin-v211-card18-publish-20261103/`。

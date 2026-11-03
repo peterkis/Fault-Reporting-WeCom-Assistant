@@ -21,14 +21,9 @@
 .ds-detail-hero>div {min-width:0;}
 .ds-detail .ds-detail-hero h2 {font-size:var(--fs-xl);line-height:var(--lh-xl);margin:0 0 var(--space-2);font-weight:var(--fw-semibold);}
 .ds-detail-state {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-1-5);font-size:var(--fs-xs);color:var(--text-secondary);}
-.ds-detail .ds-detail-state .ds-stage-pill {height:var(--space-6);border-radius:var(--radius-sm);padding:0 calc(var(--space-2) + var(--space-0-5) / 2) 0 calc(var(--space-1-5) + var(--space-0-5) / 2);font-size:var(--fs-sm);font-weight:var(--fw-semibold);}
+.ds-detail .ds-detail-state .ds-status-badge.ds-stage-pill {height:var(--space-6);border-radius:var(--radius-sm);padding:0 calc(var(--space-2) + var(--space-0-5) / 2) 0 calc(var(--space-1-5) + var(--space-0-5) / 2);font-size:var(--fs-sm);font-weight:var(--fw-semibold);}
 .ds-detail .ds-stage-pill>.ds-status-dot {display:none;}
-.ds-detail .ds-stage-pill>.ds-status-text {display:inline-flex;align-items:center;gap:var(--space-1-5);}
-.ds-drawer-stage-glyph {flex:none;width:calc(var(--icon-sm) - var(--space-0-5) / 2);height:calc(var(--icon-sm) - var(--space-0-5) / 2);}
-.ds-drawer-stage-glyph[data-drawer-stage-glyph=pending] {color:var(--stage-intake-accent);}
-.ds-drawer-stage-glyph[data-drawer-stage-glyph=active] {color:var(--stage-active-accent);}
-.ds-drawer-stage-glyph[data-drawer-stage-glyph=closed] {color:var(--stage-done-accent);}
-.ds-drawer-stage-check {stroke:var(--text-inverse);}
+.ds-detail .ds-stage-pill>.ds-stage-glyph {flex:none;width:calc(var(--icon-sm) - var(--space-0-5) / 2);height:calc(var(--icon-sm) - var(--space-0-5) / 2);}
 .ds-detail-state .ds-drawer-status {position:relative;min-height:0;}
 .ds-detail .ds-drawer-status[data-waiting=true]>.ds-status-badge {height:calc(var(--space-5) + var(--space-0-5));padding:0 calc(var(--space-1-5) + var(--space-0-5) / 2) 0 calc(var(--space-3) + var(--space-1) + var(--space-1-5) + var(--space-0-5) / 2);border-radius:var(--radius-xs);background:var(--bg-muted);color:var(--tone-neutral-fg);font-size:var(--fs-xs);font-weight:var(--fw-medium);}
 .ds-detail .ds-drawer-status[data-waiting=true]>.ds-status-badge>.ds-status-dot {display:none;}
