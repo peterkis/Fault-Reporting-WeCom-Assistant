@@ -1,7 +1,7 @@
 import type {StepReadState} from '../design/components/Drawer/NextStep';
 import { useInfiniteQuery,useQuery } from '@tanstack/react-query';
 import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,Clock3,Copy,Headset,MapPin,Phone,Radio,Ticket,TriangleAlert,UserRound,X } from 'lucide-react';
-import { useEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams } from 'react-router';
 import type { Principal,WorkbenchCard,WorkbenchDetail } from '../api/client';
 import { api,errorMessage,statusLabels } from '../api/client';
@@ -72,7 +72,20 @@ function nextSummary(item:WorkbenchCard,heatLabel:string|undefined){
   const summaries:Record<string,string>={NEW:'尚无人领取，领取后即可开始排查。',QUEUED:'尚无人领取，领取后即可开始排查。',ACCEPTED:name+'已领取，尚未开始。',IN_PROGRESS:name+'处理中，故障排除后请登记完工。',WAITING_REQUESTER:'等待报修人补充，收到信息后继续处理。',WAITING_VENDOR:'等待厂商回复，请跟进处理进度。',RESOLVED:'已解决，等待报修人确认。',CLOSED:'工单已关闭，同一故障仍未解决时可以重新打开。',CANCELLED:'工单已取消，请查看取消原因。',REOPENED:'同一故障仍未解决，请重新领取。',PENDING:'规则无法判断，需要人工确认。'};
   return (heatLabel?'已等待 '+heatLabel.replace('超时 ','')+'。':'')+(summaries[item.status]??'请核对报修材料，确认下一步。')+(item.follow_up_schedule?' 下次跟进 '+item.follow_up_schedule.due_at.slice(5,16)+'。':'');
 }
-export function WorkbenchDetailDrawer({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
+type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void};
+
+export function WorkbenchDetailDrawer(props:DetailProps){
+  const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation();
+  const [dismissBlocked,setDismissBlocked]=useState(false),blocked=useRef(false);
+  const onNavigationBlocked=props.onNavigationBlocked;
+  const reportBlocked=useCallback((value:boolean)=>{blocked.current=value;setDismissBlocked(value);onNavigationBlocked(value);},[onNavigationBlocked]);
+  const close=()=>{if(blocked.current)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
+  // Keep the overlay's focus/restore scope while each requested item owns fresh controllers.
+  const content=<WorkbenchDetailContent key={props.principal.principal_id+':'+kind+':'+id} {...props} onNavigationBlocked={reportBlocked} onClose={close}/>;
+  return props.fullPage?<article className="detail-page ds-detail" aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
+}
+
+function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocked,onClose}:DetailProps&{onClose:()=>void}){
   const [tab,setTab]=useState('activity'),[copied,setCopied]=useState(false),[attachmentCount,setAttachmentCount]=useState<number|null>(null),[conversationCount,setConversationCount]=useState<number|null>(null),[reviewReadState,setReviewReadState]=useState<StepReadState>('pending');
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[takeoverBlocked,setTakeoverBlocked]=useState(false),[takeoverCompletionBlocked,setTakeoverCompletionBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false),[waitingBlocked,setWaitingBlocked]=useState(false);
   const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false),[itemFollowBlocked,setItemFollowBlocked]=useState(false),[supplementBlocked,setSupplementBlocked]=useState(false);
@@ -96,7 +109,7 @@ export function WorkbenchDetailDrawer({principal,items,now,fullPage,onNavigation
   const boardMode=Boolean(boardIntent&&boardSelector),[cancelledBoardIntent,setCancelledBoardIntent]=useState<string|null>(null),boardIntentKey=boardIntent?JSON.stringify(boardIntent):'';
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
     queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
-  const close=()=>{if(commandsBlocked)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
+  const close=()=>{if(!commandsBlocked)onClose();};
   const activityRoot=useRef<HTMLDivElement>(null);
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
   // Observe the original permission queries; these do not infer action eligibility.
@@ -152,6 +165,5 @@ export function WorkbenchDetailDrawer({principal,items,now,fullPage,onNavigation
       </div><div className="ds-detail-footer">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
     </div>:null}
   </DetailDialogProvider>;
-  if(fullPage)return <article className="detail-page ds-detail" aria-labelledby="detail-title">{content}</article>;
-  return <Drawer dismissBlocked={commandsBlocked} onClose={close}>{content}</Drawer>;
+  return content;
 }

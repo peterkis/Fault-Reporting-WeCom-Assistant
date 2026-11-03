@@ -464,6 +464,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
       await browser.waitFor("document.querySelector('.detail-dialog')?.contains(document.activeElement)===true");
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
+      await browser.evaluate('globalThis.__web01DrawerScope=document.querySelector(".detail-dialog")');
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
@@ -477,6 +478,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("document.querySelector('#detail-title')?.textContent==='PACS 调阅影像时加载缓慢'");
       await browser.evaluate("document.querySelector('[aria-label=\"上一项\"]').click()");
       await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
+      assert.equal(await browser.evaluate('document.querySelector(".detail-dialog")===globalThis.__web01DrawerScope'),true,'item navigation retains the original overlay focus scope');
       await capture('new-detail-1920.png');
       // CDP key/code without the virtual key generates keyCode=0 and does not
       // invoke the real Escape handler; use an actual Escape key.

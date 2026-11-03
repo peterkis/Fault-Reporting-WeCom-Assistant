@@ -30,8 +30,9 @@ export function ActivityTimeline({records,principal,item,active,now,children,des
   const modalOpen=useDetailModalOpen();
   const report=description?records.find(record=>record.audience==='REPORT'&&record.text===description):undefined;
   return <Section className="detail-main" titleClassName="activity-title" title="处理记录">
-    {description?<div className="detail-description"><h3>报修描述</h3>{report?<Timeline className="activity-list"><ol><ActivityRecord record={report} principal={principal} item={item} active={active&&!modalOpen}/></ol></Timeline>:<MessageBubble className="detail-report-description">{description}</MessageBubble>}</div>:null}
-    <Timeline className="activity-list">{groupActivityRecords(records.filter(record=>record!==report),now).map(group=><TimelineGroup className="activity-group" key={group.label} label={group.label} date={group.date} aria-label={group.label+'的处理记录'}>
+    <Timeline className="activity-list">
+    {description?<div className="detail-description"><h3>报修描述</h3>{report?<ol><ActivityRecord record={report} principal={principal} item={item} active={active&&!modalOpen}/></ol>:<MessageBubble className="detail-report-description">{description}</MessageBubble>}</div>:null}
+    {groupActivityRecords(records.filter(record=>record!==report),now).map(group=><TimelineGroup className="activity-group" key={group.label} label={group.label} date={group.date} aria-label={group.label+'的处理记录'}>
       {group.records.map(record=><ActivityRecord key={record.id} record={record} principal={principal} item={item} active={active&&!modalOpen}/>)}
     </TimelineGroup>)}</Timeline>{children}
   </Section>;
