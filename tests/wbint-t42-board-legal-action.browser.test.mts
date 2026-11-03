@@ -62,7 +62,7 @@ test('T42 production board drag opens the legal handling form and moves only aft
       await browser.waitFor(`Boolean(document.querySelector('.board-column.pending '+${JSON.stringify(card)}))`);
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true,'use the formal production bundle');
       await browser.evaluate(instrument);
-      assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(card+' [data-action="board-drag-handle"]')}))`),true,'the production board must expose an explicit drag handle, separate from text and the detail link');
+      assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(card+' [data-action="board-drag-handle"]')}))`),true,'the complete card retains the original drag selector');
       const geometry=object(await browser.evaluate(`(()=>{
         const source=document.querySelector(${JSON.stringify(card+' [data-action="board-drag-handle"]')}).getBoundingClientRect(),target=document.querySelector('.board-column.active').getBoundingClientRect();
         return {x:source.x+source.width/2,y:source.y+source.height/2,toX:target.x+target.width/2,toY:target.y+Math.min(100,target.height/2)};
@@ -70,7 +70,11 @@ test('T42 production board drag opens the legal handling form and moves only aft
       for(const key of ['x','y','toX','toY'])assert.equal(typeof geometry[key],'number');
       await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:geometry.x,y:geometry.y});
       await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:geometry.x,y:geometry.y,button:'left',clickCount:1});
+      // Cross the card's click-preserving threshold before moving into the target lane.
+      await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(geometry.x)+8,y:geometry.y,button:'left',buttons:1});
+      await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card+' .board-action-card.is-dragging')}))`);
       await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:geometry.toX,y:geometry.toY,button:'left',buttons:1});
+      await browser.waitFor("Boolean(document.querySelector('[data-board-drop-column=active].is-drop-target'))");
       await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:geometry.toX,y:geometry.toY,button:'left',clickCount:1});
       await browser.waitFor(`Boolean(document.querySelector('.detail-dialog [data-action="take-and-start"]:not(:disabled)'))`);
       assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),[],'dropping only opens the current legal form; it must not submit or guess responsibility');

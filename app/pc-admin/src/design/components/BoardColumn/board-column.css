@@ -1,19 +1,16 @@
-.ds-board-column.board-column {background: var(--bg-column); padding: var(--space-2); border-radius: var(--radius-lg);}
-.ds-board-column.pending {--column-accent: var(--stage-intake-accent); --column-bg: var(--stage-intake-bg); --column-fg: var(--stage-intake-fg);}
-.ds-board-column.active {--column-accent: var(--stage-active-accent); --column-bg: var(--stage-active-bg); --column-fg: var(--stage-active-fg);}
-.ds-board-column.closed {--column-accent: var(--stage-done-accent); --column-bg: var(--stage-done-bg); --column-fg: var(--stage-done-fg);}
-.ds-board-column>.column-heading {gap: var(--space-2); min-height: var(--space-12); padding: var(--space-3); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) var(--space-2); border-top: 3px solid var(--column-accent); border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--column-bg); color: var(--column-fg);}
-.ds-board-column.board-column .stage-pill,.list-group .column-heading .stage-pill {min-width: 0; margin: 0; padding: 0; background: none; color: var(--text-primary); border-radius: 0;}
+.ds-board-column.board-column {background: var(--column-lane); padding: var(--space-2); border-radius: var(--radius-lg); outline: 1px solid var(--lane-border); outline-offset: -1px;}
+.ds-board-column.pending {--column-lane: var(--lane-intake); --column-accent: var(--stage-intake-accent); --column-bg: var(--stage-intake-bg); --column-fg: var(--stage-intake-fg);}
+.ds-board-column.active {--column-lane: var(--lane-active); --column-accent: var(--stage-active-accent); --column-bg: var(--stage-active-bg); --column-fg: var(--stage-active-fg);}
+.ds-board-column.closed {--column-lane: var(--lane-done); --column-accent: var(--stage-done-accent); --column-bg: var(--stage-done-bg); --column-fg: var(--stage-done-fg);}
+.ds-board-column>.column-heading {gap: var(--space-2); min-height: var(--space-10); padding: var(--space-3) var(--space-3) var(--space-1-5) calc(var(--space-2) + var(--space-0-5)); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0; border: 0; background: transparent;}
+.ds-board-column.board-column .stage-pill,.list-group .column-heading .stage-pill {display: flex; min-width: 0; margin: 0; padding: 0; background: none; border-radius: 0;}
+.ds-page>.board {background: transparent;}
 .ds-board-column .stage-pill::before,.list-group .stage-pill::before {content: none;}
-.ds-board-column .ds-status-badge,.list-group .stage-pill .ds-status-badge {font-size: var(--fs-md); font-weight: var(--fw-semibold); line-height: var(--lh-md);}
-.ds-board-column .ds-status-badge {color: var(--column-fg);}
-.ds-board-column .ds-status-dot {background: var(--column-accent);}
-.ds-board-column .ds-stage-count {display: inline-flex; align-items: center; justify-content: center; min-width: var(--space-6); padding: 0 var(--space-1-5); border-radius: var(--radius-full); background: var(--bg-stage-count); color: var(--column-fg); font-size: var(--fs-xs); font-variant-numeric: tabular-nums;}
-.ds-column-sort {display: inline-flex; align-items: center; gap: var(--space-1); margin-left: auto; padding: var(--space-1); min-height: var(--control-h-sm); background: transparent; border: 0; border-radius: var(--radius-sm); color: var(--column-fg); font-size: var(--fs-xs); font-weight: var(--fw-medium); white-space: nowrap; cursor: pointer;}
+.ds-board-column .ds-stage-count {color: var(--text-secondary); font-size: var(--fs-sm); font-variant-numeric: tabular-nums;}
+.ds-column-sort {display: inline-flex; align-items: center; gap: var(--space-1); margin-left: auto; padding: var(--space-1); min-height: calc(var(--space-6) + var(--space-0-5)); line-height: var(--lh-xs); background: transparent; border: 0; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--fs-xs); font-weight: var(--fw-medium); white-space: nowrap; cursor: pointer;}
 .ds-column-sort>svg {width: var(--icon-sm); height: var(--icon-sm); stroke-width: 1.75;}
-.ds-column-sort:hover {background: var(--bg-stage-count);}
+.ds-column-sort:hover {background: var(--bg-hover);}
 .ds-column-sort:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
-.ds-column-sort-note {margin: 0 var(--space-1) var(--space-2); color: var(--text-secondary); font-size: var(--fs-xs);}
 .ds-board-group {min-width: 0;}
 .ds-board-group+.ds-board-group {margin-top: var(--space-3);}
 .ds-board-group .ds-board-group-trigger {display: flex; align-items: center; justify-content: flex-start; gap: var(--space-1-5); width: 100%; min-height: var(--control-h-sm); padding: var(--space-1) var(--space-1) var(--space-2); background: transparent; border: 0; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs); font-weight: var(--fw-medium);}

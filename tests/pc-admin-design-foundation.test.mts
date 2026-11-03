@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {transpileModule, ModuleKind, ScriptTarget} from 'typescript';
-import {CircleHelp, Monitor, Printer, ScanLine} from 'lucide-react';
+import {CircleHelp, Monitor, PillBottle, Printer, ScanLine} from 'lucide-react';
 import type {WorkbenchCard as CoreWorkbenchCard,BoardColumn} from '../contracts/web01_workbench_contracts.js';
 import type {WorkbenchFollowAttention} from '../contracts/workbench_item_follow_contracts.js';
 type WorkbenchCard=CoreWorkbenchCard&{attention?:WorkbenchFollowAttention};
@@ -42,6 +42,9 @@ const boundaries: readonly (readonly [string, number, Heat | null])[] = [
   ['60:00', 3600, {tone: 'attention', label: '1 小时', ring: 'attention'}],
   ['239:59', 14399, {tone: 'attention', label: '3 小时', ring: 'attention'}],
   ['240:00', 14400, {tone: 'danger', label: '超时 4 小时', ring: 'danger'}],
+  ['23h59', 23*3600+59*60, {tone: 'danger', label: '超时 23 小时', ring: 'danger'}],
+  ['24h00', 24*3600, {tone: 'danger', label: '超时 1 天', ring: 'danger'}],
+  ['720h', 720*3600, {tone: 'danger', label: '超时 30 天', ring: 'danger'}],
 ];
 for (const [boundary, seconds, expected] of boundaries) test('heat boundary ' + boundary, () => {
   const start = new Date(now - seconds * 1000).toISOString();
@@ -50,7 +53,7 @@ for (const [boundary, seconds, expected] of boundaries) test('heat boundary ' + 
 test('heat floors units, uses the supplied clock, and respects explicit zones', () => {
   assert.deepEqual(heatOf('2026-11-02T08:00:01+08:00', now), {tone: 'attention', label: '1 小时', ring: 'attention'});
   assert.deepEqual(heatOf('2026-11-02T01:55:00Z', now), heatOf('2026-11-02T09:55:00+08:00', now));
-  assert.deepEqual(heatOf('2026-11-01T01:00:00Z', now), {tone: 'danger', label: '超时 25 小时', ring: 'danger'});
+  assert.deepEqual(heatOf('2026-11-01T01:00:00Z', now), {tone: 'danger', label: '超时 1 天', ring: 'danger'});
   assert.equal(heatOf('2026-11-02T02:00:00Z', now), null);
   assert.deepEqual(heatOf('2026-11-02T02:00:00Z', now + 300_000), {tone: 'neutral', label: '5 分钟', ring: null});
 });
@@ -155,3 +158,5 @@ test('board sorting leaves active order intact, uses completion for closed, and 
   assert.deepEqual(sortBoardItems(items,'active','newest'),items);
   assert.deepEqual(items,[newer,older]);
 });
+
+test('pharmacy uses the existing pill bottle icon',()=>{assert.equal(categoryOf('PHARMACY_MEDICATION').icon,PillBottle);});
