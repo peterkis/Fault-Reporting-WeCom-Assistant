@@ -18,6 +18,7 @@
 .notification-detail-heading h2 {margin: 0;}
 .notification-detail-heading .note-controls {margin: 0; font-size: var(--fs-xs); color: var(--text-secondary);}
 .notification-detail:focus-visible {outline: 2px solid var(--border-focus); outline-offset: var(--space-1);}
+.notification-overview[data-tone=danger] .ds-button.button[data-tone=ghost] {color: var(--tone-danger-fg);}
 @media(max-width:900px) {
   .notification-exceptions .notification-overview {align-items: flex-start;}
   .notification-exceptions .notification-overview .ds-alert-action {max-width: none;}
