@@ -24,7 +24,7 @@ export function useBoardArrivals(items:WorkbenchCard[],scope:string,ready:boolea
     const deferred=performance.now()-scrolling.current<180||window.scrollY>0||Boolean(document.querySelector('.detail-dialog,.detail-page,[role=dialog]'));
     setState(current=>({scope,arrivals:[...incoming.map(key=>({key,deferred})),...(current.scope===scope?current.arrivals:[])].filter(arrival=>items.some(item=>item.column==='pending'&&keyOf(item)===arrival.key))}));
   },[sequence,scope,ready,enabled]);
-  const arrivals=state.scope===scope?state.arrivals:[],hidden=new Set(arrivals.filter(item=>item.deferred).map(item=>item.key));
+  const arrivals=enabled&&state.scope===scope?state.arrivals:[],hidden=new Set(arrivals.filter(item=>item.deferred).map(item=>item.key));
   const promoted=arrivals.filter(item=>!item.deferred).map(item=>item.key),rank=new Map(promoted.map((key,index)=>[key,index]));
   return {
     items:items.filter(item=>!hidden.has(keyOf(item))).sort((a,b)=>(rank.get(keyOf(a))??promoted.length)-(rank.get(keyOf(b))??promoted.length)),

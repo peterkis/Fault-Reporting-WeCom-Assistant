@@ -410,6 +410,8 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   }
   const arrivals=useBoardArrivals(unique,orderingScope+':'+queries.map(query=>query.data?.pages.length??0).join(','),queries.every(query=>!query.isPending&&!query.isError)&&!(searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching),principal.realtime_sse_enabled===true&&view==='board'&&!searchMode&&!fullPage&&!locationMode&&!holdOrder);
   unique=arrivals.items;
+  // The detail freeze must inherit the sequence actually presented after arrivals.
+  if(!holdOrder)order.current={scope:orderingScope,keys:unique.map(item=>item.kind+':'+item.id)};
   const update=(key:string,value:string)=>{const next=new URLSearchParams(params);next.set(key,value);setParams(next);};
   const applyClosedRange=(value:BoardCompletionRange,dates?:{from:string;to:string})=>{
     if(navigationBlocked)return;

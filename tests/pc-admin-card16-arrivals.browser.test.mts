@@ -4,13 +4,19 @@ import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mj
 import {seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
 import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
-import {chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
-for(const mode of ['arrival','scrolling','reduced','filtered'] as const)test('Card 16 '+mode+' keeps official new-card reads, bounded motion and reading position',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,_card,get)=>{
+for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as const)test('Card 16 '+mode+' keeps official new-card reads, bounded motion and reading position',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,_card,get)=>{
   await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:mode==='reduced'?'reduce':'no-preference'}]});
   // Wait for the initial confirmed three-column batch before creating a new source fact.
   await browser.waitFor("[...document.querySelectorAll('.ds-stage-count')].every(n=>n.textContent!=='—')&&document.querySelectorAll('.ticket-card').length>3");
+  if(mode==='arrival'||mode==='collapsed'){
+    const expanded=mode==='arrival';
+    await browser.evaluate(`(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')!==${JSON.stringify(String(expanded))})button.click();})()`);
+    await browser.waitFor("document.querySelector('.board-column.pending [data-action=expand-column]')?.getAttribute('aria-expanded')==="+JSON.stringify(String(expanded)));
+  }
+  const priorTicket=await browser.evaluate("document.querySelector('.board-column.pending [data-board-group=待接单] .ticket-card')?.dataset.itemId");
   await browser.evaluate("(()=>{globalThis.__card16Motion=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.matches('.ticket-card'))globalThis.__card16Motion.push({id:this.dataset.itemId,frames,duration:options.duration});return animate.call(this,frames,options);};})()");
   if(mode==='filtered'){
     const active=await get('/api/workbench/board?column=active');assert.ok(Array.isArray(active.items));const owner=active.items.map(object).find(item=>item.assignee_name);assert.ok(owner);
@@ -46,9 +52,15 @@ for(const mode of ['arrival','scrolling','reduced','filtered'] as const)test('Ca
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column.pending [data-board-group=待接单] .ticket-card')][0]?.dataset.itemId"),ticket.id);
   const motions:unknown=await browser.evaluate('globalThis.__card16Motion');assert.ok(Array.isArray(motions));
   assert.equal(motions.some(value=>object(value).id===ticket.id&&object(value).duration===2000),mode!=='reduced');
-  if(mode==='arrival'){
+  if(mode==='arrival'||mode==='collapsed'){
     await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     await browser.waitFor(`document.querySelector(${JSON.stringify(selector)}).getAnimations().length===0`);
+    const presented=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.ok(Array.isArray(presented));
+    const next=priorTicket;assert.ok(typeof next==='string','the preceding read exposes the original next Ticket even when folded');
+    await clickWorkbenchControl(browser,selector+' .card-open');await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)"),presented,'detail freeze inherits the displayed promotion, not the old sort');
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');await browser.waitFor('location.pathname.split("/").at(-1)==='+JSON.stringify(next));
+    await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');await browser.waitFor('location.pathname.split("/").at(-1)==='+JSON.stringify(ticket.id));
   }
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
 },{realtime:true,reduceMotion:mode==='reduced'}));

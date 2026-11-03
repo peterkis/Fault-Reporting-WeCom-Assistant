@@ -86,3 +86,13 @@
 Workbench.tsx 最小接线例外已获用户确认。按当前卡 16 指令恢复减少动效支持，前向修订 §4.5；卡 12 历史记录仍绑定原交付，不改写旧决定的适用时点。没有新增 Token 或其它未批准视觉值。
 
 关闭方式沿既有能力开关；代码可通过独立 revert 回退。卡 16 为本批最后一张卡，没有自动启动的后继；PR 合并不授予部署、真实发送、现场运行或业务 Gate 批准。
+
+## PR #136 · R1 展示顺序交接修补
+
+- [Codex P2](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/136#discussion_r4449553573) 审查的权威 head 为 `f2f12da9753d5a4bb817ad285e39bd910375e2b9`。问题属实：原 order.current 在到达置顶之前保存排序，打开置顶卡后会回到旧顺序。
+- 在到达呈现之后保存当前 ID 序列，由原 holdOrder 接管；禁用到达呈现时立即返回输入序列，不让旧置顶状态参与详情首帧。仍只保存 ID，内容与可读范围始终取当前 GET，不改变业务命令、权限或状态。
+- 新增独立展开/折叠两种导航回归：置顶卡打开后原展示顺序不变，下一项准确进入到达前的首张 Ticket，再返回置顶卡；浏览器业务写入保持 0。原 SSE 新到事项进入已冻结分组的断言保留。
+- 首轮 R1 测试在折叠列里假设下一张卡必已渲染，实际仅渲染 3 张，属于测试前提失败。`related-8` 的 6 PASS / 1 FAIL 与后续 9 入口 NOT_RUN 原件保留。改为明确展开/折叠前提，并从到达前实际可见 Ticket 取得精确期望 ID；不放宽导航关系断言。
+- R1 最终 `build-9.log` PASS（917 语法检查、2755 输出）；输入 `715b6bae9973380c31ff1068c2bb51554f709edf615f85669bdd339e5351d3f2`，manifest `eb741e244ed02b4b135e15d2d12edbb2ad342fac28c3f12f1ab654d1517f9e28`。strict/negative types、Stylelint 0、ESLint 0、artifact PASS。
+- 四个直接相关注册入口 28/28 PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN：效率层 8、原领取 6、基础正式 bundle 14。原件 `r1-related-9/summary.json`。这是 R1 的定向集合，不重绑 B6 的 65 项结果，也不称为活动全集或 full/certify。
+- 自有合成库、连接、浏览器与 PG 再次按原合同释放，见 `cleanup-r1.json`；本次无视觉参数变更，保留已有四宽常规状态截图。新发布 head 的复审及适用 CI 以 PR 当前记录为准。
