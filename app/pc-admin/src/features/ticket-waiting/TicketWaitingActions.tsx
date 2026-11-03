@@ -106,7 +106,7 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange,item
     {note&&!busy?<HButton type="button" data-action={'discard-'+action+'-draft'} onClick={()=>{void discard();}} tone="secondary">清空填写内容</HButton>:null}
 
   </>;
-  return <section className={'ticket-notes ticket-waiting-actions'+(action==='cancel'?' detail-action-controller detail-cancel-controller':'')} data-waiting-purpose={action} aria-label={labels[action]}>
+  return <section className={'ticket-notes ticket-waiting-actions'+(action==='cancel'?' detail-action-controller detail-cancel-controller':'')} data-waiting-purpose={action} data-routine-draft={draft.enabled&&draft.canSubmit&&state==='idle'&&!open&&!originalId&&!note&&!draft.restoring&&!message&&!context.isPending&&!context.isFetching&&!context.isError&&draft.message==='草稿仅在当前浏览器恢复，最长24小时。'} aria-label={labels[action]}>
     {action==='cancel'?<>
       {allowed||originalId||note?<HButton type="button" data-action="cancel" className="cancel-ticket-trigger" isDisabled={busy||otherBlocked&&!originalId} onClick={()=>setOpen(true)} tone="secondary">{originalId?'核对取消':'取消工单'}</HButton>:null}
       <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={busy} title="取消工单" closeLabel="关闭取消窗口" className="detail-action-dialog detail-cancel-dialog">

@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {transpileModule, ModuleKind, ScriptTarget} from 'typescript';
-import {CircleHelp, Monitor, Printer, ScanLine} from 'lucide-react';
+import {CircleHelp, Monitor, PillBottle, Printer, ScanLine} from 'lucide-react';
 import type {WorkbenchCard as CoreWorkbenchCard,BoardColumn} from '../contracts/web01_workbench_contracts.js';
 import type {WorkbenchFollowAttention} from '../contracts/workbench_item_follow_contracts.js';
 type WorkbenchCard=CoreWorkbenchCard&{attention?:WorkbenchFollowAttention};
@@ -42,6 +42,9 @@ const boundaries: readonly (readonly [string, number, Heat | null])[] = [
   ['60:00', 3600, {tone: 'attention', label: '1 小时', ring: 'attention'}],
   ['239:59', 14399, {tone: 'attention', label: '3 小时', ring: 'attention'}],
   ['240:00', 14400, {tone: 'danger', label: '超时 4 小时', ring: 'danger'}],
+  ['23h59', 23*3600+59*60, {tone: 'danger', label: '超时 23 小时', ring: 'danger'}],
+  ['24h00', 24*3600, {tone: 'danger', label: '超时 1 天', ring: 'danger'}],
+  ['720h', 720*3600, {tone: 'danger', label: '超时 30 天', ring: 'danger'}],
 ];
 for (const [boundary, seconds, expected] of boundaries) test('heat boundary ' + boundary, () => {
   const start = new Date(now - seconds * 1000).toISOString();
@@ -50,7 +53,7 @@ for (const [boundary, seconds, expected] of boundaries) test('heat boundary ' + 
 test('heat floors units, uses the supplied clock, and respects explicit zones', () => {
   assert.deepEqual(heatOf('2026-11-02T08:00:01+08:00', now), {tone: 'attention', label: '1 小时', ring: 'attention'});
   assert.deepEqual(heatOf('2026-11-02T01:55:00Z', now), heatOf('2026-11-02T09:55:00+08:00', now));
-  assert.deepEqual(heatOf('2026-11-01T01:00:00Z', now), {tone: 'danger', label: '超时 25 小时', ring: 'danger'});
+  assert.deepEqual(heatOf('2026-11-01T01:00:00Z', now), {tone: 'danger', label: '超时 1 天', ring: 'danger'});
   assert.equal(heatOf('2026-11-02T02:00:00Z', now), null);
   assert.deepEqual(heatOf('2026-11-02T02:00:00Z', now + 300_000), {tone: 'neutral', label: '5 分钟', ring: null});
 });
@@ -154,4 +157,59 @@ test('board sorting leaves active order intact, uses completion for closed, and 
   assert.deepEqual(sortBoardItems(items,'active','oldest'),items);
   assert.deepEqual(sortBoardItems(items,'active','newest'),items);
   assert.deepEqual(items,[newer,older]);
+});
+
+test('pharmacy uses the existing pill bottle icon',()=>{assert.equal(categoryOf('PHARMACY_MEDICATION').icon,PillBottle);});
+const {formatBeijingShort,formatBeijingFull}: {
+  formatBeijingShort:(value:string,now:number)=>string;formatBeijingFull:(value:string)=>string;
+}=await import(await designModule('beijing-time'));
+const {nextSummary}: {nextSummary:(item:WorkbenchCard,heat:string|undefined,self:boolean,actions?:readonly string[])=>string}=await import(await designModule('components/Drawer/next-summary'));
+const {recordKind}: {recordKind:(record:{type:string;old_status:string|null;new_status:string|null;text:string|null;audience:string})=>string}=await import(await designModule('components/Timeline/record-kind'));
+
+test('Card 18 Beijing short times retain seconds in the full title across local/ISO/year boundaries',()=>{
+  assert.equal(formatBeijingShort('2026-11-03 09:07:43',now),'11-03 09:07');
+  assert.equal(formatBeijingShort('2025-11-03 09:07:43',now),'2025-11-03 09:07');
+  assert.equal(formatBeijingFull('2026-11-03T01:07:43Z'),'2026-11-03 09:07:43');
+  const yearBoundary=Date.parse('2026-12-31T16:00:00Z');
+  assert.equal(formatBeijingShort('2026-12-31T16:00:01Z',yearBoundary),'01-01 00:00');
+  assert.equal(formatBeijingShort('2026-12-31T15:59:59Z',yearBoundary),'2026-12-31 23:59');
+  for(const value of ['','invalid','2026-11-03T09:07:43'])assert.equal(formatBeijingShort(value,now),'');
+  assert.equal(formatBeijingShort('2026-11-03 09:07:43',NaN),'');
+});
+
+test('Card 18 record kinds distinguish explicit note events from real status transitions',()=>{
+  const base={type:'ticket.status_changed',old_status:null,new_status:null,text:null,audience:'INTERNAL'};
+  for(const status of [{old_status:'NEW'},{new_status:'IN_PROGRESS'}])assert.equal(recordKind({...base,...status,text:'状态变更'}),'status');
+  for(const audience of ['INTERNAL','EXTERNAL'])assert.equal(recordKind({...base,audience,text:'正文'}),'note');
+  assert.equal(recordKind({...base,audience:'REPORT',text:'报修原文'}),'report');
+  for(const text of [null,'','  '])assert.equal(recordKind({...base,text}),'event');
+  for(const old_status of [null,'IN_PROGRESS'])assert.equal(recordKind({...base,type:'ticket.note_added',old_status,new_status:'IN_PROGRESS',text:'内部备注'}),'note');
+  assert.equal(recordKind({...base,old_status:'IN_PROGRESS',new_status:'IN_PROGRESS',text:'责任已转交'}),'event');
+});
+
+const summaryCopy:Record<string,readonly [string,string]>={
+  NEW:['已等待 12 分钟，尚无人领取','已等待 12 分钟，尚无人领取'],
+  QUEUED:['已等待 12 分钟，尚无人领取','已等待 12 分钟，尚无人领取'],
+  ACCEPTED:['你已领取，尚未开始','林舟已领取，尚未开始'],
+  IN_PROGRESS:['你正在处理 · 故障排除后登记完工','林舟正在处理 · 需要时可接管'],
+  WAITING_REQUESTER:['等待报修人补充 · 已等待 12 分钟','等待报修人补充 · 已等待 12 分钟'],
+  WAITING_VENDOR:['等待厂商回复 · 已等待 12 分钟','等待厂商回复 · 已等待 12 分钟'],
+  RESOLVED:['已解决，等待报修人确认','已解决，等待报修人确认'],
+  CLOSED:['工单已关闭 · 同一故障仍未解决时可重新打开','工单已关闭 · 同一故障仍未解决时可重新打开'],
+  CANCELLED:['工单已取消 · 请查看取消原因','工单已取消 · 请查看取消原因'],
+  REOPENED:['同一故障仍未解决 · 请重新领取','同一故障仍未解决 · 请重新领取'],
+  PENDING:['规则无法判断 · 需要人工复核','规则无法判断 · 需要人工复核'],
+  RECEIVED:['报修已受理 · 等待建立工单','报修已受理 · 等待建立工单'],
+  WAITING_TRIAGE:['报修待判断 · 请核对报修材料','报修待判断 · 请核对报修材料'],
+  WAITING_DESCRIPTION:['等待补充报修描述','等待补充报修描述'],
+  DUPLICATE_LINKED:['已关联已有工单 · 请查看关联处理进展','已关联已有工单 · 请查看关联处理进展'],
+  FAILED:['受理处理失败 · 请核对报修材料','受理处理失败 · 请核对报修材料'],
+};
+for(const [status,expected] of Object.entries(summaryCopy))for(const self of [true,false])test('Card 18 next step '+status+' '+(self?'self':'other'),()=>{
+  const item={...boardCard({status}),assignee_name:'林舟'};
+  assert.equal(nextSummary(item,'12 分钟',self,['takeover']),expected[self?0:1]);
+});
+test('Card 18 next step does not offer takeover without allowed action or invent a wait under five minutes',()=>{
+  assert.equal(nextSummary({...boardCard({status:'IN_PROGRESS'}),assignee_name:'林舟'},undefined,false),'林舟正在处理');
+  assert.equal(nextSummary(boardCard({status:'NEW'}),undefined,false),'尚无人领取');
 });

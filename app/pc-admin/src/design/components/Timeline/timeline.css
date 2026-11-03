@@ -22,6 +22,16 @@
 .ds-timeline .record-content.button:active:not(:disabled) {background: var(--bg-active);}
 .ds-timeline .record-content.button:disabled {color: var(--text-tertiary);}
 .ds-timeline .record-text .ds-status-badge {font-size: var(--fs-sm); vertical-align: baseline;}
+.ds-timeline [data-record-kind=status] .ds-button-label,.ds-timeline [data-record-kind=event] .ds-button-label {flex-wrap:nowrap;}
+.ds-timeline [data-record-kind=status] .record-name,.ds-timeline [data-record-kind=event] .record-name {color:var(--text-secondary);}
+.ds-timeline [data-record-kind=status] .record-text {flex:0 1 auto;}
+.ds-timeline :is([data-record-kind=status],[data-record-kind=event]).is-expanded .record-content .ds-button-label {flex-wrap:wrap;}
+.ds-timeline [data-record-kind=status].is-expanded .record-content .record-text {flex-basis:100%;white-space:pre-wrap;overflow:visible;}
+.ds-timeline .record-status-change {display:inline-flex;align-items:center;gap:var(--space-1);color:var(--text-secondary);white-space:nowrap;}
+.ds-timeline .record-status-change .ds-status-badge {color:var(--text-secondary);font-size:var(--fs-sm);font-weight:var(--fw-regular);}
+.ds-timeline .record-status-change :is([data-status=NEW],[data-status=QUEUED],[data-status=ACCEPTED],[data-status=REOPENED])>.ds-status-dot {background:var(--stage-intake-accent);}
+.ds-timeline .record-status-change :is([data-status=IN_PROGRESS],[data-status=WAITING_REQUESTER],[data-status=WAITING_VENDOR])>.ds-status-dot {background:var(--stage-active-accent);}
+.ds-timeline .record-status-change :is([data-status=RESOLVED],[data-status=CLOSED],[data-status=CANCELLED])>.ds-status-dot {background:var(--stage-done-accent);}
 .ds-timeline [data-timeline-empty] {margin: 0; padding: 0; background: none; color: var(--text-secondary); font-size: var(--fs-sm); overflow-wrap: anywhere;}
 .ds-notification-summaries .notification-timeline-scroll {overflow: visible; padding: 0;}
 .ds-notification-summaries .notification-timeline {display: grid; gap: var(--space-2); padding: 0; min-width: 0;}

@@ -85,6 +85,11 @@
   --border-default: rgba(55, 53, 47, .16);  /* 输入框、次按钮描边 */
   --border-strong:  rgba(55, 53, 47, .28);  /* 输入框悬停 */
   --border-focus:   var(--blue-500);
+  --border-brand-subtle: #BFD3F2;
+  --lane-intake: #FCFAF4;
+  --lane-active: #F6F9FE;
+  --lane-done: #F5FAF6;
+  --lane-border: rgba(55,53,47,.05);
 
   /* 品牌 */
   --brand:        var(--blue-600);
@@ -132,8 +137,8 @@
   --cat-identity-bg: var(--identity-bg); --cat-identity-fg: var(--identity-fg);
   --cat-config-bg: var(--config-bg); --cat-config-fg: var(--config-fg);
   --cat-route-bg: var(--tone-neutral-bg); --cat-route-fg: var(--tone-neutral-fg);
-  --cat-unclassified-bg: var(--bg-canvas); --cat-unclassified-fg: var(--text-secondary);
-  --cat-unclassified-border: 1.5px dashed var(--gray-unclassified-ring);
+  --cat-unclassified-bg: var(--bg-muted); --cat-unclassified-fg: var(--text-secondary);
+  --cat-unclassified-border: none;
 
   /* 字号阶梯：6 档，禁止其它值 */
   --fs-xs:  12px;  --lh-xs:  18px;   /* 元信息、时间、标签、编号 */
@@ -227,4 +232,12 @@
   --field-radius: var(--radius-sm);
   --focus: var(--border-focus);
   --ring-offset-width: 0px;
+}
+
+
+/* 卡18：原型抽屉等待/备注专用色，用户授权追加；既有Token保持不变。 */
+:root {
+  --drawer-waiting-bg: #FDF6EC;
+  --drawer-waiting-border: #F2D9B8;
+  --drawer-composer-bg: #FFFDF6;
 }

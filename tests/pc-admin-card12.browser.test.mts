@@ -1,8 +1,114 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
-import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,chooseWorkbenchSelect,typeWorkbenchDates} from './helpers/heroui-workbench-controls.mjs';
 import {loadServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
+
+test('Card 17 stages, date presets and custom calendar keep the original read-only range requests',{timeout:240000},()=>withT42BoardBrowser(async(f,browser)=>{
+  await browser.command('Page.bringToFront');
+  await browser.waitFor("document.querySelectorAll('.ds-stage-glyph').length===3");
+  for(const stage of ['pending','active','closed']){
+    assert.equal(await browser.evaluate(`document.querySelector('[data-stage-glyph=${stage}]')?.getAttribute('aria-hidden')`),'true');
+    assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('.board-column.${stage} .column-heading')).borderTopWidth`),'0px');
+  }
+  assert.equal(await browser.evaluate("document.querySelector('[data-stage-glyph=pending] circle').getAttribute('stroke-dasharray')"),'2.4 2.1');
+  assert.equal(await browser.evaluate("document.querySelectorAll('[data-stage-glyph=active] circle,[data-stage-glyph=active] path').length"),2);
+  assert.equal(await browser.evaluate("document.querySelector('[data-stage-glyph=active] path').getAttribute('d')"),'M8 4.5A3.5 3.5 0 0 1 8 11.5Z');
+  assert.equal(await browser.evaluate("document.querySelector('[data-stage-glyph=active] circle').getAttribute('stroke-width')"),'1.6');
+  assert.deepEqual(await browser.evaluate("(()=>{const s=getComputedStyle(document.querySelector('[data-date-preset=recent]'));return [s.fontSize,s.paddingLeft,s.height];})()"),['13px','12px','28px']);
+  assert.equal(await browser.evaluate("document.querySelector('[data-stage-glyph=closed] .ds-stage-check').getAttribute('d')"),'m5 8.2 2 2 4-4.2');
+  assert.equal(await browser.evaluate("Boolean(document.querySelector('.board-column.active .ds-column-sort,.ds-column-sort-note'))"),false);
+  assert.match(String(await browser.evaluate("document.querySelector('.board-column.closed .ds-column-sort').textContent")),/最新完成/u);
+  assert.equal(await browser.evaluate("document.querySelector('[data-date-preset=recent]').getAttribute('aria-pressed')"),'true');
+  assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.ds-board-page-header')).minHeight"),'0px');
+  const reads:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='GET'&&request.url?.startsWith('/api/workbench/board?'))reads.push(request.url);};f.runtime.server.on('request',observe);
+  const waitRead=(matches:(url:string)=>boolean)=>new Promise<void>((resolve,reject)=>{
+    if(reads.some(matches)){resolve();return;}
+    const listener=()=>{if(reads.some(matches)){clearTimeout(timer);f.runtime.server.off('request',listener);resolve();}};
+    const timer=setTimeout(()=>{f.runtime.server.off('request',listener);reject(Error('Expected range request; observed '+JSON.stringify(reads)));},5000);
+    f.runtime.server.on('request',listener);
+  });
+  const day=new Date(Date.now()+8*3600000).toISOString().slice(0,10),week=new Date(Date.parse(day+'T00:00:00Z')-6*86400000).toISOString().slice(0,10);
+  try{
+    for(const [preset,from] of [['today',day],['week',week],['month',day.slice(0,8)+'01'],['recent',null]] as const){
+      await clickWorkbenchControl(browser,`[data-date-preset=${preset}]:not([data-compact])`);
+      await browser.waitFor(`new URLSearchParams(location.search).get('range')===${JSON.stringify(from?'custom':'recent')}&&${from?`new URLSearchParams(location.search).get('closed_from')===${JSON.stringify(from)}`:'true'}`);
+      await browser.waitFor("document.querySelector('.board-column.closed .column-cards')!==null");
+      await waitRead(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='closed'&&p.get('range')===(from?'custom':'recent')&&(!from||p.get('closed_from')===from&&p.get('closed_to')===day);});
+      assert.ok(reads.some(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='closed'&&p.get('range')===(from?'custom':'recent')&&(!from||p.get('closed_from')===from&&p.get('closed_to')===day);}),'preset must send its existing range parameters: '+preset);
+    }
+    await clickWorkbenchControl(browser,'[data-action=open-closed-date-filter]');
+    await browser.waitFor("document.querySelector('.processed-date-picker [role=spinbutton]')?.checkVisibility()");
+    await typeWorkbenchDates(browser,'2024-02-29','2024-03-01');
+    await clickWorkbenchControl(browser,'[aria-label=选择已处理日期]');
+    await browser.waitFor("document.querySelectorAll('.processed-date-popover [data-slot=range-calendar-cell]').length>=28");
+    await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+    await clickWorkbenchControl(browser,'[aria-label=应用已处理日期]');
+    await browser.waitFor("new URLSearchParams(location.search).get('closed_from')==='2024-02-29'&&new URLSearchParams(location.search).get('closed_to')==='2024-03-01'");
+    await waitRead(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='closed'&&p.get('range')==='custom'&&p.get('closed_from')==='2024-02-29'&&p.get('closed_to')==='2024-03-01';});
+    assert.ok(reads.some(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='closed'&&p.get('range')==='custom'&&p.get('closed_from')==='2024-02-29'&&p.get('closed_to')==='2024-03-01';}));
+    assert.deepEqual(await browser.evaluate("(()=>{const e=document.querySelector('[data-date-preset=custom]'),s=getComputedStyle(e);return [e.dataset.dateSelected,e.getAttribute('aria-current'),e.closest('details').open,s.backgroundColor,s.fontWeight,s.boxShadow!=='none'];})()"),['true','true',false,'rgb(255, 255, 255)','600',true]);
+    // Choosing a range manually must remain visibly custom even when it equals a preset.
+    await clickWorkbenchControl(browser,'[data-action=open-closed-date-filter]');
+    await typeWorkbenchDates(browser,day,day);
+    await clickWorkbenchControl(browser,'[aria-label=应用已处理日期]');
+    await browser.waitFor(`new URLSearchParams(location.search).get('closed_from')===${JSON.stringify(day)}&&new URLSearchParams(location.search).get('closed_to')===${JSON.stringify(day)}&&document.querySelector('[data-date-preset=custom]')?.dataset.dateSelected==='true'&&document.querySelector('[data-date-preset=today]').getAttribute('aria-pressed')==='false'&&document.querySelector('.ds-date-wide').textContent===${JSON.stringify(day.slice(5).replace('-','/')+'–'+day.slice(5).replace('-','/'))}`);
+    assert.equal(await browser.evaluate("document.querySelector('.ds-date-wide').textContent"),day.slice(5).replace('-','/')+'–'+day.slice(5).replace('-','/'));
+    assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+  }finally{f.runtime.server.off('request',observe);}
+},{search:true}));
+
+test('Card 17 combined long filters stay inside the toolbar while date segments keep their original sizes',{timeout:240000},()=>withT42BoardBrowser(async(_f,browser)=>{
+  await browser.command('Page.bringToFront');
+  await browser.waitFor("Boolean(document.querySelector('[data-field-label=类别]'))");
+  for(const width of [1101,1100]){
+    await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.ds-board-filter-pill')].every(n=>{const p=n.getBoundingClientRect(),t=n.querySelector('[data-slot=select-trigger]').getBoundingClientRect(),l=n.querySelector('.ds-filter-prefix').getBoundingClientRect();return t.width<=p.width+1&&l.right<=p.right+1;})"),true);
+  }
+  await chooseWorkbenchSelect(browser,'[data-field-label=类别]','PATIENT_ACCESS');
+  await chooseWorkbenchSelect(browser,'[data-field-label=处理人]','unassigned');
+  for(const width of [1920,1440,1280,1101,1100,900]){
+    await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+    await browser.waitFor("(()=>{const t=document.querySelector('.ds-board-toolbar-bottom').getBoundingClientRect(),d=document.querySelector('.ds-board-dates').getBoundingClientRect();return d.right<=t.right+1;})()");
+    assert.equal(await browser.evaluate("(()=>{const t=document.querySelector('.ds-board-toolbar-bottom'),r=t.getBoundingClientRect();return t.scrollWidth<=t.clientWidth+1&&[...t.querySelectorAll('.ds-board-filter-pill,.ds-board-dates')].every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1;});})()"),true);
+    assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
+    if(width<=1100)assert.equal(await browser.evaluate("document.querySelector('.ds-board-dates').getBoundingClientRect().top>document.querySelector('.ds-board-filter-row').getBoundingClientRect().bottom"),true);
+    if(width>=1280)assert.equal(await browser.evaluate("Math.abs(document.querySelector('.ds-board-dates').getBoundingClientRect().top-document.querySelector('.ds-board-search').getBoundingClientRect().top)<=1"),true);
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.ds-board-filter-pill [data-slot=select-value]')].every(n=>n.clientWidth>=24)"),true);
+    assert.equal(await browser.evaluate("(()=>{const value=document.querySelector('.ds-board-filter-pill:last-child [data-slot=select-value]');return value.clientWidth>=value.scrollWidth;})()"),true,'the short assignee value must fit in the current platform font at '+width);
+  }
+  assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+},{search:true}));
+
+test('Card 17 advanced search keeps a visible pointer submit and applies the original read criteria',{timeout:240000},()=>withT42BoardBrowser(async(f,browser)=>{
+  await clickWorkbenchControl(browser,'.workbench-search .workbench-disclosure-trigger');
+  await chooseWorkbenchSelect(browser,'.workbench-select:has(select[name=column])','pending');
+  await chooseWorkbenchSelect(browser,'.workbench-select:has(select[name=responsibility])','unassigned');
+  for(const width of [1920,1440,1280,900]){
+    await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+    assert.equal(await browser.evaluate("(()=>{const b=document.querySelector('.workbench-search button[type=submit]'),r=b.getBoundingClientRect();return getComputedStyle(b).clipPath==='none'&&r.width>40&&r.height>=24&&b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()"),true,'advanced search must retain a visible, unoccluded pointer submit at '+width);
+  }
+  const reads:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='GET'&&request.url?.startsWith('/api/workbench/search?'))reads.push(request.url);};f.runtime.server.on('request',observe);
+  try{
+    await clickWorkbenchControl(browser,'.workbench-search button[type=submit]');
+    await browser.waitFor("new URLSearchParams(location.search).get('column')==='pending'&&new URLSearchParams(location.search).get('responsibility')==='unassigned'&&!document.querySelector('.ds-board-dates')");
+    assert.ok(reads.some(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='pending'&&p.get('responsibility')==='unassigned';}));
+    assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+  }finally{f.runtime.server.off('request',observe);}
+},{search:true}));
+
+test('Card 17 location hint requires both location and all reporter fields missing, and never appears in done',{timeout:240000},()=>withT42BoardBrowser(async(_f,browser,card)=>{
+  await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card17Fields={location:null,reporter_name:null,reporter_department:null};globalThis.__card17Seen=0;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/board?')&&response.ok){const body=await response.clone().json();body.items=body.items.map(item=>item.column==='closed'||item.id===document.querySelector(${JSON.stringify(card)})?.dataset.itemId?{...item,...globalThis.__card17Fields}:item);globalThis.__card17Seen++;const headers=new Headers(response.headers);headers.delete('content-length');return new Response(JSON.stringify(body),{status:response.status,headers});}return response;};})()`);
+  for(const [fields,expected] of [[{location:'门诊二楼',reporter_name:null,reporter_department:null},false],[{location:null,reporter_name:'合成报修人',reporter_department:null},false],[{location:null,reporter_name:null,reporter_department:'合成科室'},false],[{location:null,reporter_name:null,reporter_department:null},true]] as const){
+    await browser.evaluate(`globalThis.__card17Fields=${JSON.stringify(fields)};globalThis.__card17Seen=0`);
+    await clickWorkbenchControl(browser,'.ds-page-header button[aria-label=刷新]');
+    await browser.waitFor('globalThis.__card17Seen===3');
+    await browser.waitFor(`document.querySelector(${JSON.stringify(card)})?.textContent.includes('待补位置')===${expected}`);
+    assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card)})?.textContent.includes('待补位置')`),expected);
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].some(card=>card.textContent.includes('待补位置'))"),false);
+  }
+  assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
+}));
 
 test('Card 12 category, state heat, missing fields and loaded filters use the real read projections',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,card,get)=>{
   const first=f.tickets[0];assert.ok(first);
@@ -16,8 +122,8 @@ test('Card 12 category, state heat, missing fields and loaded filters use the re
   assert.equal(projected.code,service.service_code);assert.equal(projected.category,'ENDPOINT_PRINT');
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .ds-ticket-category')}).title`),service.category_name_zh+' · '+service.name_zh);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).dataset.ring`),'danger');
-  assert.match(String(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .ds-ticket-heat')}).textContent`)),/^超时 \d+ 小时$/u);
-  assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent.includes('资料不全')`),true);
+  assert.match(String(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .ds-ticket-heat')}).textContent`)),/^超时 \d+ 天$/u);
+  assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent.includes('待补位置')`),false);
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].some(n=>/未提供|未登记/.test(n.innerText))"),false);
   assert.equal(await browser.evaluate("document.querySelectorAll('.board-column.closed .ds-ticket-heat').length"),0);
   assert.ok(Number(await browser.evaluate("document.querySelectorAll('.board-column.closed .ds-ticket-completed').length"))>0);

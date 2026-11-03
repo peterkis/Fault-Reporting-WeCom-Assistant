@@ -4,14 +4,14 @@
 .board-action-card .card-open,.board-action-card .card-open h3 { user-select: text; -webkit-user-select: text; }
 .board-action-card.is-dragging { opacity:.65; border-radius: var(--radius-md); }
 .board-action-tools { position: relative; display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--space-4) var(--space-3); }
-.ds-ticket-card .board-action-tools {position: absolute; top: calc(var(--space-3) + var(--space-6) + var(--space-3)); left: var(--space-3); flex-direction: column; gap: var(--space-1); padding: 0; opacity: 0; pointer-events: none;}
+.ds-ticket-card .board-action-tools {position: absolute; top: var(--space-2); right: var(--space-2); left: auto; flex-direction: row; gap: var(--space-1); padding: 0; opacity: 0; pointer-events: none;}
 .ds-ticket-card:is(:hover,:focus-within) .board-action-tools {opacity: 1; pointer-events: auto;}
 .ds-ticket-card .board-action-tools>button {width: var(--control-h-sm); height: var(--control-h-sm); min-height: var(--control-h-sm); padding: 0; border: 0; background: transparent;}
 .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 36px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); color: var(--text-primary); }
 .board-action-tools [data-action=board-drag-handle] { touch-action: none; user-select: none; cursor: grab; }
 .board-action-tools [data-action=board-drag-handle]:active { cursor: grabbing; }
 .board-action-tools button:disabled { cursor: default; opacity: .55; }
-.board-action-options { display: grid; gap: var(--space-1-5); position: absolute; top: 100%; left: 0; max-width: min(320px,80vw); width: max-content; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-1); z-index: var(--z-dropdown); }
+.board-action-options { display: grid; gap: var(--space-1-5); position: absolute; top: 100%; right: 0; max-width: min(320px,80vw); width: max-content; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-1); z-index: var(--z-dropdown); }
 .board-action-options button { white-space: normal; text-align: start; }
 .board-action-status { margin: var(--space-3) var(--space-6); color: var(--text-secondary); }
 .board-claim-controller .ticket-self-handling[data-board-claim-state=idle] {display: contents;}
@@ -24,8 +24,19 @@
 .board-conflict-intent pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
 @media (pointer:coarse) { .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 44px; } }
 @media (pointer:coarse) {
-  .ds-ticket-card .board-action-tools {position: relative; top: auto; left: auto; flex-direction: row; gap: var(--space-2); padding: 0 var(--space-3) var(--space-3); opacity: 1; pointer-events: auto;}
+  .ds-ticket-card .board-action-tools {position: absolute; top: var(--space-2); right: var(--space-2); left: auto; flex-direction: row; gap: var(--space-2); padding: 0 var(--space-3) var(--space-3); opacity: 1; pointer-events: auto;}
   .ds-ticket-card .board-action-tools>button {width: calc(var(--space-10) + var(--space-1)); height: calc(var(--space-10) + var(--space-1)); min-height: calc(var(--space-10) + var(--space-1));}
   .ds-ticket-card .ds-board-claim-slot {bottom: calc(var(--space-3) + var(--space-10) + var(--space-1) + var(--space-3));}
 }
 @media (prefers-reduced-motion:reduce) { .board-drop-column,.board-action-card,.board-action-tools { animation: none; transition: none; scroll-behavior: auto; } }
+
+.ds-ticket-card .board-action-tools [data-action=board-drag-handle] {display: none;}
+.ds-ticket-card .board-action-card .card-open {cursor: grab;}
+.ds-ticket-card .board-action-card.is-dragging .card-open {cursor: grabbing;}
+.ds-ticket-card:has(.board-action-tools):is(:hover,:focus-within) .card-top {padding-right: var(--space-8);}
+
+@media (pointer:coarse) {
+  .ds-ticket-card .board-action-tools {padding: 0;}
+  .ds-ticket-card:has(.board-action-tools) .card-top {padding-right: var(--space-12);}
+  .ds-ticket-card .ds-board-claim-slot {bottom: var(--space-3);}
+}

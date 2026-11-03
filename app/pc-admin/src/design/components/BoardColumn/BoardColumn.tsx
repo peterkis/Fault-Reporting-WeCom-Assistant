@@ -10,14 +10,15 @@ import './board-column.css';
 
 type Props=HTMLAttributes<HTMLElement> & {column:keyof typeof stagePresentation;label:string;count:number|string;sort?:BoardSort;onSort?:(value:BoardSort)=>void;blocked?:boolean;newCount?:number;onReveal?:()=>void};
 export function BoardColumn({column,label,count,sort='oldest',onSort,blocked=false,newCount=0,onReveal,className='',children,...props}:Props){
-  return <section {...props} data-has-arrivals={newCount>0?'true':undefined} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading"><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count" title="当前筛选后已加载的事项">{count}</span>
+  const labels=column==='closed'?{oldest:'最早完成',newest:'最新完成'}:{oldest:'等待最久',newest:'最新到达'};
+  return <section {...props} data-has-arrivals={newCount>0?'true':undefined} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading" data-summary-filter={column==='pending'?'pending':undefined} data-summary-tone={column==='pending'?'warning':undefined} aria-label={label+' '+count}><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count ds-summary-value" title="当前筛选后已加载的事项">{count}</span>
     {newCount>0?<ActionButton className="ds-column-arrivals" tone="ghost" size="sm" isDisabled={blocked} onPress={()=>onReveal?.()} aria-label={'显示 '+newCount+' 条新报修'}><ArrowUp aria-hidden="true"/>{newCount} 条新报修</ActionButton>:null}
-    {onSort?<Dropdown><Dropdown.Trigger className="ds-column-sort" aria-label={label+'排序'} isDisabled={blocked}><ArrowDownWideNarrow aria-hidden="true"/><span>{sort==='oldest'?'等待最久':'最新到达'}</span><ChevronDown aria-hidden="true"/></Dropdown.Trigger>
+    {onSort&&column!=='active'?<Dropdown><Dropdown.Trigger className="ds-column-sort" aria-label={label+'排序'} isDisabled={blocked}><ArrowDownWideNarrow aria-hidden="true"/><span>{labels[sort]}</span><ChevronDown aria-hidden="true"/></Dropdown.Trigger>
       <Dropdown.Popover><Dropdown.Menu aria-label={label+'排序方式'} selectionMode="single" disallowEmptySelection selectedKeys={new Set([sort])} onSelectionChange={keys=>{if(keys!=='all'){const key=[...keys][0];if(key==='oldest'||key==='newest')onSort(key);}}}>
-        <Dropdown.Item id="oldest" textValue="等待最久"><Dropdown.ItemIndicator/><Label>等待最久</Label></Dropdown.Item>
-        <Dropdown.Item id="newest" textValue="最新到达"><Dropdown.ItemIndicator/><Label>最新到达</Label></Dropdown.Item>
+        <Dropdown.Item id="oldest" textValue={labels.oldest}><Dropdown.ItemIndicator/><Label>{labels.oldest}</Label></Dropdown.Item>
+        <Dropdown.Item id="newest" textValue={labels.newest}><Dropdown.ItemIndicator/><Label>{labels.newest}</Label></Dropdown.Item>
       </Dropdown.Menu></Dropdown.Popover></Dropdown>:null}
-    </div>{column==='active'&&onSort?<p className="ds-column-sort-note">按查询顺序排列</p>:null}{children}</section>;
+    </div>{children}</section>;
 }
 
 export function BoardGroup({label,count,children}: {label:string;count:number;children:React.ReactNode}){

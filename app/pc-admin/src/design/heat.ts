@@ -27,5 +27,5 @@ export function heatOf(startIso: string | null | undefined, nowMs: number): Heat
   if (minutes < attention) return {tone: 'warning', label: minutes + ' 分钟', ring: null};
   const hours = Math.floor(minutes / 60);
   if (minutes < danger) return {tone: 'attention', label: hours + ' 小时', ring: 'attention'};
-  return {tone: 'danger', label: '超时 ' + hours + ' 小时', ring: 'danger'};
+  return {tone: 'danger', label: '超时 ' + (hours >= 24 ? Math.floor(hours / 24) + ' 天' : hours + ' 小时'), ring: 'danger'};
 }
