@@ -2,7 +2,7 @@
 
 ## 基线与停止线
 
-- 执行基线为本文件、[README](README.md)、[架构状态](docs/architecture_baseline_status.md)与相关 Accepted ADR；有冲突先修文档/ADR，再改代码。详细规则按下表读取，效力与原 AGENTS 相同。
+- 执行基线为本文件、[README](README.md)、[架构状态](docs/architecture_baseline_status.md)与相关 Accepted ADR；冲突先修文档/ADR。当前交付围绕[人工首版](plans/mvp-release-simplification/README.md)，与完整 P2/P3 路线图分开；历史任务编号不自动增加当前前置。
 - Unified Ticket Core 是 Ticket 编号、状态、责任和事件的唯一长期事实源。沿既有命令/查询/事件 Port 扩展；新入口接入同一核心。术语使用 [CONTEXT.md](CONTEXT.md)，ADR 放根 `adr/`。
 - 持久 Feature Flag 默认 `false`。P2-G2-LIVE、P2-008 继续停止，P2-G3 与 P3 不因本地验收、PR 合并或复盘自动启动。真实发送、现场业务写库、部署及 Gate 批准沿各自具名授权。
 - 用户原件、未提交改动、历史 Evidence、被测祖先、stash 与恢复引用先保全；历史失败、SKIP、NOT_RUN 和证据缺口如实保留。只清理已确认自有且满足合并/停止条件的资源。
@@ -15,20 +15,21 @@
 | 触发条件 | 必须读取 |
 | --- | --- |
 | 探索、写票或修改业务/接口 | [领域与合同入口](docs/agents/domain.md)；人工工作台另读[实施导航](plans/admin-workbench-integration/README.md)与[实际 API](docs/api/README.md) |
-| 领取、发布或收口任务 | [Issue tracker](docs/agents/issue-tracker.md)、[标签词汇](docs/agents/triage-labels.md) |
+| GitHub Issue 领取、发布或收口 | [Issue tracker](docs/agents/issue-tracker.md)、[标签词汇](docs/agents/triage-labels.md) |
 | 修改代码、Schema、跨层装配、AI/集成或资源配置 | [开发边界与完成标准](docs/agents/development.md)；含领域绝对规则、2C4G、Lane 和 Gate 顺序 |
-| TypeScript、测试范围、构建或认证 | [验证规则](docs/agents/validation.md)、[迁移执行入口](plans/typescript-migration/README.md)、[ADR-0026](adr/0026_typescript_strict_incremental_migration.md) |
+| TypeScript、测试范围或构建 | [验证规则](docs/agents/validation.md)、[ADR-0026](adr/0026_typescript_strict_incremental_migration.md)；[迁移执行入口](plans/typescript-migration/README.md)仅在迁移、兼容或 full/certify 时按需读取 |
 | 修改 PC 管理端 UI | [设计系统 v2.0](docs/ui/design-system.md)；UI 只组合 `app/pc-admin/src/design/components/`，新增视觉模式先改规范 |
 | 历史身份、祖先链、重复审查意见或证据减量 | [.github/review/README.md](.github/review/README.md)；先取得 GitHub 本次权威完整 SHA，再核验对象 |
-| 调试长任务、并行写入、发布或清理 | [会话运行与交付](docs/agents/session-operations.md)；先确认唯一写者、资源所有者和交接点 |
+| 长任务、并行写入、运行发布或资源清理 | [会话运行与交付](docs/agents/session-operations.md)；先确认唯一写者、资源所有者和交接点 |
 | 阶段交接、旧计数或现场批准 | [基线与历史交接](docs/agents/baseline-history.md)及其原始证据，不重绑旧 tested_head |
 | 复盘或维护指令 | [复盘索引](docs/retrospectives/README.md)、[指令导航](docs/agents/README.md) |
 
 ## 编码与验证入口
 
 - 后端新增源码使用 Node.js 24、TypeScript strict、ESM `.mts`；产物及相对运行时导入保留 `.mjs`。保留输入守卫、事务、身份、时间和哈希语义；不以类型逃逸或源码回退掩盖问题。
-- 普通 PR 使用活动 selection 的 strict、一次构建、相关业务/工具测试、制品校验与自有资源清理。手动 full、当前 certify 与固定历史 certify 各有原合同；P00 仅创建 PR 后停止。具体命令见验证规则。
-- 完成以合同、实际测试、隐私/资源、Evidence、关闭方式和 Backlog 更新齐备为准；采用[开发边界中的十项完成标准](docs/agents/development.md#9-每个任务的完成标准)。
+- 普通 PR 先说明影响，再按[路径策略](plans/testing-policy.json)选已有检查；代码适用 strict、一次应用构建、制品校验与自有资源清理，纯文档无需应用构建。手动 full/certify 保留原合同。
+- 新增验证须说明具体风险、覆盖缺口与停止条件；旧编号、测试名、验收记录和重复意见不能单独扩大范围。适用检查通过即停止扩验；当前用户明确要求可扩大范围。本次缺陷本次修，范围外问题另记；当前业务底线不能改名为历史测试规避。
+- 完成默认说明改动、验证、结果、限制和回退；合同、数据库、隐私/资源、开关、Evidence、Backlog 按[实际影响适用](docs/agents/development.md#9-每个任务的完成标准)。纯记录更新不自动重建业务候选或完整复审。
 
 ## Code Review Rules
 

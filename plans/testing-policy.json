@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "docs": {
+      "selections": [],
+      "tools": [],
+      "build": false,
+      "pyyaml": false,
+      "windows": false
+    },
+    "policy": {
+      "selections": [
+        "canary"
+      ],
+      "tools": [
+        "tools/ts-migration/pr-plan.test.mts",
+        "tools/ts-migration/check-agent-docs.test.mts"
+      ],
+      "build": true,
+      "pyyaml": true,
+      "windows": false
+    },
+    "pc": {
+      "selections": [
+        "pr-pc",
+        "pr-read-safety"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "h5": {
+      "selections": [
+        "yxx-h5-rebuild"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "core": {
+      "selections": [
+        "pr-core"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "notification": {
+      "selections": [
+        "pr-notification"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "desktop": {
+      "selections": [
+        "pr-desktop"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": true
+    },
+    "mvp": {
+      "selections": [
+        "pr-pc",
+        "yxx-h5-rebuild",
+        "pr-core",
+        "pr-notification",
+        "t03-platform",
+        "pr-read-safety",
+        "pr-identity"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "presence": {
+      "selections": [
+        "wbint-t39-activity",
+        "wbint-t39-whole-boundaries"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "identity": {
+      "selections": [
+        "pr-core",
+        "pr-identity"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
+    "toolchain": {
+      "selections": [
+        "canary"
+      ],
+      "tools": [
+        "tools/ts-migration/pr-plan.test.mts",
+        "tools/ts-migration/tooling.test.mts",
+        "tools/ts-migration/hosts.test.mts",
+        "tools/ts-migration/design-system.test.mts",
+        "tools/ts-migration/h5.test.mts",
+        "tools/ts-migration/check-agent-docs.test.mts"
+      ],
+      "build": true,
+      "pyyaml": true,
+      "windows": false
+    }
+  },
+  "rules": [
+    {
+      "pattern": "^tools/ts-migration/(?:pr-plan|check-agent-docs|t02-expiry)(?:\\.test)?\\.mts$",
+      "profiles": [
+        "policy"
+      ],
+      "reason": "Planner, documentation or scheduling contract: targeted policy/tool checks"
+    },
+    {
+      "pattern": "^(tools/|plans/typescript-migration/(?:scope|test-routing)\\.json$)",
+      "profiles": [
+        "policy",
+        "toolchain"
+      ],
+      "reason": "Build/artifact/routing tool impact: existing toolchain regression, including source and artifact drift rejection"
+    },
+    {
+      "pattern": "^(AGENTS\\.md$|docs/agents/validation\\.md$|plans/testing-policy\\.json$|\\.github/(?:workflows|actions)/)",
+      "profiles": [
+        "policy"
+      ],
+      "reason": "Execution policy, routing or tooling: tools, strict, one build and compiled canary"
+    },
+    {
+      "pattern": "\\.md$|^(?:(?:docs|plans|adr|evidence|screenshots)/|app/(?:pc-admin|h5|server)/(?:docs|evidence|screenshots)/).*\\.(?:png|jpe?g|webp|svg|pdf)$",
+      "profiles": [
+        "docs"
+      ],
+      "reason": "Ordinary Markdown outside execution-policy files: changed local links only"
+    },
+    {
+      "pattern": "^app/pc-admin/(?:desktop/|src/login/)|^app/server/src/workbench-embedded-login\\.|^tests/(?:pc-admin-electron|workbench-desktop-session)\\.",
+      "profiles": [
+        "pc",
+        "desktop"
+      ],
+      "reason": "Native desktop boundary: PC regression plus existing Windows Electron validation"
+    },
+    {
+      "pattern": "^(?:app/(?:server/src|pc-admin/src)/.*(?:workbench-activity|activity-presence)|tests/wbint-t39-)",
+      "profiles": [
+        "pc",
+        "presence"
+      ],
+      "reason": "Enhanced presence stays on demand, including current service and loss-of-authority tests"
+    },
+    {
+      "pattern": "^(?:app/(?:server/src|pc-admin/src)/.*(?:personal-read|read-position|activity)|tests/(?:t35-|wbint-t35-))",
+      "profiles": [
+        "pc",
+        "core"
+      ],
+      "reason": "Personal read/activity boundaries retain current authority and original UUID recovery checks"
+    },
+    {
+      "pattern": "^app/pc-admin/|^tests/(?:pc-admin-|web01-|workbench-|wbint-|t(?:04|09|10|12|17|19|20|21|22|24|25|26|27|28|30|31|32|35|36|37|38|39|40|41|42|43)-)",
+      "profiles": [
+        "pc"
+      ],
+      "reason": "PC UI or workbench interaction; changed registered entries are added directly"
+    },
+    {
+      "pattern": "^app/h5/|^tests/yxx-h5",
+      "profiles": [
+        "h5"
+      ],
+      "reason": "H5 main flow and direct risks; no desktop integration"
+    },
+    {
+      "pattern": "^(?:app/server/(?:src|scripts)/.*(?:notification|sender|delivery|communication|outbox)|tests/(?:mvp-|.*notification|.*sender)|contracts/.*(?:notification|delivery|communication))",
+      "profiles": [
+        "notification"
+      ],
+      "reason": "Notification admission, recipient, privacy, idempotency and UNKNOWN recovery"
+    },
+    {
+      "pattern": "^(shared/|database/|package(?:-lock)?\\.json$|tsconfig|app/server/(?:src/platform/|(?:src|scripts)/.*(?:runtime|assembly|live-cluster|worker|process-role))|contracts/|config_examples/)",
+      "profiles": [
+        "mvp"
+      ],
+      "reason": "Shared assembly, migrations, contracts, lock/build configuration: current MVP union"
+    },
+    {
+      "pattern": "^app/server/(?:src|scripts)/.*(?:auth|identity|principal|access|session|grant)",
+      "profiles": [
+        "identity"
+      ],
+      "reason": "Identity conversion, current membership and current object authorization across channels"
+    },
+    {
+      "pattern": "^app/server/|^tests/helpers/",
+      "profiles": [
+        "core"
+      ],
+      "reason": "Ticket, identity, authorization, transaction or shared test harness"
+    },
+    {
+      "pattern": "(^|/)(?:README|CONTEXT|CHANGELOG|LICENSE)(?:\\.md)?$",
+      "profiles": [
+        "docs"
+      ],
+      "reason": "Named documentation outside production roots; unknown resource extensions use the MVP fallback"
+    }
+  ],
+  "fallback": [
+    "mvp"
+  ],
+  "history": [
+    {
+      "path": "tests/t35-late-read-success.browser.test.mts",
+      "risk": "Late committed read ACK must not restore previous account scope; old SESSION case fixes a 160px viewport",
+      "applicable": true,
+      "disposition": "Old layout/height scenario is historical-only by default; current authority/recovery checks remain required. Editing this file explicitly selects it; do not classify new failures away.",
+      "replacement": [
+        "tests/t35-account-switch.browser.test.mts",
+        "tests/t35-current-authority-wait.integration.test.mts",
+        "tests/t35-unknown-read.browser.test.mts"
+      ]
+    },
+    {
+      "path": "tests/wbint-t39-activity-boundaries.browser.test.mts",
+      "risk": "Presence VIEWING/EDITING uses old disclosure/control operations; activity faults must not block the note command",
+      "applicable": false,
+      "disposition": "Old control/disclosure browser scenario is historical-only by default. Enhanced presence remains on demand via wbint-t39-activity and wbint-t39-whole-boundaries when its implementation changes; current note/authority checks remain in pr-pc/pr-core.",
+      "replacement": []
+    },
+    {
+      "path": "tests/yxx-ss-009-capacity.integration.test.mjs",
+      "risk": "Original SS009 candidate capacity and repeated full-app setup",
+      "applicable": false,
+      "disposition": "Historical candidate reproduction, not a default current MVP PR prerequisite; unchanged full/certify consumers retain their original contract.",
+      "replacement": []
+    }
+  ]
+}

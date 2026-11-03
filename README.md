@@ -1,5 +1,7 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
+当前研发围绕[人工首版服务链、能力范围与验收](plans/mvp-release-simplification/README.md)推进，按 [ADR-0053](adr/0053_mvp_delivery_and_test_policy.md) 采用风险驱动 PR 检查与渐进测试退役。完整 P2/P3 保留阶段规划用途；历史任务不自动成为首版前置。此入口不改变既有完成事实、阶段批准或部署授权。
+
 PC 媒体读取与预览优化：默认关闭的员工媒体入口、服务端视频封面和原生播放，合同见[员工媒体接口](docs/api/workbench/employee-media.md)，实施状态见[交付清单](plans/pc-admin-electron/media-employee-read-2026-10-28.md)。
 
 PC Electron MVP：Windows x64 桌面外壳、固定员工扫码入口及托盘提醒，见[使用与 D 盘开发环境](app/pc-admin/desktop/README.md)和[交付记录](plans/pc-admin-electron/README.md)。服务器业务仍沿原核心与授权；本地安装包不代表现场部署或发送批准。

@@ -15,8 +15,77 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.mode || 'pr' }}
   cancel-in-progress: true
 jobs:
-  typescript-merge-check:
+  pr-plan:
     if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      lane: ${{ steps.plan.outputs.lane }}
+      windows: ${{ steps.plan.outputs.windows }}
+      browser: ${{ steps.plan.outputs.browser }}
+      pyyaml: ${{ steps.plan.outputs.pyyaml }}
+      ffmpeg: ${{ steps.plan.outputs.ffmpeg }}
+    steps:
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: npm run migration:tools
+    - id: plan
+      name: Plan actual base/head impact and check changed documentation
+      env:
+        EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        mkdir -p "$RUNNER_TEMP/pr-plan"
+        node .build/tools/pr-plan.mjs --base "$EXPECTED_BASE" --head "$EXPECTED_HEAD" --check-docs --out "$RUNNER_TEMP/pr-plan/plan.json"
+        node --input-type=module <<'NODE'
+        import {readFileSync,appendFileSync} from 'node:fs';
+        const p=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/pr-plan/plan.json','utf8'));
+        appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## PR impact plan\nProfiles: ${p.profiles.join(', ')}\n\nSelected entries: ${p.selection.entries.length}; browser: ${p.selection.entries.filter(e=>e.requires_browser).length}\n\nLane: ${p.lane}; application builds per execution environment: ${p.build?1:0}\n\nResources: ${JSON.stringify(p.requirements)}\n\nNOT_SELECTED is not PASS. Full/certify and production acceptance are not run.\n`);
+        NODE
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: pr-plan-${{ github.run_id }}
+        path: ${{ runner.temp }}/pr-plan/
+        retention-days: 14
+  pr-docs:
+    needs: pr-plan
+    if: ${{ needs.pr-plan.outputs.lane == 'docs' }}
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo 'Document budget and changed local links checked in pr-plan. No application build or application resources selected.'
+  pr-no-database:
+    needs: pr-plan
+    if: ${{ needs.pr-plan.outputs.lane == 'no-database' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/pr-check
+      with:
+        base: ${{ github.event.pull_request.base.sha }}
+        head: ${{ github.event.pull_request.head.sha }}
+        browser: ${{ needs.pr-plan.outputs.browser }}
+        pyyaml: ${{ needs.pr-plan.outputs.pyyaml }}
+        ffmpeg: ${{ needs.pr-plan.outputs.ffmpeg }}
+        database: 'false'
+  pr-database:
+    needs: pr-plan
+    if: ${{ needs.pr-plan.outputs.lane == 'database' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
@@ -31,94 +100,144 @@ jobs:
     env:
       TS_MIGRATION_TEST_DB_ISOLATED: '1'
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
-      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
-      EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
     steps:
     - run: git config --global core.autocrlf true
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       with:
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
         persist-credentials: false
-    - run: git config --local core.autocrlf true
+    - uses: ./.github/actions/pr-check
+      with:
+        base: ${{ github.event.pull_request.base.sha }}
+        head: ${{ github.event.pull_request.head.sha }}
+        browser: ${{ needs.pr-plan.outputs.browser }}
+        pyyaml: ${{ needs.pr-plan.outputs.pyyaml }}
+        ffmpeg: ${{ needs.pr-plan.outputs.ffmpeg }}
+        database: 'true'
+  pr-windows:
+    needs: pr-plan
+    if: ${{ needs.pr-plan.outputs.windows == 'true' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      TS_MIGRATION_TEST_DB_ISOLATED: '1'
+      PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:55432/migration_ci
+    steps:
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        persist-credentials: false
     - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: '24'
-        cache: npm
-        cache-dependency-path: package-lock.json
-    - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
-    - name: Prepare media tools for the registered H5 tests
-      shell: bash
+    - name: Prepare isolated native PostgreSQL 18
+      id: native-pg
+      shell: pwsh
       run: |
-        set -euo pipefail
-        if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
-        fi
-        printf 'H5_MEDIA_FFMPEG=%s\nH5_MEDIA_FFPROBE=%s\n' "$(command -v ffmpeg)" "$(command -v ffprobe)" >> "$GITHUB_ENV"
-    - name: Read the active nonempty selection and actual tool impact
-      id: changes
-      shell: bash
+        $pgBin = 'C:/Program Files/PostgreSQL/18/bin'
+        if (-not (Test-Path "$pgBin/initdb.exe")) {
+          choco install postgresql18 --yes --no-progress --params '/Password:migration_ci_only /Port:55433'
+          if ($LASTEXITCODE -ne 0) { throw 'NATIVE_PG18_INSTALL_FAILED' }
+        }
+        $nativeData = Join-Path $env:RUNNER_TEMP 'pr-native-pg'
+        if (Test-Path -LiteralPath $nativeData) { throw 'NATIVE_DATABASE_NOT_OWNED' }
+        'owned=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        & "$pgBin/initdb.exe" -U postgres -A trust -D $nativeData
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_INIT_FAILED' }
+        & "$pgBin/pg_ctl.exe" -D $nativeData -l "$env:RUNNER_TEMP/pr-native-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_START_FAILED' }
+        & "$pgBin/createdb.exe" -U postgres -h 127.0.0.1 -p 55432 migration_ci
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_CREATE_FAILED' }
+        & "$pgBin/psql.exe" -U postgres -h 127.0.0.1 -p 55432 -d migration_ci -c 'SHOW server_version'
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_NOT_READY' }
+    - name: Prepare existing native Electron tools
+      run: npm run desktop:setup
+    - name: One native candidate build and existing process validation
+      shell: pwsh
       run: |
-        set -euo pipefail
-        node --input-type=module <<'NODE'
-        import {readFileSync,appendFileSync} from 'node:fs';
-        import {execFileSync} from 'node:child_process';
-        const rows=[...readFileSync('plans/typescript-migration/README.md','utf8').matchAll(/^ACTIVE_SELECTION: (v3-p[0-9]{2}|v3-d01)\r?$/gm)];
-        if(rows.length!==1)throw Error('ACTIVE_SELECTION_MUST_BE_UNIQUE');
-        appendFileSync(process.env.GITHUB_ENV,`MIGRATION_SELECTION=${rows[0][1]}\n`);
-        const changed=execFileSync('git',['diff','--name-only',process.env.EXPECTED_BASE,process.env.EXPECTED_HEAD],{encoding:'utf8'}).split(/\r?\n/);
-        const tools=changed.some(p=>/^(tools\/ts-migration\/|tsconfig.*\.json$|plans\/typescript-migration\/(scope|test-routing)\.json$|\.github\/workflows\/(types-migration|ss009-evidence-history|p2-staff-directory)\.yml$)/.test(p));
-        appendFileSync(process.env.GITHUB_OUTPUT,`tools=${tools}\n`);
-        NODE
-    - name: One build and strict type gates
-      shell: bash
-      run: |
-        set -euo pipefail
+        New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/pr-native" | Out-Null
         npm run migration:build
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_BUILD_FAILED' }
         node .build/tools/gate.mjs types
-        node .build/tools/check-agent-docs.mjs
-        node --test --test-reporter=tap .build/tools/check-agent-docs.test.mjs
-    - name: Run the selected compiled business and architecture entries
-      env:
-        MIGRATION_REPORT_DIR: ${{ runner.temp }}/types-merge/tests
-      shell: bash
-      run: |
-        set -euo pipefail
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_TYPES_FAILED' }
         node .build/runtime/app/server/scripts/migrate-current-baseline.mjs
-        node --input-type=module <<'NODE'
-        import {runSelection} from './.build/tools/run-tests.mjs';
-        import {loadRoutes,select} from './.build/tools/routing.mjs';
-        runSelection(process.cwd(),select(loadRoutes(process.cwd()),'selection',process.env.MIGRATION_SELECTION),{reportDir:process.env.MIGRATION_REPORT_DIR});
-        NODE
-    - name: Directly affected tool and scheduling regression
-      if: ${{ steps.changes.outputs.tools == 'true' }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/design-system.test.mjs .build/tools/hosts.test.mjs .build/tools/h5.test.mjs
-        node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs
-    - name: Verify the owned database and exact artifact
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_BASELINE_FAILED' }
+        npm run desktop:test
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_POLICY_FAILED' }
+        npm run desktop:build -- -ServerOrigin https://workbench.invalid.example
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_STAGE_FAILED' }
+        npm run desktop:integration 2>&1 | Tee-Object "$env:RUNNER_TEMP/pr-native/integration.tap"
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_PROCESS_FAILED' }
+        $tap = Get-Content -Raw "$env:RUNNER_TEMP/pr-native/integration.tap"
+        if ($tap -notmatch '(?m)^# skipped 0\r?$' -or $tap -notmatch '(?m)^# tests [1-9][0-9]*\r?$') { throw 'NATIVE_PROCESS_NOT_REACHED' }
+    - name: Verify existing Windows package boundary
+      run: npm run desktop:package -- -ServerOrigin https://workbench.invalid.example
+    - name: Verify native artifact and source
       if: always()
-      shell: bash
+      shell: pwsh
+      run: |
+        node .build/tools/verify-artifact.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_ARTIFACT_FAILED' }
+        git diff --exit-code
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_SOURCE_DRIFT' }
+    - name: Stop and remove only the owned native test cluster
+      if: ${{ always() && steps.native-pg.outputs.owned == 'true' }}
+      shell: pwsh
+      run: |
+        $nativeParent = [IO.Path]::GetFullPath($env:RUNNER_TEMP)
+        $nativeData = [IO.Path]::GetFullPath((Join-Path $nativeParent 'pr-native-pg'))
+        if ([IO.Path]::GetDirectoryName($nativeData) -ne $nativeParent) { throw 'NATIVE_CLEANUP_OUTSIDE_TEMP' }
+        if (Test-Path -LiteralPath $nativeData) {
+          if ((Get-Item -LiteralPath $nativeData).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'NATIVE_CLEANUP_REPARSE' }
+          $pgControl = 'C:/Program Files/PostgreSQL/18/bin/pg_ctl.exe'
+          if (Test-Path -LiteralPath (Join-Path $nativeData 'postmaster.pid')) {
+            & $pgControl -D $nativeData -m fast -w stop
+            if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_STOP_FAILED' }
+          }
+          & $pgControl -D $nativeData status
+          if ($LASTEXITCODE -ne 3) { throw 'NATIVE_DATABASE_STILL_RUNNING' }
+          Remove-Item -LiteralPath $nativeData -Recurse -Force
+          if (Test-Path -LiteralPath $nativeData) { throw 'NATIVE_DATA_REMAINS' }
+        }
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: pr-native-${{ github.run_id }}
+        path: ${{ runner.temp }}/pr-native/
+        retention-days: 14
+  typescript-merge-check:
+    needs: [pr-plan, pr-docs, pr-no-database, pr-database, pr-windows]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Require the planned path, including cancellation and skip failures
+      env:
+        PLAN: ${{ needs.pr-plan.result }}
+        LANE: ${{ needs.pr-plan.outputs.lane }}
+        DOCS: ${{ needs.pr-docs.result }}
+        NO_DATABASE: ${{ needs.pr-no-database.result }}
+        DATABASE: ${{ needs.pr-database.result }}
+        WINDOWS_REQUIRED: ${{ needs.pr-plan.outputs.windows }}
+        WINDOWS: ${{ needs.pr-windows.result }}
       run: |
         set -euo pipefail
-        OUT="$RUNNER_TEMP/types-merge"
-        mkdir -p "$OUT"
-        git rev-parse HEAD > "$OUT/source-sha.txt"
-        node --version > "$OUT/node-version.txt"
-        node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
-        node .build/tools/verify-artifact.mjs > "$OUT/artifact.txt" 2>&1
-        cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
-        git diff --exit-code
-        test -z "$(git status --porcelain)"
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-      if: ${{ always() }}
-      with:
-        name: types-merge-${{ github.run_id }}
-        path: ${{ runner.temp }}/types-merge/
-        retention-days: 14
+        test "$PLAN" = success
+        case "$LANE" in
+          docs) test "$DOCS" = success && test "$NO_DATABASE" = skipped && test "$DATABASE" = skipped || exit 1 ;;
+          no-database) test "$DOCS" = skipped && test "$NO_DATABASE" = success && test "$DATABASE" = skipped || exit 1 ;;
+          database) test "$DOCS" = skipped && test "$NO_DATABASE" = skipped && test "$DATABASE" = success || exit 1 ;;
+          *) exit 1 ;;
+        esac
+        case "$WINDOWS_REQUIRED" in
+          true) test "$WINDOWS" = success ;;
+          false) test "$WINDOWS" = skipped ;;
+          *) exit 1 ;;
+        esac
+        echo "Selected lane $LANE succeeded. Other lanes were NOT_SELECTED, not PASS." >> "$GITHUB_STEP_SUMMARY"
   current-regression:
     name: current shard (${{ matrix.shard }}/4)
     strategy:

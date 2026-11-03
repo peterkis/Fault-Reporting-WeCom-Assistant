@@ -219,7 +219,7 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
 export function inputs(root: string): FileDigest[] {
   const files = workspaceFiles(root).filter(p => isProductionSource(p) || /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|app\/pc-admin)\//u.test(p)
     || isH5ProductionInput(p) || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
-    || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
+    || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/') || p.startsWith('.github/actions/') || p === 'plans/testing-policy.json'
     || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-current-readiness-scope.v2.json', 'plans/yxx-current-readiness-acceptance.v2.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
       '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs',
       '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs',

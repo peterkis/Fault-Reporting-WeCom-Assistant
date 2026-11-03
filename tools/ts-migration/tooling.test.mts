@@ -168,7 +168,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
     await t.test('every legacy file preserves exact source bytes', () => {
       for (const f of first.outputs.filter(x => x.kind === 'LEGACY' || x.kind === 'RESOURCE')) assert.deepEqual(readFileSync(path.join(root, '.build/runtime', f.path)), readFileSync(path.join(root, f.source)));
     });
-    for (const relative of ['app/server/src/migration-canary.mts', 'tsconfig.base.json', 'package-lock.json']) {
+    for (const relative of ['app/server/src/migration-canary.mts', 'tsconfig.base.json', 'package-lock.json', 'plans/testing-policy.json', '.github/actions/pr-check/action.yml']) {
       await t.test('input drift is rejected: ' + relative, () => {
         alter(root, relative, readFileSync(path.join(root, relative), 'utf8') + '\n', () => assert.throws(() => verifyArtifact(root), /MIGRATION_INPUT_DRIFT/u));
       });

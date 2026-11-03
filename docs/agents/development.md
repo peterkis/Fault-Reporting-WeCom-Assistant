@@ -1,6 +1,8 @@
 # 开发边界与完成标准
 
-修改业务代码、Schema、跨层装配、AI/集成或资源配置前读取本页及[领域入口](domain.md)。本页承接重构前 AGENTS 的第1至10节；只有位置与重复交接段的路由改变，规则效力不变。
+修改业务代码、Schema、跨层装配、AI/集成或资源配置前读取本页及[领域入口](domain.md)。领域与运行底线保持；交付范围及验证默认值按 [ADR-0053](../../adr/0053_mvp_delivery_and_test_policy.md) 前向调整。
+
+人工首版按[能力表与验收责任](../../plans/mvp-release-simplification/README.md#首版能力与验收责任)推进；下文完整阶段路线用于规划和具名 Gate，不把增强协作、AI 或历史任务自动变成当前交付前置。
 
 桌面扫码、准备态、工牌/背景、原生恢复或安装包任务，另读[桌面登录与验证导航](desktop-login.md)。
 
@@ -187,20 +189,9 @@ phase3/unified-operations
 
 ## 9. 每个任务的完成标准
 
-每个任务必须包含：
+每个任务默认说明改动、实际验证、结果与未执行范围、已知限制、回退或关闭方式。按实际影响补充：输入/输出与 Schema/Contract、数据库与迁移安全、相关 Unit/Contract/Integration、安全/隐私、资源上限、Feature Flag、必要 Evidence、关联 Issue/Backlog。UI 文案等小改动不机械填全部栏目；没有关联 Issue 时不为套表新建票。
 
-- 输入和输出；
-- Schema/Contract；
-- 数据库变更或明确“无数据库变更”；
-- Unit/Contract/Integration tests；
-- 安全与隐私检查；
-- 资源上限；
-- Feature Flag；
-- Evidence；
-- Rollback 或关闭方式；
-- Backlog 状态更新。
-
-禁止把“代码写完”作为完成标准。
+以适用合同和实际验证完成为准。保留当前身份、权限、事务、并发、幂等、内部隔离和 UNKNOWN/原 UUID 恢复底线；范围外问题记录后另行处理。纯记录后继不自动生成业务候选或重复完整验收。
 
 ## 10. 禁止行为
 

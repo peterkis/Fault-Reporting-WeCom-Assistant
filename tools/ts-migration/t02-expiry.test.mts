@@ -97,15 +97,13 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
     assert.ok(Array.isArray(job.steps));
     return job.steps.map(step=>String(record(step).run??'')).join('\n');
   };
-  assert.equal(merge.if,"${{ github.event_name == 'pull_request' }}");
+  assert.equal(merge.if,"${{ always() && github.event_name == 'pull_request' }}");
   assert.equal(merge['runs-on'],'ubuntu-latest');assert.equal(merge.strategy,undefined);
-  assert.doesNotMatch(JSON.stringify(record(merge.env)),/\$\{\{\s*runner\./u,'runner context belongs to steps, not job env');
   const mergeScript=runs(merge);
-  assert.equal([...mergeScript.matchAll(/npm run migration:build/gu)].length,1);
-  assert.match(mergeScript,/node \.build\/tools\/gate\.mjs types/u);
-  assert.match(mergeScript,/ACTIVE_SELECTION_MUST_BE_UNIQUE/u);
-  assert.match(mergeScript,/runSelection\(process\.cwd\(\),select\(loadRoutes/u);
-  assert.doesNotMatch(mergeScript,/verify-published-history|pr-evidence-delta|--require-ready|--current-full|--batch|migration:typecheck/u);
+  assert.match(mergeScript,/test "\$PLAN" = success/u);
+  assert.match(mergeScript,/case "\$LANE" in/u);
+  assert.match(mergeScript,/test "\$WINDOWS" = success/u);
+  assert.doesNotMatch(mergeScript,/--require-ready|--current-full|--batch|migration:typecheck/u);
   const strict=record(jobs['strict-readiness']);
   assert.ok(Array.isArray(strict.steps));
   const strictCleanup=strict.steps.map(record).find(step=>step.name==='Verify the owned database and exact artifact');
@@ -138,13 +136,13 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
     }
     assert.match(runs(complete),/verify-current-shards\.mjs.*--shards 4/u);
   }
-  const mergeSteps=merge.steps;assert.ok(Array.isArray(mergeSteps));
-  const selectionStep=record(mergeSteps.find(step=>String(record(step).run??'').includes('runSelection')));
-  assert.equal(record(selectionStep.env).MIGRATION_REPORT_DIR,'${{ runner.temp }}/types-merge/tests');
-  const selected=String(selectionStep.run);
-  const failed=selected.replace('node .build/runtime/app/server/scripts/migrate-current-baseline.mjs',':')
-    .replace(/(?<=<<'NODE'\n)[\s\S]+(?=\nNODE\n)/u,"throw Error('SELECTED_TESTS_FAIL');");
-  assert.notEqual(spawnSync(bash,['-c',failed],{cwd:root,encoding:'utf8',windowsHide:true}).status,0);
+  // PR execution moved to the impact planner/composite action; its actual
+  // branch failures and resource conditions are exercised by pr-plan.test.
+  const execution=readFileSync(path.join(root,'.github/actions/pr-check/action.yml'),'utf8');
+  assert.equal([...execution.matchAll(/npm run migration:build/gu)].length,1);
+  assert.match(execution,/node \.build\/tools\/gate\.mjs types/u);
+  assert.match(execution,/pr-plan\.mjs.*--run/u);
+  assert.doesNotMatch(execution,/run-tests\.mjs|--reference-source/u);
   const history=record(workflows['ss009-evidence-history']), historyJobs=record(history.jobs), light=record(historyJobs['evidence-history']);
   assert.equal(light.if,"${{ github.event_name == 'pull_request' }}");assert.equal(light['runs-on'],'ubuntu-latest');assert.equal(light.strategy,undefined);
   const historyScript=runs(light);

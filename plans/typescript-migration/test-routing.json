@@ -8961,6 +8961,58 @@
       "tests/yxx-h5-static.test.mts",
       "tests/yxx-h5-v2-contract.test.mts",
       "tests/yxx-h5-v2.integration.test.mts"
+    ],
+    "pr-pc": [
+      "tests/pc-admin-design-foundation.test.mts",
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/pc-admin-card16.browser.test.mts",
+      "tests/web01-workbench.test.mts",
+      "tests/web01-workbench.integration.test.mjs",
+      "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "tests/wbint-t30-internal-note.browser.test.mts",
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/wbint-t22-realtime-tracer.browser.test.mts"
+    ],
+    "pr-core": [
+      "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+      "tests/p2-016-workbench-auth.integration.test.mjs",
+      "tests/p2-003-realtime-event-log.integration.test.mjs",
+      "tests/t10-current-authority-wait.integration.test.mts",
+      "tests/t10-atomic-rollback.integration.test.mts",
+      "tests/t10-unknown-recovery.browser.test.mts",
+      "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
+      "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "tests/wbint-t30-internal-note-risks.integration.test.mts",
+      "tests/wbint-t17-manual-receipts.integration.test.mts",
+      "tests/wbint-t22-realtime-tracer.browser.test.mts"
+    ],
+    "pr-notification": [
+      "tests/mvp-notification-policy.integration.test.mts",
+      "tests/mvp-group-replies.integration.test.mts",
+      "tests/mvp-application-members.integration.test.mts",
+      "tests/wbint-t31-delivery-admission.integration.test.mts",
+      "tests/wbint-t31-http-risks.integration.test.mts",
+      "tests/t24-synthetic-sender-unknown.integration.test.mts",
+      "tests/t24-round-notification-identity.integration.test.mts",
+      "tests/t25-app-delivery-http-recovery.integration.test.mts",
+      "tests/wbint-t32-exception-authorization.browser.test.mts"
+    ],
+    "pr-desktop": [
+      "tests/pc-admin-electron.browser.test.mts"
+    ],
+    "pr-read-safety": [
+      "tests/t35-account-switch.browser.test.mts",
+      "tests/t35-current-authority-wait.integration.test.mts",
+      "tests/t35-unknown-read.browser.test.mts"
+    ],
+    "pr-identity": [
+      "tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs",
+      "tests/p2-016-workbench-wecom-auth.test.mjs",
+      "tests/mvp-application-members.integration.test.mts",
+      "tests/p2-016-workbench-auth.integration.test.mjs",
+      "tests/yxx-h5-application-auth.test.mts"
     ]
   },
   "subprocess_entries": {
