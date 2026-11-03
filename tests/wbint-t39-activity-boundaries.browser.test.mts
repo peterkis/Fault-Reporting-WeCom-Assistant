@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -42,10 +43,10 @@ test('trusted production Review input reports editing on the currently displayed
     const ticket=tickets[0]?.ticket,cookie=browserCookies[0],viewer=cookies[2];assert.ok(ticket&&cookie&&viewer);let browser:Browser|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
-      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.disabled===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
-      await browser.evaluate('(()=>{const input=document.querySelector("[aria-label=复核结论]");input.scrollIntoView({block:"center"});input.focus();})()');
+      const field='.workbench-select[data-field-label="复核结论"]';await openWorkbenchStep(browser,field);await browser.waitFor(`document.querySelector('${field} select')?.disabled===false&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
+      await browser.evaluate(`(()=>{const input=document.querySelector('${field} select');input.scrollIntoView({block:'center'});input.focus();})()`);
       for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40,nativeVirtualKeyCode:40});
-      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.value!==""');
+      await browser.waitFor(`document.querySelector('${field} select')?.value!==''`);
       const until=Date.now()+8000;let editing=false;
       do{editing=(await currentPeople(origin,viewer,ticket.id)).some(person=>person.display_name==='林舟'&&person.mode==='EDITING');if(!editing)await new Promise(resolve=>setTimeout(resolve,100));}while(!editing&&Date.now()<until);
       assert.equal(editing,true,'a current authorized linked Review field belongs to the canonical Ticket activity');
