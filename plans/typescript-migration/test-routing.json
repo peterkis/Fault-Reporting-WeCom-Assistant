@@ -5,6 +5,24 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/pc-admin-card16.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card16-arrivals.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card12-review.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7838,6 +7856,8 @@
     ],
     "v3-p09": [
       "tests/pc-admin-card13.browser.test.mts",
+      "tests/pc-admin-card16.browser.test.mts",
+      "tests/pc-admin-card16-arrivals.browser.test.mts",
       "tests/pc-admin-card12-review.browser.test.mts",
       "tests/pc-admin-card12.browser.test.mts",
       "tests/web01-closed-range.browser.test.mts",

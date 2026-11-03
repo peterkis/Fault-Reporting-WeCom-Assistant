@@ -1,0 +1,20 @@
+.efficiency-entry.ds-button.button[data-tone] {display:flex;width:100%;justify-content:flex-start;background:var(--bg-canvas);box-shadow:var(--shadow-1);}
+.sidebar-collapsed .efficiency-entry.ds-button.button[data-tone] {display:none;}
+.efficiency-entry>.ds-button-label {width:100%;justify-content:flex-start;}
+.efficiency-entry kbd {margin-left:auto;white-space:nowrap;font-size:var(--fs-xs);}
+.efficiency-compact.ds-button.button[data-tone] {display:none;}
+.efficiency-panel .efficiency-hint,.efficiency-panel .efficiency-status,.efficiency-help>p {color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-sm);margin-top:var(--space-3);}
+.efficiency-results {max-height:50dvh;overflow:auto;margin-top:var(--space-3);}
+.efficiency-result.ds-button.button[data-tone] {display:flex;width:100%;justify-content:flex-start;text-align:left;padding:var(--space-3);height:auto;min-height:var(--space-12);white-space:normal;}
+.efficiency-result.ds-button.button[aria-selected=true] {background:var(--bg-hover);}
+.efficiency-result .ds-button-label {display:flex;width:100%;justify-content:flex-start;align-items:center;gap:var(--space-3);white-space:normal;}
+.efficiency-result .ds-button-label>span {display:block;min-width:0;}
+.efficiency-panel .ds-search-field .input {flex:1;width:100%;min-width:0;height:100%;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:var(--fs-sm);line-height:var(--lh-sm);}
+.efficiency-panel .ds-search-field .input:focus-visible {outline:none;}
+.efficiency-result strong {display:block;font-size:var(--fs-md);overflow-wrap:anywhere;}
+.efficiency-result small {display:block;color:var(--text-secondary);font-size:var(--fs-xs);margin-top:var(--space-1);}
+.efficiency-help dl {margin:var(--space-4) 0;}
+.efficiency-help dl>div {display:flex;justify-content:space-between;gap:var(--space-4);padding:var(--space-2) 0;border-bottom:1px solid var(--border-hair);font-size:var(--fs-md);}
+.efficiency-help dd {margin:0;}
+.efficiency-help kbd {font-size:var(--fs-sm);color:var(--text-secondary);}
+@media(max-width:900px){.efficiency-compact.ds-button.button[data-tone] {display:inline-flex;}.efficiency-compact kbd {font-size:var(--fs-xs);}}
