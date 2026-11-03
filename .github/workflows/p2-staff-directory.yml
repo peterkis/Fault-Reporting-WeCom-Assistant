@@ -3,7 +3,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/p2-staff-directory.yml'
-      - '.github/review/**'
+      - '.github/review/*.mjs'
+      - '.github/review/*.json'
       - 'app/server/scripts/validate-p2-016-historical.mjs'
       - 'app/server/scripts/validate-p2-016-ticket-lifecycle-workbench.mjs'
       - 'tests/p2-016-historical-validation.test.mjs'

@@ -1,5 +1,7 @@
 # 基线、交接与历史适用范围
 
+本页是按需读取的历史导航。仅在核对具体阶段交接、旧计数或具名批准时进入对应证据；旧命令、旧任务清单和当时验收不默认约束新任务。当前人工首版交付见[实施入口](../../plans/mvp-release-simplification/README.md)，不重绑下文任何历史对象。
+
 本页从重构前 AGENTS 提取交接与历史记录。日期、计数、被测 SHA 和授权继续只约束原对象，不成为新候选的新 PASS。任务当前状态先读 `plans/current_phase.json`、[架构基线](../architecture_baseline_status.md)及其引用的 Evidence；43票人工工作台另读[最终验收导航](../../plans/admin-workbench-integration/execution/all43-final-review.md)。
 
 本次复盘和文档重排不推进 P2-G2-LIVE、P2-008、P2-G3 或 P3，不改变默认关闭及具名批准边界。

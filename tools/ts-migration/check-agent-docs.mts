@@ -41,7 +41,7 @@ function documentFacts(text: string): DocumentFacts {
 }
 
 /** Check the bounded agent-document navigation surface without network or runtime access. */
-export function checkAgentDocs(root: string): AgentDocIssue[] {
+export function checkAgentDocs(root: string, changed: readonly string[] = []): AgentDocIssue[] {
   const base = realpathSync(root), files = [path.join(base, 'AGENTS.md')], issues: AgentDocIssue[] = [];
   const add = (file: string, code: string, target?: string): void => {
     issues.push(target === undefined ? {file: relative(base, file), code} : {file: relative(base, file), code, target});
@@ -62,6 +62,11 @@ export function checkAgentDocs(root: string): AgentDocIssue[] {
     } catch { add(directory, 'DOC_UNREADABLE'); }
   };
   for (const folder of ['docs/agents', 'docs/retrospectives']) collect(path.join(base, folder));
+  for (const relative of changed) {
+    const file = path.resolve(base, relative);
+    if (!inside(base, file)) { add(file, 'DOC_OUTSIDE_REPOSITORY'); continue; }
+    if (/\.md$/iu.test(file) && existsSync(file) && !files.includes(file)) files.push(file);
+  }
   const cache = new Map<string, DocumentFacts>();
   for (const file of files) {
     let text: string;

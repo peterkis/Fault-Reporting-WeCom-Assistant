@@ -154,3 +154,11 @@ test('unrelated Markdown and source-index JSON contents are outside the link sca
   write('docs/retrospectives/source-index.json', '{"source":"D:/external/session.jsonl"}\n');
   assert.deepEqual(checkAgentDocs(root), []);
 }));
+
+test('changed documents outside the fixed navigation surface are checked once and cannot escape', () => fixture((root, write) => {
+  write('plans/new/记录.md', '[missing](missing.md)\n');
+  assert.deepEqual(checkAgentDocs(root, ['plans/new/记录.md', 'plans/new/记录.md', 'plans/deleted.md']), [
+    {file: 'plans/new/记录.md', code: 'LOCAL_LINK_MISSING', target: 'missing.md'},
+  ]);
+  assert.equal(checkAgentDocs(root, ['../outside.md'])[0]?.code, 'DOC_OUTSIDE_REPOSITORY');
+}));

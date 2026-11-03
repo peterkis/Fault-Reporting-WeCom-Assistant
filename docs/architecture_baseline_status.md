@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-11-03 前向交付规则按 [ADR-0053](../adr/0053_mvp_delivery_and_test_policy.md) 收敛到[人工首版](../plans/mvp-release-simplification/README.md)：报修、人工处理、本人结果与必要通知。完整 P2/P3 是阶段路线，历史任务不自动增加当前前置；业务安全底线、当前阶段文件及下文旧日期事实保持。不代表人工首版已验收或获准部署。
+
 2026-10-28 PC员工媒体优化按[ADR-0050](../adr/0050_pc_media_employee_read_and_server_previews.md)前向实施：独立默认关闭的员工读取、请求级到期及服务端视频封面；H5原授权保持。实现/验证状态见[交付清单](../plans/pc-admin-electron/media-employee-read-2026-10-28.md)，不表示云端部署或Gate批准。
 
 2026-10-25 首批候选后继修正T35可见材料上界及G2同步核验造成的当前发送截止复现，保持原SDK终检、5秒超时、默认开关与业务边界。精确身份和本地验证见[后继交付](../plans/app-layout/candidate-followup-2026-10-25.md)，不重绑历史或批准Gate。

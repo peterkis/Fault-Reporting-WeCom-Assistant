@@ -1,16 +1,31 @@
 # 验证与 TypeScript
 
-选择检查、修改迁移工具、生成制品或执行发布认证前读取本页。活动 selection 只从[迁移执行入口](../../plans/typescript-migration/README.md)的唯一 `ACTIVE_SELECTION` 行读取，入口属性来自 `test-routing.json`，源码范围来自 `scope.json`；历史段落的测试数量不充当当前集合。
+选择检查、修改迁移工具、生成制品或执行发布认证前读取本页。普通 PR 按 [testing-policy.json](../../plans/testing-policy.json) 选择 profile；入口属性唯一来自 `test-routing.json`，源码范围来自 `scope.json`。旧活动 selection 保留兼容/历史用途。前向依据为 [ADR-0053](../../adr/0053_mvp_delivery_and_test_policy.md)。
 
 ## 普通 PR
 
-普通 TypeScript PR 使用活动 selection 的严格类型、一次构建、相关业务/工具测试、制品与自有资源清理；历史来源与差异保护只由 SS009 的单一 Linux PR job 执行。完整 current 回归使用手动 full；当前严格 readiness 与固定历史证明分别使用两个独立 workflow 的手动 certify，R01 记录两条 SUCCESS 运行 URL。具体步骤见 [迁移执行入口](../../plans/typescript-migration/README.md)。
+先说明本次影响，用 `pr-plan.mjs --base <base> --head <head>` 读取真实差异，按类别说明所选与 NOT_SELECTED。默认 head 为 HEAD，本地必须显式提供有效 base；PR 使用事件完整 base/head。重命名双方、删除、多模块和未知生产路径均纳入；坏 base/profile/入口、应执行空集失败。新增业务入口仍登记路由，不能只改策略绕开库存保护。
+
+文档路径只准备严格工具和文档检查，不做应用构建、PG、浏览器或媒体准备。代码/策略路径执行 strict、一次统一应用构建、相关工具/业务与制品校验；PG、浏览器、PyYAML、ffmpeg 从选中入口推导，工具/构建特殊依赖显式登记。构建后用 `runSelection` API 执行去重并集，避免 run-tests CLI 再构建；host、flags、超时、隔离和清理合同保持。Windows 原生由桌面边界或入口需求追加。CI 汇总必须确认计划及所选路径成功；意外跳过、取消、未完成、失败均拒绝。
+
+历史来源与差异保护仍由 SS009 单一 Linux PR job 执行。完整 current 回归为手动 full；当前严格 readiness 与固定历史证明分别为独立 workflow 的手动 certify，不自动运行或成为普通 PR 前置。
 
 下文“预检后执行严格 ready”适用于固定历史复现和发布认证，不是普通迁移 PR 的日常要求。认证器、候选指纹、历史证据、SQL、业务状态、默认 Feature Flag 和生产授权保持原约束。P00 只创建 PR，不运行 full/certify、不自动合并或推进后续阶段；不修改分支保护或 ruleset。
 
-日常本地顺序沿迁移执行入口：`npm.cmd run migration:build` 一次构建；`node .build/tools/gate.mjs types`；在任务自有 loopback PG18 上执行实际相关的已注册入口及工具回归；`node .build/tools/verify-artifact.mjs`；关闭自有资源。参数、host、flags、超时、隔离及清理沿原注册合同。需要已编译工具时直接调用 `.build/tools/`，避免再调用含 bootstrap/build 的旧别名。
+代码适用的本地顺序：`npm.cmd run migration:build` 一次；`node .build/tools/gate.mjs types`；执行计划和直接风险入口（仅需要时准备自有 loopback PG18）；相关工具检查；`node .build/tools/verify-artifact.mjs`；关闭自有资源。已编译工具直接调用 `.build/tools/`，避免 bootstrap/build 旧别名。纯文档用 `migration:tools` 后检查链接及指令预算。
 
-本地只选相关子集时记录完整路径和实际数量，不称其为活动全集；新 head 的远端普通 PR selection 独立完成。源码/SQL/共享宿主/依赖变化按实际影响扩大检查；重复评论本身不构成重跑全部检查的理由。长回归开始前在交付清单写明目标、候选、选择、完成条件与停止条件；用户改变目标后先按原批次收口已执行/未执行计数，再绑定新候选的检查范围。具名 full/certify 合同保持，定向 PASS 不补全旧轮次。
+本地子集记录完整路径/数量；新 head 的 CI 结果独立报告。SQL、共享核心/宿主、身份、事务、通知和依赖按影响扩大。新增验证先说明具体风险、现有覆盖缺口及停止条件；旧编号、测试名、验收记录或重复评论不能单独扩大。适用检查通过且缺口关闭即停止扩验；用户明确要求可扩大。本次引入的失败本次修，范围外问题另记，不能以历史分类掩盖。目标变化先收口旧批次的实际执行/未执行，再绑定新范围。
+
+## 四类验证与测试生命周期
+
+| 用途 | 范围与完成条件 |
+| --- | --- |
+| PR 检查 | 本次差异、直接风险与路由合同；计划所选检查完成 |
+| 扩展回归 | 明确风险及覆盖缺口的既有入口；缺口关闭即停止 |
+| 人工首版候选验收 | [实际开放能力](../../plans/mvp-release-simplification/README.md#首版能力与验收责任)、主体/对象权限、主链、通知异常与恢复；记录候选、设备、环境和未覆盖项，不等于部署授权 |
+| 历史复现 | 固定对象/原合同；原 full/certify 或 SS009 证据仅证明其对应范围 |
+
+测试分当前必需、按需扩展、历史专用、后续可物理移除；少量历史处置理由只记策略文件。允许随产品更新操作步骤/布局前提，保留有效业务断言；权限、幂等、隐私、恢复退出旧测试前要有替代覆盖。禁止 skip、放宽断言、改报告换通过。物理删除逐项处理路由、别名和消费者；本次保留旧文件/注册库存保护。纯记录后继不要求再生成业务候选或全套复审，原 FAIL/NOT_RUN 与历史 tested_head 不改写。
 
 ## 按风险选择已有验证入口
 
@@ -24,7 +39,7 @@ Electron 下载、认证跳转或窗口边界改动还运行 `package.json` 的�
 
 若尚未准备工具且不需要完整构建，先用 `npm.cmd run migration:tools` 准备既有严格工具。已经构建则直接运行 `npm.cmd run docs:agents:check` 和 `node --test .build/tools/check-agent-docs.test.mjs`，同一批检查不再次 bootstrap。普通 PR 在现有构建与类型步骤后运行这两项，不新增工作流，不改变手动 full/certify。
 
-文档检查只验证根 AGENTS 的本项目 8 KiB 预算、指令/复盘目录中的本地 Markdown 路径与锚点；不探测外部网络，也不能证明合同覆盖或现场就绪。OpenAI 的默认 32 KiB 是合并指令链的上限，8 KiB 是本项目为根文件选择的预算。
+文档检查验证根 AGENTS 的本项目 8 KiB 预算与适用本地 Markdown 路径/锚点；不探测外部网络，不能证明合同覆盖或现场就绪。8 KiB 是本项目预算。
 
 ## 历史复现与认证
 

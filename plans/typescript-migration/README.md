@@ -2,6 +2,10 @@
 
 ACTIVE_SELECTION: v3-p09
 
+## 当前普通 PR 策略（2026-11-03）
+
+普通 PR 从 [testing-policy.json](../testing-policy.json) 及 [pr-plan.mts](../../tools/ts-migration/pr-plan.mts) 按真实差异选检查，执行顺序见[验证规则](../../docs/agents/validation.md)。上面的唯一 `ACTIVE_SELECTION` 和下文旧 selection 保留历史/兼容用途，不再是普通 PR 的固定全集；不因旧名称或编号扩大当前义务。路由仍是入口、host、flags、资源的唯一库存；构建后复用 `runSelection` API，CLI 会先构建。手动 full/certify、历史对象及旧运行结果保持原合同，下文带日期的“普通 PR”表述属于当时记录。
+
 2026-10-23 后端目录前向整理按 [ADR-0044](../../adr/0044_server_application_layout_and_logical_source_identity.md) 实施：源码及脚本为 `app/server`，三份共用运行模块为根 `shared`，九份 PC 纯模块归入 PC。严格程序以仓库根原生输出对应运行目录，manifest 使用物理路径；T00 legacy 和退休规则保留原逻辑身份，前向映射受检查。固定历史 checkout 的原路径、REF、哈希及命令保持；活动 selection、全部注册宿主、flags、预算与 full／certify 合同不变。范围及实际验证见[目录记录](../app-layout/README.md)。
 
 2026-10-23 新 H5 源码迁至 `app/h5`。现有严格工具使用新源码定位、输入指纹与来源映射，运行输出仍为 `.build/runtime/h5`；源码型测试夹具更新位置，运行／历史根不批量替换。活动 selection、host、flags、原预算及 full／certify 合同保持。前向范围与实际验收见[应用目录整理](../app-layout/README.md)。

@@ -1,5 +1,7 @@
 # Published-history review preflight
 
+普通开发按 [ADR-0053](../../adr/0053_mvp_delivery_and_test_policy.md) 和[验证规则](../../docs/agents/validation.md)选择检查，不重复历史认证。纯记录后继只审查记录差异和适用 CI，不自动重建业务候选或重新完整复审；真实缺陷继续修复。真实性、祖先链、受保护证据及失败/取消/未执行记录约束保持。
+
 ## 当前开发与认证入口（v3，2026-10-03）
 
 普通 PR 的历史保护只有 `.github/workflows/ss009-evidence-history.yml` 中单一 Linux job：完整 checkout → published-history preflight → `pr-evidence-delta.test.mjs` → `pr-evidence-delta.mjs`。它不安装项目依赖，不执行当前业务回归或固定历史回放；TypeScript merge-check 不重复执行这三项。
