@@ -1,87 +1,57 @@
-import {WorkbenchLink as Link} from './WorkbenchLink';
-import {Dropdown} from '@heroui/react';
-import {Drawer,DrawerActions,DrawerMoreActions} from '../design/components/Drawer/Drawer';
-import {Section} from '../design/components/Section/Section';
-import {PropertyList,PropertyValue} from '../design/components/PropertyList/PropertyList';
-import {Avatar} from '../design/components/Avatar/Avatar';
-import {Tag} from '../design/components/Tag/Tag';
-import {StatusBadge} from '../design/components/StatusBadge/StatusBadge';
-import {SourceLabel} from '../design/components/SourceLabel/SourceLabel';
-import {TicketCard,TicketCardBody,TicketCategoryTile} from '../design/components/TicketCard/TicketCard';
-import {heatOf} from '../design/heat';
-import {BoardColumn as BoardColumnView,BoardGroup,boardEmptyMessage} from '../design/components/BoardColumn/BoardColumn';
-import {BoardSummary} from '../design/components/BoardSummary/BoardSummary';
-import {matchesBoardSummary,sortBoardItems} from '../design/board-presentation';
-import type {BoardSummaryFilter,BoardSort} from '../design/board-presentation';
-import {cardTags,statusTones,stagePresentation,actionPresentation} from '../design/status-map';
-import {Table as HTable} from "@heroui/react";
-import {ProcessedDatePicker} from './ProcessedDatePicker';
-import {Button as HButton} from '../design/components/Button/Button';
-import {PageHeader} from '../design/components/PageHeader/PageHeader';
-import {Toolbar,ToolbarFilters} from '../design/components/Toolbar/Toolbar';
-import {SegmentedControl} from '../design/components/SegmentedControl/SegmentedControl';
-import {FilterSelect} from '../design/components/FilterSelect/FilterSelect';
-import {readServiceCatalog} from '../features/board-filters/client';
-import {useBoardCardMotion} from '../design/use-board-card-motion';
-import {Form as HForm,Input as HInput,Label as HLabel,Link as HLink,ListBox} from "@heroui/react";
-import {WorkbenchSelect} from "./WorkbenchSelect";
-import {WorkbenchDisclosure} from "./WorkbenchDisclosure";
-import {SearchControls,criteriaFromUrl,useWorkbenchSearch,searchEmptyMessage} from '../features/search/WorkbenchSearch';
-import {SEARCH_KEYS,searchCriteriaKey,searchParameters} from '../../../../shared/workbench-search-contracts.mjs';
-import type {WorkbenchSearchCriteria} from '../../../../contracts/workbench_search_contracts';
-import {BoardActions,BoardActionCard,BoardDropColumn,BoardActionNotice} from '../features/board-actions/BoardActions';
-import {readBoardIntent} from '../features/board-actions/intent';
-import {WorkbenchReminders} from '../features/reminders/WorkbenchReminders';
-import {useDesktopSession} from '../desktop/host';
-import {WebReportUrgency} from '../features/web-report/WebReportUrgency';
-import {ItemFollow} from '../features/item-follow/ItemFollow';
-import {NotificationExceptions} from '../features/notification-exceptions/NotificationExceptions';
-import {TicketWaitingActions,TicketCancellation} from '../features/ticket-waiting/TicketWaitingActions';
-import {useEffect,useRef,useState} from 'react';
-import type {MouseEvent,ReactNode} from 'react';
-import {useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
-import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
-import {Button} from '../design/components/Button/Button';
-import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,Settings,LogOut,ChevronsUpDown,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,Search,Headset,UserRound,Building2,MapPin,Radio,Ticket,Clock3,Phone} from 'lucide-react';
-import {MorphIcon} from 'morphicons/react';
-import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
-import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
-import {api,ApiError,errorMessage,statusLabels} from '../api/client';
-import type {BoardColumn,BoardCompletionRange,WorkbenchCard,WorkbenchDetail,Principal} from '../api/client';
-import {useUiStore} from './ui-store';
-import {ActivityTimeline} from './DetailPresentation';
-import {DetailDialogProvider} from './DetailDialog';
-import {TicketNotes} from '../features/ticket-notes/TicketNotes';
-import {clearSessionAuthorization,clearSessionView,clearItemView,clearTicketUnassignView,clearTicketTakeoverView,clearTicketReturnView} from './authorization';
-import {subscribeDrafts} from '../features/drafts/encrypted-drafts';
-import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
-import {TicketConversationHandling} from '../features/ticket-handling/TicketConversationHandling';
-import {TicketCompletion} from '../features/ticket-completion/TicketCompletion';
-import {TicketTakeoverCompletion} from '../features/ticket-takeover-completion/TicketTakeoverCompletion';
-import {TicketAssignmentHistory} from '../features/assignment-history/TicketAssignmentHistory';
-import {TicketRoundNotifications} from '../features/ticket-round-notifications/TicketRoundNotifications';
-import {TicketReopen} from '../features/ticket-reopen/TicketReopen';
-import {SharedFollowUp} from '../features/follow-up/SharedFollowUp';
-import {TicketAssignment} from '../features/ticket-assignment/TicketAssignment';
-import {TicketTakeover} from '../features/ticket-takeover/TicketTakeover';
-import {TicketUnassign} from '../features/ticket-unassign/TicketUnassign';
-import {TicketReturnToDispatch} from '../features/ticket-return-to-dispatch/TicketReturnToDispatch';
-import {ReportMaterialsSection} from '../features/attachments/ReportMaterialsSection';
-import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
-import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
-import {Conversations,ItemConversations} from '../features/conversations/Conversations';
-import {IncidentCandidates} from '../features/incident-candidates/IncidentCandidates';
-import {CandidateDetailPage} from '../features/incident-candidates/CandidateDetail';
-import {IncidentResultPage} from '../features/incident-candidates/IncidentResult';
-import {ReviewWorkspace} from '../features/manual-review/ReviewWorkspace';
-import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMaterial';
-import {SupplementFollowUp,SupplementFollowUpSummary} from '../features/supplement-follow-up/SupplementFollowUp';
-import {ManualReportEntry,ManualReportForm} from '../features/manual-report/ManualReportForm';
-import {ActivityPeople} from '../features/activity/ActivityPeople';
-import {realtimeLabels} from '../realtime/useRealtime';
-import type {RealtimeView} from '../realtime/useRealtime';
+import { Dropdown,Label as HLabel,Table as HTable,ListBox } from '@heroui/react';
+import { useInfiniteQuery,useMutation,useQuery,useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper,tableFeatures,useTable } from '@tanstack/react-table';
+import { PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData } from 'lucide';
+import { Bell,ChevronDown,ChevronsUpDown,ChevronUp,LayoutGrid,List,LogOut,MessageSquare,RefreshCw,Search,Settings,TriangleAlert } from 'lucide-react';
+import { MorphIcon } from 'morphicons/react';
+import type { MouseEvent,ReactNode } from 'react';
+import { useEffect,useRef,useState } from 'react';
+import { useLocation,useNavigate,useParams,useSearchParams } from 'react-router';
+import type { WorkbenchSearchCriteria } from '../../../../contracts/workbench_search_contracts';
+import { SEARCH_KEYS,searchCriteriaKey,searchParameters } from '../../../../shared/workbench-search-contracts.mjs';
+import type { BoardColumn,BoardCompletionRange,Principal,WorkbenchCard } from '../api/client';
+import { api,ApiError,errorMessage } from '../api/client';
+import type { BoardSort,BoardSummaryFilter } from '../design/board-presentation';
+import { matchesBoardSummary,sortBoardItems } from '../design/board-presentation';
+import { Avatar } from '../design/components/Avatar/Avatar';
+import { BoardColumn as BoardColumnView,boardEmptyMessage,BoardGroup } from '../design/components/BoardColumn/BoardColumn';
+import { BoardSummary } from '../design/components/BoardSummary/BoardSummary';
+import { Button,Button as HButton } from '../design/components/Button/Button';
+import { FilterSelect } from '../design/components/FilterSelect/FilterSelect';
+import { PageHeader } from '../design/components/PageHeader/PageHeader';
+import { SegmentedControl } from '../design/components/SegmentedControl/SegmentedControl';
+import { SourceLabel } from '../design/components/SourceLabel/SourceLabel';
+import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
+import { TicketCard,TicketCardBody,TicketCategoryTile } from '../design/components/TicketCard/TicketCard';
+import { Toolbar,ToolbarFilters } from '../design/components/Toolbar/Toolbar';
+import { heatOf } from '../design/heat';
+import { cardTags,stagePresentation } from '../design/status-map';
+import { useBoardCardMotion } from '../design/use-board-card-motion';
+import { useDesktopSession } from '../desktop/host';
+import { BoardActionCard,BoardActions,BoardDropColumn } from '../features/board-actions/BoardActions';
+import { readServiceCatalog } from '../features/board-filters/client';
+import { Conversations } from '../features/conversations/Conversations';
+import { subscribeDrafts } from '../features/drafts/encrypted-drafts';
+import { CandidateDetailPage } from '../features/incident-candidates/CandidateDetail';
+import { IncidentCandidates } from '../features/incident-candidates/IncidentCandidates';
+import { IncidentResultPage } from '../features/incident-candidates/IncidentResult';
+import { ManualReportEntry,ManualReportForm } from '../features/manual-report/ManualReportForm';
+import { NotificationExceptions } from '../features/notification-exceptions/NotificationExceptions';
+import { WorkbenchReminders } from '../features/reminders/WorkbenchReminders';
+import { criteriaFromUrl,SearchControls,searchEmptyMessage,useWorkbenchSearch } from '../features/search/WorkbenchSearch';
+import { SourceGroupDirectory } from '../features/source-groups/SourceGroupDirectory';
+import { SupplementFollowUpSummary } from '../features/supplement-follow-up/SupplementFollowUp';
+import { WebReportUrgency } from '../features/web-report/WebReportUrgency';
+import type { RealtimeView } from '../realtime/useRealtime';
+import { realtimeLabels } from '../realtime/useRealtime';
+import { clearItemView,clearSessionAuthorization,clearSessionView,clearTicketReturnView,clearTicketTakeoverView,clearTicketUnassignView } from './authorization';
+import { ProcessedDatePicker } from './ProcessedDatePicker';
+import { useUiStore } from './ui-store';
+import { WorkbenchDetailDrawer as Detail } from './WorkbenchDetail';
+import { itemLink,Owner,Status,TeamAvatar,useReporterProfile } from './WorkbenchItemPresentation';
+import { WorkbenchLink as Link } from './WorkbenchLink';
 
-import {BoardColumnLoading} from './WorkbenchLoading';
+import { BoardColumnLoading } from './WorkbenchLoading';
 
 const names:Record<BoardColumn,string>={pending:stagePresentation.pending.label,active:stagePresentation.active.label,closed:stagePresentation.closed.label};
 const columns:readonly BoardColumn[]=['pending','active','closed'];
@@ -108,40 +78,12 @@ function relativeTime(value:string,now:number){
 function Message({text,retry}:{text:string;retry?:()=>void}){
   return <div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p>{retry?<Button tone="secondary" onPress={retry}>重新读取</Button>:null}</div>;
 }
-function itemLink(item:Pick<WorkbenchCard,'kind'|'id'>,search:string){
-  const parameters=new URLSearchParams(search);if(parameters.has('locate')){parameters.delete('locate');search=parameters.size?'?'+parameters:'';}
-  return '/items/'+item.kind+'/'+item.id+search;
-}
-function Status({item}:{item:WorkbenchCard}){
-  return <><StatusBadge className="status-chip" tone={statusTones[item.status]??'neutral'}>{statusLabels[item.status]??'状态待确认'}</StatusBadge>{item.kind==='ticket'&&item.review_reason?<Tag className="status-chip" tone={actionPresentation.review.tone}>待复核</Tag>:null}</>;
-}
-function TeamAvatar({name}:{name:string}){
-  return <Avatar aria-hidden="true" name={name}/>;
-}
-function Owner({name,compact=false}:{name:string|null;compact?:boolean}){
-  return <span className="owner">{name?<TeamAvatar name={name}/>:<Avatar aria-hidden="true"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
-}
 function SharedFollowUpSummary({value,compact=false}:{value:WorkbenchCard['follow_up_schedule'];compact?:boolean}){
   if(!value)return null;
   return <p className={'shared-follow-up-summary'+(value.is_due?' is-due':'')} title={'共享跟进 · '+(value.is_due?'已到期':'已安排')+' · '+value.due_at+'（北京时间）'}>
     <strong>{compact?'':'共享跟进 · '}{value.is_due?'已到期':'已安排'}</strong>
     <time dateTime={value.due_at.replace(' ','T')+'+08:00'}>{value.due_at}（北京时间）</time>
   </p>;
-}
-function useReporterProfile(item:WorkbenchCard,principal:Principal){
-  return useQuery({queryKey:['reporter-profile',principal.principal_id,item.kind,item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterProfile(item.kind,item.id,signal),
-    enabled:principal.web_reports_enabled===true&&item.source==='PORTAL'&&!item.reporter_name&&!item.reporter_department,staleTime:300_000,gcTime:300_000,retry:false});
-}
-function ReporterDisplay({item,principal,detail=false,requested}:{item:WorkbenchCard;principal:Principal;detail?:boolean;requested?:WorkbenchDetail['requested_item']}){
-  const profile=useReporterProfile(item,principal);
-  const name=item.reporter_name??profile.data?.name??(item.reporter_profile?'报修人姓名暂不可用':'报修人姓名未提供'),department=item.reporter_department??profile.data?.department??(item.reporter_profile?'部门暂不可用':'部门未提供');
-  const title=name+' · '+department+(item.reporter_profile?.source==='LATER_LOOKUP'?'（资料取得于 '+item.reporter_profile.captured_at+'）':profile.data?.current?'（当前企业微信资料）':'');
-  return detail?<><div className="property-field"><dt><UserRound size={17}/>报修人</dt><dd title={title}>{item.reporter_name||profile.data?.name?<Owner name={name}/>:<span>{name}</span>}</dd></div><div className="property-field"><dt><Building2 size={17}/>报修部门</dt><dd title={title}>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div></>:<p className="card-meta" title={title+' · '+item.source_label}><span className="ds-reporter-text">{name} · {department}</span><span aria-hidden="true">·</span><SourceLabel className="neutral-chip" source={item.source} label={item.source_label}/></p>;
-}
-function ReporterContact({item,principal,requested}:{item:WorkbenchCard;principal:Principal;requested:WorkbenchDetail['requested_item']}){
-  const contact=useQuery({queryKey:['reporter-contact',principal.principal_id,requested?.kind??item.kind,requested?.id??item.id,principal.authorization_revision],queryFn:({signal})=>api.reporterContact(item.id,signal),enabled:item.kind==='ticket',retry:false,gcTime:0});
-  const phone=contact.isError?null:contact.data?.phone,mobile=phone?.replace(/[\s+-]/gu,'').replace(/^86(?=1[3-9]\d{9}$)/u,''),formatted=mobile&&/^1[3-9]\d{9}$/u.test(mobile)?mobile.slice(0,3)+'-'+mobile.slice(3,7)+'-'+mobile.slice(7):phone;
-  return <div className="property-field reporter-contact"><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contact.isPending&&!contact.isError}>{formatted??(item.kind==='ticket'&&contact.isPending?'正在读取…':contact.isError?'暂不可用':'未提供')}</span></dd></div>;
 }
 function Card({item,principal,search,selected,now,located=false}:{item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;located?:boolean}){
   const profile=useReporterProfile(item,principal),name=item.reporter_name??profile.data?.name,department=item.reporter_department??profile.data?.department;
@@ -228,98 +170,6 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
     <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:null}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:null}<>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:null}</>
     <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{userMenu()}</div></aside>
     <main><header className="topbar"><HButton className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle} tone="secondary"><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></HButton><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':conversationPage?'服务会话':exceptionPage?'通知异常':newReport?'新报修':'工作台'}</strong></span><div className="topbar-actions"><span className="connection-status" role="status" aria-label={"连接状态："+realtimeLabels[realtime.status]}>{realtimeLabels[realtime.status]}</span><div className="topbar-desktop-settings"><HButton className="topbar-settings" tone="ghost" isIconOnly aria-label="设置" isDisabled={navigationBlocked} onPress={openSettings}><Settings size={18}/></HButton></div><div className="compact-user-menu">{userMenu(true)}</div></div></header><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked} desktopEpoch={desktopEpoch}/>{children}</main></div>;
-}
-function TicketNextStep({status}:{status:string}){
-  const steps:Record<string,[string,string]>={
-    NEW:['接单后开始处理','点击“接单”，领取工单并开始排查。'],
-    QUEUED:['接单后开始处理','点击“接单”，领取工单并开始排查。'],
-    ACCEPTED:['工单已接单','准备就绪后，点击“接单”开始排查。'],
-    REOPENED:['仍未解决，请重新接单','保留原工单号。请重新接单，再继续处理。'],
-    IN_PROGRESS:['继续处理报修','信息不足时，点击“等待补充”。故障排除后，填写处理结果并完工。'],
-    WAITING_REQUESTER:['等待报修人补充','网页补充收到后会自动恢复处理。电话或会话补充请先核对，再点击“恢复处理”。'],
-    WAITING_VENDOR:['等待厂商处理','请跟进厂商进度。可以继续排查时，点击“恢复处理”。'],
-    RESOLVED:['等待报修人确认','请回访报修人，确认故障是否解决。'],
-    CLOSED:['已完工，请回访','请确认故障是否解决。同一故障仍未解决时，点击“重开此工单”。'],
-    CANCELLED:['工单已取消','请查看取消原因。如需处理新的故障，请新建报修。'],
-  };
-  const step=steps[status];
-  return step?<section className="workflow-next" aria-label="当前处理步骤"><h3>{step[0]}</h3><p>{step[1]}</p></section>:null;
-}
-function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
-  const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[takeoverBlocked,setTakeoverBlocked]=useState(false),[takeoverCompletionBlocked,setTakeoverCompletionBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false),[waitingBlocked,setWaitingBlocked]=useState(false);
-  const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false),[itemFollowBlocked,setItemFollowBlocked]=useState(false),[supplementBlocked,setSupplementBlocked]=useState(false);
-  const [cancelBlocked,setCancelBlocked]=useState(false);
-  const [urgencyTarget,setUrgencyTarget]=useState<HTMLDivElement|null>(null);
-  const [noteActionsTarget,setNoteActionsTarget]=useState<HTMLDivElement|null>(null);
-  const [webReportBlocked,setWebReportBlocked]=useState(false),[completionOpen,setCompletionOpen]=useState(false),[mediaOpen,setMediaOpen]=useState(false);
-  const blockers={note:internalNoteBlocked,group:groupBlocked,handling:handlingBlocked,review:reviewBlocked,completion:completionBlocked,assignment:assignmentBlocked,cancel:cancelBlocked,takeover:takeoverBlocked,takeoverCompletion:takeoverCompletionBlocked,unassign:unassignBlocked,returnToDispatch:returnBlocked,waiting:waitingBlocked,reopen:reopenBlocked,followUp:followUpBlocked,follow:itemFollowBlocked,supplement:supplementBlocked,webReport:webReportBlocked};
-  const blockedByOther=(purpose:keyof typeof blockers)=>Object.entries(blockers).some(([name,value])=>name!==purpose&&value);
-  const otherCommandsBlocked=blockedByOther('webReport'),commandsBlocked=Object.values(blockers).some(Boolean);
-  const workflowBlocked=groupBlocked||reviewBlocked||takeoverBlocked||takeoverCompletionBlocked||unassignBlocked||returnBlocked||waitingBlocked||reopenBlocked||followUpBlocked||supplementBlocked;
-  useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
-  const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),pageHeading=useRef<HTMLHeadingElement>(null);
-  const routeState:unknown=location.state;
-  const route=routeState&&typeof routeState==='object'?routeState as Record<string,unknown>:null;
-  const parsedBoardIntent=readBoardIntent(route?.boardActionIntent);
-  // This is the existing presentation intent, not current authority to submit.
-  // Closing T42 cannot discard an already-open original command's protection.
-  const boardIntent=parsedBoardIntent?.kind===kind&&parsedBoardIntent.id===id?parsedBoardIntent:null;
-  const selectors=['.ticket-self-handling','.ticket-conversation-handling','.ticket-takeover','.ticket-completion','.ticket-takeover-completion','.ticket-reopen','[data-review-workspace]'];
-  const boardSelector=typeof route?.boardActionSelector==='string'&&selectors.includes(route.boardActionSelector)?route.boardActionSelector:'';
-  const boardMode=Boolean(boardIntent&&boardSelector),[cancelledBoardIntent,setCancelledBoardIntent]=useState<string|null>(null),boardIntentKey=boardIntent?JSON.stringify(boardIntent):'';
-  const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
-    queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
-  const close=()=>{if(commandsBlocked)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
-  const activityRoot=useRef<HTMLDivElement>(null);
-  const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
-  // Re-reading an open item must not take focus from an editor or move its target.
-  const detailPresent=Boolean(detail);
-  const secondaryBoardMode=boardMode&&!['.ticket-self-handling','.ticket-conversation-handling'].includes(boardSelector);
-  useEffect(()=>{if(fullPage&&detailPresent)pageHeading.current?.focus();},[fullPage,detailPresent,kind,id]);
-  const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
-  const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
-  const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
-  const content=<DetailDialogProvider>
-    <div className="detail-navigation">
-      <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span></div>
-      <div className="detail-toolbar-actions">
-        {detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}
-        {!fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||commandsBlocked} onClick={()=>move(previous)} tone="secondary"><ChevronUp size={17}/></HButton><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||commandsBlocked} onClick={()=>move(next)} tone="secondary"><ChevronDown size={17}/></HButton><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
-        <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={commandsBlocked} onClick={close} tone="secondary">{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
-      </div>
-    </div>
-    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body" ref={activityRoot}>
-      {result.isError?<p role="status" className="confirmed-facts">读取中断，以下为最近已确认资料；连接恢复后重新核验。</p>:null}
-      <header className="detail-heading"><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2></header>
-      <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError}/>
-      {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
-      <PropertyList aria-label="事项信息" header={<DrawerActions aria-label="工单常用操作" status={<><Status item={detail.item}/><div className="ds-drawer-urgency" ref={setUrgencyTarget}/></>}>
-        {detail.item.kind==='ticket'?<>
-          {principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('assignment')} onBlockedChange={setAssignmentBlocked}/>:null}
-          {principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:null}
-          {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled&&!boardMode?<TicketCompletion presentation="dialog" onOpenChange={setCompletionOpen} key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}
-          <DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><TicketCancellation key={principal.principal_id+':cancel:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('cancel')} onBlockedChange={setCancelBlocked}/></DrawerMoreActions>
-        </>:null}
-      </DrawerActions>}>
-        <ReporterDisplay item={detail.item} principal={principal} detail requested={detail.requested_item}/>
-        <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd></div>
-        <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{detail.item.source_label}</span></dd></div>
-        <div className="property-field"><dt><MapPin size={17}/>位置</dt><dd><PropertyValue>{detail.item.location}</PropertyValue></dd></div>
-        <ReporterContact item={detail.item} principal={principal} requested={detail.requested_item}/>
-        <div className="property-field property-wide"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<time dateTime={detail.reported_at.replace(' ','T')+'+08:00'} title="首次收到或登记报修的时间（北京时间）">{detail.reported_at}</time>:<span>未记录</span>}</dd></div>
-      </PropertyList>
-      {detail.description?<Section className="detail-description" title="报修描述"><p className="detail-report-description">{detail.description}</p></Section>:null}
-      <ReportMaterialsSection key={principal.principal_id+':materials:'+detail.item.kind+':'+detail.item.id} principal={principal} kind={detail.item.kind} id={detail.item.id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} readReady={result.isSuccess&&!result.isError} reporterName={detail.item.reporter_name} otherBlocked={otherCommandsBlocked} onBlockedChange={setWebReportBlocked} onMediaOpenChange={setMediaOpen} urgencyTarget={urgencyTarget}/>
-      {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id} readReady={result.isSuccess&&!result.isError} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}}/>:null}
-      <WorkbenchDisclosure section title={<>处理与协作</>} key={'workflow:'+detail.item.kind+':'+detail.item.id} className="detail-workflows" forceOpen={secondaryBoardMode||workflowBlocked}>{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}{detail.item.kind==='ticket'?<TicketNextStep status={detail.item.status}/>:null}{detail.item.kind==='ticket'&&principal.ticket_takeover_completion_enabled?<TicketTakeoverCompletion boardMode={boardMode} key={principal.principal_id+':takeover-completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverCompletionBlocked}/>:null}{detail.item.kind==='ticket'?<TicketWaitingActions key={principal.principal_id+':waiting:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('waiting')} onBlockedChange={setWaitingBlocked}/>:null}{detail.item.kind==='ticket'&&principal.supplement_follow_up_enabled?<SupplementFollowUp key={principal.principal_id+':supplement:'+detail.item.id} ticketId={detail.item.id} principal={principal} readReady={result.isSuccess&&!result.isError} onBlockedChange={setSupplementBlocked}/>:null}{detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled&&boardMode?<TicketCompletion boardMode={boardMode} key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}{detail.item.kind==='ticket'?<SharedFollowUp key={principal.principal_id+':follow-up:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setFollowUpBlocked}/>:null}{detail.item.kind==='ticket'&&principal.assignment_history_enabled?<TicketAssignmentHistory key={principal.principal_id+':history:'+detail.item.id} ticketId={detail.item.id} principal={principal}/>:null}{detail.item.kind==='ticket'?<TicketReopen boardMode={boardMode} key={principal.principal_id+':reopen:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReopenBlocked}/>:null}{detail.item.kind==='ticket'&&principal.ticket_takeover_enabled?<TicketTakeover boardMode={boardMode} key={principal.principal_id+':takeover:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setTakeoverBlocked}/>:null}{detail.item.kind==='ticket'?<TicketReturnToDispatch key={principal.principal_id+':return-to-dispatch:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setReturnBlocked}/>:null}{detail.item.kind==='ticket'&&principal.ticket_unassign_enabled?<TicketUnassign key={principal.principal_id+':unassign:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setUnassignBlocked}/>:null}<WorkbenchDisclosure title={<>关联会话</>} className="workflow-support"><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id}/></WorkbenchDisclosure>{principal.manual_review_enabled?<ReviewWorkspace key={'manual-review:'+principal.principal_id+':'+kind+':'+id} principal={principal} item={detail.item} requested={{kind:kind as WorkbenchCard['kind'],id}} refs={detail.review_refs??[]} onBlockedChange={setReviewBlocked}/>:null}</WorkbenchDisclosure>
-      <ActivityTimeline key={principal.principal_id+':activity:'+detail.item.kind+':'+detail.item.id} records={records} principal={principal} item={detail.item} active={!completionOpen&&!mediaOpen} now={now}>
-        {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button tone="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}
-      </ActivityTimeline>
-      {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
-    </div>:null}
-  </DetailDialogProvider>;
-  if(fullPage)return <article className="detail-page ds-detail" aria-labelledby="detail-title">{content}</article>;
-  return <Drawer dismissBlocked={commandsBlocked} onClose={close}>{content}</Drawer>;
 }
 interface ColumnQuery {
  isPending:boolean;isError:boolean;error:unknown;isFetchingNextPage:boolean;hasNextPage:boolean;
@@ -446,7 +296,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(unique.filter(item=>item.column===column))} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){

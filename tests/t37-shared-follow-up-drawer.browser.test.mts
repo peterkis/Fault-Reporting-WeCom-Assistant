@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // REGISTERED_SOURCE / NOT_RUN. Frozen external draft, one case240s, stock1.
 // Source reference a9daee9d26a618a8c92afe5e76a6e2fe5059157e. No repository/registry/fixture edits here.
 // The accessible controls below are TARGET DOM bindings, absent at the reference head.
@@ -45,7 +46,7 @@ async function reload(browser:Browser){
   const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
   await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'&&Boolean(document.querySelector(${JSON.stringify(drawer+' #detail-title')}))`);
   // The current detail deliberately keeps secondary workflows collapsed after navigation.
-  await browser.evaluate("(()=>{const group=document.querySelector('.detail-workflows');if(group&&!group.hasAttribute('data-expanded'))group.querySelector('[data-slot=disclosure-heading] button').click();})()");
+  await openWorkbenchStep(browser,'.shared-follow-up');
   await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.checkVisibility()===true`);
 }
 async function capture(browser:Browser,directory:string,name:string){

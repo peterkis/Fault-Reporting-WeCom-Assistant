@@ -21,8 +21,9 @@ import {ConversationReadTimeline} from './ConversationReadTimeline';
 import {conversations} from './client';
 import type {ConversationWorkspaceEntry,ConversationWorkspaceItem,ConversationMessageResult} from './client';
 const states=[['open','进行中'],['mine','我负责沟通'],['unassigned','待接管'],['waiting_human','待人工'],['waiting_user','待补充'],['failed_delivery','投递异常'],['ended','已结束']] as const;
-export function ItemConversations({principal,kind,id}:{principal:Principal;kind:string;id:string}){
+export function ItemConversations({principal,kind,id,onCountChange}:{principal:Principal;kind:string;id:string;onCountChange?:((count:number|null)=>void)|undefined}){
   const query=useQuery({queryKey:['item-conversations',principal.principal_id,kind,id],queryFn:({signal})=>conversations.links(kind,id,signal),enabled:principal.conversation_workspace_enabled});
+  useEffect(()=>{onCountChange?.(principal.conversation_workspace_enabled&&query.isSuccess&&!query.isError?query.data.items.length:null);},[onCountChange,principal.conversation_workspace_enabled,query.isSuccess,query.isError,query.data?.items.length]);
   if(!principal.conversation_workspace_enabled)return null;
   return <section className="item-conversations" aria-label="关联服务会话"><h3>关联服务会话</h3>{query.isPending?<p>正在核对关联会话…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:query.data.items.length?<ul>{query.data.items.map(v=><li key={v.session.session_id}><Link to={'/conversations/'+v.session.session_id}>{v.participant_label} · {v.topic} · {v.session.status==='ENDED'?'已结束':'进行中'}</Link></li>)}</ul>:<p>当前事项没有可读取的服务会话。可继续通过事项的处理操作协作。</p>}</section>;
 }

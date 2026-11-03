@@ -31,7 +31,7 @@ test('production Ticket-only controls use one POST, GET refresh, and reuse the a
       const capture=async name=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
       await browser.waitFor("Boolean(document.querySelector('[data-action=take-and-start]'))");
-      assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]')?.textContent"),'接单');
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]')?.textContent"),'领取并开始');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later]'))"),false);
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t04Posts=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t04Posts.push({path:String(path),body:JSON.parse(options.body)});return original(path,options);};document.querySelector('[data-action=take-and-start]').click();})()");
       await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('已开始处理')&&document.querySelector('.properties')?.innerText.includes('处理中')&&document.querySelector('.properties')?.innerText.includes('林舟')&&document.querySelector('.ticket-handling-version')?.textContent==='工单版本 4'&&document.querySelector('.ticket-handling-cycle')?.textContent.includes('处理轮次 1')");

@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // Independent successor to the frozen original selected UI tracer: status cell also carries a real manual-review badge.
 // Exactly two production UI cases; stock runner 240000ms/concurrency1, existing browser wait defaults.
 import {test} from 'node:test';
@@ -80,7 +81,7 @@ for(const stale of [false,true])test(stale
   try{
    const scenario=await prepare(fixture);completed.push(active);const {admin,path,ticketId,selected,related,before,target,ownerName}=scenario,webPath='/api/workbench/items/ticket/'+ticketId;
    fixture.runtime.server.on('request',observe);observing=true;active='PC_DETAIL_REAL';browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);
-   await browser.waitFor("document.querySelector('.detail-workflows .workbench-disclosure-trigger')?.checkVisibility()===true");await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+   await openWorkbenchStep(browser,'.ticket-return-to-dispatch');
    await browser.waitFor(`Boolean(${action})&&Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&(${reasonInput})?.disabled===false&&(${unfinishedInput})?.disabled===false&&(${property('状态')})==='等待厂商'&&(${property('处理人')})?.includes(${JSON.stringify(ownerName)})`);assert.equal(await browser.evaluate('location.origin'),fixture.origin);assert.equal(await browser.evaluate(`document.querySelector('.ds-drawer-status')?.querySelectorAll('.status-chip')[1]?.textContent?.trim()`),'待复核','the independent review fact remains visible beside the exact primary Ticket state');completed.push(active);
    // Transparent response cloning only: every captured reply is from actual public HTTP; no response injection.
    await browser.evaluate(`(()=>{const send=fetch;globalThis.__t09SelectedUi=[];globalThis.fetch=async(input,options)=>{const path=new URL(typeof input==='string'?input:input instanceof Request?input.url:String(input),location.origin).pathname,method=options?.method??'GET';const fact={order:globalThis.__t09SelectedUi.length,path,method,status:null,body:method==='POST'?JSON.parse(options.body):null,reply:null,reply_complete:false};globalThis.__t09SelectedUi.push(fact);const response=await send(input,options);try{fact.reply=await response.clone().json();fact.reply_complete=true;}catch{}fact.status=response.status;return response;};})()`);

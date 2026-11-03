@@ -1,3 +1,5 @@
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -34,7 +36,7 @@ async function productionForm(cleanupFailure=false){
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);
    await browser.waitFor("Boolean(document.querySelector('#detail-title'))");if(cleanupFailure)throw primaryFault;assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
    assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-takeover-completion'))"),true,'the formal production bundle must expose the independent composite form');
-   await browser.evaluate("(()=>{const section=document.querySelector('.detail-workflows');if(!section.hasAttribute('data-expanded'))section.querySelector('.workbench-disclosure-trigger').click();})()");await browser.waitFor("document.querySelector('.ticket-takeover-completion').checkVisibility()===true");
+   await openWorkbenchStep(browser,'.ticket-takeover-completion');await browser.waitFor("document.querySelector('.ticket-takeover-completion').checkVisibility()===true");
    await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
    assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover-completion select').value"),'');assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=TAKE_SELECTED]').checked"),true);
    assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-takeover-completion [data-session-choice] input[type=checkbox]:checked').length"),0);
@@ -58,3 +60,26 @@ async function productionForm(cleanupFailure=false){
 
 test('formal production detail requires explicit SELF group, separate blank public summary and preview confirmation before one atomic takeover-completion POST',()=>productionForm());
 test('real production-form diagnostic CDP failure retains the primary error and still closes browser, removes observer and writes its receipt',()=>productionForm(true));
+
+
+for(const failed of ['context','targets'] as const)test('takeover completion '+failed+' first-read failure exposes the original retry without an operation',async()=>{
+ await withT12Profile(async f=>{
+  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_RETRY_START'})).status,200);
+  const cookie=f.browserCookies[2];assert.ok(cookie?.url);let browser:Browser|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
+   await b.command('Page.enable');
+   const lostPath=s.path+(failed==='targets'?'/takeover-completion-targets':'');
+   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__t12ReadLost=false;globalThis.__t12RetryPosts=0;globalThis.fetch=async(url,options)=>{if(options?.method==='POST')globalThis.__t12RetryPosts++;const response=await original(url,options);if(new URL(String(url),location.href).pathname===${JSON.stringify(lostPath)}&&!globalThis.__t12ReadLost){globalThis.__t12ReadLost=true;await response.arrayBuffer();throw new TypeError('SYNTHETIC_INITIAL_PERMISSION_RESPONSE_LOST');}return response;};})()`});
+   await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id});await b.command('Page.bringToFront');
+   await b.waitFor("document.querySelector('.ticket-takeover-completion [role=alert]')?.checkVisibility()===true");
+   assert.equal(await b.evaluate("document.querySelector('.ds-next-step').getAttribute('data-read-state')"),'unknown');
+   assert.equal(await b.evaluate("document.querySelector('[data-action=refresh-takeover-completion]').checkVisibility()"),true);
+   await clickWorkbenchControl(b,'[data-action=refresh-takeover-completion]');
+   await b.waitFor("document.querySelector('.ds-next-step')?.getAttribute('data-read-state')==='ready'&&Boolean(document.querySelector('[data-step-action=takeover-complete]'))");
+   assert.equal(await b.evaluate('globalThis.__t12RetryPosts'),0);
+   assert.equal((await s.b.get(s.path)).value.status,'IN_PROGRESS');
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ },{recoveryEnabled:false});
+});

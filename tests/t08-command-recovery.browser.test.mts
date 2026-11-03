@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // Registered original production-bundle tracer; initially NOT_RUN. Production bundle, real commit and read-only original UUID recovery.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,7 +36,7 @@ for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery
    screenshots.push({file:file.replaceAll('\\','/'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticket,width:600,height:1080,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);
-   await browser.waitFor("document.querySelector('.detail-workflows .workbench-disclosure-trigger')?.checkVisibility()===true");await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+   await openWorkbenchStep(browser,'.ticket-unassign');
    await browser.waitFor(`Boolean(${reasonInput})&&document.querySelector('[data-action=unassign]')?.disabled===true`);
    if(recovery)await browser.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('最长24小时')");
    else{assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-unassign-draft-status]'))"),false);assert.deepEqual(await browser.evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name))'),[]);}

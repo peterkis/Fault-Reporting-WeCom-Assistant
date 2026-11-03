@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // Registered original selected/purpose recovery tracer; initially NOT_RUN. Future location: tests/t08-selected-recovery.browser.test.mts.
 // Exactly two production cases. The second needs only the fixture option forwarding described in its companion note.
 import {test} from 'node:test';
@@ -75,7 +76,7 @@ for(const temporary of [false,true])test(temporary
   fixture.runtime.server.on('request',observe);
   try{
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:600,height:1080,cookies:[{...cookie,url:fixture.origin+'/'}]});assert.ok(browser);
-   await browser.waitFor("document.querySelector('.detail-workflows .workbench-disclosure-trigger')?.checkVisibility()===true");await clickWorkbenchControl(browser,'.detail-workflows .workbench-disclosure-trigger');
+   await openWorkbenchStep(browser,'.ticket-unassign');
    await browser.waitFor(`Boolean(${reasonInput})&&(${reasonInput}).disabled===false&&(${draftStatus})?.textContent.includes('草稿仅在当前浏览器')`);
    await browser.evaluate(edit(reasonInput,reason));await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,target);
    await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);

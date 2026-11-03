@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // STAGED_RUNTIME / first real competition execution pending; no direct draft-row writes.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,7 +23,7 @@ function button(label:string){return `[...(${regionNode}?.querySelectorAll('butt
 function readyButton(label:string){return `Boolean(${button(label)})&&!(${button(label)}).disabled`;}
 async function click(surface:Surface,label:string){await surface.waitFor(readyButton(label));await surface.evaluate(`(()=>{const button=${button(label)};if(!button||button.disabled)throw Error('T37_NATIVE_CONTROL_UNAVAILABLE');button.click();})()`);}
 async function fill(surface:Surface,due:string){await surface.evaluate(`(()=>{const input=${inputNode};if(!(input instanceof HTMLInputElement)||input.type!=='text'||input.disabled)throw Error('T37_NATIVE_INPUT_UNAVAILABLE');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;if(!setter)throw Error('T37_NATIVE_INPUT_SETTER_REQUIRED');setter.call(input,${JSON.stringify(due)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
-async function ready(surface:Surface){await surface.waitFor('Boolean(document.querySelector(".detail-workflows"))');await surface.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");await surface.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled&&${regionNode}?.innerText.includes('草稿仅在当前浏览器')`);}
+async function ready(surface:Surface){await surface.waitFor('Boolean(document.querySelector(".detail-workflows"))');await openWorkbenchStep(surface,'.shared-follow-up');await surface.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled&&${regionNode}?.innerText.includes('草稿仅在当前浏览器')`);}
 async function current(http:T37Http,path:string){const response=await http.get(path);assert.equal(response.status,200,JSON.stringify(response.value));return response.value;}
 function version(value:unknown):number{assert.ok(typeof value==='number'&&Number.isSafeInteger(value)&&value>0);return value;}
 async function drain(fixture:T37Fixture){
