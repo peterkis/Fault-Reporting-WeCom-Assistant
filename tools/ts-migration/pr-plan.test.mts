@@ -49,8 +49,10 @@ test('notification risks include UNKNOWN, recipient authority and privacy admiss
   for(const word of ['sender-unknown','notification-identity','delivery-admission','exception-authorization'])assert.ok(paths(p).some(s=>s.includes(word)),word);
 });
 test('a new unrecognized production module gets a nonempty broader MVP fallback',()=>{
-  const p=plan('future-service/main.mts');assert.ok(p.build&&p.selection.entries.length>20);
-  assert.match(p.reasons[0]?.reason??'',/Unknown path/u);assert.ok(p.profiles.includes('mvp'));
+  for(const file of ['future-service/main.mts','future-service/assets/icon.svg','web/p2-reporter/assets/status.png']){
+    const p=plan(file);assert.ok(p.build&&p.selection.entries.length>20,file);
+    assert.match(p.reasons[0]?.reason??'',/Unknown path/u);assert.ok(p.profiles.includes('mvp'));
+  }
 });
 test('multiple modules union entries once and keep original host/flags requirements',()=>{
   const p=plan('app/pc-admin/src/Test.tsx','app/h5/src/Test.tsx','app/server/src/commands/test.mts','app/pc-admin/src/Other.tsx');

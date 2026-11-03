@@ -215,11 +215,11 @@
       "reason": "Ticket, identity, authorization, transaction or shared test harness"
     },
     {
-      "pattern": "(^|/)(?:README|CONTEXT|CHANGELOG|LICENSE)(?:\\.md)?$|\\.(?:md|png|jpe?g|webp|svg|pdf)$",
+      "pattern": "(^|/)(?:README|CONTEXT|CHANGELOG|LICENSE)(?:\\.md)?$",
       "profiles": [
         "docs"
       ],
-      "reason": "Documentation, records or screenshots outside production roots"
+      "reason": "Named documentation outside production roots; unknown resource extensions use the MVP fallback"
     }
   ],
   "fallback": [
