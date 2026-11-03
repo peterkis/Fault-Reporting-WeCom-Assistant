@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // STAGED_RUNTIME / first real browser execution pending. Prepared body and assertions retained.
 // Intended location: tests/t37-follow-up-recovery-first.browser.test.mts.
 // Requires only a fixture pass-through for the existing workbenchDraftRecoveryEnabled runtime option.
@@ -73,7 +74,7 @@ test('production T37 raw recovery retains the original shared follow-up UUID acr
     try{
       browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observeActualResponseLoss(schedulePath)});await reload(browser,schedulePath);
-await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await openWorkbenchStep(browser,'.shared-follow-up');
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))`);
       await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(region+' input[name="due_at"]')});if(!(input instanceof HTMLInputElement)||input.type!=='text')throw Error('T37_REAL_DUE_INPUT_REQUIRED');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;if(!setter)throw Error('T37_NATIVE_INPUT_REQUIRED');setter.call(input,${JSON.stringify(dueAt)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       await browser.waitFor(readyButton('设置共享时间'));await browser.evaluate(clickButton('设置共享时间'));

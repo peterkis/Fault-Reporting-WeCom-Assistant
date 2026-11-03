@@ -104,3 +104,14 @@ Workbench.tsx 最小接线例外已获用户确认。按当前卡 16 指令恢�
 - 对相同 head、相同配置只做一次有界 job 重跑。第二次尝试在卡 16 新增命令面板用例的“切到列表”操作处失败：等待 URL/弹窗容器并不保证新页面及选项已可交互，原直接 `.find(...).click()` 未找到目标。该次 2 PASS / 1 FAIL，后续 249 入口 NOT_RUN；原始日志、截图和两份 ZIP（CRC 已核）均保留于证据根 `ci-attempt1/`、`ci-attempt2/`。
 - 仅收紧 `pc-admin-card16.browser.test.mts` 自身的操作前置：等待原新报修表单/列表真正显示、等待目标选项，沿用共享真实点击辅助。原路由、权限、通知开关和 0 写入断言保留；不以扩大旧用例适配或放宽断言解决该失败。
 - 本地 `commands-10` 3/3 PASS，strict/negative types、build、artifact PASS；输入 `18f61a7fec32537bbedc4c5f3b9e8136cb278765a8d16da2526a94c20d99a14e`，manifest `3cd9977cde99ae1ebdc5ac10349fbda2bdfdb998d0c1c230fc522fb973b2182c`。生产代码与 `c610738a` 相同，后继发布 head 的审查和原有普通 CI 独立执行。
+
+## 卡 13 主线整合与获准的 CI 总预算例外
+
+- 卡 13 [#135](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/135) 已合入主线 `4379bba280a1ab08621f5c5ffd4b85436b5c8593`。其抽屉提取、共享辅助及既有测试更新全部沿 main，不在卡 16 中另作旧用例适配。
+- 同步前本分支干净，`c881a7eadd5350323b8edd2d620f02f3bce2a104` 已发布并审查无发现。建立恢复引用 `refs/recovery/pc-admin-v21-card16-pre-main-sync-20261103-c881a7ea`；以 merge 方式接入 main，保留所有已发布/被审提交的真实父链，不重绑旧验证对象。
+- 冲突仅两处：Workbench.tsx 以 main 的卡 13 版本为基础，接回卡 16 最小装配、到达呈现与已修复的顺序缓存；test-routing.json 保留卡 13 与卡 16 三个入口及原注册属性。未覆盖 WorkbenchDetail.tsx 或其它卡 13 实现。
+- `c881a7ea` 的普通 CI `41565996949` 业务选择集已完成，工具回归再次在原 40 分钟 job 总预算处取消；原始日志 `ci-c881.log` 保留。该次整体不记 PASS，当前提交复审无发现仍独立成立。
+- 用户明确批准“仅调整总 job 至 60 分钟”。本次只将 `.github/workflows/types-migration.yml` 的普通 PR `typescript-merge-check` 总预算由 40 改为 60；注册单项测试超时、选择集、断言、host/flags、并发、资源、其它 job、full/certify 及业务门禁均不变。不以此扩大旧用例适配。
+- 新基线下的实际构建、定向整合回归、CI 和复审结果后续按新候选独立记录，旧 65/7/28/3 项记录保持原输入身份。
+- 整合候选 `build-11.log` PASS：918 个实际编译语法检查、2757 输出；输入 `418b4822d8386a5631a1f33cc3a7916bdf5b23dd701ac21cc29b160e79e647d6`，manifest `070c6cbc2ae51c1786ee226f2e76b779037f36b8d3d87c398c45a635abaa34f6`。strict/negative types、Stylelint 0、ESLint 0、artifact、文档检查及文档工具 19/19 PASS。
+- 五个直接相关入口 33/33 PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN：卡 16 8、卡 13 5、原领取 6、基础正式 bundle 14。原件 `sync-related-11/summary.json`。没有继续适配其它旧用例；本地整合结果不重绑旧候选，也不替代新发布 head 的 CI/复审。

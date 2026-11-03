@@ -1,3 +1,4 @@
+import {StepEntry} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
@@ -113,7 +114,7 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange,item
       </DetailDialog>
 
     </>:<>
-      {allowed?<HButton type="button" data-action={action} isDisabled={blocked||otherBlocked} onClick={()=>setOpen(true)} tone="secondary">{labels[action]}</HButton>:null}
+      {allowed?<StepEntry action={action} label={labels[action]} fallbackTone={'secondary'}>{(tone,text)=><HButton type="button" data-action={action} isDisabled={blocked||otherBlocked} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
       {open?form:null}{recovery}
     </>}
     <DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>

@@ -1,3 +1,4 @@
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,writeFile,rm,readdir,unlink} from 'node:fs/promises';
@@ -24,6 +25,7 @@ test('production bundle displays a real authorized attachment and downloads actu
       assert.equal(typeof browserCookie.url,'string');
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1920,height:1080,cookies:[{...browserCookie,url:browserCookie.url as string}]});
       assert.ok(browser,'owned browser must launch');
+      await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');
       await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
       await browser.evaluate("(()=>{window.t16Urls=new Set();const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);URL.createObjectURL=value=>{const url=create(value);window.t16Urls.add(url);return url;};URL.revokeObjectURL=url=>{window.t16Urls.delete(url);revoke(url);};return true;})()");
       await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
@@ -41,7 +43,7 @@ test('production bundle displays a real authorized attachment and downloads actu
       const registered=await fetch(origin+'/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments',{headers:{cookie}});assert.equal(registered.status,200);assert.equal((await registered.json() as {items:{available:boolean}[]}).items[0]?.available,true,'a real browser-encoded JPEG must be supported');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:1080,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.media-refresh'))"),false);
-      const oldDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${oldDocument}&&document.querySelector('.detail-media-card img')?.naturalWidth>0`);
+      const oldDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${oldDocument}&&Boolean(document.querySelector('#detail-tab-trigger-attachments'))`);await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await browser.waitFor("document.querySelector('.detail-media-card img')?.naturalWidth>0");
       await browser.evaluate("(()=>{window.t16Urls=new Set();const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);URL.createObjectURL=value=>{const url=create(value);window.t16Urls.add(url);return url;};URL.revokeObjectURL=url=>{window.t16Urls.delete(url);revoke(url);};})()");
       await clickReadyDownload(browser);await browser.waitFor("document.querySelector('[data-toast-source=attachments]')?.textContent.includes('已交给浏览器下载')");
       let savedJpeg:Buffer|undefined;const jpegDeadline=Date.now()+5000;while(Date.now()<jpegDeadline){try{savedJpeg=await readFile(join(downloads,'report-attachment.jpg'));break;}catch{await new Promise(r=>setTimeout(r,25));}}
@@ -79,7 +81,7 @@ type T16Fixture=Parameters<Parameters<typeof withT16Fixture>[0]>[0];
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function withAttachmentBrowser(f:T16Fixture,run:(browser:Browser,directory:string)=>Promise<void>,reviewId?:string){
   const ticket=f.tickets[0];assert.ok(ticket);const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser:Browser|undefined,error:unknown;
-  try{const cookie=f.browserCookie;assert.equal(typeof cookie.url,'string');browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/'+(reviewId?'review/'+reviewId:'ticket/'+ticket.ticket.id)+'?detail=page',width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(browser);await browser.waitFor("Boolean(document.querySelector('.attachment-section'))");await run(browser,directory);}
+  try{const cookie=f.browserCookie;assert.equal(typeof cookie.url,'string');browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/'+(reviewId?'review/'+reviewId:'ticket/'+ticket.ticket.id)+'?detail=page',width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(browser);await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await browser.waitFor("Boolean(document.querySelector('.attachment-section'))");await run(browser,directory);}
   catch(failure){error=failure;try{if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
 }

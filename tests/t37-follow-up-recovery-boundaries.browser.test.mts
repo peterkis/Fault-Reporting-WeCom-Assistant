@@ -1,3 +1,4 @@
+import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 // STAGED_RUNTIME / first real browser boundary execution pending.
 // Intended location: tests/t37-follow-up-recovery-boundaries.browser.test.mts.
 // Four bounded native-browser cases. No direct draft/operation row writes, capacity or CAS races.
@@ -81,7 +82,7 @@ async function withBrowserCase(name:string,run:(context:CaseContext)=>Promise<vo
    const cookie=runtime.authenticate.browserCookies?.()[1];assert.ok(cookie);if(typeof cookie.url!=='string')throw Error('T37_BOUNDARY_COOKIE_REQUIRED');
    browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:observeWireLoss(ticketPath,schedulePath)});await reload(browser);
-await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await browser.evaluate("(()=>{const panel=document.querySelector('.detail-workflows');if(!panel.hasAttribute('data-expanded'))panel.querySelector('.workbench-disclosure-trigger').click();})()");
+await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');await openWorkbenchStep(browser,'.shared-follow-up');
    await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(region+' input[name="due_at"]')}))&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('草稿仅在当前浏览器')`);
    await run({fixture,browser,directory,ticketId,ticketPath,schedulePath,stored:storedTicket(fixture.handler,ticketId),http,recompose});
    const pixels=Buffer.from(await browser.screenshot(),'base64'),screenshotDirectory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(screenshotDirectory);const file=join(screenshotDirectory,'new-detail-1920.png');await writeFile(file,pixels);

@@ -3,6 +3,26 @@ import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 
+/** Open the current presentation of a purpose, retaining its original form and guards. */
+export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor'>,selector:string){
+  // Latch the real disclosure; attention can legitimately end while a query settles.
+  await browser.waitFor(`(()=>{
+    const node=document.querySelector(${JSON.stringify(selector)});
+    if(!node)return false;
+    const workflow=node.closest('.ds-step-workflow');if(!workflow)return node.checkVisibility();
+    const trigger=[...document.querySelectorAll('[aria-controls]')].find(control=>control.getAttribute('aria-controls')===workflow.id);
+    if(trigger){
+      if(trigger.getAttribute('data-step-open')!=='true'){
+        const more=trigger.closest('details.ds-drawer-more');if(more&&!more.open)more.querySelector('summary').click();
+        trigger.click();return false;
+      }
+      return node.checkVisibility();
+    }
+    const state=workflow.getAttribute('data-step-read-state');
+    return node.checkVisibility()&&(state==='ready'||state==='unknown');
+  })()`);
+}
+
 export async function openWorkbenchUserMenu(browser:Browser){
   // A real account-menu interaction first activates its tab; background rAF is suspended.
   await browser.command('Page.bringToFront');
@@ -30,9 +50,14 @@ export async function openWorkbenchLogoutBoundary(browser:Pick<Browser,'evaluate
 
 /** Click the actual visible control, including HeroUI's checkbox/radio label. */
 export async function clickWorkbenchControl(browser:Browser,selector:string){
+  const tab=await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('[role=tabpanel][hidden]')?.getAttribute('aria-labelledby')??null`);
+  if(typeof tab==='string')await clickWorkbenchControl(browser,'#'+tab);
   // v2 filters retain their controls in a native disclosure; use its real trigger first.
   if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-toolbar-filters');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
-  if(await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return Boolean(panel&&!panel.open&&!node?.matches('summary'));})()`))await clickWorkbenchControl(browser,'.ds-drawer-more>summary');
+  const moreLabel=await browser.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),panel=node?.closest('details.ds-drawer-more');return panel&&!panel.open&&!node?.matches('summary')?panel.querySelector('summary')?.getAttribute('aria-label'):null;})()`);
+  if(typeof moreLabel==='string')await clickWorkbenchControl(browser,'details.ds-drawer-more>summary[aria-label='+JSON.stringify(moreLabel)+']');
+  const workflow=await browser.evaluate(`(()=>{const panel=document.querySelector(${JSON.stringify(selector)})?.closest('.ds-step-workflow');return Boolean(panel&&panel.getAttribute('data-step-read-state')!=='unknown');})()`);
+  if(workflow)await openWorkbenchStep(browser,selector);
   const target=`(()=>{const root=document.querySelector(${JSON.stringify(selector)});return root?.matches('[data-slot=checkbox],[data-slot=radio]')?root.querySelector('label'):root?.matches('input[type=checkbox],input[type=radio]')?root.closest('label'):root;})()`;
   await browser.waitFor(`(()=>{const node=${target};return node?.checkVisibility()===true&&node.disabled!==true&&!node.closest('[data-disabled=true]');})()`);
   await browser.evaluate(`(()=>{const node=${target};node.scrollIntoView({block:'nearest',inline:'nearest'});})()`);
@@ -83,6 +108,9 @@ export async function assertWorkbenchPrimaryActions(browser:Browser){
 
 /** Media cards retain their preview frame instead of ordinary button dimensions. */
 export async function assertWorkbenchMediaPreviewGeometry(browser:Browser,width:number){
+  // Tab activation and resizing can place a card under the pointer; measure its resting frame.
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
+  await browser.waitFor("[...document.querySelectorAll('.detail-media-card img')].every(img=>getComputedStyle(img).transform==='none')");
   const cards:unknown=await browser.evaluate(`(()=>{const close=(a,b)=>Math.abs(a-b)<=1;return [...document.querySelectorAll('.detail-media-card')].filter(n=>n.checkVisibility()).map(n=>{const r=n.getBoundingClientRect(),c=getComputedStyle(n),label=n.querySelector('.ds-button-label'),l=label?.getBoundingClientRect(),image=n.querySelector('img'),i=image?.getBoundingClientRect();return {height:r.height,unpadded:c.padding==='0px',labelFills:Boolean(l&&close(l.width,n.clientWidth)&&close(l.height,n.clientHeight)),imageFills:!image||Boolean(i&&l&&close(i.width,l.width)&&close(i.height,l.height)&&getComputedStyle(image).objectFit==='cover')};});})()`);
   assert.ok(Array.isArray(cards));assert.ok(cards.length>0,'media geometry must observe actual preview cards');
   for(const card of cards){assert.ok(card&&typeof card==='object'&&'height' in card&&'unpadded' in card&&'labelFills' in card&&'imageFills' in card);assert.equal(card.height,width<=640?145:170);assert.equal(card.unpadded,true);assert.equal(card.labelFills,true);assert.equal(card.imageFills,true);}

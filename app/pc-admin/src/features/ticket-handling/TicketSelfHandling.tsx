@@ -1,3 +1,4 @@
+import {StepEntry} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
@@ -42,7 +43,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
   const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[],cardMode=cardActionTarget!==undefined;
   // Keep the original request/result controller mounted; only its idle presentation is optional.
   if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&state==='idle')return null;
-  const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={cardMode?'secondary':'primary'}>{cardMode?'领取 E':'接单'}</HButton>:null;
+  const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<StepEntry action="take" label={cardMode?'领取 E':'接单'} fallbackTone={cardMode?'secondary':'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={tone}>{text}</HButton>}</StepEntry>:null;
   return <section data-activity-field="ticket-handling" data-board-claim-state={cardMode?state:undefined} className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
     {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}

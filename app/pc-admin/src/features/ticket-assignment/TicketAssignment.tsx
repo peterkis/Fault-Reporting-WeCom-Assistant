@@ -1,3 +1,4 @@
+import {StepEntry,useNextStep} from '../../design/components/Drawer/NextStep';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox} from "@heroui/react";
@@ -12,6 +13,7 @@ import {useAssignmentDraft,EMPTY_ASSIGNMENT} from './use-assignment-draft';
 import type {AssignmentIntent,AssignmentInput} from './use-assignment-draft';
 
 export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='工单',otherBlocked=false}:{ticketId:string;principal:Principal;itemLabel?:string;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
+  const step=useNextStep();
   const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0);
   const [open,setOpen]=useState(false);
   const [pending,setPending]=useState<AssignmentIntent|null>(null);
@@ -38,7 +40,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   const toggle=(sessionId:string,version:string,permitted:boolean)=>{if(blocked)return;setSelected(previous=>previous.some(row=>row.session_id===sessionId)?previous.filter(row=>row.session_id!==sessionId):permitted&&previous.length<8?[...previous,{session_id:sessionId,expected_row_version:Number(version)}]:previous);};
   if(!allowed.includes(action)&&!pending&&!draft.operationId&&!team&&!person&&!choice&&!selected.length&&state==='idle'&&context.isSuccess&&!context.isError)return null;
   return <section className="ticket-notes ticket-assignment detail-action-controller" aria-label="工单派单与转派">
-    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone="secondary">{pending||draft.operationId?'核对派单':'派单'}</HButton>:null}
+    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<StepEntry action="assign" label={pending||draft.operationId?'核对派单':action==='assign'?'派单给…':'转交'} fallbackTone={'secondary'}>{(tone,text)=><HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
     {context.isError&&!open?<HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重试读取派单权限</HButton>:null}
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'} title="派单" closeLabel="关闭派单窗口" className="detail-action-dialog detail-assignment-dialog">
     <p className="detail-operation-context">{itemLabel}</p>
@@ -55,7 +57,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
     </>:null}
     <p>责任交接不会接单或开始处理；沟通责任按明确选择处理。</p>
     {draft.enabled?<DraftStatus notify={false} data-assignment-draft-status role="status">{draft.message}</DraftStatus>:null}
-    <HButton type="button" data-action={action} isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||targets.isPending||targets.isError||!allowed.includes(action)||!team||!person||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))} onClick={submit} tone="primary">{action==='assign'?'确认派单':'确认转派'}</HButton>
+    <HButton type="button" data-action={action} isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||targets.isPending||targets.isError||!allowed.includes(action)||!team||!person||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))} onClick={submit} tone={step?'secondary':'primary'}>{action==='assign'?'确认派单':'确认转派'}</HButton>
     {state==='unknown'&&(pending||draft.operationId)?<HButton type="button" data-action="check-assignment-command" onClick={check} tone="secondary">{draft.enabled?'核对上次操作':'核对原操作结果'}</HButton>:null}
     {draft.enabled&&Boolean(team||person||choice||selected.length)&&!blocked?<HButton type="button" data-action="discard-assignment-draft" onClick={()=>{void draft.discard();}} tone="secondary">丢弃选择内容</HButton>:null}
 

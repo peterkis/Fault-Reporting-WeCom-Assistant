@@ -1,3 +1,4 @@
+import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
@@ -241,7 +242,7 @@ export function TicketUnassign({ticketId,principal,onBlockedChange}:{ticketId:st
   const nextCursor=related.data?.next_cursor??null;
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
   const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
-  return <section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
+  return <StepWorkflow readState={context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready'} action="unassign" label="撤销派工" available={allowed} attention={Boolean(originalId||blocked||hasUnassignInput(value)||message)}><section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
     <h3>撤销派工</h3>
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
@@ -267,5 +268,5 @@ export function TicketUnassign({ticketId,principal,onBlockedChange}:{ticketId:st
     {!originalId&&hasUnassignInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-unassign-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
     {hasUnassignInput(value)&&!busy?<HButton type="button" data-action="discard-unassign-draft" onClick={discard} tone="secondary">清除敏感填写内容</HButton>:null}
     {message?<ToastFeedback revision={messageRevision} source="ticket-unassign" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
-  </section>;
+  </section></StepWorkflow>;
 }

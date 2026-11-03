@@ -108,8 +108,8 @@ test('ticket detail and conversation summary keep independent cache shapes acros
       const fullPageReady=`location.pathname===${JSON.stringify('/workbench/app/items/ticket/'+session.ticketId)}&&Boolean(document.querySelector('#detail-title'))&&Boolean(document.querySelector('.detail-workflows'))`;
       for(let round=0;round<2;round++){
         await browser.waitFor(fullPageReady);
-        await browser.evaluate("(()=>{const section=document.querySelector('.detail-workflows');if(!section.hasAttribute('data-expanded'))section.querySelector('.workbench-disclosure-trigger').click();})()");
-        await clickWorkbenchControl(browser,'.workflow-support .workbench-disclosure-trigger');
+
+        await clickWorkbenchControl(browser,'#detail-tab-trigger-conversations');
         await browser.waitFor(`Boolean(document.querySelector('a[href="/workbench/app/conversations/${session.id}"]'))`);
         await browser.evaluate(`document.querySelector('a[href="/workbench/app/conversations/${session.id}"]').click()`);
         await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')");
