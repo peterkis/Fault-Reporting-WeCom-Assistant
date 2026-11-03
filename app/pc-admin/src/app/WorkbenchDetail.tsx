@@ -122,7 +122,8 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const stepReadState:StepReadState=states.includes('pending')?'pending':states.includes('unknown')?'unknown':'ready';
   // Re-reading an open item must not take focus from an editor or move its target.
   const detailPresent=Boolean(detail);
-  useLayoutEffect(()=>{if(detailPresent)pageHeading.current?.focus({preventScroll:true});},[fullPage,detailPresent,kind,id]);
+  useLayoutEffect(()=>{if(!fullPage&&detailPresent)pageHeading.current?.focus({preventScroll:true});},[fullPage,detailPresent,kind,id]);
+  useEffect(()=>{if(fullPage&&detailPresent)pageHeading.current?.focus();},[fullPage,detailPresent,kind,id]);
   const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
   const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
   const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
