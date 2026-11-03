@@ -83,4 +83,4 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
   },[client,key,enabled,activityEnabled,interval]);
   return view;
 }
-export const realtimeLabels:Record<WorkbenchRealtimeStatus,string>={disabled:'按需读取',connecting:'正在连接实时更新',live:'实时更新已连接',reconnecting:'实时连接中断，正在重连',polling:'实时暂不可用，定时重读',offline:'连接失败，显示最近已确认资料','auth-blocked':'会话需要重新核验'};
+export const realtimeLabels:Record<WorkbenchRealtimeStatus,string>={disabled:'手动刷新',connecting:'正在连接',live:'实时更新中',reconnecting:'连接已断开，正在重试',polling:'实时暂不可用，定时重读',offline:'连接失败，显示最近已确认资料','auth-blocked':'会话需要重新核验'};

@@ -1,0 +1,2 @@
+.ds-page .ds-split .inbox-composer .ds-segmented[role=tablist] {padding:var(--space-0-5);background:var(--bg-muted);}
+.ds-page .ds-split .inbox-composer .ds-segmented [role=tab][aria-selected=true] {background:var(--bg-canvas);box-shadow:var(--shadow-2);}
