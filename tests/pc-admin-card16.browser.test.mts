@@ -59,14 +59,18 @@ test('Card 16 commands reuse current search, discard stale results and navigate 
 
 test('Card 16 command entries and N use the original manual-report capability and route',{timeout:240000},()=>withT42BoardBrowser(async(_f,browser)=>{
   await browser.command('Page.bringToFront');await browser.waitFor("Boolean(document.querySelector('[data-action=new-report]'))");await browser.evaluate('document.activeElement.blur()');
-  await key(browser,'n','KeyN',78);await browser.waitFor("location.pathname.endsWith('/reports/new')");await browser.evaluate('document.activeElement.blur()');
+  await key(browser,'n','KeyN',78);await browser.waitFor("location.pathname.endsWith('/reports/new')&&document.querySelector('[data-manual-report-form]')?.checkVisibility()===true");
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await browser.evaluate('document.activeElement.blur()');
   await key(browser,'k','KeyK',75,2);await browser.waitFor("Boolean(document.querySelector('.efficiency-panel'))");
-  await browser.evaluate("[...document.querySelectorAll('.efficiency-result')].find(n=>n.textContent.includes('切到列表')).click()");
-  await browser.waitFor("new URL(location.href).searchParams.get('view')==='list'");
+  await browser.waitFor("document.querySelector('.efficiency-panel .efficiency-result:nth-child(2) strong')?.textContent==='切到列表'");
+  await clickWorkbenchControl(browser,'.efficiency-panel .efficiency-result:nth-child(2)');
+  await browser.waitFor("new URL(location.href).searchParams.get('view')==='list'&&Boolean(document.querySelector('.work-table'))");
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await browser.evaluate('document.activeElement.blur()');
   await key(browser,'k','KeyK',75,2);await browser.waitFor("Boolean(document.querySelector('.efficiency-panel'))");
+  await browser.waitFor("document.querySelector('.efficiency-panel .efficiency-result:first-child strong')?.textContent==='新报修'");
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.efficiency-result')].filter(n=>n.textContent.includes('新报修')).length"),1);
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.efficiency-result')].some(n=>n.textContent.includes('通知异常'))"),false,'disabled feature does not acquire a command entry');
-  await browser.evaluate("[...document.querySelectorAll('.efficiency-result')].find(n=>n.textContent.includes('新报修')).click()");
-  await browser.waitFor("location.pathname.endsWith('/reports/new')");
+  await clickWorkbenchControl(browser,'.efficiency-panel .efficiency-result:first-child');
+  await browser.waitFor("location.pathname.endsWith('/reports/new')&&document.querySelector('[data-manual-report-form]')?.checkVisibility()===true");
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);
 },{search:true,manualReports:true}));

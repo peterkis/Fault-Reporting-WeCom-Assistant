@@ -96,3 +96,11 @@ Workbench.tsx 最小接线例外已获用户确认。按当前卡 16 指令恢�
 - R1 最终 `build-9.log` PASS（917 语法检查、2755 输出）；输入 `715b6bae9973380c31ff1068c2bb51554f709edf615f85669bdd339e5351d3f2`，manifest `eb741e244ed02b4b135e15d2d12edbb2ad342fac28c3f12f1ab654d1517f9e28`。strict/negative types、Stylelint 0、ESLint 0、artifact PASS。
 - 四个直接相关注册入口 28/28 PASS，0 FAIL/CANCEL/SKIP/TODO/NOT_RUN：效率层 8、原领取 6、基础正式 bundle 14。原件 `r1-related-9/summary.json`。这是 R1 的定向集合，不重绑 B6 的 65 项结果，也不称为活动全集或 full/certify。
 - 自有合成库、连接、浏览器与 PG 再次按原合同释放，见 `cleanup-r1.json`；本次无视觉参数变更，保留已有四宽常规状态截图。新发布 head 的复审及适用 CI 以 PR 当前记录为准。
+
+## CI 收口与卡 16 新用例就绪修正
+
+- 用户明确要求保留已发现并修好的真实回归，停止继续扩大旧用例适配。此后不再修改旧用例、产品行为、选择集、门禁或超时配置。
+- `c610738a` 的第二轮 Codex 审查完成，无发现、无未解决问题。普通 CI 运行 `41558567090` 的第一次尝试：250 入口、822/822 PASS，业务集合无 FAIL/CANCEL/SKIP/TODO/NOT_RUN；工具回归在原 40 分钟 job 总预算处被取消，整体不记 PASS。取消后的 always 数据库清理及制品校验实际均 SUCCESS，制品 manifest 为 `a5f15b49699d946944f8c8950c682e158343eca1bae15068ddf87404d7893c8f`。早先“制品校验未运行”的判断据原件在此更正。
+- 对相同 head、相同配置只做一次有界 job 重跑。第二次尝试在卡 16 新增命令面板用例的“切到列表”操作处失败：等待 URL/弹窗容器并不保证新页面及选项已可交互，原直接 `.find(...).click()` 未找到目标。该次 2 PASS / 1 FAIL，后续 249 入口 NOT_RUN；原始日志、截图和两份 ZIP（CRC 已核）均保留于证据根 `ci-attempt1/`、`ci-attempt2/`。
+- 仅收紧 `pc-admin-card16.browser.test.mts` 自身的操作前置：等待原新报修表单/列表真正显示、等待目标选项，沿用共享真实点击辅助。原路由、权限、通知开关和 0 写入断言保留；不以扩大旧用例适配或放宽断言解决该失败。
+- 本地 `commands-10` 3/3 PASS，strict/negative types、build、artifact PASS；输入 `18f61a7fec32537bbedc4c5f3b9e8136cb278765a8d16da2526a94c20d99a14e`，manifest `3cd9977cde99ae1ebdc5ac10349fbda2bdfdb998d0c1c230fc522fb973b2182c`。生产代码与 `c610738a` 相同，后继发布 head 的审查和原有普通 CI 独立执行。
