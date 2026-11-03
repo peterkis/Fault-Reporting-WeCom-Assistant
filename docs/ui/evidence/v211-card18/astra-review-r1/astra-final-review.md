@@ -53,8 +53,8 @@ capture.json另记active/waiting浏览器POST均0、核心status/version/assigne
 
 ## 关键截图
 
-![waiting 1440](D:/CodexEvidence/pc-admin-v211-card18-20261103/astra-review-r1/stable/waiting-1440.png)
+![waiting 1440](waiting-1440.png)
 
-![active 1440](D:/CodexEvidence/pc-admin-v211-card18-20261103/astra-review-r1/stable/active-1440.png)
+![active 1440](active-1440.png)
 
 像素取色与8图哈希读回保存于同目录 `final-observations.json`。原始A1/A2/A3报告与第二轮报告保持不改写，关闭状态以本报告为准。

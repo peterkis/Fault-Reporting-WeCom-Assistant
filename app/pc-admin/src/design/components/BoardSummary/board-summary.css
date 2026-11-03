@@ -87,3 +87,5 @@
 
 .ds-board-toolbar .ds-board-filter-row:has(>.ds-board-filter-pill[data-filter-active]) {min-width: min(100%,calc(var(--space-16) * 3 + var(--space-12)));}
 .ds-board-toolbar .ds-board-filter-row:has(>.ds-board-filter-pill[data-filter-active]~.ds-board-filter-pill[data-filter-active]) {min-width: min(100%,calc(var(--space-16) * 4 + var(--space-8)));}
+
+.workspace.ds-page>.ds-toolbar.ds-board-toolbar {flex-wrap: nowrap;}

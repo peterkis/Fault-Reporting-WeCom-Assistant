@@ -51,8 +51,8 @@ root的20入口全批在本次复核交接时仍运行中，本报告不提前�
 
 ## 关键图
 
-![同高度等待场景](D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1440x1060.png)
+![同高度等待场景](waiting-1440x1060.png)
 
-![UNKNOWN恢复面](D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/unknown-preserved-1920.png)
+![UNKNOWN恢复面](unknown-preserved-1920.png)
 
 本报告与 `astra-final-observations.json` 为本轮追加证据；此前报告与原始失败/限制保持不改写。

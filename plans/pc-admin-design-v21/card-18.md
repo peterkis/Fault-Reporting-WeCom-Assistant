@@ -260,3 +260,15 @@ GitHub PR API确认卡17 #139已合并为`56ccf94895856b57bd8026d9d56c1e6716557e
 同步后DrawerStageGlyph变为共享StatusBadge/StageGlyph的抽屉适配，不再重复绘制SVG；Header仍13px。StatusBadge新增默认true的showStageGlyph展示选项，仅历史Timeline两端传false，以保留原6px状态点和无气泡语义；看板/列表默认行为不变。布局断言改用卡17既有的data-stage-glyph，并保持原业务/权限/请求/UUID/回执/次数断言。
 
 109项20入口的结果仍绑定合并前ae1c281d候选；新增上游基础用例后将重新验证同步候选，不能把旧109项当作新SHA通过。Astra报告同样保持各自原source指纹。同步/发布原件位于`D:/CodexEvidence/pc-admin-v211-card18-publish-20261103/`。
+
+## PR #140 首轮检查与同步修补（2026-11-03）
+
+PR #140 发布head为`bc0b2dff8ad5950582b114bdf2469001d172cc18`，基线为上文卡17合并点。远端Codex首轮复核已完成，明确“Didn't find any major issues”，没有P1/P2意见；[复核回执](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/140#issuecomment-6604965789)只绑定该head，后继仍须按其实际head核验。
+
+首轮[CI 41643308463](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41643308463)在pr-plan失败：两份Astra报告的四个截图Markdown目标使用本机绝对路径，业务检查未到达。仅将目标改为仓库内同目录图；四张归档图与原始图哈希4/4一致，报告正文结论、source指纹和原始副本保持。修补后的真实base/head文档路径预检通过。历史不可改写检查独立通过，未更改其规则。
+
+同步候选构建和types（含Stylelint/ESLint/Token/strict/负向类型）通过；直接风险20入口实跑113项，112 PASS、1 FAIL、0取消/跳过。失败为既有`workbench-detail-restructure`的390px页面无横向溢出断言；原断言保留。运行中切换工作区dirty状态（四处文档链接修正）还导致最终制品身份校验`MIGRATION_INPUT_DRIFT`；该失败保留，不将本轮记为制品通过。
+
+仓库外原用例诊断副本重复得到390px视口/415px文档宽度，越界源为背景看板工具栏，而非抽屉；仅临时将工具栏flex-wrap设为nowrap后得到390/390且原流程2/2通过。根因为卡17纵向工具栏继承通用窄屏wrap，列向换行使工具栏内在宽度撑开。最小同步补充只在`BoardSummary/board-summary.css`添加局部选择器的`flex-wrap:nowrap`，不改宽度、业务或选择器；这是本次必要的上游展示兼容修复，超过卡18原文件表的范围在此明列。正式候选将重新构建并运行原注册入口，不以临时探针代替通过结果。
+
+原始失败、探针、修补后正式结果、后继CI和Codex回执均保留在发布证据目录；PR说明追加实际结果，不把旧109项或Astra审图重绑到发布SHA。当前仍未运行full/certify、Electron、真实发送/现场写库、部署或Gate。
