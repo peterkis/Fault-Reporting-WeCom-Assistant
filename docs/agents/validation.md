@@ -47,6 +47,8 @@ Electron 下载、认证跳转或窗口边界改动还运行 `package.json` 的�
 
 ## 11. TypeScript 增量迁移编码条款（T00）
 
+下文保留 T00 原条款：语言、strict、单实现及运行时守卫等持续编码约束适用于新增开发；T00/P 批次的进入条件、旧计数、命令与 NOT_APPLICABLE 状态只用于对应历史复现，不作为普通 PR 前置。普通任务使用上文当前策略，按需进入旧迁移记录。
+
 本迁移分支及本 PR 合并后的新增开发遵循 [ADR-0026](../../adr/0026_typescript_strict_incremental_migration.md)。执行入口为 [plans/typescript-migration/README.md](../../plans/typescript-migration/README.md)，本条不改写上文任何已完成状态、业务 Gate 或现场批准。
 
 - 活动后端目标为 Node.js 24 + TypeScript strict + ESM；源码 `.mts`、产物 `.mjs`，相对运行时导入保留 `.mjs`。新增生产 JS/MJS 禁止；现有文件的独立缺陷修复不构成新增模块豁免。
