@@ -14,7 +14,7 @@ const policy=()=>parsePolicy(raw());
 const plan=(...paths:string[])=>planChanges(policy(),routes,paths.map(p=>({status:'M',paths:[p]})));
 const paths=(p:ReturnType<typeof plan>)=>p.selection.entries.map(e=>e.path);
 test('documentation never prepares application resources or application build',()=>{
-  const p=plan('docs/api/new-guide.md','plans/example/执行记录.md','docs/ui/evidence/new.png','.github/review/README.md','app/pc-admin/README.md','app/h5/README.md','docs/agents/baseline-history.md','app/pc-admin/docs/screenshot.png');
+  const p=plan('docs/api/new-guide.md','plans/example/执行记录.md','plans/example/trace.png','adr/decision-diagram.svg','docs/ui/evidence/new.png','.github/review/README.md','app/pc-admin/README.md','app/h5/README.md','docs/agents/baseline-history.md','app/pc-admin/docs/screenshot.png');
   assert.equal(p.lane,'docs');assert.equal(p.build,false);assert.deepEqual(p.selection.entries,[]);
   assert.deepEqual(p.requirements,{database:false,browser:false,pyyaml:false,ffmpeg:false,windows:false});
   assert.ok(p.not_selected.every(e=>e.reason.startsWith('NOT_SELECTED')));
@@ -25,6 +25,7 @@ test('PC covers current commands, authorization and UNKNOWN without unrelated H5
   assert.ok(paths(p).some(s=>s.includes('unknown'))&&paths(p).some(s=>s.includes('authority')));
   assert.ok(paths(p).some(s=>s.includes('realtime-tracer')),'SSE identity and scoped recovery remain covered');
   assert.ok(paths(p).every(s=>!s.includes('h5')&&!s.includes('incident')));assert.equal(p.requirements.ffmpeg,false);
+  const resource=plan('app/pc-admin/src/features/evidence/icon.svg');assert.ok(resource.build&&resource.profiles.includes('pc'));
 });
 test('H5 flow requests its media dependency and never native desktop',()=>{
   const p=plan('app/h5/src/pages/Result.tsx');assert.equal(p.requirements.windows,false);
@@ -49,7 +50,7 @@ test('notification risks include UNKNOWN, recipient authority and privacy admiss
   for(const word of ['sender-unknown','notification-identity','delivery-admission','exception-authorization'])assert.ok(paths(p).some(s=>s.includes(word)),word);
 });
 test('a new unrecognized production module gets a nonempty broader MVP fallback',()=>{
-  for(const file of ['future-service/main.mts','future-service/assets/icon.svg','web/p2-reporter/assets/status.png']){
+  for(const file of ['future-service/main.mts','future-service/assets/icon.svg','future-service/evidence/icon.svg','web/p2-reporter/assets/status.png']){
     const p=plan(file);assert.ok(p.build&&p.selection.entries.length>20,file);
     assert.match(p.reasons[0]?.reason??'',/Unknown path/u);assert.ok(p.profiles.includes('mvp'));
   }

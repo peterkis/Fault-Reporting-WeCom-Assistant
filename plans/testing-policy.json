@@ -142,7 +142,7 @@
       "reason": "Execution policy, routing or tooling: tools, strict, one build and compiled canary"
     },
     {
-      "pattern": "\\.md$|(?:^|/)(?:docs|evidence|screenshots)/.*\\.(?:png|jpe?g|webp|svg|pdf)$",
+      "pattern": "\\.md$|^(?:(?:docs|plans|adr|evidence|screenshots)/|app/(?:pc-admin|h5|server)/(?:docs|evidence|screenshots)/).*\\.(?:png|jpe?g|webp|svg|pdf)$",
       "profiles": [
         "docs"
       ],
