@@ -10,10 +10,9 @@ test('T42 narrow long-content reduced-motion board has keyboard-equivalent actio
     assert.equal(await browser.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"),true);
     assert.ok(String(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' h3')}).textContent`)).length>120);
     const title=object(await browser.evaluate(`(()=>{const bounds=document.querySelector(${JSON.stringify(card+' h3')}).getBoundingClientRect();return {x:bounds.x+8,y:bounds.y+8};})()`));assert.equal(typeof title.x,'number');assert.equal(typeof title.y,'number');
-    await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:title.x,y:title.y,button:'left',clickCount:1});
-    await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(title.x)+90,y:title.y,button:'left',buttons:1});
-    await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:Number(title.x)+90,y:title.y,button:'left',clickCount:1});
-    assert.ok(Number(await browser.evaluate("getSelection()?.toString().length??0"))>0,'text selection must remain possible outside the explicit handle');
+    assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).dataset.action`),'board-drag-handle','Card 17 moves the existing drag selector to the complete card');
+    assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(card+' .card-open')})).cursor`),'grab');
+    assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(card+' .board-action-tools [data-action=board-drag-handle]')}).length`),0,'no separate grip remains in the category column');
     await browser.command('Input.dispatchMouseEvent',{type:'mouseWheel',x:title.x,y:title.y,deltaX:0,deltaY:80});
     assert.equal(await browser.evaluate("Boolean(document.querySelector('.is-dragging'))"),false);
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).focus()`);

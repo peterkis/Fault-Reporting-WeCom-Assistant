@@ -5,9 +5,9 @@ import type {ReactNode} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {createPortal} from 'react-dom';
 import {TicketSelfHandling} from '../ticket-handling/TicketSelfHandling';
-import {Ellipsis,GripVertical} from 'lucide-react';
+import {Ellipsis} from 'lucide-react';
 import {DragDropProvider,useDraggable,useDroppable} from '@dnd-kit/react';
-import {Feedback} from '@dnd-kit/dom';
+import {Feedback,KeyboardSensor,PointerSensor,PointerActivationConstraints} from '@dnd-kit/dom';
 import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {Principal,WorkbenchCard,BoardColumn} from '../../api/client';
 import {reviewApi} from '../manual-review/client';
@@ -131,9 +131,9 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
   const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null);
   const releaseClaim=context.releaseClaim;
   useEffect(()=>{const target=claimTarget.current;return()=>{if(target)releaseClaim(target);};},[releaseClaim]);
-  const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
+  const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,sensors:[PointerSensor.configure({activationConstraints:event=>event.pointerType==='touch'?[new PointerActivationConstraints.Delay({value:250,tolerance:5})]:[new PointerActivationConstraints.Distance({value:5})]}),KeyboardSensor.configure({preventActivation:(event,source)=>event.code!=='Space'||event.target!==source.handle})],plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
   const prepareClaim=()=>{if(claimTarget.current)context.prepareClaim(item,claimTarget.current);};
-  return <div ref={ref} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
+  return <div ref={node=>{ref(node);const link=node?.querySelector<HTMLElement>('.card-open')??null;if(link)link.dataset.action='board-drag-handle';handleRef(link);}} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
     if(event.key.toLowerCase()!=='e'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!(event.target instanceof Element)||!event.target.closest('.card-open')||event.target.closest('input,textarea,[contenteditable=true]'))return;
     const button=claimTarget.current?.querySelector<HTMLButtonElement>('button:not(:disabled)');if(button&&!context.blocked){event.preventDefault();event.stopPropagation();button.click();}
   }} onClickCapture={event=>{
@@ -144,8 +144,7 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
     {children}
     <span ref={claimTarget} className="ds-board-claim-slot"/>
     {context.enabled?<div className="board-action-tools">
-      <HButton ref={handleRef} type="button" data-action="board-drag-handle" isIconOnly size="sm" isDisabled={context.blocked} aria-label={'拖动 '+item.number+' 发起业务动作'} title="仅此手柄启动拖动；也可使用业务动作按钮" tone="ghost"><GripVertical aria-hidden="true"/><span className="sr-only">移动</span></HButton>
-      <HButton type="button" ref={menuButton} data-action="board-action-menu" isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></HButton>
+      <HButton type="button" ref={menuButton} data-action="board-action-menu" data-drag-excluded isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></HButton>
       {menu?<div className="board-action-options" role="group" aria-label={item.number+' 的业务列'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setMenu(false);menuButton.current?.focus();}}}>
         {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" isDisabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}} tone="secondary">移至{boardColumnNames[target]}：打开合法表单</HButton>)}
         <HButton type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}} tone="secondary">取消</HButton>

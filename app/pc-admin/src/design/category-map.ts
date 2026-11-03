@@ -1,4 +1,4 @@
-import {CircleHelp, Globe, KeyRound, Monitor, Pill, Printer, Receipt, Route, ScanLine, SlidersHorizontal, Stethoscope, Ticket, Wifi, type LucideIcon} from 'lucide-react';
+import {CircleHelp, Globe, KeyRound, Monitor, PillBottle, Printer, Receipt, Route, ScanLine, SlidersHorizontal, Stethoscope, Ticket, Wifi, type LucideIcon} from 'lucide-react';
 
 export interface CategoryPresentation {
   readonly label: string;
@@ -13,7 +13,7 @@ export const categoryMap = {
   CLINICAL_CORE: {label: '核心临床与病历', bg: 'var(--cat-clinical-bg)', fg: 'var(--cat-clinical-fg)', icon: Stethoscope, border: null},
   PATIENT_ACCESS: {label: '挂号、签到与叫号', bg: 'var(--cat-access-bg)', fg: 'var(--cat-access-fg)', icon: Ticket, border: null},
   DIAGNOSTIC: {label: '检验与影像结果', bg: 'var(--cat-diag-bg)', fg: 'var(--cat-diag-fg)', icon: ScanLine, border: null},
-  PHARMACY_MEDICATION: {label: '药品与审方', bg: 'var(--cat-pharm-bg)', fg: 'var(--cat-pharm-fg)', icon: Pill, border: null},
+  PHARMACY_MEDICATION: {label: '药品与审方', bg: 'var(--cat-pharm-bg)', fg: 'var(--cat-pharm-fg)', icon: PillBottle, border: null},
   BILLING_INSURANCE: {label: '收费与医保', bg: 'var(--cat-billing-bg)', fg: 'var(--cat-billing-fg)', icon: Receipt, border: null},
   INTERNET_HOSPITAL: {label: '互联网医院', bg: 'var(--cat-online-bg)', fg: 'var(--cat-online-fg)', icon: Globe, border: null},
   ENDPOINT_PRINT: {label: '终端、显示与打印', bg: 'var(--cat-endpoint-bg)', fg: 'var(--cat-endpoint-fg)', icon: Monitor, border: null},
