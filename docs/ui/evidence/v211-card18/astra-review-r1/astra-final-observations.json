@@ -1,0 +1,283 @@
+{
+  "source_input_hash": "7fa0589725988fbe3ad716e0a00143c03a5763365abe81ba644b9fe31fc26e8e",
+  "screenshots": [
+    {
+      "file": "active-1920.png",
+      "sha256_match": true,
+      "png_size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "file": "active-1440.png",
+      "sha256_match": true,
+      "png_size": [
+        1440,
+        1080
+      ]
+    },
+    {
+      "file": "active-1280.png",
+      "sha256_match": true,
+      "png_size": [
+        1280,
+        1080
+      ]
+    },
+    {
+      "file": "active-900.png",
+      "sha256_match": true,
+      "png_size": [
+        900,
+        1080
+      ]
+    },
+    {
+      "file": "waiting-1920.png",
+      "sha256_match": true,
+      "png_size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "file": "waiting-1440.png",
+      "sha256_match": true,
+      "png_size": [
+        1440,
+        1080
+      ]
+    },
+    {
+      "file": "waiting-1280.png",
+      "sha256_match": true,
+      "png_size": [
+        1280,
+        1080
+      ]
+    },
+    {
+      "file": "waiting-900.png",
+      "sha256_match": true,
+      "png_size": [
+        900,
+        1080
+      ]
+    }
+  ],
+  "samples": {
+    "waiting-step": {
+      "rect_xyxy": [
+        740,
+        166,
+        1404,
+        228
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            253,
+            246,
+            236
+          ],
+          "pixels": 32863
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "pixels": 2086
+        },
+        {
+          "rgb": [
+            37,
+            99,
+            201
+          ],
+          "pixels": 1996
+        },
+        {
+          "rgb": [
+            242,
+            217,
+            184
+          ],
+          "pixels": 1356
+        }
+      ]
+    },
+    "composer": {
+      "rect_xyxy": [
+        770,
+        948,
+        1298,
+        1013
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            255,
+            253,
+            246
+          ],
+          "pixels": 28018
+        },
+        {
+          "rgb": [
+            251,
+            243,
+            219
+          ],
+          "pixels": 2276
+        },
+        {
+          "rgb": [
+            223,
+            221,
+            214
+          ],
+          "pixels": 1107
+        },
+        {
+          "rgb": [
+            140,
+            138,
+            132
+          ],
+          "pixels": 529
+        }
+      ]
+    },
+    "note": {
+      "rect_xyxy": [
+        772,
+        692,
+        1404,
+        734
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            251,
+            243,
+            219
+          ],
+          "pixels": 23928
+        },
+        {
+          "rgb": [
+            55,
+            53,
+            47
+          ],
+          "pixels": 604
+        },
+        {
+          "rgb": [
+            191,
+            185,
+            167
+          ],
+          "pixels": 286
+        },
+        {
+          "rgb": [
+            128,
+            124,
+            111
+          ],
+          "pixels": 279
+        }
+      ]
+    },
+    "report": {
+      "rect_xyxy": [
+        772,
+        537,
+        1404,
+        579
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            241,
+            241,
+            239
+          ],
+          "pixels": 23926
+        },
+        {
+          "rgb": [
+            55,
+            53,
+            47
+          ],
+          "pixels": 515
+        },
+        {
+          "rgb": [
+            184,
+            184,
+            181
+          ],
+          "pixels": 278
+        },
+        {
+          "rgb": [
+            124,
+            123,
+            118
+          ],
+          "pixels": 245
+        }
+      ]
+    },
+    "rail": {
+      "rect_xyxy": [
+        750,
+        654,
+        752,
+        664
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "pixels": 10
+        },
+        {
+          "rgb": [
+            231,
+            230,
+            230
+          ],
+          "pixels": 10
+        }
+      ]
+    },
+    "header-line": {
+      "rect_xyxy": [
+        740,
+        59,
+        1404,
+        60
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            241,
+            241,
+            240
+          ],
+          "pixels": 664
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "scope": "LOCAL_SYNTHETIC_NOT_PIXEL_REGRESSION",
+  "height": 1080,
+  "records": [
+    {
+      "width": 1920,
+      "before_source": "docs/ui/evidence/v21-card13/r5-final-compare-1920.png",
+      "before_source_sha256": "db01f4c82fbe697c18b8aed4feb1b36dc755c40914d411278d6b601f63fd3abc",
+      "before_crop": [
+        1920,
+        56,
+        3840,
+        1136
+      ],
+      "after_source_sha256": "0a4a858b080e0e4a2af3d5bf21a4bd7ef463895b73ce87fa2640c6842cea6b8f",
+      "comparison": "compare-1920.png",
+      "comparison_sha256": "f260a284c9e4ce0269103dfb4252e04c84bc419d5558138af5a40b2d0950d315"
+    },
+    {
+      "width": 1440,
+      "before_source": "docs/ui/evidence/v21-card13/r5-final-compare-1440.png",
+      "before_source_sha256": "44294171858713b7f0cb569a857756ff1de388d54345bc2d5e7e98b5ecb4ac92",
+      "before_crop": [
+        1440,
+        56,
+        2880,
+        1136
+      ],
+      "after_source_sha256": "8d1d691716f5fccf24b8b479cef68818e57ed7bc3182e49c7b156330763c4dd4",
+      "comparison": "compare-1440.png",
+      "comparison_sha256": "cdeb7f51d03cb013ce6505d1ed587a53da98deb1ef2faddabead103fe09e059b"
+    },
+    {
+      "width": 1280,
+      "before_source": "docs/ui/evidence/v21-card13/r5-final-compare-1280.png",
+      "before_source_sha256": "4bf70ca8ed1e884b3024315edc908ee472539c616dbef7e7972d7e5c4f1a39aa",
+      "before_crop": [
+        1280,
+        56,
+        2560,
+        1136
+      ],
+      "after_source_sha256": "d8f37a424768e73b8d72c09dbc993d98cc83b91b0852f4a6a85761957da43ac4",
+      "comparison": "compare-1280.png",
+      "comparison_sha256": "f53f5b7e7810b95eaab92c04a102f1edadc92384a2978367b92fed3540a7bfa1"
+    },
+    {
+      "width": 900,
+      "before_source": "docs/ui/evidence/v21-card13/r5-final-compare-900.png",
+      "before_source_sha256": "6e0d55bdfc15b2eea315922c542818d62cc78486fb0ec2b1942b5c03a69e33c2",
+      "before_crop": [
+        900,
+        56,
+        1800,
+        1136
+      ],
+      "after_source_sha256": "7376676de913fbfd2a054c741a722ed071feff27513201061c73dfb60861022b",
+      "comparison": "compare-900.png",
+      "comparison_sha256": "dfa50c3c2b839074d244965e0e091943c6348138eb9d841084c655817bf01cc7"
+    }
+  ]
+}

@@ -1,0 +1,399 @@
+{
+  "candidate_source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+  "method": "unaltered real screenshots with lossless side-by-side composition",
+  "images": [
+    {
+      "scene": "active",
+      "viewport_width": 1920,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/active-1920.png",
+      "before_sha256": "fd0b9884224a96dcf903d1213e02ea259ec5af95ce1b2b63800e17ff8a276371",
+      "after": "active-1920.png",
+      "after_sha256": "afb5fd2b8c4922e0c1481b5fedebd814414cdb5d5a52f4a7155f6dcf1a56a5f8",
+      "comparison": "compare-active-1920.png"
+    },
+    {
+      "scene": "active",
+      "viewport_width": 1440,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/active-1440.png",
+      "before_sha256": "2e2c0d165ec76f51251ffa03e75bb534bd34e1d7f54f5d0f0a25ce55243a1c3c",
+      "after": "active-1440.png",
+      "after_sha256": "ef8c985a9dc87fe6faaea9be9fe2086b2867591d676b27ce5f7ce84596482758",
+      "comparison": "compare-active-1440.png"
+    },
+    {
+      "scene": "active",
+      "viewport_width": 1280,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/active-1280.png",
+      "before_sha256": "1292b4f38e50caf792014a9b5c28cb7ecf25c8135950029fb30393fab6fb0986",
+      "after": "active-1280.png",
+      "after_sha256": "5a0a406ca595c402facb1c43c497a798603ee9dd82ff90d8feffe3521d1d8c58",
+      "comparison": "compare-active-1280.png"
+    },
+    {
+      "scene": "active",
+      "viewport_width": 900,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/active-900.png",
+      "before_sha256": "8584e2f9d25cc39e8627188624c48f08917f1041a9163757041b7d6df8443f90",
+      "after": "active-900.png",
+      "after_sha256": "7c0a022548150f97add427ce662b6e6a7448dd0a62cb9af07e81971b597cd86b",
+      "comparison": "compare-active-900.png"
+    },
+    {
+      "scene": "waiting",
+      "viewport_width": 1920,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/waiting-1920.png",
+      "before_sha256": "cfbdbe705488e480ce2b111efb8ed96ea4669e53c556f7a795872738fa8445b9",
+      "after": "waiting-1920.png",
+      "after_sha256": "b7b28984de357ca6c22f41250a58e03542958dd111559ba6cd69a02f72810305",
+      "comparison": "compare-waiting-1920.png"
+    },
+    {
+      "scene": "waiting",
+      "viewport_width": 1440,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/waiting-1440.png",
+      "before_sha256": "7d8d4bcb646b0aca8a5eaa21ddcd41651dcb63a619cea67218c29d5bfc212fb1",
+      "after": "waiting-1440.png",
+      "after_sha256": "331dd65aa8b0878e06b1fb5b5e11143a57a4e237bd7d640ea5c3e11cc916efaf",
+      "comparison": "compare-waiting-1440.png"
+    },
+    {
+      "scene": "waiting",
+      "viewport_width": 1280,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/waiting-1280.png",
+      "before_sha256": "554b214585a3b40c7b3a4c5e01c574ae1093d2e479ed201161dfd4fb0c295666",
+      "after": "waiting-1280.png",
+      "after_sha256": "8113f11162da635e246aa9e49ecd9cab4b6ccb481a5eab495c8564e94804345f",
+      "comparison": "compare-waiting-1280.png"
+    },
+    {
+      "scene": "waiting",
+      "viewport_width": 900,
+      "before": "docs/ui/evidence/v211-card18/astra-review-r1/waiting-900.png",
+      "before_sha256": "19992437649b806e247d652c510c2f400cfeca80d1907d4f41056901bf2b419a",
+      "after": "waiting-900.png",
+      "after_sha256": "133a1dfa32f0d43d648f362f35d7700dfcd3845ac8f54212079f096ef1b33d29",
+      "comparison": "compare-waiting-900.png"
+    }
+  ],
+  "stable_capture": {
+    "scope": "LOCAL_SYNTHETIC",
+    "profile": "existing HANDLING read projection and lawful waiting action enabled",
+    "scenes": [
+      {
+        "scene": "active",
+        "browser_posts": 0,
+        "status": "IN_PROGRESS",
+        "core_facts_unchanged": true
+      },
+      {
+        "scene": "waiting",
+        "browser_posts": 0,
+        "status": "WAITING_VENDOR",
+        "core_facts_unchanged": true
+      }
+    ],
+    "source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+    "measurements": [
+      {
+        "scene": "active",
+        "viewport_width": 1920,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1920.png",
+        "sha256": "afb5fd2b8c4922e0c1481b5fedebd814414cdb5d5a52f4a7155f6dcf1a56a5f8"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 1440,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1440.png",
+        "sha256": "ef8c985a9dc87fe6faaea9be9fe2086b2867591d676b27ce5f7ce84596482758"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 1280,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1280.png",
+        "sha256": "5a0a406ca595c402facb1c43c497a798603ee9dd82ff90d8feffe3521d1d8c58"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 900,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-900.png",
+        "sha256": "7c0a022548150f97add427ce662b6e6a7448dd0a62cb9af07e81971b597cd86b"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1920,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1920.png",
+        "sha256": "b7b28984de357ca6c22f41250a58e03542958dd111559ba6cd69a02f72810305"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1440,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1440.png",
+        "sha256": "331dd65aa8b0878e06b1fb5b5e11143a57a4e237bd7d640ea5c3e11cc916efaf"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1280,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1280.png",
+        "sha256": "8113f11162da635e246aa9e49ecd9cab4b6ccb481a5eab495c8564e94804345f"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 900,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-900.png",
+        "sha256": "133a1dfa32f0d43d648f362f35d7700dfcd3845ac8f54212079f096ef1b33d29"
+      }
+    ]
+  }
+}

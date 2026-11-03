@@ -1,0 +1,23 @@
+{
+  "source": "D:\\Projects\\Fault-Reporting-WeCom-Assistant\\docs\\ui\\prototype\\医小修 PC 管理端 v2.1.1 设计原型.html",
+  "sha256": "cd4d51460e8c9e2e4136892b969f4af40d8369cd0ba419eecbe28d2d62e1ce7c",
+  "drawer_resource_id": "74e1d0c3-990f-41e0-b364-3852b46fa814",
+  "template_sha256": "6bb36148cbb3f6099f47243c5b4ee46570775305aab789c777f85cd18b790a21",
+  "reference_width": 1440,
+  "reference_height": 1060,
+  "method": "static unpacked DOM/CSS plus current application screenshot pixel sampling",
+  "current_prototype_browser_rendered": false,
+  "thumbnail_element_found": false,
+  "restriction": "browser-client trusted bridge unavailable; file navigation denied by URL policy; no proxy or alternate surface workaround",
+  "historical_reference": {
+    "path": "docs/ui/evidence/v21-card13/r5-final-compare-1440.png",
+    "sha256": "44294171858713b7f0cb569a857756ff1de388d54345bc2d5e7e98b5ecb4ac92",
+    "crop": [
+      2880,
+      56,
+      4320,
+      1136
+    ],
+    "meaning": "historical prototype screenshot, not claimed as a new rendering of the supplied HTML"
+  }
+}

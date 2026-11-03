@@ -1,16 +1,19 @@
 import type {StepReadState} from '../design/components/Drawer/NextStep';
 import { useInfiniteQuery,useQuery } from '@tanstack/react-query';
-import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,Clock3,Copy,Headset,MapPin,Phone,Radio,Ticket,TriangleAlert,UserRound,X } from 'lucide-react';
+import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,Clock3,Copy,Headset,MapPin,Pause,Phone,Radio,Ticket,TriangleAlert,UserRound,X } from 'lucide-react';
 import { useCallback,useEffect,useLayoutEffect,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams } from 'react-router';
 import type { Principal,WorkbenchCard,WorkbenchDetail } from '../api/client';
-import { api,errorMessage,statusLabels } from '../api/client';
+import { api,statusLabels } from '../api/client';
 import { Button,Button as HButton } from '../design/components/Button/Button';
 import { Drawer,DrawerMoreActions } from '../design/components/Drawer/Drawer';
 import { DrawerTabs } from '../design/components/Drawer/DrawerTabs';
+import { DrawerStageGlyph } from '../design/components/Drawer/DrawerStageGlyph';
 import { NextStep } from '../design/components/Drawer/NextStep';
+import { nextSummary } from '../design/components/Drawer/next-summary';
+import { InlineAlert } from '../design/components/InlineAlert/InlineAlert';
+import { BeijingTime } from '../design/components/Timeline/BeijingTime';
 import { PropertyList } from '../design/components/PropertyList/PropertyList';
-import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
 import { Tag } from '../design/components/Tag/Tag';
 import { TicketCategoryTile } from '../design/components/TicketCard/TicketCard';
 import { heatOf } from '../design/heat';
@@ -46,7 +49,7 @@ import { WorkbenchLink as Link } from './WorkbenchLink';
 
 import { itemLink,Owner,Status,useReporterProfile } from './WorkbenchItemPresentation';
 function Message({text,retry}:{text:string;retry?:()=>void}){
-  return <div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p>{retry?<Button tone="secondary" onPress={retry}>重新读取</Button>:null}</div>;
+  return retry?<InlineAlert className="state-message" tone="danger" action={<Button tone="ghost" onPress={retry}>重试</Button>}>加载失败，请检查网络后重试</InlineAlert>:<div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p></div>;
 }
 function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:Principal}){
   const item=detail.item,profile=useReporterProfile(item,principal),requested=detail.requested_item;
@@ -63,14 +66,9 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
     <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{item.source_label}</span></dd></div>
     {item.location?<div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{item.location}</dd></div>:null}
     <div className="property-field reporter-contact" hidden={!formatted&&!contactPending&&!contactError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contactPending&&!contactError}>{formatted??(contactPending?'正在读取…':contactError?'暂不可用':'未提供')}</span></dd></div>
-    <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<time dateTime={detail.reported_at.replace(' ','T')+'+08:00'} title="首次收到或登记报修的时间（北京时间）">{detail.reported_at}</time>:<span>未记录</span>}</dd></div>
+    <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<BeijingTime value={detail.reported_at}/>:<span>未记录</span>}</dd></div>
     {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span><span className="ds-detail-ask">向报修人补问</span></dd></div>:null}
   </PropertyList>;
-}
-function nextSummary(item:WorkbenchCard,heatLabel:string|undefined){
-  const name=item.assignee_name??'处理人';
-  const summaries:Record<string,string>={NEW:'尚无人领取，领取后即可开始排查。',QUEUED:'尚无人领取，领取后即可开始排查。',ACCEPTED:name+'已领取，尚未开始。',IN_PROGRESS:name+'处理中，故障排除后请登记完工。',WAITING_REQUESTER:'等待报修人补充，收到信息后继续处理。',WAITING_VENDOR:'等待厂商回复，请跟进处理进度。',RESOLVED:'已解决，等待报修人确认。',CLOSED:'工单已关闭，同一故障仍未解决时可以重新打开。',CANCELLED:'工单已取消，请查看取消原因。',REOPENED:'同一故障仍未解决，请重新领取。',PENDING:'规则无法判断，需要人工确认。'};
-  return (heatLabel?'已等待 '+heatLabel.replace('超时 ','')+'。':'')+(summaries[item.status]??'请核对报修材料，确认下一步。')+(item.follow_up_schedule?' 下次跟进 '+item.follow_up_schedule.due_at.slice(5,16)+'。':'');
 }
 type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void};
 
@@ -133,18 +131,18 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
     <div className="detail-navigation">
       <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span><HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail} onPress={()=>{if(detail)void navigator.clipboard.writeText(detail.item.number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
       <div className="detail-toolbar-actions">
-        {!fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||commandsBlocked} onClick={()=>move(previous)} tone="ghost"><ChevronUp size={17}/></HButton><span className="ds-detail-position" aria-label="已加载范围中的位置">{index>=0?index+1:'—'} / {items.length}</span><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||commandsBlocked} onClick={()=>move(next)} tone="ghost"><ChevronDown size={17}/></HButton><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
+        {!fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||commandsBlocked} onClick={()=>move(previous)} tone="ghost"><ChevronUp size={17}/></HButton><span className="ds-detail-position" aria-label="已加载范围中的位置">{index>=0?index+1:'—'} / {items.length}</span><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||commandsBlocked} onClick={()=>move(next)} tone="ghost"><ChevronDown size={17}/></HButton><span className="ds-detail-toolbar-divider" aria-hidden="true"/><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
         {detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}
         <DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/>{detail?.item.kind==='ticket'?<TicketCancellation key={principal.principal_id+':cancel:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('cancel')} onBlockedChange={setCancelBlocked}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>
         <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={commandsBlocked} onClick={close} tone="ghost">{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
       </div>
     </div>
-    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body">
-      {result.isError?<p role="status" className="confirmed-facts">读取中断，以下为最近已确认资料；连接恢复后重新核验。</p>:null}
-      <header className="detail-heading ds-detail-hero"><TicketCategoryTile service={detail.item.service}/><div><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2><div className="ds-detail-state"><StatusBadge className="ds-stage-pill" data-stage={detail.item.column} tone={stagePresentation[detail.item.column].tone}>{stagePresentation[detail.item.column].label}</StatusBadge><span className="ds-drawer-status" hidden={statusLabels[detail.item.status]===stagePresentation[detail.item.column].label}><Status item={detail.item}/></span>{heat?<Tag className="ds-ticket-heat" tone={heat.tone}><Clock3 size={14}/>{heat.label}</Tag>:null}<div className="ds-drawer-urgency" ref={setUrgencyTarget}/><span>报修于 {detail.reported_at?.slice(5,16)??'时间未记录'} · {detail.item.source_label}</span></div></div></header>
+    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text="加载失败，请检查网络后重试" retry={()=>{void result.refetch();}}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body">
+      {result.isError?<><Message text="加载失败，请检查网络后重试" retry={()=>{void result.refetch();}}/><p role="status" className="confirmed-facts">以下为最近已确认资料；连接恢复后重新核验。</p></>:null}
+      <header className="detail-heading ds-detail-hero"><TicketCategoryTile service={detail.item.service}/><div><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2><div className="ds-detail-state"><DrawerStageGlyph stage={detail.item.column}/><span className="ds-drawer-status" data-waiting={detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'} hidden={statusLabels[detail.item.status]===stagePresentation[detail.item.column].label}>{detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'?<Pause className="ds-drawer-pause-glyph" aria-hidden="true"/>:null}<Status item={detail.item}/></span>{heat?<Tag className="ds-ticket-heat" tone={heat.tone}><Clock3 size={14}/>{heat.label}</Tag>:null}<div className="ds-drawer-urgency" ref={setUrgencyTarget}/><span>报修于 {detail.reported_at?<BeijingTime value={detail.reported_at} now={now}/>: '时间未记录'} · {detail.item.source_label}</span></div></div></header>
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
-      <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} summary={nextSummary(detail.item,heat?.label)} readState={stepReadState}>
+      <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} summary={<><span className="ds-next-step-message">{nextSummary(detail.item,heat?.label,detail.item.attention?.related_reasons.includes('HANDLING')===true,commandRead.data?.allowed_actions)}</span>{detail.item.follow_up_schedule?<span className="ds-next-step-follow-up"><span className="ds-next-step-separator"> · </span>下次跟进 <BeijingTime value={detail.item.follow_up_schedule.due_at} now={now}/></span>:null}</>} readState={stepReadState}>
         {detail.item.kind==='ticket'?<>          {principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('assignment')} onBlockedChange={setAssignmentBlocked}/>:null}
           {principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:null}
           {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled&&!boardMode?<TicketCompletion presentation="dialog" onOpenChange={setCompletionOpen} key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}

@@ -1,3 +1,4 @@
+import {BeijingTime} from '../../design/components/Timeline/BeijingTime';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {useEffect} from 'react';
 import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
@@ -22,8 +23,8 @@ export function TicketAssignmentHistory({ticketId,principal}:{ticketId:string;pr
    {!items.length?<p>当前没有可读取的责任记录。</p>:<ul>{items.map(row=><li data-assignment-history-row key={row.ticket_event_id}><span>
     <strong>{row.kind==='FIRST_RESPONSIBILITY'?'首次接单':'责任变化'}</strong>
     <small>{label(row.previous.person)}（{row.previous.team.state==='NONE'?'无组':label(row.previous.team)}） → {label(row.next.person)}（{row.next.team.state==='NONE'?'无组':label(row.next.team)}）</small>
-    <small>操作者 {label(row.actor)} · {row.occurred_at}（北京时间） · {row.handling_cycle.state==='KNOWN'?'处理轮次 '+row.handling_cycle.cycle_no:'轮次记录不足'}</small>
-    {row.communication.length?<ul aria-label="实际沟通交接">{row.communication.map(control=><li key={control.control_event_id}><span><small>沟通交接：{label(control.previous)} → {label(control.next)}</small><small>操作者 {label(control.actor)} · {control.occurred_at}（北京时间）</small></span></li>)}</ul>:<small>当前获权范围没有可返回的沟通交接记录。</small>}
+    <small>操作者 {label(row.actor)} · <BeijingTime value={row.occurred_at}/> · {row.handling_cycle.state==='KNOWN'?'处理轮次 '+row.handling_cycle.cycle_no:'轮次记录不足'}</small>
+    {row.communication.length?<ul aria-label="实际沟通交接">{row.communication.map(control=><li key={control.control_event_id}><span><small>沟通交接：{label(control.previous)} → {label(control.next)}</small><small>操作者 {label(control.actor)} · <BeijingTime value={control.occurred_at}/></small></span></li>)}</ul>:<small>当前获权范围没有可返回的沟通交接记录。</small>}
    </span></li>)}</ul>}
   </>}
   {query.hasNextPage&&!query.isError?<HButton type="button" isDisabled={query.isFetchingNextPage} onClick={()=>{void query.fetchNextPage({cancelRefetch:false});}} tone="secondary">加载后续记录</HButton>:null}

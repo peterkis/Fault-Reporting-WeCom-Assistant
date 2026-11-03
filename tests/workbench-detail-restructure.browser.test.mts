@@ -33,7 +33,7 @@ test('production detail shares report materials, uses responsive information and
     await browser.waitFor("!document.querySelector('.report-materials .detail-loading')&&document.querySelector('[data-action=take-and-start]')?.disabled===false");
     assert.equal(await browser.evaluate('globalThis.__webReads'),1,'the fused display has one web-report query owner');
     assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.detail-properties>dl')).gridTemplateColumns.split(' ').length"),2);
-    assert.equal(await browser.evaluate("document.querySelector('.detail-properties time').textContent"),reported);
+    assert.equal(await browser.evaluate("document.querySelector('.detail-properties time').textContent"),reported.slice(reported.slice(0,4)===new Date(Date.now()+8*60*60*1000).getUTCFullYear().toString()?5:0,16));
     assert.equal(await browser.evaluate("document.querySelector('.detail-workflows').hasAttribute('data-expanded')"),false);
     assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later],[data-action=accept-for-later-with-conversations]'))"),false);
     assert.equal(await browser.evaluate("(()=>{const a=document.querySelector('[data-action=open-assignment]').getBoundingClientRect(),s=document.querySelector('[data-action=take-and-start]').getBoundingClientRect(),h=document.querySelector('.detail-heading').getBoundingClientRect();return a.y>=h.bottom&&Math.abs(a.y-s.y)<=1&&s.left>=a.right&&document.querySelector('[data-action=take-and-start]').dataset.tone==='primary'&&!document.querySelector('[data-action=cancel]').checkVisibility();})()"),true);
