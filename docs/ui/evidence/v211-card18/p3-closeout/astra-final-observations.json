@@ -1,0 +1,160 @@
+{
+  "candidate_source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+  "scope": "READ_ONLY_SOURCE_AND_SCREENSHOTS_NO_TEST_EXECUTION",
+  "stable_screenshots": [
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\active-1920.png",
+      "sha256": "afb5fd2b8c4922e0c1481b5fedebd814414cdb5d5a52f4a7155f6dcf1a56a5f8",
+      "recorded_sha256": "afb5fd2b8c4922e0c1481b5fedebd814414cdb5d5a52f4a7155f6dcf1a56a5f8",
+      "match": true,
+      "png_size": [
+        1920,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\active-1440.png",
+      "sha256": "ef8c985a9dc87fe6faaea9be9fe2086b2867591d676b27ce5f7ce84596482758",
+      "recorded_sha256": "ef8c985a9dc87fe6faaea9be9fe2086b2867591d676b27ce5f7ce84596482758",
+      "match": true,
+      "png_size": [
+        1440,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\active-1280.png",
+      "sha256": "5a0a406ca595c402facb1c43c497a798603ee9dd82ff90d8feffe3521d1d8c58",
+      "recorded_sha256": "5a0a406ca595c402facb1c43c497a798603ee9dd82ff90d8feffe3521d1d8c58",
+      "match": true,
+      "png_size": [
+        1280,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\active-900.png",
+      "sha256": "7c0a022548150f97add427ce662b6e6a7448dd0a62cb9af07e81971b597cd86b",
+      "recorded_sha256": "7c0a022548150f97add427ce662b6e6a7448dd0a62cb9af07e81971b597cd86b",
+      "match": true,
+      "png_size": [
+        900,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\waiting-1920.png",
+      "sha256": "b7b28984de357ca6c22f41250a58e03542958dd111559ba6cd69a02f72810305",
+      "recorded_sha256": "b7b28984de357ca6c22f41250a58e03542958dd111559ba6cd69a02f72810305",
+      "match": true,
+      "png_size": [
+        1920,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\waiting-1440.png",
+      "sha256": "331dd65aa8b0878e06b1fb5b5e11143a57a4e237bd7d640ea5c3e11cc916efaf",
+      "recorded_sha256": "331dd65aa8b0878e06b1fb5b5e11143a57a4e237bd7d640ea5c3e11cc916efaf",
+      "match": true,
+      "png_size": [
+        1440,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\waiting-1280.png",
+      "sha256": "8113f11162da635e246aa9e49ecd9cab4b6ccb481a5eab495c8564e94804345f",
+      "recorded_sha256": "8113f11162da635e246aa9e49ecd9cab4b6ccb481a5eab495c8564e94804345f",
+      "match": true,
+      "png_size": [
+        1280,
+        1080
+      ],
+      "visual_review": "PASS"
+    },
+    {
+      "file": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\waiting-900.png",
+      "sha256": "133a1dfa32f0d43d648f362f35d7700dfcd3845ac8f54212079f096ef1b33d29",
+      "recorded_sha256": "133a1dfa32f0d43d648f362f35d7700dfcd3845ac8f54212079f096ef1b33d29",
+      "match": true,
+      "png_size": [
+        900,
+        1080
+      ],
+      "visual_review": "PASS"
+    }
+  ],
+  "same_height_screenshot": {
+    "path": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\stable\\waiting-1440x1060.png",
+    "sha256": "f3c5d23eb333dcf6326e6871d8d4013496dcae18b5bcee3ec4fbdacb2caef6cf",
+    "png_size": [
+      1440,
+      1060
+    ],
+    "visual_review": "PASS"
+  },
+  "source_files": [
+    {
+      "path": "app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx",
+      "sha256": "78aec18fb7322c2231df0a47f8908fbe8eaa52e34ecaa5f2b33081668ae23d01"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/DrawerStageGlyph.tsx",
+      "sha256": "00d7fe0a6886d3e4cbe9869286cab4a3edd0564c63da9852ad058cdb9240687b"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/drawer-v21.css",
+      "sha256": "3a690b3d79b089035e884676875e7f9ee67a0343ce9842a803455e170aea4326"
+    },
+    {
+      "path": "app/pc-admin/src/app/WorkbenchDetail.tsx",
+      "sha256": "5ffc35f3fe5b293e2c14202f81391eff805cd004078d4e511f970157e176deeb"
+    }
+  ],
+  "routine_observations": {
+    "controller_boxes_px": [
+      20,
+      20
+    ],
+    "workflow_height_px": 21,
+    "tooltip_preserved": "草稿仅在当前浏览器恢复，最长24小时。",
+    "compression_hides_nodes": false
+  },
+  "header_observations": {
+    "active_stage_glyph_px": 13,
+    "waiting_pause_visible": true,
+    "original_status_text_retained": true,
+    "review_tag_preserved_in_source": true,
+    "pending_closed": "SOURCE_REVIEW_ONLY"
+  },
+  "unknown_screenshot_review": {
+    "status": "PASS",
+    "path": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout\\unknown-preserved-1920.png",
+    "recorded_sha256": "a18e02d5b469484003b25735db4943c482ee2d65c2a32dff923564d70df6351d",
+    "actual_sha256": "a18e02d5b469484003b25735db4943c482ee2d65c2a32dff923564d70df6351d",
+    "hash_match": true,
+    "candidate_match": true,
+    "visible": [
+      "结果尚未确认/避免重复提交",
+      "草稿已过期，敏感内容已清理；原操作须核对",
+      "核对上次操作按钮",
+      "恢复警告图标"
+    ],
+    "nonroutine_layout": "full recovery row retained; not routine 20px compact box"
+  },
+  "original_prototype_rendering": "NOT_RUN_URL_POLICY_BLOCK_PREVIOUSLY_RECORDED",
+  "disposition": {
+    "P3_routine_wide_rows": "CLOSED",
+    "P3_header_glyphs": "CLOSED",
+    "prior_A1_A2_A3": "REMAIN_CLOSED",
+    "new_findings": [],
+    "broad_20_entry_suite": "RUNNING_BY_ROOT_AT_REVIEW_HANDOFF_NOT_CLAIMED_PASS"
+  }
+}

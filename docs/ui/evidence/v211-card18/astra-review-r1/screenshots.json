@@ -1,0 +1,43 @@
+{
+  "candidate_source_input_hash": "7fa0589725988fbe3ad716e0a00143c03a5763365abe81ba644b9fe31fc26e8e",
+  "method": "lossless screenshot composition; no recoloring or screenshot content editing",
+  "data_limitations": [
+    "profiles differ: existing waiting actions are enabled in the new capture",
+    "people/ticket/service projection/time/follow-up/permissions differ from prototype demo",
+    "project fonts, time format, real focus ring and safeguards retained"
+  ],
+  "images": [
+    {
+      "width": 1920,
+      "before_source": "docs/ui/evidence/v211-card18/after-1920.png",
+      "before_sha256": "9beaf50a6dabd96d156052610e4c8896a86ce9c5a813b1379c0b82bd79d3a0de",
+      "active_sha256": "fd0b9884224a96dcf903d1213e02ea259ec5af95ce1b2b63800e17ff8a276371",
+      "waiting_sha256": "cfbdbe705488e480ce2b111efb8ed96ea4669e53c556f7a795872738fa8445b9",
+      "comparison": "compare-active-1920.png"
+    },
+    {
+      "width": 1440,
+      "before_source": "docs/ui/evidence/v211-card18/after-1440.png",
+      "before_sha256": "648f7d213880c998f69b011419b06298e5dec99bee52801ebee9ec1ecfa91a12",
+      "active_sha256": "2e2c0d165ec76f51251ffa03e75bb534bd34e1d7f54f5d0f0a25ce55243a1c3c",
+      "waiting_sha256": "7d8d4bcb646b0aca8a5eaa21ddcd41651dcb63a619cea67218c29d5bfc212fb1",
+      "comparison": "compare-active-1440.png"
+    },
+    {
+      "width": 1280,
+      "before_source": "docs/ui/evidence/v211-card18/after-1280.png",
+      "before_sha256": "affa73a51d18dfef8518534252ff485dc1bd047bd08a77a955832ee4d37381f1",
+      "active_sha256": "1292b4f38e50caf792014a9b5c28cb7ecf25c8135950029fb30393fab6fb0986",
+      "waiting_sha256": "554b214585a3b40c7b3a4c5e01c574ae1093d2e479ed201161dfd4fb0c295666",
+      "comparison": "compare-active-1280.png"
+    },
+    {
+      "width": 900,
+      "before_source": "docs/ui/evidence/v211-card18/after-900.png",
+      "before_sha256": "7c5cb66442c074874ee734bbc2a001f537cc327b44bf317d37cd26ecc456aa07",
+      "active_sha256": "8584e2f9d25cc39e8627188624c48f08917f1041a9163757041b7d6df8443f90",
+      "waiting_sha256": "19992437649b806e247d652c510c2f400cfeca80d1907d4f41056901bf2b419a",
+      "comparison": "compare-active-900.png"
+    }
+  ]
+}

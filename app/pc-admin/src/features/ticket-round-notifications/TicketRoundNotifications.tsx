@@ -1,3 +1,4 @@
+import {BeijingTime} from '../../design/components/Timeline/BeijingTime';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Section} from '../../design/components/Section/Section';
 import {NotificationSummary} from '../../design/components/Timeline/Timeline';
@@ -42,7 +43,7 @@ export function TicketRoundNotifications({ticketId,principalId,readReady=true,re
         {node.deliveries.map(item=><div className="notification-delivery" key={item.delivery_id}>
           <p><span>{item.route_kind==='YIXIAOXIU_APP'?'医小修应用':item.destination_type==='PERSON'?'原报修人单聊':'群聊'}</span><Tag className={'notification-state state-'+item.status} tone={notificationTones[item.status]??'neutral'}>{deliveryLabels[item.status]}</Tag></p>
           <small>{item.attempt_count} 次尝试 · {effectLabels[item.side_effect_state]}</small>
-          <time dateTime={(item.sent_at??item.created_at).replace(' ','T')+'+08:00'} title="北京时间">{item.sent_at?'发送于 ':'产生于 '}{item.sent_at??item.created_at}</time>
+          <span>{item.sent_at?'发送于 ':'产生于 '}<BeijingTime value={item.sent_at??item.created_at}/></span>
         </div>)}
       </NotificationSummary>)}</ol></div>
     </div>)}

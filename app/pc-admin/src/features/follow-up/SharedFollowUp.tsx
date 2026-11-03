@@ -1,3 +1,4 @@
+import {BeijingTime} from '../../design/components/Timeline/BeijingTime';
 import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Input as HInput,Label as HLabel} from "@heroui/react";
@@ -138,10 +139,10 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   {!principal.follow_up_schedules_enabled?<p>共享时间维护已关闭；仍可核对原操作。</p>:query.isPending?<p role="status">正在读取当前共享时间…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:null}
   {principal.follow_up_schedules_enabled&&view?<>
    {query.isError||!factsConfirmed?<p role="status">以下为最近已确认资料，最新安排仍需重新读取。</p>:null}
-   <p>{view.active?<><time>{view.active.due_at}</time>{view.active.is_due?' · 已到期，请跟进':' · 已安排'}</>:'尚无活动的共享时间'}</p>
+   <p>{view.active?<><BeijingTime value={view.active.due_at}/>{view.active.is_due?' · 已到期，请跟进':' · 已安排'}</>:'尚无活动的共享时间'}</p>
    {canSet?<HForm onSubmit={event=>{event.preventDefault();submit('SET');}}><HLabel htmlFor={'follow-up-due-'+ticketId}>下次行动时间（北京时间）</HLabel><HInput id={'follow-up-due-'+ticketId} name="due_at" type="text" maxLength={19} placeholder="YYYY-MM-DD HH:mm:ss" value={input} disabled={blocked} onChange={event=>setInput(event.target.value)}/><HButton type="submit" isDisabled={blocked||!draft.canSubmit||!readReady||!input.trim()||!principal.csrf_token||!workbenchTransportWritable()} tone="secondary">设置共享时间</HButton></HForm>:<p>当前仅可查看安排与历史。</p>}
    {canCancel?<HButton type="button" isDisabled={blocked||!draft.canSubmit||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>submit('CANCEL')} tone="secondary">取消共享时间</HButton>:null}
-   {view.history.length?<ol className="shared-follow-up-history">{view.history.map(entry=><li key={entry.ticket_event_id}>{entry.action==='SET'?'已设置':entry.action==='CANCEL'?'已取消':entry.end_reason==='CLOSED'?'关闭后结束':'取消工单后结束'}{entry.due_at?' · '+entry.due_at:''}<span>记录时间 {entry.occurred_at}</span></li>)}</ol>:null}
+   {view.history.length?<ol className="shared-follow-up-history">{view.history.map(entry=><li key={entry.ticket_event_id}>{entry.action==='SET'?'已设置':entry.action==='CANCEL'?'已取消':entry.end_reason==='CLOSED'?'关闭后结束':'取消工单后结束'}{entry.due_at?<> · <BeijingTime value={entry.due_at}/></>:null}<span>记录时间 <BeijingTime value={entry.occurred_at}/></span></li>)}</ol>:null}
    {view.history_has_more?<p>显示最近20条记录，仍有更早历史。</p>:null}
   </>:null}
   {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} tone="secondary">只读核对原操作</HButton>:null}

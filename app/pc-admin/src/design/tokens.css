@@ -233,3 +233,11 @@
   --focus: var(--border-focus);
   --ring-offset-width: 0px;
 }
+
+
+/* 卡18：原型抽屉等待/备注专用色，用户授权追加；既有Token保持不变。 */
+:root {
+  --drawer-waiting-bg: #FDF6EC;
+  --drawer-waiting-border: #F2D9B8;
+  --drawer-composer-bg: #FFFDF6;
+}

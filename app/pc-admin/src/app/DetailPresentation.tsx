@@ -7,6 +7,8 @@ import {MessageBubble} from '../design/components/MessageBubble/MessageBubble';
 import {ActorAvatar} from './ActorAvatar';
 import {Section} from '../design/components/Section/Section';
 import {Timeline,TimelineGroup,TimelineItem} from '../design/components/Timeline/Timeline';
+import {BeijingTime} from '../design/components/Timeline/BeijingTime';
+import {recordKind} from '../design/components/Timeline/record-kind';
 import {StatusBadge} from '../design/components/StatusBadge/StatusBadge';
 import {statusTones} from '../design/status-map';
 import type {Principal,WorkbenchDetail} from '../api/client';
@@ -31,20 +33,22 @@ export function ActivityTimeline({records,principal,item,active,now,children,des
   const report=description?records.find(record=>record.audience==='REPORT'&&record.text===description):undefined;
   return <Section className="detail-main" titleClassName="activity-title" title="处理记录">
     <Timeline className="activity-list">
-    {description?<div className="detail-description"><h3>报修描述</h3>{report?<ol><ActivityRecord record={report} principal={principal} item={item} active={active&&!modalOpen}/></ol>:<MessageBubble className="detail-report-description">{description}</MessageBubble>}</div>:null}
+    {description?<div className="detail-description"><h3>报修描述</h3>{report?<ol><ActivityRecord record={report} principal={principal} item={item} active={active&&!modalOpen} now={now}/></ol>:<MessageBubble className="detail-report-description">{description}</MessageBubble>}</div>:null}
     {groupActivityRecords(records.filter(record=>record!==report),now).map(group=><TimelineGroup className="activity-group" key={group.label} label={group.label} date={group.date} aria-label={group.label+'的处理记录'}>
-      {group.records.map(record=><ActivityRecord key={record.id} record={record} principal={principal} item={item} active={active&&!modalOpen}/>)}
+      {group.records.map(record=><ActivityRecord key={record.id} record={record} principal={principal} item={item} active={active&&!modalOpen} now={now}/>)}
     </TimelineGroup>)}</Timeline>{children}
   </Section>;
 }
-function ActivityRecord({record,principal,item,active}:{record:WorkbenchDetail['records'][number];principal:Principal;item:WorkbenchDetail['item'];active:boolean}){
-  const [expanded,setExpanded]=useState(false),name=activityActorName(record);
-  const text=record.text??(record.new_status?(statusLabels[record.old_status??'']??'新建')+' → '+(statusLabels[record.new_status]??'状态已更新'):'已记录处理操作。');
-  return <TimelineItem className={'detail-record'+(expanded?' is-expanded':'')} data-audience={record.audience} avatar={<ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name}/>} time={<time dateTime={record.at.replace(' ','T')+'+08:00'} title={record.at+'（北京时间）'}>{record.at.slice(11,16)}</time>}>
+function ActivityRecord({record,principal,item,active,now}:{record:WorkbenchDetail['records'][number];principal:Principal;item:WorkbenchDetail['item'];active:boolean;now:number}){
+  const [expanded,setExpanded]=useState(false),name=activityActorName(record),kind=recordKind(record);
+  const text=record.text??(kind==='status'?'更新状态':'已记录处理操作。');
+  const bubble=kind==='note'||kind==='report',time=<BeijingTime value={record.at} now={now}/>;
+  const audience=kind==='note'&&record.audience==='INTERNAL'?<span className="record-audience" aria-label="内部，仅信息科可见"><Lock size={12}/>内部</span>:kind==='note'&&record.audience==='EXTERNAL'?<span className="record-audience public">报修人可见</span>:null;
+  return <TimelineItem className={'detail-record'+(expanded?' is-expanded':'')} data-record-kind={kind} data-audience={record.audience} avatar={<ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name}/>} time={bubble?undefined:time}>
     <HButton tone="ghost" className="record-content" aria-expanded={expanded} title={expanded?'收起记录':'展开完整记录'} onPress={()=>setExpanded(value=>!value)}>
-      <span className="record-name">{name}</span>
-      {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{!record.text&&record.new_status?<><StatusBadge tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge tone={statusTones[record.new_status]??'neutral'}>{statusLabels[record.new_status]??'状态已更新'}</StatusBadge></>:text}</span>}
-      {record.audience==='INTERNAL'?<span className="record-audience" aria-label="内部，仅信息科可见"><Lock size={12}/>内部</span>:record.audience==='EXTERNAL'?<span className="record-audience public">报修人可见</span>:null}
+      {bubble?<span className="record-heading"><span className="record-name">{name}</span><span className="record-action">{kind==='report'?'提交报修':record.audience==='INTERNAL'?'添加内部备注':'对外说明'}</span>{audience}{time}</span>:<span className="record-name">{name}</span>}
+      {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{text}</span>}
+      {kind==='status'?<span className="record-status-change"><StatusBadge data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge></span>:null}
     </HButton>
   </TimelineItem>;
 }

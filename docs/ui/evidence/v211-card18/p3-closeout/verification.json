@@ -1,0 +1,756 @@
+{
+  "scope": "LOCAL_SYNTHETIC_NOT_DEPLOYMENT",
+  "base": "c2ab09b518fe97e5b9b6b910455b66a5b746a02d",
+  "candidate": "HEAD_PLUS_UNCOMMITTED_WORKTREE",
+  "source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+  "artifact_manifest_sha256": "2a750581df99af3461f510230d865952189b6d857e6a887035cfeccbe7eff47d",
+  "prior_source_input_hash": "7fa0589725988fbe3ad716e0a00143c03a5763365abe81ba644b9fe31fc26e8e",
+  "results": {
+    "build": "PASS",
+    "types": "PASS",
+    "stylelint": 0,
+    "eslint": 0,
+    "undefined_tokens": 0,
+    "primitive_leaks": 0,
+    "artifact": "PASS",
+    "entries": 20,
+    "counts": {
+      "tests": 109,
+      "pass": 109,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "flow_cases": 3,
+    "canonical_unknown_case": 1,
+    "unknown_checkpoint_capture_case": 1
+  },
+  "reviewer": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "xhigh",
+    "conclusion": "both P3 findings closed; no new issues observed"
+  },
+  "entries": [
+    {
+      "path": "tests/pc-admin-card12-review.browser.test.mts",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/pc-admin-card13.browser.test.mts",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/pc-admin-card16.browser.test.mts",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "counts": {
+        "tests": 54,
+        "pass": 54,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t10-unknown-recovery.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t12-crosspage-selection.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t12-opaque-recovery.browser.test.mts",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t35-account-switch.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t35-current-authority-wait.integration.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/t35-unknown-read.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t22-realtime-tracer.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t30-internal-note.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/web01-workbench.integration.test.mjs",
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/web01-workbench.test.mts",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/workbench-detail-media.browser.test.mts",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "status": "PASS"
+    }
+  ],
+  "source_files": [
+    {
+      "path": "app/pc-admin/src/app/DetailPresentation.tsx",
+      "sha256": "d9e3e35783e5740ea641a52c9970cb4296b01ec4e769b844cb9b2bb7ef0046b5"
+    },
+    {
+      "path": "app/pc-admin/src/app/WorkbenchDetail.tsx",
+      "sha256": "5ffc35f3fe5b293e2c14202f81391eff805cd004078d4e511f970157e176deeb"
+    },
+    {
+      "path": "app/pc-admin/src/design/beijing-time.ts",
+      "sha256": "51f3391bdb1b8f4e176463cd1ab498f19a0ecbe22ecec209db5ba47982eeb126"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/DrawerStageGlyph.tsx",
+      "sha256": "00d7fe0a6886d3e4cbe9869286cab4a3edd0564c63da9852ad058cdb9240687b"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx",
+      "sha256": "3bec1d291b4153cd57072016443e9cd1b749c8337165573cb71d8a54adf68e38"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/NextStep.tsx",
+      "sha256": "6fd034a4e6b91f38038ebc5d0cc362d7fac109ce9072342dac17a14fd69a043d"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/drawer-v21.css",
+      "sha256": "3a690b3d79b089035e884676875e7f9ee67a0343ce9842a803455e170aea4326"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Drawer/next-summary.ts",
+      "sha256": "14d6dadc51d51aeebb8e6ee5160182027c89eb76e2ee801509fbcc22f322940d"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Timeline/BeijingTime.tsx",
+      "sha256": "7446a15c82d46f2728f9bf6323276cd40b491320a74360bd58be178e29b756e8"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Timeline/record-kind.ts",
+      "sha256": "b3c485c5bae47758951896dda96efce891a0ea564aea1913352b31edb0138c9e"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Timeline/timeline.css",
+      "sha256": "b3c02fc144eb05022e2c5f585bbc00740630a0ee0d49f7cea6fadd99b3129dbe"
+    },
+    {
+      "path": "app/pc-admin/src/design/tokens.css",
+      "sha256": "80d5e38ee19ff88576e4804fb53416c51307f4bef3dbca76abd0cfc6be0e9fa5"
+    },
+    {
+      "path": "app/pc-admin/src/features/assignment-history/TicketAssignmentHistory.tsx",
+      "sha256": "32fe1b43a8a10c78bdebb36b3d1185b2faeea8afa5b75bd209412976d9b03e76"
+    },
+    {
+      "path": "app/pc-admin/src/features/follow-up/SharedFollowUp.tsx",
+      "sha256": "2b14f9caed5e1727f4b1567c59afdfcb00c47163d1a3be8a2f0a6ef649edfa1b"
+    },
+    {
+      "path": "app/pc-admin/src/features/ticket-round-notifications/TicketRoundNotifications.tsx",
+      "sha256": "4fd84a303fc2012da43b2406ffd29bccba96f08701f417b4b961201cc54b8163"
+    },
+    {
+      "path": "app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "sha256": "d429f2eb98c9ae076a42ec069a33aaeb0b9be03b19eab18947e3a515ad5cad1f"
+    },
+    {
+      "path": "app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx",
+      "sha256": "78aec18fb7322c2231df0a47f8908fbe8eaa52e34ecaa5f2b33081668ae23d01"
+    },
+    {
+      "path": "tests/pc-admin-card13.browser.test.mts",
+      "sha256": "98189bf7b51bd8ae69ab4f2b17482ad384fc66bce52f4ad857415a91a3bd5c27"
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "sha256": "1ca12900b705042eb53d9bf302e7a946e1b4ffa7baaca5f13da7f622ddf4cc9d"
+    },
+    {
+      "path": "tests/t10-unknown-recovery.browser.test.mts",
+      "sha256": "e34c67bd6ee842a622147bc46d5f3258204c6618fb79584124c78f0d94b5c957"
+    },
+    {
+      "path": "tests/t12-opaque-recovery.browser.test.mts",
+      "sha256": "4bf0ba9f6787e16088c9e8649025c0119b0de4d192b75fe26efa7b6fa796beea"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "sha256": "1a2b2bdbb40366fdfc8a3bf29d032289a1bd1a3cce0a0078ca5548388ea27005"
+    }
+  ],
+  "capture": {
+    "scope": "LOCAL_SYNTHETIC",
+    "profile": "existing HANDLING read projection and lawful waiting action enabled",
+    "scenes": [
+      {
+        "scene": "active",
+        "browser_posts": 0,
+        "status": "IN_PROGRESS",
+        "core_facts_unchanged": true
+      },
+      {
+        "scene": "waiting",
+        "browser_posts": 0,
+        "status": "WAITING_VENDOR",
+        "core_facts_unchanged": true
+      }
+    ],
+    "source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+    "measurements": [
+      {
+        "scene": "active",
+        "viewport_width": 1920,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1920.png",
+        "sha256": "afb5fd2b8c4922e0c1481b5fedebd814414cdb5d5a52f4a7155f6dcf1a56a5f8"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 1440,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1440.png",
+        "sha256": "ef8c985a9dc87fe6faaea9be9fe2086b2867591d676b27ce5f7ce84596482758"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 1280,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-1280.png",
+        "sha256": "5a0a406ca595c402facb1c43c497a798603ee9dd82ff90d8feffe3521d1d8c58"
+      },
+      {
+        "scene": "active",
+        "viewport_width": 900,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          },
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": false,
+        "step_bg": "rgb(232, 240, 252)",
+        "step_shadow": "none",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/active-900.png",
+        "sha256": "7c0a022548150f97add427ce662b6e6a7448dd0a62cb9af07e81971b597cd86b"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1920,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1920.png",
+        "sha256": "b7b28984de357ca6c22f41250a58e03542958dd111559ba6cd69a02f72810305"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1440,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1440.png",
+        "sha256": "331dd65aa8b0878e06b1fb5b5e11143a57a4e237bd7d640ea5c3e11cc916efaf"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 1280,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-1280.png",
+        "sha256": "8113f11162da635e246aa9e49ecd9cab4b6ccb481a5eab495c8564e94804345f"
+      },
+      {
+        "scene": "waiting",
+        "viewport_width": 900,
+        "viewport_height": 1080,
+        "drawer_width": 720,
+        "right": 8,
+        "top": 8,
+        "overflow": false,
+        "primary": 1,
+        "selected": 1,
+        "note_font": "14px",
+        "note_line": "22px",
+        "note_color": "rgb(55, 53, 47)",
+        "note_padding": "10px 12px",
+        "note_corners": [
+          "4px",
+          "12px",
+          "12px",
+          "12px"
+        ],
+        "routine_boxes": [
+          {
+            "width": 20,
+            "height": 20,
+            "title": "草稿仅在当前浏览器恢复，最长24小时。"
+          }
+        ],
+        "workflow_height": 21,
+        "stage_glyph_size": 13,
+        "pause_visible": true,
+        "step_bg": "rgb(253, 246, 236)",
+        "step_shadow": "rgb(242, 217, 184) 0px 0px 0px 1px inset",
+        "file": "D:/CodexEvidence/pc-admin-v211-card18-20261103/p3-closeout/stable/waiting-900.png",
+        "sha256": "133a1dfa32f0d43d648f362f35d7700dfcd3845ac8f54212079f096ef1b33d29"
+      }
+    ]
+  },
+  "review_delta": {
+    "basis": {
+      "kind": "PRIOR_LOCAL_DELIVERY_SOURCE_FINGERPRINT",
+      "prior_source_input_hash": "7fa0589725988fbe3ad716e0a00143c03a5763365abe81ba644b9fe31fc26e8e",
+      "current_source_input_hash": "ae1c281d4a06038a620a1e4e551336fd948140963c0c4f9f725cbd64f916f39e",
+      "prior_source_files_verified_by": "Prior validated R1 candidate with 19 source-file hashes",
+      "note": "Previously delivered unchanged evidence JSON is not a new production change in this review follow-up; the rejected whole-dirty preflight plan is preserved separately."
+    },
+    "files": [
+      {
+        "path": "app/pc-admin/src/app/WorkbenchDetail.tsx",
+        "prior_sha256": "6807e702d679cc8c165ab6a552d10a329f95067d8f554270f1845fbcbb084c87",
+        "current_sha256": "5ffc35f3fe5b293e2c14202f81391eff805cd004078d4e511f970157e176deeb"
+      },
+      {
+        "path": "app/pc-admin/src/design/components/Drawer/drawer-v21.css",
+        "prior_sha256": "f2a8cca27746d65196be27086a973bd0db0f8eb35d1a451c3ee7df3d4fe1a635",
+        "current_sha256": "3a690b3d79b089035e884676875e7f9ee67a0343ce9842a803455e170aea4326"
+      },
+      {
+        "path": "app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx",
+        "prior_sha256": "ef1d50e24397165045560b8a01c44e6c6dc3c9f9de638d0507f1d1684d497ec0",
+        "current_sha256": "78aec18fb7322c2231df0a47f8908fbe8eaa52e34ecaa5f2b33081668ae23d01"
+      },
+      {
+        "path": "tests/pc-admin-card13.browser.test.mts",
+        "prior_sha256": "5ff5d6fc338d883f753ed2524f2e88a0925807e398171ed104b4ba6f08c6ccad",
+        "current_sha256": "98189bf7b51bd8ae69ab4f2b17482ad384fc66bce52f4ad857415a91a3bd5c27"
+      },
+      {
+        "path": "tests/t10-unknown-recovery.browser.test.mts",
+        "prior_sha256": "8e4b3d0891223c86a610c0e27708b4f8533e54fba6ef2d1b660a888de0de5314",
+        "current_sha256": "e34c67bd6ee842a622147bc46d5f3258204c6618fb79584124c78f0d94b5c957"
+      },
+      {
+        "path": "app/pc-admin/src/design/components/Drawer/DrawerStageGlyph.tsx",
+        "prior_sha256": null,
+        "current_sha256": "00d7fe0a6886d3e4cbe9869286cab4a3edd0564c63da9852ad058cdb9240687b"
+      }
+    ]
+  },
+  "raw_evidence_root": "D:\\CodexEvidence\\pc-admin-v211-card18-20261103\\p3-closeout",
+  "not_run": [
+    "CI",
+    "full",
+    "certify",
+    "Electron",
+    "live sending",
+    "field business writes",
+    "deployment",
+    "Gate"
+  ],
+  "cleanup": {
+    "status_exit": 3,
+    "pg_data_retained": true,
+    "browser_http_cleanup": "owned fixture/browser zero-resource and listening=false assertions",
+    "pg_pid_alive": false,
+    "listeners_55478": 0,
+    "timestamp_utc": "2026-11-03T11:56:38.0830178Z",
+    "database_names_before_stop": [
+      "postgres"
+    ],
+    "pg_pid": 22448,
+    "stop_exit": 0
+  },
+  "docs_checks": {
+    "docs_exit": 0,
+    "docs_tools_exit": 0
+  }
+}

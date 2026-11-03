@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
 import {test} from 'node:test';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
 import {t11Http,withT11Fixture} from './helpers/t11-completion-fixture.mjs';
@@ -37,11 +39,21 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     assert.equal(await b.evaluate('globalThis.__card13Writes.length'),0);
     await click('[data-action=take-and-start]');await b.waitFor("document.querySelector('.ds-next-step [data-tone=primary]')?.textContent==='登记完工'");
     const active=await http.detail(first.ticket.id);assert.equal(active.status,'IN_PROGRESS');assert.equal(active.version,before.version+2);
+    await b.waitFor("document.querySelectorAll('.ticket-waiting-actions[data-routine-draft=true]').length===2");
+    assert.equal(await b.evaluate("[...document.querySelectorAll('.ticket-waiting-actions[data-routine-draft=true]')].every(node=>{const status=node.querySelector('.workbench-draft-status'),style=getComputedStyle(node);return node.getBoundingClientRect().height<=24&&style.padding==='0px'&&style.borderTopWidth==='0px'&&status.checkVisibility()&&status.title==='草稿仅在当前浏览器恢复，最长24小时。'&&status.getAttribute('aria-label')===status.title&&status.querySelector('.sr-only').textContent===status.title;})"),true,'routine draft hints keep full accessible text in a compact row');
+    assert.equal(await b.evaluate("document.querySelector('.detail-workflows').getBoundingClientRect().height<=24"),true,'routine-only workflow container does not reserve full-width empty rows');
+
     assert.equal(await b.evaluate("globalThis.__card13Writes.filter(w=>w.path.endsWith('/take-and-start')).length"),1);
     await click('[data-action=wait-vendor]');await b.waitFor("document.querySelector('form[aria-label=等待厂商]')?.checkVisibility()===true");
     await fill('form[aria-label=等待厂商] textarea','合成厂商等待原因，仅作内部记录');await click('form[aria-label=等待厂商] button[type=submit]');
     await b.waitFor("document.querySelector('.ds-next-step [data-tone=primary]')?.textContent==='恢复处理'");assert.equal((await http.detail(first.ticket.id)).status,'WAITING_VENDOR');
     assert.equal(await b.evaluate("globalThis.__card13Writes.filter(w=>w.path.endsWith('/wait-vendor')).length"),1);
+    assert.equal(await b.evaluate("(()=>{const root=document.querySelector('.ds-drawer-status[data-waiting=true]'),badge=root.querySelector('.ds-status-badge'),icon=root.querySelector('.ds-drawer-pause-glyph'),style=getComputedStyle(badge);return icon.checkVisibility()&&icon.getBoundingClientRect().width===12&&icon.getBoundingClientRect().height===12&&style.height==='22px'&&style.backgroundColor==='rgb(241, 241, 239)'&&style.color==='rgb(95, 94, 91)'&&style.borderRadius==='4px'&&!badge.querySelector('.ds-status-dot').checkVisibility();})()"),true,'waiting shows the neutral pause label without changing its status text');
+
+    assert.equal(await b.evaluate("(()=>{const step=document.querySelector('.ds-next-step'),style=getComputedStyle(step);return step.dataset.status==='WAITING_VENDOR'&&style.backgroundColor==='rgb(253, 246, 236)'&&style.borderTopWidth==='0px'&&style.boxShadow.includes('rgb(242, 217, 184)')&&style.boxShadow.includes('inset');})()"),true,'waiting uses the prototype warm surface and inset ring without changing its stage');
+    const reviewEvidence=process.env.PC_ADMIN_CARD18_REVIEW_EVIDENCE_DIR;
+    if(reviewEvidence){await mkdir(reviewEvidence,{recursive:true});for(const width of [1920,1440,1280,900]){await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await writeFile(join(reviewEvidence,'waiting-'+width+'.png'),Buffer.from(await b.screenshot(),'base64'));}}
+
     await click('[data-action=resume]');await fill('form[aria-label=恢复处理] textarea','合成厂商已回复，恢复本轮处理');await click('form[aria-label=恢复处理] button[type=submit]');
     await b.waitFor("document.querySelector('.ds-next-step [data-tone=primary]')?.textContent==='登记完工'");assert.equal((await http.detail(first.ticket.id)).status,'IN_PROGRESS');
     await fill('#internal-note','合成内部备注：不得出现在对外摘要');
@@ -52,6 +64,23 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     await click('[data-action=check-internal-note]');await b.waitFor("document.querySelector('#internal-note')?.value===''");
     assert.equal(await b.evaluate("(()=>{const writes=globalThis.__card13Writes.filter(w=>w.path.endsWith('/internal-notes'));return writes.length===2&&JSON.stringify(writes[0].body)===JSON.stringify(writes[1].body)&&writes[0].body.external_visible===false;})()"),true);
     assert.equal((await http.detail(first.ticket.id)).status,'IN_PROGRESS');
+    await b.waitFor("Boolean(document.querySelector('[data-record-kind=status]')&&document.querySelector('[data-record-kind=note][data-audience=INTERNAL]'))");
+    assert.equal(await b.evaluate("[...document.querySelectorAll('[data-record-kind=status] .record-text')].every(node=>getComputedStyle(node).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(node).padding==='0px')"),true,'status records have no yellow bubble or padding');
+    assert.equal(await b.evaluate("[...document.querySelectorAll('[data-record-kind=status]')].every(node=>node.querySelectorAll('.ds-status-dot').length===2&&!node.querySelector('.record-audience'))"),true,'status changes retain both stage dots without a note audience badge');
+    assert.equal(await b.evaluate("(()=>{const note=document.querySelector('[data-record-kind=note][data-audience=INTERNAL]');return getComputedStyle(note.querySelector('.record-text')).backgroundColor!=='rgba(0, 0, 0, 0)'&&note.querySelector('.record-audience svg')!==null;})()"),true);
+
+    assert.equal(await b.evaluate("[...document.querySelectorAll('[data-record-kind=note],[data-record-kind=report]')].every(row=>{const head=row.querySelector('.record-heading'),body=row.querySelector('.record-text'),style=getComputedStyle(body),h=head.getBoundingClientRect(),b=body.getBoundingClientRect();return b.top>=h.bottom+5&&Math.abs(b.left-h.left)<=1&&style.fontSize==='14px'&&style.lineHeight==='22px'&&style.color==='rgb(55, 53, 47)'&&style.padding==='10px 12px'&&style.borderTopLeftRadius==='4px'&&style.borderTopRightRadius==='12px'&&style.borderBottomRightRadius==='12px'&&style.borderBottomLeftRadius==='12px'&&row.querySelectorAll('time').length===1;})"),true,'notes and reports keep a separate primary-text body below the header with prototype corners');
+    assert.equal(await b.evaluate("(()=>{const style=getComputedStyle(document.querySelector('.detail-description'));return style.borderTopWidth==='0px'&&style.borderBottomWidth==='0px'&&getComputedStyle(document.querySelector('.ds-detail-tabs')).columnGap==='20px';})()"),true,'the tab baseline is the only description-area divider');
+    assert.equal(await b.evaluate("(()=>{const input=document.querySelector('.ds-note-input'),field=input.querySelector('textarea').getBoundingClientRect(),button=input.querySelector('[data-action=save-internal-note]').getBoundingClientRect(),style=getComputedStyle(input,'::before');return style.backgroundColor==='rgb(255, 253, 246)'&&button.left>=field.right&&button.height===40;})()"),true,'composer keeps a warm-white input surface and an adjacent save button');
+    assert.equal(await b.evaluate("document.querySelector('#detail-tab-trigger-attachments').textContent.includes(' 0')"),false);
+    assert.equal(await b.evaluate("(()=>{const tab=document.querySelector('[role=tab][aria-selected=true]'),style=getComputedStyle(tab);return style.fontWeight==='600'&&style.borderBottomWidth==='2px'&&style.borderBottomColor===style.color&&style.backgroundColor==='rgba(0, 0, 0, 0)';})()"),true,'selected tab has a two-pixel primary-text underline');
+    assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-detail time[datetime]')].every(node=>/^((\\d{4}-)?\\d{2}-\\d{2} \\d{2}:\\d{2})$/.test(node.textContent)&&/\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}（北京时间）/.test(node.title))"),true,'short times have full Beijing tooltips');
+    const evidence=process.env.PC_ADMIN_CARD18_EVIDENCE_DIR;
+    if(evidence){await mkdir(evidence,{recursive:true});for(const width of [1920,1440,1280,900]){
+      await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+      assert.equal(await b.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
+      await writeFile(join(evidence,'after-'+width+'.png'),Buffer.from(await b.screenshot(),'base64'));
+    }}
     await click('.detail-complete-button');await b.waitFor("document.querySelector('.ds-step-inline-form #completion-process')?.checkVisibility()===true");
     assert.equal(await b.evaluate("document.querySelector('.detail-complete-button').closest('.ds-next-step')!==null"),true);
     assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-detail [data-tone=primary]')].filter(n=>n.checkVisibility()).length"),1);
@@ -91,7 +120,18 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id,width:900,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
     await browser.waitFor("Boolean(document.querySelector('.ds-next-step')?.textContent.includes('你当前为只读')&&document.querySelector('.detail-properties'))");
     assert.equal(await browser.evaluate("document.querySelectorAll('.ds-next-step [data-tone=primary]').length"),0);
+    assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('[data-drawer-stage-glyph=pending]');return glyph?.querySelector('circle')?.getAttribute('stroke-dasharray')==='2.4 2.1'&&glyph.getBoundingClientRect().width===13&&!document.querySelector('.ds-stage-pill>.ds-status-dot').checkVisibility();})()"),true);
+
     await browser.command('Page.bringToFront');await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await clickWorkbenchControl(browser,'#detail-tab-trigger-conversations');
+    const reader=await t11Http(f);let activeId='',closedId='';
+    for(const candidate of f.tickets){const facts=await reader.detail(candidate.ticket.id);if(facts.status==='IN_PROGRESS'&&!activeId)activeId=candidate.ticket.id;if(facts.status==='CLOSED'&&!closedId)closedId=candidate.ticket.id;if(activeId&&closedId)break;}
+    assert.ok(activeId&&closedId);
+    for(const target of [{stage:'active',id:activeId},{stage:'closed',id:closedId}]){
+      await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+target.id});
+      await browser.waitFor("Boolean(document.querySelector('[data-drawer-stage-glyph="+target.stage+"]'))");
+      assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('[data-drawer-stage-glyph="+target.stage+"]');return glyph.getBoundingClientRect().width===13&&glyph.getBoundingClientRect().height===13&&glyph.getAttribute('viewBox')==='0 0 16 16'&&glyph.querySelector('path')!==null&&!document.querySelector('.ds-stage-pill>.ds-status-dot').checkVisibility();})()"),true,'drawer stage geometry '+target.stage);
+      assert.equal(await browser.evaluate("document.querySelectorAll('.ds-next-step [data-tone=primary]').length"),0);
+    }
     assert.equal(writes,0);
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
@@ -140,3 +180,21 @@ test('Card 13 ordinary completion initial permission failure keeps its original 
  }catch(error){failure=error;}
  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
 },{recoveryEnabled:false,notesEnabled:false}));
+
+
+test('Card 18 detail read error uses danger alert and a read-only ghost retry',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+ const first=f.tickets[0],cookie=f.browserCookies[0];assert.ok(first&&cookie?.url);
+ let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown,writes=0;
+ f.runtime.server.on('request',request=>{if(request.method==='POST')writes++;});
+ try{
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const b=browser;
+  await b.command('Page.enable');await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__card18ReadFailure=true;globalThis.fetch=(url,options)=>globalThis.__card18ReadFailure&&new URL(String(url),location.href).pathname===${JSON.stringify('/api/workbench/items/ticket/'+first.ticket.id)}?Promise.resolve(new Response(JSON.stringify({error:{code:'SYNTHETIC_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}})):original(url,options);})()`});
+  await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});await b.command('Page.bringToFront');
+  await b.waitFor("document.querySelector('.ds-detail .ds-inline-alert[data-tone=danger]')?.textContent.includes('加载失败，请检查网络后重试')");
+  assert.equal(await b.evaluate("document.querySelector('.ds-detail .ds-inline-alert button').dataset.tone"),'ghost');
+  const evidence=process.env.PC_ADMIN_CARD18_EVIDENCE_DIR;if(evidence){await mkdir(evidence,{recursive:true});await writeFile(join(evidence,'read-error-1440.png'),Buffer.from(await b.screenshot(),'base64'));}
+  await b.evaluate('globalThis.__card18ReadFailure=false');await clickWorkbenchControl(b,'.ds-detail .ds-inline-alert button');await b.waitFor("Boolean(document.querySelector('#detail-title'))");
+  assert.equal(writes,0);
+ }catch(error){failure=error;}
+ await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+}));
