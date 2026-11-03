@@ -135,6 +135,89 @@ docs/ui/evidence/v21-card13/r4-compare-1280.png
 docs/ui/evidence/v21-card13/r4-compare-1440.png
 docs/ui/evidence/v21-card13/r4-compare-1920.png
 docs/ui/evidence/v21-card13/r4-compare-900.png
+docs/ui/evidence/v21-card13/r5-final-compare-1280.png
+docs/ui/evidence/v21-card13/r5-final-compare-1440.png
+docs/ui/evidence/v21-card13/r5-final-compare-1920.png
+docs/ui/evidence/v21-card13/r5-final-compare-900.png
+docs/ui/evidence/v21-card13/verification.json
+plans/pc-admin-design-v21/card-13.md
+plans/typescript-migration/test-routing.json
+tests/conversation-inbox.browser.test.mts
+tests/helpers/heroui-workbench-controls.mts
+tests/helpers/t10-browser-fixture.mts
+tests/pc-admin-card13.browser.test.mts
+tests/t04-self-handling.browser.test.mjs
+tests/t05-conversation-handling.browser.test.mjs
+tests/t07-atomic-start.browser.test.mts
+tests/t08-command-recovery.browser.test.mts
+tests/t08-selected-recovery.browser.test.mts
+tests/t08-unassign.browser.test.mts
+tests/t09-return-to-dispatch.browser.test.mts
+tests/t09-selected-ui-boundaries.browser.test.mts
+tests/t09-selected-ui-status-scope.browser.test.mts
+tests/t11-completion.browser.test.mts
+tests/t12-production-form.browser.test.mts
+tests/t13-history-window.browser.test.mts
+tests/t13-production-history.browser.test.mts
+tests/t20-member-origin-hint.browser.test.mts
+tests/t20-staff-hint-first.browser.test.mts
+tests/t37-follow-up-post-refusal.browser.test.mts
+tests/t37-follow-up-recovery-boundaries.browser.test.mts
+tests/t37-follow-up-recovery-competition.browser.test.mts
+tests/t37-follow-up-recovery-first.browser.test.mts
+tests/t37-shared-follow-up-drawer.browser.test.mts
+tests/t37-shared-time-card-list.browser.test.mts
+tests/wbint-t14-review.browser.test.mts
+tests/wbint-t16-attachments.browser.test.mts
+tests/wbint-t42-board-complete-reopen.browser.test.mts
+tests/web01-workbench.browser.test.mjs
+tests/workbench-detail-media.browser.test.mts
+tests/workbench-detail-restructure.browser.test.mts
+tests/workbench-media-employee-read.browser.test.mts
+tests/workbench-toast-feedback.browser.test.mts
+```text
+app/pc-admin/src/app/DetailDialog.tsx
+app/pc-admin/src/app/DetailPresentation.tsx
+app/pc-admin/src/app/Workbench.tsx
+app/pc-admin/src/app/WorkbenchDetail.tsx
+app/pc-admin/src/app/WorkbenchItemPresentation.tsx
+app/pc-admin/src/design/components/Drawer/Drawer.tsx
+app/pc-admin/src/design/components/Drawer/DrawerTabs.tsx
+app/pc-admin/src/design/components/Drawer/NextStep.tsx
+app/pc-admin/src/design/components/Drawer/drawer-v21.css
+app/pc-admin/src/features/attachments/AttachmentSection.tsx
+app/pc-admin/src/features/attachments/ReportMaterialsSection.tsx
+app/pc-admin/src/features/conversations/Conversations.tsx
+app/pc-admin/src/features/follow-up/SharedFollowUp.tsx
+app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx
+app/pc-admin/src/features/source-groups/GroupNameEditor.tsx
+app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx
+app/pc-admin/src/features/ticket-completion/TicketCompletion.tsx
+app/pc-admin/src/features/ticket-handling/TicketConversationHandling.tsx
+app/pc-admin/src/features/ticket-handling/TicketSelfHandling.tsx
+app/pc-admin/src/features/ticket-notes/TicketNotes.tsx
+app/pc-admin/src/features/ticket-reopen/TicketReopen.tsx
+app/pc-admin/src/features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx
+app/pc-admin/src/features/ticket-takeover-completion/TicketTakeoverCompletion.tsx
+app/pc-admin/src/features/ticket-takeover/TicketTakeover.tsx
+app/pc-admin/src/features/ticket-unassign/TicketUnassign.tsx
+app/pc-admin/src/features/ticket-waiting/TicketWaitingActions.tsx
+docs/ui/evidence/v21-card13/compare-1280.png
+docs/ui/evidence/v21-card13/compare-1440.png
+docs/ui/evidence/v21-card13/compare-1920.png
+docs/ui/evidence/v21-card13/compare-900.png
+docs/ui/evidence/v21-card13/r1-takeover-1280.png
+docs/ui/evidence/v21-card13/r1-takeover-1440.png
+docs/ui/evidence/v21-card13/r1-takeover-1920.png
+docs/ui/evidence/v21-card13/r1-takeover-900.png
+docs/ui/evidence/v21-card13/r2-read-1280.png
+docs/ui/evidence/v21-card13/r2-read-1440.png
+docs/ui/evidence/v21-card13/r2-read-1920.png
+docs/ui/evidence/v21-card13/r2-read-900.png
+docs/ui/evidence/v21-card13/r4-compare-1280.png
+docs/ui/evidence/v21-card13/r4-compare-1440.png
+docs/ui/evidence/v21-card13/r4-compare-1920.png
+docs/ui/evidence/v21-card13/r4-compare-900.png
 docs/ui/evidence/v21-card13/verification.json
 plans/pc-admin-design-v21/card-13.md
 plans/typescript-migration/test-routing.json
@@ -464,3 +547,25 @@ tests/workbench-media-employee-read.browser.test.mts
 | 900 | [R4对照](../../docs/ui/evidence/v21-card13/r4-compare-900.png) |
 
 本卡仍未运行 full/certify、Electron原生、现场、真实发送、部署或 Gate。最终发布、审查和普通CI仍按当前远端完整SHA核验后合并，不以本地PASS替代。
+
+
+## 同一 Escape 失败的窄修补 R5
+
+发布 head `20356564a72c12f90c4481345f4f26446a37a56f` 的 Codex 审查无发现、线程全部解决；普通 CI [41559973822](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41559973822) 仍在原 WEB01 Escape 等待失败：249项中执行142项，383用例为382 PASS / 1 FAIL，107入口 NOT_RUN。原件在 `ci-r4-artifacts/`。没有据此恢复或扩大 #137 的旧用例适配。
+
+先将本地真实“打开→Tab往返→下一项→上一项→Escape→返回原卡片焦点”缩为诊断，20轮PASS、未复现CI超时；这不是修补前RED或注册selection通过。为消除内部请求事项重建后依赖库异步恢复焦点的时序，在Drawer布局阶段明确将焦点放回当前标题，增加切换后焦点仍在Drawer内的断言，保留原Escape/关闭/返回焦点及全部业务断言和截止时间。`data-dismiss-blocked` 与失败日志仅提供原状态和真实键盘事件观测，不改关闭保护或请求。
+
+中间候选 `c76a598d` 的正式WEB01为13/14：原Escape与返回焦点已过，随后全屏标题焦点失败。日志确认真实无修饰Escape已被处理、无残留Dialog，但全屏焦点落在BODY。修正为Drawer使用layout effect、全屏恢复原passive effect及focus()顺序。两个effect条件互斥，依赖仍为boolean detailPresent、请求kind/id和页面模式；普通状态、revision、分页或保留数据重读不抢走编辑焦点。
+
+最终本地被测 `ce6e9108df4e3ae95dc9420ce73b8a96c965fb99`，输入指纹 `35cfb128542113f8e094e0f3f352f11bcd6e648936780e726bb98cae8a828ae0`：build、strict/negative types、artifact、Stylelint/ESLint 0均PASS；仍仅3个必要入口21/21 PASS，0 FAIL/cancel/SKIP/todo/NOT_RUN。新增源码两轴复核无确证P1/P2。上述本地结果不宣称已证明CI时序问题解决；当前远端head的审查和CI原件核验仍是合并前置。
+
+四宽截图重新取自该正式候选，全部720px宽、8px外距、缺失行40px、单动态根、一个primary、无横向溢出、采图POST=0；原始R5中间截图和失败保留。
+
+| 宽度 | 基线 / 当前视觉 / 原型02 |
+| --- | --- |
+| 1920 | [R5对照](../../docs/ui/evidence/v21-card13/r5-final-compare-1920.png) |
+| 1440 | [R5对照](../../docs/ui/evidence/v21-card13/r5-final-compare-1440.png) |
+| 1280 | [R5对照](../../docs/ui/evidence/v21-card13/r5-final-compare-1280.png) |
+| 900 | [R5对照](../../docs/ui/evidence/v21-card13/r5-final-compare-900.png) |
+
+#137仍独立OPEN，未继续执行或宣称完成。full/certify、Electron原生、现场、真实发送、部署及Gate仍NOT_RUN。

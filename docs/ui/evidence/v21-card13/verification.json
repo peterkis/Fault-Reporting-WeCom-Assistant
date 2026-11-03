@@ -789,6 +789,154 @@
         ]
       },
       "remote_status": "最终复审、CI 与合并以本 PR 当前完整 SHA 的实际结果为准。"
+    },
+    {
+      "tested_head": "ce6e9108df4e3ae95dc9420ce73b8a96c965fb99",
+      "source_input_hash": "35cfb128542113f8e094e0f3f352f11bcd6e648936780e726bb98cae8a828ae0",
+      "change": "请求事项内容在Drawer layout阶段恢复标题焦点；全文页保留原passive effect，普通状态/revision刷新不抢焦点。新增当前焦点仍在Drawer断言及失败时原生键盘/阻塞诊断，原关闭/恢复/超时不变。",
+      "validation": {
+        "build": "PASS",
+        "types": "PASS",
+        "artifact": "PASS",
+        "stylelint": 0,
+        "eslint": 0,
+        "entries": 3,
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "manifest_sha256": "9f866a645365f1afc777f1d67587be78cb99a64e0d5b5cf6dfe8750af42b3ed8",
+        "report_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r5-final-ui"
+      },
+      "ci_failure_preserved": {
+        "run": 41559973822,
+        "head": "20356564a72c12f90c4481345f4f26446a37a56f",
+        "entries_selected": 249,
+        "entries_executed": 142,
+        "tests": 383,
+        "pass": 382,
+        "fail": 1,
+        "entries_not_run": 107,
+        "failed_entry": "tests/web01-workbench.browser.test.mjs",
+        "failure": "Escape wait at line487; no original event/focus trace on CI",
+        "artifact_dir": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\ci-r4-artifacts"
+      },
+      "diagnostics": {
+        "original_local_probe": {
+          "label": "keyboard-r5-probe",
+          "iterations": 20,
+          "status": "PASS; did not reproduce CI timeout",
+          "scope": "bounded actual UI sequence; not a registered selection and not a before-RED claim"
+        },
+        "intermediate_failed_head": "c76a598d0a20a72173a651ee8e6fa1dc626cb7c6",
+        "intermediate_report": "D:\\CodexEvidence\\pc-admin-v21-card13-20261103\\remote-r5-ui",
+        "intermediate_counts": {
+          "tests": 14,
+          "pass": 13,
+          "fail": 1,
+          "not_run_entries": 2
+        },
+        "intermediate_failure": "Escape/return focus passed; subsequent fullpage title focus failed after layout was applied to both modes. Restored original fullpage passive timing.",
+        "legacy_maintenance": "#137 remains deferred; no old T35/T39 adaptation resumed."
+      },
+      "screenshots": [
+        {
+          "width": 1920,
+          "path": "docs/ui/evidence/v21-card13/r5-final-compare-1920.png",
+          "sha256": "db01f4c82fbe697c18b8aed4feb1b36dc755c40914d411278d6b601f63fd3abc"
+        },
+        {
+          "width": 1440,
+          "path": "docs/ui/evidence/v21-card13/r5-final-compare-1440.png",
+          "sha256": "44294171858713b7f0cb569a857756ff1de388d54345bc2d5e7e98b5ecb4ac92"
+        },
+        {
+          "width": 1280,
+          "path": "docs/ui/evidence/v21-card13/r5-final-compare-1280.png",
+          "sha256": "4bf70ca8ed1e884b3024315edc908ee472539c616dbef7e7972d7e5c4f1a39aa"
+        },
+        {
+          "width": 900,
+          "path": "docs/ui/evidence/v21-card13/r5-final-compare-900.png",
+          "sha256": "6e0d55bdfc15b2eea315922c542818d62cc78486fb0ec2b1942b5c03a69e33c2"
+        }
+      ],
+      "capture_metrics": {
+        "phase": "r5-final-after",
+        "snapshots": [
+          {
+            "width": 1920,
+            "activityRoots": 1,
+            "overflow": false,
+            "drawer": {
+              "x": 1192,
+              "y": 8,
+              "width": 720,
+              "height": 1064,
+              "top": 8,
+              "right": 1912,
+              "bottom": 1072,
+              "left": 1192
+            },
+            "missingHeight": 40,
+            "primary": 1
+          },
+          {
+            "width": 1440,
+            "activityRoots": 1,
+            "overflow": false,
+            "drawer": {
+              "x": 712,
+              "y": 8,
+              "width": 720,
+              "height": 1064,
+              "top": 8,
+              "right": 1432,
+              "bottom": 1072,
+              "left": 712
+            },
+            "missingHeight": 40,
+            "primary": 1
+          },
+          {
+            "width": 1280,
+            "activityRoots": 1,
+            "overflow": false,
+            "drawer": {
+              "x": 552,
+              "y": 8,
+              "width": 720,
+              "height": 1064,
+              "top": 8,
+              "right": 1272,
+              "bottom": 1072,
+              "left": 552
+            },
+            "missingHeight": 40,
+            "primary": 1
+          },
+          {
+            "width": 900,
+            "activityRoots": 1,
+            "overflow": false,
+            "drawer": {
+              "x": 172,
+              "y": 8,
+              "width": 720,
+              "height": 1064,
+              "top": 8,
+              "right": 892,
+              "bottom": 1072,
+              "left": 172
+            },
+            "missingHeight": 40,
+            "primary": 1
+          }
+        ],
+        "posts": 0
+      },
+      "remote_status": "该候选CI是否解决先前Escape超时，仍以当前PR head的实际审查和CI制品为准。"
     }
   ]
 }
