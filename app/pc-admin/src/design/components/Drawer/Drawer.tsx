@@ -7,7 +7,7 @@ import './drawer-v21.css';
 
 export function Drawer({children,dismissBlocked,onClose}:{children:ReactNode;dismissBlocked:boolean;onClose:()=>void}){
   return <HeroDrawer.Backdrop className="workbench-drawer-backdrop ds-drawer-backdrop" isOpen isDismissable={!dismissBlocked} isKeyboardDismissDisabled={dismissBlocked} onOpenChange={open=>{if(!open)onClose();}}>
-    <HeroDrawer.Content placement="right" className="workbench-drawer-content ds-drawer-content"><HeroDrawer.Dialog data-workbench-overlay className="detail-dialog ds-detail ds-drawer" style={{borderRadius:'calc(var(--radius-lg) + var(--space-0-5))'}} aria-label="事项详情">{children}</HeroDrawer.Dialog></HeroDrawer.Content>
+    <HeroDrawer.Content placement="right" className="workbench-drawer-content ds-drawer-content"><HeroDrawer.Dialog data-workbench-overlay data-dismiss-blocked={dismissBlocked?'true':'false'} className="detail-dialog ds-detail ds-drawer" style={{borderRadius:'calc(var(--radius-lg) + var(--space-0-5))'}} aria-label="事项详情">{children}</HeroDrawer.Dialog></HeroDrawer.Content>
   </HeroDrawer.Backdrop>;
 }
 

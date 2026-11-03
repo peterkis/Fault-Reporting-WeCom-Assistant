@@ -482,6 +482,8 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await capture('new-detail-1920.png');
       // CDP key/code without the virtual key generates keyCode=0 and does not
       // invoke the real Escape handler; use an actual Escape key.
+      assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true,'item navigation keeps keyboard focus inside the current drawer');
+      await browser.evaluate("(()=>{globalThis.__web01Escape=[];document.addEventListener('keydown',event=>{globalThis.__web01Escape.push(event);},{capture:true,once:true});return true;})()");
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
       await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
       await browser.waitFor("!document.querySelector('.detail-dialog')");
@@ -568,7 +570,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
       await browser.waitFor("document.body.innerText.includes('会话已失效')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',screenshots}));
-    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({url:location.href,text:document.body.innerText,rows:document.querySelectorAll('tbody tr').length})")));}}
+    }catch(failure){error=failure;if(browser){console.log('WEB01_KEYBOARD_FAILURE '+JSON.stringify(await browser.evaluate("({url:location.href,focus:document.activeElement?.tagName,focusLabel:document.activeElement?.getAttribute('aria-label'),focusId:document.activeElement?.id,hasFocus:document.hasFocus(),inside:document.querySelector('.detail-dialog')?.contains(document.activeElement),dismissBlocked:document.querySelector('.detail-dialog')?.dataset.dismissBlocked,closeDisabled:document.querySelector('[aria-label=\"关闭详情\"]')?.disabled,events:(globalThis.__web01Escape??[]).map(event=>({key:event.key,code:event.code,keyCode:event.keyCode,shift:event.shiftKey,alt:event.altKey,ctrl:event.ctrlKey,meta:event.metaKey,trusted:event.isTrusted,prevented:event.defaultPrevented})),dialogs:document.querySelectorAll('[role=dialog]').length})")));await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({url:location.href,text:document.body.innerText,rows:document.querySelectorAll('tbody tr').length})")));}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   });
 });

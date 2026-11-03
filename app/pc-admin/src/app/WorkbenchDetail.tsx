@@ -1,7 +1,7 @@
 import type {StepReadState} from '../design/components/Drawer/NextStep';
 import { useInfiniteQuery,useQuery } from '@tanstack/react-query';
 import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,Clock3,Copy,Headset,MapPin,Phone,Radio,Ticket,TriangleAlert,UserRound,X } from 'lucide-react';
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useLayoutEffect,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams } from 'react-router';
 import type { Principal,WorkbenchCard,WorkbenchDetail } from '../api/client';
 import { api,errorMessage,statusLabels } from '../api/client';
@@ -122,7 +122,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const stepReadState:StepReadState=states.includes('pending')?'pending':states.includes('unknown')?'unknown':'ready';
   // Re-reading an open item must not take focus from an editor or move its target.
   const detailPresent=Boolean(detail);
-  useEffect(()=>{if(fullPage&&detailPresent)pageHeading.current?.focus();},[fullPage,detailPresent,kind,id]);
+  useLayoutEffect(()=>{if(detailPresent)pageHeading.current?.focus({preventScroll:true});},[fullPage,detailPresent,kind,id]);
   const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
   const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
   const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
