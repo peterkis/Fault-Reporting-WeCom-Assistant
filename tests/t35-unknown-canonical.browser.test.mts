@@ -1,4 +1,3 @@
-import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -21,7 +20,7 @@ test('T35 an unknown read survives real Review resolution and canonical Ticket n
     const selector='p[data-personal-read-ref="'+ref+'"]';
     await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[]);
     const show=`(()=>{document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'});globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`;
-    await openWorkbenchStep(browser,selector);await browser.evaluate(show);await browser.waitFor('globalThis.__t35Commits.length===1');
+    await browser.evaluate(show);await browser.waitFor('globalThis.__t35Commits.length===1');
     const posts=await browser.evaluate('globalThis.__t35Posts') as {client_command_id:string;source_ref:string;revision:string}[];const original=posts[0];assert.ok(original);assert.equal(posts.length,1);assert.equal(original.source_ref,ref);assert.equal(original.revision,'1');
     // Resolve through the existing public Review HTTP command; this is not a read-side effect.
     const detail=await (await f.get(review)).json() as {row_version:string;material_basis:{current_hash:string}};
@@ -33,7 +32,8 @@ test('T35 an unknown read survives real Review resolution and canonical Ticket n
     assert.equal(await position(0),'1');assert.equal(await position(1),'0');console.log('T35_UNKNOWN_CANONICAL_COMMITTED '+JSON.stringify({uuid:original.client_command_id,review:admission.review.id,ticket:resolved.canonical_item.id,A:'1',B:'0',delivery_failed:true}));
     await browser.evaluate("globalThis.__t35Visible=false;document.dispatchEvent(new Event('visibilitychange'));document.querySelector('.sidebar a[title=\"工作台\"]').click()");await browser.waitFor("Boolean(document.querySelector('.board-column.pending .ticket-card'))");
     await browser.evaluate("[...document.querySelectorAll('.tools button')].find(button=>button.textContent.includes('刷新')).click()");
-    await browser.waitFor(`(()=>{for(const button of document.querySelectorAll('[data-action="expand-column"]'))if(button.getAttribute('aria-expanded')==='false')button.click();return Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"]'));})()`);
+    await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"]'))`);
+    await browser.evaluate("(()=>{for(const button of document.querySelectorAll('.board-column.pending [data-action=\"expand-column\"]'))if(button.getAttribute('aria-expanded')==='false')button.click();})()");
     await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open'))`);await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${resolved.canonical_item.id}"] .card-open').click()`);
     await browser.waitFor(`Boolean(document.querySelector('.activity-list ${selector}'))`);
     await browser.waitFor("Boolean(document.querySelector('[aria-label=\"选择复核项\"]'))");

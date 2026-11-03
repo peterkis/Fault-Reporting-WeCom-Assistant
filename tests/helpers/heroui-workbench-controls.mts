@@ -9,7 +9,6 @@ export async function openWorkbenchStep(browser:Pick<Browser,'evaluate'|'waitFor
   await browser.waitFor(`(()=>{
     const node=document.querySelector(${JSON.stringify(selector)});
     if(!node)return false;
-    for(let parent=node.parentElement;parent;parent=parent.parentElement){if(parent.matches('.workbench-disclosure')&&!parent.hasAttribute('data-expanded')){parent.querySelector(':scope > .disclosure__heading > button')?.click();return false;}}
     const workflow=node.closest('.ds-step-workflow');if(!workflow)return node.checkVisibility();
     const trigger=[...document.querySelectorAll('[aria-controls]')].find(control=>control.getAttribute('aria-controls')===workflow.id);
     if(trigger){
