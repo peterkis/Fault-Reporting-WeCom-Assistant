@@ -464,7 +464,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),true);
       await browser.waitFor("document.querySelector('.detail-dialog')?.contains(document.activeElement)===true");
       assert.equal(await browser.evaluate("document.querySelector('.detail-dialog').contains(document.activeElement)"),true);
-      await browser.evaluate('globalThis.__web01DrawerScope=document.querySelector(".detail-dialog")');
+      await browser.evaluate('(()=>{globalThis.__web01DrawerScope=document.querySelector(".detail-dialog");return true;})()');
       assert.equal(await browser.evaluate("Math.round(document.querySelector('.detail-dialog').getBoundingClientRect().width)"),720);
       assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('仅供内部的合成处理记录')"));
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
