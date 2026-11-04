@@ -13,6 +13,9 @@ import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-wor
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 import {createCommunicationDeliveryWorker} from '../../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createCommunicationSenderPort} from '../../app/server/src/p2-004-communication-sender-port.mjs';
+import {attachInboxJourney} from './conversation-inbox-fixture.mjs';
+import {MockResolvedDirectory} from '../../app/server/src/p2-015-contact-journey.mjs';
+import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-profile.mjs';
 
 export function t32Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t32Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -35,6 +38,18 @@ export async function seedT32SessionExceptions(f:T32Fixture,count=2){
     assert.equal(response.status,202,JSON.stringify(response.body));assert.ok(Array.isArray(response.body.delivery_ids));const id=t32Text(response.body.delivery_ids[0]);ids.push(id);assert.ok(await worker.deliver({deliveryId:id}));
   }
   assert.equal(calls,count);return {sessionId:row.id,deliveryIds:ids,senderCalls:()=>calls};
+}
+/** N3 uses the same retained, identity-bound profile fixture as the inbox. */
+export async function seedN3SessionProfile(f:T32Fixture,sessionId:string,name='欧阳慧敏（合成）'){
+  const row=(await f.pool.query<{id:string;intake_id:string;thread_id:string;reporter:string;bot:string;source_group:string|null;chat_type:'group'|'single'}>(`SELECT s.id::text,s.service_intake_id::text AS intake_id,s.thread_id::text,s.participant_key AS reporter,
+    th.channel_account_id AS bot,i.source_chat_id AS source_group,th.chat_type FROM conversation.session s
+    JOIN conversation.thread th ON th.id=s.thread_id JOIN intake.service_intake i ON i.id=s.service_intake_id WHERE s.id=$1::uuid`,[sessionId])).rows[0];assert.ok(row);
+  const existing=(await f.pool.query<{id:string}>('SELECT journey_id::text AS id FROM intake.channel_leg WHERE source_intake_id=$1::uuid',[row.intake_id])).rows[0];
+  if(existing){
+    const resolved=await MockResolvedDirectory({contact:{name},memberships:[{department_ref:'n3-synthetic-department',name:'心血管内科第二病区护士站（合成）'}]}).resolve({});assert.equal(resolved.status,'RESOLVED');
+    await f.pool.query("UPDATE intake.contact_journey SET profile_resolution_status='RESOLVED',profile_snapshot=$2::jsonb WHERE id=$1::uuid",[existing.id,JSON.stringify(snapshotReporterProfile(resolved.snapshot))]);return existing.id;
+  }
+  return attachInboxJourney(f.pool,{id:row.id,intakeId:row.intake_id,threadId:row.thread_id,reporter:row.reporter,bot:row.bot,group:row.source_group,chatType:row.chat_type,ticketId:'',rowVersion:1},{name,department:'心血管内科第二病区护士站（合成）'});
 }
 /** N2/S11: six real queue rows, with synthetic providers and the existing append/binding path. */
 export async function seedCard21Exceptions(f:T32Fixture){

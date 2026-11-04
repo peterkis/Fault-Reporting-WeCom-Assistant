@@ -8997,7 +8997,12 @@
       "tests/t24-synthetic-sender-unknown.integration.test.mts",
       "tests/t24-round-notification-identity.integration.test.mts",
       "tests/t25-app-delivery-http-recovery.integration.test.mts",
-      "tests/wbint-t32-exception-authorization.browser.test.mts"
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/wbint-t32-exception-contract.test.mts",
+      "tests/wbint-t32-notification-exceptions.integration.test.mts",
+      "tests/wbint-t32-session-exceptions.integration.test.mts",
+      "tests/wbint-t32-incident-exceptions.integration.test.mts",
+      "tests/wbint-t32-exception-compatibility.integration.test.mts"
     ],
     "pr-desktop": [
       "tests/pc-admin-electron.browser.test.mts"

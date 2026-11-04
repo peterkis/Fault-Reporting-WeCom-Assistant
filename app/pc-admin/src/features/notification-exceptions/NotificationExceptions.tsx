@@ -60,7 +60,7 @@ export function NotificationExceptions({principal}:{principal:Principal}){
       <HTable.Column className="ds-table-action">操作</HTable.Column>
     </></HTable.Header><HTable.Body>{items.map(row=><HTable.Row key={row.delivery_id} data-exception-row data-delivery-id={row.delivery_id} data-delivery-status={row.status} data-current={selected?.delivery_id===row.delivery_id?'true':undefined} id={row.delivery_id}>
       <HTable.Cell><Tag tone={notificationTones[row.status]??'neutral'}>{statuses[row.status]}</Tag></HTable.Cell>
-      <HTable.Cell className="notification-source-cell"><Link className="notification-source-link" to={row.parent_link.slice('/workbench/app'.length)}>查看{domains[row.domain]}</Link><small className="notification-summary" title={row.safe_summary}>{row.safe_summary}</small></HTable.Cell>
+      <HTable.Cell className="notification-source-cell"><Link className="notification-source-link" data-source-domain={row.domain} to={row.parent_link.slice('/workbench/app'.length)}>{row.domain==='TICKET'?row.ticket_no:row.domain==='SESSION'?'会话 · '+(row.reporter_name??'报修人（资料未提供）'):'查看'+domains[row.domain]}</Link>{row.domain!=='SESSION'?<small className="notification-summary" title={row.domain==='TICKET'?row.ticket_title??undefined:row.safe_summary}>{row.domain==='TICKET'?row.ticket_title:row.safe_summary}</small>:null}</HTable.Cell>
       <HTable.Cell>{sources[row.source_kind]}</HTable.Cell>
       <HTable.Cell>{row.destination_type==='GROUP'?'群聊':'个人'}</HTable.Cell>
       <HTable.Cell>{routes[row.route_kind]}</HTable.Cell>

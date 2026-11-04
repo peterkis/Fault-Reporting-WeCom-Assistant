@@ -193,3 +193,8 @@ A批原件 `selection-source-clear/`：该轮实际136项，135 PASS、1 FAIL，
 本次只修正新增的视觉断言：等待字体就绪和两个绘制帧，分别断言实际总宽=实际字宽+38px（±1px）、26px高、14px图标、6px间距、8/10px内边距、13px/600。字体回退不会改变这些设计几何约束；原Windows四宽三种列头均再次实测77×26，文字39px。只改T22新增场景和本执行记录；BoardColumn、Token、产品代码及原业务断言均不变，没有任意sleep或业务断言放宽。首轮失败和未执行范围、两份完整CI制品与日志均已保存到发布回执目录。
 
 修正候选输入 `88f50afe8f519b9ae87bacb28b59382a7f53a8014bfe08cf4d45665b864fd489`，manifest `27bced16209e56608925f895861cf6f751d31660978d1a463c1a4af39b252fb3`；统一构建、gate types（含Stylelint/ESLint）、verify-artifact通过。当前直接风险检查T22两个场景+原T35共3/3 PASS，0失败/取消/跳过；新head完整路径CI独立执行，不用此3例或旧178例替代。四宽测量在发布回执的fix-visual/conversation-metrics.json；合成库已清空，仅剩postgres，PG停止成功。后继审查/CI/合并/清理结果按实际head记录在同一外部回执目录。
+
+
+## N3后继票（2026-11-04）
+
+用户已授权独立补齐[N3 #144](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/144)，规格及验证见[N3执行记录](n3-source-projection.md)。该票扩展原只读合同及其真实来源；本卡上述“未提供编号/标题/姓名”的结论保留为当时事实，不重绑旧截图/测试对象。另有[绿色旧版退役 #145](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/145)原生依赖#144；退役以新PC现有流程为准，不补回旧业务流。

@@ -18,7 +18,7 @@
     },
     "item": {
       "type": "object", "additionalProperties": false,
-      "required": ["domain", "parent_id", "delivery_id", "source_kind", "route_kind", "destination_type", "status", "side_effect_state", "attempt_count", "last_attempt", "safe_summary", "error_code", "created_at", "updated_at", "sent_at", "allowed_actions", "parent_link"],
+      "required": ["domain", "parent_id", "delivery_id", "source_kind", "route_kind", "destination_type", "status", "side_effect_state", "attempt_count", "last_attempt", "safe_summary", "ticket_no", "ticket_title", "reporter_name", "error_code", "created_at", "updated_at", "sent_at", "allowed_actions", "parent_link"],
       "properties": {
         "domain": {"enum": ["TICKET", "SESSION", "INCIDENT"]},
         "parent_id": {"$ref": "#/$defs/uuid"},
@@ -31,12 +31,22 @@
         "attempt_count": {"type": "integer", "minimum": 0, "maximum": 2147483647},
         "last_attempt": {"anyOf": [{"$ref": "#/$defs/attempt"}, {"type": "null"}]},
         "safe_summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "ticket_no": {"type": ["string", "null"], "pattern": "^IT-[0-9]{8}-[0-9]{4,}$"},
+        "ticket_title": {"type": ["string", "null"], "minLength": 1, "maxLength": 200},
+        "reporter_name": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
         "error_code": {"enum": ["FAILURE_RECORDED", "RESULT_UNCONFIRMED", null]},
         "created_at": {"$ref": "#/$defs/time"}, "updated_at": {"$ref": "#/$defs/time"},
         "sent_at": {"anyOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
         "allowed_actions": {"type": "array", "maxItems": 2, "uniqueItems": true, "items": {"enum": ["RETRY", "RECONCILE"]}},
         "parent_link": {"type": "string", "maxLength": 160, "pattern": "^/workbench/"}
-      }
+      },
+      "allOf": [
+        {"if": {"properties": {"domain": {"const": "TICKET"}}},
+         "then": {"properties": {"ticket_no": {"type": "string"}, "ticket_title": {"type": "string"}}},
+         "else": {"properties": {"ticket_no": {"type": "null"}, "ticket_title": {"type": "null"}}}},
+        {"if": {"properties": {"domain": {"const": "SESSION"}}},
+         "then": {}, "else": {"properties": {"reporter_name": {"type": "null"}}}}
+      ]
     }
   },
   "type": "object", "additionalProperties": false,

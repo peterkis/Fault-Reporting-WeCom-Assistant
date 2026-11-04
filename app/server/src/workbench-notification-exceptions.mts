@@ -7,20 +7,23 @@ import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-autho
 import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
 import type {NotificationExceptionItem, NotificationExceptionPage} from '../../../contracts/workbench_notification_exception_contracts.js';
 import {failP2016, limitP2016, uuidP2016, transactionP2016, publicP2016} from './p2-016-domain-contracts.mjs';
+import {SESSION_JOURNEY_JOIN_SQL} from './conversation-topic-scope.mjs';
+import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 
 export interface NotificationExceptionIncidentScope {lifecycle:boolean;publicProgress:boolean;publicScopes:readonly string[]}
 export type NotificationExceptionIncidentScopePort=(input:{authContext:unknown;tx:PostgresTransaction})=>Promise<NotificationExceptionIncidentScope|null>;
-interface Options {pool:PostgresPool; query:Pick<P2016TicketQuery,'principal'>; enabled?:boolean; externalSendEnabled?:boolean;incidentScope?:NotificationExceptionIncidentScopePort|null}
+interface Options {pool:PostgresPool; query:Pick<P2016TicketQuery,'principal'>; enabled?:boolean; externalSendEnabled?:boolean;incidentScope?:NotificationExceptionIncidentScopePort|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined}
 interface Filters {domain:string;route:string;state:string;limit:number;cursor:string|null;scopeKey:string}
 interface Position {at:string;id:string}
-interface ExceptionRow extends Omit<NotificationExceptionItem,'allowed_actions'|'parent_link'|'safe_summary'|'error_code'> {assignee_id:string|null;summary?:string}
+interface ExceptionRow extends Omit<NotificationExceptionItem,'allowed_actions'|'parent_link'|'safe_summary'|'error_code'|'ticket_no'|'ticket_title'|'reporter_name'> {assignee_id:string|null;summary?:string}
+interface SourceDisplay extends Pick<NotificationExceptionItem,'domain'|'parent_id'|'ticket_no'|'ticket_title'|'reporter_name'> {assignee_id:string|null}
 type HttpContext=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 const stamp=(column:string)=>`to_char(${column},'YYYY-MM-DD"T"HH24:MI:SS.US')`;
 const route=`CASE WHEN d.target_type='GROUP' THEN 'GROUP' WHEN d.provider='WECOM_APP' THEN 'YIXIAOXIU_APP' ELSE 'BOT_DIRECT' END`;
 const exception=`(d.status='DEAD_LETTER' OR (d.status IN ('RECONCILIATION_REQUIRED','CANCELLED') AND d.side_effect_state='UNKNOWN'))`;
 
 /** A bounded read of the existing binding/Delivery/Attempt facts, never a second queue ledger. */
-export function createWorkbenchNotificationExceptions({pool,query,enabled=false,externalSendEnabled=true,incidentScope=null}:Options) {
+export function createWorkbenchNotificationExceptions({pool,query,enabled=false,externalSendEnabled=true,incidentScope=null,currentSessionPredicate}:Options) {
   if(typeof enabled!=='boolean'||typeof externalSendEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const cursorKey=randomBytes(32);
   const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
@@ -51,12 +54,48 @@ export function createWorkbenchNotificationExceptions({pool,query,enabled=false,
       return pos;
     }catch {failP2016('CURSOR_INVALID');}
   }
-  function project(row:ExceptionRow,p:WorkbenchPrincipal):NotificationExceptionItem {
+  async function sourceDisplays(tx:PostgresTransaction,p:WorkbenchPrincipal,authContext:unknown,rows:ExceptionRow[]):Promise<Map<string,SourceDisplay>> {
+    const ticket=ticketPredicateP2016(p,2),session=authorization.sessionAccessPredicate(p,{start:7});
+    const candidates=rows.map(row=>({domain:row.domain,parent_id:row.parent_id}));
+    const values:unknown[]=[JSON.stringify(candidates),...ticket.values,[...p.roles].sort(),[...p.team_ids].sort(),...session.values];
+    let authenticated='TRUE';
+    if(currentSessionPredicate){const proof=currentSessionPredicate(authContext,p.principal_id,11);values.push(...proof.values);authenticated=proof.sql;}
+    else if(authContext&&typeof authContext==='object'&&'session_id' in authContext)failP2016('AUTH_UNAVAILABLE',503);
+    // One final READ snapshot covers every n+1 candidate, including rows that
+    // determine has_more. Missing profile data never removes an authorized row.
+    const proof=(await tx.query<{authenticated:boolean;scope_current:boolean;parents_current:boolean;sources:SourceDisplay[]}>(`/* N3_SOURCE_DISPLAY_FINAL */
+      WITH candidates AS (SELECT DISTINCT domain,parent_id FROM jsonb_to_recordset($1::jsonb) AS c(domain text,parent_id uuid)),
+      sources AS (
+        SELECT c.domain,c.parent_id::text,t.ticket_no,t.title AS ticket_title,NULL::text AS reporter_name,t.assignee_id::text
+        FROM candidates c JOIN pilot_ticket.ticket t ON c.domain='TICKET' AND t.id=c.parent_id WHERE ${ticket.sql}
+        UNION ALL
+        SELECT c.domain,c.parent_id::text,NULL::text,NULL::text,
+          CASE WHEN j.profile_resolution_status='RESOLVED' THEN NULLIF(left(j.profile_snapshot->'contact'->>'name',128),'') END,NULL::text
+        FROM candidates c JOIN conversation.session s ON c.domain='SESSION' AND s.id=c.parent_id
+        LEFT JOIN conversation.assignment a ON a.session_id=s.id LEFT JOIN pilot_ticket.ticket t ON t.source_intake_id=s.service_intake_id
+        LEFT JOIN conversation.thread th ON th.id=s.thread_id
+        LEFT JOIN intake.service_intake i ON i.id=s.service_intake_id AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+          AND i.source_provider=th.provider AND i.source_bot_id=th.channel_account_id AND i.reporter_wecom_userid=s.participant_key
+        ${SESSION_JOURNEY_JOIN_SQL} WHERE ${session.sql}
+      ) SELECT (${authenticated}) AS authenticated,
+        EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor WHERE actor.id=$3::uuid AND actor.is_active
+          AND ARRAY(SELECT role::text FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role::text COLLATE "C")=$5::text[]
+          AND ARRAY(SELECT team_id::text FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id::text COLLATE "C")=$6::text[]) AS scope_current,
+        NOT EXISTS(SELECT 1 FROM candidates c WHERE c.domain IN ('TICKET','SESSION') AND NOT EXISTS(SELECT 1 FROM sources x WHERE x.domain=c.domain AND x.parent_id=c.parent_id::text)) AS parents_current,
+        COALESCE((SELECT jsonb_agg(to_jsonb(x)) FROM sources x),'[]'::jsonb) AS sources`,values)).rows[0];
+    if(!proof?.authenticated)failP2016('UNAUTHENTICATED',401);
+    if(!proof.scope_current)failP2016('FORBIDDEN',403);
+    if(!proof.parents_current)failP2016('NOT_FOUND',404);
+    return new Map(proof.sources.map(source=>[source.domain+'/'+source.parent_id,source]));
+  }
+  function project(row:ExceptionRow,p:WorkbenchPrincipal,display:SourceDisplay|undefined):NotificationExceptionItem {
+    if(row.domain!=='INCIDENT'&&!display)failP2016('NOT_FOUND',404);
     const unknown=row.side_effect_state==='UNKNOWN';
+    const assignee=display?display.assignee_id:row.assignee_id;
     const allowed:NotificationExceptionItem['allowed_actions']=[];
-    if(row.domain!=='INCIDENT'&&externalSendEnabled&&row.status==='DEAD_LETTER'&&row.side_effect_state==='NOT_ATTEMPTED'&&(row.domain==='SESSION'||p.roles.some(r=>['ADMIN','DISPATCHER'].includes(r))||row.assignee_id===p.principal_id))allowed.push('RETRY');
+    if(row.domain!=='INCIDENT'&&externalSendEnabled&&row.status==='DEAD_LETTER'&&row.side_effect_state==='NOT_ATTEMPTED'&&(row.domain==='SESSION'||p.roles.some(r=>['ADMIN','DISPATCHER'].includes(r))||assignee===p.principal_id))allowed.push('RETRY');
     if(row.domain!=='INCIDENT'&&externalSendEnabled&&row.status==='RECONCILIATION_REQUIRED'&&unknown&&p.roles.includes('ADMIN'))allowed.push('RECONCILE');
-    return {domain:row.domain,parent_id:row.parent_id,delivery_id:row.delivery_id,source_kind:row.source_kind,route_kind:row.route_kind,destination_type:row.destination_type,status:row.status,side_effect_state:row.side_effect_state,attempt_count:row.attempt_count,last_attempt:row.last_attempt,safe_summary:row.summary??(row.domain==='SESSION'?'会话外部消息':'工单通知'),error_code:unknown?'RESULT_UNCONFIRMED':'FAILURE_RECORDED',created_at:row.created_at,updated_at:row.updated_at,sent_at:row.sent_at,allowed_actions:allowed,parent_link:row.domain==='INCIDENT'?'/workbench/app/incidents/'+row.parent_id:row.domain==='SESSION'?'/workbench/app/conversations/'+row.parent_id:'/workbench/app/items/ticket/'+row.parent_id};
+    return {domain:row.domain,parent_id:row.parent_id,delivery_id:row.delivery_id,source_kind:row.source_kind,route_kind:row.route_kind,destination_type:row.destination_type,status:row.status,side_effect_state:row.side_effect_state,attempt_count:row.attempt_count,last_attempt:row.last_attempt,safe_summary:row.summary??(row.domain==='SESSION'?'会话外部消息':'工单通知'),ticket_no:display?.ticket_no??null,ticket_title:display?.ticket_title??null,reporter_name:display?.reporter_name??null,error_code:unknown?'RESULT_UNCONFIRMED':'FAILURE_RECORDED',created_at:row.created_at,updated_at:row.updated_at,sent_at:row.sent_at,allowed_actions:allowed,parent_link:row.domain==='INCIDENT'?'/workbench/app/incidents/'+row.parent_id:row.domain==='SESSION'?'/workbench/app/conversations/'+row.parent_id:'/workbench/app/items/ticket/'+row.parent_id};
   }
   async function ticketRows(tx:PostgresTransaction,p:WorkbenchPrincipal,f:Filters,pos:Position|null,item?:{parent:string;delivery:string}) {
     const predicate=ticketPredicateP2016(p);
@@ -144,8 +183,9 @@ export function createWorkbenchNotificationExceptions({pool,query,enabled=false,
       if(['ALL','TICKET'].includes(f.domain))rows.push(...await ticketRows(tx,p,f,pos));
       if(['ALL','SESSION'].includes(f.domain))rows.push(...await sessionRows(tx,p,f,pos));
       if(['ALL','INCIDENT'].includes(f.domain)){rows.push(...await incidentRows(tx,f,pos,scope,false));rows.push(...await incidentRows(tx,f,pos,scope,true));}
+      const displays=await sourceDisplays(tx,p,authContext,rows);
       rows.sort((a,b)=>a.created_at===b.created_at?(a.delivery_id<b.delivery_id?1:a.delivery_id>b.delivery_id?-1:0):a.created_at<b.created_at?1:-1);
-      const hasMore=rows.length>f.limit,items=rows.slice(0,f.limit).map(row=>project(row,p)),last=items.at(-1);
+      const hasMore=rows.length>f.limit,items=rows.slice(0,f.limit).map(row=>project(row,p,displays.get(row.domain+'/'+row.parent_id))),last=items.at(-1);
       return publicP2016({items,has_more:hasMore,next_cursor:hasMore&&last?encode({at:last.created_at,id:last.delivery_id},p,f):null});
     });
   }
@@ -155,7 +195,7 @@ export function createWorkbenchNotificationExceptions({pool,query,enabled=false,
       const target={parent:uuidP2016(parent),delivery:uuidP2016(delivery)};
       const scope=domain==='incident'?await incidentScope?.({authContext,tx})??null:null;
       const rows=domain==='ticket'?await ticketRows(tx,p,f,null,target):domain==='session'?await sessionRows(tx,p,f,null,target):domain==='incident'?[...await incidentRows(tx,f,null,scope,false,target),...await incidentRows(tx,f,null,scope,true,target)]:[];
-      if(rows.length!==1)failP2016('NOT_FOUND',404);return publicP2016(project(rows[0] as ExceptionRow,p));
+      if(rows.length!==1)failP2016('NOT_FOUND',404);const displays=await sourceDisplays(tx,p,authContext,rows),row=rows[0] as ExceptionRow;return publicP2016(project(row,p,displays.get(row.domain+'/'+row.parent_id)));
     });
   }
   return Object.freeze({list,item,async handler({request,response,url,authContext,json}:HttpContext) {

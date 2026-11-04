@@ -51,6 +51,8 @@ test('T32 public exceptions paginate only current readable Ticket failures and r
         const intake = await seedPersistedIntake({pool: context.pool, text: 'T32_INTERNAL_FORBIDDEN_' + index, chatType: 'single', requestType: 'INCIDENT', status: 'RECEIVED', tag: 't32-first-' + index});
         const created = await core.createForIntake({intakeId: intake.intakeId, occurredAt: intake.receivedAt, traceId: 't32-first'});
         assert.ok(created.ticket);
+        // The internal-source canary stays private; N3 exposes the actual public Ticket title.
+        await context.pool.query('UPDATE pilot_ticket.ticket SET title=$2 WHERE id=$1::uuid',[created.ticket.id,'N3打印设备连接异常（合成）'+index]);
         await actor.start(created.ticket.id);
         await runtime.roundNotifications.runOnce();
         const response = await admin.get('/api/tickets/' + created.ticket.id + '/deliveries'); assert.equal(response.status, 200);

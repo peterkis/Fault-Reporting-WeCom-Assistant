@@ -12,6 +12,8 @@
 .notification-exceptions .notification-table .notification-action-cell {text-align:right;}
 .notification-exceptions .ds-data-table.ds-data-table .notification-table tr[data-current=true] {background: var(--bg-selected);}
 .notification-exceptions .notification-source-link {color:var(--text-link);}
+.notification-exceptions .notification-source-link[data-source-domain=TICKET] {font-family:var(--font-mono);}
+.notification-exceptions .notification-source-link[data-source-domain=SESSION] {display:block;width:100%;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .notification-exceptions .notification-source-link:hover {text-decoration:underline;}
 .notification-exceptions .notification-summary {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .notification-exceptions .notification-time {font-variant-numeric: tabular-nums; white-space: nowrap;}
