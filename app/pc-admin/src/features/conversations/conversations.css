@@ -1,2 +1,29 @@
 .ds-page .ds-split .inbox-composer .ds-segmented[role=tablist] {padding:var(--space-0-5);background:var(--bg-muted);}
 .ds-page .ds-split .inbox-composer .ds-segmented [role=tab][aria-selected=true] {background:var(--bg-canvas);box-shadow:var(--shadow-2);}
+
+/* v2.1.2 C1–C10 / S10; shared component sizes stay owned by design Tokens. */
+.workspace.ds-page:is(.conversation-inbox-workspace,.conversation-workspace)>.ds-page-header {min-height:0;padding-bottom:0;margin-bottom:var(--space-3);}
+.conversation-inbox-workspace .inbox-search>.ds-search-field {height:var(--control-h-md);border:0;background:var(--bg-muted);}
+.conversation-inbox-workspace .inbox-search>.ds-search-field:focus-within {outline:var(--space-0-5) solid var(--border-focus);outline-offset:var(--space-0-5);}
+.ds-page .ds-split .inbox-contact-title {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:var(--space-2);width:100%;}
+.inbox-contact-title .inbox-contact-identity {display:flex;align-items:baseline;gap:var(--space-2);min-width:0;overflow:hidden;}
+.ds-page .ds-split .inbox-contact-identity>strong {flex:none;white-space:nowrap;}
+.ds-page .ds-split .inbox-contact-identity>.inbox-contact-department {flex:1;min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ds-page .ds-split .inbox-contact-title>time {white-space:nowrap;}
+.ds-page .ds-split .inbox-contact-preview {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ds-page .ds-split .inbox-message [data-internal=true] {position:relative;color:var(--text-primary);}
+.ds-page .ds-split .inbox-message [data-internal=true]>.ds-message-prefix {padding-left:calc(var(--fs-xs) + var(--space-1));color:var(--tone-warning-fg);}
+.ds-page .ds-split .inbox-internal-lock {position:absolute;top:var(--space-2);left:var(--space-3);width:var(--fs-xs);height:var(--fs-xs);color:var(--tone-warning-fg);}
+.ds-page .ds-split .inbox-message-system .ds-message-bubble time {font-size:var(--fs-xs);color:var(--text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ds-page .ds-split .inbox-message-system footer:empty {display:none;}
+.ds-page .ds-split .inbox-pagination {justify-content:center;gap:var(--space-2);}
+.ds-page .ds-split .inbox-pagination>.ds-button.button {border:0;min-height:var(--control-h-sm);padding:0 var(--space-2);background:transparent;color:var(--text-secondary);font-size:var(--fs-sm);}
+.ds-page .ds-split .inbox-associated .inbox-mini-ticket .card-open {padding:calc(var(--space-2) + var(--space-0-5));}
+.ds-page .ds-split .inbox-associated .inbox-mini-ticket h3 {margin:0;font-size:var(--fs-sm);line-height:var(--lh-sm);min-height:var(--lh-sm);max-height:calc(var(--lh-sm) * 2);}
+.inbox-mini-ticket .ds-ticket-body {grid-template-rows:auto auto auto;}
+.ds-page .ds-split .inbox-mini-ticket .ds-ticket-metadata {height:auto;min-height:var(--lh-xs);}
+.ds-page .ds-split .inbox-mini-ticket .card-footer {display:none;}
+.inbox-mini-stage .ds-tag-content {display:inline-flex;align-items:center;gap:var(--space-1);}
+.inbox-mini-stage .ds-stage-glyph {width:var(--fs-xs);height:var(--fs-xs);}
+
+.ds-page .ds-split .inbox-contact-rows .ds-conversation-list-item>a {width:100%;max-width:100%;}

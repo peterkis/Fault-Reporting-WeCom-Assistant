@@ -15,12 +15,13 @@ import type { BoardSort,BoardSummaryFilter } from '../design/board-presentation'
 import { matchesBoardSummary,sortBoardItems } from '../design/board-presentation';
 import { Avatar } from '../design/components/Avatar/Avatar';
 import { BoardColumn as BoardColumnView,boardEmptyMessage,BoardGroup } from '../design/components/BoardColumn/BoardColumn';
-import { BoardSummary,BoardDatePresets,BoardFilterPill } from '../design/components/BoardSummary/BoardSummary';
+import { BoardSummary,BoardDatePresets } from '../design/components/BoardSummary/BoardSummary';
 import { Button,Button as HButton } from '../design/components/Button/Button';
-import { FilterSelect } from '../design/components/FilterSelect/FilterSelect';
 import { PageHeader } from '../design/components/PageHeader/PageHeader';
 import { SegmentedControl } from '../design/components/SegmentedControl/SegmentedControl';
 import { SourceLabel } from '../design/components/SourceLabel/SourceLabel';
+import {FilterChip} from '../design/components/FilterChip/FilterChip';
+import {Shapes,UserRound} from 'lucide-react';
 import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
 import { TicketCard,TicketCardBody,TicketCategoryTile } from '../design/components/TicketCard/TicketCard';
 import { Toolbar } from '../design/components/Toolbar/Toolbar';
@@ -288,8 +289,8 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
         {principal.workbench_search_enabled?<div className="ds-board-search"><Search aria-hidden="true"/>{view==='board'?<kbd>/</kbd>:null}<SearchControls principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} onApply={applySearch} onLeave={leaveSearch}/></div>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
         {principal.workbench_search_enabled?<span className="ds-board-toolbar-divider" aria-hidden="true"/>:null}
         <div className="ds-board-filter-layout"><div className="ds-board-filter-row" role="group" aria-label="筛选已加载事项" title="类别和处理人仅筛选已加载事项">
-          {catalog.data||searchMode?<BoardFilterPill active={categoryFilter!=='all'} label="类别" blocked={navigationBlocked||searchMode} onClear={()=>setBoardFilter('category','all')}><FilterSelect aria-label="类别" label={<span className="ds-board-filter-label">类别</span>} value={categoryFilter} isDisabled={navigationBlocked||searchMode||catalog.isError} onChange={value=>setBoardFilter('category',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item>{(catalog.data?.categories??[]).map(category=><ListBox.Item key={category.category} id={category.category} textValue={category.category_name_zh}>{category.category_name_zh}<ListBox.ItemIndicator/></ListBox.Item>)}<ListBox.Item id="unclassified" textValue="未分类">未分类<ListBox.ItemIndicator/></ListBox.Item></FilterSelect></BoardFilterPill>:null}
-          <BoardFilterPill active={handlerFilter!=='all'} label="处理人" blocked={navigationBlocked||searchMode} onClear={()=>setBoardFilter('handler','all')}><FilterSelect aria-label="处理人" label={<span className="ds-board-filter-label">处理人</span>} value={handlerFilter} isDisabled={navigationBlocked||searchMode} onChange={value=>setBoardFilter('handler',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue="未领取">未领取<ListBox.ItemIndicator/></ListBox.Item>{handlers.map(name=><ListBox.Item key={name} id={'name:'+name} textValue={name}>{name}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterSelect></BoardFilterPill>
+          {catalog.data||searchMode?<FilterChip active={categoryFilter!=='all'} label="类别" icon={<Shapes/>} isDisabled={navigationBlocked||searchMode||catalog.isError} onClear={()=>setBoardFilter('category','all')} aria-label="类别" value={categoryFilter} onChange={value=>setBoardFilter('category',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item>{(catalog.data?.categories??[]).map(category=><ListBox.Item key={category.category} id={category.category} textValue={category.category_name_zh}>{category.category_name_zh}<ListBox.ItemIndicator/></ListBox.Item>)}<ListBox.Item id="unclassified" textValue="未分类">未分类<ListBox.ItemIndicator/></ListBox.Item></FilterChip>:null}
+          <FilterChip active={handlerFilter!=='all'} label="处理人" icon={<UserRound/>} isDisabled={navigationBlocked||searchMode} onClear={()=>setBoardFilter('handler','all')} aria-label="处理人" value={handlerFilter} onChange={value=>setBoardFilter('handler',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue="未领取">未领取<ListBox.ItemIndicator/></ListBox.Item>{handlers.map(name=><ListBox.Item key={name} id={'name:'+name} textValue={name}>{name}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterChip>
         </div>
           {categoryFilter!=='all'&&handlerFilter!=='all'?<Button tone="ghost" data-action="clear-board-filters" isDisabled={navigationBlocked||searchMode} onPress={()=>setBoardFilters({scope:filterScope,category:'all',handler:'all'})}>清除</Button>:null}
         </div>

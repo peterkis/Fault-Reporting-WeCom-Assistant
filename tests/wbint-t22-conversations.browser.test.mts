@@ -1,12 +1,78 @@
 import {test} from 'node:test';
-import {assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
+import {assertWorkbenchPrimaryLabelContrast,chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID,createHash} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {conversationPost,freshCommand,seedCard21Conversation} from './helpers/conversation-inbox-fixture.mjs';
+import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
+type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+
+test('v2.1.2 G1 S10 C1–C10 use real long contacts, chronological fixtures and shared keyboard filters',{timeout:240000},async()=>{
+  await withT22Fixture(async f=>{
+    const {session,dates}=await seedCard21Conversation(f),directory=process.env.CARD21_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card21-conversation-'));await mkdir(directory,{recursive:true});
+    const raw=(await f.pool.query<{sequence_no:string;occurred_at:string;sender_kind:string;item_type:string}>('SELECT sequence_no::text,occurred_at::text,sender_kind,item_type FROM conversation.item WHERE session_id=$1::uuid ORDER BY sequence_no',[session.id])).rows;
+    assert.deepEqual(raw.filter(row=>['USER_MESSAGE','AGENT_MESSAGE'].includes(row.item_type)).slice(0,4).map(row=>row.occurred_at),[dates.yesterday+' 16:40:00',dates.yesterday+' 16:52:00',dates.today+' 09:10:00',dates.today+' 09:30:00']);
+    assert.ok(raw.every((row,index)=>index===0||row.occurred_at>=(raw[index-1]?.occurred_at??'')),'fixture timestamps, including appended system projections, must follow the original sequence');
+    let browser:Browser|undefined,failure:unknown;const posts:string[]=[],metrics:unknown[]=[];
+    const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+    try{
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')&&document.querySelector('.inbox-message-internal_note')?.textContent.includes('已联系同事')");
+      for(const width of [1920,1440,1280,900]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+        await browser.evaluate('window.scrollTo(0,0);document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
+        const sample=await browser.evaluate(`(()=>{const row=[...document.querySelectorAll('[data-contact-ref]')].find(n=>n.textContent.includes('欧阳慧敏')),t=row.querySelector('time'),title=row.querySelector('.inbox-contact-title'),preview=row.querySelector('.inbox-contact-preview'),note=document.querySelector('.inbox-message-internal_note'),header=document.querySelector('.ds-page-header'),toolbar=document.querySelector('.ds-toolbar'),chip=document.querySelector('.ds-filter-chip'),search=document.querySelector('.inbox-search .ds-search-field'),mini=document.querySelector('.inbox-mini-ticket'),root=getComputedStyle(document.documentElement);return {width:innerWidth,title:document.querySelector('h1').getBoundingClientRect().toJSON(),headerGap:toolbar.getBoundingClientRect().top-header.getBoundingClientRect().bottom,timeRight:t.getBoundingClientRect().right,rowRight:row.getBoundingClientRect().right,timeText:t.textContent,grid:getComputedStyle(title).display,preview:preview.textContent,ellipsis:getComputedStyle(preview).textOverflow,previewWhiteSpace:getComputedStyle(preview).whiteSpace,dates:[...document.querySelectorAll('.inbox-message-divider time')].map(n=>n.textContent),dividers:[...document.querySelectorAll('.inbox-message-divider')].map(n=>n.textContent),note:note.innerText,noteLabel:note.querySelectorAll('.ds-message-prefix').length,lock:note.querySelectorAll('.inbox-internal-lock').length,systemHeaders:document.querySelectorAll('.inbox-message-system header').length,systemTimes:document.querySelectorAll('.inbox-message-system .ds-message-bubble time').length,systemCount:document.querySelectorAll('.inbox-message-system').length,chipHeight:chip.getBoundingClientRect().height,searchHeight:search.getBoundingClientRect().height,searchBorder:getComputedStyle(search).borderTopWidth,searchBg:getComputedStyle(search).backgroundColor,pagination:document.querySelectorAll('.inbox-pagination button').length,miniPadding:getComputedStyle(mini.querySelector('.card-open')).paddingTop,miniTitle:getComputedStyle(mini.querySelector('h3')).fontSize,miniCategory:mini.querySelectorAll('.ds-ticket-category').length,miniStage:mini.querySelectorAll('.ds-stage-glyph').length,miniHeat:mini.querySelectorAll('.ds-ticket-heat').length,miniOwnerVisible:mini.querySelector('.card-footer').checkVisibility(),scrollbar:getComputedStyle(document.querySelector('.inbox-timeline'),'::-webkit-scrollbar').width,brand:root.getPropertyValue('--tone-brand-solid').trim(),overflow:document.documentElement.scrollWidth>innerWidth};})()`) as {width:number;title:{x:number;y:number};headerGap:number;timeRight:number;rowRight:number;timeText:string;grid:string;preview:string;ellipsis:string;previewWhiteSpace:string;dates:string[];dividers:string[];note:string;noteLabel:number;lock:number;systemHeaders:number;systemTimes:number;systemCount:number;chipHeight:number;searchHeight:number;searchBorder:string;searchBg:string;pagination:number;miniPadding:string;miniTitle:string;miniCategory:number;miniStage:number;miniHeat:number;miniOwnerVisible:boolean;scrollbar:string;brand:string;overflow:boolean};
+        assert.equal(sample.headerGap,12);assert.equal(sample.chipHeight,30);assert.equal(sample.searchHeight,32);assert.equal(sample.searchBorder,'0px');assert.equal(sample.searchBg,'rgb(241, 241, 239)');
+        if(width>900){assert.equal(sample.grid,'grid');assert.ok(sample.timeRight<=sample.rowRight+1,'C1 time right edge at '+width);assert.match(sample.timeText,/^\d{2}-\d{2} \d{2}:\d{2}$/u);assert.ok(sample.preview.length>60);}
+        assert.equal(sample.ellipsis,'ellipsis');assert.equal(sample.previewWhiteSpace,'nowrap');assert.deepEqual(sample.dates,['昨天','今天']);assert.equal(sample.dividers.length,3);assert.equal(sample.dividers[2],'切换到 Bot 私聊');
+        assert.equal(sample.noteLabel,1);assert.equal(sample.lock,1);assert.equal((sample.note.match(/内部/gu)??[]).length,1);assert.equal(sample.systemHeaders,0);assert.equal(sample.systemTimes,sample.systemCount);assert.ok(sample.systemCount>0);
+        assert.equal(sample.pagination,0);assert.equal(sample.miniPadding,'10px');assert.equal(sample.miniTitle,'13px');assert.equal(sample.miniCategory,1);assert.equal(sample.miniStage,1);assert.equal(sample.miniHeat,1);assert.equal(sample.miniOwnerVisible,false);assert.equal(sample.scrollbar,'8px');assert.equal(sample.brand.toUpperCase(),'#2563C9');assert.equal(sample.overflow,false);
+        metrics.push(sample);await writeFile(join(directory,'conversation-'+width+'.png'),Buffer.from(await browser.screenshot(),'base64'));
+        await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ds-board-filter-row .ds-filter-chip').length===2");
+        const boardTitle=await browser.evaluate("document.querySelector('h1').getBoundingClientRect().toJSON()") as {x:number;y:number};assert.equal(boardTitle.x,sample.title.x);assert.equal(boardTitle.y,sample.title.y);
+        const chips=await browser.evaluate("[...document.querySelectorAll('.ds-board-filter-row .ds-filter-chip')].map(n=>{const trigger=n.querySelector('[data-slot=select-trigger]'),icon=n.querySelector('.ds-filter-chip-icon svg'),label=trigger.querySelector('.ds-board-filter-label'),arrow=trigger.querySelector('[data-slot=select-default-indicator]');return {height:n.getBoundingClientRect().height,iconLeft:icon.getBoundingClientRect().left-n.getBoundingClientRect().left,iconGap:label.getBoundingClientRect().left-icon.getBoundingClientRect().right,arrowGap:arrow.getBoundingClientRect().left-label.getBoundingClientRect().right,labelCenterDelta:Math.abs((label.getBoundingClientRect().top+label.getBoundingClientRect().bottom-n.getBoundingClientRect().top-n.getBoundingClientRect().bottom)/2)};})") as {height:number;iconLeft:number;iconGap:number;arrowGap:number;labelCenterDelta:number}[];
+        assert.ok(chips.every(n=>n.height===30&&n.iconLeft===11&&n.iconGap===6&&n.arrowGap===6&&n.labelCenterDelta<=1),'G1 official board 01 spacing');
+        await browser.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
+        // The 77px reference includes 39px of CJK text. CI may use fallback glyphs;
+        // verify the same fixed geometry around its actual text, rather than a system font.
+        const stages=await browser.evaluate("[...document.querySelectorAll('.ds-board-column .ds-status-badge[data-stage]')].map(n=>{const c=getComputedStyle(n),text=n.querySelector('.ds-status-text'),icon=n.querySelector('.ds-stage-glyph');return {width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,textWidth:text.getBoundingClientRect().width,iconWidth:icon.getBoundingClientRect().width,paddingLeft:c.paddingLeft,paddingRight:c.paddingRight,gap:c.columnGap,font:c.fontSize,weight:c.fontWeight};})") as {width:number;height:number;textWidth:number;iconWidth:number;paddingLeft:string;paddingRight:string;gap:string;font:string;weight:string}[];assert.equal(stages.length,3);assert.ok(stages.every(n=>Math.abs(n.width-n.textWidth-38)<=1&&n.height===26&&n.iconWidth===14&&n.paddingLeft==='8px'&&n.paddingRight==='10px'&&n.gap==='6px'&&n.font==='13px'&&n.weight==='600'),'column labels use official board 01, never discussion 06: '+JSON.stringify(stages));metrics.push({boardWidth:width,stages});
+        await writeFile(join(directory,'board-'+width+'.png'),Buffer.from(await browser.screenshot(),'base64'));
+        await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+session.id});await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&Boolean(document.querySelector('.inbox-message-internal_note'))&&document.querySelector('.inbox-associated')?.textContent.includes('当前状态')");
+      }
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+      const queue='[data-field-label="收件箱队列"] [data-slot=select-trigger]',source='[data-field-label="收件箱来源"]';
+      assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(queue)+').closest(".ds-filter-chip").title'),'当前：进行中');
+      await browser.evaluate('document.querySelector('+JSON.stringify(queue)+').focus()');
+      for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await browser.waitFor("Boolean(document.querySelector('.ds-filter-chip[data-filter-open]'))");await clickWorkbenchControl(browser,'[role=option][data-key=unassigned]');
+      await browser.waitFor("new URLSearchParams(location.search).get('state')==='unassigned'");await chooseWorkbenchSelect(browser,source,'group');
+      await browser.waitFor("new URLSearchParams(location.search).get('source')==='group'");
+      await browser.evaluate('document.querySelector(\'[aria-label="清除队列筛选"]\').focus()');
+      for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('state')"),'open');assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('source')"),'group');assert.equal(await browser.evaluate("document.activeElement?.closest('[data-field-label]')?.dataset.fieldLabel"),'收件箱队列');
+      await browser.evaluate('document.querySelector('+JSON.stringify(queue)+').focus()');
+      for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:' ',code:'Space',windowsVirtualKeyCode:32});
+      await browser.waitFor("Boolean(document.querySelector('.ds-filter-chip[data-filter-open]'))");
+      for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+      await browser.waitFor("!document.querySelector('.ds-filter-chip[data-filter-open]')");
+      const groupValue=await browser.waitFor("[...(document.querySelector('[data-field-label=\"具体来源群\"] select')?.options??[])].find(option=>option.value&&option.value!=='all')?.value");assert.equal(typeof groupValue,'string');
+      await chooseWorkbenchSelect(browser,'[data-field-label="具体来源群"]',String(groupValue));
+      await clickWorkbenchControl(browser,'[aria-label="清除来源筛选"]');
+      assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('source_group_ref')"),groupValue,'clearing source preserves the separately selected source group');assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('source')??'all'"),'all');assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('state')"),'open');
+      assert.deepEqual(posts,[],'G1 presentation and filter navigation issue no business commands');
+      f.runtime.server.off('request',observe);
+      const sourceNote='内部：保留报修沟通中的原文前缀（合成）。',entry=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
+      assert.equal((await conversationPost(f.origin,f.cookie,session.id,'internal-notes',{...freshCommand(entry.session.row_version),text:sourceNote})).status,201);await f.runtime.coordinator.runOnce();
+      await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+session.id});await browser.waitFor("[...document.querySelectorAll('.inbox-message-internal_note p')].some(node=>node.textContent==="+JSON.stringify(sourceNote)+')');
+      await writeFile(join(directory,'conversation-metrics.json'),JSON.stringify({raw,metrics,posts,sourcePrefixPreserved:true},null,2));console.log('CARD21_CONVERSATION_EVIDENCE '+directory);
+    }catch(error){failure=error;if(browser){await writeFile(join(directory,'conversation-failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'conversation-failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
+    finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  },{inbox:true,personalRead:false,recovery:true});
+});
 
 test('the production workspace reads real scoped topics, keeps input and selection during new material, and labels 202 as pending delivery',async()=>{
   await withT22Fixture(async({origin,browserCookie,pool,sessions})=>{

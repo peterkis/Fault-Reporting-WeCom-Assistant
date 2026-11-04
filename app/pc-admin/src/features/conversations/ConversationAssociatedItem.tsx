@@ -5,13 +5,15 @@ import {api,ApiError,errorMessage,statusLabels} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearItemAuthorization} from '../../app/authorization';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
-import {TicketCard,TicketCardBody} from '../../design/components/TicketCard/TicketCard';
+import {TicketCard,TicketCardBody,TicketCategoryTile} from '../../design/components/TicketCard/TicketCard';
+import {StageGlyph} from '../../design/components/StageGlyph/StageGlyph';
+import {Tag} from '../../design/components/Tag/Tag';
+import {heatOf} from '../../design/heat';
 import {Drawer} from '../../design/components/Drawer/Drawer';
 import {Button} from '../../design/components/Button/Button';
 import {Section} from '../../design/components/Section/Section';
 import {StatusBadge} from '../../design/components/StatusBadge/StatusBadge';
-import {Avatar} from '../../design/components/Avatar/Avatar';
-import {statusTones} from '../../design/status-map';
+import {statusTones,stagePresentation} from '../../design/status-map';
 import type {ConversationChatEntry} from './inbox-client';
 
 export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean}){
@@ -20,10 +22,11 @@ export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChat
   const denied=detail.error instanceof ApiError&&[403,404].includes(detail.error.status);
   useEffect(()=>{if(item&&detail.error instanceof ApiError&&[403,404].includes(detail.error.status)){setOpen(false);void clearItemAuthorization(client,principal.principal_id,item.kind,item.id,detail.error);}},[client,principal.principal_id,item,denied,detail.error]);
   const current=denied?undefined:detail.data?.item;
+  const heatStart=current?.column==='pending'?current.created_at:current?.column==='active'?current.stage_entered_at:null,heat=heatOf(heatStart?heatStart.replace(' ','T')+'+08:00':null,Date.now());
   const full=item?'/items/'+item.kind+'/'+item.id+'?detail=page':'/';
   return <section className="inbox-associated" aria-label="关联事项"><h3>关联事项</h3>{item&&!denied?<>
     <TicketCard className="inbox-mini-ticket"><Link className="card-open" to={full} aria-label={'查看关联事项 '+item.number} onClick={event=>{event.preventDefault();if(!blocked)setOpen(true);}}>
-      <TicketCardBody number={item.number} title={item.title} metadata={current?<span className="card-meta">当前状态 · {statusLabels[current.status]??current.status}</span>:<span className="inbox-meta">{detail.isError?'事项摘要暂不可用':'正在加载事项摘要…'}</span>} tags={[]} owner={current?.assignee_name?<><Avatar size={20} name={current.assignee_name}/>{current.assignee_name}</>:null} activity={null}/>
+      <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={current?.service}/>} heat={heat} heatStart={heatStart??null} metadata={current?<Tag className="inbox-mini-stage" tone={stagePresentation[current.column].tone} title={'当前状态 · '+(statusLabels[current.status]??current.status)}><StageGlyph stage={current.column}/>{stagePresentation[current.column].label}<span className="sr-only"> · 当前状态 · {statusLabels[current.status]??current.status}</span></Tag>:<span className="inbox-meta">{detail.isError?'事项摘要暂不可用':'正在加载事项摘要…'}</span>} tags={[]} owner={null} activity={null}/>
     </Link></TicketCard>
   </>:<p>暂无可展示的关联事项</p>}
     <section className="inbox-reporter"><h3>报修人</h3><p>{entry.participant_label}</p>{entry.department_label?<p>{entry.department_label}</p>:null}</section>

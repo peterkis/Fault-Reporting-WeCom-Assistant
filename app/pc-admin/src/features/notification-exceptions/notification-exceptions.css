@@ -1,17 +1,19 @@
-.notification-exceptions .notification-overview {align-items: center; margin-bottom: var(--space-5);}
+.notification-exceptions .notification-overview {align-items: center; margin-bottom: var(--space-4);}
 .notification-exceptions .notification-overview strong {font-weight: var(--fw-semibold);}
 .notification-exceptions .notification-empty {min-height: calc(var(--space-16) * 5);}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table {min-width: 840px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table :is(th,td):first-child {width: 148px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.notification-source-column {width: auto;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.notification-type-column {width: 104px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.notification-recipient-column {width: 72px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.notification-channel-column {width: 100px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.notification-time-column {width: 140px; text-align: right;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table th.ds-table-action {width: 80px;}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table td {height: var(--space-16);}
+.notification-exceptions {--notification-column:calc(var(--space-16) + var(--space-12) + var(--space-2));--notification-source-min:calc(var(--space-16) * 3 + var(--space-12));--notification-time:calc(var(--space-16) * 2 + var(--space-3));--notification-action:calc(var(--space-16) + var(--space-4));--notification-row-h:calc(var(--space-12) + var(--space-2));--notification-gap:max(calc(var(--space-0-5) * 0),calc((60% - var(--notification-column) * 4 - var(--notification-time) - var(--notification-action) + var(--space-0-5)) / 6));--notification-columns:var(--notification-column) minmax(var(--notification-source-min),1.5fr) repeat(3,var(--notification-column)) var(--notification-time) var(--notification-action);}
+.workspace.ds-page.notification-exceptions>.ds-page-header {min-height:0;padding-bottom:0;margin-bottom:var(--space-3);}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table {display:block;min-width:calc(var(--notification-column) * 4 + var(--notification-source-min) + var(--notification-time) + var(--notification-action));}
+.notification-exceptions .notification-table :is(thead,tbody) {display:block;}
+.notification-exceptions .notification-table tr {display:grid;grid-template-columns:var(--notification-columns);column-gap:var(--notification-gap);border-bottom:1px solid var(--border-hair);}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table :is(th,td) {display:block;align-content:center;width:auto;min-width:0;border-bottom:0;}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table th:is(.notification-time-column,.ds-table-action) {text-align:right;}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table tbody tr,.notification-exceptions .ds-data-table.ds-data-table .notification-table td {height:var(--notification-row-h);}
+.notification-exceptions .notification-table .notification-action-cell {text-align:right;}
 .notification-exceptions .ds-data-table.ds-data-table .notification-table tr[data-current=true] {background: var(--bg-selected);}
-.notification-exceptions .notification-summary {display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;}
+.notification-exceptions .notification-source-link {color:var(--text-link);}
+.notification-exceptions .notification-source-link:hover {text-decoration:underline;}
+.notification-exceptions .notification-summary {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .notification-exceptions .notification-time {font-variant-numeric: tabular-nums; white-space: nowrap;}
 .notification-exceptions .notification-detail {padding-top: var(--space-5); border-top: 1px solid var(--border-hair);}
 .notification-detail-heading {display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);}
