@@ -193,21 +193,9 @@ test('temporary database failure is isolated behind stable projection errors wit
   assert.equal(result.streams.every((stream) => stream.failures[0].code === 'P2_G1_PROJECTION_STORAGE_FAILED'), true);
 });
 
-test('P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence', () => {
-  const projector = readFileSync('app/server/src/p2-002-timeline-projector.mjs', 'utf8');
-  assert.match(projector, /itemTransactionHook = null/u);
-  assert.match(projector, /await itemTransactionHook/u);
-  const browser = readFileSync('web/p2-workbench/workbench.js', 'utf8');
-  assert.match(browser, /composerPending/u);
-  assert.match(browser, /if \(!value \|\| !state\.detail \|\| composerPending\) return/u);
-  assert.match(browser, /eventSource\.addEventListener\(eventType, refresh\)/u);
-  const realtimeSchema = JSON.parse(readFileSync('contracts/conversation_realtime_event.schema.json', 'utf8'));
-  for (const eventType of realtimeSchema.$defs.event_type.enum) assert.equal(browser.includes(`'${eventType}'`), true, eventType);
-  assert.match(browser, /if \(realtimeRefreshRunning\) \{ realtimeRefreshPending = true; return; \}/u);
-  assert.match(browser, /while \(realtimeRefreshPending\)/u);
-  assert.match(browser, /location\.hash\.match\(\/\^#test-agent-\(\[A-D\]\)\$\/u\)/u);
-  assert.match(browser, /测试窗口 \$\{testSession\}/u);
-  assert.match(readFileSync('web/p2-workbench/workbench.css', 'utf8'), /\[hidden\] \{ display: none !important; \}/u);
+test('P2-002 transaction hook remains optional after the reference UI is retired',()=>{
+  const projector=readFileSync('app/server/src/p2-002-timeline-projector.mjs','utf8');
+  assert.match(projector,/itemTransactionHook = null/u);assert.match(projector,/await itemTransactionHook/u);
 });
 
 test('live script has no broad --live mode and no default live-send npm command', () => {

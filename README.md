@@ -101,7 +101,7 @@ P2 保持 `IN_PROGRESS`。P2-001 至 P2-007 与 P2-015 均已完成；P2-006 是
 
 P2-016 的独立授权见 `evidence/p2-016-start-authorization.md`；其默认关闭的完整工单/人工复核工作台、双责任、Reporter-safe Timeline 和可靠通知已经负责人批准并收口为 DONE。P2-012 的人工确认 Incident、Reporter Subscription 和可靠通知也已于 2026-09-07 完成，见 `evidence/p2-012-human-confirmed-incident-report.md` 与 `evidence/p2-012-project-owner-approval.md`。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口候选1044/1044及两轴独立审查通过，准备状态READY_FOR_LIVE_E2E，真实身份对应/定向现场仍待独立证明与授权；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。不构成 Phase 2 Go。
 
-自动化报告：`evidence/p2-016-automated-readiness-report.md` / `.json`。内部视图为 `/workbench/lifecycle`，原 `/workbench/` 会话入口保留。受控现场配置、命令、HTTPS 隔离和停止线见 `docs/61_p2_016_wecom_notifications_template_card.md`；未配置审批和目标库时，`npm run p2:016:live:check` 应失败关闭，不会自动发送。
+自动化报告：`evidence/p2-016-automated-readiness-report.md` / `.json`。内部界面统一为 `/workbench/app/`。绿色旧页已退役；旧 `/workbench[/]`、`/workbench/lifecycle` 只302跳转到新PC，`/workbench/incidents`跳转到新PC候选页；旧静态资源404。受控现场配置、命令、HTTPS 隔离和停止线见 `docs/61_p2_016_wecom_notifications_template_card.md`；未配置审批和目标库时，`npm run p2:016:live:check` 应失败关闭，不会自动发送。
 
 ```text
 Persisted Channel Message / Service Intake

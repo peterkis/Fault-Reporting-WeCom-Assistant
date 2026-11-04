@@ -33,3 +33,12 @@ Morphicons 只增强状态切换的图标反馈，使用与 lucide-react 同版�
 按用户明确要求，正式 PC 管理端的交互控件统一使用现有 HeroUI v3，参考已配置的 HeroUI MCP 组件文档。按钮、输入、选择、确认、表单、折叠、表格及弹层保持既有业务控制器；弹层挂载不拥有草稿、原操作身份或结果核对状态。Toast 继续使用前述 react-hot-toast，挂入当前可访问的 HeroUI 弹层。HTML 语义结构及音视频、图片原生媒体能力保留。
 
 工作台将已关闭分栏的展示名称改为“已处理”，不改 Ticket 状态或查询事实。移除旧范围下拉菜单，普通看板通过日期范围控件选择单日或起止日期；日期只限制已处理分栏，清除日期显示全部已处理记录。搜索继续遵循原搜索合同，不显示不受支持的日期控件。旧取消筛选链接须明确显示当前筛选，并允许清除。处理记录增加姓名前的细连接线和适当行距，内部标签只显示文字。
+
+
+## 2026-11-04 绿色旧版工作台退役
+
+用户明确以正式新PC管理端现有流程为唯一界面，不要求迁移或复刻旧页独有业务流。本前向决定替代首段“保留旧工作台”的现行要求；成员端、独立合成原型、离线正式画布与历史Evidence继续保留，不改写旧对象的验证结论。
+
+退役web/p2-workbench页面/JS/CSS及专属预览、静态资源装配。正式PC宿主的/workbench（含尾斜杠）与/workbench/lifecycle以302/no-store转到/workbench/app/；/workbench/incidents转到/workbench/app/incidents/candidates。旧/static/workbench资源404，裸G1等没有正式PC的宿主不重定向到不存在的页面。原认证、回调/退出及原回跳白名单继续服务入口跳转，不提供旧HTML或旧业务流。
+
+现行导航改用已有新PC入口；缺少对应功能的旧专属入口及处置承诺删除，不为退役补新流程。共享HTTP、现有域查询/命令、当前READ、原UUID与UNKNOWN恢复及已存在的新PC能力不删除。旧DOM测试按逐项处置退役，仍有效的后端权限、版本、恢复、隐私和发送断言保留在当前HTTP/新PC覆盖；历史来源、别名原命令和冻结checkout证据保持其原对象。范围与结果见[退役执行记录](../plans/pc-admin-design-v21/legacy-workbench-retirement.md)及[Issue #145](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/145)。不推进部署、现场、真实发送、full/certify或Gate。

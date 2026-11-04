@@ -111,7 +111,8 @@
         "tools/ts-migration/hosts.test.mts",
         "tools/ts-migration/design-system.test.mts",
         "tools/ts-migration/h5.test.mts",
-        "tools/ts-migration/check-agent-docs.test.mts"
+        "tools/ts-migration/check-agent-docs.test.mts",
+        "tools/ts-migration/backend-layout.test.mts"
       ],
       "build": true,
       "pyyaml": true,

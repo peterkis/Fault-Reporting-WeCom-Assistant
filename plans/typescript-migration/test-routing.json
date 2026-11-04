@@ -3904,17 +3904,8 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/p2-006-workbench-browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": false,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/p2-006-workbench-timezone-browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
+      "mode": "MIXED_EXPLICIT_ROOTS",
       "node_flags": [],
       "requires_database": false,
       "requires_browser": true,
@@ -4186,17 +4177,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/p2-012-workbench-browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [
-        "--expose-gc"
-      ],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/p2-012-workbench.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [
@@ -4427,17 +4407,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/p2-016-ticket-browser.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [
-        "--expose-gc"
-      ],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [
@@ -4456,17 +4425,6 @@
       ],
       "requires_database": true,
       "requires_browser": false,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/p2-016-workbench-browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [
-        "--expose-gc"
-      ],
-      "requires_database": false,
-      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -4561,15 +4519,6 @@
       "node_flags": [],
       "requires_database": true,
       "requires_browser": false,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/p2-g2-command-outcome-browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -4767,7 +4716,7 @@
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
-      "requires_browser": true,
+      "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -4907,24 +4856,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/p2-g2-responsibility-browser.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/p2-g2-review-real-browser.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/p2-g2-same-second-ingress.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -4944,15 +4875,6 @@
     },
     {
       "path": "tests/p2-g2-send-guard.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/p2-g2-service-loop-browser.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
@@ -5019,7 +4941,7 @@
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
-      "requires_browser": true,
+      "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -6959,6 +6881,15 @@
       "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-legacy-retirement.browser.test.mts",
+      "mode": "MIXED_EXPLICIT_ROOTS",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -8199,7 +8130,10 @@
       "tests/p2-g1-human-only-assembly.test.mjs",
       "tests/p2-g1-human-only-assembly-browser.test.mjs",
       "tests/p2-016-projection-lock-order.integration.test.mjs",
-      "tests/p2-006-workbench-browser.test.mjs",
+      "tests/web01-workbench.integration.test.mjs",
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/t10-unknown-recovery.browser.test.mts",
+      "tests/p2-012-workbench.integration.test.mjs",
       "tests/p2-g2-same-second-ingress.integration.test.mjs",
       "tests/yxx-ss-009-http-recovery.integration.test.mjs",
       "tests/p2-002-timeline-projector.test.mjs",
@@ -8366,9 +8300,11 @@
       "tests/p2-003-realtime-event-log.integration.test.mjs"
     ],
     "t02-browser": [
-      "tests/p2-016-workbench-browser.test.mjs",
-      "tests/p2-016-reporter-browser.test.mjs",
-      "tests/p2-016-ticket-browser.integration.test.mjs"
+      "tests/web01-workbench.integration.test.mjs",
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/t10-unknown-recovery.browser.test.mts",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "tests/p2-016-reporter-browser.test.mjs"
     ],
     "t02-sql": [
       "tests/p2-016-migration.integration.test.mjs",
@@ -8973,7 +8909,8 @@
       "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
       "tests/wbint-t30-internal-note.browser.test.mts",
       "tests/wbint-t32-exception-authorization.browser.test.mts",
-      "tests/wbint-t22-realtime-tracer.browser.test.mts"
+      "tests/wbint-t22-realtime-tracer.browser.test.mts",
+      "tests/pc-admin-legacy-retirement.browser.test.mts"
     ],
     "pr-core": [
       "tests/p2-016-ticket-lifecycle.integration.test.mjs",
@@ -9057,93 +8994,14 @@
       "historical_only": true
     }
   },
-  "support_files": {
-    "SUBPROCESS_AND_ENVIRONMENT": [
-      "tests/yxx-h5-performance-qa.mts",
-      "tests/yxx-h5-performance-harness.mts",
-      "tests/yxx-h5-bounded-performance.mts",
-      "tests/yxx-h5-large-performance.mts",
-      "tests/yxx-h5-performance-worker.mts",
-      "tests/yxx-h5-performance-worker-controller.mts",
-      "tests/fixtures/p1-003-inbox-worker.mjs",
-      "tests/helpers/p2-002-migrate-child.mjs",
-      "tests/helpers/p2-002-migrate-process-harness.mjs",
-      "tests/helpers/p2-002-worker-child.mjs",
-      "tests/helpers/p2-002-worker-process-harness.mjs",
-      "tests/helpers/p2-003-cli-process-harness.mjs",
-      "tests/helpers/p2-003-server-child.mjs",
-      "tests/helpers/p2-004-worker-child.mjs",
-      "tests/helpers/p2-004-worker-process-harness.mjs",
-      "tests/helpers/p2-012-server-child.mjs",
-      "tests/helpers/p2-012-worker-child.mjs",
-      "tests/helpers/p2-015-worker-child.mjs",
-      "tests/helpers/p2-016-server-child.mjs",
-      "tests/helpers/p2-016-worker-child.mjs",
-      "tests/helpers/p2-g2-yixiaoxiu-process-child.mjs",
-      "tests/helpers/yxx-ss-009-crash-child.mjs"
-    ],
-    "ISOLATED_PG_AND_CLEANUP": [
-      "tests/helpers/p2-002-postgres-harness.mjs",
-      "tests/helpers/p2-003-postgres-harness.mjs",
-      "tests/helpers/p2-004-postgres-harness.mjs",
-      "tests/helpers/p2-005-postgres-harness.mjs",
-      "tests/helpers/p2-006-postgres-harness.mjs",
-      "tests/helpers/p2-012-postgres-harness.mjs",
-      "tests/helpers/p2-015-postgres-harness.mjs",
-      "tests/helpers/p2-016-postgres-harness.mjs",
-      "tests/helpers/yxx-ss-009-resources.mjs",
-      "tests/helpers/t32-notification-exception-fixture.mts",
-      "tests/helpers/t33-incident-delivery-control-fixture.mts",
-      "tests/helpers/t33-whole-fixture.mts"
-    ],
-    "LOCAL_HTTP_SSE_RUNTIME": [
-      "tests/helpers/t36-bound-reply-fixture.mts",
-      "tests/helpers/t36-bound-reply-scenes.mts",
-      "tests/helpers/t36-supplement-fixture.mts",
-      "tests/helpers/t29-owner-transfer-http-fixture.mts",
-      "tests/helpers/p2-003-client-harness.mjs",
-      "tests/helpers/p2-003-sse-harness.mjs",
-      "tests/helpers/p2-g2-runtime-harness.mjs",
-      "tests/helpers/t33-incident-delivery-control-fixture.mts",
-      "tests/helpers/t33-whole-fixture.mts",
-      "tests/helpers/t41-search-fixture.mts",
-      "tests/helpers/t41-search-risk-fixture.mts",
-      "tests/helpers/t40-reminder-first-fixture.mts",
-      "tests/helpers/t40-reminder-locate-fixture.mts",
-      "tests/helpers/t40-reminder-risk-fixture.mts",
-      "tests/helpers/t43-full-service-fixture.mts",
-      "tests/helpers/t43-service-actions.mts"
-    ],
-    "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION": [
-      "tests/helpers/yxx-h5-performance-observability.mts",
-      "tests/helpers/p2-003-realtime-fixtures.mjs",
-      "tests/helpers/p2-007-directory-fixture.mjs",
-      "tests/helpers/p2-016-schema-assert.mjs",
-      "tests/helpers/p2-g2-configuration-fixture.mjs",
-      "tests/helpers/p2-g2-gold-observation.mjs",
-      "tests/helpers/p2-g2-late-binding-harness.mjs",
-      "tests/helpers/p2-g2-text-gold-adjudication.mjs",
-      "tests/helpers/p2-g2-yixiaoxiu-fixture.mjs",
-      "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
-      "tests/helpers/yxx-ss-009-http-fixture.mjs",
-      "tests/helpers/yxx-ss-010-fixture.mjs"
-    ],
-    "BROWSER_AND_STATIC_RESOURCES": [
-      "tests/helpers/h5-pure-module-loader.mts",
-      "tests/helpers/p2-006-browser-harness.mjs",
-      "tests/helpers/p2-016-browser-fixture.mjs",
-      "tests/helpers/p2-g2-yixiaoxiu-browser.mjs",
-      "tests/helpers/t32-notification-exception-browser-fixture.mts",
-      "tests/helpers/t29-owner-transfer-browser-fixture.mts",
-      "tests/helpers/t33-incident-delivery-browser-fixture.mts",
-      "tests/helpers/t36-browser-risk-journey.mts",
-      "tests/helpers/t42-board-browser-fixture.mts"
-    ],
-    "MIGRATION_TEST_ROOTS": [
-      "tests/helpers/migration-roots.mjs",
-      "tests/helpers/yxx-current-scope-checkout.mts"
-    ]
-  },
+  "support_files": [
+    "SUBPROCESS_AND_ENVIRONMENT",
+    "ISOLATED_PG_AND_CLEANUP",
+    "LOCAL_HTTP_SSE_RUNTIME",
+    "SYNTHETIC_FIXTURE_SCHEMA_AND_OBSERVATION",
+    "BROWSER_AND_STATIC_RESOURCES",
+    "MIGRATION_TEST_ROOTS"
+  ],
   "notes": [
     "Runtime resources (schemas, SQL, synthetic fixtures) alone do not make a test mixed. Source checks and Git/evidence checks retain their true source host.",
     "All entries remain selectable; T02 verification is targeted, not a claim of running every registry entry. No failed test is moved to historical to evade it.",
@@ -9156,6 +9014,104 @@
       "reason": "Legacy MJS test files must retain direct-source compatibility; this helper resolves source inspection only, never production module loading.",
       "retire_stage": "T11",
       "production_imports_allowed": false
+    }
+  ],
+  "retired_entries": [
+    {
+      "path": "tests/p2-012-workbench-browser.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-016-workbench-browser.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-016-ticket-browser.integration.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-g2-command-outcome-browser.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-g2-responsibility-browser.integration.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-g2-review-real-browser.integration.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: old UI flows withdrawn; retained API, new PC routing and UNKNOWN safety have current coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/p2-006-workbench-browser.test.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_RETIRED: G1 reference DOM withdrawn; current PC and retained API safety have independent coverage",
+      "replacements": [
+        "tests/pc-admin-legacy-retirement.browser.test.mts",
+        "tests/web01-workbench.integration.test.mjs",
+        "tests/workbench-detail-restructure.browser.test.mts",
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/p2-012-workbench.integration.test.mjs"
+      ]
     }
   ]
 }

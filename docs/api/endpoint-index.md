@@ -256,16 +256,16 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 
 | ID | 方法 | 完整路径 / 范围 | 宿主 | 状态 / 用途 | 契约文档 |
 | --- | --- | --- | --- | --- | --- |
-| U01 | GET | `/workbench`、`/workbench/` | W | 页面：会话 | [平台](platform/auth-health.md) |
-| U02 | GET | `/workbench/lifecycle` | W | 页面：工单/复核 | [平台](platform/auth-health.md) |
-| U03 | GET | `/workbench/incidents` | W | 页面：公共故障 | [平台](platform/auth-health.md) |
+| U01 | GET | `/workbench`、`/workbench/` | W | 旧入口：302/no-store到/workbench/app/ | [平台](platform/auth-health.md) |
+| U02 | GET | `/workbench/lifecycle` | W | 旧入口：302/no-store到/workbench/app/ | [平台](platform/auth-health.md) |
+| U03 | GET | `/workbench/incidents` | W | 旧入口：302/no-store到/workbench/app/incidents/candidates | [平台](platform/auth-health.md) |
 | U04 | GET | `/workbench/app`、`/workbench/app/` | W | 页面：React内部认证 | [看板](workbench/board.md) |
 | U05 | GET | `/workbench/app/items/{kind}/{id}` | W | 页面：React详情deep link | [平台](platform/auth-health.md) |
 | UC01 | GET | `/workbench/app/conversations` | W | 正式集中会话页，默认关闭、先验身份 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | UC02 | GET | `/workbench/app/conversations/{sessionId}` | W | 正式主题deep link，默认关闭、先验身份 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | U06 | GET | `/workbench/app/assets/{buildAsset}.js`、`/workbench/app/assets/{buildAsset}.css` | W | 静态：inventory成员 | [平台](platform/auth-health.md) |
-| U07 | GET | `/static/workbench/workbench.js`、`/static/workbench/workbench.css`、`/static/workbench/workbench-state.mjs`、`/static/workbench/time-display.mjs` | W | 静态：会话 | [平台](platform/auth-health.md) |
-| U08 | GET | `/static/workbench/lifecycle.js`、`/static/workbench/lifecycle.css`、`/static/workbench/incidents.js` | W | 静态：生命周期/公共故障 | [平台](platform/auth-health.md) |
+| U07 | GET | `/static/workbench/workbench.js`、`/static/workbench/workbench.css`、`/static/workbench/workbench-state.mjs`、`/static/workbench/time-display.mjs` | W | 已退役：404 | [平台](platform/auth-health.md) |
+| U08 | GET | `/static/workbench/lifecycle.js`、`/static/workbench/lifecycle.css`、`/static/workbench/incidents.js` | W | 已退役：404 | [平台](platform/auth-health.md) |
 | U09 | GET | `/wecom/yixiaoxiu/` | O/M/W按profile | 页面：认证/自助主页 | [平台](platform/auth-health.md) |
 | U10 | GET | `/wecom/yixiaoxiu/reports` | M/W扩展 | 页面：我的报修 | [自助](member/self-service.md) |
 | U11 | GET | `/wecom/yixiaoxiu/reports/new` | M/W扩展 | 页面：新报修 | [自助](member/self-service.md) |
@@ -385,3 +385,8 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | --- | --- | --- | --- | --- |
 | GET | /api/workbench/profile | W | 当前登录人员姓名、部门；只读、当前会话及角色终检 | [身份](platform/auth-health.md) |
 | GET | /api/workbench/items/{kind}/{id}/reporter-profile | W | 当前获权 H5 报修人展示资料；历史快照优先 | [H5资料](workbench/web-reports.md) |
+
+
+### 绿色旧页退役（2026-11-04）
+
+正式PC宿主：GET `/workbench`、`/workbench/`、`/workbench/lifecycle` 为302到 `/workbench/app/`；GET `/workbench/incidents` 为302到 `/workbench/app/incidents/candidates`，均no-store。上述U行仅保留入口检索含义，不再存在旧HTML客户端；旧 `/static/workbench/*` 为404。裸G1不装配新PC时不会跳转到不存在的页面。认证/回调/退出接口未退役，详见[平台入口](platform/auth-health.md)。

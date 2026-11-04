@@ -1,15 +1,14 @@
-import type { ServerResponse } from 'node:http';
+import type {ServerResponse} from 'node:http';
 
-import { readFile } from 'node:fs/promises';
-import { createWorkbenchStaticHandler } from './p2-006-workbench-static.mjs';
-const assets: Readonly<Record<string, readonly [string, string]>>=Object.freeze({'/workbench/lifecycle':['lifecycle.html','text/html'],
-  '/static/workbench/lifecycle.js':['lifecycle.js','text/javascript'],'/static/workbench/lifecycle.css':['lifecycle.css','text/css']});
-export function createP2016WorkbenchStatic({enabled=false,conversationEnabled=false}: { enabled?: boolean; conversationEnabled?: boolean }) {
-  const original=createWorkbenchStaticHandler({enabled:conversationEnabled});
-  return async(pathname: string,response: ServerResponse)=>{
-    const asset=assets[pathname];if(!asset)return original(pathname,response);
-    if(!enabled){response.writeHead(503,{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'});response.end('P2-016 工作台未启用');return true;}
-    const body=await readFile(new URL('../../../web/p2-workbench/'+asset[0],import.meta.url));
-    response.writeHead(200,{'content-type':asset[1]+'; charset=utf-8','cache-control':'no-store'});response.end(body);return true;
+const destinations:Readonly<Record<string,string>>=Object.freeze({
+  '/workbench':'/workbench/app/','/workbench/':'/workbench/app/',
+  '/workbench/lifecycle':'/workbench/app/','/workbench/incidents':'/workbench/app/incidents/candidates',
+});
+/** Only the P2-016 assembly that mounts the formal PC frontend installs these aliases. */
+export function createP2016WorkbenchStatic({enabled=false}:{enabled?:boolean}={}){
+  if(typeof enabled!=='boolean')throw new TypeError('Static handler configuration is invalid.');
+  return async(pathname:string,response:ServerResponse)=>{
+    const location=destinations[pathname];if(!enabled||!location)return false;
+    response.writeHead(302,{location,'cache-control':'no-store'});response.end();return true;
   };
 }

@@ -9,7 +9,7 @@ import {DataTable as HTable} from '../../design/components/DataTable/DataTable';
 import {Tag} from '../../design/components/Tag/Tag';
 import {notificationTones} from '../../design/status-map';
 import {Button as HButton} from '../../design/components/Button/Button';
-import {Link as HLink,ListBox} from "@heroui/react";
+import {ListBox} from "@heroui/react";
 import {FilterChip} from '../../design/components/FilterChip/FilterChip';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -77,7 +77,7 @@ export function NotificationExceptions({principal}:{principal:Principal}){
       <p>尝试 {item.attempt_count} 次 · {item.side_effect_state==='UNKNOWN'?'尚不能确认是否送达':item.side_effect_state==='NOT_ATTEMPTED'?'已确认发送失败':'已有发送结果，请结合来源核对'}</p>
       {item.last_attempt?<p>最近一次尝试：{item.last_attempt.started_at.replace('T',' ')}（北京时间）</p>:<p>暂时没有尝试记录。</p>}
       <Link to={item.parent_link.slice('/workbench/app'.length)}>打开当前来源</Link>
-      {item.allowed_actions.length?<p>可前往来源{item.allowed_actions.map(a=>a==='RETRY'?'重试':'核对').join('、')}。<HLink href={item.domain==='TICKET'?'/workbench/lifecycle#queue=failed_delivery&selected='+item.parent_id:'/workbench'}>前往核验处置</HLink></p>:<p>当前仅可查看这条通知。</p>}
+      <p>当前仅可查看这条通知。</p>
     </>:null}
   </section>:null}
  </section>;

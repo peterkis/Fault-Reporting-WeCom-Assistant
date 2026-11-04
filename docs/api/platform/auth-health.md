@@ -50,15 +50,15 @@ H5 401 可在无草稿／UNKNOWN 栅栏时单次自动 `snsapi_base` 认证；�
 
 | 页面 / 资源路径 | 宿主 | 用途 / 条件 |
 | --- | --- | --- |
-| `/workbench`、`/workbench/` | W | 会话参考客户端；挂员工auth时无session进入登录 |
-| `/workbench/lifecycle` | W | 工单/复核页面，生命周期扩展 |
-| `/workbench/incidents` | W | Incident人工页面，Incident扩展 |
+| `/workbench`、`/workbench/` | W | 旧页已退役；正式PC宿主302/no-store到/workbench/app/，认证仍沿原流程 |
+| `/workbench/lifecycle` | W | 旧页已退役；正式PC宿主302/no-store到/workbench/app/ |
+| `/workbench/incidents` | W | 旧页已退役；正式PC宿主302/no-store到/workbench/app/incidents/candidates |
 | `/workbench/app`、`/workbench/app/` | W | WEB01 React shell；先验内部身份与bootstrap，未认证401 |
 | `/workbench/app/items/{kind}/{id}`（可尾斜杠） | W | WEB01详情deep link；kind=ticket/review/intake；同样先认证 |
 | `/workbench/app/conversations`、`/workbench/app/conversations/{sessionId}`（可尾斜杠） | W | 正式集中会话页与主题deep link；UUID、先验身份，`workbenchConversationsEnabled=false` 默认不挂载；不是任意SPA路径回退 |
 | `/workbench/app/assets/{buildAsset}.js` 或 `.css` | W | 仅当前asset-inventory中的编译资源，先认证；不是任意路径文件读取 |
-| `/static/workbench/workbench.css`、`workbench.js`、`workbench-state.mjs`、`time-display.mjs` | W | 会话资源，完整前缀均为/static/workbench/ |
-| `/static/workbench/lifecycle.js`、`lifecycle.css`、`incidents.js` | W | 生命周期/Incident资源 |
+| `/static/workbench/workbench.css`、`workbench.js`、`workbench-state.mjs`、`time-display.mjs` | W | 已退役404，不再打包或提供 |
+| `/static/workbench/lifecycle.js`、`lifecycle.css`、`incidents.js` | W | 已退役404，不再打包或提供 |
 | `/wecom/yixiaoxiu/reports`、`/reports/new`、`/reports/{requestRef}`（均完整前缀/wecom/yixiaoxiu） | M | 成员自助页面，无query；ref32位opaque；缺Cookie可经有界OAuth首页返回 |
 | `/wecom/yixiaoxiu/self-service.js`、`self-service.css` | M | 自助资源，无query |
 | `/reporter/`、`/reporter/open`、`/reporter/reporter.js`、`reporter.css` | Reporter | 旧/成员Reporter资源，无query；shell可打开不代表数据授权 |

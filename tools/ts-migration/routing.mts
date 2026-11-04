@@ -5,7 +5,8 @@ export const ROUTING_BASE = '84d39b964d02db335c6c0c900d56d5b0a383f621';
 export type Host = 'SOURCE_HOST' | 'STAGED_RUNTIME' | 'MIXED_EXPLICIT_ROOTS';
 export type Entry = { path: string; mode: Host; node_flags: string[]; requires_database: boolean; requires_browser: boolean; requires_powershell: boolean; requires_pyyaml: boolean;requires_ffmpeg?:boolean };
 export type Selection = { entries: Entry[]; flags: string[]; label: string };
-export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown>; frozen: Record<string, unknown>; subprocesses: Record<string, unknown> };
+export type RetiredEntry = {path:string;replacements:string[]};
+export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown>; frozen: Record<string, unknown>; subprocesses: Record<string, unknown>;retired?:RetiredEntry[] };
 export const logical = (p: string): string => p.endsWith('.mts') ? p.slice(0, -4) + '.mjs' : p;
 const hostNames = new Set(['SOURCE_HOST', 'STAGED_RUNTIME', 'MIXED_EXPLICIT_ROOTS']);
 export function flags(value: unknown): string[] {
@@ -30,7 +31,19 @@ export function loadRoutes(root: string): Routes {
   if (new Set(declared.map(logical)).size !== declared.length || JSON.stringify(current) !== JSON.stringify(declared)) throw new Error('MIGRATION_TEST_INVENTORY_MISMATCH');
   const old = record(JSON.parse(git(root, ['show', ROUTING_BASE + ':plans/typescript-migration/test-routing.json'])) as unknown);
   const required = Object.values(record(old.proposed_groups)).flatMap(strings);
-  if (required.some(f => !declared.map(logical).includes(logical(f)))) throw new Error('MIGRATION_LEGACY_TEST_REMOVED');
+  if(raw.retired_entries!==undefined&&!Array.isArray(raw.retired_entries))throw Error('MIGRATION_RETIREMENT_INVALID');
+  const retired:RetiredEntry[]=(raw.retired_entries??[]).map((value:unknown)=>{
+    const r=record(value),replacement=strings(r.replacements);
+    if(Object.keys(r).sort().join(',')!=='issue,path,reason,replacements'||typeof r.path!=='string'
+      ||!required.includes(r.path)||declared.map(logical).includes(logical(r.path))
+      ||!Number.isSafeInteger(r.issue)||(r.issue as number)<1||typeof r.reason!=='string'||!r.reason.startsWith('LEGACY_GREEN_UI_RETIRED:')
+      ||!replacement.length||new Set(replacement).size!==replacement.length||replacement.some(p=>!declared.includes(p)))throw Error('MIGRATION_RETIREMENT_INVALID');
+    const prior=git(root,['show',ROUTING_BASE+':'+r.path]);
+    if(!prior.includes('launchSystemBrowser')||!prior.includes('/workbench'))throw Error('MIGRATION_RETIREMENT_NOT_LEGACY_UI');
+    return {path:r.path,replacements:replacement};
+  });
+  if(new Set(retired.map(r=>r.path)).size!==retired.length)throw Error('MIGRATION_RETIREMENT_INVALID');
+  if (required.some(f => !declared.map(logical).includes(logical(f))&&!retired.some(r=>r.path===f))) throw new Error('MIGRATION_LEGACY_TEST_REMOVED');
   for (const e of entries) { safeFile(root, e.path); if (e.mode === 'SOURCE_HOST' && e.path.endsWith('.mts')) throw new Error('MIGRATION_TYPED_SOURCE_TEST_REQUIRES_MIXED_HOST'); }
   const aliases = record(raw.legacy_commands), pkg = record(readJson(safeFile(root, 'package.json')));
   const original = record(JSON.parse(git(root, ['show', ROUTING_BASE + ':package.json'])) as unknown);
@@ -52,7 +65,7 @@ export function loadRoutes(root: string): Routes {
     if (!declared.includes(entry)) throw new Error('MIGRATION_SUBPROCESS_ENTRY_UNKNOWN');
     for (const target of strings(targets)) safeFile(root, target);
   }
-  return { entries, selections: record(raw.selections), aliases, frozen, subprocesses };
+  return { entries, selections: record(raw.selections), aliases, frozen, subprocesses,retired };
 }
 export function parseOriginal(command: string): { flags: string[]; patterns: string[] } {
   if (command.startsWith('node scripts/p2-g2-synthetic-e2e.mjs --suite=')) {
@@ -69,11 +82,12 @@ export function parseOriginal(command: string): { flags: string[]; patterns: str
   if (!patterns.length || patterns.some(p => !/^tests\/[\w./*-]+\.test\.mjs$/u.test(p))) throw new Error('MIGRATION_UNSUPPORTED_TEST_PATTERN');
   return { flags: selectedFlags, patterns };
 }
-export function expandPatterns(patterns: string[], entries: Entry[]): Entry[] {
+export function expandPatterns(patterns: string[], entries: Entry[],retired:RetiredEntry[]=[]): Entry[] {
   const selected = new Map<string, Entry>();
   for (const pattern of patterns) {
     const re = new RegExp('^' + pattern.split('*').map(p => p.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')).join('[^/]*') + '$', 'u');
     const matches = entries.filter(e => re.test(logical(e.path)));
+    for(const r of retired.filter(r=>re.test(logical(r.path))))for(const path of r.replacements){const entry=entries.find(e=>e.path===path);if(!entry)throw Error('MIGRATION_RETIREMENT_INVALID');matches.push(entry);}
     if (!matches.length) throw new Error('MIGRATION_EMPTY_TEST_PATTERN: ' + pattern);
     for (const entry of matches) selected.set(entry.path, entry);
   }
@@ -82,7 +96,7 @@ export function expandPatterns(patterns: string[], entries: Entry[]): Entry[] {
 export function select(routes: Routes, kind: 'alias' | 'selection', name: string): Selection {
   if (kind === 'alias') {
     const spec = record(routes.aliases[name]);
-    return { entries: expandPatterns(strings(spec.patterns), routes.entries), flags: flags(spec.node_flags), label: name };
+    return { entries: expandPatterns(strings(spec.patterns), routes.entries,routes.retired), flags: flags(spec.node_flags), label: name };
   }
   const names = strings(routes.selections[name]);
   if (!names.length) throw new Error('MIGRATION_EMPTY_SELECTION');

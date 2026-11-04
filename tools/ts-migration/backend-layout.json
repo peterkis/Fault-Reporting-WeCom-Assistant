@@ -1530,5 +1530,13 @@
       "source": "src/yxx-self-service-verification.mts",
       "target": "app/server/src/yxx-self-service-verification.mts"
     }
+  ],
+  "retired_sources": [
+    {
+      "source": "scripts/p2-006-preview.mjs",
+      "target": "app/server/scripts/p2-006-preview.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_PREVIEW_RETIRED"
+    }
   ]
 }

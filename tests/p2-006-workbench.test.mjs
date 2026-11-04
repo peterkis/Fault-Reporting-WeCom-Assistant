@@ -5,7 +5,6 @@ import path from 'node:path';
 import { encodeConversationCursor, decodeConversationCursor, createConversationWorkbenchQueryService, WORKBENCH_ERROR_CODES } from '../app/server/src/p2-006-workbench-query.mjs';
 import { createConversationWorkbenchHttpServer, listenConversationWorkbenchServer, closeConversationWorkbenchServer } from '../app/server/src/p2-006-workbench-http.mjs';
 import { createConversationWorkbenchCommandFacade } from '../app/server/src/p2-006-workbench-command-facade.mjs';
-import { initialWorkbenchState, reduceWorkbenchState, loadRefreshState, saveRefreshState } from '../web/p2-workbench/workbench-state.mjs';
 
 const root = process.cwd();
 const sessionId = '00000000-0000-4000-8000-000000000111';
@@ -175,41 +174,10 @@ test('command facade delegates frozen control and communication ports without se
   assert.equal(calls[1][1].command.destination_policy, 'SESSION_THREAD'); assert.equal(Object.hasOwn(calls[1][1].command, 'target_id'), false);
 });
 
-test('UI source renders untrusted content through text nodes only', () => {
-  const source = fs.readFileSync(path.join(root, 'web/p2-workbench/workbench.js'), 'utf8');
-  assert.match(source, /textContent/u); assert.match(source, /createElement/u);
-  assert.doesNotMatch(source, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function/iu);
-  for (const payload of ['<script>', '<img onerror=', 'javascript:', '<svg onload=', '&lt;script&gt;', '\u202E']) assert.ok(payload.length > 0);
-});
-
-test('UI reducer bounds conversations and timeline arrays', () => {
-  let state = initialWorkbenchState();
-  const conversations = Array.from({ length: 260 }, (_, index) => ({ session: { session_id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}` } }));
-  state = reduceWorkbenchState(state, { type: 'CONVERSATIONS', items: conversations, nextCursor: null }); assert.equal(state.conversations.length, 200);
-  const items = Array.from({ length: 500 }, (_, index) => ({ item_id: String(index) }));
-  state = reduceWorkbenchState(state, { type: 'ITEMS', items }); assert.equal(state.items.length, 400);
-});
-
-test('refresh storage persists only selected id and filter', () => {
-  const values = new Map(); const storage = { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) };
-  saveRefreshState({ filter: 'mine', selectedSessionId: sessionId, message: 'must-not-persist', csrf: 'must-not-persist' }, storage);
-  assert.deepEqual([...values.keys()].sort(), ['p2_workbench_filter', 'p2_workbench_session']);
-  assert.deepEqual(loadRefreshState(storage), { filter: 'mine', selectedSessionId: sessionId });
-});
-
-test('P2-006 creates no migration and static preview check succeeds', async () => {
-  assert.equal(fs.existsSync(path.join(root, 'database/migrations/022_p2_006_workbench.sql')), false);
-  const { spawnSync } = await import('node:child_process');
-  const source = process.env.TS_MIGRATION_TEST_SOURCE_ROOT;
-  assert.ok(source, 'The public npm preview commands require the explicit source root.');
-  const launcher = path.join(source, '.build/tools/npm-launcher.mjs');
-  const options = { cwd: source, encoding: 'utf8', windowsHide: true, timeout: 30_000,
-    env: { ...process.env, P2_006_PREVIEW_APPROVED: 'false' } };
-  const result = spawnSync(process.execPath, [launcher, 'run', 'p2:006:preview:check'], options);
-  assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.match(result.stdout, /P2-006 preview check passed/u);
-  const serve = spawnSync(process.execPath, [launcher, 'run', 'p2:006:preview'], options);
-  assert.equal(serve.status, 1, serve.stdout + serve.stderr);
-  assert.match(serve.stderr, /P2_006_PREVIEW_APPROVAL_REQUIRED/u);
-  assert.doesNotMatch(serve.stdout + serve.stderr, /ERR_MODULE_NOT_FOUND|listening on/u);
+test('retiring the reference UI creates no Workbench database migration or preview command',()=>{
+  assert.equal(fs.existsSync(path.join(root,'database/migrations/022_p2_006_workbench.sql')),false);
+  const source=process.env.TS_MIGRATION_TEST_SOURCE_ROOT;assert.ok(source);
+  assert.equal(fs.existsSync(path.join(source,'web/p2-workbench')),false);
+  const scripts=JSON.parse(fs.readFileSync(path.join(source,'package.json'),'utf8')).scripts;
+  assert.equal(Object.hasOwn(scripts,'p2:006:preview'),false);assert.equal(Object.hasOwn(scripts,'p2:006:preview:check'),false);
 });

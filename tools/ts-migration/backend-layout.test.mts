@@ -18,17 +18,29 @@ function fixture(){
  const root=mkdtempSync(path.join(tmpdir(),'server-layout-negative-'));
  mkdirSync(path.join(root,'tools/ts-migration'),{recursive:true});
  writeFileSync(path.join(root,'tools/ts-migration/backend-layout.json'),JSON.stringify(mapping));
- return {root,files:entries.map(item=>item.target)};
+ return {root,files:entries.map(item=>item.target).filter(file=>file!=='app/server/scripts/p2-006-preview.mjs')};
 }
 test('server layout binds all 382 original files to unique physical and logical identities',()=>{
  const {root,files}=fixture();
  try{
-  assert.equal(files.length,382);assert.equal(new Set(files).size,382);
+  assert.equal(entries.length,382);assert.equal(files.length,381);assert.equal(new Set(files).size,381);
   assert.equal(files.filter(file=>file.startsWith('app/server/src/')).length,265);
-  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,105);
+  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,104);
   assert.equal(PC_MODULES.length,9);assert.equal(SHARED_MODULES.length,3);
   for(const entry of entries)assert.equal(logicalSource(entry.target),entry.source);
   assertBackendLayout(root,files,baseline);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});
+
+test('only the explicitly retired green preview can be absent and its resurrection is rejected',()=>{
+ const {root,files}=fixture();const file=path.join(root,'tools/ts-migration/backend-layout.json');
+ try{
+  assertBackendLayout(root,files,baseline);
+  assert.throws(()=>assertBackendLayout(root,[...files,'app/server/scripts/p2-006-preview.mjs'],baseline),/RETIREMENT_RESURRECTED/u);
+  writeFileSync(file,JSON.stringify({...mapping,retired_sources:[]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
+  for(const retired of [[{source:'src/p1-005-pilot-ticket-core.mjs',target:'app/server/src/p1-005-pilot-ticket-core.mts',issue:145,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}],[{source:'scripts/p2-006-preview.mjs',target:'app/server/scripts/p2-006-preview.mjs',issue:0,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]]){
+   writeFileSync(file,JSON.stringify({...mapping,retired_sources:retired}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
+  }
  }finally{rmSync(root,{recursive:true,force:true});}
 });
 test('a missing source and duplicate logical module are rejected before emit',()=>{

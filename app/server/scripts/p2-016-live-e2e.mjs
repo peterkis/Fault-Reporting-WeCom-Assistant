@@ -36,7 +36,7 @@ export async function main(argv=process.argv.slice(2)){
     await assertP2016DatabaseScope(guardClient,config);
     cluster=createP2016LiveCluster(config,{gatewayEnabled:true,senderEnabled:true});
     const started=await cluster.start();
-    browsers=await launchP2G1TestBrowserSessions({origin:started.origin,cookies:started.cookies,initialPath:'/workbench/lifecycle',requireCleanupSuccess:true});
+    browsers=await launchP2G1TestBrowserSessions({origin:started.origin,cookies:started.cookies,initialPath:'/workbench/app/',requireCleanupSuccess:true});
     start=Date.now();
     await record('STARTED',{process_count:3,total_pool_max_including_controller:8,loopback_origin:started.origin,
       workbench_path:'/workbench/lifecycle',group_strong_mention:'UNVERIFIED',client_observations:'PENDING',owner_approval:'PENDING'});

@@ -5,6 +5,14 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
+/** Explicit validation input: compile the current PC formatter, never a production source fallback. */
+export async function compileCurrentPcTimeFormatter(sourceRoot){
+  const source=await readFile(path.join(sourceRoot,'app/pc-admin/src/design/beijing-time.ts'),'utf8');
+  const result=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022},reportDiagnostics:true});
+  if(result.diagnostics?.some(d=>d.category===ts.DiagnosticCategory.Error))throw Error('ARCH_005_PC_TIME_COMPILE_FAILED');
+  return result.outputText;
+}
+
 export function hasWorkbenchItemOrdering(text){
   const source=ts.createSourceFile('workbench-query.mts',text,ts.ScriptTarget.Latest,true);let valid=false;
   const shape=node=>{
@@ -122,14 +130,14 @@ export async function validateArch005TimeContract() {
     'app/server/src/p2-005-conversation-control-projections.mjs',
     'app/server/src/p2-006-workbench-query.mjs',
     'app/server/src/p2-g1-inbound-projection-coordinator.mjs',
-    'web/p2-workbench/workbench.js',
   ];
   for (const relative of criticalBusinessFiles) {
     const text = await readFile(sourcePath(relative), 'utf8');
     check(!/Date\.parse\s*\(|\.toISOString\s*\(|toLocale(?:String|DateString|TimeString)\s*\(/u.test(text), `ARCH_005_BUSINESS_DATE_API:${relative}`);
   }
-  const workbench = await readFile(path.join(ROOT, 'web/p2-workbench/workbench.js'), 'utf8');
-  check(!/new Date\s*\(|toLocale/u.test(workbench), 'ARCH_005_BROWSER_TIMEZONE_DISPLAY_LEAK');
+  const moduleSource=await compileCurrentPcTimeFormatter(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??ROOT);
+  const {formatBeijingFull}=await import('data:text/javascript;base64,'+Buffer.from(moduleSource).toString('base64'));
+  check(formatBeijingFull('2026-09-03 12:34:56')==='2026-09-03 12:34:56'&&formatBeijingFull('2026-09-03T04:34:56Z')==='2026-09-03 12:34:56', 'ARCH_005_BROWSER_TIMEZONE_DISPLAY_LEAK');
 
   const eventOrderingContracts = [
     ['app/server/src/p2-002-timeline-projector.mjs', 'ORDER BY item.occurred_at, item.sequence_no'],

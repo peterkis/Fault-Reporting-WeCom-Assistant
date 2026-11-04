@@ -5,7 +5,7 @@ import { createServer } from 'node:net';
 import { withP2012Database, applyThrough031, fixtureP2012 } from './helpers/p2-012-postgres-harness.mjs';
 import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { createP2012Runtime } from '../app/server/src/p2-012-workbench-assembly.mjs';
-import { launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
+import { closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 
 test('G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation',async t=>{
   await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2subhttp',run:async({pool,databaseUrl})=>{
@@ -15,7 +15,7 @@ test('G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and 
     const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
     const origin='http://127.0.0.1:'+port,runtime=createP2012Runtime({pool,principalId:f.admin.id,publicOrigin:origin,listenPort:port,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true,INCIDENT_PRIVATE_NOTICE_ENABLED:true}});
-    let browser,primaryError=null;
+    let primaryError=null;
     try{
       const started=await runtime.start(),cookie=started.cookie.name+'='+started.cookie.value;
       const get=async p=>{const response=await fetch(origin+p,{headers:{cookie}});assert.equal(response.status,200);return response.json();};
@@ -64,11 +64,8 @@ test('G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and 
         SELECT id FROM incident.command_receipt WHERE result_event_id=$1) AND safe_payload ? 'subscription_id'`,[relink.body.result_event_id])).rows;
       assert.ok(event.some(e=>e.event_type==='incident.subscription.created'&&e.safe_payload.status==='PENDING_DESTINATION'));
       assert.ok(!event.some(e=>e.event_type==='incident.subscription.activated'));
-      browser=await launchSystemBrowser({url:origin+'/workbench/incidents#mode=active&selected='+id,width:1440,height:1000,cookies:[started.cookie]});
-      await browser.waitFor("document.querySelector('#detail')?.textContent.includes('等待可靠单聊渠道')");
-      assert.equal(await browser.evaluate("document.querySelector('#detail').textContent.includes('接收通知')"),false);
-      t.diagnostic(JSON.stringify({scenario_ids:['G2-I05','G2-I06','G2-I07'],surface:'SYNTHETIC_RETENTION_REAL_HTTP_DB_BROWSER',
+      t.diagnostic(JSON.stringify({scenario_ids:['G2-I05','G2-I06','G2-I07'],surface:'SYNTHETIC_RETENTION_REAL_HTTP_DB',
         wrong_reporter_and_stale_resume_rejected:true,expired_destination_excluded:true,relink_pending_without_activation:true,notification_delta:0}));
-    }catch(error){primaryError=error;}finally{await closeBrowserTestResources([()=>browser?.close(),()=>runtime.stop()],primaryError);}
+    }catch(error){primaryError=error;}finally{await closeBrowserTestResources([()=>runtime.stop()],primaryError);}
   }});
 });
