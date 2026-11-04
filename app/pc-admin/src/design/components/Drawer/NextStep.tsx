@@ -4,6 +4,8 @@ import {createPortal} from 'react-dom';
 import {Button} from '../Button/Button';
 import {DrawerMoreActions} from './Drawer';
 import {Clock3} from 'lucide-react';
+import type {WorkbenchCard} from '../../../api/client';
+import {StageGlyph} from '../StageGlyph/StageGlyph';
 
 type Entry={id:string;action:string};
 export type StepReadState='pending'|'unknown'|'ready';
@@ -17,7 +19,7 @@ const orders:Record<string,string[]>={
 };
 
 /** Only arranges entries already admitted by their original command owners. */
-export function NextStep({status,stage,summary,readState,children}:{status:string;stage:string;summary:ReactNode;readState:StepReadState;children:ReactNode}){
+export function NextStep({status,stage,summary,readState,children}:{status:string;stage:WorkbenchCard['column'];summary:ReactNode;readState:StepReadState;children:ReactNode}){
   const waiting=status==='WAITING_VENDOR'||status==='WAITING_REQUESTER';
   const [entries,setEntries]=useState<Entry[]>([]),[main,setMain]=useState<HTMLDivElement|null>(null),[secondary,setSecondary]=useState<HTMLDivElement|null>(null),[more,setMore]=useState<HTMLDivElement|null>(null);
   const [reads,setReads]=useState<Record<string,StepReadState>>({});
@@ -30,7 +32,7 @@ export function NextStep({status,stage,summary,readState,children}:{status:strin
   const scope=useMemo(()=>({entries:sorted,register,reportRead,targets:[main,secondary,more],primary,label}),[entries,register,reportRead,main,secondary,more,primary,label,status]);
   return <Context.Provider value={scope}>
     <section className="ds-next-step" data-stage={stage} data-status={status} data-read-state={currentRead} aria-label="下一步">
-      {waiting?<span className="ds-next-step-wait-icon" aria-hidden="true"><Clock3/></span>:null}
+      {waiting?<span className="ds-next-step-wait-icon" aria-hidden="true"><Clock3/></span>:<span className="ds-next-step-icon" data-stage={stage} aria-hidden="true"><StageGlyph stage={stage}/></span>}
       <div className="ds-next-step-copy"><h3 className={waiting?'sr-only':undefined}>下一步</h3><p>{summary}</p>{!entries.length?<small>{currentRead==='pending'?'正在核对可用操作…':currentRead==='unknown'?'可用操作暂未确认，请刷新或选择复核项':'你当前为只读'}</small>:null}</div>
       <div className="ds-next-step-actions ds-drawer-command-buttons"><div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
     </section>

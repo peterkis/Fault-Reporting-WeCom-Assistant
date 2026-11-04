@@ -3,6 +3,9 @@ import {test} from 'node:test';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
 import {clickWorkbenchControl,chooseWorkbenchSelect,typeWorkbenchDates} from './helpers/heroui-workbench-controls.mjs';
 import {loadServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
+import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 test('Card 17 stages, date presets and custom calendar keep the original read-only range requests',{timeout:240000},()=>withT42BoardBrowser(async(f,browser)=>{
   await browser.command('Page.bringToFront');
@@ -209,4 +212,62 @@ test('Card 12 stale claim permission is rejected by the original command without
   await browser.waitFor('globalThis.__t42Responses.some(response=>response.status===401)');
   const after=(await f.pool.query('SELECT status,assignee_id,version,(SELECT count(*) FROM pilot_ticket.ticket_event e WHERE e.ticket_id=t.id) AS events FROM pilot_ticket.ticket t WHERE id=$1::uuid',[first.ticket.id])).rows[0];
   assert.deepEqual(after,before);assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1);
+}));
+
+test('Card 20 K3 K4 categories, spacing and clear filters use real synthetic projections without writes',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+ let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown,writes=0;
+ const before=(await f.pool.query('SELECT id::text,status,version,assignee_id::text FROM pilot_ticket.ticket ORDER BY id')).rows;
+ f.runtime.server.on('request',request=>{if(request.method==='POST')writes++;});
+ try{
+  const cookie=f.browserCookies[0];assert.ok(cookie);
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
+  await b.waitFor("document.querySelectorAll('.column-cards').length===3&&document.querySelector('[data-summary-filter=mine] .ds-summary-value')?.textContent==='3'");
+  assert.equal(await b.evaluate("getComputedStyle(document.querySelector('.connection-status'),'::before').display"),'none');
+  assert.equal(await b.evaluate("(()=>{const toggle=document.querySelector('.topbar .icon-button'),settings=document.querySelector('.topbar-settings'),a=toggle.getBoundingClientRect(),z=settings.getBoundingClientRect();return toggle.dataset.tone==='ghost'&&a.width===z.width&&a.height===z.height&&a.width===32;})()"),true);
+  for(const selector of ['.board-column.pending [data-action=expand-column]','.board-column.active [data-action=expand-column]'])await clickWorkbenchControl(b,selector);
+  const cases=[{index:1,label:null,ring:null},{index:2,label:'12 分钟',ring:null},{index:5,label:'45 分钟',ring:null},{index:8,label:'2 小时',ring:'attention'},{index:6,label:'超时 5 小时',ring:'danger'},{index:0,label:'超时 1 天',ring:'danger'}];
+  for(const item of cases){const ticket=f.tickets[item.index];assert.ok(ticket);const selector='.board .ticket-card[data-item-id="'+ticket.ticket.id+'"]';
+   assert.deepEqual(await b.evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});return {label:e.querySelector('.ds-ticket-heat')?.textContent??null,ring:e.dataset.ring??null};})()`),{label:item.label,ring:item.ring});
+  }
+  for(const [index,category,icon] of [[0,'ENDPOINT_PRINT','printer'],[1,'NETWORK_INFRASTRUCTURE','wifi'],[2,'DIAGNOSTIC','scan-line'],[3,'CLINICAL_CORE','stethoscope']] as const){const ticket=f.tickets[index];assert.ok(ticket);assert.equal(await b.evaluate(`Boolean(document.querySelector('.board [data-item-id="${ticket.ticket.id}"] [data-category=${category}] .lucide-${icon}'))`),true);}
+  assert.equal(await b.evaluate("document.querySelectorAll('.board [data-category=unclassified]').length>=2"),true);
+  for(const width of [1920,1440,1280,900]){
+   await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+   const metrics=await b.evaluate("(()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {title:r('.ds-board-toolbar-top').top-r('.ds-board-page-header h1').bottom,tabs:r('.ds-board-toolbar-bottom').top-r('.ds-board-toolbar-top').bottom,board:r('.board').top-r('.ds-board-toolbar-bottom').bottom,background:getComputedStyle(document.querySelector('.board')).backgroundColor,metadata:[...document.querySelectorAll('.board .ds-ticket-metadata')].filter(e=>e.checkVisibility()).map(e=>e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom),overflow:document.documentElement.scrollWidth>innerWidth};})()");
+   assert.ok(metrics&&typeof metrics==='object');const m=metrics as {title:number;tabs:number;board:number;background:string;metadata:number[];overflow:boolean};
+   for(const [actual,target] of [[m.title,12],[m.tabs,12],[m.board,16]] as const)assert.ok(Math.abs(actual-target)<=1,JSON.stringify({width,m}));
+   assert.equal(m.background,'rgba(0, 0, 0, 0)');assert.equal(m.overflow,false);assert.ok(m.metadata.every(gap=>Math.abs(gap-8)<=1));
+  }
+  await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+  assert.match(String(await b.evaluate("document.querySelector('[data-summary-filter=all]').title")),/已加载 15 项；计数基于已加载数据/u);
+  assert.equal(await b.evaluate("getComputedStyle(document.querySelector('.range-bar')).position"),'absolute');
+  assert.equal(await b.evaluate("document.querySelector('.search-main input').placeholder"),'搜索工单号、标题、报修人');
+  assert.equal(await b.evaluate("(()=>{const input=document.querySelector('.search-main input').getBoundingClientRect(),trigger=document.querySelector('.workbench-search .workbench-disclosure-trigger').getBoundingClientRect(),icon=document.querySelector('.ds-search-options svg').getBoundingClientRect();return trigger.left>=input.left&&trigger.right<=input.right&&icon.width===16&&icon.height===16;})()"),true);
+  assert.equal(await b.evaluate("document.querySelector('.workbench-search .workbench-disclosure-trigger').getAttribute('aria-label')"),'搜索选项');
+  assert.equal(await b.evaluate("document.querySelector('.workbench-search .workbench-disclosure-trigger').title"),'搜索选项');
+  await clickWorkbenchControl(b,'[data-date-preset=today]:not([data-compact])');
+  await b.waitFor("new URLSearchParams(location.search).get('range')==='custom'&&document.querySelectorAll('.column-cards').length===3");
+  await clickWorkbenchControl(b,'[data-summary-filter=overdue]');
+  await b.waitFor("document.querySelector('[data-summary-filter=overdue]').getAttribute('aria-pressed')==='true'");
+  await chooseWorkbenchSelect(b,'[data-field-label=类别]','ENDPOINT_PRINT');
+  assert.equal(await b.evaluate("document.querySelector('[data-action=clear-board-filters]')===null"),true);
+  await chooseWorkbenchSelect(b,'[data-field-label=处理人]','unassigned');
+  await b.waitFor("Boolean(document.querySelector('[data-action=clear-board-filters]'))");
+  const search=await b.evaluate('location.search');
+  await clickWorkbenchControl(b,'[data-action=clear-board-filters]');
+  assert.equal(await b.evaluate('location.search'),search);assert.equal(await b.evaluate("document.querySelector('[data-summary-filter=overdue]').getAttribute('aria-pressed')"),'true');
+  assert.equal(await b.evaluate("document.querySelectorAll('.ds-board-filter-pill[data-filter-active]').length"),0);
+  await b.close();browser=undefined;
+  const zero=f.browserCookies[2];assert.ok(zero);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...zero,url:f.origin+'/'}]});assert.ok(browser);
+  await browser.waitFor("document.querySelector('[data-summary-filter=mine] .ds-summary-value')?.textContent==='0'");
+  assert.equal(writes,0);assert.deepEqual((await f.pool.query('SELECT id::text,status,version,assignee_id::text FROM pilot_ticket.ticket ORDER BY id')).rows,before);
+ }catch(error){failure=error;}
+ await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+},{precisionV212:true,serviceCatalog:loadServiceCatalog(),ticketSelfHandlingEnabled:true,workbenchFollowEnabled:true,workbenchSearchEnabled:true}));
+
+test('Card 20 K3 unavailable ownership projection omits the count and explains why',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+ let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
+ try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);
+  await browser.waitFor("document.querySelectorAll('.column-cards').length===3");assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value')===null"),true);assert.match(String(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').title")),/当前没有本人处理关系资料，暂无法统计/u);
+ }catch(error){failure=error;}await closeBrowserTestResources([async()=>{await browser?.close();}],failure);
 }));

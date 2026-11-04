@@ -1,12 +1,12 @@
 /* v2.1.1 toolbar; scoped here so parallel cards keep their own surfaces. */
 .ds-page>.ds-toolbar.ds-board-toolbar {display: flex; flex-direction: column; align-items: stretch; height: auto; gap: var(--space-3); padding: 0; margin-bottom: var(--space-4); box-shadow: none;}
 .ds-board-toolbar-top {display: flex; align-items: flex-start; gap: var(--space-6); min-height: var(--space-10); border-bottom: 1px solid var(--border-hair);}
-.ds-board-summary.scope-tabs {padding-top: var(--space-0-5); display: flex; gap: var(--space-6); min-width: 0; overflow-x: auto;}
+.ds-board-summary.scope-tabs {padding-top: 0; display: flex; gap: var(--space-6); min-width: 0; overflow-x: auto;}
 .ds-board-summary .ds-summary-card.button[data-tone] {position: relative; flex: none; height: var(--space-10); padding: 0 var(--space-0-5); border: 0; border-radius: 0; background: transparent; color: var(--text-secondary); box-shadow: none; font-size: var(--fs-md); font-weight: var(--fw-regular);}
 .ds-summary-card>.ds-button-label {display: flex; align-items: center; gap: var(--space-1-5);}
 .ds-board-summary .ds-summary-card.button[aria-pressed=true] {color: var(--text-primary); font-weight: var(--fw-semibold);}
 .ds-summary-card[aria-pressed=true]::after {content: ''; position: absolute; inset: auto 0 0; height: var(--space-0-5); background: var(--text-primary);}
-.ds-summary-value {color: var(--text-tertiary); font-size: var(--fs-xs); font-weight: var(--fw-regular); font-variant-numeric: tabular-nums;}
+.ds-summary-value {color: var(--text-secondary); font-size: var(--fs-xs); font-weight: var(--fw-regular); font-variant-numeric: tabular-nums;}
 .ds-summary-card[data-overdue=true] .ds-summary-label::before {content: ''; display: inline-block; width: var(--space-1-5); height: var(--space-1-5); margin-right: var(--space-1-5); border-radius: var(--radius-full); background: var(--tone-danger-dot); vertical-align: middle;}
 .ds-summary-card[data-overdue=true] .ds-summary-value {color: var(--tone-danger-fg); font-weight: var(--fw-semibold);}
 .ds-summary-card[aria-disabled=true] {cursor: default;}
@@ -38,7 +38,7 @@
 .ds-date-custom .ds-toolbar-filter-content {left: auto; right: 0; width: min(640px,100%);}
 .ds-board-search {position: relative; flex: none; width: calc(var(--space-16) * 4 + var(--space-1) + var(--space-8)); min-height: var(--control-h-md);}
 .ds-board-search>svg {position: absolute; left: var(--space-2); top: var(--space-2); width: var(--icon-md); height: var(--icon-md); z-index: 1; color: var(--text-secondary); pointer-events: none;}
-.ds-board-search>kbd {position: absolute; right: calc(var(--space-8) + var(--space-2)); top: var(--space-1-5); color: var(--text-tertiary); font-size: var(--fs-xs); pointer-events: none;}
+.ds-board-search>kbd {position: absolute; right: calc(var(--space-8) + var(--space-2)); top: var(--space-1-5); color: var(--text-secondary); font-size: var(--fs-xs); pointer-events: none;}
 .ds-board-search .workbench-search,.ds-board-search fieldset {display: contents;}
 .ds-board-search .search-main {display: flex; flex-wrap: wrap; gap: var(--space-1); width: calc(var(--space-16) * 4 + var(--space-1)); margin: 0;}
 .ds-board-search .search-main label {position: relative; display: block; width: 100%; height: var(--control-h-md); overflow: hidden; color: transparent;}
@@ -89,3 +89,15 @@
 .ds-board-toolbar .ds-board-filter-row:has(>.ds-board-filter-pill[data-filter-active]~.ds-board-filter-pill[data-filter-active]) {min-width: min(100%,calc(var(--space-16) * 4 + var(--space-8)));}
 
 .workspace.ds-page>.ds-toolbar.ds-board-toolbar {flex-wrap: nowrap;}
+
+.workspace.ds-page>.ds-page-header.ds-board-page-header {padding-bottom:0;}
+.workspace.ds-page>.ds-toolbar.ds-board-toolbar {margin-top:var(--space-3);}
+.ds-board-search {width:calc(var(--space-16) * 4 + var(--space-1));}
+.ds-board-search .search-main input {padding-right:calc(var(--space-8) + var(--space-6));}
+.ds-board-search>kbd {right:calc(var(--space-8) + var(--space-1));}
+.ds-board-search .workbench-disclosure>[data-slot=disclosure-heading] {right:var(--space-0-5);top:var(--space-0-5);}
+.ds-board-search .workbench-disclosure-trigger {height:var(--control-h-sm);min-height:var(--control-h-sm);border-radius:var(--radius-sm);}
+.ds-board-search .workbench-disclosure-trigger>[data-slot=disclosure-indicator] {display:none;}
+.ds-board-search .ds-search-options {display:inline-flex;align-items:center;justify-content:center;width:var(--icon-md);height:var(--icon-md);}
+.ds-search-options>svg {width:var(--icon-md);height:var(--icon-md);}
+.ds-board-search .search-main button[type=submit]:focus-visible,.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true]) .search-main button[type=submit] {right:calc(var(--space-8) + var(--space-1));}
