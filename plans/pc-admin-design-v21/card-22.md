@@ -112,7 +112,7 @@ R5/R6完整实测见[像素表](../../docs/ui/evidence/v213-card22/README.md)。
 
 资源关闭：fixture合成库已删除，仅剩postgres，其他客户端连接0；PG停止exit0、status3，54822监听0，自有进程0。保留分支/worktree、静态PG数据目录、全部原始结果与24张截图，用户原件及主工作区保持。来源清单为 `screenshot-inventory.json`，完整差异清单为 `changed-files.json`，关闭回执为 `cleanup.json`。
 
-[本地PR描述草稿](D:/CodexEvidence/pc-admin-v213-card22-20261104/pr-description.md)按pr技能模板逐条列出R1–R6，仅供本地审阅，未创建远端PR。最终STOP于「本地验证通过 + 交付说明」。
+当时的本地PR描述草稿位于 `D:/CodexEvidence/pc-admin-v213-card22-20261104/pr-description.md`，按pr技能模板逐条列出R1–R6，仅供本地审阅，不作为仓库内链接；该本地交付快照未创建远端PR。随后发布授权见下节。
 
 
 ## 发布授权续记（2026-11-05）
@@ -122,3 +122,9 @@ R5/R6完整实测见[像素表](../../docs/ui/evidence/v213-card22/README.md)。
 发布前HTTPS fetch与GitHub API均确认main为 `6e2553888f0923248827173fa54ef2456d2c0cae`，49项差异与已交付清单逐文件hash一致，原制品再次校验通过。主工作区6份未跟踪原件和151个Git引用已做保护快照；不清理其它任务资源。
 
 原本地29入口178/178、4/4、失败/NOT_RUN及旧manifest保持原候选身份，不重绑tested_head。新提交的CI和审查按GitHub当前完整head独立核验。发布、复审、合并、main同步及清理的实际回执集中于 `D:/CodexEvidence/pc-admin-v213-card22-publish-20261105/`；最终结果见其中 `closeout-final.md`。原本地build-manifest与artifact-proof已按原字节保全，删除可重建worktree时不丢失其来源绑定。
+
+### 首轮发布检查与文档修正
+
+初始提交 `7611e55e5fc3ad73bf445919a3147e872039eab5` 已发布为 PR #148。首轮CI运行41931826224的pr-plan在业务测试执行前拒绝4个指向D盘外部原件的Markdown链接；失败原件与本地同命令RED保留在发布回执根。将外部原件位置改为代码形式说明，原始JSON/草稿、仓库内数值表及截图保持；不修改校验器、策略、产品或业务测试，不为纯文档修正重建业务候选。新head的CI结果独立核验。
+
+GitHub Codex自动审查和一次明确的`@codex review`请求均因代码审查额度耗尽而失败，尚无有效审查结果；失败状态不等于无major，也不把summary内部失败标记当成已产生的代码finding。原始回复保存在发布回执的review-initial.json，后续审查路线沿当前会话的明确授权执行。

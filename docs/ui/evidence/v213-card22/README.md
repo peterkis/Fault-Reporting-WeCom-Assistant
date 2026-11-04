@@ -2,7 +2,7 @@
 
 [执行记录](../../../../plans/pc-admin-design-v21/card-22.md)。基线 `6e2553888f0923248827173fa54ef2456d2c0cae`，未提交候选；Node 24、PG18、自有 loopback 合成库、系统 Chrome，截图缩放1。正式参考仅01–05及04b；没有使用06–08。
 
-本目录来自 `D:/CodexEvidence/pc-admin-v213-card22-20261104/direct-4/` 的4/4浏览器断言（3个新增场景及原未接待场景）；原始字段测量保存在 [工作台](D:/CodexEvidence/pc-admin-v213-card22-20261104/direct-4/board-metrics.json)、[会话](D:/CodexEvidence/pc-admin-v213-card22-20261104/direct-4/conversation-metrics.json)、[通知异常](D:/CodexEvidence/pc-admin-v213-card22-20261104/direct-4/notification-metrics.json)。候选输入 SHA-256 `2186a3598a76d54c182e72eee3188e94eb30c9d04e6e56db7fbbb8f853a1270f`，manifest SHA-256 `35670741c5c569143f08d19f31f469e9af20cc32d6b04fef574e8f7858d56397`。旧截图继续证明其原候选，不重绑身份。
+本目录来自 `D:/CodexEvidence/pc-admin-v213-card22-20261104/direct-4/` 的4/4浏览器断言（3个新增场景及原未接待场景）；原始字段测量位于该外部回执目录中的 `board-metrics.json`（工作台）、`conversation-metrics.json`（会话）、`notification-metrics.json`（通知异常）。这些是本地原件位置，不作为仓库内可点击链接；可移植的数值表与截图见下文。候选输入 SHA-256 `2186a3598a76d54c182e72eee3188e94eb30c9d04e6e56db7fbbb8f853a1270f`，manifest SHA-256 `35670741c5c569143f08d19f31f469e9af20cc32d6b04fef574e8f7858d56397`。旧截图继续证明其原候选，不重绑身份。
 
 ## 1920 / 1440 前后对照
 
