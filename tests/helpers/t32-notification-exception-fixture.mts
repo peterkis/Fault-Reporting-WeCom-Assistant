@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
+import {appendCommunication} from '../../app/server/src/p2-004-communication-core.mjs';
+import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {createP2012Runtime} from '../../app/server/src/p2-012-workbench-assembly.mjs';
@@ -33,6 +35,33 @@ export async function seedT32SessionExceptions(f:T32Fixture,count=2){
     assert.equal(response.status,202,JSON.stringify(response.body));assert.ok(Array.isArray(response.body.delivery_ids));const id=t32Text(response.body.delivery_ids[0]);ids.push(id);assert.ok(await worker.deliver({deliveryId:id}));
   }
   assert.equal(calls,count);return {sessionId:row.id,deliveryIds:ids,senderCalls:()=>calls};
+}
+/** N2/S11: six real queue rows, with synthetic providers and the existing append/binding path. */
+export async function seedCard21Exceptions(f:T32Fixture){
+  const session=await seedT32SessionExceptions(f,2),deliveryIds=[...session.deliveryIds];let calls=0;
+  for(let index=0;index<4;index++){
+    const ticket=f.tickets[index];assert.ok(ticket);
+    const title='护士站打印与业务系统连接异常，需要核对网络和终端配置（合成）'+(index+1);
+    await f.pool.query('UPDATE pilot_ticket.ticket SET title=$2 WHERE id=$1::uuid',[ticket.ticket.id,title]);
+    const event=(await f.pool.query<{id:string}>('SELECT event_id::text AS id FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid ORDER BY created_at,event_id LIMIT 1',[ticket.ticket.id])).rows[0];assert.ok(event);
+    const group=index===2,targetType=group?'GROUP':'PERSON',provider=index<2?'WECOM_APP':'WECOM_AIBOT';
+    const expiry=(await f.pool.query<{at:string}>("SELECT platform.local_now()+interval '30 days' AS at")).rows[0];assert.ok(expiry);
+    const result=await transactionP2016(f.pool,async tx=>{
+      const message=await appendCommunication({transaction:tx,actor:null,command:{client_command_id:randomUUID(),session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',message_type:'text',visibility:'EXTERNAL',text:'配置检查进展通知（合成）',privacy_class:'INTERNAL',retention_until:expiry.at},resolvedDestinations:[{provider,channel_account_id:'v212-synthetic-account',target_type:targetType,target_id:'v212-synthetic-target-'+index}]});
+      assert.ok(message&&'message_id' in message&&message.outbox_id&&message.delivery_ids[0]);
+      await tx.query(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
+        VALUES($1::uuid,$2::uuid,'TICKET_CREATED',$3,$4,'V212_SYNTHETIC',$5::uuid,$6::uuid,$7::uuid)`,[event.id,ticket.ticket.id,createHash('sha256').update('v212-synthetic-'+index).digest('hex'),targetType,message.message_id,message.outbox_id,message.delivery_ids[0]]);
+      return message;
+    });
+    const id=result.delivery_ids[0];assert.ok(id);deliveryIds.push(id);
+    const attempts=index%3+1;let attempt=0;
+    const worker=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,sender:createCommunicationSenderPort(()=>{attempt++;calls++;return {outcome:attempt===attempts&&index%2?'UNKNOWN':'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'V212_SYNTHETIC_FAILURE',retryable:attempt<attempts};})});
+    for(let n=0;n<attempts;n++){
+      if(n)await f.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[id]);
+      assert.ok(await worker.deliver({deliveryId:id}));
+    }
+  }
+  return {deliveryIds,sessionId:session.sessionId,senderCalls:()=>session.senderCalls()+calls};
 }
 export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{enabled?:boolean;publication?:boolean;ddl?:boolean;externalSend?:boolean}={}) {
   await withWeb01Fixture(async(original:T11Fixture)=>{
