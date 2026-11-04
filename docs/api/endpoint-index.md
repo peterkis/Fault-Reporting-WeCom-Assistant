@@ -6,6 +6,15 @@
 
 H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用成员认证合同，不是新增宿主进程；实际装配见 [H5 V2](member/h5-v2.md#宿主认证和协商)。W 的工作人员权限与 M／F 的成员权限分别核验。
 
+## T32 通知异常与 N3 关联来源（默认关闭）
+
+| 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| GET | `/api/notification-exceptions` | W | 已实现、默认关闭：当前各域获权异常及关联来源，不触发重发 | [通知异常](workbench/notification-exceptions.md) |
+| GET | `/api/notification-exceptions/ticket/{parentId}/{deliveryId}` | W | 已实现、默认关闭：精确Ticket异常与当前工单号/标题 | [通知异常](workbench/notification-exceptions.md) |
+| GET | `/api/notification-exceptions/session/{parentId}/{deliveryId}` | W | 已实现、默认关闭：精确Session异常与有效主题姓名/null | [通知异常](workbench/notification-exceptions.md) |
+| GET | `/api/notification-exceptions/incident/{parentId}/{deliveryId}` | W | 已实现、默认关闭：原Incident用途获权安全异常，N3字段null | [通知异常](workbench/notification-exceptions.md) |
+
 ## T31 显式安全公开进展（独立默认关闭）
 
 | 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |

@@ -320,3 +320,8 @@ v2.0 解决的是**一致性**，而美感来自**节奏与对比**。现在的�
 - N3：来源链接使用text-link、安全摘要单行省略。当前DTO没有工单号/标题/报修人姓名；本卡不改变后端合同、不逐行读取来源、不从safe_summary推断字段。完整双行编号/标题与会话姓名样式待只读投影具备字段后实施。
 
 范围、合成数据根因和实际验收见[卡21记录](../../plans/pc-admin-design-v21/card-21.md)。
+
+
+### N3后继：真实关联来源
+
+[N3 #144](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/144)前向补齐编号/标题/主题姓名只读字段；上文卡21缺口保留历史含义。工单第一行用font-mono的真实编号链接，第二行text-secondary标题单行省略及完整title；Session只显示“会话 · 姓名”，缺失为“会话 · 报修人（资料未提供）”，不以safe_summary代替人员身份。继续56px行高、四宽来源列约束、现有Token与原parent_link；公共故障保持原展示。原型正式范围仍为01–05（含04b），列头01，06–08排除。

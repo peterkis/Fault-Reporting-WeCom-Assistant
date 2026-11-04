@@ -1,4 +1,4 @@
-/** T32 closed query contract. SOURCE proposal until mounted and actually verified. */
+/** T32 closed read contract; N3 display fields follow the current parent READ. */
 export type NotificationExceptionDomain = 'TICKET' | 'SESSION' | 'INCIDENT';
 export type NotificationExceptionSource = 'TICKET_NOTIFICATION' | 'SESSION_MESSAGE' | 'INCIDENT_LIFECYCLE' | 'INCIDENT_PUBLIC_PROGRESS';
 export type NotificationExceptionRoute = 'GROUP' | 'BOT_DIRECT' | 'YIXIAOXIU_APP';
@@ -30,6 +30,9 @@ export interface NotificationExceptionItem {
   attempt_count: number;
   last_attempt: NotificationExceptionAttempt | null;
   safe_summary: string;
+  ticket_no: string | null;
+  ticket_title: string | null;
+  reporter_name: string | null;
   error_code: 'FAILURE_RECORDED' | 'RESULT_UNCONFIRMED' | null;
   created_at: string;
   updated_at: string;
