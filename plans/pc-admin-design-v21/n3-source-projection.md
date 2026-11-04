@@ -35,3 +35,12 @@ N3真实PG/HTTP覆盖Ticket编号/标题与列表/精确单项一致；已完结
 ## 提交后CI索引修正
 
 初始发布head a3a59c602a45147338f789353bcda53e2d1df6d3的CI在pr-plan文档预检失败，尚未运行所选应用入口：本次触及的API总索引含三处已有T06旧锚点“明确派单wbint-t06进行中”，实际章节已是“明确派单与转派（WBINT-T06）”。用同一pr-plan --check-docs命令在发布工作树复现后，仅修正三处锚点及本记录；不修改业务/合同/测试输入，不重绑本地405db98e候选。普通docs:agents:check的固定导航通过不能替代提交差异文档检查，后继显式执行pr-plan --check-docs。首轮CI失败及应用NOT_RUN保持原件。
+
+
+## 工具链完成与真实长名补验
+
+同一405db98e候选的本地六类工具链保护测试115/115 PASS，无失败/取消/跳过；原耗时检查在分离HEAD的验证工作树持续完成。发布工作树逐字节复制25路径后独立提交，4a4f73df08dc164bee096f2e0fbe7e3e776f0c89的源码输入与该候选相同；其Codex复审无findings，CI的计划、主数据库路径、汇总、regression和历史证据检查全部通过。该对象及原manifest保持独立历史含义。
+
+最后核对长姓名验收时，将合成姓名扩至64字并要求scrollWidth>clientWidth、真实ellipsis且链接右缘不越单元格。原bce6ec97候选的生产bundle在1920下真实RED（浏览器1PASS/1FAIL）：基础HeroUI link宽为fit-content，现有overflow只能在单元格处裁切。仅为Session来源链接补width/max-width=100%，不改全局Link、数据或请求；同一场景修复后四宽均真实溢出并显示ellipsis，浏览器2/2 PASS，原POST=0、Sender次数及所有旧业务断言保持。
+
+修复候选输入c83ccfa3204b90de0ebe042a223fd6e103af491921b5063891ce5ddbead35135，统一build、gate types（含双lint）和新浏览器场景通过，制品身份单独校验。未把旧385例或旧manifest重绑此候选；提交后仍由新完整head CI验证计划并集。新增四张长名截图及真实RED图见证据索引。构建前曾因自有PG从runtime目录启动而锁住Windows目录，EPERM原日志保留；停止自有PG后重建成功，后继只从工作树根启动PG。

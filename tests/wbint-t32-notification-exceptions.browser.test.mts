@@ -54,7 +54,17 @@ test('v2.1.2 N1–N4 S10 S11 show six real synthetic exceptions with bounded bal
         await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');await writeFile(join(directory,'notifications-empty-'+width+'.png'),Buffer.from(await browser.screenshot(),'base64'));assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=next-exceptions]'))"),false);
       }
       assert.deepEqual(posts,[]);assert.equal(seed.senderCalls(),beforeCalls,'filtering and exact-item review never send or retry');
-      await writeFile(join(directory,'notification-metrics.json'),JSON.stringify({metrics,rows,posts,reads,senderCalls:beforeCalls},null,2));console.log('CARD21_NOTIFICATION_EVIDENCE '+directory);
+      // A valid long name must really overflow the source cell, including at 1920.
+      const longName='欧阳慧敏（合成）'.repeat(8);await seedN3SessionProfile(f,seed.sessionId,longName);await chooseWorkbenchSelect(browser,select,'ALL');
+      await browser.waitFor("[...document.querySelectorAll('.notification-source-link[data-source-domain=SESSION]')].some(n=>n.textContent==="+JSON.stringify('会话 · '+longName)+')');
+      const longNameMetrics:unknown[]=[];
+      for(const width of [1920,1440,1280,900]){
+        await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
+        const names=await browser.evaluate("[...document.querySelectorAll('.notification-source-link[data-source-domain=SESSION]')].map(n=>({text:n.textContent,right:n.getBoundingClientRect().right,cellRight:n.closest('td').getBoundingClientRect().right,scrollWidth:n.scrollWidth,clientWidth:n.clientWidth,ellipsis:getComputedStyle(n).textOverflow}))") as {text:string;right:number;cellRight:number;scrollWidth:number;clientWidth:number;ellipsis:string}[];
+        assert.equal(names.length,2);assert.ok(names.every(n=>n.text==='会话 · '+longName&&n.right<=n.cellRight+1&&n.scrollWidth>n.clientWidth&&n.ellipsis==='ellipsis'),'N3 long name actually overflows within its cell at '+width+': '+JSON.stringify(names));longNameMetrics.push({width,names});await writeFile(join(directory,'notifications-long-name-'+width+'.png'),Buffer.from(await browser.screenshot(),'base64'));
+      }
+      assert.deepEqual(posts,[]);assert.equal(seed.senderCalls(),beforeCalls);
+      await writeFile(join(directory,'notification-metrics.json'),JSON.stringify({metrics,rows,longNameMetrics,posts,reads,senderCalls:beforeCalls},null,2));console.log('CARD21_NOTIFICATION_EVIDENCE '+directory);
     }catch(error){failure=error;if(browser){await writeFile(join(directory,'notification-failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'notification-failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
     finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
   });
