@@ -113,6 +113,7 @@ test('R1 R3 R4 R5 card22 merged dividers, actual reply capabilities and aligned 
  await withT22Fixture(async f=>{
   const {session,dates}=await seedCard22Conversation(f),directory=process.env.CARD22_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card22-conversation-'));await mkdir(directory,{recursive:true});
   const metrics:unknown[]=[],posts:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+  let scenarioFailure:unknown;
   try{for(const [account,cookie,allowed] of [['denied',f.handlerCookie,false],['allowed',f.cookie,true]] as const){
    const response=await fetch(f.origin+'/api/workbench/conversations/'+session.id+'?view=chat',{headers:{cookie}});assert.equal(response.status,200);const entry=await response.json() as ConversationChatEntry;
    assert.equal(entry.capabilities.includes('REPLY'),allowed);assert.equal(entry.capabilities.includes('INTERNAL_NOTE'),allowed);
@@ -143,9 +144,16 @@ test('R1 R3 R4 R5 card22 merged dividers, actual reply capabilities and aligned 
      const waiting=f.sessions[0];assert.ok(waiting);await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+waiting.id});await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&Boolean(document.querySelector('textarea[data-purpose=messages]'))");
      assert.equal(await browser.evaluate("document.querySelector('#audience-messages').textContent==='领取接待后可回复'&&document.querySelector('#audience-messages').checkVisibility()&&document.querySelector('textarea[data-purpose=messages]').disabled"),true,'R4 waiting reason is visible; original recovery-enabled half-screen regression also runs separately');
     }
-   }catch(error){failure=error;if(browser)await captureCard22(browser,directory,'conversation-'+account+'-failure');}
-   finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+   }catch(error){failure=error;}
+   finally{await closeBrowserTestResources([
+    async()=>{if(failure&&browser)await captureCard22(browser,directory,'conversation-'+account+'-failure');},
+    async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+   ],failure);}
   }assert.deepEqual(posts,[],'presentation and no-capability inputs produce no write requests');}
-  finally{f.runtime.server.off('request',observe);await writeFile(join(directory,'conversation-metrics.json'),JSON.stringify(metrics,null,2));}
+  catch(error){scenarioFailure=error;}
+  finally{await closeBrowserTestResources([
+   ()=>{f.runtime.server.off('request',observe);},
+   ()=>writeFile(join(directory,'conversation-metrics.json'),JSON.stringify(metrics,null,2)),
+  ],scenarioFailure);}
  },{inbox:true,personalRead:false,recovery:false});
 });

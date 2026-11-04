@@ -88,7 +88,12 @@ test('R5 R6 card22 notification flex widths, shared chips and scroll without wra
     metrics.push({R6:sample});await captureCard22(browser,directory,'notifications-'+width);
    }
    assert.deepEqual(posts,[]);assert.equal(seed.senderCalls(),beforeCalls,'R5/R6 never send or retry');
-  }catch(error){failure=error;if(browser)await captureCard22(browser,directory,'notifications-failure');}
-  finally{f.runtime.server.off('request',observe);await writeFile(join(directory,'notification-metrics.json'),JSON.stringify(metrics,null,2));await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+  }catch(error){failure=error;}
+  finally{await closeBrowserTestResources([
+   async()=>{if(failure&&browser)await captureCard22(browser,directory,'notifications-failure');},
+   ()=>{f.runtime.server.off('request',observe);},
+   ()=>writeFile(join(directory,'notification-metrics.json'),JSON.stringify(metrics,null,2)),
+   async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+  ],failure);}
  });
 });

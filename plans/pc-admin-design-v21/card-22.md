@@ -128,3 +128,11 @@ R5/R6完整实测见[像素表](../../docs/ui/evidence/v213-card22/README.md)。
 初始提交 `7611e55e5fc3ad73bf445919a3147e872039eab5` 已发布为 PR #148。首轮CI运行41931826224的pr-plan在业务测试执行前拒绝4个指向D盘外部原件的Markdown链接；失败原件与本地同命令RED保留在发布回执根。将外部原件位置改为代码形式说明，原始JSON/草稿、仓库内数值表及截图保持；不修改校验器、策略、产品或业务测试，不为纯文档修正重建业务候选。新head的CI结果独立核验。
 
 GitHub Codex自动审查和一次明确的`@codex review`请求均因代码审查额度耗尽而失败，尚无有效审查结果；失败状态不等于无major，也不把summary内部失败标记当成已产生的代码finding。原始回复保存在发布回执的review-initial.json，后续审查路线沿当前会话的明确授权执行。
+
+### 本地独立审查的P2修补
+
+用户已明确授权本地独立审查替代额度耗尽的远端审查，原CI通过且无major的合并条件保持。对 `102669f9f423591b89738c781d2f8a1cdbdf7b1f` 的独立初审：Spec 0项；Standards 1项P2，指出新测试在finally先写证据JSON、后关浏览器，I/O失败会跳过清理并覆盖原错误。
+
+本次沿既有closeBrowserTestResources把截图、JSON写入、监听移除、浏览器关闭拆成独立步骤并传入原failure；同时修复会话外层证据写入覆盖原错误的同类路径。仅修改三个相关测试的退出路径，产品展示源码、权限、请求、状态与业务断言不变。对实际编译退出块的故障注入先RED后GREEN，4类退出块均保留主错误/I/O错误并执行清理；不把该注入描述成真实浏览器故障。三个受影响浏览器测试文件实际重跑19/19 PASS，0失败/取消/SKIP/TODO，正常路径的资源归零断言保持。
+
+修补候选统一build、types（含lint）及verify-artifact通过；输入hash为 `769b0765545dea98fe2f743a2a8a5d416efcf0bc27ca6da32147fc647c6d8824`，manifest为 `ff538aa7f1d295160e7d9fda9864814643dd03ce87dfe4209e3d5fb16f9533a5`。原178/178及截图保持原候选身份；修补后提交的CI与两轴复审独立报告。原始依据位于发布回执根的local-review-initial.md、cleanup-red/green.json、cleanup-positive.log、build/types/artifact-cleanup-fix.log及对应manifest原件。

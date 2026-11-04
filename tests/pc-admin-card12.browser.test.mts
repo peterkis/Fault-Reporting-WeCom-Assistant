@@ -312,6 +312,11 @@ test('R1 R2 R5 card22 avatars, shared overdue membership and aligned board filte
   await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');await browser.waitFor("document.querySelectorAll('.board [data-item-id]').length===3");
   assert.deepEqual((await browser.evaluate("[...document.querySelectorAll('.board [data-item-id]')].map(n=>n.dataset.itemId)") as string[]).sort(),red.map(row=>row.id).sort());metrics.push({R2:'non-ticket-red',red});
   assert.deepEqual(posts,[],'R1/R2/R5 presentation never invokes a business command');
- }catch(error){failure=error;if(browser)await captureCard22(browser,directory,'board-failure');}
- finally{await writeFile(join(directory,'board-metrics.json'),JSON.stringify(metrics,null,2));f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+ }catch(error){failure=error;}
+ finally{await closeBrowserTestResources([
+  async()=>{if(failure&&browser)await captureCard22(browser,directory,'board-failure');},
+  ()=>writeFile(join(directory,'board-metrics.json'),JSON.stringify(metrics,null,2)),
+  ()=>{f.runtime.server.off('request',observe);},
+  async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+ ],failure);}
 },{precisionV212:true,workbenchSearchEnabled:true}));
