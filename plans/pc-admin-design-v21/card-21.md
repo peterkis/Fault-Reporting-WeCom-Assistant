@@ -183,3 +183,13 @@ A批原件 `selection-source-clear/`：该轮实际136项，135 PASS、1 FAIL，
 发布基点经HTTPS fetch仍为 `f8959042ecf9e596a79cbb249ec7932451805ddb`。本地最终校准35入口178/178、原始失败与旧manifest保持原对象；本次提交后的CI和审查以GitHub当前完整head独立核验，不重绑旧tested_head。N3完整字段仍缺只读投影，本PR仅交付已验证的展示范围；原型正式范围为01–05（含04b），列头01，06–08排除。
 
 发布/审查/合并/清理回执集中于 `D:/CodexEvidence/pc-admin-v212-card21-publish-20261104/`。保留主工作区5份用户原件、stash及全部既有recovery/checkpoint引用；只删除本任务已合并的分支/worktree，不扩展清理其它来源。
+
+### 发布CI诊断与测试修正
+
+初始提交 `617998a7b7973c8672b5ab2166d26d522e3bb4d1` 已推送并创建 [PR #143](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/143)，按pr模板逐条引用G1、S10、S11、C1–C10、N1–N4。首轮 `@codex review` 对该完整head已完成，未发现major或其它findings；该结果不替代后继测试修正的重新审查。
+
+同一head的 [CI运行](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/41783997700) 保留两次失败，不改写成通过：attempt 1为111 PASS/1 FAIL、15入口NOT_RUN，T35在真实ACK丢失后的抽屉重挂载阶段等待原COMMITTED回执超时。本地原路径及受控动画观测均未复现；attempt 2的T35自然通过，尚不能据此确认根因，未修改已读控制器、UUID、请求或回执断言。attempt 2继续执行到本卡新增列头断言，124 PASS/1 FAIL、9入口NOT_RUN，固定77px总宽在Linux环境失败；其CI浏览器截图显示中文字形缺失，而产品列头宽度本就由文字、14px图标、6px间距和8/10px内边距组成，并非固定77px。
+
+本次只修正新增的视觉断言：等待字体就绪和两个绘制帧，分别断言实际总宽=实际字宽+38px（±1px）、26px高、14px图标、6px间距、8/10px内边距、13px/600。字体回退不会改变这些设计几何约束；原Windows四宽三种列头均再次实测77×26，文字39px。只改T22新增场景和本执行记录；BoardColumn、Token、产品代码及原业务断言均不变，没有任意sleep或业务断言放宽。首轮失败和未执行范围、两份完整CI制品与日志均已保存到发布回执目录。
+
+修正候选输入 `88f50afe8f519b9ae87bacb28b59382a7f53a8014bfe08cf4d45665b864fd489`，manifest `27bced16209e56608925f895861cf6f751d31660978d1a463c1a4af39b252fb3`；统一构建、gate types（含Stylelint/ESLint）、verify-artifact通过。当前直接风险检查T22两个场景+原T35共3/3 PASS，0失败/取消/跳过；新head完整路径CI独立执行，不用此3例或旧178例替代。四宽测量在发布回执的fix-visual/conversation-metrics.json；合成库已清空，仅剩postgres，PG停止成功。后继审查/CI/合并/清理结果按实际head记录在同一外部回执目录。
