@@ -67,7 +67,7 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
     {item.location?<div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{item.location}</dd></div>:null}
     <div className="property-field reporter-contact" hidden={!formatted&&!contactPending&&!contactError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contactPending&&!contactError}>{formatted??(contactPending?'正在读取…':contactError?'暂不可用':'未提供')}</span></dd></div>
     <div className="property-field"><dt><Clock3 size={17}/>报修时间</dt><dd>{detail.reported_at?<BeijingTime value={detail.reported_at}/>:<span>未记录</span>}</dd></div>
-    {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span><span className="ds-detail-ask">向报修人补问</span></dd></div>:null}
+    {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span></dd></div>:null}
   </PropertyList>;
 }
 type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void};

@@ -11,8 +11,6 @@
   --gray-0:   #FFFFFF;
   --gray-25:  #FBFBFA;
   --gray-50:  #F7F7F5;
-  --gray-board: #F7F6F3;
-  --gray-column: #F4F3EF;
   --gray-unclassified-ring: #C9C7C1;
   --gray-100: #F1F1EF;
   --gray-150: #EBEBE9;
@@ -21,10 +19,19 @@
   --gray-400: #A5A29A;
   --gray-500: #8C8A84;
   --gray-600: #6B6965;   /* 白底 5.48:1 */
+  --gray-650: #5F5E5B;
   --gray-700: #4A4844;
   --gray-900: #37352F;   /* 白底 12.26:1 */
 
   /* 品牌蓝：全站唯一强调色 */
+  --blue-25: #F6F9FE;
+  --blue-200: #BFD3F2;
+  --yellow-25: #FCFAF4;
+  --green-25: #F5FAF6;
+  --orange-25: #FDF6EC;
+  --orange-200: #F2D9B8;
+  --yellow-10: #FFFDF6;
+  --red-600: #C9332D;   /* 白字 5.26:1 */
   --blue-50:  #EEF4FD;
   --blue-stage-50: #E8F0FC;
   --blue-100: #DCE8FB;
@@ -71,8 +78,6 @@
   /* 背景 */
   --bg-canvas:   var(--gray-0);    /* 主工作区 */
   --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
-  --bg-board:    var(--gray-board);
-  --bg-column:   var(--gray-column);
   --bg-stage-count: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
   --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
   --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
@@ -85,10 +90,10 @@
   --border-default: rgba(55, 53, 47, .16);  /* 输入框、次按钮描边 */
   --border-strong:  rgba(55, 53, 47, .28);  /* 输入框悬停 */
   --border-focus:   var(--blue-500);
-  --border-brand-subtle: #BFD3F2;
-  --lane-intake: #FCFAF4;
-  --lane-active: #F6F9FE;
-  --lane-done: #F5FAF6;
+  --border-brand-subtle: var(--blue-200);
+  --lane-intake: var(--yellow-25);
+  --lane-active: var(--blue-25);
+  --lane-done: var(--green-25);
   --lane-border: rgba(55,53,47,.05);
 
   /* 品牌 */
@@ -98,7 +103,7 @@
   --on-brand:     var(--gray-0);
 
   /* 语气（tone）：用于标签、状态点、提示条。每个 tone = bg / fg / dot */
-  --tone-neutral-bg: var(--gray-100);  --tone-neutral-fg: #5F5E5B;            --tone-neutral-dot: var(--gray-400);
+  --tone-neutral-bg: var(--gray-100);  --tone-neutral-fg: var(--gray-650);            --tone-neutral-dot: var(--gray-400);
   --tone-brand-bg:   var(--blue-50);   --tone-brand-fg:   var(--blue-700);    --tone-brand-dot:   var(--blue-500);
   --tone-info-bg:    var(--sky-50);    --tone-info-fg:    var(--sky-700);     --tone-info-dot:    var(--sky-500);
   --tone-success-bg: var(--green-50);  --tone-success-fg: var(--green-700);   --tone-success-dot: var(--green-500);
@@ -109,12 +114,12 @@
 
   /* 实心小徽标：白字使用 --text-inverse，全部 ≥ 4.5:1 */
   --tone-neutral-solid: var(--tone-neutral-fg);
-  --tone-brand-solid: var(--tone-brand-fg);
+  --tone-brand-solid: var(--blue-600); /* 白字 5.67:1 */
   --tone-info-solid: var(--tone-info-fg);
   --tone-success-solid: var(--tone-success-fg);
   --tone-warning-solid: var(--tone-warning-fg);
   --tone-attention-solid: var(--tone-attention-fg);
-  --tone-danger-solid: var(--tone-danger-fg);
+  --tone-danger-solid: var(--red-600); /* 白字 5.26:1 */
   --tone-review-solid: var(--tone-review-fg);
 
   /* 阶段：与子状态 tone 分开，不改变状态值或列归属 */
@@ -171,6 +176,12 @@
   --shadow-2: 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);          /* 卡片悬停、分段选中 */
   --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
   --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */
+
+  /* 全局细滚动条 */
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: var(--gray-300);
+  --scrollbar-thumb-hover: var(--gray-400);
+  --scrollbar-track: transparent;
 
   /* 尺寸 */
   --control-h-sm: 28px;
@@ -237,7 +248,7 @@
 
 /* 卡18：原型抽屉等待/备注专用色，用户授权追加；既有Token保持不变。 */
 :root {
-  --drawer-waiting-bg: #FDF6EC;
-  --drawer-waiting-border: #F2D9B8;
-  --drawer-composer-bg: #FFFDF6;
+  --drawer-waiting-bg: var(--orange-25);
+  --drawer-waiting-border: var(--orange-200);
+  --drawer-composer-bg: var(--yellow-10);
 }

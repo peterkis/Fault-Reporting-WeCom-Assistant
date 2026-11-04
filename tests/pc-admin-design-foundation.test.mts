@@ -112,7 +112,7 @@ test('solid badges meet white-text AA and every category meets its specified con
   }
   const contrast = (a: string, b: string) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
   for (const tone of ['neutral', 'brand', 'info', 'success', 'warning', 'attention', 'danger', 'review']) {
-    assert.equal(color('--tone-' + tone + '-solid'), color('--tone-' + tone + '-fg'));
+    assert.equal(color('--tone-' + tone + '-solid'), color(tone==='brand'?'--blue-600':tone==='danger'?'--red-600':'--tone-' + tone + '-fg'));
     assert.ok(contrast(color('--tone-' + tone + '-solid'), color('--text-inverse')) >= 4.5, tone);
   }
   for (const category of [...Object.values(categoryMap), unclassifiedCategory]) {
@@ -179,12 +179,13 @@ test('Card 18 Beijing short times retain seconds in the full title across local/
 
 test('Card 18 record kinds distinguish explicit note events from real status transitions',()=>{
   const base={type:'ticket.status_changed',old_status:null,new_status:null,text:null,audience:'INTERNAL'};
-  for(const status of [{old_status:'NEW'},{new_status:'IN_PROGRESS'}])assert.equal(recordKind({...base,...status,text:'状态变更'}),'status');
+  for(const status of [{old_status:'NEW'},{new_status:'IN_PROGRESS'}])assert.equal(recordKind({...base,...status,text:'状态变更'}),'note');
+  assert.equal(recordKind({...base,old_status:'ACCEPTED',new_status:'IN_PROGRESS',text:'开始处理'}),'status');
   for(const audience of ['INTERNAL','EXTERNAL'])assert.equal(recordKind({...base,audience,text:'正文'}),'note');
   assert.equal(recordKind({...base,audience:'REPORT',text:'报修原文'}),'report');
   for(const text of [null,'','  '])assert.equal(recordKind({...base,text}),'event');
   for(const old_status of [null,'IN_PROGRESS'])assert.equal(recordKind({...base,type:'ticket.note_added',old_status,new_status:'IN_PROGRESS',text:'内部备注'}),'note');
-  assert.equal(recordKind({...base,old_status:'IN_PROGRESS',new_status:'IN_PROGRESS',text:'责任已转交'}),'event');
+  assert.equal(recordKind({...base,old_status:'IN_PROGRESS',new_status:'IN_PROGRESS',text:'责任已转交'}),'note');
 });
 
 const summaryCopy:Record<string,readonly [string,string]>={
@@ -212,4 +213,12 @@ for(const [status,expected] of Object.entries(summaryCopy))for(const self of [tr
 test('Card 18 next step does not offer takeover without allowed action or invent a wait under five minutes',()=>{
   assert.equal(nextSummary({...boardCard({status:'IN_PROGRESS'}),assignee_name:'林舟'},undefined,false),'林舟正在处理');
   assert.equal(nextSummary(boardCard({status:'NEW'}),undefined,false),'尚无人领取');
+});
+
+test('Card 20 T3 semantic colors reference the primitive palette and retire the board underlay',async()=>{
+  const css=await readFile(resolve(root,'app/pc-admin/src/design/tokens.css'),'utf8');
+  const semantic=css.split('/* ---------- 第 2 层')[1]?.split('/* ---------- 第 3 层')[0];assert.ok(semantic);
+  assert.doesNotMatch(semantic,/#(?:[\da-f]{3}){1,2}\b/iu);
+  assert.doesNotMatch(css,/--(?:bg-board|bg-column|gray-board|gray-column)\s*:/u);
+  assert.match(css,/--scrollbar-size:\s*8px/u);
 });

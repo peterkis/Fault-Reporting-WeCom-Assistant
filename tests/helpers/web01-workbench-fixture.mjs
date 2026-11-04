@@ -53,13 +53,13 @@ async function settleManualFixtureProjection(runtime){
   console.log('WBINT_T17_FIXTURE_BASELINE '+JSON.stringify({source_stream:channel.source_stream,scanned:channel.scanned,inserted:channel.inserted,replayed:channel.replayed,channel_failures:channel.failures.length,other_stream_failures:result.failures-channel.failures.length}));
 }
 // Actual Web source through the existing Store Port: there is no Bot inbox/thread to project into a Session.
-export async function seedWeb01NoConversationIntake({pool,text,location='合成位置'}){
+export async function seedWeb01NoConversationIntake({pool,text,location='合成位置',serviceCode=null}){
   const scope={scopeHash:createHash('sha256').update('web01-only-'+randomUUID()).digest('hex'),sourceCorpScope:'web01-synthetic-corp',sourceAppScope:'web01-synthetic-app',proofRef:'web01-synthetic-proof'};
-  const {receipt}=await createYxxSelfServiceStore({pool}).accept({scope,input:{schema_version:1,client_command_id:randomUUID(),description:text,location:{text:location,unknown:false},service_code:null,impact_scope:'SELF',reported_department_text:null,extension:null}});
+  const {receipt}=await createYxxSelfServiceStore({pool}).accept({scope,input:{schema_version:1,client_command_id:randomUUID(),description:text,location:{text:location,unknown:false},service_code:serviceCode,impact_scope:'SELF',reported_department_text:null,extension:null}});
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{precisionV212=false,serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
@@ -69,19 +69,33 @@ export async function withWeb01Fixture(run,{serviceCatalog=/** @type {import('..
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
     if(workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
     const access=createPilotAccessService({pool});
-    const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
+    const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});
     const core=createPilotTicketCore({pool}),tickets=[];
-    for(const [index,[title,location,status]] of scenarios.entries()){
+    for(const [index,[originalTitle,originalLocation,originalStatus]] of scenarios.entries()){
+      // Card 20: opt-in synthetic evidence; ordinary business fixtures retain their original facts.
+      const title=originalTitle+(precisionV212?'（合成）':''),location=originalLocation+(precisionV212?'（合成）':'');
+      const status=precisionV212&&[1,2].includes(index)?'IN_PROGRESS':originalStatus;
+      const serviceCode=precisionV212?['PRINT.PRINTER_DEVICE','NETWORK.ENDPOINT_ACCESS','DIAG.IMAGING_VIEWER','CLINICAL.INPATIENT_WORKSTATION'][index]??null:null;
       const text=title+'。全新合成开发材料，请协助排查。';
-      const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
+      const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location,serviceCode}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;
       const row=(await pool.query(`UPDATE pilot_ticket.ticket SET title=$2,status=$3,reported_location_text=$4,version=2,
         assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval
-        WHERE id=$1::uuid RETURNING *`,[ticket.id,title,status,location,['NEW','QUEUED'].includes(status)?null:principals[index%4].id,index])).rows[0];
+        WHERE id=$1::uuid RETURNING *`,[ticket.id,title,status,location,['NEW','QUEUED'].includes(status)?null:principals[precisionV212?([1,2,3].includes(index)?0:2):index%4].id,index])).rows[0];
       ticket={...ticket,...row};
       const event=await appendTicketEvent({transaction:pool,ticket,eventType:eventTypes[status],actor:{type:'PILOT_USER',id:principals[index%4].id},oldStatus:'NEW',internalNote:'仅供内部的合成处理记录',externalNote:status==='CLOSED'?'本次处置已完成。':null,traceId:'web01-synthetic'});
       if(!(chronologicalTicketEvents||workbenchReviewResolveAndStartEnabled))await pool.query(`UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' hours')::interval WHERE event_id=$1::uuid`,[event.event_id,status==='RESOLVED'?240:index>=9?(index-9)*4:0]);
+      if(precisionV212){
+        const minutes=[1560,3,12,30,30,45,300,90,120,20,40,60,10][index];
+        await pool.query("UPDATE pilot_ticket.ticket SET created_at=platform.local_now()-($2::text||' minutes')::interval WHERE id=$1::uuid",[ticket.id,Math.max(minutes+10,180)]);
+        if(index===0)await pool.query("UPDATE pilot_ticket.ticket SET created_at=platform.local_now()-interval '26 hours' WHERE id=$1::uuid",[ticket.id]);
+        await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' minutes')::interval WHERE event_id=$1::uuid",[event.event_id,minutes]);
+        if(index===0){
+          await appendTicketEvent({transaction:pool,ticket,eventType:'ticket.note_added',actor:{type:'PILOT_USER',id:principals[0].id},oldStatus:status,internalNote:'正在核对打印队列（合成）；状态保持待接单。',externalNote:null,traceId:'v212-synthetic-note'});
+          await appendTicketEvent({transaction:pool,ticket,eventType:'ticket.note_added',actor:{type:'PILOT_USER',id:principals[0].id},oldStatus:status,internalNote:null,externalNote:'请保留待打印的文件（合成）。',traceId:'v212-synthetic-external-note'});
+        }
+      }
       tickets.push({ticket,intake,event});
     }
     const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey:'web01-only-synthetic-identity-key',decisionStore:createDecisionStore(),

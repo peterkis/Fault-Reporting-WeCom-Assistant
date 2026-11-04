@@ -171,5 +171,8 @@ to {transform: translateX(0);opacity: 1; } }
 .compact-account{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);padding:var(--space-1-5);background:transparent;cursor:pointer}
 .account .read-only-badge {margin-left:0;padding:0;background:transparent;border-radius:0;}
 .connection-status {display:inline-flex;align-items:center;gap:var(--space-1-5);white-space:nowrap;color:var(--text-secondary);font-size:var(--fs-xs);}
-.connection-status::before {content:"";width:6px;height:6px;border-radius:var(--radius-full);background:var(--text-secondary);}
+.connection-status::before {content:"";width:var(--space-1-5);height:var(--space-1-5);border-radius:var(--radius-full);background:var(--tone-neutral-dot);}
+.connection-status[data-realtime-status=disabled]::before {display:none;}
+.connection-status[data-realtime-status=live]::before {background:var(--tone-success-dot);}
+.connection-status:is([data-realtime-status=reconnecting],[data-realtime-status=polling],[data-realtime-status=offline])::before {background:var(--tone-attention-dot);}
 @media(max-width:900px) {.topbar .topbar-desktop-settings {display:none;}}

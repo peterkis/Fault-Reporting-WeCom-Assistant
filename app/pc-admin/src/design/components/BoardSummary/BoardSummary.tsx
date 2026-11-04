@@ -13,7 +13,7 @@ export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,
   scope:'team'|'related';relatedAvailable:boolean;onScope:(value:'team'|'related')=>void;
 }){
   const tabs=[
-    {key:'all',label:'全部',tone:'neutral',note:'当前查询范围内的事项。'},
+    {key:'all',label:'全部',tone:'neutral',note:'计数基于已加载数据。'},
     {key:'mine',label:'我负责',tone:'brand',note:'仅计当前资料中由你负责处理的事项。'},
     {key:'related',label:'与我有关',tone:'brand',note:'查看与你有关的事项；当前没有独立计数。'},
     {key:'overdue',label:'已超时',tone:'danger',note:'仅计待受理工单；处理中暂未计入。'},
@@ -23,7 +23,7 @@ export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,
     {tabs.map(({key,label,tone,note})=>{
       const unavailable=partial||(key==='mine'&&!mineAvailable),metric=key==='mine'||key==='overdue'||key==='today'?key:null;
       const count=loading||unavailable||key==='related'?null:metric?items.filter(item=>matchesBoardSummary(item,metric,now)).length:items.length;
-      const description='基于已加载的 '+items.length+' 项。'+note+(loading?'正在读取，暂不显示计数。':partial?'部分事项读取失败，暂无法统计。':key==='mine'&&!mineAvailable?'当前没有本人处理关系资料，暂无法统计。':'');
+      const description=(key==='all'?'已加载 '+items.length+' 项；':'基于已加载的 '+items.length+' 项。')+note+(loading?'正在读取，暂不显示计数。':partial?'部分事项读取失败，暂无法统计。':key==='mine'&&!mineAvailable?'当前没有本人处理关系资料，暂无法统计。':'');
       const active=metric?selected===metric:!selected&&(key==='related'?scope==='related':scope==='team');
       return <Button key={key} tone="ghost" className="ds-summary-card" data-summary-filter={key} data-summary-tone={tone}
         {...(key==='related'?{'data-action':'related-scope'}:{})} data-overdue={key==='overdue'&&count!==null&&count>0?'true':undefined}

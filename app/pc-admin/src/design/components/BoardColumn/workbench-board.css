@@ -2,7 +2,7 @@
 .range-bar {display: flex;align-items: center;flex-wrap: wrap;gap: var(--space-4);margin-bottom: var(--space-4);font-size: var(--fs-sm);color: var(--text-secondary); }
 .range-bar label {display: inline-flex;align-items: center;gap: var(--space-1-5);margin-left: auto; }
 .range-bar select {border: 0;box-shadow: var(--shadow-1);background: var(--bg-canvas);color: var(--text-primary);border-radius: var(--radius-sm);min-height: var(--control-h-md);padding: var(--space-1) var(--space-2); }
-.board {display: grid;grid-template-columns: repeat(3,minmax(0,1fr));gap: var(--space-4);align-items: start;background: var(--bg-board); }
+.board {display: grid;grid-template-columns: repeat(3,minmax(0,1fr));gap: var(--space-4);align-items: start; }
 .board-column {min-width: 0;background: var(--bg-subtle);border-radius: var(--radius-lg);padding: var(--space-2) var(--space-2) var(--space-1); }
 .board-column.active {background: var(--bg-subtle); }
 .board-column.closed {background: var(--bg-subtle); }
@@ -27,3 +27,8 @@
 .board {grid-template-columns: minmax(0,1fr); }
 .range-bar label {margin-left: 0; }
 }
+
+/* Card 20: keep TicketCard's shared primitive; tighten only the board's metadata rhythm. */
+.board .ds-ticket-body {grid-template-rows:none;}
+.board .ds-ticket-body .ds-ticket-metadata:is(:empty,:has(.card-meta:empty)) {display:none;}
+.board .ds-ticket-body .ds-ticket-metadata+.card-footer {margin-top:var(--space-0-5);}

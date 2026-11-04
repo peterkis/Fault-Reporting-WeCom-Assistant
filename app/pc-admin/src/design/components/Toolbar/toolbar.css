@@ -24,3 +24,9 @@
 @media(max-width:1100px) {.ds-page>.ds-toolbar:has(.ds-board-filter-row) {height: auto; flex-wrap: wrap;} .ds-board-filter-row {order: 3; flex-basis: 100%;}}
 @media(max-width:900px) {.ds-toolbar-filter-content .search-filters {grid-template-columns: minmax(0,1fr);} .ds-toolbar .inbox-search {max-width: none;} .ds-page>.ds-toolbar {gap: var(--space-1);} .ds-toolbar .ds-segmented>.ds-button.button,.ds-toolbar .ds-segmented>span {padding-inline: var(--space-2);} }
 @media(prefers-reduced-motion:reduce) {.ds-toolbar-filters * {transition: none; animation: none;}}
+
+/* Card 20 caller layout keeps the last chip intact and the clear action adjacent to it. */
+.ds-board-filter-layout {display:contents;}
+.ds-board-filter-layout:has(>[data-action=clear-board-filters]) {display:flex;align-items:center;gap:var(--space-2);flex:1 1 0;min-width:min(100%,calc(var(--space-16) * 4 + var(--space-8)));}
+.ds-board-toolbar .ds-board-filter-layout>.ds-board-filter-row:has(>.ds-board-filter-pill[data-filter-active]~.ds-board-filter-pill[data-filter-active]) {flex:0 1 auto;min-width:0;}
+.ds-board-toolbar .ds-board-filter-layout>.ds-button[data-action=clear-board-filters] {min-width:var(--control-h-sm);padding-inline:0;font-size:var(--fs-sm);}
