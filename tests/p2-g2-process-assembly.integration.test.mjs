@@ -97,8 +97,8 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
       await cluster.submitSyntheticFrame(frame('处方提交不了', people[2], 'single'));
       await until(async () => (await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n === 1);
       const origin = started.origin, cookie = started.cookies[0];
-      browser = await launchSystemBrowser({ url: origin + '/workbench/lifecycle', width: 1366, height: 768, cookies: [cookie] });
-      await browser.waitFor("document.body.textContent.includes('工单')");
+      browser = await launchSystemBrowser({ url: origin + '/workbench/app/', width: 1366, height: 768, cookies: [cookie] });
+      await browser.waitFor("Boolean(document.querySelector('.ds-board-page-header'))");
       const organic = (await pool.query(`SELECT j.entry_mode,l.leg_type FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
         JOIN intake.service_intake i ON i.id=l.source_intake_id WHERE i.reporter_wecom_userid=$1`, [people[2]])).rows;
       assert.deepEqual(organic, [{ entry_mode: 'DIRECT_ORGANIC', leg_type: 'DIRECT_ORGANIC' }]);
@@ -133,13 +133,13 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
       assert.equal((await fetch(origin+'/health/ready')).status,503,'Gateway loss remains visible in service readiness');
       const disconnectedTicket=(await pool.query(`SELECT t.id FROM pilot_ticket.ticket t JOIN intake.service_intake i ON i.id=t.source_intake_id
         WHERE i.reporter_wecom_userid=$1`,[people[1]])).rows[0];
-      await browser.evaluate(`location.hash=${JSON.stringify('queue=queued&selected='+disconnectedTicket.id)};location.reload()`,{awaitPromise:false});
-      await browser.waitFor("Array.from(document.querySelectorAll('#lc-detail button')).some(b=>b.textContent==='接单')");
-      await browser.evaluate("Array.from(document.querySelectorAll('#lc-detail button')).find(b=>b.textContent==='接单').click()");
-      await browser.waitFor("document.querySelector('#lc-detail form button')?.textContent==='确认：接单'");
-      await browser.evaluate("document.querySelector('#lc-detail form button').click()");
-      await browser.waitFor("document.querySelector('.detail-header .badge')?.textContent==='已接单'");
-      await browser.waitFor("document.querySelector('#lc-detail .delivery')?.textContent.includes('待处理')");
+      const staffHeaders={cookie:cookie.name+'='+cookie.value};
+      const staffBootstrap=await(await fetch(origin+'/api/lifecycle/bootstrap',{headers:staffHeaders})).json();
+      const staffTicket=await(await fetch(origin+'/api/tickets/'+disconnectedTicket.id,{headers:staffHeaders})).json();
+      const accept={client_command_id:randomUUID(),expected_version:staffTicket.version,reason_code:'OPERATOR_REVIEWED'};
+      const accepted=await fetch(origin+'/api/tickets/'+disconnectedTicket.id+'/accept',{method:'POST',headers:{...staffHeaders,origin,'content-type':'application/json','x-csrf-token':staffBootstrap.csrf_token,'idempotency-key':accept.client_command_id,'if-match':'"'+accept.expected_version+'"'},body:JSON.stringify(accept)});
+      assert.equal(accepted.status,200,await accepted.text());
+      assert.equal((await(await fetch(origin+'/api/tickets/'+disconnectedTicket.id,{headers:staffHeaders})).json()).status,'ACCEPTED');
       await until(async()=>(await pool.query(`SELECT count(*)::integer AS n FROM communication.delivery_attempt a
         JOIN communication.ticket_notification_binding b ON b.delivery_id=a.delivery_id WHERE b.ticket_id=$1
         AND b.notification_type='TICKET_ACCEPTED' AND a.outcome='RETRY_SCHEDULED' AND a.error_code='GATEWAY_UNAVAILABLE'`,[disconnectedTicket.id])).rows[0].n>0);
@@ -149,7 +149,8 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
       const reconnectAt=String(Date.now());await cluster.reconnectGatewayForFault('G2-F01');
       await until(async()=>cluster.status().gateway_authenticated===true&&(await fetch(origin+'/health/ready')).status===200);
       const on=controls.append({scenario_id:'G2-F01',role:'GATEWAY',action:'reconnect',started_physical_epoch_ms:reconnectAt,state:cluster.status()});
-      await browser.waitFor("document.querySelector('#lc-detail .delivery')?.textContent.includes('已发送')");
+      await until(async()=>(await pool.query(`SELECT d.status FROM communication.ticket_notification_binding b JOIN communication.delivery d ON d.id=b.delivery_id
+        WHERE b.ticket_id=$1 AND b.notification_type='TICKET_ACCEPTED'`,[disconnectedTicket.id])).rows[0].status==='SENT');
       assert.equal((await cluster.syntheticProviderCounts()).calls,beforeReconnectCalls+1);
       const acceptedOnce=(await pool.query(`SELECT count(*)::integer AS n FROM communication.ticket_notification_binding
         WHERE ticket_id=$1 AND notification_type='TICKET_ACCEPTED'`,[disconnectedTicket.id])).rows[0].n;
@@ -163,8 +164,8 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
       assert.equal((await pool.query('SELECT count(*)::integer AS n FROM channel.message_inbox WHERE msg_id=$1', [waiting.body.msgid])).rows[0].n, 1);
       assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n, 2);
       assert.equal((await cluster.syntheticProviderCounts()).calls,beforeReconnectCalls+1,'replayed inbound does not resend the accepted notification');
-      t.diagnostic(JSON.stringify({scenario_id:'G2-F01',surface:'ACTUAL_GATEWAY_DISCONNECT_WORKER_RECOVERY_BROWSER_AND_POSTGRES_MOCK_SDK',
-        persisted_ticket_action_committed_while_disconnected:true,ui_pending_then_sent:true,additional_sdk_calls:1,accepted_notification_bindings:acceptedOnce}));
+      t.diagnostic(JSON.stringify({scenario_id:'G2-F01',surface:'ACTUAL_GATEWAY_DISCONNECT_WORKER_RECOVERY_HTTP_AND_POSTGRES_MOCK_SDK',
+        persisted_ticket_action_committed_while_disconnected:true,delivery_pending_then_sent:true,additional_sdk_calls:1,accepted_notification_bindings:acceptedOnce}));
       await cluster.submitSyntheticFrame(frame('眼科多个诊室都打不开工作站。', people[2]));
       const candidate = await until(async () => (await pool.query('SELECT id FROM incident.candidate_review LIMIT 1')).rows[0]);
       await until(async () => (await pool.query("SELECT count(*)::integer AS n FROM communication.delivery WHERE status IN ('PENDING','LEASED','SENDING')")).rows[0].n === 0);

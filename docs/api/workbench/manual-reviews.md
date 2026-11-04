@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 W；调用方 [lifecycle UI](../../../web/p2-workbench/lifecycle.js)。条件：`TICKET_LIFECYCLE_WORKBENCH_ENABLED` 默认 false。实现：[HTTP](../../../app/server/src/p2-016-workbench-http.mts)、[manual review facade](../../../app/server/src/p2-016-manual-review-facade.mts)、[P2-015 store/executor](../../../app/server/src/p2-015-manual-review.mts)。权限沿用内部坐席、工单/Journey 范围。
+宿主 W；调用方 [正式PC详情](../../../app/pc-admin/src/app/WorkbenchDetail.tsx)。条件：`TICKET_LIFECYCLE_WORKBENCH_ENABLED` 默认 false。实现：[HTTP](../../../app/server/src/p2-016-workbench-http.mts)、[manual review facade](../../../app/server/src/p2-016-manual-review-facade.mts)、[P2-015 store/executor](../../../app/server/src/p2-015-manual-review.mts)。权限沿用内部坐席、工单/Journey 范围。
 
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |

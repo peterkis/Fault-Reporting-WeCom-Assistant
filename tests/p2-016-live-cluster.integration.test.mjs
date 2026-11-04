@@ -33,7 +33,7 @@ test('P2-016 approved topology uses three real bounded processes, rule-first Wor
       assert.equal(metrics.gateway_authenticated,0);assert.ok(metrics.worker_active_timers>=1);
       const cookie=started.cookies[0].name+'='+started.cookies[0].value;
       assert.equal((await fetch(started.origin+'/api/tickets',{headers:{cookie}})).status,200);
-      assert.equal((await fetch(started.origin+'/workbench/lifecycle')).status,200);
+      assert.equal((await fetch(started.origin+'/workbench/lifecycle',{redirect:'manual'})).status,302);
       assert.equal((await pool.query("SELECT count(*)::integer n FROM communication.delivery WHERE status='SENT'")).rows[0].n,0);
       t.diagnostic(JSON.stringify({process_count:3,pool_max:7,live_provider_calls:0,rule_first_worker:true}));
     }finally{assert.equal((await cluster.stop()).process_count,0);}

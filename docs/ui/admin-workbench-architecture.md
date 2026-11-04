@@ -1,5 +1,7 @@
 # 正式管理端技术方案（WEB01–WEB05）
 
+2026-11-04 前向退役：[Issue #145](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/145)以新PC现有流程为唯一界面，绿色旧页和专属资源删除，不迁移旧页独有流程；旧地址仅302/no-store入口跳转。此项替代下文历史段落“保留旧管理端”的现行要求；成员端、合成/离线原型及历史证据保留。详见[执行记录](../../plans/pc-admin-design-v21/legacy-workbench-retirement.md)。
+
 2026-10-22 源码布局前向调整：正式包现位于 `app/pc-admin`，沿 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md) 保持原前端与服务端边界。根依赖、统一构建、`/workbench/app/` 与 `.build/runtime/web/admin-workbench` 不变；整体应用目标和分步状态见[目录说明](../../app/README.md)。下文 WEB01 首版的目录及范围描述保留原日期含义。
 
 状态：技术选型已由用户确认；实现与运行验证以 WEB01 PR 实际结果为准。日期：2026-10-07。

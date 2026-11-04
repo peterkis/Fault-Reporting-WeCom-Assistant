@@ -4,7 +4,7 @@
 
 2026-10-17 会话增量：[联系人收件箱、相关主题与显式聊天投影](conversation-inbox.md)使用独立默认关闭开关；本页原默认接口与历史验证记录保持原合同。
 
-宿主：W。调用方：[既有会话 UI](../../../web/p2-workbench/workbench.js)。实现：[HTTP 路由](../../../app/server/src/p2-006-workbench-http.mts)、[query](../../../app/server/src/p2-006-workbench-query.mts)、[command facade](../../../app/server/src/p2-006-workbench-command-facade.mts)、[授权](../../../app/server/src/p2-006-workbench-authorization.mts)。工厂使用enabled参数；持久政策Flag为默认false的 `HUMAN_WORKBENCH_V2_ENABLED`，获授权G1装配显式enabled:true。消息外发还受通信/实际sender授权和开关约束。
+宿主：W。调用方：[正式PC会话](../../../app/pc-admin/src/features/conversations/ConversationInbox.tsx)。实现：[HTTP 路由](../../../app/server/src/p2-006-workbench-http.mts)、[query](../../../app/server/src/p2-006-workbench-query.mts)、[command facade](../../../app/server/src/p2-006-workbench-command-facade.mts)、[授权](../../../app/server/src/p2-006-workbench-authorization.mts)。工厂使用enabled参数；持久政策Flag为默认false的 `HUMAN_WORKBENCH_V2_ENABLED`，获授权G1装配显式enabled:true。消息外发还受通信/实际sender授权和开关约束。
 
 ## 查询入口
 

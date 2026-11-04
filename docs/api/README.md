@@ -73,3 +73,6 @@
 ## 通知控制（T33，默认关闭）
 
 [Incident 分路投递控制](workbench/incident-delivery-control.md) 记录独立当前授权、v2 尝试、原 UUID/正文与 scoped 恢复；[Conversation 前向合同](workbench/conversations.md#t33-会话-uuid-投递控制前向合同) 记录真实 Session 既有 receipt 用途及显式 061 前置。原 Ticket 路由沿 [Ticket 合同](workbench/tickets.md)。
+
+
+2026-11-04：绿色旧版页面退役，界面统一以新PC现有流程为准；旧工作台地址只保留到新PC的302/no-store跳转，旧静态资源404，业务API与成员端不变。现行模块调用方链接已切换正式PC源码；历史证据及固定祖先验证保持原对象。详见[页面入口](platform/auth-health.md)与[退役记录](../../plans/pc-admin-design-v21/legacy-workbench-retirement.md)。

@@ -173,7 +173,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         alter(root, relative, readFileSync(path.join(root, relative), 'utf8') + '\n', () => assert.throws(() => verifyArtifact(root), /MIGRATION_INPUT_DRIFT/u));
       });
     }
-    for (const relative of ['app/server/src/migration-canary.mjs', 'app/server/src/p2-015-decision-store.mjs', 'web/p2-workbench/index.html']) {
+    for (const relative of ['app/server/src/migration-canary.mjs', 'app/server/src/p2-015-decision-store.mjs', 'contracts/conversation_thread.schema.json']) {
       await t.test('artifact tampering is rejected: ' + relative, () => {
         alter(root, '.build/runtime/' + relative, '// changed', () => assert.throws(() => verifyArtifact(root), /MIGRATION_OUTPUT_TAMPERED/u));
       });
@@ -261,7 +261,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
       });
     });
     await t.test('missing required resources fail without source fallback', () => {
-      const resource = path.join(root, 'web/p2-workbench/index.html'), content = readFileSync(resource);
+      const resource = path.join(root, 'contracts/conversation_thread.schema.json'), content = readFileSync(resource);
       rmSync(resource);
       try { assert.throws(() => build(root)); assert.equal(existsSync(path.join(root, '.build/artifact-proof.json')), false); }
       finally { writeFileSync(resource, content); }

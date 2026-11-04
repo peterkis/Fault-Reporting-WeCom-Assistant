@@ -36,8 +36,7 @@ test('P2-012 both parsed OpenAPI documents declare canonical subscription destin
       assert.deepEqual(item.post.responses[409],{description:'Version, state or command conflict'});
     }
   }
-  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile(sourceFile('app/server/src/p2-012-incident-query.mjs'),'utf8');
-  assert.ok(ui.includes("root+'/subscriptions/'+s.id+'/direct-destinations?limit=100'"));
+  const query=await readFile(sourceFile('app/server/src/p2-012-incident-query.mjs'),'utf8');
   assert.ok(query.includes('subscriptions\\/([a-f0-9-]{36})\\/direct-destinations'));
 });
 

@@ -260,8 +260,8 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
  try{
   const routes=loadRoutes(root), raw=readFileSync(path.join(root,'plans/typescript-migration/test-routing.json'),'utf8');
   await t.test('all legacy entries and aliases remain represented',()=>{
-    // Frozen original legacy paths and the six original T02 companion cases remain required.
-    // New explicitly registered workbench tickets do not change this baseline cohort.
+    // The frozen cohort stays represented by active entries or explicit old-UI
+    // retirements; unrelated removal still fails and frozen checkouts are unchanged.
     const frozen=record(JSON.parse(git(root,['show',ROUTING_BASE+':plans/typescript-migration/test-routing.json'])) as unknown);
     const legacy=[...new Set(Object.values(record(frozen.proposed_groups)).flatMap(strings))];
     assert.equal(legacy.length,207);
@@ -269,7 +269,8 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     const required=new Set([...legacy,'tests/p1-migration-compatibility.test.mjs','tests/p1-foundation-cli.test.mjs','tests/platform-postgres-callback.integration.test.mjs','tests/platform-boundary-contracts.test.mjs','tests/migration-canary.test.mjs','tests/p1-011-typescript-compatibility.test.mjs']);
     assert.equal(required.size,213);
     const declared=new Set(routes.entries.map(entry=>logical(entry.path)));
-    assert.equal([...required].filter(file=>declared.has(file)).length,213);
+    assert.equal([...required].filter(file=>declared.has(file)||routes.retired?.some(r=>r.path===file)).length,213);
+    for(const r of routes.retired??[])assert.ok(r.replacements.length&&r.replacements.every(p=>routes.entries.some(e=>e.path===p)));
     assert.equal(select(routes,'selection','yxx-current-readiness').entries[0]?.path,'tests/yxx-current-readiness.test.mts');
     assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);
   });
@@ -277,6 +278,16 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     const selected=select(routes,'alias','test:p2:007');assert.equal(selected.entries.length,7);
     const one=expandPatterns(['tests/p2-007-*.test.mjs'],routes.entries);assert.deepEqual(one,expandPatterns(['tests/p2-007-*.test.mjs'],[...routes.entries].reverse()));
     assert.throws(()=>expandPatterns(['tests/absent-*.test.mjs'],routes.entries),/EMPTY_TEST_PATTERN/u);
+  });
+  await t.test('old UI retirement is explicit, bounded and preserves operational legacy aliases',()=>{
+    const doc=record(JSON.parse(raw) as unknown);assert.ok(Array.isArray(doc.retired_entries));assert.ok(doc.retired_entries.length>0);
+    const first=record(doc.retired_entries[0]);
+    for(const value of [[],[first,first],[{...first,issue:0}],[{...first,reason:'remove arbitrary tests'}],[{...first,replacements:['tests/missing.test.mts']}],[{...first,path:'tests/p2-006-workbench.test.mjs'}]]){
+      alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,retired_entries:value}),()=>assert.throws(()=>loadRoutes(root),/LEGACY_TEST_REMOVED|RETIREMENT/u));
+    }
+    const selected=expandPatterns([String(first.path)],routes.entries,routes.retired);
+    assert.deepEqual(selected.map(e=>e.path).sort(),strings(first.replacements).sort());
+    assert.ok(selected.every(e=>!routes.retired?.some(r=>r.path===e.path)));
   });
   await t.test('removed, duplicate and unregistered tests are rejected',()=>{
     const doc=record(JSON.parse(raw) as unknown);assert.ok(Array.isArray(doc.entries));

@@ -418,16 +418,6 @@
     "tests/fixtures/p2-g2/scenarios.v1.jsonl",
     "tests/fixtures/retired-self-service/self-service.html",
     "tests/fixtures/retired-self-service/self-service.css",
-    "tests/fixtures/retired-self-service/self-service.js",
-    "web/p2-workbench/incidents.html",
-    "web/p2-workbench/incidents.js",
-    "web/p2-workbench/index.html",
-    "web/p2-workbench/lifecycle.css",
-    "web/p2-workbench/lifecycle.html",
-    "web/p2-workbench/lifecycle.js",
-    "web/p2-workbench/time-display.mjs",
-    "web/p2-workbench/workbench-state.mjs",
-    "web/p2-workbench/workbench.css",
-    "web/p2-workbench/workbench.js"
+    "tests/fixtures/retired-self-service/self-service.js"
   ]
 }

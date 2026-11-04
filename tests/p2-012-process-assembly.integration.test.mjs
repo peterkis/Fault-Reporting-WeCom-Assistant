@@ -23,7 +23,7 @@ test('P2-012 network-off three-role assembly serves Incident and closes children
       inboundScope:{bot_id:'bot-test',person_hashes:['synthetic-reporter-0','synthetic-reporter-1'].map(textHashP2016),group_hashes:[textHashP2016('synthetic-incident-group')]},allowedTargetHashes:[],secret:'synthetic-not-used',wsUrl:'wss://invalid.example.test'};
     for(let iteration=0;iteration<2;iteration++){
       const cluster=createP2012LiveCluster(config,{gatewayEnabled:false,senderEnabled:false});
-      try{const started=await cluster.start();assert.equal((await fetch(started.origin+'/workbench/incidents')).status,200);
+      try{const started=await cluster.start();assert.equal((await fetch(started.origin+'/workbench/incidents',{redirect:'manual'})).status,302);
         let ready=false;
         for(let attempt=0;attempt<200;attempt++){
           const result=(await pool.query(`SELECT c.status='EXPIRED' AND EXISTS(SELECT 1 FROM pilot_ticket.ticket WHERE source_intake_id=$2::uuid) AS ready

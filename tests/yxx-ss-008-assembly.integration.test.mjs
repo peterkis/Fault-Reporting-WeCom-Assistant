@@ -304,14 +304,10 @@ test('SS-008 four actual sources coexist on 033/034 with independent lineage and
       const items=(await member.request('/api/yixiaoxiu/my-reports')).json().items;
       assert.equal(items.filter(x=>x.kind==='WEB_REQUEST').length,1);assert.equal(items.filter(x=>x.kind==='BOT_TICKET').length,1);
       const webTicket=(await f.pool.query(`SELECT i.pilot_ticket_id::text AS id FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE b.request_ref=$1`,[ref])).rows[0].id;
-      const staffBrowser=await launchSystemBrowser({url:f.origin+'/workbench/lifecycle#queue=queued&selected='+webTicket,width:1440,height:900,cookies:[f.runtime.authenticate.browserCookie()]});
-      try{
-        await staffBrowser.waitFor("document.querySelector('#lc-detail').textContent.includes('网页报修')");
-        assert.ok(await staffBrowser.evaluate("document.querySelector('#lc-detail').textContent.includes('处方提交不了')"));
-        assert.ok(await staffBrowser.evaluate("document.querySelector('#lc-detail').textContent.includes('SS008网页追加说明')"));
-        assert.ok(await staffBrowser.evaluate("document.querySelector('#lc-detail').textContent.includes('聊天与人工回复不可用')"));
-        assert.equal(await staffBrowser.evaluate("[...document.querySelectorAll('#lc-detail button')].some(b=>b.textContent==='进入会话与人工回复')"),false);
-      }finally{await staffBrowser.close();}
+      const staffCookie=f.runtime.authenticate.browserCookie(),staffHeaders={cookie:staffCookie.name+'='+staffCookie.value};
+      const staffResponse=await fetch(f.origin+'/api/tickets/'+webTicket,{headers:staffHeaders});assert.equal(staffResponse.status,200);
+      const staff=await staffResponse.json();assert.ok(JSON.stringify(staff).includes('处方提交不了'));assert.ok(JSON.stringify(staff).includes('SS008网页追加说明'));
+      assert.ok(staff.web_report);assert.equal(staff.web_report.source_kind,'WEB_REQUEST');
       assert.equal(f.providerCalls.length,0);
     }finally{await self.stop();}
   },{webSchema:true});

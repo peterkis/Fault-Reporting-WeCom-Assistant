@@ -8,7 +8,6 @@ export type P2012LiveApproval = Partial<Record<'live' | 'scope' | 'send' | 'publ
 export interface P2012RuntimeOptions extends P2016RuntimeOptions { incidentFlags?: unknown; incidentLiveApproval?: P2012LiveApproval | null; incidentTestLabel?: boolean; incidentBackgroundMaintenance?: boolean;incidentCandidateWorkspaceEnabled?:boolean;incidentInternalNotesEnabled?:boolean;incidentPublicProgressEnabled?:boolean;incidentOwnerTransferEnabled?:boolean;incidentDeliveryControlEnabled?:boolean;incidentDeliveryControlPermissions?:IncidentDeliveryControlPermissionPort|null }
 type ExtensionOptions = { pool: PostgresPool;deliveryControlEnabled?:boolean;deliveryControlPermissions?:IncidentDeliveryControlPermissionPort|null;externalSendEnabled?:boolean; realtime?: { wakeup?: (() => unknown | Promise<unknown>) | undefined }; featureFlags?: unknown; testLabel?: boolean; backgroundMaintenance?: boolean;candidateWorkspaceEnabled?:boolean; internalNotesEnabled?:boolean; publicProgressEnabled?:boolean;ownerTransferEnabled?:boolean; communicationAppend?: Parameters<typeof createP2012NotificationPolicy>[0]['communicationAppend'];currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined };
 export type P2012WorkbenchExtension = ReturnType<typeof createP2012WorkbenchExtension>;
-import { readFile } from 'node:fs/promises';
 import { createP2012IncidentQuery } from './p2-012-incident-query.mjs';
 import { createP2012IncidentCommandService } from './p2-012-incident-command-service.mjs';
 import { createP2012NotificationPolicy } from './p2-012-notification-policy.mjs';
@@ -64,12 +63,6 @@ export function createP2012WorkbenchExtension({pool,deliveryControlEnabled=false
     async ready(){if(!enabled)return true;try{return await deliveryControl.ready()&&(!ownerTransferEnabled||await ownerTransferSchemaReady(pool))&&(!publicProgressEnabled||await publicProgressSchemaReady(pool))&&(!internalNotesEnabled||await internalNoteSchemaReady(pool))&&(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
     reporterAdapter:enabled?createP2012ReporterTimelineAdapter({pool,enabled}):null,
     authenticatedHandler:createP2012WorkbenchHttp({query,commands,deliveryControl,enabled,candidateWorkspaceEnabled:enabled&&candidateWorkspaceEnabled,internalNotesEnabled:enabled&&internalNotesEnabled,publicProgressEnabled:enabled&&publicProgressEnabled,ownerTransferEnabled:enabled&&ownerTransferEnabled}),
-    async staticHandler(pathname: string,response: Parameters<NonNullable<G1RuntimeExtension['staticHandler']>>[1]){
-      const files: Record<string, readonly [string, string]>={'/workbench/incidents':['incidents.html','text/html'],'/static/workbench/incidents.js':['incidents.js','text/javascript']};
-      const item=files[pathname];if(!item)return false;
-      if(!enabled){response.writeHead(503,{'content-type':'text/plain; charset=utf-8'});response.end('Incident 未启用');return true;}
-      response.writeHead(200,{'content-type':item[1]+'; charset=utf-8','cache-control':'no-store'});response.end(await readFile(new URL('../../../web/p2-workbench/'+item[0],import.meta.url)));return true;
-    },
     async runOnce(){
       if(!enabled||!backgroundMaintenance)return {processed:0};
       const correlated=await correlation.runOnce();

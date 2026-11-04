@@ -117,7 +117,7 @@ async function cleanupStaleProfiles() {
   }
 }
 
-async function launchOne({ executable, origin, cookie, label, headless,initialPath='/workbench' }: { executable: string; origin: string; cookie: BrowserCookie; label: string; headless: boolean; initialPath?: string }) {
+async function launchOne({ executable, origin, cookie, label, headless,initialPath='/workbench/app/' }: { executable: string; origin: string; cookie: BrowserCookie; label: string; headless: boolean; initialPath?: string }) {
   const profile = await mkdtemp(join(tmpdir(), 'p2-g1-live-browser-'));
   const argumentsList = [
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--new-window',
@@ -298,10 +298,10 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
   }
 }
 
-export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false,initialPath='/workbench',requireCleanupSuccess=false }: BrowserOptions = {}) {
+export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false,initialPath='/workbench/app/',requireCleanupSuccess=false }: BrowserOptions = {}) {
   if (typeof origin !== 'string' || !/^http:\/\/127\.0\.0\.1:[0-9]{4,5}$/u.test(origin)
     || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4 || typeof headless !== 'boolean'
-    || !['/workbench','/workbench/lifecycle'].includes(initialPath)||typeof requireCleanupSuccess!=='boolean') {
+    || !['/workbench/app/','/workbench/app/incidents/candidates'].includes(initialPath)||typeof requireCleanupSuccess!=='boolean') {
     throw new TypeError('P2_G1_TEST_BROWSER_CONFIGURATION_INVALID');
   }
   await cleanupStaleProfiles();

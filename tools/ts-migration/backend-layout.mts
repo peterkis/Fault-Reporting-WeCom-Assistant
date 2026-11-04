@@ -89,10 +89,22 @@ export function assertBackendLayout(root:string,files:readonly string[],baseline
     sources.push(item.source);targets.push(item.target);
   }
   if(expected.length!==382||JSON.stringify([...sources].sort())!==JSON.stringify(expected)||new Set(targets).size!==targets.length)throw new Error('MIGRATION_LAYOUT_MAPPING_INVALID');
+  const retirements='retired_sources' in value?value.retired_sources:[];
+  if(!Array.isArray(retirements))throw Error('MIGRATION_LAYOUT_RETIREMENT_INVALID');
+  const retired=new Set<string>();
+  for(const retirement of retirements){
+    if(!retirement||typeof retirement!=='object'||Object.keys(retirement).sort().join(',')!=='issue,reason,source,target'
+      ||!('source' in retirement)||retirement.source!=='scripts/p2-006-preview.mjs'
+      ||!('target' in retirement)||retirement.target!=='app/server/scripts/p2-006-preview.mjs'
+      ||!('reason' in retirement)||retirement.reason!=='LEGACY_GREEN_UI_PREVIEW_RETIRED'
+      ||!('issue' in retirement)||!Number.isSafeInteger(retirement.issue)||(retirement.issue as number)<1||retired.has(retirement.target))throw Error('MIGRATION_LAYOUT_RETIREMENT_INVALID');
+    if(files.includes(retirement.target)||files.includes(retirement.target.slice(0,-4)+'.mts'))throw Error('MIGRATION_LAYOUT_RETIREMENT_RESURRECTED');
+    retired.add(retirement.target);
+  }
   if(files.some(file=>/^(?:src|scripts)\//u.test(file))||existsSync(path.join(root,'src'))||existsSync(path.join(root,'scripts')))throw new Error('MIGRATION_OLD_SOURCE_ROOT');
   // The forward map records placement. A later approved MJS-to-MTS conversion
   // keeps that identity; an already typed source cannot move back to MJS.
-  if(targets.some(file=>!files.includes(file)&&!(file.endsWith('.mjs')&&files.includes(file.slice(0,-4)+'.mts'))))throw new Error('MIGRATION_LAYOUT_SOURCE_MISSING');
+  if(targets.some(file=>!files.includes(file)&&!(file.endsWith('.mjs')&&files.includes(file.slice(0,-4)+'.mts'))&&!retired.has(file)))throw new Error('MIGRATION_LAYOUT_SOURCE_MISSING');
   const logical=new Set<string>();
   for(const file of files.filter(isProductionSource)){
     const identity=logicalSource(file).replace(/\.mts$/u,'.mjs');

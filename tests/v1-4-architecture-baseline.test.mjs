@@ -411,10 +411,10 @@ test('P2-006 completion has a runnable workbench and no migration 022', () => {
     'app/server/src/p2-006-workbench-delivery-control.mjs',
     'app/server/src/p2-006-workbench-http.mjs',
     'app/server/src/p2-006-workbench-static.mjs',
-    'web/p2-workbench/index.html',
+    'app/pc-admin/index.html',
     'tests/p2-006-workbench.test.mjs',
     'tests/p2-006-workbench.integration.test.mjs',
-    'tests/p2-006-workbench-browser.test.mjs',
+    'tests/pc-admin-legacy-retirement.browser.test.mts',
   ]) assert.equal(sourceExists(relativePath), true, relativePath);
   assert.equal(fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), false);
 });
