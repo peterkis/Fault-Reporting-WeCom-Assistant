@@ -1,9 +1,9 @@
-.ds-filter-chip.ds-board-filter-pill {--filter-chip-h:calc(var(--control-h-sm) + var(--space-0-5));--filter-chip-line:calc(var(--space-0-5) / 2);--filter-chip-pad:calc(var(--space-2) + var(--space-0-5) + var(--filter-chip-line));--filter-chip-border:var(--border-default);--shadow-filter-chip:inset 0 0 0 var(--filter-chip-line) var(--filter-chip-border);--fs-filter-chip-prefix:0;display:inline-flex;align-items:center;position:relative;min-width:0;max-width:100%;height:var(--filter-chip-h);flex:0 1 auto;gap:0;border:0;border-radius:var(--radius-full);box-shadow:var(--shadow-filter-chip);background:var(--bg-canvas);color:var(--text-primary);}
+.ds-filter-chip.ds-board-filter-pill {--filter-chip-h:var(--control-h-md);--filter-chip-line:calc(var(--space-0-5) / 2);--filter-chip-pad:calc(var(--space-2) + var(--space-0-5) + var(--filter-chip-line));--filter-chip-border:var(--border-default);--shadow-filter-chip:inset 0 0 0 var(--filter-chip-line) var(--filter-chip-border);--fs-filter-chip-prefix:0;display:inline-flex;align-items:center;position:relative;min-width:0;max-width:100%;height:var(--filter-chip-h);flex:0 1 auto;gap:0;border:0;border-radius:var(--radius-full);box-shadow:var(--shadow-filter-chip);background:var(--bg-canvas);color:var(--text-primary);}
 .ds-filter-chip.ds-board-filter-pill>.ds-filter-select.workbench-select {flex:1 1 auto;min-width:0;max-width:100%;}
 .ds-filter-chip.ds-board-filter-pill .ds-filter-select.workbench-select [data-slot=select-trigger] {height:var(--filter-chip-h);min-height:var(--filter-chip-h);padding:0 var(--filter-chip-pad);border:0;border-radius:var(--radius-full);box-shadow:none;background:transparent;color:inherit;font-size:var(--fs-sm);gap:var(--space-1-5);}
 .ds-filter-chip.ds-board-filter-pill:has(.ds-filter-chip-icon) .ds-filter-select.workbench-select [data-slot=select-trigger] {padding-left:calc(var(--filter-chip-pad) + var(--icon-sm) + var(--space-1-5));}
-.ds-filter-chip.ds-board-filter-pill .ds-filter-prefix {display:inline-flex;align-items:center;flex:none;font-size:var(--fs-filter-chip-prefix);line-height:var(--lh-sm);color:inherit;}
-.ds-filter-chip.ds-board-filter-pill .ds-board-filter-label {font-size:var(--fs-sm);font-weight:var(--fw-regular);color:inherit;}
+.ds-filter-chip.ds-board-filter-pill .ds-filter-prefix {display:inline-flex;align-items:center;flex:none;font-size:var(--fs-filter-chip-prefix);line-height:1;color:inherit;}
+.ds-filter-chip.ds-board-filter-pill .ds-board-filter-label {font-size:var(--fs-sm);font-weight:var(--fw-regular);line-height:1;color:inherit;}
 .ds-filter-chip.ds-board-filter-pill .ds-filter-chip-icon {position:absolute;left:var(--filter-chip-pad);display:flex;pointer-events:none;color:var(--text-secondary);}
 .ds-filter-chip-icon>svg {width:var(--icon-sm);height:var(--icon-sm);}
 .ds-filter-chip.ds-board-filter-pill :is([data-slot=select-indicator],[data-slot=select-default-indicator]) {position:static;flex:none;margin:0;width:var(--fs-xs);height:var(--fs-xs);color:inherit;}
@@ -21,3 +21,5 @@
 .ds-filter-chip.ds-board-filter-pill>.ds-button.button svg {width:var(--fs-xs);height:var(--fs-xs);}
 .ds-filter-chip.ds-board-filter-pill .ds-filter-select.workbench-select [data-slot=select-trigger]:focus-visible {outline:var(--space-0-5) solid var(--border-focus);outline-offset:var(--space-0-5);}
 .ds-filter-chip.ds-board-filter-pill[data-filter-disabled] {color:var(--text-tertiary);background:var(--bg-subtle);}
+
+.ds-filter-chip.ds-board-filter-pill [data-slot=select-value] {line-height:1;padding-block:0;}

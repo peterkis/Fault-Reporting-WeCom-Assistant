@@ -8,7 +8,7 @@ import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
 import {TicketCard,TicketCardBody,TicketCategoryTile} from '../../design/components/TicketCard/TicketCard';
 import {StageGlyph} from '../../design/components/StageGlyph/StageGlyph';
 import {Tag} from '../../design/components/Tag/Tag';
-import {heatOf} from '../../design/heat';
+import {cardHeat,cardHeatStart} from '../../design/heat';
 import {Drawer} from '../../design/components/Drawer/Drawer';
 import {Button} from '../../design/components/Button/Button';
 import {Section} from '../../design/components/Section/Section';
@@ -22,7 +22,7 @@ export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChat
   const denied=detail.error instanceof ApiError&&[403,404].includes(detail.error.status);
   useEffect(()=>{if(item&&detail.error instanceof ApiError&&[403,404].includes(detail.error.status)){setOpen(false);void clearItemAuthorization(client,principal.principal_id,item.kind,item.id,detail.error);}},[client,principal.principal_id,item,denied,detail.error]);
   const current=denied?undefined:detail.data?.item;
-  const heatStart=current?.column==='pending'?current.created_at:current?.column==='active'?current.stage_entered_at:null,heat=heatOf(heatStart?heatStart.replace(' ','T')+'+08:00':null,Date.now());
+  const heatStart=current?cardHeatStart(current):null,heat=current?cardHeat(current,Date.now()):null;
   const full=item?'/items/'+item.kind+'/'+item.id+'?detail=page':'/';
   return <section className="inbox-associated" aria-label="关联事项"><h3>关联事项</h3>{item&&!denied?<>
     <TicketCard className="inbox-mini-ticket"><Link className="card-open" to={full} aria-label={'查看关联事项 '+item.number} onClick={event=>{event.preventDefault();if(!blocked)setOpen(true);}}>

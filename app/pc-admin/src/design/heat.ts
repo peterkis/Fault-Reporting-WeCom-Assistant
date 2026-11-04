@@ -1,4 +1,5 @@
 import type {Tone} from './status-map';
+import type {WorkbenchCard} from '../api/client';
 
 /** Minutes; shared by every category. Intervals are inclusive at the lower bound. */
 export const HEAT_THRESHOLDS_MINUTES = Object.freeze([5, 20, 60, 240] as const);
@@ -9,7 +10,21 @@ export interface Heat {
   readonly ring: 'attention' | 'danger' | null;
 }
 
-/** Presentation only. The caller chooses the state start and excludes completed items. */
+type HeatCard = Pick<WorkbenchCard, 'column' | 'created_at' | 'stage_entered_at'>;
+
+export function cardHeatStart(item: HeatCard): string | null {
+  if (item.column === 'pending') return item.created_at;
+  if (item.column === 'active') return item.stage_entered_at ?? null;
+  return null;
+}
+
+/** API civil timestamps are Shanghai time. Missing stage starts never borrow another clock. */
+export function cardHeat(item: HeatCard, now: number): Heat | null {
+  const start = cardHeatStart(item);
+  return heatOf(start ? start.replace(' ', 'T') + '+08:00' : null, now);
+}
+
+/** Presentation only; callers with WorkbenchCard data use cardHeat. */
 export function heatOf(startIso: string | null | undefined, nowMs: number): Heat | null {
   // Require an explicit zone: a local timestamp must not change heat across machines.
   if (!startIso || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u.test(startIso)) return null;

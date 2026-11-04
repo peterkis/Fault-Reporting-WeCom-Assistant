@@ -25,7 +25,7 @@ import {Shapes,UserRound} from 'lucide-react';
 import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
 import { TicketCard,TicketCardBody,TicketCategoryTile } from '../design/components/TicketCard/TicketCard';
 import { Toolbar } from '../design/components/Toolbar/Toolbar';
-import { heatOf } from '../design/heat';
+import { cardHeat,cardHeatStart } from '../design/heat';
 import { cardTags,stagePresentation } from '../design/status-map';
 import { useBoardCardMotion } from '../design/use-board-card-motion';
 import { WorkbenchEfficiency,EfficiencyEntry } from '../features/efficiency/WorkbenchEfficiency';
@@ -92,8 +92,8 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
   const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
   const incomplete=item.column!=='closed'&&!item.location?.trim()&&!name?.trim()&&!department?.trim(),tags=[...cardTags(item),...(incomplete?[{key:'incomplete',label:'待补位置',tone:'neutral' as const}]:[])];
-  const start=item.column==='pending'?item.created_at:item.stage_entered_at;
-  const heat=item.column==='closed'?null:heatOf(start?start.replace(' ','T')+'+08:00':null,now);
+  const start=cardHeatStart(item);
+  const heat=cardHeat(item,now);
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
   return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-ring={ring} data-reminder-located={located?'true':undefined}>
     <BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>

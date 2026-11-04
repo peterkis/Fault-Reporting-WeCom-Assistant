@@ -17,8 +17,10 @@ async function designModule(name: string): Promise<string> {
   return 'data:text/javascript;base64,' + Buffer.from(name==='board-presentation'?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
 }
 interface Heat {tone: string; label: string; ring: string | null}
-const {heatOf, HEAT_THRESHOLDS_MINUTES}: {
+const {heatOf, cardHeat, cardHeatStart, HEAT_THRESHOLDS_MINUTES}: {
   heatOf: (startIso: string | null | undefined, nowMs: number) => Heat | null;
+  cardHeat: (item: Pick<WorkbenchCard,'column'|'created_at'|'stage_entered_at'>,now:number)=>Heat|null;
+  cardHeatStart: (item: Pick<WorkbenchCard,'column'|'created_at'|'stage_entered_at'>)=>string|null;
   HEAT_THRESHOLDS_MINUTES: readonly number[];
 } = await import(await designModule('heat'));
 interface Category {label: string; bg: string; fg: string; icon: unknown; border: string | null}
@@ -128,10 +130,27 @@ const {matchesBoardSummary,sortBoardItems}: {
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
   return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,...overrides};
 }
-test('board overdue uses the shared exact four-hour boundary, only for pending Tickets',()=>{
+test('R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets',async()=>{
+  const {avatarInitial}:{avatarInitial:(name:string)=>string}=await import(await designModule('components/Avatar/avatarInitial'));
+  for(const [name,initial] of [['张三（合成）','三'],['李四(外包)','四'],['王五（合成）（外包）','五'],['（合成）','合'],['Peter','P'],['peter (实习)','P'],['  赵六  ','六'],['','—'],[' () （） ','—'],['张😀（合成）','😀']])assert.equal(avatarInitial(name??''),initial,name);
+});
+test('R2 a–e share civil-time starts, never substitute created_at for a missing active stage',()=>{
+  const cases:readonly (readonly [Partial<WorkbenchCard>,string|null,string|null])[]=[
+    [{created_at:'2026-11-01 08:00:00'},'2026-11-01 08:00:00','danger'],
+    [{column:'active',stage_entered_at:'2026-11-02 05:00:00'},'2026-11-02 05:00:00','danger'],
+    [{column:'active',stage_entered_at:'2026-11-02 09:30:00'},'2026-11-02 09:30:00','warning'],
+    [{column:'active',stage_entered_at:null,created_at:'2026-10-31 10:00:00'},null,null],
+    [{column:'closed',created_at:'2026-10-30 10:00:00',completed_at:'2026-11-02 09:00:00'},null,null],
+  ];
+  for(const [fields,start,tone] of cases){const item=boardCard(fields);assert.equal(cardHeatStart(item),start);assert.equal(cardHeat(item,now)?.tone??null,tone);assert.equal(matchesBoardSummary(item,'overdue',now),tone==='danger');}
+  assert.equal(cardHeat(boardCard({column:'active'}),now),null);
+});
+test('R2 board overdue follows the heat of pending and active cards of every rendered kind',()=>{
   assert.equal(matchesBoardSummary(boardCard(),'overdue',now),true);
   assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 06:00:01'}),'overdue',now),false);
-  for(const item of [boardCard({kind:'intake'}),boardCard({kind:'review'}),boardCard({column:'active'}),boardCard({column:'closed'})])assert.equal(matchesBoardSummary(item,'overdue',now),false);
+  for(const kind of ['ticket','intake','review'] as const)assert.equal(matchesBoardSummary(boardCard({kind}),'overdue',now),true);
+  assert.equal(matchesBoardSummary(boardCard({column:'active',stage_entered_at:'2026-11-02 05:00:00'}),'overdue',now),true);
+  for(const item of [boardCard({column:'active',stage_entered_at:null}),boardCard({column:'closed'})])assert.equal(matchesBoardSummary(item,'overdue',now),false);
   assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 09:59:00',updated_at:'2020-01-01 00:00:00'}),'overdue',now),false);
 });
 test('board mine requires the caller-only HANDLING relation, never names, follow or conversation responsibility',()=>{

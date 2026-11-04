@@ -1,21 +1,23 @@
 .notification-exceptions .notification-overview {align-items: center; margin-bottom: var(--space-4);}
 .notification-exceptions .notification-overview strong {font-weight: var(--fw-semibold);}
 .notification-exceptions .notification-empty {min-height: calc(var(--space-16) * 5);}
-.notification-exceptions {--notification-column:calc(var(--space-16) + var(--space-12) + var(--space-2));--notification-source-min:calc(var(--space-16) * 3 + var(--space-12));--notification-time:calc(var(--space-16) * 2 + var(--space-3));--notification-action:calc(var(--space-16) + var(--space-4));--notification-row-h:calc(var(--space-12) + var(--space-2));--notification-gap:max(calc(var(--space-0-5) * 0),calc((60% - var(--notification-column) * 4 - var(--notification-time) - var(--notification-action) + var(--space-0-5)) / 6));--notification-columns:var(--notification-column) minmax(var(--notification-source-min),1.5fr) repeat(3,var(--notification-column)) var(--notification-time) var(--notification-action);}
+.notification-exceptions {--notification-column:calc(var(--space-16) + var(--space-12) + var(--space-2));--notification-source-min:calc(var(--space-16) * 2 + var(--space-3));--notification-type-min:calc(var(--space-16) * 2 + var(--space-8));--notification-time:calc(var(--space-16) * 2 + var(--space-3));--notification-action:calc(var(--space-16) + var(--space-4));--notification-row-h:calc(var(--space-12) + var(--space-2));--notification-gap:var(--space-2);--notification-columns:var(--notification-column) minmax(var(--notification-source-min),0.6fr) minmax(var(--notification-type-min),1fr) minmax(var(--notification-column),0.6fr) var(--notification-column) var(--notification-time) var(--notification-action);}
 .workspace.ds-page.notification-exceptions>.ds-page-header {min-height:0;padding-bottom:0;margin-bottom:var(--space-3);}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table {display:block;min-width:calc(var(--notification-column) * 4 + var(--notification-source-min) + var(--notification-time) + var(--notification-action));}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table {display:block;min-width:calc(var(--notification-column) * 3 + var(--notification-source-min) + var(--notification-type-min) + var(--notification-time) + var(--notification-action) + var(--notification-gap) * 6);}
 .notification-exceptions .notification-table :is(thead,tbody) {display:block;}
 .notification-exceptions .notification-table tr {display:grid;grid-template-columns:var(--notification-columns);column-gap:var(--notification-gap);border-bottom:1px solid var(--border-hair);}
-.notification-exceptions .ds-data-table.ds-data-table .notification-table :is(th,td) {display:block;align-content:center;width:auto;min-width:0;border-bottom:0;}
+.notification-exceptions .ds-data-table.ds-data-table .notification-table :is(th,td) {display:block;align-content:center;width:auto;min-width:0;border-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notification-exceptions .ds-data-table.ds-data-table .notification-table th:is(.notification-time-column,.ds-table-action) {text-align:right;}
 .notification-exceptions .ds-data-table.ds-data-table .notification-table tbody tr,.notification-exceptions .ds-data-table.ds-data-table .notification-table td {height:var(--notification-row-h);}
 .notification-exceptions .notification-table .notification-action-cell {text-align:right;}
 .notification-exceptions .ds-data-table.ds-data-table .notification-table tr[data-current=true] {background: var(--bg-selected);}
-.notification-exceptions .notification-source-link {color:var(--text-link);}
+.notification-exceptions .notification-source-link {display:block;width:100%;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:var(--text-link);}
+.notification-source-link>svg {display:inline-block;width:var(--icon-sm);height:var(--icon-sm);margin-right:var(--space-1);vertical-align:middle;}
 .notification-exceptions .notification-source-link[data-source-domain=TICKET] {font-family:var(--font-mono);}
-.notification-exceptions .notification-source-link[data-source-domain=SESSION] {display:block;width:100%;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
 .notification-exceptions .notification-source-link:hover {text-decoration:underline;}
 .notification-exceptions .notification-summary {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.notification-exceptions .notification-type {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .notification-exceptions .notification-time {font-variant-numeric: tabular-nums; white-space: nowrap;}
 .notification-exceptions .notification-detail {padding-top: var(--space-5); border-top: 1px solid var(--border-hair);}
 .notification-detail-heading {display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);}

@@ -28,6 +28,24 @@ import {createWeComWorkbenchAuthentication} from '../../app/server/src/p2-016-wo
 import {createYxxBrowserFixture} from './p2-g2-yixiaoxiu-browser.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 // Fresh synthetic scenarios match the prototype's visual content. Never part of a production bundle.
+/** R2: opt-in civil timestamps through the fixture's existing synthetic writes. */
+export async function seedCard22Board(f){
+  for(const {ticket} of f.tickets){
+    await f.pool.query("UPDATE pilot_ticket.ticket SET created_at=platform.local_now()-interval '30 minutes' WHERE id=$1::uuid",[ticket.id]);
+    await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-interval '30 minutes' WHERE ticket_id=$1::uuid",[ticket.id]);
+  }
+  /** @type {[string,number,number,number|null][]} */
+  const cases=[['a',0,1560,1560],['b',5,300,300],['c',8,30,30],['d',1,2880,null],['e',9,4320,0]];
+  /** @type {Record<string,string>} */
+  const ids={};
+  for(const [key,index,createdMinutes,stageMinutes] of cases){
+    const id=f.tickets[index].ticket.id;ids[key]=id;
+    await f.pool.query("UPDATE pilot_ticket.ticket SET title=$2,created_at=platform.local_now()-($3::text||' minutes')::interval WHERE id=$1::uuid",[id,'R2-'+key+' 热度验收（合成）',createdMinutes]);
+    if(stageMinutes===null)await f.pool.query('UPDATE pilot_ticket.ticket_event SET old_status=new_status WHERE ticket_id=$1::uuid',[id]);
+    else await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' minutes')::interval WHERE ticket_id=$1::uuid",[id,stageMinutes]);
+  }
+  return ids;
+}
 const scenarios=[
  ['门诊二楼打印机无法打印处方','门诊二楼 · 203 诊室','QUEUED'],
  ['护士站登录护理系统提示连接超时','住院部 · 六楼护士站','NEW'],

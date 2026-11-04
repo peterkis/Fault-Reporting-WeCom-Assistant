@@ -23,6 +23,7 @@
 .ds-page .ds-split .inbox-timeline {min-height:0;flex:1;padding:var(--space-5);}
 .ds-page .ds-split .inbox-message-divider {display:flex;align-items:center;justify-content:center;gap:var(--space-3);max-width:100%;font-size:var(--fs-xs);color:var(--text-secondary);margin:var(--space-2) 0 var(--space-5);}
 .inbox-message-divider::before,.inbox-message-divider::after {content:'';height:1px;flex:1;background:var(--border-hair);}
+.inbox-message-divider>[aria-hidden=true] {color:var(--text-tertiary);margin-inline:calc(var(--space-1) - var(--space-3));}
 .ds-page .ds-split .inbox-message-internal_note,.ds-page .ds-split .inbox-message-automated_rule {margin-left:auto;}
 .inbox-message-internal_note header,.inbox-message-internal_note footer,.inbox-message-automated_rule header,.inbox-message-automated_rule footer {justify-content:flex-end;}
 .ds-page .ds-split .inbox-message-system {text-align:center;}
@@ -40,7 +41,13 @@
 .ds-page .ds-split .inbox-composer[data-purpose=internal-notes] [aria-selected=true] {color:var(--tone-warning-fg);background:var(--tone-warning-bg);}
 .ds-page .ds-split .inbox-composer .conversation-composer {padding:0;background:transparent;}
 .ds-page .ds-split .inbox-composer .conversation-composer textarea {min-height:56px;max-height:100px;border:0;border-radius:var(--radius-sm);padding:var(--space-2);background:transparent;resize:none;}
-.ds-page .ds-split .inbox-composer .conversation-composer textarea:disabled {background:transparent;}
+.ds-page .ds-split .inbox-composer:has([role=tabpanel]:not([hidden]) .conversation-composer[data-composer-disabled=true]) {background:var(--bg-subtle);border-color:var(--border-hair);color:var(--text-tertiary);cursor:not-allowed;}
+.ds-page .ds-split .inbox-composer .conversation-composer textarea:disabled {background:var(--bg-subtle);color:var(--text-tertiary);cursor:not-allowed;}
+.ds-page .ds-split .inbox-composer .conversation-composer textarea:disabled::placeholder {color:var(--text-tertiary);opacity:1;}
+.conversation-composer[data-composer-disabled=true] .ds-composer-count {display:none;}
+.conversation-composer .ds-composer-disabled-reason {margin:0 var(--space-2) var(--space-1);font-size:var(--fs-xs);color:var(--text-secondary);}
+.ds-page .ds-split .inbox-composer .ds-composer-disabled-reason {margin:0 var(--space-2);line-height:var(--lh-xs);}
+.ds-page .ds-split .inbox-composer .conversation-composer:has(.ds-composer-disabled-reason) textarea:disabled:placeholder-shown {min-height:var(--space-12);height:var(--space-12);}
 .ds-page .ds-split .inbox-composer .conversation-composer .sr-only {position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%);}
 .ds-page .ds-split .inbox-composer .ds-composer-count {float:left;line-height:var(--control-h-sm);padding-left:var(--space-2);}
 .ds-page .ds-split .inbox-composer .draft-status {font-size:var(--fs-xs);}

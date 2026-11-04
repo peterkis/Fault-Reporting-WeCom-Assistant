@@ -16,7 +16,7 @@ export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,
     {key:'all',label:'全部',tone:'neutral',note:'计数基于已加载数据。'},
     {key:'mine',label:'我负责',tone:'brand',note:'仅计当前资料中由你负责处理的事项。'},
     {key:'related',label:'与我有关',tone:'brand',note:'查看与你有关的事项；当前没有独立计数。'},
-    {key:'overdue',label:'已超时',tone:'danger',note:'仅计待受理工单；处理中暂未计入。'},
+    {key:'overdue',label:'已超时',tone:'danger',note:'计入所有显示红色超时热度的事项。'},
     {key:'today',label:'今日完成',tone:'success',note:'按北京时间完成时间统计，沿当前日期与查询范围。'},
   ] as const;
   return <div className="ds-board-summary scope-tabs" role="group" aria-label="工作范围">
