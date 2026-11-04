@@ -30,3 +30,8 @@ N3真实PG/HTTP覆盖Ticket编号/标题与列表/精确单项一致；已完结
 [四宽截图与实测](../../docs/ui/evidence/n3-source-projection/README.md)：来源列占比1920=39.855%、1440=38.380%、1280=29.435%、900=25.532%，六行均56px；Ticket真实编号/标题与Session姓名链接、缺省姓名、原parent_link、无父详情扇出、无POST及原Sender次数均有浏览器断言。
 
 本地合成库已收回，仅剩postgres；PG停止成功。原始日志、逐例报告、manifest、图像哈希、Schema示例与工具来源证明集中于D:/CodexEvidence/pc-admin-n3-retirement-20261104/。提交后的CI与审查仍按GitHub完整head独立核验，不重绑本地未提交候选身份。
+
+
+## 提交后CI索引修正
+
+初始发布head a3a59c602a45147338f789353bcda53e2d1df6d3的CI在pr-plan文档预检失败，尚未运行所选应用入口：本次触及的API总索引含三处已有T06旧锚点“明确派单wbint-t06进行中”，实际章节已是“明确派单与转派（WBINT-T06）”。用同一pr-plan --check-docs命令在发布工作树复现后，仅修正三处锚点及本记录；不修改业务/合同/测试输入，不重绑本地405db98e候选。普通docs:agents:check的固定导航通过不能替代提交差异文档检查，后继显式执行pr-plan --check-docs。首轮CI失败及应用NOT_RUN保持原件。

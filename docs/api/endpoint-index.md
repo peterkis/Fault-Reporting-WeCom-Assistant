@@ -119,9 +119,9 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | T29 | POST | `/api/tickets/{ticketId}/take-and-start-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人承接并开始 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | T30 | POST | `/api/tickets/{ticketId}/accept-for-later-with-conversations` | W | 已实现、默认关闭：明确会话集合或保留沟通，原子本人先接单 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
 | T31 | GET | `/api/tickets/{ticketId}/conversation-handling-commands/{commandId}` | W | 已实现、默认关闭：原UUID专用安全Ticket终态，无Session结果 | [关联沟通承接](workbench/tickets.md#明确选择关联沟通的本人承接wbint-t05) |
-| WB-T06-A1 | POST | `/api/tickets/{ticketId}/assign` | W | 已挂载、默认关闭，验证进行中：明确内部处理人/组，不接单或开始 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
-| WB-T06-A2 | POST | `/api/tickets/{ticketId}/transfer-assignment` | W | 源码已挂载、默认关闭，待本候选验证：显式转派处理人/组，保留状态和轮次 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
-| WB-T06-Q1 | GET | `/api/tickets/{ticketId}/assignment-targets` | W | 已挂载、默认关闭，待本候选验证：当前工单权限下的有效处理组与明确所选组成员 | [派单](workbench/tickets.md#明确派单wbint-t06进行中) |
+| WB-T06-A1 | POST | `/api/tickets/{ticketId}/assign` | W | 已挂载、默认关闭，验证进行中：明确内部处理人/组，不接单或开始 | [派单](workbench/tickets.md#明确派单与转派wbint-t06) |
+| WB-T06-A2 | POST | `/api/tickets/{ticketId}/transfer-assignment` | W | 源码已挂载、默认关闭，待本候选验证：显式转派处理人/组，保留状态和轮次 | [派单](workbench/tickets.md#明确派单与转派wbint-t06) |
+| WB-T06-Q1 | GET | `/api/tickets/{ticketId}/assignment-targets` | W | 已挂载、默认关闭，待本候选验证：当前工单权限下的有效处理组与明确所选组成员 | [派单](workbench/tickets.md#明确派单与转派wbint-t06) |
 | WB-T07-A1 | POST | `/api/tickets/{ticketId}/takeover` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，本人与实际有效组一起接管，保留状态及同轮首次责任依据 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
 | WB-T07-A2 | POST | `/api/tickets/{ticketId}/takeover-and-start` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，本人接管与合法accept/start同事务 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
 | WB-T07-Q1 | GET | `/api/tickets/{ticketId}/takeover-targets` | W | 已实现、本地验证、默认关闭：按独立接管能力条件挂载，当前Ticket原读权下本人实际有效组 | [T07 合同与证据](workbench/tickets.md#跨团队本人接管wbint-t07-source) |
