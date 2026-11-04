@@ -7,6 +7,7 @@ import {appendT22Item} from './wbint-t22-fixture.mjs';
 import type {T22Fixture} from './wbint-t22-fixture.mjs';
 import {createContactJourneyStore,MockResolvedDirectory,reporterIdentityHash} from '../../app/server/src/p2-015-contact-journey.mjs';
 import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-profile.mjs';
+import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {hmacIdentity,safeHash} from '../../app/server/src/p2-015-domain-contracts.mjs';
 import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
 export const INBOX_IDENTITY_KEY='conversation-inbox-synthetic-key-v1';
@@ -68,4 +69,12 @@ export async function seedCard21Conversation(f:T22Fixture){
   await f.runtime.coordinator.runOnce();
   await f.pool.query("UPDATE conversation.item SET occurred_at=CASE WHEN source_id=$2 THEN $4::timestamp WHEN source_id=$3 THEN $5::timestamp WHEN item_type='INTERNAL_NOTE' THEN $6::timestamp ELSE $7::timestamp END WHERE session_id=$1::uuid AND sequence_no>2",[session.id,sent[0],sent[1],dates.today+' 09:10:00',dates.today+' 09:30:00',dates.today+' 09:35:00',dates.today+' 09:40:00']);
   return {session,dates,sent};
+}
+
+/** R4: both accounts retain the real per-session capability projection. */
+export async function seedCard22Conversation(f:T22Fixture){
+  const data=await seedCard21Conversation(f);
+  const handler=f.principals[1];assert.ok(handler);
+  await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-1',displayName:'只读值班（合成）',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
+  return data;
 }

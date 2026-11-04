@@ -198,3 +198,8 @@ A批原件 `selection-source-clear/`：该轮实际136项，135 PASS、1 FAIL，
 ## N3后继票（2026-11-04）
 
 用户已授权独立补齐[N3 #144](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/144)，规格及验证见[N3执行记录](n3-source-projection.md)。该票扩展原只读合同及其真实来源；本卡上述“未提供编号/标题/姓名”的结论保留为当时事实，不重绑旧截图/测试对象。另有[绿色旧版退役 #145](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/145)原生依赖#144；退役以新PC现有流程为准，不补回旧业务流。
+
+
+## 卡22前向分隔线规则（2026-11-04）
+
+[卡22](card-22.md)将当天首条消息与同一 index 的渠道变化合并：分隔线数量 = 天数 + 与当天首条消息不重合的渠道切换次数。昨天16:40、16:52，今天09:10切到Bot私聊、09:30继续私聊的场景显示「昨天」「今天 · 切换到 Bot 私聊」，共2条；同一天中途切回群聊再增加独立渠道项。上文卡21原候选的3条分隔项与历史截图保持当时事实。

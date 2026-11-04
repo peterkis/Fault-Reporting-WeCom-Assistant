@@ -1,5 +1,5 @@
 import type {BoardColumn, WorkbenchCard} from '../api/client';
-import {heatOf} from './heat';
+import {cardHeat} from './heat';
 
 export type BoardSummaryFilter = 'pending' | 'overdue' | 'mine' | 'today';
 export type BoardSort = 'oldest' | 'newest';
@@ -12,9 +12,7 @@ function instant(value: string | null) {
 export function matchesBoardSummary(item: WorkbenchCard, filter: BoardSummaryFilter, now: number): boolean {
   switch (filter) {
     case 'pending': return item.column === 'pending';
-    // Active-state start is not projected until Card 11. Never substitute updated_at.
-    case 'overdue': return item.kind === 'ticket' && item.column === 'pending'
-      && heatOf(item.created_at.replace(' ', 'T') + '+08:00', now)?.tone === 'danger';
+    case 'overdue': return cardHeat(item, now)?.tone === 'danger';
     case 'mine': return item.attention?.related_reasons.includes('HANDLING') === true;
     case 'today': {
       const completed = instant(item.completed_at);

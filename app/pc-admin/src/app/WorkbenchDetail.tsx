@@ -16,7 +16,7 @@ import { BeijingTime } from '../design/components/Timeline/BeijingTime';
 import { PropertyList } from '../design/components/PropertyList/PropertyList';
 import { Tag } from '../design/components/Tag/Tag';
 import { TicketCategoryTile } from '../design/components/TicketCard/TicketCard';
-import { heatOf } from '../design/heat';
+import { cardHeat } from '../design/heat';
 import { stagePresentation } from '../design/status-map';
 import { ActivityPeople } from '../features/activity/ActivityPeople';
 import { TicketAssignmentHistory } from '../features/assignment-history/TicketAssignmentHistory';
@@ -125,8 +125,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
   const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
   const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
-  const start=detail?.item.column==='pending'?detail.item.created_at:detail?.item.stage_entered_at;
-  const heat=detail?.item.column==='closed'?null:heatOf(start?start.replace(' ','T')+'+08:00':null,now);
+  const heat=detail?cardHeat(detail.item,now):null;
   const content=<DetailDialogProvider>
     <div className="detail-navigation">
       <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span><HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail} onPress={()=>{if(detail)void navigator.clipboard.writeText(detail.item.number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>

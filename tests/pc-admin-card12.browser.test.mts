@@ -3,7 +3,11 @@ import {test} from 'node:test';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
 import {clickWorkbenchControl,chooseWorkbenchSelect,typeWorkbenchDates} from './helpers/heroui-workbench-controls.mjs';
 import {loadServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
-import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {withWeb01Fixture,seedCard22Board} from './helpers/web01-workbench-fixture.mjs';
+import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {card22Filters,assertCard22Filters,assertCard22Avatars,captureCard22} from './helpers/card22-presentation.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
@@ -271,3 +275,48 @@ test('Card 20 K3 unavailable ownership projection omits the count and explains w
   await browser.waitFor("document.querySelectorAll('.column-cards').length===3");assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value')===null"),true);assert.match(String(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').title")),/当前没有本人处理关系资料，暂无法统计/u);
  }catch(error){failure=error;}await closeBrowserTestResources([async()=>{await browser?.close();}],failure);
 }));
+
+test('R1 R2 R5 card22 avatars, shared overdue membership and aligned board filters',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
+ const ids=await seedCard22Board(f),directory=process.env.CARD22_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card22-board-'));await mkdir(directory,{recursive:true});
+ let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;const metrics:unknown[]=[],posts:string[]=[];
+ const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+ try{
+  const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);
+  const ready="Boolean(document.querySelector('[data-summary-filter=overdue] .ds-summary-value'))&&document.querySelectorAll('.column-cards .ticket-card').length>=9";
+  await browser.waitFor(ready);await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
+  await browser.waitFor("document.querySelectorAll('.board [data-heat-tone=danger]').length===2");
+  const cards=await browser.evaluate("[...document.querySelectorAll('.board [data-item-id]')].map(n=>({id:n.dataset.itemId,kind:n.dataset.kind,column:n.closest('.board-column').className,heat:n.querySelector('[data-heat-tone]')?.dataset.heatTone??null}))") as {id:string;kind:string;column:string;heat:string|null}[];
+  for(const [key,tone] of [['a','danger'],['b','danger'],['c','warning'],['d',null],['e',null]])assert.equal(cards.find(card=>card.id===ids[key??''])?.heat,tone,key??'');
+  assert.equal(await browser.evaluate("Number(document.querySelector('[data-summary-filter=overdue] .ds-summary-value').textContent)"),2);
+  metrics.push({R2:cards,avatars:await assertCard22Avatars(browser)});
+  for(const width of [1920,1440]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('document.fonts.ready');await captureCard22(browser,directory,'board-'+width);}
+  const defaults=await card22Filters(browser,'.ds-board-search');assert.ok(defaults.search);assertCard22Filters(defaults);assert.ok(defaults.chips.every(chip=>!chip.active));metrics.push({R5:'board-inactive',...defaults});
+  await chooseWorkbenchSelect(browser,'[data-field-label="类别"]','unclassified');
+  const active=await card22Filters(browser,'.ds-board-search');assertCard22Filters(active);assert.ok(active.chips.some(chip=>chip.active));metrics.push({R5:'board-active',...active});await captureCard22(browser,directory,'toolbar-board-1440','.ds-board-toolbar-bottom');
+  await clickWorkbenchControl(browser,'[aria-label="清除类别筛选"]');
+  await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
+  await captureCard22(browser,directory,'avatar-board-owner','.board [data-item-id="'+ids.b+'"] .ds-ticket-owner');
+  await captureCard22(browser,directory,'avatar-sidebar-account','.account-menu-trigger');
+  await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');
+  await browser.waitFor("document.querySelectorAll('.board [data-item-id]').length===2");
+  assert.deepEqual((await browser.evaluate("[...document.querySelectorAll('.board [data-item-id]')].map(n=>n.dataset.itemId)") as string[]).sort(),[ids.a,ids.b].sort());
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await captureCard22(browser,directory,'board-overdue-1920');
+  await clickWorkbenchControl(browser,'.board [data-item-id="'+ids.b+'"] .card-open');await browser.waitFor("Boolean(document.querySelector('.property-field .ds-avatar[title=\"周宁（合成）\"]'))");
+  metrics.push({R1:'drawer',avatars:await assertCard22Avatars(browser)});await captureCard22(browser,directory,'drawer-1920');await captureCard22(browser,directory,'avatar-drawer-owner','.property-field:has(.lucide-headset) dd');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});await captureCard22(browser,directory,'drawer-1440');
+  await f.pool.query("UPDATE intake.manual_review_item SET created_at=platform.local_now()-interval '5 hours' WHERE status='PENDING'");
+  await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor(ready);await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
+  await browser.waitFor("document.querySelectorAll('.board [data-heat-tone=danger]').length===3");
+  const red=await browser.evaluate("[...document.querySelectorAll('.board [data-heat-tone=danger]')].map(n=>({id:n.closest('[data-item-id]').dataset.itemId,kind:n.closest('[data-kind]').dataset.kind}))") as {id:string;kind:string}[];
+  assert.ok(red.some(row=>row.kind==='review'));assert.equal(await browser.evaluate("Number(document.querySelector('[data-summary-filter=overdue] .ds-summary-value').textContent)"),red.length);
+  await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');await browser.waitFor("document.querySelectorAll('.board [data-item-id]').length===3");
+  assert.deepEqual((await browser.evaluate("[...document.querySelectorAll('.board [data-item-id]')].map(n=>n.dataset.itemId)") as string[]).sort(),red.map(row=>row.id).sort());metrics.push({R2:'non-ticket-red',red});
+  assert.deepEqual(posts,[],'R1/R2/R5 presentation never invokes a business command');
+ }catch(error){failure=error;}
+ finally{await closeBrowserTestResources([
+  async()=>{if(failure&&browser)await captureCard22(browser,directory,'board-failure');},
+  ()=>writeFile(join(directory,'board-metrics.json'),JSON.stringify(metrics,null,2)),
+  ()=>{f.runtime.server.off('request',observe);},
+  async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+ ],failure);}
+},{precisionV212:true,workbenchSearchEnabled:true}));
