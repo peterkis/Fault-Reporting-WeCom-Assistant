@@ -1,5 +1,15 @@
 # 医小修 PC 管理端 · 统一设计系统规范 v2.0
 
+## v2.1.6 会话计数与等待（卡25B，前向补充）
+
+事实口径沿 [ADR-0054](../../adr/0054_conversation_inbox_counts_and_waiting_since.md)：计数来自 summary 的完整当前可见范围，不随队列、来源、搜索或分页变化；不得把已加载条数当总数。等待从会话变成 UNASSIGNED 的时刻开始；使用显式只读 waiting_since 投影，不从最后消息、latest_activity_at 或 created_at 推算。
+
+- 标题计数：在「会话」标题右侧同基线显示「N 位报修人等待回复」，fs-sm、text-secondary、fw-normal、左间距 space-3；0、加载中或辅助读取失败时不显示，不增加告警或阻塞核心页面。
+- 侧栏徽标：复用 Tag，在「会话」右侧使用 tone-brand-solid / text-inverse、18px 高和最小宽、radius-full、fs-xs / fw-semibold；数字继承全局 tabular-nums，超过99为99+，0不显示。aria-label 使用原始数「N 条未读」；折叠时仅显示图标右上角8px实心圆点，保留名称。通知异常没有直接总数接口，本卡不画伪计数。
+- 联系人等待：waiting_since 有效且非未来时复用 heatOf 的5/20/60/240分钟阈值与向下取整标签；去掉用于卡片的「超时 」前缀，5分钟以下显示整数分钟。关注前（含 neutral/warning）text-secondary；60分钟起 tone-attention-fg / fw-semibold；240分钟起 tone-danger-fg / fw-semibold；24小时起沿 heatOf 显示天数。title 为「已等待 {时长} · 最近活动 YYYY-MM-DD HH:mm（北京时间）」；无起点则保留 formatListTime。
+- 等待横幅：主句「姓名已等待 {时长}，尚无人接待」，补句「 · 接待后即可回复」；姓名只去掉「（资料未提供）」后缀。超时时仅时长用 tone-danger-fg。无起点沿卡24旧文案，保持单行省略、按钮不收缩。
+- 刷新：summary 与联系人查询共用 conversation-inbox 实时查询族和当前账号缓存边界；它是辅助读取，业务不可用时隐去数字，认证失效仍沿原规则处理。看板热度与会话复用可见页面的60秒显示时钟，列表/横幅共用同一 now；隐藏时停止计时，恢复可见立即重算，时钟不请求接口、不新增传输或轮询。
+
 ## v2.1.5 字体与细节（卡24，前向覆盖同项旧规格）
 
 视觉依据为最新版「医小修 PC 管理端 v2.1.4 · 定稿原型」01–05（含03b、04b），06–08不再适用。执行与逐项验收见[卡24](../../plans/pc-admin-design-v21/card-24.md)。

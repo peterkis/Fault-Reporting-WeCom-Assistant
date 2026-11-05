@@ -35,6 +35,9 @@ import { useDesktopSession } from '../desktop/host';
 import { BoardActionCard,BoardActions,BoardDropColumn } from '../features/board-actions/BoardActions';
 import { readServiceCatalog } from '../features/board-filters/client';
 import { Conversations } from '../features/conversations/Conversations';
+import { conversationSummaryQuery } from '../features/conversations/inbox-client';
+import { observeVisibleMinute } from '../design/format-time';
+import { Tag } from '../design/components/Tag/Tag';
 import { subscribeDrafts } from '../features/drafts/encrypted-drafts';
 import { CandidateDetailPage } from '../features/incident-candidates/CandidateDetail';
 import { IncidentCandidates } from '../features/incident-candidates/IncidentCandidates';
@@ -64,7 +67,7 @@ function useColumn(principal:Principal,column:BoardColumn,range:BoardCompletionR
 }
 function useClock(){
   const [now,setNow]=useState(Date.now);
-  useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),60_000);return()=>window.clearInterval(timer);},[]);
+  useEffect(()=>observeVisibleMinute(setNow),[]);
   return now;
 }
 function relativeTime(value:string,now:number){
@@ -133,6 +136,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
 }
 function Shell({principal,children,navigationBlocked=false,realtime}:{principal:Principal;children:ReactNode;navigationBlocked?:boolean;realtime:RealtimeView}){
   const desktopEpoch=useDesktopSession(principal,realtime,navigationBlocked);
+  const summaryOptions=conversationSummaryQuery(principal),summary=useQuery(summaryOptions),unread=summaryOptions.enabled&&summary.isSuccess?summary.data?.my_unread_count??0:0;
   const collapsed=useUiStore(s=>s.sidebarCollapsed),toggle=useUiStore(s=>s.toggleSidebar),openSettings=useUiStore(s=>s.openSettings);
   const profile=useQuery({queryKey:['current-profile',principal.principal_id,principal.authorization_revision],queryFn:({signal})=>api.profile(signal),enabled:principal.current_profile_available===true,staleTime:300_000,gcTime:300_000,retry:false});
   const displayName=profile.data?.name??principal.display_name,department=profile.data?.department;
@@ -171,7 +175,7 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   return <WorkbenchEfficiency principal={principal} blocked={navigationBlocked}><div className={'app '+(collapsed?'sidebar-collapsed':'')} data-realtime-status={realtime.status}><aside className="sidebar" aria-label="主导航">
     <SidebarBrand team={teamLabel}/><EfficiencyEntry/>
     <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings&&!conversationPage&&!exceptionPage?'current':'')} to="/" aria-current={!settings&&!conversationPage&&!exceptionPage?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
-    <>{principal.conversation_workspace_enabled?<Link className={"nav-item "+(conversationPage?"current":"")} to="/conversations" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span></Link>:null}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:null}<>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:null}</>
+    <>{principal.conversation_workspace_enabled?<Link className={"nav-item conversation-nav-item "+(conversationPage?"current":"")} to="/conversations" aria-label="会话" aria-current={conversationPage?"page":undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} data-action="open-conversations"><MessageSquare/><span>会话</span>{unread>0?<Tag tone="brand" className="conversation-unread-badge" role="status" aria-label={unread+' 条未读'} data-conversation-unread={unread}>{unread>99?'99+':unread}</Tag>:null}</Link>:null}</>{principal.incident_candidate_workspace_enabled?<Link className="nav-item" to="/incidents/candidates" data-action="open-incident-candidates" aria-disabled={navigationBlocked} onClick={guardNavigation}><TriangleAlert/><span>公共故障</span></Link>:null}<>{principal.notification_exceptions_enabled?<Link className={"nav-item "+(exceptionPage?"current":"")} to="/notification-exceptions" data-action="open-notification-exceptions" aria-disabled={navigationBlocked} onClick={guardNavigation}><Bell/><span>通知异常</span></Link>:null}</>
     <div className="sidebar-note"/><div className="sidebar-bottom">{userMenu()}</div></aside>
     <main><header className="topbar"><HButton className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle} tone="ghost" isIconOnly title={collapsed?'展开侧栏':'收起侧栏'}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></HButton><span><span data-breadcrumb-team>{teamLabel}</span> <span className="slash">/</span> <strong>{settings?'设置':conversationPage?'会话':exceptionPage?'通知异常':newReport?'新报修':'工作台'}</strong></span><div className="topbar-actions"><EfficiencyEntry compact/><span className="connection-status" data-realtime-status={realtime.status} role="status" aria-label={"连接状态："+realtimeLabels[realtime.status]}>{realtime.status==='disabled'?<RefreshCw size={14} aria-hidden="true"/>:null}{realtimeLabels[realtime.status]}</span><div className="topbar-desktop-settings"><HButton className="topbar-settings" tone="ghost" isIconOnly aria-label="设置" isDisabled={navigationBlocked} onPress={openSettings}><Settings size={18}/></HButton></div><div className="compact-user-menu">{userMenu(true)}</div></div></header><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked} desktopEpoch={desktopEpoch}/>{children}</main></div></WorkbenchEfficiency>;
 }

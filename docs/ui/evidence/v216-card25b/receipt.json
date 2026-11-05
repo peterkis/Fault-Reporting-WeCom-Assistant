@@ -1,0 +1,47 @@
+{
+  "scope": "LOCAL_SYNTHETIC_REAL_HTTP_PG_SSE",
+  "base": "4ca9a7002c688341bd6fabca1b91ae8fc8a59803",
+  "working_tree_uncommitted": true,
+  "source_input_hash": "1547e1a45e080e125cbdd17839d7eadc1449cecf18912bfcae5475d444e30eaf",
+  "manifest_sha256": "7aab67d8f9807d04487497a4bd7a51491d7974a70df77bbd20b153fa2b003a9e",
+  "shots": [
+    {
+      "file": "conversation-1440-before.png",
+      "width": 1440,
+      "height": 1080,
+      "sha256": "8dfd1e1d2a814ba3ae6bb937ce12ac5a24d97dc1ce9142c6631c729bfed850c1"
+    },
+    {
+      "file": "conversation-1920-before.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "355e2102b64188ed011d9b4a10f133334914491ee55df23b12e345720a116ca9"
+    },
+    {
+      "file": "sidebar-collapsed.png",
+      "width": 1440,
+      "height": 1080,
+      "sha256": "560e01cdfb66569cc9c9af16ecbc472bcfe1260cb27e7b88ad13a8548ce2bf69"
+    },
+    {
+      "file": "conversation-1440-after-takeover.png",
+      "width": 1440,
+      "height": 1080,
+      "sha256": "a9c89e2f550f7e39e45d5c0ce672ff5ab16ff142fdda6caafcbe304977540757"
+    }
+  ],
+  "initial": {
+    "as_of": "2026-11-06 00:02:08",
+    "my_unread_count": 143,
+    "unassigned_contact_count": 6
+  },
+  "after_takeover": 5,
+  "cursor": {
+    "before": 139,
+    "after": 35,
+    "real_cursor_sse": true
+  },
+  "minute_fetches": 0,
+  "summary_failure_hidden": true,
+  "production_ready": false
+}

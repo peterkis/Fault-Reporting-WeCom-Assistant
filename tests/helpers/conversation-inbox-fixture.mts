@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {buildConversationThreadIdentity,buildConversationSessionScope} from '../../app/server/src/p2-001-conversation-contracts.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
-import {appendT22Item} from './wbint-t22-fixture.mjs';
+import {appendT22Item,appendT22LiveItem} from './wbint-t22-fixture.mjs';
 import type {T22Fixture} from './wbint-t22-fixture.mjs';
 import {createContactJourneyStore,MockResolvedDirectory,reporterIdentityHash} from '../../app/server/src/p2-015-contact-journey.mjs';
 import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-profile.mjs';
@@ -148,4 +148,22 @@ export async function seedCard23Conversation(f:T22Fixture){
   }
   await f.pool.query('UPDATE conversation.session SET last_activity_at=$2::timestamp WHERE id=$1::uuid',[session.id,dates.today+' 09:35:00']);
   return {...data,sent,contacts,systemId:system.id,reporterItems:items.slice(0,2).map(item=>item.id)};
+}
+
+/** Card25B: persisted synthetic waiting starts; release time is intentionally newer than Session start. */
+export async function seedCard25bConversation(f:T22Fixture){
+  const clock=(await f.pool.query<{at:string}>("SELECT to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS at")).rows[0];assert.ok(clock);
+  const epoch=Date.parse(clock.at.replace(' ','T')+'+08:00'),local=(minutes:number)=>new Date(epoch-minutes*60000+28800000).toISOString().slice(0,19).replace('T',' '),contacts:InboxSession[]=[];
+  for(const [key,name,minutes] of [['twelve','宋岚（合成）',12],['two','许初（合成）',120],['five','何明（合成）',300],['assigned','林舟（合成）',2880]] as const){
+    const contact=await addInboxSession(f.pool,{reporter:'v25b-synthetic-'+key,group:'v25b-synthetic-group',text:'终端设备与打印服务检查，请协助处理（合成）。'});
+    await attachInboxJourney(f.pool,contact,{name,department:'信息科（合成）'});
+    await f.pool.query('UPDATE conversation.session SET started_at=$2::timestamp WHERE id=$1::uuid',[contact.id,local(key==='five'?480:minutes)]);
+    if(key==='five'){const principal=f.principals[0];assert.ok(principal);await inboxControlAt(f.pool,contact.id,principal.id,'TAKEOVER',local(360));await inboxControlAt(f.pool,contact.id,principal.id,'RELEASE',local(300));}
+    if(key==='assigned'){assert.equal((await conversationPost(f.origin,f.cookie,contact.id,'takeover',freshCommand())).status,200);for(let index=0;index<101;index++)await appendT22LiveItem(f.pool,contact.id,'待阅读检查记录 '+(index+1)+'（合成）。');}
+    contacts.push(contact);
+  }
+  await f.runtime.coordinator.runOnce();
+  for(const [index,contact] of contacts.entries())await f.pool.query('UPDATE conversation.session SET last_activity_at=$2::timestamp WHERE id=$1::uuid',[contact.id,local(index)]);
+  const [twelve,two,five,assigned]=contacts;assert.ok(twelve&&two&&five&&assigned);
+  return {twelve,two,five,assigned,epoch};
 }

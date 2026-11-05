@@ -13,7 +13,9 @@ export const isWorkbenchRealtimeQuery=(key:readonly unknown[],principal:string)=
 const isSearchQuery=(key:readonly unknown[],principal:string)=>key[0]==='board'&&key[1]===principal&&key[2]==='search';
 const isPeriodicQuery=(key:readonly unknown[],principal:string)=>isWorkbenchRealtimeQuery(key,principal)&&!['current-profile','reporter-profile','reporter-contact'].includes(String(key[0]))&&!isSearchQuery(key,principal);
 const auxiliaryFamilies=new Set(['reminders','ticket-round-notifications','attachments','web-report']);
-const isBusinessQuery=(key:readonly unknown[],principal:string)=>!auxiliaryFamilies.has(String(key[0]))&&isPeriodicQuery(key,principal);
+// Counts share inbox wakeups without becoming a prerequisite for core commands.
+const isAuxiliaryQuery=(key:readonly unknown[])=>auxiliaryFamilies.has(String(key[0]))||key[0]==='conversation-inbox'&&key[2]==='summary';
+const isBusinessQuery=(key:readonly unknown[],principal:string)=>!isAuxiliaryQuery(key)&&isPeriodicQuery(key,principal);
 const identity=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 class IdentityChanged extends Error{}
 export interface RealtimeView {status:WorkbenchRealtimeStatus;lastReadAt:number|null}
@@ -59,7 +61,7 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
           const abort=()=>{void client.cancelQueries({predicate:query=>isBusinessQuery(query.queryKey,principal.principal_id)&&query.isActive()},{revert:false});};
           signal.addEventListener('abort',abort,{once:true});
           // Auxiliary views share the wakeup without holding core command availability.
-          void client.invalidateQueries({predicate:query=>auxiliaryFamilies.has(String(query.queryKey[0]))&&isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});
+          void client.invalidateQueries({predicate:query=>isAuxiliaryQuery(query.queryKey)&&isWorkbenchRealtimeQuery(query.queryKey,principal.principal_id)&&query.isActive(),refetchType:'active'},{cancelRefetch:false,throwOnError:false});
           if(!isWorkbenchVisible()){
             signal.removeEventListener('abort',abort);signal.throwIfAborted();
             setWorkbenchTransportWritable(false);return {available:fresh.realtime_sse_available};

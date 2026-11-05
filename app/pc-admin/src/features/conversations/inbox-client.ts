@@ -1,10 +1,11 @@
-import {ApiError,readWorkbench} from '../../api/client';
+import {ApiError,decodeWorkbenchDateTime,readWorkbench} from '../../api/client';
+import type {Principal} from '../../api/client';
 import {UUID,decodeConversation} from './client';
-import type {ConversationInboxPage,ConversationInboxEntry,ConversationChatEntry,ConversationRelatedPage,ConversationChatItemPage,ConversationSourceBadge,ConversationChatDeliveryPage} from '../../../../../contracts/workbench_conversation_inbox_contracts';
+import type {ConversationInboxPage,ConversationInboxEntry,ConversationInboxSummary,ConversationChatEntry,ConversationRelatedPage,ConversationChatItemPage,ConversationSourceBadge,ConversationChatDeliveryPage} from '../../../../../contracts/workbench_conversation_inbox_contracts';
 export type {ConversationInboxEntry,ConversationChatEntry,ConversationChatItem,ConversationSourceBadge} from '../../../../../contracts/workbench_conversation_inbox_contracts';
 function bad():never{throw new ApiError(502,'INVALID_RESPONSE');}
 function object(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))bad();return v as Record<string,unknown>;}
-function exact(v:unknown,keys:readonly string[]){const o=object(v);if(Object.keys(o).length!==keys.length||Object.keys(o).some(k=>!keys.includes(k)))bad();return o;}
+function exact(v:unknown,keys:readonly string[],optional:readonly string[]=[]){const o=object(v);if(keys.some(k=>!Object.hasOwn(o,k))||Object.keys(o).some(k=>!keys.includes(k)&&!optional.includes(k)))bad();return o;}
 function text(v:unknown,max=20480):string{if(typeof v!=='string'||v.length>max)bad();return v;}
 function nullable(v:unknown,max=20480){return v===null?null:text(v,max);}
 function uuid(v:unknown){const s=text(v,36);if(!UUID.test(s))bad();return s;}
@@ -16,22 +17,25 @@ function time(v:unknown){const s=text(v,19);if(!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:
 function sequence(v:unknown){const s=text(v,19);if(!/^[1-9][0-9]{0,18}$/u.test(s)||BigInt(s)>9223372036854775807n)bad();return s;}
 function ref(v:unknown,kind:'cci'|'ctp'){const s=text(v,71);if(!new RegExp('^'+kind+'_v1_[a-f0-9]{64}$','u').test(s))bad();return s;}
 function source(v:unknown):ConversationSourceBadge{const o=exact(v,['kind','label','ref']),r=nullable(o.ref,64);if(r!==null&&!/^[a-f0-9]{64}$/u.test(r))bad();return {kind:enumeration(o.kind,['group','direct','unknown']),label:text(o.label,256),ref:r};}
+function waiting(o:Record<string,unknown>){return Object.hasOwn(o,'waiting_since')?{waiting_since:o.waiting_since===null?null:decodeWorkbenchDateTime(o.waiting_since)}:{};}
+export function decodeConversationSummary(v:unknown):ConversationInboxSummary{const o=exact(v,['unassigned_contact_count','my_unread_count','as_of']);return {unassigned_contact_count:integer(o.unassigned_contact_count),my_unread_count:integer(o.my_unread_count),as_of:decodeWorkbenchDateTime(o.as_of)};}
 export function decodeInboxEntry(v:unknown):ConversationInboxEntry{
-  const o=exact(v,['contact_ref','participant_label','department_label','anchor_session_id','matching_topic_count','latest_activity_at','last_item_preview','unread_count','source_badges','additional_source_count','assignment_summary','has_delivery_exception']);
+  const o=exact(v,['contact_ref','participant_label','department_label','anchor_session_id','matching_topic_count','latest_activity_at','last_item_preview','unread_count','source_badges','additional_source_count','assignment_summary','has_delivery_exception'],['waiting_since']);
   const a=exact(o.assignment_summary,['kind','label']),last=o.last_item_preview===null?null:exact(o.last_item_preview,['item_id','text','sender_kind','visibility']);
   return {contact_ref:ref(o.contact_ref,'cci'),participant_label:text(o.participant_label,128),department_label:nullable(o.department_label,128),anchor_session_id:uuid(o.anchor_session_id),matching_topic_count:integer(o.matching_topic_count),latest_activity_at:time(o.latest_activity_at),
     last_item_preview:last?{item_id:uuid(last.item_id),text:nullable(last.text,256),sender_kind:text(last.sender_kind,32),visibility:enumeration(last.visibility,['EXTERNAL','INTERNAL','RESTRICTED'])}:null,
-    unread_count:integer(o.unread_count),source_badges:array(o.source_badges,source,8),additional_source_count:integer(o.additional_source_count),assignment_summary:{kind:enumeration(a.kind,['UNASSIGNED','MINE','SINGLE','MIXED']),label:text(a.label,256)},has_delivery_exception:bool(o.has_delivery_exception)};
+    unread_count:integer(o.unread_count),source_badges:array(o.source_badges,source,8),additional_source_count:integer(o.additional_source_count),assignment_summary:{kind:enumeration(a.kind,['UNASSIGNED','MINE','SINGLE','MIXED']),label:text(a.label,256)},has_delivery_exception:bool(o.has_delivery_exception),...waiting(o)};
 }
 export function decodeChatEntry(v:unknown):ConversationChatEntry{
-  const o=exact(v,['session','participant_label','topic','channel_label','canonical_item','assignment','handoff','capabilities','contact_ref','topic_ref','department_label','original_source','current_contact_channel','reply_channel_label']);
-  return {...decodeConversation(o),contact_ref:ref(o.contact_ref,'cci'),topic_ref:ref(o.topic_ref,'ctp'),department_label:nullable(o.department_label,128),original_source:source(o.original_source),current_contact_channel:enumeration(o.current_contact_channel,['group','direct']),reply_channel_label:text(o.reply_channel_label,128)};
+  const o=exact(v,['session','participant_label','topic','channel_label','canonical_item','assignment','handoff','capabilities','contact_ref','topic_ref','department_label','original_source','current_contact_channel','reply_channel_label'],['waiting_since']);
+  return {...decodeConversation(o),contact_ref:ref(o.contact_ref,'cci'),topic_ref:ref(o.topic_ref,'ctp'),department_label:nullable(o.department_label,128),original_source:source(o.original_source),current_contact_channel:enumeration(o.current_contact_channel,['group','direct']),reply_channel_label:text(o.reply_channel_label,128),...waiting(o)};
 }
 const base=(id:string)=>'/api/workbench/conversations/'+encodeURIComponent(id);
 export const conversationInbox={
-  list:(filters:{state:string;source:string;q:string;source_group_ref?:string},cursor:string|null,signal:AbortSignal):Promise<ConversationInboxPage>=>readWorkbench('/api/workbench/conversation-inbox?'+new URLSearchParams({...filters,limit:'30',...(cursor?{cursor}:{})}),signal,v=>{const o=exact(v,['items','next_cursor']);return {items:array(o.items,decodeInboxEntry),next_cursor:nullable(o.next_cursor,2048)};}),
-  detail:(id:string,signal:AbortSignal)=>readWorkbench(base(id)+'?view=chat',signal,v=>{const entry=decodeChatEntry(v);if(entry.session.session_id!==id)bad();return entry;}),
-  related:(id:string,cursor:string|null,signal:AbortSignal):Promise<ConversationRelatedPage>=>readWorkbench(base(id)+'/related-sessions?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,v=>{const o=exact(v,['items','next_cursor']);return {items:array(o.items,decodeChatEntry),next_cursor:nullable(o.next_cursor,2048)};}),
+  summary:(signal:AbortSignal):Promise<ConversationInboxSummary>=>readWorkbench('/api/workbench/conversations/summary',signal,decodeConversationSummary),
+  list:(filters:{state:string;source:string;q:string;source_group_ref?:string},cursor:string|null,signal:AbortSignal):Promise<ConversationInboxPage>=>readWorkbench('/api/workbench/conversation-inbox?'+new URLSearchParams({...filters,limit:'30',include_waiting_since:'true',...(cursor?{cursor}:{})}),signal,v=>{const o=exact(v,['items','next_cursor']);return {items:array(o.items,decodeInboxEntry),next_cursor:nullable(o.next_cursor,2048)};}),
+  detail:(id:string,signal:AbortSignal)=>readWorkbench(base(id)+'?view=chat&include_waiting_since=true',signal,v=>{const entry=decodeChatEntry(v);if(entry.session.session_id!==id)bad();return entry;}),
+  related:(id:string,cursor:string|null,signal:AbortSignal):Promise<ConversationRelatedPage>=>readWorkbench(base(id)+'/related-sessions?'+new URLSearchParams({limit:'50',include_waiting_since:'true',...(cursor?{cursor}:{})}),signal,v=>{const o=exact(v,['items','next_cursor']);return {items:array(o.items,decodeChatEntry),next_cursor:nullable(o.next_cursor,2048)};}),
   items:(id:string,signal:AbortSignal,before?:string):Promise<ConversationChatItemPage>=>readWorkbench(base(id)+'/items?'+new URLSearchParams({view:'chat',limit:'50',...(before?{before_sequence:before}:{})}),signal,v=>{
     const o=exact(v,['session_id','items','before_sequence','after_sequence','has_more']);if(uuid(o.session_id)!==id)bad();
     return {session_id:id,items:array(o.items,v=>{const i=exact(v,['item_id','sequence_no','item_type','sender_kind','visibility','text','occurred_at','sender_label','sender_category','communication_message_id','source_label','media_availability']);
@@ -42,3 +46,10 @@ export const conversationInbox={
       return {message_id:uuid(d.message_id),purpose:text(d.purpose,64),delivery_id:uuid(d.delivery_id),status:text(d.status,64),side_effect_state:text(d.side_effect_state,64),channel:text(d.channel,64),attempt_count:integer(d.attempt_count),last_error_code:nullable(d.last_error_code,128),sent_at:d.sent_at===null?null:time(d.sent_at),created_at:time(d.created_at)};}),next_cursor:nullable(o.next_cursor,2048)};
   }),
 };
+
+/** One account-scoped cache shared by title and sidebar, including existing realtime invalidation. */
+export function conversationSummaryQuery(principal:Pick<Principal,'principal_id'|'conversation_workspace_enabled'|'conversation_inbox_enabled'>){
+  return {queryKey:['conversation-inbox',principal.principal_id,'summary'] as const,enabled:principal.conversation_workspace_enabled===true&&principal.conversation_inbox_enabled===true,
+    queryFn:async({signal}:{signal:AbortSignal}):Promise<ConversationInboxSummary|null>=>{try{return await conversationInbox.summary(signal);}catch(error){if(signal.aborted||error instanceof Error&&error.name==='AbortError'||error instanceof ApiError&&[401,403].includes(error.status))throw error;return null;}},
+    retry:false,staleTime:Infinity,gcTime:0,refetchOnWindowFocus:false};
+}
