@@ -354,3 +354,15 @@ additional-evidence-10全部断言通过：C6错误码为JetBrains Mono/12px；�
 只删除了本任务下载缓存中可从原固定版本缓存恢复、且SHA相同的Electron重复ZIP；源缓存、已安装依赖、当前正式build、分支/worktree与静态PG目录保留供复核。失败/NOT_RUN/原件、原主工作区未跟踪文件与历史Evidence未清理。没有提交、推送、PR、部署或Gate操作。
 
 本地PR描述草稿（按pr技能模板，逐条F1–F4/C1–C9/N1–N3/G1–G3）位于 `D:/CodexEvidence/pc-admin-v215-card24-20261105/pr-description.md`；没有创建远端PR。汇总为同目录final-result.json；可移植截图/数值索引见卡24Evidence README。源码和依赖可用Git差异/lockfile恢复，关闭无需数据库迁移或持久开关动作。
+
+
+## 发布与独立本地审查（2026-11-05，用户后续授权）
+
+用户明确授权：先提交，独立本地两端审查替代暂不可用的Codex Review，修复/验证后推送创建PR；等待CI全部成功且无major后，以merge commit合并main、同步本地主分支，只清理本卡分支/worktree。此授权不扩展部署、真实发送或Gate。
+
+首次提交293551f868c78b2fc2b2be04131289005a10767c，base f71a1cb8e51a2731ca72be78429a281b4fcbbebf。两个独立只读代理分别审Standards与Spec，完整74路径（54文本、20PNG），原件保存 `D:/CodexEvidence/pc-admin-v215-card24-publish-20261105/`。Standards无可执行发现；Spec发现F1 P2：统一Token只覆盖原23处，热度/列表计数仍normal。Root用真实正式bundle/UUID合成库实测确认：heat四项、列表列头三项normal，已有time/stage-count为tabular-nums；numeric-before.json保留。没有以既有PASS或“只替换23处”解释收窄需求。
+
+修复为根级font-variant-numeric继承既有Token，保证未单列规则的数字控件同样tabular；保留原23处引用。新增真实可见数字控件计算值断言（时间、计数、热度/期限、徽标、表格页脚），并在实际列表视图明确断言列头计数。未改命令、状态、权限、数据或依赖。后续测试与复核在新提交上单列，不回绑旧结果。
+
+
+独立审查初轮已完成：Standards 0项；Spec 1项P2/F1（74/74路径、跳过0），未发现P0/P1。原报告分别standards-review.md与spec-review.md（外部发布回执根）；不是Codex Review服务调用。F1修复和真实控件断言随后提交，待在新SHA完成构建/实测和两端复核后才发布。

@@ -14,7 +14,7 @@ import {seedCard23Conversation} from './helpers/conversation-inbox-fixture.mjs';
 import {card23Geometry,assertCard23Geometry} from './helpers/card23-presentation.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import {card24Fonts,card24Kbd,card24Conversation} from './helpers/card24-presentation.mjs';
+import {card24Fonts,card24Kbd,card24Conversation,card24Numeric} from './helpers/card24-presentation.mjs';
 import {seedCard22Board} from './helpers/web01-workbench-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 
@@ -63,6 +63,9 @@ test('Card24 F1–F4 C1–C9 G1–G3 measure local fonts, four conversation stat
    const boardHeader=await browser.evaluate("({title:document.querySelector('h1').getBoundingClientRect().toJSON(),icon:document.querySelector('.page-icon').getBoundingClientRect().toJSON()})") as {title:{x:number;y:number};icon:{width:number;height:number}};assert.equal(boardHeader.title.x,header.x);assert.equal(boardHeader.title.y,header.y);assert.equal(boardHeader.icon.width,36);assert.equal(boardHeader.icon.height,36);metrics.push({G1:boardHeader});
    await captureCard22(browser,directory,'board-1440');await captureCard22(browser,directory,'glyph-card-x2','.ticket-card');await captureCard22(browser,directory,'glyph-account-x2','.sidebar .account');
    await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('scrollTo(0,0)');await captureCard22(browser,directory,'board-1920');await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?view=list'});await browser.waitFor("document.querySelectorAll('.list-group .work-table tbody td').length>0");
+   const listNumeric=await card24Numeric(browser);assert.ok(listNumeric.some(n=>n.selector==='.list-group .column-heading>span'));metrics.push({F1ListNumeric:listNumeric});
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length>=3");
    await clickWorkbenchControl(browser,'.ticket-card .card-open');await browser.waitFor("Boolean(document.querySelector('.detail-body'))");await captureCard22(browser,directory,'drawer-1440');
    await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await browser.evaluate('document.fonts.ready');assert.equal(await browser.evaluate('document.fonts.check(\'14px "Noto Sans SC Variable"\')'),true);await captureCard22(browser,directory,'offline-loaded-fonts-1440');metrics.push({F4:'already loaded page, full browser network offline; this is not a cold Electron start'});await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
    assert.deepEqual(posts,[],'presentation verification never POSTs');

@@ -214,6 +214,7 @@
   font-family: var(--font-sans);
   font-size: var(--fs-md);
   font-weight: var(--fw-regular);
+  font-variant-numeric: var(--font-numeric-variant);
   line-height: var(--lh-md);
   color: var(--text-primary);
   background: var(--bg-canvas);

@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import type {Browser} from './wbint-t27-browser-fixture.mjs';
 import {record} from './wbint-t27-browser-fixture.mjs';
 
+export async function card24Numeric(browser:Browser){
+ const values=await browser.evaluate(`(()=>{const selectors=['time','.ds-composer-count','.inbox-unread','.ds-stage-count','.ds-board-group-count','.ds-ticket-heat','.ds-ticket-deadline','.card-tags .ds-tag','.list-group .column-heading>span','.ds-table-footer'];return selectors.flatMap(selector=>[...document.querySelectorAll(selector)].filter(n=>n.checkVisibility()&&/[0-9]/.test(n.textContent)).map(n=>({selector,text:n.textContent,variant:getComputedStyle(n).fontVariantNumeric})));})()`) as {selector:string;text:string;variant:string}[];
+ assert.ok(values.length>0,'F1 rendered numeric controls');
+ for(const value of values)assert.equal(value.variant,'tabular-nums','F1 '+value.selector+' '+value.text);
+ return values;
+}
+
 export async function card24Fonts(browser:Browser){
  await browser.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
  const sample=record(await browser.evaluate(`(()=>{
@@ -18,7 +25,7 @@ export async function card24Fonts(browser:Browser){
  for(const value of sample.mono)assert.match(String(value),/^"?JetBrains Mono Variable/u);
  assert.ok(Array.isArray(sample.fonts)&&sample.fonts.length>0);assert.equal(sample.fonts.some(v=>record(v).external),false,'F1 no remote font');
  assert.equal(sample.dpr,1);assert.equal(sample.zoom,1);
- return sample;
+ return {...sample,numeric:await card24Numeric(browser)};
 }
 
 export async function card24Kbd(browser:Browser,selector:string){

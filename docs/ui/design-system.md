@@ -6,7 +6,7 @@
 
 ### 字体（F1–F4）
 
-- 正文、中文、西文与数字统一 `--font-sans: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`。Inter在前，中文及全角标点回落Noto Sans SC。`--font-num: var(--font-sans)`；时间、计数、徽标与数字列共用 `--font-numeric-variant: tabular-nums`，使用该Token或统一数字规则，禁止重复裸写。
+- 正文、中文、西文与数字统一 `--font-sans: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`。Inter在前，中文及全角标点回落Noto Sans SC。`--font-num: var(--font-sans)`；时间、计数、徽标与数字列共用 `--font-numeric-variant: tabular-nums`，根级继承该Token，已有数字规则继续引用同一Token，覆盖热度/期限徽标、折叠数量和列表列头计数；禁止重复裸写。
 - `--font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Consolas, monospace`，仅工单/受理编号、错误码及代码使用。快捷键用sans。字重只用400/500/600 Token，保留font-synthesis:none。
 - 三个Fontsource可变字体包精确锁版；Inter、JetBrains Mono仅latin normal wght，Noto Sans SC保留包内unicode-range编号分片，浏览器按文字加载。不合并中文大文件，不引入其它语种和斜体。每个face使用swap，字体随正式制品同源分发，禁止外部字体CDN。
 - fonts.css先于tokens.css引入；独立登录入口引入字体，并在login.css声明同一字体Token以保留原始布局与基准字号。根使用antialiased、grayscale和optimizeLegibility。HeroUI继承同一栈。Stylelint约束font-family只能引用var(--font-*)，仅fonts.css的face声明与Token源豁免；登录保留旧颜色豁免但字体约束仍检查。
