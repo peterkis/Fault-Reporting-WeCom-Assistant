@@ -43,3 +43,9 @@ ca893d6d的本地build 922/922、types/Stylelint/ESLint、工具/文档33/33、�
 本地正式ca893产物A/B：旧helper的--disable-gpu得到no-adapter背景回退；仅去除该参数、不加unsafe或blocklist豁免后，实际shader ready，工牌摆幅15.8406px、后段0px、209帧、最大间隔116.8ms。显式unsupported回退对照也通过，但未把量化摆动移到该对照或删除任何原GPU分支。探针原件为probe-login-gpu-isolation.json和probe-login-normal-graphics.json；早期额外开关探针单列，不冒充最终配置。
 
 只让正式登录3D测试通过graphics=true使用浏览器正常图形路径；helper默认仍为false，全部其它调用继续禁用GPU。原组合摆幅≥6px、后段<1px、同iframe、完整动效以及所有GPU/恢复/认证断言保持，增加背景模式、可见性和最大帧间隔日志。未改登录应用动画、布局或全局系统设置，也不据Windows结果提前宣称Linux问题已消失。原生导航测试只复用既有helper的D/C两盘OpenSSL候选定位并在缺失时明确失败；证书参数与后续全部原生断言保持。后继结果另绑定新提交。
+
+ffcc9c08本地build 922/922、types/样式、工具33/33、默认helper生命周期6/6和完整登录11/11通过；真实组合为shader背景、页面visible、15.8364px/后段0px、218帧、最大间隔17.4ms，manifest 7dac01cdb9e12ce2b9a5f430bf908badd35d3fba2182238a129153dfb9d9422c。新增实际desktop:test首次与原参数复跑均8PASS/1FAIL，卡在窗口可见但document.hidden仍true；原失败不覆盖。
+
+原生探针记录Windows输入桌面为解锁Default；hide前就hidden，窗口visible、未最小化、viewVisible、页面有焦点。生成物中重复throttling守卫及moveTop/restore两项单变量探针均失败，原compiled文件各已哈希恢复，未进入生产源码。仅在测试Electron启动关闭CalculateNativeWinOcclusion后，完整原生导航1/1通过（native-occlusion-probe.log），全部原hide/show、离线/崩溃/认证/窗口断言保持。该参数只固定GUI测试的宿主遮挡环境，生产窗口的可见性和隐私机制不变。
+
+干净CI的desktop:test依赖stage壳文件和图标，因此将现有desktop:build提前到它之前，并给既有真实workflow工具测试补前置顺序断言。没有增减所选检查、放宽失败/跳过规则或更改合并汇总；后继正式结果另绑定提交，不把探针PASS冒充新候选或CI通过。

@@ -52,7 +52,9 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
   const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:profile,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
   // This GUI test observes the app's first show. SW_HIDE would override that first
   // native ShowWindow call and require the test driver to manufacture visibility.
-  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
+  // Unrelated host windows must not occlude this GUI fixture. Actual hide/show
+  // visibility and the application's native privacy guards remain under test.
+  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage,'--disable-features=CalculateNativeWinOcclusion'],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
   child.stderr?.on('data',(chunk:Buffer)=>writeFileSync(path.join(profile,'process-stderr.log'),chunk,{flag:'a'}));
   let ready=false,next=1;const pending=new Map<number,{resolve:(value:unknown)=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>();
   child.on('message',(value:unknown)=>{if(!value||typeof value!=='object')return;const message=value as Record<string,unknown>;if(message.ready===true){ready=true;return;}if(typeof message.id!=='number')return;const slot=pending.get(message.id);if(!slot)return;clearTimeout(slot.timer);pending.delete(message.id);if(message.ok)slot.resolve(message.result);else slot.reject(Error(String(message.error)));});
