@@ -44,7 +44,7 @@ export function buildWeb(root:string):void {
   const project=path.join(root,'app/pc-admin'),output=path.join(controlledBuildRoot(root),'emit/web/admin-workbench');
   runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--outDir',output,'--emptyOutDir']);
   const files=outputFiles(output);
-  if(!files.includes('index.html')||!files.includes('.vite/manifest.json')||files.some(f=>!['index.html','.vite/manifest.json'].includes(f)&&!/^assets\/[A-Za-z0-9_-]+\.(js|css)$/u.test(f)))throw new Error('WEB01_BUILD_OUTPUT_INVALID');
+  if(!files.includes('index.html')||!files.includes('.vite/manifest.json')||files.some(f=>!['index.html','.vite/manifest.json'].includes(f)&&!/^assets\/[A-Za-z0-9_-]+\.(js|css|woff2)$/u.test(f)))throw new Error('WEB01_BUILD_OUTPUT_INVALID');
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');
   const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
   writeFileSync(path.join(output,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
@@ -53,7 +53,7 @@ export function buildWeb(root:string):void {
     const loginOutput=path.join(controlledBuildRoot(root),'emit/web/desktop-login');
     runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--config',loginConfig,'--outDir',loginOutput,'--emptyOutDir']);
     const loginFiles=outputFiles(loginOutput);
-    if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)$/u.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
+    if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2)$/u.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
     const manifest=record(JSON.parse(readFileSync(safeFile(loginOutput,'.vite/manifest.json'),'utf8')) as unknown);
     record(manifest['src/login/main.ts']).loginRepresentations=emitRepresentations(loginOutput,loginFiles.filter(file=>file.startsWith('assets/')));
     writeFileSync(path.join(loginOutput,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');

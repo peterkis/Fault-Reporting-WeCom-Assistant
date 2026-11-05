@@ -64,8 +64,10 @@
 /* ---------- 第 2 层：语义 Token（业务 CSS 只用这一层和第 3 层） ---------- */
 :root {
   /* 字体 */
-  --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  --font-sans: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-num: var(--font-sans);
+  --font-numeric-variant: tabular-nums;
 
   /* 文字 */
   --text-primary:   var(--gray-900);
@@ -188,7 +190,7 @@
   --control-h-md: 32px;    /* 默认 */
   --control-h-lg: 36px;
   --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px;
-  --avatar-sm: 20px; --avatar-md: 24px; --avatar-lg: 32px;
+  --avatar-sm: 20px; --avatar-md: 24px; --avatar-msg: 28px; --avatar-lg: 32px;
   --fs-avatar-sm: calc(var(--avatar-sm) / 2); /* §6.13: avatar glyph = 50% of size. */
 
   /* 布局 */
@@ -218,6 +220,8 @@
   color-scheme: light;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 @media (max-width: 1280px) { :root { --page-pad-x: var(--space-6); } }

@@ -1,10 +1,11 @@
 .workspace.ds-page>.ds-page-header {display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-5) 0 var(--space-4); margin: 0; min-width: 0; min-height: calc(var(--lh-2xl) + var(--lh-sm) + var(--space-1) + var(--space-5) + var(--space-4));}
 .ds-page-heading {flex: 1; min-width: 0;}
-.ds-page-heading-line {display: flex; align-items: center; gap: var(--space-2); min-width: 0;}
-.ds-page-header .page-icon {display: inline-flex; width: var(--icon-lg); height: var(--icon-lg); background: transparent; border-radius: 0; color: var(--text-secondary);}
+.ds-page-heading-line {display: flex; align-items: center; gap: var(--space-3); min-width: 0;}
+.ds-page-header .page-icon {display: inline-flex; align-items:center; justify-content:center; flex:none; width: var(--control-h-lg); height: var(--control-h-lg); background: var(--bg-muted); border-radius: var(--radius-md); color: var(--text-primary);}
 .ds-page-header .page-icon>svg {width: var(--icon-lg); height: var(--icon-lg); stroke-width: 1.75;}
 .ds-page .ds-page-header h1 {font-size: var(--fs-2xl); line-height: var(--lh-2xl); font-weight: var(--fw-semibold); letter-spacing: normal; overflow-wrap: anywhere;}
 .ds-page .ds-page-header .ds-page-heading>p {font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--text-secondary); margin-top: var(--space-1); max-width: 100%; overflow-wrap: anywhere;}
+.ds-page-heading:has(.page-icon)>p {margin-left:calc(var(--control-h-lg) + var(--space-3));}
 .ds-page-header .ds-page-actions {display: flex; align-items: center; gap: var(--space-2); margin: 0 0 0 auto; flex: none; max-width: 50%;}
 .ds-page-actions>a {font-size: var(--fs-sm); color: var(--text-secondary); overflow-wrap: anywhere;}
 .ds-page-actions>a:hover {color: var(--text-link);}

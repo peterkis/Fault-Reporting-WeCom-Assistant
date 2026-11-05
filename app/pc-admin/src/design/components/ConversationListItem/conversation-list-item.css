@@ -8,7 +8,7 @@
 .ds-conversation-list-item>a[aria-disabled=true] {color:var(--text-tertiary);cursor:not-allowed;}
 .ds-conversation-list-item strong {min-width:0;font-size:var(--fs-md);font-weight:var(--fw-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ds-conversation-list-item .inbox-contact-title {gap:var(--space-2);}
-.ds-conversation-list-item time {font-size:var(--fs-xs);font-variant-numeric:tabular-nums;flex:none;color:var(--text-secondary);}
+.ds-conversation-list-item time {font-size:var(--fs-xs);font-variant-numeric:var(--font-numeric-variant);flex:none;color:var(--text-secondary);}
 .ds-conversation-list-item .inbox-contact-preview {display:block;font-size:var(--fs-sm);line-height:var(--lh-sm);margin:var(--space-1) 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ds-split .inbox-contact-title strong {flex:1;min-width:0;}
 .ds-split .inbox-contact-title {min-width:0;max-width:100%;}

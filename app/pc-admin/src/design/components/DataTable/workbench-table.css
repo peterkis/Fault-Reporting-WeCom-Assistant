@@ -5,7 +5,7 @@
 .work-table th {height: var(--space-8);color: var(--text-secondary);font-size: var(--fs-sm);font-weight: var(--fw-regular);box-shadow: inset 0 -1px 0 var(--border-hair); }
 .work-table td {height: var(--topbar-h);font-size: var(--fs-md); }
 .work-table th, .work-table td {padding: 0 var(--space-1-5);overflow: hidden;text-overflow: ellipsis;white-space: nowrap; }
-.work-table th:first-child, .work-table td:first-child {padding-left: var(--space-3);width: 88px;font-family: var(--font-mono);font-size: var(--fs-xs);color: var(--text-secondary);border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.work-table th:first-child, .work-table td:first-child {padding-left: var(--space-3);width: 88px;font-family: var(--font-sans);font-size: var(--fs-xs);color: var(--text-secondary);border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 .work-table th:nth-child(2) {width: 28%; }
 .work-table th:nth-child(3) {width: 110px; }
 .work-table th:nth-child(4) {width: 92px; }
@@ -34,3 +34,6 @@
 .source-group-pagination {display:flex;gap:var(--space-2); }
 @media(max-width:900px) {
 .source-group-directory .page-title {align-items:start; } }
+
+/* F3: only the canonical number column uses mono; shared table headings stay sans. */
+.list-group .work-table td:first-child {font-family:var(--font-mono); }

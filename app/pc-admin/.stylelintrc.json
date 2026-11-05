@@ -1,29 +1,101 @@
 {
-  "ignoreFiles": ["src/login/**/*.css", "dist/**"],
+  "ignoreFiles": [
+    "dist/**"
+  ],
   "rules": {
     "color-no-hex": true,
     "color-named": "never",
-    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla"],
+    "function-disallowed-list": [
+      "rgb",
+      "rgba",
+      "hsl",
+      "hsla"
+    ],
     "declaration-no-important": true,
-    "unit-disallowed-list": ["rem", "em"],
+    "unit-disallowed-list": [
+      "rem",
+      "em"
+    ],
     "declaration-property-value-allowed-list": {
-      "font-size": ["/^var\\(--fs-/", "inherit"],
-      "font-weight": ["/^var\\(--fw-/", "inherit"],
-      "border-radius": ["/^var\\(--radius-/", "0"],
-      "box-shadow": ["/^var\\(--shadow-/", "none", "/^inset 0 -?1px 0 var\\(--border-/", "/^0 0 0 2px var\\(--border-focus\\)/"],
-      "z-index": ["/^var\\(--z-/", "0", "1", "-1"],
-      "color": ["/^var\\(--/", "inherit", "currentColor", "transparent"],
-      "background-color": ["/^var\\(--/", "transparent", "inherit"],
-      "background": ["/^var\\(--/", "none", "transparent"]
+      "font-size": [
+        "/^var\\(--fs-/",
+        "inherit"
+      ],
+      "font-weight": [
+        "/^var\\(--fw-/",
+        "inherit"
+      ],
+      "border-radius": [
+        "/^var\\(--radius-/",
+        "0"
+      ],
+      "box-shadow": [
+        "/^var\\(--shadow-/",
+        "none",
+        "/^inset 0 -?1px 0 var\\(--border-/",
+        "/^0 0 0 2px var\\(--border-focus\\)/"
+      ],
+      "z-index": [
+        "/^var\\(--z-/",
+        "0",
+        "1",
+        "-1"
+      ],
+      "color": [
+        "/^var\\(--/",
+        "inherit",
+        "currentColor",
+        "transparent"
+      ],
+      "background-color": [
+        "/^var\\(--/",
+        "transparent",
+        "inherit"
+      ],
+      "background": [
+        "/^var\\(--/",
+        "none",
+        "transparent"
+      ],
+      "font-family": [
+        "/^var\\(--font-[a-z-]+\\)$/"
+      ]
     }
   },
   "overrides": [
     {
-      "files": ["src/design/tokens.css"],
+      "files": [
+        "src/design/tokens.css"
+      ],
       "rules": {
         "color-no-hex": null,
         "function-disallowed-list": null,
         "declaration-property-value-allowed-list": null
+      }
+    },
+    {
+      "files": [
+        "src/design/fonts.css"
+      ],
+      "rules": {
+        "declaration-property-value-allowed-list": null
+      }
+    },
+    {
+      "files": [
+        "src/login/**/*.css"
+      ],
+      "rules": {
+        "color-no-hex": null,
+        "color-named": null,
+        "function-disallowed-list": null,
+        "declaration-no-important": null,
+        "unit-disallowed-list": null,
+        "declaration-property-value-allowed-list": {
+          "font-family": [
+            "/^var\\(--font-[a-z-]+\\)$/"
+          ]
+        }
       }
     }
   ]

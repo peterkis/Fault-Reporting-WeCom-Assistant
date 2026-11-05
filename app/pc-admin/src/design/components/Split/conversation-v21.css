@@ -114,7 +114,7 @@
 .ds-page .ds-split .inbox-composer .ds-composer-disabled-reason {display:flex;align-items:center;gap:var(--space-1);margin:0;padding:0 var(--space-2);font-size:var(--fs-xs);line-height:var(--lh-xs);color:var(--text-secondary);}
 .ds-composer-disabled-reason>svg {width:var(--fs-sm);height:var(--fs-sm);flex:none;}
 .inbox-composer .ds-composer-shortcut {white-space:nowrap;font-size:var(--fs-xs);color:var(--text-tertiary);}
-.inbox-composer .ds-composer-shortcut kbd {font:inherit;}
+.inbox-composer .ds-composer-shortcut kbd {font-family:var(--font-sans);}
 .inbox-composer .note-controls:has([type=submit]:disabled) .ds-composer-shortcut {display:none;}
 .inbox-composer .ds-composer-status .inbox-draft-status:not(.sr-only) {display:inline-flex;align-items:center;gap:var(--space-1);min-width:0;width:auto;max-width:100%;height:auto;line-height:var(--lh-xs);font-size:var(--fs-xs);color:var(--text-secondary);}
 .inbox-composer .inbox-draft-status:not(.sr-only)::before {content:'·';color:var(--text-tertiary);margin-right:var(--space-1);}

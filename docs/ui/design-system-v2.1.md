@@ -1,5 +1,7 @@
 # 医小修 PC 管理端 · v2.0 验收与 v2.1 升华设计方案
 
+卡24字体与细节前向规格见[统一规范](design-system.md#v215-字体与细节卡24前向覆盖同项旧规格)和[执行记录](../../plans/pc-admin-design-v21/card-24.md)：Inter/Noto Sans SC/JetBrains Mono本地分片、数字Token与sans快捷键取代本文件旧字体描述；颜色、架构与业务合同保持。
+
 Nov 1, 2026 · @peter evans
 
 ## 结论

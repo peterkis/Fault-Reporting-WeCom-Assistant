@@ -2,7 +2,7 @@ import type {HTMLAttributes,ReactNode} from 'react';
 import {avatarInitial} from './avatarInitial';
 import './avatar.css';
 
-type Props=Omit<HTMLAttributes<HTMLSpanElement>,'style'|'color'> & {name?:string|null;personId?:string|undefined;size?:20|24|32;systemIcon?:ReactNode;imageSrc?:string|undefined};
+type Props=Omit<HTMLAttributes<HTMLSpanElement>,'style'|'color'> & {name?:string|null;personId?:string|undefined;size?:20|24|28|32;systemIcon?:ReactNode;imageSrc?:string|undefined};
 export function Avatar({name,personId,size=24,systemIcon,imageSrc,className='',...props}:Props){
   let hash=0;
   for(const character of personId??name??'')hash=(hash*31+(character.codePointAt(0)??0))>>>0;

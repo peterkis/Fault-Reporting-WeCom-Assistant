@@ -44,6 +44,14 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   for(const header of ['*;q=0','identity;q=0,br;q=0,gzip;q=0','identity;q=0,gzip;q=2,br;q=0'])assert.equal((await raw(script,header)).status,406);
   for(const suffix of ['.gz','.br','?raw=1'])assert.equal((await raw(script+suffix,'br,gzip')).status,400,'encoding sidecars and queries never become new public paths');
   assert.equal((await raw('/workbench/desktop/assets/unmanifested.js','br,gzip')).status,404);
+  const styles=[...shell.matchAll(/href="([^"<>]+\.css)"/gu)].map(match=>match[1]);assert.ok(styles.length);
+  const fontPaths=new Set<string>();
+  for(const style of styles){assert.ok(style);const response=await raw(style);assert.equal(response.status,200);for(const match of response.body.toString().matchAll(/url\(["']?(\/workbench\/desktop\/assets\/[^"')]+\.woff2)["']?\)/gu)){assert.ok(match[1]);fontPaths.add(match[1]);}assert.equal(/url\(["']?data:font/iu.test(response.body.toString()),false);}
+  assert.equal(fontPaths.size,99,'F1 login uses the same local unicode-range shards');
+  const fontPath=[...fontPaths][0];assert.ok(fontPath);const font=await raw(fontPath,'br,gzip');assert.equal(font.status,200);assert.equal(font.headers['content-type'],'font/woff2');assert.equal(font.headers['content-encoding'],undefined);assert.equal(font.body.subarray(0,4).toString(),'wOF2');
+  const fontHead=await raw(fontPath,'br,gzip','HEAD');assert.equal(fontHead.status,200);assert.equal(fontHead.body.length,0);assert.equal(fontHead.headers['content-length'],String(font.body.length));
+  assert.equal((await raw(fontPath,'identity;q=0,br,gzip')).status,406);assert.equal((await raw('/workbench/desktop/assets/inter-latin-wght-normal-unmanifested.woff2')).status,404);
+  assert.equal((await raw(fontPath+'?raw=1')).status,400);assert.equal((await raw(fontPath+'.br')).status,400);
   browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');

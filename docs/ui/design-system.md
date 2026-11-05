@@ -1,5 +1,32 @@
 # 医小修 PC 管理端 · 统一设计系统规范 v2.0
 
+## v2.1.5 字体与细节（卡24，前向覆盖同项旧规格）
+
+视觉依据为最新版「医小修 PC 管理端 v2.1.4 · 定稿原型」01–05（含03b、04b），06–08不再适用。执行与逐项验收见[卡24](../../plans/pc-admin-design-v21/card-24.md)。
+
+### 字体（F1–F4）
+
+- 正文、中文、西文与数字统一 `--font-sans: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`。Inter在前，中文及全角标点回落Noto Sans SC。`--font-num: var(--font-sans)`；时间、计数、徽标与数字列共用 `--font-numeric-variant: tabular-nums`，使用该Token或统一数字规则，禁止重复裸写。
+- `--font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Consolas, monospace`，仅工单/受理编号、错误码及代码使用。快捷键用sans。字重只用400/500/600 Token，保留font-synthesis:none。
+- 三个Fontsource可变字体包精确锁版；Inter、JetBrains Mono仅latin normal wght，Noto Sans SC保留包内unicode-range编号分片，浏览器按文字加载。不合并中文大文件，不引入其它语种和斜体。每个face使用swap，字体随正式制品同源分发，禁止外部字体CDN。
+- fonts.css先于tokens.css引入；独立登录入口引入字体，并在login.css声明同一字体Token以保留原始布局与基准字号。根使用antialiased、grayscale和optimizeLegibility。HeroUI继承同一栈。Stylelint约束font-family只能引用var(--font-*)，仅fonts.css的face声明与Token源豁免；登录保留旧颜色豁免但字体约束仍检查。
+- CSP沿原font-src 'self'，无远程放宽；构建检查是否存在data字体。Electron远程页面与安装壳资源分别报告，浏览器离线缓存验证不冒充安装包离线业务能力。
+
+### 会话（C1–C9）
+
+- C1/C2：普通气泡12px圆角；组首条incoming左上4px/outgoing右上4px，rest四角12px。内边距10px 12px，组合已有space-2/space-0-5/space-3；系统胶囊不变。消息头像及合并占位28px（avatar-msg），文字fs-xs；其它头像不变。
+- C3：等待横幅与输入区贴合，共用1px分隔线，上圆角10px、下圆角12px；横幅单行省略，按钮不收缩。主句primary/600，补充secondary/400，时钟attention。无等待起点不显示时长。待接待输入白底、计数可见、发送禁用、无快捷键；无回复权限才灰底。
+- C4/C5：底栏左侧计数、草稿状态、ghost清理草稿（12px、24px高、无边框），原动作/恢复完整保留。可回复且非待接待/提交中始终显示快捷键，空输入不隐藏。占位姓名前后不插空格。
+- C6/C7：投递label逻辑保持；已有映射用中文、title保留码，无映射显示“错误码 ”及mono/fs-xs原码，失败与结果待核实一致。联系人异常用12px TriangleAlert、danger色及原aria/title。
+- C8/C9：会话头白底+hair底线，滚动内容不穿入。待接待warning；本人“接待中 · 我”brand；他人“接待中 · 姓名（去括号后缀）”brand；结束neutral。右栏标题13/600、姓名14/600、科室12，来源13/22，标签secondary、值primary。
+
+### 外壳与通知（N1–N3、G1–G3）
+
+- N1：th无底边框，thead tr绘制等于表格宽的连续1px hair底线。N2：失败TriangleAlert，待核对Clock，均12px、间距4px。N3：会话来源仅去掉“（资料未提供）”，保留其它后缀。
+- G1：页面标题图标36px、8px圆角、muted底、20px primary图标；通知异常danger底/字。图标到标题12px，副标题向标题文字对齐（48px）。各页标题原点统一。
+- G2：侧栏搜索上品牌行48px高，28px品牌底白扳手、医小修15/600、团队12/secondary，团队与面包屑共用现有来源。上下间距8px、水平对齐导航；折叠保留图标。
+- G3：统一kbd高18px、最小宽18px、水平4px、4px圆角、1px default描边、canvas白底、12px secondary sans/500，侧栏Ctrl K、搜索/、输入Ctrl共用。尺寸用已有Token组合，品牌15px用fs-md+描边单位组合，不扩字号阶梯。
+
 Oct 31, 2026 · @peter evans
 
 ## 结论
@@ -183,7 +210,7 @@ v2.1.2 删除看板底板及 `--bg-board` / `--bg-column`；泳道使用 `--lane
 
 ### 4.2 字体
 
-字体栈：`"PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", ui-sans-serif, …`；编号、数字时间用 `--font-mono` 或 `font-variant-numeric: tabular-nums`。Windows Electron 上必须优先 `Microsoft YaHei UI`（比 YaHei 行距紧凑）。
+字体栈：`"Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`。西文/数字优先Inter，中文回落Noto Sans SC。时间/计数沿 `--font-num` 与 `--font-numeric-variant`；只有工单/受理编号、错误码与代码使用 `--font-mono`（JetBrains Mono Variable）。本地子集、swap、CSP与lint见前向字体章节F1–F4，禁止外部CDN。
 
 | Token | 字号 / 行高 | 字重 | 用在 |
 | --- | --- | --- | --- |
@@ -430,7 +457,7 @@ PageHeader 的原获权「新报修」primary 内附 `N` 提示；本卡只加�
 
 ### 6.13 头像 Avatar
 
-圆形；尺寸 20/24/32；字号为尺寸 50%、500；四种柔和色按 `personId ?? name` 的完整原始输入稳定哈希；系统事件用 `--bg-muted` 底 + 图标；未派单用 1.5px 虚线圆。
+圆形；一般尺寸20/24/32，消息组专用28（avatar-msg）；一般字号为尺寸50%、500，28px消息头像固定fs-xs/500；四种柔和色按 `personId ?? name` 的完整原始输入稳定哈希；系统事件用 `--bg-muted` 底 + 图标；未派单用 1.5px 虚线圆。
 
 显示字由 `Avatar/avatarInitial.ts` 的纯函数 `avatarInitial(name)` 统一计算：先 `trim()`，循环剥离末尾全角/半角括号后缀（`/\s*[（(][^（）()]*[）)]\s*$/u`）；剥离后为空则取原名第一个非括号、非空白字符，仍为空返回「—」。以拉丁字母开头则取首字母大写，否则用 `Array.from` 取最后一个 Unicode 字符。例：张三（合成）→三，Peter→P，（合成）→合。`aria-label` 和 `title` 保留完整原名，颜色哈希输入不随后缀剥离改变。
 
@@ -531,7 +558,7 @@ features/*/             只组合 design/components，原则上不再有自己�
 
 导入顺序：`tailwindcss` → `@heroui/styles` → `design/tokens.css` → `design/base.css` → `design/components/*.css` → 极少量 `features/*.css`。
 
-实际入口由 `main.tsx` 先导入 `design/foundation.css`，该文件按上述顺序用 CSS `@import` 接入 Tailwind、HeroUI 与 Token，再加载其余样式。不要在 TypeScript 中直接副作用导入 `@heroui/styles`：包根会解析为 JavaScript 工具导出；显式 `/css` 出口也缺少本项目严格副作用导入所需的类型声明。CSS 入口复用现有构建机制，无需增加声明豁免。
+实际入口由 `main.tsx` 最先导入 `design/fonts.css`，再导入 `design/foundation.css`，该文件按上述顺序用 CSS `@import` 接入 Tailwind、HeroUI 与 Token，再加载其余样式。不要在 TypeScript 中直接副作用导入 `@heroui/styles`：包根会解析为 JavaScript 工具导出；显式 `/css` 出口也缺少本项目严格副作用导入所需的类型声明。CSS 入口复用现有构建机制，无需增加声明豁免。
 
 文件位置：`tokens.css` → `app/pc-admin/src/design/tokens.css`；`.stylelintrc.json` → `app/pc-admin/.stylelintrc.json`（与该应用的 package.json 同级，在 `app/pc-admin` 下运行 `npx stylelint "src/**/*.css"`）；本规范导出 Markdown → `docs/ui/design-system.md`。当前代码在该配置下的基线违规为 600 条。
 

@@ -14,7 +14,62 @@ import {seedCard23Conversation} from './helpers/conversation-inbox-fixture.mjs';
 import {card23Geometry,assertCard23Geometry} from './helpers/card23-presentation.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {card24Fonts,card24Kbd,card24Conversation} from './helpers/card24-presentation.mjs';
+import {seedCard22Board} from './helpers/web01-workbench-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+
+test('Card24 F1–F4 C1–C9 G1–G3 measure local fonts, four conversation states, board and drawer',{timeout:240000},async()=>{
+ await withT22Fixture(async f=>{
+  const data=await seedCard23Conversation(f),waiting=data.contacts.waiting,other=data.contacts.earlier;assert.ok(waiting&&other);
+  const directory=process.env.CARD24_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card24-'));await mkdir(directory,{recursive:true});
+  let browser:Browser|undefined,failure:unknown;const metrics:unknown[]=[],posts:string[]=[];
+  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+data.session.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+   await browser.waitFor("document.querySelectorAll('[data-message-delivery]').length===4&&Boolean(document.querySelector('.inbox-mini-stage'))");
+   metrics.push({page:'conversation',fonts:await card24Fonts(browser)});
+   const kbd=await card24Kbd(browser,'.sidebar kbd');assert.deepEqual(await card24Kbd(browser,'#conversation-reply-panel kbd'),kbd);metrics.push({G3:kbd});
+   const team=await browser.evaluate("({sidebar:document.querySelector('[data-sidebar-team]').textContent,breadcrumb:document.querySelector('[data-breadcrumb-team]').textContent,height:document.querySelector('.sidebar-brand').getBoundingClientRect().height,icon:document.querySelector('.sidebar-brand-icon').getBoundingClientRect().width,size:getComputedStyle(document.querySelector('.sidebar-brand-copy strong')).fontSize})") as {sidebar:string;breadcrumb:string;height:number;icon:number;size:string};
+   assert.equal(team.sidebar,team.breadcrumb);assert.equal(team.height,48);assert.equal(team.icon,28);assert.equal(team.size,'15px');metrics.push({G2:team});
+   const header=await browser.evaluate("document.querySelector('h1').getBoundingClientRect().toJSON()") as {x:number;y:number};
+   for(const mode of ['allowed','failed','waiting','denied'] as const){
+    const cookie=mode==='denied'?f.handlerCookie:f.cookie,split=cookie.indexOf('=');await browser.command('Network.clearBrowserCookies');await browser.command('Network.setCookie',{name:cookie.slice(0,split),value:cookie.slice(split+1),url:f.origin+'/'});
+    await browser.evaluate("document.documentElement.dataset.card24Leaving='true'");await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+(mode==='waiting'?waiting.id:data.session.id)});
+    await browser.waitFor("!document.documentElement.dataset.card24Leaving&&Boolean(document.querySelector('[data-conversation-ready]'))");
+    if(mode!=='waiting')await browser.waitFor("document.querySelectorAll('[data-message-delivery]').length===4&&Boolean(document.querySelector('.inbox-mini-stage'))");
+    metrics.push({mode,...await card24Conversation(browser,mode)});
+    await browser.evaluate(mode==='allowed'?"document.querySelector('.inbox-timeline').scrollTop=0":"document.querySelector('.inbox-timeline').scrollTop=document.querySelector('.inbox-timeline').scrollHeight");
+    await captureCard22(browser,directory,'conversation-'+mode+'-1440');
+    if(mode==='allowed'){
+     await captureCard22(browser,directory,'glyph-bubble-meta-x2','.inbox-message-user:has(+.inbox-message-merged)');
+     await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await card24Conversation(browser,mode);await captureCard22(browser,directory,'conversation-allowed-1920');await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+     await browser.evaluate("(()=>{const n=document.querySelector('textarea[data-purpose=messages]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(n,'继续核对打印配置（合成）');n.dispatchEvent(new Event('input',{bubbles:true}));})()");
+     await browser.waitFor("Boolean(document.querySelector('[data-action=discard-messages]'))&&document.querySelector('[data-conversation-draft=messages]')?.textContent.includes('草稿已保存')");
+     const discard=await browser.evaluate("(()=>{const n=document.querySelector('[data-action=discard-messages]'),s=getComputedStyle(n);return {font:s.fontSize,border:s.borderTopWidth,height:n.getBoundingClientRect().height,parent:n.parentElement.className};})()") as {font:string;border:string;height:number;parent:string};assert.equal(discard.font,'12px');assert.equal(discard.border,'0px');assert.equal(discard.height,24);assert.equal(discard.parent,'ds-composer-status');metrics.push({C4:discard});
+     await captureCard22(browser,directory,'detail-composer-bottom-x2','.ds-composer-bottom');await clickWorkbenchControl(browser,'[data-action=discard-messages]');await browser.waitFor("document.querySelector('textarea[data-purpose=messages]').value===''");
+    }
+   }
+   // C6: use the fixture's existing synthetic UPDATE path; exact real delivery IDs remain unchanged.
+   await f.pool.query("UPDATE communication.delivery SET last_error_code='COMMUNICATION_SEND_TIMEOUT' WHERE outbox_id=(SELECT id FROM communication.outbox WHERE message_id=$1::uuid)",[data.sent[3]]);
+   const cookie=f.cookie,split=cookie.indexOf('=');await browser.command('Network.clearBrowserCookies');await browser.command('Network.setCookie',{name:cookie.slice(0,split),value:cookie.slice(split+1),url:f.origin+'/'});
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+data.session.id});await browser.waitFor("Boolean(document.querySelector('[data-delivery-label=结果待核实] [title=COMMUNICATION_SEND_TIMEOUT]'))");
+   const errors=await browser.evaluate("[...document.querySelectorAll('[data-delivery-label=发送失败],[data-delivery-label=结果待核实]')].map(n=>({text:n.innerText,title:n.title,code:n.querySelector('code')?.textContent,mapped:n.querySelector('[title=COMMUNICATION_SEND_TIMEOUT]')?.textContent}))") as {text:string;title:string;code?:string;mapped?:string}[];
+   assert.ok(errors.some(n=>n.text==='发送失败 · 错误码 V23_SYNTHETIC_FAILURE'&&n.code==='V23_SYNTHETIC_FAILURE'&&n.title.includes('V23_SYNTHETIC_FAILURE')));assert.ok(errors.some(n=>n.text==='结果待核实 · 企微接口超时'&&n.mapped==='企微接口超时'&&n.title.includes('COMMUNICATION_SEND_TIMEOUT')));metrics.push({C6:errors});await captureCard22(browser,directory,'detail-errors-x2','.inbox-message-human:has([data-delivery-label=结果待核实])');
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+other.id});await browser.waitFor("document.querySelector('[data-chat-assignment]')?.textContent==='接待中 · 只读值班'");assert.equal(await browser.evaluate("document.querySelector('[data-chat-assignment]').dataset.tone"),'brand');
+   const ended=f.sessions[2];assert.ok(ended);await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+ended.id});await browser.waitFor("document.querySelector('[data-chat-assignment]')?.textContent==='已结束'");assert.equal(await browser.evaluate("document.querySelector('[data-chat-assignment]').dataset.tone"),'neutral');
+   // Same fixture, current production board and drawer. No browser-mocked API or command.
+   await seedCard22Board(f);await browser.command('Network.clearBrowserCache');await browser.command('Network.setCacheDisabled',{cacheDisabled:true});await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length>=3");
+   metrics.push({page:'board',fonts:await card24Fonts(browser)});assert.deepEqual(await card24Kbd(browser,'.ds-board-search kbd'),kbd);
+   const boardHeader=await browser.evaluate("({title:document.querySelector('h1').getBoundingClientRect().toJSON(),icon:document.querySelector('.page-icon').getBoundingClientRect().toJSON()})") as {title:{x:number;y:number};icon:{width:number;height:number}};assert.equal(boardHeader.title.x,header.x);assert.equal(boardHeader.title.y,header.y);assert.equal(boardHeader.icon.width,36);assert.equal(boardHeader.icon.height,36);metrics.push({G1:boardHeader});
+   await captureCard22(browser,directory,'board-1440');await captureCard22(browser,directory,'glyph-card-x2','.ticket-card');await captureCard22(browser,directory,'glyph-account-x2','.sidebar .account');
+   await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('scrollTo(0,0)');await captureCard22(browser,directory,'board-1920');await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+   await clickWorkbenchControl(browser,'.ticket-card .card-open');await browser.waitFor("Boolean(document.querySelector('.detail-body'))");await captureCard22(browser,directory,'drawer-1440');
+   await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await browser.evaluate('document.fonts.ready');assert.equal(await browser.evaluate('document.fonts.check(\'14px "Noto Sans SC Variable"\')'),true);await captureCard22(browser,directory,'offline-loaded-fonts-1440');metrics.push({F4:'already loaded page, full browser network offline; this is not a cold Electron start'});await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+   assert.deepEqual(posts,[],'presentation verification never POSTs');
+  }catch(error){failure=error;}
+  finally{await closeBrowserTestResources([()=>writeFile(join(directory,'card24-conversation-metrics.json'),JSON.stringify({metrics,posts},null,2)),()=>{f.runtime.server.off('request',observe);},async()=>{if(failure&&browser)await captureCard22(browser,directory,'card24-failure');},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+ },{inbox:true,recovery:true,search:true});
+});
 
 test('V1–V13 card23 conversation details use real DTOs and measured geometry in all four states',{timeout:240000},async()=>{
  await withT22Fixture(async f=>{

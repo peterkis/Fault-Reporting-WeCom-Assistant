@@ -14,7 +14,7 @@
 .ds-page .ds-split .inbox-message [data-internal=true] {position:relative;color:var(--text-primary);}
 .ds-page .ds-split .inbox-message [data-internal=true]>.ds-message-prefix {padding-left:calc(var(--fs-xs) + var(--space-1));color:var(--tone-warning-fg);}
 .ds-page .ds-split .inbox-internal-lock {position:absolute;top:var(--space-2);left:var(--space-3);width:var(--fs-xs);height:var(--fs-xs);color:var(--tone-warning-fg);}
-.ds-page .ds-split .inbox-message-system .ds-message-bubble time {font-size:var(--fs-xs);color:var(--text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ds-page .ds-split .inbox-message-system .ds-message-bubble time {font-size:var(--fs-xs);color:var(--text-secondary);font-variant-numeric:var(--font-numeric-variant);white-space:nowrap;}
 .ds-page .ds-split .inbox-message-system footer:empty {display:none;}
 .ds-page .ds-split .inbox-pagination {justify-content:center;gap:var(--space-2);}
 .ds-page .ds-split .inbox-pagination>.ds-button.button {border:0;min-height:var(--control-h-sm);padding:0 var(--space-2);background:transparent;color:var(--text-secondary);font-size:var(--fs-sm);}
@@ -27,3 +27,29 @@
 .inbox-mini-stage .ds-stage-glyph {width:var(--fs-xs);height:var(--fs-xs);}
 
 .ds-page .ds-split .inbox-contact-rows .ds-conversation-list-item>a {width:100%;max-width:100%;}
+
+/* Card24 C3–C9. Preserve controller state and the existing full-width toolbar. */
+.ds-page .ds-split .inbox-chat-header {background:var(--bg-canvas);border-bottom:1px solid var(--border-hair);flex:none;}
+.ds-page .ds-split .inbox-timeline {position:relative;z-index:0;}
+.ds-page .ds-split .inbox-reception {--radius-reception:calc(var(--radius-md) + var(--space-0-5));margin-bottom:0;border:1px solid var(--border-default);border-bottom:0;border-radius:var(--radius-reception) var(--radius-reception) 0 0;flex-wrap:nowrap;padding:var(--space-2) var(--space-3);}
+.ds-page .ds-split .inbox-reception p {min-width:0;flex:1;}
+.inbox-reception p>span {display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-weight:var(--fw-regular);}
+.inbox-reception strong {color:var(--text-primary);font-weight:var(--fw-semibold);}
+.inbox-reception-actions {flex:none;}
+.ds-page .ds-split .inbox-reception:not([hidden])+.inbox-composer {border-radius:var(--radius-lg);border-top-left-radius:0;border-top-right-radius:0;}
+.ds-page .ds-split .inbox-composer:has([role=tabpanel]:not([hidden]) .conversation-composer[data-composer-disabled=true]) {background:var(--bg-canvas);border-color:var(--border-default);}
+.ds-page .ds-split .inbox-composer .conversation-composer textarea:disabled {background:var(--bg-canvas);}
+.ds-page .ds-split .inbox-composer .conversation-composer[data-composer-no-permission=true] textarea:disabled {background:var(--bg-subtle);}
+.ds-page .ds-split .inbox-composer:has([role=tabpanel]:not([hidden]) .conversation-composer[data-composer-no-permission=true]) {background:var(--bg-subtle);border-color:var(--border-hair);}
+.conversation-composer[data-composer-disabled=true]:not([data-composer-no-permission]) .ds-composer-count {display:block;}
+.ds-page .ds-split .inbox-composer .ds-composer-discard.ds-button {height:var(--space-6);min-height:var(--space-6);padding:0 var(--space-1);border:0;background:transparent;color:var(--text-secondary);font-size:var(--fs-xs);font-weight:var(--fw-regular);}
+.ds-page .ds-split .inbox-composer .ds-composer-discard.ds-button:hover {background:var(--bg-hover);color:var(--text-primary);}
+.inbox-composer [data-composer-shortcut=true] .ds-composer-shortcut,.inbox-composer [data-composer-shortcut=true] .note-controls:has([type=submit]:disabled) .ds-composer-shortcut {display:inline-flex;align-items:center;gap:var(--space-1);color:var(--text-secondary);}
+.inbox-composer .conversation-composer:not([data-composer-shortcut]) .ds-composer-shortcut {display:none;}
+.inbox-composer .ds-composer-status>.ds-composer-discard {flex:none;}
+.inbox-delivery code {font-family:var(--font-mono);font-size:var(--fs-xs);}
+.inbox-contact-bottom .inbox-delivery-exception>svg {display:block;width:var(--fs-xs);height:var(--fs-xs);}
+.ds-page .ds-split .inbox-associated h3 {font-size:var(--fs-sm);font-weight:var(--fw-semibold);}
+.inbox-reporter-person strong {font-size:var(--fs-md);}
+.ds-page .ds-split .inbox-origin p {font-size:var(--fs-sm);line-height:var(--lh-md);}
+.ds-page .ds-split .inbox-internal-lock {top:calc(var(--space-2) + var(--space-0-5));}

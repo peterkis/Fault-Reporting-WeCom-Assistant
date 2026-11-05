@@ -16,11 +16,11 @@
 .ds-data-table.ds-data-table small {display:block;font-size:var(--fs-xs);color:var(--text-secondary);}
 .ds-data-table.ds-data-table code {font-size:var(--fs-xs);font-family:var(--font-mono);overflow-wrap:anywhere;}
 .ds-data-table.ds-data-table .source-group-rows code {display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ds-data-table.ds-data-table .ds-table-number {text-align:right;font-variant-numeric:tabular-nums;}
+.ds-data-table.ds-data-table .ds-table-number {text-align:right;font-variant-numeric:var(--font-numeric-variant);}
 .ds-data-table.ds-data-table .ds-table-action {width:160px;}
 .ds-data-table.ds-data-table .ds-table-reference {width:240px;}
 .ds-data-table.ds-data-table .ds-table-state {width:180px;}
-.ds-data-table.ds-data-table .ds-table-count {width:64px;text-align:right;font-variant-numeric:tabular-nums;}
+.ds-data-table.ds-data-table .ds-table-count {width:64px;text-align:right;font-variant-numeric:var(--font-numeric-variant);}
 .ds-data-table.ds-data-table .ds-button {max-width:100%;white-space:normal;}
 .ds-data-table.ds-data-table .ds-button-label {overflow-wrap:anywhere;}
 .source-group-directory .ds-data-table.ds-data-table .source-group-rows {display:table-row-group;}
@@ -40,3 +40,5 @@
 /* V14: HeroUI's decorative table__column::after is not a resize handle. */
 .ds-data-table.ds-data-table th,.ds-data-table.ds-data-table th::before,.ds-data-table.ds-data-table th::after {border-left:0;border-right:0;}
 .ds-data-table.ds-data-table th::after {content:none;width:0;background:transparent;}
+.ds-data-table.ds-data-table th {border-bottom:0;box-shadow:none;}
+.ds-data-table.ds-data-table thead tr {border-bottom:1px solid var(--border-hair);}
