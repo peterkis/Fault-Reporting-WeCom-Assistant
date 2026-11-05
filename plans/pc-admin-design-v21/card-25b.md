@@ -105,6 +105,28 @@
 
 新增回归保留原 11 条浏览器用例，额外验证 pending 超过既有截止时仍 live、通过原回复和内部备注命令分别提交成功、仍只有一个 summary 请求和一个 SSE，响应恢复后数字能显示。后续构建、相关检查、独立复核及 PR/CI 结果按实际追加，不预填通过。
 
+### 修复候选验证与独立复核
+
+修复代码提交为 `390366434f8ecf627f6c668d971e68c91244ac91`；本段是该提交之后的纯记录后继。代码构建与以下新测试绑定修复提交的干净工作区，编译输入 `eede2b248a0366a6c1a64df243e9524919fa7f6a89035fe34a3cc028bd225bd0`，manifest `1d1c261cf8a87df2532f0413d7896f0f30148311342472bc1d98a26e09fa3a8a`。没有把前一阶段 431 条结果改绑至新提交。
+
+| 新检查 | 实际结果（本轮 review 目录） |
+| --- | --- |
+| 应用构建 | `build-fix.log` PASS；strict emit、PC/H5 及 922 个语法检查通过。 |
+| 类型及样式门槛 | `types-fix.log` PASS，含 strict、负向类型、CSS 和设计变量。 |
+| 真实差异计划 | `path-plan-fix.json`：57 入口，core/docs/mvp/pc，database lane，工具文件 0；其余 profile 为 NOT_SELECTED。 |
+| 直接风险与协调器相关回归 | `fix-related/summary.json`：7 入口 113/113 PASS，零 SKIP/TODO；基础 71、契约/解析 7、收件箱集成 17、收件箱浏览器 12、实时/UNKNOWN tracer 1、核心离线阻断 2、提醒辅助恢复 3。没有用本地 7 入口冒称整个 57 入口计划通过。 |
+| 真实慢响应 GREEN | `CARD25B_SLOW_SUMMARY` 回执：summary 持续 pending 超过既有 5000ms 截止，核心仍 live，原回复/内部备注各提交 1 次，summary 请求 1、SSE 1；恢复响应后数字重新显示。修复前 RED 原件保持。 |
+| 制品核验 | `verify-fix.log` PASS，ARTIFACT_VERIFIED_NOT_ACTIVATED，manifest 与该批测试一致。 |
+| Standards 独立复核 | `standards-final.md`：剩余规范问题 0，Fowler 判断项 0；原 P2/P3 均闭合。 |
+| Spec 独立复核 | `spec-final.md`：剩余可操作发现 0，原 P2 闭合，未另报 scope creep。 |
+| OCR delegate 独立复核 | `ocr-delegate-final.json/.md`：无 critical/high/medium；fresh preview/rule 原生选中 7 文件，补审 11，18/18、跳过 0。独立内存观测还确认核心失败仍阻断、bootstrap 401 清理、summary 401/403 继续抛出、授权修订取消旧 summary、跨账号隔离。该观测与 Root 的真实 PG/浏览器验证分开记账。 |
+
+相对于本卡基点共 18 个文件，新增的第 18 项是 `app/pc-admin/src/realtime/useRealtime.ts`；其余初始 17 文件清单在上文。四张截图的 Git blob、尺寸与 SHA-256 保持，代表既有 UI 检查点；Token 修复没有改变数字样式值。后端、契约、依赖、数据库迁移仍为零差异，旧断言与选择器未删除。
+
+本轮自有 PG 已恢复三库基线、其他客户端 0；核验 data/PID 后已停止，status=3、55485 无监听，数据和全部原始证据保留。`pg-final-baseline.json`、`pg-stop-receipt.json` 给出实际回执。新增浏览器回归及其他入口均沿既有自有资源关闭断言。
+
+PR/CI、Codex review 额度或回复、合并及本卡分支/worktree 清理，以 GitHub 实际回执和本轮外部 closeout 记录为准。用户已经授权继续执行这些步骤；本段不预填远端成功。原 A3 自动 ENDED 推送缺口、B6 无总数契约和 full/certify、Electron、真实发送、部署、业务 Gate 的停止边界不变。
+
 ## 限制与回退
 
 25A A3 中自动结束 Session 缺少独立推送仍是已知停止项，本卡不改写入路径。当前已有收件箱刷新事件会同步刷新 summary；服务端未产生事件的情况仍受该既有缺口限制。通知异常侧栏无可用总数接口，B6 跳过。
