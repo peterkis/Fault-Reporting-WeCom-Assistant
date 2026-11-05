@@ -1,0 +1,25 @@
+# 卡24本地独立双轴审查与发布前验证
+
+2026-11-05；用户授权以本地两端评审替代暂不可用的Codex Review，后续CI成功且无major后合并并只清理本卡。未请求远端Codex Review，也未改变保护规则。
+
+| 轴 | 初审对象 / 覆盖 | 发现 | 修复复核 |
+| --- | --- | --- | --- |
+| Standards | f71a1cb8…293551f868c78b2fc2b2be04131289005a10767c；74/74路径，跳过0 | 0项可执行问题 | 293551f8…bdf2ad714a4683523955281aaff9ea233994f63e，5/5路径，新增0 |
+| Spec | 同一固定base/head；74/74路径，跳过0 | F1 P2：数字继承遗漏，真实热度/列表计数normal | 根级继承同Token和真实控件断言；独立读回before/after、构建、types和manifest哈希，P2关闭，新增0 |
+
+两轴独立只读，未让已写实现/既有PASS代替需求核对。详细原始报告、逐路径覆盖、OCR规则分组在 `D:/CodexEvidence/pc-admin-v215-card24-publish-20261105/`（standards-review.md、spec-review.md、standards-recheck.md、spec-recheck.md）。OCR delegate只做确定性文件/规则选择，不调用LLM端点；其不识别.mts等的排除未减少人工74路径覆盖。
+
+## bdf2ad71验证
+
+- 正式统一build通过，922/922实际Node语法检查，max_active2；strict/types、Stylelint/ESLint与verify-artifact通过。输入hash为56c24f9c1499bfa8a6f50385738b9d119bcc66c97bf643dfe3058fa61b9d5247，manifest为1ae9ed7625e00d6ead43a8016cc0d39a8ccb4cdffb148e45f0b615509d1ed244。
+- F1实际20样本before/after：4热度、3列表计数由normal变tabular，13原时间/阶段计数保持。Spec独立复核确认关闭P2。
+- 当前PC/read-safety并集及直接字体/登录风险18入口共135项；首轮134PASS/1FAIL，失败是既有登录工牌翻面等待超时。首次失败、TAP、not_run空集合保留。
+- 登录产物与修补前逐字节相同。原参数隔离复跑1/1自然PASS，仅说明未再复现；没有修改登录源码、超时或业务断言。完整同入口11/11重跑PASS后，该135项所选范围全部实际到达并通过，原FAIL不覆盖。
+- 具名Windows Electron1/1 PASS，三人真实PG/合成OAuth、200/409并发、闭环、后台通知、隐藏读/活动写0和失权/退出均保持。
+- 上述原件为build-reviewed.log、types-reviewed.log、artifact-reviewed-final.log、numeric-before/after.json、local-reviewed/、desktop-session-retry/、native-reviewed.log。此为本地合成验证，不是CI、full/certify、真实发送或Gate。
+
+## 发布文档预检
+
+真实提交差异的pr-plan --check-docs发现design-system-v2.1.md既有FilterChip旧锚点失效，修为当前6.2.1标题的真实锚点。只变链接，未改规范含义或代码。此纯记录/链接后继不重新生成业务候选；保留bdf2ad71为本地被测代码祖先，最终PR head另由CI构建和验证。
+
+原实现与数值/截图见[卡24执行记录](card-24.md)及[Evidence](../../docs/ui/evidence/v215-card24/README.md)。后续PR/CI/合并和清理回执在外部发布根集中维护，避免只为更新状态反复构建或重跑CI；CI未完成前不声明发布通过。

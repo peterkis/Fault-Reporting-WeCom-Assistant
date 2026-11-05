@@ -366,3 +366,6 @@ additional-evidence-10全部断言通过：C6错误码为JetBrains Mono/12px；�
 
 
 独立审查初轮已完成：Standards 0项；Spec 1项P2/F1（74/74路径、跳过0），未发现P0/P1。原报告分别standards-review.md与spec-review.md（外部发布回执根）；不是Codex Review服务调用。F1修复和真实控件断言随后提交，待在新SHA完成构建/实测和两端复核后才发布。
+
+
+本地双轴审查及修复后验证已完成，Standards 0项、Spec唯一F1/P2在bdf2ad71关闭；实际18入口135项范围（保留一次登录超时及同入口原条件复跑通过）、原生1项通过。发布文档仅修旧FilterChip锚点，并单列[双轴审查记录](card-24-review.md)。本地被测代码祖先/最终CI对象分别报告，不将纯记录后继回绑为旧验证SHA。
