@@ -77,6 +77,12 @@
               }
             }
           },
+          "waiting_since": {
+            "readOnly": true,
+            "x-business-timezone": "Asia/Shanghai",
+            "description": "Session waiting origin, with the same semantics as the chat entry.",
+            "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }]
+          },
           "participant_label": {
             "type": "string",
             "minLength": 1,

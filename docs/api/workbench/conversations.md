@@ -131,3 +131,21 @@ POST 使用 UUID Idempotency-Key、`If-Match: "<expected_row_version>"`，Cookie
 P2-G1 的现有 bootstrap / migrateCurrentBaseline 不自动安装 061。其组装显式开启 UUID receipt Port 后，缺少目录前置的新 UUID 控制安全返回 503，READ 和回复保持可用；不会自动 DDL 或退回无 UUID 执行。需要显式运行已编译 scripts/conversation-delivery-commands-migrate.mjs --status / --check / --apply，使用既有 PILOT_DATABASE_URL 配置；check 回滚，BASE/MANUAL/INTAKE/BOT 完整目录、旧校验和和前向 031/032/T34 护栏分别核验。Port 工厂默认关闭。
 
 实际原 G1 前置→503→显式 061→同 Cookie/同正文/同 UUID 首次 200 与重放 200 的隔离证据见 [T33 记录](../../../plans/admin-workbench-integration/execution/t33.md)。这不是新的现场或发送批准。
+
+## 会话全局计数与等待起点（卡 25A）
+
+`GET /api/workbench/conversations/summary`：宿主 W，本地只读实现，调用方为后续 25B。沿现有 `workbenchConversationsEnabled=false` 和 `workbenchConversationInboxEnabled=false` 的默认关闭约束，内部认证、guard、当前会话有效性、Principal/角色/团队与对象 READ 的最终快照均复用[联系人收件箱](conversation-inbox.md)。不接受任何 query/body，不需要 CSRF、Idempotency-Key 或 If-Match；未知/重复参数 400，非 GET 404，未认证 401、无内部读取权限 403、关闭 503。成功 200，`Cache-Control: no-store`。
+
+成功响应三个必需只读字段：`unassigned_contact_count:number` 为可见范围内至少有一个未结束且无人接待 Session 的联系人数；`my_unread_count:number` 为当前 Principal 在全部可见未结束 Session 上的现有 unread_count 之和；`as_of:LocalDateTime` 为北京时间精确到秒的计算时刻。数字非负，空集合为 0。两个计数分别严格等于无其它筛选的 `state=unassigned` 完整翻页人数和 `state=open` 完整翻页未读之和；OPEN/WAITING_USER 均纳入，ENDED 排除。只数仍在保留期内的 EXTERNAL/INTERNAL Item，按当前个人 read_cursor 判断，RESTRICTED 仍不计未读。筛选、搜索、队列和 limit 不改变 summary。
+
+```json
+{"unassigned_contact_count":3,"my_unread_count":12,"as_of":"2026-11-05 09:00:00"}
+```
+
+收件箱条目及 `?view=chat` / related entry 新增可选只读 `waiting_since:LocalDateTime|null`，当前实现总返回该字段：未结束且 UNASSIGNED 时取最近一次 `assignment.released_at`，从未领取/无 assignment 行则取 `session.started_at`；ASSIGNED/ENDED 为 null。联系人条目取**完整可见范围**该联系人所有待接待 Session 中最早的值，与筛选和页面 anchor 无关。`matching_topic_count` 等原字段仍按筛选聚合；不要据 anchor 或最后消息时间重算等待。
+
+数据聚合为单条 SQL，无按联系人查询；同原收件箱为只读事务、2000 ms statement_timeout、固定身份预检。没有新身份、目标或个人信息字段。沿既有 realtime 家族失效重读，25B 可用 conversation-inbox family 承载 summary、每分钟只本地更新等待显示。旧 Session 自动结束缺少其自身事件的补齐按停止线另待确认，不能宣称全部七类推送已闭合。
+
+兼容限制：当前 PC inbox-client.ts 严格拒绝新增键，尚不能忽略 waiting_since。用户已确认保留前端供 25B 修补；本卡不改该文件，不声称当前 UI 可启用。必须在 25B 兼容解码后再联调。
+
+来源与验证：[查询](../../../app/server/src/workbench-conversation-inbox.mts)、[summary Schema](../../../contracts/workbench_conversation_inbox_summary.schema.json)、[类型](../../../contracts/workbench_conversation_inbox_contracts.d.ts)、[集成测试](../../../tests/conversation-inbox.integration.test.mts)、[ADR-0054](../../../adr/0054_conversation_inbox_counts_and_waiting_since.md)、[执行结果与限制](../../../plans/pc-admin-design-v21/card-25a.md)。旧 `/api/conversations` detail Schema 无需新增字段。关闭既有选项可回退，保留已提交的原业务事实；未授权部署或真实发送。

@@ -207,6 +207,7 @@
     "contracts/workbench_conversation_detail.schema.json",
     "contracts/workbench_conversation_inbox_contracts.d.ts",
     "contracts/workbench_conversation_inbox_page.schema.json",
+    "contracts/workbench_conversation_inbox_summary.schema.json",
     "contracts/workbench_conversation_item_page.schema.json",
     "contracts/workbench_conversation_page.schema.json",
     "contracts/workbench_conversation_related_page.schema.json",
