@@ -31,3 +31,7 @@ PR #150、ed3f53835bb7d1e7d6637d9147bc5b38555dcd66的首次TypeScript运行41989
 登录测试在scene ready后通过另一次CDP往返安装采样器，无法保证仍在一次性2600ms开场内。真实编译产物探针：ready起采样15.8277px/收敛0px；延后3100ms安装旧采样器为0px/0px，而同页提前采样仍15.8361px/0px（外部probe-login-motion.json）。这证明测试同步存在缺口；首次CI没有开场/采样时刻，尚不能排除首物理帧阻塞等其它原因。
 
 仅将原3600ms rAF采样提前安装到新文档，在ready和iframe首次同时出现时开始；新增timeOrigin守卫和全动态媒体断言，保留摆幅≥6px、后段<1px及同一iframe断言。首物理帧过晚造成真正无摆动仍会失败，未改登录动画、超时、权限或业务断言。后续实际验证与两轴复核另绑定修补提交。
+
+用户另明确授权三项最小CI配置修复：Windows测试initdb明确UTF8；desktop:setup的registry与既有lock的npmmirror一致，保留两套Electron依赖原版本、下载URL和integrity；清理在确认停止、预期status3、路径及数据删除后显式成功退出。没有移除或放宽原检查，也未修改合并汇总/分支保护。既有pr-plan工具测试增加对应Windows资源合同断言。
+
+本地自有PG18、C locale下的编码差分：WIN1252执行同一中文SELECT得到22P05；UTF8完整读回「卡24（合成）」。两套探针库均实际停止并仅删除其已核绝对路径数据目录，脚本退出0；首次探针无效locale、Windows导入路径错误的日志同样保留，未记通过。详见外部probe-ci-encoding-final.log；此差分证明编码修复，不替代Windows CI后续整套实际结果。
