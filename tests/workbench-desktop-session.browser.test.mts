@@ -159,10 +159,16 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
   await browser.evaluate('sessionStorage.removeItem("workbench-login-view-v2")');
+  // Observe the opening inside the new document before it can start. A CDP round trip
+  // after scene readiness can otherwise miss the complete 2600ms one-shot opening.
+  const introSampler=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__introMotion=new Promise(resolve=>{let start=null,panel=null;const samples=[];const sample=now=>{const face=document.querySelector(".lanyard-front");if(start===null&&document.body?.dataset.loginScene==="ready"&&face?.querySelector("iframe")){start=now;panel=face.querySelector("iframe");}if(start!==null){const r=face.getBoundingClientRect();samples.push({t:now-start,x:r.x+r.width/2});if(now-start>=3600){const early=samples.filter(p=>p.t<2600).map(p=>p.x),late=samples.filter(p=>p.t>=3000).map(p=>p.x);resolve({range:Math.max(...early)-Math.min(...early),lateRange:Math.max(...late)-Math.min(...late),samePanel:panel===document.querySelector(".lanyard-front iframe"),reducedMotion:matchMedia("(prefers-reduced-motion: reduce)").matches,samples:samples.length});return;}}requestAnimationFrame(sample);};requestAnimationFrame(sample);});'}) as {identifier:string};
+  const previousMotionOrigin=await browser.evaluate('performance.timeOrigin');
   await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
-  await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
+  await browser.waitFor('performance.timeOrigin!=='+Number(previousMotionOrigin)+'&&Boolean(document.querySelector(".lanyard-front iframe"))');
   await waitScene();
-  const introMotion=await browser.evaluate('new Promise(resolve=>{const panel=document.querySelector(".lanyard-front iframe"),face=document.querySelector(".lanyard-front"),samples=[],start=performance.now();const sample=now=>{const r=face.getBoundingClientRect();samples.push({t:now-start,x:r.x+r.width/2});if(now-start<3600){requestAnimationFrame(sample);return;}const early=samples.filter(p=>p.t<2600).map(p=>p.x),late=samples.filter(p=>p.t>=3000).map(p=>p.x);resolve({range:Math.max(...early)-Math.min(...early),lateRange:Math.max(...late)-Math.min(...late),samePanel:panel===document.querySelector(".lanyard-front iframe")});};requestAnimationFrame(sample);})') as {range:number;lateRange:number;samePanel:boolean};
+  const introMotion=await browser.evaluate('window.__introMotion') as {range:number;lateRange:number;samePanel:boolean;reducedMotion:boolean;samples:number};
+  await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:introSampler.identifier});
+  assert.equal(introMotion.reducedMotion,false,'the physical opening is measured with full motion');
   assert.ok(introMotion.range>=6,'the initial physical swing is visible: '+JSON.stringify(introMotion));
   assert.ok(introMotion.lateRange<1,'the one-shot swing settles after about three seconds: '+JSON.stringify(introMotion));
   assert.equal(introMotion.samePanel,true,'the intro preserves the mounted QR iframe');

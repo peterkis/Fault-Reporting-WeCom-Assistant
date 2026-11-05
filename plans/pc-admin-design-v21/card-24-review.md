@@ -23,3 +23,11 @@
 真实提交差异的pr-plan --check-docs发现design-system-v2.1.md既有FilterChip旧锚点失效，修为当前6.2.1标题的真实锚点。只变链接，未改规范含义或代码。此纯记录/链接后继不重新生成业务候选；保留bdf2ad71为本地被测代码祖先，最终PR head另由CI构建和验证。
 
 原实现与数值/截图见[卡24执行记录](card-24.md)及[Evidence](../../docs/ui/evidence/v215-card24/README.md)。后续PR/CI/合并和清理回执在外部发布根集中维护，避免只为更新状态反复构建或重跑CI；CI未完成前不声明发布通过。
+
+## 首次CI失败与登录采样修补
+
+PR #150、ed3f53835bb7d1e7d6637d9147bc5b38555dcd66的首次TypeScript运行41989455590未通过。Linux普通入口已执行234项、233PASS/1FAIL，12个后续H5入口NOT_RUN；失败为既有登录开场采样range0/lateRange0/samePanel true。Windows在原生业务验证前因测试库WIN1252报22P05；另保留setup改写既有lock URL的源码漂移及清理预期退出码3的步骤失败。未据此合并或更改任何合并条件。
+
+登录测试在scene ready后通过另一次CDP往返安装采样器，无法保证仍在一次性2600ms开场内。真实编译产物探针：ready起采样15.8277px/收敛0px；延后3100ms安装旧采样器为0px/0px，而同页提前采样仍15.8361px/0px（外部probe-login-motion.json）。这证明测试同步存在缺口；首次CI没有开场/采样时刻，尚不能排除首物理帧阻塞等其它原因。
+
+仅将原3600ms rAF采样提前安装到新文档，在ready和iframe首次同时出现时开始；新增timeOrigin守卫和全动态媒体断言，保留摆幅≥6px、后段<1px及同一iframe断言。首物理帧过晚造成真正无摆动仍会失败，未改登录动画、超时、权限或业务断言。后续实际验证与两轴复核另绑定修补提交。
