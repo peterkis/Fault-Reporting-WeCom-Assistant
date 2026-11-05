@@ -53,3 +53,12 @@
 .inbox-reporter-person strong {font-size:var(--fs-md);}
 .ds-page .ds-split .inbox-origin p {font-size:var(--fs-sm);line-height:var(--lh-md);}
 .ds-page .ds-split .inbox-internal-lock {top:calc(var(--space-2) + var(--space-0-5));}
+
+/* Card25B: account-wide counts and server-projected waiting starts (ADR-0054). */
+.inbox-waiting-count {display:inline-block;margin-left:var(--space-3);font-size:var(--fs-sm);font-weight:var(--fw-regular);color:var(--text-secondary);vertical-align:baseline;}
+.ds-page .ds-split .inbox-contact-title>time.inbox-wait-time {color:var(--text-secondary);}
+.ds-page .ds-split .inbox-contact-title>time[data-wait-tone=attention] {color:var(--tone-attention-fg);font-weight:var(--fw-semibold);}
+.ds-page .ds-split .inbox-contact-title>time[data-wait-tone=danger],.inbox-wait-duration[data-wait-tone=danger] {color:var(--tone-danger-fg);font-weight:var(--fw-semibold);}
+.nav-item.conversation-nav-item {position:relative;}
+.nav-item .conversation-unread-badge.ds-tag {margin-left:auto;display:inline-flex;justify-content:center;height:18px;min-width:18px;padding:0 var(--space-1);border:0;border-radius:var(--radius-full);background:var(--tone-brand-solid);color:var(--text-inverse);font-size:var(--fs-xs);font-weight:var(--fw-semibold);font-variant-numeric:tabular-nums;line-height:18px;}
+.sidebar-collapsed .conversation-nav-item .conversation-unread-badge.ds-tag {display:block;position:absolute;top:var(--space-1);right:var(--space-1);width:8px;height:8px;min-width:8px;padding:0;}

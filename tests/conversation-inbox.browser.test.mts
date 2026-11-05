@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
-import {conversationPost,freshCommand,addInboxSession,attachInboxJourney} from './helpers/conversation-inbox-fixture.mjs';
+import {conversationPost,freshCommand,addInboxSession,attachInboxJourney,seedCard25bConversation} from './helpers/conversation-inbox-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
@@ -13,8 +13,75 @@ import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-wo
 import type {ConversationChatEntry,ConversationRelatedPage} from '../contracts/workbench_conversation_inbox_contracts.js';
 import type {ConversationCommandReceipt,ConversationTextCommand} from '../contracts/workbench_conversation_workspace_contracts.js';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+const afterPaint='new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))';
 const input=(purpose:string,text:string)=>`(()=>{const input=document.querySelector('textarea[data-purpose="${purpose}"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();})()`;
 const ready="Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-conversation-draft=messages]')?.textContent.includes('草稿')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'";
+const inboxLive="Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'";
+
+test('B1–B5 global counts, waiting heat and banners survive filters and share real SSE refresh',async()=>withT22Fixture(async f=>{
+  const data=await seedCard25bConversation(f),directory=await mkdtemp(join(tmpdir(),'card25b-')),shots:Record<string,unknown>[]=[],requests:{path:string;query:string;method:string}[]=[];
+  let browser:Browser|undefined,failure:unknown,summaryMode:'normal'|'failure'|'zero'='normal';
+  f.runtime.server.on('request',(request,response)=>{const url=new URL(request.url??'/',f.origin);if(typeof request.headers['sec-fetch-site']==='string')requests.push({path:url.pathname,query:url.search,method:request.method??''});
+    if(url.pathname==='/api/workbench/conversations/summary'){const end=response.end;response.end=(...args:unknown[])=>{if(summaryMode!=='normal')response.removeHeader('content-length');if(summaryMode==='failure'){response.statusCode=503;Reflect.apply(end,response,['{}']);}else if(summaryMode==='zero')Reflect.apply(end,response,[JSON.stringify({unassigned_contact_count:0,my_unread_count:0,as_of:'2026-11-05 09:00:00'})]);else Reflect.apply(end,response,args);return response;};}
+  });
+  const summary=async()=>await(await fetch(f.origin+'/api/workbench/conversations/summary',{headers:{cookie:f.cookie}})).json() as {unassigned_contact_count:number;my_unread_count:number};
+  try{
+    const original=await summary();assert.ok(original.unassigned_contact_count>=3&&original.my_unread_count>99);
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+data.five.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);const active=browser;
+    await active.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const originalNow=Date.now,originalInterval=window.setInterval.bind(window),originalClear=window.clearInterval.bind(window),callbacks=new Map();let offset=0;Date.now=()=>originalNow()+offset;window.setInterval=(callback,delay,...args)=>{const id=originalInterval(callback,delay,...args);if(delay===60000)callbacks.set(id,()=>callback(...args));return id;};window.clearInterval=id=>{callbacks.delete(id);originalClear(id);};globalThis.__card25bClock={advance:()=>{offset+=60000;for(const tick of callbacks.values())tick();},reset:()=>{offset=0;for(const tick of callbacks.values())tick();}};})()`});
+    await active.waitFor(inboxLive);requests.length=0;await active.command('Page.reload',{ignoreCache:true});await active.waitFor('Boolean(globalThis.__card25bClock)');await active.waitFor(inboxLive);
+    const count=()=>active.evaluate("Number(document.querySelector('[data-unassigned-contact-count]')?.dataset.unassignedContactCount)");
+    await active.waitFor("document.querySelector('.inbox-waiting-count')&&document.querySelectorAll('.inbox-wait-time').length>=3");assert.equal(await count(),original.unassigned_contact_count);
+    assert.equal(await active.evaluate("document.querySelector('.conversation-unread-badge')?.textContent"),'99+');
+    assert.equal(await active.evaluate("document.querySelector('.conversation-unread-badge')?.getAttribute('aria-label')"),original.my_unread_count+' 条未读');
+    assert.equal(await active.evaluate("document.querySelector('.conversation-unread-badge').getBoundingClientRect().height"),18);
+    for(const [contact,label,tone,token] of [[data.twelve,'12 分钟','neutral','--text-secondary'],[data.two,'2 小时','attention','--tone-attention-fg'],[data.five,'5 小时','danger','--tone-danger-fg']] as const){
+      const selector='[data-contact-ref] a[href^="/workbench/app/conversations/'+contact.id+'"] time';
+      assert.deepEqual(await active.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}),probe=document.createElement('span');probe.style.color='var(${token})';document.body.append(probe);const result={label:node?.textContent,tone:node?.dataset.waitTone,color:node&&getComputedStyle(node).color===getComputedStyle(probe).color,title:node?.title.includes('最近活动')&&node.title.endsWith('（北京时间）')};probe.remove();return result;})()`),{label,tone,color:true,title:true});
+    }
+    const assignedSelector='[data-contact-ref] a[href^="/workbench/app/conversations/'+data.assigned.id+'"] time';
+    assert.equal(await active.evaluate(`document.querySelector(${JSON.stringify(assignedSelector)}).hasAttribute('data-wait-tone')`),false,'assigned contact retains activity clock');
+    assert.equal(await active.evaluate("document.querySelector('.inbox-reception p').textContent"),'何明（合成）已等待 5 小时，尚无人接待 · 接待后即可回复');
+    assert.equal(await active.evaluate("document.querySelector('.inbox-wait-duration').dataset.waitTone"),'danger');
+    assert.equal(await active.evaluate("getComputedStyle(document.querySelector('.inbox-wait-duration')).color===getComputedStyle(document.querySelector('.inbox-wait-time[data-wait-tone=danger]')).color"),true);
+    const capture=async(name:string,width:number)=>{await active.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await active.evaluate('document.fonts.ready');await active.evaluate(afterPaint);const bytes=Buffer.from(await active.screenshot(),'base64'),file=join(directory,name+'.png');await writeFile(file,bytes);shots.push({file,width,height:1080,sha256:createHash('sha256').update(bytes).digest('hex')});};
+    await capture('conversation-1440-before',1440);await capture('conversation-1920-before',1920);
+    await clickWorkbenchControl(active,'.topbar [aria-label="收起侧栏"]');await active.waitFor("Boolean(document.querySelector('.sidebar-collapsed'))");
+    assert.deepEqual(await active.evaluate("(()=>{const node=document.querySelector('.conversation-unread-badge'),box=node.getBoundingClientRect();return{width:box.width,height:box.height,label:node.getAttribute('aria-label'),textVisible:node.querySelector('span').checkVisibility()};})()"),{width:8,height:8,label:original.my_unread_count+' 条未读',textVisible:false});
+    await capture('sidebar-collapsed',1440);await clickWorkbenchControl(active,'.topbar [aria-label="展开侧栏"]');
+    const beforeFilters=requests.filter(row=>row.path.endsWith('/summary')).length;
+    for(const [index,value,param] of [[1,'unassigned','state'],[2,'direct','source']] as const){await clickWorkbenchControl(active,`.inbox-filters>.ds-filter-chip:nth-child(${index}) [data-slot=select-trigger]`);await clickWorkbenchControl(active,'[role=option][data-key="'+value+'"]');await active.waitFor('new URLSearchParams(location.search).get('+JSON.stringify(param)+')==='+JSON.stringify(value));assert.equal(await count(),original.unassigned_contact_count);}
+    await active.evaluate("(()=>{const input=document.querySelector('.inbox-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'不存在的主题（合成）');input.dispatchEvent(new Event('input',{bubbles:true}));})()");await active.evaluate('document.querySelector(".inbox-search").requestSubmit()');await active.waitFor("new URLSearchParams(location.search).has('q')");assert.equal(await count(),original.unassigned_contact_count);
+    assert.equal(requests.filter(row=>row.path.endsWith('/summary')).length,beforeFilters,'after the initial read and real SSE snapshot refresh, queue, source and search never refetch the shared summary');
+    await clickWorkbenchControl(active,'[aria-label="清除队列筛选"]');await active.waitFor("new URLSearchParams(location.search).get('state')==='open'&&!document.querySelector('.inbox-filters>.ds-filter-chip:nth-child(1)').hasAttribute('data-filter-active')");
+    await clickWorkbenchControl(active,'[aria-label="清除来源筛选"]');await active.waitFor("!new URLSearchParams(location.search).has('source')&&!document.querySelector('.inbox-filters>.ds-filter-chip:nth-child(2)').hasAttribute('data-filter-active')");
+    await active.evaluate("(()=>{const input=document.querySelector('.inbox-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));})()");await active.evaluate('document.querySelector(".inbox-search").requestSubmit()');await active.waitFor("document.querySelectorAll('.inbox-wait-time').length>=3");
+    const beforeMinute=requests.filter(row=>row.method==='GET'&&(row.path.endsWith('/summary')||row.path==='/api/workbench/conversation-inbox')).length;
+    await active.evaluate('globalThis.__card25bClock.advance()');await active.waitFor("[...document.querySelectorAll('.inbox-wait-time')].some(node=>node.textContent==='13 分钟')");
+    assert.equal(requests.filter(row=>row.method==='GET'&&(row.path.endsWith('/summary')||row.path==='/api/workbench/conversation-inbox')).length,beforeMinute,'minute display updates do not fetch');await active.evaluate('globalThis.__card25bClock.reset()');
+    await clickWorkbenchControl(active,'[data-action=takeover-conversation]');await active.waitFor("document.querySelector('.inbox-reception').hidden&&document.querySelector('[data-realtime-status]').dataset.realtimeStatus==='live'");await active.waitFor('Number(document.querySelector("[data-unassigned-contact-count]")?.dataset.unassignedContactCount)==='+String(original.unassigned_contact_count-1));
+    assert.equal(await active.evaluate(`document.querySelector('[data-contact-ref] a[href^="/workbench/app/conversations/${data.five.id}"] time').hasAttribute('data-wait-tone')`),false);assert.equal((await summary()).unassigned_contact_count,original.unassigned_contact_count-1);
+    await capture('conversation-1440-after-takeover',1440);
+    summaryMode='failure';const detail=await(await fetch(f.origin+'/api/workbench/conversations/'+data.five.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
+    assert.equal((await conversationPost(f.origin,f.cookie,data.five.id,'internal-notes',{...freshCommand(detail.session.row_version),text:'辅助计数失败时仍可沟通（合成）'})).status,201);await f.runtime.coordinator.runOnce();
+    await active.waitFor("!document.querySelector('.inbox-waiting-count')&&!document.querySelector('.conversation-unread-badge')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");assert.equal(await active.evaluate("document.querySelector('textarea[data-purpose=messages]').disabled"),false);assert.equal(await active.evaluate("document.body.innerText.includes('INVALID_RESPONSE')"),false);
+    summaryMode='zero';await appendT22LiveItem(f.pool,data.five.id,'零计数边界（合成）');await f.runtime.coordinator.runOnce();await active.waitFor("document.querySelector('[data-conversation-timeline]').textContent.includes('零计数边界（合成）')");assert.equal(await active.evaluate("Boolean(document.querySelector('.inbox-waiting-count')||document.querySelector('.conversation-unread-badge'))"),false);
+    assert.equal((await f.runtime.observability.metrics()).sse_clients,1);assert.ok(requests.filter(row=>row.path.endsWith('/summary')).every(row=>row.query===''));
+    console.log('CARD25B_BROWSER '+JSON.stringify({directory,shots,initial:original,after_takeover:original.unassigned_contact_count-1,scope:'LOCAL_SYNTHETIC_REAL_HTTP_PG_SSE',summary_failure_hidden:true,minute_fetches:0}));
+  }catch(error){failure=error;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify({state:await browser.evaluate('({text:document.body.innerText,url:location.href})'),requests}));console.log('CARD25B_DIAGNOSTICS '+directory);}}
+  finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+},{inbox:true,realtime:true,personalRead:false,recovery:false}));
+
+test('B2 reading a real contact decreases the global badge through the existing Cursor SSE',async()=>withT22Fixture(async f=>{
+  const data=await seedCard25bConversation(f);let browser:Browser|undefined,failure:unknown;
+  const getSummary=async()=>await(await fetch(f.origin+'/api/workbench/conversations/summary',{headers:{cookie:f.cookie}})).json() as {my_unread_count:number};
+  try{const before=await getSummary();assert.ok(before.my_unread_count>99);
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations',width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor("document.querySelector('.conversation-unread-badge')?.textContent==='99+'");
+    await clickWorkbenchControl(browser,'[data-contact-ref] a[href^="/workbench/app/conversations/'+data.assigned.id+'"]');await browser.waitFor(inboxLive);await browser.waitFor("Number(document.querySelector('.conversation-unread-badge')?.dataset.conversationUnread)<100");
+    const after=await getSummary();assert.ok(after.my_unread_count<before.my_unread_count);assert.equal(await browser.evaluate("Number(document.querySelector('.conversation-unread-badge')?.dataset.conversationUnread)"),after.my_unread_count);assert.equal(await browser.evaluate("document.querySelector('.conversation-unread-badge').getAttribute('aria-label')"),after.my_unread_count+' 条未读');
+    console.log('CARD25B_CURSOR '+JSON.stringify({before:before.my_unread_count,after:after.my_unread_count,real_cursor_sse:true}));
+  }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+},{inbox:true,realtime:true,personalRead:true,recovery:false}));
 
 test('v2.1 reception uses the original command and keeps message space, purpose and newline boundaries',async()=>{
   await withT22Fixture(async f=>{

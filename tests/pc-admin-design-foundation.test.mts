@@ -14,7 +14,7 @@ async function designModule(name: string): Promise<string> {
   const source = await readFile(resolve(root, 'app/pc-admin/src/design', name + '.ts'), 'utf8');
   const output = transpileModule(source, {compilerOptions: {module: ModuleKind.ESNext, target: ScriptTarget.ES2022, verbatimModuleSyntax: true}}).outputText;
   const resolved=output.replaceAll("'lucide-react'", JSON.stringify(import.meta.resolve('lucide-react')));
-  return 'data:text/javascript;base64,' + Buffer.from(name==='board-presentation'?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
+  return 'data:text/javascript;base64,' + Buffer.from(['board-presentation','format-time'].includes(name)?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
 }
 interface Heat {tone: string; label: string; ring: string | null}
 const {heatOf, cardHeat, cardHeatStart, HEAT_THRESHOLDS_MINUTES}: {
@@ -31,7 +31,7 @@ const {categoryOf, categoryMap, unclassifiedCategory}: {
 } = await import(await designModule('category-map'));
 
 const now = Date.parse('2026-11-02T10:00:00+08:00');
-const {formatListTime,shanghaiDays}:{formatListTime:(local:string,nowMs:number)=>string;shanghaiDays:(nowMs:number)=>{today:string;yesterday:string}}=await import(await designModule('format-time'));
+const {formatListTime,shanghaiDays,formatWaitingTime,observeVisibleMinute}:{formatListTime:(local:string,nowMs:number)=>string;shanghaiDays:(nowMs:number)=>{today:string;yesterday:string};formatWaitingTime:(local:string|null|undefined,now:number)=>{label:string;tone:string}|null;observeVisibleMinute:(update:(now:number)=>void)=>()=>void}=await import(await designModule('format-time'));
 for(const [name,local,clock,expected] of [
   ['today','2026-11-05 09:35:00','2026-11-05T12:00:00+08:00','09:35'],
   ['yesterday','2026-11-04 16:52:00','2026-11-05T12:00:00+08:00','昨天'],
@@ -42,6 +42,25 @@ for(const [name,local,clock,expected] of [
   ['year boundary yesterday','2025-12-31 23:59:30','2026-01-01T00:00:30+08:00','昨天'],
 ] as const)test('V1 Shanghai list time '+name,()=>assert.equal(formatListTime(local,Date.parse(clock)),expected));
 test('V1 list and timeline dividers share Shanghai midnight',()=>assert.deepEqual(shanghaiDays(Date.parse('2026-11-04T16:00:30Z')),{today:'2026-11-05',yesterday:'2026-11-04'}));
+test('B3 waiting shares heat thresholds, Shanghai starts and whole-day labels',()=>{
+  const start='2026-11-05 08:00:00',at=Date.parse('2026-11-05T08:00:00+08:00');
+  for(const [minutes,label,tone] of [[0,'0 分钟','neutral'],[4,'4 分钟','neutral'],[5,'5 分钟','neutral'],[12,'12 分钟','neutral'],[20,'20 分钟','neutral'],[59,'59 分钟','neutral'],[60,'1 小时','attention'],[120,'2 小时','attention'],[239,'3 小时','attention'],[240,'4 小时','danger'],[300,'5 小时','danger'],[1440,'1 天','danger'],[2880,'2 天','danger']] as const)assert.deepEqual(formatWaitingTime(start,at+minutes*60_000),{label,tone});
+  for(const local of [null,undefined,'','2026-02-30 08:00:00','2026-11-05T08:00:00Z','2026-11-05 08:01:00'])assert.equal(formatWaitingTime(local,at),null);
+  assert.equal(formatWaitingTime(start,NaN),null);
+});
+test('B5 minute clock pauses while hidden, resumes immediately and owns no request timer',t=>{
+  const doc=new class extends EventTarget{hidden=false;}(),timers=new Map<number,()=>void>(),ticks:number[]=[],delays:number[]=[];let serial=0,clock=1000;
+  const originals=['window','document'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)] as const);
+  t.mock.method(Date,'now',()=>clock);
+  Object.defineProperty(globalThis,'window',{configurable:true,value:{setInterval:(callback:()=>void,delay:number)=>{delays.push(delay);timers.set(++serial,callback);return serial;},clearInterval:(id:number)=>timers.delete(id)}});
+  Object.defineProperty(globalThis,'document',{configurable:true,value:doc});
+  try{const stop=observeVisibleMinute(at=>ticks.push(at));assert.deepEqual(ticks,[1000]);assert.equal(timers.size,1);
+    clock+=60_000;for(const tick of timers.values())tick();assert.deepEqual(ticks,[1000,61000]);
+    doc.hidden=true;doc.dispatchEvent(new Event('visibilitychange'));assert.equal(timers.size,0);clock+=120_000;assert.equal(ticks.length,2);
+    doc.hidden=false;doc.dispatchEvent(new Event('visibilitychange'));assert.deepEqual(ticks,[1000,61000,181000]);assert.equal(timers.size,1);assert.deepEqual(delays,[60000,60000]);
+    stop();assert.equal(timers.size,0);doc.dispatchEvent(new Event('visibilitychange'));assert.equal(ticks.length,3);
+  }finally{for(const[key,descriptor]of originals)if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}
+});
 test('heat thresholds are the frozen shared minute tuple', () => {
   assert.deepEqual(HEAT_THRESHOLDS_MINUTES, [5, 20, 60, 240]);
   assert.ok(Object.isFrozen(HEAT_THRESHOLDS_MINUTES));
