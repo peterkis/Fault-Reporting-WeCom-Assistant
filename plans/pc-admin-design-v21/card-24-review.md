@@ -49,3 +49,11 @@ ffcc9c08本地build 922/922、types/样式、工具33/33、默认helper生命周
 原生探针记录Windows输入桌面为解锁Default；hide前就hidden，窗口visible、未最小化、viewVisible、页面有焦点。生成物中重复throttling守卫及moveTop/restore两项单变量探针均失败，原compiled文件各已哈希恢复，未进入生产源码。仅在测试Electron启动关闭CalculateNativeWinOcclusion后，完整原生导航1/1通过（native-occlusion-probe.log），全部原hide/show、离线/崩溃/认证/窗口断言保持。该参数只固定GUI测试的宿主遮挡环境，生产窗口的可见性和隐私机制不变。
 
 干净CI的desktop:test依赖stage壳文件和图标，因此将现有desktop:build提前到它之前，并给既有真实workflow工具测试补前置顺序断言。没有增减所选检查、放宽失败/跳过规则或更改合并汇总；后继正式结果另绑定提交，不把探针PASS冒充新候选或CI通过。
+
+## F4相关首帧缺陷与第四轮候选
+
+bc76670a本地build 922/922、types/样式、工具33/33、stage和正式原生9/9通过，manifest b77b67477e2ea06a90ea8ad68211015fd5ba500e02a42ff2e3b74bb59346f792；其runtime全部2943项与ffcc逐字节相同，未把ffcc的17项浏览器结果重绑。第三轮CI 41998850865保留FAIL：Linux为no-adapter静态背景、visible、53帧但最大间隔2649.8ms、摆幅0，已排除必须有WebGPU背景才失败的解释。Windows实际原生9/9和整合1/1均通过，但默认spec文本被既有TAP格式守卫拒绝；打包后续未执行。
+
+旧正式产物的受控回放只在首个真实物理rAF前阻塞2700ms：shader ready、visible、阻塞已注入，随后217帧/最大间隔17.5ms、range0/late0，原≥6断言确实FAIL（probe-cold-frame-before.log/json）；旧脚本另存原件。原因是开场在排队时就记墙钟，首个呈现帧晚到便可能耗尽原2600ms。不是将CI归因于未证的字体或GPU负载。
+
+用户明确追加授权仅在src/login/Lanyard.tsx做最小首帧准备修复及对应回放。沿既有rAF先准备两帧再启动同一冲量/阻尼/2600ms时间段；隐藏和拖动取消准备，未新增计时器，未改布局或业务状态/权限。只读data-opening-ready标记表明呈现准备完成；原3600ms、≥6/<1、同iframe、完整动效和全部GPU/恢复/认证断言保留，并分别验证正常与2700ms冷首帧。另将既有具名Integration入口固定为TAP reporter，保留CI原格式/执行/退出码守卫，不把“未到达”检查删除。后继结果在新候选单列。
