@@ -10,7 +10,7 @@
 .ds-property-list .owner-name {overflow-wrap: anywhere; min-width: 0;}
 .ds-property-list .ds-property-missing,.ds-property-list [data-empty=true] {color: var(--text-tertiary);}
 .ds-property-list .detail-source-tag {padding: 0; background: transparent; border: 0; color: var(--text-secondary); border-radius: 0; font-size: var(--fs-md);}
-.ds-property-list time {font-size: var(--fs-md); white-space: normal; font-variant-numeric: tabular-nums;}
+.ds-property-list time {font-size: var(--fs-md); white-space: normal; font-variant-numeric:var(--font-numeric-variant);}
 .ds-property-list:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
 .ds-property-list [aria-disabled=true] {color: var(--text-tertiary);}
 @container detail-info (max-width:639px) {.detail-body .ds-property-list.detail-properties>dl {grid-template-columns: minmax(0,1fr);}}

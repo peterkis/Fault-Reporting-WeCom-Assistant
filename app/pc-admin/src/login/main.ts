@@ -1,3 +1,4 @@
+import '../design/fonts.css';
 import * as ww from '@wecom/jssdk';
 import {createElement} from 'react';
 import {createRoot} from 'react-dom/client';

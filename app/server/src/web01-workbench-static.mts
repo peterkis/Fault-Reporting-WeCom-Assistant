@@ -8,14 +8,14 @@ export function createWeb01WorkbenchStatic({enabled=false,conversationsEnabled=f
     if(!enabled)failP2016('DISABLED',503);
     let file: string,type: string;
     if((notificationExceptionsEnabled&&/^\/workbench\/app\/notification-exceptions\/?$/u.test(pathname))||UI.test(pathname)||(conversationsEnabled&&/^\/workbench\/app\/conversations(?:\/[0-9a-f-]{36})?\/?$/iu.test(pathname))){file='index.html';type='text/html';}
-    else if(/^\/workbench\/app\/assets\/[A-Za-z0-9_-]+\.(?:js|css)$/u.test(pathname)){
-      file=pathname.slice('/workbench/app/'.length);type=file.endsWith('.css')?'text/css':'text/javascript';
+    else if(/^\/workbench\/app\/assets\/[A-Za-z0-9_-]+\.(?:js|css|woff2)$/u.test(pathname)){
+      file=pathname.slice('/workbench/app/'.length);type=file.endsWith('.woff2')?'font/woff2':file.endsWith('.css')?'text/css':'text/javascript';
     }else failP2016('NOT_FOUND',404);
     const root=new URL('../../../web/admin-workbench/',import.meta.url);
     // Asset membership is pinned by the build's inventory, never an arbitrary file path.
     const inventory: unknown=JSON.parse(await readFile(new URL('asset-inventory.json',root),'utf8'));
     if(!Array.isArray(inventory)||!inventory.every(v=>typeof v==='string')||!inventory.includes(file))failP2016('NOT_FOUND',404);
     const body=await readFile(new URL(file,root));
-    response.writeHead(200,{'content-type':type+'; charset=utf-8','cache-control':'no-store',...((webReportsEnabled||attachmentsEnabled||actorAvatarsEnabled)&&type==='text/html'?{'content-security-policy':"default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; "+(webReportsEnabled?(employeeMediaEnabled?"media-src 'self' blob:; ":"media-src blob:; "):"media-src 'none'; ")+"font-src 'self'"}:{})});response.end(body);return true;
+    response.writeHead(200,{'content-type':type+(type==='font/woff2'?'':'; charset=utf-8'),'cache-control':'no-store',...((webReportsEnabled||attachmentsEnabled||actorAvatarsEnabled)&&type==='text/html'?{'content-security-policy':"default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; "+(webReportsEnabled?(employeeMediaEnabled?"media-src 'self' blob:; ":"media-src blob:; "):"media-src 'none'; ")+"font-src 'self'"}:{})});response.end(body);return true;
   };
 }

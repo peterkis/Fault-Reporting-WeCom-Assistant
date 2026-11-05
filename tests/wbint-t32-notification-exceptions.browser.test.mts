@@ -8,6 +8,28 @@ import {t32Record,t32Text,withT32Fixture,seedCard21Exceptions,seedN3SessionProfi
 import {card22Filters,assertCard22Filters,captureCard22} from './helpers/card22-presentation.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {card24Fonts} from './helpers/card24-presentation.mjs';
+
+test('Card24 F1–F3 N1–N3 G1 notification fonts, continuous header rule, result icons and source names',{timeout:120000},async()=>{
+ await withT32Fixture(async f=>{
+  const seed=await seedCard21Exceptions(f),calls=seed.senderCalls(),directory=process.env.CARD24_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card24-notifications-'));await mkdir(directory,{recursive:true});
+  const cookie=f.browserCookies[0];assert.ok(cookie);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;const metrics:unknown[]=[],posts:string[]=[];
+  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/notification-exceptions',width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor("document.querySelectorAll('[data-exception-row]').length===6");
+   metrics.push({fonts:await card24Fonts(browser)});
+   const sample=await browser.evaluate(`(()=>{const rect=n=>n.getBoundingClientRect().toJSON(),css=n=>getComputedStyle(n),table=document.querySelector('.notification-table'),header=table.querySelector('thead tr'),icon=document.querySelector('.page-icon');return {table:rect(table).width,line:rect(header).width,border:css(header).borderBottomWidth,th:[...table.querySelectorAll('th')].map(n=>css(n).borderBottomWidth),shadows:[...table.querySelectorAll('th')].map(n=>css(n).boxShadow),results:[...table.querySelectorAll('[data-exception-row]')].map(n=>{const badge=n.querySelector('.notification-result'),svg=badge.querySelector('svg');return {status:n.dataset.deliveryStatus,count:badge.querySelectorAll('svg').length,width:rect(svg).width,height:rect(svg).height,clock:svg.classList.contains('lucide-clock'),triangle:svg.classList.contains('lucide-triangle-alert'),gap:css(badge.firstElementChild).gap};}),sources:[...table.querySelectorAll('[data-source-domain=SESSION]')].map(n=>n.textContent),title:rect(document.querySelector('h1')),description:rect(document.querySelector('.ds-page-heading>p')),icon:rect(icon),color:css(icon).color,background:css(icon).backgroundColor};})()`) as {table:number;line:number;border:string;th:string[];shadows:string[];results:{status:string;count:number;width:number;height:number;clock:boolean;triangle:boolean;gap:string}[];sources:string[];title:{left:number;top:number};description:{left:number};icon:{width:number;height:number};color:string;background:string};
+   assert.equal(sample.line,sample.table);assert.equal(sample.border,'1px');assert.ok(sample.th.every(n=>n==='0px'));assert.ok(sample.shadows.every(n=>n==='none'));assert.equal(sample.results.length,6);
+   for(const result of sample.results){assert.equal(result.count,1);assert.equal(result.width,12);assert.equal(result.height,12);assert.equal(result.gap,'4px');assert.equal(result.triangle,result.status==='DEAD_LETTER');assert.equal(result.clock,result.status!=='DEAD_LETTER');}
+   assert.ok(sample.sources.length>0);assert.ok(sample.sources.every(n=>n==='会话 · 报修人'));assert.equal(sample.description.left,sample.title.left);assert.equal(sample.icon.width,36);assert.equal(sample.icon.height,36);metrics.push({N1N2N3G1:sample});
+   await captureCard22(browser,directory,'notifications-1440');await captureCard22(browser,directory,'glyph-notification-time-x2','.notification-time');
+   await clickWorkbenchControl(browser,'.ds-filter-chip [data-slot=select-trigger]');await browser.waitFor("Boolean(document.querySelector('[role=option]'))");
+   const options=await browser.evaluate("[...document.querySelectorAll('[role=option],[role=listbox]')].map(n=>getComputedStyle(n).fontFamily)") as string[];assert.ok(options.length>0);for(const font of options)assert.match(font,/^"?Inter Variable/u);metrics.push({F2HeroUI:options});
+   assert.deepEqual(posts,[]);assert.equal(seed.senderCalls(),calls);
+  }catch(error){failure=error;}
+  finally{await closeBrowserTestResources([()=>writeFile(join(directory,'card24-notification-metrics.json'),JSON.stringify({metrics,posts,senderCalls:seed.senderCalls()},null,2)),()=>{f.runtime.server.off('request',observe);},async()=>{if(failure&&browser)await captureCard22(browser,directory,'card24-notification-failure');},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+ });
+});
 
 test('V14 notification header has no column separators and today uses HH:mm',{timeout:240000},async()=>{
  await withT32Fixture(async f=>{
@@ -39,7 +61,7 @@ test('T32 production bundle reads the bounded real queue and exact item instead 
   await t32Browser('t32-real-queue',async({browser,seed,capture})=>{
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-notification-exceptions]"))'),true,'the formal exceptions page must be mounted');
     await browser.waitFor('document.querySelectorAll("[data-exception-row]").length===10');
-    assert.equal(await browser.evaluate("document.querySelector('.notification-source-link[data-source-domain=SESSION]')?.textContent"),'会话 · 报修人（资料未提供）');
+    assert.equal(await browser.evaluate("document.querySelector('.notification-source-link[data-source-domain=SESSION]')?.textContent"),'会话 · 报修人');
     const ids=await browser.evaluate('Array.from(document.querySelectorAll("[data-exception-row]")).map(row=>row.dataset.deliveryId)');assert.ok(Array.isArray(ids));assert.equal(new Set(ids).size,10);assert.ok(ids.every(id=>seed.deliveryIds.includes(t32Text(id))));
     assert.equal(await browser.evaluate('document.querySelectorAll("[data-exception-row][data-delivery-status=RECONCILIATION_REQUIRED]").length>0'),true);
     const selected=t32Text(ids[0]);await browser.evaluate('document.querySelector("[data-action=open-exception]").click()');

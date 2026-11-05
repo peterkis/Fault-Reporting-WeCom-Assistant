@@ -78,7 +78,7 @@ try{
   }
   if($Action -eq 'Integration'){
     $env:WECOM_DESKTOP_INTEGRATION='true'
-    Invoke-DesktopNode @('--test','--test-concurrency=1',(Join-Path $desktopRoot '.build/runtime/tests/pc-admin-electron.browser.test.mjs'))
+    Invoke-DesktopNode @('--test','--test-reporter=tap','--test-concurrency=1',(Join-Path $desktopRoot '.build/runtime/tests/pc-admin-electron.browser.test.mjs'))
     return
   }
   if(-not $ServerOrigin){throw 'DESKTOP_SERVER_ORIGIN_REQUIRED'}

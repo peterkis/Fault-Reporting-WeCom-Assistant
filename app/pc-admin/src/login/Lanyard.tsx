@@ -1081,6 +1081,8 @@ const Lanyard = ({
     let readyPending = false;
     let frontReady = false;
     let introStarted: number | null = null;
+    let introWarmupFrames = 0;
+    delete container.dataset.openingReady;
     let openingStarted = false;
     let failed = false;
     let capturedPointer: number | null = null;
@@ -1395,7 +1397,7 @@ const Lanyard = ({
     const beginOpening = (): void => {
       if(openingStarted||!frontReady||!visible||!settingsRef.current?.presentationReady)return;
       openingStarted=true;
-      if(settingsRef.current.intro&&!reducedMotion){introStarted=performance.now();sim.body.velocity.x+=0.8;start();}
+      if(settingsRef.current.intro&&!reducedMotion){introWarmupFrames=2;start();}
     };
 
     const physics = (): Physics => {
@@ -1435,6 +1437,12 @@ const Lanyard = ({
       const current = physics();
       const body = sim.body;
       let introFinished = false;
+      // Let the first visible frame finish before the one-shot clock starts.
+      if (introWarmupFrames > 0 && --introWarmupFrames === 0) {
+        introStarted = performance.now();
+        body.velocity.x += 0.8;
+        container.dataset.openingReady = 'true';
+      }
       if (introStarted !== null) {
         current.linearDrag *= 5;
         current.angularDrag *= 2.5;
@@ -1511,6 +1519,7 @@ const Lanyard = ({
       const hit = pickCard();
       if (!hit) return;
       introStarted = null;
+      introWarmupFrames = 0;
       sim.grab = {
         local: hit.point.clone().sub(sim.body.position).applyQuaternion(sim.body.quaternion.clone().invert()),
         rotation: sim.body.quaternion.clone(),
@@ -1572,6 +1581,7 @@ const Lanyard = ({
       visible = intersecting && !document.hidden;
       if (!visible || settingsRef.current?.paused) {
         introStarted = null;
+        introWarmupFrames = 0;
         cancelAnimationFrame(raf);
         raf = 0;
         stopInteraction();

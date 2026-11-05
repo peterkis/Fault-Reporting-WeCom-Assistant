@@ -64,6 +64,12 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal((await fetch(origin+'/workbench/app/settings/source-groups')).status,401);
     assert.equal((await fetch(origin+'/workbench/app?view=list')).status,401);
     const html=await shell.text(),asset=html.match(/src="([^"]+\.js)"/u)?.[1];assert.ok(asset);assert.equal((await get(asset)).status,200);
+    const stylesheet=html.match(/href="([^"]+\.css)"/u)?.[1];assert.ok(stylesheet);
+    const css=await (await get(stylesheet)).text(),fonts=[...css.matchAll(/url\(["']?(\/workbench\/app\/assets\/[^"')]+\.woff2)["']?\)/gu)].map(match=>match[1]);
+    assert.equal(new Set(fonts).size,99,'F1 all unicode-range shards remain separate local files');assert.equal(/url\(["']?data:font/iu.test(css),false);
+    const font=fonts[0];assert.ok(font);assert.equal((await fetch(origin+font)).status,401,'font asset retains current workbench authentication');
+    const fontResponse=await get(font);assert.equal(fontResponse.status,200);assert.equal(fontResponse.headers.get('content-type'),'font/woff2');assert.equal(Buffer.from(await fontResponse.arrayBuffer()).subarray(0,4).toString(),'wOF2');
+    assert.equal((await get('/workbench/app/assets/unknown.woff2')).status,404,'unmanifested font stays rejected');
     assert.equal((await get('/workbench/app/assets/unknown.js')).status,404);
     assert.equal((await get('/workbench/app/src/main.tsx')).status,404);
     const unknown=await get('/api/unknown-web01');assert.equal(unknown.status,404);assert.match(unknown.headers.get('content-type'),/application\/json/u);

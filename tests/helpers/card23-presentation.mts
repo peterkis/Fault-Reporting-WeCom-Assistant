@@ -40,9 +40,9 @@ export function assertCard23Geometry(sample:Card23Geometry,mode:'allowed'|'denie
  assert.ok(sample.picker.gap>=4,'V2 value/arrow gap '+sample.picker.gap);assert.equal(sample.picker.position,'static');assert.equal(sample.picker.icon,14);
  assert.ok(sample.picker.menuGap>=4);assert.equal(sample.picker.indicatorContained,true);
  if(sample.width===1440){assert.ok(sample.chatWidth>=500);assert.equal(sample.rightWidth,264);}
- assert.equal(sample.metaGap,4,'V5 meta gap');assert.equal(sample.avatarGap,8);assert.ok(Math.abs(sample.avatarTop)<=1);assert.equal(sample.avatarSize,24);
+ assert.equal(sample.metaGap,4,'V5 meta gap');assert.equal(sample.avatarGap,8);assert.ok(Math.abs(sample.avatarTop)<=1);assert.equal(sample.avatarSize,28);
  assert.equal(sample.groups[0]?.avatar,1);assert.equal(sample.groups[0]?.meta,1);assert.equal(sample.groups[0]?.gap,6);
- assert.equal(sample.groups[1]?.avatar,0);assert.equal(sample.groups[1]?.meta,0);assert.equal(sample.groups[1]?.slot,24);
+ assert.equal(sample.groups[1]?.avatar,0);assert.equal(sample.groups[1]?.meta,0);assert.equal(sample.groups[1]?.slot,28);
  assert.deepEqual(sample.deliveries.map(d=>d.label).sort(),['渠道已确认发送','排队中','发送失败','结果待核实'].sort());
  for(const d of sample.deliveries){
   assert.equal(d.color,d.expected);assert.equal(d.icons,1);assert.equal(d.iconSize,12);assert.equal(d.idCount,1);

@@ -4,6 +4,7 @@
 .ds-avatar.av4 {background: var(--tone-warning-bg); color: var(--tone-warning-fg);}
 .ds-avatar[data-size="20"] {width: var(--avatar-sm); height: var(--avatar-sm); font-size: var(--fs-avatar-sm);}
 .ds-avatar[data-size="32"] {width: var(--avatar-lg); height: var(--avatar-lg); font-size: var(--fs-lg);}
+.ds-avatar[data-size="28"] {width: var(--avatar-msg); height: var(--avatar-msg); font-size: var(--fs-xs);}
 .ds-avatar[data-system=true] {background: var(--bg-muted); color: var(--text-secondary);}
 .ds-avatar[data-system=true] svg {width: var(--icon-sm); height: var(--icon-sm);}
 .ds-avatar.unassigned {background: none; border: 1.5px dashed var(--border-strong); color: var(--text-secondary);}

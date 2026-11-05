@@ -98,7 +98,10 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
    if(actor===0){assert.equal(confirmations,1,'the real PG/OAuth path accepts the first confirmation after renewal');heldQrRequests=0;}
    assert.equal(await desktop.evaluate('(async()=> (await (await fetch("/api/lifecycle/bootstrap")).json()).principal_id)()'),principals[actor]);
    await desktop.wait('document.querySelector(".account")?.textContent.includes("企业微信合成姓名'+actor+'")&&document.querySelector(".account")?.textContent.includes("合成信息科")');
-   assert.equal(await desktop.evaluate('Boolean(document.querySelector("aside .brand"))||document.querySelector(".topbar").innerText.includes("旧管理端")||document.querySelector(".topbar").innerText.includes("实时更新")'),false);
+   assert.equal(await desktop.evaluate('Boolean(document.querySelector("aside .brand"))||document.querySelector(".topbar").innerText.includes("旧管理端")'),false);
+   // Card24 G2 keeps the current live-status contract and derives the brand's team from the breadcrumb.
+   assert.equal(await desktop.evaluate('document.querySelector(".connection-status[data-realtime-status=live]")?.textContent'),'实时更新中');
+   assert.equal(await desktop.evaluate('document.querySelector("[data-sidebar-team]")?.textContent===document.querySelector("[data-breadcrumb-team]")?.textContent'),true);
    assert.equal(await desktop.evaluate('typeof require+":"+typeof process'), 'undefined:undefined');
    assert.equal(await desktop.evaluate('window.workbenchDesktop.version'),1);
    const paths=object(object(await desktop.command('state')).paths);for(const value of Object.values(paths))assert.ok(String(value).startsWith(root+'\\.local\\electron\\profiles\\'));

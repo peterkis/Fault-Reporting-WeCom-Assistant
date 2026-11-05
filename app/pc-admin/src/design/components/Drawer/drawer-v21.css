@@ -11,7 +11,7 @@
 .ds-drawer-content>.ds-detail.ds-drawer {display:flex;flex-direction:column;overflow:hidden;border-radius:var(--radius-drawer-frame);}
 .ds-detail [hidden] {display:none;}
 .ds-detail .detail-navigation {flex:none;height:calc(var(--space-12) + var(--space-1));min-height:calc(var(--space-12) + var(--space-1));padding:0 var(--space-3) 0 var(--space-5);border:0;box-shadow:inset 0 -1px 0 var(--border-drawer-hair);}
-.ds-detail .ds-detail-position {font-size:var(--fs-xs);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ds-detail .ds-detail-position {font-size:var(--fs-xs);font-variant-numeric:var(--font-numeric-variant);white-space:nowrap;}
 .ds-detail-toolbar-divider {flex:none;width:1px;height:var(--lh-xs);margin:0 var(--space-1);background:var(--border-drawer-line);}
 .ds-detail-view {display:flex;flex-direction:column;flex:1;min-height:0;}
 .ds-detail .ds-detail-view>.detail-body {flex:1;overflow:auto;overscroll-behavior:contain;padding:var(--space-5) calc(var(--space-6) + var(--space-1)) var(--space-6);}
@@ -87,7 +87,7 @@
 .ds-detail .record-heading {display:flex;align-items:center;gap:var(--space-1-5);min-width:0;width:100%;font-size:var(--fs-sm);line-height:var(--lh-md);color:var(--text-secondary);}
 .ds-detail .record-heading .record-name {flex:none;}
 .ds-detail .record-heading .record-action {min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-.ds-detail .record-heading>time {flex:none;color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-md);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ds-detail .record-heading>time {flex:none;color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-md);font-variant-numeric:var(--font-numeric-variant);white-space:nowrap;}
 .ds-detail .detail-record[data-record-kind=report] .record-text,.ds-detail .detail-record[data-record-kind=note] .record-text {display:block;background:var(--bg-muted);color:var(--text-primary);border-radius:var(--radius-xs) var(--radius-lg) var(--radius-lg) var(--radius-lg);padding:calc(var(--space-2) + var(--space-0-5)) var(--space-3);margin-top:var(--space-1-5);font-size:var(--fs-md);line-height:var(--lh-md);}
 .ds-detail .detail-record[data-record-kind=note][data-audience=INTERNAL] .record-text {background:var(--tone-warning-bg);color:var(--text-primary);}
 .ds-detail .record-audience {display:inline-flex;align-items:center;gap:var(--space-1);}
@@ -101,7 +101,7 @@
 .ds-detail .ds-note-input .note-entry {display:flex;flex-direction:column;gap:var(--space-2);}
 .ds-detail .ds-note-input textarea {width:100%;min-height:var(--lh-md);max-height:calc(var(--space-16) * 2);padding:0;border:0;background:transparent;resize:vertical;field-sizing:content;}
 .ds-note-bottom {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);width:100%;}
-.ds-note-counter {color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-xs);font-variant-numeric:tabular-nums;}
+.ds-note-counter {color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-xs);font-variant-numeric:var(--font-numeric-variant);}
 .ds-detail .ds-note-input .ds-button[data-action=save-internal-note] {height:var(--control-h-sm);min-height:var(--control-h-sm);font-size:var(--fs-sm);margin-left:auto;}
 .ds-note-input kbd {margin-left:var(--space-1);font-size:var(--fs-xs);color:var(--text-secondary);}
 .ds-detail .ds-detail-footer .note-controls {margin:var(--space-1) 0 0;font-size:var(--fs-xs);}

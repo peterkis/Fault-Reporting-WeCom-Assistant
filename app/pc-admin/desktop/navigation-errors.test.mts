@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:https';
 import {createHash,createPublicKey,randomUUID} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
-import {mkdirSync,readFileSync,writeFileSync,copyFileSync} from 'node:fs';
+import {mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync} from 'node:fs';
 import path from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
 test('real Electron navigation recovers offline/crashes and keeps authentication/window guards',{timeout:90000,skip:process.platform!=='win32'},async()=>{
   const root=process.cwd(),id=randomUUID(),stage=path.join(root,'.local/electron/temp','navigation-'+id),profile=path.join(root,'.local/electron/profiles','navigation-'+id);
   mkdirSync(stage,{recursive:true});mkdirSync(profile,{recursive:true});
-  execFileSync('D:/Program Files/Git/usr/bin/openssl.exe',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(stage,'key.pem'),'-out',path.join(stage,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
+  const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);
+  assert.ok(openssl,'native navigation tests require Git for Windows OpenSSL');
+  execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(stage,'key.pem'),'-out',path.join(stage,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
   const cert=readFileSync(path.join(stage,'cert.pem')),key=readFileSync(path.join(stage,'key.pem'));
   const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
   let status=404,loginRecovery=false,qrGeneration=0,confirmations=0;
@@ -50,7 +52,9 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
   const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:profile,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
   // This GUI test observes the app's first show. SW_HIDE would override that first
   // native ShowWindow call and require the test driver to manufacture visibility.
-  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
+  // Unrelated host windows must not occlude this GUI fixture. Actual hide/show
+  // visibility and the application's native privacy guards remain under test.
+  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage,'--disable-features=CalculateNativeWinOcclusion'],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
   child.stderr?.on('data',(chunk:Buffer)=>writeFileSync(path.join(profile,'process-stderr.log'),chunk,{flag:'a'}));
   let ready=false,next=1;const pending=new Map<number,{resolve:(value:unknown)=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>();
   child.on('message',(value:unknown)=>{if(!value||typeof value!=='object')return;const message=value as Record<string,unknown>;if(message.ready===true){ready=true;return;}if(typeof message.id!=='number')return;const slot=pending.get(message.id);if(!slot)return;clearTimeout(slot.timer);pending.delete(message.id);if(message.ok)slot.resolve(message.result);else slot.reject(Error(String(message.error)));});

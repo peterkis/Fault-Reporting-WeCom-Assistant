@@ -146,7 +146,7 @@ jobs:
         $nativeData = Join-Path $env:RUNNER_TEMP 'pr-native-pg'
         if (Test-Path -LiteralPath $nativeData) { throw 'NATIVE_DATABASE_NOT_OWNED' }
         'owned=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-        & "$pgBin/initdb.exe" -U postgres -A trust -D $nativeData
+        & "$pgBin/initdb.exe" -U postgres -A trust -D $nativeData --encoding=UTF8
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_INIT_FAILED' }
         & "$pgBin/pg_ctl.exe" -D $nativeData -l "$env:RUNNER_TEMP/pr-native-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_START_FAILED' }
@@ -155,6 +155,8 @@ jobs:
         & "$pgBin/psql.exe" -U postgres -h 127.0.0.1 -p 55432 -d migration_ci -c 'SHOW server_version'
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_DATABASE_NOT_READY' }
     - name: Prepare existing native Electron tools
+      env:
+        npm_config_registry: https://registry.npmmirror.com
       run: npm run desktop:setup
     - name: One native candidate build and existing process validation
       shell: pwsh
@@ -166,10 +168,10 @@ jobs:
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_TYPES_FAILED' }
         node .build/runtime/app/server/scripts/migrate-current-baseline.mjs
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_BASELINE_FAILED' }
-        npm run desktop:test
-        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_POLICY_FAILED' }
         npm run desktop:build -- -ServerOrigin https://workbench.invalid.example
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_STAGE_FAILED' }
+        npm run desktop:test
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_POLICY_FAILED' }
         npm run desktop:integration 2>&1 | Tee-Object "$env:RUNNER_TEMP/pr-native/integration.tap"
         if ($LASTEXITCODE -ne 0) { throw 'NATIVE_PROCESS_FAILED' }
         $tap = Get-Content -Raw "$env:RUNNER_TEMP/pr-native/integration.tap"
@@ -203,6 +205,7 @@ jobs:
           Remove-Item -LiteralPath $nativeData -Recurse -Force
           if (Test-Path -LiteralPath $nativeData) { throw 'NATIVE_DATA_REMAINS' }
         }
+        exit 0
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       if: always()
       with:

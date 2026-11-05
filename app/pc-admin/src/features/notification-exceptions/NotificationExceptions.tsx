@@ -1,5 +1,5 @@
 import {formatListTime} from '../../design/format-time';
-import {Bell,Check,ChevronLeft,ChevronRight,ClipboardList,MessageCircle,RefreshCw,X} from 'lucide-react';
+import {Bell,Clock,TriangleAlert,Check,ChevronLeft,ChevronRight,ClipboardList,MessageCircle,RefreshCw,X} from 'lucide-react';
 import './notification-exceptions.css';
 import {EmptyState} from '../../design/components/EmptyState/EmptyState';
 import {InlineAlert} from '../../design/components/InlineAlert/InlineAlert';
@@ -60,8 +60,8 @@ export function NotificationExceptions({principal}:{principal:Principal}){
       <HTable.Column className="ds-table-count notification-time-column">时间</HTable.Column>
       <HTable.Column className="ds-table-action">操作</HTable.Column>
     </></HTable.Header><HTable.Body>{items.map(row=><HTable.Row key={row.delivery_id} data-exception-row data-delivery-id={row.delivery_id} data-delivery-status={row.status} data-current={selected?.delivery_id===row.delivery_id?'true':undefined} id={row.delivery_id}>
-      <HTable.Cell><Tag tone={notificationTones[row.status]??'neutral'}>{statuses[row.status]}</Tag></HTable.Cell>
-      <HTable.Cell className="notification-source-cell"><Link className="notification-source-link" data-source-domain={row.domain} to={row.parent_link.slice('/workbench/app'.length)}>{row.domain==='TICKET'?<ClipboardList aria-hidden="true"/>:row.domain==='SESSION'?<MessageCircle aria-hidden="true"/>:null}{row.domain==='TICKET'?row.ticket_no:row.domain==='SESSION'?'会话 · '+(row.reporter_name??'报修人（资料未提供）'):'查看'+domains[row.domain]}</Link>{row.domain!=='SESSION'?<small className="notification-summary" title={row.domain==='TICKET'?row.ticket_title??undefined:row.safe_summary}>{row.domain==='TICKET'?row.ticket_title:row.safe_summary}</small>:null}</HTable.Cell>
+      <HTable.Cell><Tag className="notification-result" tone={notificationTones[row.status]??'neutral'}>{row.status==='DEAD_LETTER'?<TriangleAlert aria-hidden="true"/>:<Clock aria-hidden="true"/>}{statuses[row.status]}</Tag></HTable.Cell>
+      <HTable.Cell className="notification-source-cell"><Link className="notification-source-link" data-source-domain={row.domain} to={row.parent_link.slice('/workbench/app'.length)}>{row.domain==='TICKET'?<ClipboardList aria-hidden="true"/>:row.domain==='SESSION'?<MessageCircle aria-hidden="true"/>:null}{row.domain==='TICKET'?row.ticket_no:row.domain==='SESSION'?'会话 · '+(row.reporter_name??'报修人').replace(/（资料未提供）$/u,''):'查看'+domains[row.domain]}</Link>{row.domain!=='SESSION'?<small className="notification-summary" title={row.domain==='TICKET'?row.ticket_title??undefined:row.safe_summary}>{row.domain==='TICKET'?row.ticket_title:row.safe_summary}</small>:null}</HTable.Cell>
       <HTable.Cell className="notification-type-cell"><span className="notification-type" title={sources[row.source_kind]}>{sources[row.source_kind]}</span></HTable.Cell>
       <HTable.Cell>{row.destination_type==='GROUP'?'群聊':'个人'}</HTable.Cell>
       <HTable.Cell>{routes[row.route_kind]}</HTable.Cell>
@@ -73,7 +73,7 @@ export function NotificationExceptions({principal}:{principal:Principal}){
   {selected&&visible?<section ref={detailRef} tabIndex={-1} className="attachment-section ds-table-detail notification-detail" data-exception-detail data-delivery-id={item?.delivery_id} aria-label="本路异常详情">
     <div className="notification-detail-heading"><h2>通知核对</h2><div className="note-controls"><span>{selectedIndex+1} / {items.length}</span><HButton type="button" tone="ghost" isIconOnly aria-label="上一条通知" isDisabled={selectedIndex<=0} onClick={()=>setSelected(items[selectedIndex-1]??null)}><ChevronLeft/></HButton><HButton type="button" tone="ghost" isIconOnly aria-label="下一条通知" isDisabled={selectedIndex<0||selectedIndex>=items.length-1} onClick={()=>setSelected(items[selectedIndex+1]??null)}><ChevronRight/></HButton><HButton type="button" tone="ghost" isIconOnly aria-label="关闭通知核对" onClick={()=>{setSelected(null);openerRef.current?.focus();}}><X/></HButton></div></div>
     {detail.isPending?<p>正在确认这条通知的最新情况…</p>:detail.isError?<p role="status">{errorMessage(detail.error)}</p>:item?<>
-      <p><Tag tone={notificationTones[item.status]??'neutral'}>{statuses[item.status]}</Tag> {domains[item.domain]} · {routes[item.route_kind]}</p>
+      <p><Tag className="notification-result" tone={notificationTones[item.status]??'neutral'}>{item.status==='DEAD_LETTER'?<TriangleAlert aria-hidden="true"/>:<Clock aria-hidden="true"/>}{statuses[item.status]}</Tag> {domains[item.domain]} · {routes[item.route_kind]}</p>
       <p className="ds-preserve-lines">{item.safe_summary}</p>
       <p>尝试 {item.attempt_count} 次 · {item.side_effect_state==='UNKNOWN'?'尚不能确认是否送达':item.side_effect_state==='NOT_ATTEMPTED'?'已确认发送失败':'已有发送结果，请结合来源核对'}</p>
       {item.last_attempt?<p>最近一次尝试：{item.last_attempt.started_at.replace('T',' ')}（北京时间）</p>:<p>暂时没有尝试记录。</p>}

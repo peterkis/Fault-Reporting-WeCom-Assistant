@@ -5,5 +5,5 @@
 .shared-follow-up-history span{display:block;margin-top:var(--space-0-5);color:var(--text-secondary);font-size:var(--fs-xs)}
 .shared-follow-up-summary{margin:var(--space-3) 0;font-size:var(--fs-xs);line-height:1.6;color:var(--text-secondary)}
 .shared-follow-up-summary strong{font-weight:var(--fw-medium)}
-.shared-follow-up-summary time{display:block;font-variant-numeric:tabular-nums;white-space:normal}
+.shared-follow-up-summary time{display:block;font-variant-numeric:var(--font-numeric-variant);white-space:normal}
 .shared-follow-up-summary.is-due strong{color:var(--tone-attention-fg)}

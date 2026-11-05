@@ -13,12 +13,15 @@
 .notification-exceptions .ds-data-table.ds-data-table .notification-table tr[data-current=true] {background: var(--bg-selected);}
 .notification-exceptions .notification-source-link {display:block;width:100%;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:var(--text-link);}
 .notification-source-link>svg {display:inline-block;width:var(--icon-sm);height:var(--icon-sm);margin-right:var(--space-1);vertical-align:middle;}
+.notification-exceptions .ds-page-header .page-icon {background:var(--tone-danger-bg);color:var(--tone-danger-fg);}
+.notification-result .ds-tag-content {display:inline-flex;align-items:center;gap:var(--space-1);}
+.notification-result .ds-tag-content>svg {width:var(--fs-xs);height:var(--fs-xs);margin:0;flex:none;}
 .notification-exceptions .notification-source-link[data-source-domain=TICKET] {font-family:var(--font-mono);}
 
 .notification-exceptions .notification-source-link:hover {text-decoration:underline;}
 .notification-exceptions .notification-summary {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .notification-exceptions .notification-type {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.notification-exceptions .notification-time {font-variant-numeric: tabular-nums; white-space: nowrap;}
+.notification-exceptions .notification-time {font-variant-numeric:var(--font-numeric-variant); white-space: nowrap;}
 .notification-exceptions .notification-detail {padding-top: var(--space-5); border-top: 1px solid var(--border-hair);}
 .notification-detail-heading {display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);}
 .notification-detail-heading h2 {margin: 0;}

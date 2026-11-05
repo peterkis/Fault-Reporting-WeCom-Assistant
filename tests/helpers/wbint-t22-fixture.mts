@@ -31,7 +31,7 @@ export async function appendT22LiveItem(pool:PostgresPool,sessionId:string,text:
   }catch(error){try{await transaction.query('ROLLBACK');}catch{/* preserve the arrangement failure */}throw error;}
   finally{transaction.release();}
 }
-export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false}:{enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
+export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false,search=false}:{search?:boolean;enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
   await withWeb01Fixture(async(f:Base)=>{
     await f.runtime.stop();const sessions:T22Session[]=[];
     if(personalRead){const input={databaseUrl:f.databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
@@ -59,7 +59,7 @@ export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{en
       }
       return originalContext;
     }}:null;
-    const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds,workbenchAuthentication,externalSendEnabled:false,...{workbenchConversationsEnabled:enabled,workbenchConversationInboxEnabled:inbox,workbenchRealtimeEnabled:realtime,workbenchPersonalReadEnabled:personalRead,identityHmacKey:inbox?'conversation-inbox-synthetic-key-v1':undefined},workbenchDraftRecoveryEnabled:recovery});
+    const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds,workbenchAuthentication,externalSendEnabled:false,...{workbenchConversationsEnabled:enabled,workbenchSearchEnabled:search,workbenchConversationInboxEnabled:inbox,workbenchRealtimeEnabled:realtime,workbenchPersonalReadEnabled:personalRead,identityHmacKey:inbox?'conversation-inbox-synthetic-key-v1':undefined},workbenchDraftRecoveryEnabled:recovery});
     let dropping=dropResponses;
     if(dropResponses)runtime.server.on('request',(request,response)=>{if(!/\/messages$/u.test(request.url??''))return;const end=response.end.bind(response);response.end=((...args:Parameters<typeof response.end>)=>{if(response.statusCode===202&&dropping){request.socket.destroy();return response;}return end(...args);}) as typeof response.end;});
     try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');
