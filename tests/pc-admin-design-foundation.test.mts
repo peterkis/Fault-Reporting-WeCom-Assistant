@@ -31,6 +31,17 @@ const {categoryOf, categoryMap, unclassifiedCategory}: {
 } = await import(await designModule('category-map'));
 
 const now = Date.parse('2026-11-02T10:00:00+08:00');
+const {formatListTime,shanghaiDays}:{formatListTime:(local:string,nowMs:number)=>string;shanghaiDays:(nowMs:number)=>{today:string;yesterday:string}}=await import(await designModule('format-time'));
+for(const [name,local,clock,expected] of [
+  ['today','2026-11-05 09:35:00','2026-11-05T12:00:00+08:00','09:35'],
+  ['yesterday','2026-11-04 16:52:00','2026-11-05T12:00:00+08:00','昨天'],
+  ['earlier this year','2026-10-21 10:00:00','2026-11-05T12:00:00+08:00','10-21'],
+  ['previous year','2025-10-21 10:00:00','2026-11-05T12:00:00+08:00','2025-10-21'],
+  ['midnight today','2026-11-05 00:00:30','2026-11-04T16:00:30Z','00:00'],
+  ['midnight yesterday','2026-11-04 23:59:30','2026-11-04T16:00:30Z','昨天'],
+  ['year boundary yesterday','2025-12-31 23:59:30','2026-01-01T00:00:30+08:00','昨天'],
+] as const)test('V1 Shanghai list time '+name,()=>assert.equal(formatListTime(local,Date.parse(clock)),expected));
+test('V1 list and timeline dividers share Shanghai midnight',()=>assert.deepEqual(shanghaiDays(Date.parse('2026-11-04T16:00:30Z')),{today:'2026-11-05',yesterday:'2026-11-04'}));
 test('heat thresholds are the frozen shared minute tuple', () => {
   assert.deepEqual(HEAT_THRESHOLDS_MINUTES, [5, 20, 60, 240]);
   assert.ok(Object.isFrozen(HEAT_THRESHOLDS_MINUTES));

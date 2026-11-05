@@ -36,3 +36,7 @@
 .ds-table-detail p {margin:var(--space-2) 0;overflow-wrap:anywhere;font-size:var(--fs-sm);}
 .ds-preserve-lines {white-space:pre-wrap;overflow-wrap:anywhere;}
 @media(max-width:900px){.ds-data-table.ds-data-table .ds-table-reference {width:160px;}.ds-data-table.ds-data-table .ds-table-state {width:128px;}.ds-data-table.ds-data-table .work-table th.ds-table-state {width:180px;}.ds-data-table.ds-data-table .ds-table-action,.ds-data-table.ds-data-table .work-table th.ds-table-action {width:128px;}}
+
+/* V14: HeroUI's decorative table__column::after is not a resize handle. */
+.ds-data-table.ds-data-table th,.ds-data-table.ds-data-table th::before,.ds-data-table.ds-data-table th::after {border-left:0;border-right:0;}
+.ds-data-table.ds-data-table th::after {content:none;width:0;background:transparent;}

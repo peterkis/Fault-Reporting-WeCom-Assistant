@@ -2,6 +2,7 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Input as HInput,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {Headset} from 'lucide-react';
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -27,7 +28,7 @@ export function ConversationControl({entry,principal,onBlockedChange,chat=false,
     finally{if(request.current===controller){request.current=null;setBusy(false);void client.invalidateQueries({predicate:q=>q.queryKey[1]===principal.principal_id&&['conversation-view','conversation-chat','conversation-related','conversation-inbox'].includes(String(q.queryKey[0]))});}}
   }
   const disabled=busy||Boolean(pending);
-  const reception=<>{entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} tone={chat?'ghost':'secondary'}>请求人工接管</HButton>:null}{entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" tone={receptionTarget?'primary':'secondary'}>{chat?takeoverLabel:'接管沟通'}</HButton>:null}</>;
+  const reception=<>{entry.capabilities.includes('REQUEST_HANDOFF')?<HButton isDisabled={disabled} onClick={()=>void act('handoff/request')} tone={chat?'ghost':'secondary'}>请求人工接管</HButton>:null}{entry.capabilities.includes('TAKEOVER')?<HButton isDisabled={disabled} onClick={()=>void act('takeover')} data-action="takeover-conversation" tone={receptionTarget?'primary':'secondary'}>{chat?<Headset className="inbox-takeover-icon" aria-hidden="true"/>:null}{chat?takeoverLabel:'接管沟通'}</HButton>:null}</>;
   return <section className="conversation-controls" aria-label="沟通责任"><h3>沟通责任</h3><p>{entry.assignment.assigned_display_name??'暂未分配沟通人'}{entry.assignment.assigned_to_me?'（我负责沟通）':''} · {entry.session.control_mode==='HUMAN'?'人工沟通':entry.session.control_mode}</p>
     <div className="note-controls">
       {receptionTarget?createPortal(reception,receptionTarget):reception}

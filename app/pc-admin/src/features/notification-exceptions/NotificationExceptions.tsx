@@ -1,3 +1,4 @@
+import {formatListTime} from '../../design/format-time';
 import {Bell,Check,ChevronLeft,ChevronRight,ClipboardList,MessageCircle,RefreshCw,X} from 'lucide-react';
 import './notification-exceptions.css';
 import {EmptyState} from '../../design/components/EmptyState/EmptyState';
@@ -64,7 +65,7 @@ export function NotificationExceptions({principal}:{principal:Principal}){
       <HTable.Cell className="notification-type-cell"><span className="notification-type" title={sources[row.source_kind]}>{sources[row.source_kind]}</span></HTable.Cell>
       <HTable.Cell>{row.destination_type==='GROUP'?'群聊':'个人'}</HTable.Cell>
       <HTable.Cell>{routes[row.route_kind]}</HTable.Cell>
-      <HTable.Cell className="ds-table-number notification-time"><time dateTime={(row.last_attempt?.started_at??row.created_at)+'+08:00'} title={'北京时间 '+(row.last_attempt?.started_at??row.created_at).replace('T',' ')}>{(row.last_attempt?.started_at??row.created_at).slice(5,16).replace('T',' ')}</time><small>{row.attempt_count} 次尝试</small></HTable.Cell>
+      <HTable.Cell className="ds-table-number notification-time"><time dateTime={(row.last_attempt?.started_at??row.created_at).replace(' ','T')+'+08:00'} title={(row.last_attempt?.started_at??row.created_at).replace('T',' ').slice(0,16)+'（北京时间）'}>{formatListTime((row.last_attempt?.started_at??row.created_at).replace('T',' '),Date.now())}</time><small>{row.attempt_count} 次尝试</small></HTable.Cell>
       <HTable.Cell className="notification-action-cell"><HButton type="button" data-action="open-exception" onClick={event=>{openerRef.current=event.currentTarget;setSelected(row);}} tone="secondary">核对</HButton></HTable.Cell>
     </HTable.Row>)}</HTable.Body></HTable.Content></HTable.ScrollContainer></HTable></div>
   </>}

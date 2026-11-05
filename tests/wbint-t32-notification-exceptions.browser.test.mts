@@ -9,6 +9,32 @@ import {card22Filters,assertCard22Filters,captureCard22} from './helpers/card22-
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
+test('V14 notification header has no column separators and today uses HH:mm',{timeout:240000},async()=>{
+ await withT32Fixture(async f=>{
+  const seed=await seedCard21Exceptions(f),senderCalls=seed.senderCalls(),directory=process.env.CARD23_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card23-notifications-'));await mkdir(directory,{recursive:true});
+  const cookie=f.browserCookies[0];assert.ok(cookie);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown,sample:unknown;const posts:string[]=[];
+  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/notification-exceptions',width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor("document.querySelectorAll('[data-exception-row]').length===6");
+   const measured=await browser.evaluate(`(()=>{
+    const headers=[...document.querySelectorAll('.notification-table th')].map(n=>({text:n.textContent,styles:[null,'::before','::after'].map(p=>{const s=getComputedStyle(n,p);return {left:s.borderLeftWidth,right:s.borderRightWidth,bottom:s.borderBottomWidth,content:s.content,width:s.width};})}));
+    return {headers,times:[...document.querySelectorAll('.notification-time time')].map(n=>({text:n.textContent,title:n.title,dateTime:n.dateTime,attempts:n.nextElementSibling.textContent})),rowBorder:getComputedStyle(document.querySelector('.notification-table thead tr')).borderBottomWidth};
+   })()`) as {headers:{text:string;styles:{left:string;right:string;bottom:string;content:string;width:string}[]}[];times:{text:string;title:string;dateTime:string;attempts:string}[];rowBorder:string};
+   sample=measured;assert.equal(measured.headers.length,7);assert.equal(measured.rowBorder,'1px');
+   for(const header of measured.headers){for(const s of header.styles){assert.equal(s.left,'0px');assert.equal(s.right,'0px');}assert.equal(header.styles[2]?.content,'none');assert.equal(header.styles[2]?.width,'0px');}
+   assert.equal(measured.times.length,6);
+   for(const time of measured.times){assert.match(time.text,/^\d{2}:\d{2}$/u);assert.match(time.title,/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}（北京时间）$/u);assert.match(time.dateTime,/T\d{2}:\d{2}:\d{2}(?:\.\d+)?\+08:00$/u);assert.match(time.attempts,/^[123] 次尝试$/u);}
+   await captureCard22(browser,directory,'notifications-1440');assert.deepEqual(posts,[]);assert.equal(seed.senderCalls(),senderCalls);
+  }catch(error){failure=error;}
+  finally{await closeBrowserTestResources([
+   ()=>{f.runtime.server.off('request',observe);},
+   ()=>writeFile(join(directory,'card23-notification-metrics.json'),JSON.stringify({sample,posts,senderCalls:seed.senderCalls()},null,2)),
+   async()=>{if(failure&&browser)await captureCard22(browser,directory,'card23-notification-failure');},
+   async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+  ],failure);}
+ });
+});
+
 test('T32 production bundle reads the bounded real queue and exact item instead of per-card fanout',{timeout:240000},async()=>{
   await t32Browser('t32-real-queue',async({browser,seed,capture})=>{
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-notification-exceptions]"))'),true,'the formal exceptions page must be mounted');
