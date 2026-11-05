@@ -4,6 +4,7 @@ import {mkdtemp,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {setTimeout as delay} from 'node:timers/promises';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney,seedCard25bConversation} from './helpers/conversation-inbox-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -82,6 +83,33 @@ test('B2 reading a real contact decreases the global badge through the existing 
     console.log('CARD25B_CURSOR '+JSON.stringify({before:before.my_unread_count,after:after.my_unread_count,real_cursor_sse:true}));
   }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
 },{inbox:true,realtime:true,personalRead:true,recovery:false}));
+
+test('B1/B5 reply and internal notes remain available while summary remains pending beyond the refresh deadline',async()=>withT22Fixture(async f=>{
+  const session=f.sessions[0];assert.ok(session);assert.equal((await conversationPost(f.origin,f.cookie,session.id,'takeover',freshCommand())).status,200);await f.runtime.coordinator.runOnce();
+  const bootstrap=await(await fetch(f.origin+'/api/workbench/bootstrap',{headers:{cookie:f.cookie}})).json() as {polling_interval_ms:number};
+  assert.ok(Number.isSafeInteger(bootstrap.polling_interval_ms)&&bootstrap.polling_interval_ms>0&&bootstrap.polling_interval_ms<=10000);
+  const releases:(()=>void)[]=[],posts:string[]=[];let hold=true,summaryStartedAt:number|null=null,summaryRequests=0,browser:Browser|undefined,failure:unknown;
+  f.runtime.server.on('request',(request,response)=>{const path=new URL(request.url??'/',f.origin).pathname;
+    if(request.method==='POST')posts.push(path);
+    if(request.method!=='GET'||path!=='/api/workbench/conversations/summary')return;
+    summaryRequests++;const end=response.end;response.end=(...args:unknown[])=>{if(hold){summaryStartedAt??=Date.now();releases.push(()=>{if(!response.destroyed)Reflect.apply(end,response,args);});return response;}Reflect.apply(end,response,args);return response;};
+  });
+  try{
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+    await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))");for(let attempt=0;attempt<200&&releases.length===0;attempt++)await delay(25);assert.notEqual(summaryStartedAt,null);assert.ok(releases.length>0);
+    // Observe beyond the real, existing refresh deadline, without changing its timer or server push.
+    await delay(Math.max(0,Number(summaryStartedAt)+bootstrap.polling_interval_ms+1500-Date.now()));
+    assert.equal(await browser.evaluate("document.querySelector('[data-realtime-status]').dataset.realtimeStatus"),'live','only auxiliary summary is pending; core refresh must remain live');
+    assert.equal(await browser.evaluate("Boolean(document.querySelector('.inbox-waiting-count')||document.querySelector('.conversation-unread-badge'))"),false);
+    const reply='辅助计数仍在读取时正常回复（合成）',note='辅助计数仍在读取时保存内部协作记录（合成）';
+    await browser.evaluate(input('messages',reply));await clickWorkbenchControl(browser,'[data-action=send-conversation-reply]');await browser.waitFor('document.querySelector("[data-conversation-timeline]").textContent.includes('+JSON.stringify(reply)+')');
+    await clickWorkbenchControl(browser,'#conversation-note-tab');await browser.evaluate(input('internal-notes',note));await clickWorkbenchControl(browser,'[data-action=save-conversation-note]');await browser.waitFor('document.querySelector("[data-conversation-timeline]").textContent.includes('+JSON.stringify(note)+')');
+    assert.equal(posts.filter(path=>path.endsWith('/messages')).length,1);assert.equal(posts.filter(path=>path.endsWith('/internal-notes')).length,1);assert.equal(summaryRequests,1,'pending summary remains one shared read across command push refreshes');
+    assert.equal(await browser.evaluate("document.querySelector('[data-realtime-status]').dataset.realtimeStatus"),'live');assert.equal((await f.runtime.observability.metrics()).sse_clients,1);
+    hold=false;for(const release of releases.splice(0))release();await browser.waitFor("Boolean(document.querySelector('.conversation-unread-badge'))");
+    console.log('CARD25B_SLOW_SUMMARY '+JSON.stringify({deadline_ms:bootstrap.polling_interval_ms,held_beyond_deadline:true,reply_posts:1,note_posts:1,real_http_pg_sse:true,core_remained_live:true}));
+  }catch(error){failure=error;}finally{hold=false;for(const release of releases.splice(0))release();await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+},{inbox:true,realtime:true,personalRead:false,recovery:false}));
 
 test('v2.1 reception uses the original command and keeps message space, purpose and newline boundaries',async()=>{
   await withT22Fixture(async f=>{

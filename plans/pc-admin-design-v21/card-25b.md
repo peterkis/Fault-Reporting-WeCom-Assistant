@@ -89,6 +89,22 @@
 
 最终停在本地验证与交付。CI（本卡未推送）、full/certify、Electron、真实发送、现场业务写库、部署及业务 Gate 均 NOT_RUN。
 
+## 2026-11-06 独立审查与发布后继
+
+用户随后明确授权先提交、独立审查和修复、验证后推送并创建 PR / 请求 Codex review，CI 通过且无 major 问题后合并、同步 main，仅清理本卡分支和 worktree。以上“本地未提交”是前一交付检查点的真实记录，不覆盖本次授权。
+
+初始提交 `66785f6c690c59a728db67ca7a34c434fef3a01f`，固定基点仍为 `4ca9a7002c688341bd6fabca1b91ae8fc8a59803`。只读独立审查分别执行：code-review 的 Standards 与 Spec 两轴，以及 Open Code Review delegate；三方未互读报告。
+
+- Standards：P2 为 summary 悬挂进入核心刷新完成门槛；P3 为徽标裸写 tabular-nums，未引用统一数字 Token。Fowler 判断项 0。
+- Spec：P2 为辅助 summary 单独超时会令实时状态 offline、阻断原回复及内部备注，违反 B1 辅助失败不阻塞核心。
+- OCR delegate：同一悬挂恢复问题为 medium，无 critical/high；CLI 原生选中 6 文件，另 7 文本和 4 PNG 补审，17/17 覆盖，跳过 0。原 preview、规则、探针和各自报告保存于 `D:/CodexEvidence/pc-admin-v216-card25b-review-20261106/`。
+
+新增真实 PG/HTTP/浏览器回归先在修复前的生产 bundle 上诊断：summary 响应单独保持 pending，超过原刷新截止后观察到 `offline !== live`，`slow-summary-red.log/json` 保留该 RED。新增测试源码在仓库外转译加载，生产 bundle 未注入或改写；这是诊断，不冒称新的制品认证。
+
+修复只在现有前端 `useRealtime.ts` 中把精确 summary key 纳入既有辅助失效通道，同时排除核心等待/失败门槛。该文件是本次已授权审查修复所需的 B1/B5 接线补充；没有新增族、连接或轮询，不改 bootstrap、当前账号筛选、授权 epoch、认证拒绝清理或命令权限。徽标改为引用 `--font-numeric-variant`，视觉值不变。后端、契约、迁移及依赖仍不改。
+
+新增回归保留原 11 条浏览器用例，额外验证 pending 超过既有截止时仍 live、通过原回复和内部备注命令分别提交成功、仍只有一个 summary 请求和一个 SSE，响应恢复后数字能显示。后续构建、相关检查、独立复核及 PR/CI 结果按实际追加，不预填通过。
+
 ## 限制与回退
 
 25A A3 中自动结束 Session 缺少独立推送仍是已知停止项，本卡不改写入路径。当前已有收件箱刷新事件会同步刷新 summary；服务端未产生事件的情况仍受该既有缺口限制。通知异常侧栏无可用总数接口，B6 跳过。
