@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:https';
 import {createHash,createPublicKey,randomUUID} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
-import {mkdirSync,readFileSync,writeFileSync,copyFileSync} from 'node:fs';
+import {mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync} from 'node:fs';
 import path from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
 test('real Electron navigation recovers offline/crashes and keeps authentication/window guards',{timeout:90000,skip:process.platform!=='win32'},async()=>{
   const root=process.cwd(),id=randomUUID(),stage=path.join(root,'.local/electron/temp','navigation-'+id),profile=path.join(root,'.local/electron/profiles','navigation-'+id);
   mkdirSync(stage,{recursive:true});mkdirSync(profile,{recursive:true});
-  execFileSync('D:/Program Files/Git/usr/bin/openssl.exe',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(stage,'key.pem'),'-out',path.join(stage,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
+  const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);
+  assert.ok(openssl,'native navigation tests require Git for Windows OpenSSL');
+  execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(stage,'key.pem'),'-out',path.join(stage,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
   const cert=readFileSync(path.join(stage,'cert.pem')),key=readFileSync(path.join(stage,'key.pem'));
   const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
   let status=404,loginRecovery=false,qrGeneration=0,confirmations=0;

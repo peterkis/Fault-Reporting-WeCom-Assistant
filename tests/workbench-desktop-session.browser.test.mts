@@ -52,7 +52,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   const fontHead=await raw(fontPath,'br,gzip','HEAD');assert.equal(fontHead.status,200);assert.equal(fontHead.body.length,0);assert.equal(fontHead.headers['content-length'],String(font.body.length));
   assert.equal((await raw(fontPath,'identity;q=0,br,gzip')).status,406);assert.equal((await raw('/workbench/desktop/assets/inter-latin-wght-normal-unmanifested.woff2')).status,404);
   assert.equal((await raw(fontPath+'?raw=1')).status,400);assert.equal((await raw(fontPath+'.br')).status,400);
-  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900});assert.ok(browser);
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');
   const clickLogin=async(selector:string)=>{
@@ -161,13 +161,14 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.evaluate('sessionStorage.removeItem("workbench-login-view-v2")');
   // Observe the opening inside the new document before it can start. A CDP round trip
   // after scene readiness can otherwise miss the complete 2600ms one-shot opening.
-  const introSampler=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__introMotion=new Promise(resolve=>{let start=null,panel=null;const samples=[];const sample=now=>{const face=document.querySelector(".lanyard-front");if(start===null&&document.body?.dataset.loginScene==="ready"&&face?.querySelector("iframe")){start=now;panel=face.querySelector("iframe");}if(start!==null){const r=face.getBoundingClientRect();samples.push({t:now-start,x:r.x+r.width/2});if(now-start>=3600){const early=samples.filter(p=>p.t<2600).map(p=>p.x),late=samples.filter(p=>p.t>=3000).map(p=>p.x);resolve({range:Math.max(...early)-Math.min(...early),lateRange:Math.max(...late)-Math.min(...late),samePanel:panel===document.querySelector(".lanyard-front iframe"),reducedMotion:matchMedia("(prefers-reduced-motion: reduce)").matches,samples:samples.length});return;}}requestAnimationFrame(sample);};requestAnimationFrame(sample);});'}) as {identifier:string};
+  const introSampler=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__introMotion=new Promise(resolve=>{let start=null,panel=null;const samples=[];const sample=now=>{const face=document.querySelector(".lanyard-front");if(start===null&&document.body?.dataset.loginScene==="ready"&&face?.querySelector("iframe")){start=now;panel=face.querySelector("iframe");}if(start!==null){const r=face.getBoundingClientRect();samples.push({t:now-start,x:r.x+r.width/2});if(now-start>=3600){const early=samples.filter(p=>p.t<2600).map(p=>p.x),late=samples.filter(p=>p.t>=3000).map(p=>p.x);resolve({range:Math.max(...early)-Math.min(...early),lateRange:Math.max(...late)-Math.min(...late),samePanel:panel===document.querySelector(".lanyard-front iframe"),reducedMotion:matchMedia("(prefers-reduced-motion: reduce)").matches,samples:samples.length,largestGap:Math.max(0,...samples.slice(1).map((p,i)=>p.t-samples[i].t)),backdrop:document.body.dataset.backdrop,backdropReason:document.body.dataset.backdropReason??null,visibility:document.visibilityState});return;}}requestAnimationFrame(sample);};requestAnimationFrame(sample);});'}) as {identifier:string};
   const previousMotionOrigin=await browser.evaluate('performance.timeOrigin');
   await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
   await browser.waitFor('performance.timeOrigin!=='+Number(previousMotionOrigin)+'&&Boolean(document.querySelector(".lanyard-front iframe"))');
   await waitScene();
-  const introMotion=await browser.evaluate('window.__introMotion') as {range:number;lateRange:number;samePanel:boolean;reducedMotion:boolean;samples:number};
+  const introMotion=await browser.evaluate('window.__introMotion') as {range:number;lateRange:number;samePanel:boolean;reducedMotion:boolean;samples:number;largestGap:number;backdrop:string;backdropReason:string|null;visibility:string};
   await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:introSampler.identifier});
+  console.log('LOGIN_OPENING_METRICS',JSON.stringify(introMotion));
   assert.equal(introMotion.reducedMotion,false,'the physical opening is measured with full motion');
   assert.ok(introMotion.range>=6,'the initial physical swing is visible: '+JSON.stringify(introMotion));
   assert.ok(introMotion.lateRange<1,'the one-shot swing settles after about three seconds: '+JSON.stringify(introMotion));

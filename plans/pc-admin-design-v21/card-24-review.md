@@ -35,3 +35,11 @@ PR #150、ed3f53835bb7d1e7d6637d9147bc5b38555dcd66的首次TypeScript运行41989
 用户另明确授权三项最小CI配置修复：Windows测试initdb明确UTF8；desktop:setup的registry与既有lock的npmmirror一致，保留两套Electron依赖原版本、下载URL和integrity；清理在确认停止、预期status3、路径及数据删除后显式成功退出。没有移除或放宽原检查，也未修改合并汇总/分支保护。既有pr-plan工具测试增加对应Windows资源合同断言。
 
 本地自有PG18、C locale下的编码差分：WIN1252执行同一中文SELECT得到22P05；UTF8完整读回「卡24（合成）」。两套探针库均实际停止并仅删除其已核绝对路径数据目录，脚本退出0；首次探针无效locale、Windows导入路径错误的日志同样保留，未记通过。详见外部probe-ci-encoding-final.log；此差分证明编码修复，不替代Windows CI后续整套实际结果。
+
+## 第二次CI与图形验证配置
+
+ca893d6d的本地build 922/922、types/Stylelint/ESLint、工具/文档33/33、完整登录11/11和制品校验通过（manifest 62bfc604568b2aa499eebc7baeb2b70e5956c705e5e74689db3530738e39679a）；PR运行41993088540仍失败。Linux提前采样为range0、late0、同iframe、reduce=false、samples2，说明3600ms窗口内出现严重帧饥饿，不能继续归为单纯晚装采样。Windows通过前轮UTF8/registry/清理修复和strict/制品检查，首次到达原生导航测试后因硬编码开发机D盘OpenSSL而ENOENT。两份新原始日志保留于ci-second-database-actual.log、ci-second-windows-actual.log；未据此合并。
+
+本地正式ca893产物A/B：旧helper的--disable-gpu得到no-adapter背景回退；仅去除该参数、不加unsafe或blocklist豁免后，实际shader ready，工牌摆幅15.8406px、后段0px、209帧、最大间隔116.8ms。显式unsupported回退对照也通过，但未把量化摆动移到该对照或删除任何原GPU分支。探针原件为probe-login-gpu-isolation.json和probe-login-normal-graphics.json；早期额外开关探针单列，不冒充最终配置。
+
+只让正式登录3D测试通过graphics=true使用浏览器正常图形路径；helper默认仍为false，全部其它调用继续禁用GPU。原组合摆幅≥6px、后段<1px、同iframe、完整动效以及所有GPU/恢复/认证断言保持，增加背景模式、可见性和最大帧间隔日志。未改登录应用动画、布局或全局系统设置，也不据Windows结果提前宣称Linux问题已消失。原生导航测试只复用既有helper的D/C两盘OpenSSL候选定位并在缺失时明确失败；证书参数与后续全部原生断言保持。后继结果另绑定新提交。
