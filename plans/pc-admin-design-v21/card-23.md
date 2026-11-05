@@ -165,3 +165,14 @@ V5先确认字段补充：查ConversationChatItem及其闭合守卫，只有send
 Standards复审：原2项P2关闭，剩余0；覆盖22个文本与20个PNG清单。Spec复审：原2项P2关闭，剩余0，V1–V14及新增V5身份字段缺口已核对。Open Code Review独立委托复审：11/11选中文件审查，跳过0，31个测试/文档/PNG由规则明确排除；原2项medium关闭，剩余critical/high/medium均0。三份复审均绑定冻结tree 4dfcfedc056a4331fed4baa554dd41ccb81b649b，未调用远端Codex审查。完整报告在发布回执根；随后只补充验证计数/评审回执元信息，不改已审应用与测试源码。
 
 后续提交时核对已审tree内容和实际commit tree；新PR发布head的GitHub CI独立核验并记录，当前本地回归不替代CI。经用户条件授权，全部适用CI通过、无major后使用保留被测祖先的merge commit合并；实际合并、主分支快进与仅本卡清理结果集中保存在发布回执根的closeout-final.md。此段是执行授权与交接位置，不预先声称远端操作已经发生。
+
+
+### PR #149 首轮CI与T35交互前提修正
+
+已按授权提交并HTTPS推送e86ca33f2daa8fe4ac535b4e9cbd952c9bfebffe，tree与三端元信息确认的cd365a8df1e933814e1f0890e55143d2ea91ecdf完全相同；PR #149已创建。首轮CI run41955351264的pr-plan与Evidence保护通过，数据库回归在T35原UUID阅读恢复场景超时，汇总依合同拒绝通过。实际CI统计162项、161PASS/1FAIL，32入口NOT_RUN，未合并。完整job log及pr-check原件已下载到发布回执根ci-e86-failure/，来源source-sha确认e86；原T35失败截图未被旧归档器收集（screenshot_artifacts为空），如实保留该证据缺口。
+
+失败在真正COMMIT且ACK丢失之后、重挂载等待安全收据时发生。diagnosing-bugs受控原生复现仅操纵测试DOM进入期opacity：观测时材料opacity0、首节点确属前台，POST保持1且无收据请求；材料可见但没有新观测时仍无请求；就绪后发出同样前台观测，原UUID返回200/COMMITTED，POST仍1、A/B位置仍1/0。该复现场景排除了UNKNOWN意图丢失与后台首节点，支持进入期观测过早这一交互前提问题；CI缺少原图，不能据此断言它是唯一环境原因。原控制实验的JSON/两幅PNG/log位于t35-foreground-probe/。
+
+仅修改tests/t35-unknown-read.browser.test.mts的交互前提：沿共享clickWorkbenchControl执行真实、稳定、无遮挡的侧栏/卡片操作；定位当前详情抽屉材料，等待几何稳定、祖先完全可见且进入动画结束、命中测试通过后再发出原visibility/focus观测。没有新增sleep，没有扩大原120秒或等待超时，没有改生产PersonalReadMaterial/foreground-text/客户端/读取逻辑，ACK丢失注入及所有原有状态、权限、UUID、回执与POST次数断言逐字保持，证明见t35-assertion-preservation.json。
+
+本轮统一build-ci-t35-fix通过921个模块语法检查，types-ci-t35-fix（含strict/负向类型）与artifact-ci-t35-fix通过；本地原T35场景独立连续3次各1/1 PASS，原UUID/POST1/A1B0保持。此处只证明该定向场景，不把旧422项回归或首轮CI失败改写为当前完整通过。应用与20张证据图blob未变，旧图/旧manifest仍绑定原候选。新增一个对应read-safety测试文件后，本卡为43路径；新提交的完整CI仍待重新独立核验，通过前不合并。

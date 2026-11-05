@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
 test('T35 a real committed read with lost ACK delivery keeps its UUID across remount and checks only its safe receipt',{timeout:120_000},()=>withT35Fixture(async f=>{
   const selected=f.tickets[1];assert.ok(selected);const path='/api/workbench/items/ticket/'+selected.ticket.id+'/read-position';
@@ -18,18 +19,28 @@ test('T35 a real committed read with lost ACK delivery keeps its UUID across rem
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{globalThis.__t35Visible=false;globalThis.__t35LoseAck=true;globalThis.__t35Posts=[];globalThis.__t35ActualCommits=[];globalThis.__t35Receipts=[];globalThis.__t35ReceiptResults=[];Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>globalThis.__t35Visible?'visible':'hidden'});const original=fetch;globalThis.fetch=(path,options)=>{const value=String(path),write=options?.method==='POST'&&value.endsWith('/read-position'),receipt=value.includes('/read-position/commands/');if(write)globalThis.__t35Posts.push(JSON.parse(options.body));if(receipt)globalThis.__t35Receipts.push(value);return original(path,options).then(async response=>{if(write&&response.status===200&&globalThis.__t35LoseAck){globalThis.__t35LoseAck=false;globalThis.__t35ActualCommits.push(await response.clone().json());throw new TypeError('T35 authentic ACK delivery lost after COMMIT');}if(receipt)globalThis.__t35ReceiptResults.push({status:response.status,body:await response.clone().json()});return response;});};})()`});
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+selected.ticket.id+'?detail=page'});
     await browser.waitFor("Boolean(document.querySelector('.activity-list .record-text[data-personal-read-ref]'))");assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[]);
-    const show="(()=>{document.querySelector('.activity-list .record-text[data-personal-read-ref]').scrollIntoView({block:'center'});globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()";
-    await browser.evaluate(show);await browser.waitFor('globalThis.__t35ActualCommits.length===1');
+    const show=(drawer=false)=>`(async()=>{
+      const root=${drawer?"document.querySelector('[role=dialog].detail-dialog.ds-drawer')":'document'},node=root?.querySelector('.activity-list .record-text[data-personal-read-ref]');
+      if(!node?.checkVisibility()||node.closest('[data-exiting]'))return false;
+      node.scrollIntoView({block:'center'});const before=node.getBoundingClientRect();
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(!node.isConnected)return false;const after=node.getBoundingClientRect();
+      if(['x','y','width','height'].some(key=>before[key]!==after[key]))return false;
+      for(let parent=node;parent;parent=parent.parentElement){const style=getComputedStyle(parent);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)!==1||parent.getAnimations().some(animation=>animation.playState==='running'))return false;}
+      const hit=document.elementFromPoint(after.x+after.width/2,after.y+after.height/2);if(!hit||hit!==node&&!node.contains(hit))return false;
+      globalThis.__t35Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));return true;
+    })()`;
+    await browser.waitFor(show());await browser.waitFor('globalThis.__t35ActualCommits.length===1');
     const posts=await browser.evaluate('globalThis.__t35Posts') as {client_command_id:string;source_ref:string;revision:string}[];const original=posts[0];assert.ok(original);assert.equal(posts.length,1);
     assert.equal(await position(0),'1');assert.equal(await position(1),'0');
     console.log('T35_READ_UNKNOWN_COMMITTED '+JSON.stringify({original_command_id:original.client_command_id,A:'1',B:'0',delivery_failed:true}));
     // Real React Router navigation unmounts the observer without reloading the JS process.
-    await browser.evaluate("document.querySelector('.sidebar a[title=\"工作台\"]').click()");await browser.waitFor("Boolean(document.querySelector('.board-column'))");
+    await clickWorkbenchControl(browser,'.sidebar a[title="工作台"]');await browser.waitFor("Boolean(document.querySelector('.board-column'))");
     await browser.waitFor("Boolean(document.querySelector('.board-column.pending .ticket-card'))");
     await browser.evaluate("(()=>{for(const button of document.querySelectorAll('.board-column.pending [data-action=\"expand-column\"]'))if(button.getAttribute('aria-expanded')==='false')button.click();})()");
     await browser.waitFor(`Boolean(document.querySelector('.ticket-card[data-item-id="${selected.ticket.id}"] .card-open'))`);
-    await browser.evaluate(`document.querySelector('.ticket-card[data-item-id="${selected.ticket.id}"] .card-open').click()`);
-    await browser.waitFor("Boolean(document.querySelector('.activity-list .record-text[data-personal-read-ref]'))");await browser.evaluate(show);
+    await clickWorkbenchControl(browser,'.ticket-card[data-item-id="'+selected.ticket.id+'"] .card-open');
+    await browser.waitFor("Boolean(document.querySelector('[role=dialog].detail-dialog.ds-drawer .activity-list .record-text[data-personal-read-ref]'))");await browser.waitFor(show(true));
     await browser.waitFor(`globalThis.__t35ReceiptResults.some(response=>response.status===200&&response.body.client_command_id===${JSON.stringify(original.client_command_id)}&&response.body.state==='COMMITTED')`);
     assert.deepEqual(await browser.evaluate('globalThis.__t35Posts'),[original],'UNKNOWN must not be replaced by a second UUID or a repeated body POST');
     assert.equal(await position(0),'1');assert.equal(await position(1),'0');
