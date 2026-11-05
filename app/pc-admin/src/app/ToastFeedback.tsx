@@ -43,9 +43,11 @@ export function DraftFeedback({children,enabled=true}:{children:string;enabled?:
   return <ToastFeedback source="draft" state={warning?'unknown':undefined} enabled={enabled&&(warning||/已恢复/u.test(children))}>{children}</ToastFeedback>;
 }
 
-export function DraftStatus({children,notify=true,...attributes}:Omit<HTMLAttributes<HTMLSpanElement>,'children'> & {children:string;notify?:boolean}){
+export function DraftStatus({children,notify=true,inlineText=false,...attributes}:Omit<HTMLAttributes<HTMLSpanElement>,'children'> & {children:string;notify?:boolean;inlineText?:boolean}){
   const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
-  return <><span {...attributes} role="img" aria-label={children} title={children} className="workbench-draft-status">{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
+  const quiet=inlineText&&(!children||/^草稿仅在当前浏览器/u.test(children));
+  const short=/^已保存恢复副本/u.test(children)?'草稿已保存':/^已提交；恢复副本已清理/u.test(children)?'草稿已清理':children;
+  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
 export function WorkbenchToasts(){

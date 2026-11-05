@@ -15,6 +15,34 @@ import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {ConversationInboxPage,ConversationRelatedPage,ConversationChatEntry,ConversationChatDeliveryPage,ConversationChatItemPage} from '../contracts/workbench_conversation_inbox_contracts.js';
 import type {ConversationMessageResult} from '../contracts/workbench_conversation_workspace_contracts.js';
 
+test('card23 fixture keeps partial Intake invisible to its own live coordinator',async()=>{
+ await withT22Fixture(async f=>{
+  const reporter='v23-atomic-'+randomUUID();let interleaves=0,visible=-1;
+  const intercept=async(text:string,run:()=>Promise<unknown>)=>{
+   const result=await run();
+   if(text.startsWith('UPDATE channel.message_inbox SET bot_id=')&&interleaves===0){
+    interleaves++;await f.runtime.coordinator.runOnce();
+    visible=(await f.pool.query<{count:number}>('SELECT count(*)::integer AS count FROM intake.service_intake WHERE reporter_wecom_userid=$1',[reporter])).rows[0]?.count??-1;
+   }return result;
+  };
+  const pool=new Proxy(f.pool,{get(target,property,receiver){
+   if(property==='query')return (text:string,values?:unknown[])=>intercept(text,()=>target.query(text,values));
+   if(property==='connect')return async()=>{
+    const client=await target.connect();
+    return new Proxy(client,{get(connection,key,context){
+     if(key==='query')return (text:string,values?:unknown[])=>intercept(text,()=>connection.query(text,values));
+     return Reflect.get(connection,key,context);
+    }});
+   };
+   return Reflect.get(target,property,receiver);
+  }});
+  const session=await addInboxSession(pool,{reporter,group:'v23-atomic-group',text:'原子会话准备（合成）'});
+  assert.equal(interleaves,1);assert.equal(visible,0,'no partially prepared Intake reaches the projector');
+  await f.runtime.coordinator.runOnce();
+  const sessions=await f.pool.query<{id:string}>('SELECT id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[session.intakeId]);assert.deepEqual(sessions.rows.map(row=>row.id),[session.id]);
+ },{inbox:true,recovery:false});
+});
+
 test('default-off preserves the original workspace and rejects the new read views',async()=>{
   await withT22Fixture(async({origin,cookie,sessions})=>{
     const get=(path:string)=>fetch(origin+path,{headers:{cookie}}),id=sessions[0]?.id;assert.ok(id);

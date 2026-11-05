@@ -12,3 +12,8 @@
 .ds-split .conversation-timeline li:has([data-side=outgoing]) {margin-left:auto;}
 .ds-split .conversation-timeline li header {font-size:var(--fs-xs);display:flex;flex-wrap:wrap;gap:var(--space-2);color:var(--text-secondary);margin-bottom:var(--space-1);}
 .ds-split .conversation-timeline li header strong {font-weight:var(--fw-medium);}
+
+.ds-message-group {display:flex;align-items:flex-start;gap:var(--space-2);min-width:0;}
+.ds-message-group[data-side=outgoing] {flex-direction:row-reverse;}
+.ds-message-avatar {display:block;flex:none;width:var(--avatar-md);min-height:var(--avatar-md);}
+.ds-message-content {flex:1;min-width:0;}
