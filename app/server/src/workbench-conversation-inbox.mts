@@ -4,7 +4,7 @@ import type {WorkbenchAuthorizationAdapter,WorkbenchPrincipal} from './p2-006-wo
 import type {WorkbenchAuthContext} from './p2-006-workbench-query.mjs';
 import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import type {ConversationWorkspaceDelivery} from '../../../contracts/workbench_conversation_workspace_contracts.js';
-import type {ConversationInboxState,ConversationInboxSource,ConversationInboxPage,ConversationInboxEntry,ConversationChatEntry,ConversationRelatedPage,ConversationSourceBadge,ConversationChatItemPage,ConversationChatDeliveryPage} from '../../../contracts/workbench_conversation_inbox_contracts.js';
+import type {ConversationInboxState,ConversationInboxSource,ConversationInboxPage,ConversationInboxEntry,ConversationInboxSummary,ConversationChatEntry,ConversationRelatedPage,ConversationSourceBadge,ConversationChatItemPage,ConversationChatDeliveryPage} from '../../../contracts/workbench_conversation_inbox_contracts.js';
 import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import {transactionP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
@@ -14,18 +14,22 @@ import {RULE_ACTION_MESSAGE_JOIN_SQL} from './conversation-rule-admission.mjs';
 
 interface Options {pool:PostgresPool;authorization:WorkbenchAuthorizationAdapter;enabled?:boolean;identityHmacKey?:string|undefined;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined}
 interface Identity {provider:string;channel_account_id:string;participant_key:string}
-interface SessionRow extends Identity {session_id:string;status:string;control_mode:string;generation_version:number;row_version:number;last_activity_at:string;journey_id:string|null;participant_label:string;department_label:string|null;topic:string;canonical_item:ConversationChatEntry['canonical_item'];source:ConversationSourceBadge;chat_type:'group'|'single';reply_binding:boolean;assignment_status:string;assigned_principal_id:string|null;assigned_display_name:string|null;handoff:ConversationChatEntry['handoff']}
-interface InboxRow extends Identity {anchor_session_id:string;participant_label:string;department_label:string|null;latest_activity_at:string;matching_topic_count:number;unread_count:number;last_item:ConversationInboxEntry['last_item_preview'];sources:ConversationSourceBadge[];source_count:number;owner_count:number;mine_count:number;assigned_count:number;session_count:number;owner_name:string|null;has_delivery_exception:boolean}
+interface SessionRow extends Identity {session_id:string;status:string;control_mode:string;generation_version:number;row_version:number;last_activity_at:string;waiting_since:string|null;journey_id:string|null;participant_label:string;department_label:string|null;topic:string;canonical_item:ConversationChatEntry['canonical_item'];source:ConversationSourceBadge;chat_type:'group'|'single';reply_binding:boolean;assignment_status:string;assigned_principal_id:string|null;assigned_display_name:string|null;handoff:ConversationChatEntry['handoff']}
+interface InboxRow extends Identity {anchor_session_id:string;participant_label:string;department_label:string|null;latest_activity_at:string;waiting_since:string|null;matching_topic_count:number;unread_count:number;last_item:ConversationInboxEntry['last_item_preview'];sources:ConversationSourceBadge[];source_count:number;owner_count:number;mine_count:number;assigned_count:number;session_count:number;owner_name:string|null;has_delivery_exception:boolean}
 interface Cursor {v:2;binding:string;criteria:string;scope:string;at:string;anchor:string}
 type Params={sourceGroups:boolean;values:unknown[];add(value:unknown,cast?:string):string};
 interface ReadQuery {prefix:string;sql:string;anchor?:string;cursor?:string;scope?:boolean;cursorScope?:string}
 function invalid(code:string=WORKBENCH_ERROR_CODES.requestInvalid,status=400):never{throw new WorkbenchError(code,status);}
 function integer(v:string|null,fallback:number,max:number):number{if(v===null)return fallback;if(!/^[1-9][0-9]*$/u.test(v)||!Number.isSafeInteger(Number(v))||Number(v)>max)invalid();return Number(v);}
 function keys(url:URL,allowed:readonly string[]){const names=[...url.searchParams.keys()];if(names.some(k=>!allowed.includes(k))||new Set(names).size!==names.length)invalid();}
+function includeWaitingSince(url:URL):boolean{const value=url.searchParams.get('include_waiting_since');if(value!==null&&value!=='true'&&value!=='false')invalid();return value==='true';}
 function object(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))invalid();return v as Record<string,unknown>;}
 const states=new Set<ConversationInboxState>(['open','mine','unassigned','waiting_human','waiting_user','failed_delivery','ended']);
+const unreadItemSql="item.visibility IN ('EXTERNAL','INTERNAL') AND item.sequence_no>COALESCE(rc.last_read_sequence,0)";
 export function conversationInboxCriteria(url:URL){
-  keys(url,['state','source','q','source_group_ref','cursor','limit']);
+  keys(url,['state','source','q','source_group_ref','cursor','limit','include_waiting_since']);
+  // A presentation opt-in does not change filtering, ordering or existing cursor identities.
+  includeWaitingSince(url);
   const state=url.searchParams.get('state')??'open',source=url.searchParams.get('source')??'all',q=(url.searchParams.get('q')??'').trim(),group=url.searchParams.get('source_group_ref');
   if(!states.has(state as ConversationInboxState)||!['all','group','direct'].includes(source)||[...q].length>128||/[\u0000-\u001f\u007f]/u.test(q)||group!==null&&!/^[a-f0-9]{64}$/u.test(group))invalid();
   return {state:state as ConversationInboxState,source:source as ConversationInboxSource,q,group,limit:integer(url.searchParams.get('limit'),30,100)};
@@ -94,6 +98,8 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         AND th.chat_type=i.source_chat_type AND s.participant_key=i.reporter_wecom_userid
         AND th.external_thread_key=CASE WHEN i.source_chat_type='single' THEN i.reporter_wecom_userid ELSE i.source_chat_id END,false) AS reply_binding,
       COALESCE(a.assignment_status,'UNASSIGNED') AS assignment_status,a.assigned_principal_id::text,ap.display_name AS assigned_display_name,
+      CASE WHEN s.status<>'ENDED' AND COALESCE(a.assignment_status,'UNASSIGNED')='UNASSIGNED'
+        THEN to_char(COALESCE(a.released_at,s.started_at),'YYYY-MM-DD HH24:MI:SS') END AS waiting_since,
       CASE WHEN h.id IS NOT NULL THEN jsonb_build_object('handoff_id',h.id,'status',h.status,'row_version',h.row_version::integer) END AS handoff,
       ${filterDeliveryException?`EXISTS(SELECT 1 FROM communication.message cm JOIN communication.outbox co ON co.message_id=cm.id JOIN communication.delivery d ON d.outbox_id=co.id
         WHERE cm.session_id=s.id AND cm.retention_until_epoch_ms>platform.physical_epoch_ms() AND d.status IN ('DEAD_LETTER','RECONCILIATION_REQUIRED'))`:'FALSE'} AS has_delivery_exception
@@ -109,7 +115,7 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       LEFT JOIN LATERAL(SELECT h.id,h.status,h.row_version FROM conversation.handoff h WHERE h.session_id=s.id ORDER BY h.requested_at DESC,h.id DESC LIMIT 1) h ON TRUE
       WHERE ${access.sql})`;
   }
-  function entry(r:SessionRow,p:WorkbenchPrincipal):ConversationChatEntry{
+  function entry(r:SessionRow,p:WorkbenchPrincipal,includeWaiting=false):ConversationChatEntry{
     const capabilities=r.status==='ENDED'?[]:authorization.actionsFor(p,{assignedToMe:r.assignment_status==='ASSIGNED'&&r.assigned_principal_id===p.principal_id,canTakeover:r.assignment_status!=='ASSIGNED'}).filter(a=>{
       if(['READ_CURSOR','RECONCILE','DELIVERY_RETRY'].includes(a))return false;if(a==='REPLY')return r.reply_binding;
       if(a==='TAKEOVER')return r.assignment_status!=='ASSIGNED';if(['TRANSFER','FORCE_TRANSFER','RELEASE'].includes(a))return r.assignment_status==='ASSIGNED';
@@ -118,16 +124,31 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
     if(r.status!=='ENDED'&&r.assigned_principal_id===p.principal_id&&!capabilities.includes('TRANSFER'))capabilities.push('TRANSFER');
     return {session:{session_id:r.session_id,status:r.status,control_mode:r.control_mode,generation_version:r.generation_version,row_version:r.row_version,last_activity_at:assertLocalDateTime(r.last_activity_at)},
       participant_label:r.participant_label,department_label:r.department_label,topic:r.topic,channel_label:r.chat_type==='group'?'群来源 · 回复通过私聊':'Bot 私聊',
+      ...(includeWaiting?{waiting_since:r.waiting_since===null?null:assertLocalDateTime(r.waiting_since)}:{}),
       canonical_item:r.canonical_item,assignment:{status:r.assignment_status,assigned_to_me:r.assigned_principal_id===p.principal_id,assigned_display_name:r.assigned_display_name},handoff:r.handoff,capabilities,
       contact_ref:conversationReference(key,'contact',r),topic_ref:conversationReference(key,'topic',r,r.journey_id?'journey:'+r.journey_id:'session:'+r.session_id),
       original_source:r.source,current_contact_channel:r.chat_type==='group'?'group':'direct',reply_channel_label:r.reply_binding?'发送到本人 Bot 私聊':'当前绑定不支持回复'};
   }
-  async function detail(auth:WorkbenchAuthContext,id:string):Promise<ConversationChatEntry>{
+  async function detail(auth:WorkbenchAuthContext,id:string,url?:URL):Promise<ConversationChatEntry>{
+    guard();if(url)keys(url,['view','include_waiting_since']);const includeWaiting=url?includeWaitingSince(url):false;
     const result=await read<SessionRow>(auth,(p,v)=>({prefix:relation(p,v),sql:'SELECT * FROM eligible WHERE session_id='+v.add(uuidP2016(id),'::text')}));
-    const row=result.rows[0];if(!row)invalid(WORKBENCH_ERROR_CODES.notFound,404);return entry(row,result.principal);
+    const row=result.rows[0];if(!row)invalid(WORKBENCH_ERROR_CODES.notFound,404);return entry(row,result.principal,includeWaiting);
+  }
+  async function summary(auth:WorkbenchAuthContext,url:URL):Promise<ConversationInboxSummary>{
+    guard();keys(url,[]);
+    const result=await read<{unassigned_contact_count:number;my_unread_count:number;as_of:string}>(auth,(p,v)=>({
+      prefix:relation(p,v)+", active AS MATERIALIZED(SELECT * FROM eligible WHERE status<>'ENDED')",
+      sql:`SELECT count(DISTINCT (provider,channel_account_id,participant_key)) FILTER(WHERE assignment_status='UNASSIGNED')::integer AS unassigned_contact_count,
+        (SELECT count(*)::integer FROM active e JOIN conversation.item item ON item.session_id=e.session_id::uuid
+          LEFT JOIN conversation.read_cursor rc ON rc.session_id=item.session_id AND rc.principal_id=$1::uuid
+          WHERE item.retention_until>platform.local_now() AND ${unreadItemSql}) AS my_unread_count,
+        to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS as_of FROM active`
+    }));
+    const row=result.rows[0];if(!row)throw new Error('CONVERSATION_INBOX_SUMMARY_MISSING');
+    return {...row,as_of:assertLocalDateTime(row.as_of)};
   }
   async function inbox(auth:WorkbenchAuthContext,url:URL):Promise<ConversationInboxPage>{
-    guard();const c=conversationInboxCriteria(url),cursor=decode(url.searchParams.get('cursor')),criteria=digest(c,'INBOX_FILTER_V1');
+    guard();const c=conversationInboxCriteria(url),includeWaiting=includeWaitingSince(url),cursor=decode(url.searchParams.get('cursor')),criteria=digest(c,'INBOX_FILTER_V1');
     const result=await read<InboxRow>(auth,(p,v)=>{
       if(cursor&&(cursor.binding!==binding(auth,p)||cursor.criteria!==criteria))invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
       const base=relation(p,v,c.state==='failed_delivery'),predicates=[c.state==='ended'?"status='ENDED'":"status<>'ENDED'"];
@@ -153,9 +174,11 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       const order=' ORDER BY g.latest_activity_at DESC,g.provider DESC,g.channel_account_id DESC,g.participant_key DESC';
       const prefix=filtered+`, page AS MATERIALIZED(SELECT g.* FROM grouped g ${boundary}${order} LIMIT ${v.add(c.limit+1)}),
         page_sessions AS MATERIALIZED(SELECT m.* FROM matched m JOIN page p USING(provider,channel_account_id,participant_key)),
+        contact_waiting AS(SELECT provider,channel_account_id,participant_key,min(waiting_since) AS waiting_since
+          FROM eligible GROUP BY provider,channel_account_id,participant_key),
         origins AS(SELECT DISTINCT provider,channel_account_id,participant_key,source FROM page_sessions),
         material AS(SELECT ps.provider,ps.channel_account_id,ps.participant_key,
-          count(*) FILTER(WHERE item.visibility IN ('EXTERNAL','INTERNAL') AND item.sequence_no>COALESCE(rc.last_read_sequence,0))::integer AS unread_count,
+          count(*) FILTER(WHERE ${unreadItemSql})::integer AS unread_count,
           (array_agg(jsonb_build_object('item_id',item.id,'text',left(item.text,256),'sender_kind',item.sender_kind,'visibility',item.visibility)
             ORDER BY item.occurred_at DESC,item.sequence_no DESC,item.id DESC) FILTER(WHERE NULLIF(btrim(item.text),'') IS NOT NULL))[1] AS last_item
           FROM page_sessions ps JOIN conversation.item item ON item.session_id=ps.session_id::uuid
@@ -165,20 +188,22 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         exceptions AS(SELECT DISTINCT ps.provider,ps.channel_account_id,ps.participant_key FROM page_sessions ps
           JOIN communication.message cm ON cm.session_id=ps.session_id::uuid JOIN communication.outbox co ON co.message_id=cm.id JOIN communication.delivery d ON d.outbox_id=co.id
           WHERE cm.retention_until_epoch_ms>platform.physical_epoch_ms() AND d.status IN ('DEAD_LETTER','RECONCILIATION_REQUIRED'))`;
-      const sql=`SELECT g.*,COALESCE(m.unread_count,0) AS unread_count,m.last_item,ex.provider IS NOT NULL AS has_delivery_exception,
+      const sql=`SELECT g.*,cw.waiting_since,COALESCE(m.unread_count,0) AS unread_count,m.last_item,ex.provider IS NOT NULL AS has_delivery_exception,
         (SELECT count(*)::integer FROM origins o WHERE (o.provider,o.channel_account_id,o.participant_key)=(g.provider,g.channel_account_id,g.participant_key)) AS source_count,
         ARRAY(SELECT source FROM origins o WHERE (o.provider,o.channel_account_id,o.participant_key)=(g.provider,g.channel_account_id,g.participant_key) ORDER BY source::text LIMIT 8) AS sources
-        FROM page g LEFT JOIN material m USING(provider,channel_account_id,participant_key) LEFT JOIN exceptions ex USING(provider,channel_account_id,participant_key)${order}`;
+        FROM page g JOIN contact_waiting cw USING(provider,channel_account_id,participant_key)
+        LEFT JOIN material m USING(provider,channel_account_id,participant_key) LEFT JOIN exceptions ex USING(provider,channel_account_id,participant_key)${order}`;
       return {prefix,sql,cursor:valid,scope:true,...(cursor?{cursorScope:cursor.scope}:{})};
     });
     const rows=result.rows.slice(0,c.limit),last=rows.at(-1);
     const items=rows.map((r):ConversationInboxEntry=>({contact_ref:conversationReference(key,'contact',r),participant_label:r.participant_label,department_label:r.department_label,anchor_session_id:r.anchor_session_id,
       matching_topic_count:r.matching_topic_count,latest_activity_at:assertLocalDateTime(r.latest_activity_at),last_item_preview:r.last_item,unread_count:r.unread_count,source_badges:r.sources,additional_source_count:Math.max(0,r.source_count-r.sources.length),
+      ...(includeWaiting?{waiting_since:r.waiting_since===null?null:assertLocalDateTime(r.waiting_since)}:{}),
       assignment_summary:r.owner_count===0?{kind:'UNASSIGNED',label:c.state==='ended'?'历史主题':'待接待'}:r.mine_count===r.session_count?{kind:'MINE',label:'我接待的'}:r.owner_count===1&&r.assigned_count===r.session_count?{kind:'SINGLE',label:r.owner_name??'工作人员'}:{kind:'MIXED',label:'多个主题由不同同事接待'},has_delivery_exception:r.has_delivery_exception}));
     return {items,next_cursor:result.rows.length>c.limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.latest_activity_at,anchor:last.anchor_session_id}):null};
   }
   async function related(auth:WorkbenchAuthContext,id:string,url:URL):Promise<ConversationRelatedPage>{
-    guard();keys(url,['cursor','limit']);const limit=integer(url.searchParams.get('limit'),50,100),cursor=decode(url.searchParams.get('cursor')),criteria=digest(['related',id,limit],'RELATED_FILTER_V1');
+    guard();keys(url,['cursor','limit','include_waiting_since']);const includeWaiting=includeWaitingSince(url),limit=integer(url.searchParams.get('limit'),50,100),cursor=decode(url.searchParams.get('cursor')),criteria=digest(['related',id,limit],'RELATED_FILTER_V1');
     const result=await read<SessionRow>(auth,(p,v)=>{
       if(cursor&&(cursor.binding!==binding(auth,p)||cursor.criteria!==criteria))invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
       const base=relation(p,v),anchorId=v.add(id),boundary=cursor?` AND (r.last_activity_at,r.session_id)<(${v.add(cursor.at)},${v.add(cursor.anchor)})`:'';
@@ -191,7 +216,7 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         WHERE TRUE ${boundary} ORDER BY r.last_activity_at DESC,r.session_id DESC LIMIT ${v.add(limit+1)}`};
     });
     const rows=result.rows.slice(0,limit),last=rows.at(-1);
-    return {items:rows.map(r=>entry(r,result.principal)),next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.last_activity_at,anchor:last.session_id}):null};
+    return {items:rows.map(r=>entry(r,result.principal,includeWaiting)),next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.last_activity_at,anchor:last.session_id}):null};
   }
   async function chatItems(auth:WorkbenchAuthContext,id:string,url:URL):Promise<ConversationChatItemPage>{
     guard();keys(url,['view','before_sequence','after_sequence','limit']);
@@ -268,5 +293,5 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
     const rows=result.rows.slice(0,limit),last=rows.at(-1);
     return {items:rows,next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.created_at,anchor:last.delivery_id}):null};
   }
-  return {enabled,detail,inbox,related,chatItems,chatDeliveries};
+  return {enabled,detail,inbox,summary,related,chatItems,chatDeliveries};
 }

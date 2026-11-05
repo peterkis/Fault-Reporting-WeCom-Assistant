@@ -95,10 +95,11 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
   }
   return {async handler({request,response,url,authContext,json,readJson,validateWriteRequest}:Context){
     const related=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/related-sessions$/iu.exec(url.pathname);
-    if(url.pathname==='/api/workbench/conversation-inbox'||related){
+    const inboxSummary=url.pathname==='/api/workbench/conversations/summary';
+    if(url.pathname==='/api/workbench/conversation-inbox'||related||inboxSummary){
       if(!enabled||!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
       if(request.method!=='GET')invalid(404);
-      json(response,200,related?await inbox.related(authContext,uuidP2016(related[1]),url):await inbox.inbox(authContext,url));return true;
+      json(response,200,inboxSummary?await inbox.summary(authContext,url):related?await inbox.related(authContext,uuidP2016(related[1]),url):await inbox.inbox(authContext,url));return true;
     }
     const command=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/(messages|internal-notes)\/commands\/([a-f0-9-]{36})$/iu.exec(url.pathname);
     const delivery=/^\/api\/workbench\/conversations\/([a-f0-9-]{36})\/deliveries$/iu.exec(url.pathname);
@@ -135,7 +136,7 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
         if(url.searchParams.get('view')!=='chat'||part!==undefined&&part!=='items')invalid();
         if(!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
         if(part==='items')json(response,200,await inbox.chatItems(authContext,sessionId,url));
-        else{keys(url,['view']);const value=await inbox.detail(authContext,sessionId);json(response,200,value,{etag:'"'+value.session.row_version+'"'});}return true;
+        else{keys(url,['view','include_waiting_since']);const value=await inbox.detail(authContext,sessionId,url);json(response,200,value,{etag:'"'+value.session.row_version+'"'});}return true;
       }
       if(!part){keys(url,[]);const result=await detail(authContext,sessionId);json(response,200,result,{etag:'"'+result.session.row_version+'"'});return true;}
       if(part==='eligible-principals'){keys(url,[]);json(response,200,await query.listEligiblePrincipals({authContext,sessionId}));return true;}

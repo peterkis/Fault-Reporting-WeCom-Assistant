@@ -64,6 +64,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | CW15 | GET | `/api/workbench/conversations/{sessionId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：固定内部备注purpose安全只读收据 | [集中会话](workbench/conversations.md#集中服务会话工作区wbint-t22默认关闭) |
 | CW16 | GET | `/api/workbench/conversation-inbox` | W | 已实现、独立默认关闭：当前获权联系人keyset分页，按筛选聚合主题与本人未读 | [收件箱](workbench/conversation-inbox.md) |
 | CW17 | GET | `/api/workbench/conversations/{anchorSessionId}/related-sessions` | W | 已实现、独立默认关闭：同报修人的真实获权Session、历史及稳定topic_ref | [相关主题](workbench/conversation-inbox.md) |
+| CW18 | GET | `/api/workbench/conversations/summary` | W | 本地实现、沿用独立默认关闭：完整可见范围待接待联系人数、本人未结束会话未读与计算时刻；无筛选参数 | [会话计数与等待起点](workbench/conversations.md#会话全局计数与等待起点卡-25a) |
 | MR01 | POST | `/api/workbench/reports` | W | 已挂载、默认关闭；T17 手填与 T18 明确核实选择两个 reporter 分支，同一受理账本；本人立即处理使用 MR06 独立原子命令 | [代录报修](workbench/manual-reports.md) |
 | MR02 | GET | `/api/workbench/reports/capabilities` | W | 当前代录创建权限与恢复配置；能力不能替代每次操作验权 | [代录报修](workbench/manual-reports.md) |
 | MR03 | GET | `/api/workbench/reports/commands/{commandId}` | W | 原主体／用途同账本只读 UNKNOWN/FAILED/COMMITTED；含核实选择原结果，另需恢复开关 | [代录报修](workbench/manual-reports.md) |

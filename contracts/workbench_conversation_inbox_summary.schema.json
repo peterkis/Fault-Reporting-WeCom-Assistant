@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workbench_conversation_inbox_summary.schema.json",
+  "title": "Conversation Inbox Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["unassigned_contact_count", "my_unread_count", "as_of"],
+  "properties": {
+    "unassigned_contact_count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991, "readOnly": true },
+    "my_unread_count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991, "readOnly": true },
+    "as_of": { "$ref": "local_datetime.schema.json", "readOnly": true, "x-business-timezone": "Asia/Shanghai" }
+  }
+}

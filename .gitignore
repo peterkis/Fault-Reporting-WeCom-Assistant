@@ -32,3 +32,6 @@ secrets/
 
 # Local tools, caches, profiles and task materials
 /.local/
+
+# Local task prompts
+/prompts/

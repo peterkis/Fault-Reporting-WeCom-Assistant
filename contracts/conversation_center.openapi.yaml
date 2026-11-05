@@ -10,6 +10,89 @@ info:
 servers:
   - url: /api
 paths:
+  /workbench/conversations/summary:
+    get:
+      operationId: getWorkbenchConversationInboxSummary
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: >
+        Read-only counts over the exact inbox-visible scope, independent of all list filters.
+        Requires the same conversation workspace and inbox flags and current READ proof as the inbox.
+        Counts distinct visible contacts with an UNASSIGNED non-ENDED Session and retained
+        EXTERNAL/INTERNAL items beyond the current principal read cursor in all non-ENDED Sessions.
+        These equal full unfiltered pagination of state=unassigned (contacts) and state=open (unread sum).
+      responses:
+        '200':
+          description: Counts and Asia/Shanghai calculation time; Cache-Control no-store
+          content:
+            application/json:
+              schema: { $ref: './workbench_conversation_inbox_summary.schema.json' }
+        '400': { description: 'WORKBENCH_REQUEST_INVALID for any query; WORKBENCH_CURSOR_INVALID for changed current role/team proof' }
+        '401': { description: 'WORKBENCH_UNAUTHENTICATED for absent, expired or revoked internal authentication' }
+        '403': { description: 'WORKBENCH_FORBIDDEN for an inactive or unauthorized internal principal' }
+        '503': { description: 'WORKBENCH_DISABLED when the workspace or inbox is disabled' }
+  /workbench/conversation-inbox:
+    get:
+      operationId: getWorkbenchContactInbox
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: >
+        Contact-grouped visible inbox. Legacy requests preserve the old closed entry shape.
+        Only include_waiting_since=true adds the optional readonly waiting_since, the earliest wait origin
+        across all visible non-ENDED UNASSIGNED Sessions for that contact, before any filters.
+        Other material, including matching_topic_count and unread_count, retains its filtered semantics.
+      parameters:
+        - { in: query, name: state, schema: { type: string, enum: [open, mine, unassigned, waiting_human, waiting_user, failed_delivery, ended], default: open } }
+        - { in: query, name: source, schema: { type: string, enum: [all, group, direct], default: all } }
+        - { in: query, name: q, schema: { type: string, maxLength: 128 } }
+        - { in: query, name: source_group_ref, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 2048 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 30 } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Presentation only; true returns waiting_since, absent or false preserves legacy entry keys. Does not change cursor criteria.' }
+      responses:
+        '200':
+          description: Contact entries; nullable Asia/Shanghai waiting_since only when explicitly requested
+          content:
+            application/json:
+              schema: { $ref: './workbench_conversation_inbox_page.schema.json' }
+  /workbench/conversations/{sessionId}:
+    get:
+      operationId: getWorkbenchConversationChat
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: >
+        With view=chat returns the current chat entry. Only include_waiting_since=true adds readonly waiting_since:
+        the latest assignment release time, or Session started_at when never assigned;
+        null when ASSIGNED or ENDED. Legacy workspace view without view=chat is unchanged.
+      parameters:
+        - { in: path, name: sessionId, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: view, schema: { type: string, enum: [chat] } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Allowed only with view=chat. Absent or false preserves legacy entry keys.' }
+      responses:
+        '200':
+          description: Chat entry for view=chat, otherwise the original workspace entry
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: './workbench_conversation_chat.schema.json' }
+                  - { $ref: './workbench_conversation_workspace.schema.json' }
+  /workbench/conversations/{sessionId}/related-sessions:
+    get:
+      operationId: getWorkbenchContactRelatedSessions
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      parameters:
+        - { in: path, name: sessionId, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 2048 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Presentation only; true returns waiting_since, absent or false preserves legacy entry keys. Does not change cursor criteria.' }
+      responses:
+        '200':
+          description: Visible related chat entries; nullable waiting_since only when explicitly requested
+          content:
+            application/json:
+              schema: { $ref: './workbench_conversation_related_page.schema.json' }
   /reporter/member/session: {"servers":[{"url":"/api"}],"get":{"security":[{"WeComMember":[]}],"x-reporter-policy":"MEMBER_REQUIRED","x-legacy-compatibility":"LEGACY_BOUND_GRANT only when explicitly selected by the server for isolated compatibility; never an authentication fallback.","x-reject-unknown-query":true,"operationId":"getYxxMemberSession","responses":{"200":{"description":"Authentication status only; no raw identity or selected Ticket","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_member_session.schema.json"}}}},"400":{"description":"Invalid closed input or duplicate/unknown query","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"401":{"description":"Current member authentication required","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"403":{"description":"Origin or member scope denied","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"404":{"description":"Ticket not owned or not available; no existence disclosure","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"503":{"description":"Fail closed; no legacy fallback","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}}}}}
   /reporter/bootstrap: {"servers":[{"url":"/api"}],"get":{"security":[{"WeComMember":[]}],"x-reporter-policy":"MEMBER_REQUIRED","x-legacy-compatibility":"LEGACY_BOUND_GRANT only when explicitly selected by the server for isolated compatibility; never an authentication fallback.","x-reject-unknown-query":true,"operationId":"getP2016ReporterSession","responses":{"200":{"description":"Member mode contains no public_ref; legacy mode uses the existing bound-session schema","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_member_session.schema.json"}}}},"400":{"description":"Invalid closed input or duplicate/unknown query","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"401":{"description":"Current member authentication required","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"403":{"description":"Origin or member scope denied","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"404":{"description":"Ticket not owned or not available; no existence disclosure","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"503":{"description":"Fail closed; no legacy fallback","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}}}}}
   /reporter/member-entry/prepare: {"servers":[{"url":"/api"}],"post":{"operationId":"prepareYxxLegacyEntry","security":[],"description":"Same-origin JSON, max2048 bytes. Retain locator/digest and browser-bound intent only; do not consume Grant or disclose Ticket.","requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_legacy_prepare.schema.json"}}}},"responses":{"200":{"description":"Opaque continuation path, not a Ticket capability","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_legacy_prepared.schema.json"}}}},"400":{"description":"Invalid closed input or duplicate/unknown query","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"401":{"description":"Current member authentication required","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"403":{"description":"Origin or member scope denied","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"404":{"description":"Ticket not owned or not available; no existence disclosure","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"503":{"description":"Fail closed; no legacy fallback","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}}}}}

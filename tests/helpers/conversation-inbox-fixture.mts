@@ -10,6 +10,8 @@ import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-prof
 import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {hmacIdentity,safeHash} from '../../app/server/src/p2-015-domain-contracts.mjs';
 import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
+import {createConversationControlService,createPilotConversationControlAuthorization} from '../../app/server/src/p2-005-conversation-control.mjs';
+import {appendRealtimeEvent} from '../../app/server/src/p2-003-realtime-event-log.mjs';
 export const INBOX_IDENTITY_KEY='conversation-inbox-synthetic-key-v1';
 export interface InboxSession {id:string;intakeId:string;ticketId:string;reporter:string;rowVersion:number;threadId:string;bot:string;group:string|null;chatType:'group'|'single'}
 export async function addInboxSession(pool:PostgresPool,{reporter,group,bot='t22-synthetic-bot',text='合成独立服务主题',status='OPEN'}:{reporter:string;group:string|null;bot?:string;text?:string;status?:'OPEN'|'ENDED'}):Promise<InboxSession>{
@@ -47,6 +49,15 @@ export async function conversationPost(origin:string,cookie:string,sessionId:str
   return fetch(origin+'/api/workbench/conversations/'+sessionId+'/'+action,{method:'POST',headers:{cookie,origin,'x-csrf-token':bootstrap.csrf_token,'content-type':'application/json','idempotency-key':String(body.client_command_id),'if-match':'"'+String(body.expected_row_version)+'"'},body:JSON.stringify(body)});
 }
 export const freshCommand=(version=1)=>({client_command_id:randomUUID(),expected_row_version:version});
+
+/** Card 25A: real control commands with an explicit synthetic business clock. */
+export async function inboxControlAt(pool:PostgresPool,sessionId:string,principalId:string,type:'TAKEOVER'|'RELEASE',at:string){
+  const version=(await pool.query<{version:number}>('SELECT row_version::integer AS version FROM conversation.session WHERE id=$1::uuid',[sessionId])).rows[0]?.version;assert.ok(version);
+  const service=createConversationControlService({pool,enabled:true,authorize:createPilotConversationControlAuthorization({pool}),realtimeAppender:appendRealtimeEvent,now:()=>new Date(at.replace(' ','T')+'+08:00')});
+  const command={command_type:type,session_id:sessionId,client_command_id:randomUUID(),idempotency_scope:'CARD25A_SYNTHETIC',expected_row_version:version,actor_principal_id:principalId,target_principal_id:type==='TAKEOVER'?principalId:null,reason_code:'SYNTHETIC_CONTROL'};
+  const result=type==='TAKEOVER'?await service.takeoverSession({...command,command_type:'TAKEOVER'}):await service.releaseAssignment({...command,command_type:'RELEASE'});
+  assert.equal(result.ok,true,JSON.stringify(result));return result;
+}
 
 /** C1–C3: opt-in evidence using the same persisted fixture and real conversation commands. */
 export async function seedCard21Conversation(f:T22Fixture){
