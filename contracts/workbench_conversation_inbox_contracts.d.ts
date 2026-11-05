@@ -6,12 +6,14 @@ export type ConversationInboxSource='all'|'group'|'direct';
 export interface ConversationSourceBadge {kind:'group'|'direct'|'unknown';label:string;ref:string|null}
 export interface ConversationChatContext {
   contact_ref:string;topic_ref:string;department_label:string|null;
+  /** Present only with include_waiting_since=true; absent in the legacy response shape. */
   readonly waiting_since?:LocalDateTime|null;
   original_source:ConversationSourceBadge;current_contact_channel:'group'|'direct';reply_channel_label:string;
 }
 export interface ConversationInboxEntry {
   contact_ref:string;participant_label:string;department_label:string|null;anchor_session_id:string;
   matching_topic_count:number;latest_activity_at:string;
+  /** Full visible-contact wait origin, present only with include_waiting_since=true. */
   readonly waiting_since?:LocalDateTime|null;
   last_item_preview:{item_id:string;text:string|null;sender_kind:string;visibility:string}|null;
   unread_count:number;source_badges:ConversationSourceBadge[];additional_source_count:number;

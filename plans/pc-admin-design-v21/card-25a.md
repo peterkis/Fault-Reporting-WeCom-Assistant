@@ -1,6 +1,6 @@
 # 卡 25A：v2.1.6 会话计数与等待起点
 
-日期：2026-11-05（Asia/Shanghai）。分支：`codex/pc-admin-v216-card25a`。本地基点：`b4ab3f10c5ea1c10593e8eeed7dd26aa9b8aeb10`。本次未提交、未推送、未创建 PR；记录对应工作区差异，不能冒充新提交或 CI 结果。
+日期：2026-11-05（Asia/Shanghai）。分支：`codex/pc-admin-v216-card25a`。原本地基点：`b4ab3f10c5ea1c10593e8eeed7dd26aa9b8aeb10`。下面先保留审查前本地阶段记录，当时未提交、未推送、未创建 PR；其候选、失败和“16 文件”等描述不重绑到后继提交。最新独立审查与修复见[发布续作](#独立评审与发布续作)。
 
 ## 授权与资源
 
@@ -123,3 +123,13 @@ A3 后续可审查方案：在旧 Session 结束的原事务内，用现有 mapp
 A3 结束推送补齐和当前前端解码兼容仍待后续处理；用户明确将前端问题留给 25B。本卡只证明后端本地只读投影，不能单独启用现有 inbox UI。无通知异常全局总数；A4 后续口径独立确定。summary 不包含已结束会话的未读；联系人 waiting_since 的全范围口径与 matching_topic_count 的筛选口径并存，25B 应在展示上说明。
 
 保持既有 workspace/inbox 开关关闭可关闭这些读入口。未提交状态按本清单逐文件撤回即可；不回退用户原件、不改写历史、不删除业务数据。没有数据库迁移回退或通知发送回退。
+
+## 独立评审与发布续作
+
+用户随后授权：先提交 25A，使用 code-review 双轴与 Open Code Review 两端本地独立评审，修复和验证后推送并创建 PR，CI 全通过且无 major 后合并、同步 main，只清理本卡分支/worktree；Codex 机器人评审因额度不足由这两端替代。此前单独提交的原型/.gitignore 为 `31f3da34f66812966c57344d78cf1fb75439d137`；25A 首次提交为 `1cee2064333e377ac1d4561ae440534898d61ac4`。卡片初审固定比较这两个提交，共 16 文件。
+
+初审分开记录：Standards 0 项可操作发现；Spec 1 项 P1（旧 exact-key 客户端被无条件新增 waiting_since 破坏）；Open Code Review Delegate 独立确认同一项 High/P1，实际客户端导出在旧形状下通过、加入 null/时间后 6 个组合均拒绝。原 OCR 端点模式因未配置 LLM 端点失败，未冒称成功；使用插件 Delegate 模式实际执行 preview/rule，7 个 CLI 选中文件和 9 个 unsupported_ext 文件按已解析 fallback 规则补审，覆盖 16/16、跳过 0。原排除清单及三份独立报告均保留在 `D:/CodexEvidence/pc-admin-v216-card25a-review-20261105/`。
+
+修复在后端完成：增加显式 `include_waiting_since=true` 投影，缺省/false 保持旧列表、chat 和 related 条目的键集合；请求 true 才返回定义不变的只读 nullable 等待起点。只接受 true/false，重复或非法值 400；选项不影响范围、筛选、排序、计数或既有游标身份，summary 仍拒绝所有查询参数。前端、业务命令、状态、权限、迁移和依赖不变。补充旧响应（含已领取状态）、三种 opt-in、非法参数和旧游标继续使用的真实 HTTP 断言，原七种等待断言改为明确请求新投影，未删减原业务断言。同步实际收件箱文档 `docs/api/workbench/conversation-inbox.md` 的参数说明，为本轮必要的第 17 个卡片文件。
+
+修复后的独立复核、构建、相关验证、PR/CI 与合并同步结果按实际完成后追加；原 A3 结束推送停止线保持，等待显示与分钟重算仍属于 25B。

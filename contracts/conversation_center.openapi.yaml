@@ -37,7 +37,8 @@ paths:
       security: [{ InternalSession: [] }, { InternalBearer: [] }]
       x-reject-unknown-query: true
       description: >
-        Contact-grouped visible inbox. Optional readonly waiting_since is the earliest wait origin
+        Contact-grouped visible inbox. Legacy requests preserve the old closed entry shape.
+        Only include_waiting_since=true adds the optional readonly waiting_since, the earliest wait origin
         across all visible non-ENDED UNASSIGNED Sessions for that contact, before any filters.
         Other material, including matching_topic_count and unread_count, retains its filtered semantics.
       parameters:
@@ -47,9 +48,10 @@ paths:
         - { in: query, name: source_group_ref, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
         - { in: query, name: cursor, schema: { type: string, maxLength: 2048 } }
         - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 30 } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Presentation only; true returns waiting_since, absent or false preserves legacy entry keys. Does not change cursor criteria.' }
       responses:
         '200':
-          description: Contact entries with nullable Asia/Shanghai waiting_since
+          description: Contact entries; nullable Asia/Shanghai waiting_since only when explicitly requested
           content:
             application/json:
               schema: { $ref: './workbench_conversation_inbox_page.schema.json' }
@@ -59,12 +61,13 @@ paths:
       security: [{ InternalSession: [] }, { InternalBearer: [] }]
       x-reject-unknown-query: true
       description: >
-        With view=chat returns the current chat entry. Optional readonly waiting_since is
+        With view=chat returns the current chat entry. Only include_waiting_since=true adds readonly waiting_since:
         the latest assignment release time, or Session started_at when never assigned;
         null when ASSIGNED or ENDED. Legacy workspace view without view=chat is unchanged.
       parameters:
         - { in: path, name: sessionId, required: true, schema: { type: string, format: uuid } }
         - { in: query, name: view, schema: { type: string, enum: [chat] } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Allowed only with view=chat. Absent or false preserves legacy entry keys.' }
       responses:
         '200':
           description: Chat entry for view=chat, otherwise the original workspace entry
@@ -83,9 +86,10 @@ paths:
         - { in: path, name: sessionId, required: true, schema: { type: string, format: uuid } }
         - { in: query, name: cursor, schema: { type: string, maxLength: 2048 } }
         - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { in: query, name: include_waiting_since, schema: { type: boolean, default: false }, description: 'Presentation only; true returns waiting_since, absent or false preserves legacy entry keys. Does not change cursor criteria.' }
       responses:
         '200':
-          description: Visible related chat entries including nullable waiting_since
+          description: Visible related chat entries; nullable waiting_since only when explicitly requested
           content:
             application/json:
               schema: { $ref: './workbench_conversation_related_page.schema.json' }

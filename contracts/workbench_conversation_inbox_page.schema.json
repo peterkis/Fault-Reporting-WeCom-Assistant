@@ -64,7 +64,7 @@
           "waiting_since": {
             "readOnly": true,
             "x-business-timezone": "Asia/Shanghai",
-            "description": "Oldest unassigned non-ended Session in the full visible contact scope, independent of list filters.",
+            "description": "Only present with include_waiting_since=true. Oldest unassigned non-ended Session in the full visible contact scope, independent of list filters.",
             "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }]
           },
           "last_item_preview": {

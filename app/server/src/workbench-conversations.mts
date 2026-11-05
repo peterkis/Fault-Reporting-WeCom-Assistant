@@ -136,7 +136,7 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
         if(url.searchParams.get('view')!=='chat'||part!==undefined&&part!=='items')invalid();
         if(!inbox?.enabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled,503);
         if(part==='items')json(response,200,await inbox.chatItems(authContext,sessionId,url));
-        else{keys(url,['view']);const value=await inbox.detail(authContext,sessionId);json(response,200,value,{etag:'"'+value.session.row_version+'"'});}return true;
+        else{keys(url,['view','include_waiting_since']);const value=await inbox.detail(authContext,sessionId,url);json(response,200,value,{etag:'"'+value.session.row_version+'"'});}return true;
       }
       if(!part){keys(url,[]);const result=await detail(authContext,sessionId);json(response,200,result,{etag:'"'+result.session.row_version+'"'});return true;}
       if(part==='eligible-principals'){keys(url,[]);json(response,200,await query.listEligiblePrincipals({authContext,sessionId}));return true;}

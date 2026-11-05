@@ -58,7 +58,7 @@ test('waiting_since follows seven assignment cases and the oldest visible wait b
   const actor=f.principals[0];assert.ok(actor);
   const session=await addInboxSession(f.pool,{reporter:'card25a-wait-private',group:'card25a-wait-group',text:'等待起点一（合成）'});
   await f.pool.query("UPDATE conversation.session SET started_at=timestamp '2026-11-04 08:00:00',created_at=timestamp '2026-11-05 08:00:00',last_activity_at=timestamp '2026-11-05 09:00:00' WHERE id=$1::uuid",[session.id]);
-  const detail=async(id=session.id)=>{const response=await fetch(f.origin+'/api/workbench/conversations/'+id+'?view=chat',{headers:{cookie:f.cookie}});assert.equal(response.status,200);const entry=await response.json() as ConversationChatEntry;await assertP2016Schema('workbench_conversation_chat',entry);return entry;};
+  const detail=async(id=session.id)=>{const response=await fetch(f.origin+'/api/workbench/conversations/'+id+'?view=chat&include_waiting_since=true',{headers:{cookie:f.cookie}});assert.equal(response.status,200);const entry=await response.json() as ConversationChatEntry;await assertP2016Schema('workbench_conversation_chat',entry);return entry;};
   await t.test('never claimed uses started_at even without assignment, independent of last message and created_at',async()=>{
    assert.equal((await f.pool.query('SELECT 1 FROM conversation.assignment WHERE session_id=$1::uuid',[session.id])).rowCount,0);
    assert.equal((await detail()).waiting_since,'2026-11-04 08:00:00');
@@ -76,25 +76,51 @@ test('waiting_since follows seven assignment cases and the oldest visible wait b
   await t.test('a contact uses its earliest visible wait across source, search, queue and page filters',async()=>{
    const older=await addInboxSession(f.pool,{reporter:session.reporter,group:null,text:'另一个独立主题（合成）'});
    await f.pool.query("UPDATE conversation.session SET started_at=timestamp '2026-11-04 07:00:00' WHERE id=$1::uuid",[older.id]);
-   const groupPage=await (await fetch(f.origin+'/api/workbench/conversation-inbox?source=group&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
+   const groupPage=await (await fetch(f.origin+'/api/workbench/conversation-inbox?include_waiting_since=true&source=group&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
    const contact=groupPage.items.find(row=>row.anchor_session_id===session.id);assert.ok(contact);assert.equal(contact.matching_topic_count,1);assert.equal(contact.waiting_since,'2026-11-04 07:00:00');
    const groupRef=contact.source_badges.find(row=>row.kind==='group')?.ref;assert.ok(groupRef);
-   const page=await (await fetch(f.origin+'/api/workbench/conversation-inbox?source_group_ref='+groupRef+'&limit=1&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
+   const page=await (await fetch(f.origin+'/api/workbench/conversation-inbox?include_waiting_since=true&source_group_ref='+groupRef+'&limit=1&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
    assert.equal(page.items[0]?.waiting_since,contact.waiting_since);
    await inboxControlAt(f.pool,session.id,actor.id,'TAKEOVER','2026-11-05 08:50:00');
-   const mine=await (await fetch(f.origin+'/api/workbench/conversation-inbox?state=mine&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
+   const mine=await (await fetch(f.origin+'/api/workbench/conversation-inbox?include_waiting_since=true&state=mine&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.cookie}})).json() as ConversationInboxPage;
    assert.equal(mine.items[0]?.waiting_since,contact.waiting_since,'assigned anchor retains another visible Session wait');assert.equal((await detail()).waiting_since,null);
-   const related=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'/related-sessions',{headers:{cookie:f.cookie}})).json() as ConversationRelatedPage;
+   const related=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'/related-sessions?include_waiting_since=true',{headers:{cookie:f.cookie}})).json() as ConversationRelatedPage;
    await assertP2016Schema('workbench_conversation_related_page',related);assert.equal(related.items.find(row=>row.session.session_id===older.id)?.waiting_since,contact.waiting_since);
    const handler=f.principals[1];assert.ok(handler);
    assert.equal((await conversationPost(f.origin,f.cookie,session.id,'transfer',{...freshCommand((await detail()).session.row_version),target_principal_id:handler.id})).status,200);
-   const limited=await (await fetch(f.origin+'/api/workbench/conversation-inbox?q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.handlerCookie}})).json() as ConversationInboxPage;
+   const limited=await (await fetch(f.origin+'/api/workbench/conversation-inbox?include_waiting_since=true&q='+encodeURIComponent('等待起点一'),{headers:{cookie:f.handlerCookie}})).json() as ConversationInboxPage;
    assert.equal(limited.items[0]?.waiting_since,null,'the invisible older Session must not leak its wait');
   });
   await t.test('ended Sessions have no wait even when unassigned',async()=>{
    const ended=await addInboxSession(f.pool,{reporter:'card25a-wait-ended',group:null,text:'已经结束的无人接待主题（合成）',status:'ENDED'});
    assert.equal((await detail(ended.id)).waiting_since,null);
   });
+ },{inbox:true,recovery:false});
+});
+
+test('legacy entry shapes stay closed while waiting projection is an explicit bounded opt-in',async()=>{
+ await withT22Fixture(async f=>{
+  const session=f.sessions[0];assert.ok(session);await f.runtime.coordinator.runOnce();
+  const inbox='/api/workbench/conversation-inbox',chat='/api/workbench/conversations/'+session.id+'?view=chat',related='/api/workbench/conversations/'+session.id+'/related-sessions';
+  const get=async(path:string)=>{const response=await fetch(f.origin+path,{headers:{cookie:f.cookie}});assert.equal(response.status,200);return response.json();};
+  for(const assigned of [false,true]){
+   for(const value of ['', 'false','true']){
+    const query=value?'include_waiting_since='+value:'',page=await get(inbox+(query?'?'+query:'')) as ConversationInboxPage;
+    const entry=await get(chat+(query?'&'+query:'')) as ConversationChatEntry,list=await get(related+(query?'?'+query:'')) as ConversationRelatedPage;
+    assert.ok(page.items.length>0&&list.items.length>0);
+    for(const item of [...page.items,entry,...list.items])assert.equal(Object.hasOwn(item,'waiting_since'),value==='true','legacy exact-key clients must never receive even a null extension by default');
+    if(value==='true')assert.equal(entry.waiting_since===null,assigned);
+    await assertP2016Schema('workbench_conversation_inbox_page',page);await assertP2016Schema('workbench_conversation_chat',entry);await assertP2016Schema('workbench_conversation_related_page',list);
+   }
+   if(!assigned){const current=await get(chat) as ConversationChatEntry;assert.equal((await conversationPost(f.origin,f.cookie,session.id,'takeover',freshCommand(current.session.row_version))).status,200);}
+  }
+  // Presentation does not invalidate previously issued cursors or alter their scopes.
+  const first=await get(inbox+'?limit=1') as ConversationInboxPage;assert.ok(first.next_cursor);
+  const next=await get(inbox+'?limit=1&include_waiting_since=true&cursor='+encodeURIComponent(first.next_cursor)) as ConversationInboxPage;assert.ok(next.items.length);assert.ok(next.items.every(item=>Object.hasOwn(item,'waiting_since')));
+  const relatedFirst=await get(related+'?limit=1') as ConversationRelatedPage;assert.ok(relatedFirst.next_cursor);
+  const relatedNext=await get(related+'?limit=1&include_waiting_since=true&cursor='+encodeURIComponent(relatedFirst.next_cursor)) as ConversationRelatedPage;assert.ok(relatedNext.items.length);assert.ok(relatedNext.items.every(item=>Object.hasOwn(item,'waiting_since')));
+  for(const value of ['', '1','TRUE','yes','true&include_waiting_since=false'])for(const base of [inbox,chat,related])assert.equal((await fetch(f.origin+base+(base.includes('?')?'&':'?')+'include_waiting_since='+value,{headers:{cookie:f.cookie}})).status,400);
+  for(const path of ['/api/workbench/conversations/'+session.id+'?include_waiting_since=true','/api/workbench/conversations/'+session.id+'/items?view=chat&include_waiting_since=true','/api/workbench/conversations/'+session.id+'/deliveries?view=chat&include_waiting_since=true','/api/workbench/conversations/summary?include_waiting_since=true'])assert.equal((await fetch(f.origin+path,{headers:{cookie:f.cookie}})).status,400);
  },{inbox:true,recovery:false});
 });
 

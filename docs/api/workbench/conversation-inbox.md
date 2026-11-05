@@ -20,6 +20,7 @@
 | source_group_ref | 现有64位小写十六进制安全群引用；从获权来源标签取得，不接受原始群ID |
 | cursor | 已签名 opaque keyset cursor；绑定当前主体、认证会话、角色/团队及完整可读 Session 集合摘要，不能自行构造或跨会话复用；集合变化时重置分页 |
 | limit | 默认30，1–100 |
+| include_waiting_since | 可选 true/false，默认 false。只有 true 增加只读 nullable waiting_since；不改变筛选、排序或游标身份，缺省/false 保持旧响应键集合 |
 
 响应 `{items,next_cursor}`。每项包含 `contact_ref`、姓名、核实部门或 null、定位 Session、当前筛选内的主题数/本人未读、最新安全文字摘要、活动时间、原始来源标签、责任摘要与投递异常。来源标签最多8个，额外数量单列。只有未过保留期且当前获权的真实 Session 进入筛选和聚合。可靠 Journey 的群/私聊窗口只计一个主题；不能证明关联的 Session 各自计数。
 
@@ -31,7 +32,7 @@
 
 `GET /api/workbench/conversations/{anchorSessionId}/related-sessions`
 
-参数仅 `cursor、limit`，默认50、最大100。先证明锚点当前可读，再返回同一受保护身份的当前获权真实 Session，包含历史。每项为聊天详情及稳定 `topic_ref`。不跨 Bot、不按姓名、不按共同 Ticket 合并；纯 H5/电话事项没有真实 Session 时不制造聊天窗口。
+参数为 `cursor、limit、include_waiting_since?`，默认50、最大100。等待选项仅接受 true/false，缺省/false 保持旧条目键集合；true 返回只读 nullable waiting_since，不参与游标身份。先证明锚点当前可读，再返回同一受保护身份的当前获权真实 Session，包含历史。每项为聊天详情及稳定 `topic_ref`。不跨 Bot、不按姓名、不按共同 Ticket 合并；纯 H5/电话事项没有真实 Session 时不制造聊天窗口。
 
 响应 `{items,next_cursor}`，按活动时间与 Session ID 降序。游标同样签名并绑定认证/范围/锚点/limit；锚点不存在或失权404，分页锚点变化400。新关联私聊仅提示“本主题有私聊补充”，由工作人员明确切换，再依据该 Session 当前 capabilities 继续接待。ENDED 只读，不复活旧 Session，也不因会话结束关闭 Ticket。
 
@@ -41,11 +42,13 @@
 
 | 方法与路径 | 新投影 |
 | --- | --- |
-| `GET /api/workbench/conversations/{sessionId}?view=chat` | 原详情加联系人/主题引用、核实部门、原始来源、当前窗口和固定本人 Bot 私聊去向；capabilities 仍仅属于明确 Session |
+| `GET /api/workbench/conversations/{sessionId}?view=chat` | 原详情加联系人/主题引用、核实部门、原始来源、当前窗口和固定本人 Bot 私聊去向；capabilities 仍仅属于明确 Session；可选 include_waiting_since=true 请求等待起点，缺省/false 保持旧键集合 |
 | `GET /api/workbench/conversations/{sessionId}/items?view=chat` | 默认最近50，最大200/页；before_sequence 或 after_sequence 二选一。增加实际发送者安全姓名/类别、精确 communication_message_id、来源标签和媒体可用状态 |
 | `GET /api/workbench/conversations/{sessionId}/deliveries?view=chat` | 参数 message_ids（最多50个唯一UUID的逗号串）、cursor、limit（默认/最大100），按 Delivery UUID keyset 返回 `{items,next_cursor}`。只能读取当前 Session、保留期内外部 Message 的精确 Delivery |
 
 发送者由原 Message 的 sender/principal、原安全动作及人工复核主体推导；不用当前接待人替代历史发送者。Items 经原 Item Source/Binding 关联精确 Message。Delivery 时间线记录只更新状态，不另建重复气泡。正式 Item 未到时只显示真实 COMMITTED 回执对应的待同步提示，按 Message ID 替换；没有读取到 Delivery 时显示“投递状态尚未读取”，不通过时间/正文猜测。
+
+等待起点的初始/释放规则、联系人完整可见范围最早值及全局计数见[卡 25A 合同](conversations.md#会话全局计数与等待起点卡-25a)。等待选项的空值、非布尔值和重复参数拒绝 400；普通 workspace、Items、Delivery 和 summary 不接受该选项。
 
 媒体没有可用资产时标记 UNAVAILABLE，保留真实消息占位；不返回 Provider URL、密钥、解密资料或伪造预览。已保存附件仍从关联事项的[受控附件](attachments.md)入口下载。本增量不接收保存实时媒体，不新增图片发送或在线预览。
 

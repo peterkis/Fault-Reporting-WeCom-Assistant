@@ -14,6 +14,12 @@ test('contact and topic references separate purposes, bot accounts and real part
   const contact=conversationReference(key,'contact',identity);assert.match(contact,/^cci_v1_[a-f0-9]{64}$/u);assert.equal(contact.includes('private'),false);
   assert.equal(contact,conversationReference(key,'contact',identity));assert.notEqual(contact,conversationReference(key,'contact',{...identity,participant_key:'another-person'}));assert.notEqual(contact,conversationReference(key,'contact',{...identity,channel_account_id:'another-bot'}));assert.notEqual(contact,conversationReference(key,'topic',identity,'journey:one'));
 });
+
+test('waiting projection accepts only explicit booleans and does not change existing cursor criteria',()=>{
+  const url=(q:string)=>new URL('/api/workbench/conversation-inbox'+q,'http://127.0.0.1');
+  for(const value of ['true','false'])assert.deepEqual(conversationInboxCriteria(url('?include_waiting_since='+value)),conversationInboxCriteria(url('')));
+  for(const value of ['','1','TRUE','null','true&include_waiting_since=false'])assert.throws(()=>conversationInboxCriteria(url('?include_waiting_since='+value)));
+});
 test('the forward inbox schema rejects identity disclosure and retains explicit internal preview semantics',async()=>{
   const identity={provider:'WECOM_AIBOT',channel_account_id:'b',participant_key:'p'},contact={contact_ref:conversationReference('synthetic-key-for-test','contact',identity),participant_label:'合成报修人',department_label:null,anchor_session_id:randomUUID(),matching_topic_count:1,latest_activity_at:'2026-10-17 09:00:00',last_item_preview:null,unread_count:0,source_badges:[{kind:'group',label:'群名称未登记',ref:'a'.repeat(64)}],additional_source_count:0,assignment_summary:{kind:'UNASSIGNED',label:'待接待'},has_delivery_exception:false};
   await assertP2016Schema('workbench_conversation_inbox_page',{items:[contact],next_cursor:null});

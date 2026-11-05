@@ -69,7 +69,7 @@
     "waiting_since": {
       "readOnly": true,
       "x-business-timezone": "Asia/Shanghai",
-      "description": "Latest release time, or Session started_at when never assigned; null when assigned or ended.",
+      "description": "Only present with include_waiting_since=true. Latest release time, or Session started_at when never assigned; null when assigned or ended.",
       "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }]
     },
     "participant_label": {

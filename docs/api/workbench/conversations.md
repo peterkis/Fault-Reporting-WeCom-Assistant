@@ -142,10 +142,10 @@ P2-G1 的现有 bootstrap / migrateCurrentBaseline 不自动安装 061。其组�
 {"unassigned_contact_count":3,"my_unread_count":12,"as_of":"2026-11-05 09:00:00"}
 ```
 
-收件箱条目及 `?view=chat` / related entry 新增可选只读 `waiting_since:LocalDateTime|null`，当前实现总返回该字段：未结束且 UNASSIGNED 时取最近一次 `assignment.released_at`，从未领取/无 assignment 行则取 `session.started_at`；ASSIGNED/ENDED 为 null。联系人条目取**完整可见范围**该联系人所有待接待 Session 中最早的值，与筛选和页面 anchor 无关。`matching_topic_count` 等原字段仍按筛选聚合；不要据 anchor 或最后消息时间重算等待。
+收件箱条目及 `?view=chat` / related entry 新增可选只读 `waiting_since:LocalDateTime|null`，仅显式 `include_waiting_since=true` 返回：未结束且 UNASSIGNED 时取最近一次 `assignment.released_at`，从未领取/无 assignment 行则取 `session.started_at`；ASSIGNED/ENDED 为 null。参数缺省或 false 保持旧响应键集合；只接受 true/false，空值、其它值和重复参数 400。该选项只控制投影字段，不参与筛选、排序或游标身份。普通 workspace、Items、Delivery 和 summary 均不接受它。联系人条目取**完整可见范围**该联系人所有待接待 Session 中最早的值，与筛选和页面 anchor 无关。`matching_topic_count` 等原字段仍按筛选聚合；不要据 anchor 或最后消息时间重算等待。
 
 数据聚合为单条 SQL，无按联系人查询；同原收件箱为只读事务、2000 ms statement_timeout、固定身份预检。没有新身份、目标或个人信息字段。沿既有 realtime 家族失效重读，25B 可用 conversation-inbox family 承载 summary、每分钟只本地更新等待显示。旧 Session 自动结束缺少其自身事件的补齐按停止线另待确认，不能宣称全部七类推送已闭合。
 
-兼容限制：当前 PC inbox-client.ts 严格拒绝新增键，尚不能忽略 waiting_since。用户已确认保留前端供 25B 修补；本卡不改该文件，不声称当前 UI 可启用。必须在 25B 兼容解码后再联调。
+兼容方式：当前 PC inbox-client.ts 严格拒绝新增键，因此旧请求默认不返回 waiting_since，保持现有界面可读。本卡未改前端；25B 需显式请求该只读投影，并兼容解码后显示等待时间。
 
 来源与验证：[查询](../../../app/server/src/workbench-conversation-inbox.mts)、[summary Schema](../../../contracts/workbench_conversation_inbox_summary.schema.json)、[类型](../../../contracts/workbench_conversation_inbox_contracts.d.ts)、[集成测试](../../../tests/conversation-inbox.integration.test.mts)、[ADR-0054](../../../adr/0054_conversation_inbox_counts_and_waiting_since.md)、[执行结果与限制](../../../plans/pc-admin-design-v21/card-25a.md)。旧 `/api/conversations` detail Schema 无需新增字段。关闭既有选项可回退，保留已提交的原业务事实；未授权部署或真实发送。

@@ -26,11 +26,11 @@ Status: **Accepted for local read projection implementation — 按用户本次�
 
 定义：非 ENDED 且 `COALESCE(assignment_status,'UNASSIGNED')='UNASSIGNED'` 时，`waiting_since=COALESCE(assignment.released_at,session.started_at)`；其余为 null。所有输出为北京时间 `YYYY-MM-DD HH:mm:ss`。不补写丢失历史，不改业务命令。
 
-chat entry 与 related entry 输出该 Session 的值；收件箱条目按 `(provider,channel_account_id,participant_key)`，在**完整 eligible 可见集合**中取最小非空 waiting_since。先聚合，再与筛选后分页的联系人连接。因此筛选后 anchor 即使已领取或已结束，该联系人另一个可见主题仍可能等待；`matching_topic_count`、原 unread_count、来源及责任摘要仍按本页筛选计算。这是有意的不同口径，25B 的文案不能把联系人等待起点误称为当前筛选主题的等待起点。
+显式请求等待投影时，chat entry 与 related entry 输出该 Session 的值；收件箱条目按 `(provider,channel_account_id,participant_key)`，在**完整 eligible 可见集合**中取最小非空 waiting_since。先聚合，再与筛选后分页的联系人连接。因此筛选后 anchor 即使已领取或已结束，该联系人另一个可见主题仍可能等待；`matching_topic_count`、原 unread_count、来源及责任摘要仍按本页筛选计算。这是有意的不同口径，25B 的文案不能把联系人等待起点误称为当前筛选主题的等待起点。
 
-新增 waiting_since 在类型/Schema 中为可选只读 nullable，以兼容旧形状的客户端与响应构造；当前服务端总是返回字段（不适用为 null）。实际 chat Schema 为 `workbench_conversation_chat.schema.json`；旧 `workbench_conversation_detail.schema.json` 属于 `/api/conversations/{sessionId}` 的旧详情，保持原合同。summary 是新接口，其成功响应按 A2 明确定义返回非空数字与 as_of；空集合的数字为 0。
+新增 waiting_since 在类型/Schema 中为可选只读 nullable。实际 chat Schema 为 `workbench_conversation_chat.schema.json`；旧 `workbench_conversation_detail.schema.json` 属于 `/api/conversations/{sessionId}` 的旧详情，保持原合同。summary 是新接口，其成功响应按 A2 明确定义返回非空数字与 as_of；空集合的数字为 0。
 
-**当前客户端兼容限制**：现有 `app/pc-admin/src/features/conversations/inbox-client.ts` 的 exact 守卫按键数量拒绝新增字段，实际旧客户端不会忽略 waiting_since。本次已向用户提出最小解析兼容补丁，用户明确要求“保持不改前端，兼容问题留给 25B”。因此本卡只交付后端；在 25B 更新守卫前，开启 inbox 的当前前端会报 INVALID_RESPONSE。类型/Schema 的可选性不消除此运行时限制，不能声明前后端联调通过或当前 UI 可启用。
+**兼容协商（独立审查后的前向修订）**：初版无条件返回 waiting_since，现有 `app/pc-admin/src/features/conversations/inbox-client.ts` 的 exact 守卫会拒绝新键，连 null 也不能忽略。Spec 和 Open Code Review Delegate 独立确认这是合并回归。为遵守用户“保持不改前端，兼容问题留给 25B”的边界，修复在后端完成：收件箱、`?view=chat` 和 related-sessions 只有显式 `include_waiting_since=true` 才返回该字段，不适用为 null；参数缺省或 false 时保持旧响应键集合，前端无改动。值只接受 true/false，空值、其它值和重复参数按原闭合输入规则 400。它只选择字段，不改变可见范围、筛选、排序或已有游标身份；旧游标可继续使用。普通 workspace、Items、Delivery 和 summary 不接受该参数。25B 获取等待时间时需显式携带该选项；其显示与分钟重算仍属于 25B。
 
 ## 两个计数与权限复用
 
