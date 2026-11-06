@@ -15,19 +15,23 @@ function request(f:Fixture,path:string,init:RequestInit={}){
 }
 async function read(f:Fixture,path:string){const response=await request(f,path);assert.equal(response.status,200,await response.clone().text());return object(await response.json());}
 
-test('T41 all/closed/status/number search includes original readable completed and ignored Intakes without changing the board',async()=>{
+test('T41 all/closed/status/number search preserves the default completed and ignored canonical board membership',async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
   for(const status of ['COMPLETED','IGNORED']){
-   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status,status});
+   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status+'（合成）',status});
    const detail=await read(f,'/api/workbench/items/intake/'+intake.intakeId),item=object(detail.item);
    assert.equal(item.kind,'intake');assert.equal(item.status,status);
+   const before=await read(f,'/api/workbench/board?column=closed&range=all');
+   const membership=rows(before.items).map(row=>[row.kind,row.id,row.status]);
+   assert.ok(rows(before.items).some(row=>row.kind==='intake'&&row.id===intake.intakeId&&row.status===status),'Card 27A defaults include both closed Intake kinds');
    for(const column of ['all','closed']){
     const found=await read(f,'/api/workbench/search?column='+column+'&range=all&statuses='+status+'&q='+encodeURIComponent(text(item.number)));
     assert.deepEqual(rows(found.items).map(row=>[row.kind,row.id,row.status]),[['intake',intake.intakeId,status]]);
     assert.equal(found.next_cursor,null);assert.equal(Object.hasOwn(found,'total'),false);
    }
    const board=await read(f,'/api/workbench/board?column=closed&range=all');
-   assert.ok(!rows(board.items).some(row=>row.id===intake.intakeId),'search must not change ordinary board membership');
+   assert.deepEqual(rows(board.items).map(row=>[row.kind,row.id,row.status]),membership,'search must not change ordinary board membership');
+   assert.deepEqual(board.group_counts,before.group_counts,'read-only search must not change complete group counts');
   }
  },{manualProjection:true,workbenchSearchEnabled:true,workbenchManualReviewEnabled:true});
 });

@@ -162,8 +162,13 @@ const {matchesBoardSummary,sortBoardItems}: {
   sortBoardItems:(items:readonly WorkbenchCard[],column:BoardColumn,sort:'oldest'|'newest')=>WorkbenchCard[];
 }=await import(await designModule('board-presentation'));
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
-  return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,...overrides};
+  return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,closure:null,...overrides};
 }
+test('Card 27A audit: the existing today summary includes dismissed cards with a same-day completed_at',()=>{
+  const now=Date.parse('2026-11-06T12:00:00+08:00');
+  for(const status of ['CLOSED','CANCELLED','DUPLICATE_LINKED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00'}),'today',now),true,status+'（合成）');
+  assert.equal(matchesBoardSummary(boardCard({status:'IGNORED',column:'closed',completed_at:null}),'today',now),false);
+});
 test('R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets',async()=>{
   const {avatarInitial}:{avatarInitial:(name:string)=>string}=await import(await designModule('components/Avatar/avatarInitial'));
   for(const [name,initial] of [['张三（合成）','三'],['李四(外包)','四'],['王五（合成）（外包）','五'],['（合成）','合'],['Peter','P'],['peter (实习)','P'],['  赵六  ','六'],['','—'],[' () （） ','—'],['张😀（合成）','😀']])assert.equal(avatarInitial(name??''),initial,name);

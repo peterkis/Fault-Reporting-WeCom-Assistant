@@ -36,7 +36,8 @@
           "review_reason",
           "created_at",
           "updated_at",
-          "completed_at"
+          "completed_at",
+          "closure"
         ],
         "properties": {
           "kind": {
@@ -213,8 +214,280 @@
           },
           "follow_up_schedule": {
             "$ref": "workbench_follow_up_schedule_view.schema.json#/properties/active"
+          },
+          "closure": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "source",
+                  "reason_code",
+                  "reason_label",
+                  "reason_note",
+                  "closed_by_display_name",
+                  "closed_at",
+                  "duplicate_of",
+                  "can_restore"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "COMPLETED",
+                      "DISMISSED"
+                    ]
+                  },
+                  "source": {
+                    "enum": [
+                      "MANUAL",
+                      "SYSTEM",
+                      null
+                    ]
+                  },
+                  "reason_code": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "\\S"
+                      }
+                    ]
+                  },
+                  "reason_label": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "\\S"
+                      }
+                    ]
+                  },
+                  "reason_note": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2000,
+                        "pattern": "\\S"
+                      }
+                    ]
+                  },
+                  "closed_by_display_name": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "\\S"
+                      }
+                    ]
+                  },
+                  "closed_at": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "local_datetime.schema.json"
+                      }
+                    ]
+                  },
+                  "duplicate_of": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "display_no"
+                        ],
+                        "properties": {
+                          "display_no": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "can_restore": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            ]
+          },
+          "reporter_department": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reporter_profile": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "state",
+              "source",
+              "captured_at"
+            ],
+            "properties": {
+              "state": {
+                "enum": [
+                  "PENDING",
+                  "PARTIAL",
+                  "RESOLVED",
+                  "UNAVAILABLE"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "REPORT_SNAPSHOT",
+                  "LATER_LOOKUP",
+                  null
+                ]
+              },
+              "captured_at": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "local_datetime.schema.json"
+                  }
+                ]
+              }
+            }
+          },
+          "web_report_urge": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "active",
+              "count",
+              "last_urged_at"
+            ],
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "last_urged_at": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "local_datetime.schema.json"
+                  }
+                ]
+              }
+            }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "column": {
+                  "const": "closed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "closure": {
+                  "type": "object"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "closure": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "RESOLVED",
+                    "CLOSED",
+                    "COMPLETED"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "closure": {
+                  "properties": {
+                    "kind": {
+                      "const": "COMPLETED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "CANCELLED",
+                    "DUPLICATE_LINKED",
+                    "IGNORED"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "closure": {
+                  "properties": {
+                    "kind": {
+                      "const": "DISMISSED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "next_cursor": {

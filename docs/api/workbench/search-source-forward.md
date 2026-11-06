@@ -21,13 +21,14 @@
 
 ### 输入与组合含义
 
-GET 缺省值见下表；POST 的 criteria 必须包含全部 12 个字段，外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
+GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选增加 closure_kind；外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
 
 | criteria 字段 | 类型／约束／GET 缺省 |
 | --- | --- |
 | `q` | 字符串，trim 后最多 128 个 Unicode 码点，缺省空串。按编号、描述、当前可读且留存的报修时资料／位置作不区分大小写的字面子串匹配，`%`／`_` 不变成通配符。 |
 | `column` | `all / pending / active / closed`；缺省 `all`。 |
 | `range` | `recent / all / cancelled`；缺省 `all`。 |
+| `closure_kind` | 可选 `completed / dismissed`，缺省不增加 criteria 键；只筛第三列状态，pending/active 保留其它条件的原结果。空值、重复值及其它枚举值拒绝。 |
 | `scope` | `team / related`；缺省 `team`，related 使用当前真实处理／沟通／显式关注关系。 |
 | `responsibility` | `any / handling / communication / following / unassigned`；缺省 `any`。 |
 | `resolver_team_id` | 原团队代码或 `null`；`[A-Z][A-Z0-9_]{1,63}`，缺省 `null`。 |
@@ -40,7 +41,9 @@ GET 缺省值见下表；POST 的 criteria 必须包含全部 12 个字段，外
 
 外层 `cursor` 缺省 `null`，非空时最多 2048 字符；`limit` 缺省 50，范围 1..100。同一数组内部取并集，不同条件取交集。某条件依赖的原开关／Schema 关闭或不可用时返回错误，不把漏掉的来源冒认为完整结果。
 
-响应恰含 `items / next_cursor / column / range / criteria`。`items` 沿当前安全 WorkbenchCard，kind 为 `ticket / review / intake`，可附原 attention／supplement_follow_up／follow_up_schedule；每页不超过 limit，无匹配时空数组、next_cursor 为 null。range 包含 mode、from、until、`Asia/Shanghai`，from／until 是原近期本地窗口，`all` 不因此缩小获权集合。没有 total、hidden_count、内部匹配片段或未经 READ 的材料。
+响应恰含 `items / next_cursor / column / range / criteria`。`items` 沿当前安全 WorkbenchCard，kind 为 `ticket / review / intake`，每卡必有 closure（非第三列为 null，第三列沿 [结束方式合同](board.md#结束方式与分组计数卡-27a)）；可附原 attention／supplement_follow_up／follow_up_schedule／reporter_profile／web_report_urge 及既有 reporter_department。service/stage_entered_at 仍不在搜索形状。每页不超过 limit，无匹配时空数组、next_cursor 为 null。range 包含 mode、from、until、`Asia/Shanghai`，from／until 是原近期本地窗口，`all` 不因此缩小获权集合。搜索不返回看板的 group_counts，也没有 total、hidden_count、内部匹配片段或未经 READ 的材料。
+
+第三列默认同时纳入 COMPLETED 与 DISMISSED，包括 CANCELLED；cancelled 预设暂保留且只选取消。已关闭按可证明的关闭时间进入近期范围，未知时间只在 all 可见（取消仍可走 cancelled）；不存在 include_* / closure_groups 新兼容开关。closure_kind 与其它条件取交集，加入 criteria 和游标身份。所有时间、缺事实处理、内部原因读取权与 can_restore 语义沿 ADR-0055，不增加写入能力。
 
 合成请求：
 
@@ -65,7 +68,7 @@ GET /api/workbench/search?q=printer&column=all&range=all&scope=team&limit=50
 
 ### 当前权限、留存和稳定分页
 
-SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排序和 LIMIT。同 Ticket 的 Review 不重复；开启原 manualReview 能力时，原详情仍可 READ、无 Ticket 且留存的 COMPLETED／IGNORED Intake 纳入搜索。原活动看板的成员条件不变。资料来自原事实和报修时快照，不逐卡查询第三方目录；可读 Ticket 不使其已到期 Journey／材料重新可见。
+SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排序和 LIMIT。同 Ticket 的 Review 不重复；原详情仍可 READ、无 Ticket 且留存的 COMPLETED／IGNORED Intake 默认纳入相同 canonical 关系，不再靠 manualReview 字段选择协商。原活动看板的成员条件不变。资料来自原事实和报修时快照，不逐卡查询第三方目录；可读 Ticket 不使其已到期 Journey／材料重新可见。
 
 游标由当前 App 临时 HMAC 签名，绑定 principal、真实 session、完整当前角色／团队、规范 criteria、时间窗口及 kind／id／排序锚。更换条件、主体、session、权限、日期窗口，或锚已失权／到期／不再匹配时拒绝游标，须从首页明确重读；App 重启也会令旧签名失效。不允许用客户端传入的搜索页面 cursor／limit 作为导航条件。
 

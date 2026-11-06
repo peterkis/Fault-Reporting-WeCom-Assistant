@@ -96,6 +96,20 @@ function decodeCardService(value:unknown):NonNullable<WorkbenchCard['service']> 
   const bounded=(value:unknown,maximum:number)=>{const result=text(value);if(!result.trim()||result.length>maximum)throw new ApiError(502,'INVALID_RESPONSE');return result;};
   return {code:bounded(v.code,64),name_zh:bounded(v.name_zh,80),category:bounded(v.category,64),category_name_zh:bounded(v.category_name_zh,80),source:v.source as NonNullable<WorkbenchCard['service']>['source']};
 }
+function decodeCardClosure(value:unknown,column:BoardColumn,status:string):WorkbenchCard['closure'] {
+  if(column!=='closed'){if(value!==null)throw new ApiError(502,'INVALID_RESPONSE');return null;}
+  const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','closed_by_display_name','closed_at','duplicate_of','can_restore'];
+  const expected=['RESOLVED','CLOSED','COMPLETED'].includes(status)?'COMPLETED':['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status)?'DISMISSED':null;
+  if(Object.keys(v).length!==keys.length||keys.some(key=>!Object.hasOwn(v,key))||expected===null||v.kind!==expected
+    ||v.source!==null&&v.source!=='MANUAL'&&v.source!=='SYSTEM'||typeof v.can_restore!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
+  const bounded=(value:unknown,maximum:number)=>{if(value===null)return null;const result=text(value);if(!result.trim()||Array.from(result).length>maximum)throw new ApiError(502,'INVALID_RESPONSE');return result;};
+  const actor=bounded(v.closed_by_display_name,128);
+  if(v.source!=='MANUAL'&&actor!==null)throw new ApiError(502,'INVALID_RESPONSE');
+  let duplicate:NonNullable<WorkbenchCard['closure']>['duplicate_of']=null;
+  if(v.duplicate_of!==null){const d=object(v.duplicate_of);if(Object.keys(d).length!==1||!Object.hasOwn(d,'display_no'))throw new ApiError(502,'INVALID_RESPONSE');const display=bounded(d.display_no,128);if(display===null||status!=='DUPLICATE_LINKED')throw new ApiError(502,'INVALID_RESPONSE');duplicate={display_no:display};}
+  return {kind:expected,source:v.source as NonNullable<WorkbenchCard['closure']>['source'],reason_code:bounded(v.reason_code,64),reason_label:bounded(v.reason_label,128),reason_note:bounded(v.reason_note,2000),
+    closed_by_display_name:actor,closed_at:v.closed_at===null?null:notificationDatetime(v.closed_at),duplicate_of:duplicate,can_restore:v.can_restore};
+}
 function decodeCard(value:unknown):WorkbenchCard {
   const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
   let reporterProfile:WorkbenchCard['reporter_profile'];
@@ -106,7 +120,7 @@ function decodeCard(value:unknown):WorkbenchCard {
     reporterProfile={state:p.state as NonNullable<WorkbenchCard['reporter_profile']>['state'],source:p.source as NonNullable<WorkbenchCard['reporter_profile']>['source'],captured_at:p.captured_at===null?null:datetime(p.captured_at)};
   }
   return {kind:v.kind as WorkbenchCard['kind'],id:id(v.id),intake_id:id(v.intake_id),column:v.column as BoardColumn,
-    number:text(v.number),title:text(v.title),status:text(v.status),priority:nullable(v.priority),source:text(v.source),
+    number:text(v.number),title:text(v.title),status:text(v.status),closure:decodeCardClosure(v.closure,v.column as BoardColumn,text(v.status)),priority:nullable(v.priority),source:text(v.source),
     source_label:text(v.source_label),source_group:v.source_group===null?null:decodeGroup(v.source_group),
     ...(Object.hasOwn(v,'service')?{service:v.service===null?null:decodeCardService(v.service)}:{}),
     ...(Object.hasOwn(v,'stage_entered_at')?{stage_entered_at:v.stage_entered_at===null?null:notificationDatetime(v.stage_entered_at)}:{}),
@@ -121,7 +135,12 @@ function decodePage(value:unknown):BoardPage {
   const v=object(value),r=object(v.range);
   if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all','cancelled','custom'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
   const column=v.column as BoardColumn,items=v.items.map(decodeCard);if(items.some(item=>item.column!==column))throw new ApiError(502,'INVALID_RESPONSE');
-  return {items,column,next_cursor:nullable(v.next_cursor),range:{mode:r.mode as BoardCompletionRange,from:datetime(r.from),until:datetime(r.until),timezone:'Asia/Shanghai'}};
+  let counts:BoardPage['group_counts'];
+  if(column==='closed'){
+    const group=object(v.group_counts);if(Object.keys(group).length!==2||!['completed','dismissed'].every(key=>Object.hasOwn(group,key)&&typeof group[key]==='number'&&Number.isSafeInteger(group[key])&&group[key]>=0))throw new ApiError(502,'INVALID_RESPONSE');
+    counts={completed:group.completed as number,dismissed:group.dismissed as number};
+  }else if(Object.hasOwn(v,'group_counts'))throw new ApiError(502,'INVALID_RESPONSE');
+  return {items,column,next_cursor:nullable(v.next_cursor),range:{mode:r.mode as BoardCompletionRange,from:datetime(r.from),until:datetime(r.until),timezone:'Asia/Shanghai'},...(counts?{group_counts:counts}:{})};
 }
 function decodeSearchPage(value:unknown,expected:WorkbenchSearchCriteria):WorkbenchSearchPage{
  const page=object(value),range=object(page.range);
@@ -130,7 +149,7 @@ function decodeSearchPage(value:unknown,expected:WorkbenchSearchCriteria):Workbe
   Object.keys(range).length!==4||!['mode','from','until','timezone'].every(key=>Object.hasOwn(range,key))||range.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
  let criteria:WorkbenchSearchCriteria;try{criteria=normalizeSearchCriteria(page.criteria);}catch{throw new ApiError(502,'INVALID_RESPONSE');}
  if(searchCriteriaKey(criteria)!==searchCriteriaKey(expected)||page.column!==criteria.column||range.mode!==criteria.range)throw new ApiError(502,'INVALID_RESPONSE');
- const allowed=['kind','id','intake_id','number','title','status','column','priority','source','source_label','source_group','location','reporter_name','reporter_department','reporter_profile','assignee_name','review_reason','created_at','updated_at','completed_at','attention','supplement_follow_up','follow_up_schedule'];
+ const allowed=['kind','id','intake_id','number','title','status','column','priority','source','source_label','source_group','location','reporter_name','reporter_department','reporter_profile','assignee_name','review_reason','created_at','updated_at','completed_at','closure','attention','supplement_follow_up','follow_up_schedule','web_report_urge'];
  const items=page.items.map(value=>{
   const item=object(value);if(Object.keys(item).some(key=>!allowed.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');return decodeCard(item);
  });

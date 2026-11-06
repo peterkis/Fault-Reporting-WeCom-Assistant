@@ -7,6 +7,11 @@ import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '.
 import {createConversationControlService,createPilotConversationControlAuthorization} from '../app/server/src/p2-005-conversation-control.mjs';
 import {appendRealtimeEvent} from '../app/server/src/p2-003-realtime-event-log.mjs';
 import {migrateWorkbenchSourceGroups} from '../app/server/scripts/workbench-source-groups-migrate.mjs';
+import {appendTicketEvent} from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
+import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
+import {createServiceIntakeDecisionPort} from '../app/server/src/p2-015-service-intake-decision-port.mjs';
+import {safeHash} from '../app/server/src/p2-015-domain-contracts.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
   await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals,databaseUrl})=>{
     const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
@@ -45,7 +50,7 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const commandId=randomUUID();
     const cancelled=await fetch(origin+'/api/tickets/'+tickets[0].ticket.id+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'WEB01_SYNTHETIC_CANCEL'})});
     assert.equal(cancelled.status,200,await cancelled.clone().text());
-    assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.every(i=>i.status!=='CANCELLED'));
+    assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.some(i=>i.id===tickets[0].ticket.id&&i.status==='CANCELLED'));
     const cancellationView=await read('/api/workbench/board?column=closed&range=cancelled');
     assert.equal(cancellationView.items.length,1);assert.equal(cancellationView.items[0].status,'CANCELLED');
     const separateReview=pending.items.find(i=>i.kind==='review');
@@ -360,6 +365,200 @@ test('Card 11 preserves terminal Intake detail and resolved Review aliases',asyn
   },{workbenchManualReviewEnabled:true});
 });
 
+test('Card 27A closure facts, default groups, date boundaries and list filters share the authorized canonical items',async()=>{
+  await withWeb01Fixture(async({origin,cookies,pool,tickets,principals,runtime,processReviewIntake})=>{
+    const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
+    const read=async(path,index=0)=>{const response=await get(path,index);assert.equal(response.status,200,await response.clone().text());assert.equal(response.headers.get('cache-control'),'no-store');const value=await response.json();
+      if(path.startsWith('/api/workbench/board'))await assertP2016Schema('web01_workbench_board',value);
+      if(path.startsWith('/api/workbench/search'))await assertP2016Schema('workbench_search_page',value);return value;};
+    const bootstrap=await read('/api/lifecycle/bootstrap');
+    const commandId=randomUUID(),cancelledId=tickets[0].ticket.id;
+    const cancel=await fetch(origin+'/api/tickets/'+cancelledId+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,
+      'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},
+      body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'CANCELLED_BY_STAFF',note:'误报核对后取消（合成）',external_visible:false})});
+    assert.equal(cancel.status,200,await cancel.clone().text());
+    const cancelledEvent=(await pool.query("SELECT reason_code,internal_note,to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS closed_at FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[cancelledId])).rows[0];
+    assert.equal(cancelledEvent.reason_code,'CANCELLED_BY_STAFF');assert.equal(cancelledEvent.internal_note,'误报核对后取消（合成）');
+    const cancellation=await read('/api/workbench/items/ticket/'+cancelledId);
+    assert.deepEqual(cancellation.item.closure,{kind:'DISMISSED',source:'MANUAL',reason_code:null,reason_label:'已取消',reason_note:'误报核对后取消（合成）',
+      closed_by_display_name:principals[0].display_name,closed_at:cancelledEvent.closed_at,duplicate_of:null,can_restore:false});
+    assert.ok(cancellation.records.some(record=>record.audience==='INTERNAL'&&record.text===cancellation.item.closure.reason_note),'the closure note was already visible under the existing internal Ticket READ');
+    assert.equal((await read('/api/tickets/'+cancelledId)).allowed_actions.includes('reopen'),false,'the existing command capability has no cancelled restore');
+    assert.equal((await get('/api/workbench/items/ticket/'+cancelledId,1)).status,404);
+
+    const duplicateId=tickets[1].ticket.id;
+    const duplicate=(await pool.query("UPDATE pilot_ticket.ticket SET status='DUPLICATE_LINKED',title='重复事项（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateId])).rows[0];
+    await appendTicketEvent({transaction:pool,ticket:duplicate,eventType:'ticket.duplicate_linked',actor:{type:'SYSTEM',id:null},oldStatus:tickets[1].ticket.status,internalNote:null,externalNote:null,traceId:'card27a-duplicate-synthetic'});
+    const duplicateCard=(await read('/api/workbench/items/ticket/'+duplicateId)).item;
+    assert.equal(duplicateCard.closure.kind,'DISMISSED');assert.equal(duplicateCard.closure.source,'SYSTEM');assert.equal(duplicateCard.closure.reason_label,'重复');
+    assert.equal(duplicateCard.closure.duplicate_of,null,'no original Ticket reference can be inferred from this existing event');assert.equal(duplicateCard.closure.can_restore,false);
+    assert.equal((await read('/api/tickets/'+duplicateId)).allowed_actions.includes('reopen'),false);
+
+    const resolve=async(text,resolution_code,resolution_reason_code,oldObservation=false)=>{
+      const intake=await seedPersistedIntake({pool,text,status:'RECEIVED'});await processReviewIntake(intake.intakeId);
+      const review=(await pool.query("SELECT id::text,row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING'",[intake.intakeId])).rows[0];assert.ok(review);
+      if(oldObservation)await pool.query("UPDATE intake.deterministic_decision SET observed_at=platform.local_now()-interval '3 days' WHERE id=(SELECT decision_id FROM intake.manual_review_item WHERE id=$1::uuid)",[review.id]);
+      const result=await runtime.reviews.resolveManualReview({authContext:{principal_id:principals[0].id},reviewId:review.id,
+        body:{client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code,resolution_reason_code}});
+      assert.equal(result.ok,true);return {intake,review,result};
+    };
+    const manual=await resolve('范围外请求人工核对（合成）','MARK_OUT_OF_SCOPE','OUT_OF_SCOPE_CONFIRMED',true);
+    const manualCard=(await read('/api/workbench/items/intake/'+manual.intake.intakeId)).item;
+    assert.equal(manualCard.status,'IGNORED');assert.equal(manualCard.closure.kind,'DISMISSED');assert.equal(manualCard.closure.source,'MANUAL');
+    assert.equal(manualCard.closure.reason_code,'OUT_OF_SCOPE_CONFIRMED');assert.equal(manualCard.closure.closed_by_display_name,principals[0].display_name);
+    assert.equal(manualCard.closure.reason_note,null);assert.equal(manualCard.closure.can_restore,false);
+    const manualTimes=(await pool.query("SELECT to_char(r.resolved_at,'YYYY-MM-DD HH24:MI:SS') AS resolved_at,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS event_at FROM intake.manual_review_item r JOIN intake.service_intake_event e ON e.payload->>'decision_id'=r.resolution_decision_id::text WHERE r.id=$1::uuid AND e.event_type='intake.rule_decision_applied'",[manual.review.id])).rows[0];
+    assert.ok(manualTimes.event_at<manualTimes.resolved_at,'the existing BOT writer retains the earlier observation time');
+    assert.equal(manualCard.closure.closed_at,manualTimes.resolved_at,'human closing time is the matching resolved review');
+    const alternateReason=await resolve('人工范围外复核选择其它既有原因（合成）','MARK_OUT_OF_SCOPE','HUMAN_CONFIRMED');
+    const alternateCard=(await read('/api/workbench/items/intake/'+alternateReason.intake.intakeId)).item;
+    assert.equal(alternateCard.closure.reason_code,'HUMAN_CONFIRMED');assert.equal(alternateCard.closure.reason_label,'人工核对确认','the UI permits all eight reasons, not only the default for this resolution');
+    const completed=await resolve('确认收到的受理事项（合成）','ACKNOWLEDGE','ACKNOWLEDGED');
+    const completedCard=(await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item;
+    assert.equal(completedCard.status,'COMPLETED');assert.equal(completedCard.closure.kind,'COMPLETED');assert.equal(completedCard.closure.source,'MANUAL');assert.equal(completedCard.closure.can_restore,false);
+    const consultation=await resolve('已核对业务咨询（合成）','CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');
+    assert.equal((await read('/api/workbench/items/intake/'+consultation.intake.intakeId)).item.closure.kind,'COMPLETED');
+    const retired=await resolve('取消复核再自动判断（合成）','CANCEL_REVIEW','STALE_REVIEW_CANCELLED');
+    assert.equal((await pool.query('SELECT status FROM intake.service_intake WHERE id=$1::uuid',[retired.intake.intakeId])).rows[0].status,'WAITING_TRIAGE','cancelling a review does not close the Intake');
+    const original=(await pool.query('SELECT * FROM intake.deterministic_decision WHERE service_intake_id=$1::uuid AND status=$2 ORDER BY decision_ordinal LIMIT 1',[retired.intake.intakeId,'RECORDED'])).rows[0];assert.ok(original);
+    const safe_result={...original.safe_result,result_code:'OUT_OF_SCOPE',reason_code:'RULE_OUT_OF_SCOPE',manual_review_required:false};
+    const delayedAt=(await pool.query("SELECT to_char(platform.local_now()-interval '3 days','YYYY-MM-DD HH24:MI:SS') AS at")).rows[0].at;
+    const automatic=await createDecisionStore().record({transaction:pool,input:{...original,observed_at:delayedAt,result_code:'OUT_OF_SCOPE',reason_code:'RULE_OUT_OF_SCOPE',safe_result,
+      decision_policy_version:'CARD27A_'+randomUUID(),result_hash:safeHash(safe_result),input_hash:safeHash({fixture:randomUUID()}),safe_action_suggestions:[]}});
+    const applied=await createServiceIntakeDecisionPort().apply({transaction:pool,input:{intake_id:retired.intake.intakeId,decision_id:automatic.id,result_code:'OUT_OF_SCOPE',
+      catalog_version:original.catalog_version,rule_set_version:original.rule_set_version,occurred_at:delayedAt,trace_id:'card27a-automatic-synthetic'}});
+    assert.equal(applied.applied,true);
+    const automaticCard=(await read('/api/workbench/items/intake/'+retired.intake.intakeId)).item;
+    assert.equal(automaticCard.status,'IGNORED');assert.equal(automaticCard.closure.source,'SYSTEM');assert.equal(automaticCard.closure.reason_label,'系统判定不受理');
+    assert.equal(automaticCard.closure.reason_code,null);assert.equal(automaticCard.closure.closed_by_display_name,null);assert.equal(automaticCard.closure.reason_note,null);
+    assert.equal(automaticCard.closure.closed_at,null,'an automatic event retains input observation time, not the physical closing instant');
+    const automaticEvent=(await pool.query("SELECT to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS at FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[retired.intake.intakeId])).rows[0];assert.equal(automaticEvent.at,delayedAt);
+
+    const pending=await read('/api/workbench/board?column=pending'),active=await read('/api/workbench/board?column=active');
+    for(const page of [pending,active]){assert.equal(Object.hasOwn(page,'group_counts'),false);assert.ok(page.items.every(item=>Object.hasOwn(item,'closure')&&item.closure===null));}
+    const all=await read('/api/workbench/board?column=closed&range=all');
+    assert.deepEqual(new Set(all.items.map(item=>item.status)),new Set(['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED']));
+    const counted={completed:all.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:all.items.filter(item=>item.closure.kind==='DISMISSED').length};
+    assert.deepEqual(all.group_counts,counted);assert.ok(all.items.some(item=>item.id===cancelledId));
+    const paged=[];let cursor=null;
+    do{
+      const page=await read('/api/workbench/board?column=closed&range=all&limit=2'+(cursor?'&cursor='+encodeURIComponent(cursor):''));
+      assert.deepEqual(page.group_counts,counted,'each page counts the complete selected range, before the keyset limit');paged.push(...page.items);cursor=page.next_cursor;
+    }while(cursor);
+    assert.deepEqual(paged.map(item=>item.kind+':'+item.id),all.items.map(item=>item.kind+':'+item.id));
+    assert.equal(new Set(paged.map(item=>item.kind+':'+item.id)).size,paged.length);
+    const empty=await read('/api/workbench/board?column=closed&range=all',1);assert.deepEqual(empty.items,[]);assert.deepEqual(empty.group_counts,{completed:0,dismissed:0});
+    const legacyCancelled=await read('/api/workbench/board?column=closed&range=cancelled');assert.deepEqual(legacyCancelled.items.map(item=>item.id),[cancelledId]);assert.deepEqual(legacyCancelled.group_counts,{completed:0,dismissed:1});
+
+    const day=(await pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(date_trunc('day',platform.local_now()),'YYYY-MM-DD HH24:MI:SS') AS start")).rows[0];
+    await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,day.start]);
+    await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp-interval '1 second' WHERE ticket_id=$1::uuid AND event_type='ticket.duplicate_linked'",[duplicateId,day.start]);
+    await pool.query('UPDATE pilot_ticket.ticket SET updated_at=platform.local_now() WHERE id=ANY($1::uuid[])',[[cancelledId,duplicateId]]);
+    const custom=await read('/api/workbench/board?column=closed&range=custom&closed_from='+day.today+'&closed_to='+day.today);
+    assert.ok(custom.items.some(item=>item.id===cancelledId),'inclusive start uses the real cancellation event');assert.ok(custom.items.every(item=>item.id!==duplicateId),'later metadata updates cannot move yesterday\'s closure into today');
+    assert.deepEqual(custom.group_counts,{completed:custom.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:custom.items.filter(item=>item.closure.kind==='DISMISSED').length});
+    await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp+interval '1 day' WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,day.start]);
+    const upper=await read('/api/workbench/board?column=closed&range=custom&closed_from='+day.today+'&closed_to='+day.today);assert.ok(upper.items.every(item=>item.id!==cancelledId),'exclusive upper day boundary');
+
+    const completedList=await read('/api/workbench/search?column=closed&range=all&closure_kind=completed');
+    assert.equal(completedList.criteria.closure_kind,'completed');assert.ok(completedList.items.length>0);assert.ok(completedList.items.every(item=>item.column==='closed'&&item.closure.kind==='COMPLETED'));
+    const dismissedList=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed');
+    assert.equal(dismissedList.criteria.closure_kind,'dismissed');assert.ok(dismissedList.items.length>0);assert.ok(dismissedList.items.every(item=>item.closure.kind==='DISMISSED'));
+    assert.deepEqual(new Set(dismissedList.items.map(item=>item.kind+':'+item.id)),new Set(all.items.filter(item=>item.closure.kind==='DISMISSED').map(item=>item.kind+':'+item.id)));
+    const mixed=await read('/api/workbench/search?column=all&range=all&closure_kind=dismissed');assert.ok(mixed.items.some(item=>item.column!=='closed'));assert.ok(mixed.items.every(item=>item.column!=='closed'||item.closure.kind==='DISMISSED'),'the filter affects terminal statuses only');
+    const selected=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=CANCELLED');assert.deepEqual(selected.items.map(item=>item.id),[cancelledId]);
+    const first=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&limit=1');assert.ok(first.next_cursor);
+    assert.equal((await get('/api/workbench/search?column=closed&range=all&closure_kind=completed&limit=1&cursor='+encodeURIComponent(first.next_cursor))).status,400,'a cursor cannot be reused for a different closure kind');
+    const next=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&limit=1&cursor='+encodeURIComponent(first.next_cursor));assert.equal(next.items.length,1);assert.notEqual(next.items[0].id,first.items[0].id);
+    const denied=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed',1);assert.deepEqual(denied.items,[]);assert.equal(denied.next_cursor,null);assert.equal(JSON.stringify(denied).includes(cancelledId),false);
+    for(const value of ['','invalid','COMPLETED','completed&closure_kind=dismissed'])assert.equal((await get('/api/workbench/search?closure_kind='+value)).status,400,value);
+    const originalQuery=pool.query;let waitingBoundary=false;
+    pool.query=async function(sql,values){
+      const result=await originalQuery.call(this,sql,values);
+      if(!waitingBoundary&&typeof sql==='string'&&sql.includes('SELECT * FROM projected_sources')){
+        waitingBoundary=true;
+        await originalQuery.call(this,`WITH expiry AS (SELECT platform.physical_epoch_ms()-1 AS epoch)
+          UPDATE intake.contact_journey SET retention_until_epoch_ms=expiry.epoch,retention_until=platform.local_from_epoch_ms(expiry.epoch)
+          FROM expiry WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1::uuid)`,[manual.review.id]);
+      }
+      return result;
+    };
+    try{
+      const stale=await get('/api/workbench/board?column=closed');assert.equal(waitingBoundary,true);
+      assert.equal(stale.status,409,'a card that leaves the date filter during projection waits cannot accompany the new counts');
+      const error=await stale.json();assert.equal(error.error.code,'P2_016_VERSION_CONFLICT');assert.equal(Object.hasOwn(error,'items'),false);assert.equal(Object.hasOwn(error,'group_counts'),false);
+    }finally{pool.query=originalQuery;}
+    const expired=(await read('/api/workbench/items/intake/'+manual.intake.intakeId)).item;
+    assert.equal(expired.closure.source,null);assert.equal(expired.closure.closed_at,null,'expired human evidence must not fall back to the original observation time');
+    assert.equal(expired.closure.reason_code,null);assert.equal(expired.closure.closed_by_display_name,null);
+    const recent=await read('/api/workbench/board?column=closed');assert.ok(recent.items.every(item=>item.id!==manual.intake.intakeId));
+    assert.ok(recent.items.every(item=>item.id!==retired.intake.intakeId),'unknown automatic close time must not be guessed into a date window');
+    assert.deepEqual(recent.group_counts,{completed:recent.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:recent.items.filter(item=>item.closure.kind==='DISMISSED').length});
+    const completedEvent=(await pool.query("SELECT payload FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[completed.intake.intakeId])).rows[0];assert.ok(completedEvent);
+    await pool.query("UPDATE intake.service_intake_event SET payload=jsonb_set(payload,'{decision_id}',to_jsonb($2::text)) WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[completed.intake.intakeId,'缺少旧关闭证据标识（合成）']);
+    const unknownDecision=(await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item;
+    assert.equal(unknownDecision.closure.source,null);assert.equal(unknownDecision.closure.closed_at,null);assert.equal(unknownDecision.closure.closed_by_display_name,null,'malformed legacy text must remain an unknown proof rather than a UUID cast error');
+    await pool.query("UPDATE intake.service_intake_event SET payload=$2::jsonb WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[completed.intake.intakeId,JSON.stringify(completedEvent.payload)]);
+    assert.deepEqual((await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item.closure,completedCard.closure);
+    const originalCancellation=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,'旧操作人未解析（合成）']);
+    const unknownActor=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
+    assert.deepEqual(unknownActor,{...originalCancellation,closed_by_display_name:null},'an unknown legacy actor keeps the original closure facts and nullable display name');
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,principals[0].id]);
+    assert.deepEqual((await read('/api/workbench/items/ticket/'+cancelledId)).item.closure,originalCancellation);
+    console.log('CARD27A_SYNTHETIC '+JSON.stringify({states:6,manual_intake:manualCard.status,automatic_intake:automaticCard.status,cancelled_reason_note_visible:true,duplicate_original_available:false,dismissed_restore:false,expired_source_time_null:true,post_wait_filter_conflict:true,all_group_counts:counted,pages:Math.ceil(paged.length/2)}));
+  },{workbenchManualReviewEnabled:true,workbenchSearchEnabled:true,precisionV212:true});
+});
+
+
+test('Card 27A review rejects a newly matching prefix or sentinel after a real follow commit',async()=>{
+  for(const scenario of ['before','after','empty'])await withWeb01Fixture(async f=>{
+    const get=async path=>{const r=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200,await r.clone().text());return r.json();};
+    const a=f.tickets[scenario==='before'?11:9].ticket.id,b=f.tickets[scenario==='before'?9:11].ticket.id;
+    await f.pool.query("UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED')",[f.principals[2].id]);
+    if(scenario!=='empty')await f.pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE id=$2::uuid',[f.principals[0].id,a]);
+    const path='/api/workbench/board?column=closed&range=all&scope=related&limit=1';
+    const initial=await get(path);assert.deepEqual(initial.items.map(item=>item.id),scenario==='empty'?[]:[a]);assert.equal(initial.next_cursor,null);
+    const bootstrap=await get('/api/lifecycle/bootstrap'),detail=await get('/api/workbench/items/ticket/'+b);
+    const command={client_command_id:randomUUID(),canonical_item:{kind:'ticket',id:b},expected_follow_version:detail.item.attention.follow_version,following:true};
+    const original=f.pool.query;let entered=false;
+    f.pool.query=async function(sql,values){const result=await original.call(this,sql,values);
+      if(!entered&&typeof sql==='string'&&sql.includes('SELECT * FROM projected_sources')){entered=true;
+        const followed=await fetch(f.origin+'/api/workbench/items/ticket/'+b+'/follow',{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':command.client_command_id,'if-match':'"'+command.expected_follow_version+'"'},body:JSON.stringify(command)});
+        assert.equal(followed.status,200,await followed.clone().text());
+      }return result;
+    };
+    try{const stale=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(entered,true);assert.equal(stale.status,409,scenario);const body=await stale.json();assert.equal(body.error.code,'P2_016_VERSION_CONFLICT');assert.equal(Object.hasOwn(body,'items'),false);assert.equal(Object.hasOwn(body,'group_counts'),false);}finally{f.pool.query=original;}
+    const current=await get(path),expected=scenario==='empty'?[b]:scenario==='before'?[b,a]:[a,b];
+    assert.deepEqual(current.group_counts,{completed:expected.length,dismissed:0});
+    const items=[...current.items];let cursor=current.next_cursor;
+    while(cursor){const next=await get(path+'&cursor='+encodeURIComponent(cursor));assert.deepEqual(next.group_counts,current.group_counts);items.push(...next.items);cursor=next.next_cursor;}
+    assert.deepEqual(items.map(item=>item.id),expected,scenario+' current complete pagination');
+  },{precisionV212:true,workbenchFollowEnabled:true});
+});
+
+test('Card 27A review normalizes valid legacy whitespace without changing stored internal facts',async()=>{
+  await withWeb01Fixture(async f=>{
+    const read=async path=>{const r=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200,await r.clone().text());return r.json();};
+    const bootstrap=await read('/api/lifecycle/bootstrap'),id=f.tickets[0].ticket.id,commandId=randomUUID();
+    await f.pool.query("UPDATE pilot_ticket.pilot_principal SET display_name=' ' WHERE id=$1::uuid",[f.principals[0].id]);
+    const cancelled=await fetch(f.origin+'/api/tickets/'+id+'/cancel',{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'CANCELLED_BY_STAFF',note:' ',external_visible:false})});
+    assert.equal(cancelled.status,200,await cancelled.clone().text());
+    const detail=await read('/api/workbench/items/ticket/'+id);assert.equal(detail.item.closure.reason_note,null);assert.equal(detail.item.closure.closed_by_display_name,null);assert.equal(detail.item.closure.source,'MANUAL');
+    assert.ok(detail.records.some(item=>item.type==='ticket.cancelled'&&item.text===' '),'the original internal Event is unchanged and still readable');
+    await assertP2016Schema('web01_workbench_card',detail.item);
+  },{precisionV212:true});
+});
+
+test('Card 27A review initial ignored closing time is its creation fact, not delayed input time',async()=>{
+  await withWeb01Fixture(async f=>{
+    const intake=await seedPersistedIntake({pool:f.pool,text:'创建即忽略的感谢消息（合成）',requestType:'CHATTER',status:'IGNORED'});
+    await f.pool.query("UPDATE intake.service_intake_event SET payload=jsonb_build_object('status','IGNORED'),occurred_at=occurred_at-interval '3 days' WHERE intake_id=$1::uuid AND event_type='intake.received'",[intake.intakeId]);
+    const created=(await f.pool.query("SELECT to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS at FROM intake.service_intake WHERE id=$1::uuid",[intake.intakeId])).rows[0].at;
+    const r=await fetch(f.origin+'/api/workbench/items/intake/'+intake.intakeId,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200);const body=await r.json();
+    assert.equal(body.item.closure.source,'SYSTEM');assert.equal(body.item.closure.closed_at,created);
+  },{precisionV212:true});
+});
 
 test('Card 11 final statement rejects a revoked Principal after source, route or postflight waits',async()=>{
   const {readWorkbenchCardProjections}=await import('../app/server/src/workbench-card-projections.mjs');
