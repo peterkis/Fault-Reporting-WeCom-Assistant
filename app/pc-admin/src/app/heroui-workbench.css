@@ -61,6 +61,20 @@ html body :is(a,summary,button,input,textarea,select,[tabindex],[role="button"])
 html body .date-input-group:focus-within {background:var(--bg-canvas);border-color:var(--border-focus)}
 .workbench-drawer-backdrop {z-index:var(--z-drawer)}
 
+/* Card 28: one list filter row; search keeps the original submit/leave handlers. */
+.ds-list-toolbar .ds-board-toolbar-bottom {flex-wrap:nowrap;}
+.ds-list-toolbar .ds-board-filter-layout {display:flex;align-items:center;gap:var(--space-2);flex:none;min-width:0;}
+.ds-list-toolbar .ds-board-filter-layout>.ds-board-filter-row {flex:none;flex-basis:auto;flex-wrap:nowrap;min-width:0;order:initial;gap:var(--space-2);}
+.ds-list-toolbar .ds-board-filter-row>.ds-filter-chip {flex:none;}
+.ds-list-toolbar .ds-board-dates {flex-basis:auto;justify-content:flex-end;margin-left:auto;}
+.ds-list-toolbar .ds-board-search {flex:0 1 calc(var(--space-16) * 4 + var(--space-1));min-width:calc(var(--space-16) * 2 + var(--space-8));}
+.ds-list-toolbar .ds-board-search .search-main {position:relative;width:100%;flex-wrap:nowrap;}
+.ds-list-toolbar .search-main .ds-search-leave-icon.button {position:absolute;right:var(--space-8);top:var(--space-1);width:var(--space-6);height:var(--space-6);min-height:var(--space-6);padding:0;color:var(--text-tertiary);}
+.ds-list-toolbar .ds-search-leave-icon svg {width:var(--icon-md);height:var(--icon-md);}
+.ds-list-toolbar .ds-board-search:has(.ds-search-leave-icon) input {padding-right:calc(var(--space-8) + var(--space-8));}
+.ds-list-toolbar .ds-board-search:has(.ds-search-leave-icon) .search-main button[type=submit]:focus-visible,.ds-list-toolbar .ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true]) .search-main button[type=submit] {right:var(--space-16);}
+.inbox-chat-identity>p>.ds-conversation-separator {margin-inline:var(--space-1);color:var(--text-tertiary);}
+
 @media(prefers-reduced-motion:reduce){
   html body #root *,html body #root *::before,html body #root *::after,
   html body .workbench-modal-backdrop *,html body .workbench-drawer-backdrop *,

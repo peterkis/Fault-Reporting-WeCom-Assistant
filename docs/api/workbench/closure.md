@@ -36,6 +36,8 @@ ADMIN / DISPATCHER / HANDLER 可关闭、恢复当前可见事项，只读账号
 
 有效 ADMIN / DISPATCHER 的既有全局受理权限不要求额外团队 membership；HANDLER 继续要求有效团队权限。新增恢复安全回执在实际 receipt SELECT 等待后再次核验当前 READ 与认证 TTL。
 
+本卡四个新增只读入口（Ticket 恢复回执、Intake 关闭/恢复回执和 closure-context）在数据等待后核验原 Cookie 会话。官方退出登录后为 401 / WORKBENCH_UNAUTHENTICATED，无旧回执或上下文字段；携带绝对 TTL 的非持久认证过期时为 403。内部 principal-only 调用和原写命令合同不变。
+
 UNKNOWN 使用原 UUID 查询同用途回执，不生成新 UUID 盲重试；等待锁和复用回执前保留当前 READ，实际写入保留权限终检。冲突沿原 409；参数守卫 400；不可见 404，失权 401/403，缺迁移/数据错误 503。
 
 ## 投影和通知

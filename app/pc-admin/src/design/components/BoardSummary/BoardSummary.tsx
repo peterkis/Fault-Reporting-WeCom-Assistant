@@ -49,13 +49,13 @@ export function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardC
   const key=dateKey(range,dates);
   const week=new Date(Date.parse(day+'T00:00:00Z')-6*86_400_000).toISOString().slice(0,10),month=day.slice(0,8)+'01';
   const selected:Preset|'custom'=choice?.key===key&&(choice.preset==='custom'||range==='recent'||dates?.to===day)?choice.preset:range==='recent'?'recent':range==='custom'&&dates?.to===day?(dates.from===day?'today':dates.from===week?'week':dates.from===month?'month':'custom'):'custom';
-  const customSelected=range==='custom'&&selected==='custom';
+  const customSelected=range==='all'||range==='custom'&&selected==='custom';
   const caption=range==='all'?'全部日期':selected==='custom'&&dates?dates.from.slice(5).replace('-','/')+'–'+dates.to.slice(5).replace('-','/'):selected==='custom'?'自定义':dateLabels[selected];
   const select=(preset:Preset)=>{if(blocked)return;if(panel.current)panel.current.open=false;const next=preset==='recent'?undefined:{from:preset==='today'?day:preset==='week'?week:month,to:day},mode=preset==='recent'?'recent':'custom';setChoice({key:dateKey(mode,next),preset});onApply(mode,next);};
-  const presets=(compact=false)=>(Object.keys(dateLabels) as Preset[]).map(key=><Button key={key} tone="ghost" data-date-preset={key} data-compact={compact?'true':undefined} aria-pressed={selected===key} isDisabled={blocked} onPress={()=>select(key)}>{dateLabels[key]}</Button>);
+  const presets=(compact=false)=>(Object.keys(dateLabels) as Preset[]).map(key=><Button key={key} tone="ghost" data-date-preset={key} data-compact={compact?'true':undefined} aria-pressed={!compact&&selected===key} {...(compact&&selected===key?{'aria-current':'date' as const}:{})} isDisabled={blocked} onPress={()=>select(key)}>{dateLabels[key]}</Button>);
   return <div className="ds-board-dates" title="日期仅影响已处理列，未完成事项不限日期">
     <span className="ds-board-date-label">已处理</span><div className="ds-date-segments">{presets()}
-      <details ref={panel} className="ds-toolbar-filters ds-date-custom"><summary className="ds-toolbar-date-filter" data-date-preset="custom" data-date-selected={customSelected?'true':undefined} aria-current={customSelected?'true':undefined} data-action="open-closed-date-filter" aria-label="筛选已处理日期" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>
+      <details ref={panel} className="ds-toolbar-filters ds-date-custom"><summary className="ds-toolbar-date-filter" data-date-preset="custom" aria-pressed={customSelected} data-date-selected={customSelected?'true':undefined} aria-current={customSelected?'true':undefined} data-action="open-closed-date-filter" aria-label="筛选已处理日期" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>
         <span className="ds-date-wide"><CalendarDays aria-hidden="true"/>{selected==='custom'?caption:'自定义'}</span><span className="ds-date-compact">已处理 · {caption}<ChevronDown aria-hidden="true"/></span>
       </summary><div className="ds-toolbar-filter-content"><div className="ds-date-mobile-presets">{presets(true)}</div>
         <ProcessedDatePicker key={key} range={range} dates={dates} now={now} blocked={blocked} onApply={(value,next)=>{setChoice({key:dateKey(value,next),preset:'custom'});onApply(value,next);if(panel.current)panel.current.open=false;}}/>

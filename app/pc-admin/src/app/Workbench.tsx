@@ -1,7 +1,6 @@
 import {SidebarBrand} from './SidebarBrand';
-import { Dropdown,Label as HLabel,Table as HTable,ListBox } from '@heroui/react';
+import { Dropdown,Label as HLabel,ListBox } from '@heroui/react';
 import { useInfiniteQuery,useMutation,useQuery,useQueryClient } from '@tanstack/react-query';
-import { createColumnHelper,tableFeatures,useTable } from '@tanstack/react-table';
 import { PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData } from 'lucide';
 import { Bell,ChevronDown,ChevronsUpDown,ChevronUp,LayoutGrid,List,LogOut,MessageSquare,RefreshCw,Search,Settings,TriangleAlert } from 'lucide-react';
 import { MorphIcon } from 'morphicons/react';
@@ -24,8 +23,9 @@ import { SourceLabel } from '../design/components/SourceLabel/SourceLabel';
 import {FilterChip} from '../design/components/FilterChip/FilterChip';
 import {Shapes,UserRound} from 'lucide-react';
 import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
-import { TicketCard,TicketCardBody,TicketCategoryTile,DismissedTicketCardBody,ClosureReason } from '../design/components/TicketCard/TicketCard';
+import { TicketCard,TicketCardBody,TicketCategoryTile,DismissedTicketCardBody } from '../design/components/TicketCard/TicketCard';
 import { Toolbar } from '../design/components/Toolbar/Toolbar';
+import { WorkTable,orderWorkTableItems } from '../design/components/WorkTable/WorkTable';
 import { cardHeat,cardHeatStart } from '../design/heat';
 import { cardTags,stagePresentation } from '../design/status-map';
 import { useBoardCardMotion } from '../design/use-board-card-motion';
@@ -47,14 +47,12 @@ import { NotificationExceptions } from '../features/notification-exceptions/Noti
 import { WorkbenchReminders } from '../features/reminders/WorkbenchReminders';
 import { criteriaFromUrl,SearchControls,searchEmptyMessage,useWorkbenchSearch } from '../features/search/WorkbenchSearch';
 import { SourceGroupDirectory } from '../features/source-groups/SourceGroupDirectory';
-import { SupplementFollowUpSummary } from '../features/supplement-follow-up/SupplementFollowUp';
-import { WebReportUrgency } from '../features/web-report/WebReportUrgency';
 import type { RealtimeView } from '../realtime/useRealtime';
 import { realtimeLabels } from '../realtime/useRealtime';
 import { clearItemView,clearSessionAuthorization,clearSessionView,clearTicketReturnView,clearTicketTakeoverView,clearTicketUnassignView } from './authorization';
 import { useUiStore } from './ui-store';
 import { WorkbenchDetailDrawer as Detail } from './WorkbenchDetail';
-import { itemLink,Owner,Status,TeamAvatar,useReporterProfile } from './WorkbenchItemPresentation';
+import { itemLink,TeamAvatar,useReporterProfile } from './WorkbenchItemPresentation';
 import { WorkbenchLink as Link } from './WorkbenchLink';
 
 import { BoardColumnLoading } from './WorkbenchLoading';
@@ -114,28 +112,6 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
 }
 function More({expanded,count,onClick,controls,error=false}:{expanded:boolean;count:number;onClick:()=>void;controls:string;error?:boolean}){
   return <div className="ds-column-footer" title={error?'读取未完成':'已加载 '+count+' 项'}>{error?<span>读取未完成</span>:null}{count>3?<HButton className="column-more" data-action="expand-column" aria-expanded={expanded} aria-controls={controls} onClick={onClick} tone="ghost">{expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}<span>{expanded?'收起':('显示剩余 '+(count-3)+' 项')}</span><span className="sr-only">（当前已加载范围）</span></HButton>:null}</div>;
-}
-const tableFeaturesForWork=tableFeatures({});
-const tableHelper=createColumnHelper<typeof tableFeaturesForWork,WorkbenchCard>();
-function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[];search:string;selected:string|undefined;now:number;column:BoardColumn;label:string}){
-  const [expanded,setExpanded]=useState(false),visible=expanded?items:items.slice(0,3);
-  const tableColumns=tableHelper.columns([
-    tableHelper.accessor('number',{header:'编号'}),
-    tableHelper.accessor('title',{header:'问题',cell:({row})=><><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link><SharedFollowUpSummary value={row.original.follow_up_schedule}/><SupplementFollowUpSummary pending={row.original.supplement_follow_up?.has_pending_supplements}/></>}),
-    tableHelper.accessor('status',{header:'状态',cell:({row})=><><Status item={row.original}/><WebReportUrgency value={row.original.web_report_urge}/></>}),
-    ...(column==='closed'?[tableHelper.accessor('closure',{id:'closure_reason',header:'原因',cell:({row})=>row.original.closure?.kind==='DISMISSED'?<ClosureReason closure={row.original.closure}/>:null})]:[]),
-    tableHelper.accessor('source_label',{header:'来源',cell:({row})=><SourceLabel className="neutral-chip" source={row.original.source} label={row.original.source_label}/>}),
-    tableHelper.accessor('location',{header:'位置',cell:({getValue})=>getValue()??'未提供'}),
-    tableHelper.accessor('reporter_name',{header:'报修人',cell:({getValue})=>getValue()??'未提供'}),
-    tableHelper.accessor('assignee_name',{header:'负责人',cell:({getValue})=><Owner name={getValue()} compact/>}),
-    tableHelper.accessor('updated_at',{header:'最新活动',cell:({getValue})=><time className="activity-time" title={getValue()+'（北京时间）'}>{relativeTime(getValue(),now)}</time>}),
-  ]);
-  const table=useTable({features:tableFeaturesForWork,columns:tableColumns,data:visible,getRowId:row=>row.kind+':'+row.id});
-  // Server order and cursors stay authoritative; folding does not claim full-range totals or filtering.
-  return <section className="list-group" aria-label={label}><div className="column-heading"><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span>{items.length}</span></div>
-    <div className="table-wrap" id={'list-'+column}><HTable variant="secondary"><HTable.ScrollContainer><HTable.Content aria-label={label+'事项列表'} className="work-table"><HTable.Header>{table.getFlatHeaders().map(header=><HTable.Column key={header.id} id={header.id} className={header.id==='closure_reason'?'ds-list-closure-reason':''} isRowHeader={header.index===0}><table.FlexRender header={header}/></HTable.Column>)}</HTable.Header><HTable.Body>{table.getRowModel().rows.map(row=><HTable.Row className={row.original.id===selected?'is-selected':''} data-closure-kind={row.original.closure?.kind} key={row.id} id={row.id}>{row.getAllCells().map(cell=><HTable.Cell key={cell.id} className={cell.column.id==='closure_reason'?'ds-list-closure-reason':''}><span title={typeof cell.getValue()==='string'?String(cell.getValue()):undefined}><table.FlexRender cell={cell}/></span></HTable.Cell>)}</HTable.Row>)}</HTable.Body></HTable.Content></HTable.ScrollContainer></HTable></div>
-    <More expanded={expanded} count={items.length} controls={'list-'+column} onClick={()=>setExpanded(value=>!value)}/>
-  </section>;
 }
 function Shell({principal,children,navigationBlocked=false,realtime}:{principal:Principal;children:ReactNode;navigationBlocked?:boolean;realtime:RealtimeView}){
   const desktopEpoch=useDesktopSession(principal,realtime,navigationBlocked);
@@ -272,7 +248,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const ordered=view==='board'?columns.flatMap(column=>{
     const sorted=sortBoardItems(fresh.filter(item=>item.column===column),column,sorts[column]);
     return column==='pending'?[...sorted.filter(item=>item.kind!=='ticket'),...sorted.filter(item=>item.kind==='ticket')]:column==='closed'?[...sorted.filter(item=>item.closure?.kind==='COMPLETED'),...sorted.filter(item=>item.closure?.kind==='DISMISSED')]:sorted;
-  }):fresh;
+  }):orderWorkTableItems(fresh);
   let unique=ordered;
   const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage&&!locationMode;
   const orderingScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,summaryFilter,categoryFilter,handlerFilter,sorts,searchMode?searchKey:null]),keys=ordered.map(item=>item.kind+':'+item.id),present=new Set(keys);
@@ -283,7 +259,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     const rank=new Map(order.current.keys.map((key,index)=>[key,index]));
     const ranked=[...ordered].sort((a,b)=>(rank.get(a.kind+':'+a.id)??0)-(rank.get(b.kind+':'+b.id)??0));
     // Freeze within the visible hierarchy; new keys must not sit behind unrelated groups in navigation.
-    unique=columns.flatMap(column=>{
+    unique=view==='list'?orderWorkTableItems(ranked):columns.flatMap(column=>{
       const stage=ranked.filter(item=>item.column===column);
       return view==='board'&&column==='pending'?[...stage.filter(item=>item.kind!=='ticket'),...stage.filter(item=>item.kind==='ticket')]:view==='board'&&column==='closed'?[...stage.filter(item=>item.closure?.kind==='COMPLETED'),...stage.filter(item=>item.closure?.kind==='DISMISSED')]:stage;
     });
@@ -310,7 +286,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     for(const [key,value]of searchParameters(criteria))next.set(key,value);next.set('search','1');commitConditions(next);
   };
   const leaveSearch=()=>{const next=new URLSearchParams(params),keep=new Set(['range','scope',...(range==='custom'?['closed_from','closed_to']:[])]);for(const key of SEARCH_KEYS)if(!keep.has(key))next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');commitConditions(next);};
-  const closureKind=parsed.criteria?.closure_kind??'all';
+  const closureKind=searchMode?(parsed.criteria?.closure_kind??'all'):'all';
   const applyClosureKind=(value:string)=>{
     if(navigationBlocked)return;
     const next=new URLSearchParams(params);for(const key of ['cursor','limit'])next.delete(key);
@@ -323,19 +299,19 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
   useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching,orderingScope,arrivals.arrivalKeys);
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
-    <Toolbar className="ds-board-toolbar">
+    <Toolbar className={'ds-board-toolbar'+(view==='list'?' ds-list-toolbar':'')}>
       <div className="ds-board-toolbar-top">
         <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked||searchConditionsBusy} scope={scope??'team'} relatedAvailable={principal.workbench_follow_enabled===true} onScope={value=>{if(principal.workbench_follow_enabled)update('scope',value);}}/>
         <SegmentedControl className="view-tabs" aria-label="展示方式"><HButton aria-pressed={view==='board'} onClick={()=>update('view','board')} tone="ghost"><LayoutGrid size={16}/>看板</HButton><HButton aria-pressed={view==='list'} onClick={()=>update('view','list')} tone="ghost"><List size={16}/>列表</HButton></SegmentedControl>
       </div>
       <div className="ds-board-toolbar-bottom">
-        {principal.workbench_search_enabled?<div className="ds-board-search"><Search aria-hidden="true"/>{view==='board'?<kbd>/</kbd>:null}<SearchControls principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} busy={searchConditionsBusy} onApply={applySearch} onLeave={leaveSearch}/></div>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
+        {principal.workbench_search_enabled?<div className="ds-board-search"><Search aria-hidden="true"/>{view==='board'?<kbd>/</kbd>:null}<SearchControls inlineLeave={view==='list'} principal={principal} criteria={parsed.criteria} active={searchMode} loaded={fresh} blocked={navigationBlocked} busy={searchConditionsBusy} onApply={applySearch} onLeave={leaveSearch}/></div>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
         {principal.workbench_search_enabled?<span className="ds-board-toolbar-divider" aria-hidden="true"/>:null}
         <div className="ds-board-filter-layout"><div className="ds-board-filter-row" role="group" aria-label="筛选已加载事项" title="类别和处理人仅筛选已加载事项">
           {catalog.data||searchMode?<FilterChip active={categoryFilter!=='all'} label="类别" icon={<Shapes/>} isDisabled={navigationBlocked||searchMode||catalog.isError} onClear={()=>setBoardFilter('category','all')} aria-label="类别" value={categoryFilter} onChange={value=>setBoardFilter('category',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item>{(catalog.data?.categories??[]).map(category=><ListBox.Item key={category.category} id={category.category} textValue={category.category_name_zh}>{category.category_name_zh}<ListBox.ItemIndicator/></ListBox.Item>)}<ListBox.Item id="unclassified" textValue="未分类">未分类<ListBox.ItemIndicator/></ListBox.Item></FilterChip>:null}
           <FilterChip active={handlerFilter!=='all'} label="处理人" icon={<UserRound/>} isDisabled={navigationBlocked||searchMode} onClear={()=>setBoardFilter('handler','all')} aria-label="处理人" value={handlerFilter} onChange={value=>setBoardFilter('handler',value)}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue="未领取">未领取<ListBox.ItemIndicator/></ListBox.Item>{handlers.map(name=><ListBox.Item key={name} id={'name:'+name} textValue={name}>{name}<ListBox.ItemIndicator/></ListBox.Item>)}</FilterChip>
-        </div>
           {view==='list'&&principal.workbench_search_enabled?<FilterChip active={closureKind!=='all'} label="结束方式" isDisabled={navigationBlocked||searchConditionsBusy} title="按当前日期和结束方式筛选已处理事项" onClear={()=>applyClosureKind('all')} aria-label="结束方式" value={closureKind} onChange={applyClosureKind}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="completed" textValue="已完成">已完成<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="dismissed" textValue="已关闭">已关闭<ListBox.ItemIndicator/></ListBox.Item></FilterChip>:null}
+        </div>
           {categoryFilter!=='all'&&handlerFilter!=='all'?<Button tone="ghost" data-action="clear-board-filters" isDisabled={navigationBlocked||searchMode} onPress={()=>setBoardFilters({scope:filterScope,category:'all',handler:'all'})}>清除</Button>:null}
         </div>
         <BoardDatePresets range={range} dates={closedDates} now={now} blocked={navigationBlocked||searchConditionsBusy} onApply={applyClosedRange}/>
@@ -347,10 +323,16 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
     {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter||categoryFilter!=='all'||handlerFilter!=='all')} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
-      {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null}<WorkList column={column} label={label(column)} items={visibleItems(unique.filter(item=>item.column===column))} search={location.search} selected={selected.id} now={now}/>{!query.data?.pages.some(page=>page.items.length)?<p className="empty">这里暂时没有工单</p>:null}{query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
+      <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind}
+        renderLink={(item,content)=><BoardActionCard item={item}><Link draggable={false} className="row-link card-open" to={itemLink(item,location.search)} state={{fromBoard:true}} title={item.title}>{content}</Link></BoardActionCard>}
+        renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={relativeTime}
+        groups={columns.flatMap((column,index)=>{const query=queries[index];if(!query||closureKind!=='all'&&column!=='closed')return [];const loaded=visibleItems(unique.filter(item=>item.column===column));return [{column,label:label(column),items:loaded,count:query.isError?'—':loaded.length,
+          feedback:query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null,
+          nextPage:query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}];})}/></>}
+
     <div className="range-bar sr-only" data-loaded-count><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='closed'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){

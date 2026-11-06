@@ -106,6 +106,8 @@ Ticket 人工关闭事件沿用 `ticket.cancelled`；新增 `ticket.restored` �
 
 共享 Ticket facade 所有命令统一先取得 realtime stream mutex，再建立带 Ticket FK 的 receipt，避免默认关闭功能配置下旧命令与新关闭/恢复形成反向锁序。安全回执 SELECT 等待后重新核验当前 READ；新增恢复回执同时重查绝对认证 TTL，再返回 UNKNOWN / FAILED / COMMITTED。
 
+本卡新增 Ticket 恢复回执、Intake 关闭/恢复回执和 closure-context 在数据查询等待后复用已初始化认证的 `currentSessionPredicate`，核验原 Cookie 会话仍有效；官方退出登录后返回 401，不返回旧回执或上下文。携带绝对 TTL 的非持久认证也在读取终检时检查物理过期；principal-only 内部调用保留原合同。该会话证明只用于新增只读入口，不改变写命令或历史回执合同，不增加锁、事件或迁移。
+
 恢复负责人沿既有角色权限：有效 ADMIN / DISPATCHER 保留全局受理资格，不额外要求团队 membership；HANDLER 仍须有效团队成员关系。只有人员停用或实际失权才按用户确认回 QUEUED、负责人为空。
 
 当前 Human / P2016 的 App、Worker、Gateway 均在 ready 前要求迁移 071；Gateway 在构造 Intake、SDK 和连接网络前检查，失败关闭自有连接池。H5 未启用时此关闭模型依赖仍成立；通用 G1 默认入口不增加该前置。

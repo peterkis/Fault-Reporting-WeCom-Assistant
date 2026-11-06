@@ -1,3 +1,6 @@
+import {assertEpochMsString} from './platform/time-contract.mjs';
+import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
+import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {createP2016ManualReviewFacade} from './p2-016-manual-review-facade.mjs';
@@ -8,7 +11,7 @@ import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import {exactP2016,uuidP2016,versionP2016,failP2016,guardP2016,transactionP2016,codeP2016} from './p2-016-domain-contracts.mjs';
 import {normalizeClosureInput,intakeClosureSnapshot,insertClosureRecord,currentClosure,markClosureRestored,appendIntakeClosureEvent} from './service-closure-records.mjs';
 interface IntakeRow {id:string;status:string;version:number;request_type:string;pilot_ticket_id:string|null;linked_ticket:boolean}
-export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,notifications,reviews}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtime:Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'review'>;notifications:Pick<ReturnType<typeof createP2016TicketNotificationProjector>,'projectClosure'>;reviews:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'resolveManualReviewInTransaction'>}){
+export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,notifications,reviews,currentSessionPredicate}:{currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtime:Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'review'>;notifications:Pick<ReturnType<typeof createP2016TicketNotificationProjector>,'projectClosure'>;reviews:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'resolveManualReviewInTransaction'>}){
  const ledger=createP2016CommandLedger({pool});
  async function authorize(authContext:unknown,id:string,tx:PostgresTransaction,lock=false){
   const principal=await query.principal(authContext,tx),predicate=ticketPredicateP2016(principal,2);
@@ -22,14 +25,27 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
     WHERE l.source_intake_id=i.id AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND ${predicate.sql}))${lock?' FOR UPDATE OF i':''}`,[id,...predicate.values])).rows[0];
   if(!intake)failP2016('NOT_FOUND',404);return {principal,intake};
  }
+ async function authorizeRead(authContext:unknown,id:string,tx:PostgresTransaction){
+  const current=await authorize(authContext,id,tx);
+  if(currentSessionPredicate&&authContext&&typeof authContext==='object'&&'auth_method' in authContext&&authContext.auth_method==='COOKIE'){
+   const proof=currentSessionPredicate(authContext,current.principal.principal_id);
+   const session=(await tx.query<{current:boolean}>('SELECT '+proof.sql+' AS current',proof.values)).rows[0];
+   if(session?.current!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+  }
+  if(authContext&&typeof authContext==='object'&&'expires_epoch_ms' in authContext){
+   let expires:string;try{expires=assertEpochMsString(authContext.expires_epoch_ms);}catch{failP2016('FORBIDDEN',403);}
+   if(BigInt(expires)<=BigInt(Date.now()))failP2016('FORBIDDEN',403);
+  }
+  return current;
+ }
  return Object.freeze({
   async context({authContext,intakeId}:{authContext:unknown;intakeId:unknown}){
    guardP2016(enabled);const id=uuidP2016(intakeId);
    return transactionP2016(pool,async tx=>{
-    await tx.query('SET TRANSACTION READ ONLY');const initial=await authorize(authContext,id,tx);
+    await tx.query('SET TRANSACTION READ ONLY');const initial=await authorizeRead(authContext,id,tx);
     const record=(await tx.query<{id:string}>('SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL',[id])).rows[0];
     const review=(await tx.query<{id:string;row_version:string}>('SELECT id::text,row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status=\'PENDING\' ORDER BY created_at,id LIMIT 1',[id])).rows[0]??null;
-    const {principal,intake}=await authorize(authContext,id,tx);if(intake.version!==initial.intake.version)failP2016('VERSION_CONFLICT',409);
+    const {principal,intake}=await authorizeRead(authContext,id,tx);if(intake.version!==initial.intake.version)failP2016('VERSION_CONFLICT',409);
     const worker=principal.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));
     if(intake.status==='IGNORED'&&!record)failP2016('ACTION_FAILED',503);
     return {subject_id:id,version:intake.version,status:intake.status,can_close:worker&&['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(intake.status)&&!intake.linked_ticket,can_restore:worker&&intake.status==='IGNORED'&&Boolean(record)&&!intake.linked_ticket,closure_id:record?.id??null,pending_review:review};
@@ -38,9 +54,9 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
   async acknowledgement({authContext,intakeId,commandId,restoring}:{authContext:unknown;intakeId:unknown;commandId:unknown;restoring:boolean}){
    const id=uuidP2016(intakeId),command=uuidP2016(commandId);
    return transactionP2016(pool,async tx=>{
-    await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorize(authContext,id,tx);
+    await tx.query('SET TRANSACTION READ ONLY');const {principal}=await authorizeRead(authContext,id,tx);
     const receipt=(await tx.query<{state:string;result_snapshot:unknown;error_code:string;retryable:boolean}>(`SELECT state,result_snapshot,error_code,retryable FROM pilot_ticket.ticket_command_receipt WHERE closure_intake_id=$1::uuid AND client_command_id=$2::uuid AND command_scope=$3 AND actor_principal_id=$4::uuid AND command_type=$5`,[id,command,'P2_016:'+principal.principal_id,principal.principal_id,restoring?'WORKBENCH_INTAKE_RESTORE':'WORKBENCH_INTAKE_CLOSE'])).rows[0];
-    await authorize(authContext,id,tx);
+    await authorizeRead(authContext,id,tx);
     if(!receipt||receipt.state==='STARTED')return {state:'UNKNOWN' as const};
     if(receipt.state==='FAILED')return {state:'FAILED' as const,error:{code:codeP2016(receipt.error_code),retryable:false}};
     const v=exactP2016(receipt.result_snapshot,['ok','subject_type','subject_id','version','closure_id','event_id']);if(v.ok!==true||v.subject_type!=='INTAKE'||v.subject_id!==id)failP2016('ACTION_FAILED',503);

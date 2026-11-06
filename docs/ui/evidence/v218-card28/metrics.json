@@ -1,0 +1,695 @@
+{
+  "dateAllSelected": true,
+  "groupControls": {
+    "width": 24,
+    "height": 24,
+    "icon": 14,
+    "moreSize": "12px",
+    "morePadding": "4px"
+  },
+  "initial": {
+    "columns": [
+      {
+        "text": "类别 · 编号",
+        "x": 272,
+        "y": 213,
+        "width": 192,
+        "height": 36,
+        "top": 213,
+        "right": 464,
+        "bottom": 249,
+        "left": 272,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "问题",
+        "x": 464,
+        "y": 213,
+        "width": 292,
+        "height": 36,
+        "top": 213,
+        "right": 756,
+        "bottom": 249,
+        "left": 464,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "状态",
+        "x": 756,
+        "y": 213,
+        "width": 108,
+        "height": 36,
+        "top": 213,
+        "right": 864,
+        "bottom": 249,
+        "left": 756,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "时效",
+        "x": 864,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 988,
+        "bottom": 249,
+        "left": 864,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "报修人 · 位置",
+        "x": 988,
+        "y": 213,
+        "width": 188,
+        "height": 36,
+        "top": 213,
+        "right": 1176,
+        "bottom": 249,
+        "left": 988,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "负责人",
+        "x": 1176,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 1300,
+        "bottom": 249,
+        "left": 1176,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "最新活动",
+        "x": 1300,
+        "y": 213,
+        "width": 92,
+        "height": 36,
+        "top": 213,
+        "right": 1392,
+        "bottom": 249,
+        "left": 1300,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      }
+    ],
+    "rowHeights": [
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44
+    ],
+    "stageHeight": 54,
+    "subgroupHeight": 32,
+    "stage": {
+      "x": 316,
+      "y": 269,
+      "width": 77,
+      "height": 26,
+      "top": 269,
+      "right": 393,
+      "bottom": 295,
+      "left": 316
+    },
+    "stageStyle": {
+      "height": "26px",
+      "color": "rgb(127, 95, 1)",
+      "background": "rgb(251, 243, 219)"
+    },
+    "toolbar": {
+      "x": 272,
+      "y": 165,
+      "width": 1128,
+      "height": 32,
+      "top": 165,
+      "right": 1400,
+      "bottom": 197,
+      "left": 272
+    },
+    "chipGap": 8,
+    "headers": 1,
+    "missing": false,
+    "leftEdges": [
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ]
+    ]
+  },
+  "longOwner": {
+    "text": "阿卜杜拉艾合买提",
+    "title": "阿卜杜拉艾合买提（合成）",
+    "width": 74,
+    "scrollWidth": 74,
+    "height": 40,
+    "scrollHeight": 40,
+    "font": "13px",
+    "avatar": 20,
+    "row": 44
+  },
+  "completedIntake": "success",
+  "failedIntake": "danger",
+  "heatTones": [
+    "neutral",
+    "attention",
+    "danger"
+  ],
+  "manual": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "system": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "duplicate": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "claimAction": "take-and-start",
+  "listOrder": [
+    {
+      "kind": "review",
+      "id": "01a1b1c2-a6a1-77c9-a53b-41b5a519c6ed",
+      "number": "INT-20261107-0014"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b1c2-a6e9-72ed-bd94-7e5ae274d355",
+      "number": "INT-20260903-0022"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b1c2-a6a8-7c72-a90f-294280e39c98",
+      "number": "INT-20261107-0015"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a6e3-7d5e-985a-cde60bc34c02",
+      "number": "IT-20261107-0017"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a6dc-7afd-8f1e-82d1e028c8b6",
+      "number": "IT-20261107-0016"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a6d4-7df8-b4c0-b29e07754875",
+      "number": "IT-20261107-0015"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a6ce-7216-b265-ec97bf53ff7c",
+      "number": "IT-20261107-0014"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a62e-764f-9acf-7e79a029ef20",
+      "number": "IT-20261107-0006"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a638-7b7e-a4b7-f19945150e33",
+      "number": "IT-20261107-0007"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a643-7d63-8e72-54d138295c5f",
+      "number": "IT-20261107-0008"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a64d-7a9b-a99b-49b6e926293a",
+      "number": "IT-20261107-0009"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a675-7a41-b7fe-d271aeb63fc0",
+      "number": "IT-20261107-0013",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a66a-72d0-bd98-032d5232ecea",
+      "number": "IT-20261107-0012",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a661-7215-8236-ebafed2709f3",
+      "number": "IT-20261107-0011",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a657-776a-9bd5-a494c9340ca8",
+      "number": "IT-20261107-0010",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b1c2-a6e6-7bf2-836e-0d6b719b4983",
+      "number": "INT-20260903-0021",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a622-7cda-a243-6f7d612446d5",
+      "number": "IT-20261107-0005",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a5fe-7eac-942b-073155f0f560",
+      "number": "IT-20261107-0002",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b1c2-a6c5-7249-9b6d-d0075b634639",
+      "number": "INT-20260903-0016",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a5ec-7c2a-aad8-a95bf51eed48",
+      "number": "IT-20261107-0001",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a617-7a7f-878a-dfc9eb364ac5",
+      "number": "IT-20261107-0004",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b1c2-a60a-7408-9e6b-09aef12bacef",
+      "number": "IT-20261107-0003",
+      "closureKind": "DISMISSED"
+    }
+  ],
+  "selected": {
+    "height": 44,
+    "shadow": "rgb(37, 99, 201) 2px 0px 0px 0px inset, rgba(55, 53, 47, 0.09) 0px -1px 0px 0px inset",
+    "border": "0px",
+    "selected": true
+  },
+  "groupedNavigationWithRealtime": true,
+  "completedDismissedNavigationWithRealtime": true,
+  "boardStage": {
+    "height": "26px",
+    "color": "rgb(127, 95, 1)",
+    "background": "rgb(251, 243, 219)"
+  },
+  "closedCardHeight": {
+    "after": 96,
+    "withMetadata": 122,
+    "reduction": 26,
+    "comparison": "same-card metadata row restored only for measurement"
+  },
+  "preferenceRoundtrip": true,
+  "datePresetAndCustomSelected": true,
+  "filter-dismissed": {
+    "visible": [
+      "已处理"
+    ],
+    "stages": [
+      "已处理"
+    ],
+    "subgroups": [
+      "已关闭"
+    ]
+  },
+  "filteredParentExpanded": true,
+  "filter-completed": {
+    "visible": [
+      "已处理"
+    ],
+    "stages": [
+      "已处理"
+    ],
+    "subgroups": [
+      "已完成"
+    ]
+  },
+  "filter-all": {
+    "visible": [
+      "待受理",
+      "处理中",
+      "已处理"
+    ],
+    "stages": [
+      "待受理",
+      "处理中",
+      "已处理"
+    ],
+    "subgroups": [
+      "待判断",
+      "待接单",
+      "已完成",
+      "已关闭"
+    ]
+  },
+  "search": {
+    "columns": [
+      {
+        "text": "类别 · 编号",
+        "x": 272,
+        "y": 213,
+        "width": 192,
+        "height": 36,
+        "top": 213,
+        "right": 464,
+        "bottom": 249,
+        "left": 272,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "问题",
+        "x": 464,
+        "y": 213,
+        "width": 292,
+        "height": 36,
+        "top": 213,
+        "right": 756,
+        "bottom": 249,
+        "left": 464,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "状态",
+        "x": 756,
+        "y": 213,
+        "width": 108,
+        "height": 36,
+        "top": 213,
+        "right": 864,
+        "bottom": 249,
+        "left": 756,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "时效",
+        "x": 864,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 988,
+        "bottom": 249,
+        "left": 864,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "报修人 · 位置",
+        "x": 988,
+        "y": 213,
+        "width": 188,
+        "height": 36,
+        "top": 213,
+        "right": 1176,
+        "bottom": 249,
+        "left": 988,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "负责人",
+        "x": 1176,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 1300,
+        "bottom": 249,
+        "left": 1176,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "最新活动",
+        "x": 1300,
+        "y": 213,
+        "width": 92,
+        "height": 36,
+        "top": 213,
+        "right": 1392,
+        "bottom": 249,
+        "left": 1300,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      }
+    ],
+    "rowHeights": [
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44
+    ],
+    "stageHeight": 54,
+    "subgroupHeight": 32,
+    "stage": {
+      "x": 316,
+      "y": 269,
+      "width": 77,
+      "height": 26,
+      "top": 269,
+      "right": 393,
+      "bottom": 295,
+      "left": 316
+    },
+    "stageStyle": {
+      "height": "26px",
+      "color": "rgb(127, 95, 1)",
+      "background": "rgb(251, 243, 219)"
+    },
+    "toolbar": {
+      "x": 272,
+      "y": 165,
+      "width": 1128,
+      "height": 32,
+      "top": 165,
+      "right": 1400,
+      "bottom": 197,
+      "left": 272
+    },
+    "chipGap": 8,
+    "headers": 1,
+    "missing": false,
+    "leftEdges": [
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ]
+    ]
+  },
+  "searchClear": {
+    "icon": 16,
+    "top": 169,
+    "bottom": 193,
+    "inputTop": 165,
+    "inputBottom": 197
+  },
+  "containerWidths": [
+    {
+      "width": 1280,
+      "firstBefore": {
+        "x": 264,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 456,
+        "bottom": 379,
+        "left": 264
+      },
+      "firstAfter": {
+        "x": 264,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 456,
+        "bottom": 379,
+        "left": 264
+      },
+      "narrowHead": {
+        "x": 276,
+        "y": 269,
+        "width": 125.4375,
+        "height": 26,
+        "top": 269,
+        "right": 401.4375,
+        "bottom": 295,
+        "left": 276
+      },
+      "area": {
+        "client": 976,
+        "scroll": 1080,
+        "left": 104
+      }
+    },
+    {
+      "width": 900,
+      "firstBefore": {
+        "x": 16,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 208,
+        "bottom": 379,
+        "left": 16
+      },
+      "firstAfter": {
+        "x": 16,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 208,
+        "bottom": 379,
+        "left": 16
+      },
+      "narrowHead": {
+        "x": 28,
+        "y": 269,
+        "width": 125.4375,
+        "height": 26,
+        "top": 269,
+        "right": 153.4375,
+        "bottom": 295,
+        "left": 28
+      },
+      "area": {
+        "client": 852,
+        "scroll": 1080,
+        "left": 180
+      }
+    }
+  ],
+  "narrow": {
+    "width": 900,
+    "firstBefore": {
+      "x": 16,
+      "y": 335,
+      "width": 192,
+      "height": 44,
+      "top": 335,
+      "right": 208,
+      "bottom": 379,
+      "left": 16
+    },
+    "firstAfter": {
+      "x": 16,
+      "y": 335,
+      "width": 192,
+      "height": 44,
+      "top": 335,
+      "right": 208,
+      "bottom": 379,
+      "left": 16
+    },
+    "narrowHead": {
+      "x": 28,
+      "y": 269,
+      "width": 125.4375,
+      "height": 26,
+      "top": 269,
+      "right": 153.4375,
+      "bottom": 295,
+      "left": 28
+    },
+    "area": {
+      "client": 852,
+      "scroll": 1080,
+      "left": 180
+    }
+  },
+  "stickyNumberPointer": true,
+  "emptyStages": 3,
+  "businessWrites": []
+}

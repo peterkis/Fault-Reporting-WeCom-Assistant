@@ -1,6 +1,6 @@
 # 卡 27C-A：统一关闭原因、通知与恢复
 
-日期：2026-11-06 至 2026-11-07（Asia/Shanghai）。状态：独立审查修复已进入源码，组合候选复验中。分支：`codex/v219-card27c-a`。原始基线：`728d9d9fa95edf7e911b8bd51891df5e802296a7`（PR #157）。用户已追加授权多代理独立审查、修复复验、隔离分支提交/推送、创建 PR 和 `@codex review`、通过后合并、main 快进及本卡分支/工作树清理；下文原本地阶段记录作为历史保留。
+日期：2026-11-06 至 2026-11-07（Asia/Shanghai）。状态：本地最终组合验证通过；发布回执沿实际 PR/CI/Git 对象记录。分支：`codex/v219-card27c-a`。原始基线：`728d9d9fa95edf7e911b8bd51891df5e802296a7`（PR #157）。用户已追加授权多代理独立审查、修复复验、隔离分支提交/推送、创建 PR 和 `@codex review`、通过后合并、main 快进及本卡分支/工作树清理；下文原本地阶段记录作为历史保留。
 
 ## 来源、并行与 A0
 
@@ -276,3 +276,176 @@ PC/H5 截图通过现有 Windows Chrome 测试宿主加载正式编译资源及�
 - `tools/ts-migration/h5.test.mts`
 
 后继接入 Card28 main、组合候选路径计划及完整回归、截图、远端 PR/CI/Codex、合并/main快进/清理以随后追加的实际回执为准，本段不预报成功。
+
+
+### 接入已合并 Card28 的组合候选
+
+本轮定向通过后首次提交为 344aac7a1f2c1612025baae68270580a90c60a93。GitHub/原生 fetch 读回 main 为 caa4d98bbd9afc421e76004743cd741e9350db36（PR #158）；用保留祖先的 merge 接入，组合候选复验前不提交 merge。唯一冲突位于 tests/pc-admin-card12.browser.test.mts；保留 Card28 全部单表布局适配、两条新测试、折叠/热度/sticky/键盘/SSE导航/无业务写入断言，同时保留本卡 U7 已关闭计数。未改上游生产 UI；相对 origin/main 的本卡仍为94路径。
+
+seedCard28Board 新重复关联单通过原 insertClosureRecord helper 写 SYSTEM/DUPLICATE，原单使用本夹具真实可见的已完成 Ticket 编号；删除仅伪造 duplicate_of 的 response seam，保留其它三项合成读取字段。原日期交错目的不变，取消时间改写新关闭记录，完成时间仍沿完成事件。独立整合审查原件 integration-card28-review.md。
+
+| 旧期望 | 新期望 | 规则 |
+| --- | --- | --- |
+| Card28 原重复原因标签“重复” | 固定一级原因标签“重复报修” | U1 |
+| 原单编号由响应替身注入、没有原单事实 | 新关闭记录保存实际可见的已完成原单编号，列表/详情共用同一事实 | U2、U7 |
+| 重复关联合成终态只有旧 Event | 同步写 SYSTEM/DUPLICATE 关闭记录，不做旧事实兼容读取 | U7 |
+| overlap receipt 的 dismissedToday 仍为3（相邻实际断言已为4） | receipt=4，与新规则重建后的实际断言一致 | U7 |
+
+Card28 已合并的单表数量1、tr.ds-work-row、子组逐一展开等是保留上游布局断言，不是本卡改变界面或业务规则。接下来的构建、路径并集和 Windows PC/H5截图独立绑定组合候选，原候选149项通过不冒充该组合验证。
+
+
+### 补审 R8：新只读入口的 Cookie 会话终检
+
+R8 已确认并复现：原外层只在进入 authenticatedHandler 前认证，新增回执等到 receipt SELECT 后只重查 Principal/对象READ/TTL，官方 logout 撤销的 stored Cookie session 没有参与最后检查。Intake closure-context 同属新增只读入口。沿 AGENTS 原当前READ/等待后终检合同修补，不扩大到写命令或历史ACK。
+
+修补前组合候选 integrated-01 已完成64入口538/538 PASS、0 FAIL/SKIP/取消；manifest=6573f94843c3eb73ad4dd70b6a21b4c619599da5251e1df2c5c5d49405ee3796、input_hash=408389d336c88ab86e24a9c1b190733b1d0b7c5bef41dad129de0c8612d40b34，原manifest/proof及制品终检已归档。这538项没有覆盖R8，不冒充修补后候选。
+
+真实红例 ack-cookie-red-01.log：已有 fixture/正式HTTP先关闭和恢复；pg_stat_activity 观察到实际 receipt SELECT 被自有锁阻塞后，官方 logout 返回200；session=REVOKED，TTL未过、Principal/角色/团队不变。释放锁后旧GET仍200/COMMITTED，期望401的真实断言FAIL，原件保留；不只依赖源码推导，没有伪造RED。
+
+Root核4文件原SHA后应用外部提案；Runtime只把原 currentSessionPredicate 交给新 Ticket restore ACK、Intake close/restore ACK 与 closure-context；读取等待后核验原会话，已退出返回401且无旧结果。Intake read wrapper也沿既有绝对TTL检查，过期返回403；内部principal-only与静态认证不新增存储会话前置，写命令和历史ACK不变。没有新状态、权限、依赖、锁或迁移。
+
+新增正式回归进入既有 t10-waiting-ack 注册入口：3个Cookie回执GET×COMMITTED/FAILED/UNKNOWN共9、context logout 1，以及Intake非持久认证的 close ACK/restore ACK/context 3个物理TTL等待子例。只用原fixture、官方业务命令/退出登录和现有Client持锁，不写receipt或替换真实authorizer。此为新增覆盖，未改既有断言或选择器。
+
+独立Spec核对最终4文件提案可采纳，确认401沿同一WorkbenchError进入外层HTTP、初始化接线成立且无新增锁序；原始报告 ack-auth-audit.md、r8-spec-review.md。初始四路7项和本次补审1项合计8项；R8运行复验尚待下面实际结果收口。
+
+
+## 最终本地交付（含独立审查修补 R1–R8）
+
+A0：已完成。四项书面结论、处理中关联对象与定时任务处理、终态复用、二级原因映射及单一通知管线均在 ADR-0056；两项业务歧义已有用户补充确认。
+
+A1：已完成。六原因固定校验、追加关闭记录、系统实际关闭时间、六原因×两主体及恢复/多次关闭合成事实，迁移与回退均有正式集成验证；仅重建现有helper持有的UUID测试库。
+
+A2：已完成。全部开放状态、当前可见范围及ADMIN/DISPATCHER/HANDLER、只读与不可见拒绝、输入校验、幂等/并发/安全回执、原单可选关联及新记录投影；原PC对话框client适配OTHER，不改界面。
+
+A3：已完成。逐原因矩阵、内部说明隔离、真实ACK与UNKNOWN、旧P1取消静默、固定文案及真实Sender到合成SDK回归全部通过，无真实外发。
+
+A4：已完成。原状态/负责人/团队/轮次、负责人失效回QUEUED/null、多次关闭/恢复、挂起任务不重建及原热度规则；新只读Cookie/TTL等待终检完成。
+
+A5：已完成。H5 COMPLETED/CLOSED_OUT及受影响计数、固定安全closure_text、PC/H5解析层同步；Windows编译界面和真实PG查询加载通过。
+
+A6：已完成。声明/Schema/OpenAPI/API文档/ADR与执行记录同步；原件、验证身份、业务断言映射及迁移回退说明保留。没有新增依赖、兼容开关或生产UI改动。
+
+| 编号 | 结果 | 入口 / 原件 |
+| --- | --- | --- |
+| F1 | 已完成：928/928 Node语法、928 typed /341 legacy /2961 outputs，严格构建PASS | build-r8-01.log，npm.cmd run migration:build |
+| F2 | 已完成：strict / negative-types / Stylelint / design variables / feature ESLint / PC-H5 types PASS | types-r8-01.log，gate.mjs types |
+| F3 | 已完成：64入口556/556 PASS，0 FAIL/SKIP/取消/未到达，计数含子用例 | integrated-r8-01/summary.json及逐例JSONL/TAP |
+| F4 | 已完成：旧200→401红例保留；相同官方logout门控新候选401且只有error；正式ACK26/26 PASS | ack-cookie-red-01.log、ack-cookie-green-01.log及已注册ACK入口 |
+| F5 | 已完成：迁移正向/重入/漂移拒绝/空库回退和重上/非空事实拒绝回退；业务矩阵和所有计数PASS | F3中的migration、closure、H5 integration入口 |
+| F6 | 已完成：266 Schema、736本地引用和两份OpenAPI PASS；本轮工具13/13+47/47 PASS | contracts-r8-01.log、h5-tool-01.log、tools-fast-01.log；未把其它重工具的旧结果改绑当前候选，完整PR工具结果以原生CI为准 |
+| F7 | 已完成：Windows /DPR1 /zoom1，PC及H5正式编译资源+真实PG查询加载，H5 COMPLETED仅一项且取消项未混入 | client-smoke-final-r8-01/evidence.json及三张原始PNG；外部成员认证为合成替身，不是真实企业微信登录 |
+| F8 | 已完成：94路径，21个已有测试文件名称/属性选择器删除0；生产UI/样式/包依赖差异0 | scope-r8-01.log、scope-integrated-audit.json |
+
+最终应用验证对象是 HEAD 344aac7a1f2c1612025baae68270580a90c60a93 + MERGE_HEAD caa4d98bbd9afc421e76004743cd741e9350db36 的未提交组合工作区，后续普通merge提交保存真实祖先；不把该工作区回执改绑成未来Git/CI head。
+
+最终 input_hash：`61be66050c4ce78491ca038282602b7dcf8a2f0bb18497db835e0905b4e6b594`；manifest_sha256：`5382836cf38bae966838b1d19a86a9548b44995540dc66c2c4c6f2569ddc6c0c`。raw manifest/proof已另存 manifest-final.json / proof-final.json。制品保持 STAGED_NOT_ACTIVATED，无部署。
+
+
+### 本轮七项自检
+
+1. 是：相对已合入的main只有94个授权路径；生产UI组件/样式0差异；工具资源清单为原明确授权，H5合成工具夹具为本轮必要审查修复。
+2. 是：U1–U8与两项用户补充确认全部落实，未增加状态或放宽权限；对应A0–A6与F3。
+3. 是：内部说明不进入H5或通知；固定模板、真实Sender合成SDK及JSON投影有负面断言；F3/F7。
+4. 是：包清单/锁文件无差异；测试和截图无真实外发；F3/F8及截图evidence。
+5. 是：无历史映射/回填/自由文本原因读取；缺记录为数据错误；现有fixture按新规则重建，精确回收自有UUID库。
+6. 是：选择器/测试名删除0；旧业务期望的修改均列在前述U规则映射；R8只新增覆盖，未改既有断言。
+7. 是（本地组合源码）：PC/H5已在相同候选加载、完成口径正确；合并阶段另以PR head/merge tree和原生CI核验同树，不预报远端结果。
+
+提交、推送、PR/Codex/CI、合并、main快进与本卡分支清理继续由Root按本次授权完成，最终实际对象与回执见PR及交付回复；本记录不授予真实通知、现场写库、部署或Gate。
+
+### 当前完整文件清单（94）
+
+- `adr/0056_unified_closure_reasons_notify_and_restore.md`
+- `app/h5/src/api/query.ts`
+- `app/h5/src/api/read-decode.ts`
+- `app/h5/src/api/types.ts`
+- `app/pc-admin/src/api/client.ts`
+- `app/pc-admin/src/features/closure/client.ts`
+- `app/pc-admin/src/features/manual-review/client.ts`
+- `app/server/scripts/human-workbench-role.mts`
+- `app/server/scripts/p2-016-process-role.mts`
+- `app/server/scripts/p2-g1-process-role.mts`
+- `app/server/scripts/service-closure-migrate.mts`
+- `app/server/scripts/workbench-follow-migrate.mts`
+- `app/server/src/p1-004-service-intake.mts`
+- `app/server/src/p1-005-pilot-ticket-core.mts`
+- `app/server/src/p1-006-ticket-state-actions.mts`
+- `app/server/src/p1-007-notification-outbox.mts`
+- `app/server/src/p2-004-communication-delivery-worker.mts`
+- `app/server/src/p2-006-delivery-command-schema.mts`
+- `app/server/src/p2-012-live-reporter-scope.mts`
+- `app/server/src/p2-015-decision-router.mts`
+- `app/server/src/p2-015-rule-first-orchestrator.mts`
+- `app/server/src/p2-015-service-intake-decision-port.mts`
+- `app/server/src/p2-015-worker.mts`
+- `app/server/src/p2-016-manual-review-facade.mts`
+- `app/server/src/p2-016-runtime.mts`
+- `app/server/src/p2-016-ticket-command-facade.mts`
+- `app/server/src/p2-016-ticket-command-ledger.mts`
+- `app/server/src/p2-016-ticket-notification-policy.mts`
+- `app/server/src/p2-016-ticket-notification-projector.mts`
+- `app/server/src/p2-016-ticket-query.mts`
+- `app/server/src/p2-016-wecom-sender.mts`
+- `app/server/src/p2-016-workbench-http.mts`
+- `app/server/src/service-closure-notifications.mts`
+- `app/server/src/service-closure-records.mts`
+- `app/server/src/web01-workbench-query.mts`
+- `app/server/src/workbench-card-projections.mts`
+- `app/server/src/workbench-intake-closure.mts`
+- `app/server/src/workbench-supplement-follow-up.mts`
+- `app/server/src/yxx-h5-batch-sql.mts`
+- `app/server/src/yxx-h5-entry.mts`
+- `app/server/src/yxx-h5-v2-contracts.mts`
+- `app/server/src/yxx-h5-v2-lifecycle.mts`
+- `app/server/src/yxx-self-service-native-http.mts`
+- `app/server/src/yxx-self-service-orchestrator.mts`
+- `app/server/src/yxx-self-service-query.mts`
+- `contracts/conversation_center.openapi.yaml`
+- `contracts/p2_016_contracts.d.ts`
+- `contracts/p2_016_manual_review_resolution.schema.json`
+- `contracts/p2_016_ticket_detail.schema.json`
+- `contracts/ticket_event.schema.json`
+- `contracts/unified_closure_command.schema.json`
+- `contracts/unified_closure_contracts.d.ts`
+- `contracts/unified_intake_closure_command.schema.json`
+- `contracts/unified_restore_command.schema.json`
+- `contracts/web01_workbench_card.schema.json`
+- `contracts/web01_workbench_contracts.d.ts`
+- `contracts/workbench_search_page.schema.json`
+- `contracts/yxx_h5_v2_contracts.d.ts`
+- `contracts/yxx_self_service.openapi.yaml`
+- `contracts/yxx_self_service_contracts.d.ts`
+- `contracts/yxx_self_service_request_detail.schema.json`
+- `database/migrations/071_unified_service_closure.sql`
+- `docs/api/README.md`
+- `docs/api/endpoint-index.md`
+- `docs/api/member/h5-v2.md`
+- `docs/api/workbench/closure.md`
+- `docs/api/workbench/manual-reviews.md`
+- `docs/api/workbench/tickets.md`
+- `plans/pc-admin-design-v21/card-27c-a.md`
+- `tests/helpers/card27c-closure-cases.mts`
+- `tests/helpers/card27c-notification-review-cases.mts`
+- `tests/helpers/t11-completion-fixture.mts`
+- `tests/helpers/t13-profile-fixture.mts`
+- `tests/helpers/t24-round-notification-fixture.mts`
+- `tests/helpers/t25-app-notification-fixture.mts`
+- `tests/helpers/t32-notification-exception-fixture.mts`
+- `tests/helpers/t35-read-fixture.mts`
+- `tests/helpers/wbint-t22-fixture.mts`
+- `tests/helpers/web01-workbench-fixture.mjs`
+- `tests/p2-016-ticket-lifecycle.integration.test.mjs`
+- `tests/pc-admin-card12.browser.test.mts`
+- `tests/pc-admin-design-foundation.test.mts`
+- `tests/t10-action-boundaries.integration.test.mts`
+- `tests/t10-waiting-ack.integration.test.mts`
+- `tests/t10-waiting-contract.test.mts`
+- `tests/t10-waiting.integration.test.mts`
+- `tests/t41-search-contract.test.mts`
+- `tests/web01-workbench.integration.test.mjs`
+- `tests/web01-workbench.test.mts`
+- `tests/yxx-h5-flow.integration.test.mts`
+- `tests/yxx-h5-runtime.test.mts`
+- `tests/yxx-h5-v2.integration.test.mts`
+- `tools/ts-migration/h5.test.mts`
+- `tools/ts-migration/resources.json`

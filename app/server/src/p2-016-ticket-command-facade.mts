@@ -1,3 +1,5 @@
+import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
+import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { TicketAction, TicketActionAfterHook, PublicTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import type { PublicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
@@ -10,7 +12,7 @@ export type TicketCommand = CommandBase & (
   | { action: 'takeover-and-accept-ticket'; session_id: string; expected_session_row_version: number; target_principal_id?: never; resolver_team_id?: never });
 export interface TicketProjectionInput { transaction: PostgresTransaction; ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent; command?: TicketCommand | null }
 export type TicketRealtimeProjector = ((input: TicketProjectionInput) => Promise<unknown>) & { lock?: (transaction: PostgresTransaction) => Promise<unknown> };
-interface FacadeOptions { pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; ticketTakeoverCompletionEnabled?: boolean; ticketWaitingActionsEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
+interface FacadeOptions { currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined; pool: PostgresPool; enabled?: boolean; ticketStaffCompletionEnabled?: boolean; ticketTakeoverCompletionEnabled?: boolean; ticketWaitingActionsEnabled?: boolean; query?: P2016TicketQuery; controlService?: Pick<ReturnType<typeof createConversationControlService>, 'takeoverSessionInTransaction'>; notificationProjector?: { project: (input: TicketProjectionInput) => Promise<unknown> } | null; realtimeProjector?: TicketRealtimeProjector | null; closure?: { afterTicketAction: TicketActionAfterHook } | null }
 
 import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016,ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
@@ -51,7 +53,7 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   return result as TicketCommand;
 }
 export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCompletionEnabled=false,ticketTakeoverCompletionEnabled=false,ticketWaitingActionsEnabled=false,ticketReopenRoundsEnabled=false,query=createP2016TicketQuery({pool,enabled,ticketWaitingActionsEnabled}),controlService,
-  notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions & {ticketReopenRoundsEnabled?:boolean}) {
+  notificationProjector=null,realtimeProjector=null,closure=null,currentSessionPredicate}: FacadeOptions & {ticketReopenRoundsEnabled?:boolean}) {
   if(typeof ticketReopenRoundsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketStaffCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof ticketTakeoverCompletionEnabled!=='boolean')failP2016('FLAG_INVALID',503);
@@ -61,6 +63,11 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
     async restoreAcknowledgement({authContext,ticketId,commandId}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
       guardP2016(enabled);return ledger.waitingAcknowledgement({ticketId:uuidP2016(ticketId),commandId:uuidP2016(commandId),action:'restore',authorize:async transaction=>{
         const current=await query.authorizedTicket({authContext,ticketId,transaction});
+        if(currentSessionPredicate&&authContext&&typeof authContext==='object'&&'auth_method' in authContext&&authContext.auth_method==='COOKIE'){
+          const proof=currentSessionPredicate(authContext,current.principal.principal_id);
+          const session=(await transaction.query<{current:boolean}>('SELECT '+proof.sql+' AS current',proof.values)).rows[0];
+          if(session?.current!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
+        }
         // HTTP authentication carries an absolute TTL; internal principal-only callers retain their existing contract.
         if(authContext&&typeof authContext==='object'&&'expires_epoch_ms' in authContext){
           let expires:string;try{expires=assertEpochMsString(authContext.expires_epoch_ms);}catch{failP2016('FORBIDDEN',403);}

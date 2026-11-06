@@ -1,4 +1,4 @@
-import {SlidersHorizontal} from 'lucide-react';
+import {SlidersHorizontal,X} from 'lucide-react';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Fieldset as HFieldset,Form as HForm,Input as HInput,Label as HLabel,ListBox,ComboBox} from "@heroui/react";
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
@@ -38,9 +38,9 @@ export function useWorkbenchSearch(principal:Principal,criteria:WorkbenchSearchC
  },[client,key,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,roles,enabled]);
  return {...query,restart:()=>client.resetQueries({queryKey,exact:true},{cancelRefetch:true})};
 }
-interface Props {principal:Principal;criteria:WorkbenchSearchCriteria|null;blocked:boolean;busy?:boolean;active:boolean;loaded:WorkbenchCard[];
+interface Props {principal:Principal;criteria:WorkbenchSearchCriteria|null;blocked:boolean;busy?:boolean;inlineLeave?:boolean;active:boolean;loaded:WorkbenchCard[];
  onApply:(criteria:WorkbenchSearchCriteria)=>void;onLeave:()=>void}
-export function SearchControls({principal,criteria,blocked,busy=false,active,loaded,onApply,onLeave}:Props){
+export function SearchControls({principal,criteria,blocked,busy=false,inlineLeave=false,active,loaded,onApply,onLeave}:Props){
  const fallback=parseSearchRequest(new URLSearchParams()).criteria,key=criteria?searchCriteriaKey(criteria):'invalid';
  const [draft,setDraft]=useState(()=>searchParameters(criteria??fallback)),[error,setError]=useState<string|null>(null);
  const previous=useRef(criteria);
@@ -60,7 +60,7 @@ export function SearchControls({principal,criteria,blocked,busy=false,active,loa
  const groups=[...new Map(loaded.flatMap(item=>item.source_group?[[item.source_group.ref,item.source_group] as const]:[])).values()];
  return <HForm className="workbench-search" aria-label="搜索全部获权事项" aria-busy={busy} onSubmit={submit}><HFieldset disabled={blocked}><div className="search-main"><HLabel>编号、描述、报修时资料或位置
    <HInput name="q" value={draft.get('q')??''} maxLength={256} onChange={event=>set('q',event.target.value)} placeholder="搜索工单号、标题、报修人" autoComplete="off"/></HLabel>
-   <HButton type="submit" isDisabled={busy} tone="secondary">搜索全部</HButton>{active?<HButton type="button" isDisabled={busy} onClick={onLeave} tone="secondary">结束搜索</HButton>:null}</div><WorkbenchDisclosure title={<span className="ds-search-options" title="搜索选项" ref={node=>{const trigger=node?.closest('button');trigger?.setAttribute('aria-label','搜索选项');trigger?.setAttribute('title','搜索选项');}}><SlidersHorizontal aria-hidden="true"/><span className="sr-only">搜索选项</span></span>}><div className="search-filters">
+   <HButton type="submit" isDisabled={busy} tone="secondary">搜索全部</HButton>{active?<HButton type="button" className={inlineLeave?'ds-search-leave-icon':undefined} data-action="leave-workbench-search" aria-label="结束搜索" title="结束搜索" isIconOnly={inlineLeave} isDisabled={busy} onClick={onLeave} tone={inlineLeave?'ghost':'secondary'}>{inlineLeave?<X aria-hidden="true"/>:'结束搜索'}</HButton>:null}</div><WorkbenchDisclosure title={<span className="ds-search-options" title="搜索选项" ref={node=>{const trigger=node?.closest('button');trigger?.setAttribute('aria-label','搜索选项');trigger?.setAttribute('title','搜索选项');}}><SlidersHorizontal aria-hidden="true"/><span className="sr-only">搜索选项</span></span>}><div className="search-filters">
     <WorkbenchSelect label={<>事项阶段</>} name="column" value={draft.get('column')??'all'} onChange={event=>set('column',event)} isDisabled={(blocked)}><ListBox.Item id="all" textValue={"全部阶段"}>全部阶段<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="pending" textValue={"待受理"}>待受理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="active" textValue={"处理中"}>处理中<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="closed" textValue={"已处理"}>已处理<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <WorkbenchSelect label={<>责任关系</>} name="responsibility" value={draft.get('responsibility')??'any'} onChange={event=>set('responsibility',event)} isDisabled={(blocked)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="handling" textValue={"由我处理"}>由我处理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="communication" textValue={"由我沟通"}>由我沟通<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="following" isDisabled={!principal.workbench_follow_enabled} textValue={"我已关注"}>我已关注<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue={"尚无处理人"}>尚无处理人<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <HLabel>处理组标识<HInput name="resolver_team_id" value={draft.get('resolver_team_id')??''} onChange={event=>set('resolver_team_id',event.target.value)} placeholder="已知处理组标识" autoComplete="off"/></HLabel>
