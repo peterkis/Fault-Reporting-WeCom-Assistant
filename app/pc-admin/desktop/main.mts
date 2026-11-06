@@ -209,6 +209,7 @@ else{
     traceStartup('released');layout();notifyPresented();sendState();if(window?.isFocused()&&!recovery&&!menuOpen)focusContent();
   };
   updateStartup=event=>{
+    if(event.type==='active')mediaTick=performance.now();
     if(event.type==='video'&&event.signal.type==='visibility')overlayDocumentVisible=event.signal.visible;
     const previous=startup;startup=transitionStartup(startup,event);
     if(previous.phase==='releasing'&&startup.phase!=='releasing'&&releaseTimer){clearTimeout(releaseTimer);releaseTimer=null;}
