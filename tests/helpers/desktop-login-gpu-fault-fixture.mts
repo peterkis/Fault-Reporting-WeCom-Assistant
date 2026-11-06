@@ -85,3 +85,52 @@ const GPU_FAULT_SCRIPT=String.raw`(function installGpuPreparationFault(mode){
   window.workbenchLogin={version:1,getAppVersion:async()=>'0.1.18-synthetic',quit:async()=>{},startup:{version:1,connect:async()=>{},prepared:async value=>{p.preparedCalls.push(value);return{presented:false};},onPresented:callback=>{p.present=()=>{p.presentedCalls++;callback();};return()=>{p.present=null;};}}};
   window.addEventListener('pagehide',event=>{queueMicrotask(()=>{const proof={...p.snapshot(),trustedPagehide:event.isTrusted};try{navigator.sendBeacon('/gpu-proof',new Blob([JSON.stringify(proof)],{type:'application/json'}));}catch{}});});
 })`;
+
+
+const reducedManualNumbers=['draws','physicsFrames','textureUploads','lateVersionUploads','latePaints','iframeCreates','iframeCount'] as const;
+interface ReducedManualCard{x:number;y:number;onScreen:boolean;}
+export type ReducedManualSnapshot=Record<typeof reducedManualNumbers[number],number>&{
+  card:ReducedManualCard;backFacing:boolean;hidden:boolean;sameIframe:boolean;
+  scene:string;fonts:string;view:string;
+};
+function isReducedManualCard(value:unknown):value is ReducedManualCard{
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  const object:Record<string,unknown>={...value};
+  return typeof object.x==='number'&&Number.isFinite(object.x)&&typeof object.y==='number'&&Number.isFinite(object.y)&&typeof object.onScreen==='boolean';
+}
+function isReducedManualSnapshot(value:unknown):value is ReducedManualSnapshot{
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  const object:Record<string,unknown>={...value};
+  return isReducedManualCard(object.card)
+    &&reducedManualNumbers.every(key=>typeof object[key]==='number'&&Number.isSafeInteger(object[key])&&object[key]>=0)
+    &&['backFacing','hidden','sameIframe'].every(key=>typeof object[key]==='boolean')
+    &&['scene','fonts','view'].every(key=>typeof object[key]==='string');
+}
+export function readReducedManualSnapshot(value:unknown):ReducedManualSnapshot{
+  assert.ok(isReducedManualSnapshot(value),'the prepared manual fallback must supply bounded native draw and public card observations');return value;
+}
+// This new browser owns its explicit media emulation. It does not change the
+// default desktop preference, startup playback, or any other test's document.
+// Native calls are delegated, and dragging positively validates the RAF probe.
+export function loginReducedManualScript():string{return REDUCED_MANUAL_SCRIPT;}
+const REDUCED_MANUAL_SCRIPT=String.raw`(function installDemandProbe(){
+ Object.defineProperty(navigator,'gpu',{configurable:true,value:undefined});
+ const p={pointerId:null,draws:0,physicsFrames:0,textureUploads:0,lateVersionUploads:0,latePaints:0,iframeCreates:0,lateCanvas:null,hidden:false,resolveVersion:null};
+ window.__demand=p;
+ Object.defineProperty(document,'hidden',{configurable:true,get:()=>p.hidden});
+ Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>p.hidden?'hidden':'visible'});
+ const nativeRAF=window.requestAnimationFrame.bind(window);
+ window.requestAnimationFrame=function(callback){const physical=String(callback).includes('1/240')&&String(callback).includes('2600');return nativeRAF(now=>{if(physical)p.physicsFrames++;return callback(now);});};
+ const wrapped=new WeakSet();
+ const wrap=(owner,name,observe)=>{const original=owner?.[name];if(typeof original!=='function'||wrapped.has(original))return;const value=function(...args){return observe.call(this,original,args);};wrapped.add(value);owner[name]=value;};
+ for(const prototype of [globalThis.WebGLRenderingContext?.prototype,globalThis.WebGL2RenderingContext?.prototype]){
+  for(const name of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])wrap(prototype,name,function(original,args){if(String(this.canvas?.className??'').includes('lanyard-canvas'))p.draws++;return Reflect.apply(original,this,args);});
+  for(const name of ['texImage2D','texSubImage2D'])wrap(prototype,name,function(original,args){if(String(this.canvas?.className??'').includes('lanyard-canvas')){p.textureUploads++;if(p.lateCanvas&&args.some(value=>value===p.lateCanvas))p.lateVersionUploads++;}return Reflect.apply(original,this,args);});
+ }
+ wrap(CanvasRenderingContext2D.prototype,'fillText',function(original,args){if(args[0]==='v0.1.18-demand'){p.latePaints++;p.lateCanvas=this.canvas;}return Reflect.apply(original,this,args);});
+ const create=document.createElement.bind(document);document.createElement=function(name,...args){if(String(name).toLowerCase()==='iframe')p.iframeCreates++;return create(name,...args);};
+ window.workbenchLogin={version:1,getAppVersion:()=>new Promise(resolve=>{p.resolveVersion=resolve;}),quit:async()=>{}};
+ p.card=()=>{const layer=document.querySelector('.lanyard-interaction');if(!layer)return null;const points=[...layer.style.clipPath.matchAll(/(-?[\d.]+)px (-?[\d.]+)px/g)].map(value=>({x:Number(value[1]),y:Number(value[2])}));if(points.length!==4)return null;const x=points.reduce((sum,p)=>sum+p.x,0)/4,y=points.reduce((sum,p)=>sum+p.y,0)/4;return{x,y,onScreen:x>0&&x<innerWidth&&y>0&&y<innerHeight&&document.elementFromPoint(x,y)===layer};};
+ document.addEventListener('pointerdown',event=>{p.pointerId=event.pointerId;},true);
+ p.snapshot=()=>({card:p.card(),backFacing:document.querySelector('.lanyard-front')?.getAttribute('aria-hidden')==='true',draws:p.draws,physicsFrames:p.physicsFrames,textureUploads:p.textureUploads,lateVersionUploads:p.lateVersionUploads,latePaints:p.latePaints,iframeCreates:p.iframeCreates,iframeCount:document.querySelectorAll('#wecom-panel iframe').length,hidden:document.hidden,scene:document.body?.dataset.loginScene,fonts:document.fonts.status,view:document.getElementById('desktop-login')?.dataset.view,sameIframe:window.__demandIframe===document.querySelector('#wecom-panel iframe')});
+})();`;

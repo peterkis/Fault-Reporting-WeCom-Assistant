@@ -5,7 +5,7 @@ import {brotliDecompressSync,gunzipSync} from 'node:zlib';
 import {setTimeout as delay} from 'node:timers/promises';
 import {renderEmbeddedLogin,embeddedLoginHeaders,serveEmbeddedLoginAsset} from '../app/server/src/workbench-embedded-login.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,type LoginGpuFaultSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
+import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,loginReducedManualScript,readReducedManualSnapshot,type LoginGpuFaultSnapshot,type ReducedManualSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
 
 test('compiled login prepares once under the native cover, presents the same iframe and exposes initializer/compatibility recovery',{timeout:90_000},async()=>{
  let origin='',generation=0;
@@ -205,6 +205,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
     await waitScene();
     if(await browser.evaluate('document.querySelector("[data-blob-state]")?.dataset.blobState==="ready"')){
       const frequency=await browser.evaluate('new Promise(resolve=>{const before=window.__backgroundSubmits,start=performance.now();setTimeout(()=>resolve((window.__backgroundSubmits-before)*1000/(performance.now()-start)),2200)})') as number;
+      console.log('LOGIN_BACKGROUND_METRICS',JSON.stringify({frequency,sampleMs:2200}));
       assert.ok(frequency>=20&&frequency<=35,'only the background renders near 30fps: '+frequency);
       assert.equal(await browser.evaluate('(()=>{const c=document.querySelector(".login-blob");return c.width*c.height<=550000&&getComputedStyle(c).transitionDuration==="0s"})()'),true,'full-screen display uses the 550k render budget without a late fade');
       await browser.evaluate('window.__blobPanel=document.querySelector("#wecom-panel iframe");Object.defineProperty(navigator,"onLine",{configurable:true,value:false});window.dispatchEvent(new Event("offline"))');
@@ -361,4 +362,80 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.equal(await browser.evaluate('performance.getEntriesByType("resource").some(e=>e.name.includes("LoginBackdrop-"))'),false,'unsupported GPUs do not download the optional shader engine');
  }catch(error){failure=error;if(browser)console.log('EMBEDDED_LOGIN_UI_DIAGNOSTIC',JSON.stringify(await browser.evaluate('({view:document.getElementById("desktop-login")?.dataset.view,frames:document.querySelectorAll("#wecom-panel iframe").length,canvas:document.querySelectorAll(".lanyard-canvas").length,status:document.getElementById("login-status")?.textContent})')));}
  finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
+// Only this owned browser selects the explicit manual reduced-motion fallback.
+// Its visibility/cancel simulation is not native Windows or real QR evidence.
+test('explicit reduced-motion fallback draws on demand and uses direct drag, static release, flip, hide and cancel without replacing the iframe',{timeout:90_000},async()=>{
+ let origin='',generation=0;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ const observations:Record<string,ReducedManualSnapshot>={};
+ const snapshot=async()=>{assert.ok(browser);return readReducedManualSnapshot(await browser.evaluate('window.__demand.snapshot()'));};
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){
+   generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.reduce-demand-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;
+  }
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end('<!doctype html><title>Reduced motion browser test</title>');
+ })().catch(()=>{if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_REDUCE_FIXTURE_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
+  await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:loginReducedManualScript()});
+  await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  await browser.waitFor('document.body?.dataset.loginScene==="ready"&&document.querySelector(".lanyard-front iframe")&&window.__demand.resolveVersion');
+  // Drain the real presentation paint and loaded fonts, rather than waiting for
+  // numerical physics convergence. The whole automatic physics count stays zero.
+  await browser.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
+  await browser.evaluate('window.__demandIframe=document.querySelector("#wecom-panel iframe")');
+  const idleBefore=await snapshot();observations.idleBefore=idleBefore;await delay(500);const idleAfter=await snapshot();observations.idleAfter=idleAfter;
+  assert.equal(idleAfter.physicsFrames,0,'reduced motion never starts automatic physics, including the whole presented interval');
+  assert.equal(idleAfter.draws,idleBefore.draws,'stable props and loaded fonts do not keep drawing GL');
+  const beforeLabel=await snapshot();await browser.evaluate('window.__demand.resolveVersion("0.1.18-demand")');
+  await browser.waitFor('window.__demand.latePaints>0&&window.__demand.lateVersionUploads>0');
+  const afterLabel=await snapshot();observations.afterLabel=afterLabel;
+  assert.ok(afterLabel.draws>beforeLabel.draws,'late version texture data reaches an actual GL drawing');assert.equal(afterLabel.physicsFrames,0,'texture repaint alone never starts physics');
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');const quiet=await snapshot();await delay(350);const quietEnd=await snapshot();assert.equal(quietEnd.draws,quiet.draws,'the demand repaint ends without a continuous frame loop');
+  const pointValue:unknown=await browser.evaluate('(()=>{const r=document.querySelector(".lanyard-front").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()');
+  assert.ok(pointValue&&typeof pointValue==='object'&&'x' in pointValue&&'y' in pointValue&&typeof pointValue.x==='number'&&Number.isFinite(pointValue.x)&&typeof pointValue.y==='number'&&Number.isFinite(pointValue.y));
+  const point={x:pointValue.x,y:pointValue.y};
+  await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x-150,y:point.y+35,button:'left',buttons:1});
+  await browser.waitFor('(()=>{const r=document.querySelector(".lanyard-front").getBoundingClientRect();return r.x+r.width/2<'+(point.x-35)+';})()');
+  const drag=await snapshot();observations.drag=drag;assert.ok(drag.physicsFrames>0,'real user dragging positively proves the physics RAF hook is active');assert.ok(drag.draws>quietEnd.draws);
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x-150,y:point.y+35,button:'left',clickCount:1});
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const released=await snapshot();observations.released=released;
+  assert.ok(Math.abs(released.card.x-point.x)<8,'manual reduced release immediately rehangs the card');assert.equal(released.sameIframe,true);
+  await delay(250);const afterRelease=await snapshot();assert.equal(afterRelease.physicsFrames,released.physicsFrames,'release ends physics without waiting for numerical convergence');assert.equal(afterRelease.draws,released.draws);
+  const flipPoint=released.card;
+  for(const type of ['mousePressed','mouseReleased'])await browser.command('Input.dispatchMouseEvent',{type,x:flipPoint.x,y:flipPoint.y,button:'left',clickCount:1});
+  await browser.waitFor('document.querySelector(".lanyard-front")?.getAttribute("aria-hidden")==="true"');
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const flipped=await snapshot();observations.flipped=flipped;assert.equal(flipped.sameIframe,true);assert.ok(flipped.card.onScreen);await delay(200);const afterFlip=await snapshot();assert.equal(afterFlip.physicsFrames,flipped.physicsFrames);assert.equal(afterFlip.draws,flipped.draws,'tap flips once and then stays static');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1100,height:820,deviceScaleFactor:1,mobile:false});
+  await browser.waitFor('window.__demand.draws>'+afterFlip.draws);
+  await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const resized=await snapshot();observations.resized=resized;assert.equal(resized.physicsFrames,afterFlip.physicsFrames);assert.equal(resized.backFacing,true,'static resize retains the selected back side');assert.ok(resized.card.onScreen);assert.equal(resized.sameIframe,true);
+  const restPoint=resized.card;
+  await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:restPoint.x,y:restPoint.y,button:'left',clickCount:1});await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:restPoint.x-120,y:restPoint.y+30,button:'left',buttons:1});
+  await browser.waitFor('window.__demand.card().x<'+(restPoint.x-25));
+  const beforeHide=await snapshot();observations.beforeHide=beforeHide;assert.ok(beforeHide.physicsFrames>resized.physicsFrames);
+  await browser.evaluate('window.__demand.hidden=true;document.dispatchEvent(new Event("visibilitychange"))');
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:restPoint.x-120,y:restPoint.y+30,button:'left',clickCount:1});
+  const hidden=await snapshot();observations.hidden=hidden;await delay(250);const hiddenEnd=await snapshot();assert.equal(hiddenEnd.draws,hidden.draws);assert.equal(hiddenEnd.physicsFrames,hidden.physicsFrames);
+  await browser.evaluate('window.__demand.hidden=false;document.dispatchEvent(new Event("visibilitychange"))');await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const restored=await snapshot();observations.restored=restored;assert.equal(restored.physicsFrames,hiddenEnd.physicsFrames,'manual fallback restores statically instead of resuming inertia');assert.ok(restored.draws>hiddenEnd.draws);assert.equal(restored.sameIframe,true);assert.equal(restored.backFacing,true);assert.ok(restored.card.onScreen);assert.ok(Math.abs(restored.card.x-restPoint.x)<8,'hiding during drag cannot leave the card stranded off screen');
+  const cancelPoint=restored.card;
+  await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:cancelPoint.x,y:cancelPoint.y,button:'left',clickCount:1});await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:cancelPoint.x+110,y:cancelPoint.y+25,button:'left',buttons:1});await browser.waitFor('window.__demand.card().x>'+(cancelPoint.x+20));
+  await browser.evaluate('document.querySelector(".lanyard-interaction").dispatchEvent(new PointerEvent("pointercancel",{bubbles:true,pointerId:window.__demand.pointerId,pointerType:"mouse",button:0}))');await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:cancelPoint.x+110,y:cancelPoint.y+25,button:'left',clickCount:1});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const cancelled=await snapshot();observations.cancelled=cancelled;await delay(250);const cancelEnd=await snapshot();assert.equal(cancelEnd.physicsFrames,cancelled.physicsFrames);assert.equal(cancelEnd.draws,cancelled.draws);assert.equal(cancelEnd.backFacing,true);assert.equal(cancelEnd.sameIframe,true);assert.ok(cancelEnd.card.onScreen);assert.ok(Math.abs(cancelEnd.card.x-cancelPoint.x)<8);assert.equal(cancelEnd.iframeCreates,1);assert.equal(cancelEnd.iframeCount,1);assert.equal(generation,1);
+  const capture:unknown=await browser.screenshot();assert.ok(typeof capture==='string');const png=Buffer.from(capture,'base64');assert.ok(png.length>=24);assert.deepEqual(png.subarray(0,8),Buffer.from([137,80,78,71,13,10,26,10]));assert.equal(png.readUInt32BE(16),1100);assert.equal(png.readUInt32BE(20),820);
+  console.log('LOGIN_REDUCED_MANUAL_METRICS',JSON.stringify({observations,generation,visibility:'synthetic document visibility and pointercancel',actualQr:'NOT_RUN'}));
+ }catch(error){
+  failure=error;let state:unknown=null;try{state=await browser?.evaluate('window.__demand?.snapshot?.()??null');}catch{/* The failed document may have navigated. */}
+  console.log('LOGIN_REDUCED_MANUAL_FAILURE',JSON.stringify({observations,generation,state}));
+ }finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });

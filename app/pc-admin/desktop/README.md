@@ -25,6 +25,8 @@ npm run desktop:package -- -ServerOrigin https://cd3120.mobimedical.cn
 
 登录网页的挂绳首帧另外采用可取消的异步GPU预编译，减少同步着色器查询对整个窗口启动绘制的阻塞；保留原画质、诊断、真实首绘门槛和失败恢复。客户端安装与登录网页资源发布分别生效，网页修复需单独发布；构建和本地验证不构成部署授权。
 
+仅手动启用减动备用时，静止工牌按需重绘；拖动跟手、松手挂稳、点击即时翻面，隐藏或取消后保持已选正反面，版本与尺寸更新仍可显示。默认完整动效保留原物理效果。
+
 开发/自动化 profile 由 `-Profile` 指定；运行包在开发机验收时也可设置绝对 D 盘 `WECOM_DESKTOP_DATA_ROOT`，主进程在 ready 前设置 userData/sessionData/temp/crashDumps/logs。同事正常安装使用 Windows 当前用户目录，不要求 D 盘。
 
 ## 服务器准备

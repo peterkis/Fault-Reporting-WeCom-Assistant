@@ -848,7 +848,7 @@ const solvePin = (body: Body, grab: Grab, target: THREE.Vector3): void => {
   pushBody(body, r, normal.multiplyScalar(lambda));
 };
 
-const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void => {
+const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean, preserveRotation = false): void => {
   const { nodes, previous, velocities, body, anchor } = sim;
   at(nodes, 0).copy(anchor);
   for (let i = 1; i <= JOINTS; i++) {
@@ -856,8 +856,10 @@ const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void
     if (intro) at(nodes, i).x += sim.rest;
     else at(nodes, i).y -= sim.rest;
   }
-  body.quaternion.identity();
-  if (intro) body.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  if (!preserveRotation) {
+    body.quaternion.identity();
+    if (intro) body.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  }
   body.hang.set(0, layout.hangY, 0);
   const offset = scratch.a.copy(body.hang).applyQuaternion(body.quaternion);
   body.position.copy(at(nodes, JOINTS)).sub(offset);
@@ -870,9 +872,11 @@ const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void
     at(velocities, i).set(0, 0, 0);
   }
   sim.lengths.fill(sim.rest);
-  sim.turn = 0;
-  sim.twist = 0;
-  sim.twistRaw = 0;
+  if (!preserveRotation) {
+    sim.turn = 0;
+    sim.twist = 0;
+    sim.twistRaw = 0;
+  }
   sim.calm = 0;
 };
 
@@ -1240,6 +1244,7 @@ const Lanyard = ({
     let press: Press | null = null;
     let imageToken = 0;
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let staticPaintPending = false;
 
     const paintFaces = () => {
       const s = settingsRef.current;
@@ -1352,6 +1357,8 @@ const Lanyard = ({
           placed = true;
         } else if (layoutKey !== applied.layoutKey) {
           placeHanging(sim, layout, false);
+        } else if (reducedMotion && !sim.grab) {
+          placeHanging(sim, layout, false, true);
         }
       }
 
@@ -1580,6 +1587,7 @@ const Lanyard = ({
     const tick = (now: number): void => {
       raf = 0;
       if (!alive || !visible || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+      if (reducedMotion && !sim.grab) return;
       const dt = Math.min(1 / 30, Math.max(1 / 240, (now - last) / 1000));
       last = now;
       time += dt;
@@ -1623,6 +1631,17 @@ const Lanyard = ({
 
     const start = () => {
       if (!gpuReady || raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+      if (reducedMotion && !sim.grab) {
+        if (!staticPaintPending) {
+          staticPaintPending = true;
+          queueMicrotask(() => {
+            staticPaintPending = false;
+            if (!gpuReady || raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+            render();
+          });
+        }
+        return;
+      }
       sim.calm = 0;
       last = performance.now();
       raf = requestAnimationFrame(tick);
@@ -1660,6 +1679,15 @@ const Lanyard = ({
       }
       sim.turn = sim.turn === 0 ? Math.PI * direction : 0;
       body.angular.addScaledVector(up, FLIP_SPIN * direction);
+    };
+
+    const settleReduced = (): void => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      sim.body.quaternion.setFromAxisAngle(scratch.a.set(0, 1, 0), sim.turn);
+      sim.twist = sim.turn;
+      sim.twistRaw = sim.turn;
+      placeHanging(sim, layout, false, true);
     };
 
     const onPointerDown = (event: PointerEvent): void => {
@@ -1700,12 +1728,13 @@ const Lanyard = ({
 
     const onPointerUp = (event: PointerEvent): void => {
       if (!sim.grab || capturedPointer !== event.pointerId) return;
-      sim.grab = null;
       if (press && event.type === 'pointerup' && performance.now() - press.time < 450) flip(press.point);
+      sim.grab = null;
       press = null;
       capturedPointer = null;
       if (container.hasPointerCapture(event.pointerId)) container.releasePointerCapture(event.pointerId);
       setCursor(hovering && event.pointerType !== 'touch' ? 'grab' : '');
+      if (reducedMotion) settleReduced();
       start();
     };
 
@@ -1720,11 +1749,13 @@ const Lanyard = ({
     const stopInteraction = (): void => {
       sim.grab = null;
       press = null;
-      if (capturedPointer !== null && container.hasPointerCapture(capturedPointer)) {
-        container.releasePointerCapture(capturedPointer);
-      }
+      const pointerId = capturedPointer;
       capturedPointer = null;
+      if (pointerId !== null && container.hasPointerCapture(pointerId)) {
+        container.releasePointerCapture(pointerId);
+      }
       setCursor('');
+      if (reducedMotion) settleReduced();
     };
     const syncVisibility = (): void => {
       visible = intersecting && !document.hidden;
