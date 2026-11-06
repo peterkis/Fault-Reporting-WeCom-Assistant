@@ -90,6 +90,7 @@ process.on('message',async(value:unknown)=>{
       case 'metrics':result=app.getAppMetrics();break;
       case 'navigate':if(typeof command.expression!=='string'||!/^https:\/\/127\.0\.0\.1:\d+\/workbench\//u.test(command.expression))throw Error('TEST_LOOPBACK_URL_REQUIRED');void page.loadURL(command.expression).catch(()=>{});result=true;break;
       case 'hide':window.hide();result=true;break;
+      case 'blur':window.blur();result=true;break;
       case 'show':if(window.isMinimized())window.restore();window.show();window.focus();(startup?.webContents??page).focus();result=true;break;
       case 'resize':{const size:unknown=JSON.parse(String(command.expression));if(!Array.isArray(size)||size.length!==2||size.some(v=>!Number.isInteger(v)||v<650||v>2000))throw Error('TEST_SIZE_INVALID');window.setSize(size[0],size[1]);result=true;break;}
       case 'attempt-quit':app.quit();result=true;break;

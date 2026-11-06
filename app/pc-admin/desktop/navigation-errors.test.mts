@@ -80,6 +80,10 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     assert.equal((await early.command('state') as {startupVisible:boolean}).startupVisible,true);
     assert.equal(await early.command('evaluate','window.presentations'),0,'prepared login animations have not been presented in the background');
     assert.equal(await early.command('evaluate','typeof document.querySelector("iframe").contentWindow.workbenchLogin'),'undefined','child frames do not acquire even the presentation-only login bridge');
+    await early.command('blur');await early.wait('startup-evaluate','document.querySelector("video").paused');
+    const blurredTime=await early.command('startup-evaluate','document.querySelector("video").currentTime');await delay(250);
+    assert.equal(await early.command('startup-evaluate','document.querySelector("video").currentTime'),blurredTime,'loss of native focus pauses startup even when Chromium visibility is synthetic');
+    await early.command('show');await early.wait('startup-evaluate','!document.querySelector("video").paused');
     await early.command('chrome-evaluate','document.getElementById("close").click()');
     assert.equal((await early.command('state') as {visible:boolean}).visible,false,'close-to-tray responds immediately without waiting for startup completion');
     await early.wait('startup-evaluate','document.querySelector("video").paused');

@@ -45,6 +45,7 @@ const notices=new Map<string,Notification>(),seen=new Map<string,number>();
 const state=():DesktopState=>({version:1,visible:startup.phase==='released'&&!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:startup.phase==='released'&&!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
 const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:startup.phase!=='released',recovery:startup.phase==='released'?recovery:null,loginExpired,loginCompatibility:startup.phase==='released'&&startup.scene==='compatibility'});
 const startupState=():StartupState=>({version:1,generation:startup.generation,active:startup.active,releasing:startup.phase==='releasing',reducedMotion:process.argv.includes('--wecom-reduced-motion'),firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure});
+const startupNativeActive=()=>!!window?.isVisible()&&!window.isMinimized()&&window.isFocused()&&!locked&&!suspended&&!quitting;
 function focusContent(){const target=startupView?.webContents??content?.webContents;if(target&&!target.isDestroyed())target.focus();}
 function clearNotices(){for(const notice of notices.values())notice.close();notices.clear();}
 function sendState(){
@@ -209,9 +210,11 @@ else{
     traceStartup('released');layout();notifyPresented();sendState();if(window?.isFocused()&&!recovery&&!menuOpen)focusContent();
   };
   updateStartup=event=>{
+    const previous=startup;
     if(event.type==='active')mediaTick=performance.now();
+    else if(startupNativeActive()!==startup.active){mediaTick=performance.now();startup=transitionStartup(startup,{type:'active',active:startupNativeActive()});}
     if(event.type==='video'&&event.signal.type==='visibility')overlayDocumentVisible=event.signal.visible;
-    const previous=startup;startup=transitionStartup(startup,event);
+    startup=transitionStartup(startup,event);
     if(previous.phase==='releasing'&&startup.phase!=='releasing'&&releaseTimer){clearTimeout(releaseTimer);releaseTimer=null;}
     if(previous.phase!==startup.phase||previous.scene!==startup.scene||previous.video!==startup.video||previous.firstPlaybackComplete!==startup.firstPlaybackComplete)traceStartup(event.type==='video'?event.signal.type:event.type);
     if(startup.phase==='releasing'&&previous.phase!=='releasing'){
@@ -222,7 +225,7 @@ else{
       releaseTimer=setTimeout(()=>{releaseTimer=null;if(startup.phase==='releasing'&&startup.generation===generation){traceStartup('overlay-release-timeout');updateStartup({type:'video',signal:{version:1,type:'released',generation}});}},1200);releaseTimer.unref();
     }
     if(startup.phase==='released'&&previous.phase!=='released')releaseOverlay();
-    layout();if(event.type==='active'||event.type==='scene')syncSceneTimers();
+    layout();if(event.type==='active'||event.type==='scene'||previous.active!==startup.active)syncSceneTimers();
     sendState();
   };
   const validateLease=(event:Electron.IpcMainInvokeEvent,value:unknown)=>{
@@ -240,7 +243,7 @@ else{
     finishRecovery();content?.setVisible(true);updateStartup({type:'scene',generation,scene:'prepared'});notifyPresented();layout();
     return {presented:startup.phase==='released'};
   };
-  const nativeActivity=()=>{updateStartup({type:'active',active:!!window?.isVisible()&&!window.isMinimized()&&!locked&&!suspended&&!quitting});};
+  const nativeActivity=()=>{updateStartup({type:'active',active:startupNativeActive()});};
   startupPage.on('dom-ready',()=>{startupView?.setBackgroundColor('#00000000');sendState();focusContent();});
   const overlayFailed=(signal:StartupSignal)=>{updateStartup({type:'video',signal});if(startup.scene==='loading')beginRecovery(config.serverOrigin+activeLoginEntry,'unavailable');if(startup.phase==='releasing')updateStartup({type:'video',signal:{version:1,type:'released',generation:startup.generation}});};
   startupPage.on('did-fail-load',(_event,code,_description,_url,mainFrame)=>{if(mainFrame&&code!==-3)overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'});});
@@ -394,6 +397,7 @@ else{
   window.on('closed',()=>{stopSceneTimers();if(releaseTimer)clearTimeout(releaseTimer);if(!page.isDestroyed())page.close();if(!loginChromePage.isDestroyed())loginChromePage.close();if(!startupPage.isDestroyed())startupPage.close();startupView=null;content=null;loginChrome=null;window=null;clearNotices();powerMonitor.removeListener('resume',checkConnection);powerMonitor.removeListener('unlock-screen',checkConnection);powerMonitor.removeListener('resume',renewAfterIdle);powerMonitor.removeListener('unlock-screen',renewAfterIdle);powerMonitor.removeListener('lock-screen',onLock);powerMonitor.removeListener('unlock-screen',onUnlock);powerMonitor.removeListener('suspend',onSuspend);powerMonitor.removeListener('resume',onResume);});
   window.on('show',sendState);window.on('hide',sendState);window.on('minimize',sendState);window.on('restore',sendState);window.on('focus',sendState);window.on('blur',sendState);
   window.on('show',nativeActivity);window.on('hide',nativeActivity);window.on('minimize',nativeActivity);window.on('restore',nativeActivity);
+  window.on('focus',nativeActivity);window.on('blur',nativeActivity);
   window.on('maximize',sendState);window.on('unmaximize',sendState);
   const powerChanged=()=>{revision++;clearNotices();nativeActivity();sendState();};
   const onLock=()=>{locked=true;powerChanged();},onUnlock=()=>{locked=false;powerChanged();},onSuspend=()=>{suspended=true;powerChanged();},onResume=()=>{suspended=false;powerChanged();};
