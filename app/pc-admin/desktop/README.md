@@ -23,6 +23,8 @@ npm run desktop:package -- -ServerOrigin https://cd3120.mobimedical.cn
 
 0.1.18 使用原片派生的540×540、30fps、68帧无损WebP与Canvas，在原可信本地覆盖层连续播放；只预解码当前及后两帧，交接后释放位图并销毁覆盖WebContents。远端在真实布局下并行准备，正常路径等待全部帧实际按序绘制完成及当前场景prepared；后续循环可中途交接，二维码续期不重播。默认完整动效，不因Windows系统减动设置跳过；仅显式`--wecom-reduced-motion`启用静态备用。可见但失焦仍继续准备/播放，最小化、隐藏、锁屏和休眠暂停后续播；旧页协商等待缩短至dom-ready后1秒，新页保留20秒故障预算。资源故障与兼容均有诊断和恢复入口。具体状态机、安全和现场验证边界见[桌面登录导航](../../../docs/agents/desktop-login.md)。
 
+登录网页的挂绳首帧另外采用可取消的异步GPU预编译，减少同步着色器查询对整个窗口启动绘制的阻塞；保留原画质、诊断、真实首绘门槛和失败恢复。客户端安装与登录网页资源发布分别生效，网页修复需单独发布；构建和本地验证不构成部署授权。
+
 开发/自动化 profile 由 `-Profile` 指定；运行包在开发机验收时也可设置绝对 D 盘 `WECOM_DESKTOP_DATA_ROOT`，主进程在 ready 前设置 userData/sessionData/temp/crashDumps/logs。同事正常安装使用 Windows 当前用户目录，不要求 D 盘。
 
 ## 服务器准备

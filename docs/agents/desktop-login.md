@@ -37,6 +37,10 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 ## 登录准备、呈现与兼容
 
+挂绳GPU准备保留shader诊断，但不在首次使用时同步等待编译结果。支持`KHR_parallel_shader_compile`时，先对同一PMREM实例及相同环境参数做compile-only预遍历，非阻塞等待程序完成，再执行真实环境生成；主场景在最终环境、灯光、材料、纹理和窗口尺寸配置后同样预编译。只有后续实际WebGL/CSS3D首帧成功、host连接且context/生命周期仍有效时，才调用原onFrontReady创建官方面板。预遍历及编译Promise不能单独当作scene-ready。无扩展时保持原同步行为，不自动减动；异常、15秒回退和取消会终止轮询并释放临时目标，且在program销毁前显式标记删除尚未首用的shader句柄。Renderer状态按每个同步pass分别恢复，不能跨await用旧快照覆盖窗口resize。
+
+启动速度与稳态资源测量分开：性能夹具人为挂起首响应10秒、首帧后采样，不能用来推断点击到登录时延。时延对照必须包含建立工作树之前的旧客户端+旧页面，首响应不延迟，从进程spawn开始分别记录窗口、GET、DOM、prepared、真实首遍、presented及可见页面；fresh profile与同origin/profile热缓存单列。正常视频路径仍至少播放完整一遍，不能用缩短时长或补帧伪造消除GPU空档。
+
 网页将资源准备与实际呈现分开。面板创建成功或可操作失败、背景生成或静态降级均完成后发送`prepared`；它只表示可呈现场景，不证明二维码已显示或可扫码。覆盖层淡出完成并释放后发送`presented`，此时才启动挂绳入场等可见动画；淡出期间仍保持远端不可交互，隐藏/锁定可取消尚未完成的淡出。保留已创建的官方iframe及其WebContents，不因交接重新创建、迁移或导航iframe。背景及挂绳原有隐藏暂停规则保持；背景超时须能形成静态降级，不能阻塞整个登录。
 
 新桥接通过contextBridge只增加版本化的`workbenchLogin.startup.connect`、`prepared`和`onPresented`，不授予认证或业务权限。主进程核对所属WebContents、主框架、允许HTTPS origin、精确embedded登录path、消息形状和当前文档代际/私有nonce；拒绝子帧、非登录页、旧文档及畸形消息。主进程在当前文档dom-ready建立私有文档lease，preload在握手前排队。准备回执中的panel为`created/failed`，backdrop为`shader/fallback`。

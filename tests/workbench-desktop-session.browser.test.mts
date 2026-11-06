@@ -2,8 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer,request as nativeRequest} from 'node:http';
 import {brotliDecompressSync,gunzipSync} from 'node:zlib';
+import {setTimeout as delay} from 'node:timers/promises';
 import {renderEmbeddedLogin,embeddedLoginHeaders,serveEmbeddedLoginAsset} from '../app/server/src/workbench-embedded-login.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,type LoginGpuFaultSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
 
 test('compiled login prepares once under the native cover, presents the same iframe and exposes initializer/compatibility recovery',{timeout:90_000},async()=>{
  let origin='',generation=0;
@@ -54,6 +56,84 @@ test('compiled login prepares once under the native cover, presents the same ifr
   }
  }catch(error){failure=error;}
  finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
+// These faults exercise the compiled public login scene and actual WebGL. The
+// provider stays blocked: an observable panel is never evidence of a scannable QR.
+for(const mode of loginGpuFaultModes)test('compiled login GPU preparation '+mode,{timeout:90_000},async()=>{
+ let origin='',generation=0,fixtureFailure:unknown;
+ const proofs:LoginGpuFaultSnapshot[]=[];
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);
+  if(url.pathname==='/gpu-proof'&&request.method==='POST'){
+   const chunks:Buffer[]=[];let size=0;
+   for await(const part of request){const chunk:unknown=part;assert.ok(Buffer.isBuffer(chunk));size+=chunk.length;assert.ok(size<16_000);chunks.push(chunk);}
+   const value:unknown=JSON.parse(Buffer.concat(chunks).toString());proofs.push(readLoginGpuFaultSnapshot(value));response.writeHead(204);response.end();return;
+  }
+  if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){
+   generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());
+   response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.gpu-fault-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;
+  }
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Synthetic GPU preparation test</title>');
+ })().catch(error=>{fixtureFailure??=error;if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_LOGIN_GPU_FIXTURE_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
+  await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:loginGpuFaultScript(mode)});
+  await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  if(mode==='abort'){
+   await browser.waitFor('window.__loginGpuFault?.completionQueries>=2&&window.__loginGpuFault.framebuffersCreated>=2');
+   const before=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
+   assert.equal(before.khrAvailable,true,'async cancellation must reach the actual KHR capability');assert.equal(before.iframeCreates,0);assert.equal(before.preparedCalls.length,0);
+   // Observe cleanup in the live document, then independently navigate to verify
+   // a trusted pagehide and idempotent disposal. Neither action reports prepared.
+   await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));");
+   const after=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));await delay(200);
+   const settled=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
+   assert.equal(after.pendingPollTimers,0);assert.equal(settled.completionQueries,after.completionQueries,'aborted polling never resumes');
+   assertLoginGpuFaultReleased(settled);assert.equal(settled.iframeCreates,0);assert.equal(settled.preparedCalls.length,0);
+   await browser.command('Page.navigate',{url:origin+'/done'});await browser.waitFor('location.pathname==="/done"');
+   for(let i=0;i<20&&!proofs.some(value=>value.trustedPagehide);i++)await delay(25);
+   assert.ok(proofs.some(value=>value.trustedPagehide&&value.targetFramebuffersLive===0&&value.pendingPollTimers===0),'actual navigation confirms the cancelled scene stayed disposed');
+   console.log('LOGIN_GPU_PREPARATION_FAULT',JSON.stringify({mode,before,after,settled,proofs}));
+  }else{
+   await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.querySelector("#wecom-panel iframe")');
+   const prepared=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
+   if(mode==='no-khr'){
+    assert.ok(prepared.khrRequests>0);assert.equal(prepared.completionQueries,0);assert.ok(prepared.draws>0,'without KHR the original synchronous path still draws actual GL');
+    assert.equal(prepared.view,'lanyard');assert.equal(generation,1);
+   }else{
+    assert.equal(prepared.view,'flat');assert.equal(generation,2,'a preparation fault recovers with a fresh complete login intent');
+    for(let i=0;i<30&&!proofs.length;i++)await delay(25);
+    const prior=proofs.find(value=>value.framebuffersCreated>0);assert.ok(prior,'the disposed GPU document must supply its cleanup receipt');
+    assert.equal(prior.khrAvailable,true,'this fault must reach asynchronous preparation, not silently use an unsupported path');
+    assert.equal(prior.iframeCreates,0,'failed GL preparation must not initialize the provider iframe');assert.equal(prior.preparedCalls.length,0,'compile completion or failure is not front-ready');
+    assertLoginGpuFaultReleased(prior);
+    if(mode==='context-loss'){assert.equal(prior.lossRequested,true);assert.ok(prior.contextLostEvents>0);assert.equal(prepared.fallback,'context-lost');}
+    if(mode==='shader-link'){assert.equal(prior.badShaderInjected,true);assert.equal(prepared.fallback,'webgl-unavailable');}
+    if(mode==='timeout'){
+     assert.ok(prior.elapsedMs>=15_000,'the existing real 15-second scene deadline must not be shortened');
+     assert.equal(prepared.fallback,'startup-timeout');
+    }
+   }
+   assert.equal(prepared.iframeCreates,1);assert.equal(prepared.iframeCount,1);assert.equal(prepared.preparedCalls.length,1);
+   await browser.evaluate('window.__loginGpuFaultIframe=document.querySelector("#wecom-panel iframe");window.__loginGpuFault.present();window.__loginGpuFault.present();');
+   await browser.waitFor('document.body.dataset.loginScene==="ready"');
+   const presented=readLoginGpuFaultSnapshot(await browser.evaluate('({...window.__loginGpuFault.snapshot(),sameIframe:window.__loginGpuFaultIframe===document.querySelector("#wecom-panel iframe"),retryEnabled:!document.getElementById("retry-login").disabled})'));
+   assert.equal(presented.sameIframe,true,'duplicate presentation retains the one live provider iframe');assert.equal(presented.iframeCreates,1);assert.equal(presented.iframeCount,1);assert.equal(presented.preparedCalls.length,1);assert.equal(presented.retryEnabled,true,'recovered login remains actionable');
+   console.log('LOGIN_GPU_PREPARATION_FAULT',JSON.stringify({mode,generation,prepared,presented,proofs}));
+  }
+  if(fixtureFailure)throw fixtureFailure;
+ }catch(error){
+  failure=error;let snapshot:unknown=null;try{snapshot=await browser?.evaluate('window.__loginGpuFault?.snapshot?.()??null');}catch{/* The failed document may already have navigated. */}
+  console.log('LOGIN_GPU_PREPARATION_FAULT_FAILURE',JSON.stringify({mode,generation,proofs,snapshot}));
+ }finally{
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);
+ }
 });
 
 test('compiled embedded login keeps one iframe during badge interaction and renews on view or scale fallback',{timeout:120_000},async()=>{
