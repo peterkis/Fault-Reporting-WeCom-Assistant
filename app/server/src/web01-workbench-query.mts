@@ -33,6 +33,7 @@ export function boardColumn(status: string): BoardColumn {
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'|'follow_up_schedule'|'closure'> { sort_at: string; closure_evidence:ClosureEvidence|null }
 interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; closedFrom?:string|null; closedTo?:string|null; cursor: unknown; limit: unknown }
+const UUID_TEXT_PATTERN='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 const REPORTER_PROFILE_SQL=`LEFT JOIN LATERAL (SELECT j.profile_snapshot->'contact'->>'name' AS name,
    (SELECT string_agg(m->>'name','、' ORDER BY ord) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(j.profile_snapshot->'memberships')='array' THEN j.profile_snapshot->'memberships' ELSE '[]'::jsonb END) WITH ORDINALITY AS members(m,ord)) AS department
  FROM (SELECT origin.id FROM intake.contact_journey origin WHERE origin.origin_intake_id=i.id
@@ -50,7 +51,8 @@ const INTAKE_CLOSURE_SQL=`LEFT JOIN LATERAL (SELECT e.event_type,e.occurred_at,e
       AND e.payload->>'old_status' IS DISTINCT FROM e.payload->>'new_status'
       OR e.event_type='intake.received' AND e.payload->>'status'=i.status)
   ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) closing ON TRUE
- LEFT JOIN intake.deterministic_decision closing_decision ON closing_decision.id::text=closing.payload->>'decision_id'
+ LEFT JOIN intake.deterministic_decision closing_decision ON closing_decision.id=CASE
+   WHEN closing.payload->>'decision_id' ~ '${UUID_TEXT_PATTERN}' THEN (closing.payload->>'decision_id')::uuid END
    AND closing_decision.service_intake_id=i.id
    AND EXISTS(SELECT 1 FROM intake.contact_journey retained WHERE retained.id=closing_decision.journey_id
      AND retained.retention_until_epoch_ms>platform.physical_epoch_ms())
@@ -86,11 +88,12 @@ export const CARD_SQL = `WITH cards AS (
  LEFT JOIN pilot_ticket.pilot_principal p ON p.id=t.assignee_id
  ${REPORTER_PROFILE_SQL}
  LEFT JOIN LATERAL (SELECT e.created_at AS at,e.operator_type,e.operator_id,e.internal_note FROM pilot_ticket.ticket_event e
-   WHERE e.ticket_id=t.id AND e.new_status=t.status
+   WHERE t.status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED') AND e.ticket_id=t.id AND e.new_status=t.status
      AND e.old_status IS DISTINCT FROM e.new_status
      AND e.event_type IN ('ticket.resolved','ticket.closed','ticket.cancelled','ticket.duplicate_linked')
    ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) ended ON TRUE
- LEFT JOIN pilot_ticket.pilot_principal closing_actor ON closing_actor.id::text=ended.operator_id AND ended.operator_type='PILOT_USER'
+ LEFT JOIN pilot_ticket.pilot_principal closing_actor ON closing_actor.id=CASE
+   WHEN ended.operator_id ~ '${UUID_TEXT_PATTERN}' THEN ended.operator_id::uuid END AND ended.operator_type='PILOT_USER'
  LEFT JOIN LATERAL (SELECT r.review_reason_code FROM intake.manual_review_item r
    JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket jt ON jt.id=j.linked_ticket_id
    WHERE r.status='PENDING' AND (r.linked_ticket_id=t.id OR r.service_intake_id=t.source_intake_id OR j.linked_ticket_id=t.id)

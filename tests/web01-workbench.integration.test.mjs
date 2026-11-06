@@ -494,6 +494,18 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     const recent=await read('/api/workbench/board?column=closed');assert.ok(recent.items.every(item=>item.id!==manual.intake.intakeId));
     assert.ok(recent.items.every(item=>item.id!==retired.intake.intakeId),'unknown automatic close time must not be guessed into a date window');
     assert.deepEqual(recent.group_counts,{completed:recent.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:recent.items.filter(item=>item.closure.kind==='DISMISSED').length});
+    const completedEvent=(await pool.query("SELECT payload FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[completed.intake.intakeId])).rows[0];assert.ok(completedEvent);
+    await pool.query("UPDATE intake.service_intake_event SET payload=jsonb_set(payload,'{decision_id}',to_jsonb($2::text)) WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[completed.intake.intakeId,'缺少旧关闭证据标识（合成）']);
+    const unknownDecision=(await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item;
+    assert.equal(unknownDecision.closure.source,null);assert.equal(unknownDecision.closure.closed_at,null);assert.equal(unknownDecision.closure.closed_by_display_name,null,'malformed legacy text must remain an unknown proof rather than a UUID cast error');
+    await pool.query("UPDATE intake.service_intake_event SET payload=$2::jsonb WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[completed.intake.intakeId,JSON.stringify(completedEvent.payload)]);
+    assert.deepEqual((await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item.closure,completedCard.closure);
+    const originalCancellation=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,'旧操作人未解析（合成）']);
+    const unknownActor=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
+    assert.deepEqual(unknownActor,{...originalCancellation,closed_by_display_name:null},'an unknown legacy actor keeps the original closure facts and nullable display name');
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,principals[0].id]);
+    assert.deepEqual((await read('/api/workbench/items/ticket/'+cancelledId)).item.closure,originalCancellation);
     console.log('CARD27A_SYNTHETIC '+JSON.stringify({states:6,manual_intake:manualCard.status,automatic_intake:automaticCard.status,cancelled_reason_note_visible:true,duplicate_original_available:false,dismissed_restore:false,expired_source_time_null:true,post_wait_filter_conflict:true,all_group_counts:counted,pages:Math.ceil(paged.length/2)}));
   },{workbenchManualReviewEnabled:true,workbenchSearchEnabled:true,precisionV212:true});
 });

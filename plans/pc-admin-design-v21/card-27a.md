@@ -8,7 +8,29 @@
 
 PR 使用 pr skill 的 Summary / Evidence / Merge Danger 格式；如实说明本轮 23 入口 149/149、原失败与 NOT_RUN、自动关闭时间及 S1–S4 缺口、旧 SQL/EXPLAIN 原字节丢失事故、ESLint 的实际范围和本地验证边界。CI 结果与远端审查意见另以该 PR 的当前完整 head 和 GitHub 回执为准，不把本地 WIP 通过冒充 CI 或上线批准。未经后续明确授权不合并。
 
-日期：2026-11-06（Asia/Shanghai）。分支：`codex/pc-admin-v217-card27a`。基线：`702f80d653f0c96f6febd7404c58834246427fe7`。状态：本地实现与适用验证完成，保留 H5 媒体 seek 的两次未归因超时；未提交/推送/创建 PR。
+### 首轮 PR CI 失败与查询修复候选
+
+已只提交本卡 22 路径为 `84f250ccff47d3a1491310e60edcb6a8a7428ef9`，推送并创建 [PR #154](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/154)；卡 26 与用户原型未暂存，提交后逐字节保护核验通过。已请求 @codex review，远端对该 head 回执为无主要问题，行内线程 0；未合并。
+
+[首轮 TypeScript CI](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/42166822735) FAIL：58 个所选入口仅到达 10 个，47 项中 46 PASS / 1 FAIL，余 48 入口 NOT_RUN。失败为 Card16 命令搜索第 2 项 P2_006_BROWSER_WAIT_TIMEOUT；PG 同时记录新 `WITH cards AS MATERIALIZED` 搜索 SQL 触发原 2000ms statement_timeout。前面的构建、strict/Stylelint 和最终制品/源码/合成库清理均通过；合并汇总因所选测试失败而 FAIL。总运行约 28 分钟中，约 24 分钟是媒体工具准备，不冒称查询运行 28 分钟。原件下载 `ci-first`，zip SHA256 `399aa66e3e4369c1c62286c3a466aa52ae0a5fcc735902ec3af0ab90139ad92b` 与 GitHub 回执一致且 CRC 通过；原 FAIL/NOT_RUN 保留。
+
+Windows 原搜索合成样本 HTTP 约 51ms，prepared / final 计划估算成本 1356492.67 / 1356545.95，执行约 2ms；该 PG 的 pg_jit_available=false，不能用本地通过证明 Linux LLVM 耗时。两个新增关联把 UUID 主键转 text，丢失原生主键 lookup/唯一性估算。保持主键为 UUID、仅把规范小写的 RHS 文本守卫转换后，同参变体成本降为 426067.22 / 426124.78；PG18 的 JIT/优化由估算成本触发，参见 ADR 官方来源。JIT 主导 CI 超时仍是待 CI 复验的假设，不写为已证实根因。
+
+最小修复仅改只读查询：上述两个 JOIN 保留旧非规范文本不匹配的语义，另为 Ticket 终结事件 lateral 显式加四终态守卫。保留物化、安全指纹、2 秒时限和最终 READ/分页/日期/计数终检。既有 web01 集成补断言：旧 decision/operator 非 UUID 文本仍返回 200、来源或显示名未知为 null，恢复原规范标识后 closure 完全一致。没有改命令、迁移、权限、依赖、界面或测试时限。两名子代理只读复核，Root 唯一构建和运行；新候选通过与否以接下来独立回执为准，旧 149/149 不补新候选。
+
+`build-ci-fix.log` / `types-ci-fix.log` 对 input `636ccd1b3c554f8d1abbaa54cce811125e7457b35b6393696262ceccfed9abfe` 通过。本地 `tests-ci-fix` 到达 7/23 入口，115 项中 114 PASS / 1 FAIL，16 入口 NOT_RUN；SQL 新断言与 Card16 均通过，原失败保留。另一个既有别名/真实 HTTP / PC 解析兼容回归 `pc-admin-legacy-retirement.browser.test.mts` 在通知详情容器出现即取链接，截图仍是“正在确认这条通知的最新情况...”。仅在该测试新增一行等待现有详情链接出现，原负向文案、链接安全、无 POST/发送、原等待和原时限全部保留，无组件或通知实现变化；两名独立审查者确认等待缺口真实且未削弱业务断言。该既有回归成为本卡第 23 路径，PC 应用依然只改 api/client.ts。测试源码改变后旧制品校验正确报告 INPUT_DRIFT，保留回执并以 fresh build 重新验证，不冒称旧通过可补新测试。
+
+### 查询与就绪修复的本地复验
+
+最终 `build-ci-fix-ready.log` / `types-ci-fix-ready.log` PASS，input=`0a6c5e45b20737f4eae411922d642a523199811ee7d0472f996667eb4abd1b36`，manifest=`6633b507d155197e60f960db432d2ae9fe49bf8db1b2024bdc537102fc43b8f2`；922 模块 / 2,944 制品。`tests-ci-fix-ready/summary.json` 同一候选单批 23 入口、149/149 PASS，fail/cancel/skip/todo=0、NOT_RUN 为空。Card16、非法旧标识及原别名回归均通过；此前 CI 和本地 FAIL/NOT_RUN 原件不删除。制品与文档链接校验通过，既有 Stylelint/Token 检查通过；本卡无 CSS/ESLint 范围变化。
+
+实际新编译查询的 `search-plan-after-fix-ready-summary.json` 为 Windows 无 LLVM 的本地合成观测：HTTP 207.107ms；prepared / final cost=426067.22 / 426124.78，execution=12.26 / 12.784ms。原 SQL/计划及原变体对比均在独立文件，不覆盖原件。独立 Standards / Spec / closure 审查均新增0，OCR delegate 补审另附原回执；Linux 效果以新提交 CI 为准，不拿该 Windows 结果补已失败 CI。
+
+`ci-fix-observation` 单独保存当前 1440×1060 / DPR=1 / zoom=1 截图，已实际查看，3列正常、已加载15项，PNG SHA256=743a32a2309fa5cc2eb19e5559a600c5d4bf64abc29554399273425498515d62。同一小合成样本 limit=1/50 实返1/5卡，均11条SQL、各1条计数查询，group_counts=4 completed/1 dismissed；EXPLAIN planning=18.537ms、execution=8.73ms。原旧证据目录没有改写，无生产容量结论。
+
+本次追加提交只含上述 5 路径，累计本卡 23 路径，继续逐 blob 与隔离候选比对并保护卡26工作区。远端 CI / Codex 审查的最终 head 和结果以 PR #154 回执为准，暂不合并。
+
+日期：2026-11-06（Asia/Shanghai）。分支：`codex/pc-admin-v217-card27a`。基线：`702f80d653f0c96f6febd7404c58834246427fe7`。原阶段状态：本地实现与适用验证完成，保留 H5 媒体 seek 的两次未归因超时；当时未提交/推送/创建 PR。
 
 ## 2026-11-06 后继独立审查（当前修复候选）
 

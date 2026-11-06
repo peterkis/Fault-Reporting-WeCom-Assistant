@@ -2,7 +2,7 @@
 
 Status: **Accepted for the authorized local read projection; 写入侧原因与恢复方案为 Draft / 停止待确认。**
 
-日期：2026-11-06（Asia/Shanghai）。范围：卡 27A。核查基线：`702f80d653f0c96f6febd7404c58834246427fe7`。本卡不提交、不推送、不创建 PR，不构成部署、现场或 Gate 批准。
+日期：2026-11-06（Asia/Shanghai）。范围：卡 27A。核查基线：`702f80d653f0c96f6febd7404c58834246427fe7`。初始本地阶段未提交、推送或创建 PR；后续已获用户具名发布授权并创建 PR #154，见[执行记录](../plans/pc-admin-design-v21/card-27a.md)，暂不合并，不构成部署、现场或 Gate 批准。
 
 ## 背景
 
@@ -56,6 +56,12 @@ Status: **Accepted for the authorized local read projection; 写入侧原因与�
 
 列表 `closure_kind=completed|dismissed` 为可选参数，省略不增响应 criteria 键；只筛选第三列状态，第一、二列状态保持原结果。与 q / 状态 / 责任 / 来源等条件取交集，游标绑定规范筛选身份，未知值、空值和重复参数拒绝。
 
+## 查询计划与关闭证据关联
+
+关闭 Decision / actor 关联保留原生 UUID 主键，将现有 JSON / operator 文本在规范小写 UUID 守卫后转换。这样保留主键索引及唯一性估算；无效旧文本仍不匹配，不把未知证据变成转换错误。Ticket 的终结事件 lateral 显式限于原四个终态，非终态不扫描这些事件。当前 READ、物化边界、安全指纹与最终终检保持，搜索原 2000ms statement_timeout 保持。
+
+首轮 PR CI 的 Card16 搜索在该上限失败。Windows 同参小合成样本（无 JIT 实现）估算成本由约 135 万降至约 42.6 万；原查询在该平台执行约 2ms，不能据此证明 Linux LLVM 执行时间。PG18 按估算成本选择 JIT / 优化，短查询的编译可能超过收益，属于需由 CI 回执验证的性能假设，参见[官方规则](https://www.postgresql.org/docs/18/jit-decision.html)。保留首次失败和 NOT_RUN，后续复验见执行记录，不放宽时限或业务断言。
+
 ## S1–S4 状态与后续写入侧方案
 
 | 项 | 状态 | 本卡处理与后续方案 |
@@ -69,4 +75,4 @@ Status: **Accepted for the authorized local read projection; 写入侧原因与�
 
 完成统计口径需单独决定前端今日完成、H5 COMPLETED/active_count 与未来月报是否按 kind 分开；27A 不改这些消费者。重复关联无法交付编号；完整业务原因与恢复写入侧未实现。
 
-投影与计数复用现有查询和最终当前主体/角色/团队/会话/对象 READ 证明；不得按卡追加查询或读取生产配置。查询计划、实测规模、验证、截图、文件与资源记录见[卡 27A 执行记录](../plans/pc-admin-design-v21/card-27a.md)。本地未提交改动可按本卡文件撤回，保留原型及历史证据。无迁移、依赖、默认 Flag 或写入事实变化。
+投影与计数复用现有查询和最终当前主体/角色/团队/会话/对象 READ 证明；不得按卡追加查询或读取生产配置。查询计划、实测规模、验证、截图、文件与资源记录见[卡 27A 执行记录](../plans/pc-admin-design-v21/card-27a.md)。回退以本卡提交为单位，同时回退后端合同与前端解析，保留卡26、用户原型及历史证据。无迁移、依赖、默认 Flag 或写入事实变化。
